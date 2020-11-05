@@ -16,7 +16,7 @@ namespace details
 template <typename TScopeExitLambda>
 class scope_exit_caller
 {
- public:
+public:
   explicit scope_exit_caller(TScopeExitLambda&& lambda) noexcept : _scope_exit_lambda(std::move(lambda))
   {
     static_assert(std::is_same<decltype(lambda()), void>::value, "scope_exit lambdas cannot have a return value.");
@@ -44,7 +44,7 @@ class scope_exit_caller
     }
   }
 
- private:
+private:
   bool _will_call = true;
   TScopeExitLambda _scope_exit_lambda;
 };

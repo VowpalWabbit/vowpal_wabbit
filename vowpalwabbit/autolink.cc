@@ -20,7 +20,7 @@ struct autolink
   void predict(VW::LEARNER::single_learner& base, example& ec);
   void learn(VW::LEARNER::single_learner& base, example& ec);
 
- private:
+private:
   void prepare_example(VW::LEARNER::single_learner& base, example& ec);
   void reset_example(example& ec);
 

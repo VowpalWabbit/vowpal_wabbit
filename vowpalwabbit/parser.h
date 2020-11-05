@@ -10,15 +10,15 @@
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
 #ifdef _M_CEE
-#pragma managed(push, off)
-#undef _M_CEE
-#include <mutex>
-#include <condition_variable>
-#define _M_CEE 001
-#pragma managed(pop)
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <mutex>
+#  include <condition_variable>
+#  define _M_CEE 001
+#  pragma managed(pop)
 #else
-#include <mutex>
-#include <condition_variable>
+#  include <mutex>
+#  include <condition_variable>
 #endif
 
 #include <atomic>
@@ -57,7 +57,7 @@ struct parser
     counts.delete_v();
   }
 
-  //delete copy constructor
+  // delete copy constructor
   parser(const parser&) = delete;
   parser& operator=(const parser&) = delete;
 
@@ -87,7 +87,7 @@ struct parser
 
   const size_t ring_size;
   std::atomic<uint64_t> begin_parsed_examples;  // The index of the beginning parsed example.
-  std::atomic<uint64_t> end_parsed_examples;      // The index of the fully parsed example.
+  std::atomic<uint64_t> end_parsed_examples;    // The index of the fully parsed example.
   std::atomic<uint64_t> finished_examples;      // The count of finished examples.
   uint32_t in_pass_counter = 0;
   bool emptylines_separate_examples = false;  // true if you want to have holdout computed on a per-block basis rather

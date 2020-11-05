@@ -22,8 +22,9 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
       head = space.begin();
       space.end() = space.begin() + left;
     }
-    if (current < input_files.size() && fill(input_files[current].get()) > 0)  // read more bytes from current file if present
-      return buf_read(pointer, n);  // more bytes are read.
+    if (current < input_files.size() &&
+        fill(input_files[current].get()) > 0)  // read more bytes from current file if present
+      return buf_read(pointer, n);             // more bytes are read.
     else if (++current < input_files.size())
       return buf_read(pointer, n);  // No more bytes, so go to next file and try again.
     else
@@ -39,12 +40,10 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
 bool io_buf::isbinary()
 {
   if (space.end() == head)
-    if (fill(input_files[current].get()) <= 0)
-      return false;
+    if (fill(input_files[current].get()) <= 0) return false;
 
   bool ret = (*head == 0);
-  if (ret)
-    head++;
+  if (ret) head++;
 
   return ret;
 }
@@ -107,14 +106,14 @@ void io_buf::buf_write(char*& pointer, size_t n)
   }
 }
 
-size_t io_buf::copy_to(void *dst, size_t max_size)
+size_t io_buf::copy_to(void* dst, size_t max_size)
 {
   size_t to_copy = std::min(unflushed_bytes_count(), max_size);
   memcpy(dst, space.begin(), to_copy);
   return to_copy;
 }
 
-void io_buf::replace_buffer(char *buff, size_t capacity)
+void io_buf::replace_buffer(char* buff, size_t capacity)
 {
   // TODO the following should be moved to v_array
   space.delete_v();

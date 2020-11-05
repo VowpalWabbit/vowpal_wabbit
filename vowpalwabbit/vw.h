@@ -20,10 +20,10 @@
  */
 
 #ifdef _WIN32
-#ifdef LEAKCHECK
+#  ifdef LEAKCHECK
 // Visual Leak Detector for memory leak detection on Windows
-#include <vld.h>
-#endif
+#    include <vld.h>
+#  endif
 #endif
 
 #include "global_data.h"

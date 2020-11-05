@@ -10,15 +10,15 @@
 #include <cerrno>
 #include <cstdlib>
 #ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
+#  define NOMINMAX
+#  include <WinSock2.h>
 #else
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <netdb.h>
+#  include <sys/types.h>
+#  include <unistd.h>
+#  include <sys/socket.h>
+#  include <netinet/in.h>
+#  include <netinet/tcp.h>
+#  include <netdb.h>
 #endif
 
 using std::cerr;
@@ -66,8 +66,7 @@ int recvall(int s, char* buf, int n)
   while (ret > 0 && total < n)
   {
     total += ret;
-    if (buf[total - 1] == '\n')
-      break;
+    if (buf[total - 1] == '\n') break;
     ret = recv(s, buf + total, n, 0);
   }
   return total;
@@ -84,18 +83,9 @@ int main(int argc, char* argv[])
   int s, ret, queries = 0;
   std::string line;
 
-  if (argc > 1)
-  {
-    host = argv[1];
-  }
-  if (argc > 2)
-  {
-    port = atoi(argv[2]);
-  }
-  if (port <= 1024 || port == (unsigned short)(~0u))
-  {
-    port = 26542;
-  }
+  if (argc > 1) { host = argv[1]; }
+  if (argc > 2) { port = atoi(argv[2]); }
+  if (port <= 1024 || port == (unsigned short)(~0u)) { port = 26542; }
 
   s = open_socket(host, port);
   size_t id = 0;
@@ -133,10 +123,7 @@ int main(int argc, char* argv[])
     ttag = strsep(&toks, " ");
     tag = ttag ? std::string(ttag) : std::string("'empty");
     itok = strsep(&toks, "\n");
-    if (itok == nullptr || itok[0] == '\0')
-    {
-      continue;
-    }
+    if (itok == nullptr || itok[0] == '\0') { continue; }
 
     queries += 1;
     std::string imp = std::string(itok) + " " + tag + " |";

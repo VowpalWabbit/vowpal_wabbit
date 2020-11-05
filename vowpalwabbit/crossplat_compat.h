@@ -10,10 +10,10 @@
 #include <cstdio>
 
 #ifndef _WIN32
-#define sprintf_s snprintf
-#define vsprintf_s vsnprintf
-#define strtok_s strtok_r
-#define fscanf_s fscanf
+#  define sprintf_s snprintf
+#  define vsprintf_s vsnprintf
+#  define strtok_s strtok_r
+#  define fscanf_s fscanf
 
 constexpr uint64_t UINT64_ZERO = 0ULL;
 constexpr uint64_t UINT64_ONE = 1ULL;
@@ -30,7 +30,7 @@ inline int string_cpy(char *dest, size_t dest_size, const char *src)
   // strcpy_s returns an errno_t
   return strcpy_s(dest, dest_size, src);
 #else
-  (void)dest_size; // unused here
+  (void)dest_size;  // unused here
   strcpy(dest, src);
   return 0;
 #endif
@@ -43,10 +43,7 @@ inline int file_open(FILE **pf, const char *filename, const char *mode)
   return fopen_s(pf, filename, mode);
 #else
   *pf = fopen(filename, mode);
-  if (*pf == nullptr)
-  {
-    return -1;
-  }
+  if (*pf == nullptr) { return -1; }
   return 0;
 #endif
 }

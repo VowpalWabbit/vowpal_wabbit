@@ -20,7 +20,6 @@ namespace VW
 {
 namespace config
 {
-
 struct base_option
 {
   base_option(std::string name, size_t type_hash) : m_name(std::move(name)), m_type_hash(type_hash) {}
@@ -96,7 +95,7 @@ struct typed_option : base_option
 
   T& m_location;
 
- private:
+private:
   // Would prefer to use std::optional (C++17) here but we are targeting C++11
   std::shared_ptr<T> m_value{nullptr};
   std::shared_ptr<T> m_default_value{nullptr};
