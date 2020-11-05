@@ -10,12 +10,6 @@ jobs:
       image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
     steps:
-      - name: Apt update
-        shell: bash
-        run: sudo apt update
-      - name: Install git
-        shell: bash
-        run: sudo apt install -y git
       - uses: actions/checkout@v2
         # with: // master doesn't have benchmark scripts this right now, check diff between two branch runs
         #   ref: master
