@@ -1035,7 +1035,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::class_<Search::predictor, predictor_ptr>("predictor", py::no_init)
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")
       //.def("set_input_ldf", &my_set_input_ldf, "set the inputs (a list of examples) for this predictor (LDF mode
-      //only)")
+      // only)")
       .def(
           "set_input_length", &Search::predictor::set_input_length, "declare the length of an LDF-sequence of examples")
       .def("set_input_at", &my_set_input_at,
@@ -1061,7 +1061,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
       //.def("set_num_learners", &Search::search::set_num_learners, "Set the total number of learners you want to
-      //train")
+      // train")
       .def("get_history_length", &Search::search::get_history_length,
           "Get the value specified by --search_history_length")
       .def("loss", &Search::search::loss, "Declare a (possibly incremental) loss")
