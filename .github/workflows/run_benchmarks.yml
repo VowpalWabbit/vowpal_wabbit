@@ -13,8 +13,12 @@ jobs:
       - name: Conda init
         shell: bash
         run: conda init bash
-      - run: source ~/.bashrc
-      - run: conda activate test-python36
+      - name: Source bashrc
+        shell: bash
+        run: source ~/.bashrc
+      - name: Activate python3.6
+        shell: bash
+        run: conda activate test-python36
       - run: python --version
       - run: pip --version
       - uses: actions/checkout@v1
@@ -30,7 +34,6 @@ jobs:
       - name: Benchmark master
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json # repo dir
-      - run: ls
       - run: rm -rf benchmark build
       - name: Upload master benchmark results
         uses: actions/upload-artifact@v2
