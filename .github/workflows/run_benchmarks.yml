@@ -11,9 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-        with:
+        # with:
           # ref: master # master doesn't have benchmark scripts this right now, check diff between two branch runs
-          path: master_checkout
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmark.sh # repo dir
@@ -23,17 +22,26 @@ jobs:
       - name: Benchmark master
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json # repo dir
-      # - run: rm -rf benchmark build
       - name: Upload master benchmark results
         uses: actions/upload-artifact@v2
         with:
           name: master-benchmarks
           path: master-benchmarks.json
+      - name: Upload benchmark compare
+        uses: actions/upload-artifact@v2
+        with:
+          name: benchmark-compare
+          path: benchmark/tools/compare.py
+      - run: rm -rf benchmark build
       - uses: actions/checkout@v1
       - name: Download master benchmark results
         uses: actions/download-artifact@v2
         with:
           name: master-benchmarks
+      - name: Download benchmark compare
+        uses: actions/download-artifact@v2
+        with:
+          name: benchmark-compare
       # - name: Install google benchmarks
       #   shell: bash
       #   run: ./.scripts/linux/install-benchmark.sh
@@ -45,7 +53,7 @@ jobs:
         run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
       - name: Install benchmark compare requirements
         shell: bash
-        run: /usr/local/miniconda/envs/test-python36/bin/pip install -r master_checkout/benchmark/tools/requirements.txt
+        run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
       - name: Compare benchmarks
         shell: bash
         run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
