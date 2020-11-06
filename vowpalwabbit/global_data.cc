@@ -30,10 +30,7 @@ size_t really_read(VW::io::reader* sock, void* in, size_t count)
   ssize_t r = 0;
   while (done < count)
   {
-    if ((r = sock->read(buf, static_cast<unsigned int>(count - done))) == 0)
-    {
-      return 0;
-    }
+    if ((r = sock->read(buf, static_cast<unsigned int>(count - done))) == 0) { return 0; }
     else if (r < 0)
     {
       THROWERRNO("read(" << sock << "," << count << "-" << done << ")");
@@ -85,10 +82,7 @@ int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag)
   return tag.begin() != tag.end();
 }
 
-int print_tag(std::stringstream& ss, v_array<char> tag)
-{
-  return print_tag_by_ref(ss, tag);
-}
+int print_tag(std::stringstream& ss, v_array<char> tag) { return print_tag_by_ref(ss, tag); }
 
 void print_result(VW::io::writer* f, float res, float unused, v_array<char> tag)
 {
@@ -101,24 +95,19 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
   {
     std::stringstream ss;
     auto saved_precision = ss.precision();
-    if (floorf(res) == res)
-      ss << std::setprecision(0);
+    if (floorf(res) == res) ss << std::setprecision(0);
     ss << std::fixed << res << std::setprecision(saved_precision);
     print_tag_by_ref(ss, tag);
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-    {
-      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
-    }
+    if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
   }
 }
 
 void print_raw_text(VW::io::writer* f, std::string s, v_array<char> tag)
 {
-  if (f == nullptr)
-    return;
+  if (f == nullptr) return;
 
   std::stringstream ss;
   ss << s;
@@ -126,16 +115,12 @@ void print_raw_text(VW::io::writer* f, std::string s, v_array<char> tag)
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-  if (t != len)
-  {
-    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
-  }
+  if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
 }
 
 void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_array<char>& tag)
 {
-  if (f == nullptr)
-    return;
+  if (f == nullptr) return;
 
   std::stringstream ss;
   ss << s;
@@ -143,26 +128,20 @@ void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_arra
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-  if (t != len)
-  {
-    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
-  }
+  if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
 }
-
 
 void set_mm(shared_data* sd, float label)
 {
   sd->min_label = std::min(sd->min_label, label);
-  if (label != FLT_MAX)
-    sd->max_label = std::max(sd->max_label, label);
+  if (label != FLT_MAX) sd->max_label = std::max(sd->max_label, label);
 }
 
 void noop_mm(shared_data*, float) {}
 
 void vw::learn(example& ec)
 {
-  if (l->is_multiline)
-    THROW("This reduction does not support single-line examples.");
+  if (l->is_multiline) THROW("This reduction does not support single-line examples.");
 
   if (ec.test_only || !training)
     VW::LEARNER::as_singleline(l)->predict(ec);
@@ -172,8 +151,7 @@ void vw::learn(example& ec)
 
 void vw::learn(multi_ex& ec)
 {
-  if (!l->is_multiline)
-    THROW("This reduction does not support multi-line example.");
+  if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
 
   if (!training)
     VW::LEARNER::as_multiline(l)->predict(ec);
@@ -183,8 +161,7 @@ void vw::learn(multi_ex& ec)
 
 void vw::predict(example& ec)
 {
-  if (l->is_multiline)
-    THROW("This reduction does not support single-line examples.");
+  if (l->is_multiline) THROW("This reduction does not support single-line examples.");
 
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
@@ -194,31 +171,25 @@ void vw::predict(example& ec)
 
 void vw::predict(multi_ex& ec)
 {
-  if (!l->is_multiline)
-    THROW("This reduction does not support multi-line example.");
+  if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
 
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
-  for (auto& ex : ec)
-  {
-    ex->test_only = true;
-  }
+  for (auto& ex : ec) { ex->test_only = true; }
 
   VW::LEARNER::as_multiline(l)->predict(ec);
 }
 
 void vw::finish_example(example& ec)
 {
-  if (l->is_multiline)
-    THROW("This reduction does not support single-line examples.");
+  if (l->is_multiline) THROW("This reduction does not support single-line examples.");
 
   VW::LEARNER::as_singleline(l)->finish_example(*this, ec);
 }
 
 void vw::finish_example(multi_ex& ec)
 {
-  if (!l->is_multiline)
-    THROW("This reduction does not support multi-line example.");
+  if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
 
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
@@ -231,8 +202,7 @@ void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NA
     if (isdigit(limit[0]))
     {
       int n = atoi(limit.c_str());
-      if (!quiet)
-        std::cerr << "limiting to " << n << "features for each namespace." << std::endl;
+      if (!quiet) std::cerr << "limiting to " << n << "features for each namespace." << std::endl;
       for (size_t j = 0; j < 256; j++) dest[j] = n;
     }
     else if (limit.size() == 1)
@@ -241,8 +211,7 @@ void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NA
     {
       int n = atoi(limit.c_str() + 1);
       dest[(uint32_t)limit[0]] = n;
-      if (!quiet)
-        std::cerr << "limiting to " << n << " for namespaces " << limit[0] << std::endl;
+      if (!quiet) std::cerr << "limiting to " << n << " for namespaces " << limit[0] << std::endl;
     }
   }
 }
@@ -256,8 +225,7 @@ void trace_listener_cerr(void*, const std::string& message)
 int vw_ostream::vw_streambuf::sync()
 {
   int ret = std::stringbuf::sync();
-  if (ret)
-    return ret;
+  if (ret) return ret;
 
   parent.trace_listener(parent.trace_context, str());
   str("");
@@ -398,8 +366,7 @@ vw::~vw()
   }
 
   // Check if options object lifetime is managed internally.
-  if (should_delete_options)
-    delete options;
+  if (should_delete_options) delete options;
 
   // TODO: migrate all finalization into parser destructor
   if (example_parser != nullptr)

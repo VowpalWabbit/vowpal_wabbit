@@ -19,7 +19,7 @@ struct example_predict
     features* _feature_space;
     v_array<namespace_index>::iterator _index;
 
-   public:
+  public:
     iterator(features* feature_space, namespace_index* index);
     features& operator*();
     iterator& operator++();
@@ -56,7 +56,7 @@ struct example_predict
 class VW_DEPRECATED("example_predict is now RAII based. That class can be used instead.") safe_example_predict
     : public example_predict
 {
- public:
+public:
   safe_example_predict();
   ~safe_example_predict();
 

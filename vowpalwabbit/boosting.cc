@@ -38,14 +38,10 @@ inline float sign(float w)
 
 int64_t choose(int64_t n, int64_t k)
 {
-  if (k > n)
-    return 0;
-  if (k < 0)
-    return 0;
-  if (k == n)
-    return 1;
-  if (k == 0 && n != 0)
-    return 1;
+  if (k > n) return 0;
+  if (k < 0) return 0;
+  if (k == n) return 1;
+  if (k == 0 && n != 0) return 1;
   int64_t r = 1;
   for (int64_t d = 1; d <= k; ++d)
   {
@@ -81,8 +77,7 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, example& e
   float s = 0;
   float u = ec.weight;
 
-  if (is_learn)
-    o.t++;
+  if (is_learn) o.t++;
 
   for (int i = 0; i < o.N; i++)
   {
@@ -149,8 +144,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, e
   float s = 0;
   float u = ec.weight;
 
-  if (is_learn)
-    o.t++;
+  if (is_learn) o.t++;
   float eta = 4.f / sqrtf((float)o.t);
 
   for (int i = 0; i < o.N; i++)
@@ -173,10 +167,8 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, e
 
       // update alpha
       o.alpha[i] += eta * z / (1 + correctedExp(s));
-      if (o.alpha[i] > 2.)
-        o.alpha[i] = 2;
-      if (o.alpha[i] < -2.)
-        o.alpha[i] = -2;
+      if (o.alpha[i] > 2.) o.alpha[i] = 2;
+      if (o.alpha[i] < -2.) o.alpha[i] = -2;
 
       base.learn(ec, i);
     }
@@ -208,8 +200,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, e
   float v_normalization = 0, v_partial_sum = 0;
   float u = ec.weight;
 
-  if (is_learn)
-    o.t++;
+  if (is_learn) o.t++;
   float eta = 4.f / (float)sqrtf((float)o.t);
 
   float stopping_point = o._random_state->get_and_update_random();
@@ -229,38 +220,27 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, e
 
       s += z * o.alpha[i];
 
-      if (v_partial_sum <= stopping_point)
-      {
-        final_prediction += ec.pred.scalar * o.alpha[i];
-      }
+      if (v_partial_sum <= stopping_point) { final_prediction += ec.pred.scalar * o.alpha[i]; }
 
       partial_prediction += ec.pred.scalar * o.alpha[i];
 
       v_partial_sum += o.v[i];
 
       // update v, exp(-1) = 0.36788
-      if (ld.label * partial_prediction < 0)
-      {
-        o.v[i] *= 0.36788f;
-      }
+      if (ld.label * partial_prediction < 0) { o.v[i] *= 0.36788f; }
       v_normalization += o.v[i];
 
       // update alpha
       o.alpha[i] += eta * z / (1 + correctedExp(s));
-      if (o.alpha[i] > 2.)
-        o.alpha[i] = 2;
-      if (o.alpha[i] < -2.)
-        o.alpha[i] = -2;
+      if (o.alpha[i] > 2.) o.alpha[i] = 2;
+      if (o.alpha[i] < -2.) o.alpha[i] = -2;
 
       base.learn(ec, i);
     }
     else
     {
       base.predict(ec, i);
-      if (v_partial_sum <= stopping_point)
-      {
-        final_prediction += ec.pred.scalar * o.alpha[i];
-      }
+      if (v_partial_sum <= stopping_point) { final_prediction += ec.pred.scalar * o.alpha[i]; }
       else
       {
         // stopping at learner i
@@ -275,8 +255,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, e
   {
     for (int i = 0; i < o.N; i++)
     {
-      if (v_normalization)
-        o.v[i] /= v_normalization;
+      if (v_normalization) o.v[i] /= v_normalization;
     }
   }
 
@@ -292,8 +271,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, e
 
 void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.num_files() == 0)
-    return;
+  if (model_file.num_files() == 0) return;
   std::stringstream os;
   os << "boosts " << o.N << endl;
   bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
@@ -332,19 +310,13 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
       bin_text_write_fixed(model_file, (char*)&(o.v[i]), sizeof(o.v[i]), os2, text);
     }
 
-  if (read)
-  {
-    cerr << "Loading alpha and v: " << endl;
-  }
+  if (read) { cerr << "Loading alpha and v: " << endl; }
   else
   {
     cerr << "Saving alpha and v, current weighted_examples = "
          << o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples << endl;
   }
-  for (int i = 0; i < o.N; i++)
-  {
-    cerr << o.alpha[i] << " " << o.v[i] << endl;
-  }
+  for (int i = 0; i < o.N; i++) { cerr << o.alpha[i] << " " << o.v[i] << endl; }
   cerr << endl;
 }
 
@@ -356,14 +328,12 @@ void return_example(vw& all, boosting& /* a */, example& ec)
 
 void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.num_files() == 0)
-    return;
+  if (model_file.num_files() == 0) return;
   std::stringstream os;
   os << "boosts " << o.N << endl;
   bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
 
-  if (read)
-    o.alpha.resize(o.N);
+  if (read) o.alpha.resize(o.N);
 
   for (int i = 0; i < o.N; i++)
     if (read)
@@ -414,10 +384,8 @@ VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   // "adaptive" implements AdaBoost.OL (Algorithm 2 in BLK'15,
   // 	    using sampling rather than importance weighting)
 
-  if (!all.logger.quiet)
-    cerr << "Number of weak learners = " << data->N << endl;
-  if (!all.logger.quiet)
-    cerr << "Gamma = " << data->gamma << endl;
+  if (!all.logger.quiet) cerr << "Number of weak learners = " << data->N << endl;
+  if (!all.logger.quiet) cerr << "Gamma = " << data->gamma << endl;
 
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;

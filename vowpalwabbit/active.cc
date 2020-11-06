@@ -22,8 +22,7 @@ float get_active_coin_bias(float k, float avg_loss, float g, float c0)
   avg_loss = std::min(1.f, std::max(0.f, avg_loss));  // loss should be in [0,1]
 
   sl = std::sqrt(avg_loss) + std::sqrt(avg_loss + g);
-  if (g <= sb * sl + b)
-    return 1;
+  if (g <= sb * sl + b) return 1;
   rs = (sl + std::sqrt(sl * sl + 4 * g)) / (2 * g);
   return b * rs * rs;
 }
@@ -91,30 +90,18 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
 
 void active_print_result(VW::io::writer* f, float res, float weight, v_array<char> tag)
 {
-  if (f == nullptr)
-  {
-    return;
-  }
+  if (f == nullptr) { return; }
 
   std::stringstream ss;
   ss << std::fixed << res;
-  if (!print_tag_by_ref(ss, tag))
-  {
-    ss << ' ';
-  }
+  if (!print_tag_by_ref(ss, tag)) { ss << ' '; }
 
-  if (weight >= 0)
-  {
-    ss << " " << std::fixed << weight;
-  }
+  if (weight >= 0) { ss << " " << std::fixed << weight; }
   ss << '\n';
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
-  if (t != len)
-  {
-    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
-  }
+  if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
 }
 
 void output_and_account_example(vw& all, active& a, example& ec)
@@ -122,19 +109,14 @@ void output_and_account_example(vw& all, active& a, example& ec)
   label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX && !ec.test_only)
-    all.sd->weighted_labels += ((double)ld.label) * ec.weight;
+  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
   float ai = -1;
-  if (ld.label == FLT_MAX)
-    ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
+  if (ld.label == FLT_MAX) ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
-  for (auto& i : all.final_prediction_sink)
-  {
-    active_print_result(i.get(), ec.pred.scalar, ai, ec.tag);
-  }
+  for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag); }
 
   print_update(all, ec);
 }
@@ -163,8 +145,7 @@ base_learner* active_setup(options_i& options, vw& all)
   data->all = &all;
   data->_random_state = all.get_random_state();
 
-  if (options.was_supplied("lda"))
-    THROW("error: you can't combine lda and active learning");
+  if (options.was_supplied("lda")) THROW("error: you can't combine lda and active learning");
 
   auto base = as_singleline(setup_base(options, all));
 

@@ -14,14 +14,14 @@ class vw_ostream : public std::ostream
   {
     vw_ostream& parent;
 
-   public:
+  public:
     vw_streambuf(vw_ostream& str) : parent(str){};
 
     virtual int sync();
   };
   vw_streambuf buf;
 
- public:
+public:
   vw_ostream();
 
   void* trace_context;

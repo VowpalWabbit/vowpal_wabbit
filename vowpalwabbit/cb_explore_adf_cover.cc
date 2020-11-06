@@ -25,7 +25,7 @@ namespace cover
 {
 struct cb_explore_adf_cover
 {
- private:
+private:
   size_t _cover_size;
   float _psi;
   bool _nounif;
@@ -41,7 +41,7 @@ struct cb_explore_adf_cover
   v_array<COST_SENSITIVE::label> _prepped_cs_labels;
   v_array<CB::label> _cb_labels;
 
- public:
+public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, bool first_only,
       VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type);
   ~cb_explore_adf_cover();
@@ -50,7 +50,7 @@ struct cb_explore_adf_cover
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
- private:
+private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
@@ -160,8 +160,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   sort_action_probs(_action_probs, _scores);
   for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
 
-  if (is_learn)
-    ++_counter;
+  if (is_learn) ++_counter;
 }
 
 cb_explore_adf_cover::~cb_explore_adf_cover()
@@ -210,10 +209,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   }
 
   // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf"))
-  {
-    options.insert("cb_adf", "");
-  }
+  if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 

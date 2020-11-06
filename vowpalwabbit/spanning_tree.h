@@ -5,14 +5,14 @@
 #pragma once
 
 #ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
-#include <Windows.h>
-#include <WS2tcpip.h>
-#include <io.h>
+#  define NOMINMAX
+#  include <WinSock2.h>
+#  include <Windows.h>
+#  include <WS2tcpip.h>
+#  include <io.h>
 
-#define CLOSESOCK closesocket
-#define inet_ntop InetNtopA
+#  define CLOSESOCK closesocket
+#  define inet_ntop InetNtopA
 
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
@@ -26,26 +26,26 @@ template <typename T>
 class future;
 }  // namespace std
 #else
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <netdb.h>
-#include <strings.h>
-#include <arpa/inet.h>
+#  include <unistd.h>
+#  include <sys/socket.h>
+#  include <netinet/in.h>
+#  include <netinet/tcp.h>
+#  include <netdb.h>
+#  include <strings.h>
+#  include <arpa/inet.h>
 
-#define CLOSESOCK close
+#  define CLOSESOCK close
 
 typedef int socket_t;
 
-#include <future>
+#  include <future>
 #endif
 
 namespace VW
 {
 class SpanningTree
 {
- private:
+private:
   bool m_stop;
   socket_t sock;
   uint16_t m_port;
@@ -56,7 +56,7 @@ class SpanningTree
 
   bool m_quiet;
 
- public:
+public:
   SpanningTree(short unsigned int port = 26543, bool quiet = false);
   ~SpanningTree();
 

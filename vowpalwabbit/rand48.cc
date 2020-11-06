@@ -11,7 +11,7 @@
 // in a 32-bit env: warning: integer constant is too large for "long" type
 //
 #ifdef __clang__
-#pragma clang diagnostic ignored "-Wc++11-long-long"
+#  pragma clang diagnostic ignored "-Wc++11-long-long"
 #endif
 constexpr uint64_t CONSTANT_A = 0xeece66d5deece66dULL;
 constexpr uint64_t CONSTANT_C = 2147483647;

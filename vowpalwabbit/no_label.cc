@@ -38,7 +38,7 @@ void parse_no_label(parser*, shared_data*, void*, std::vector<VW::string_view>& 
       break;
     default:
       std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-      for (const auto & word : words) std::cout << word;
+      for (const auto& word : words) std::cout << word;
       std::cout << std::endl;
   }
 }
@@ -61,10 +61,7 @@ void output_and_account_no_label_example(vw& all, example& ec)
   all.sd->update(ec.test_only, false, ec.loss, ec.weight, ec.num_features);
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
-  for (auto& sink : all.final_prediction_sink)
-  {
-    all.print_by_ref(sink.get(), ec.pred.scalar, 0, ec.tag);
-  }
+  for (auto& sink : all.final_prediction_sink) { all.print_by_ref(sink.get(), ec.pred.scalar, 0, ec.tag); }
 
   print_no_label_update(all, ec);
 }

@@ -116,8 +116,7 @@ void run(Search::search& sch, multi_ex& ec)
       .foreach_action([](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void {
         cdbg << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a << ", taken=" << taken
              << ", a_cost=" << a_cost << ")" << std::endl;
-        if (taken)
-          return;  // ignore the taken action
+        if (taken) return;  // ignore the taken action
         task_data& d = *sch.get_metatask_data<task_data>();
         float delta = a_cost - min_cost;
         std::vector<act_score> branch;
@@ -165,8 +164,7 @@ void run(Search::search& sch, multi_ex& ec)
         .maybe_override_prediction([](Search::search& sch, size_t t, action& a, float& a_cost) -> bool {
           task_data& d = *sch.get_metatask_data<task_data>();
           path& path = d.branches[d.cur_branch].second;
-          if (t >= path.size())
-            return false;
+          if (t >= path.size()) return false;
           a = path[t].first;
           a_cost = path[t].second;
           return true;
@@ -212,8 +210,7 @@ void run(Search::search& sch, multi_ex& ec)
       .maybe_override_prediction([](Search::search& sch, size_t t, action& a, float& a_cost) -> bool {
         task_data& d = *sch.get_metatask_data<task_data>();
         path& path = d.final[d.cur_branch].first.second;
-        if ((t >= path.size()) || (path[t].first == (action)-1))
-          return false;
+        if ((t >= path.size()) || (path[t].first == (action)-1)) return false;
         a = path[t].first;
         a_cost = path[t].second;
         return true;
@@ -231,10 +228,7 @@ void run(Search::search& sch, multi_ex& ec)
 
   // clean up memory
   d.branches.clear();
-  for (size_t i = 0; i < d.final.size(); i++)
-  {
-    delete d.final[i].second;
-  }
+  for (size_t i = 0; i < d.final.size(); i++) { delete d.final[i].second; }
   d.final.clear();
   delete d.kbest_out;
   d.kbest_out = nullptr;
