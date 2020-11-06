@@ -261,7 +261,7 @@ struct options_name_extractor : options_i
 
   bool was_supplied(const std::string&) const override { return false; };
 
-  void tint(const std::string& reduction_name) override
+  void tint(const std::string&) override
   {
     THROW("options_name_extractor does not implement this method");
   };

@@ -105,7 +105,7 @@ public:
   }
 
   template <typename TTypes>
-  py::object do_also(VW::config::base_option& options)
+  py::object base_option_to_pyobject(VW::config::base_option& options)
   {
     py::object* temp = transform_if_t<typename TTypes::head>(options);
     if (temp != nullptr)
@@ -115,7 +115,7 @@ public:
       return repack;
     }
 
-    return do_also<typename TTypes::tail>(options);
+    return base_option_to_pyobject<typename TTypes::tail>(options);
   }
 
   py::object get_vw_option_pyobjects(vw_ptr all, bool enabled_only)
@@ -143,7 +143,7 @@ public:
         py::list options;
         for (auto opt : options_group.m_options)
         {
-          auto temp = do_also<VW::config::supported_options_types>(*opt.get());
+          auto temp = base_option_to_pyobject<VW::config::supported_options_types>(*opt.get());
           options.append(temp);
         }
 
@@ -159,7 +159,7 @@ public:
 };
 
 template <>
-py::object OptionManager::do_also<VW::config::typelist<>>(VW::config::base_option& options)
+py::object OptionManager::base_option_to_pyobject<VW::config::typelist<>>(VW::config::base_option& options)
 {
   return py::object();
 }
