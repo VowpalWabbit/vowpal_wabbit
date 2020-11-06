@@ -66,7 +66,6 @@ class TC_parser
   v_array<char> _spelling;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
-  bool _chain_hash;
 
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
 
@@ -175,7 +174,7 @@ class TC_parser
       float float_feature_value = 0.f;
       bool is_feature_float = isFeatureValueFloat(float_feature_value);
 
-      if (_chain_hash && !is_feature_float)
+      if (!is_feature_float)
       {
         string_feature_value = stringFeatureValue(_line.substr(_read_idx));
         _v = 1;
@@ -185,20 +184,21 @@ class TC_parser
         _v = _cur_channel_v * float_feature_value;
       }
 
-
       uint64_t word_hash;
-
-      if (_chain_hash && !string_feature_value.empty())
+      // Case where string:string or :string
+      if (!string_feature_value.empty())
       {
         // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
         word_hash = (_p->hasher(string_feature_value.begin(), string_feature_value.length(),
                          _p->hasher(feature_name.begin(), feature_name.length(), _channel_hash)) &
             _parse_mask);
       }
+      // Case where string:float
       else if (!feature_name.empty())
       {
         word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _channel_hash) & _parse_mask);
       }
+      // Case where :float
       else
       {
         word_hash = _channel_hash + _anon++;
@@ -211,7 +211,7 @@ class TC_parser
 
       if (audit)
       {
-        if (_chain_hash && !string_feature_value.empty())
+        if (!string_feature_value.empty())
         {
           std::stringstream ss;
           ss << feature_name << "^" << string_feature_value;
@@ -473,7 +473,6 @@ class TC_parser
       this->_namespace_dictionaries = &all.namespace_dictionaries;
       this->_hash_seed = all.hash_seed;
       this->_parse_mask = all.parse_mask;
-      this->_chain_hash = all.chain_hash;
       listNameSpace();
     }
   }

@@ -457,7 +457,7 @@ input_options parse_source(vw& all, options_i& options)
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
       .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
       .add(make_option("no_daemon", all.no_daemon).help("Force a loaded daemon or active learning model to accept local input instead of starting in daemon mode"))
-      .add(make_option("chain_hash", parsed_options.chain_hash)
+      .add(make_option("chain_hash", parsed_options.chain_hash_json)
                .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"));
 
 

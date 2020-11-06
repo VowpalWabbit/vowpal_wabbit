@@ -894,7 +894,7 @@ class DefaultState : public BaseState<audit>
       }
     }
 
-    if (ctx.all->chain_hash)
+    if (ctx.all->chain_hash_json)
     {
       ctx.CurrentNamespace().AddFeature(ctx.all, ctx.key, str);
     }
