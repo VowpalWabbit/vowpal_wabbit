@@ -550,7 +550,7 @@ class DFtoVW:
         Examples
         --------
         >>> from vowpalwabbit.DFtoVW import DFtoVW, SimpleLabel, Feature
-        >>> from pandas as pd
+        >>> import pandas as pd
 
         >>> df = pd.DataFrame({"y": [1], "a": [2], "b": [3], "c": [4]})
         >>> conv1 = DFtoVW(df=df,
@@ -621,7 +621,7 @@ class DFtoVW:
         Examples
         --------
         >>> from vowpalwabbit.DFtoVW import DFtoVW
-        >>> from pandas as pd
+        >>> import pandas as pd
         >>> df = pd.DataFrame({"y": [1], "x": [2]})
         >>> conv = DFtoVW.from_colnames(y="y", x="x", df=df)
         >>> conv.convert_df()
