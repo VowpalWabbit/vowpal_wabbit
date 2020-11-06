@@ -26,12 +26,10 @@ void tokenize(char delim, VW::string_view s, ContainerT& ret, bool allow_empty =
   while (!s.empty() && ((end_pos = s.find(delim)) != VW::string_view::npos))
   {
     last_space = end_pos == 0;
-    if (allow_empty || end_pos > 0)
-      ret.emplace_back(s.substr(0, end_pos));
+    if (allow_empty || end_pos > 0) ret.emplace_back(s.substr(0, end_pos));
     s.remove_prefix(end_pos + 1);
   }
-  if (!s.empty() || (last_space && allow_empty))
-    ret.emplace_back(s.substr(0));
+  if (!s.empty() || (last_space && allow_empty)) ret.emplace_back(s.substr(0));
 }
 
 // This function returns a vector of strings (not string_views) because we need to remove the escape characters
@@ -50,7 +48,7 @@ namespace VW
 typedef example& (*example_factory_t)(void*);
 }
 
-typedef uint64_t (*hash_func_t)(const char * s, size_t, uint64_t);
+typedef uint64_t (*hash_func_t)(const char* s, size_t, uint64_t);
 
 hash_func_t getHasher(const std::string& s);
 
@@ -66,10 +64,7 @@ inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nu
 
   end_idx = 0;
 
-  if (!p || !*p)
-  {
-    return 0;
-  }
+  if (!p || !*p) { return 0; }
   int s = 1;
   while ((*p == ' ') && (endLine_is_null || p < endLine)) p++;
 
@@ -119,13 +114,9 @@ inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nu
     // can't use stod because that throws an exception. Use strtod instead.
     char* end = nullptr;
     auto ret = strtof(start, &end);
-    if (end >= start)
-    {
-      end_idx = end - start;
-    }
+    if (end >= start) { end_idx = end - start; }
     return ret;
   }
-
 }
 
 inline float float_of_string(VW::string_view s)
@@ -146,8 +137,7 @@ inline int int_of_string(VW::string_view s, char*& end)
   int i = strtol(s.begin(), &end, 10);
   if (end <= s.begin() && s.size() > 0)
   {
-    std::cout << "warning: " << s << " is not a good int, replacing with 0"
-              << std::endl;
+    std::cout << "warning: " << s << " is not a good int, replacing with 0" << std::endl;
     i = 0;
   }
 

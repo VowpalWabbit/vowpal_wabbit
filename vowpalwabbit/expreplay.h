@@ -46,13 +46,11 @@ void predict_or_learn(expreplay<lp>& er, VW::LEARNER::single_learner& base, exam
   for (size_t replay = 1; replay < er.replay_count; replay++)
   {
     size_t n = (size_t)(er._random_state->get_and_update_random() * (float)er.N);
-    if (er.filled[n])
-      base.learn(er.buf[n]);
+    if (er.filled[n]) base.learn(er.buf[n]);
   }
 
   size_t n = (size_t)(er._random_state->get_and_update_random() * (float)er.N);
-  if (er.filled[n])
-    base.learn(er.buf[n]);
+  if (er.filled[n]) base.learn(er.buf[n]);
 
   er.filled[n] = true;
   VW::copy_example_data(er.all->audit, &er.buf[n], &ec);  // don't copy the label
@@ -109,9 +107,8 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
   er->buf->interactions = &all.interactions;
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_CPP_17_LANG_EXT
-  if
-    VW_STD17_CONSTEXPR(er_level == 'c')
-  for (size_t n = 0; n < er->N; n++) er->buf[n].l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+  if VW_STD17_CONSTEXPR (er_level == 'c')
+    for (size_t n = 0; n < er->N; n++) er->buf[n].l.cs.costs = v_init<COST_SENSITIVE::wclass>();
   VW_WARNING_STATE_POP
   er->filled = calloc_or_throw<bool>(er->N);
 

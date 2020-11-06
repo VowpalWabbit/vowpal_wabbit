@@ -42,10 +42,8 @@ void finish(explore_eval& data)
   if (!data.all->logger.quiet)
   {
     data.all->trace_message << "update count = " << data.update_count << std::endl;
-    if (data.violations > 0)
-      data.all->trace_message << "violation count = " << data.violations << std::endl;
-    if (!data.fixed_multiplier)
-      data.all->trace_message << "final multiplier = " << data.multiplier << std::endl;
+    if (data.violations > 0) data.all->trace_message << "violation count = " << data.violations << std::endl;
+    if (!data.fixed_multiplier) data.all->trace_message << "final multiplier = " << data.multiplier << std::endl;
   }
 }
 
@@ -55,8 +53,7 @@ void finish(explore_eval& data)
 
 void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 {
-  if (example_is_newline_not_header(ec))
-    return;
+  if (example_is_newline_not_header(ec)) return;
 
   size_t num_features = 0;
 
@@ -64,8 +61,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
   ACTION_SCORE::action_scores preds = (*ec_seq)[0]->pred.a_s;
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
-    if (!CB::ec_is_example_header(*(*ec_seq)[i]))
-      num_features += (*ec_seq)[i]->num_features;
+    if (!CB::ec_is_example_header(*(*ec_seq)[i])) num_features += (*ec_seq)[i]->num_features;
 
   bool labeled_example = true;
   if (c.known_cost.probability > 0)
@@ -94,8 +90,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0)
-        outputStringStream << ' ';
+      if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
@@ -109,8 +104,7 @@ void output_example_seq(vw& all, explore_eval& data, multi_ex& ec_seq)
   if (ec_seq.size() > 0)
   {
     output_example(all, data, **(ec_seq.begin()), &(ec_seq));
-    if (all.raw_prediction != nullptr)
-      all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
+    if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
   }
 }
 
@@ -146,8 +140,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
 
     float action_probability = 0;
     for (size_t i = 0; i < a_s.size(); i++)
-      if (data.known_cost.action == a_s[i].action)
-        action_probability = a_s[i].score;
+      if (data.known_cost.action == a_s[i].action) action_probability = a_s[i].score;
 
     float threshold = action_probability / data.known_cost.probability;
 
@@ -156,8 +149,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
     else
       threshold *= data.multiplier;
 
-    if (threshold > 1. + 1e-6)
-      data.violations++;
+    if (threshold > 1. + 1e-6) data.violations++;
 
     if (data._random_state->get_and_update_random() < threshold)
     {
@@ -166,8 +158,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
       {
         if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
           ec_found = ec;
-        if (threshold > 1)
-          ec->weight *= threshold;
+        if (threshold > 1) ec->weight *= threshold;
       }
       ec_found->l.cb.costs[0].probability = action_probability;
 
@@ -210,8 +201,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   else
     data->multiplier = 1;
 
-  if (!options.was_supplied("cb_explore_adf"))
-    options.insert("cb_explore_adf", "");
+  if (!options.was_supplied("cb_explore_adf")) options.insert("cb_explore_adf", "");
 
   all.delete_prediction = nullptr;
 

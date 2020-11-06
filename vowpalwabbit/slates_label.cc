@@ -16,11 +16,10 @@ namespace slates
 {
 void default_label(void* v);
 
-#define READ_CACHED_VALUE(DEST, TYPE)                            \
-  next_read_size = sizeof(TYPE);                                 \
-  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) \
-    return 0;                                                    \
-  DEST = *(TYPE*)read_ptr;                                       \
+#define READ_CACHED_VALUE(DEST, TYPE)                                      \
+  next_read_size = sizeof(TYPE);                                           \
+  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0; \
+  DEST = *(TYPE*)read_ptr;                                                 \
   read_count += sizeof(TYPE);
 
 #define WRITE_CACHED_VALUE(VALUE, TYPE) \
@@ -70,10 +69,7 @@ void cache_label(void* v, io_buf& cache)
   WRITE_CACHED_VALUE(ld->cost, float);
   WRITE_CACHED_VALUE(VW::convert(ld->slot_id), uint32_t);
   WRITE_CACHED_VALUE(VW::convert(ld->probabilities.size()), uint32_t);
-  for (const auto& score : ld->probabilities)
-  {
-    WRITE_CACHED_VALUE(score, ACTION_SCORE::action_score);
-  }
+  for (const auto& score : ld->probabilities) { WRITE_CACHED_VALUE(score, ACTION_SCORE::action_score); }
 }
 
 float weight(void* v) { return static_cast<polylabel*>(v)->slates.weight; }
@@ -126,19 +122,10 @@ void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string
   auto& ld = static_cast<polylabel*>(v)->slates;
   ld.weight = 1;
 
-  if (words.empty())
-  {
-    THROW("Slates labels may not be empty");
-  }
-  if (!(words[0] == SLATES_LABEL))
-  {
-    THROW("Slates labels require the first word to be slates");
-  }
+  if (words.empty()) { THROW("Slates labels may not be empty"); }
+  if (!(words[0] == SLATES_LABEL)) { THROW("Slates labels require the first word to be slates"); }
 
-  if (words.size() == 1)
-  {
-    THROW("Slates labels require a type. It must be one of: [shared, action, slot]");
-  }
+  if (words.size() == 1) { THROW("Slates labels require a type. It must be one of: [shared, action, slot]"); }
 
   const auto& type = words[1];
   if (type == SHARED_TYPE)
@@ -157,17 +144,12 @@ void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string
   }
   else if (type == ACTION_TYPE)
   {
-    if (words.size() != 3)
-    {
-      THROW("Slates action labels must be of the form: slates action <slot_id>");
-    }
+    if (words.size() != 3) { THROW("Slates action labels must be of the form: slates action <slot_id>"); }
 
     char* char_after_int = nullptr;
     ld.slot_id = int_of_string(words[2], char_after_int);
     if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
-    {
-      THROW("Slot id seems to be malformed");
-    }
+    { THROW("Slot id seems to be malformed"); }
 
     ld.type = example_type::action;
   }
@@ -182,10 +164,7 @@ void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string
       for (auto& token : p->parse_name)
       {
         tokenize(':', token, split_colons);
-        if (split_colons.size() != 2)
-        {
-          THROW("Malformed action score token");
-        }
+        if (split_colons.size() != 2) { THROW("Malformed action score token"); }
 
         // Element 0 is the action, element 1 is the probability
         ld.probabilities.push_back(

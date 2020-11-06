@@ -13,9 +13,9 @@
 
 namespace ACTION_SCORE
 {
-  struct action_score;
-  typedef v_array<action_score> action_scores;
-}
+struct action_score;
+typedef v_array<action_score> action_scores;
+}  // namespace ACTION_SCORE
 
 struct vw;
 struct example;
@@ -29,6 +29,8 @@ using decision_scores_t = v_array<ACTION_SCORE::action_scores>;
 void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decision_scores);
 void delete_decision_scores(void* polypred);
 
-void print_update_ccb(vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features);
-void print_update_slates(vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features);
-}
+void print_update_ccb(
+    vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features);
+void print_update_slates(
+    vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features);
+}  // namespace VW

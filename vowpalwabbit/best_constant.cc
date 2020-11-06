@@ -13,7 +13,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
   float label1 = all.sd->first_observed_label;  // observed labels might be inside [sd->Min_label, sd->Max_label], so
                                                 // can't use Min/Max
   float label2 = all.sd->second_observed_label;
-  if(label2 == FLT_MAX)
+  if (label2 == FLT_MAX)
   {
     label2 = 0;  // if only one label observed, second might be 0
   }
@@ -36,8 +36,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
   else
     return false;
 
-  if ((label1_cnt + label2_cnt) <= 0.)
-    return false;
+  if ((label1_cnt + label2_cnt) <= 0.) return false;
 
   auto funcName = all.loss->getType();
   if (funcName.compare("squared") == 0 || funcName.compare("Huber") == 0 || funcName.compare("classic") == 0)
@@ -67,8 +66,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
   {
     float tau = 0.5;
 
-    if (all.options->was_supplied("quantile_tau"))
-      tau = all.options->get_typed_option<float>("quantile_tau").value();
+    if (all.options->was_supplied("quantile_tau")) tau = all.options->get_typed_option<float>("quantile_tau").value();
 
     float q = tau * (label1_cnt + label2_cnt);
     if (q < label2_cnt)

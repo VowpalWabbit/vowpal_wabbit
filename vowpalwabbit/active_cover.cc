@@ -46,10 +46,7 @@ struct active_cover
 
 bool dis_test(vw& all, example& ec, single_learner& base, float /* prediction */, float threshold)
 {
-  if (all.sd->t + ec.weight <= 3)
-  {
-    return true;
-  }
+  if (all.sd->t + ec.weight <= 3) { return true; }
 
   // Get loss difference
   float middle = 0.f;
@@ -65,10 +62,7 @@ bool dis_test(vw& all, example& ec, single_learner& base, float /* prediction */
 
 float get_threshold(float sum_loss, float t, float c0, float alpha)
 {
-  if (t < 3.f)
-  {
-    return 1.f;
-  }
+  if (t < 3.f) { return 1.f; }
   else
   {
     float avg_loss = sum_loss / t;
@@ -80,10 +74,7 @@ float get_threshold(float sum_loss, float t, float c0, float alpha)
 float get_pmin(float sum_loss, float t)
 {
   // t = ec.example_t - 1
-  if (t <= 2.f)
-  {
-    return 1.f;
-  }
+  if (t <= 2.f) { return 1.f; }
 
   float avg_loss = sum_loss / t;
   float pmin = fmin(1.f / (std::sqrt(t * avg_loss) + log(t)), 0.5f);
@@ -92,20 +83,11 @@ float get_pmin(float sum_loss, float t)
 
 float query_decision(active_cover& a, single_learner& l, example& ec, float prediction, float pmin, bool in_dis)
 {
-  if (a.all->sd->t + ec.weight <= 3)
-  {
-    return 1.f;
-  }
+  if (a.all->sd->t + ec.weight <= 3) { return 1.f; }
 
-  if (!in_dis)
-  {
-    return -1.f;
-  }
+  if (!in_dis) { return -1.f; }
 
-  if (a.oracular)
-  {
-    return 1.f;
-  }
+  if (a.oracular) { return 1.f; }
 
   float p, q2 = 4.f * pmin * pmin;
 
@@ -117,15 +99,9 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
 
   p = std::sqrt(q2) / (1 + std::sqrt(q2));
 
-  if (std::isnan(p))
-  {
-    p = 1.f;
-  }
+  if (std::isnan(p)) { p = 1.f; }
 
-  if (a._random_state->get_and_update_random() <= p)
-  {
-    return 1.f / p;
-  }
+  if (a._random_state->get_and_update_random() <= p) { return 1.f / p; }
   else
   {
     return -1.f;
@@ -184,10 +160,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
     // Set up costs
     // cost = cost of predicting erm's prediction
     // cost_delta = cost - cost of predicting the opposite label
-    if (in_dis)
-    {
-      cost = r * (fmax(importance, 0.f)) * ((float)(sign(prediction) != sign(ec_input_label)));
-    }
+    if (in_dis) { cost = r * (fmax(importance, 0.f)) * ((float)(sign(prediction) != sign(ec_input_label))); }
     else
     {
       cost = 0.f;
@@ -258,14 +231,11 @@ base_learner* active_cover_setup(options_i& options, vw& all)
   data->_random_state = all.get_random_state();
   data->beta_scale *= data->beta_scale;
 
-  if (data->oracular)
-    data->cover_size = 0;
+  if (data->oracular) data->cover_size = 0;
 
-  if (options.was_supplied("lda"))
-    THROW("error: you can't combine lda and active learning");
+  if (options.was_supplied("lda")) THROW("error: you can't combine lda and active learning");
 
-  if (options.was_supplied("active"))
-    THROW("error: you can't use --active_cover and --active at the same time");
+  if (options.was_supplied("active")) THROW("error: you can't use --active_cover and --active at the same time");
 
   auto base = as_singleline(setup_base(options, all));
 

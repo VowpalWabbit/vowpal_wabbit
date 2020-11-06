@@ -49,8 +49,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   {
     uint32_t l = o.subsample_order[p];
     p = (p + 1) % o.k;
-    if (l == ld.label - 1)
-      continue;
+    if (l == ld.label - 1) continue;
     base.learn(ec, l);
     if (ec.partial_prediction > best_partial_prediction)
     {
@@ -76,14 +75,12 @@ void predict_or_learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   std::stringstream outputStringStream;
   uint32_t prediction = 1;
   v_array<float> scores_array;
-  if (scores)
-    scores_array = ec.pred.scalars;
+  if (scores) scores_array = ec.pred.scalars;
 
   ec.l.simple = {FLT_MAX, 0.f, 0.f};
   base.multipredict(ec, 0, o.k, o.pred, true);
   for (uint32_t i = 2; i <= o.k; i++)
-    if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar)
-      prediction = i;
+    if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar) prediction = i;
 
   if (ec.passthrough)
     for (uint32_t i = 1; i <= o.k; i++) add_passthrough_feature(ec, i, o.pred[i - 1].scalar);
@@ -146,8 +143,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   {
     if (ec.l.multi.label <= o.k)  // prevent segmentation fault if labeĺ==(uint32_t)-1
       correct_class_prob = ec.pred.scalars[ec.l.multi.label - 1];
-    if (correct_class_prob > 0)
-      multiclass_log_loss = -log(correct_class_prob) * ec.weight;
+    if (correct_class_prob > 0) multiclass_log_loss = -log(correct_class_prob) * ec.weight;
     if (ec.test_only)
       all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
     else
@@ -158,23 +154,17 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   // but we cannot store it in ec.pred union because we store ec.pred.probs there.
   uint32_t prediction = 0;
   for (uint32_t i = 1; i < o.k; i++)
-    if (ec.pred.scalars[i] > ec.pred.scalars[prediction])
-      prediction = i;
+    if (ec.pred.scalars[i] > ec.pred.scalars[prediction]) prediction = i;
   prediction++;  // prediction is 1-based index (not 0-based)
   float zero_one_loss = 0;
-  if (ec.l.multi.label != prediction)
-    zero_one_loss = ec.weight;
+  if (ec.l.multi.label != prediction) zero_one_loss = ec.weight;
 
   // === Print probabilities for all classes
   std::ostringstream outputStringStream;
   for (uint32_t i = 0; i < o.k; i++)
   {
-    if (i > 0)
-      outputStringStream << ' ';
-    if (all.sd->ldict)
-    {
-      outputStringStream << all.sd->ldict->get(i + 1);
-    }
+    if (i > 0) outputStringStream << ' ';
+    if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(i + 1); }
     else
       outputStringStream << i + 1;
     outputStringStream << ':' << ec.pred.scalars[i];

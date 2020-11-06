@@ -220,8 +220,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
         data.second_cs_label.costs[j].class_index = j + 1;
         data.second_cs_label.costs[j].x = pseudo_cost;
       }
-      if (i != 0)
-        data.cs->learn(ec, i + 1);
+      if (i != 0) data.cs->learn(ec, i + 1);
       if (probabilities[predictions[i] - 1] < min_prob)
         norm += std::max(0.f, additive_probability - (min_prob - probabilities[predictions[i] - 1]));
       else
@@ -323,10 +322,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     options.insert("cb", ss.str());
   }
 
-  if (data->epsilon < 0.0 || data->epsilon > 1.0)
-  {
-    THROW("The value of epsilon must be in [0,1]");
-  }
+  if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   all.delete_prediction = delete_action_scores;
   data->cbcs.cb_type = CB_TYPE_DR;
