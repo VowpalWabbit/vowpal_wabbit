@@ -45,6 +45,7 @@ struct cb_explore
   float psi;
 
   size_t counter;
+  bool nounif;
 
   ~cb_explore()
   {
@@ -135,7 +136,8 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
   ec.pred.a_s = probs;
 }
 
-void get_cover_probabilities(cb_explore& data, single_learner& /* base */, example& ec, v_array<action_score>& probs)
+void get_cover_probabilities(
+    cb_explore& data, single_learner& /* base */, example& ec, v_array<action_score>& probs, float min_prob)
 {
   float additive_probability = 1.f / (float)data.cover_size;
   data.preds.clear();
@@ -155,11 +157,7 @@ void get_cover_probabilities(cb_explore& data, single_learner& /* base */, examp
   }
   uint32_t num_actions = data.cbcs.num_actions;
 
-  float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(data.counter * num_actions));
-
-  enforce_minimum_probability(min_prob * num_actions, false, begin_scores(probs), end_scores(probs));
-
-  data.counter++;
+  enforce_minimum_probability(min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
 }
 
 template <bool is_learn>
@@ -183,18 +181,21 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   float additive_probability = 1.f / (float)cover_size;
 
-  float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(counter * num_actions));
-
   data.cb_label = ec.l.cb;
 
   // Guard example state restore against throws
   auto restore_guard = VW::scope_exit([&data, &ec] { ec.l.cb = data.cb_label; });
 
   ec.l.cs = data.cs_label;
-  get_cover_probabilities(data, base, ec, probs);
+  float min_prob = is_learn
+      ? std::min(data.epsilon / num_actions, data.epsilon / (float)std::sqrt(data.counter * num_actions))
+      : data.epsilon / num_actions;
+
+  get_cover_probabilities(data, base, ec, probs, min_prob);
 
   if (is_learn)
   {
+    data.counter++;
     ec.l.cb = data.cb_label;
     base.learn(ec);
 
@@ -305,7 +306,10 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
                .help("epsilon-greedy exploration"))
       .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
       .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
-      .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
+      .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"))
+      .add(make_option("nounif", data->nounif)
+               .keep()
+               .help("do not explore uniformly on zero-probability actions in cover"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
