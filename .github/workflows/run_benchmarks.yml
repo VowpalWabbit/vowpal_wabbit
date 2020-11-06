@@ -21,6 +21,10 @@ jobs:
         with:
           name: benchmark-compare
           path: benchmark/tools/
+      - name: Download benchmark compare
+        uses: actions/download-artifact@v2
+        with:
+          name: benchmark-compare
       - run: ls
       - name: Build master
         shell: bash
@@ -42,10 +46,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: master-benchmarks
-      - name: Download benchmark compare
-        uses: actions/download-artifact@v2
-        with:
-          name: benchmark-compare
       - name: Build branch
         shell: bash
         run: ./.scripts/linux/build-with-benchmarks.sh
