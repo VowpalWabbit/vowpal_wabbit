@@ -12,8 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v1
         with:
-          # ref: master // master doesn't have benchmark scripts this right now, check diff between two branch runs
-          submodules: true
+          ref: master # master doesn't have benchmark scripts this right now, check diff between two branch runs
+          path: a_path
+      - run: ls
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmark.sh # repo dir
@@ -30,8 +31,6 @@ jobs:
           name: master-benchmarks
           path: master-benchmarks.json
       - uses: actions/checkout@v1
-        with:
-          submodules: true
       - name: Download master benchmark results
         uses: actions/download-artifact@v2
         with:
