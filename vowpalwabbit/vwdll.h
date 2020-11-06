@@ -5,21 +5,21 @@
 
 // indirect the Win32 so non win32 Microsoft C programs can work
 #ifdef _WIN32
-#define MS_CONV  // use Microsoft library calling conventions
+#  define MS_CONV  // use Microsoft library calling conventions
 #endif
 
 // enable wide character (32 bit) versions of functions
 // these are optional  since other compilers may not have wide to narrow char libarray facilities built in.
 #ifdef _WIN32
-#define USE_CODECVT
+#  define USE_CODECVT
 #endif
 
 #include "vwvis.h"
 
 #ifdef MS_CONV
-#define VW_CALLING_CONV __stdcall
+#  define VW_CALLING_CONV __stdcall
 #else
-#define VW_CALLING_CONV
+#  define VW_CALLING_CONV
 #endif
 
 #ifdef __cplusplus
@@ -28,9 +28,9 @@ extern "C"
 #endif
 
 #ifdef __cplusplus
-#define VW_TYPE_SAFE_NULL nullptr
+#  define VW_TYPE_SAFE_NULL nullptr
 #else
-#define VW_TYPE_SAFE_NULL NULL
+#  define VW_TYPE_SAFE_NULL NULL
 #endif
 
   typedef void* VW_HANDLE;

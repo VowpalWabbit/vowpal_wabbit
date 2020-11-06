@@ -3,11 +3,11 @@
 // license as described in the file LICENSE.
 
 #ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
+#  define NOMINMAX
+#  include <WinSock2.h>
 #else
-#include <sys/socket.h>
-#include <arpa/inet.h>
+#  include <sys/socket.h>
+#  include <arpa/inet.h>
 #endif
 #include <sys/timeb.h>
 #include "parse_args.h"
@@ -90,10 +90,7 @@ int main(int argc, char* argv[])
     if (argc == 3 && !std::strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
-      if (!arg_file)
-      {
-        THROW("Could not open file: " << argv[2]);
-      }
+      if (!arg_file) { THROW("Could not open file: " << argv[2]); }
 
       int line_count = 1;
       std::string line;
@@ -152,10 +149,7 @@ int main(int argc, char* argv[])
 
     for (vw* v : alls)
     {
-      if (v->p->exc_ptr)
-      {
-        std::rethrow_exception(v->p->exc_ptr);
-      }
+      if (v->example_parser->exc_ptr) { std::rethrow_exception(v->example_parser->exc_ptr); }
 
       VW::sync_stats(*v);
       VW::finish(*v);

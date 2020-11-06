@@ -43,10 +43,10 @@ static_assert(std::is_trivial<feature>::value, "To be used in v_array feature mu
 /// iterator over feature values only
 class features_value_iterator
 {
- protected:
+protected:
   feature_value* _begin;
 
- public:
+public:
   explicit features_value_iterator(feature_value* begin) : _begin(begin) {}
 
   features_value_iterator(const features_value_iterator&) = default;
@@ -89,10 +89,10 @@ class features_value_iterator
 /// iterator over values and indicies
 class features_value_index_iterator : public features_value_iterator
 {
- protected:
+protected:
   feature_index* _begin_index;
 
- public:
+public:
   features_value_index_iterator(feature_value* begin, feature_index* begin_index)
       : features_value_iterator(begin), _begin_index(begin_index)
   {
@@ -143,10 +143,10 @@ class features_value_index_iterator : public features_value_iterator
 /// iterator over values, indicies and audit space names
 class features_value_index_audit_iterator : public features_value_index_iterator
 {
- protected:
+protected:
   audit_strings_ptr* _begin_audit;
 
- public:
+public:
   features_value_index_audit_iterator(feature_value* begin, feature_index* begin_index, audit_strings_ptr* begin_audit)
       : features_value_index_iterator(begin, begin_index), _begin_audit(begin_audit)
   {
@@ -161,10 +161,7 @@ class features_value_index_audit_iterator : public features_value_index_iterator
   inline features_value_index_audit_iterator& operator++()
   {
     features_value_index_iterator::operator++();
-    if (_begin_audit != nullptr)
-    {
-      _begin_audit++;
-    }
+    if (_begin_audit != nullptr) { _begin_audit++; }
     return *this;
   }
 
@@ -173,10 +170,7 @@ class features_value_index_audit_iterator : public features_value_index_iterator
   inline features_value_index_audit_iterator& operator+=(std::ptrdiff_t index)
   {
     features_value_index_iterator::operator+=(index);
-    if (_begin_audit != nullptr)
-    {
-      _begin_audit += index;
-    }
+    if (_begin_audit != nullptr) { _begin_audit += index; }
     return *this;
   }
 
@@ -208,8 +202,8 @@ struct features
   using iterator_value = features_value_iterator;
   using iterator_all = features_value_index_audit_iterator;
 
-  v_array<feature_value> values;           // Always needed.
-  v_array<feature_index> indicies;         // Optional for sparse data.
+  v_array<feature_value> values;               // Always needed.
+  v_array<feature_index> indicies;             // Optional for sparse data.
   std::vector<audit_strings_ptr> space_names;  // Optional for audit mode.
 
   float sum_feat_sq;
@@ -217,10 +211,10 @@ struct features
   /// defines a "range" usable by C++ 11 for loops
   class features_value_index_audit_range
   {
-   private:
+  private:
     features* _outer;
 
-   public:
+  public:
     features_value_index_audit_range(features* outer) : _outer(outer) {}
 
     inline features_value_index_audit_iterator begin()
@@ -229,7 +223,7 @@ struct features
     }
     inline features_value_index_audit_iterator end()
     {
-      return {_outer->values.end(), _outer->indicies.end(), _outer->space_names.data() + _outer->space_names.size() };
+      return {_outer->values.end(), _outer->indicies.end(), _outer->space_names.data() + _outer->space_names.size()};
     }
   };
 

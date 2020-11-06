@@ -164,7 +164,8 @@ void predict(plt& p, single_learner& base, example& ec)
   p.true_labels.clear();
   for (auto label : ec.l.multilabels.label_v)
   {
-    if (label < p.k) p.true_labels.insert(label);
+    if (label < p.k)
+      p.true_labels.insert(label);
     else
       std::cout << "label " << label << " is not in {0," << p.k - 1 << "} Model can't predict it." << std::endl;
   }
@@ -191,7 +192,8 @@ void predict(plt& p, single_learner& base, example& ec)
         float cp_child = node.p * (1.f / (1.f + exp(-p.node_preds[i].scalar)));
         if (cp_child > p.threshold)
         {
-          if (n_child < p.ti) p.node_queue.push_back({n_child, cp_child});
+          if (n_child < p.ti)
+            p.node_queue.push_back({n_child, cp_child});
           else
           {
             uint32_t l = n_child - p.ti;
@@ -371,7 +373,7 @@ base_learner* plt_setup(options_i& options, vw& all)
     l = &init_learner(
         tree, as_singleline(setup_base(options, all)), learn, predict<true>, tree->t, prediction_type_t::multilabels);
 
-  all.p->lp = MULTILABEL::multilabel;
+  all.example_parser->lbl_parser = MULTILABEL::multilabel;
   all.label_type = label_type_t::multi;
   all.delete_prediction = MULTILABEL::multilabel.delete_label;
 

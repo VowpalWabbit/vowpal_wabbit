@@ -139,10 +139,7 @@ void create_cb_labels(ccb& data)
 {
   data.shared->l.cb.costs = data.cb_label_pool.get_object();
   data.shared->l.cb.costs.push_back(data.default_cb_label);
-  for (example* action : data.actions)
-  {
-    action->l.cb.costs = data.cb_label_pool.get_object();
-  }
+  for (example* action : data.actions) { action->l.cb.costs = data.cb_label_pool.get_object(); }
   data.shared->l.cb.weight = 1.0;
 }
 
@@ -151,10 +148,7 @@ void delete_cb_labels(ccb& data)
 {
   return_v_array(data.shared->l.cb.costs, data.cb_label_pool);
 
-  for (example* action : data.actions)
-  {
-    return_v_array(action->l.cb.costs, data.cb_label_pool);
-  }
+  for (example* action : data.actions) { return_v_array(action->l.cb.costs, data.cb_label_pool); }
 }
 
 void attach_label_to_example(
@@ -175,10 +169,7 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   decision_scores.push_back(pred);
 
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
-  for (auto& action_score : pred)
-  {
-    action_score.action = data.origin_index[action_score.action];
-  }
+  for (auto& action_score : pred) { action_score.action = data.origin_index[action_score.action]; }
 
   // Exclude the chosen action from next slots.
   auto original_index_of_chosen_action = pred[0].action;
@@ -205,15 +196,10 @@ void inject_slot_features(example* shared, example* slot)
   for (auto index : slot->indices)
   {
     // constant namespace should be ignored, as it already exists and we don't want to double it up.
-    if (index == constant_namespace)
-    {
-      continue;
-    }
+    if (index == constant_namespace) { continue; }
 
     if (index == default_namespace)  // slot default namespace has a special namespace in shared
-    {
-      LabelDict::add_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[default_namespace]);
-    }
+    { LabelDict::add_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[default_namespace]); }
     else
     {
       LabelDict::add_example_namespace(*shared, index, slot->feature_space[index]);
@@ -225,10 +211,7 @@ template <bool audit>
 void inject_slot_id(ccb& data, example* shared, size_t id)
 {
   // id is zero based, so the vector must be of size id + 1
-  if (id + 1 > data.slot_id_hashes.size())
-  {
-    data.slot_id_hashes.resize(id + 1, 0);
-  }
+  if (id + 1 > data.slot_id_hashes.size()) { data.slot_id_hashes.resize(id + 1, 0); }
 
   uint64_t index;
   if (data.slot_id_hashes[id] == 0)
@@ -264,10 +247,7 @@ void remove_slot_id(example* shared)
   shared->feature_space[ccb_id_namespace].values.pop();
   shared->indices.pop();
 
-  if (audit)
-  {
-    shared->feature_space[ccb_id_namespace].space_names.pop_back();
-  }
+  if (audit) { shared->feature_space[ccb_id_namespace].space_names.pop_back(); }
 }
 
 void remove_slot_features(example* shared, example* slot)
@@ -275,15 +255,10 @@ void remove_slot_features(example* shared, example* slot)
   for (auto index : slot->indices)
   {
     // constant namespace should be ignored, as it already exists and we don't want to double it up.
-    if (index == constant_namespace)
-    {
-      continue;
-    }
+    if (index == constant_namespace) { continue; }
 
     if (index == default_namespace)  // slot default namespace has a special namespace in shared
-    {
-      LabelDict::del_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[default_namespace]);
-    }
+    { LabelDict::del_example_namespace(*shared, ccb_slot_namespace, slot->feature_space[default_namespace]); }
     else
     {
       LabelDict::del_example_namespace(*shared, index, slot->feature_space[index]);
@@ -340,20 +315,15 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   inject_slot_features(data.shared, slot);
   cb_ex.push_back(data.shared);
 
-  // Retrieve the list of actions explicitly available for the slot (if the list is empty, then all actions are possible)
+  // Retrieve the list of actions explicitly available for the slot (if the list is empty, then all actions are
+  // possible)
   auto& explicit_includes = slot->l.conditional_contextual_bandit.explicit_included_actions;
   if (!explicit_includes.empty())
   {
     // First time seeing this, initialize the vector with falses so we can start setting each included action.
-    if (data.include_list.empty())
-    {
-      data.include_list.assign(data.actions.size(), false);
-    }
+    if (data.include_list.empty()) { data.include_list.assign(data.actions.size(), false); }
 
-    for (uint32_t included_action_id : explicit_includes)
-    {
-      data.include_list[included_action_id] = true;
-    }
+    for (uint32_t included_action_id : explicit_includes) { data.include_list[included_action_id] = true; }
   }
 
   // set the available actions in the cb multi-example
@@ -363,16 +333,10 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   for (size_t i = 0; i < data.actions.size(); i++)
   {
     // Filter actions that are not explicitly included. If the list is empty though, everything is included.
-    if (!data.include_list.empty() && !data.include_list[i])
-    {
-      continue;
-    }
+    if (!data.include_list.empty() && !data.include_list[i]) { continue; }
 
     // Filter actions chosen by previous slots
-    if (data.exclude_list[i])
-    {
-      continue;
-    }
+    if (data.exclude_list[i]) { continue; }
 
     // Select the action
     cb_ex.push_back(data.actions[i]);
@@ -407,16 +371,10 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 {
   clear_all(data);
   // split shared, actions and slots
-  if (!split_multi_example_and_stash_labels(examples, data))
-  {
-    return;
-  }
+  if (!split_multi_example_and_stash_labels(examples, data)) { return; }
 
 #ifndef NDEBUG
-  if (!sanity_checks<is_learn>(data))
-  {
-    return;
-  }
+  if (!sanity_checks<is_learn>(data)) { return; }
 #endif
 
   data.has_seen_multi_slot_example = data.has_seen_multi_slot_example || data.slots.size() > 1;
@@ -435,92 +393,91 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
-  auto restore_guard = VW::scope_exit(
-    [&data, &examples]
+  auto restore_guard = VW::scope_exit([&data, &examples] {
+    delete_cb_labels(data);
+
+    // Restore ccb labels to the example objects.
+    for (size_t i = 0; i < examples.size(); i++)
     {
-      delete_cb_labels(data);
-
-      // Restore ccb labels to the example objects.
-      for (size_t i = 0; i < examples.size(); i++)
-      {
-        examples[i]->l.conditional_contextual_bandit = {
-            data.stored_labels[i].type, data.stored_labels[i].outcome, data.stored_labels[i].explicit_included_actions, 0.};
-      }
+      examples[i]->l.conditional_contextual_bandit = {data.stored_labels[i].type, data.stored_labels[i].outcome,
+          data.stored_labels[i].explicit_included_actions, 0.};
     }
-  );
+  });
 
-  //this is temporary only so we can get some logging of what's going on
-  try {
-  // Reset exclusion list for this example.
-  data.exclude_list.assign(data.actions.size(), false);
-
-  auto decision_scores = examples[0]->pred.decision_scores;
-
-  // for each slot, re-build the cb example and call cb_explore_adf
-  size_t slot_id = 0;
-  for (example* slot : data.slots)
+  // this is temporary only so we can get some logging of what's going on
+  try
   {
-    if (should_augment_with_slot_info)
-    {
-      // Namespace crossing for slot features.
-      data.generated_interactions.clear();
-      std::copy(data.original_interactions->begin(), data.original_interactions->end(),
-          std::back_inserter(data.generated_interactions));
-      calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
-      data.shared->interactions = &data.generated_interactions;
-      for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
-    }
+    // Reset exclusion list for this example.
+    data.exclude_list.assign(data.actions.size(), false);
 
-    data.include_list.clear();
-    build_cb_example<is_learn>(data.cb_ex, slot, data);
+    auto decision_scores = examples[0]->pred.decision_scores;
 
-    if (should_augment_with_slot_info)
+    // for each slot, re-build the cb example and call cb_explore_adf
+    size_t slot_id = 0;
+    for (example* slot : data.slots)
     {
-      if (data.all->audit) { inject_slot_id<true>(data, data.shared, slot_id); }
+      if (should_augment_with_slot_info)
+      {
+        // Namespace crossing for slot features.
+        data.generated_interactions.clear();
+        std::copy(data.original_interactions->begin(), data.original_interactions->end(),
+            std::back_inserter(data.generated_interactions));
+        calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
+        data.shared->interactions = &data.generated_interactions;
+        for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
+      }
+
+      data.include_list.clear();
+      build_cb_example<is_learn>(data.cb_ex, slot, data);
+
+      if (should_augment_with_slot_info)
+      {
+        if (data.all->audit) { inject_slot_id<true>(data, data.shared, slot_id); }
+        else
+        {
+          inject_slot_id<false>(data, data.shared, slot_id);
+        }
+      }
+
+      if (has_action(data.cb_ex))
+      {
+        // the cb example contains at least 1 action
+        multiline_learn_or_predict<is_learn>(base, data.cb_ex, examples[0]->ft_offset);
+        save_action_scores(data, decision_scores);
+        clear_pred_and_label(data);
+      }
       else
       {
-        inject_slot_id<false>(data, data.shared, slot_id);
+        // the cb example contains no action => cannot decide
+        decision_scores.push_back(data.action_score_pool.get_object());
       }
-    }
 
-    if (has_action(data.cb_ex))
-    {
-      // the cb example contains at least 1 action
-      multiline_learn_or_predict<is_learn>(base, data.cb_ex, examples[0]->ft_offset);
-      save_action_scores(data, decision_scores);
-      clear_pred_and_label(data);
-    }
-    else
-    {
-      // the cb example contains no action => cannot decide
-      decision_scores.push_back(data.action_score_pool.get_object());
-    }
-
-    if (should_augment_with_slot_info)
-    {
-      data.shared->interactions = data.original_interactions;
-      for (auto* ex : data.actions) { ex->interactions = data.original_interactions; }
-    }
-    remove_slot_features(data.shared, slot);
-
-    if (should_augment_with_slot_info)
-    {
-      if (data.all->audit) { remove_slot_id<true>(data.shared); }
-      else
+      if (should_augment_with_slot_info)
       {
-        remove_slot_id<false>(data.shared);
+        data.shared->interactions = data.original_interactions;
+        for (auto* ex : data.actions) { ex->interactions = data.original_interactions; }
       }
-    }
+      remove_slot_features(data.shared, slot);
 
-    // Put back the original shared example tag.
-    std::swap(data.shared->tag, slot->tag);
-    slot_id++;
-    data.cb_ex.clear();
+      if (should_augment_with_slot_info)
+      {
+        if (data.all->audit) { remove_slot_id<true>(data.shared); }
+        else
+        {
+          remove_slot_id<false>(data.shared);
+        }
+      }
+
+      // Put back the original shared example tag.
+      std::swap(data.shared->tag, slot->tag);
+      slot_id++;
+      data.cb_ex.clear();
+    }
+    // Save the predictions
+    examples[0]->pred.decision_scores = decision_scores;
   }
-  // Save the predictions
-  examples[0]->pred.decision_scores = decision_scores;
-
-  } catch(std::exception &e) {
+  catch (std::exception& e)
+  {
     data.all->trace_message << "CCB got exception from base reductions: " << e.what() << std::endl;
     throw;
   }
@@ -536,10 +493,7 @@ std::string generate_ccb_label_printout(const std::vector<example*>& slots)
     counter++;
 
     auto* outcome = slot->l.conditional_contextual_bandit.outcome;
-    if (outcome == nullptr)
-    {
-      label_ss << delim << "?";
-    }
+    if (outcome == nullptr) { label_ss << delim << "?"; }
     else
     {
       label_ss << delim << outcome->probabilities[0].action << ":" << outcome->cost;
@@ -559,10 +513,7 @@ std::string generate_ccb_label_printout(const std::vector<example*>& slots)
 
 void output_example(vw& all, ccb& c, multi_ex& ec_seq)
 {
-  if (ec_seq.empty())
-  {
-    return;
-  }
+  if (ec_seq.empty()) { return; }
 
   std::vector<example*> slots;
   size_t num_features = 0;
@@ -573,10 +524,7 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
   {
     num_features += ec->num_features;
 
-    if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot)
-    {
-      slots.push_back(ec);
-    }
+    if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot) { slots.push_back(ec); }
   }
 
   // Is it hold out?
@@ -598,23 +546,16 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
   }
 
   if (num_labelled > 0 && num_labelled < slots.size())
-  {
-    std::cerr << "Warning: Unlabeled example in train set, was this intentional?\n";
-  }
+  { std::cerr << "Warning: Unlabeled example in train set, was this intentional?\n"; }
 
   bool holdout_example = num_labelled > 0;
-  for (const auto& example : ec_seq)
-  {
-    holdout_example &= example->test_only;
-  }
+  for (const auto& example : ec_seq) { holdout_example &= example->test_only; }
 
   // TODO what does weight mean here?
   all.sd->update(holdout_example, num_labelled > 0, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-  {
-    VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores);
-  }
+  { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores); }
 
   VW::print_update_ccb(all, slots, preds, num_features);
 }
@@ -627,10 +568,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
-  for (auto& a_s : ec_seq[0]->pred.decision_scores)
-  {
-    return_v_array(a_s, data.action_score_pool);
-  }
+  for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_v_array(a_s, data.action_score_pool); }
   ec_seq[0]->pred.decision_scores.clear();
 
   VW::finish_example(all, ec_seq);
@@ -681,7 +619,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   }
 
   auto* base = as_multiline(setup_base(options, all));
-  all.p->lp = CCB::ccb_label_parser;
+  all.example_parser->lbl_parser = CCB::ccb_label_parser;
   all.label_type = label_type_t::ccb;
 
   // Stash the base learners stride_shift so we can properly add a feature later.

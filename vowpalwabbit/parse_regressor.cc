@@ -7,7 +7,7 @@
 #include "crossplat_compat.h"
 
 #ifndef _WIN32
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 
 #include <cstdlib>
@@ -28,19 +28,10 @@
 #include "vw_versions.h"
 #include "options_serializer_boost_po.h"
 
-void initialize_weights_as_random_positive(weight* weights, uint64_t index)
-{
-  weights[0] = 0.1f * merand48(index);
-}
-void initialize_weights_as_random(weight* weights, uint64_t index)
-{
-  weights[0] = merand48(index) - 0.5f;
-}
+void initialize_weights_as_random_positive(weight* weights, uint64_t index) { weights[0] = 0.1f * merand48(index); }
+void initialize_weights_as_random(weight* weights, uint64_t index) { weights[0] = merand48(index) - 0.5f; }
 
-void initialize_weights_as_polar_normal(weight* weights, uint64_t index)
-{
-  weights[0] = merand48_boxmuller(index);
-}
+void initialize_weights_as_polar_normal(weight* weights, uint64_t index) { weights[0] = merand48_boxmuller(index); }
 
 // re-scaling to re-picking values outside the truncating boundary.
 // note:- boundary is twice the standard deviation.
@@ -49,10 +40,7 @@ void truncate(vw& all, T& weights)
 {
   static double sd = calculate_sd(all, weights);
   std::for_each(weights.begin(), weights.end(), [](float& v) {
-    if (std::fabs(v) > sd * 2)
-    {
-      v = (float)std::remainder(static_cast<double>(v), sd * 2);
-    }
+    if (std::fabs(v) > sd * 2) { v = (float)std::remainder(static_cast<double>(v), sd * 2); }
   });
 }
 
@@ -72,8 +60,7 @@ template <class T>
 void initialize_regressor(vw& all, T& weights)
 {
   // Regressor is already initialized.
-  if (weights.not_null())
-    return;
+  if (weights.not_null()) return;
 
   size_t length = ((size_t)1) << all.num_bits;
   try
@@ -87,14 +74,12 @@ void initialize_regressor(vw& all, T& weights)
     THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
   }
   if (weights.mask() == 0)
-  {
-    THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
-  }
+  { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
   {
     auto initial_weight = all.initial_weight;
     auto initial_value_weight_initializer = [initial_weight](
-      weight* weights, uint64_t /*index*/) { weights[0] = initial_weight; };
+                                                weight* weights, uint64_t /*index*/) { weights[0] = initial_weight; };
     weights.set_default(initial_value_weight_initializer);
   }
   else if (all.random_positive_weights)
@@ -175,8 +160,7 @@ void save_load_header(
       all.model_file_ver = buff2;  // stored in all to check save_resume fix in gd
       VW::validate_version(all);
 
-      if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
-        model_file.verify_hash(true);
+      if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH) model_file.verify_hash(true);
 
       if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
       {
@@ -184,8 +168,7 @@ void save_load_header(
 
         msg << "Id " << all.id << "\n";
         memcpy(buff2, all.id.c_str(), std::min(v_length, default_buf_size));
-        if (read)
-          v_length = default_buf_size;
+        if (read) v_length = default_buf_size;
         bytes_read_write += bin_text_read_write(model_file, buff2, v_length, "", read, msg, text);
         all.id = buff2;
 
@@ -231,8 +214,7 @@ void save_load_header(
 
       if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
       {
-        if (!read)
-          THROW("cannot write legacy format");
+        if (!read) THROW("cannot write legacy format");
 
         // -q, --cubic and --interactions are not saved in vw::file_options
         uint32_t pair_len = 0;
@@ -249,9 +231,7 @@ void save_load_header(
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
           std::vector<namespace_index> temp(pair, *(&pair + 1));
           if (std::count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-          {
-            all.interactions.emplace_back(temp.begin(), temp.end());
-          }
+          { all.interactions.emplace_back(temp.begin(), temp.end()); }
         }
 
         msg << "\n";
@@ -273,9 +253,7 @@ void save_load_header(
 
           std::vector<namespace_index> temp(triple, *(&triple + 1));
           if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-          {
-            all.interactions.emplace_back(temp.begin(), temp.end());
-          }
+          { all.interactions.emplace_back(temp.begin(), temp.end()); }
         }
 
         msg << "\n";
@@ -284,8 +262,7 @@ void save_load_header(
         if (all.model_file_ver >=
             VERSION_FILE_WITH_INTERACTIONS)  // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
         {
-          if (!read)
-            THROW("cannot write legacy format");
+          if (!read) THROW("cannot write legacy format");
 
           // the only version that saves interacions among pairs and triples
           uint32_t len = 0;
@@ -301,19 +278,13 @@ void save_load_header(
             bytes_read_write += bin_text_read_write_fixed_validated(
                 model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
 
-
             auto size = bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
             bytes_read_write += size;
-            if(size != inter_len)
-            {
-              THROW("Failed to read interaction from model file.");
-            }
+            if (size != inter_len) { THROW("Failed to read interaction from model file."); }
 
             std::vector<namespace_index> temp(buff2, buff2 + size);
             if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-            {
-              all.interactions.emplace_back(buff2, buff2 + inter_len);
-            }
+            { all.interactions.emplace_back(buff2, buff2 + inter_len); }
           }
 
           msg << "\n";
@@ -412,8 +383,7 @@ void save_load_header(
       {
         uint32_t len;
         size_t ret = model_file.bin_read_fixed((char*)&len, sizeof(len), "");
-        if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t))
-          THROW("bad model format!");
+        if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t)) THROW("bad model format!");
         resize_buf_if_needed(buff2, buf2_size, len);
         bytes_read_write += model_file.bin_read_fixed(buff2, len, "") + ret;
 
@@ -436,10 +406,7 @@ void save_load_header(
         VW::config::options_serializer_boost_po serializer;
         for (auto const& option : options.get_all_options())
         {
-          if (option->m_keep && options.was_supplied(option->m_name))
-          {
-            serializer.add(*option);
-          }
+          if (option->m_keep && options.was_supplied(option->m_name)) { serializer.add(*option); }
         }
 
         auto serialized_keep_options = serializer.str();
@@ -454,8 +421,7 @@ void save_load_header(
         msg << "options:" << serialized_keep_options << "\n";
 
         uint32_t len = (uint32_t)serialized_keep_options.length();
-        if (len > 0)
-          safe_memcpy(buff2, buf2_size, serialized_keep_options.c_str(), len + 1);
+        if (len > 0) safe_memcpy(buff2, buf2_size, serialized_keep_options.c_str(), len + 1);
         *(buff2 + len) = 0;
         bytes_read_write += bin_text_read_write(model_file, buff2, len + 1,  // len+1 to write a \0
             "", read, msg, text);
@@ -473,14 +439,10 @@ void save_load_header(
         msg << "Checksum: " << check_sum << "\n";
         bin_text_read_write(model_file, (char*)&check_sum, sizeof(check_sum), "", read, msg, text);
 
-        if (check_sum_saved != check_sum)
-          THROW("Checksum is inconsistent, file is possibly corrupted.");
+        if (check_sum_saved != check_sum) THROW("Checksum is inconsistent, file is possibly corrupted.");
       }
 
-      if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
-      {
-        model_file.verify_hash(false);
-      }
+      if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH) { model_file.verify_hash(false); }
     }
   }
   catch (...)
@@ -494,14 +456,10 @@ void save_load_header(
 
 void dump_regressor(vw& all, io_buf& buf, bool as_text)
 {
-  if (buf.num_output_files() == 0)
-  {
-    THROW("Cannot dump regressor with an io buffer that has no output files.");
-  }
+  if (buf.num_output_files() == 0) { THROW("Cannot dump regressor with an io buffer that has no output files."); }
   std::string unused;
   save_load_header(all, buf, false, as_text, unused, *all.options);
-  if (all.l != nullptr)
-    all.l->save_load(buf, false, as_text);
+  if (all.l != nullptr) all.l->save_load(buf, false, as_text);
 
   buf.flush();  // close_file() should do this for me ...
   buf.close_file();
@@ -509,8 +467,7 @@ void dump_regressor(vw& all, io_buf& buf, bool as_text)
 
 void dump_regressor(vw& all, std::string reg_name, bool as_text)
 {
-  if (reg_name == std::string(""))
-    return;
+  if (reg_name == std::string("")) return;
   std::string start_name = reg_name + std::string(".writing");
   io_buf io_temp;
   io_temp.add_file(VW::io::open_file_writer(start_name));
@@ -528,8 +485,7 @@ void save_predictor(vw& all, std::string reg_name, size_t current_pass)
 {
   std::stringstream filename;
   filename << reg_name;
-  if (all.save_per_pass)
-    filename << "." << current_pass;
+  if (all.save_per_pass) filename << "." << current_pass;
   dump_regressor(all, filename.str(), false);
 }
 
@@ -580,9 +536,7 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
     if (initial_regressors.size() > 0)
     {
       if (feature_mask == initial_regressors[0])  //-i and -mask are from same file, just generate mask
-      {
-        return;
-      }
+      { return; }
     }
 
     // all other cases, including from different file, or -i does not exist, need to read in the mask file

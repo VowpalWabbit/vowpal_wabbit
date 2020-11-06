@@ -73,8 +73,7 @@ float binarySearch(float fhat, float delta, float sens, float tol)
 {
   float maxw = std::min(fhat / sens, FLT_MAX);
 
-  if (maxw * fhat * fhat <= delta)
-    return maxw;
+  if (maxw * fhat * fhat <= delta) return maxw;
 
   float l = 0, u = maxw, w, v;
 
@@ -86,8 +85,7 @@ float binarySearch(float fhat, float delta, float sens, float tol)
       u = w;
     else
       l = w;
-    if (fabs(v) <= tol || u - l <= tol)
-      break;
+    if (fabs(v) <= tol || u - l <= tol) break;
   }
 
   return l;
@@ -131,8 +129,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
         ec.l.simple.label = FLT_MAX;
     }
 
-    if (ec.l.simple.label != FLT_MAX)
-      base.learn(ec, i - 1);
+    if (ec.l.simple.label != FLT_MAX) base.learn(ec, i - 1);
   }
   else if (!is_simulation)
     // Prediction in reduction mode could be used by upper layer to ask whether this label needs to be queried.
@@ -197,9 +194,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     // Double label query budget
     cs_a.min_labels *= 2;
     for (size_t i = 0; i < cs_a.examples_by_queries.size(); i++)
-    {
-      cerr << endl << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i];
-    }
+    { cerr << endl << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i]; }
 
     cerr << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
     cerr << endl << "average distance to range = " << cs_a.distance_to_range / ((float)cs_a.labels_outside_range);
@@ -214,8 +209,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     cerr << endl << endl;
   }
 
-  if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes)
-    return;
+  if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes) return;
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
@@ -272,8 +266,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
           (query && lqd.is_range_overlapped && lqd.is_range_large));
       inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl->class_index, lqd.cl->x, prediction, score,
           lqd.cl->partial_prediction, query_label, lqd.query_needed);
-      if (lqd.query_needed)
-        ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
+      if (lqd.query_needed) ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
       if (cs_a.print_debug_stuff)
         cerr << "label=" << lqd.cl->class_index << " x=" << lqd.cl->x << " prediction=" << prediction
              << " score=" << score << " pp=" << lqd.cl->partial_prediction << " ql=" << query_label
@@ -285,27 +278,21 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     // Need to pop metadata
     cs_a.query_data.clear();
 
-    if (cs_a.all->sd->queries - queries > 0)
-      cs_a.num_any_queries++;
+    if (cs_a.all->sd->queries - queries > 0) cs_a.num_any_queries++;
 
     cs_a.examples_by_queries[cs_a.all->sd->queries - queries] += 1;
     // if(any_query)
     // cs_a.num_any_queries++;
 
     ec.partial_prediction = score;
-    if (is_learn)
-    {
-      cs_a.t++;
-    }
+    if (is_learn) { cs_a.t++; }
   }
   else
   {
     float temp = 0.f;
     bool temp2 = false, temp3 = false;
     for (uint32_t i = 1; i <= cs_a.num_classes; i++)
-    {
-      inner_loop<false, is_simulation>(cs_a, base, ec, i, FLT_MAX, prediction, score, temp, temp2, temp3);
-    }
+    { inner_loop<false, is_simulation>(cs_a, base, ec, i, FLT_MAX, prediction, score, temp, temp2, temp3); }
   }
 
   ec.pred.multiclass = prediction;
@@ -349,32 +336,26 @@ base_learner* cs_active_setup(options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->use_domination = true;
-  if (options.was_supplied("domination") && !domination)
-    data->use_domination = false;
+  if (options.was_supplied("domination") && !domination) data->use_domination = false;
 
   data->all = &all;
   data->t = 1;
 
   auto loss_function_type = all.loss->getType();
-  if (loss_function_type != "squared")
-    THROW("error: you can't use non-squared loss with cs_active");
+  if (loss_function_type != "squared") THROW("error: you can't use non-squared loss with cs_active");
 
-  if (options.was_supplied("lda"))
-    THROW("error: you can't combine lda and active learning");
+  if (options.was_supplied("lda")) THROW("error: you can't combine lda and active learning");
 
-  if (options.was_supplied("active"))
-    THROW("error: you can't use --cs_active and --active at the same time");
+  if (options.was_supplied("active")) THROW("error: you can't use --cs_active and --active at the same time");
 
   if (options.was_supplied("active_cover"))
     THROW("error: you can't use --cs_active and --active_cover at the same time");
 
-  if (options.was_supplied("csoaa"))
-    THROW("error: you can't use --cs_active and --csoaa at the same time");
+  if (options.was_supplied("csoaa")) THROW("error: you can't use --cs_active and --csoaa at the same time");
 
-  if (!options.was_supplied("adax"))
-    all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
+  if (!options.was_supplied("adax")) all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
 
-  all.p->lp = cs_label;  // assigning the label parser
+  all.example_parser->lbl_parser = cs_label;  // assigning the label parser
   all.set_minmax(all.sd, data->cost_max);
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);

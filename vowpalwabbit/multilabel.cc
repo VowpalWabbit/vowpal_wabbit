@@ -35,8 +35,7 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   ld->label_v.clear();
   char* c;
   size_t total = sizeof(size_t);
-  if (cache.buf_read(c, (int)total) < total)
-    return 0;
+  if (cache.buf_read(c, (int)total) < total) return 0;
   bufread_label(ld, c, cache);
 
   return total;
@@ -79,8 +78,7 @@ bool test_label(void* v)
 void delete_label(void* v)
 {
   labels* ld = (labels*)v;
-  if (ld)
-    ld->label_v.delete_v();
+  if (ld) ld->label_v.delete_v();
 }
 
 void copy_label(void* dst, void* src)
@@ -105,7 +103,7 @@ void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>&
     case 1:
       tokenize(',', words[0], p->parse_name);
 
-      for (const auto & parse_name : p->parse_name)
+      for (const auto& parse_name : p->parse_name)
       {
         uint32_t n = int_of_string(parse_name);
         ld->label_v.push_back(n);
@@ -113,7 +111,7 @@ void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>&
       break;
     default:
       std::cerr << "example with an odd label, what is ";
-      for (const auto & word : words) std::cerr << word << " ";
+      for (const auto& word : words) std::cerr << word << " ";
       std::cerr << std::endl;
   }
 }
@@ -186,8 +184,7 @@ void output_example(vw& all, example& ec)
 
       for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
       {
-        if (i > 0)
-          ss << ',';
+        if (i > 0) ss << ',';
         ss << ec.pred.multilabels.label_v[i];
       }
       ss << ' ';

@@ -24,8 +24,7 @@ constexpr inline bool observed_cost(cb_class* cl)
 cb_class* get_observed_cost(CB::label& ld)
 {
   for (auto& cl : ld.costs)
-    if (observed_cost(&cl))
-      return &cl;
+    if (observed_cost(&cl)) return &cl;
   return nullptr;
 }
 
@@ -64,8 +63,7 @@ void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
     CB::label ld = examples[i]->l.cb;
 
     COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
-    if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
-      wc.x = ld.costs[0].cost;
+    if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX) wc.x = ld.costs[0].cost;
     cs_labels.costs.push_back(wc);
   }
 }
@@ -175,10 +173,8 @@ void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset, ACT
 
     // TODO: This clipping is conceptually unnecessary because the example weight for this instance should be close to
     // 0.
-    if (wc.x > 100.)
-      wc.x = 100.0;
-    if (wc.x < -100.)
-      wc.x = -100.0;
+    if (wc.x > 100.) wc.x = 100.0;
+    if (wc.x < -100.) wc.x = -100.0;
 
     cs_labels.costs.push_back(wc);
   }

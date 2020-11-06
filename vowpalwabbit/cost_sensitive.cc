@@ -23,8 +23,7 @@ void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v
       break;
     case 2:
       v = float_of_string(name[1]);
-      if (std::isnan(v))
-        THROW("error NaN value for: " << name[0]);
+      if (std::isnan(v)) THROW("error NaN value for: " << name[0]);
       break;
     default:
       std::cerr << "example with a wierd name.  What is '" << s << "'?\n";
@@ -58,8 +57,7 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   ld->costs.clear();
   char* c;
   size_t total = sizeof(size_t);
-  if (cache.buf_read(c, (int)total) < total)
-    return 0;
+  if (cache.buf_read(c, (int)total) < total) return 0;
   bufread_label(ld, c, cache);
 
   return total;
@@ -96,19 +94,16 @@ void default_label(void* v)
 bool test_label(void* v)
 {
   label* ld = (label*)v;
-  if (ld->costs.size() == 0)
-    return true;
+  if (ld->costs.size() == 0) return true;
   for (unsigned int i = 0; i < ld->costs.size(); i++)
-    if (FLT_MAX != ld->costs[i].x)
-      return false;
+    if (FLT_MAX != ld->costs[i].x) return false;
   return true;
 }
 
 void delete_label(void* v)
 {
   label* ld = (label*)v;
-  if (ld)
-    ld->costs.delete_v();
+  if (ld) ld->costs.delete_v();
 }
 
 void copy_label(void* dst, void* src)
@@ -170,8 +165,7 @@ void parse_label(parser* p, shared_data* sd, void* v, std::vector<VW::string_vie
     wclass f = {0., 0, 0., 0.};
     name_value(words[i], p->parse_name, f.x);
 
-    if (p->parse_name.size() == 0)
-      THROW(" invalid cost: specification -- no names on: " << words[i]);
+    if (p->parse_name.size() == 0) THROW(" invalid cost: specification -- no names on: " << words[i]);
 
     if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3)
     {
@@ -224,8 +218,7 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
       }
       else
         pred_buf << ec.pred.a_s[0].action;
-      if (action_scores)
-        pred_buf << ".....";
+      if (action_scores) pred_buf << ".....";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_current_features,
           all.progress_add, all.progress_arg);
       ;
@@ -250,10 +243,8 @@ void output_example(vw& all, example& ec)
     float min = FLT_MAX;
     for (auto& cl : ld.costs)
     {
-      if (cl.class_index == pred)
-        chosen_loss = cl.x;
-      if (cl.x < min)
-        min = cl.x;
+      if (cl.class_index == pred) chosen_loss = cl.x;
+      if (cl.x < min) min = cl.x;
     }
     if (chosen_loss == FLT_MAX)
       std::cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?"
@@ -268,10 +259,7 @@ void output_example(vw& all, example& ec)
 
   for (auto& sink : all.final_prediction_sink)
   {
-    if (!all.sd->ldict)
-    {
-      all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
-    }
+    if (!all.sd->ldict) { all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag); }
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
@@ -285,8 +273,7 @@ void output_example(vw& all, example& ec)
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
       wclass cl = ld.costs[i];
-      if (i > 0)
-        outputStringStream << ' ';
+      if (i > 0) outputStringStream << ' ';
       outputStringStream << cl.class_index << ':' << cl.partial_prediction;
     }
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
@@ -304,23 +291,18 @@ void finish_example(vw& all, example& ec)
 bool example_is_test(example& ec)
 {
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
-  if (costs.size() == 0)
-    return true;
+  if (costs.size() == 0) return true;
   for (size_t j = 0; j < costs.size(); j++)
-    if (costs[j].x != FLT_MAX)
-      return false;
+    if (costs[j].x != FLT_MAX) return false;
   return true;
 }
 
 bool ec_is_example_header(example const& ec)  // example headers look like "shared"
 {
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
-  if (costs.size() != 1)
-    return false;
-  if (costs[0].class_index != 0)
-    return false;
-  if (costs[0].x != -FLT_MAX)
-    return false;
+  if (costs.size() != 1) return false;
+  if (costs[0].class_index != 0) return false;
+  if (costs[0].x != -FLT_MAX) return false;
   return true;
 }
 }  // namespace COST_SENSITIVE
