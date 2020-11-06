@@ -133,10 +133,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
         }
       }
 
-      if (all.chain_hash_json)
-      {
-        namespaces.back().AddFeature(&all, key_namespace, str);
-      }
+      if (all.chain_hash_json) { namespaces.back().AddFeature(&all, key_namespace, str); }
       else
       {
         char* prepend = (char*)str - key_namespace_length;

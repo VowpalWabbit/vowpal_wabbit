@@ -591,9 +591,12 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       if (input_options.json || input_options.dsjson)
       {
-        if(!input_options.chain_hash_json)
+        if (!input_options.chain_hash_json)
         {
-          all.trace_message << "WARNING: Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a future version. Use `--chain_hash` to use new behavior and silence this warning." << endl;
+          all.trace_message
+              << "WARNING: Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a "
+                 "future version. Use `--chain_hash` to use new behavior and silence this warning."
+              << endl;
         }
         set_json_reader(all, input_options.dsjson);
       }

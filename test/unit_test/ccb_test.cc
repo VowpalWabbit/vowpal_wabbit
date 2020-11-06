@@ -79,7 +79,8 @@ BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 
 BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
 {
-  auto vw =  VW::initialize("--ccb_explore_adf --epsilon 0.2 --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(
+      "--ccb_explore_adf --epsilon 0.2 --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::vector<uint32_t> previous;
   const size_t iterations = 10;
