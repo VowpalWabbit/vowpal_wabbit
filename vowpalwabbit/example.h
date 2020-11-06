@@ -132,8 +132,7 @@ void free_flatten_example(flat_example* fec);
 
 inline int example_is_newline(example const& ec)
 {  // if only index is constant namespace or no index
-  if (!ec.tag.empty())
-    return false;
+  if (!ec.tag.empty()) return false;
   return ((ec.indices.empty()) || ((ec.indices.size() == 1) && (ec.indices.last() == constant_namespace)));
 }
 
@@ -141,8 +140,7 @@ inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
 
 inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t i, float x)
 {
-  if (ec.passthrough)
-    ec.passthrough->push_back(x, (FNV_prime * magic) ^ i);
+  if (ec.passthrough) ec.passthrough->push_back(x, (FNV_prime * magic) ^ i);
 }
 
 #define add_passthrough_feature(ec, i, x) \

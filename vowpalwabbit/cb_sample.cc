@@ -34,10 +34,7 @@ struct cb_sample_data
 
     // Find that chosen action in the learning case, skip the shared example.
     auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
-    if (it != examples.end())
-    {
-      maybe_labelled_action = static_cast<int64_t>(std::distance(examples.begin(), it));
-    }
+    if (it != examples.end()) { maybe_labelled_action = static_cast<int64_t>(std::distance(examples.begin(), it)); }
 
     // If we are learning and have a label, then take that action as the chosen action. Otherwise sample the
     // distribution.
@@ -62,10 +59,7 @@ struct cb_sample_data
 
       VW::string_view tag_seed;
       const bool tag_provided_seed = try_extract_random_seed(*examples[0], tag_seed);
-      if (tag_provided_seed)
-      {
-        seed = uniform_hash(tag_seed.begin(), tag_seed.size(), 0);
-      }
+      if (tag_provided_seed) { seed = uniform_hash(tag_seed.begin(), tag_seed.size(), 0); }
 
       // Sampling is done after the base learner has generated a pdf.
       auto result = exploration::sample_after_normalizing(
@@ -74,10 +68,7 @@ struct cb_sample_data
       _UNUSED(result);
 
       // Update the seed state in place if it was used for this example.
-      if (!tag_provided_seed)
-      {
-        _random_state->get_and_update_random();
-      }
+      if (!tag_provided_seed) { _random_state->get_and_update_random(); }
     }
 
     auto result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
@@ -86,7 +77,7 @@ struct cb_sample_data
     _UNUSED(result);
   }
 
- private:
+private:
   std::shared_ptr<rand_state> _random_state;
 };
 }  // namespace VW
@@ -108,9 +99,7 @@ base_learner *cb_sample_setup(options_i &options, vw &all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (options.was_supplied("no_predict"))
-  {
-    THROW("cb_sample cannot be used with no_predict, as there would be no predictions to sample.");
-  }
+  { THROW("cb_sample cannot be used with no_predict, as there would be no predictions to sample."); }
 
   auto data = scoped_calloc_or_throw<cb_sample_data>(all.get_random_state());
   return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true>,

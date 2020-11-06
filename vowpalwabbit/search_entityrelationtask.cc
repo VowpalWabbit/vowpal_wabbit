@@ -69,10 +69,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 
   my_task_data->allow_skip = false;
 
-  if (my_task_data->search_order != 3 && my_task_data->search_order != 4)
-  {
-    sch.set_options(0);
-  }
+  if (my_task_data->search_order != 3 && my_task_data->search_order != 4) { sch.set_options(0); }
   else
   {
     example* ldf_examples = VW::alloc_examples(sizeof(CS::label), 10);
@@ -88,8 +85,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   }
 
   sch.set_num_learners(2);
-  if (my_task_data->search_order == 4)
-    sch.set_num_learners(3);
+  if (my_task_data->search_order == 4) sch.set_num_learners(3);
 }
 
 void finish(Search::search& sch)
@@ -109,10 +105,8 @@ bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
 {
   size_t valid_ent1_id[] = {2, 3, 4, 2, 2};  // encode the valid entity-relation combinations
   size_t valid_ent2_id[] = {4, 4, 4, 3, 2};
-  if (rel_id - 5 == 5)
-    return true;
-  if (valid_ent1_id[rel_id - 5] == ent1_id && valid_ent2_id[rel_id - 5] == ent2_id)
-    return true;
+  if (rel_id - 5 == 5) return true;
+  if (valid_ent1_id[rel_id - 5] == ent1_id && valid_ent2_id[rel_id - 5] == ent2_id) return true;
   return false;
 }
 
@@ -191,10 +185,7 @@ size_t predict_entity(
 
   // record loss
   float loss = 0.0;
-  if (prediction == LABEL_SKIP)
-  {
-    loss = my_task_data->skip_cost;
-  }
+  if (prediction == LABEL_SKIP) { loss = my_task_data->skip_cost; }
   else if (prediction != ex->l.multi.label)
     loss = my_task_data->entity_cost;
   sch.loss(loss);
@@ -257,10 +248,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
         lab.costs[0].class_index = constrained_relation_labels[a];
         lab.costs[0].partial_prediction = 0.f;
         lab.costs[0].wap_value = 0.f;
-        if (constrained_relation_labels[a] == ex->l.multi.label)
-        {
-          correct_label = (int)a;
-        }
+        if (constrained_relation_labels[a] == ex->l.multi.label) { correct_label = (int)a; }
       }
       size_t pred_pos = Search::predictor(sch, my_tag)
                             .set_input(my_task_data->ldf_relation, constrained_relation_labels.size())
@@ -281,16 +269,10 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   }
 
   float loss = 0.0;
-  if (prediction == LABEL_SKIP)
-  {
-    loss = my_task_data->skip_cost;
-  }
+  if (prediction == LABEL_SKIP) { loss = my_task_data->skip_cost; }
   else if (prediction != ex->l.multi.label)
   {
-    if (ex->l.multi.label == R_NONE)
-    {
-      loss = my_task_data->relation_none_cost;
-    }
+    if (ex->l.multi.label == R_NONE) { loss = my_task_data->relation_none_cost; }
     else
     {
       loss = my_task_data->relation_cost;
@@ -360,20 +342,14 @@ void er_allow_skip_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& 
   for (ptag t = 0;; t++)
   {
     ptag i = t % (uint32_t)ec.size();
-    if (n_predicts == ec.size())
-      break;
+    if (n_predicts == ec.size()) break;
 
     if (predictions[i] == 0)
     {
-      if (must_predict)
-      {
-        my_task_data->allow_skip = false;
-      }
+      if (must_predict) { my_task_data->allow_skip = false; }
       size_t prediction = 0;
       if (i < n_ent)  // do entity recognition
-      {
-        prediction = predict_entity(sch, ec[i], predictions, i);
-      }
+      { prediction = predict_entity(sch, ec[i], predictions, i); }
       else  // do relation recognition
       {
         prediction = predict_relation(sch, ec[i], predictions, i);
@@ -394,10 +370,7 @@ void er_allow_skip_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& 
 
     if (i == ec.size() - 1)
     {
-      if (n_predicts == p_n_predicts)
-      {
-        must_predict = true;
-      }
+      if (n_predicts == p_n_predicts) { must_predict = true; }
       p_n_predicts = n_predicts;
     }
   }
@@ -408,10 +381,7 @@ void run(Search::search& sch, multi_ex& ec)
   task_data* my_task_data = sch.get_task_data<task_data>();
 
   v_array<size_t> predictions = v_init<size_t>();
-  for (size_t i = 0; i < ec.size(); i++)
-  {
-    predictions.push_back(0);
-  }
+  for (size_t i = 0; i < ec.size(); i++) { predictions.push_back(0); }
 
   switch (my_task_data->search_order)
   {
@@ -433,8 +403,7 @@ void run(Search::search& sch, multi_ex& ec)
 
   for (size_t i = 0; i < ec.size(); i++)
   {
-    if (sch.output().good())
-      sch.output() << predictions[i] << ' ';
+    if (sch.output().good()) sch.output() << predictions[i] << ' ';
   }
   predictions.delete_v();
 }
