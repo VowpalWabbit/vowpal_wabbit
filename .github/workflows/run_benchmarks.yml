@@ -16,6 +16,12 @@ jobs:
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmark.sh # repo dir
+      - name: Upload benchmark compare
+        uses: actions/upload-artifact@v2
+        with:
+          name: benchmark-compare
+          path: benchmark/tools/
+      - run: ls
       - name: Build master
         shell: bash
         run: ./.scripts/linux/build-with-benchmarks.sh
@@ -27,11 +33,6 @@ jobs:
         with:
           name: master-benchmarks
           path: master-benchmarks.json
-      - name: Upload benchmark compare
-        uses: actions/upload-artifact@v2
-        with:
-          name: benchmark-compare
-          path: benchmark/tools/compare.py
       - name: Install benchmark compare requirements
         shell: bash
         run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
