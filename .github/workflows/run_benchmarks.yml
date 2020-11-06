@@ -22,8 +22,7 @@ jobs:
       - name: Benchmark master
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json # repo dir
-
-        - name: Upload master benchmark results
+      - name: Upload master benchmark results
         uses: actions/upload-artifact@v2
         with:
           name: master-benchmarks
@@ -37,7 +36,6 @@ jobs:
         shell: bash
         run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
       - run: rm -rf benchmark build
-
       - uses: actions/checkout@v1
       - name: Download master benchmark results
         uses: actions/download-artifact@v2
