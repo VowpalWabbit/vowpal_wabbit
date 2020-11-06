@@ -1875,7 +1875,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/plt_top1_multilabel.predict
 
 # Test 220: daemon test with json
-./daemon-test.sh --json --chain_hash
+./daemon-test.sh --json
     test-sets/ref/vw-daemon.stdout
 
 # Test 221: cbify adf, squarecb
