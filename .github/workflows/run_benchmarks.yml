@@ -45,7 +45,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: benchmark-compare
-      - run: ls
       - name: Build branch
         shell: bash
         run: ./.scripts/linux/build-with-benchmarks.sh
