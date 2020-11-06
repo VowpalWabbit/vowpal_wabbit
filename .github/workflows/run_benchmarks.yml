@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
         # with:
-          # ref: master # master doesn't have benchmark scripts this right now, check diff between two branch runs
+          # ref: master # master doesn't have benchmark scripts right now, change once master is merged
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmark.sh # repo dir
@@ -32,6 +32,9 @@ jobs:
         with:
           name: benchmark-compare
           path: benchmark/tools/compare.py
+      - name: Install benchmark compare requirements
+        shell: bash
+        run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
       - run: rm -rf benchmark build
       - uses: actions/checkout@v1
       - name: Download master benchmark results
@@ -42,19 +45,13 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: benchmark-compare
-      # - name: Install google benchmarks
-      #   shell: bash
-      #   run: ./.scripts/linux/install-benchmark.sh
+      - run: ls
       - name: Build branch
         shell: bash
         run: ./.scripts/linux/build-with-benchmarks.sh
       - name: Benchmark branch
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
-      - name: Install benchmark compare requirements
-        shell: bash
-        run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
       - name: Compare benchmarks
         shell: bash
         run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
-      - run: ls
