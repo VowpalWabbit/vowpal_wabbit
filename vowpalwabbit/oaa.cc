@@ -303,7 +303,7 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
   {
     l->set_learn(learn_randomized);
     l->set_finish_example(MULTICLASS::finish_example_without_loss<oaa>);
-    l->predict_before_learn = false;
+    l->learn_returns_prediction = false;
   }
 
   return make_base(*l);

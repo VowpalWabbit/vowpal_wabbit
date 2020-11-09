@@ -168,17 +168,19 @@ void vw::learn(example& ec)
     VW::LEARNER::as_singleline(l)->predict(ec);
   else
   {
-    if (l->predict_before_learn)
+    if (l->learn_returns_prediction)
     {
-      VW::LEARNER::as_singleline(l)->predict(ec);
-      copy_prediction(ec.pred);
-      auto restore_guard = VW::scope_exit([&ec, this] {
-        std::swap(ec.pred, _predict_buffer);
-        VW::LEARNER::as_singleline(l)->learn(ec);
-      });
+      VW::LEARNER::as_singleline(l)->learn(ec);
     }
     else
+    {
+      VW::LEARNER::as_singleline(l)->predict(ec);
+      std::swap(_predict_buffer, ec.pred);
+      auto restore_guard = VW::scope_exit([&ec, this] {
+        std::swap(ec.pred, _predict_buffer);
+        });
       VW::LEARNER::as_singleline(l)->learn(ec);
+    }
   }
 }
 
@@ -191,15 +193,15 @@ void vw::learn(multi_ex& ec)
     VW::LEARNER::as_multiline(l)->predict(ec);
   else
   {
-    if (l->predict_before_learn)
+    if (l->learn_returns_prediction)
     {
-      VW::LEARNER::as_multiline(l)->predict(ec);
-      copy_prediction(ec[0]->pred);
-      auto restore_guard = VW::scope_exit([&ec, this] { std::swap(ec[0]->pred, _predict_buffer); });
       VW::LEARNER::as_multiline(l)->learn(ec);
     }
     else
     {
+      VW::LEARNER::as_multiline(l)->predict(ec);
+      copy_prediction(ec[0]->pred);
+      auto restore_guard = VW::scope_exit([&ec, this] { std::swap(ec[0]->pred, _predict_buffer); });
       VW::LEARNER::as_multiline(l)->learn(ec);
     }
   }

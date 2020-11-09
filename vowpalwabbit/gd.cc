@@ -1267,7 +1267,7 @@ base_learner* setup(options_i& options, vw& all)
 
   gd* bare = g.get();
   learner<gd, example>& ret =
-      init_learner(g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()), "gd", false);
+      init_learner(g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()), "gd", true);
   ret.set_sensitivity(bare->sensitivity);
   ret.set_multipredict(bare->multipredict);
   ret.set_update(bare->update);

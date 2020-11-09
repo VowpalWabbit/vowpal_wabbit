@@ -79,7 +79,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     else
       GEN_CS::gen_cs_example<false>(_gen_cs, examples, _cs_labels);
 
-    if (base.predict_before_learn)
+    if (base.learn_returns_prediction)
     {
       // First predict() since the result of the predictions are used to learn
       // later in the reduction
@@ -270,7 +270,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
       cover_size, psi, nounif, first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type_enum);
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(data, base, explore_type::learn, explore_type::predict,
-      problem_multiplier, prediction_type_t::action_probs, "cb_explore_adf-cover", false);
+      problem_multiplier, prediction_type_t::action_probs, "cb_explore_adf-cover", true);
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

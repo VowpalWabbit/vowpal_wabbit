@@ -136,7 +136,7 @@ base_learner* csoaa_setup(options_i& options, vw& all)
 
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
       predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass, "csoaa",
-      false /*csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first*/
+      true /*csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first*/
   );
   all.example_parser->lbl_parser = cs_label;
   all.label_type = label_type_t::cs;

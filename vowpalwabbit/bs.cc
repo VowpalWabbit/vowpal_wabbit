@@ -266,7 +266,7 @@ base_learner* bs_setup(options_i& options, vw& all)
   data->_random_state = all.get_random_state();
 
   learner<bs, example>& l = init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>,
-      predict_or_learn<false>, data->B, "bootstrap", false);
+      predict_or_learn<false>, data->B, "bootstrap", true);
   l.set_finish_example(finish_example);
 
   return make_base(l);

@@ -287,7 +287,7 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
   all.label_type = label_type_t::slates;
   all.delete_prediction = VW::delete_decision_scores;
   auto& l = VW::LEARNER::init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
-      prediction_type_t::decision_probs, "slates", base->predict_before_learn);
+      prediction_type_t::decision_probs, "slates", base->learn_returns_prediction);
   l.set_finish_example(finish_multiline_example);
   return VW::LEARNER::make_base(l);
 }
