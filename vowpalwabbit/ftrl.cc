@@ -367,6 +367,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   b->total_weight = 0;
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
+  bool learn_returns_prediction = false;
 
   std::string algorithm_name;
   if (ftrl_option)
@@ -385,6 +386,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     learn_ptr = learn_pistol;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 4;
+    learn_returns_prediction = true;
   }
   else if (coin)
   {
@@ -416,9 +418,9 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   learner<ftrl, example>* l;
   if (all.audit || all.hash_inv)
     l = &init_learner(
-        b, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift(), "ftrl-" + algorithm_name + "-audit");
+        b, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift(), "ftrl-" + algorithm_name + "-audit", learn_returns_prediction);
   else
-    l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift(), "ftrl-" + algorithm_name);
+    l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift(), "ftrl-" + algorithm_name, learn_returns_prediction);
   l->set_sensitivity(sensitivity);
   if (all.audit || all.hash_inv)
     l->set_multipredict(multipredict<true>);
