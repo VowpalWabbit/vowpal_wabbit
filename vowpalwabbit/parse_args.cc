@@ -1424,7 +1424,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
 
 bool check_interaction_settings_collision(options_i& options, std::string file_options)
 {
-  bool command_line_has_interaction = options.was_supplied("q") || options.was_supplied("quadratic") ||
+  bool command_line_has_interaction = options.was_supplied("-q") || options.was_supplied("quadratic") ||
       options.was_supplied("cubic") || options.was_supplied("interactions");
 
   if (!command_line_has_interaction) return false;
