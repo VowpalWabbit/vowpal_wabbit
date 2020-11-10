@@ -322,7 +322,7 @@ public:
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
 
-  bool chain_hash = false;
+  bool chain_hash_json = false;
 
   VW::LEARNER::base_learner* l;         // the top level learner
   VW::LEARNER::single_learner* scorer;  // a scoring function
