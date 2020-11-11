@@ -435,9 +435,11 @@ input_options parse_source(vw& all, options_i& options)
       .add(make_option("no_daemon", all.no_daemon)
                .help("Force a loaded daemon or active learning model to accept local input instead of starting in "
                      "daemon mode"))
-      .add(make_option("chain_hash", parsed_options.chain_hash)
-               .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as "
-                     "A^B^C"));
+      .add(make_option("chain_hash", parsed_options.chain_hash_json)
+               .help("Enable chain hash in JSON for feature name and string feature value. e.g. {'A': {'B': 'C'}} is "
+                     "hashed as "
+                     "A^B^C. Note: this will become the default in a future version, so enabling this option will "
+                     "migrate you to the new behavior and silence the warning."));
 
   options.add_and_parse(input_options);
 
