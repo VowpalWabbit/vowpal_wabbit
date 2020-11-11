@@ -139,9 +139,9 @@ bool options_boost_po::was_supplied(const std::string& key) const
   if (m_supplied_options.count(key) > 0) { return true; }
 
   // Basic check, std::string match against command line.
-  auto keys = {std::string("--" + key),std::string("-" + key)};
-  return std::find_first_of(std::begin(m_command_line), std::end(m_command_line),
-                            std::begin(keys), std::end(keys)) != std::end(m_command_line);
+  auto keys = {std::string("--" + key), std::string("-" + key)};
+  return std::find_first_of(std::begin(m_command_line), std::end(m_command_line), std::begin(keys), std::end(keys)) !=
+      std::end(m_command_line);
 }
 
 std::string options_boost_po::help() const { return m_help_stringstream.str(); }
