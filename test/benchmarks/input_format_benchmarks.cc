@@ -189,6 +189,32 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
   examples.delete_v();
 }
 
+static void benchmark_example_reuse(benchmark::State& state)
+{
+  std::string example_string = "1 1.0 zebra|MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures NumberOfLegs:4.0 HasStripes";
+
+  auto vw = VW::initialize("--quiet", nullptr, false, nullptr, nullptr);
+
+  auto examples = v_init<example*>();
+
+  io_buf reader_view_of_buffer;
+  vw->example_parser->input = &reader_view_of_buffer;
+
+  for (auto _ : state)
+  {
+    for (size_t i = 0; i < 20000; i++)
+    {
+      examples.push_back(&VW::get_unused_example(vw));
+      reader_view_of_buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
+      vw->example_parser->reader(vw, examples);
+      VW::finish_example(*vw, *examples[0]);
+      examples.clear();
+      benchmark::ClobberMemory();
+    }
+  }
+  examples.delete_v();
+}
+
 BENCHMARK_CAPTURE(bench_text, 120_string_fts, get_x_string_fts(120));
 BENCHMARK_CAPTURE(bench_cache_io_buf, 120_string_fts, get_x_string_fts(120));
 BENCHMARK_CAPTURE(bench_text_io_buf, 120_string_fts, get_x_string_fts(120));
@@ -196,6 +222,8 @@ BENCHMARK_CAPTURE(bench_text_io_buf, 120_string_fts, get_x_string_fts(120));
 BENCHMARK_CAPTURE(bench_text, 120_num_fts, get_x_numerical_fts(120));
 BENCHMARK_CAPTURE(bench_cache_io_buf, 120_num_fts, get_x_numerical_fts(120));
 BENCHMARK_CAPTURE(bench_text_io_buf, 120_num_fts, get_x_numerical_fts(120));
+
+BENCHMARK(benchmark_example_reuse);
 
 // Run the benchmark
 BENCHMARK_MAIN();
