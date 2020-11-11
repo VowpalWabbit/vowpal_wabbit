@@ -7,7 +7,7 @@
 # Set environment variable GH_WORKFLOW_LOGGING to output logging that Azure pipelines will interpret as a warning.
 # Set environment variable WARNING_AS_ERROR to make the script exit with a non-zero code if issues are found.
 
-for VW_FILE in $(find vowpalwabbit -type f -name '*.cc' -o -name '*.h'); do
+for VW_FILE in $(find vowpalwabbit python -type f -name '*.cc' -o -name '*.h'); do
 
     if [ "$1" = check ]; then
         diff $VW_FILE <(clang-format $VW_FILE);

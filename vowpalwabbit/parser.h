@@ -10,15 +10,15 @@
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
 #ifdef _M_CEE
-#pragma managed(push, off)
-#undef _M_CEE
-#include <mutex>
-#include <condition_variable>
-#define _M_CEE 001
-#pragma managed(pop)
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <mutex>
+#  include <condition_variable>
+#  define _M_CEE 001
+#  pragma managed(pop)
 #else
-#include <mutex>
-#include <condition_variable>
+#  include <mutex>
+#  include <condition_variable>
 #endif
 
 #include <atomic>
@@ -42,7 +42,7 @@ struct parser
   {
     this->input = new io_buf{};
     this->output = new io_buf{};
-    this->lp = simple_label;
+    this->lbl_parser = simple_label_parser;
 
     // Free parser must still be used for the following fields.
     this->ids = v_init<size_t>();
@@ -57,7 +57,7 @@ struct parser
     counts.delete_v();
   }
 
-  //delete copy constructor
+  // delete copy constructor
   parser(const parser&) = delete;
   parser& operator=(const parser&) = delete;
 
@@ -87,7 +87,7 @@ struct parser
 
   const size_t ring_size;
   std::atomic<uint64_t> begin_parsed_examples;  // The index of the beginning parsed example.
-  std::atomic<uint64_t> end_parsed_examples;      // The index of the fully parsed example.
+  std::atomic<uint64_t> end_parsed_examples;    // The index of the fully parsed example.
   std::atomic<uint64_t> finished_examples;      // The count of finished examples.
   uint32_t in_pass_counter = 0;
   bool emptylines_separate_examples = false;  // true if you want to have holdout computed on a per-block basis rather
@@ -105,7 +105,7 @@ struct parser
 
   std::vector<VW::string_view> parse_name;
 
-  label_parser lp;  // moved from vw
+  label_parser lbl_parser;  // moved from vw
 
   bool audit = false;
   bool decision_service_json = false;

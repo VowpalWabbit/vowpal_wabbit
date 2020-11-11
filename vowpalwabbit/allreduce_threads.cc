@@ -61,8 +61,5 @@ AllReduceThreads::AllReduceThreads(const size_t ptotal, const size_t pnode, bool
 
 AllReduceThreads::~AllReduceThreads()
 {
-  if (m_syncOwner)
-  {
-    delete m_sync;
-  }
+  if (m_syncOwner) { delete m_sync; }
 }

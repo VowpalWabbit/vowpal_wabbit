@@ -13,7 +13,7 @@ namespace details
 template <typename T>
 class swap_guard_impl
 {
- public:
+public:
   swap_guard_impl(T* original_location, T* value_to_swap) noexcept
       : _original_location(original_location), _value_to_swap(value_to_swap)
   {
@@ -50,7 +50,7 @@ class swap_guard_impl
     return false;
   }
 
- private:
+private:
   T* _original_location;
   T* _value_to_swap;
   bool _will_swap_back = true;
@@ -59,7 +59,7 @@ class swap_guard_impl
 template <typename T>
 class swap_guard_impl_rvalue
 {
- public:
+public:
   swap_guard_impl_rvalue(T* original_location, T&& value_to_swap) noexcept
       : _original_location(original_location), _value_to_swap(std::move(value_to_swap))
   {
@@ -95,7 +95,7 @@ class swap_guard_impl_rvalue
     return false;
   }
 
- private:
+private:
   T* _original_location;
   T _value_to_swap;
   bool _will_swap_back = true;

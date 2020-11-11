@@ -35,8 +35,7 @@ struct multipredict_info
 template <class T>
 inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint64_t fi)
 {
-  if ((-1e-10 < fx) && (fx < 1e-10))
-    return;
+  if ((-1e-10 < fx) && (fx < 1e-10)) return;
   uint64_t mask = mp.weights.mask();
   polyprediction* p = mp.pred;
   fi &= mask;

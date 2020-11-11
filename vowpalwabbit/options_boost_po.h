@@ -23,10 +23,7 @@ namespace std
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec)
 {
-  for (auto const& item : vec)
-  {
-    os << item << ", ";
-  }
+  for (auto const& item : vec) { os << item << ", "; }
   return os;
 }
 }  // namespace std
@@ -63,10 +60,7 @@ struct options_boost_po : public options_i
   void insert(const std::string& key, const std::string& value) override
   {
     m_command_line.push_back("--" + key);
-    if (!value.empty())
-    {
-      m_command_line.push_back(value);
-    }
+    if (!value.empty()) { m_command_line.push_back(value); }
   }
 
   // Note: does not work for vector options.
@@ -84,9 +78,7 @@ struct options_boost_po : public options_i
 
     // Check if it is the final option or the next option is not a value.
     if (it + 1 == m_command_line.end() || (*(it + 1)).find("--") != std::string::npos)
-    {
-      THROW(key + " option does not have a value.");
-    }
+    { THROW(key + " option does not have a value."); }
 
     // Actually replace the value.
     *(it + 1) = value;
@@ -108,14 +100,11 @@ struct options_boost_po : public options_i
     po::variables_map vm;
     po::store(pos, vm);
 
-    if (vm.count("__positional__") != 0)
-    {
-      return vm["__positional__"].as<std::vector<std::string>>();
-    }
+    if (vm.count("__positional__") != 0) { return vm["__positional__"].as<std::vector<std::string>>(); }
     return std::vector<std::string>();
   }
 
- private:
+private:
   template <typename T>
   typename po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_option<T>>& opt);
 
@@ -144,17 +133,14 @@ struct options_boost_po : public options_i
   template <typename TTypes>
   void add_to_description_impl(std::shared_ptr<base_option> opt, po::options_description& options_description)
   {
-    if (add_if_t<typename TTypes::head>(opt, options_description))
-    {
-      return;
-    }
+    if (add_if_t<typename TTypes::head>(opt, options_description)) { return; }
     add_to_description_impl<typename TTypes::tail>(opt, options_description);
   }
 
   template <typename T>
   void add_to_description(std::shared_ptr<typed_option<T>> opt, po::options_description& options_description);
 
- private:
+private:
   std::map<std::string, std::shared_ptr<base_option>> m_options;
 
   std::vector<std::string> m_command_line;
@@ -178,10 +164,7 @@ po::typed_value<std::vector<T>>* options_boost_po::get_base_boost_value(std::sha
 {
   auto value = po::value<std::vector<T>>();
 
-  if (opt->default_value_supplied())
-  {
-    value->default_value({opt->default_value()});
-  }
+  if (opt->default_value_supplied()) { value->default_value({opt->default_value()}); }
 
   return add_notifier(opt, value)->composing();
 }
@@ -192,10 +175,7 @@ po::typed_value<std::vector<T>>* options_boost_po::get_base_boost_value(
 {
   auto value = po::value<std::vector<T>>();
 
-  if (opt->default_value_supplied())
-  {
-    value->default_value(opt->default_value());
-  }
+  if (opt->default_value_supplied()) { value->default_value(opt->default_value()); }
 
   return add_notifier(opt, value)->composing();
 }
@@ -230,7 +210,7 @@ po::typed_value<std::vector<T>>* options_boost_po::add_notifier(
     {
       for (auto const& item : final_arguments)
       {
-        if(item != result)
+        if (item != result)
         {
           std::stringstream ss;
           ss << "Disagreeing option values for '" << opt->m_name << "': '" << result << "' vs '" << item << "'";

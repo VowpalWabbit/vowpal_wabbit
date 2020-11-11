@@ -45,8 +45,7 @@ float get_cost_pred(
   else
     scorer->predict(ec, index - 1 + base);
 
-  if (!baseline_enabled_old)
-    BASELINE::reset_baseline_disabled(&ec);
+  if (!baseline_enabled_old) BASELINE::reset_baseline_disabled(&ec);
   float pred = ec.pred.scalar;
   ec.pred = p;
 
@@ -57,23 +56,20 @@ float get_cost_pred(
 
 inline float get_cost_estimate(CB::cb_class* observation, uint32_t action, float offset = 0.)
 {
-  if (action == observation->action)
-    return (observation->cost - offset) / observation->probability;
+  if (action == observation->action) return (observation->cost - offset) / observation->probability;
   return 0.;
 }
 
 inline float get_cost_estimate(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
 {
   for (auto& cl : scores.costs)
-    if (cl.class_index == action)
-      return get_cost_estimate(observation, action, cl.x) + cl.x;
+    if (cl.class_index == action) return get_cost_estimate(observation, action, cl.x) + cl.x;
   return get_cost_estimate(observation, action);
 }
 
 inline float get_cost_estimate(ACTION_SCORE::action_score& a_s, float cost, uint32_t action, float offset = 0.)
 {
-  if (action == a_s.action)
-    return (cost - offset) / a_s.score;
+  if (action == a_s.action) return (cost - offset) / a_s.score;
   return 0.;
 }
 

@@ -40,8 +40,8 @@ inline void dummy_func(R&, const audit_strings*)
 
 template <class R, class S, void (*T)(R&, float, S), class W>  // nullptr func can't be used as template param in old
                                                                // compilers
-inline void generate_interactions(std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec,
-    R& dat,
+inline void generate_interactions(std::vector<std::vector<namespace_index>>& interactions, bool permutations,
+    example_predict& ec, R& dat,
     W& weights)  // default value removed to eliminate
                  // ambiguity in old complers
 {
@@ -74,7 +74,8 @@ inline void vec_add(float& p, const float fx, const float& fw) { p += fw * fx; }
 
 template <class W>
 inline float inline_predict(W& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
-    std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec, float initial = 0.f)
+    std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec,
+    float initial = 0.f)
 {
   foreach_feature<float, const float&, vec_add, W>(
       weights, ignore_some_linear, ignore_linear, interactions, permutations, ec, initial);

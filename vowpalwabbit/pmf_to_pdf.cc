@@ -242,8 +242,9 @@ base_learner* setup(options_i& options, vw& all)
 
   if (data->num_actions == 0) return nullptr;
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
-  { THROW("error: min and max values must be supplied with cb_continuous"); } if (data->bandwidth <= 0)
-  { THROW("error: Bandwidth must be >= 1"); } auto p_base = as_singleline(setup_base(options, all));
+  { THROW("error: min and max values must be supplied with cb_continuous"); }
+  if (data->bandwidth <= 0) { THROW("error: Bandwidth must be >= 1"); }
+  auto p_base = as_singleline(setup_base(options, all));
   data->_p_base = p_base;
 
   learner<pmf_to_pdf::reduction, example>& l = init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf);

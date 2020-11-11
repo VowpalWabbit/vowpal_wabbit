@@ -38,8 +38,7 @@ bool know_all_cost_example(CB::label& ld)
   // if we specified more than 1 action for this example, i.e. either we have a limited set of possible actions, or all
   // actions are specified than check if all actions have a specified cost
   for (auto& cl : ld.costs)
-    if (cl.cost == FLT_MAX)
-      return false;
+    if (cl.cost == FLT_MAX) return false;
 
   return true;
 }
@@ -94,8 +93,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if (!CB::cb_label.test_label(&ld))
-    loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
+  if (!CB::cb_label.test_label(&ld)) loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
   all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
 
@@ -107,8 +105,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
       cb_class cl = ld.costs[i];
-      if (i > 0)
-        outputStringStream << ' ';
+      if (i > 0) outputStringStream << ' ';
       outputStringStream << cl.action << ':' << cl.partial_prediction;
     }
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
@@ -161,8 +158,7 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
     c.cb_type = CB_TYPE_DR;
   else if (type_string.compare("dm") == 0)
   {
-    if (eval)
-      THROW("direct method can not be used for evaluation --- it is biased.");
+    if (eval) THROW("direct method can not be used for evaluation --- it is biased.");
     c.cb_type = CB_TYPE_DM;
     problem_multiplier = 1;
   }
@@ -187,12 +183,12 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   auto base = as_singleline(setup_base(options, all));
   if (eval)
   {
-    all.p->lp = CB_EVAL::cb_eval;
+    all.example_parser->lbl_parser = CB_EVAL::cb_eval;
     all.label_type = label_type_t::cb_eval;
   }
   else
   {
-    all.p->lp = CB::cb_label;
+    all.example_parser->lbl_parser = CB::cb_label;
     all.label_type = label_type_t::cb;
   }
 
