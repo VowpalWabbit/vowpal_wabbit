@@ -103,9 +103,7 @@ CB::cb_class get_observed_cost(multi_ex& examples, bool skip_example_header)
   size_t i = 0;
   for (example*& ec : examples)
   {
-    if (skip_example_header && CB::ec_is_example_header(*ec)) {
-      continue;
-    }
+    if (skip_example_header && CB::ec_is_example_header(*ec)) { continue; }
 
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
     {
