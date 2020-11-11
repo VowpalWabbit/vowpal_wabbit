@@ -1,0 +1,56 @@
+name: Run Benchmarks
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  Benchmarking:
+    container:
+      image: vowpalwabbit/ubuntu1604-build:latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+        # with:
+          # ref: master # master doesn't have benchmark scripts right now, change once master is merged
+      - name: Install google benchmarks
+        shell: bash
+        run: ./.scripts/linux/install-benchmark.sh # repo dir
+      - name: Build master
+        shell: bash
+        run: ./.scripts/linux/build-with-benchmarks.sh
+      - name: Benchmark master
+        shell: bash
+        run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json # repo dir
+      - name: Upload master benchmark results
+        uses: actions/upload-artifact@v2
+        with:
+          name: master-benchmarks
+          path: master-benchmarks.json
+      - name: Upload benchmark compare
+        uses: actions/upload-artifact@v2
+        with:
+          name: benchmark-compare
+          path: benchmark/tools/
+      - name: Install benchmark compare requirements
+        shell: bash
+        run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
+      - run: rm -rf benchmark build
+      - uses: actions/checkout@v1
+      - name: Download master benchmark results
+        uses: actions/download-artifact@v2
+        with:
+          name: master-benchmarks
+      - name: Download benchmark compare
+        uses: actions/download-artifact@v2
+        with:
+          name: benchmark-compare
+      - name: Build branch
+        shell: bash
+        run: ./.scripts/linux/build-with-benchmarks.sh
+      - name: Benchmark branch
+        shell: bash
+        run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
+      - name: Compare benchmarks
+        shell: bash
+        run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
