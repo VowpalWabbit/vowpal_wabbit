@@ -32,18 +32,20 @@ struct reduction_test_harness
     for (uint32_t i = 0; i < _predictions.size(); i++)
     { ec.pred.a_s.push_back(ACTION_SCORE::action_score{_predictions[i].first, _predictions[i].second}); }
 
-    cout << "\nec.pred.a_s (PMF): " << endl;
-    for (uint32_t i = 0; i < _predictions.size(); i++)
-    { cout << "(" << ec.pred.a_s[i].action << " : " << ec.pred.a_s[i].score << "), " << endl; } }
+    // cout << "\nec.pred.a_s (PMF): " << endl;
+    // for (uint32_t i = 0; i < _predictions.size(); i++)
+    // { cout << "(" << ec.pred.a_s[i].action << " : " << ec.pred.a_s[i].score << "), " << endl; }
+  }
 
   void test_learn(single_learner& base, example& ec)
   {
-    cout << "ec.l.cb.costs after:" << endl;
-    for (uint32_t i = 0; i < ec.l.cb.costs.size(); i++)
-    {
-      cout << "(" << ec.l.cb.costs[i].action << " , " << ec.l.cb.costs[i].cost << " , " << ec.l.cb.costs[i].probability
-           << " , " << ec.l.cb.costs[i].partial_prediction << "), " << endl;
-    }
+    // cout << "ec.l.cb.costs after:" << endl;
+    // for (uint32_t i = 0; i < ec.l.cb.costs.size(); i++)
+    // {
+    //   cout << "(" << ec.l.cb.costs[i].action << " , " << ec.l.cb.costs[i].cost << " , " <<
+    //   ec.l.cb.costs[i].probability
+    //        << " , " << ec.l.cb.costs[i].partial_prediction << "), " << endl;
+    // }
   }
 
   static void predict(reduction_test_harness& test_reduction, single_learner& base, example& ec)
@@ -69,6 +71,53 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
 }  // namespace pmf_to_pdf
 }  // namespace VW
 
+void check_pdf_sums_to_one(VW::continuous_actions::probability_density_function& pdf)
+{
+  float sum = 0;
+  for (uint32_t i = 0; i < pdf.size(); i++) { sum += pdf[i].pdf_value * (pdf[i].right - pdf[i].left); }
+
+  BOOST_CHECK_CLOSE(1.0f, sum, .0001f);
+}
+
+void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_function& pdf, uint32_t min_value,
+    uint32_t max_value, uint32_t bandwidth, uint32_t num_actions, uint32_t action)
+{
+  // check that left <= right for all pdf
+  float prev_pdf_limit = 0;
+  for (uint32_t i = 0; i < pdf.size(); i++)
+  {
+    BOOST_CHECK_GE(pdf[i].left, prev_pdf_limit);
+    BOOST_CHECK_GE(pdf[i].right, pdf[i].left);
+    prev_pdf_limit = pdf[i].right;
+  }
+
+  // check that leftmost >= min_value and rightmost <= max_value
+  BOOST_CHECK_GE(pdf[0].left, min_value);
+  BOOST_CHECK_LE(pdf[pdf.size() - 1].right, max_value);
+
+  // check that left/right pair around the predicted action has the right bandwidth
+  float continuous_range = max_value - min_value;
+  float unit_range = continuous_range / (num_actions - 1);
+  for (uint32_t i = 0; i < pdf.size(); i++)
+  {
+    float left_unit = (pdf[i].left - min_value) / unit_range;
+    float right_unit = (pdf[i].right - min_value) / unit_range;
+    if (pdf[i].left <= action && action <= pdf[i].right)
+    {
+      // for 'action' prediced left limit will be 'action - bandwidth', or zero for edge cases where action < bandwidth
+      // for 'action' predicted right limit will be 'action + bandwidth',  or 'num_actions - 1' for edge cases
+      // where action + bandwidth > num_actions - 1
+      // resulting in a span of max 2 * bandwidth
+      if (pdf[i].left == 0 || pdf[i].right == num_actions - 1)
+      { BOOST_CHECK_LT(right_unit - left_unit, 2 * bandwidth); }
+      else
+      {
+        BOOST_CHECK_EQUAL(right_unit - left_unit, 2 * bandwidth);
+      }
+    }
+  }
+}
+
 BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 {
   uint32_t k = 4;
@@ -76,7 +125,8 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   float min_val = 1000;
   float max_val = 1100;
 
-  const VW::pmf_to_pdf::predictions_t prediction_scores{{2, 1.f}};
+  uint32_t action = 2;
+  const VW::pmf_to_pdf::predictions_t prediction_scores{{action, 1.f}};
 
   const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
 
@@ -93,12 +143,8 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   predict(*data, *data->_p_base, ec);
 
-  float sum = 0;
-  std::stringstream sout;
-  for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
-  { sum += ec.pred.pdf[i].pdf_value * (ec.pred.pdf[i].right - ec.pred.pdf[i].left); }
-
-  BOOST_CHECK_CLOSE(1.0f, sum, .0001f);
+  check_pdf_sums_to_one(ec.pred.pdf);
+  check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
 
   ec.l.cb_cont = VW::cb_continuous::continuous_label();
   ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
@@ -117,6 +163,81 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
   test_harness->finish();
   destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
+}
+
+BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
+{
+  example ec;
+  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
+  uint32_t k = 4;  // num_actions
+  uint32_t h = 2;  // bandwidth
+  float min_val = 1000;
+  float max_val = 1400;
+
+  // continuous_range = max_value - min_value;
+  // unit_range = continuous_range / (k - 1);
+
+  data->num_actions = k;
+  data->bandwidth = h;
+  data->min_value = min_val;
+  data->max_value = max_val;
+
+  for (uint32_t action = 0; action < k; action++)
+  {
+    const VW::pmf_to_pdf::predictions_t prediction_scores{{action, 1.f}};
+
+    const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
+    data->_p_base = as_singleline(test_harness);
+    ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
+
+    predict(*data, *data->_p_base, ec);
+
+    check_pdf_sums_to_one(ec.pred.pdf);
+    check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
+
+    test_harness->finish();
+    destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
+    delete_probability_density_function(&ec.pred.pdf);
+    CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
+{
+  example ec;
+  auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
+
+  uint32_t k = 16;  // num_actions
+  uint32_t h = 3;   // bandwidth
+  float min_val = 1000;
+  float max_val = 1400;
+
+  data->num_actions = k;
+  data->bandwidth = h;
+  data->min_value = min_val;
+  data->max_value = max_val;
+
+  // continuous_range = max_value - min_value;
+  // unit_range = continuous_range / (k - 1);
+
+  for (uint32_t action = 0; action < k; action++)
+  {
+    const VW::pmf_to_pdf::predictions_t prediction_scores{{action, 1.f}};
+
+    const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
+    data->_p_base = as_singleline(test_harness);
+    ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
+
+    predict(*data, *data->_p_base, ec);
+
+    check_pdf_sums_to_one(ec.pred.pdf);
+    check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
+
+    test_harness->finish();
+    destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
+    delete_probability_density_function(&ec.pred.pdf);
+    CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
+  }
 }
 
 namespace VW
