@@ -1129,7 +1129,7 @@ __DATA__
     train-sets/ref/library_train.stderr
 
 # Test 59: cb_adf, sharedfeatures
-{VW}  --dsjson --cb_adf -d train-sets/no_shared_features.json
+{VW}  --dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json
     train-sets/ref/no_shared_features.stderr
 
 # Test 60: empty test, bad builds (without make clean)
@@ -1527,13 +1527,13 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/explore_eval.predict
 
 # Test 143: Test 1 using JSON
-{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.json --json \
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.json --json --chain_hash \
     -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off
         train-sets/ref/0001.json.stderr
 
 # Test 144: cb_explore_adf with cover exploration + double robust
-{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.json --json --noconstant -p cbe_adf_cover_dr.predict
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.json --json --chain_hash --noconstant -p cbe_adf_cover_dr.predict
     train-sets/ref/cbe_adf_cover_dr.json.stderr
     pred-sets/ref/cbe_adf_cover_dr.predict
 
@@ -1543,7 +1543,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/labeled-unlabeled-mix.stderr
 
 # Test 146: cb_explore_adf with cover exploration + double robust (using more than 256 examples)
-{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test256.json --json --noconstant -p cbe_adf_cover_dr256.predict
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test256.json --json --chain_hash --noconstant -p cbe_adf_cover_dr256.predict
     train-sets/ref/cbe_adf_cover_dr256.json.stderr
     pred-sets/ref/cbe_adf_cover_dr256.predict
 
@@ -1676,7 +1676,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     train-sets/ref/audit2.stdout
 
 # Test 178 cb_adf, sharedfeatures
-{VW}  --dsjson --cb_adf -d train-sets/no_shared_features.json
+{VW}  --dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json
     train-sets/ref/no_shared_features.stderr
 
 # Test 179 warm_cb warm start
@@ -1721,7 +1721,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     pred-sets/ref/cb_adf_sm.predict
 
 # Test 189 test dsjson parser correctly processes checkpoint and dangling observation lines
-{VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --cb_explore_adf -P 1
+{VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -P 1
     train-sets/ref/b1848_dsjson_parser_regression.stderr
 
 # Test 190: one-against-all with subsampling
@@ -1776,7 +1776,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     train-sets/ref/ccb_reuse_small.stderr
 
 # Test 202: Test memory corruption issue in ccb_explore_adf where mtr was leaving a prediction behind
-{VW} --ccb_explore_adf --ring_size 20 --dsjson -d train-sets/ccb_reuse_medium.dsjson
+{VW} --ccb_explore_adf --ring_size 20 --dsjson --chain_hash -d train-sets/ccb_reuse_medium.dsjson
     train-sets/ref/ccb_reuse_medium.stderr
 
 # Test 203: Basic test of cluster. Can't use the VW replacer as it will think this is a VW command append things like --onethread
@@ -1802,7 +1802,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cache_interaction_audit.stderr
 
 # Test 207: Enable chain hash option for json example
-{VW} --audit --json -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash && \
+{VW} --audit --json --chain_hash -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash && \
     tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new && \
         rm chain_hash_json_result.cmp && \
             mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp
@@ -1857,7 +1857,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/offset_tree_002.pred
 
 # Test 216: Regression test for crash on unlabelled data
-{VW} --dsjson --slates -d train-sets/slates_simple_unlabeled.dsjson
+{VW} --dsjson --chain_hash --slates -d train-sets/slates_simple_unlabeled.dsjson
     train-sets/ref/slates_simple_unlabeled.stderr
 
 # Test 217: check plt training
@@ -1945,5 +1945,10 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} -d train-sets/big_feature_poison.dat --interactions aaaaa --noconstant --power_t 0
     train-sets/ref/big_feature_poison_2.stderr
     train-sets/ref/big_feature_poison_2.stdout
+
+# Test 237: test decision service json parsing including chain hashing
+{VW} -d train-sets/decisionservice.json --dsjson --chain_hash --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson_chain_hash.predict
+    train-sets/ref/cbe_adf_dsjson_chain_hash.stderr
+    pred-sets/ref/cbe_adf_dsjson_chain_hash.predict
 
 # Do not delete this line or the empty line above it
