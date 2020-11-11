@@ -191,7 +191,9 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
 
 static void benchmark_example_reuse(benchmark::State& state)
 {
-  std::string example_string = "1 1.0 zebra|MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures NumberOfLegs:4.0 HasStripes";
+  std::string example_string =
+      "1 1.0 zebra|MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures "
+      "NumberOfLegs:4.0 HasStripes";
 
   auto vw = VW::initialize("--quiet", nullptr, false, nullptr, nullptr);
 
