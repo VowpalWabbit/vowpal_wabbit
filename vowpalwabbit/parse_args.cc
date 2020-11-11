@@ -1683,11 +1683,14 @@ vw* initialize(
       model = &localModel;
     }
 
-    // Loads header of model files and loads the command line options into the options object.
-    load_header_merge_options(options, all, *model);
-
+    // Register framework related options including -q.  -q is needed
+    // when merging options found in model vs options in command line which happens
+    // in the next step
     std::vector<std::string> dictionary_nses;
     parse_modules(options, all, dictionary_nses);
+
+    // Loads header of model files and loads the command line options into the options object.
+    load_header_merge_options(options, all, *model);
 
     parse_sources(options, all, *model, skipModelLoad);
 
