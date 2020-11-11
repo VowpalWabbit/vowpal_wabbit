@@ -14,7 +14,7 @@ example::example()
   memset(&l, 0, sizeof(polylabel));
   memset(&pred, 0, sizeof(polyprediction));
   tag = v_init<char>();
-  pred_info.cats_pdf = v_init<VW::continuous_actions::pdf_segment>();
+  meta_info.cats_pdf_hint = v_init<VW::continuous_actions::pdf_segment>();
 }
 VW_WARNING_STATE_POP
 
@@ -23,7 +23,7 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
 {
   tag.delete_v();
-  pred_info.cats_pdf.delete_v();
+  meta_info.cats_pdf_hint.delete_v();
   if (passthrough)
   {
     delete passthrough;
@@ -38,7 +38,7 @@ example::example(example&& other) noexcept
     : example_predict(std::move(other))
     , l(other.l)
     , pred(other.pred)
-    , pred_info(other.pred_info)
+    , meta_info(other.meta_info)
     , weight(other.weight)
     , tag(std::move(other.tag))
     , example_counter(other.example_counter)
@@ -55,7 +55,7 @@ example::example(example&& other) noexcept
     , in_use(other.in_use)
 {
   other.weight = 1.f;
-  auto& other_cats_pdf = other.pred_info.cats_pdf;
+  auto& other_cats_pdf = other.meta_info.cats_pdf_hint;
   other_cats_pdf._begin = nullptr;
   other_cats_pdf._end = nullptr;
   other_cats_pdf.end_array = nullptr;
@@ -83,7 +83,7 @@ example& example::operator=(example&& other) noexcept
   example_predict::operator=(std::move(other));
   l = other.l;
   pred = other.pred;
-  pred_info = std::move(other.pred_info);
+  meta_info = std::move(other.meta_info);
   weight = other.weight;
   tag = std::move(other.tag);
   example_counter = other.example_counter;
@@ -105,7 +105,7 @@ example& example::operator=(example&& other) noexcept
   other.weight = 1.f;
 
   // We need to null out all the v_arrays to prevent double freeing during moves
-  auto& other_cats_pdf = other.pred_info.cats_pdf;
+  auto& other_cats_pdf = other.meta_info.cats_pdf_hint;
   other_cats_pdf._begin = nullptr;
   other_cats_pdf._end = nullptr;
   other_cats_pdf.end_array = nullptr;
@@ -179,7 +179,7 @@ void copy_example_label(example* dst, example* src, size_t, void (*copy_label)(v
 
 void copy_example_metadata(bool /* audit */, example* dst, example* src)
 {
-  copy_array(dst->pred_info.cats_pdf, src->pred_info.cats_pdf);
+  copy_array(dst->meta_info.cats_pdf_hint, src->meta_info.cats_pdf_hint);
   copy_array(dst->tag, src->tag);
   dst->example_counter = src->example_counter;
 

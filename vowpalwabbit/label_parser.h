@@ -14,11 +14,12 @@
 
 struct parser;
 struct shared_data;
+struct metadata_info;
 
 struct label_parser
 {
   void (*default_label)(void*);
-  void (*parse_label)(parser*, shared_data*, void*, std::vector<VW::string_view>&);
+  void (*parse_label)(parser*, shared_data*, void*, std::vector<VW::string_view>&, metadata_info& meta_info);
   void (*cache_label)(void*, io_buf& cache);
   size_t (*read_cached_label)(shared_data*, void*, io_buf& cache);
   void (*delete_label)(void*);

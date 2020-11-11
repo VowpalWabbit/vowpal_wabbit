@@ -14,7 +14,8 @@ void parse_label(label_parser& lp, parser* p, shared_data* sd, VW::string_view l
 {
   tokenize(' ', label, p->words);
   lp.default_label(&l);
-  lp.parse_label(p, sd, &l, p->words);
+  metadata_info meta_info;
+  lp.parse_label(p, sd, &l, p->words, meta_info);
 }
 
 BOOST_AUTO_TEST_CASE(multiclass_label_parser)

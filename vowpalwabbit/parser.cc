@@ -796,7 +796,8 @@ void parse_example_label(vw& all, example& ec, std::string label)
 {
   std::vector<VW::string_view> words;
   tokenize(' ', label, words);
-  all.example_parser->lbl_parser.parse_label(all.example_parser, all.example_parser->_shared_data, &ec.l, words);
+  all.example_parser->lbl_parser.parse_label(
+      all.example_parser, all.example_parser->_shared_data, &ec.l, words, ec.meta_info);
 }
 
 void empty_example(vw& /*all*/, example& ec)
@@ -805,7 +806,7 @@ void empty_example(vw& /*all*/, example& ec)
 
   ec.indices.clear();
   ec.tag.clear();
-  ec.pred_info.cats_pdf.clear();
+  ec.meta_info.cats_pdf_hint.clear();
   ec.sorted = false;
   ec.end_pass = false;
 }

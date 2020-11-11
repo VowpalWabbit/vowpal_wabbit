@@ -116,7 +116,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, std::vector<VW::string_view>& words)
+void parse_label(parser* p, shared_data* sd, void* v, std::vector<VW::string_view>& words, metadata_info& /*meta_info*/)
 {
   label* ld = (label*)v;
   ld->costs.clear();

@@ -60,9 +60,9 @@ typedef union
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
 } polyprediction;
 
-struct predict_info
+struct metadata_info
 {
-  VW::continuous_actions::probability_density_function cats_pdf;
+  VW::continuous_actions::probability_density_function cats_pdf_hint;
 };
 
 VW_WARNING_STATE_PUSH
@@ -88,8 +88,8 @@ struct example : public example_predict  // core example datatype.
   // output prediction
   polyprediction pred;
 
-  // prediction hints
-  predict_info pred_info;
+  // metadata info
+  metadata_info meta_info;
 
   float weight = 1.f;  // a relative importance weight for the example, default = 1
   v_array<char> tag;   // An identifier for the example.

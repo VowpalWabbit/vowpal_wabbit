@@ -79,7 +79,8 @@ bool test_label(void* v)
 
 void delete_simple_label(void*) {}
 
-void parse_simple_label(parser*, shared_data* sd, void* v, std::vector<VW::string_view>& words)
+void parse_simple_label(
+    parser*, shared_data* sd, void* v, std::vector<VW::string_view>& words, metadata_info& /*meta_info*/)
 {
   label_data* ld = (label_data*)v;
 

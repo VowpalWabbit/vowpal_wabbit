@@ -30,7 +30,7 @@ bool test_label(void*) { return false; }
 
 void delete_no_label(void*) {}
 
-void parse_no_label(parser*, shared_data*, void*, std::vector<VW::string_view>& words)
+void parse_no_label(parser*, shared_data*, void*, std::vector<VW::string_view>& words, metadata_info& /*meta_info*/)
 {
   switch (words.size())
   {
