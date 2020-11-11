@@ -11,17 +11,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-        # with:
-          # ref: master # master doesn't have benchmark scripts right now, change once master is merged
+        with:
+          ref: master
       - name: Install google benchmarks
         shell: bash
-        run: ./.scripts/linux/install-benchmark.sh # repo dir
+        run: ./.scripts/linux/install-benchmark.sh
       - name: Build master
         shell: bash
         run: ./.scripts/linux/build-with-benchmarks.sh
       - name: Benchmark master
         shell: bash
-        run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json # repo dir
+        run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json
       - name: Upload master benchmark results
         uses: actions/upload-artifact@v2
         with:
