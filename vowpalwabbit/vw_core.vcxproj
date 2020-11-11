@@ -151,6 +151,7 @@
     <ClInclude Include="cb_sample.h" />
     <ClInclude Include="cbify.h" />
     <ClInclude Include="ccb_label.h" />
+    <ClInclude Include="ccb_predict_data.h" />
     <ClInclude Include="classweight.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />

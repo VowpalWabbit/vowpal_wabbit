@@ -62,6 +62,7 @@ set(vw_all_headers
   cb.h
   cbify.h
   ccb_label.h
+  ccb_predict_data.h
   classweight.h
   compat.h
   conditional_contextual_bandit.h

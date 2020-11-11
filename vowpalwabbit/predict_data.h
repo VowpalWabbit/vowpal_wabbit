@@ -1,5 +1,5 @@
 #pragma once
-#include "ccb_label.h"
+#include "ccb_predict_data.h"
 
 /*
  * class predict_data
@@ -20,7 +20,6 @@
  *     features_data fd;
  *     auto& data = fd.get<data_type>();
  */
-
 
 class predict_data
 {
