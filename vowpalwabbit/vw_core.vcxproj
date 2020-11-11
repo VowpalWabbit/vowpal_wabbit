@@ -218,6 +218,7 @@
     <ClInclude Include="pmf_to_pdf.h" />
     <ClInclude Include="primitives.h" />
     <ClInclude Include="plt.h" />
+    <ClInclude Include="predict_data.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="prob_dist_cont.h" />
     <ClInclude Include="queue.h" />
@@ -349,6 +350,7 @@
     <ClCompile Include="parser.cc" />
     <ClCompile Include="pmf_to_pdf.cc" />
     <ClCompile Include="plt.cc" />
+    <ClInclude Include="predict_data.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="prob_dist_cont.cc" />
     <ClCompile Include="rand48.cc" />
