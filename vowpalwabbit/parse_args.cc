@@ -1690,7 +1690,6 @@ vw* initialize(
 
     std::vector<std::string> dictionary_nses;
     parse_modules(options, all, dictionary_nses);
-
     parse_sources(options, all, *model, skipModelLoad);
 
     // we must delay so parse_mask is fully defined.
