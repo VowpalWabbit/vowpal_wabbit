@@ -1426,7 +1426,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
 
 bool check_interaction_settings_collision(options_i& options, std::string file_options)
 {
-  bool command_line_has_interaction = options.was_supplied("q") || options.was_supplied("quadratic") ||
+  bool command_line_has_interaction = options.was_supplied("-q") || options.was_supplied("quadratic") ||
       options.was_supplied("cubic") || options.was_supplied("interactions");
 
   if (!command_line_has_interaction) return false;
@@ -1685,15 +1685,11 @@ vw* initialize(
       model = &localModel;
     }
 
-    // Register framework related options including -q.  -q is needed
-    // when merging options found in model vs options in command line which happens
-    // in the next step
-    std::vector<std::string> dictionary_nses;
-    parse_modules(options, all, dictionary_nses);
-
     // Loads header of model files and loads the command line options into the options object.
     load_header_merge_options(options, all, *model);
 
+    std::vector<std::string> dictionary_nses;
+    parse_modules(options, all, dictionary_nses);
     parse_sources(options, all, *model, skipModelLoad);
 
     // we must delay so parse_mask is fully defined.
