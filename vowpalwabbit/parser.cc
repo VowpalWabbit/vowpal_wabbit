@@ -805,6 +805,7 @@ void empty_example(vw& /*all*/, example& ec)
 
   ec.indices.clear();
   ec.tag.clear();
+  ec.pred_info.cats_pdf.clear();
   ec.sorted = false;
   ec.end_pass = false;
 }
