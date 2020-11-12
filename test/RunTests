@@ -1830,7 +1830,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt
     train-sets/ref/inv_hash_load_model.invert.txt
     train-sets/ref/inv_hash_load_model.readable.txt
-        
+
 # Test 211: cb_explore_adf with rnd exploration
 {VW} --cb_explore_adf --rnd 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_rnd.predict
     train-sets/ref/cbe_adf_rnd.stderr
