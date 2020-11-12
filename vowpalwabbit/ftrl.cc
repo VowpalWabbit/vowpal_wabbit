@@ -394,6 +394,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     learn_ptr = learn_coin_betting;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
+    learn_returns_prediction = true;
   }
 
   b->data.ftrl_alpha = b->ftrl_alpha;
