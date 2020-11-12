@@ -27,7 +27,7 @@ elseif(${CMAKE_VERSION} VERSION_LESS "3.18.0")
   find_package(Python ${PY_VERSION} EXACT COMPONENTS Development REQUIRED)
 else()
   # This was fixed in 3.18 to allow for just the Development.Module component to be used
-  find_package(Python COMPONENTS Development.Module REQUIRED)
+  find_package(Python ${PY_VERSION} EXACT COMPONENTS Development.Module REQUIRED)
 endif()
 find_package(Boost REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
 
