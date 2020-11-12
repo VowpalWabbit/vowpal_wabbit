@@ -11,8 +11,6 @@
 #include "debug_log.h"
 #include <memory>
 #include "scope_exit.h"
-#include "vw_versions.h"
-#include "version.h"
 
 using namespace VW::LEARNER;
 using namespace ACTION_SCORE;
@@ -48,8 +46,6 @@ struct cb_explore
   bool nounif;
 
   size_t counter;
-
-  VW::version_struct model_file_version;
 
   ~cb_explore()
   {
@@ -161,9 +157,8 @@ void get_cover_probabilities(cb_explore& data, single_learner& /* base */, examp
   uint32_t num_actions = data.cbcs.num_actions;
 
   float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(data.counter * num_actions));
-  bool update_zero_elements = data.model_file_version <= VERSION_FILE_WITH_CB_ADF_SAVE ? false : !data.nounif;
 
-  enforce_minimum_probability(min_prob * num_actions, update_zero_elements, begin_scores(probs), end_scores(probs));
+  enforce_minimum_probability(min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
 }
 
 template <bool is_learn>
@@ -319,7 +314,6 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
 
   data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
-  data->model_file_version = all.model_file_ver;
 
   // If neither cb nor cats_tree are present on the reduction stack then
   // add cb to the reduction stack as the default reduction for cb_explore.
