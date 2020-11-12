@@ -734,23 +734,15 @@ base_learner* cbify_setup(options_i& options, vw& all)
     if (use_cs)
     {
       l = &init_cost_sensitive_learner(
-<<<<<<< HEAD
-          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, 1);
+          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.example_parser, 1);
       all.label_type = label_type_t::cs;
     }
-=======
-          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.example_parser, 1);
->>>>>>> upstream/master
     else
     {
       l = &init_multiclass_learner(
-<<<<<<< HEAD
-          data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, 1);
+          data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.example_parser, 1);
       all.label_type = label_type_t::mc;
     }
-=======
-            data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.example_parser, 1);
->>>>>>> upstream/master
   }
   else
   {
