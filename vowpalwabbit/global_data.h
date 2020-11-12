@@ -513,6 +513,7 @@ struct vw
 
 private:
   polyprediction _predict_buffer;
+  float _loss_buffer = 0.f;
 
   void cleanup_prediction();
   void copy_prediction(const polyprediction& from_pred);

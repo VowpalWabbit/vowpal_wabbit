@@ -34,7 +34,8 @@ void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
 
   ec.pred.scalar = link(ec.pred.scalar);
   VW_DBG(ec) << "ex#= " << ec.example_counter << ", offset=" << ec.ft_offset << ", lbl=" << ec.l.simple.label
-             << ", pred= " << ec.pred.scalar << ", wt=" << ec.weight << std::endl;
+             << ", pred= " << ec.pred.scalar << ", wt=" << ec.weight << ", gd.raw=" << ec.partial_prediction
+             << ", loss=" << ec.loss << std::endl;
 }
 
 template <float (*link)(float in)>
