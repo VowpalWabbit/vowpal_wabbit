@@ -79,6 +79,7 @@ option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by defaul
 
 option(VW_INSTALL "Add install targets." ON)
 option(BUILD_TESTS "Build and enable tests." ON)
+option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
@@ -261,6 +262,10 @@ endif()
 
 if(BUILD_SLIM_VW)
   add_subdirectory(vowpalwabbit/slim)
+endif()
+
+if(BUILD_BENCHMARKS)
+  add_subdirectory(test/benchmarks)
 endif()
 
 if(BUILD_TESTS)

@@ -863,7 +863,7 @@ public:
       }
     }
 
-    if (ctx.all->chain_hash) { ctx.CurrentNamespace().AddFeature(ctx.all, ctx.key, str); }
+    if (ctx.all->chain_hash_json) { ctx.CurrentNamespace().AddFeature(ctx.all, ctx.key, str); }
     else
     {
       char* prepend = (char*)str - ctx.key_length;

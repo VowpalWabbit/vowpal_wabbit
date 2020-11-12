@@ -21,8 +21,8 @@ do
             Foreground="$1"
             ;;
         --json)
-            JSON="$1"
-            ;;    
+            JSON="$1 --chain_hash"
+            ;;
         *)
             echo "$NAME: unknown argument $1"
             exit 1
@@ -32,7 +32,7 @@ do
     then
         case "$2" in
             --json)
-                JSON="$2"
+                JSON="$2 --chain_hash"
                 ;;
             *)
                 echo "$NAME: unknown argument $2"
