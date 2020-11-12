@@ -13,7 +13,7 @@
 // TODO: Make unit test dig out and verify features.
 BOOST_AUTO_TEST_CASE(parse_json_simple)
 {
-  auto vw = VW::initialize("--json --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   std::string json_text = R"(
     {
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cb)
       ]
     })";
 
-  auto vw = VW::initialize("--cb_adf --json --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--cb_adf --json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   auto examples = parse_json(*vw, json_text);
   BOOST_CHECK_EQUAL(examples.size(), 4);
 
@@ -105,8 +105,9 @@ BOOST_AUTO_TEST_CASE(parse_json_cats)
 }
 )";
 
-  auto vw = VW::initialize("--json --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet",
-      nullptr, false, nullptr, nullptr);
+  auto vw =
+      VW::initialize("--json --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet",
+          nullptr, false, nullptr, nullptr);
   auto examples = parse_json(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
@@ -139,8 +140,9 @@ BOOST_AUTO_TEST_CASE(parse_json_cats_no_label)
   "M":1
 }
 )";
-  auto vw = VW::initialize("--json -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet",
-      nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(
+      "--json --chain_hash -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
+      false, nullptr, nullptr);
   auto examples = parse_json(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
@@ -206,7 +208,8 @@ BOOST_AUTO_TEST_CASE(parse_json_ccb)
       ]
     })";
 
-  auto vw = VW::initialize("--ccb_explore_adf --json --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw =
+      VW::initialize("--ccb_explore_adf --json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   auto examples = parse_json(*vw, json_text);
 
@@ -274,7 +277,8 @@ BOOST_AUTO_TEST_CASE(parse_json_cb_as_ccb)
       ]
     })";
 
-  auto vw = VW::initialize("--ccb_explore_adf --json --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw =
+      VW::initialize("--ccb_explore_adf --json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
   auto examples = parse_json(*vw, json_text);
 
@@ -350,7 +354,8 @@ BOOST_AUTO_TEST_CASE(parse_json_slates_dom_parser)
 )";
 
   // Assert parsed values against what they should be
-  auto slates_vw = VW::initialize("--slates --dsjson --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto slates_vw =
+      VW::initialize("--slates --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   auto examples = parse_json(*slates_vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 8);
