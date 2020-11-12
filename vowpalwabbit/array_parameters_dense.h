@@ -12,12 +12,12 @@ typedef float weight;
 template <typename T>
 class dense_iterator
 {
- private:
+private:
   T* _current;
   T* _begin;
   uint32_t _stride;
 
- public:
+public:
   typedef std::forward_iterator_tag iterator_category;
   typedef T value_type;
   typedef std::ptrdiff_t difference_type;
@@ -42,13 +42,13 @@ class dense_iterator
 
 class dense_parameters
 {
- private:
+private:
   weight* _begin;
   uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
   uint32_t _stride_shift;
   bool _seeded;  // whether the instance is sharing model state with others
 
- public:
+public:
   typedef dense_iterator<weight> iterator;
   typedef dense_iterator<const weight> const_iterator;
   dense_parameters(size_t length, uint32_t stride_shift = 0)
@@ -85,8 +85,7 @@ class dense_parameters
 
   void shallow_copy(const dense_parameters& input)
   {
-    if (!_seeded)
-      free(_begin);
+    if (!_seeded) free(_begin);
     _begin = input._begin;
     _weight_mask = input._weight_mask;
     _stride_shift = input._stride_shift;
@@ -95,7 +94,7 @@ class dense_parameters
 
   inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
 
-  template<typename Lambda>
+  template <typename Lambda>
   void set_default(Lambda&& default_func)
   {
     auto iter = begin();
@@ -122,7 +121,7 @@ class dense_parameters
   void stride_shift(uint32_t stride_shift) { _stride_shift = stride_shift; }
 
 #ifndef _WIN32
-#ifndef DISABLE_SHARED_WEIGHTS
+#  ifndef DISABLE_SHARED_WEIGHTS
   void share(size_t length)
   {
     float* shared_weights = (float*)mmap(
@@ -133,7 +132,7 @@ class dense_parameters
     free(_begin);
     _begin = dest;
   }
-#endif
+#  endif
 #endif
 
   ~dense_parameters()

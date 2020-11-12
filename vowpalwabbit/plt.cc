@@ -164,7 +164,8 @@ void predict(plt& p, single_learner& base, example& ec)
   p.true_labels.clear();
   for (auto label : ec.l.multilabels.label_v)
   {
-    if (label < p.k) p.true_labels.insert(label);
+    if (label < p.k)
+      p.true_labels.insert(label);
     else
       std::cout << "label " << label << " is not in {0," << p.k - 1 << "} Model can't predict it." << std::endl;
   }
@@ -191,7 +192,8 @@ void predict(plt& p, single_learner& base, example& ec)
         float cp_child = node.p * (1.f / (1.f + exp(-p.node_preds[i].scalar)));
         if (cp_child > p.threshold)
         {
-          if (n_child < p.ti) p.node_queue.push_back({n_child, cp_child});
+          if (n_child < p.ti)
+            p.node_queue.push_back({n_child, cp_child});
           else
           {
             uint32_t l = n_child - p.ti;
@@ -322,7 +324,7 @@ base_learner* plt_setup(options_i& options, vw& all)
 {
   auto tree = scoped_calloc_or_throw<plt>();
   option_group_definition new_options("Probabilistic Label Tree ");
-  new_options.add(make_option("plt", tree->k).keep().help("Probabilistic Label Tree with <k> labels"))
+  new_options.add(make_option("plt", tree->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))
       .add(make_option("kary_tree", tree->kary).keep().default_value(2).help("use <k>-ary tree"))
       .add(make_option("threshold", tree->threshold)
                .default_value(0.5)
@@ -330,9 +332,8 @@ base_learner* plt_setup(options_i& options, vw& all)
       .add(make_option("top_k", tree->top_k)
                .default_value(0)
                .help("predict top-<k> labels instead of labels above threshold"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("plt")) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   tree->all = &all;
 
@@ -372,12 +373,11 @@ base_learner* plt_setup(options_i& options, vw& all)
     l = &init_learner(
         tree, as_singleline(setup_base(options, all)), learn, predict<true>, tree->t, prediction_type_t::multilabels);
 
-  all.p->lp = MULTILABEL::multilabel;
+  all.example_parser->lbl_parser = MULTILABEL::multilabel;
   all.label_type = label_type_t::multi;
   all.delete_prediction = MULTILABEL::multilabel.delete_label;
 
   // force logistic loss for base classifiers
-  delete (all.loss);
   all.loss = getLossFunction(all, "logistic");
 
   l->set_finish_example(finish_example);

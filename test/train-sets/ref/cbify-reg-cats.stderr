@@ -9,6 +9,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/regression/cbify-reg.dat
 num sources = 1
+Enabled reductions: ftrl, scorer, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats, cbify
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.155338 0.155338            1            1.0 3879.0000 185.1211       10

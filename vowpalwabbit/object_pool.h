@@ -11,15 +11,15 @@
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
 #ifdef _M_CEE
-#pragma managed(push, off)
-#undef _M_CEE
-#include <mutex>
-#include <condition_variable>
-#define _M_CEE 001
-#pragma managed(pop)
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <mutex>
+#  include <condition_variable>
+#  define _M_CEE 001
+#  pragma managed(pop)
 #else
-#include <mutex>
-#include <condition_variable>
+#  include <mutex>
+#  include <condition_variable>
 #endif
 
 namespace VW
@@ -65,10 +65,7 @@ struct no_lock_object_pool
 
   T* get_object()
   {
-    if (m_pool.empty())
-    {
-      new_chunk(m_chunk_size);
-    }
+    if (m_pool.empty()) { new_chunk(m_chunk_size); }
 
     auto obj = m_pool.front();
     m_pool.pop();
@@ -96,31 +93,22 @@ struct no_lock_object_pool
   {
     for (auto& bound : m_chunk_bounds)
     {
-      if (obj >= bound.first && obj <= bound.second)
-      {
-        return true;
-      }
+      if (obj >= bound.first && obj <= bound.second) { return true; }
     }
 
     return false;
   }
 
- private:
+private:
   void new_chunk(size_t size)
   {
-    if (size == 0)
-    {
-      return;
-    }
+    if (size == 0) { return; }
 
     m_chunks.push_back(std::unique_ptr<T[]>(new T[size]));
     auto& chunk = m_chunks.back();
     m_chunk_bounds.push_back({&chunk[0], &chunk[size - 1]});
 
-    for (size_t i = 0; i < size; i++)
-    {
-      m_pool.push(m_initializer(&chunk[i]));
-    }
+    for (size_t i = 0; i < size; i++) { m_pool.push(m_initializer(&chunk[i])); }
   }
 
   TInitializer m_initializer;
@@ -152,10 +140,7 @@ struct value_object_pool
 
   T get_object()
   {
-    if (m_pool.empty())
-    {
-      return m_allocator();
-    }
+    if (m_pool.empty()) { return m_allocator(); }
 
     auto obj = m_pool.top();
     m_pool.pop();
@@ -166,7 +151,7 @@ struct value_object_pool
 
   size_t size() const { return m_pool.size(); }
 
- private:
+private:
   std::stack<T> m_pool;
   TAllocator m_allocator;
   TDeleter m_deleter;
@@ -211,7 +196,7 @@ struct object_pool
     return inner_pool.is_from_pool(obj);
   }
 
-  private:
+private:
   mutable std::mutex m_lock;
   no_lock_object_pool<T, TInitializer, TCleanup> inner_pool;
 };

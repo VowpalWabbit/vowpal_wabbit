@@ -146,16 +146,11 @@ void copy_example_to_adf(cbify& data, example& ec)
     for (features& fs : eca)
     {
       for (feature_index& idx : fs.indicies)
-      {
-        idx = ((((idx >> ss) * 28904713) + 4832917 * (uint64_t)a) << ss) & mask;
-      }
+      { idx = ((((idx >> ss) * 28904713) + 4832917 * (uint64_t)a) << ss) & mask; }
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l))
-    {
-      eca.tag.push_back('n');
-    }
+    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l)) { eca.tag.push_back('n'); }
   }
 }
 
@@ -348,8 +343,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   cl.action = chosen_action + 1;
   cl.probability = ec.pred.a_s[chosen_action].score;
 
-  if (!cl.action)
-    THROW("No action with non-zero probability found!");
+  if (!cl.action) THROW("No action with non-zero probability found!");
   if (use_cs)
     cl.cost = loss_cs(data, csl.costs, cl.action);
   else
@@ -359,8 +353,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   data.cb_label.costs.push_back(cl);
   ec.l.cb = data.cb_label;
 
-  if (is_learn)
-    base.learn(ec);
+  if (is_learn) base.learn(ec);
 
   data.a_s = ec.pred.a_s;
   data.a_s.clear();
@@ -398,8 +391,7 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   cl.action = out_ec.pred.a_s[chosen_action].action + 1;
   cl.probability = out_ec.pred.a_s[chosen_action].score;
 
-  if (!cl.action)
-    THROW("No action with non-zero probability found!");
+  if (!cl.action) THROW("No action with non-zero probability found!");
 
   if (use_cs)
     cl.cost = loss_cs(data, csl.costs, cl.action);
@@ -411,8 +403,7 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   lab.costs.clear();
   lab.costs.push_back(cl);
 
-  if (is_learn)
-    base.learn(data.adf_data.ecs);
+  if (is_learn) base.learn(data.adf_data.ecs);
 
   ec.pred.multiclass = cl.action;
 }
@@ -436,12 +427,9 @@ template <bool is_learn>
 void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 {
   // change label and pred data for cb
-  if (data.cs_costs.size() < ec_seq.size())
-    data.cs_costs.resize(ec_seq.size());
-  if (data.cb_costs.size() < ec_seq.size())
-    data.cb_costs.resize(ec_seq.size());
-  if (data.cb_as.size() < ec_seq.size())
-    data.cb_as.resize(ec_seq.size());
+  if (data.cs_costs.size() < ec_seq.size()) data.cs_costs.resize(ec_seq.size());
+  if (data.cb_costs.size() < ec_seq.size()) data.cb_costs.resize(ec_seq.size());
+  if (data.cb_as.size() < ec_seq.size()) data.cb_as.resize(ec_seq.size());
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
     auto& ec = *ec_seq[i];
@@ -465,8 +453,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   cl.action = out_ec.pred.a_s[chosen_action].action + 1;
   cl.probability = out_ec.pred.a_s[chosen_action].score;
 
-  if (!cl.action)
-    THROW("No action with non-zero probability found!");
+  if (!cl.action) THROW("No action with non-zero probability found!");
 
   cl.cost = loss_csldf(data, data.cs_costs, cl.action);
 
@@ -499,10 +486,8 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 {
   const auto& costs = ec.l.cs.costs;
 
-  if (example_is_newline(ec))
-    return;
-  if (COST_SENSITIVE::ec_is_example_header(ec))
-    return;
+  if (example_is_newline(ec)) return;
+  if (COST_SENSITIVE::ec_is_example_header(ec)) return;
 
   all.sd->total_features += ec.num_features;
 
@@ -514,8 +499,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
   {
     for (auto const& cost : costs)
     {
-      if (hit_loss)
-        break;
+      if (hit_loss) break;
       if (predicted_class == cost.class_index)
       {
         loss = cost.x;
@@ -535,8 +519,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
     std::stringstream outputStringStream(outputString);
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0)
-        outputStringStream << ' ';
+      if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
@@ -548,8 +531,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
 void output_example_seq(vw& all, multi_ex& ec_seq)
 {
-  if (ec_seq.empty())
-    return;
+  if (ec_seq.empty()) return;
   all.sd->weighted_labeled_examples += ec_seq[0]->weight;
   all.sd->example_number++;
 
@@ -658,6 +640,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   new_options
       .add(make_option("cbify", num_actions)
                .keep()
+               .necessary()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
       .add(make_option("cbify_cs", use_cs).help("Consume cost-sensitive classification examples instead of multiclass"))
       .add(make_option("cbify_reg", use_reg)
@@ -683,10 +666,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
 
-  options.add_and_parse(new_options);
-
-  if (!options.was_supplied("cbify"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->regression_data.num_actions = num_actions;
   data->use_adf = options.was_supplied("cb_explore_adf");
@@ -704,8 +684,8 @@ base_learner* cbify_setup(options_i& options, vw& all)
     if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
     { THROW("error: min and max values must be supplied with cbify_reg"); }
 
-    if (use_discrete && options.was_supplied("cats"))
-    { THROW("error: incompatible options: cb_discrete and cats"); } else if (use_discrete)
+    if (use_discrete && options.was_supplied("cats")) { THROW("error: incompatible options: cb_discrete and cats"); }
+    else if (use_discrete)
     {
       std::stringstream ss;
       ss << num_actions;
@@ -754,22 +734,30 @@ base_learner* cbify_setup(options_i& options, vw& all)
     if (use_cs)
     {
       l = &init_cost_sensitive_learner(
+<<<<<<< HEAD
           data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, 1);
       all.label_type = label_type_t::cs;
     }
+=======
+          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.example_parser, 1);
+>>>>>>> upstream/master
     else
     {
       l = &init_multiclass_learner(
+<<<<<<< HEAD
           data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, 1);
       all.label_type = label_type_t::mc;
     }
+=======
+            data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.example_parser, 1);
+>>>>>>> upstream/master
   }
   else
   {
     single_learner* base = as_singleline(setup_base(options, all));
     if (use_reg)
     {
-      all.p->lp = simple_label;
+      all.example_parser->lbl_parser = simple_label_parser;
       all.label_type = label_type_t::simple;
       if (use_discrete)
       {
@@ -787,12 +775,13 @@ base_learner* cbify_setup(options_i& options, vw& all)
     else if (use_cs)
     {
       l = &init_cost_sensitive_learner(
-          data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.p, 1);
+          data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.example_parser, 1);
       all.label_type = label_type_t::cs;
     }
     else
     {
-      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1);
+      l = &init_multiclass_learner(
+          data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.example_parser, 1);
       all.label_type = label_type_t::mc;
     }
   }
@@ -808,22 +797,20 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   option_group_definition new_options("Make csoaa_ldf into Contextual Bandit");
   new_options
-      .add(make_option("cbify_ldf", cbify_ldf_option).keep().help("Convert csoaa_ldf into a contextual bandit problem"))
+      .add(make_option("cbify_ldf", cbify_ldf_option)
+               .keep()
+               .necessary()
+               .help("Convert csoaa_ldf into a contextual bandit problem"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("cbify_ldf"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->app_seed = uniform_hash("vw", 2, 0);
   data->all = &all;
   data->use_adf = true;
 
-  if (!options.was_supplied("cb_explore_adf"))
-  {
-    options.insert("cb_explore_adf", "");
-  }
+  if (!options.was_supplied("cb_explore_adf")) { options.insert("cb_explore_adf", ""); }
   options.insert("cb_min_cost", std::to_string(data->loss0));
   options.insert("cb_max_cost", std::to_string(data->loss1));
 
@@ -839,7 +826,7 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
       data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type_t::multiclass);
 
   l.set_finish_example(finish_multiline_example);
-  all.p->lp = COST_SENSITIVE::cs_label;
+  all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
   all.delete_prediction = nullptr;
 
   return make_base(l);

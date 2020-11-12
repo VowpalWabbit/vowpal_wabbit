@@ -27,7 +27,7 @@ namespace CB_ADF
 {
 struct cb_adf
 {
- private:
+private:
   shared_data* _sd;
   // model_file_ver is only used to conditionally run save_load(). In the setup function
   // model_file_ver is not always set.
@@ -49,7 +49,7 @@ struct cb_adf
   const bool _rank_all;
   const float _clip_p;
 
- public:
+public:
   template <bool is_learn>
   void do_actual_learning(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
   bool update_statistics(example& ec, multi_ex* ec_seq);
@@ -84,7 +84,7 @@ struct cb_adf
     _gen_cs.pred_scores.costs.delete_v();
   }
 
- private:
+private:
   void learn_IPS(multi_learner& base, multi_ex& examples);
   void learn_DR(multi_learner& base, multi_ex& examples);
   void learn_DM(multi_learner& base, multi_ex& examples);
@@ -94,7 +94,7 @@ struct cb_adf
   void learn_MTR(multi_learner& base, multi_ex& examples);
 };
 
-CB::cb_class get_observed_cost(multi_ex& examples)
+CB::cb_class get_observed_cost(multi_ex& examples, bool skip_example_header)
 {
   CB::label* ld = nullptr;
   int index = -1;
@@ -103,6 +103,8 @@ CB::cb_class get_observed_cost(multi_ex& examples)
   size_t i = 0;
   for (example*& ec : examples)
   {
+    if (skip_example_header && CB::ec_is_example_header(*ec)) { continue; }
+
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
     {
       ld = &ec->l.cb;
@@ -205,8 +207,7 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
     else
       examples[current_action]->weight *= example_weight * action_score.score;
 
-    if (examples[current_action]->weight <= 1e-15)
-      examples[current_action]->weight = 0;
+    if (examples[current_action]->weight <= 1e-15) examples[current_action]->weight = 0;
   }
 
   // Do actual training
@@ -264,24 +265,21 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 // Validates a multiline example collection as a valid sequence for action dependent features format.
 example* test_adf_sequence(multi_ex& ec_seq)
 {
-  if (ec_seq.empty())
-    THROW("cb_adf: At least one action must be provided for an example to be valid.");
+  if (ec_seq.empty()) THROW("cb_adf: At least one action must be provided for an example to be valid.");
 
   uint32_t count = 0;
   example* ret = nullptr;
   for (auto* ec : ec_seq)
   {
     // Check if there is more than one cost for this example.
-    if (ec->l.cb.costs.size() > 1)
-      THROW("cb_adf: badly formatted example, only one cost can be known.");
+    if (ec->l.cb.costs.size() > 1) THROW("cb_adf: badly formatted example, only one cost can be known.");
 
     // Check whether the cost was initialized to a value.
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
     {
       ret = ec;
       count += 1;
-      if (count > 1)
-        THROW("cb_adf: badly formatted example, only one line can have a cost");
+      if (count > 1) THROW("cb_adf: badly formatted example, only one line can have a cost");
     }
   }
 
@@ -292,7 +290,7 @@ template <bool is_learn>
 void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
-  _gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
+  _gen_cs.known_cost = get_observed_cost(ec_seq, false);  // need to set for test case
   bool learn = is_learn && test_adf_sequence(ec_seq) != nullptr;
   if (learn)
   {
@@ -344,8 +342,7 @@ void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& fi
   for (auto& sink : final_prediction_sink)
   {
     ssize_t t = sink->write(temp, 1);
-    if (t != 1)
-      std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != 1) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
   }
 }
 
@@ -375,16 +372,12 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
 
 void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
-  if (example_is_newline_not_header(ec))
-    return;
+  if (example_is_newline_not_header(ec)) return;
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (auto& sink : all.final_prediction_sink)
-  {
-    all.print_by_ref(sink.get(), (float)action, 0, ec.tag);
-  }
+  for (auto& sink : all.final_prediction_sink) { all.print_by_ref(sink.get(), (float)action, 0, ec.tag); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -394,8 +387,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0)
-        outputStringStream << ' ';
+      if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
@@ -408,8 +400,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   const auto& costs = ec.l.cb.costs;
 
-  if (example_is_newline_not_header(ec))
-    return;
+  if (example_is_newline_not_header(ec)) return;
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
@@ -421,8 +412,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     std::stringstream outputStringStream(outputString);
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0)
-        outputStringStream << ' ';
+      if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
@@ -441,8 +431,7 @@ void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
     {
       output_example(all, data, **(ec_seq.begin()), &(ec_seq));
 
-      if (all.raw_prediction != nullptr)
-        all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
+      if (all.raw_prediction != nullptr) all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag);
     }
   }
 }
@@ -459,8 +448,7 @@ void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
 
 void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 {
-  if (c.get_model_file_ver() != nullptr && *c.get_model_file_ver() < VERSION_FILE_WITH_CB_ADF_SAVE)
-    return;
+  if (c.get_model_file_ver() != nullptr && *c.get_model_file_ver() < VERSION_FILE_WITH_CB_ADF_SAVE) return;
   std::stringstream msg;
   msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
   bin_text_read_write_fixed(
@@ -491,6 +479,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   new_options
       .add(make_option("cb_adf", cb_adf_option)
                .keep()
+               .necessary()
                .help("Do Contextual Bandit learning with multiline action dependent features."))
       .add(make_option("rank_all", rank_all).keep().help("Return actions sorted by score order"))
       .add(make_option("no_predict", no_predict).help("Do not do a prediction when training"))
@@ -501,10 +490,8 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
-  options.add_and_parse(new_options);
 
-  if (!cb_adf_option)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of this option in all cases.
   if (!options.was_supplied("cb_type"))
@@ -548,26 +535,17 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   if ((!options.was_supplied("csoaa_ldf") && !options.was_supplied("wap_ldf")) || rank_all ||
       !options.was_supplied("csoaa_rank"))
   {
-    if (!options.was_supplied("csoaa_ldf"))
-    {
-      options.insert("csoaa_ldf", "multiline");
-    }
+    if (!options.was_supplied("csoaa_ldf")) { options.insert("csoaa_ldf", "multiline"); }
 
-    if (!options.was_supplied("csoaa_rank"))
-    {
-      options.insert("csoaa_rank", "");
-    }
+    if (!options.was_supplied("csoaa_rank")) { options.insert("csoaa_rank", ""); }
   }
 
-  if (options.was_supplied("baseline") && check_baseline_enabled)
-  {
-    options.insert("check_enabled", "");
-  }
+  if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
   auto ld = scoped_calloc_or_throw<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict);
 
   auto base = as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
+  all.example_parser->lbl_parser = CB::cb_label;
   all.label_type = label_type_t::cb;
 
   cb_adf* bare = ld.get();

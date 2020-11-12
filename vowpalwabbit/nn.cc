@@ -23,7 +23,7 @@ constexpr uint64_t nn_constant = 533357803;
 struct nn
 {
   uint32_t k;
-  loss_function* squared_loss;
+  std::unique_ptr<loss_function> squared_loss;
   example output_layer;
   example hiddenbias;
   example outputweight;
@@ -47,7 +47,6 @@ struct nn
 
   ~nn()
   {
-    delete squared_loss;
     free(hidden_units);
     free(dropped_out);
     free(hidden_units_pred);
@@ -137,16 +136,14 @@ void finish_setup(nn& n, vw& all)
 
 void end_pass(nn& n)
 {
-  if (n.all->bfgs)
-    n.xsubi = n.save_xsubi;
+  if (n.all->bfgs) n.xsubi = n.save_xsubi;
 }
 
 template <bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
   bool shouldOutput = n.all->raw_prediction != nullptr;
-  if (!n.finished_setup)
-    finish_setup(n, *(n.all));
+  if (!n.finished_setup) finish_setup(n, *(n.all));
   shared_data sd;
   memcpy(&sd, n.all->sd, sizeof(shared_data));
   {
@@ -158,7 +155,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     float save_min_label;
     float save_max_label;
     float dropscale = n.dropout ? 2.0f : 1.0f;
-    loss_function* save_loss = n.all->loss;
+    auto loss_function_swap_guard = VW::swap_guard(n.all->loss, n.squared_loss);
 
     polyprediction* hidden_units = n.hidden_units_pred;
     polyprediction* hiddenbias_pred = n.hiddenbias_pred;
@@ -167,7 +164,6 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     std::ostringstream outputStringStream;
 
     n.all->set_minmax = noop_mm;
-    n.all->loss = n.squared_loss;
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = hidden_min_activation;
     save_max_label = n.all->sd->max_label;
@@ -175,8 +171,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 
     uint64_t save_ft_offset = ec.ft_offset;
 
-    if (n.multitask)
-      ec.ft_offset = 0;
+    if (n.multitask) ec.ft_offset = 0;
 
     n.hiddenbias.ft_offset = ec.ft_offset;
 
@@ -208,13 +203,12 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     if (shouldOutput)
       for (unsigned int i = 0; i < n.k; ++i)
       {
-        if (i > 0)
-          outputStringStream << ' ';
+        if (i > 0) outputStringStream << ' ';
         outputStringStream << i << ':' << hidden_units[i].scalar << ','
                            << fasttanh(hidden_units[i].scalar);  // TODO: huh, what was going on here?
       }
 
-    n.all->loss = save_loss;
+    loss_function_swap_guard.do_swap();
     n.all->set_minmax = save_set_minmax;
     n.all->sd->min_label = save_min_label;
     n.all->sd->max_label = save_max_label;
@@ -225,7 +219,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     float save_final_prediction = 0;
     float save_ec_loss = 0;
 
-CONVERSE:  // That's right, I'm using goto.  So sue me.
+  CONVERSE:  // That's right, I'm using goto.  So sue me.
 
     n.output_layer.total_sum_feat_sq = 1;
     n.output_layer.feature_space[nn_output_namespace].sum_feat_sq = 1;
@@ -233,7 +227,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
     n.outputweight.ft_offset = ec.ft_offset;
 
     n.all->set_minmax = noop_mm;
-    n.all->loss = n.squared_loss;
+    auto loss_function_swap_guard_converse_block = VW::swap_guard(n.all->loss, n.squared_loss);
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = -1;
     save_max_label = n.all->sd->max_label;
@@ -262,7 +256,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
       }
     }
 
-    n.all->loss = save_loss;
+    loss_function_swap_guard_converse_block.do_swap();
     n.all->set_minmax = save_set_minmax;
     n.all->sd->min_label = save_min_label;
     n.all->sd->max_label = save_max_label;
@@ -328,7 +322,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
 
         if (fabs(gradient) > 0)
         {
-          n.all->loss = n.squared_loss;
+          auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss, n.squared_loss);
           n.all->set_minmax = noop_mm;
           save_min_label = n.all->sd->min_label;
           n.all->sd->min_label = hidden_min_activation;
@@ -356,7 +350,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
             }
           }
 
-          n.all->loss = save_loss;
+          loss_function_swap_guard_learn_block.do_swap();
           n.all->set_minmax = save_set_minmax;
           n.all->sd->min_label = save_min_label;
           n.all->sd->max_label = save_max_label;
@@ -376,10 +370,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
 
     if (n.dropout && !converse)
     {
-      for (unsigned int i = 0; i < n.k; ++i)
-      {
-        dropped_out[i] = !dropped_out[i];
-      }
+      for (unsigned int i = 0; i < n.k; ++i) { dropped_out[i] = !dropped_out[i]; }
 
       converse = true;
       goto CONVERSE;
@@ -423,17 +414,16 @@ base_learner* nn_setup(options_i& options, vw& all)
   auto n = scoped_calloc_or_throw<nn>();
   bool meanfield = false;
   option_group_definition new_options("Neural Network");
-  new_options.add(make_option("nn", n->k).keep().help("Sigmoidal feedforward network with <k> hidden units"))
+  new_options
+      .add(make_option("nn", n->k).keep().necessary().help("Sigmoidal feedforward network with <k> hidden units"))
       .add(make_option("inpass", n->inpass)
                .keep()
                .help("Train or test sigmoidal feedforward network with input passthrough."))
       .add(make_option("multitask", n->multitask).keep().help("Share hidden layer across all reduced tasks."))
       .add(make_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout."))
       .add(make_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field."));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("nn"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   n->all = &all;
   n->_random_state = all.get_random_state();
@@ -471,8 +461,7 @@ base_learner* nn_setup(options_i& options, vw& all)
   nn& nv = *n.get();
   learner<nn, example>& l =
       init_learner(n, base, predict_or_learn_multi<true, true>, predict_or_learn_multi<false, true>, n->k + 1);
-  if (nv.multitask)
-    l.set_multipredict(multipredict);
+  if (nv.multitask) l.set_multipredict(multipredict);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);
 

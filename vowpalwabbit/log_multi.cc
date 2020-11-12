@@ -14,7 +14,7 @@ using namespace VW::config;
 
 class node_pred
 {
- public:
+public:
   double Ehk;
   float norm_Ehk;
   uint32_t nk;
@@ -23,15 +23,9 @@ class node_pred
 
   bool operator==(node_pred v) const { return (label == v.label); }
 
-  bool operator>(node_pred v) const
-  {
-    return label > v.label;
-  }
+  bool operator>(node_pred v) const { return label > v.label; }
 
-  bool operator<(node_pred v) const
-  {
-    return label < v.label;
-  }
+  bool operator<(node_pred v) const { return label < v.label; }
 
   node_pred() = default;
   node_pred(uint32_t l)
@@ -319,8 +313,7 @@ void predict(log_multi& b, single_learner& base, example& ec)
 void learn(log_multi& b, single_learner& base, example& ec)
 {
   //    verify_min_dfs(b, b.nodes[0]);
-  if (ec.l.multi.label == (uint32_t)-1 || b.progress)
-    predict(b, base, ec);
+  if (ec.l.multi.label == (uint32_t)-1 || b.progress) predict(b, base, ec);
 
   if (ec.l.multi.label != (uint32_t)-1)  // if training the tree
   {
@@ -360,17 +353,12 @@ void save_node_stats(log_multi& d)
         b->nodes[i].Eh / b->nodes[i].n, b->nodes[i].n);
 
     fprintf(fp, "Label:, ");
-    for (j = 0; j < b->nodes[i].preds.size(); j++)
-    {
-      fprintf(fp, "%6d,", (int)b->nodes[i].preds[j].label);
-    }
+    for (j = 0; j < b->nodes[i].preds.size(); j++) { fprintf(fp, "%6d,", (int)b->nodes[i].preds[j].label); }
     fprintf(fp, "\n");
 
     fprintf(fp, "Ehk:, ");
     for (j = 0; j < b->nodes[i].preds.size(); j++)
-    {
-      fprintf(fp, "%7.4f,", b->nodes[i].preds[j].Ehk / b->nodes[i].preds[j].nk);
-    }
+    { fprintf(fp, "%7.4f,", b->nodes[i].preds[j].Ehk / b->nodes[i].preds[j].nk); }
     fprintf(fp, "\n");
 
     total = 0;
@@ -495,29 +483,25 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
 {
   auto data = scoped_calloc_or_throw<log_multi>();
   option_group_definition new_options("Logarithmic Time Multiclass Tree");
-  new_options.add(make_option("log_multi", data->k).keep().help("Use online tree for multiclass"))
+  new_options.add(make_option("log_multi", data->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("no_progress", data->progress).help("disable progressive validation"))
-      .add(make_option("swap_resistance", data->swap_resist).default_value(4).help("disable progressive validation"))
       .add(make_option("swap_resistance", data->swap_resist)
                .default_value(4)
                .help("higher = more resistance to swap, default=4"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("log_multi"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->progress = !data->progress;
 
   std::string loss_function = "quantile";
   float loss_parameter = 0.5;
-  delete (all.loss);
   all.loss = getLossFunction(all, loss_function, loss_parameter);
 
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
   learner<log_multi, example>& l = init_multiclass_learner(
-      data, as_singleline(setup_base(options, all)), learn, predict, all.p, data->max_predictors);
+      data, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, data->max_predictors);
   all.label_type = label_type_t::mc;
   l.set_save_load(save_load_tree);
 

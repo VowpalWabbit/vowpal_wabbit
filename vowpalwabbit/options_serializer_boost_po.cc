@@ -15,10 +15,7 @@ void options_serializer_boost_po::add(base_option& option) { add_impl<supported_
 template <>
 void options_serializer_boost_po::serialize<bool>(typed_option<bool>& typed_option)
 {
-  if (typed_option.value())
-  {
-    m_output_stream << " --" << typed_option.m_name;
-  }
+  if (typed_option.value()) { m_output_stream << " --" << typed_option.m_name; }
 }
 
 template <>

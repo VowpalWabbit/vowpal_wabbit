@@ -8,9 +8,9 @@
 
 // ssize_t
 #ifdef _WIN32
-#define ssize_t int64_t
+#  define ssize_t int64_t
 #else
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 
 namespace VW

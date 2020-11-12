@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 
 #ifdef _WIN32
-#define NOMINMAX
-#include <winsock2.h>
+#  define NOMINMAX
+#  include <winsock2.h>
 #else
-#include <netdb.h>
+#  include <netdb.h>
 #endif
 
 #include "reductions.h"
@@ -50,15 +50,13 @@ template <bool cache_sub_predictions>
 void predict(mf& data, single_learner& base, example& ec)
 {
   float prediction = 0;
-  if (cache_sub_predictions)
-    data.sub_predictions.resize(2 * data.rank + 1);
+  if (cache_sub_predictions) data.sub_predictions.resize(2 * data.rank + 1);
 
   // predict from linear terms
   base.predict(ec);
 
   // store linear prediction
-  if (cache_sub_predictions)
-    data.sub_predictions[0] = ec.partial_prediction;
+  if (cache_sub_predictions) data.sub_predictions[0] = ec.partial_prediction;
   prediction += ec.partial_prediction;
 
   // store namespace indices
@@ -83,8 +81,7 @@ void predict(mf& data, single_learner& base, example& ec)
         // compute l^k * x_l using base learner
         base.predict(ec, k);
         float x_dot_l = ec.partial_prediction;
-        if (cache_sub_predictions)
-          data.sub_predictions[2 * k - 1] = x_dot_l;
+        if (cache_sub_predictions) data.sub_predictions[2 * k - 1] = x_dot_l;
 
         // set example to right namespace only
         ec.indices[0] = static_cast<namespace_index>(right_ns);
@@ -92,8 +89,7 @@ void predict(mf& data, single_learner& base, example& ec)
         // compute r^k * x_r using base learner
         base.predict(ec, k + data.rank);
         float x_dot_r = ec.partial_prediction;
-        if (cache_sub_predictions)
-          data.sub_predictions[2 * k] = x_dot_r;
+        if (cache_sub_predictions) data.sub_predictions[2 * k] = x_dot_r;
 
         // accumulate prediction
         prediction += (x_dot_l * x_dot_r);
@@ -190,21 +186,17 @@ base_learner* mf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<mf>();
   option_group_definition new_options("Matrix Factorization Reduction");
-  new_options.add(make_option("new_mf", data->rank).keep().help("rank for reduction-based matrix factorization"));
-  options.add_and_parse(new_options);
+  new_options.add(
+      make_option("new_mf", data->rank).keep().necessary().help("rank for reduction-based matrix factorization"));
 
-  if (!options.was_supplied("new_mf"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->all = &all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
   auto non_pair_count = std::count_if(all.interactions.begin(), all.interactions.end(),
       [](const std::vector<unsigned char>& interaction) { return interaction.size() != 2; });
-  if (non_pair_count > 0)
-{
-    THROW("can only use pairs with new_mf");
-  }
+  if (non_pair_count > 0) { THROW("can only use pairs with new_mf"); }
 
   data->pairs = all.interactions;
   all.interactions.clear();

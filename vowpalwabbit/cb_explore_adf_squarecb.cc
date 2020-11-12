@@ -298,8 +298,9 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
+               .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("squarecb", squarecb).keep().help("SquareCB exploration"))
+      .add(make_option("squarecb", squarecb).keep().necessary().help("SquareCB exploration"))
       .add(make_option("gamma_scale", gamma_scale)
                .keep()
                .default_value(10.f)
@@ -325,9 +326,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
-  options.add_and_parse(new_options);
 
-  if (!cb_explore_adf_option || !options.was_supplied("squarecb")) return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
@@ -343,7 +343,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   size_t problem_multiplier = 1;
 
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
+  all.example_parser->lbl_parser = CB::cb_label;
   all.label_type = label_type_t::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;

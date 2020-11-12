@@ -32,15 +32,11 @@ void finish(Search::search& sch)
   task_data* td = sch.get_task_data<task_data>();
   if (td->delete_run_object)
   {
-    if (td->run_object)
-      td->delete_run_object(td->run_object);
-    if (td->setup_object)
-      td->delete_run_object(td->setup_object);
-    if (td->takedown_object)
-      td->delete_run_object(td->takedown_object);
+    if (td->run_object) td->delete_run_object(td->run_object);
+    if (td->setup_object) td->delete_run_object(td->setup_object);
+    if (td->takedown_object) td->delete_run_object(td->takedown_object);
   }
-  if (td->delete_extra_data)
-    td->delete_extra_data(*td);
+  if (td->delete_extra_data) td->delete_extra_data(*td);
   delete td;
 }
 
@@ -56,14 +52,12 @@ void run(Search::search& sch, multi_ex& /*ec*/)
 void run_setup(Search::search& sch, multi_ex& /*ec*/)
 {
   task_data* td = sch.get_task_data<task_data>();
-  if (td->run_setup_f)
-    td->run_setup_f(sch);
+  if (td->run_setup_f) td->run_setup_f(sch);
 }
 
 void run_takedown(Search::search& sch, multi_ex& /*ec*/)
 {
   task_data* td = sch.get_task_data<task_data>();
-  if (td->run_takedown_f)
-    td->run_takedown_f(sch);
+  if (td->run_takedown_f) td->run_takedown_f(sch);
 }
 }  // namespace HookTask

@@ -43,6 +43,7 @@ struct cb_explore
   size_t bag_size;
   size_t cover_size;
   float psi;
+  bool nounif;
 
   size_t counter;
 
@@ -157,9 +158,7 @@ void get_cover_probabilities(cb_explore& data, single_learner& /* base */, examp
 
   float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(data.counter * num_actions));
 
-  enforce_minimum_probability(min_prob * num_actions, false, begin_scores(probs), end_scores(probs));
-
-  data.counter++;
+  enforce_minimum_probability(min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
 }
 
 template <bool is_learn>
@@ -195,6 +194,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   if (is_learn)
   {
+    data.counter++;
     ec.l.cb = data.cb_label;
     base.learn(ec);
 
@@ -220,8 +220,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
         data.second_cs_label.costs[j].class_index = j + 1;
         data.second_cs_label.costs[j].x = pseudo_cost;
       }
-      if (i != 0)
-        data.cs->learn(ec, i + 1);
+      if (i != 0) data.cs->learn(ec, i + 1);
       if (probabilities[predictions[i] - 1] < min_prob)
         norm += std::max(0.f, additive_probability - (min_prob - probabilities[predictions[i] - 1]));
       else
@@ -296,16 +295,22 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   new_options
       .add(make_option("cb_explore", data->cbcs.num_actions)
                .keep()
+               .necessary()
                .help("Online explore-exploit for a <k> action contextual bandit problem"))
       .add(make_option("first", data->tau).keep().help("tau-first exploration"))
-      .add(make_option("epsilon", data->epsilon).keep().allow_override().default_value(0.05f).help("epsilon-greedy exploration"))
+      .add(make_option("epsilon", data->epsilon)
+               .keep()
+               .allow_override()
+               .default_value(0.05f)
+               .help("epsilon-greedy exploration"))
       .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
       .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
+      .add(make_option("nounif", data->nounif)
+               .keep()
+               .help("do not explore uniformly on zero-probability actions in cover"))
       .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("cb_explore"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
@@ -320,10 +325,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     options.insert("cb", ss.str());
   }
 
-  if (data->epsilon < 0.0 || data->epsilon > 1.0)
-  {
-    THROW("The value of epsilon must be in [0,1]");
-  }
+  if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   all.delete_prediction = delete_action_scores;
   data->cbcs.cb_type = CB_TYPE_DR;

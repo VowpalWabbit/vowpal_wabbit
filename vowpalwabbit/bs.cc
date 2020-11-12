@@ -90,8 +90,7 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
         counter++;
         // sum_labels += pred_vec[i]; // uncomment for: "avg on votes" and getLoss()
       }
-    if (counter * 2 > pred_vec.size())
-      majority_found = true;
+    if (counter * 2 > pred_vec.size()) majority_found = true;
   }
 
   if (multivote_detected && !majority_found)  // then find most frequent element - if tie: smallest tie label
@@ -133,10 +132,7 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
 
 void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float lb, float ub)
 {
-  if (f == nullptr)
-  {
-    return;
-  }
+  if (f == nullptr) { return; }
 
   std::stringstream ss;
   ss << std::fixed << res;
@@ -145,10 +141,7 @@ void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float 
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
-  if (t != len)
-  {
-    std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
-  }
+  if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
 }
 
 void output_example(vw& all, bs& d, example& ec)
@@ -156,8 +149,7 @@ void output_example(vw& all, bs& d, example& ec)
   label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX && !ec.test_only)
-    all.sd->weighted_labels += ((double)ld.label) * ec.weight;
+  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
   if (!all.final_prediction_sink.empty())  // get confidence interval only when printing out predictions
   {
@@ -165,10 +157,8 @@ void output_example(vw& all, bs& d, example& ec)
     d.ub = -FLT_MAX;
     for (double v : *d.pred_vec)
     {
-      if (v > d.ub)
-        d.ub = (float)v;
-      if (v < d.lb)
-        d.lb = (float)v;
+      if (v > d.ub) d.ub = (float)v;
+      if (v < d.lb) d.lb = (float)v;
     }
   }
 
@@ -201,8 +191,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
 
     if (shouldOutput)
     {
-      if (i > 1)
-        outputStringStream << ' ';
+      if (i > 1) outputStringStream << ' ';
       outputStringStream << i << ':' << ec.partial_prediction;
     }
   }
@@ -221,8 +210,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
       THROW("Unknown bs_type specified: " << d.bs_type);
   }
 
-  if (shouldOutput)
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
+  if (shouldOutput) all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
 }
 
 void finish_example(vw& all, bs& d, example& ec)
@@ -236,12 +224,11 @@ base_learner* bs_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<bs>();
   std::string type_string("mean");
   option_group_definition new_options("Bootstrap");
-  new_options.add(make_option("bootstrap", data->B).keep().help("k-way bootstrap by online importance resampling"))
+  new_options
+      .add(make_option("bootstrap", data->B).keep().necessary().help("k-way bootstrap by online importance resampling"))
       .add(make_option("bs_type", type_string).keep().help("prediction type {mean,vote}"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("bootstrap"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->ub = FLT_MAX;
   data->lb = -FLT_MAX;

@@ -17,8 +17,7 @@ struct print
 void print_feature(vw& /* all */, float value, uint64_t index)
 {
   cout << index;
-  if (value != 1.)
-    cout << ":" << value;
+  if (value != 1.) cout << ":" << value;
   cout << " ";
 }
 
@@ -31,8 +30,7 @@ void learn(print& p, VW::LEARNER::base_learner&, example& ec)
     if (ec.weight != 1 || ld.initial != 0)
     {
       cout << ec.weight << " ";
-      if (ld.initial != 0)
-        cout << ld.initial << " ";
+      if (ld.initial != 0) cout << ld.initial << " ";
     }
   }
   if (!ec.tag.empty())
@@ -49,11 +47,9 @@ VW::LEARNER::base_learner* print_setup(options_i& options, vw& all)
 {
   bool print_option = false;
   option_group_definition new_options("Print psuedolearner");
-  new_options.add(make_option("print", print_option).keep().help("print examples"));
-  options.add_and_parse(new_options);
+  new_options.add(make_option("print", print_option).keep().necessary().help("print examples"));
 
-  if (!print_option)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   auto p = scoped_calloc_or_throw<print>();
   p->all = &all;

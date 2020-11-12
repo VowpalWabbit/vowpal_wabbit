@@ -3,11 +3,11 @@
 // license as described in the file LICENSE.
 
 #ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
+#  define NOMINMAX
+#  include <WinSock2.h>
 #else
-#include <sys/socket.h>
-#include <arpa/inet.h>
+#  include <sys/socket.h>
+#  include <arpa/inet.h>
 #endif
 #include <sys/timeb.h>
 #include "parse_args.h"
@@ -42,7 +42,20 @@ vw* setup(options_i& options)
   }
   all->vw_is_main = true;
 
-  if (!all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
+  auto skip_driver = options.get_typed_option<bool>("dry_run").value();
+
+  // output list of enabled reductions
+  if (!all->logger.quiet && !options.was_supplied("audit_regressor") && !all->enabled_reductions.empty())
+  {
+    const char* const delim = ", ";
+    std::ostringstream imploded;
+    std::copy(all->enabled_reductions.begin(), all->enabled_reductions.end() - 1,
+        std::ostream_iterator<std::string>(imploded, delim));
+
+    all->trace_message << "Enabled reductions: " << imploded.str() << all->enabled_reductions.back() << std::endl;
+  }
+
+  if (!skip_driver && !all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
   {
     all->trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
                        << " " << std::setw(shared_data::col_since_last) << std::left << "since"
@@ -77,10 +90,7 @@ int main(int argc, char* argv[])
     if (argc == 3 && !std::strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
-      if (!arg_file)
-      {
-        THROW("Could not open file: " << argv[2]);
-      }
+      if (!arg_file) { THROW("Could not open file: " << argv[2]); }
 
       int line_count = 1;
       std::string line;
@@ -112,6 +122,14 @@ int main(int argc, char* argv[])
 
     vw& all = *alls[0];
 
+    auto skip_driver = all.options->get_typed_option<bool>("dry_run").value();
+
+    if (skip_driver)
+    {
+      for (vw* v : alls) { VW::finish(*v); }
+      return 0;
+    }
+
     if (should_use_onethread)
     {
       if (alls.size() == 1)
@@ -131,10 +149,7 @@ int main(int argc, char* argv[])
 
     for (vw* v : alls)
     {
-      if (v->p->exc_ptr)
-      {
-        std::rethrow_exception(v->p->exc_ptr);
-      }
+      if (v->example_parser->exc_ptr) { std::rethrow_exception(v->example_parser->exc_ptr); }
 
       VW::sync_stats(*v);
       VW::finish(*v);

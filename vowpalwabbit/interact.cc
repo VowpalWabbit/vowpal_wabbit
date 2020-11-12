@@ -21,8 +21,7 @@ struct interact
 bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, interact& in)
 {
   // first feature must be 1 so we're sure that the anchor feature is present
-  if (f_src1.size() == 0 || f_src2.size() == 0)
-    return false;
+  if (f_src1.size() == 0 || f_src2.size() == 0) return false;
 
   if (f_src1.values[0] != 1)
   {
@@ -136,8 +135,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   }
 
   base.predict(ec);
-  if (is_learn)
-    base.learn(ec);
+  if (is_learn) base.learn(ec);
 
   // re-insert namespace into the right position
   ec.indices.incr();
@@ -153,12 +151,12 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 {
   std::string s;
   option_group_definition new_options("Interact via elementwise multiplication");
-  new_options.add(
-      make_option("interact", s).keep().help("Put weights on feature products from namespaces <n1> and <n2>"));
-  options.add_and_parse(new_options);
+  new_options.add(make_option("interact", s)
+                      .keep()
+                      .necessary()
+                      .help("Put weights on feature products from namespaces <n1> and <n2>"));
 
-  if (!options.was_supplied("interact"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (s.length() != 2)
   {
@@ -170,8 +168,7 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   data->n1 = (unsigned char)s[0];
   data->n2 = (unsigned char)s[1];
-  if (!all.logger.quiet)
-    std::cerr << "Interacting namespaces " << data->n1 << " and " << data->n2 << std::endl;
+  if (!all.logger.quiet) std::cerr << "Interacting namespaces " << data->n1 << " and " << data->n2 << std::endl;
   data->all = &all;
 
   VW::LEARNER::learner<interact, example>* l;

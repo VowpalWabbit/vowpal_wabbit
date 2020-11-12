@@ -22,13 +22,13 @@
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
-#pragma managed(push, off)
-#undef _M_CEE
-#include <thread>
-#define _M_CEE 001
-#pragma managed(pop)
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <thread>
+#  define _M_CEE 001
+#  pragma managed(pop)
 #else
-#include <thread>
+#  include <thread>
 #endif
 
 #include "v_array.h"
@@ -56,6 +56,7 @@
 typedef float weight;
 
 typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
+typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::config::options_i&, vw&);
 
 struct dictionary_info
 {
@@ -249,8 +250,7 @@ struct shared_data
               << std::setw(col_current_predict) << std::right << prediction << " " << std::setw(col_current_features)
               << std::right << num_features;
 
-    if (holding_out)
-      std::cerr << " h";
+    if (holding_out) std::cerr << " h";
 
     std::cerr << std::endl;
     std::cerr.flush();
@@ -286,10 +286,10 @@ enum class label_type_t
 
 struct rand_state
 {
- private:
+private:
   uint64_t random_state;
 
- public:
+public:
   constexpr rand_state() : random_state(0) {}
   rand_state(uint64_t initial) : random_state(initial) {}
   constexpr uint64_t get_current_state() const noexcept { return random_state; }
@@ -303,9 +303,7 @@ struct vw_logger
 {
   bool quiet;
 
-  vw_logger()
-    : quiet(false) {
-  }
+  vw_logger() : quiet(false) {}
 
   vw_logger(const vw_logger& other) = delete;
   vw_logger& operator=(const vw_logger& other) = delete;
@@ -324,23 +322,24 @@ class parser;
 
 struct vw
 {
- private:
+private:
   std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
 
- public:
+public:
   shared_data* sd;
 
-  parser* p;
+  parser* example_parser;
   std::thread parse_thread;
 
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
 
-  bool chain_hash = false;
+  bool chain_hash_json = false;
 
-  VW::LEARNER::base_learner* l;               // the top level learner
-  VW::LEARNER::single_learner* scorer;        // a scoring function
-  VW::LEARNER::base_learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
+  VW::LEARNER::base_learner* l;         // the top level learner
+  VW::LEARNER::single_learner* scorer;  // a scoring function
+  VW::LEARNER::base_learner*
+      cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 
   void learn(example&);
   void learn(multi_ex&);
@@ -466,11 +465,12 @@ struct vw
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
+  std::stack<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
+  std::vector<std::string> enabled_reductions;
 
   // Prediction output
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
-  std::unique_ptr<VW::io::writer> raw_prediction;                  // file descriptors for text output.
+  std::unique_ptr<VW::io::writer> raw_prediction;                      // file descriptors for text output.
 
   VW_DEPRECATED("print has been deprecated, use print_by_ref")
   void (*print)(VW::io::writer*, float, float, v_array<char>);
@@ -478,14 +478,15 @@ struct vw
   VW_DEPRECATED("print_text has been deprecated, use print_text_by_ref")
   void (*print_text)(VW::io::writer*, std::string, v_array<char>);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&);
-  loss_function* loss;
+  std::unique_ptr<loss_function> loss;
 
   VW_DEPRECATED("This is unused and will be removed")
   char* program_name;
 
   bool stdin_off;
 
-  bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input when loaded instead.
+  bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input
+                           // when loaded instead.
 
   // runtime accounting variables.
   float initial_t;

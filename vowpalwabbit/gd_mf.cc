@@ -5,10 +5,10 @@
 #include <cfloat>
 #include <cstdio>
 #ifdef _WIN32
-#define NOMINMAX
-#include <winsock2.h>
+#  define NOMINMAX
+#  include <winsock2.h>
 #else
-#include <netdb.h>
+#  include <netdb.h>
 #endif
 
 #include "gd.h"
@@ -41,16 +41,14 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
     for (auto& f : fs.values_indices_audit())
     {
       std::cout << '\t';
-      if (audit)
-        std::cout << f.audit()->get()->first << '^' << f.audit()->get()->second << ':';
+      if (audit) std::cout << f.audit()->get()->first << '^' << f.audit()->get()->second << ':';
       std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
       std::cout << ':' << (&weights[f.index()])[offset];
     }
   }
   for (const auto& i : all.interactions)
   {
-    if (i.size() != 2)
-      THROW("can only use pairs in matrix factorization");
+    if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
     if (ec.feature_space[(unsigned char)i[0]].size() > 0 && ec.feature_space[(unsigned char)i[1]].size() > 0)
     {
@@ -101,8 +99,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   for (const auto& i : d.all->interactions)
   {
-    if (i.size() != 2)
-      THROW("can only use pairs in matrix factorization");
+    if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
     ec.num_features -= ec.feature_space[(int)i[0]].size() * ec.feature_space[(int)i[1]].size();
     ec.num_features += ec.feature_space[(int)i[0]].size() * d.rank;
@@ -160,11 +157,9 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
-  if (ld.label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
+  if (ld.label != FLT_MAX) ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
 
-  if (all.audit)
-    mf_print_audit_features(d, ec, 0);
+  if (all.audit) mf_print_audit_features(d, ec, 0);
 
   return ec.pred.scalar;
 }
@@ -204,8 +199,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
   // quadratic update
   for (const auto& i : all.interactions)
   {
-    if (i.size() != 2)
-      THROW("can only use pairs in matrix factorization");
+    if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {
@@ -290,8 +284,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
         brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
       }
 
-      if (!read)
-        ++i;
+      if (!read) ++i;
     } while ((!read && i < length) || (read && brw > 0));
   }
 }
@@ -301,13 +294,11 @@ void end_pass(gdmf& d)
   vw* all = d.all;
 
   all->eta *= all->eta_decay_rate;
-  if (all->save_per_pass)
-    save_predictor(*all, all->final_regressor_name, all->current_pass);
+  if (all->save_per_pass) save_predictor(*all, all->final_regressor_name, all->current_pass);
 
   if (!all->holdout_set_off)
   {
-    if (summarize_holdout_set(*all, d.no_win_counter))
-      finalize_regressor(*all, all->final_regressor_name);
+    if (summarize_holdout_set(*all, d.no_win_counter)) finalize_regressor(*all, all->final_regressor_name);
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
       set_done(*all);
@@ -321,8 +312,7 @@ void learn(gdmf& d, single_learner&, example& ec)
   vw& all = *d.all;
 
   mf_predict(d, ec);
-  if (all.training && ec.l.simple.label != FLT_MAX)
-    mf_train(d, ec);
+  if (all.training && ec.l.simple.label != FLT_MAX) mf_train(d, ec);
 }
 
 base_learner* gd_mf_setup(options_i& options, vw& all)
@@ -332,26 +322,21 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   bool bfgs = false;
   bool conjugate_gradient = false;
   option_group_definition gf_md_options("Gradient Descent Matrix Factorization");
-  gf_md_options.add(make_option("rank", data->rank).keep().help("rank for matrix factorization."));
+  gf_md_options.add(make_option("rank", data->rank).keep().necessary().help("rank for matrix factorization."));
 
   // Not supported, need to be checked to be false.
   gf_md_options.add(make_option("bfgs", bfgs).help("Option not supported by this reduction"));
   gf_md_options.add(
       make_option("conjugate_gradient", conjugate_gradient).help("Option not supported by this reduction"));
-  options.add_and_parse(gf_md_options);
 
-  if (!options.was_supplied("rank"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(gf_md_options)) return nullptr;
 
-  if (options.was_supplied("adaptive"))
-    THROW("adaptive is not implemented for matrix factorization");
-  if (options.was_supplied("normalized"))
-    THROW("normalized is not implemented for matrix factorization");
+  if (options.was_supplied("adaptive")) THROW("adaptive is not implemented for matrix factorization");
+  if (options.was_supplied("normalized")) THROW("normalized is not implemented for matrix factorization");
   if (options.was_supplied("exact_adaptive_norm"))
     THROW("normalized adaptive updates is not implemented for matrix factorization");
 
-  if (bfgs || conjugate_gradient)
-    THROW("bfgs is not implemented for matrix factorization");
+  if (bfgs || conjugate_gradient) THROW("bfgs is not implemented for matrix factorization");
 
   data->all = &all;
   data->no_win_counter = 0;

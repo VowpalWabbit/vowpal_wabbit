@@ -49,6 +49,31 @@ class _Col:
         else:
             return out.fillna("").apply(str)
 
+    def is_number(self, df):
+        """Check if the column is of type number.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to check the column's type.
+        """
+        col_type = df[self.colname].dtype
+        return np.issubsctype(col_type, np.number)
+
+    def get_colname(self):
+        """Returns a colname that is compatible with VW (no ':' nor ' ').
+
+        Returns
+        -------
+        colname : str
+            A valid colname.
+        """
+        colname = str(self.colname)
+        colname = colname.replace(":", " ")
+        colname = colname.strip()
+        colname = colname.replace(" ", "_")
+        return colname
+
     def check_col_type(self, df):
         """Check if the type of the column is valid.
 
@@ -311,7 +336,7 @@ class Feature(object):
     """The feature type for the constructor of DFtoVW"""
     value = AttributeDescriptor("value", expected_type=(str, int, float))
 
-    def __init__(self, value, rename_feature=None):
+    def __init__(self, value, rename_feature=None, as_type=None):
         """
         Initialize a Feature instance.
 
@@ -321,13 +346,18 @@ class Feature(object):
             The column name with the value of the feature.
         rename_feature : str, optional
             The name to use instead of the default (which is the column name defined in the value argument).
-
+        as_type: str
+            Enforce a specific type ('numerical' or 'categorical')
         Returns
         -------
         self : Feature
         """
         self.value = value
         self.rename_feature = rename_feature
+        if as_type is not None and as_type not in ("numerical", "categorical"):
+            raise ValueError("Argument 'as_type' can either be 'numerical' or 'categorical'")
+        else:
+            self.as_type = as_type
 
     def process(self, df):
         """Returns the Feature string representation.
@@ -342,12 +372,14 @@ class Feature(object):
         out : str or pandas.Series
             The Feature string representation.
         """
+        name = self.rename_feature if self.rename_feature is not None else self.value.get_colname()
         value_col = self.value.get_col(df)
-        if self.rename_feature is None:
-            out = value_col
+        if self.as_type:
+            sep = ':' if self.as_type == "numerical" else '='
         else:
-            name_col = self.rename_feature
-            out = name_col + ":" + value_col
+            sep = ':' if self.value.is_number(df) else '='
+
+        out = name + sep + value_col
         return out
 
 
@@ -412,7 +444,7 @@ class Namespace(object):
 
         Examples
         --------
-        >>> from pyvw import Namespace, Feature
+        >>> from vowpalwabbit.DFtoVW import Namespace, Feature
         >>> ns_one_feature = Namespace(Feature("a"))
         >>> ns_multi_features = Namespace([Feature("a"), Feature("b")])
         >>> ns_one_feature_with_name = Namespace(Feature("a"), name="FirstNamespace")
@@ -517,8 +549,8 @@ class DFtoVW:
 
         Examples
         --------
-        >>> from vowpalwabbit.pyvw import DFtoVW
-        >>> from pandas as pd
+        >>> from vowpalwabbit.DFtoVW import DFtoVW, SimpleLabel, Feature
+        >>> import pandas as pd
 
         >>> df = pd.DataFrame({"y": [1], "a": [2], "b": [3], "c": [4]})
         >>> conv1 = DFtoVW(df=df,
@@ -588,8 +620,8 @@ class DFtoVW:
 
         Examples
         --------
-        >>> from vowpalwabbit.pyvw import DFtoVW
-        >>> from pandas as pd
+        >>> from vowpalwabbit.DFtoVW import DFtoVW
+        >>> import pandas as pd
         >>> df = pd.DataFrame({"y": [1], "x": [2]})
         >>> conv = DFtoVW.from_colnames(y="y", x="x", df=df)
         >>> conv.convert_df()
