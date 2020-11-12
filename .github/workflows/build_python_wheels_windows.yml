@@ -39,7 +39,7 @@ jobs:
         run: |
           cd ${{github.workspace}}\\vcpkg
           .\\bootstrap-vcpkg.bat
-          .\\vcpkg.exe --triplet x64-windows install zlib boost-program-options boost-align boost-foreach boost-python boost-math python3
+          .\\vcpkg.exe --triplet x64-windows install zlib boost-program-options boost-align boost-foreach boost-python boost-math python3 flatbuffers
       - uses: actions/checkout@v2
         with:
           path: ${{github.workspace}}\\vowpal_wabbit
