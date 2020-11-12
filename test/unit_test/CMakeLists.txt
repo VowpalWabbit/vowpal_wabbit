@@ -9,6 +9,7 @@ add_executable(vw-unit-test.out
   error_test.cc
   example_header_test.cc
   explore_test.cc
+  flatbuffer_parser_test.cc
   guard_test.cc
   initialize_test.cc
   io_adapter_test.cc

@@ -65,7 +65,7 @@ struct cats_tree
   const tree_node& get_sibling(const tree_node& tree_node);
   float return_cost(const tree_node& w);
   void learn(LEARNER::single_learner& base, example& ec);
-  void set_trace_message(std::ostream* ostrm);
+  void set_trace_message(std::ostream* ostrm, bool quiet);
   ~cats_tree();
 
 private:
@@ -76,6 +76,7 @@ private:
   node_cost _a;
   node_cost _b;
   std::ostream* _trace_stream = nullptr;
+  bool _quiet = false;
 };
 
 }  // namespace cats_tree

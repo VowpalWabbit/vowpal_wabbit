@@ -144,11 +144,8 @@ set(vw_all_headers
   parse_regressor.h
   parse_slates_example_json.h
   parser.h
-<<<<<<< HEAD
   parser/flatbuffer/parse_example_flatbuffer.h
-=======
   pmf_to_pdf.h
->>>>>>> Continuous actions (#2493)
   plt.h
   print.h
   prob_dist_cont.h
@@ -282,6 +279,8 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
+  parser/flatbuffer/parse_example_flatbuffer.cc
+  parser/flatbuffer/parse_label.cc
   pmf_to_pdf.cc
   plt.cc
   print.cc

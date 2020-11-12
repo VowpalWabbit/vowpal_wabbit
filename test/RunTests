@@ -1936,4 +1936,54 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} -d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips --all_slots_loss
     train-sets/ref/ccb_allslots_loss.stderr
 
+# Test 235: Flatbuffer Simple Label Test
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.fb \
+    -f models/0001_1.model --invariant --flatbuffer\
+    --ngram 3 --skips 1 --holdout_off
+        train-sets/ref/0001_fb.stderr
+
+# Test 236: Flatbuffer CB Label Test
+{VW} --cb 2 -d train-sets/rcv1_raw_cb_small.fb \
+     --flatbuffer
+        train-sets/ref/rcv1_raw_cb_fb.stderr
+
+# Test 237: Flatbuffer Multilabel Test
+{VW} --multilabel_oaa 10 -d train-sets/multilabel.fb \
+     --flatbuffer
+        train-sets/ref/multilabel_fb.stderr
+
+# Test 238: Flatbuffer Mutliclass Test
+{VW} -d train-sets/multiclass.fb -k --ect 10 \
+     --flatbuffer
+         train-sets/ref/multiclass_fb.stderr
+         
+# Test 239: Flatbuffer CS Test
+{VW} -k -d train-sets/cs.fb --invariant \
+     --csoaa_ldf multiline --flatbuffer
+         train-sets/ref/cs_fb.stderr
+
+# Test 240: Flatbuffer CB_eval test
+{VW} -d train-sets/rcv1_cb_eval.fb --cb 2 --eval \
+     --flatbuffer
+         train-sets/ref/rcv1_cb_eval_fb.stderr
+
+# Test 241: Flatbuffer no label Test (LDA)
+{VW} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/no_label.fb --flatbuffer
+         train-sets/ref/no_label_fb.stderr
+
+# Test 242: Flatbuffer CCB Label Test
+{VW} --ccb_explore_adf -d train-sets/ccb.fb \
+     --flatbuffer
+         train-sets/ref/ccb_fb.stderr
+
+# Test 243: Named Labels FB Test (Based on 88)
+{VW} -d train-sets/named_label.fb --named_labels det,noun,verb \
+     --oaa 3 -k --flatbuffer -c --passes 10 --holdout_off -f models/test_named_fb.model
+         train-sets/ref/named_label_fb.stderr
+
+# Test 244: Named Labels FB at prediction (Based on 89)
+{VW} -i models/test_named_fb.model -t -d train-sets/test_named -p test_named.predict
+    train-sets/ref/named_label_test_fb.stderr
+    pred-sets/ref/test_named.predict
+
 # Do not delete this line or the empty line above it
