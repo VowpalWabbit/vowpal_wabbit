@@ -55,7 +55,8 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
     if (label->explicit_included_actions() != nullptr)
     {
       for (const auto& exp_included_action : *(label->explicit_included_actions()))
-      { l->conditional_contextual_bandit.explicit_included_actions.push_back(exp_included_action); } }
+      { l->conditional_contextual_bandit.explicit_included_actions.push_back(exp_included_action); }
+    }
     else if (label->outcome() != nullptr)
     {
       auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());

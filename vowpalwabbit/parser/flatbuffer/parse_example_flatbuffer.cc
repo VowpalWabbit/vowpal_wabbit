@@ -65,7 +65,7 @@ bool parser::parse_examples(vw* all, v_array<example*>& examples)
 
 void parser::parse_example(vw* all, example* ae, const Example* eg)
 {
-  all->p->lp.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(&ae->l);
   parse_flat_label(all->sd, ae, eg);
 
   if (flatbuffers::IsFieldPresent(eg, Example::VT_TAG))
@@ -83,7 +83,7 @@ void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
     temp_index = (uint8_t)ns->name()->c_str()[0];
-    _c_hash = all->p->hasher(ns->name()->c_str(), ns->name()->Length(), all->hash_seed);
+    _c_hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->Length(), all->hash_seed);
   }
   else
   {
@@ -100,7 +100,7 @@ void parser::parse_features(vw* all, features& fs, const Feature* feature)
 {
   if (flatbuffers::IsFieldPresent(feature, Feature::VT_NAME))
   {
-    uint64_t word_hash = all->p->hasher(feature->name()->c_str(), feature->name()->Length(), _c_hash);
+    uint64_t word_hash = all->example_parser->hasher(feature->name()->c_str(), feature->name()->Length(), _c_hash);
     fs.push_back(feature->value(), word_hash);
   }
   else

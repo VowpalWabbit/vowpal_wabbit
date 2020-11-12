@@ -191,7 +191,7 @@ void to_flat::create_no_label(example* v, flatbuffers::Offset<void>& label, VW::
 void to_flat::convert_txt_to_flat(vw& all)
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> examplecollection;
-  example* ae = all.p->ready_parsed_examples.pop();
+  example* ae = all.example_parser->ready_parsed_examples.pop();
   int examples = 0;
   while (ae != nullptr && !ae->end_pass)
   {
@@ -260,7 +260,7 @@ void to_flat::convert_txt_to_flat(vw& all)
     examplecollection.push_back(flat_example);
 
     examples++;
-    ae = all.p->ready_parsed_examples.pop();
+    ae = all.example_parser->ready_parsed_examples.pop();
   }
 
   all.trace_message << "Converted " << examples << " examples" << std::endl;
