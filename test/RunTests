@@ -1222,7 +1222,7 @@ echo "" | {VW}
     train-sets/ref/cbify_bag.stderr
 
 # Test 79: cbify, cover
-{VW} --cbify 10 --cover 3 -d train-sets/multiclass
+{VW} --cbify 10 --cover 3 -d train-sets/multiclass --nounif
     train-sets/ref/cbify_cover.stderr
 
 # Test 80: lrq empty namespace
