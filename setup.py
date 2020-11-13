@@ -110,8 +110,11 @@ class BuildPyLibVWBindingsModule(_build_ext):
         # If we are being installed in a conda environment then use the dependencies from there.
         if 'CONDA_PREFIX' in os.environ:
             cmake_args.append('-DCMAKE_PREFIX_PATH={}'.format(os.environ['CONDA_PREFIX']))
-            cmake_args.append('-DPython_INCLUDE_DIR={}/include/python{v[0]}.{v[1]}/'.format(os.environ['CONDA_PREFIX'], v=version_info))
-            print('-DPython_INCLUDE_DIR={}/include/python{v[0]}.{v[1]}/'.format(os.environ['CONDA_PREFIX'], v=version_info))
+            if version_info[0] == 2:
+                cmake_args.append('-DPython_INCLUDE_DIR={}/include/python{v[0]}.{v[1]}/'.format(os.environ['CONDA_PREFIX'], v=version_info))
+            else:
+                cmake_args.append('-DPython_INCLUDE_DIR={}/include/python{v[0]}.{v[1]}/m'.format(os.environ['CONDA_PREFIX'], v=version_info))
+
         # example of build args
         build_args = [
             '--config', config
