@@ -43,6 +43,7 @@ struct cb_explore
   size_t bag_size;
   size_t cover_size;
   float psi;
+  bool nounif;
 
   size_t counter;
 
@@ -156,7 +157,7 @@ void get_cover_probabilities(
   }
   uint32_t num_actions = data.cbcs.num_actions;
 
-  enforce_minimum_probability(min_prob * num_actions, false, begin_scores(probs), end_scores(probs));
+  enforce_minimum_probability(min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
 }
 
 template <bool is_learn>
@@ -305,6 +306,9 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
                .help("epsilon-greedy exploration"))
       .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
       .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
+      .add(make_option("nounif", data->nounif)
+               .keep()
+               .help("do not explore uniformly on zero-probability actions in cover"))
       .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
