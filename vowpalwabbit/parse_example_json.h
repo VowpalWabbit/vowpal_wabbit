@@ -188,10 +188,6 @@ public:
   BaseState<audit>* Float(Context<audit>& ctx, float v) override
   {
     if (!_stricmp(ctx.key, "left")) { segment.left = v; }
-    else if (!_stricmp(ctx.key, "action"))
-    {
-      segment.left = v;
-    }
     else if (!_stricmp(ctx.key, "right"))
     {
       segment.right = v;
@@ -199,6 +195,10 @@ public:
     else if (!_stricmp(ctx.key, "pdf_value"))
     {
       segment.pdf_value = v;
+    }
+    else if (!_stricmp(ctx.key, "chosen_action"))
+    {
+      ctx.ex->reduction_features.template get<VW::continuous_actions::reduction_features>().chosen_action = v;
     }
     else
     {

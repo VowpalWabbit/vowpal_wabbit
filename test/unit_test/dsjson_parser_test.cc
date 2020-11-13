@@ -289,17 +289,21 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_valid_pdf)
   auto examples = parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
+  const auto& reduction_features =
+      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  const auto& pdf = examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>().pdf;
+  BOOST_TEST(reduction_features.is_pdf_set());
+  BOOST_TEST(!reduction_features.is_chosen_action_set());
 
-  BOOST_CHECK_EQUAL(pdf.size(), 2);
-  BOOST_CHECK_CLOSE(pdf[0].left, 185., FLOAT_TOL);
-  BOOST_CHECK_CLOSE(pdf[0].right, 8109.67, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(pdf[0].pdf_value, 2.10314e-06, FLOAT_TOL);
 
-  BOOST_CHECK_CLOSE(pdf[1].left, 8109.67, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(pdf[1].right, 23959., FLOAT_TOL);
-  BOOST_CHECK_CLOSE(pdf[1].pdf_value, 6.20426e-05, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(reduction_features.pdf.size(), 2);
+  BOOST_CHECK_CLOSE(reduction_features.pdf[0].left, 185., FLOAT_TOL);
+  BOOST_CHECK_CLOSE(reduction_features.pdf[0].right, 8109.67, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(reduction_features.pdf[0].pdf_value, 2.10314e-06, FLOAT_TOL);
+
+  BOOST_CHECK_CLOSE(reduction_features.pdf[1].left, 8109.67, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(reduction_features.pdf[1].right, 23959., FLOAT_TOL);
+  BOOST_CHECK_CLOSE(reduction_features.pdf[1].pdf_value, 6.20426e-05, FLOAT_TOL);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
@@ -340,8 +344,58 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_invalid_pdf)
   auto examples = parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
-  const auto& pdf = examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>().pdf;
-  BOOST_CHECK_EQUAL(pdf.size(), 0);
+
+  const auto& reduction_features =
+      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+
+  BOOST_TEST(!reduction_features.is_pdf_set());
+  BOOST_TEST(!reduction_features.is_chosen_action_set());
+
+  auto& space_names = examples[0]->feature_space[' '].space_names;
+  BOOST_CHECK_EQUAL(features.size(), space_names.size());
+  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
+
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+}
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_cats_chosen_action)
+{
+  std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
+  std::string json_text = R"(
+{
+  "Version": "1",
+  "EventId": "event_id",
+  "pdf": [
+    {"chosen_action": 185}
+  ],
+  "c": {
+    "18-25":1,
+    "4":1,
+    "C":1,
+    "0":1,
+    "1":1,
+    "2":1,
+    "15":1,
+    "M":1
+  },
+  "VWState": {
+    "m": "N/A"
+  }
+}
+)";
+  auto vw = VW::initialize(
+      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
+      false, nullptr, nullptr);
+  auto examples = parse_dsjson(*vw, json_text);
+
+  const auto& reduction_features =
+      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+
+  BOOST_CHECK_EQUAL(examples.size(), 1);
+  BOOST_TEST(!reduction_features.is_pdf_set());
+  BOOST_TEST(reduction_features.is_chosen_action_set());
+  BOOST_CHECK_CLOSE(reduction_features.chosen_action, 185., FLOAT_TOL);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());

@@ -48,17 +48,17 @@ int cb_explore_pdf::learn(example& ec, experimental::api_status*)
 
 int cb_explore_pdf::predict(example& ec, experimental::api_status*)
 {
-  if (first_only && ec.reduction_features.template get<VW::continuous_actions::reduction_features>().pdf.size() == 0)
+  const auto& reduction_features = ec.reduction_features.template get<VW::continuous_actions::reduction_features>();
+  if (first_only && !reduction_features.is_pdf_set() && !reduction_features.is_chosen_action_set())
   {
     // uniform random
     ec.pred.pdf.push_back({min_value, max_value, static_cast<float>(1. / (max_value - min_value))});
     return error_code::success;
   }
-  else if (first_only &&
-      ec.reduction_features.template get<VW::continuous_actions::reduction_features>().pdf.size() > 1)
+  else if (first_only && reduction_features.is_pdf_set())
   {
     // pdf provided
-    copy_array(ec.pred.pdf, ec.reduction_features.template get<VW::continuous_actions::reduction_features>().pdf);
+    copy_array(ec.pred.pdf, reduction_features.pdf);
     return error_code::success;
   }
 

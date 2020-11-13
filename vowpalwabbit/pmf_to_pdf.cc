@@ -104,9 +104,10 @@ reduction::~reduction()
 
 void reduction::predict(example& ec)
 {
-  if (first_only && ec.reduction_features.template get<VW::continuous_actions::reduction_features>().pdf.size() == 1)
+  const auto& reduction_features = ec.reduction_features.template get<VW::continuous_actions::reduction_features>();
+  if (first_only && reduction_features.is_chosen_action_set())
   {
-    float chosen_action = ec.reduction_features.template get<VW::continuous_actions::reduction_features>().pdf[0].left;
+    float chosen_action = reduction_features.chosen_action;
     const float continuous_range = max_value - min_value;
     const float unit_range = continuous_range / (num_actions - 1);
 

@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(cats_no_model_action_provided)
   "Version": "1",
   "EventId": "event_id",
   "pdf": [
-    {"action": 185.121}
+    {"chosen_action": 185.121}
   ],
   "c": {
     "f":1
@@ -27,15 +27,19 @@ BOOST_AUTO_TEST_CASE(cats_no_model_action_provided)
 }
 )";
   auto vw = VW::initialize(
-      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --first_only", nullptr,
-      false, nullptr, nullptr);
+      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --first_only",
+      nullptr, false, nullptr, nullptr);
   auto examples = parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[0].left, 185.121, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[0].right, 0., FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[0].pdf_value, 0., FLOAT_TOL);
+  const auto& reduction_features =
+      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+
+  BOOST_TEST(!reduction_features.is_pdf_set());
+  BOOST_TEST(reduction_features.is_chosen_action_set());
+
+  BOOST_CHECK_CLOSE(reduction_features.chosen_action, 185.121, FLOAT_TOL);
 
   vw->predict(*examples[0]);
 
@@ -53,7 +57,7 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_action_provided)
   "Version": "1",
   "EventId": "event_id",
   "pdf": [
-    {"action": 185.121}
+    {"chosen_action": 185.121}
   ],
   "c": {
     "f":1
@@ -64,16 +68,20 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_action_provided)
 }
 )";
   auto vw = VW::initialize(
-      "--dsjson --chain_hash --cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --first_only", nullptr,
-      false, nullptr, nullptr);
+      "--dsjson --chain_hash --cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet "
+      "--first_only",
+      nullptr, false, nullptr, nullptr);
   auto examples = parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
-  BOOST_CHECK_EQUAL(examples[0]->pred.pdf.size(), 1);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[0].left, 185.121, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[0].right, 0., FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[0].pdf_value, 0., FLOAT_TOL);
+  const auto& reduction_features =
+      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+
+  BOOST_TEST(!reduction_features.is_pdf_set());
+  BOOST_TEST(reduction_features.is_chosen_action_set());
+
+  BOOST_CHECK_CLOSE(reduction_features.chosen_action, 185.121, FLOAT_TOL);
 
   vw->predict(*examples[0]);
 
@@ -113,7 +121,11 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_uniform_random)
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
-  BOOST_CHECK_EQUAL(examples[0]->pred.pdf.size(), 0);
+  const auto& reduction_features =
+      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+
+  BOOST_TEST(!reduction_features.is_pdf_set());
+  BOOST_TEST(!reduction_features.is_chosen_action_set());
 
   vw->predict(*examples[0]);
 
@@ -157,7 +169,13 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_pdf_provided)
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
-  BOOST_CHECK_EQUAL(examples[0]->pred.pdf.size(), 2);
+  const auto& reduction_features =
+      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+
+  BOOST_TEST(reduction_features.is_pdf_set());
+  BOOST_TEST(!reduction_features.is_chosen_action_set());
+
+  BOOST_CHECK_EQUAL(reduction_features.pdf.size(), 2);
 
   vw->predict(*examples[0]);
 
@@ -176,4 +194,4 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_pdf_provided)
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
-} 
+}

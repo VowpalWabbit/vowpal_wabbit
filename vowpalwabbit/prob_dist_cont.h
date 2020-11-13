@@ -32,7 +32,9 @@ void delete_probability_density_function(void* v);
 struct reduction_features
 {
   probability_density_function pdf;
-  float action;
+  float chosen_action;
+  bool is_chosen_action_set() const;
+  bool is_pdf_set() const;
 
   reduction_features();
   ~reduction_features();
