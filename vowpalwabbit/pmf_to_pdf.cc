@@ -104,6 +104,8 @@ reduction::~reduction()
 
 void reduction::predict(example& ec)
 {
+  auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
+
   const auto& reduction_features = ec.reduction_features.template get<VW::continuous_actions::reduction_features>();
   if (first_only && reduction_features.is_chosen_action_set())
   {
@@ -126,11 +128,9 @@ void reduction::predict(example& ec)
   }
   else
   {
-    auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
-    {  // scope for saving / restoring prediction
-      auto save_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
-      _p_base->predict(ec);
-    }
+    // scope for saving / restoring prediction
+    auto save_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
+    _p_base->predict(ec);
   }
   transform_prediction(ec);
 }
