@@ -18,7 +18,6 @@ else(Boost_MINOR_VERSION GREATER 66)
   endif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
 endif(Boost_MINOR_VERSION GREATER 66)
 
-set(Python_ADDITIONAL_VERSIONS ${PY_VERSION})
 # Using find_package(Python...) allows us to only require the Python headers to be found.
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
   find_package(PythonInterp ${PY_VERSION} REQUIRED)
