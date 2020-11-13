@@ -13,6 +13,7 @@ typedef unsigned char namespace_index;
 
 #include <vector>
 #include <array>
+#include <sstream>
 
 struct example_predict
 {
@@ -44,7 +45,8 @@ struct example_predict
 
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
-  uint64_t ft_offset;                                  // An offset for all feature values.
+  uint64_t ft_offset;                                  // SAn offset for all feature values.
+  uint32_t stack_depth;
 
   // Interactions are specified by this vector of vectors of unsigned characters, where each vector is an interaction
   // and each char is a namespace.
@@ -65,3 +67,7 @@ public:
 
   void clear();
 };
+
+std::string features_to_string(const example_predict& ec);
+std::string depth_indent_string(const example_predict& ec);
+std::string depth_indent_string(int32_t stack_depth);

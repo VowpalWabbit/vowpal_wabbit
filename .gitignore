@@ -62,6 +62,7 @@ test/RunTests.last.times
 *.pc
 *.pyc
 .DS_Store
+logs/**
 results/**
 
 # build folders
@@ -138,7 +139,12 @@ reinforcement_learning/unit_test/rlclient-test.out
 cs/azure_service/azure_service.ccproj.user
 
 build
-dist/
-*.model
-python/examples/*.model
-doc/html
+vowpalwabbit/*.model
+vowpalwabbit/*.predict
+test/*.stderr
+test/*.preds
+test/*.model
+test/*.stdout
+test/*.stderr
+test/*.lenient-diff
+test/outputs

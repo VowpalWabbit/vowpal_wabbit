@@ -189,7 +189,7 @@ uint32_t ect_predict(ect& e, single_learner& base, example& ec)
   uint32_t finals_winner = 0;
 
   // Binary final elimination tournament first
-  ec.l.simple = {FLT_MAX, 0., 0.};
+  ec.l.simple = {FLT_MAX, VW::UNUSED_1, VW::UNUSED_0};
 
   for (size_t i = e.tree_height - 1; i != (size_t)0 - 1; i--)
   {
@@ -224,8 +224,6 @@ void ect_train(ect& e, single_learner& base, example& ec)
   MULTICLASS::label_t mc = ec.l.multi;
 
   label_data simple_temp;
-
-  simple_temp.initial = 0.;
 
   e.tournaments_won.clear();
 
@@ -285,8 +283,8 @@ void ect_train(ect& e, single_learner& base, example& ec)
           simple_temp.label = -1;
         else
           simple_temp.label = 1;
-        simple_temp.weight = (float)(1 << (e.tree_height - i - 1));
         ec.l.simple = simple_temp;
+        ec.weight = (float)(1 << (e.tree_height - i - 1));
 
         uint32_t problem_number = e.last_pair + j * (1 << (i + 1)) + (1 << i) - 1;
 
@@ -316,7 +314,6 @@ void predict(ect& e, single_learner& base, example& ec)
 void learn(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
-  predict(e, base, ec);
   uint32_t pred = ec.pred.multiclass;
 
   if (mc.label != (uint32_t)-1) ect_train(e, base, ec);
@@ -345,7 +342,7 @@ base_learner* ect_setup(options_i& options, vw& all)
   if (link == "logistic") data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
 
   learner<ect, example>& l =
-      init_multiclass_learner(data, as_singleline(base), learn, predict, all.example_parser, wpp);
+      init_multiclass_learner(data, as_singleline(base), learn, predict, all.example_parser, wpp, "ect");
 
   return make_base(l);
 }

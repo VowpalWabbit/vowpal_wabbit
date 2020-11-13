@@ -86,7 +86,7 @@ void multipredict(
     ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *b.all;
-  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple.initial;
+  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.initial;
   if (b.all->weights.sparse)
   {
     GD::multipredict_info<sparse_parameters> mp = {
@@ -351,6 +351,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   b->total_weight = 0;
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
+  bool learn_returns_prediction = false;
 
   std::string algorithm_name;
   if (ftrl_option)
@@ -369,6 +370,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     learn_ptr = learn_pistol;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 4;
+    learn_returns_prediction = true;
   }
   else if (coin)
   {
@@ -376,6 +378,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
     learn_ptr = learn_coin_betting;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
+    learn_returns_prediction = true;
   }
 
   b->data.ftrl_alpha = b->ftrl_alpha;
@@ -399,9 +402,10 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   learner<ftrl, example>* l;
   if (all.audit || all.hash_inv)
-    l = &init_learner(b, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift());
+    l = &init_learner(
+        b, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift(), "ftrl-" + algorithm_name + "-audit", learn_returns_prediction);
   else
-    l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift());
+    l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift(), "ftrl-" + algorithm_name, learn_returns_prediction);
   l->set_sensitivity(sensitivity);
   if (all.audit || all.hash_inv)
     l->set_multipredict(multipredict<true>);

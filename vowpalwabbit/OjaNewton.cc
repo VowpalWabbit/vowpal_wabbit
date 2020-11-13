@@ -404,7 +404,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
   predict(ON, base, ec);
 
   update_data& data = ON.data;
-  data.g = ON.all->loss->first_derivative(ON.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.l.simple.weight;
+  data.g = ON.all->loss->first_derivative(ON.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
   data.g /= 2;  // for half square loss
 
   if (ON.normalize) GD::foreach_feature<update_data, update_normalization>(*ON.all, ec, data);
@@ -539,7 +539,7 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
 
   all.weights.stride_shift((uint32_t)ceil(log2(ON->m + 2)));
 
-  learner<OjaNewton, example>& l = init_learner(ON, learn, predict, all.weights.stride());
+  learner<OjaNewton, example>& l = init_learner(ON, learn, predict, all.weights.stride(), "OjaNewton");
   l.set_save_load(save_load);
   l.set_finish_example(keep_example);
   return make_base(l);

@@ -118,8 +118,7 @@ void finish_multiline_example(vw& all, explore_eval& data, multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
-template <bool is_learn>
-void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_seq)
+void learn(explore_eval& data, multi_learner& base, multi_ex& ec_seq)
 {
   example* label_example = CB_ADF::test_adf_sequence(ec_seq);
 
@@ -128,13 +127,12 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
     data.action_label = label_example->l.cb;
     label_example->l.cb = data.empty_label;
   }
-  multiline_learn_or_predict<false>(base, ec_seq, data.offset);
 
   if (label_example != nullptr)  // restore label
     label_example->l.cb = data.action_label;
 
-  data.known_cost = CB_ADF::get_observed_cost(ec_seq, true);
-  if (label_example != nullptr && is_learn)
+  data.known_cost = CB_ADF::get_observed_cost(ec_seq);
+  if (label_example != nullptr)
   {
     ACTION_SCORE::action_scores& a_s = ec_seq[0]->pred.a_s;
 
@@ -174,6 +172,11 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
     }
   }
 }
+
+void predict(explore_eval& data, multi_learner& base, multi_ex& ec_seq)
+{
+  multiline_learn_or_predict<false>(base, ec_seq, data.offset);
+}
 }  // namespace EXPLORE_EVAL
 
 using namespace EXPLORE_EVAL;
@@ -210,7 +213,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   all.label_type = label_type_t::cb;
 
   learner<explore_eval, multi_ex>& l =
-      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type_t::action_probs);
+      init_learner(data, base, learn, predict, 1, prediction_type_t::action_probs, "explore_eval");
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);

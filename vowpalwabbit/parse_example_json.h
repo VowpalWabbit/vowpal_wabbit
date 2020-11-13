@@ -194,12 +194,12 @@ public:
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      ctx.ex->l.simple.initial = std::numeric_limits<float>::quiet_NaN();
+      ctx.ex->l.simple.serialized_initial = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      ctx.ex->l.simple.weight = std::numeric_limits<float>::quiet_NaN();
+      ctx.ex->l.simple.serialized_weight = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     // CB/CA
@@ -241,12 +241,12 @@ public:
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      ctx.ex->l.simple.initial = v;
+      ctx.ex->initial = v;
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      ctx.ex->l.simple.weight = v;
+      ctx.ex->weight = v;
       found = true;
     }
     // CB/CA

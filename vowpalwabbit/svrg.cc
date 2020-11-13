@@ -44,7 +44,7 @@ inline void vec_add(float& p, const float x, float& w)
 template <int offset>
 inline float inline_predict(vw& all, example& ec)
 {
-  float acc = ec.l.simple.initial;
+  float acc = ec.initial;
   GD::foreach_feature<float, vec_add<offset> >(all, ec, acc);
   return acc;
 }
@@ -180,7 +180,7 @@ base_learner* svrg_setup(options_i& options, vw& all)
 
   // Request more parameter storage (4 floats per feature)
   all.weights.stride_shift(2);
-  learner<svrg, example>& l = init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift());
+  learner<svrg, example>& l = init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift(), "svrg");
   l.set_save_load(save_load);
   return make_base(l);
 }

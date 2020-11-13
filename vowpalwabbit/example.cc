@@ -199,6 +199,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->interactions = src->interactions;
+  dst->stack_depth = src->stack_depth;
 }
 
 void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
@@ -269,7 +270,7 @@ flat_example* flatten_example(vw& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
-  fec.l.simple.weight = ec->weight;
+  fec.weight = ec->weight;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len > 0)
@@ -314,22 +315,7 @@ void free_flatten_example(flat_example* fec)
   }
 }
 
-std::string features_to_string(const example& ec)
-{
-  std::stringstream strstream;
-  strstream << "[off=" << ec.ft_offset << "]";
-  for (auto& f : ec.feature_space)
-  {
-    auto ind_iter = f.indicies.cbegin();
-    auto val_iter = f.values.cbegin();
-    for (; ind_iter != f.indicies.cend(); ++ind_iter, ++val_iter)
-    {
-      strstream << "[h=" << *ind_iter << ","
-                << "v=" << *val_iter << "]";
-    }
-  }
-  return strstream.str();
-}
+std::string depth_indent_string(const multi_ex& ec) { return depth_indent_string(*ec[0]); }
 
 std::string cb_label_to_string(const example& ec)
 {
@@ -348,17 +334,7 @@ std::string cb_label_to_string(const example& ec)
 std::string simple_label_to_string(const example& ec)
 {
   std::stringstream strstream;
-  strstream << "[l=" << ec.l.simple.label << ",w=" << ec.l.simple.weight << "]";
-  return strstream.str();
-}
-
-std::string depth_indent_string(const example& ec) { return depth_indent_string(ec._current_reduction_depth); }
-
-std::string depth_indent_string(int32_t stack_depth)
-{
-  std::stringstream strstream;
-  for (auto i = 0; i < stack_depth - 1; i++) { strstream << "| "; }
-  strstream << "+ ";
+  strstream << "[l=" << ec.l.simple.label << ",w=" << ec.weight << "]";
   return strstream.str();
 }
 
@@ -408,8 +384,6 @@ example* alloc_examples(size_t, size_t count = 1)
   for (size_t i = 0; i < count; i++)
   {
     ec[i].ft_offset = 0;
-    //  std::cerr << "  alloc_example.indices.begin()=" << ec->indices.begin() << " end=" << ec->indices.end() << " //
-    //  ld = " << ec->ld << "\t|| me = " << ec << std::endl;
   }
   return ec;
 }

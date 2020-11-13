@@ -11,6 +11,11 @@
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
+#include "debug_log.h"
+
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::learner
+
 #include "future_compat.h"
 #include "example.h"
 #include <memory>
@@ -121,16 +126,43 @@ inline float noop_sensitivity(void*, base_learner&, example&)
 }
 float recur_sensitivity(void*, base_learner&, example&);
 
+inline void increment_depth(example& ex)
+{
+  if (vw_dbg::track_stack) ++ex.stack_depth;
+}
+
+inline void increment_depth(multi_ex& ec_seq)
+{
+  if (vw_dbg::track_stack)
+  {
+    for (auto& ec : ec_seq) { ++ec->stack_depth; }
+  }
+}
+
+inline void decrement_depth(example& ex)
+{
+  if (vw_dbg::track_stack) --ex.stack_depth;
+}
+
+inline void decrement_depth(multi_ex& ec_seq)
+{
+  if (vw_dbg::track_stack)
+  {
+    for (auto& ec : ec_seq) { --ec->stack_depth; }
+  }
+}
+
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
 {
   ++ex._current_reduction_depth;
   ex.ft_offset += static_cast<uint32_t>(increment * i);
+  increment_depth(ex);
 }
 
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
-  if (ec_seq.size() > 0) ++ec_seq[0]->_current_reduction_depth;
-  for (auto& ec : ec_seq) ec->ft_offset += static_cast<uint32_t>(increment * i);
+  if (ec_seq.size() > 0) increment_depth(ec_seq);
+  for (auto& ec : ec_seq) { ec->ft_offset += static_cast<uint32_t>(increment * i); }
 }
 
 inline void decrement_offset(example& ex, const size_t increment, const size_t i)
@@ -138,6 +170,7 @@ inline void decrement_offset(example& ex, const size_t increment, const size_t i
   --ex._current_reduction_depth;
   assert(ex.ft_offset >= increment * i);
   ex.ft_offset -= static_cast<uint32_t>(increment * i);
+  decrement_depth(ex);
 }
 
 inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
@@ -147,6 +180,7 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
   {
     assert(ec->ft_offset >= increment * i);
     ec->ft_offset -= static_cast<uint32_t>(increment * i);
+    decrement_depth(*ec);
   }
 }
 
@@ -185,17 +219,44 @@ private:
   func_data end_pass_fd;
   func_data end_examples_fd;
   func_data finisher_fd;
-
   std::shared_ptr<void> learner_data;
+
   learner(){};  // Should only be able to construct a learner through init_learner function
+
 public:
   prediction_type_t pred_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
   bool is_multiline;  // Is this a single-line or multi-line reduction?
+  std::string name;   // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
+
+  // learn will return a prediction.  The framework should
+  // not call predict before learn
+  bool learn_returns_prediction;
 
   using end_fptr_type = void (*)(vw&, void*, void*);
   using finish_fptr_type = void (*)(void*);
+
+  void log_entry(example& ec, const std::string& msg)
+  {
+    VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl;
+    increment_depth(ec);
+  }
+  void log_entry(multi_ex& ec, const std::string& msg)
+  {
+    VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
+    increment_depth(ec);
+  }
+  void log_exit(example& ec)
+  {
+    decrement_depth(ec);
+    VW_DBG(ec) << std::endl;
+  }
+  void log_exit(multi_ex& ec)
+  {
+    decrement_depth(ec);
+    VW_DBG(*ec[0]) << std::endl;
+  }
 
   /// \brief Will update the model according to the labels and examples supplied.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
@@ -210,7 +271,9 @@ public:
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
+    log_entry(ec, "learn");
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+    log_exit(ec);
     decrement_offset(ec, increment, i);
   }
 
@@ -228,7 +291,9 @@ public:
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
+    log_entry(ec, "predict");
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+    log_exit(ec);
     decrement_offset(ec, increment, i);
   }
 
@@ -239,6 +304,7 @@ public:
     if (learn_fd.multipredict_f == NULL)
     {
       increment_offset(ec, increment, lo);
+      log_entry(ec, "multipredict");
       for (size_t c = 0; c < count; c++)
       {
         learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
@@ -250,12 +316,15 @@ public:
         // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         increment_offset(ec, increment, 1);
       }
+      log_exit(ec);
       decrement_offset(ec, increment, lo + count);
     }
     else
     {
       increment_offset(ec, increment, lo);
+      log_entry(ec, "multipredict");
       learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, (void*)&ec, count, increment, pred, finalize_predictions);
+      log_exit(ec);
       decrement_offset(ec, increment, lo);
     }
   }
@@ -290,7 +359,9 @@ public:
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
+    log_entry(ec, "update");
     learn_fd.update_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+    log_exit(ec);
     decrement_offset(ec, increment, i);
   }
   template <class L>
@@ -314,7 +385,9 @@ public:
   inline float sensitivity(example& ec, size_t i = 0)
   {
     increment_offset(ec, increment, i);
+    log_entry(ec, "sensitivity");
     const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, ec);
+    log_exit(ec);
     decrement_offset(ec, increment, i);
     return ret;
   }
@@ -353,6 +426,7 @@ public:
       finisher_fd.base->finish();
       free(finisher_fd.base);
     }
+    name.~basic_string();
   }
 
   void end_pass()
@@ -396,7 +470,9 @@ public:
   // called after learn example for each example.  Explicitly not recursive.
   inline void finish_example(vw& all, E& ec)
   {
+    log_entry(ec, "finish_example");
     finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
+    log_exit(ec);
   }
   // called after learn example for each example.  Explicitly not recursive.
   void set_finish_example(void (*f)(vw& all, T&, E&))
@@ -409,8 +485,8 @@ public:
   }
 
   template <class L>
-  static learner<T, E>& init_learner(
-      T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws, prediction_type_t pred_type)
+  static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
+      prediction_type_t pred_type, const std::string name, bool learn_returns_prediction = false)
   {
     learner<T, E>& ret = calloc_or_throw<learner<T, E> >();
 
@@ -449,6 +525,7 @@ public:
       VW_WARNING_STATE_POP
     }
 
+    ret.name = name;
     ret.learner_data = std::shared_ptr<T>(dat, [](T* ptr) {
       ptr->~T();
       free(ptr);
@@ -464,6 +541,9 @@ public:
     ret.learn_fd.multipredict_f = nullptr;
     ret.pred_type = pred_type;
     ret.is_multiline = std::is_same<multi_ex, E>::value;
+    ret.learn_returns_prediction = learn_returns_prediction;
+
+    VW_DBG_0 << "Added Reduction: " << name << std::endl;
 
     return ret;
   }
@@ -471,9 +551,9 @@ public:
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t ws, prediction_type_t pred_type)
+    size_t ws, prediction_type_t pred_type, const std::string& name, bool learn_returns_prediction = false)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
+  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_returns_prediction);
 
   dat.release();
   return *ret;
@@ -481,11 +561,11 @@ learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&)
 
 // base learner/predictor
 template <class T, class E, class L>
-learner<T, E>& init_learner(
-    free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t params_per_weight)
+learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
+    size_t params_per_weight, const std::string& name, bool learn_returns_prediction = false)
 {
   auto ret = &learner<T, E>::init_learner(
-      dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type_t::scalar);
+      dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type_t::scalar, name, learn_returns_prediction);
 
   dat.release();
   return *ret;
@@ -493,27 +573,29 @@ learner<T, E>& init_learner(
 
 // base predictor only
 template <class T, class E, class L>
-learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weight)
+learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weight, const std::string& name)
 {
   return learner<T, E>::init_learner(
-      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type_t::scalar);
+      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type_t::scalar, name);
 }
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t params_per_weight, prediction_type_t pred_type)
+    size_t params_per_weight, prediction_type_t pred_type, const std::string& name, bool learn_returns_prediction = false)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type);
+  auto ret = &learner<T, E>::init_learner(
+      dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type, name, learn_returns_prediction);
   dat.release();
   return *ret;
 }
 
 // reduction with default prediction type
 template <class T, class E, class L>
-learner<T, E>& init_learner(
-    free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws)
+learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
+    size_t ws, const std::string& name, bool learn_returns_prediction = false)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, base->pred_type);
+  auto ret =
+      &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, base->pred_type, name, learn_returns_prediction);
 
   dat.release();
   return *ret;
@@ -521,9 +603,11 @@ learner<T, E>& init_learner(
 
 // reduction with default num_params
 template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&))
+learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
+    const std::string& name, bool learn_returns_prediction = false)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type);
+  auto ret =
+      &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type, name, learn_returns_prediction);
 
   dat.release();
   return *ret;
@@ -531,17 +615,20 @@ learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&)
 
 // Reduction with no data.
 template <class T, class E, class L>
-learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&))
+learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), const std::string& name,
+    bool learn_returns_prediction = false)
 {
-  return learner<T, E>::init_learner(nullptr, base, learn, predict, 1, base->pred_type);
+  return learner<T, E>::init_learner(nullptr, base, learn, predict, 1, base->pred_type, name, learn_returns_prediction);
 }
 
 // multiclass reduction
 template <class T, class E, class L>
 learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&), parser* p, size_t ws, prediction_type_t pred_type = prediction_type_t::multiclass)
+    void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
+    prediction_type_t pred_type = prediction_type_t::multiclass, bool learn_returns_prediction = false)
 {
-  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
+  learner<T, E>& l =
+      learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_returns_prediction);
 
   dat.release();
   l.set_finish_example(MULTICLASS::finish_example<T>);
@@ -551,9 +638,11 @@ learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(
 
 template <class T, class E, class L>
 learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&), parser* p, size_t ws, prediction_type_t pred_type = prediction_type_t::multiclass)
+    void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
+    prediction_type_t pred_type = prediction_type_t::multiclass, bool learn_returns_prediction = false)
 {
-  learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
+  learner<T, E>& l =
+      learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_returns_prediction);
   dat.release();
   l.set_finish_example(COST_SENSITIVE::finish_example);
   p->lbl_parser = COST_SENSITIVE::cs_label;

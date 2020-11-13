@@ -177,7 +177,7 @@ inline void add_DIR(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * f
 
 float dot_with_direction(vw& all, example& ec)
 {
-  float temp = ec.l.simple.initial;
+  float temp = ec.initial;
   GD::foreach_feature<float, add_DIR>(all, ec, temp);
   return temp;
 }
@@ -1116,9 +1116,9 @@ base_learner* bfgs_setup(options_i& options, vw& all)
 
   learner<bfgs, example>* l;
   if (all.audit || all.hash_inv)
-    l = &init_learner(b, learn_ptr, predict<true>, all.weights.stride());
+    l = &init_learner(b, learn_ptr, predict<true>, all.weights.stride(), "bfgs-audit");
   else
-    l = &init_learner(b, learn_ptr, predict<false>, all.weights.stride());
+    l = &init_learner(b, learn_ptr, predict<false>, all.weights.stride(), "bfgs");
 
   l->set_save_load(save_load);
   l->set_init_driver(init_driver);

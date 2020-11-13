@@ -44,8 +44,8 @@ struct classweights
   }
 };
 
-template <bool is_learn, prediction_type_t pred_type>
-static void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base, example& ec)
+template <prediction_type_t pred_type>
+void update_example_weight(classweights& cweights, example& ec)
 {
   switch (pred_type)
   {
@@ -59,11 +59,20 @@ static void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner
       // suppress the warning
       break;
   }
+}
 
+template <bool is_learn, prediction_type_t pred_type>
+void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base, example& ec)
+{
+  update_example_weight<pred_type>(cweights, ec);
   if (is_learn)
+  {
     base.learn(ec);
+  }
   else
+  {
     base.predict(ec);
+  }
 }
 }  // namespace CLASSWEIGHTS
 
@@ -87,11 +96,12 @@ VW::LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
 
   VW::LEARNER::learner<classweights, example>* ret;
   if (base->pred_type == prediction_type_t::scalar)
-    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type_t::scalar>,
-        predict_or_learn<false, prediction_type_t::scalar>);
+    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, prediction_type_t::scalar>,
+        &predict_or_learn<false, prediction_type_t::scalar>, "classweight-scalar", true);
   else if (base->pred_type == prediction_type_t::multiclass)
-    ret = &VW::LEARNER::init_learner<classweights>(cweights, base,
-        predict_or_learn<true, prediction_type_t::multiclass>, predict_or_learn<false, prediction_type_t::multiclass>);
+    ret =
+        &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, prediction_type_t::multiclass>,
+            &predict_or_learn<false, prediction_type_t::multiclass>, "classweight-multi", true);
   else
     THROW("--classweight not implemented for this type of prediction");
   return make_base(*ret);

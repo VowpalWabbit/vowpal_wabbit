@@ -29,4 +29,5 @@ struct label_parser
                                      // constains, for instance, pointers (otherwise you'll get double-free errors)
   bool (*test_label)(void*);
   size_t label_size;
+  void (*post_parse_setup)(example*);
 };

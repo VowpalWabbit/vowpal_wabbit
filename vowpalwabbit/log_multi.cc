@@ -297,7 +297,8 @@ void predict(log_multi& b, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
 
-  ec.l.simple = {FLT_MAX, 0.f, 0.f};
+  ec.l.simple = {FLT_MAX, VW::UNUSED_1, VW::UNUSED_0};
+
   uint32_t cn = 0;
   uint32_t depth = 0;
   while (b.nodes[cn].internal)
@@ -312,16 +313,13 @@ void predict(log_multi& b, single_learner& base, example& ec)
 
 void learn(log_multi& b, single_learner& base, example& ec)
 {
-  //    verify_min_dfs(b, b.nodes[0]);
-  if (ec.l.multi.label == (uint32_t)-1 || b.progress) predict(b, base, ec);
-
   if (ec.l.multi.label != (uint32_t)-1)  // if training the tree
   {
     MULTICLASS::label_t mc = ec.l.multi;
     uint32_t start_pred = ec.pred.multiclass;
 
     uint32_t class_index = 0;
-    ec.l.simple = {FLT_MAX, 0.f, 0.f};
+    ec.l.simple = {FLT_MAX, VW::UNUSED_1, VW::UNUSED_0};
     uint32_t cn = 0;
     uint32_t depth = 0;
     while (children(b, cn, class_index, mc.label))
@@ -500,8 +498,8 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
-  learner<log_multi, example>& l = init_multiclass_learner(
-      data, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, data->max_predictors);
+  learner<log_multi, example>& l = init_multiclass_learner(data, as_singleline(setup_base(options, all)), learn,
+      predict, all.example_parser, data->max_predictors, "log_multi");
   l.set_save_load(save_load_tree);
 
   return make_base(l);

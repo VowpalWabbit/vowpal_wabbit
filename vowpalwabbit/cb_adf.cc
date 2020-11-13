@@ -15,6 +15,9 @@
 #include "vw_versions.h"
 #include "explore.h"
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cb_adf
+
 using namespace VW::LEARNER;
 using namespace CB;
 using namespace ACTION_SCORE;
@@ -49,17 +52,17 @@ private:
   const bool _rank_all;
   const float _clip_p;
 
-public:
-  template <bool is_learn>
-  void do_actual_learning(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
-  bool update_statistics(example& ec, multi_ex* ec_seq);
+ public:
+   void learn(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
+   void predict(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
+   bool update_statistics(example& ec, multi_ex* ec_seq);
 
-  cb_adf(
-      shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
-      : _sd(sd), _model_file_ver(model_file_ver), _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p)
-  {
-    _gen_cs.cb_type = cb_type;
-  }
+   cb_adf(shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p,
+       bool no_predict)
+       : _sd(sd), _model_file_ver(model_file_ver), _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p)
+   {
+     _gen_cs.cb_type = cb_type;
+   }
 
   void set_scorer(VW::LEARNER::single_learner* scorer) { _gen_cs.scorer = scorer; }
 
@@ -89,7 +92,6 @@ private:
   void learn_DR(multi_learner& base, multi_ex& examples);
   void learn_DM(multi_learner& base, multi_ex& examples);
   void learn_SM(multi_learner& base, multi_ex& examples);
-
   template <bool predict>
   void learn_MTR(multi_learner& base, multi_ex& examples);
 };
@@ -130,13 +132,13 @@ CB::cb_class get_observed_cost(multi_ex& examples, bool skip_example_header)
 void cb_adf::learn_IPS(multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_ips(examples, _cs_labels, _clip_p);
-  call_cs_ldf<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
 void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
 {
   gen_cs_test_example(examples, _cs_labels);  // create test labels.
-  call_cs_ldf<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 
   // Can probably do this more efficiently than 6 loops over the examples...
   //[1: initialize temporary storage;
@@ -211,7 +213,7 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
   }
 
   // Do actual training
-  call_cs_ldf<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 
   // Restore example weights and numFeatures
   for (size_t i = 0; i < _prob_s.size(); i++)
@@ -225,26 +227,26 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
 void cb_adf::learn_DR(multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels, _clip_p);
-  call_cs_ldf<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
 void cb_adf::learn_DM(multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_dm(examples, _cs_labels);
-  call_cs_ldf<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
-template <bool predict>
+template <bool PREDICT>
 void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 {
-  // uint32_t action = 0;
-  if (predict)  // first get the prediction to return
+  if (PREDICT)  // first get the prediction to return
   {
     gen_cs_example_ips(examples, _cs_labels);
-    call_cs_ldf<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+    cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
     std::swap(examples[0]->pred.a_s, _a_s);
   }
-  // second train on _one_ action (which requires up to 3 examples).
+
+  // Train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
   // proper feature handling.
   gen_cs_example_mtr(_gen_cs, examples, _cs_labels);
@@ -255,7 +257,7 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
 
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are dropped)
-  GEN_CS::call_cs_ldf<true>(base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
+  cs_ldf_learn_or_predict<true>(base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
   examples[_gen_cs.mtr_example]->num_features = nf;
   examples[_gen_cs.mtr_example]->weight = old_weight;
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
@@ -286,19 +288,12 @@ example* test_adf_sequence(multi_ex& ec_seq)
   return ret;
 }
 
-template <bool is_learn>
-void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
+void cb_adf::learn(multi_learner& base, multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
-  _gen_cs.known_cost = get_observed_cost(ec_seq, false);  // need to set for test case
-  bool learn = is_learn && test_adf_sequence(ec_seq) != nullptr;
-  if (learn)
+  _gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
+  if (test_adf_sequence(ec_seq) != nullptr)
   {
-    /*	v_array<float> temp_scores;
-    temp_scores = v_init<float>();
-    do_actual_learning<false>(data,base);
-    for (size_t i = 0; i < data.ec_seq[0]->pred.a_s.size(); i++)
-    temp_scores.push_back(data.ec_seq[0]->pred.a_s[i].score);*/
     switch (_gen_cs.cb_type)
     {
       case CB_TYPE_IPS:
@@ -322,17 +317,15 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
       default:
         THROW("Unknown cb_type specified for contextual bandit learning: " << _gen_cs.cb_type);
     }
+  }
+}
 
-    /*      for (size_t i = 0; i < temp_scores.size(); i++)
-    if (temp_scores[i] != data.ec_seq[0]->pred.a_s[i].score)
-     std::cout << "problem! " << temp_scores[i] << " != " << data.ec_seq[0]->pred.a_s[i].score << " for " <<
-    data.ec_seq[0]->pred.a_s[i].action << std::endl; temp_scores.delete_v();*/
-  }
-  else
-  {
-    gen_cs_test_example(ec_seq, _cs_labels);  // create test labels.
-    call_cs_ldf<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, _offset);
-  }
+void cb_adf::predict(multi_learner& base, multi_ex& ec_seq)
+{
+  _offset = ec_seq[0]->ft_offset;
+  _gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
+  gen_cs_test_example(ec_seq, _cs_labels);         // create test labels.
+  cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 }
 
 void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink)
@@ -459,9 +452,9 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
       model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), "", read, msg, text);
 }
 
-void learn(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.do_actual_learning<true>(base, ec_seq); }
+void learn(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.learn(base, ec_seq); }
 
-void predict(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.do_actual_learning<false>(base, ec_seq); }
+void predict(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.predict(base, ec_seq); }
 
 }  // namespace CB_ADF
 using namespace CB_ADF;
@@ -550,7 +543,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   cb_adf* bare = ld.get();
   learner<cb_adf, multi_ex>& l =
-      init_learner(ld, base, learn, predict, problem_multiplier, prediction_type_t::action_scores);
+      init_learner(ld, base, learn, predict, problem_multiplier, prediction_type_t::action_scores, "cb_adf");
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   bare->set_scorer(all.scorer);

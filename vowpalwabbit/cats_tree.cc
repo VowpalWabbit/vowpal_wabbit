@@ -20,7 +20,8 @@ using namespace VW::LEARNER;
 using CB::cb_class;
 using std::vector;
 
-VW_DEBUG_ENABLE(false)
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cats_tree
 
 namespace VW
 {
@@ -169,7 +170,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
     {
       ec.partial_prediction = 0.f;
       ec.pred.scalar = 0.f;
-      ec.l.simple.initial = 0.f;  // needed for gd.predict()
+      ec.initial = 0.f;  // needed for gd.predict()
       base.predict(ec, cur_node.id);
       VW_DBG(ec) << "tree_c: predict() after base.predict() " << scalar_pred_to_string(ec)
                  << ", nodeid = " << cur_node.id << std::endl;
@@ -251,7 +252,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
         if (((cost_v < cost_w) ? v : w).id == v_parent.left_id) { local_action = LEFT; }
 
         ec.l.simple.label = local_action;
-        ec.l.simple.initial = 0.f;
+        ec.initial = 0.f;
         ec.weight = std::abs(cost_v - cost_w);
 
         bool filter = false;
@@ -364,8 +365,8 @@ base_learner* setup(options_i& options, vw& all)
 
   base_learner* base = setup_base(options, all);
 
-  learner<cats_tree, example>& l =
-      init_learner(tree, as_singleline(base), learn, predict, tree->learner_count(), prediction_type_t::multiclass);
+  learner<cats_tree, example>& l = init_learner(
+      tree, as_singleline(base), learn, predict, tree->learner_count(), prediction_type_t::multiclass, "cats_tree");
 
   return make_base(l);
 }

@@ -10,6 +10,9 @@
 #include "vw_string_view.h"
 #include "tag_utils.h"
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cb_sample
+
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
@@ -74,10 +77,21 @@ struct cb_sample_data
     auto result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
     assert(result == S_EXPLORATION_OK);
 
+    VW_DBG(examples) << "cb " << cb_decision_to_string(examples[0]->pred.a_s)
+                     << " rnd:" << _random_state->get_current_state() << std::endl;
+
     _UNUSED(result);
   }
 
-private:
+  std::string cb_decision_to_string(const ACTION_SCORE::action_scores &action_scores)
+  {
+    std::ostringstream ostrm;
+    if (action_scores.empty()) return "";
+    ostrm << "chosen" << action_scores[0] << action_scores;
+    return ostrm.str();
+  }
+
+ private:
   std::shared_ptr<rand_state> _random_state;
 };
 }  // namespace VW
@@ -103,5 +117,5 @@ base_learner *cb_sample_setup(options_i &options, vw &all)
 
   auto data = scoped_calloc_or_throw<cb_sample_data>(all.get_random_state());
   return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true>,
-      learn_or_predict<false>, 1 /* weights */, prediction_type_t::action_probs));
+      learn_or_predict<false>, 1 /* weights */, prediction_type_t::action_probs, "cb_sample", true));
 }

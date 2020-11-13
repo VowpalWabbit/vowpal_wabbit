@@ -16,11 +16,15 @@
 #include "decision_scores.h"
 #include "vw_versions.h"
 #include "version.h"
+#include "debug_log.h"
 
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
 #include <bitset>
+
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::ccb
 
 using namespace VW::LEARNER;
 using namespace VW;
@@ -364,6 +368,22 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   std::swap(data.shared->tag, slot->tag);
 }
 
+std::string ccb_decision_to_string(const ccb& data)
+{
+  std::ostringstream outstrm;
+  auto& pred = data.shared->pred.a_s;
+  // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
+  outstrm << "a_s [";
+  for (const auto& action_score : pred) outstrm << action_score.action << ":" << action_score.score << ", ";
+  outstrm << "] ";
+
+  outstrm << "excl [";
+  for (const auto& excl : data.exclude_list) outstrm << excl << ",";
+  outstrm << "] ";
+
+  return outstrm.str();
+}
+
 // iterate over slots contained in the multi-example, and for each slot, build a cb example and perform a
 // cb_explore_adf call.
 template <bool is_learn>
@@ -439,18 +459,31 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         }
       }
 
-      if (has_action(data.cb_ex))
-      {
-        // the cb example contains at least 1 action
-        multiline_learn_or_predict<is_learn>(base, data.cb_ex, examples[0]->ft_offset);
-        save_action_scores(data, decision_scores);
-        clear_pred_and_label(data);
-      }
-      else
-      {
-        // the cb example contains no action => cannot decide
-        decision_scores.push_back(data.action_score_pool.get_object());
-      }
+    // the cb example contains at least 1 action
+    if (has_action(data.cb_ex))
+    {
+      // Notes:  Prediction is needed for output purposes. i.e.  save_action_scores needs it.
+      // This is will be used to a) display prediction, b) output to a predict file c) progressive loss calcs
+      //
+      // Strictly speaking, predict is not needed to learn.  The only reason for doing this here
+      // instead of letting the framework call predict before learn is to avoid extra work in example manipulation.
+      //
+      // The right thing to do here is to detect library mode and not have to call predict if prediction is
+      // not needed for learn.  This will be part of a future PR
+      if (!is_learn) multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
+
+      if (is_learn) { multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset); }
+
+      save_action_scores(data, decision_scores);
+      VW_DBG(examples) << "ccb "
+                       << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
+      clear_pred_and_label(data);
+    }
+    else
+    {
+      // the cb example contains no action => cannot decide
+      decision_scores.push_back(data.action_score_pool.get_object());
+    }
 
       if (should_augment_with_slot_info)
       {
@@ -636,8 +669,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_str.append("_id");
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
-  learner<ccb, multi_ex>& l =
-      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_probs);
+  learner<ccb, multi_ex>& l = init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
+      prediction_type_t::decision_probs, "ccb_explore_adf", true);
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 

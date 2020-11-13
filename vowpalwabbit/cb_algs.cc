@@ -195,13 +195,14 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   learner<cb, example>* l;
   if (eval)
   {
-    l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass);
+    l = &init_learner(
+        data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass, "cb-eval", true);
     l->set_finish_example(eval_finish_example);
   }
   else
   {
-    l = &init_learner(
-        data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier, prediction_type_t::multiclass);
+    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier,
+        prediction_type_t::multiclass, "cb");
     l->set_finish_example(finish_example);
   }
   c.scorer = all.scorer;

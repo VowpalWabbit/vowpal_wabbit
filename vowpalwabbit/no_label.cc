@@ -44,7 +44,7 @@ void parse_no_label(parser*, shared_data*, void*, std::vector<VW::string_view>& 
 }
 
 label_parser no_label_parser = {default_no_label, parse_no_label, cache_no_label, read_cached_no_label, delete_no_label,
-    get_weight, nullptr, test_label, sizeof(nullptr)};
+    get_weight, nullptr, test_label, sizeof(nullptr), nullptr};
 
 void print_no_label_update(vw& all, example& ec)
 {

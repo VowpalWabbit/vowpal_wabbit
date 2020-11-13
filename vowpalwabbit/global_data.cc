@@ -146,7 +146,24 @@ void vw::learn(example& ec)
   if (ec.test_only || !training)
     VW::LEARNER::as_singleline(l)->predict(ec);
   else
-    VW::LEARNER::as_singleline(l)->learn(ec);
+  {
+    if (l->learn_returns_prediction)
+    {
+      VW::LEARNER::as_singleline(l)->learn(ec);
+    }
+    else
+    {
+      VW::LEARNER::as_singleline(l)->predict(ec);
+      std::swap(_predict_buffer, ec.pred);
+      std::swap(_loss_buffer,ec.loss);
+      auto restore_guard = VW::scope_exit([&ec, this]
+      {
+        std::swap(ec.pred, _predict_buffer);
+        std::swap(ec.loss,_loss_buffer);
+      });
+      VW::LEARNER::as_singleline(l)->learn(ec);
+    }
+  }
 }
 
 void vw::learn(multi_ex& ec)
@@ -156,7 +173,24 @@ void vw::learn(multi_ex& ec)
   if (!training)
     VW::LEARNER::as_multiline(l)->predict(ec);
   else
-    VW::LEARNER::as_multiline(l)->learn(ec);
+  {
+    if (l->learn_returns_prediction)
+    {
+      VW::LEARNER::as_multiline(l)->learn(ec);
+    }
+    else
+    {
+      VW::LEARNER::as_multiline(l)->predict(ec);
+      std::swap(_predict_buffer, ec[0]->pred);
+      std::swap(_loss_buffer,ec[0]->loss);
+      auto restore_guard = VW::scope_exit([&ec, this]
+      {
+        std::swap(ec[0]->pred, _predict_buffer);
+        std::swap(ec[0]->loss, _loss_buffer);
+      });
+      VW::LEARNER::as_multiline(l)->learn(ec);
+    }
+  }
 }
 
 void vw::predict(example& ec)
@@ -239,6 +273,84 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
+
+void vw::copy_prediction(const polyprediction& from_pred)
+{
+  if (l == nullptr) return;
+
+  switch (l->pred_type)
+  {
+    case prediction_type_t::action_probs:
+      copy_array(_predict_buffer.a_s, from_pred.a_s);
+      break;
+    case prediction_type_t::action_scores:
+      copy_array(_predict_buffer.a_s, from_pred.a_s);
+      break;
+    case prediction_type_t::decision_probs:
+      copy_array(_predict_buffer.decision_scores, from_pred.decision_scores);
+      break;
+    case prediction_type_t::multilabels:
+      copy_array(_predict_buffer.multilabels.label_v, from_pred.multilabels.label_v);
+      break;
+    case prediction_type_t::pdf:
+      copy_array(_predict_buffer.pdf, from_pred.pdf);
+      break;
+    case prediction_type_t::scalars:
+      copy_array(_predict_buffer.scalars, from_pred.scalars);
+      break;
+    case prediction_type_t::multiclass:
+      _predict_buffer = from_pred;
+      break;
+    case prediction_type_t::action_pdf_value:
+      _predict_buffer = from_pred;
+      break;
+    case prediction_type_t::prob:
+      _predict_buffer = from_pred;
+      break;
+    case prediction_type_t::scalar:
+      _predict_buffer = from_pred;
+      break;
+    default:
+      THROW("Unhandled prediction type");
+  }
+}
+
+void vw::cleanup_prediction()
+{
+  if (l == nullptr) return;
+
+  switch (l->pred_type)
+  {
+    case prediction_type_t::action_probs:
+      _predict_buffer.a_s.delete_v();
+      break;
+    case prediction_type_t::action_scores:
+      _predict_buffer.a_s.delete_v();
+      break;
+    case prediction_type_t::decision_probs:
+      _predict_buffer.decision_scores.delete_v();
+      break;
+    case prediction_type_t::multilabels:
+      _predict_buffer.multilabels.label_v.delete_v();
+      break;
+    case prediction_type_t::pdf:
+      _predict_buffer.pdf.delete_v();
+      break;
+    case prediction_type_t::scalars:
+      _predict_buffer.scalars.delete_v();
+      break;
+    case prediction_type_t::multiclass:
+      break;
+    case prediction_type_t::action_pdf_value:
+      break;
+    case prediction_type_t::prob:
+      break;
+    case prediction_type_t::scalar:
+      break;
+    default:
+      THROW("Unhandled prediction type");
+  }
+}
 
 vw::vw()
 {
@@ -354,11 +466,14 @@ vw::vw()
   sd->report_multiclass_log_loss = false;
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
+  std::memset(&_predict_buffer, 0, sizeof(_predict_buffer));
 }
 VW_WARNING_STATE_POP
 
 vw::~vw()
 {
+  cleanup_prediction();
+
   if (l != nullptr)
   {
     l->finish();

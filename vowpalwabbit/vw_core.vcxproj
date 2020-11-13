@@ -171,6 +171,7 @@
     <ClInclude Include="ftrl.h" />
     <ClInclude Include="gd_mf.h" />
     <ClInclude Include="gd.h" />
+    <ClInclude Include="gd_predict.h" />
     <ClInclude Include="gen_cs_example.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="guard.h" />

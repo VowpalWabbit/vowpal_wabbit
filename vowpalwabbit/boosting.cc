@@ -396,18 +396,18 @@ VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
 
   learner<boosting, example>* l;
   if (data->alg == "BBM")
-    l = &init_learner<boosting, example>(
-        data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, data->N);
+    l = &init_learner<boosting, example>(data, as_singleline(setup_base(options, all)), predict_or_learn<true>,
+        predict_or_learn<false>, data->N, "boosting");
   else if (data->alg == "logistic")
   {
     l = &init_learner<boosting, example>(data, as_singleline(setup_base(options, all)), predict_or_learn_logistic<true>,
-        predict_or_learn_logistic<false>, data->N);
+        predict_or_learn_logistic<false>, data->N, "boosting-logistic");
     l->set_save_load(save_load);
   }
   else if (data->alg == "adaptive")
   {
     l = &init_learner<boosting, example>(data, as_singleline(setup_base(options, all)), predict_or_learn_adaptive<true>,
-        predict_or_learn_adaptive<false>, data->N);
+        predict_or_learn_adaptive<false>, data->N, "boosting-adaptive");
     l->set_save_load(save_load_sampling);
   }
   else

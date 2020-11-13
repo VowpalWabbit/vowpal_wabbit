@@ -4,6 +4,10 @@
 
 #include <cfloat>
 #include "reductions.h"
+#include "debug_log.h"
+
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::binary
 
 using namespace VW::config;
 using std::endl;
@@ -26,6 +30,8 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
   else
     ec.pred.scalar = -1;
 
+  VW_DBG(ec) << "binary: final-pred " << scalar_pred_to_string(ec) << features_to_string(ec) << endl;
+
   if (ec.l.simple.label != FLT_MAX)
   {
     if (fabs(ec.l.simple.label) != 1.f)
@@ -47,7 +53,7 @@ VW::LEARNER::base_learner* binary_setup(options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   VW::LEARNER::learner<char, example>& ret = VW::LEARNER::init_learner(
-      as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
+      as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, "binary", true);
   return make_base(ret);
 }
 

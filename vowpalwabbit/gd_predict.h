@@ -5,6 +5,10 @@
 
 #include "interactions_predict.h"
 #include "v_array.h"
+#include "debug_log.h"
+
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::gd_predict
 
 namespace GD
 {
@@ -19,7 +23,11 @@ void foreach_feature(W& /*weights*/, features& fs, R& dat, uint64_t offset = 0, 
 template <class R, void (*T)(R&, const float, float&), class W>
 inline void foreach_feature(W& weights, features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
 {
-  for (features::iterator& f : fs) T(dat, mult * f.value(), weights[(f.index() + offset)]);
+  for (features::iterator& f : fs)
+  {
+    weight& w = weights[(f.index() + offset)];
+    T(dat, mult * f.value(), w);
+  }
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)

@@ -204,6 +204,6 @@ base_learner* mf_setup(options_i& options, vw& all)
   all.random_positive_weights = true;
 
   learner<mf, example>& l =
-      init_learner(data, as_singleline(setup_base(options, all)), learn, predict<false>, 2 * data->rank + 1);
+      init_learner(data, as_singleline(setup_base(options, all)), learn, predict<false>, 2 * data->rank + 1, "new_mf");
   return make_base(l);
 }

@@ -20,7 +20,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
   MULTILABEL::labels preds = ec.pred.multilabels;
   preds.label_v.clear();
 
-  ec.l.simple = {FLT_MAX, 1.f, 0.f};
+  ec.l.simple = {FLT_MAX, VW::UNUSED_1, VW::UNUSED_0};
   uint32_t multilabel_index = 0;
   for (uint32_t i = 0; i < o.k; i++)
   {
@@ -65,8 +65,9 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  VW::LEARNER::learner<multi_oaa, example>& l = VW::LEARNER::init_learner(data, as_singleline(setup_base(options, all)),
-      predict_or_learn<true>, predict_or_learn<false>, data->k, prediction_type_t::multilabels);
+  VW::LEARNER::learner<multi_oaa, example>& l =
+      VW::LEARNER::init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>,
+          predict_or_learn<false>, data->k, prediction_type_t::multilabels, "multilabel_oaa", true);
   l.set_finish_example(finish_example);
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
   all.label_type = label_type_t::multi;
