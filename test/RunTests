@@ -1951,8 +1951,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbe_adf_dsjson_chain_hash.stderr
     pred-sets/ref/cbe_adf_dsjson_chain_hash.predict
 
-# Test 238: Evaluate exploration with uniform probabilities for each action and uniform distributed policy(--epsilon 1)
-{VW} --explore_eval --epsilon 1 -d train-sets/explore_eval.dat
-    train-sets/ref/explore_eval_uniform_distributed_policy.stderr
+# Test 238: same with test 142 but with empty shared features
+{VW} --explore_eval --epsilon 0.2 -d train-sets/cb_test_with_empty_shared_feature.ldf --noconstant -p explore_eval.predict
+    train-sets/ref/explore_eval_with_empty_shared_feature.stderr
+    pred-sets/ref/explore_eval.predict
 
 # Do not delete this line or the empty line above it
