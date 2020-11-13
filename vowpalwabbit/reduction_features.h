@@ -4,6 +4,7 @@
 
 #pragma once
 #include "ccb_reduction_features.h"
+#include "prob_dist_cont.h"
 
 /*
  * class reduction_features
@@ -29,6 +30,7 @@ class reduction_features
 {
  private:
   CCB::reduction_features _ccb_reduction_features;
+  VW::continuous_actions::reduction_features _contact_reduction_features;
 
  public:
   template <typename T>
@@ -39,5 +41,6 @@ class reduction_features
   // call clear() on all instantiated types
   void clear() {
     _ccb_reduction_features.clear();
+    _contact_reduction_features.clear();
   }
 };

@@ -29,5 +29,15 @@ std::string to_string(const probability_density_function_value& pdf_value, bool 
 std::string to_string(const probability_density_function& pdf, bool print_newline = false);
 void delete_probability_density_function(void* v);
 
+struct reduction_features
+{
+  probability_density_function pdf;
+  float action;
+
+  reduction_features();
+  ~reduction_features();
+  void clear();
+};
+
 }  // namespace continuous_actions
 }  // namespace VW

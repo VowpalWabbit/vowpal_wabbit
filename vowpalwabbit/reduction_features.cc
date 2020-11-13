@@ -14,3 +14,14 @@ const CCB::reduction_features& reduction_features::get<CCB::reduction_features>(
 {
   return _ccb_reduction_features;
 }
+
+template <>
+VW::continuous_actions::reduction_features& reduction_features::get<VW::continuous_actions::reduction_features>()
+{
+  return _contact_reduction_features;
+}
+template <>
+const VW::continuous_actions::reduction_features& reduction_features::get<VW::continuous_actions::reduction_features>() const
+{
+  return _contact_reduction_features;
+}

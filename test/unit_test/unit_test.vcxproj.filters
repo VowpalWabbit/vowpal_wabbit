@@ -24,6 +24,9 @@
     <ClCompile Include="ccb_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="cats_user_provided_pdf.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="continuous_actions_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

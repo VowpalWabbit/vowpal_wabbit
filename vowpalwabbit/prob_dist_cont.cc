@@ -48,5 +48,9 @@ void delete_probability_density_function(void* v)
   pdf->delete_v();
 }
 
+reduction_features::reduction_features() { pdf = v_init<pdf_segment>(); }
+reduction_features::~reduction_features() { pdf.delete_v(); }
+void reduction_features::clear() { pdf.clear(); }
+
 }  // namespace continuous_actions
 }  // namespace VW
