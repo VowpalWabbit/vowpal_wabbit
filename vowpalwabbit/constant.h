@@ -2,6 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
+#include <cstdint>
+#include <cstddef>
+
 constexpr int quadratic_constant = 27942141;
 constexpr int cubic_constant = 21791;
 constexpr int cubic_constant2 = 37663;
