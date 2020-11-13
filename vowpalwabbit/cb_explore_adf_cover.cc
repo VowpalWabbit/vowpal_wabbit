@@ -96,8 +96,8 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
 
   float additive_probability = 1.f / (float)_cover_size;
 
-  float min_prob = is_learn ? std::min(_epsilon / num_actions, _epsilon / (float)std::sqrt(_counter * num_actions))
-                            : _epsilon / num_actions;
+  float min_prob = _epsilon / num_actions;
+
   _action_probs.clear();
   for (uint32_t i = 0; i < num_actions; i++) _action_probs.push_back({i, 0.});
   _scores.clear();

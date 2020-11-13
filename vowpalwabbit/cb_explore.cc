@@ -44,6 +44,7 @@ struct cb_explore
   size_t cover_size;
   float psi;
   bool nounif;
+  bool epsilon_decay = true;
 
   size_t counter;
 
@@ -187,9 +188,11 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
   auto restore_guard = VW::scope_exit([&data, &ec] { ec.l.cb = data.cb_label; });
 
   ec.l.cs = data.cs_label;
-  float min_prob = is_learn
-      ? std::min(data.epsilon / num_actions, data.epsilon / (float)std::sqrt(data.counter * num_actions))
-      : data.epsilon / num_actions;
+
+  float min_prob = data.epsilon / num_actions;
+  // float min_prob = !is_learn || (is_learn && data.epsilon_decay)
+  //     ? data.epsilon / num_actions;
+  //     : std::min(data.epsilon / num_actions, data.epsilon / (float)std::sqrt(data.counter * num_actions));
 
   get_cover_probabilities(data, base, ec, probs, min_prob);
 
@@ -337,6 +340,11 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   learner<cb_explore, example>* l;
   if (options.was_supplied("cover"))
   {
+    if (options.was_supplied("epsilon"))
+    {
+      // fixed epsilon during learning
+      data->epsilon_decay = false;
+    }
     data->cs = (learner<cb_explore, example>*)(as_singleline(all.cost_sensitive));
     data->second_cs_label.costs.resize(num_actions);
     data->second_cs_label.costs.end() = data->second_cs_label.costs.begin() + num_actions;
