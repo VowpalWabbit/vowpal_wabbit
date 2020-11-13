@@ -295,7 +295,6 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_valid_pdf)
   BOOST_TEST(reduction_features.is_pdf_set());
   BOOST_TEST(!reduction_features.is_chosen_action_set());
 
-
   BOOST_CHECK_EQUAL(reduction_features.pdf.size(), 2);
   BOOST_CHECK_CLOSE(reduction_features.pdf[0].left, 185., FLOAT_TOL);
   BOOST_CHECK_CLOSE(reduction_features.pdf[0].right, 8109.67, FLOAT_TOL);

@@ -56,15 +56,9 @@ reduction_features::reduction_features()
 
 reduction_features::~reduction_features() { pdf.delete_v(); }
 
-bool reduction_features::is_chosen_action_set() const
-{
-  return !std::isnan(chosen_action);
-}
+bool reduction_features::is_chosen_action_set() const { return !std::isnan(chosen_action); }
 
-bool reduction_features::is_pdf_set() const
-{
-  return pdf.size() > 0;
-}
+bool reduction_features::is_pdf_set() const { return pdf.size() > 0; }
 
 void reduction_features::clear()
 {

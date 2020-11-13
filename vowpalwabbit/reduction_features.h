@@ -32,7 +32,7 @@ class reduction_features
   CCB::reduction_features _ccb_reduction_features;
   VW::continuous_actions::reduction_features _contact_reduction_features;
 
- public:
+public:
   template <typename T>
   T& get();
   template <typename T>

@@ -21,7 +21,8 @@ VW::continuous_actions::reduction_features& reduction_features::get<VW::continuo
   return _contact_reduction_features;
 }
 template <>
-const VW::continuous_actions::reduction_features& reduction_features::get<VW::continuous_actions::reduction_features>() const
+const VW::continuous_actions::reduction_features& reduction_features::get<VW::continuous_actions::reduction_features>()
+    const
 {
   return _contact_reduction_features;
 }
