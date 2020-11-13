@@ -174,7 +174,7 @@ public:
   BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
   {
     // check valid pdf else remove
-    auto& pdf = ctx.ex->reduction_features.template get<VW::continuous_actions::reduction_features>().pdf;
+    auto& pdf = ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().pdf;
     float mass = 0.f;
     for (const auto& segment : pdf) { mass += (segment.right - segment.left) * segment.pdf_value; }
     if (mass < 0.9999 || mass > 1.0001)
@@ -198,7 +198,7 @@ public:
     }
     else if (!_stricmp(ctx.key, "chosen_action"))
     {
-      ctx.ex->reduction_features.template get<VW::continuous_actions::reduction_features>().chosen_action = v;
+      ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().chosen_action = v;
     }
     else
     {
@@ -213,7 +213,7 @@ public:
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    ctx.ex->reduction_features.template get<VW::continuous_actions::reduction_features>().pdf.push_back(segment);
+    ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().pdf.push_back(segment);
     segment = {0., 0., 0.};
     return obj_return_state;
   }

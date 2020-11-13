@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(cats_no_model_action_provided)
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
   const auto& reduction_features =
-      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+      examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
   BOOST_TEST(!reduction_features.is_pdf_set());
   BOOST_TEST(reduction_features.is_chosen_action_set());
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_action_provided)
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
   const auto& reduction_features =
-      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+      examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
   BOOST_TEST(!reduction_features.is_pdf_set());
   BOOST_TEST(reduction_features.is_chosen_action_set());
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_uniform_random)
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
   const auto& reduction_features =
-      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+      examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
   BOOST_TEST(!reduction_features.is_pdf_set());
   BOOST_TEST(!reduction_features.is_chosen_action_set());
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_pdf_provided)
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
   const auto& reduction_features =
-      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+      examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
   BOOST_TEST(reduction_features.is_pdf_set());
   BOOST_TEST(!reduction_features.is_chosen_action_set());

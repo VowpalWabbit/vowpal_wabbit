@@ -49,7 +49,7 @@ struct example_predict
   // Interactions are specified by this vector of vectors of unsigned characters, where each vector is an interaction
   // and each char is a namespace.
   std::vector<std::vector<namespace_index>>* interactions;
-  reduction_features reduction_features;
+  reduction_features _reduction_features;
 
   uint32_t _current_reduction_depth;  // Used for debugging reductions.  Keeps track of current reduction level
 };

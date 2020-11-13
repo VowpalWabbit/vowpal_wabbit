@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_valid_pdf)
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
   const auto& reduction_features =
-      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+      examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
   BOOST_TEST(reduction_features.is_pdf_set());
   BOOST_TEST(!reduction_features.is_chosen_action_set());
@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_invalid_pdf)
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
   const auto& reduction_features =
-      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+      examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
   BOOST_TEST(!reduction_features.is_pdf_set());
   BOOST_TEST(!reduction_features.is_chosen_action_set());
@@ -390,7 +390,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_chosen_action)
   auto examples = parse_dsjson(*vw, json_text);
 
   const auto& reduction_features =
-      examples[0]->reduction_features.template get<VW::continuous_actions::reduction_features>();
+      examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
   BOOST_TEST(!reduction_features.is_pdf_set());

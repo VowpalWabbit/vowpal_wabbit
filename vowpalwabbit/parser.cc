@@ -807,7 +807,7 @@ void empty_example(vw& /*all*/, example& ec)
   ec.tag.clear();
   ec.sorted = false;
   ec.end_pass = false;
-  ec.reduction_features.clear();
+  ec._reduction_features.clear();
 }
 
 void clean_example(vw& all, example& ec, bool rewind)
