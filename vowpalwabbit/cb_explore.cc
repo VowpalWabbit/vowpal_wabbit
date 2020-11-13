@@ -189,10 +189,9 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 
   ec.l.cs = data.cs_label;
 
-  float min_prob = data.epsilon / num_actions;
-  // float min_prob = !is_learn || (is_learn && data.epsilon_decay)
-  //     ? data.epsilon / num_actions;
-  //     : std::min(data.epsilon / num_actions, data.epsilon / (float)std::sqrt(data.counter * num_actions));
+  float min_prob = !is_learn || (is_learn && data.epsilon_decay)
+      ? data.epsilon / num_actions
+      : std::min(data.epsilon / num_actions, data.epsilon / (float)std::sqrt(data.counter * num_actions));
 
   get_cover_probabilities(data, base, ec, probs, min_prob);
 

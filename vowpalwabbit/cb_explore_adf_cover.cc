@@ -30,6 +30,7 @@ private:
   float _psi;
   bool _nounif;
   float _epsilon;
+  bool _epsilon_decay;
   bool _first_only;
   size_t _counter;
   VW::LEARNER::multi_learner* _cs_ldf_learner;
@@ -43,7 +44,7 @@ private:
   v_array<CB::label> _cb_labels;
 
 public:
-  cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool first_only,
+  cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
       VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type);
   ~cb_explore_adf_cover();
 
@@ -56,12 +57,13 @@ private:
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
 
-cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool first_only,
-    VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type)
+cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
+    bool first_only, VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type)
     : _cover_size(cover_size)
     , _psi(psi)
     , _nounif(nounif)
     , _epsilon(epsilon)
+    , _epsilon_decay(epsilon_decay)
     , _first_only(first_only)
     , _cs_ldf_learner(cs_ldf_learner)
 {
@@ -96,7 +98,9 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
 
   float additive_probability = 1.f / (float)_cover_size;
 
-  float min_prob = _epsilon / num_actions;
+  float min_prob = !is_learn || (is_learn && _epsilon_decay)
+      ? _epsilon / num_actions
+      : std::min(_epsilon / num_actions, _epsilon / (float)std::sqrt(_counter * num_actions));
 
   _action_probs.clear();
   for (uint32_t i = 0; i < num_actions; i++) _action_probs.push_back({i, 0.});
@@ -253,9 +257,11 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   all.example_parser->lbl_parser = CB::cb_label;
   all.label_type = label_type_t::cb;
 
+  bool epsilon_decay = options.was_supplied("epsilon") ? false : true;
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
-  auto data = scoped_calloc_or_throw<explore_type>(
-      cover_size, psi, nounif, epsilon, first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type_enum);
+  auto data = scoped_calloc_or_throw<explore_type>(cover_size, psi, nounif, epsilon, epsilon_decay, first_only,
+      as_multiline(all.cost_sensitive), all.scorer, cb_type_enum);
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
