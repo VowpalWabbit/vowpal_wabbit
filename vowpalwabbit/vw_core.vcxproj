@@ -151,7 +151,7 @@
     <ClInclude Include="cb_sample.h" />
     <ClInclude Include="cbify.h" />
     <ClInclude Include="ccb_label.h" />
-    <ClInclude Include="ccb_predict_data.h" />
+    <ClInclude Include="ccb_reduction_features.h" />
     <ClInclude Include="classweight.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />
@@ -219,7 +219,7 @@
     <ClInclude Include="pmf_to_pdf.h" />
     <ClInclude Include="primitives.h" />
     <ClInclude Include="plt.h" />
-    <ClInclude Include="predict_data.h" />
+    <ClInclude Include="reduction_features.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="prob_dist_cont.h" />
     <ClInclude Include="queue.h" />
@@ -351,7 +351,7 @@
     <ClCompile Include="parser.cc" />
     <ClCompile Include="pmf_to_pdf.cc" />
     <ClCompile Include="plt.cc" />
-    <ClInclude Include="predict_data.cc" />
+    <ClInclude Include="reduction_features.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="prob_dist_cont.cc" />
     <ClCompile Include="rand48.cc" />

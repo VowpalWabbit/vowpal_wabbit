@@ -11,7 +11,7 @@
 #include "v_array.h"
 #include "action_score.h"
 // TODO: This header can be removed once type and explicit_included_actions are removed from the label
-#include "ccb_predict_data.h"
+#include "ccb_reduction_features.h"
 
 namespace CCB
 {
@@ -26,7 +26,7 @@ struct conditional_contextual_bandit_outcome
 };
 
 
-//TODO: Remove the elements that are in predict_data
+//TODO: Remove the elements that are in reduction_features
 // ccb_label.cc will need a major revamp before that can happen
 struct label
 {

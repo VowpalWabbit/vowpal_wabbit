@@ -1,8 +1,8 @@
 #pragma once
-#include "ccb_predict_data.h"
+#include "ccb_reduction_features.h"
 
 /*
- * class predict_data
+ * class reduction_features
  * Description:
  *   This data structure manages access and lifetime of the features data used in various VW reductions.
  *
@@ -21,10 +21,10 @@
  *     auto& data = fd.get<data_type>();
  */
 
-class predict_data
+class reduction_features
 {
  private:
-  CCB::predict_data _ccb_predict_data;
+  CCB::reduction_features _ccb_reduction_features;
 
  public:
   template <typename T>
@@ -34,6 +34,6 @@ class predict_data
 
   // call clear() on all instantiated types
   void clear() {
-    _ccb_predict_data.clear();
+    _ccb_reduction_features.clear();
   }
 };
