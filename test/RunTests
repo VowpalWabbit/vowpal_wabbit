@@ -1503,8 +1503,8 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/audit.stderr
     train-sets/ref/audit.stdout
 
-# Test 138: cb_explore_adf with cover exploration
-{VW} --cb_explore_adf --cover 3 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover.predict
+# Test 138: cb_explore_adf with cover exploration epsilon decaying
+{VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -p cbe_adf_cover.predict -f models/cover_adf_e_decaying.model
     train-sets/ref/cbe_adf_cover.stderr
     pred-sets/ref/cbe_adf_cover.predict
 
@@ -1954,5 +1954,37 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 # Test 238: Evaluate exploration with uniform probabilities for each action and uniform distributed policy(--epsilon 1)
 {VW} --explore_eval --epsilon 1 -d train-sets/explore_eval.dat
     train-sets/ref/explore_eval_uniform_distributed_policy.stderr
+
+# Test 239: cb_explore with cover epsilon decaying
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
+    train-sets/ref/cbe_cover_e_dec.stderr
+
+# Test 240: cb_explore with cover epsilon decaying predict
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict
+    train-sets/ref/cbe_cover_e_dec_predict.stderr
+    pred-sets/ref/cbe_cover_e_dec.predict
+
+# Test 241: cb_explore with cover epsilon fixed
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5
+    train-sets/ref/cbe_cover_e_fixed.stderr
+
+# Test 242: cb_explore with cover epsilon fixed predict
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed.predict
+    train-sets/ref/cbe_cover_e_fixed_predict.stderr
+    pred-sets/ref/cbe_cover_e_fixed.predict
+
+# Test 243: cb_explore_adf with cover exploration epsilon decaying predict only
+{VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -p cbe_adf_cover_predict.predict -i models/cover_adf_e_decaying.model -t
+    train-sets/ref/cbe_adf_cover_predict.stderr
+    pred-sets/ref/cbe_adf_cover_predict.predict
+
+# Test 244: cb_explore_adf with cover epsilon fixed
+{VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf -f models/cover_adf_e_fixed.model --epsilon 0.5
+    train-sets/ref/cbe_adf_cover_e_fixed.stderr
+
+# Test 245: cb_explore_adf with cover epsilon fixed predict
+{VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf -i models/cover_adf_e_fixed.model --epsilon 0.5 -t -p cbe_adf_cover_e_fixed.predict
+    train-sets/ref/cbe_adf_cover_e_fixed_predict.stderr
+    pred-sets/ref/cbe_adf_cover_e_fixed.predict
 
 # Do not delete this line or the empty line above it
