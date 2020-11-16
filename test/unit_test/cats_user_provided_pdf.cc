@@ -36,8 +36,8 @@ BOOST_AUTO_TEST_CASE(cats_no_model_action_provided)
   const auto& reduction_features =
       examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_TEST(!reduction_features.is_pdf_set());
-  BOOST_TEST(reduction_features.is_chosen_action_set());
+  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
+  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), true);
 
   BOOST_CHECK_CLOSE(reduction_features.chosen_action, 185.121, FLOAT_TOL);
 
@@ -78,8 +78,8 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_action_provided)
   const auto& reduction_features =
       examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_TEST(!reduction_features.is_pdf_set());
-  BOOST_TEST(reduction_features.is_chosen_action_set());
+  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
+  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), true);
 
   BOOST_CHECK_CLOSE(reduction_features.chosen_action, 185.121, FLOAT_TOL);
 
@@ -124,8 +124,8 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_uniform_random)
   const auto& reduction_features =
       examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_TEST(!reduction_features.is_pdf_set());
-  BOOST_TEST(!reduction_features.is_chosen_action_set());
+  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
+  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), false);
 
   vw->predict(*examples[0]);
 
@@ -172,8 +172,8 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_pdf_provided)
   const auto& reduction_features =
       examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_TEST(reduction_features.is_pdf_set());
-  BOOST_TEST(!reduction_features.is_chosen_action_set());
+  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), true);
+  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), false);
 
   BOOST_CHECK_EQUAL(reduction_features.pdf.size(), 2);
 

@@ -292,8 +292,8 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_valid_pdf)
   const auto& reduction_features =
       examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_TEST(reduction_features.is_pdf_set());
-  BOOST_TEST(!reduction_features.is_chosen_action_set());
+  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), true);
+  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), false);
 
   BOOST_CHECK_EQUAL(reduction_features.pdf.size(), 2);
   BOOST_CHECK_CLOSE(reduction_features.pdf[0].left, 185., FLOAT_TOL);
@@ -347,8 +347,8 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_invalid_pdf)
   const auto& reduction_features =
       examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_TEST(!reduction_features.is_pdf_set());
-  BOOST_TEST(!reduction_features.is_chosen_action_set());
+  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
+  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), false);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
@@ -392,8 +392,8 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_chosen_action)
       examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
-  BOOST_TEST(!reduction_features.is_pdf_set());
-  BOOST_TEST(reduction_features.is_chosen_action_set());
+  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
+  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), true);
   BOOST_CHECK_CLOSE(reduction_features.chosen_action, 185., FLOAT_TOL);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
