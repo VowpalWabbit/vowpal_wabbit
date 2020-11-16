@@ -10,6 +10,9 @@
 #include "gen_cs_example.h"
 #include "cb_explore.h"
 #include "explore.h"
+#include "vw_versions.h"
+#include "version.h"
+
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -33,8 +36,11 @@ private:
   bool _epsilon_decay;
   bool _first_only;
   size_t _counter;
+
   VW::LEARNER::multi_learner* _cs_ldf_learner;
   GEN_CS::cb_to_cs_adf _gen_cs;
+
+  VW::version_struct _model_file_version;
 
   v_array<ACTION_SCORE::action_score> _action_probs;
   std::vector<float> _scores;
@@ -45,12 +51,14 @@ private:
 
 public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
-      VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type);
+      VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type,
+      VW::version_struct model_file_version);
   ~cb_explore_adf_cover();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void save_load(io_buf& io, bool read, bool text);
 
 private:
   template <bool is_learn>
@@ -58,7 +66,8 @@ private:
 };
 
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
-    bool first_only, VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type)
+    bool first_only, VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type,
+    VW::version_struct model_file_version)
     : _cover_size(cover_size)
     , _psi(psi)
     , _nounif(nounif)
@@ -66,6 +75,7 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
     , _epsilon_decay(epsilon_decay)
     , _first_only(first_only)
     , _cs_ldf_learner(cs_ldf_learner)
+    , _model_file_version(model_file_version)
 {
   _gen_cs.cb_type = cb_type;
   _gen_cs.scorer = scorer;
@@ -98,9 +108,9 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
 
   float additive_probability = 1.f / (float)_cover_size;
 
-  float min_prob = !is_learn || (is_learn && _epsilon_decay)
-      ? _epsilon / num_actions
-      : std::min(_epsilon / num_actions, _epsilon / (float)std::sqrt(_counter * num_actions));
+  float min_prob = _epsilon_decay
+      ? std::min(_epsilon / num_actions, _epsilon / (float)std::sqrt(_counter * num_actions))
+      : _epsilon / num_actions;
 
   _action_probs.clear();
   for (uint32_t i = 0; i < num_actions; i++) _action_probs.push_back({i, 0.});
@@ -173,6 +183,17 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
 
   if (is_learn) ++_counter;
+}
+
+void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+  if (!read || _model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  {
+    std::stringstream msg;
+    if (!read) { msg << "cb storing example counter:  = " << _counter << "\n"; }
+    bin_text_read_write_fixed_validated(io, (char*)&_counter, sizeof(_counter), "", read, msg, text);
+  }
 }
 
 cb_explore_adf_cover::~cb_explore_adf_cover()
@@ -257,16 +278,27 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   all.example_parser->lbl_parser = CB::cb_label;
   all.label_type = label_type_t::cb;
 
-  bool epsilon_decay = options.was_supplied("epsilon") ? false : true;
+  bool epsilon_decay;
+  if (options.was_supplied("epsilon"))
+  {
+    // fixed epsilon during learning
+    epsilon_decay = false;
+  }
+  else
+  {
+    epsilon = 1.f;
+    epsilon_decay = true;
+  }
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
   auto data = scoped_calloc_or_throw<explore_type>(cover_size, psi, nounif, epsilon, epsilon_decay, first_only,
-      as_multiline(all.cost_sensitive), all.scorer, cb_type_enum);
+      as_multiline(all.cost_sensitive), all.scorer, cb_type_enum, all.model_file_ver);
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
 
   l.set_finish_example(explore_type::finish_multiline_example);
+  l.set_save_load(explore_type::save_load);
   return make_base(l);
 }
 }  // namespace cover
