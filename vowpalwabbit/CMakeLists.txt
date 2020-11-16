@@ -62,6 +62,7 @@ set(vw_all_headers
   cb.h
   cbify.h
   ccb_label.h
+  ccb_reduction_features.h
   classweight.h
   compat.h
   conditional_contextual_bandit.h
@@ -141,6 +142,7 @@ set(vw_all_headers
   parser.h
   pmf_to_pdf.h
   plt.h
+  reduction_features.h
   print.h
   prob_dist_cont.h
   queue.h
@@ -275,6 +277,7 @@ set(vw_all_sources
   parser.cc
   pmf_to_pdf.cc
   plt.cc
+  reduction_features.cc
   print.cc
   prob_dist_cont.cc
   rand48.cc
