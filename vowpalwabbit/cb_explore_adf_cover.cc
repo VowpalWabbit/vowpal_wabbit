@@ -191,7 +191,7 @@ void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
   if (!read || _model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
-    if (!read) { msg << "cb storing example counter:  = " << _counter << "\n"; }
+    if (!read) { msg << "cb cover adf storing example counter:  = " << _counter << "\n"; }
     bin_text_read_write_fixed_validated(io, (char*)&_counter, sizeof(_counter), "", read, msg, text);
   }
 }

@@ -47,7 +47,7 @@ struct cb_explore
   size_t cover_size;
   float psi;
   bool nounif;
-  bool epsilon_decay = true;
+  bool epsilon_decay;
   VW::version_struct model_file_version;
 
   size_t counter;
@@ -299,7 +299,7 @@ void save_load(cb_explore& cb, io_buf& io, bool read, bool text)
   if (!read || cb.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
-    if (!read) { msg << "cb storing example counter:  = " << cb.counter << "\n"; }
+    if (!read) { msg << "cb cover storing example counter:  = " << cb.counter << "\n"; }
     bin_text_read_write_fixed_validated(io, (char*)&cb.counter, sizeof(cb.counter), "", read, msg, text);
   }
 }
