@@ -14,6 +14,7 @@
 #include "gen_cs_example.h"
 #include "vw_versions.h"
 #include "explore.h"
+#include "cb_adf.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_adf
