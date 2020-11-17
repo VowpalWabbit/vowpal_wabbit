@@ -1656,23 +1656,119 @@
   },
   {
     "id": 177,
-    "desc": "check --audit output is reproducible. Test 178 cb_adf, sharedfeatures. Test 179 warm_cb warm start. Test 180 warm_cb warm start with lambda set containing 0/1. Test 181 warm_cb warm start with warm start update turned off. Test 182 warm_cb warm start with interaction update turned off. Test 183 warm_cb warm start with bandit warm start type (Sim-Bandit). Test 184 warm_cb warm start with CYC supervised corruption. Test 185 warm_cb warm start with input cost-sensitive examples. Test 186 test counting examples with holdout_after option. Test 187 test counting examples with holdout_after option with 2 passes on the training set. Test 188 test cb_adf with softmax. Test 189 test dsjson parser correctly processes checkpoint and dangling observation lines",
-    "vw_command": " printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' | {VW} --oaa 3 -q ef --audit {VW}  --dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update -d train-sets/multiclass {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --lambda_scheme 2 --warm_start_update --interaction_update -d train-sets/multiclass {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --interaction_update -d train-sets/multiclass {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.0 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update -d train-sets/multiclass {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 1 --warm_start_update --interaction_update --sim_bandit -d train-sets/multiclass {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update --corrupt_type_warm_start 2 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass {VW} --warm_cb 3 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 1 --interaction 2 --choices_lambda 8 --warm_start_update --interaction_update --warm_cb_cs -d train-sets/cs_cb {VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat {VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat -c --passes 2 {VW} --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_adf_sm.predict --cb_type sm {VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -P 1",
+    "desc": "check --audit output is reproducible",
+    "vw_command": " printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' | {VW} --oaa 3 -q ef --audit",
     "is_bash_command": true,
     "files": [
-      "train-sets/ref/audit2.stdout",
-      "train-sets/ref/no_shared_features.stderr",
-      "train-sets/ref/warm_cb.stderr",
-      "train-sets/ref/warm_cb_lambda_zeroone.stderr",
-      "train-sets/ref/warm_cb_no_ws_upd.stderr",
-      "train-sets/ref/warm_cb_no_int_upd.stderr",
-      "train-sets/ref/warm_cb_simbandit.stderr",
-      "train-sets/ref/warm_cb_cyc.stderr",
-      "train-sets/ref/warm_cb_cs.stderr",
-      "train-sets/ref/holdout_after.stderr",
-      "train-sets/ref/holdout_after_2passes.stderr",
+      "train-sets/ref/audit2.stdout"
+    ]
+  },
+  {
+    "id": 178,
+    "desc": "cb_adf, sharedfeatures",
+    "vw_command": "--dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json",
+    "is_bash_command": false,
+    "files": [
+      "train-sets/ref/no_shared_features.stderr"
+    ]
+  },
+  {
+    "id": 179,
+    "desc": "warm_cb warm start",
+    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update -d train-sets/multiclass",
+    "is_bash_command": false,
+    "files": [
+      "train-sets/ref/warm_cb.stderr"
+    ]
+  },
+  {
+    "id": 180,
+    "desc": "warm_cb warm start with lambda set containing 0/1",
+    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --lambda_scheme 2 --warm_start_update --interaction_update -d train-sets/multiclass",
+    "is_bash_command": false,
+    "files": [
+      "train-sets/ref/warm_cb_lambda_zeroone.stderr"
+    ]
+  },
+  {
+    "id": 181,
+    "desc": "warm_cb warm start with warm start update turned off",
+    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --interaction_update -d train-sets/multiclass",
+    "is_bash_command": false,
+    "files": [
+      "train-sets/ref/warm_cb_no_ws_upd.stderr"
+    ]
+  },
+  {
+    "id": 182,
+    "desc": "warm_cb warm start with interaction update turned off",
+    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.0 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update -d train-sets/multiclass",
+    "is_bash_command": false,
+    "files": [
+      "train-sets/ref/warm_cb_no_int_upd.stderr"
+    ]
+  },
+  {
+    "id": 183,
+    "desc": "warm_cb warm start with bandit warm start type (Sim-Bandit)",
+    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 1 --warm_start_update --interaction_update --sim_bandit -d train-sets/multiclass",
+    "is_bash_command": false,
+    "files": [
+      "train-sets/ref/warm_cb_simbandit.stderr"
+    ]
+  },
+  {
+    "id": 184,
+    "desc": "warm_cb warm start with CYC supervised corruption",
+    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update --corrupt_type_warm_start 2 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass",
+    "is_bash_command": false,
+    "files": [
+      "train-sets/ref/warm_cb_cyc.stderr"
+    ]
+  },
+  {
+    "id": 185,
+    "desc": "warm_cb warm start with input cost-sensitive examples",
+    "vw_command": "--warm_cb 3 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 1 --interaction 2 --choices_lambda 8 --warm_start_update --interaction_update --warm_cb_cs -d train-sets/cs_cb",
+    "is_bash_command": false,
+    "files": [
+      "train-sets/ref/warm_cb_cs.stderr"
+    ]
+  },
+  {
+    "id": 186,
+    "desc": "test counting examples with holdout_after option",
+    "vw_command": "-k -P 100 --holdout_after 500 -d train-sets/0002.dat",
+    "is_bash_command": false,
+    "files": [
+      "train-sets/ref/holdout_after.stderr"
+    ]
+  },
+  {
+    "id": 187,
+    "desc": "test counting examples with holdout_after option with 2 passes on the training set",
+    "vw_command": "-k -P 100 --holdout_after 500 -d train-sets/0002.dat -c --passes 2",
+    "is_bash_command": false,
+    "files": [
+      "train-sets/ref/holdout_after_2passes.stderr"
+    ]
+  },
+  {
+    "id": 188,
+    "desc": "test cb_adf with softmax",
+    "vw_command": "--cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_adf_sm.predict --cb_type sm",
+    "is_bash_command": false,
+    "files": [
       "train-sets/ref/cb_adf_sm.stderr",
-      "pred-sets/ref/cb_adf_sm.predict",
+      "pred-sets/ref/cb_adf_sm.predict"
+    ]
+  },
+  {
+    "id": 189,
+    "desc": "test dsjson parser correctly processes checkpoint and dangling observation lines",
+    "vw_command": "-d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -P 1",
+    "is_bash_command": false,
+    "files": [
       "train-sets/ref/b1848_dsjson_parser_regression.stderr"
     ]
   },
