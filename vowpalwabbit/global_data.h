@@ -509,6 +509,11 @@ public:
   // That pointer would be invalidated if it were to be moved.
   vw(const vw&&) = delete;
   vw& operator=(const vw&&) = delete;
+
+  private:
+  std::vector<float> _example_weight_buffer;
+  void save_example_weights(multi_ex& ec);
+  void swap_example_weights(multi_ex& ec);
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")
