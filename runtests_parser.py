@@ -1,6 +1,13 @@
 import json
 
 class Test:
+    output = {}
+
+    @staticmethod
+    def register_output(idnum, filename):
+        Test.output[filename] = idnum
+
+
     def __init__(self, id, desc):   
         self.id = id 
         self.desc = desc.strip()
@@ -8,6 +15,7 @@ class Test:
         self.vw_command = "" 
         self.is_bash_command = False
         self.files = []
+        self.depends_on = []
 
     def add_more_comments(self, line):
         self.desc = self.desc + ". " + line.strip()[1:].strip()
@@ -40,10 +48,36 @@ class Test:
         self.is_bash_command = True
         self.add_vw_command(line)
 
+    @staticmethod
+    def get_value_of_arg(command, argname):
+        command = command.split()
+        results = []
+
+        prev_is_argname = False
+        for c in command:
+            if prev_is_argname:
+                results.append(c)
+                prev_is_argname = False
+            if argname == c:
+                prev_is_argname = True
+
+        return results
+
     def clean(self):
         if not self.is_bash_command:
             self.vw_command = " ".join(self.vw_command.split()[1:])
-        
+
+            # get output files and register as creator of files
+            files = Test.get_value_of_arg(self.vw_command, "-f")
+            for f in files:
+                Test.register_output(int(self.id), f)
+
+            # check who produces the input files of this test
+            files = Test.get_value_of_arg(self.vw_command, "-i")
+            for f in files:
+                if "model-sets" not in f:
+                    self.depends_on.append(Test.output[f])
+
         if self.id.isnumeric():
             self.id = int(self.id)
         else:

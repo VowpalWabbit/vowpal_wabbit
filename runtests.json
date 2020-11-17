@@ -6,7 +6,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/0001.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 2,
@@ -16,6 +17,9 @@
     "files": [
       "test-sets/ref/0001.stderr",
       "pred-sets/ref/0001.predict"
+    ],
+    "depends_on": [
+      1
     ]
   },
   {
@@ -25,7 +29,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/0002.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 4,
@@ -35,7 +40,8 @@
     "files": [
       "train-sets/ref/0002.stdout",
       "train-sets/ref/0002.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 5,
@@ -44,7 +50,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/0002a.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 6,
@@ -54,6 +61,9 @@
     "files": [
       "test-sets/ref/0002b.stderr",
       "pred-sets/ref/0002b.predict"
+    ],
+    "depends_on": [
+      4
     ]
   },
   {
@@ -63,7 +73,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/0002c.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 8,
@@ -73,6 +84,9 @@
     "files": [
       "test-sets/ref/0002c.stderr",
       "pred-sets/ref/0002c.predict"
+    ],
+    "depends_on": [
+      7
     ]
   },
   {
@@ -83,7 +97,8 @@
     "files": [
       "train-sets/ref/cs_test.ldf.csoaa.stderr",
       "train-sets/ref/cs_test.ldf.csoaa.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 10,
@@ -93,7 +108,8 @@
     "files": [
       "train-sets/ref/cs_test.ldf.wap.stderr",
       "train-sets/ref/cs_test.ldf.wap.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 11,
@@ -102,7 +118,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/oaa.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 12,
@@ -111,7 +128,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/multiclass.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 13,
@@ -120,7 +138,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/search_wsj.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 14,
@@ -130,7 +149,8 @@
     "files": [
       "train-sets/ref/search_wsj2.dat.stdout",
       "train-sets/ref/search_wsj2.dat.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 15,
@@ -140,7 +160,8 @@
     "files": [
       "train-sets/ref/zero.stdout",
       "train-sets/ref/zero.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 16,
@@ -150,7 +171,8 @@
     "files": [
       "train-sets/ref/rcv1_small.stdout",
       "train-sets/ref/rcv1_small.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 17,
@@ -159,7 +181,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/wiki1K.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 18,
@@ -168,7 +191,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/search_small.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 19,
@@ -177,7 +201,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/3parity.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 20,
@@ -187,6 +212,9 @@
     "files": [
       "pred-sets/ref/0022.stderr",
       "pred-sets/ref/0022.predict"
+    ],
+    "depends_on": [
+      19
     ]
   },
   {
@@ -196,7 +224,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/xxor.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 22,
@@ -206,7 +235,8 @@
     "files": [
       "train-sets/ref/ml100k_small.stdout",
       "train-sets/ref/ml100k_small.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 23,
@@ -216,6 +246,9 @@
     "files": [
       "test-sets/ref/ml100k_small.stdout",
       "test-sets/ref/ml100k_small.stderr"
+    ],
+    "depends_on": [
+      22
     ]
   },
   {
@@ -225,7 +258,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/active-simulation.t24.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 25,
@@ -235,7 +269,8 @@
     "files": [
       "train-sets/ref/bs.reg.stderr",
       "train-sets/ref/bs.reg.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 26,
@@ -245,6 +280,9 @@
     "files": [
       "train-sets/ref/bs.prreg.stderr",
       "train-sets/ref/bs.prreg.predict"
+    ],
+    "depends_on": [
+      25
     ]
   },
   {
@@ -255,7 +293,8 @@
     "files": [
       "train-sets/ref/bs.vote.stderr",
       "train-sets/ref/bs.vote.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 28,
@@ -265,6 +304,9 @@
     "files": [
       "train-sets/ref/bs.prvote.stderr",
       "train-sets/ref/bs.prvote.predict"
+    ],
+    "depends_on": [
+      27
     ]
   },
   {
@@ -274,7 +316,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/affix_test.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 30,
@@ -283,7 +326,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/mask.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 31,
@@ -292,7 +336,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/remask.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 32,
@@ -301,6 +346,9 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/remask.final.stderr"
+    ],
+    "depends_on": [
+      31
     ]
   },
   {
@@ -310,7 +358,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/topk-train.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 34,
@@ -320,6 +369,9 @@
     "files": [
       "train-sets/ref/topk-rec.stderr",
       "train-sets/ref/topk-rec.predict"
+    ],
+    "depends_on": [
+      33
     ]
   },
   {
@@ -329,7 +381,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/big-constant.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 36,
@@ -338,7 +391,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/progress-10.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 37,
@@ -347,7 +401,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/progress-0.5.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 38,
@@ -356,7 +411,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/nn-1-noquiet.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 39,
@@ -365,7 +421,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/rcv1_raw_cb_dr.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 40,
@@ -374,7 +431,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/rcv1_raw_cb_ips.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 41,
@@ -383,7 +441,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/rcv1_raw_cb_dm.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 42,
@@ -392,7 +451,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/lda-2pass-hang.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 43,
@@ -401,7 +461,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/sequence_data.nonldf.train.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 44,
@@ -411,6 +472,9 @@
     "files": [
       "train-sets/ref/sequence_data.nonldf.test.stderr",
       "train-sets/ref/sequence_data.nonldf.test.predict"
+    ],
+    "depends_on": [
+      43
     ]
   },
   {
@@ -420,7 +484,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/search_small2.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 46,
@@ -429,7 +494,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/sequence_data.ldf.train.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 47,
@@ -439,6 +505,9 @@
     "files": [
       "train-sets/ref/sequence_data.ldf.test.stderr",
       "train-sets/ref/sequence_data.ldf.test.predict"
+    ],
+    "depends_on": [
+      46
     ]
   },
   {
@@ -448,7 +517,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/sequencespan_data.nonldf.train.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 49,
@@ -458,6 +528,9 @@
     "files": [
       "train-sets/ref/sequencespan_data.nonldf.test.stderr",
       "train-sets/ref/sequencespan_data.nonldf.test.predict"
+    ],
+    "depends_on": [
+      48
     ]
   },
   {
@@ -467,7 +540,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/sequencespan_data.nonldf-bilou.train.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 51,
@@ -477,6 +551,9 @@
     "files": [
       "train-sets/ref/sequencespan_data.nonldf-bilou.test.stderr",
       "train-sets/ref/sequencespan_data.nonldf-bilou.test.predict"
+    ],
+    "depends_on": [
+      50
     ]
   },
   {
@@ -486,7 +563,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/argmax_data.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 53,
@@ -495,7 +573,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/holdout-loss-not-zero.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 54,
@@ -505,7 +584,8 @@
     "files": [
       "train-sets/ref/stage_poly.s025.stderr",
       "train-sets/ref/stage_poly.s025.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 55,
@@ -514,7 +594,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/stage_poly.s100.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 56,
@@ -524,7 +605,8 @@
     "files": [
       "train-sets/ref/stage_poly.s025.doubling.stderr",
       "train-sets/ref/stage_poly.s025.doubling.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 57,
@@ -534,7 +616,8 @@
     "files": [
       "train-sets/ref/stage_poly.s100.doubling.stderr",
       "train-sets/ref/stage_poly.s100.doubling.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 58,
@@ -544,7 +627,8 @@
     "files": [
       "train-sets/ref/library_train.stdout",
       "train-sets/ref/library_train.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 59,
@@ -553,7 +637,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/no_shared_features.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 60,
@@ -562,7 +647,8 @@
     "is_bash_command": true,
     "files": [
       "train-sets/ref/empty-set.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 61,
@@ -571,7 +657,8 @@
     "is_bash_command": true,
     "files": [
       "test-sets/ref/vw-daemon.stdout"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 62,
@@ -581,7 +668,8 @@
     "files": [
       "train-sets/ref/ksvm_train.linear.stderr",
       "train-sets/ref/ksvm_train.linear.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 63,
@@ -591,7 +679,8 @@
     "files": [
       "train-sets/ref/ksvm_train.poly.stderr",
       "train-sets/ref/ksvm_train.poly.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 64,
@@ -601,7 +690,8 @@
     "files": [
       "train-sets/ref/ksvm_train.rbf.stderr",
       "train-sets/ref/ksvm_train.rbf.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 65,
@@ -610,7 +700,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/search_er.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 66,
@@ -619,7 +710,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/search_dep_parser.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 67,
@@ -628,7 +720,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/dictionary_test.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 68,
@@ -637,7 +730,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/search_multiclass.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 69,
@@ -647,6 +741,9 @@
     "files": [
       "train-sets/ref/sequence_data.nonldf.beam.test.stderr",
       "train-sets/ref/sequence_data.nonldf.beam.test.predict"
+    ],
+    "depends_on": [
+      43
     ]
   },
   {
@@ -657,6 +754,9 @@
     "files": [
       "train-sets/ref/sequence_data.ldf.beam.test.stderr",
       "train-sets/ref/sequence_data.ldf.beam.test.predict"
+    ],
+    "depends_on": [
+      46
     ]
   },
   {
@@ -667,7 +767,8 @@
     "files": [
       "train-sets/ref/0002.autolink.stderr",
       "train-sets/ref/0002.autolink.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 72,
@@ -676,7 +777,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/0001_ftrl.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 73,
@@ -686,6 +788,9 @@
     "files": [
       "test-sets/ref/0001_ftrl.stderr",
       "pred-sets/ref/0001_ftrl.predict"
+    ],
+    "depends_on": [
+      72
     ]
   },
   {
@@ -695,7 +800,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/rcv1_cb_eval.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 75,
@@ -704,7 +810,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/log_multi.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 76,
@@ -713,7 +820,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_epsilon.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 77,
@@ -722,7 +830,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_first.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 78,
@@ -731,7 +840,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_bag.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 79,
@@ -740,7 +850,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_cover.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 80,
@@ -749,7 +860,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/0080.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 81,
@@ -758,7 +870,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/ftrl_pistol.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 82,
@@ -768,6 +881,9 @@
     "files": [
       "test-sets/ref/ftrl_pistol.stderr",
       "pred-sets/ref/ftrl_pistol.predict"
+    ],
+    "depends_on": [
+      81
     ]
   },
   {
@@ -777,7 +893,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/redefine.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 84,
@@ -786,7 +903,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cb_adf_mtr.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 85,
@@ -796,7 +914,8 @@
     "files": [
       "train-sets/ref/multilabel.stderr",
       "pred-sets/ref/multilabel.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 86,
@@ -806,7 +925,8 @@
     "files": [
       "train-sets/ref/multilabel_ldf.stderr",
       "pred-sets/ref/multilabel_ldf.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 87,
@@ -816,7 +936,8 @@
     "files": [
       "train-sets/ref/cb_adf_rank.stderr",
       "pred-sets/ref/cb_adf_rank.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 88,
@@ -825,7 +946,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/test_named_train.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 89,
@@ -835,6 +957,9 @@
     "files": [
       "train-sets/ref/test_named_test.stderr",
       "pred-sets/ref/test_named.predict"
+    ],
+    "depends_on": [
+      88
     ]
   },
   {
@@ -844,7 +969,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/test_named_csoaa_train.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 91,
@@ -854,6 +980,9 @@
     "files": [
       "train-sets/ref/test_named_csoaa_test.stderr",
       "pred-sets/ref/test_named_csoaa.predict"
+    ],
+    "depends_on": [
+      90
     ]
   },
   {
@@ -864,7 +993,8 @@
     "files": [
       "train-sets/ref/inv_hash.stderr",
       "pred-sets/ref/inv_hash.cmp"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 93,
@@ -874,7 +1004,8 @@
     "files": [
       "train-sets/ref/cb_adf_dr.stderr",
       "pred-sets/ref/cb_adf_dr.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 94,
@@ -883,7 +1014,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/0001-replay.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 95,
@@ -892,7 +1024,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/test_named_csoaa_train-replay.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 96,
@@ -902,7 +1035,8 @@
     "files": [
       "test-sets/ref/backwards.stderr",
       "test-sets/ref/backwards.stdout"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 97,
@@ -911,7 +1045,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/0097.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 98,
@@ -921,6 +1056,9 @@
     "files": [
       "test-sets/ref/0098.stderr",
       "pred-sets/ref/0098.predict"
+    ],
+    "depends_on": [
+      97
     ]
   },
   {
@@ -931,6 +1069,9 @@
     "files": [
       "test-sets/ref/0099.stderr",
       "pred-sets/ref/0099.predict"
+    ],
+    "depends_on": [
+      97
     ]
   },
   {
@@ -940,7 +1081,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/sequence_data.ctg.train.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 101,
@@ -949,7 +1091,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/active_cover.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 102,
@@ -959,6 +1102,9 @@
     "files": [
       "test-sets/ref/active_cover.stderr",
       "pred-sets/ref/active_cover.predict"
+    ],
+    "depends_on": [
+      101
     ]
   },
   {
@@ -968,7 +1114,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/active_cover_oracular.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 104,
@@ -977,7 +1124,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cb_adf_mtr.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 105,
@@ -986,7 +1134,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/0001_ftrl_holdout.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 106,
@@ -996,6 +1145,9 @@
     "files": [
       "test-sets/ref/0001_ftrl_holdout_106.stderr",
       "pred-sets/ref/0001_ftrl_holdout.predict"
+    ],
+    "depends_on": [
+      105
     ]
   },
   {
@@ -1005,7 +1157,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/0001_ftrl_holdout_off.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 108,
@@ -1015,6 +1168,9 @@
     "files": [
       "test-sets/ref/0001_ftrl_holdout_off.stderr",
       "pred-sets/ref/0001_ftrl_holdout_off.predict"
+    ],
+    "depends_on": [
+      107
     ]
   },
   {
@@ -1025,7 +1181,8 @@
     "files": [
       "train-sets/ref/oaa_probabilities.stderr",
       "pred-sets/ref/oaa_probabilities.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 110,
@@ -1035,7 +1192,8 @@
     "files": [
       "train-sets/ref/csoaa_ldf_probabilities.stderr",
       "pred-sets/ref/csoaa_ldf_probabilities.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 111,
@@ -1044,7 +1202,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/search_dep_parser_one_learner.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 112,
@@ -1053,7 +1212,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/search_dep_parser_cost_to_go.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 113,
@@ -1063,7 +1223,8 @@
     "files": [
       "train-sets/ref/confidence.stderr",
       "pred-sets/ref/confidence.preds"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 114,
@@ -1072,7 +1233,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/oversize.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 115,
@@ -1081,7 +1243,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/long_line.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 116,
@@ -1091,7 +1254,8 @@
     "files": [
       "train-sets/ref/cb_eval.stderr",
       "pred-sets/ref/cb_eval.preds"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 117,
@@ -1101,6 +1265,9 @@
     "files": [
       "train-sets/ref/ftrl_audit_regr.stderr",
       "train-sets/ref/ftrl.audit_regr"
+    ],
+    "depends_on": [
+      107
     ]
   },
   {
@@ -1111,6 +1278,9 @@
     "files": [
       "train-sets/ref/csoaa_audit_regr.stderr",
       "train-sets/ref/csoaa.audit_regr"
+    ],
+    "depends_on": [
+      95
     ]
   },
   {
@@ -1121,7 +1291,8 @@
     "files": [
       "train-sets/ref/mwt_learn.stderr",
       "pred-sets/ref/mwt_learn.preds"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 120,
@@ -1131,7 +1302,8 @@
     "files": [
       "train-sets/ref/mwt_learn_exclude.stderr",
       "pred-sets/ref/mwt_learn_exclude.preds"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 121,
@@ -1141,7 +1313,8 @@
     "files": [
       "train-sets/ref/rcv1_raw_cb_explore.stderr",
       "pred-sets/ref/rcv1_raw_cb_explore.preds"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 122,
@@ -1151,7 +1324,8 @@
     "files": [
       "train-sets/ref/confidence_after_training.stderr",
       "pred-sets/ref/confidence_after_training.preds"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 123,
@@ -1161,7 +1335,8 @@
     "files": [
       "train-sets/ref/cb_eval1.stderr",
       "pred-sets/ref/cb_eval1.preds"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 124,
@@ -1171,6 +1346,9 @@
     "files": [
       "train-sets/ref/cb_eval2.stderr",
       "pred-sets/ref/cb_eval2.preds"
+    ],
+    "depends_on": [
+      123
     ]
   },
   {
@@ -1180,14 +1358,16 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/search_dep_parser_arceager.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 126,
     "desc": "recall tree hello world",
     "vw_command": "--quiet -d train-sets/gauss1k.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic",
     "is_bash_command": false,
-    "files": []
+    "files": [],
+    "depends_on": []
   },
   {
     "id": 127,
@@ -1197,6 +1377,9 @@
     "files": [
       "train-sets/ref/recall_tree_gauss1k.stderr",
       "train-sets/ref/recall_tree_gauss1k.stdout"
+    ],
+    "depends_on": [
+      126
     ]
   },
   {
@@ -1207,7 +1390,8 @@
     "files": [
       "train-sets/ref/cbe_adf_epsilon.stderr",
       "pred-sets/ref/cbe_adf_epsilon.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 129,
@@ -1217,7 +1401,8 @@
     "files": [
       "train-sets/ref/cbe_adf_softmax.stderr",
       "pred-sets/ref/cbe_adf_softmax.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 130,
@@ -1227,7 +1412,8 @@
     "files": [
       "train-sets/ref/cbe_adf_bag.stderr",
       "pred-sets/ref/cbe_adf_bag.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 131,
@@ -1237,7 +1423,8 @@
     "files": [
       "train-sets/ref/cbe_adf_first.stderr",
       "pred-sets/ref/cbe_adf_first.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 132,
@@ -1247,7 +1434,8 @@
     "files": [
       "train-sets/ref/poisson.train.stderr",
       "pred-sets/ref/poisson.train.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 133,
@@ -1257,7 +1445,8 @@
     "files": [
       "train-sets/ref/poisson.train.normalized.stderr",
       "pred-sets/ref/poisson.train.normalized.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 134,
@@ -1267,7 +1456,8 @@
     "files": [
       "train-sets/ref/second_order.stderr",
       "pred-sets/ref/second_order.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 135,
@@ -1276,7 +1466,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cb_adf_crash1.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 136,
@@ -1285,6 +1476,9 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cb_adf_crash2.stderr"
+    ],
+    "depends_on": [
+      135
     ]
   },
   {
@@ -1295,7 +1489,8 @@
     "files": [
       "train-sets/ref/audit.stderr",
       "train-sets/ref/audit.stdout"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 138,
@@ -1305,7 +1500,8 @@
     "files": [
       "train-sets/ref/cbe_adf_cover.stderr",
       "pred-sets/ref/cbe_adf_cover.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 139,
@@ -1315,7 +1511,8 @@
     "files": [
       "train-sets/ref/cbe_adf_cover_dr.stderr",
       "pred-sets/ref/cbe_adf_cover_dr.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 140,
@@ -1324,7 +1521,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/marginal.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 141,
@@ -1333,6 +1531,9 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/marginal_test.stderr"
+    ],
+    "depends_on": [
+      140
     ]
   },
   {
@@ -1343,7 +1544,8 @@
     "files": [
       "train-sets/ref/explore_eval.stderr",
       "pred-sets/ref/explore_eval.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 143,
@@ -1352,7 +1554,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/0001.json.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 144,
@@ -1362,7 +1565,8 @@
     "files": [
       "train-sets/ref/cbe_adf_cover_dr.json.stderr",
       "pred-sets/ref/cbe_adf_cover_dr.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 145,
@@ -1371,7 +1575,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/labeled-unlabeled-mix.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 146,
@@ -1381,7 +1586,8 @@
     "files": [
       "train-sets/ref/cbe_adf_cover_dr256.json.stderr",
       "pred-sets/ref/cbe_adf_cover_dr256.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 147,
@@ -1391,7 +1597,8 @@
     "files": [
       "train-sets/ref/oaa_scores.stderr",
       "pred-sets/ref/oaa_scores.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 148,
@@ -1401,7 +1608,8 @@
     "files": [
       "train-sets/ref/cb_adf_dm.stderr",
       "pred-sets/ref/cb_adf_dm.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 149,
@@ -1411,7 +1619,8 @@
     "files": [
       "train-sets/ref/initial_weight.stderr",
       "train-sets/ref/initial_weight.stdout"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 150,
@@ -1420,7 +1629,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/sparse.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 151,
@@ -1429,7 +1639,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/0151.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 152,
@@ -1438,7 +1649,8 @@
     "is_bash_command": true,
     "files": [
       "test-sets/ref/vw-daemon.stdout"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 153,
@@ -1447,7 +1659,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/marginal_compete.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 154,
@@ -1456,7 +1669,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/ignore_linear.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 155,
@@ -1466,6 +1680,9 @@
     "files": [
       "train-sets/ref/0097.audit_regr.stderr",
       "train-sets/ref/0097.audit_regr"
+    ],
+    "depends_on": [
+      97
     ]
   },
   {
@@ -1473,7 +1690,8 @@
     "desc": "--cubic regression verification",
     "vw_command": "./cubic-test.sh ${VW}",
     "is_bash_command": true,
-    "files": []
+    "files": [],
+    "depends_on": []
   },
   {
     "id": 157,
@@ -1482,7 +1700,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/157.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 158,
@@ -1492,7 +1711,8 @@
     "files": [
       "train-sets/ref/cbe_adf_dsjson.stderr",
       "pred-sets/ref/cbe_adf_dsjson.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 159,
@@ -1501,7 +1721,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/bootstrap_and_binary.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 160,
@@ -1510,7 +1731,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/bootstrap_and_oaa.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 161,
@@ -1519,7 +1741,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/classweight.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 162,
@@ -1528,7 +1751,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/classweight_multiclass.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 163,
@@ -1537,7 +1761,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/classweight_recall_tree.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 164,
@@ -1546,7 +1771,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cs_active_0.01.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 165,
@@ -1555,7 +1781,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cs_active_1.0.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 166,
@@ -1564,7 +1791,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/hash_seed_train.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 167,
@@ -1573,6 +1801,9 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/hash_seed_test.stderr"
+    ],
+    "depends_on": [
+      166
     ]
   },
   {
@@ -1582,6 +1813,9 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/rcv1_raw_cb_dm_test.stderr"
+    ],
+    "depends_on": [
+      41
     ]
   },
   {
@@ -1591,7 +1825,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/rcv1_multiclass.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 170,
@@ -1600,7 +1835,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_epsilon_adf.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 171,
@@ -1609,7 +1845,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_epsilon_cs.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 172,
@@ -1618,7 +1855,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_epsilon_cs_adf.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 173,
@@ -1627,7 +1865,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_regcb.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 174,
@@ -1636,7 +1875,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_regcbopt.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 175,
@@ -1645,14 +1885,16 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_ldf_regcbopt.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 176,
     "desc": "same model on cluster mode",
     "vw_command": "./same-model-test.sh",
     "is_bash_command": true,
-    "files": []
+    "files": [],
+    "depends_on": []
   },
   {
     "id": 177,
@@ -1661,7 +1903,8 @@
     "is_bash_command": true,
     "files": [
       "train-sets/ref/audit2.stdout"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 178,
@@ -1670,7 +1913,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/no_shared_features.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 179,
@@ -1679,7 +1923,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/warm_cb.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 180,
@@ -1688,7 +1933,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/warm_cb_lambda_zeroone.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 181,
@@ -1697,7 +1943,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/warm_cb_no_ws_upd.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 182,
@@ -1706,7 +1953,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/warm_cb_no_int_upd.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 183,
@@ -1715,7 +1963,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/warm_cb_simbandit.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 184,
@@ -1724,7 +1973,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/warm_cb_cyc.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 185,
@@ -1733,7 +1983,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/warm_cb_cs.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 186,
@@ -1742,7 +1993,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/holdout_after.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 187,
@@ -1751,7 +2003,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/holdout_after_2passes.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 188,
@@ -1761,7 +2014,8 @@
     "files": [
       "train-sets/ref/cb_adf_sm.stderr",
       "pred-sets/ref/cb_adf_sm.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 189,
@@ -1770,7 +2024,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/b1848_dsjson_parser_regression.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 190,
@@ -1779,7 +2034,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/oaa_subsample.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 191,
@@ -1788,7 +2044,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/ftrl_coin.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 192,
@@ -1798,6 +2055,9 @@
     "files": [
       "test-sets/ref/ftrl_coin.stderr",
       "pred-sets/ref/ftrl_coin.predict"
+    ],
+    "depends_on": [
+      191
     ]
   },
   {
@@ -1807,7 +2067,8 @@
     "is_bash_command": true,
     "files": [
       "train-sets/ref/malformed-onethread-strict_parse.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 194,
@@ -1816,7 +2077,8 @@
     "is_bash_command": true,
     "files": [
       "train-sets/ref/malformed-strict_parse.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 195,
@@ -1825,7 +2087,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/malformed.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 196,
@@ -1834,7 +2097,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cmt_rcv1_smaller_online.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 197,
@@ -1843,7 +2107,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cmt_rcv1_smaller_offline.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 198,
@@ -1852,7 +2117,8 @@
     "is_bash_command": false,
     "files": [
       "pred-sets/ref/cb_sample_seed.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 199,
@@ -1862,7 +2128,8 @@
     "files": [
       "train-sets/ref/ccb_test.stderr",
       "train-sets/ref/ccb_test.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 200,
@@ -1872,7 +2139,8 @@
     "files": [
       "train-sets/ref/cbe_adf_softmax_biglambda.stderr",
       "pred-sets/ref/cbe_adf_softmax_biglambda.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 201,
@@ -1881,7 +2149,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/ccb_reuse_small.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 202,
@@ -1890,7 +2159,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/ccb_reuse_medium.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 203,
@@ -1901,7 +2171,8 @@
       "test-sets/ref/cluster.stderr",
       "test-sets/ref/cluster.stdout",
       "pred-sets/ref/cluster.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 204,
@@ -1910,7 +2181,8 @@
     "is_bash_command": false,
     "files": [
       "test-sets/ref/negative-num-option.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 205,
@@ -1920,7 +2192,8 @@
     "files": [
       "train-sets/ref/cb_dro_adf_sm.stderr",
       "pred-sets/ref/cb_dro_adf_sm.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 206,
@@ -1930,7 +2203,8 @@
     "files": [
       "train-sets/ref/cache_interaction_audit.stdout",
       "train-sets/ref/cache_interaction_audit.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 207,
@@ -1941,7 +2215,8 @@
       "test-sets/ref/chain_hash_json_test.stderr",
       "test-sets/ref/chain_hash_json_test.stdout",
       "test-sets/ref/chain_hash_json_result.cmp"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 208,
@@ -1952,7 +2227,8 @@
       "test-sets/ref/chain_hash_text_result.stderr",
       "test-sets/ref/chain_hash_text_result.stdout",
       "test-sets/ref/chain_hash_text_result.cmp"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 209,
@@ -1962,7 +2238,8 @@
     "files": [
       "pred-sets/ref/override_epsilon.stderr",
       "pred-sets/ref/override_epsilon.preds"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 210,
@@ -1972,7 +2249,8 @@
     "files": [
       "train-sets/ref/inv_hash_load_model.invert.txt",
       "train-sets/ref/inv_hash_load_model.readable.txt"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 211,
@@ -1982,7 +2260,8 @@
     "files": [
       "train-sets/ref/cbe_adf_rnd.stderr",
       "pred-sets/ref/cbe_adf_rnd.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 212,
@@ -1992,7 +2271,8 @@
     "files": [
       "train-sets/ref/slates_simple.stderr",
       "pred-sets/ref/slates_simple.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 213,
@@ -2002,7 +2282,8 @@
     "files": [
       "test-sets/ref/offset_tree_000.stderr",
       "pred-sets/ref/offset_tree_000.pred"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 214,
@@ -2012,7 +2293,8 @@
     "files": [
       "test-sets/ref/offset_tree_001.stderr",
       "pred-sets/ref/offset_tree_001.pred"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 215,
@@ -2022,7 +2304,8 @@
     "files": [
       "test-sets/ref/offset_tree_002.stderr",
       "pred-sets/ref/offset_tree_002.pred"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 216,
@@ -2031,7 +2314,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/slates_simple_unlabeled.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 217,
@@ -2040,7 +2324,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/plt_multilabel.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 218,
@@ -2050,6 +2335,9 @@
     "files": [
       "train-sets/ref/plt_multilabel_predict.stderr",
       "pred-sets/ref/plt_multilabel.predict"
+    ],
+    "depends_on": [
+      217
     ]
   },
   {
@@ -2060,6 +2348,9 @@
     "files": [
       "train-sets/ref/plt_top1_multilabel_predict.stderr",
       "pred-sets/ref/plt_top1_multilabel.predict"
+    ],
+    "depends_on": [
+      217
     ]
   },
   {
@@ -2069,7 +2360,8 @@
     "is_bash_command": true,
     "files": [
       "test-sets/ref/vw-daemon.stdout"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 221,
@@ -2078,7 +2370,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_squarecb.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 222,
@@ -2087,7 +2380,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_squarecb_elim.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 223,
@@ -2096,7 +2390,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_ldf_squarecb.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 224,
@@ -2105,7 +2400,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_ldf_squarecb_elim.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 225,
@@ -2114,7 +2410,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify-reg-cats.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 226,
@@ -2123,7 +2420,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cats-train.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 227,
@@ -2133,6 +2431,9 @@
     "files": [
       "train-sets/ref/cats-predict.stderr",
       "pred-sets/ref/cats.predict"
+    ],
+    "depends_on": [
+      226
     ]
   },
   {
@@ -2142,7 +2443,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cats-pdf-train.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 229,
@@ -2152,6 +2454,9 @@
     "files": [
       "train-sets/ref/cats-pdf-predict.stderr",
       "pred-sets/ref/cats-pdf.predict"
+    ],
+    "depends_on": [
+      228
     ]
   },
   {
@@ -2161,7 +2466,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_reg.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 231,
@@ -2170,7 +2476,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_reg_discrete.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 232,
@@ -2179,7 +2486,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/cbify_reg_discrete_cats.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 233,
@@ -2188,7 +2496,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/ccb_1slot_loss.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 234,
@@ -2197,7 +2506,8 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/ccb_allslots_loss.stderr"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 235,
@@ -2207,7 +2517,8 @@
     "files": [
       "train-sets/ref/big_feature_poison.stderr",
       "train-sets/ref/big_feature_poison.stdout"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 236,
@@ -2217,7 +2528,8 @@
     "files": [
       "train-sets/ref/big_feature_poison_2.stderr",
       "train-sets/ref/big_feature_poison_2.stdout"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 237,
@@ -2227,7 +2539,8 @@
     "files": [
       "train-sets/ref/cbe_adf_dsjson_chain_hash.stderr",
       "pred-sets/ref/cbe_adf_dsjson_chain_hash.predict"
-    ]
+    ],
+    "depends_on": []
   },
   {
     "id": 238,
@@ -2236,6 +2549,7 @@
     "is_bash_command": false,
     "files": [
       "train-sets/ref/explore_eval_uniform_distributed_policy.stderr"
-    ]
+    ],
+    "depends_on": []
   }
 ]
