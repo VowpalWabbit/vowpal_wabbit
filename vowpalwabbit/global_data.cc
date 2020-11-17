@@ -160,23 +160,6 @@ void vw::learn(example& ec)
   }
 }
 
-void vw::swap_example_weights(multi_ex& ec)
-{
-  for(auto i = 0; i < ec.size(); ++i)
-  {
-    std::swap(ec[i]->weight, _example_weight_buffer[i]);
-  }
-}
-
-void vw::save_example_weights(multi_ex& ec)
-{
-  _example_weight_buffer.resize(ec.size());
-  for(auto i = 0; i < ec.size(); ++i)
-  {
-    _example_weight_buffer[i] = ec[i]->weight;
-  }
-}
-
 void vw::learn(multi_ex& ec)
 {
   if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
