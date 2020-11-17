@@ -97,11 +97,11 @@ VW::LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
   VW::LEARNER::learner<classweights, example>* ret;
   if (base->pred_type == prediction_type_t::scalar)
     ret = &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, prediction_type_t::scalar>,
-        &predict_or_learn<false, prediction_type_t::scalar>, "classweight-scalar", true);
+        &predict_or_learn<false, prediction_type_t::scalar>, "classweight-scalar");
   else if (base->pred_type == prediction_type_t::multiclass)
     ret =
         &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, prediction_type_t::multiclass>,
-            &predict_or_learn<false, prediction_type_t::multiclass>, "classweight-multi", true);
+            &predict_or_learn<false, prediction_type_t::multiclass>, "classweight-multi");
   else
     THROW("--classweight not implemented for this type of prediction");
   return make_base(*ret);

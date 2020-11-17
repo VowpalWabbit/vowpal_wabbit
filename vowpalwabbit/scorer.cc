@@ -50,6 +50,9 @@ void update(scorer& s, VW::LEARNER::single_learner& base, example& ec)
 {
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   base.update(ec);
+  VW_DBG(ec) << "ex#= " << ec.example_counter << ", offset=" << ec.ft_offset << ", lbl=" << ec.l.simple.label
+             << ", pred= " << ec.pred.scalar << ", wt=" << ec.weight << ", gd.raw=" << ec.partial_prediction
+             << ", loss=" << ec.loss << std::endl;
 }
 
 // y = f(x) -> [0, 1]
