@@ -558,7 +558,7 @@
   {
     "id": 60,
     "desc": "empty test, bad builds (without make clean). sometimes cause a SEGV even on empty input",
-    "vw_command": " echo \"\" | {VW}",
+    "vw_command": "echo \"\" | {VW}",
     "is_bash_command": true,
     "files": [
       "train-sets/ref/empty-set.stderr"
@@ -567,7 +567,7 @@
   {
     "id": 61,
     "desc": "daemon test",
-    "vw_command": " ./daemon-test.sh",
+    "vw_command": "./daemon-test.sh",
     "is_bash_command": true,
     "files": [
       "test-sets/ref/vw-daemon.stdout"
@@ -859,7 +859,7 @@
   {
     "id": 92,
     "desc": "check -q :: and -oaa inverse hash",
-    "vw_command": " printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp &&  tail -n +2 inv_hash.cmp > inv_hash.cmp.new &&  rm inv_hash.cmp &&  mv inv_hash.cmp.new inv_hash.cmp",
+    "vw_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp &&  tail -n +2 inv_hash.cmp > inv_hash.cmp.new &&  rm inv_hash.cmp &&  mv inv_hash.cmp.new inv_hash.cmp",
     "is_bash_command": true,
     "files": [
       "train-sets/ref/inv_hash.stderr",
@@ -897,7 +897,7 @@
   {
     "id": 96,
     "desc": "backwards compatibility",
-    "vw_command": " printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} -i simple_model --invert_hash inv_hash.cmp &&  tail -n +2 inv_hash.cmp",
+    "vw_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} -i simple_model --invert_hash inv_hash.cmp &&  tail -n +2 inv_hash.cmp",
     "is_bash_command": true,
     "files": [
       "test-sets/ref/backwards.stderr",
@@ -1406,7 +1406,7 @@
   {
     "id": 149,
     "desc": "initial_weight option is used",
-    "vw_command": " echo \"1 | feature:1\" | {VW} -a --initial_weight 0.1 --initial_t 0.3",
+    "vw_command": "echo \"1 | feature:1\" | {VW} -a --initial_weight 0.1 --initial_t 0.3",
     "is_bash_command": true,
     "files": [
       "train-sets/ref/initial_weight.stderr",
@@ -1434,7 +1434,7 @@
   {
     "id": 152,
     "desc": "daemon on the foreground test",
-    "vw_command": " ./daemon-test.sh --foreground",
+    "vw_command": "./daemon-test.sh --foreground",
     "is_bash_command": true,
     "files": [
       "test-sets/ref/vw-daemon.stdout"
@@ -1471,7 +1471,7 @@
   {
     "id": 156,
     "desc": "--cubic regression verification",
-    "vw_command": " ./cubic-test.sh ${VW}",
+    "vw_command": "./cubic-test.sh ${VW}",
     "is_bash_command": true,
     "files": []
   },
@@ -1650,14 +1650,14 @@
   {
     "id": 176,
     "desc": "same model on cluster mode",
-    "vw_command": " ./same-model-test.sh",
+    "vw_command": "./same-model-test.sh",
     "is_bash_command": true,
     "files": []
   },
   {
     "id": 177,
     "desc": "check --audit output is reproducible",
-    "vw_command": " printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' | {VW} --oaa 3 -q ef --audit",
+    "vw_command": "printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' | {VW} --oaa 3 -q ef --audit",
     "is_bash_command": true,
     "files": [
       "train-sets/ref/audit2.stdout"
@@ -1803,7 +1803,7 @@
   {
     "id": 193,
     "desc": "malformed examples, onethread, strict_parse failure",
-    "vw_command": " ./negative-test.sh {VW} -d train-sets/malformed.dat --onethread --strict_parse",
+    "vw_command": "./negative-test.sh {VW} -d train-sets/malformed.dat --onethread --strict_parse",
     "is_bash_command": true,
     "files": [
       "train-sets/ref/malformed-onethread-strict_parse.stderr"
@@ -1812,7 +1812,7 @@
   {
     "id": 194,
     "desc": "malformed examples, strict_parse failure",
-    "vw_command": " ./negative-test.sh {VW} -d train-sets/malformed.dat --strict_parse",
+    "vw_command": "./negative-test.sh {VW} -d train-sets/malformed.dat --strict_parse",
     "is_bash_command": true,
     "files": [
       "train-sets/ref/malformed-strict_parse.stderr"
@@ -1895,7 +1895,7 @@
   {
     "id": 203,
     "desc": "Basic test of cluster. Can't use the VW replacer as it will think this is a VW command append things like --onethread",
-    "vw_command": " python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build/cluster/spanning_tree  --test_file test-sets/0001.dat --data_files train-sets/0001.dat train-sets/0002.dat  --prediction_file cluster.predict",
+    "vw_command": "python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build/cluster/spanning_tree  --test_file test-sets/0001.dat --data_files train-sets/0001.dat train-sets/0002.dat  --prediction_file cluster.predict",
     "is_bash_command": true,
     "files": [
       "test-sets/ref/cluster.stderr",
@@ -1935,7 +1935,7 @@
   {
     "id": 207,
     "desc": "Enable chain hash option for json example",
-    "vw_command": " {VW} --audit --json --chain_hash -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash &&  tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new &&  rm chain_hash_json_result.cmp &&  mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp",
+    "vw_command": "{VW} --audit --json --chain_hash -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash &&  tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new &&  rm chain_hash_json_result.cmp &&  mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp",
     "is_bash_command": true,
     "files": [
       "test-sets/ref/chain_hash_json_test.stderr",
@@ -1946,7 +1946,7 @@
   {
     "id": 208,
     "desc": "Enable chain hash option for text example",
-    "vw_command": " {VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash &&  tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new &&  rm chain_hash_text_result.cmp &&  mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp",
+    "vw_command": "{VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash &&  tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new &&  rm chain_hash_text_result.cmp &&  mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp",
     "is_bash_command": true,
     "files": [
       "test-sets/ref/chain_hash_text_result.stderr",
@@ -1967,7 +1967,7 @@
   {
     "id": 210,
     "desc": "Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.. SkipC# - Do not remove this - this test breaks test generation by creating an infinite sized list containing this test case (many times)",
-    "vw_command": " {VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant  && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt",
+    "vw_command": "{VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant  && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt",
     "is_bash_command": true,
     "files": [
       "train-sets/ref/inv_hash_load_model.invert.txt",
@@ -2065,7 +2065,7 @@
   {
     "id": 220,
     "desc": "daemon test with json",
-    "vw_command": " ./daemon-test.sh --json",
+    "vw_command": "./daemon-test.sh --json",
     "is_bash_command": true,
     "files": [
       "test-sets/ref/vw-daemon.stdout"

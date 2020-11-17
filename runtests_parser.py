@@ -4,7 +4,7 @@ class Test:
     def __init__(self, id, desc):   
         self.id = id 
         self.desc = desc.strip()
-        self.more_vw = False
+        self.backslash_seen = False
         self.vw_command = "" 
         self.is_bash_command = False
         self.files = []
@@ -13,17 +13,19 @@ class Test:
         self.desc = self.desc + ". " + line.strip()[1:].strip()
     
     def add_vw_command(self, line):
-        self.vw_command = self.vw_command + " " + line
-        if line[-1] == "\\":
+        self.vw_command = (self.vw_command + " " + line).strip()
+        if self.vw_command[-1] == "\\":
             self.vw_command = self.vw_command[:-1]
-            self.more_vw = True
+            self.backslash_seen = True
 
         if "&&" in self.vw_command:
             self.is_bash_command = True
     
-    def force_cmd_append(self, line):
-        if self.more_vw:
-            self.more_vw = False
+    # a cmd is incomplete if self.backslash_seen is true
+    # this represents that the previous command parsed ended in '\' char
+    def append_cmd_if_incomplete(self, line):
+        if self.backslash_seen:
+            self.backslash_seen = False
             self.add_vw_command(line)
             return True
         else:
@@ -47,7 +49,7 @@ class Test:
         else:
             raise Exception("id is not a number. fatal.")
 
-        delattr(self, 'more_vw')
+        delattr(self, 'backslash_seen')
 
 class Parser:
     def __init__(self):   
@@ -101,7 +103,7 @@ class Parser:
                 self.curr_test = new_test
             else: # its any other perl comment
                 self.curr_test.add_more_comments(line)
-        elif self.curr_test.force_cmd_append(line): # check case if previous line ended in \
+        elif self.curr_test.append_cmd_if_incomplete(line): # check case if previous line ended in \
             pass
         elif Parser.begins_with_vw_command(line):
             self.curr_test.add_vw_command(line)
