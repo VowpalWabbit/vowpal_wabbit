@@ -153,7 +153,6 @@ void vw::learn(example& ec)
     }
     else
     {
-      // Get prediction from top level learner
       VW::LEARNER::as_singleline(l)->predict(ec);
       VW::LEARNER::as_singleline(l)->learn(ec);
     }
@@ -174,7 +173,6 @@ void vw::learn(multi_ex& ec)
     }
     else
     {
-      // Get prediction from top level learner
       VW::LEARNER::as_multiline(l)->predict(ec);
       VW::LEARNER::as_multiline(l)->learn(ec);
     }
