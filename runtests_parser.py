@@ -63,15 +63,17 @@ class Parser:
         return line.split()[0] == "{VW}"
 
     @staticmethod
-    def is_filename(line):
+    def is_filename_of_testset(line):
         tokens = line.split("/")
         if tokens[0] in ["train-sets", "pred-sets", "test-sets"]:
             return True
         
         return False
 
+    # returns a Test(n, ...) instance if line has format:
+    # '# Test n:'...
     @staticmethod
-    def process_perl_comment(line):
+    def try_parse_test_definition(line):
         tokens = line.split(":")
 
         if len(tokens) <= 1:
@@ -92,18 +94,18 @@ class Parser:
 
     def process_line(self, line):
         if Parser.is_perl_comment(line):
-            new_test = Parser.process_perl_comment(line)
+            new_test = Parser.try_parse_test_definition(line)
 
-            if new_test is not None:
+            if new_test: # we reached a perl comment that declares a new test
                 self.commit_parsed_test()
                 self.curr_test = new_test
-            else:
+            else: # its any other perl comment
                 self.curr_test.add_more_comments(line)
         elif Parser.is_vw_command(line):
             self.curr_test.add_vw_command(line)
-        elif self.curr_test.force_vw_append(line):
+        elif self.curr_test.force_vw_append(line): # check case if previous line ended in \
             pass
-        elif Parser.is_filename(line):
+        elif Parser.is_filename_of_testset(line):
             self.curr_test.add_file(line)
         else:
             self.curr_test.add_bash_command(line)
