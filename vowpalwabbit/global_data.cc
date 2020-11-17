@@ -153,16 +153,8 @@ void vw::learn(example& ec)
     }
     else
     {
-      // Notes on example.weight:  Reductions can sometimes change the weight.
-      // for example classweight.  This weighted example is needed for output
-      // by the framework so it cannot be reverted.  Since predict() and learn()
-      // must both see same the initial example weight, weight must be saved/restored
-      float weight_buffer = ec.weight;
       // Get prediction from top level learner
       VW::LEARNER::as_singleline(l)->predict(ec);
-      // Swap the weight returned by predict with original weight
-      std::swap(weight_buffer,ec.weight);
-
       VW::LEARNER::as_singleline(l)->learn(ec);
     }
   }
@@ -199,15 +191,8 @@ void vw::learn(multi_ex& ec)
     }
     else
     {
-      // Notes on example.weight:  Reductions can sometimes change the weight of an example.
-      // (found in classweight.cc)  This weighted example is needed for output
-      // by the framework so it cannot be reverted.  Since predict() and learn()
-      // must both see same the initial example weight, weight must be saved/restored
-      save_example_weights(ec);
       // Get prediction from top level learner
       VW::LEARNER::as_multiline(l)->predict(ec);
-      // Swap the weight returned by predict with original weight
-      swap_example_weights(ec);
       VW::LEARNER::as_multiline(l)->learn(ec);
     }
   }

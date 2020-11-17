@@ -64,9 +64,9 @@ void update_example_weight(classweights& cweights, example& ec)
 template <bool is_learn, prediction_type_t pred_type>
 void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base, example& ec)
 {
-  update_example_weight<pred_type>(cweights, ec);
   if (is_learn)
   {
+    update_example_weight<pred_type>(cweights, ec);
     base.learn(ec);
   }
   else
