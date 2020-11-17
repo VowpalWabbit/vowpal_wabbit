@@ -77,6 +77,12 @@ class Test:
             for f in files:
                 if "model-sets" not in f:
                     self.depends_on.append(Test.output[f])
+        
+        orig_files = self.files
+
+        self.files = {}
+        for f in orig_files:
+            self.files[Parser.parse_file(f)] = f
 
         if self.id.isnumeric():
             self.id = int(self.id)
@@ -89,6 +95,15 @@ class Parser:
     def __init__(self):   
         self.curr_test = None
         self.results = []
+
+    @staticmethod
+    def parse_file(file):
+        tokens = file.split(".")
+        if tokens[-1] in ["stderr", "stdout"]:
+            return tokens[-1]
+        else:
+            tokens = file.split("/")
+            return tokens[-1]
 
     @staticmethod
     def is_perl_comment(line):
