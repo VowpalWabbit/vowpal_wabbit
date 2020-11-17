@@ -165,7 +165,7 @@ class Parser:
         self.commit_parsed_test()
         return json.dumps(self.results, indent=2, default=lambda x: x.__dict__)
 
-with open('./test/RunTests') as f:
+with open('./RunTests') as f:
     saw_first_test = False
 
     RTParser = Parser()
