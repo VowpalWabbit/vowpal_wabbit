@@ -192,24 +192,31 @@ void vw::learn(multi_ex& ec)
     }
     else
     {
+      // Expected behavior in some reductions is to throw if there are zero examples
+      // Therefore we need to let predict and learn happen with zero size collection
+      // Unit_Testing will check if this contract is enforced.
+      bool zero_examples = ec.size() == 0;
       // Notes on example.weight:  Reductions can sometimes change the weight.
       // for example classweight.  This weighted example is needed for output
       // by the framework so it cannot be reverted.  Since predict() and learn()
       // must both see same the initial example weight, weight must be saved/restored
-      float weight_buffer = ec[0]->weight;
+      float weight_buffer = (zero_examples) ? 0.f : ec[0]->weight;
       // Get prediction from top level learner
       VW::LEARNER::as_multiline(l)->predict(ec);
       // Swap the weight returned by predict with original weight
-      std::swap(weight_buffer,ec[0]->weight);
+      if(!zero_examples) std::swap(weight_buffer,ec[0]->weight);
       // Save the loss.... Needs further investigation.
       float loss_buffer = ec[0]->loss;
       // Everything that must be restored after calling learn
-      auto restore_guard = VW::scope_exit([&ec, loss_buffer, weight_buffer]
+      auto restore_guard = VW::scope_exit([&ec, loss_buffer, weight_buffer, zero_examples]
       {
-        // Restore the loss value from earlier call to predict()
-        ec[0]->loss = loss_buffer;
-        // Restore the weight value from earlier call to predict()
-        ec[0]->weight = weight_buffer;
+        if(!zero_examples)
+        {
+          // Restore the loss value from earlier call to predict()
+          ec[0]->loss = loss_buffer;
+          // Restore the weight value from earlier call to predict()
+          ec[0]->weight = weight_buffer;
+        }
       });
 
       VW::LEARNER::as_multiline(l)->learn(ec);
