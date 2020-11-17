@@ -160,8 +160,6 @@ void vw::learn(example& ec)
       float weight_buffer = ec.weight;
       // Get prediction from top level learner
       VW::LEARNER::as_singleline(l)->predict(ec);
-      // Save the prediction and restore it later
-//      std::swap(_predict_buffer, ec.pred);
       // Swap the weight returned by predict with original weight
       std::swap(weight_buffer,ec.weight);
       // Save the loss.... Needs further investigation.
@@ -169,8 +167,6 @@ void vw::learn(example& ec)
       // Everything that must be restored after calling learn
       auto restore_guard = VW::scope_exit([&ec, this, loss_buffer, weight_buffer]
       {
-        // Restore the prediction value from earlier call to predict()
-//        std::swap(ec.pred, _predict_buffer);
         // Restore the loss value from earlier call to predict()
         ec.loss = loss_buffer;
         // Restore the weight value from earlier call to predict()
@@ -203,8 +199,6 @@ void vw::learn(multi_ex& ec)
       float weight_buffer = ec[0]->weight;
       // Get prediction from top level learner
       VW::LEARNER::as_multiline(l)->predict(ec);
-      // Save the prediction and restor it later
-//      std::swap(_predict_buffer, ec[0]->pred);
       // Swap the weight returned by predict with original weight
       std::swap(weight_buffer,ec[0]->weight);
       // Save the loss.... Needs further investigation.
@@ -212,8 +206,6 @@ void vw::learn(multi_ex& ec)
       // Everything that must be restored after calling learn
       auto restore_guard = VW::scope_exit([&ec, this, loss_buffer, weight_buffer]
       {
-        // Restore the prediction value from earlier call to predict()
-//        std::swap(ec[0]->pred, _predict_buffer);
         // Restore the loss value from earlier call to predict()
         ec[0]->loss = loss_buffer;
         // Restore the weight value from earlier call to predict()

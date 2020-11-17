@@ -511,8 +511,6 @@ public:
   vw& operator=(const vw&&) = delete;
 
 private:
-  polyprediction _predict_buffer;
-
   void cleanup_prediction();
   void copy_prediction(const polyprediction& from_pred);
 };
