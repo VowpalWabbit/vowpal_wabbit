@@ -51,7 +51,7 @@ class Test:
 
 class Parser:
     def __init__(self):   
-        self.temp_test = None
+        self.curr_test = None
         self.results = []
 
     @staticmethod
@@ -85,10 +85,10 @@ class Parser:
             return None
 
     def commit_parsed_test(self):
-        if self.temp_test is not None:
-            self.temp_test.clean()
-            self.results.append(self.temp_test)
-            self.temp_test = None
+        if self.curr_test is not None:
+            self.curr_test.clean()
+            self.results.append(self.curr_test)
+            self.curr_test = None
 
     def process_line(self, line):
         if Parser.is_perl_comment(line):
@@ -96,17 +96,17 @@ class Parser:
 
             if new_test is not None:
                 self.commit_parsed_test()
-                self.temp_test = new_test
+                self.curr_test = new_test
             else:
-                self.temp_test.add_more_comments(line)
+                self.curr_test.add_more_comments(line)
         elif Parser.is_vw_command(line):
-            self.temp_test.add_vw_command(line)
-        elif self.temp_test.force_vw_append(line):
+            self.curr_test.add_vw_command(line)
+        elif self.curr_test.force_vw_append(line):
             pass
         elif Parser.is_filename(line):
-            self.temp_test.add_file(line)
+            self.curr_test.add_file(line)
         else:
-            self.temp_test.add_bash_command(line)
+            self.curr_test.add_bash_command(line)
     
     def get_json_str(self):
         self.commit_parsed_test()
