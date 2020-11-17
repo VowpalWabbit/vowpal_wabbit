@@ -38,21 +38,21 @@ private:
   std::vector<float> _scores;
   std::vector<float> _top_actions;
 
- public:
-   using PredictionT = v_array<ACTION_SCORE::action_score>;
+public:
+  using PredictionT = v_array<ACTION_SCORE::action_score>;
 
-   cb_explore_adf_bag(
-       float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state);
-   ~cb_explore_adf_bag();
+  cb_explore_adf_bag(
+      float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state);
+  ~cb_explore_adf_bag();
 
-   // Should be called through cb_explore_adf_base for pre/post-processing
-   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
-   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  // Should be called through cb_explore_adf_base for pre/post-processing
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
-   const PredictionT& get_cached_prediction() { return _action_probs; };
+  const PredictionT& get_cached_prediction() { return _action_probs; };
 
- private:
-   uint32_t get_bag_learner_update_count(uint32_t learner_index);
+private:
+  uint32_t get_bag_learner_update_count(uint32_t learner_index);
 };
 
 cb_explore_adf_bag::cb_explore_adf_bag(

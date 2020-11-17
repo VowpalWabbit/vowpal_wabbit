@@ -182,8 +182,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     VW_DBG_0 << std::endl;
   }
 
-  if (is_learn)
-    ++_counter;
+  if (is_learn) ++_counter;
 }
 
 cb_explore_adf_cover::~cb_explore_adf_cover()

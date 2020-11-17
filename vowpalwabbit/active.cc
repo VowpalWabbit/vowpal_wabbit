@@ -157,7 +157,8 @@ base_learner* active_setup(options_i& options, vw& all)
   else
   {
     all.active = true;
-    l = &init_learner(data, base, predict_or_learn_active<true>, predict_or_learn_active<false>, "active", base->learn_returns_prediction);
+    l = &init_learner(data, base, predict_or_learn_active<true>, predict_or_learn_active<false>, "active",
+        base->learn_returns_prediction);
     l->set_finish_example(return_active_example);
   }
 

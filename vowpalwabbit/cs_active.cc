@@ -250,8 +250,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
           (query && lqd.is_range_overlapped && lqd.is_range_large));
       inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl->class_index, lqd.cl->x, prediction, score,
           lqd.cl->partial_prediction, query_label, lqd.query_needed);
-      if (lqd.query_needed)
-        ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
+      if (lqd.query_needed) ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
 
       VW_DBG(ec) << "label=" << lqd.cl->class_index << " x=" << lqd.cl->x << " prediction=" << prediction
                  << " score=" << score << " pp=" << lqd.cl->partial_prediction << " ql=" << query_label

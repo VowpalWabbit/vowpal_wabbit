@@ -553,7 +553,8 @@ template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
     size_t ws, prediction_type_t pred_type, const std::string& name, bool learn_returns_prediction = false)
 {
-  auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_returns_prediction);
+  auto ret =
+      &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_returns_prediction);
 
   dat.release();
   return *ret;
@@ -564,8 +565,8 @@ template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
     size_t params_per_weight, const std::string& name, bool learn_returns_prediction = false)
 {
-  auto ret = &learner<T, E>::init_learner(
-      dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type_t::scalar, name, learn_returns_prediction);
+  auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight,
+      prediction_type_t::scalar, name, learn_returns_prediction);
 
   dat.release();
   return *ret;
@@ -581,7 +582,8 @@ learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weigh
 
 template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t params_per_weight, prediction_type_t pred_type, const std::string& name, bool learn_returns_prediction = false)
+    size_t params_per_weight, prediction_type_t pred_type, const std::string& name,
+    bool learn_returns_prediction = false)
 {
   auto ret = &learner<T, E>::init_learner(
       dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type, name, learn_returns_prediction);
@@ -594,8 +596,8 @@ template <class T, class E, class L>
 learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
     size_t ws, const std::string& name, bool learn_returns_prediction = false)
 {
-  auto ret =
-      &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, base->pred_type, name, learn_returns_prediction);
+  auto ret = &learner<T, E>::init_learner(
+      dat.get(), base, learn, predict, ws, base->pred_type, name, learn_returns_prediction);
 
   dat.release();
   return *ret;

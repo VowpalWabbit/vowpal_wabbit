@@ -136,7 +136,7 @@ float average_update(float total_weight, float normalized_sum_norm_x, float neg_
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void train(gd& g, example& ec, float update)
 {
-  if VW_STD17_CONSTEXPR(normalized != 0) { update *= g.update_multiplier; }
+  if VW_STD17_CONSTEXPR (normalized != 0) { update *= g.update_multiplier; }
   VW_DBG(ec) << "gd: train() spare=" << spare << std::endl;
   foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
 }
@@ -373,8 +373,7 @@ void predict(gd& g, base_learner&, example& ec)
 
   VW_DBG(ec) << "gd: predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << std::endl;
 
-  if (audit)
-    print_audit_features(all, ec);
+  if (audit) print_audit_features(all, ec);
 }
 
 template <class T>

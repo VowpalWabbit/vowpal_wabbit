@@ -275,7 +275,7 @@ void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& example
       examples[i]->l.cb = cb_labels[i];
       examples[i]->ft_offset = saved_offset;
     }
-    });
+  });
 
   if (is_learn)
   {

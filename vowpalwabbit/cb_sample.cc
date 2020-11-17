@@ -91,7 +91,7 @@ struct cb_sample_data
     return ostrm.str();
   }
 
- private:
+private:
   std::shared_ptr<rand_state> _random_state;
 };
 }  // namespace VW

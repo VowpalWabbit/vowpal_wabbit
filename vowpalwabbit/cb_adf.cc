@@ -53,17 +53,17 @@ private:
   const bool _rank_all;
   const float _clip_p;
 
- public:
-   void learn(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
-   void predict(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
-   bool update_statistics(example& ec, multi_ex* ec_seq);
+public:
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
+  bool update_statistics(example& ec, multi_ex* ec_seq);
 
-   cb_adf(shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p,
-       bool no_predict)
-       : _sd(sd), _model_file_ver(model_file_ver), _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p)
-   {
-     _gen_cs.cb_type = cb_type;
-   }
+  cb_adf(
+      shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
+      : _sd(sd), _model_file_ver(model_file_ver), _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p)
+  {
+    _gen_cs.cb_type = cb_type;
+  }
 
   void set_scorer(VW::LEARNER::single_learner* scorer) { _gen_cs.scorer = scorer; }
 
