@@ -165,7 +165,7 @@ void vw::learn(example& ec)
       // Save the loss.... Needs further investigation.
       float loss_buffer = ec.loss;
       // Everything that must be restored after calling learn
-      auto restore_guard = VW::scope_exit([&ec, this, loss_buffer, weight_buffer]
+      auto restore_guard = VW::scope_exit([&ec, loss_buffer, weight_buffer]
       {
         // Restore the loss value from earlier call to predict()
         ec.loss = loss_buffer;
@@ -204,7 +204,7 @@ void vw::learn(multi_ex& ec)
       // Save the loss.... Needs further investigation.
       float loss_buffer = ec[0]->loss;
       // Everything that must be restored after calling learn
-      auto restore_guard = VW::scope_exit([&ec, this, loss_buffer, weight_buffer]
+      auto restore_guard = VW::scope_exit([&ec, loss_buffer, weight_buffer]
       {
         // Restore the loss value from earlier call to predict()
         ec[0]->loss = loss_buffer;
@@ -412,14 +412,11 @@ vw::vw()
   sd->report_multiclass_log_loss = false;
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
-  std::memset(&_predict_buffer, 0, sizeof(_predict_buffer));
 }
 VW_WARNING_STATE_POP
 
 vw::~vw()
 {
-  cleanup_prediction();
-
   if (l != nullptr)
   {
     l->finish();
