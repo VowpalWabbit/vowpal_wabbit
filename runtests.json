@@ -1,6 +1,6 @@
 [
   {
-    "id": "1",
+    "id": 1,
     "desc": "",
     "vw_command": "-k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001_1.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off",
     "is_bash_command": false,
@@ -9,7 +9,7 @@
     ]
   },
   {
-    "id": "2",
+    "id": 2,
     "desc": "checking predictions as well",
     "vw_command": "-k -t -d train-sets/0001.dat -i models/0001_1.model -p 0001.predict --invariant",
     "is_bash_command": false,
@@ -19,7 +19,7 @@
     ]
   },
   {
-    "id": "3",
+    "id": 3,
     "desc": "without -d, training only",
     "vw_command": "-k -d train-sets/0002.dat -f models/0002.model --invariant",
     "is_bash_command": false,
@@ -28,7 +28,7 @@
     ]
   },
   {
-    "id": "4",
+    "id": 4,
     "desc": "same, with -d",
     "vw_command": "-k -d train-sets/0002.dat -f models/0002.model --invariant",
     "is_bash_command": false,
@@ -38,7 +38,7 @@
     ]
   },
   {
-    "id": "5",
+    "id": 5,
     "desc": "add -q .., adaptive, and more (same input, different outputs)",
     "vw_command": "-k --initial_t 1 --adaptive --invariant -q Tf -q ff -f models/0002a.model -d train-sets/0002.dat",
     "is_bash_command": false,
@@ -47,7 +47,7 @@
     ]
   },
   {
-    "id": "6",
+    "id": 6,
     "desc": "run predictions on Test 4 model. Pretending the labels aren't there",
     "vw_command": "-k -t -i models/0002.model -d train-sets/0002.dat -p 0002b.predict",
     "is_bash_command": false,
@@ -57,7 +57,7 @@
     ]
   },
   {
-    "id": "7",
+    "id": 7,
     "desc": "using normalized adaptive updates and a low --power_t",
     "vw_command": "-k --power_t 0.45 -f models/0002c.model -d train-sets/0002.dat",
     "is_bash_command": false,
@@ -66,7 +66,7 @@
     ]
   },
   {
-    "id": "8",
+    "id": 8,
     "desc": "predicts on test 7 model",
     "vw_command": "-k -t -i models/0002c.model -d train-sets/0002.dat -p 0002c.predict",
     "is_bash_command": false,
@@ -76,7 +76,7 @@
     ]
   },
   {
-    "id": "9",
+    "id": 9,
     "desc": "label-dependent features with csoaa_ldf",
     "vw_command": "-k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off --noconstant",
     "is_bash_command": false,
@@ -86,7 +86,7 @@
     ]
   },
   {
-    "id": "10",
+    "id": 10,
     "desc": "label-dependent features with wap_ldf",
     "vw_command": "-k -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --invariant --wap_ldf multiline --holdout_off --noconstant",
     "is_bash_command": false,
@@ -96,7 +96,7 @@
     ]
   },
   {
-    "id": "11",
+    "id": 11,
     "desc": "one-against-all",
     "vw_command": "-k --oaa 10 -c --passes 10 -d train-sets/multiclass --holdout_off",
     "is_bash_command": false,
@@ -105,7 +105,7 @@
     ]
   },
   {
-    "id": "12",
+    "id": 12,
     "desc": "Error Correcting Tournament",
     "vw_command": "-k --ect 10 --error 3 -c --passes 10 --invariant -d train-sets/multiclass --holdout_off",
     "is_bash_command": false,
@@ -114,7 +114,7 @@
     ]
   },
   {
-    "id": "13",
+    "id": 13,
     "desc": "Run search (dagger) on wsj_small for 6 passes extra features",
     "vw_command": "-k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off",
     "is_bash_command": false,
@@ -123,7 +123,7 @@
     ]
   },
   {
-    "id": "14",
+    "id": 14,
     "desc": "Run search (searn) on wsj_small for 6 passes extra features",
     "vw_command": "-k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off --search_passes_per_policy 3 --search_interpolation policy",
     "is_bash_command": false,
@@ -133,7 +133,7 @@
     ]
   },
   {
-    "id": "15",
+    "id": 15,
     "desc": "LBFGS on zero derivative input",
     "vw_command": "-k -c -d train-sets/zero.dat --loss_function=squared -b 20 --bfgs --mem 7 --passes 5 --l2 1.0 --holdout_off",
     "is_bash_command": false,
@@ -143,7 +143,7 @@
     ]
   },
   {
-    "id": "16",
+    "id": 16,
     "desc": "LBFGS early termination",
     "vw_command": "-k -c -d train-sets/rcv1_small.dat --loss_function=logistic --bfgs --mem 7 --passes 20 --termination 0.001 --l2 1.0 --holdout_off",
     "is_bash_command": false,
@@ -153,7 +153,7 @@
     ]
   },
   {
-    "id": "17",
+    "id": 17,
     "desc": "Run LDA with 100 topics on 1000 Wikipedia articles",
     "vw_command": "-k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/wiki256.dat",
     "is_bash_command": false,
@@ -162,7 +162,7 @@
     ]
   },
   {
-    "id": "18",
+    "id": 18,
     "desc": "Run search on seq_small for 12 passes, 4 passes per policy",
     "vw_command": "-k -c -d train-sets/seq_small --passes 12 --invariant --search 4 --search_task sequence --holdout_off",
     "is_bash_command": false,
@@ -171,7 +171,7 @@
     ]
   },
   {
-    "id": "19",
+    "id": 19,
     "desc": "neural network 3-parity with 2 hidden units",
     "vw_command": "-k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 19 --quiet --holdout_off",
     "is_bash_command": false,
@@ -180,7 +180,7 @@
     ]
   },
   {
-    "id": "20",
+    "id": 20,
     "desc": "neural network 3-parity with 2 hidden units (predict)",
     "vw_command": "-d train-sets/3parity -t -i models/0021.model -p 0022.predict",
     "is_bash_command": false,
@@ -190,7 +190,7 @@
     ]
   },
   {
-    "id": "21",
+    "id": 21,
     "desc": "cubic features -- on a parity test case",
     "vw_command": "-k -c -f models/xxor.model -d train-sets/xxor.dat --cubic abc --passes 100 --holdout_off --progress 1.33333",
     "is_bash_command": false,
@@ -199,7 +199,7 @@
     ]
   },
   {
-    "id": "22",
+    "id": 22,
     "desc": "matrix factorization -- training",
     "vw_command": "-k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 --l2 2e-6 --learning_rate 0.05 --passes 2 --decay_learning_rate 0.97 --power_t 0 -f models/movielens.reg -c --loss_function classic --holdout_off",
     "is_bash_command": false,
@@ -209,7 +209,7 @@
     ]
   },
   {
-    "id": "23",
+    "id": 23,
     "desc": "matrix factorization -- testing",
     "vw_command": "-i models/movielens.reg -t -d test-sets/ml100k_small_test",
     "is_bash_command": false,
@@ -219,7 +219,7 @@
     ]
   },
   {
-    "id": "24",
+    "id": 24,
     "desc": "active-learning -- training",
     "vw_command": "-k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3",
     "is_bash_command": false,
@@ -228,7 +228,7 @@
     ]
   },
   {
-    "id": "25",
+    "id": 25,
     "desc": "bagging -- training regressor",
     "vw_command": "-k -d train-sets/0002.dat -f models/bs.reg.model --bootstrap 4 -p bs.reg.predict",
     "is_bash_command": false,
@@ -238,7 +238,7 @@
     ]
   },
   {
-    "id": "26",
+    "id": 26,
     "desc": "bagging -- predicting with bagged regressor",
     "vw_command": "-d train-sets/0002.dat -i models/bs.reg.model -p bs.prreg.predict -t",
     "is_bash_command": false,
@@ -248,7 +248,7 @@
     ]
   },
   {
-    "id": "27",
+    "id": 27,
     "desc": "bagging -- binary classifiers",
     "vw_command": "-d train-sets/0001.dat -f models/bs.vote.model --bootstrap 4 --bs_type vote -p bs.vote.predict",
     "is_bash_command": false,
@@ -258,7 +258,7 @@
     ]
   },
   {
-    "id": "28",
+    "id": 28,
     "desc": "bagging -- predict with bagged classifier",
     "vw_command": "-d train-sets/0001.dat -i models/bs.vote.model -p bs.prvote.predict -t",
     "is_bash_command": false,
@@ -268,7 +268,7 @@
     ]
   },
   {
-    "id": "29",
+    "id": 29,
     "desc": "affix features",
     "vw_command": "-d train-sets/affix_test.dat -k -c --passes 10 --holdout_off --affix -2",
     "is_bash_command": false,
@@ -277,7 +277,7 @@
     ]
   },
   {
-    "id": "30",
+    "id": 30,
     "desc": "train --l1 regularized model",
     "vw_command": "-d train-sets/0001.dat -f models/mask.model --invert_hash mask.predict --l1 0.01",
     "is_bash_command": false,
@@ -286,7 +286,7 @@
     ]
   },
   {
-    "id": "31",
+    "id": 31,
     "desc": "train model using --feature_mask",
     "vw_command": "-d train-sets/0001.dat --invert_hash remask.predict --feature_mask models/mask.model -f models/remask.model",
     "is_bash_command": false,
@@ -295,7 +295,7 @@
     ]
   },
   {
-    "id": "32",
+    "id": 32,
     "desc": "train model using --feature_mask and --initial_regressor",
     "vw_command": "-d train-sets/0001.dat --feature_mask models/mask.model -i models/remask.model",
     "is_bash_command": false,
@@ -304,7 +304,7 @@
     ]
   },
   {
-    "id": "33",
+    "id": 33,
     "desc": "train model for topk recommender",
     "vw_command": "-d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off",
     "is_bash_command": false,
@@ -313,7 +313,7 @@
     ]
   },
   {
-    "id": "34",
+    "id": 34,
     "desc": "train model for topk recommender",
     "vw_command": "-P 1 -d train-sets/topk.vw -i topk.model --top 2 -p topk-rec.predict",
     "is_bash_command": false,
@@ -323,7 +323,7 @@
     ]
   },
   {
-    "id": "35",
+    "id": 35,
     "desc": "non-centered data-set where constant >> 0. To test the new --constant option without which performance is very weak",
     "vw_command": "-k --passes 100 -c --holdout_off --constant 1000 -d train-sets/big-constant.dat",
     "is_bash_command": false,
@@ -332,7 +332,7 @@
     ]
   },
   {
-    "id": "36",
+    "id": 36,
     "desc": "new option: --progress w/ integer arg",
     "vw_command": "-k -d train-sets/0001.dat --progress 10",
     "is_bash_command": false,
@@ -341,7 +341,7 @@
     ]
   },
   {
-    "id": "37",
+    "id": 37,
     "desc": "new-option: --progress w/ floating-point arg. + alternate short form (-P)",
     "vw_command": "-k -d train-sets/0001.dat -P 0.5",
     "is_bash_command": false,
@@ -350,7 +350,7 @@
     ]
   },
   {
-    "id": "38",
+    "id": 38,
     "desc": "--nn without --quiet to avoid nn regressions. (Needs to be a simple test, not one sensitive to symmetry breaking)",
     "vw_command": "-k -d train-sets/0001.dat --nn 1",
     "is_bash_command": false,
@@ -359,7 +359,7 @@
     ]
   },
   {
-    "id": "39",
+    "id": 39,
     "desc": "cb with dr",
     "vw_command": "-d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25",
     "is_bash_command": false,
@@ -368,7 +368,7 @@
     ]
   },
   {
-    "id": "40",
+    "id": 40,
     "desc": "cb with ips",
     "vw_command": "-d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125",
     "is_bash_command": false,
@@ -377,7 +377,7 @@
     ]
   },
   {
-    "id": "41",
+    "id": 41,
     "desc": "cb with dm",
     "vw_command": "-d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg",
     "is_bash_command": false,
@@ -386,7 +386,7 @@
     ]
   },
   {
-    "id": "42",
+    "id": 42,
     "desc": "--lda --passes 2 hang regression",
     "vw_command": "-k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off",
     "is_bash_command": false,
@@ -395,7 +395,7 @@
     ]
   },
   {
-    "id": "43",
+    "id": 43,
     "desc": "search sequence labeling, non-ldf train",
     "vw_command": "-k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f models/sequence_data.model",
     "is_bash_command": false,
@@ -404,7 +404,7 @@
     ]
   },
   {
-    "id": "44",
+    "id": 44,
     "desc": "search sequence labeling, non-ldf test",
     "vw_command": "-d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.nonldf.test.predict",
     "is_bash_command": false,
@@ -414,7 +414,7 @@
     ]
   },
   {
-    "id": "45",
+    "id": 45,
     "desc": "make sure that history works",
     "vw_command": "-k -c -d train-sets/seq_small2 --passes 4 --search 4 --search_task sequence --holdout_off",
     "is_bash_command": false,
@@ -423,7 +423,7 @@
     ]
   },
   {
-    "id": "46",
+    "id": 46,
     "desc": "search sequence labeling, ldf train",
     "vw_command": "-k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model --noconstant",
     "is_bash_command": false,
@@ -432,7 +432,7 @@
     ]
   },
   {
-    "id": "47",
+    "id": 47,
     "desc": "search sequence labeling, ldf test",
     "vw_command": "-d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.ldf.test.predict --noconstant",
     "is_bash_command": false,
@@ -442,7 +442,7 @@
     ]
   },
   {
-    "id": "48",
+    "id": 48,
     "desc": "search sequence SPAN labeling BIO, non-ldf train, no rollouts",
     "vw_command": "-k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout none --search_task sequencespan --search 7 --holdout_off -f models/sequencespan_data.model",
     "is_bash_command": false,
@@ -451,7 +451,7 @@
     ]
   },
   {
-    "id": "49",
+    "id": 49,
     "desc": "search sequence SPAN labeling BIO, non-ldf test",
     "vw_command": "-d train-sets/sequencespan_data -t -i models/sequencespan_data.model -p sequencespan_data.nonldf.test.predict",
     "is_bash_command": false,
@@ -461,7 +461,7 @@
     ]
   },
   {
-    "id": "50",
+    "id": 50,
     "desc": "search sequence SPAN labeling BILOU, non-ldf train",
     "vw_command": "-k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model",
     "is_bash_command": false,
@@ -470,7 +470,7 @@
     ]
   },
   {
-    "id": "51",
+    "id": 51,
     "desc": "search sequence SPAN labeling BILOU, non-ldf test",
     "vw_command": "-d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.nonldf-bilou.test.predict",
     "is_bash_command": false,
@@ -480,7 +480,7 @@
     ]
   },
   {
-    "id": "52",
+    "id": 52,
     "desc": "silly test for \"argmax\" task",
     "vw_command": "-d train-sets/argmax_data -k -c --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off",
     "is_bash_command": false,
@@ -489,7 +489,7 @@
     ]
   },
   {
-    "id": "53",
+    "id": 53,
     "desc": "(holdout-broken regression). ensure we have no holdout loss of '0 h'",
     "vw_command": "-k -c --passes 2 -d train-sets/0001.dat",
     "is_bash_command": false,
@@ -498,7 +498,7 @@
     ]
   },
   {
-    "id": "54",
+    "id": 54,
     "desc": "stagewise poly with exponent 0.25. ###in the following stage_poly tests, there are minute differences in losses, which are not being fuzzy-diffed;. ###thus the stderr is cleared (--quiet) and only comparing (fuzzy-diffed) predictions.",
     "vw_command": "--stage_poly --sched_exponent 0.25 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat -p stage_poly.s025.predict --quiet",
     "is_bash_command": false,
@@ -508,7 +508,7 @@
     ]
   },
   {
-    "id": "55",
+    "id": 55,
     "desc": "stagewise poly with exponent 1.0",
     "vw_command": "--stage_poly --sched_exponent 1.0 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat --quiet",
     "is_bash_command": false,
@@ -517,7 +517,7 @@
     ]
   },
   {
-    "id": "56",
+    "id": 56,
     "desc": "stagewise poly with exponent 0.25 and doubling batches",
     "vw_command": "--stage_poly --sched_exponent 0.25 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s025.doubling.predict --quiet",
     "is_bash_command": false,
@@ -527,7 +527,7 @@
     ]
   },
   {
-    "id": "57",
+    "id": 57,
     "desc": "stagewise poly with exponent 1.0 and doubling batches",
     "vw_command": "--stage_poly --sched_exponent 1.0 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s100.doubling.predict --quiet",
     "is_bash_command": false,
@@ -537,7 +537,7 @@
     ]
   },
   {
-    "id": "58",
+    "id": 58,
     "desc": "library test, train the initial model",
     "vw_command": "-c -k -d train-sets/library_train -f models/library_train.w -q st --passes 100 --hash all --noconstant --csoaa_ldf m --holdout_off",
     "is_bash_command": false,
@@ -547,7 +547,7 @@
     ]
   },
   {
-    "id": "59",
+    "id": 59,
     "desc": "cb_adf, sharedfeatures",
     "vw_command": "--dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json",
     "is_bash_command": false,
@@ -556,7 +556,7 @@
     ]
   },
   {
-    "id": "60",
+    "id": 60,
     "desc": "empty test, bad builds (without make clean). sometimes cause a SEGV even on empty input",
     "vw_command": " echo \"\" | {VW}",
     "is_bash_command": true,
@@ -565,7 +565,7 @@
     ]
   },
   {
-    "id": "61",
+    "id": 61,
     "desc": "daemon test",
     "vw_command": " ./daemon-test.sh",
     "is_bash_command": true,
@@ -574,7 +574,7 @@
     ]
   },
   {
-    "id": "62",
+    "id": 62,
     "desc": "SVM linear kernel",
     "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -p ksvm_train.linear.predict -d train-sets/rcv1_smaller.dat",
     "is_bash_command": false,
@@ -584,7 +584,7 @@
     ]
   },
   {
-    "id": "63",
+    "id": 63,
     "desc": "SVM polynomial kernel",
     "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 --kernel poly -p ksvm_train.poly.predict -d train-sets/rcv1_smaller.dat",
     "is_bash_command": false,
@@ -594,7 +594,7 @@
     ]
   },
   {
-    "id": "64",
+    "id": 64,
     "desc": "SVM rbf kernel",
     "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 --kernel rbf -p ksvm_train.rbf.predict -d train-sets/rcv1_smaller.dat",
     "is_bash_command": false,
@@ -604,7 +604,7 @@
     ]
   },
   {
-    "id": "65",
+    "id": 65,
     "desc": "Run search (dagger) on an entity-relation recognitions data set,. er_small, for 6 passes with constraints",
     "vw_command": "-k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8",
     "is_bash_command": false,
@@ -613,7 +613,7 @@
     ]
   },
   {
-    "id": "66",
+    "id": 66,
     "desc": "Train a depenency parser with search (dagger). on wsj_small.dparser.vw.gz for 6 passes",
     "vw_command": "-k -c -d train-sets/wsj_small.dparser.vw.gz --passes 6 --search_task dep_parser --search 12 --search_alpha 1e-4 --search_rollout oracle --holdout_off",
     "is_bash_command": false,
@@ -622,7 +622,7 @@
     ]
   },
   {
-    "id": "67",
+    "id": 67,
     "desc": "classification with data from dictionaries. (eg embeddings or gazetteers) -- note that this is impossible without. dictionaries because --ignore w; also test to make sure gzipped dicts. work and dictionary redundancy checking works",
     "vw_command": "-k -c -d train-sets/dictionary_test.dat --binary --ignore w --holdout_off --passes 32 --dictionary w:dictionary_test.dict --dictionary w:dictionary_test.dict.gz --dictionary_path train-sets",
     "is_bash_command": false,
@@ -631,7 +631,7 @@
     ]
   },
   {
-    "id": "68",
+    "id": 68,
     "desc": "Search for multiclass classification",
     "vw_command": "-k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off",
     "is_bash_command": false,
@@ -640,7 +640,7 @@
     ]
   },
   {
-    "id": "69",
+    "id": 69,
     "desc": "(see Test 43/Test 44): search sequence labeling, with selective branching",
     "vw_command": "-d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.nonldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10",
     "is_bash_command": false,
@@ -650,7 +650,7 @@
     ]
   },
   {
-    "id": "70",
+    "id": 70,
     "desc": "(see Test 46/47) search sequence labeling, ldf test, with selective branching",
     "vw_command": "-d train-sets/sequence_data -t -i models/sequence_data.ldf.model -p sequence_data.ldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10 --noconstant",
     "is_bash_command": false,
@@ -660,7 +660,7 @@
     ]
   },
   {
-    "id": "71",
+    "id": 71,
     "desc": "autolink",
     "vw_command": "-d train-sets/0002.dat --autolink 1 --examples 100 -p 0002.autolink.predict",
     "is_bash_command": false,
@@ -670,7 +670,7 @@
     ]
   },
   {
-    "id": "72",
+    "id": 72,
     "desc": "train FTRL-Proximal",
     "vw_command": "-k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 1 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2",
     "is_bash_command": false,
@@ -679,7 +679,7 @@
     ]
   },
   {
-    "id": "73",
+    "id": 73,
     "desc": "test FTRL-Proximal",
     "vw_command": "-k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl.predict",
     "is_bash_command": false,
@@ -689,7 +689,7 @@
     ]
   },
   {
-    "id": "74",
+    "id": 74,
     "desc": "cb evaluation",
     "vw_command": "-d train-sets/rcv1_cb_eval --cb 2 --eval",
     "is_bash_command": false,
@@ -698,7 +698,7 @@
     ]
   },
   {
-    "id": "75",
+    "id": 75,
     "desc": "Log_multi",
     "vw_command": "--log_multi 10 -d train-sets/multiclass",
     "is_bash_command": false,
@@ -707,7 +707,7 @@
     ]
   },
   {
-    "id": "76",
+    "id": 76,
     "desc": "cbify, epsilon-greedy",
     "vw_command": "--cbify 10 --epsilon 0.05 -d train-sets/multiclass",
     "is_bash_command": false,
@@ -716,7 +716,7 @@
     ]
   },
   {
-    "id": "77",
+    "id": 77,
     "desc": "cbify, tau first",
     "vw_command": "--cbify 10 --first 5 -d train-sets/multiclass",
     "is_bash_command": false,
@@ -725,7 +725,7 @@
     ]
   },
   {
-    "id": "78",
+    "id": 78,
     "desc": "cbify, bag",
     "vw_command": "--cbify 10 --bag 7 -d train-sets/multiclass",
     "is_bash_command": false,
@@ -734,7 +734,7 @@
     ]
   },
   {
-    "id": "79",
+    "id": 79,
     "desc": "cbify, cover",
     "vw_command": "--cbify 10 --cover 3 -d train-sets/multiclass --nounif",
     "is_bash_command": false,
@@ -743,7 +743,7 @@
     ]
   },
   {
-    "id": "80",
+    "id": 80,
     "desc": "lrq empty namespace",
     "vw_command": "--lrq aa3 -d train-sets/0080.dat",
     "is_bash_command": false,
@@ -752,7 +752,7 @@
     ]
   },
   {
-    "id": "81",
+    "id": 81,
     "desc": "train FTRL-PiSTOL",
     "vw_command": "-k -d train-sets/0001.dat -f models/ftrl_pistol.model --passes 1 --pistol",
     "is_bash_command": false,
@@ -761,7 +761,7 @@
     ]
   },
   {
-    "id": "82",
+    "id": 82,
     "desc": "test FTRL-PiSTOL",
     "vw_command": "-k -t -d train-sets/0001.dat -i models/ftrl_pistol.model -p ftrl_pistol.predict",
     "is_bash_command": false,
@@ -771,7 +771,7 @@
     ]
   },
   {
-    "id": "83",
+    "id": 83,
     "desc": "check redefine functionality",
     "vw_command": "-k -d train-sets/0080.dat --redefine := --redefine y:=: --redefine x:=arma --ignore x -q yy",
     "is_bash_command": false,
@@ -780,7 +780,7 @@
     ]
   },
   {
-    "id": "84",
+    "id": 84,
     "desc": "check cb_adf",
     "vw_command": "--cb_adf -d train-sets/cb_test.ldf --noconstant",
     "is_bash_command": false,
@@ -789,7 +789,7 @@
     ]
   },
   {
-    "id": "85",
+    "id": 85,
     "desc": "check multilabel_oaa",
     "vw_command": "--multilabel_oaa 10 -d train-sets/multilabel -p multilabel.predict",
     "is_bash_command": false,
@@ -799,7 +799,7 @@
     ]
   },
   {
-    "id": "86",
+    "id": 86,
     "desc": "check --csoaa_rank on csoaa_ldf",
     "vw_command": "--csoaa_ldf multiline --csoaa_rank -d train-sets/cs_test_multilabel.ldf -p multilabel_ldf.predict --noconstant",
     "is_bash_command": false,
@@ -809,7 +809,7 @@
     ]
   },
   {
-    "id": "87",
+    "id": 87,
     "desc": "check --rank_all on csoaa_ldf",
     "vw_command": "--cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_rank.predict --noconstant",
     "is_bash_command": false,
@@ -819,7 +819,7 @@
     ]
   },
   {
-    "id": "88",
+    "id": 88,
     "desc": "named labels at training time",
     "vw_command": "--named_labels det,noun,verb --oaa 3 -d train-sets/test_named -k -c --passes 10 --holdout_off -f models/test_named.model",
     "is_bash_command": false,
@@ -828,7 +828,7 @@
     ]
   },
   {
-    "id": "89",
+    "id": 89,
     "desc": "named labels at prediction",
     "vw_command": "-i models/test_named.model -t -d train-sets/test_named -p test_named.predict",
     "is_bash_command": false,
@@ -838,7 +838,7 @@
     ]
   },
   {
-    "id": "90",
+    "id": 90,
     "desc": "named labels at training time (csoaa)",
     "vw_command": "--named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model",
     "is_bash_command": false,
@@ -847,7 +847,7 @@
     ]
   },
   {
-    "id": "91",
+    "id": 91,
     "desc": "named labels at prediction (csoaa)",
     "vw_command": "-i models/test_named_csoaa.model -t -d train-sets/test_named_csoaa -p test_named_csoaa.predict",
     "is_bash_command": false,
@@ -857,7 +857,7 @@
     ]
   },
   {
-    "id": "92",
+    "id": 92,
     "desc": "check -q :: and -oaa inverse hash",
     "vw_command": " printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} --oaa 3 -q :: --invert_hash inv_hash.cmp &&  tail -n +2 inv_hash.cmp > inv_hash.cmp.new &&  rm inv_hash.cmp &&  mv inv_hash.cmp.new inv_hash.cmp",
     "is_bash_command": true,
@@ -867,7 +867,7 @@
     ]
   },
   {
-    "id": "93",
+    "id": 93,
     "desc": "check cb_adf with doubly robust option",
     "vw_command": "--cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_dr.predict --cb_type dr",
     "is_bash_command": false,
@@ -877,7 +877,7 @@
     ]
   },
   {
-    "id": "94",
+    "id": 94,
     "desc": "experience replay version of test 1",
     "vw_command": "-k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off --replay_b 100",
     "is_bash_command": false,
@@ -886,7 +886,7 @@
     ]
   },
   {
-    "id": "95",
+    "id": 95,
     "desc": "named labels at training time (csoaa) with experience replay",
     "vw_command": "--named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model --replay_c 100",
     "is_bash_command": false,
@@ -895,7 +895,7 @@
     ]
   },
   {
-    "id": "96",
+    "id": 96,
     "desc": "backwards compatibility",
     "vw_command": " printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' |  {VW} -i simple_model --invert_hash inv_hash.cmp &&  tail -n +2 inv_hash.cmp",
     "is_bash_command": true,
@@ -905,7 +905,7 @@
     ]
   },
   {
-    "id": "97",
+    "id": 97,
     "desc": "",
     "vw_command": "-d train-sets/0001.dat -f models/0097.model --save_resume",
     "is_bash_command": false,
@@ -914,7 +914,7 @@
     ]
   },
   {
-    "id": "98",
+    "id": 98,
     "desc": "checking predictions as well",
     "vw_command": "--preserve_performance_counters -d train-sets/0001.dat -i models/0097.model -p 0098.predict",
     "is_bash_command": false,
@@ -924,7 +924,7 @@
     ]
   },
   {
-    "id": "99",
+    "id": 99,
     "desc": "checking predictions with testing",
     "vw_command": "-d train-sets/0001.dat -i models/0097.model -p 0099.predict",
     "is_bash_command": false,
@@ -934,7 +934,7 @@
     ]
   },
   {
-    "id": "100",
+    "id": 100,
     "desc": "action costs, no rollout",
     "vw_command": "-k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout none --search_task sequence_ctg --search 5 --holdout_off",
     "is_bash_command": false,
@@ -943,7 +943,7 @@
     ]
   },
   {
-    "id": "101",
+    "id": 101,
     "desc": "active cover",
     "vw_command": "--loss_function logistic --binary --active_cover -d train-sets/rcv1_mini.dat -f models/active_cover.model",
     "is_bash_command": false,
@@ -952,7 +952,7 @@
     ]
   },
   {
-    "id": "102",
+    "id": 102,
     "desc": "active cover (predict)",
     "vw_command": "-i models/active_cover.model -t -d test-sets/rcv1_small_test.data -p active_cover.predict",
     "is_bash_command": false,
@@ -962,7 +962,7 @@
     ]
   },
   {
-    "id": "103",
+    "id": 103,
     "desc": "active cover oracular",
     "vw_command": "--loss_function logistic --binary --active_cover --oracular -d ./train-sets/rcv1_small.dat",
     "is_bash_command": false,
@@ -971,7 +971,7 @@
     ]
   },
   {
-    "id": "104",
+    "id": 104,
     "desc": "check cb_adf",
     "vw_command": "--cb_adf -d train-sets/cb_test.ldf --cb_type mtr --noconstant",
     "is_bash_command": false,
@@ -980,7 +980,7 @@
     ]
   },
   {
-    "id": "105",
+    "id": 105,
     "desc": "train FTRL-Proximal early stopping",
     "vw_command": "-k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 3.0 --ftrl_beta 0 --l1 0.9 --cache",
     "is_bash_command": false,
@@ -989,7 +989,7 @@
     ]
   },
   {
-    "id": "106",
+    "id": 106,
     "desc": "test FTRL-Proximal early stopping prediction",
     "vw_command": "-k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout.predict",
     "is_bash_command": false,
@@ -999,7 +999,7 @@
     ]
   },
   {
-    "id": "107",
+    "id": 107,
     "desc": "train FTRL-Proximal no early stopping",
     "vw_command": "-k -d train-sets/0001.dat -f models/0001_ftrl.model --passes 10 --ftrl --ftrl_alpha 0.01 --ftrl_beta 0 --l1 2 --cache --holdout_off",
     "is_bash_command": false,
@@ -1008,7 +1008,7 @@
     ]
   },
   {
-    "id": "108",
+    "id": 108,
     "desc": "test FTRL-Proximal no early stopping",
     "vw_command": "-k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout_off.predict --holdout_off",
     "is_bash_command": false,
@@ -1018,7 +1018,7 @@
     ]
   },
   {
-    "id": "109",
+    "id": 109,
     "desc": "--probabilities --oaa",
     "vw_command": "-d train-sets/probabilities.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_probabilities.predict",
     "is_bash_command": false,
@@ -1028,7 +1028,7 @@
     ]
   },
   {
-    "id": "110",
+    "id": 110,
     "desc": "--probabilities --csoaa_ldf=mc",
     "vw_command": "-d train-sets/cs_test.ldf --probabilities --csoaa_ldf=mc --loss_function=logistic -p csoaa_ldf_probabilities.predict",
     "is_bash_command": false,
@@ -1038,7 +1038,7 @@
     ]
   },
   {
-    "id": "111",
+    "id": 111,
     "desc": "Train a depenency parser with neural network and one_learner approach (lols)",
     "vw_command": "-k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --nn 5 --ftrl --search_history_length 3 --root_label 8",
     "is_bash_command": false,
@@ -1047,7 +1047,7 @@
     ]
   },
   {
-    "id": "112",
+    "id": 112,
     "desc": "Train a depenency parser with cost_to_go",
     "vw_command": "-k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --passes 6 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout none --holdout_off --search_history_length 3 --root_label 8 --cost_to_go",
     "is_bash_command": false,
@@ -1056,7 +1056,7 @@
     ]
   },
   {
-    "id": "113",
+    "id": 113,
     "desc": "Predictions with confidences",
     "vw_command": "--confidence -d ./train-sets/rcv1_micro.dat --initial_t 0.1 -p confidence.preds",
     "is_bash_command": false,
@@ -1066,7 +1066,7 @@
     ]
   },
   {
-    "id": "114",
+    "id": 114,
     "desc": "Over size example test",
     "vw_command": "-d train-sets/x.txt",
     "is_bash_command": false,
@@ -1075,7 +1075,7 @@
     ]
   },
   {
-    "id": "115",
+    "id": 115,
     "desc": "Long Line test",
     "vw_command": "-d train-sets/long_line -c -k",
     "is_bash_command": false,
@@ -1084,7 +1084,7 @@
     ]
   },
   {
-    "id": "116",
+    "id": 116,
     "desc": "MWT test",
     "vw_command": "-d train-sets/cb_eval --multiworld_test f -p cb_eval.preds",
     "is_bash_command": false,
@@ -1094,7 +1094,7 @@
     ]
   },
   {
-    "id": "117",
+    "id": 117,
     "desc": "Audit regressor of ftrl model (from test #107)",
     "vw_command": "-d train-sets/0001.dat -i models/0001_ftrl.model --audit_regressor ftrl.audit_regr",
     "is_bash_command": false,
@@ -1104,7 +1104,7 @@
     ]
   },
   {
-    "id": "118",
+    "id": 118,
     "desc": "Audit regressor of csoaa model (from test #95)",
     "vw_command": "-d train-sets/test_named_csoaa -i models/test_named_csoaa.model --audit_regressor csoaa.audit_regr",
     "is_bash_command": false,
@@ -1114,7 +1114,7 @@
     ]
   },
   {
-    "id": "119",
+    "id": 119,
     "desc": "MWT learn test",
     "vw_command": "-d train-sets/cb_eval --multiworld_test f --learn 2 -p mwt_learn.preds",
     "is_bash_command": false,
@@ -1124,7 +1124,7 @@
     ]
   },
   {
-    "id": "120",
+    "id": 120,
     "desc": "MWT learn exclude test",
     "vw_command": "-d train-sets/cb_eval --multiworld_test f --learn 2 --exclude_eval -p mwt_learn_exclude.preds",
     "is_bash_command": false,
@@ -1134,7 +1134,7 @@
     ]
   },
   {
-    "id": "121",
+    "id": 121,
     "desc": "cb_explore",
     "vw_command": "-d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds",
     "is_bash_command": false,
@@ -1144,7 +1144,7 @@
     ]
   },
   {
-    "id": "122",
+    "id": 122,
     "desc": "Predictions with confidences after training",
     "vw_command": "--confidence --confidence_after_training --initial_t 0.1 -d ./train-sets/rcv1_small.dat -p confidence_after_training.preds",
     "is_bash_command": false,
@@ -1154,7 +1154,7 @@
     ]
   },
   {
-    "id": "123",
+    "id": 123,
     "desc": "cb_eval save/load #1",
     "vw_command": "-d train-sets/cb_eval1 --multiworld_test f -f mwt.model -p cb_eval1.preds",
     "is_bash_command": false,
@@ -1164,7 +1164,7 @@
     ]
   },
   {
-    "id": "124",
+    "id": 124,
     "desc": "cb_eval save/load #2",
     "vw_command": "-d train-sets/cb_eval2 -i mwt.model -p cb_eval2.preds",
     "is_bash_command": false,
@@ -1174,7 +1174,7 @@
     ]
   },
   {
-    "id": "125",
+    "id": 125,
     "desc": "arc-eager trasition-based dependency parser",
     "vw_command": "-k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 26 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --search_history_length 3 --root_label 8 --transition_system 2 --passes 8",
     "is_bash_command": false,
@@ -1183,14 +1183,14 @@
     ]
   },
   {
-    "id": "126",
+    "id": 126,
     "desc": "recall tree hello world",
     "vw_command": "--quiet -d train-sets/gauss1k.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic",
     "is_bash_command": false,
     "files": []
   },
   {
-    "id": "127",
+    "id": 127,
     "desc": "recall_tree hello world predict-from-saved-model",
     "vw_command": "-t -d train-sets/gauss1k.dat.gz -i models/recall_tree_g100.model",
     "is_bash_command": false,
@@ -1200,7 +1200,7 @@
     ]
   },
   {
-    "id": "128",
+    "id": 128,
     "desc": "cb_explore_adf with epsilon-greedy exploration",
     "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_epsilon.predict",
     "is_bash_command": false,
@@ -1210,7 +1210,7 @@
     ]
   },
   {
-    "id": "129",
+    "id": 129,
     "desc": "cb_explore_adf with softmax exploration",
     "vw_command": "--cb_explore_adf --softmax --lambda 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax.predict",
     "is_bash_command": false,
@@ -1220,7 +1220,7 @@
     ]
   },
   {
-    "id": "130",
+    "id": 130,
     "desc": "cb_explore_adf with bagging exploration",
     "vw_command": "--cb_explore_adf --bag 3 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_bag.predict",
     "is_bash_command": false,
@@ -1230,7 +1230,7 @@
     ]
   },
   {
-    "id": "131",
+    "id": 131,
     "desc": "cb_explore_adf with explore-first exploration",
     "vw_command": "--cb_explore_adf --first 2 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_first.predict",
     "is_bash_command": false,
@@ -1240,7 +1240,7 @@
     ]
   },
   {
-    "id": "132",
+    "id": 132,
     "desc": "train a poisson model",
     "vw_command": "--quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson -b 2 -p poisson.train.predict",
     "is_bash_command": false,
@@ -1250,7 +1250,7 @@
     ]
   },
   {
-    "id": "133",
+    "id": 133,
     "desc": "train a poisson model without invariant updates",
     "vw_command": "--quiet -d train-sets/poisson.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict",
     "is_bash_command": false,
@@ -1260,7 +1260,7 @@
     ]
   },
   {
-    "id": "134",
+    "id": 134,
     "desc": "second order online learning",
     "vw_command": "--OjaNewton -d train-sets/0001.dat -f models/second_order.model -p second_order.predict",
     "is_bash_command": false,
@@ -1270,7 +1270,7 @@
     ]
   },
   {
-    "id": "135",
+    "id": 135,
     "desc": "cb explore adf",
     "vw_command": "-d train-sets/cb_adf_crash_1.data -f models/cb_adf_crash.model --cb_explore_adf --epsilon 0.05",
     "is_bash_command": false,
@@ -1279,7 +1279,7 @@
     ]
   },
   {
-    "id": "136",
+    "id": 136,
     "desc": "cb explore adf predict",
     "vw_command": "-d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t",
     "is_bash_command": false,
@@ -1288,7 +1288,7 @@
     ]
   },
   {
-    "id": "137",
+    "id": 137,
     "desc": "Fix for regression introduced by badeedb.. Ensure audit output continues to work correctly in the presence of anon features.. Github issue 1038 (https://github.com/JohnLangford/vowpal_wabbit/issues/1038)",
     "vw_command": "--audit -d train-sets/audit.dat --noconstant",
     "is_bash_command": false,
@@ -1298,7 +1298,7 @@
     ]
   },
   {
-    "id": "138",
+    "id": 138,
     "desc": "cb_explore_adf with cover exploration",
     "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover.predict",
     "is_bash_command": false,
@@ -1308,7 +1308,7 @@
     ]
   },
   {
-    "id": "139",
+    "id": 139,
     "desc": "cb_explore_adf with cover exploration + double robust",
     "vw_command": "--cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover_dr.predict",
     "is_bash_command": false,
@@ -1318,7 +1318,7 @@
     ]
   },
   {
-    "id": "140",
+    "id": 140,
     "desc": "marginal features",
     "vw_command": "--marginal f -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100 -f marginal_model",
     "is_bash_command": false,
@@ -1327,7 +1327,7 @@
     ]
   },
   {
-    "id": "141",
+    "id": 141,
     "desc": "marginal features test",
     "vw_command": "-i marginal_model -d train-sets/marginal_features --noconstant -t",
     "is_bash_command": false,
@@ -1336,7 +1336,7 @@
     ]
   },
   {
-    "id": "142",
+    "id": 142,
     "desc": "Evaluate exploration on contextal bandit data",
     "vw_command": "--explore_eval --epsilon 0.2 -d train-sets/cb_test.ldf --noconstant -p explore_eval.predict",
     "is_bash_command": false,
@@ -1346,7 +1346,7 @@
     ]
   },
   {
-    "id": "143",
+    "id": 143,
     "desc": "Test 1 using JSON",
     "vw_command": "-k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.json --json --chain_hash -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off",
     "is_bash_command": false,
@@ -1355,7 +1355,7 @@
     ]
   },
   {
-    "id": "144",
+    "id": 144,
     "desc": "cb_explore_adf with cover exploration + double robust",
     "vw_command": "--cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.json --json --chain_hash --noconstant -p cbe_adf_cover_dr.predict",
     "is_bash_command": false,
@@ -1365,7 +1365,7 @@
     ]
   },
   {
-    "id": "145",
+    "id": 145,
     "desc": "mix labeled and unlabeled examples with --bootstrap bug:. https://github.com/JohnLangford/vowpal_wabbit/issues/1111",
     "vw_command": "--bootstrap 2 -d train-sets/labeled-unlabeled-mix.dat",
     "is_bash_command": false,
@@ -1374,7 +1374,7 @@
     ]
   },
   {
-    "id": "146",
+    "id": 146,
     "desc": "cb_explore_adf with cover exploration + double robust (using more than 256 examples)",
     "vw_command": "--cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test256.json --json --chain_hash --noconstant -p cbe_adf_cover_dr256.predict",
     "is_bash_command": false,
@@ -1384,7 +1384,7 @@
     ]
   },
   {
-    "id": "147",
+    "id": 147,
     "desc": "--scores --oaa",
     "vw_command": "-d train-sets/probabilities.dat --scores --oaa=4 -p oaa_scores.predict",
     "is_bash_command": false,
@@ -1394,7 +1394,7 @@
     ]
   },
   {
-    "id": "148",
+    "id": 148,
     "desc": "check cb_adf with direct method option",
     "vw_command": "--cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm",
     "is_bash_command": false,
@@ -1404,7 +1404,7 @@
     ]
   },
   {
-    "id": "149",
+    "id": 149,
     "desc": "initial_weight option is used",
     "vw_command": " echo \"1 | feature:1\" | {VW} -a --initial_weight 0.1 --initial_t 0.3",
     "is_bash_command": true,
@@ -1414,7 +1414,7 @@
     ]
   },
   {
-    "id": "150",
+    "id": 150,
     "desc": "Test --sparse_weights with 148",
     "vw_command": "--cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights",
     "is_bash_command": false,
@@ -1423,7 +1423,7 @@
     ]
   },
   {
-    "id": "151",
+    "id": 151,
     "desc": "lrqfa",
     "vw_command": "--lrqfa aa3 -d train-sets/0080.dat",
     "is_bash_command": false,
@@ -1432,7 +1432,7 @@
     ]
   },
   {
-    "id": "152",
+    "id": 152,
     "desc": "daemon on the foreground test",
     "vw_command": " ./daemon-test.sh --foreground",
     "is_bash_command": true,
@@ -1441,7 +1441,7 @@
     ]
   },
   {
-    "id": "153",
+    "id": 153,
     "desc": "marginal features",
     "vw_command": "--marginal f -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100 --compete",
     "is_bash_command": false,
@@ -1450,7 +1450,7 @@
     ]
   },
   {
-    "id": "154",
+    "id": 154,
     "desc": "ignore linear",
     "vw_command": "-k --cache_file ignore_linear.cache --passes 10000 --holdout_off -d train-sets/0154.dat --noconstant --ignore_linear x -q xx",
     "is_bash_command": false,
@@ -1459,7 +1459,7 @@
     ]
   },
   {
-    "id": "155",
+    "id": 155,
     "desc": "checking audit_regressor with --save_resume model",
     "vw_command": "-d train-sets/0001.dat -i models/0097.model --save_resume --audit_regressor 0097.audit_regr",
     "is_bash_command": false,
@@ -1469,14 +1469,14 @@
     ]
   },
   {
-    "id": "156",
+    "id": 156,
     "desc": "--cubic regression verification",
     "vw_command": " ./cubic-test.sh ${VW}",
     "is_bash_command": true,
     "files": []
   },
   {
-    "id": "157",
+    "id": 157,
     "desc": "save_resume without --preserve_performce_counters does not alter performance counters over multiple passes",
     "vw_command": "-d train-sets/0001.dat -f models/sr.model --passes 2 -c -k -P 50 --save_resume",
     "is_bash_command": false,
@@ -1485,7 +1485,7 @@
     ]
   },
   {
-    "id": "158",
+    "id": 158,
     "desc": "test decision service json parsing",
     "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson.predict",
     "is_bash_command": false,
@@ -1495,7 +1495,7 @@
     ]
   },
   {
-    "id": "159",
+    "id": 159,
     "desc": "test --bootstrap & --binary interaction",
     "vw_command": "-d train-sets/rcv1_mini.dat --bootstrap 5 --binary -c -k --passes 2",
     "is_bash_command": false,
@@ -1504,7 +1504,7 @@
     ]
   },
   {
-    "id": "160",
+    "id": 160,
     "desc": "test --bootstrap & --oaa interaction. (Also adds -q :: and -P1 to get & verify perfect predictions in 2nd pass)",
     "vw_command": "-d train-sets/multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions -c -k --passes 2 --holdout_off -P1",
     "is_bash_command": false,
@@ -1513,7 +1513,7 @@
     ]
   },
   {
-    "id": "161",
+    "id": 161,
     "desc": "--classweight",
     "vw_command": "-d train-sets/0001.dat --classweight 1:2,0:3.1,-1:5",
     "is_bash_command": false,
@@ -1522,7 +1522,7 @@
     ]
   },
   {
-    "id": "162",
+    "id": 162,
     "desc": "--classweight with multiclass",
     "vw_command": "--oaa 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10 --classweight 10:3",
     "is_bash_command": false,
@@ -1531,7 +1531,7 @@
     ]
   },
   {
-    "id": "163",
+    "id": 163,
     "desc": "--classweight with multiclass",
     "vw_command": "--recall_tree 10 -d train-sets/multiclass --classweight 4:0,7:0.1 --classweight 2:10,10:3",
     "is_bash_command": false,
@@ -1540,7 +1540,7 @@
     ]
   },
   {
-    "id": "164",
+    "id": 164,
     "desc": "cs_active low mellowness",
     "vw_command": "--cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 0.01 --simulation --adax",
     "is_bash_command": false,
@@ -1549,7 +1549,7 @@
     ]
   },
   {
-    "id": "165",
+    "id": 165,
     "desc": "cs_active high mellowness",
     "vw_command": "--cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 1.0 --simulation --adax",
     "is_bash_command": false,
@@ -1558,7 +1558,7 @@
     ]
   },
   {
-    "id": "166",
+    "id": 166,
     "desc": "hash_seed train",
     "vw_command": "--hash_seed 5 -d train-sets/rcv1_mini.dat --holdout_off --passes 2 -f hash_seed5.model -c -k --ngram 2 -q ::",
     "is_bash_command": false,
@@ -1567,7 +1567,7 @@
     ]
   },
   {
-    "id": "167",
+    "id": 167,
     "desc": "hash_seed test",
     "vw_command": "-d train-sets/rcv1_mini.dat -i hash_seed5.model -t",
     "is_bash_command": false,
@@ -1576,7 +1576,7 @@
     ]
   },
   {
-    "id": "168",
+    "id": 168,
     "desc": "test cb with dm",
     "vw_command": "-d train-sets/rcv1_raw_cb_small.vw -t -i cb_dm.reg",
     "is_bash_command": false,
@@ -1585,7 +1585,7 @@
     ]
   },
   {
-    "id": "169",
+    "id": 169,
     "desc": "test cbify large",
     "vw_command": "-d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05",
     "is_bash_command": false,
@@ -1594,7 +1594,7 @@
     ]
   },
   {
-    "id": "170",
+    "id": 170,
     "desc": "cbify adf, epsilon-greedy",
     "vw_command": "--cbify 10 --cb_explore_adf --epsilon 0.05 -d train-sets/multiclass",
     "is_bash_command": false,
@@ -1603,7 +1603,7 @@
     ]
   },
   {
-    "id": "171",
+    "id": 171,
     "desc": "cbify cs, epsilon-greedy",
     "vw_command": "--cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb",
     "is_bash_command": false,
@@ -1612,7 +1612,7 @@
     ]
   },
   {
-    "id": "172",
+    "id": 172,
     "desc": "cbify adf cs, epsilon-greedy",
     "vw_command": "--cbify 3 --cbify_cs --cb_explore_adf --epsilon 0.05 -d train-sets/cs_cb",
     "is_bash_command": false,
@@ -1621,7 +1621,7 @@
     ]
   },
   {
-    "id": "173",
+    "id": 173,
     "desc": "cbify adf, regcb",
     "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --regcb --mellowness 0.01 -d train-sets/multiclass",
     "is_bash_command": false,
@@ -1630,7 +1630,7 @@
     ]
   },
   {
-    "id": "174",
+    "id": 174,
     "desc": "cbify adf, regcbopt",
     "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --regcbopt --mellowness 0.01 -d train-sets/multiclass",
     "is_bash_command": false,
@@ -1639,7 +1639,7 @@
     ]
   },
   {
-    "id": "175",
+    "id": 175,
     "desc": "cbify ldf, regcbopt",
     "vw_command": "-d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01",
     "is_bash_command": false,
@@ -1648,132 +1648,36 @@
     ]
   },
   {
-    "id": "176",
+    "id": 176,
     "desc": "same model on cluster mode",
     "vw_command": " ./same-model-test.sh",
     "is_bash_command": true,
     "files": []
   },
   {
-    "id": "177",
-    "desc": "check --audit output is reproducible",
-    "vw_command": " printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' | {VW} --oaa 3 -q ef --audit",
+    "id": 177,
+    "desc": "check --audit output is reproducible. Test 178 cb_adf, sharedfeatures. Test 179 warm_cb warm start. Test 180 warm_cb warm start with lambda set containing 0/1. Test 181 warm_cb warm start with warm start update turned off. Test 182 warm_cb warm start with interaction update turned off. Test 183 warm_cb warm start with bandit warm start type (Sim-Bandit). Test 184 warm_cb warm start with CYC supervised corruption. Test 185 warm_cb warm start with input cost-sensitive examples. Test 186 test counting examples with holdout_after option. Test 187 test counting examples with holdout_after option with 2 passes on the training set. Test 188 test cb_adf with softmax. Test 189 test dsjson parser correctly processes checkpoint and dangling observation lines",
+    "vw_command": " printf '3 |f a b c |e x y z\\n2 |f a y c |e x\\n' | {VW} --oaa 3 -q ef --audit {VW}  --dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update -d train-sets/multiclass {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --lambda_scheme 2 --warm_start_update --interaction_update -d train-sets/multiclass {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --interaction_update -d train-sets/multiclass {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.0 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update -d train-sets/multiclass {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 1 --warm_start_update --interaction_update --sim_bandit -d train-sets/multiclass {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update --corrupt_type_warm_start 2 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass {VW} --warm_cb 3 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 1 --interaction 2 --choices_lambda 8 --warm_start_update --interaction_update --warm_cb_cs -d train-sets/cs_cb {VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat {VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat -c --passes 2 {VW} --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_adf_sm.predict --cb_type sm {VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -P 1",
     "is_bash_command": true,
     "files": [
-      "train-sets/ref/audit2.stdout"
-    ]
-  },
-  {
-    "id": "178",
-    "desc": "cb_adf, sharedfeatures",
-    "vw_command": "--dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json",
-    "is_bash_command": false,
-    "files": [
-      "train-sets/ref/no_shared_features.stderr"
-    ]
-  },
-  {
-    "id": "179",
-    "desc": "warm_cb warm start",
-    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update -d train-sets/multiclass",
-    "is_bash_command": false,
-    "files": [
-      "train-sets/ref/warm_cb.stderr"
-    ]
-  },
-  {
-    "id": "180",
-    "desc": "warm_cb warm start with lambda set containing 0/1",
-    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --lambda_scheme 2 --warm_start_update --interaction_update -d train-sets/multiclass",
-    "is_bash_command": false,
-    "files": [
-      "train-sets/ref/warm_cb_lambda_zeroone.stderr"
-    ]
-  },
-  {
-    "id": "181",
-    "desc": "warm_cb warm start with warm start update turned off",
-    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --interaction_update -d train-sets/multiclass",
-    "is_bash_command": false,
-    "files": [
-      "train-sets/ref/warm_cb_no_ws_upd.stderr"
-    ]
-  },
-  {
-    "id": "182",
-    "desc": "warm_cb warm start with interaction update turned off",
-    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.0 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update -d train-sets/multiclass",
-    "is_bash_command": false,
-    "files": [
-      "train-sets/ref/warm_cb_no_int_upd.stderr"
-    ]
-  },
-  {
-    "id": "183",
-    "desc": "warm_cb warm start with bandit warm start type (Sim-Bandit)",
-    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 1 --warm_start_update --interaction_update --sim_bandit -d train-sets/multiclass",
-    "is_bash_command": false,
-    "files": [
-      "train-sets/ref/warm_cb_simbandit.stderr"
-    ]
-  },
-  {
-    "id": "184",
-    "desc": "warm_cb warm start with CYC supervised corruption",
-    "vw_command": "--warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update --corrupt_type_warm_start 2 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass",
-    "is_bash_command": false,
-    "files": [
-      "train-sets/ref/warm_cb_cyc.stderr"
-    ]
-  },
-  {
-    "id": "185",
-    "desc": "warm_cb warm start with input cost-sensitive examples",
-    "vw_command": "--warm_cb 3 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 1 --interaction 2 --choices_lambda 8 --warm_start_update --interaction_update --warm_cb_cs -d train-sets/cs_cb",
-    "is_bash_command": false,
-    "files": [
-      "train-sets/ref/warm_cb_cs.stderr"
-    ]
-  },
-  {
-    "id": "186",
-    "desc": "test counting examples with holdout_after option",
-    "vw_command": "-k -P 100 --holdout_after 500 -d train-sets/0002.dat",
-    "is_bash_command": false,
-    "files": [
-      "train-sets/ref/holdout_after.stderr"
-    ]
-  },
-  {
-    "id": "187",
-    "desc": "test counting examples with holdout_after option with 2 passes on the training set",
-    "vw_command": "-k -P 100 --holdout_after 500 -d train-sets/0002.dat -c --passes 2",
-    "is_bash_command": false,
-    "files": [
-      "train-sets/ref/holdout_after_2passes.stderr"
-    ]
-  },
-  {
-    "id": "188",
-    "desc": "test cb_adf with softmax",
-    "vw_command": "--cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_adf_sm.predict --cb_type sm",
-    "is_bash_command": false,
-    "files": [
+      "train-sets/ref/audit2.stdout",
+      "train-sets/ref/no_shared_features.stderr",
+      "train-sets/ref/warm_cb.stderr",
+      "train-sets/ref/warm_cb_lambda_zeroone.stderr",
+      "train-sets/ref/warm_cb_no_ws_upd.stderr",
+      "train-sets/ref/warm_cb_no_int_upd.stderr",
+      "train-sets/ref/warm_cb_simbandit.stderr",
+      "train-sets/ref/warm_cb_cyc.stderr",
+      "train-sets/ref/warm_cb_cs.stderr",
+      "train-sets/ref/holdout_after.stderr",
+      "train-sets/ref/holdout_after_2passes.stderr",
       "train-sets/ref/cb_adf_sm.stderr",
-      "pred-sets/ref/cb_adf_sm.predict"
-    ]
-  },
-  {
-    "id": "189",
-    "desc": "test dsjson parser correctly processes checkpoint and dangling observation lines",
-    "vw_command": "-d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -P 1",
-    "is_bash_command": false,
-    "files": [
+      "pred-sets/ref/cb_adf_sm.predict",
       "train-sets/ref/b1848_dsjson_parser_regression.stderr"
     ]
   },
   {
-    "id": "190",
+    "id": 190,
     "desc": "one-against-all with subsampling",
     "vw_command": "-k --oaa 10 --oaa_subsample 5 -c --passes 10 -d train-sets/multiclass --holdout_off",
     "is_bash_command": false,
@@ -1782,7 +1686,7 @@
     ]
   },
   {
-    "id": "191",
+    "id": 191,
     "desc": "train coin betting",
     "vw_command": "-k -d train-sets/0001.dat -f models/ftrl_coin.model --passes 1 --coin",
     "is_bash_command": false,
@@ -1791,7 +1695,7 @@
     ]
   },
   {
-    "id": "192",
+    "id": 192,
     "desc": "test coin betting",
     "vw_command": "-k -t -d train-sets/0001.dat -i models/ftrl_coin.model -p ftrl_coin.predict",
     "is_bash_command": false,
@@ -1801,7 +1705,7 @@
     ]
   },
   {
-    "id": "193",
+    "id": 193,
     "desc": "malformed examples, onethread, strict_parse failure",
     "vw_command": " ./negative-test.sh {VW} -d train-sets/malformed.dat --onethread --strict_parse",
     "is_bash_command": true,
@@ -1810,7 +1714,7 @@
     ]
   },
   {
-    "id": "194",
+    "id": 194,
     "desc": "malformed examples, strict_parse failure",
     "vw_command": " ./negative-test.sh {VW} -d train-sets/malformed.dat --strict_parse",
     "is_bash_command": true,
@@ -1819,7 +1723,7 @@
     ]
   },
   {
-    "id": "195",
+    "id": 195,
     "desc": "malformed examples success",
     "vw_command": "-d train-sets/malformed.dat --onethread",
     "is_bash_command": false,
@@ -1828,7 +1732,7 @@
     ]
   },
   {
-    "id": "196",
+    "id": 196,
     "desc": "online contextual memory tree",
     "vw_command": "-d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --online --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 --passes 1 --loss_function squared --holdout_off",
     "is_bash_command": false,
@@ -1837,7 +1741,7 @@
     ]
   },
   {
-    "id": "197",
+    "id": 197,
     "desc": "offline contextual memory tree",
     "vw_command": "-d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off",
     "is_bash_command": false,
@@ -1846,7 +1750,7 @@
     ]
   },
   {
-    "id": "198",
+    "id": 198,
     "desc": "test cb_sample",
     "vw_command": "--cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict --random_seed 1234",
     "is_bash_command": false,
@@ -1855,7 +1759,7 @@
     ]
   },
   {
-    "id": "199",
+    "id": 199,
     "desc": "CCB train then test",
     "vw_command": "-d train-sets/ccb_test.dat --ccb_explore_adf -p ccb_test.predict",
     "is_bash_command": false,
@@ -1865,7 +1769,7 @@
     ]
   },
   {
-    "id": "200",
+    "id": 200,
     "desc": "cb_explore_adf with huge lambda softmax exploration",
     "vw_command": "--cb_explore_adf --softmax --lambda 100000 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax_biglambda.predict",
     "is_bash_command": false,
@@ -1875,7 +1779,7 @@
     ]
   },
   {
-    "id": "201",
+    "id": 201,
     "desc": "Test memory corruption issue in ccb_explore_adf where mtr was leaving a prediction behind",
     "vw_command": "--ccb_explore_adf --ring_size 7 -d train-sets/ccb_reuse_small.data",
     "is_bash_command": false,
@@ -1884,7 +1788,7 @@
     ]
   },
   {
-    "id": "202",
+    "id": 202,
     "desc": "Test memory corruption issue in ccb_explore_adf where mtr was leaving a prediction behind",
     "vw_command": "--ccb_explore_adf --ring_size 20 --dsjson --chain_hash -d train-sets/ccb_reuse_medium.dsjson",
     "is_bash_command": false,
@@ -1893,7 +1797,7 @@
     ]
   },
   {
-    "id": "203",
+    "id": 203,
     "desc": "Basic test of cluster. Can't use the VW replacer as it will think this is a VW command append things like --onethread",
     "vw_command": " python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build/cluster/spanning_tree  --test_file test-sets/0001.dat --data_files train-sets/0001.dat train-sets/0002.dat  --prediction_file cluster.predict",
     "is_bash_command": true,
@@ -1904,7 +1808,7 @@
     ]
   },
   {
-    "id": "204",
+    "id": 204,
     "desc": "Test if options that are negative numbers are handled correctly",
     "vw_command": "--classweight -1:0.5 --no_stdin",
     "is_bash_command": false,
@@ -1913,7 +1817,7 @@
     ]
   },
   {
-    "id": "205",
+    "id": 205,
     "desc": "test cb_dro with softmax",
     "vw_command": "--cb_dro --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_dro_adf_sm.predict --cb_type sm",
     "is_bash_command": false,
@@ -1923,7 +1827,7 @@
     ]
   },
   {
-    "id": "206",
+    "id": 206,
     "desc": "Tests segfault that used to happen when audit, cache and interactions were combined.",
     "vw_command": "-c -k --passes 2 -d train-sets/cache_interaction_audit.txt -q st --audit",
     "is_bash_command": false,
@@ -1933,7 +1837,7 @@
     ]
   },
   {
-    "id": "207",
+    "id": 207,
     "desc": "Enable chain hash option for json example",
     "vw_command": " {VW} --audit --json --chain_hash -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash &&  tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new &&  rm chain_hash_json_result.cmp &&  mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp",
     "is_bash_command": true,
@@ -1944,7 +1848,7 @@
     ]
   },
   {
-    "id": "208",
+    "id": 208,
     "desc": "Enable chain hash option for text example",
     "vw_command": " {VW} --audit -d train-sets/chain_hash_text_test.dat --invert_hash chain_hash_text_result.cmp --chain_hash &&  tail -n +2 chain_hash_text_result.cmp > chain_hash_text_result.cmp.new &&  rm chain_hash_text_result.cmp &&  mv chain_hash_text_result.cmp.new chain_hash_text_result.cmp",
     "is_bash_command": true,
@@ -1955,7 +1859,7 @@
     ]
   },
   {
-    "id": "209",
+    "id": 209,
     "desc": "Test override epsilon value saved in a model",
     "vw_command": "-i model-sets/epsilon.model -d train-sets/override_epsilon.txt --epsilon 0.3 -p override_epsilon.preds",
     "is_bash_command": false,
@@ -1965,7 +1869,7 @@
     ]
   },
   {
-    "id": "210",
+    "id": 210,
     "desc": "Ensure that all weights that exist in the model are present in the invert_hash output. Even if Audit did not see it.. SkipC# - Do not remove this - this test breaks test generation by creating an infinite sized list containing this test case (many times)",
     "vw_command": " {VW} -d train-sets/inv_hash_load_model_data1.txt -f inv_hash_load_model.vw --noconstant  && {VW} -d train-sets/inv_hash_load_model_data2.txt -i inv_hash_load_model.vw --noconstant --readable_model inv_hash_load_model.readable.txt --invert_hash inv_hash_load_model.invert.txt",
     "is_bash_command": true,
@@ -1975,7 +1879,7 @@
     ]
   },
   {
-    "id": "211",
+    "id": 211,
     "desc": "cb_explore_adf with rnd exploration",
     "vw_command": "--cb_explore_adf --rnd 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_rnd.predict",
     "is_bash_command": false,
@@ -1985,7 +1889,7 @@
     ]
   },
   {
-    "id": "212",
+    "id": 212,
     "desc": "Slates sanity check",
     "vw_command": "--slates -d train-sets/slates_simple.txt -p slates_simple.predict",
     "is_bash_command": false,
@@ -1995,7 +1899,7 @@
     ]
   },
   {
-    "id": "213",
+    "id": 213,
     "desc": "offset_tree, 2 actions",
     "vw_command": "--ot 2 -k -d train-sets/offset_tree_000.dat -p offset_tree_000.pred -P 1",
     "is_bash_command": false,
@@ -2005,7 +1909,7 @@
     ]
   },
   {
-    "id": "214",
+    "id": 214,
     "desc": "offset_tree, 3 actions",
     "vw_command": "--ot 3 -k -d train-sets/offset_tree_001.dat -p offset_tree_001.pred -P 1",
     "is_bash_command": false,
@@ -2015,7 +1919,7 @@
     ]
   },
   {
-    "id": "215",
+    "id": 215,
     "desc": "offset_tree, 4 actions",
     "vw_command": "--ot 4 -k -d train-sets/offset_tree_002.dat -p offset_tree_002.pred -P 1",
     "is_bash_command": false,
@@ -2025,7 +1929,7 @@
     ]
   },
   {
-    "id": "216",
+    "id": 216,
     "desc": "Regression test for crash on unlabelled data",
     "vw_command": "--dsjson --chain_hash --slates -d train-sets/slates_simple_unlabeled.dsjson",
     "is_bash_command": false,
@@ -2034,7 +1938,7 @@
     ]
   },
   {
-    "id": "217",
+    "id": 217,
     "desc": "check plt training",
     "vw_command": "-d train-sets/multilabel -f plt.model --plt 10 --sgd",
     "is_bash_command": false,
@@ -2043,7 +1947,7 @@
     ]
   },
   {
-    "id": "218",
+    "id": 218,
     "desc": "check default plt prediction",
     "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_multilabel.predict",
     "is_bash_command": false,
@@ -2053,7 +1957,7 @@
     ]
   },
   {
-    "id": "219",
+    "id": 219,
     "desc": "check plt top-1 prediction",
     "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1",
     "is_bash_command": false,
@@ -2063,7 +1967,7 @@
     ]
   },
   {
-    "id": "220",
+    "id": 220,
     "desc": "daemon test with json",
     "vw_command": " ./daemon-test.sh --json",
     "is_bash_command": true,
@@ -2072,7 +1976,7 @@
     ]
   },
   {
-    "id": "221",
+    "id": 221,
     "desc": "cbify adf, squarecb",
     "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --squarecb --gamma_scale 500 -d train-sets/multiclass",
     "is_bash_command": false,
@@ -2081,7 +1985,7 @@
     ]
   },
   {
-    "id": "222",
+    "id": 222,
     "desc": "cbify adf, squarecb-elim",
     "vw_command": "--cbify 10 --cb_explore_adf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001 -d train-sets/multiclass",
     "is_bash_command": false,
@@ -2090,7 +1994,7 @@
     ]
   },
   {
-    "id": "223",
+    "id": 223,
     "desc": "cbify ldf, squarecb",
     "vw_command": "-d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --gamma_scale 500",
     "is_bash_command": false,
@@ -2099,7 +2003,7 @@
     ]
   },
   {
-    "id": "224",
+    "id": 224,
     "desc": "cbify ldf, squarecb-elim",
     "vw_command": "-d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --squarecb --elim --gamma_scale 10 --mellowness 0.001",
     "is_bash_command": false,
@@ -2108,7 +2012,7 @@
     ]
   },
   {
-    "id": "225",
+    "id": 225,
     "desc": "cbify regression dataset.  Use it with cats.",
     "vw_command": "--cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1",
     "is_bash_command": false,
@@ -2117,7 +2021,7 @@
     ]
   },
   {
-    "id": "226",
+    "id": 226,
     "desc": "cats train",
     "vw_command": "--cats 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model",
     "is_bash_command": false,
@@ -2126,7 +2030,7 @@
     ]
   },
   {
-    "id": "227",
+    "id": 227,
     "desc": "cats predict",
     "vw_command": "-d train-sets/cats.acpx -i cats.model -p cats.predict",
     "is_bash_command": false,
@@ -2136,7 +2040,7 @@
     ]
   },
   {
-    "id": "228",
+    "id": 228,
     "desc": "cats-pdf train",
     "vw_command": "--cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model",
     "is_bash_command": false,
@@ -2145,7 +2049,7 @@
     ]
   },
   {
-    "id": "229",
+    "id": 229,
     "desc": "cats-pdf predict",
     "vw_command": "-d train-sets/cats.acpx -i cats-pdf.model -p cats-pdf.predict",
     "is_bash_command": false,
@@ -2155,7 +2059,7 @@
     ]
   },
   {
-    "id": "230",
+    "id": 230,
     "desc": "cbify-reg",
     "vw_command": "--cbify 2048 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 4 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1",
     "is_bash_command": false,
@@ -2164,7 +2068,7 @@
     ]
   },
   {
-    "id": "231",
+    "id": 231,
     "desc": "cbify-reg cb_discrete",
     "vw_command": "--cbify 2048 --cbify_reg --cb_discrete --min_value=185 --max_value=23959 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1",
     "is_bash_command": false,
@@ -2173,7 +2077,7 @@
     ]
   },
   {
-    "id": "232",
+    "id": 232,
     "desc": "cbify-reg discrete cats_tree",
     "vw_command": "--cbify 2048 --cbify_reg --cb_discrete --cats_tree 2048 --min_value=185 --max_value=23959 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1",
     "is_bash_command": false,
@@ -2182,7 +2086,7 @@
     ]
   },
   {
-    "id": "233",
+    "id": 233,
     "desc": "CCB first slot loss",
     "vw_command": "-d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips",
     "is_bash_command": false,
@@ -2191,7 +2095,7 @@
     ]
   },
   {
-    "id": "234",
+    "id": 234,
     "desc": "CCB all slots loss",
     "vw_command": "-d train-sets/ccb_losses.txt --ccb_explore_adf --epsilon 0 --cb_type ips --all_slots_loss",
     "is_bash_command": false,
@@ -2200,7 +2104,7 @@
     ]
   },
   {
-    "id": "235",
+    "id": 235,
     "desc": "big feature poison test 1",
     "vw_command": "-d train-sets/big_feature_poison.dat --interactions aaaaa --noconstant",
     "is_bash_command": false,
@@ -2210,7 +2114,7 @@
     ]
   },
   {
-    "id": "236",
+    "id": 236,
     "desc": "big feature poison test 2",
     "vw_command": "-d train-sets/big_feature_poison.dat --interactions aaaaa --noconstant --power_t 0",
     "is_bash_command": false,
@@ -2220,7 +2124,7 @@
     ]
   },
   {
-    "id": "237",
+    "id": 237,
     "desc": "test decision service json parsing including chain hashing",
     "vw_command": "-d train-sets/decisionservice.json --dsjson --chain_hash --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson_chain_hash.predict",
     "is_bash_command": false,
@@ -2230,7 +2134,7 @@
     ]
   },
   {
-    "id": "238",
+    "id": 238,
     "desc": "Evaluate exploration with uniform probabilities for each action and uniform distributed policy(--epsilon 1). Do not delete this line or the empty line above it",
     "vw_command": "--explore_eval --epsilon 1 -d train-sets/explore_eval.dat",
     "is_bash_command": false,

@@ -41,6 +41,12 @@ class Test:
     def clean(self):
         if not self.is_bash_command:
             self.vw_command = " ".join(self.vw_command.split()[1:])
+        
+        if self.id.isnumeric():
+            self.id = int(self.id)
+        else:
+            raise Exception("id is not a number. fatal.")
+
         delattr(self, 'more_vw')
 
 class Parser:
