@@ -80,7 +80,7 @@ class Parser:
         if "# Test" in tokens[0]:
             test_id = tokens[0].split()[-1]
             test_desc = ':'.join(tokens[1:])
-            return (test_id, test_desc)
+            return Test(test_id, test_desc)
         else:
             return None
 
@@ -92,11 +92,11 @@ class Parser:
 
     def process_line(self, line):
         if Parser.is_perl_comment(line):
-            result = Parser.process_perl_comment(line)
+            new_test = Parser.process_perl_comment(line)
 
-            if result is not None:
+            if new_test is not None:
                 self.commit_parsed_test()
-                self.temp_test = Test(result[0], result[1])
+                self.temp_test = new_test
             else:
                 self.temp_test.add_more_comments(line)
         elif Parser.is_vw_command(line):
