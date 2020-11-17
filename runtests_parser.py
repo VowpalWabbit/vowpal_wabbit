@@ -21,7 +21,7 @@ class Test:
         if "&&" in self.vw_command:
             self.is_bash_command = True
     
-    def force_vw_append(self, line):
+    def force_cmd_append(self, line):
         if self.more_vw:
             self.more_vw = False
             self.add_vw_command(line)
@@ -59,7 +59,7 @@ class Parser:
         return line[0] == "#"
 
     @staticmethod
-    def is_vw_command(line):
+    def begins_with_vw_command(line):
         return line.split()[0] == "{VW}"
 
     @staticmethod
@@ -101,10 +101,10 @@ class Parser:
                 self.curr_test = new_test
             else: # its any other perl comment
                 self.curr_test.add_more_comments(line)
-        elif Parser.is_vw_command(line):
-            self.curr_test.add_vw_command(line)
-        elif self.curr_test.force_vw_append(line): # check case if previous line ended in \
+        elif self.curr_test.force_cmd_append(line): # check case if previous line ended in \
             pass
+        elif Parser.begins_with_vw_command(line):
+            self.curr_test.add_vw_command(line)
         elif Parser.is_filename_of_testset(line):
             self.curr_test.add_file(line)
         else:
