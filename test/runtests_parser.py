@@ -82,7 +82,7 @@ class Test:
 
         self.files = {}
         for f in orig_files:
-            self.files[Parser.parse_file(f)] = f
+            self.files[Parser.parse_filetype(f)] = f
 
         if self.id.isnumeric():
             self.id = int(self.id)
@@ -97,7 +97,7 @@ class Parser:
         self.results = []
 
     @staticmethod
-    def parse_file(file):
+    def parse_filetype(file):
         tokens = file.split(".")
         if tokens[-1] in ["stderr", "stdout"]:
             return tokens[-1]
