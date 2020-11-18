@@ -166,6 +166,10 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
+  // Signal cb_adf MTR to not predict when training.  The framework already handles calling
+  // predict before training is called.
+  if (!options.was_supplied("no_predict")) { options.insert("no_predict", ""); }
+
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   size_t problem_multiplier = bag_size;

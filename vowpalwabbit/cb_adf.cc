@@ -262,7 +262,9 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   examples[_gen_cs.mtr_example]->num_features = nf;
   examples[_gen_cs.mtr_example]->weight = old_weight;
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
-  std::swap(examples[0]->pred.a_s, _a_s);
+
+  if (PREDICT)  // Return the saved prediction
+    std::swap(examples[0]->pred.a_s, _a_s);
 }
 
 // Validates a multiline example collection as a valid sequence for action dependent features format.
