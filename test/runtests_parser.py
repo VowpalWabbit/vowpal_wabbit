@@ -2,11 +2,22 @@ import json
 
 class Test:
     output = {}
+    unique_id = set()
 
     @staticmethod
     def register_output(idnum, filename):
         Test.output[filename] = idnum
+    
+    @staticmethod
+    def filename_to_test_id(filename):
+        return Test.output[filename]
 
+    @staticmethod
+    def check_add_unique_id(idnum):
+        if idnum in Test.unique_id:
+            raise Exception("test id is repeated. fatal id: " + idnum)
+        else:
+            Test.unique_id.add(idnum)
 
     def __init__(self, id, desc):   
         self.id = id 
@@ -48,8 +59,42 @@ class Test:
         self.is_bash_command = True
         self.add_vw_command(line)
 
+    def clean(self):
+        if not self.is_bash_command:
+            self.vw_command = " ".join(self.vw_command.split()[1:])
+
+            # get output files and register as creator of files
+            files = Parser.get_values_of_vwarg(self.vw_command, "-f")
+            for f in files:
+                Test.register_output(int(self.id), f)
+
+            # check who produces the input files of this test
+            files = Parser.get_values_of_vwarg(self.vw_command, "-i")
+            for f in files:
+                if "model-sets" not in f:
+                    self.depends_on.append(Test.filename_to_test_id(f))
+        
+        orig_files = self.files
+
+        self.files = {}
+        for f in orig_files:
+            self.files[Parser.parse_filetype(f)] = f
+
+        if self.id.isnumeric():
+            self.id = int(self.id)
+            Test.check_add_unique_id(self.id)
+        else:
+            raise Exception("id is not a number. fatal.")
+
+        delattr(self, 'backslash_seen')
+
+class Parser:
+    def __init__(self):   
+        self.curr_test = None
+        self.results = []
+
     @staticmethod
-    def get_value_of_arg(command, argname):
+    def get_values_of_vwarg(command, argname):
         command = command.split()
         results = []
 
@@ -62,39 +107,6 @@ class Test:
                 prev_is_argname = True
 
         return results
-
-    def clean(self):
-        if not self.is_bash_command:
-            self.vw_command = " ".join(self.vw_command.split()[1:])
-
-            # get output files and register as creator of files
-            files = Test.get_value_of_arg(self.vw_command, "-f")
-            for f in files:
-                Test.register_output(int(self.id), f)
-
-            # check who produces the input files of this test
-            files = Test.get_value_of_arg(self.vw_command, "-i")
-            for f in files:
-                if "model-sets" not in f:
-                    self.depends_on.append(Test.output[f])
-        
-        orig_files = self.files
-
-        self.files = {}
-        for f in orig_files:
-            self.files[Parser.parse_filetype(f)] = f
-
-        if self.id.isnumeric():
-            self.id = int(self.id)
-        else:
-            raise Exception("id is not a number. fatal.")
-
-        delattr(self, 'backslash_seen')
-
-class Parser:
-    def __init__(self):   
-        self.curr_test = None
-        self.results = []
 
     @staticmethod
     def parse_filetype(file):
