@@ -217,6 +217,74 @@ static void benchmark_example_reuse(benchmark::State& state)
   examples.delete_v();
 }
 
+static void benchmark_learn_simple(benchmark::State& state)
+{
+  std::string example_string =
+      "1 zebra|MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures "
+      "NumberOfLegs:4.0 HasStripes";
+
+  auto vw = VW::initialize("--quiet", nullptr, false, nullptr, nullptr);
+
+  multi_ex examples;
+  examples.push_back(VW::read_example(*vw, example_string));
+
+  for (auto _ : state)
+  {
+    for (size_t i = 0; i < 20000; i++)
+    {
+      vw->learn(*examples[0]);
+      benchmark::ClobberMemory();
+    }
+  }
+  vw->finish_example(*examples[0]);
+}
+
+static void benchmark_cb_adf_learn(benchmark::State& state)
+{
+  auto vw = VW::initialize("--cb_explore_adf --epsilon 0.1 --quiet", nullptr, false, nullptr, nullptr);
+  multi_ex examples;
+  examples.push_back(VW::read_example(*vw, std::string("shared | s_1 s_2")));
+  examples.push_back(VW::read_example(*vw, std::string("0:1.0:0.5 | a_1 b_1 c_1")));
+  examples.push_back(VW::read_example(*vw, std::string("| a_2 b_2 c_2")));
+  examples.push_back(VW::read_example(*vw, std::string("| a_3 b_3 c_3")));
+
+  for (auto _ : state)
+  {
+    for (size_t i = 0; i < 20000; i++)
+    {
+      vw->learn(examples);
+      benchmark::ClobberMemory();
+    }
+  }
+  vw->finish_example(examples);
+}
+
+static void benchmark_ccb_adf_learn(benchmark::State& state)
+{
+  auto vw = VW::initialize("--ccb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
+
+  multi_ex examples;
+  examples.push_back(VW::read_example(*vw, std::string("ccb shared |User b")));
+  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action d")));
+  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action e")));
+  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action f")));
+  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action ff")));
+  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action fff")));
+  examples.push_back(VW::read_example(*vw, std::string("ccb slot 0:0:0.2 |Slot h")));
+  examples.push_back(VW::read_example(*vw, std::string("ccb slot 1:0:0.25 |Slot i")));
+  examples.push_back(VW::read_example(*vw, std::string("ccb slot 2:0:0.333333 |Slot j")));
+
+  for (auto _ : state)
+  {
+    for (size_t i = 0; i < 20000; i++)
+    {
+      vw->learn(examples);
+      benchmark::ClobberMemory();
+    }
+  }
+  vw->finish_example(examples);
+}
+
 BENCHMARK_CAPTURE(bench_text, 120_string_fts, get_x_string_fts(120));
 BENCHMARK_CAPTURE(bench_cache_io_buf, 120_string_fts, get_x_string_fts(120));
 BENCHMARK_CAPTURE(bench_text_io_buf, 120_string_fts, get_x_string_fts(120));
@@ -226,6 +294,9 @@ BENCHMARK_CAPTURE(bench_cache_io_buf, 120_num_fts, get_x_numerical_fts(120));
 BENCHMARK_CAPTURE(bench_text_io_buf, 120_num_fts, get_x_numerical_fts(120));
 
 BENCHMARK(benchmark_example_reuse);
+BENCHMARK(benchmark_learn_simple);
+BENCHMARK(benchmark_cb_adf_learn);
+BENCHMARK(benchmark_ccb_adf_learn);
 
 // Run the benchmark
 BENCHMARK_MAIN();
