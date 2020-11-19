@@ -27,7 +27,6 @@ class Test:
         self.vw_command = "" 
         self.is_bash_command = False
         self.files = []
-        self.depends_on = []
 
     def add_more_comments(self, line):
         self.desc = self.desc + ". " + line.strip()[1:].strip()
@@ -71,9 +70,12 @@ class Test:
 
             # check who produces the input files of this test
             files = Parser.get_values_of_vwarg(self.vw_command, "-i")
+            depends_on = []
             for f in files:
                 if "model-sets" not in f:
-                    self.depends_on.append(Test.filename_to_test_id(f))
+                    depends_on.append(Test.filename_to_test_id(f))
+            if depends_on:
+                self.depends_on = depends_on
         
         orig_files = self.files
 
@@ -84,10 +86,12 @@ class Test:
         self.id = int(self.id)
         Test.check_add_unique_id(self.id)
 
-        delattr(self, 'backslash_seen')
+        if self.is_bash_command:
+            self.bash_command = self.vw_command
+            delattr(self, 'vw_command')
 
-        if not self.depends_on:
-            delattr(self, 'depends_on')
+        delattr(self, 'is_bash_command')
+        delattr(self, 'backslash_seen')
 
 
 class Parser:
