@@ -74,9 +74,9 @@ T base_predict(JNIEnv* env, jobjectArray example_strings, jboolean learn, jlong 
     rethrow_cpp_exception_as_java_exception(env);
   }
 
+  T result = predictor(first_example, env);
   vwInstance->finish_example(ex_coll);
-
-  return predictor(first_example, env);
+  return result;
 }
 
 #endif  // VW_BASE_LEARNER_H
