@@ -1,4 +1,5 @@
 import json
+from os import path
 
 class Test:
     output = {}
@@ -80,11 +81,8 @@ class Test:
         for f in orig_files:
             self.files[Parser.parse_filetype(f)] = f
 
-        if self.id.isnumeric():
-            self.id = int(self.id)
-            Test.check_add_unique_id(self.id)
-        else:
-            raise Exception("id is not a number. fatal.")
+        self.id = int(self.id)
+        Test.check_add_unique_id(self.id)
 
         delattr(self, 'backslash_seen')
 
@@ -92,6 +90,7 @@ class Parser:
     def __init__(self):   
         self.curr_test = None
         self.results = []
+        self.saw_first_test = False
 
     @staticmethod
     def get_values_of_vwarg(command, argname):
@@ -128,10 +127,7 @@ class Parser:
     @staticmethod
     def is_filename_of_testset(line):
         tokens = line.split("/")
-        if tokens[0] in ["train-sets", "pred-sets", "test-sets"]:
-            return True
-        
-        return False
+        return tokens[0] in ["train-sets", "pred-sets", "test-sets"]
 
     # returns a Test(n, ...) instance if line has format:
     # '# Test n:'...
@@ -156,6 +152,17 @@ class Parser:
             self.curr_test = None
 
     def process_line(self, line):
+        line = line.strip()
+
+        if line.isspace() or not line:
+            return
+
+        if not self.saw_first_test and "# Test 1:" in line:
+            self.saw_first_test = True
+
+        if not self.saw_first_test:
+            return # do nothing until we find first test definition
+
         if Parser.is_perl_comment(line):
             new_test = Parser.try_parse_test_definition(line)
 
@@ -177,16 +184,20 @@ class Parser:
         self.commit_parsed_test()
         return json.dumps(self.results, indent=2, default=lambda x: x.__dict__)
 
-with open('./RunTests') as f:
-    saw_first_test = False
+def main():
+    possible_paths = ["./RunTests", "./test/RunTests"]
+    for p in possible_paths:
+        if path.exists(p):
+            rtfile = p
 
     RTParser = Parser()
 
-    for line in f:
-        if "# Test 1:" in line:
-            saw_first_test = True
+    with open(rtfile) as f:
+        for line in f:
+            RTParser.process_line(line)
 
-        if saw_first_test and not line.isspace():
-            RTParser.process_line(line.strip())
-    
-    print(RTParser.get_json_str())
+    with open(path.join(path.dirname(rtfile), "runtests.json"), "w") as f:
+        f.write(RTParser.get_json_str())
+
+if __name__ == "__main__":
+    main()
