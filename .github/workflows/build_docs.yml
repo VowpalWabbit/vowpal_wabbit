@@ -102,15 +102,15 @@ jobs:
       - name: Copy CXX Docs
         shell: bash
         run: |
-          rm -rf docs/vowpal_wabbit/cpp/${{ FOLDER_NAME }}/
-          mkdir -p docs/vowpal_wabbit/cpp/${{ FOLDER_NAME }}/
-          cp -r cxx_docs/* docs/vowpal_wabbit/cpp/${{ FOLDER_NAME }}/
+          rm -rf docs/vowpal_wabbit/cpp/$FOLDER_NAME/
+          mkdir -p docs/vowpal_wabbit/cpp/$FOLDER_NAME/
+          cp -r cxx_docs/* docs/vowpal_wabbit/cpp/$FOLDER_NAME/
       - name: Copy Python Docs
         shell: bash
         run: |
-          rm -rf docs/vowpal_wabbit/python/${{ FOLDER_NAME }}/
-          mkdir -p docs/vowpal_wabbit/python/${{ FOLDER_NAME }}/
-          cp -r python_docs/html/* docs/vowpal_wabbit/python/${{ FOLDER_NAME }}/
+          rm -rf docs/vowpal_wabbit/python/$FOLDER_NAME/
+          mkdir -p docs/vowpal_wabbit/python/$FOLDER_NAME/
+          cp -r python_docs/html/* docs/vowpal_wabbit/python/$FOLDER_NAME/
       - name: Checkout master
         shell: bash
         run: |
