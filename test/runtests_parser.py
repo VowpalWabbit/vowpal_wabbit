@@ -86,6 +86,10 @@ class Test:
 
         delattr(self, 'backslash_seen')
 
+        if not self.depends_on:
+            delattr(self, 'depends_on')
+
+
 class Parser:
     def __init__(self):   
         self.curr_test = None
