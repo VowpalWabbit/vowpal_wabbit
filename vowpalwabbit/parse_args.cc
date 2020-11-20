@@ -1309,6 +1309,7 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(VW::cb_explore_adf::bag::setup);
   reductions.push_back(cb_dro_setup);
   reductions.push_back(cb_sample_setup);
+  reductions.push_back(explore_eval_setup);
   reductions.push_back(VW::shared_feature_merger::shared_feature_merger_setup);
   reductions.push_back(CCB::ccb_explore_adf_setup);
   reductions.push_back(VW::slates::slates_setup);
@@ -1323,7 +1324,6 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(cbify_setup);
   reductions.push_back(cbifyldf_setup);
   reductions.push_back(VW::offset_tree::setup);
-  reductions.push_back(explore_eval_setup);
   reductions.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   reductions.push_back(Search::setup);
   reductions.push_back(audit_regressor_setup);
