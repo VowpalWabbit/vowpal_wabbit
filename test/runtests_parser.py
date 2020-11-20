@@ -204,7 +204,7 @@ def main():
         for line in f:
             RTParser.process_line(line)
 
-    with open(path.join(path.dirname(rtfile), "runtests.json"), "w") as f:
+    with open(path.join(path.dirname(rtfile), "runtests.AUTOGEN.json"), "w") as f:
         f.write(RTParser.get_json_str())
 
 if __name__ == "__main__":
