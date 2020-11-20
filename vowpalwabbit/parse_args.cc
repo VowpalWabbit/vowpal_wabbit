@@ -439,7 +439,9 @@ input_options parse_source(vw& all, options_i& options)
                .help("Enable chain hash in JSON for feature name and string feature value. e.g. {'A': {'B': 'C'}} is "
                      "hashed as "
                      "A^B^C. Note: this will become the default in a future version, so enabling this option will "
-                     "migrate you to the new behavior and silence the warning."));
+                     "migrate you to the new behavior and silence the warning."))
+      .add(make_option("flatbuffer", parsed_options.flatbuffer)
+               .help("data file will be interpreted as a flatbuffer file"));
 
   options.add_and_parse(input_options);
 
