@@ -114,8 +114,16 @@ if((NOT PROFILE) AND (NOT GCOV))
   set(linux_release_config ${linux_release_config} -fomit-frame-pointer)
 endif()
 
+
+# Using this on MacOS trips an issue with differing visibility settings. 
+if(APPLE)
+  set(visibility_flag "")
+else()
+  set(visibility_flag -fvisibility=hidden)
+endif()
+
 #Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
-set(linux_flags -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}> $<$<CONFIG:RelWithDebInfo>:${linux_release_config}>)
+set(linux_flags ${visibility_flag} $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}> $<$<CONFIG:RelWithDebInfo>:${linux_release_config}>)
 
 if(LTO)
 	if(NOT "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
