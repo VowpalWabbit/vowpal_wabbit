@@ -5,10 +5,12 @@
 
 typedef unsigned char namespace_index;
 
-#include "v_array.h"
-#include "feature_group.h"
 #include "constant.h"
 #include "future_compat.h"
+#include "reduction_features.h"
+#include "feature_group.h"
+#include "v_array.h"
+
 #include <vector>
 #include <array>
 
@@ -47,6 +49,7 @@ struct example_predict
   // Interactions are specified by this vector of vectors of unsigned characters, where each vector is an interaction
   // and each char is a namespace.
   std::vector<std::vector<namespace_index>>* interactions;
+  reduction_features _reduction_features;
 
   uint32_t _current_reduction_depth;  // Used for debugging reductions.  Keeps track of current reduction level
 };

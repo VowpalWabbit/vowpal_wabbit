@@ -21,6 +21,11 @@ add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
 target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
 add_library(VowpalWabbit::io ALIAS vw_io)
 
+add_subdirectory(parser/flatbuffer)
+add_library(FlatbuffersTarget INTERFACE)
+target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
+add_dependencies(FlatbuffersTarget fbschemas)
+
 set(vw_all_headers
   accumulate.h
   action_score.h
@@ -62,6 +67,7 @@ set(vw_all_headers
   cb.h
   cbify.h
   ccb_label.h
+  ccb_reduction_features.h
   classweight.h
   compat.h
   conditional_contextual_bandit.h
@@ -139,8 +145,10 @@ set(vw_all_headers
   parse_regressor.h
   parse_slates_example_json.h
   parser.h
+  parser/flatbuffer/parse_example_flatbuffer.h
   pmf_to_pdf.h
   plt.h
+  reduction_features.h
   print.h
   prob_dist_cont.h
   queue.h
@@ -273,8 +281,11 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
+  parser/flatbuffer/parse_example_flatbuffer.cc
+  parser/flatbuffer/parse_label.cc
   pmf_to_pdf.cc
   plt.cc
+  reduction_features.cc
   print.cc
   prob_dist_cont.cc
   rand48.cc
@@ -315,7 +326,8 @@ target_link_libraries(vw
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
-    $<BUILD_INTERFACE:RapidJSON>)
+    $<BUILD_INTERFACE:RapidJSON>
+    $<BUILD_INTERFACE:FlatbuffersTarget>)
 
 add_library(VowpalWabbit::vw ALIAS vw)
 

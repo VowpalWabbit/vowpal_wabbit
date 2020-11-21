@@ -280,7 +280,8 @@ enum class label_type_t
   multi,
   mc,
   ccb,  // conditional contextual-bandit
-  slates
+  slates,
+  nolabel
 };
 
 struct rand_state
@@ -307,6 +308,17 @@ struct vw_logger
   vw_logger(const vw_logger& other) = delete;
   vw_logger& operator=(const vw_logger& other) = delete;
 };
+
+namespace VW
+{
+namespace parsers
+{
+namespace flatbuffer
+{
+class parser;
+}
+}  // namespace parsers
+}  // namespace VW
 
 struct vw
 {
@@ -345,7 +357,8 @@ public:
 
   uint32_t hash_seed;
 
-  std::string data_filename;  // was vm["data"]
+  std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
+  std::string data_filename;
 
   bool daemon;
   size_t num_children;

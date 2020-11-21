@@ -32,14 +32,14 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{github.workspace}}\\vcpkg
-          key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}-1
+          key: ${{ runner.os }}-${{ matrix.config.version }}-${{ matrix.config.vcpkg_commit }}-2
       - name: Bootstrap and install vcpkg packages
         shell: powershell
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         run: |
           cd ${{github.workspace}}\\vcpkg
           .\\bootstrap-vcpkg.bat
-          .\\vcpkg.exe --triplet x64-windows install zlib boost-program-options boost-align boost-foreach boost-python boost-math python3
+          .\\vcpkg.exe --triplet x64-windows install zlib boost-program-options boost-align boost-foreach boost-python boost-math python3 flatbuffers
       - uses: actions/checkout@v2
         with:
           path: ${{github.workspace}}\\vowpal_wabbit

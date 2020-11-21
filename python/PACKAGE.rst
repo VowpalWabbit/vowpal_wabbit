@@ -5,7 +5,6 @@ Binary wheels are produced in CI according to the `support table`_ and uploaded 
 
 Deployment Process
 ------------------
-
 0) Binary wheels are automatically produced for every commit to master and uploaded as artifacts in the CI
     * `Linux`_
     * `Windows`_
@@ -36,7 +35,15 @@ Deployment Process
     
         $ # Repeat for each wheel
         $ twine upload -u <username> -p <password>  vowpalwabbit-<VERSION>-cp37-cp37m-manylinux2010_x86_64.whl
+    
+    c) Upload the source package
+   
+    .. code-block:: bash
 
+        $ python setup.py sdist
+        $ twine upload -u <username> -p <password> dist/vowpalwabbit-<VERSION>.tar.gz
+        
+        
 .. _support table: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Python#support
 .. _Linux: https://github.com/VowpalWabbit/vowpal_wabbit/actions?query=workflow%3A%22Build+Linux+Python+Wheels%22
 .. _Windows: https://github.com/VowpalWabbit/vowpal_wabbit/actions?query=workflow%3A%22Build+Windows+Python+Wheels%22
