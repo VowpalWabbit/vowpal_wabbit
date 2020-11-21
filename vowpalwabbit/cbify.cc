@@ -732,11 +732,17 @@ base_learner* cbify_setup(options_i& options, vw& all)
   {
     multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
+    {
       l = &init_cost_sensitive_learner(
           data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.example_parser, 1);
+      all.label_type = label_type_t::cs;
+    }
     else
+    {
       l = &init_multiclass_learner(
           data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.example_parser, 1);
+      all.label_type = label_type_t::mc;
+    }
   }
   else
   {
@@ -744,6 +750,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
     if (use_reg)
     {
       all.example_parser->lbl_parser = simple_label_parser;
+      all.label_type = label_type_t::simple;
       if (use_discrete)
       {
         l = &init_learner(data, base, predict_or_learn_regression_discrete<true>,
@@ -758,11 +765,17 @@ base_learner* cbify_setup(options_i& options, vw& all)
       }
     }
     else if (use_cs)
+    {
       l = &init_cost_sensitive_learner(
           data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.example_parser, 1);
+      all.label_type = label_type_t::cs;
+    }
     else
+    {
       l = &init_multiclass_learner(
           data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.example_parser, 1);
+      all.label_type = label_type_t::mc;
+    }
   }
   all.delete_prediction = nullptr;
 

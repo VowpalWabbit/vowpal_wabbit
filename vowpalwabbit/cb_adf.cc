@@ -94,7 +94,7 @@ private:
   void learn_MTR(multi_learner& base, multi_ex& examples);
 };
 
-CB::cb_class get_observed_cost(multi_ex& examples, bool skip_example_header)
+CB::cb_class get_observed_cost(multi_ex& examples)
 {
   CB::label* ld = nullptr;
   int index = -1;
@@ -103,8 +103,6 @@ CB::cb_class get_observed_cost(multi_ex& examples, bool skip_example_header)
   size_t i = 0;
   for (example*& ec : examples)
   {
-    if (skip_example_header && CB::ec_is_example_header(*ec)) { continue; }
-
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
     {
       ld = &ec->l.cb;
@@ -290,7 +288,7 @@ template <bool is_learn>
 void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
-  _gen_cs.known_cost = get_observed_cost(ec_seq, false);  // need to set for test case
+  _gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
   bool learn = is_learn && test_adf_sequence(ec_seq) != nullptr;
   if (learn)
   {
