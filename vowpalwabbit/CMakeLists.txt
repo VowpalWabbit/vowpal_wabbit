@@ -59,6 +59,7 @@ set(vw_all_headers
   cb_explore_adf_greedy.h
   cb_explore_adf_regcb.h
   cb_explore_adf_squarecb.h
+  cb_explore_adf_synthcover.h
   cb_explore_adf_rnd.h
   cb_explore_adf_softmax.h
   cb_explore_pdf.h
@@ -220,6 +221,7 @@ set(vw_all_sources
   cb_explore_adf_greedy.cc
   cb_explore_adf_regcb.cc
   cb_explore_adf_squarecb.cc
+  cb_explore_adf_synthcover.cc
   cb_explore_adf_rnd.cc
   cb_explore_adf_softmax.cc
   cb_explore_pdf.cc

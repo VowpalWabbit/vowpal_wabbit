@@ -1,0 +1,25 @@
+predictions = cbe_adf_synthcover.predict
+Using synthcover for CB exploration
+synthcoversize = 100
+epsilon = 0.01
+synthcoverpsi = 0.1
+synthcovereta = 0.2
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/cb_test.ldf
+num sources = 1
+Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_synthcover, shared_feature_merger
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.680000 0.680000            1            1.0    known        0:0.34...        9
+0.340000 0.000000            2            2.0    known        1:0.995...        6
+
+finished run
+number of examples = 3
+weighted example sum = 3.000000
+weighted label sum = 0.000000
+average loss = 0.340000
+total feature number = 23
