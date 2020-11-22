@@ -37,6 +37,8 @@ private:
   v_array<ACTION_SCORE::action_score> _action_probs;
   std::vector<float> beta;
   std::vector<int> policyaction;
+  float min_cost;
+  float max_cost;
 
 public:
   cb_explore_adf_synthcover(
@@ -47,6 +49,9 @@ public:
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
+//  float& get_min_cost() { return min_cost; }
+//  float& get_max_cost() { return max_cost; }
+
 private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
@@ -54,7 +59,7 @@ private:
 
 cb_explore_adf_synthcover::cb_explore_adf_synthcover(
       float epsilon, float psi, float eta, size_t synthcoversize, std::shared_ptr<rand_state> random_state)
-    : _epsilon(epsilon), _psi(psi), _eta(eta), _synthcoversize(synthcoversize), _random_state(random_state), beta(synthcoversize, 1.0 / synthcoversize)
+    : _epsilon(epsilon), _psi(psi), _eta(eta), _synthcoversize(synthcoversize), _random_state(random_state), beta(synthcoversize, 1.0 / synthcoversize), min_cost(-1.0), max_cost(1.0)
 {
 }
 
@@ -63,12 +68,27 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
 {
   VW::LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
+  const auto it =
+      std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
+
+  if (it != examples.end())
+  {
+    const CB::cb_class logged = (*it)->l.cb.costs[0];
+
+    min_cost = std::min(logged.cost, min_cost);
+    max_cost = std::max(logged.cost, max_cost);
+  }
+
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)examples.size();
   if (num_actions == 0)
   {
     preds.clear();
     return;
+  }
+  for (size_t i = 0; i < num_actions; i++)
+  {
+    preds[i].score = std::min(max_cost, std::max(min_cost, preds[i].score));
   }
   std::make_heap(preds.begin(), preds.end(),
                  [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
@@ -119,6 +139,20 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
 }
 
 cb_explore_adf_synthcover::~cb_explore_adf_synthcover() { _action_probs.delete_v(); }
+
+// TODO: wait for Olga's changes to merge
+//
+// void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool text)
+// {
+//   std::stringstream msg;
+//   msg << "min_cost " << c.explore.get_min_cost() << "\n";
+//   bin_text_read_write_fixed(
+//       model_file, (char*)&c.explore.get_min_cost(), sizeof(c.explore.get_min_cost()), "", read, msg, text);
+//
+//   msg << "max_cost " << c.explore.get_max_cost() << "\n";
+//   bin_text_read_write_fixed(
+//       model_file, (char*)&c.explore.get_max_cost(), sizeof(c.explore.get_max_cost()), "", read, msg, text);
+// }
 
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
@@ -174,6 +208,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
 
   l.set_finish_example(explore_type::finish_multiline_example);
+  //l.set_save_load(explore_type::save_load);
   return make_base(l);
 }
 
