@@ -86,6 +86,12 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     preds.clear();
     return;
   }
+  else if (num_actions == 1)
+  {
+    preds[0].score = 1;
+    return;
+  }
+
   for (size_t i = 0; i < num_actions; i++)
   {
     preds[i].score = std::min(max_cost, std::max(min_cost, preds[i].score));
@@ -99,7 +105,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   for (uint32_t i = 0; i < num_actions; i++) _action_probs.push_back({i, 0.});
 
   policyaction.clear();
-  for (uint32_t i = 0; i < _synthcoversize; i++)
+  for (uint32_t i = 0; i < _synthcoversize; )
   {
     std::pop_heap(preds.begin(), preds.end(),
                   [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
@@ -107,9 +113,15 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
                });
     // NB: what STL calls pop_back(), v_array calls pop().  facepalm.
     auto minpred = preds.pop();
-    policyaction.push_back(minpred.action);
-    _action_probs[minpred.action].score += beta[i];
-    minpred.score += beta[i] * _psi;
+
+    auto secondminpred = preds[0];
+    for (; secondminpred.score >= minpred.score && i < _synthcoversize; i++)
+    {
+      policyaction.push_back(minpred.action);
+      _action_probs[minpred.action].score += beta[i];
+      minpred.score += beta[i] * _psi;
+    }
+
     preds.push_back(minpred);
     std::push_heap(preds.begin(), preds.end(),
                   [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
