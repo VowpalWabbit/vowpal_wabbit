@@ -7,3 +7,7 @@ extraction:
   csharp:
     index:
       buildless: true
+  cpp:
+    configure:
+      command:
+        - .scripts/linux/install-flatbuffers.sh
