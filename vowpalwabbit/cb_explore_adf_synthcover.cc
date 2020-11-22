@@ -59,7 +59,7 @@ private:
 
 cb_explore_adf_synthcover::cb_explore_adf_synthcover(
       float epsilon, float psi, float eta, size_t synthcoversize, std::shared_ptr<rand_state> random_state)
-    : _epsilon(epsilon), _psi(psi), _eta(eta), _synthcoversize(synthcoversize), _random_state(random_state), beta(synthcoversize, 1.0 / synthcoversize), min_cost(-1.0), max_cost(1.0)
+    : _epsilon(epsilon), _psi(psi), _eta(eta), _synthcoversize(synthcoversize), _random_state(random_state), beta(synthcoversize, 1.0 / synthcoversize), min_cost(0.0), max_cost(0.0)
 {
 }
 
@@ -92,7 +92,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   }
   std::make_heap(preds.begin(), preds.end(),
                  [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
-                 return ACTION_SCORE::score_comp(&a, &b) < 0;
+                 return ACTION_SCORE::score_comp(&a, &b) > 0;
               });
 
   _action_probs.clear();
@@ -101,33 +101,36 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   policyaction.clear();
   for (uint32_t i = 0; i < _synthcoversize; i++)
   {
-    // NB: what STL calls pop_back(), v_array calls pop().  facepalm.
-    auto mincost = preds.pop();
     std::pop_heap(preds.begin(), preds.end(),
                   [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
-                  return ACTION_SCORE::score_comp(&a, &b) < 0;
+                  return ACTION_SCORE::score_comp(&a, &b) > 0;
                });
-    policyaction.push_back(mincost.action);
-    _action_probs[mincost.action].score += beta[i];
-    mincost.score += beta[i] * _psi;
-    preds.push_back(mincost);
+    // NB: what STL calls pop_back(), v_array calls pop().  facepalm.
+    auto minpred = preds.pop();
+    policyaction.push_back(minpred.action);
+    _action_probs[minpred.action].score += beta[i];
+    minpred.score += beta[i] * _psi;
+    preds.push_back(minpred);
     std::push_heap(preds.begin(), preds.end(),
                   [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
-                  return ACTION_SCORE::score_comp(&a, &b) < 0;
+                  return ACTION_SCORE::score_comp(&a, &b) > 0;
                });
   }
 
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(_action_probs), end_scores(_action_probs));
 
-  float sumbeta = 0.0;
-  for (size_t i = 0; i < _synthcoversize; i++)
+  if (is_learn)
   {
-    beta[i] *= 1 + _eta / _action_probs[policyaction[i]].score;
-    sumbeta += beta[i];
-  }
-  for (size_t i = 0; i < _synthcoversize; i++)
-  {
-    beta[i] /= sumbeta;
+    float sumbeta = 0.0;
+    for (size_t i = 0; i < _synthcoversize; i++)
+    {
+      beta[i] *= 1 + _eta / _action_probs[policyaction[i]].score;
+      sumbeta += beta[i];
+    }
+    for (size_t i = 0; i < _synthcoversize; i++)
+    {
+      beta[i] /= sumbeta;
+    }
   }
 
   std::sort(_action_probs.begin(), _action_probs.end(),
