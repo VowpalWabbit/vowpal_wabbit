@@ -64,6 +64,7 @@ cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, s
     , _synthcoversize(synthcoversize)
     , _random_state(random_state)
     , _model_file_version(model_file_version)
+    , _action_probs(v_init<ACTION_SCORE::action_score>())
     , min_cost(0.0)
     , max_cost(0.0)
 {
