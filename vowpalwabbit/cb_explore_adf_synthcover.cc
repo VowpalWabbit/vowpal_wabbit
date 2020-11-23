@@ -209,7 +209,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   if (synthcoversize <= 0) { THROW("synthcoversize must be >= 1"); }
   if (epsilon < 0) { THROW("epsilon must be non-negative"); }
   if (psi <= 0) { THROW("synthcoverpsi must be positive"); }
-  if (eta <= 0 || eta > 0.25) { THROW("synthcovereta must be in [0, 0.25]"); }
+  if (eta < 0 || eta > 0.25) { THROW("synthcovereta must be in [0, 0.25]"); }
 
   if (!all.logger.quiet)
   {
