@@ -2006,38 +2006,38 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/named_label_test_fb.stderr
     pred-sets/ref/test_named.predict
 
-# Test 239: cb_explore with cover epsilon decaying
+# Test 249: cb_explore with cover epsilon decaying
 {VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
     train-sets/ref/cbe_cover_e_dec.stderr
 
-# Test 240: cb_explore with cover epsilon decaying predict
+# Test 250: cb_explore with cover epsilon decaying predict
 {VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict
     train-sets/ref/cbe_cover_e_dec_predict.stderr
     pred-sets/ref/cbe_cover_e_dec.predict
 
-# Test 241: cb_explore with cover epsilon fixed
+# Test 251: cb_explore with cover epsilon fixed
 {VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5
     train-sets/ref/cbe_cover_e_fixed.stderr
 
-# Test 242: cb_explore with cover epsilon fixed predict
+# Test 252: cb_explore with cover epsilon fixed predict
 {VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed.predict
     train-sets/ref/cbe_cover_e_fixed_predict.stderr
     pred-sets/ref/cbe_cover_e_fixed.predict
 
-# Test 243: cb_explore_adf with cover exploration epsilon decaying
+# Test 253: cb_explore_adf with cover exploration epsilon decaying
 {VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -f models/cover_adf_e_dec.model
     train-sets/ref/cbe_adf_cover_e_dec.stderr
 
-# Test 244: cb_explore_adf with cover exploration epsilon decaying predict only
+# Test 254: cb_explore_adf with cover exploration epsilon decaying predict only
 {VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -p cbe_adf_cover_e_dec.predict -i models/cover_adf_e_dec.model -t
     train-sets/ref/cbe_adf_cover_e_dec_predict.stderr
     pred-sets/ref/cbe_adf_cover_e_dec.predict
 
-# Test 245: cb_explore_adf with cover epsilon fixed
+# Test 255: cb_explore_adf with cover epsilon fixed
 {VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf -f models/cover_adf_e_fixed.model --epsilon 0.5
     train-sets/ref/cbe_adf_cover_e_fixed.stderr
 
-# Test 246: cb_explore_adf with cover epsilon fixed predict
+# Test 256: cb_explore_adf with cover epsilon fixed predict
 {VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf -i models/cover_adf_e_fixed.model --epsilon 0.5 -t -p cbe_adf_cover_e_fixed.predict
     train-sets/ref/cbe_adf_cover_e_fixed_predict.stderr
     pred-sets/ref/cbe_adf_cover_e_fixed.predict
