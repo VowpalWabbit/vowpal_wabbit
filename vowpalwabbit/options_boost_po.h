@@ -26,13 +26,15 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec)
   for (auto const& item : vec) { os << item << ", "; }
   return os;
 }
+
+// The std::vector<bool> specialization does not support ref access, so we need to handle this differently.
+std::ostream& operator<<(std::ostream& os, const std::vector<bool>& vec);
 }  // namespace std
 
 template std::ostream& std::operator<<<int>(std::ostream&, const std::vector<int>&);
 template std::ostream& std::operator<<<char>(std::ostream&, const std::vector<char>&);
 template std::ostream& std::operator<<<std::string>(std::ostream&, const std::vector<std::string>&);
 template std::ostream& std::operator<<<float>(std::ostream&, const std::vector<float>&);
-template std::ostream& std::operator<<<bool>(std::ostream&, const std::vector<bool>&);
 
 namespace VW
 {
@@ -197,6 +199,35 @@ template <>
 po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<bool>>& opt);
 
 template <typename T>
+void check_disagreeing_option_values(T value, const std::string& name, const std::vector<T>& final_arguments)
+{
+  for (auto const& item : final_arguments)
+  {
+    if (item != value)
+    {
+      std::stringstream ss;
+      ss << "Disagreeing option values for '" << name << "': '" << value << "' vs '" << item << "'";
+      THROW_EX(VW::vw_argument_disagreement_exception, ss.str());
+    }
+  }
+}
+
+// This is another spot that we need to specialize std::vector<bool> because of its lack of reference operator...
+inline void check_disagreeing_option_values(
+    bool value, const std::string& name, const std::vector<bool>& final_arguments)
+{
+  for (auto const item : final_arguments)
+  {
+    if (item != value)
+    {
+      std::stringstream ss;
+      ss << "Disagreeing option values for '" << name << "': '" << value << "' vs '" << item << "'";
+      THROW_EX(VW::vw_argument_disagreement_exception, ss.str());
+    }
+  }
+}
+
+template <typename T>
 po::typed_value<std::vector<T>>* options_boost_po::add_notifier(
     std::shared_ptr<typed_option<T>>& opt, po::typed_value<std::vector<T>>* po_value)
 {
@@ -206,18 +237,7 @@ po::typed_value<std::vector<T>>* options_boost_po::add_notifier(
     // Due to the way options get added to the vector, the model options are at the end, and the
     // command-line options are at the front. To allow override from command-line over model file,
     // simply keep the first item, and suppress the error.
-    if (!opt->m_allow_override)
-    {
-      for (auto const& item : final_arguments)
-      {
-        if (item != result)
-        {
-          std::stringstream ss;
-          ss << "Disagreeing option values for '" << opt->m_name << "': '" << result << "' vs '" << item << "'";
-          THROW_EX(VW::vw_argument_disagreement_exception, ss.str());
-        }
-      }
-    }
+    if (!opt->m_allow_override) { check_disagreeing_option_values(result, opt->m_name, final_arguments); }
 
     // Set the value for the listening location.
     opt->m_location = result;
