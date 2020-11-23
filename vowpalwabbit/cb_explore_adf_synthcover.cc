@@ -174,7 +174,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"))
       .add(make_option("synthcover", use_synthcover).keep().necessary().help("use synthetic cover exploration"))
       .add(make_option("synthcoverpsi", psi).keep().default_value(0.1).allow_override().help("exploration reward bonus"))
-      .add(make_option("synthcoversize", synthcoversize).keep().default_value(100).help("number of policies in cover"));
+      .add(make_option("synthcoversize", synthcoversize).keep().default_value(100).allow_override().help("number of policies in cover"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
