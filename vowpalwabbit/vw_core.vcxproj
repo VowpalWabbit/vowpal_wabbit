@@ -145,6 +145,7 @@
     <ClInclude Include="cb_algs.h" />
     <ClInclude Include="cb_dro.h" />
     <ClInclude Include="cb_explore_adf_bag.h" />
+    <ClInclude Include="cb_explore_adf_synthcover.h" />
     <ClInclude Include="cb_explore_adf_common.h" />
     <ClInclude Include="cb_explore_adf_cover.h" />
     <ClInclude Include="cb_explore_adf_first.h" />
