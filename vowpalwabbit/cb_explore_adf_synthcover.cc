@@ -43,8 +43,8 @@ private:
   float max_cost;
 
 public:
-  cb_explore_adf_synthcover(
-      float epsilon, float psi, size_t synthcoversize, std::shared_ptr<rand_state> random_state, VW::version_struct model_file_version);
+  cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize, std::shared_ptr<rand_state> random_state,
+      VW::version_struct model_file_version);
   ~cb_explore_adf_synthcover();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -57,9 +57,15 @@ private:
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
 
-cb_explore_adf_synthcover::cb_explore_adf_synthcover(
-      float epsilon, float psi, size_t synthcoversize, std::shared_ptr<rand_state> random_state, VW::version_struct model_file_version)
-    : _epsilon(epsilon), _psi(psi), _synthcoversize(synthcoversize), _random_state(random_state), _model_file_version(model_file_version), min_cost(0.0), max_cost(0.0)
+cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize,
+    std::shared_ptr<rand_state> random_state, VW::version_struct model_file_version)
+    : _epsilon(epsilon)
+    , _psi(psi)
+    , _synthcoversize(synthcoversize)
+    , _random_state(random_state)
+    , _model_file_version(model_file_version)
+    , min_cost(0.0)
+    , max_cost(0.0)
 {
 }
 
@@ -69,7 +75,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   VW::LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
   const auto it =
-      std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
+      std::find_if(examples.begin(), examples.end(), [](example* item) { return !item->l.cb.costs.empty(); });
 
   if (it != examples.end())
   {
@@ -92,25 +98,22 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     return;
   }
 
-  for (size_t i = 0; i < num_actions; i++)
-  {
-    preds[i].score = std::min(max_cost, std::max(min_cost, preds[i].score));
-  }
-  std::make_heap(preds.begin(), preds.end(),
-                 [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
-                 return ACTION_SCORE::score_comp(&a, &b) > 0;
-              });
+  for (size_t i = 0; i < num_actions; i++) { preds[i].score = std::min(max_cost, std::max(min_cost, preds[i].score)); }
+  std::make_heap(
+      preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
+        return ACTION_SCORE::score_comp(&a, &b) > 0;
+      });
 
   _action_probs.clear();
   for (uint32_t i = 0; i < num_actions; i++) _action_probs.push_back({i, 0.});
 
   policyaction.clear();
-  for (uint32_t i = 0; i < _synthcoversize; )
+  for (uint32_t i = 0; i < _synthcoversize;)
   {
-    std::pop_heap(preds.begin(), preds.end(),
-                  [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
-                  return ACTION_SCORE::score_comp(&a, &b) > 0;
-               });
+    std::pop_heap(
+        preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
+          return ACTION_SCORE::score_comp(&a, &b) > 0;
+        });
     // NB: what STL calls pop_back(), v_array calls pop().  facepalm.
     auto minpred = preds.pop();
 
@@ -123,18 +126,18 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     }
 
     preds.push_back(minpred);
-    std::push_heap(preds.begin(), preds.end(),
-                  [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
-                  return ACTION_SCORE::score_comp(&a, &b) > 0;
-               });
+    std::push_heap(
+        preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
+          return ACTION_SCORE::score_comp(&a, &b) > 0;
+        });
   }
 
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(_action_probs), end_scores(_action_probs));
 
   std::sort(_action_probs.begin(), _action_probs.end(),
-            [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
-            return ACTION_SCORE::score_comp(&a, &b) > 0;
-         });
+      [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
+        return ACTION_SCORE::score_comp(&a, &b) > 0;
+      });
 
   for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
 }
@@ -148,12 +151,10 @@ void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool te
   {
     std::stringstream msg;
     if (!read) msg << "min_cost " << min_cost << "\n";
-    bin_text_read_write_fixed(
-        model_file, (char*)&min_cost, sizeof(min_cost), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, (char*)&min_cost, sizeof(min_cost), "", read, msg, text);
 
     if (!read) msg << "max_cost " << max_cost << "\n";
-    bin_text_read_write_fixed(
-        model_file, (char*)&max_cost, sizeof(max_cost), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, (char*)&max_cost, sizeof(max_cost), "", read, msg, text);
   }
 }
 
@@ -173,8 +174,13 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"))
       .add(make_option("synthcover", use_synthcover).keep().necessary().help("use synthetic cover exploration"))
-      .add(make_option("synthcoverpsi", psi).keep().default_value(0.1).allow_override().help("exploration reward bonus"))
-      .add(make_option("synthcoversize", synthcoversize).keep().default_value(100).allow_override().help("number of policies in cover"));
+      .add(
+          make_option("synthcoverpsi", psi).keep().default_value(0.1).allow_override().help("exploration reward bonus"))
+      .add(make_option("synthcoversize", synthcoversize)
+               .keep()
+               .default_value(100)
+               .allow_override()
+               .help("number of policies in cover"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -201,7 +207,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.label_type = label_type_t::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;
-  auto data = scoped_calloc_or_throw<explore_type>(epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
+  auto data =
+      scoped_calloc_or_throw<explore_type>(epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
