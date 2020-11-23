@@ -2006,7 +2006,6 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/named_label_test_fb.stderr
     pred-sets/ref/test_named.predict
 
-<<<<<<< HEAD
 # Test 249: cb_explore with cover epsilon decaying
 {VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
     train-sets/ref/cbe_cover_e_dec.stderr
