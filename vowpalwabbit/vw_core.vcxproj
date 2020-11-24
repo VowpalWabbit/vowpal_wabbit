@@ -292,7 +292,6 @@
     <ClCompile Include="cb_algs.cc" />
     <ClCompile Include="cb_dro.cc" />
     <ClCompile Include="cb_explore_adf_bag.cc" />
-    <ClInclude Include="cb_explore_adf_synthcover.cc" />
     <ClCompile Include="cb_explore_adf_cover.cc" />
     <ClCompile Include="cb_explore_adf_first.cc" />
     <ClCompile Include="cb_explore_adf_greedy.cc" />
