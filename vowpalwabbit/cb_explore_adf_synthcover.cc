@@ -120,8 +120,8 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     auto secondminpred = preds[0];
     for (; secondminpred.score >= minpred.score && i < _synthcoversize; i++)
     {
-      _action_probs[minpred.action].score += 1.0 / _synthcoversize;
-      minpred.score += (1.0 / _synthcoversize) * _psi;
+      _action_probs[minpred.action].score += 1.0f / _synthcoversize;
+      minpred.score += (1.0f / _synthcoversize) * _psi;
     }
 
     preds.push_back(minpred);
@@ -174,7 +174,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"))
       .add(make_option("synthcover", use_synthcover).keep().necessary().help("use synthetic cover exploration"))
       .add(
-          make_option("synthcoverpsi", psi).keep().default_value(0.1).allow_override().help("exploration reward bonus"))
+          make_option("synthcoverpsi", psi).keep().default_value(0.1f).allow_override().help("exploration reward bonus"))
       .add(make_option("synthcoversize", synthcoversize)
                .keep()
                .default_value(100)
