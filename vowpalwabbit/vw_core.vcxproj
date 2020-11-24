@@ -145,7 +145,6 @@
     <ClInclude Include="cb_algs.h" />
     <ClInclude Include="cb_dro.h" />
     <ClInclude Include="cb_explore_adf_bag.h" />
-    <ClInclude Include="cb_explore_adf_synthcover.h" />
     <ClInclude Include="cb_explore_adf_common.h" />
     <ClInclude Include="cb_explore_adf_cover.h" />
     <ClInclude Include="cb_explore_adf_first.h" />
@@ -154,6 +153,7 @@
     <ClInclude Include="cb_explore_adf_squarecb.h" />
     <ClInclude Include="cb_explore_adf_rnd.h" />
     <ClInclude Include="cb_explore_adf_softmax.h" />
+    <ClInclude Include="cb_explore_adf_synthcover.h" />
     <ClInclude Include="cb_explore.h" />
     <ClInclude Include="cb_sample.h" />
     <ClInclude Include="cbify.h" />
@@ -299,6 +299,7 @@
     <ClCompile Include="cb_explore_adf_squarecb.cc" />
     <ClCompile Include="cb_explore_adf_rnd.cc" />
     <ClCompile Include="cb_explore_adf_softmax.cc" />
+    <ClCompile Include="cb_explore_adf_synthcover.cc" />
     <ClCompile Include="cb_explore.cc" />
     <ClCompile Include="cb_sample.cc" />
     <ClCompile Include="cb.cc" />

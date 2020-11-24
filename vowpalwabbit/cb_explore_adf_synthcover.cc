@@ -38,9 +38,8 @@ private:
   VW::version_struct _model_file_version;
 
   v_array<ACTION_SCORE::action_score> _action_probs;
-  std::vector<int> policyaction;
-  float min_cost;
-  float max_cost;
+  float _min_cost;
+  float _max_cost;
 
 public:
   cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize, std::shared_ptr<rand_state> random_state,
@@ -65,8 +64,8 @@ cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, s
     , _random_state(random_state)
     , _model_file_version(model_file_version)
     , _action_probs(v_init<ACTION_SCORE::action_score>())
-    , min_cost(0.0)
-    , max_cost(0.0)
+    , _min_cost(0.0)
+    , _max_cost(0.0)
 {
 }
 
@@ -82,8 +81,8 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   {
     const CB::cb_class logged = (*it)->l.cb.costs[0];
 
-    min_cost = std::min(logged.cost, min_cost);
-    max_cost = std::max(logged.cost, max_cost);
+    _min_cost = std::min(logged.cost, _min_cost);
+    _max_cost = std::max(logged.cost, _max_cost);
   }
 
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
@@ -99,7 +98,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     return;
   }
 
-  for (size_t i = 0; i < num_actions; i++) { preds[i].score = std::min(max_cost, std::max(min_cost, preds[i].score)); }
+  for (size_t i = 0; i < num_actions; i++) { preds[i].score = std::min(_max_cost, std::max(_min_cost, preds[i].score)); }
   std::make_heap(
       preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
         return ACTION_SCORE::score_comp(&a, &b) > 0;
@@ -108,7 +107,6 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   _action_probs.clear();
   for (uint32_t i = 0; i < num_actions; i++) _action_probs.push_back({i, 0.});
 
-  policyaction.clear();
   for (uint32_t i = 0; i < _synthcoversize;)
   {
     std::pop_heap(
@@ -121,7 +119,6 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     auto secondminpred = preds[0];
     for (; secondminpred.score >= minpred.score && i < _synthcoversize; i++)
     {
-      policyaction.push_back(minpred.action);
       _action_probs[minpred.action].score += 1.0 / _synthcoversize;
       minpred.score += (1.0 / _synthcoversize) * _psi;
     }
@@ -151,11 +148,11 @@ void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool te
   if (!read || _model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
-    if (!read) msg << "min_cost " << min_cost << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&min_cost, sizeof(min_cost), "", read, msg, text);
+    if (!read) msg << "_min_cost " << _min_cost << "\n";
+    bin_text_read_write_fixed(model_file, (char*)&_min_cost, sizeof(_min_cost), "", read, msg, text);
 
-    if (!read) msg << "max_cost " << max_cost << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&max_cost, sizeof(max_cost), "", read, msg, text);
+    if (!read) msg << "_max_cost " << _max_cost << "\n";
+    bin_text_read_write_fixed(model_file, (char*)&_max_cost, sizeof(_max_cost), "", read, msg, text);
   }
 }
 
