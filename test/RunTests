@@ -2042,4 +2042,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbe_adf_cover_e_fixed_predict.stderr
     pred-sets/ref/cbe_adf_cover_e_fixed.predict
 
+# Test 257: cb_explore_adf with synthcover exploration
+{VW} --cb_explore_adf --synthcover --epsilon 0.01 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_synthcover.predict
+    train-sets/ref/cbe_adf_synthcover.stderr
+    pred-sets/ref/cbe_adf_synthcover.predict
+
 # Do not delete this line or the empty line above it
