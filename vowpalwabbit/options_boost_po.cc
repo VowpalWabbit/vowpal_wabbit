@@ -16,6 +16,13 @@
 
 using namespace VW::config;
 
+std::ostream& std::operator<<(std::ostream& os, const std::vector<bool>& vec)
+{
+  // The lack of & is the only different bit to the template in the header.
+  for (auto const item : vec) { os << item << ", "; }
+  return os;
+}
+
 bool is_number(const VW::string_view& s)
 {
   size_t endidx = 0;

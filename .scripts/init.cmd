@@ -35,6 +35,15 @@ IF NOT DEFINED vstestPath (
     )
 )
 
+
+IF NOT DEFINED VCPKG_INSTALLATION_ROOT (
+    ECHO ERROR: VCPKG_INSTALLATION_ROOT is not configured. Cannot find vcpkg.
+    EXIT /b 1
+)
+
+SET "VcpkgIntegration=%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\msbuild\vcpkg.targets"
+SET "flatcPath=%VCPKG_INSTALLATION_ROOT%\installed\x64-windows\tools\flatbuffers\flatc.exe"
+
 REM Repo-specific paths
 IF NOT DEFINED vwRoot (
     SET vwRoot=%~dp0..

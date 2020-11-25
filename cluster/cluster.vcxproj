@@ -104,5 +104,6 @@
     <ClInclude Include="..\vowpalwabbit\vw_exception.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
   <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>
