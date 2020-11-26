@@ -1,3 +1,4 @@
+import threading
 import argparse
 import difflib
 from pathlib import Path
@@ -176,145 +177,149 @@ def print_colored_diff(diff):
             print(line)
 
 
-async def run_command_line_test(loop, executor, command_line, comparison_files, overwrite, epsilon, dependency=None):
-    def inner_thing(command_line, comparison_files, dependency=None):
-        result = subprocess.run(
-            (f"{command_line}").split(),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
-        return_code = result.returncode
-        stdout = try_decode(result.stdout)
-        stderr = try_decode(result.stderr)
+def run_command_line_test(id, command_line, comparison_files, overwrite, epsilon, dependencies=None):
+    if dependencies is not None:
+        for dep in dependencies:
+            completed_tests.wait_for_completion(dep)
 
-        checks = dict()
-        checks["error_code"] = {
-            "success": return_code == 0,
-            "message": f"Exited with {return_code}",
-            "stdout": stdout,
-            "stderr": stderr
-        }
+    result = subprocess.run(
+        (f"{command_line}").split(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
+    return_code = result.returncode
+    stdout = try_decode(result.stdout)
+    stderr = try_decode(result.stderr)
 
-        for output_file, ref_file in comparison_files.items():
+    checks = dict()
+    checks["error_code"] = {
+        "success": return_code == 0,
+        "message": f"Exited with {return_code}",
+        "stdout": stdout,
+        "stderr": stderr
+    }
 
-            if output_file == "stdout":
-                output_content = stdout
-            elif output_file == "stderr":
-                output_content = stderr
-            else:
-                if os.path.isfile(output_file):
-                    output_content = open(output_file, 'r').read()
-                else:
-                    checks[output_file] = {
-                        "success": False,
-                        "message": f"Failed to open output file: {output_file}",
-                        "diff": []
-                    }
-                    continue
+    for output_file, ref_file in comparison_files.items():
 
-            if os.path.isfile(ref_file):
-                ref_content = open(ref_file, 'r').read()
+        if output_file == "stdout":
+            output_content = stdout
+        elif output_file == "stderr":
+            output_content = stderr
+        else:
+            if os.path.isfile(output_file):
+                output_content = open(output_file, 'r').read()
             else:
                 checks[output_file] = {
                     "success": False,
-                    "message": f"Failed to open ref file: {ref_file}",
+                    "message": f"Failed to open output file: {output_file}",
                     "diff": []
                 }
                 continue
-            are_different, diff, reason = are_outputs_different(output_content, output_file,
-                                                                ref_content, ref_file, overwrite, epsilon)
 
-            if are_different:
-                message = f"Diff not OK, {reason}"
-            else:
-                message = f"Diff OK, {reason}"
-
+        if os.path.isfile(ref_file):
+            ref_content = open(ref_file, 'r').read()
+        else:
             checks[output_file] = {
-                "success": are_different == False,
-                "message": message,
-                "diff": diff
+                "success": False,
+                "message": f"Failed to open ref file: {ref_file}",
+                "diff": []
             }
+            continue
+        are_different, diff, reason = are_outputs_different(output_content, output_file,
+                                                            ref_content, ref_file, overwrite, epsilon)
 
-        return {
-            "success": all(check["success"] == True for name, check in checks.items()),
-            "checks": checks
+        if are_different:
+            message = f"Diff not OK, {reason}"
+        else:
+            message = f"Diff OK, {reason}"
+
+        checks[output_file] = {
+            "success": are_different == False,
+            "message": message,
+            "diff": diff
         }
 
-    if dependency is not None:
-        await dependency
-    return await loop.run_in_executor(executor, inner_thing, command_line, comparison_files, dependency)
-
+    completed_tests.report_completion(id)
+    return (id, {
+        "success": all(check["success"] == True for name, check in checks.items()),
+        "checks": checks
+    })
 
 SEARCH_PATHS = ["../build/vowpalwabbit", "test",
                 "../vowpalwabbit", "vowpalwabbit", "."]
 
+class Completion():
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.condition = threading.Condition(self.lock)
+        self.completed = set()
 
-async def main():
-    parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('-t', "--test", type=int)
+    def report_completion(self, id):
+        self.lock.acquire()
+        self.completed.add(id)
+        self.condition.notify_all()
+        self.lock.release()
+
+    def wait_for_completion(self, id):
+        def is_complete():
+            return id in self.completed
+        self.lock.acquire()
+        if not is_complete():
+            self.condition.wait_for(is_complete)
+        self.lock.release()
+
+
+completed_tests = Completion()
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-t', "--test", type=int, help="Run a single test")
     parser.add_argument('-E', "--epsilon", type=float, default=1e-4)
-    parser.add_argument('-o', "--overwrite", type=bool, default=False)
+    parser.add_argument('-e', "--exit_first_fail", action='store_true')
+    parser.add_argument('-o', "--overwrite", action='store_true')
+    parser.add_argument('-j', "--jobs", type=int, default=4)
     args = parser.parse_args()
 
     vw = find_vw(SEARCH_PATHS)
 
-    loop = asyncio.get_event_loop()
-    executor = ThreadPoolExecutor()
     with open("test_spec.json", 'r') as f:
         tests = json.load(f)["tests"]
 
-    test_tasks = []
-    named_tasks = {}
-    for i, test in enumerate(tests):
-        test_number = i + 1
+    tasks = []
+    executor = ThreadPoolExecutor(max_workers=args.jobs)
+    for test in tests:
+        test_number = test["id"]
         if args.test is not None and args.test != test_number:
             continue
 
-        if "type" not in test:
-            print(
-                f"Skipping test number '{test_number}' as 'type' is missing")
-            continue
+        dependencies = None
+        if "depends_on" in test:
+            dependencies = test["depends_on"]
 
-        elif test["type"] == "vw_cmd_line" or test["type"] == "bash_script":
-            dependency = None
-            if "depends_on" in test:
-                depends_on_id = test["depends_on"]
-                if depends_on_id not in named_tasks:
-                    print(
-                        f"No task with id '{depends_on_id}' exists, specify which task is '{depends_on_id}' with `\"id\":\"{depends_on_id}\"")
-                    sys.exit(1)
-                dependency = named_tasks[test["depends_on"]]
-
-            if test["type"] == "vw_cmd_line":
-                command_line = f"{vw} {test['command_line']}"
-            elif test["type"] == "bash_script":
-                if sys.platform == "win32":
-                    print(
-                        f"Skipping test number '{test_number}' as bash_script is an unsupported type on Windows.")
-                    continue
-                command_line = test['command_line'].format(vw=vw)
-
-            this_task = asyncio.create_task(run_command_line_test(
-                loop, executor, command_line, test["comparison_files"], overwrite=args.overwrite, epsilon=args.epsilon, dependency=dependency))
-            if "id" in test:
-                this_id = test["id"]
-                if this_id in named_tasks:
-                    print(f"There already exists a test with name '{this_id}'")
-                named_tasks[this_id] = this_task
-            test_tasks.append((test_number, this_task))
+        if "bash_command" in test:
+            if sys.platform == "win32":
+                print(
+                    f"Skipping test number '{test_number}' as bash_command is unsupported on Windows.")
+                continue
+            command_line = test['bash_command'].format(VW=vw)
+        elif "vw_command" in test:
+            command_line = f"{vw} {test['vw_command']}"
         else:
-            print(
-                f"Skipping unknown test type '{test['type']}' for test number '{test_number}'")
+            print(f"{test_number} is an unknown type. Skipping...")
             continue
+
+        tasks.append(executor.submit(run_command_line_test, test_number, command_line, test["files"],
+                                 overwrite=args.overwrite, epsilon=args.epsilon, dependencies=dependencies))
 
     num_success = 0
     num_fail = 0
-    for i, task in test_tasks:
-        result = await task
+    while len(tasks) > 0:
+        test_number, result = tasks[0].result()
+        tasks.pop(0)
         success_text = f"{Color.OKGREEN}Success{Color.ENDC}"
         fail_text = f"{Color.FAIL}Fail{Color.ENDC}"
         num_success += 1 if result['success'] else 0
         num_fail += 0 if result['success'] else 1
-        print(f"Test {i}: {success_text if result['success'] else fail_text}")
+        print(f"Test {test_number}: {success_text if result['success'] else fail_text}")
         for name, check in result["checks"].items():
             print(
                 f"\t[{name}] {success_text if check['success'] else fail_text}: {check['message']}")
@@ -332,10 +337,14 @@ async def main():
                     else:
                         print_colored_diff(check["diff"])
                     print()
+                if args.exit_first_fail:
+                    for task in tasks:
+                        task.cancel()
+                    sys.exit(1)
     print(f"-----")
     print(f"# Success: {num_success}")
     print(f"# Fail: {num_fail}")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+   main()
