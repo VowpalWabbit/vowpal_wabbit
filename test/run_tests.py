@@ -320,6 +320,13 @@ def main():
         num_success += 1 if result['success'] else 0
         num_fail += 0 if result['success'] else 1
         print(f"Test {test_number}: {success_text if result['success'] else fail_text}")
+        if not result['success']:
+            test = tests[test_number - 1]
+            print(f"\tDescription: {test['desc']}")
+            if 'vw_command' in test:
+                print(f"\tvw_command: \"{test['vw_command']}\"")
+            if 'bash_command' in test:
+                print(f"\tbash_command: \"{test['bash_command']}\"")
         for name, check in result["checks"].items():
             print(
                 f"\t[{name}] {success_text if check['success'] else fail_text}: {check['message']}")
