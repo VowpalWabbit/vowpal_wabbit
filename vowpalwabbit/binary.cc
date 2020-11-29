@@ -46,8 +46,8 @@ VW::LEARNER::base_learner* binary_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  VW::LEARNER::learner<char, example>& ret = VW::LEARNER::init_learner(
-      as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, all.get_setup_name(binary_setup));
+  VW::LEARNER::learner<char, example>& ret = VW::LEARNER::init_learner(as_singleline(setup_base(options, all)),
+      predict_or_learn<true>, predict_or_learn<false>, all.get_setup_name(binary_setup));
   return make_base(ret);
 }
 

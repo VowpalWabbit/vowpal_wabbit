@@ -732,7 +732,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
     if (use_cs)
     {
       l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>,
-          all.example_parser, 1, all.get_setup_name(cbify_setup)+"-adf-cs");
+          all.example_parser, 1, all.get_setup_name(cbify_setup) + "-adf-cs");
       all.label_type = label_type_t::cs;
     }
     else
@@ -752,7 +752,8 @@ base_learner* cbify_setup(options_i& options, vw& all)
       if (use_discrete)
       {
         l = &init_learner(data, base, predict_or_learn_regression_discrete<true>,
-            predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar, all.get_setup_name(cbify_setup) + "-reg-discrete");
+            predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar,
+            all.get_setup_name(cbify_setup) + "-reg-discrete");
         l->set_finish_example(finish_example_cb_reg_discrete);
       }
       else

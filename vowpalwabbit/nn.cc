@@ -459,8 +459,8 @@ base_learner* nn_setup(options_i& options, vw& all)
   auto base = as_singleline(setup_base(options, all));
   n->increment = base->increment;  // Indexing of output layer is odd.
   nn& nv = *n.get();
-  learner<nn, example>& l =
-      init_learner(n, base, predict_or_learn_multi<true, true>, predict_or_learn_multi<false, true>, n->k + 1, all.get_setup_name(nn_setup));
+  learner<nn, example>& l = init_learner(n, base, predict_or_learn_multi<true, true>,
+      predict_or_learn_multi<false, true>, n->k + 1, all.get_setup_name(nn_setup));
   if (nv.multitask) l.set_multipredict(multipredict);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);

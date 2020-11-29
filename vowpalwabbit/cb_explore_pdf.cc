@@ -105,8 +105,9 @@ LEARNER::base_learner* cb_explore_pdf_setup(config::options_i& options, vw& all)
   p_reduction->min_value = min;
   p_reduction->max_value = max;
 
-  LEARNER::learner<cb_explore_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base),
-      predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf, all.get_setup_name(cb_explore_pdf_setup));
+  LEARNER::learner<cb_explore_pdf, example>& l =
+      init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1,
+          prediction_type_t::pdf, all.get_setup_name(cb_explore_pdf_setup));
 
   return make_base(l);
 }

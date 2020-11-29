@@ -88,17 +88,14 @@ int print_tag(std::stringstream& ss, v_array<char> tag) { return print_tag_by_re
 std::string vw::get_setup_name(reduction_setup_fn setup_fn)
 {
   const auto loc = _setup_name_map.find(setup_fn);
-  if (loc != _setup_name_map.end())
-    return loc->second;
+  if (loc != _setup_name_map.end()) return loc->second;
   return "NA";
 }
 
 void vw::map_setup_name()
 {
-  for (auto && setup_tuple : reduction_stack)
-  {
-    _setup_name_map.insert_or_assign(std::get<1>(setup_tuple), std::get<0>(setup_tuple));
-  }
+  for (auto&& setup_tuple : reduction_stack)
+  { _setup_name_map.insert_or_assign(std::get<1>(setup_tuple), std::get<0>(setup_tuple)); }
 }
 
 void print_result(VW::io::writer* f, float res, float unused, v_array<char> tag)
