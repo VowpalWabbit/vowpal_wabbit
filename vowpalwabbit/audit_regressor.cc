@@ -261,7 +261,7 @@ VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   dat->out_file->add_file(VW::io::open_file_writer(out_file));
 
   VW::LEARNER::learner<audit_regressor_data, example>& ret = VW::LEARNER::init_learner(
-      dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1, "audit");
+      dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1, all.get_setup_name(audit_regressor_setup));
   ret.set_end_examples(end_examples);
   ret.set_finish_example(finish_example);
   ret.set_finish(finish);

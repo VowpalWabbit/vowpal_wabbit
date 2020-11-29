@@ -1116,9 +1116,9 @@ base_learner* bfgs_setup(options_i& options, vw& all)
 
   learner<bfgs, example>* l;
   if (all.audit || all.hash_inv)
-    l = &init_learner(b, learn_ptr, predict<true>, all.weights.stride(), "bfgs-audit");
+    l = &init_learner(b, learn_ptr, predict<true>, all.weights.stride(), all.get_setup_name(bfgs_setup)+ "-audit");
   else
-    l = &init_learner(b, learn_ptr, predict<false>, all.weights.stride(), "bfgs");
+    l = &init_learner(b, learn_ptr, predict<false>, all.weights.stride(), all.get_setup_name(bfgs_setup));
 
   l->set_save_load(save_load);
   l->set_init_driver(init_driver);
