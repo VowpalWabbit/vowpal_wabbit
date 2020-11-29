@@ -263,7 +263,8 @@ base_learner* mwt_setup(options_i& options, vw& all)
   if (c->learn)
     if (exclude_eval)
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, true, true>,
-          predict_or_learn<true, true, false>, 1, prediction_type_t::scalars, all.get_setup_name(mwt_setup) + "-no_eval");
+          predict_or_learn<true, true, false>, 1, prediction_type_t::scalars,
+          all.get_setup_name(mwt_setup) + "-no_eval");
     else
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, false, true>,
           predict_or_learn<true, false, false>, 1, prediction_type_t::scalars, all.get_setup_name(mwt_setup) + "-eval");

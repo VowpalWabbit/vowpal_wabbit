@@ -363,9 +363,11 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels, all.get_setup_name(cs_active_setup)+"-sim")
+            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels,
+            all.get_setup_name(cs_active_setup) + "-sim")
       : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
-            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels, all.get_setup_name(cs_active_setup));
+            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels,
+            all.get_setup_name(cs_active_setup));
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);

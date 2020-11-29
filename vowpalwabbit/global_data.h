@@ -524,7 +524,8 @@ public:
   vw& operator=(const vw&&) = delete;
   std::string get_setup_name(reduction_setup_fn setup);
   void map_setup_name();
-  private:
+
+private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
 

@@ -195,8 +195,8 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   learner<cb, example>* l;
   if (eval)
   {
-    l = &init_learner(
-        data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass, all.get_setup_name(cb_algs_setup)+"-eval");
+    l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass,
+        all.get_setup_name(cb_algs_setup) + "-eval");
     l->set_finish_example(eval_finish_example);
   }
   else

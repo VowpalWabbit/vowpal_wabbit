@@ -88,8 +88,7 @@ int print_tag(std::stringstream& ss, v_array<char> tag) { return print_tag_by_re
 std::string vw::get_setup_name(reduction_setup_fn setup_fn)
 {
   const auto loc = _setup_name_map.find(setup_fn);
-  if (loc != _setup_name_map.end())
-    return loc->second;
+  if (loc != _setup_name_map.end()) return loc->second;
   return "NA";
 }
 
