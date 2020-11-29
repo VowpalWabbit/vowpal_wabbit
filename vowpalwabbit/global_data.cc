@@ -97,7 +97,7 @@ void vw::map_setup_name()
 {
   for (auto && setup_tuple : reduction_stack)
   {
-    _setup_name_map.insert_or_assign(std::get<1>(setup_tuple), std::get<0>(setup_tuple));
+    _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple);
   }
 }
 
