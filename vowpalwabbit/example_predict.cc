@@ -113,5 +113,3 @@ std::string depth_indent_string(const int32_t depth)
   str_stream << indent_str;
   return str_stream.str();
 }
-
-std::string depth_indent_string(const example_predict& ec) { return depth_indent_string(ec._current_reduction_depth); }

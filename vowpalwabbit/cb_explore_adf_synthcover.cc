@@ -213,7 +213,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       scoped_calloc_or_throw<explore_type>(epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
+      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs, "cb_explore_adf-synthcover");
 
   l.set_finish_example(explore_type::finish_multiline_example);
   l.set_save_load(explore_type::save_load);
