@@ -153,11 +153,11 @@ base_learner* active_setup(options_i& options, vw& all)
   learner<active, example>* l;
   if (options.was_supplied("simulation"))
     l = &init_learner(
-        data, base, predict_or_learn_simulation<true>, predict_or_learn_simulation<false>, "active-simulation");
+        data, base, predict_or_learn_simulation<true>, predict_or_learn_simulation<false>, all.get_setup_name(active_setup) + "-simulation");
   else
   {
     all.active = true;
-    l = &init_learner(data, base, predict_or_learn_active<true>, predict_or_learn_active<false>, "active");
+    l = &init_learner(data, base, predict_or_learn_active<true>, predict_or_learn_active<false>, all.get_setup_name(active_setup));
     l->set_finish_example(return_active_example);
   }
 

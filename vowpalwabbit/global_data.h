@@ -465,7 +465,7 @@ public:
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
+  std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
   std::vector<std::string> enabled_reductions;
 
   // Prediction output
@@ -522,6 +522,10 @@ public:
   // That pointer would be invalidated if it were to be moved.
   vw(const vw&&) = delete;
   vw& operator=(const vw&&) = delete;
+  std::string get_setup_name(reduction_setup_fn setup);
+  void map_setup_name();
+  private:
+  std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")

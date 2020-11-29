@@ -1202,8 +1202,8 @@ void load_input_model(vw& all, io_buf& io_temp)
 
 VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
-  auto setup_func = all.reduction_stack.top();
-  all.reduction_stack.pop();
+  auto setup_func = all.reduction_stack.back();
+  all.reduction_stack.pop_back();
   auto base = std::get<1>(setup_func)(options, all);
 
   // returning nullptr means that setup_func (any reduction) was not 'enabled' but
@@ -1230,17 +1230,20 @@ void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
 
   for (auto setup_fn : reductions)
   {
-    if (allowlist.count(setup_fn)) { all.reduction_stack.push(std::make_tuple(allowlist[setup_fn], setup_fn)); }
+    if (allowlist.count(setup_fn)) { all.reduction_stack.push_back(std::make_tuple(allowlist[setup_fn], setup_fn)); }
     else
     {
       auto base = setup_fn(name_extractor, dummy_all);
 
       if (base == nullptr)
-        all.reduction_stack.push(std::make_tuple(name_extractor.generated_name, setup_fn));
+        all.reduction_stack.push_back(std::make_tuple(name_extractor.generated_name, setup_fn));
       else
         THROW("fatal: under register_reduction() all setup functions must return nullptr");
     }
   }
+
+  // populate setup_fn -> name map to be used to lookup names in setup_base
+  all.map_setup_name();
 }
 
 void parse_reductions(options_i& options, vw& all)
