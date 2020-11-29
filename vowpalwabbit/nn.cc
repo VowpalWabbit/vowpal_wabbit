@@ -136,16 +136,14 @@ void finish_setup(nn& n, vw& all)
 
 void end_pass(nn& n)
 {
-  if (n.all->bfgs)
-    n.xsubi = n.save_xsubi;
+  if (n.all->bfgs) n.xsubi = n.save_xsubi;
 }
 
 template <bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
   bool shouldOutput = n.all->raw_prediction != nullptr;
-  if (!n.finished_setup)
-    finish_setup(n, *(n.all));
+  if (!n.finished_setup) finish_setup(n, *(n.all));
   shared_data sd;
   memcpy(&sd, n.all->sd, sizeof(shared_data));
   {
@@ -173,8 +171,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 
     uint64_t save_ft_offset = ec.ft_offset;
 
-    if (n.multitask)
-      ec.ft_offset = 0;
+    if (n.multitask) ec.ft_offset = 0;
 
     n.hiddenbias.ft_offset = ec.ft_offset;
 
@@ -206,8 +203,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     if (shouldOutput)
       for (unsigned int i = 0; i < n.k; ++i)
       {
-        if (i > 0)
-          outputStringStream << ' ';
+        if (i > 0) outputStringStream << ' ';
         outputStringStream << i << ':' << hidden_units[i].scalar << ','
                            << fasttanh(hidden_units[i].scalar);  // TODO: huh, what was going on here?
       }
@@ -223,7 +219,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     float save_final_prediction = 0;
     float save_ec_loss = 0;
 
-CONVERSE:  // That's right, I'm using goto.  So sue me.
+  CONVERSE:  // That's right, I'm using goto.  So sue me.
 
     n.output_layer.total_sum_feat_sq = 1;
     n.output_layer.feature_space[nn_output_namespace].sum_feat_sq = 1;
@@ -374,10 +370,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
 
     if (n.dropout && !converse)
     {
-      for (unsigned int i = 0; i < n.k; ++i)
-      {
-        dropped_out[i] = !dropped_out[i];
-      }
+      for (unsigned int i = 0; i < n.k; ++i) { dropped_out[i] = !dropped_out[i]; }
 
       converse = true;
       goto CONVERSE;

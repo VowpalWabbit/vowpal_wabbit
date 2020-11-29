@@ -59,10 +59,7 @@ struct node
   {
   }
 
-  ~node()
-  {
-    preds.delete_v();
-  }
+  ~node() { preds.delete_v(); }
 };
 
 struct recall_tree
@@ -149,15 +146,12 @@ node_pred* find_or_create(recall_tree& b, uint32_t cn, example& ec)
 
 void compute_recall_lbest(recall_tree& b, node* n)
 {
-  if (n->n <= 0)
-    return;
+  if (n->n <= 0) return;
 
   double mass_at_k = 0;
 
   for (node_pred* ls = n->preds.begin(); ls != n->preds.end() && ls < n->preds.begin() + b.max_candidates; ++ls)
-  {
-    mass_at_k += ls->label_count;
-  }
+  { mass_at_k += ls->label_count; }
 
   float f = (float)mass_at_k / (float)n->n;
   float stdf = std::sqrt(f * (1.f - f) / (float)n->n);
@@ -227,10 +221,7 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
   ec.indices.push_back(node_id_namespace);
   features& fs = ec.feature_space[node_id_namespace];
 
-  if (b.node_only)
-  {
-    fs.push_back(1., (((uint64_t)868771 * cn) << ss) & mask);
-  }
+  if (b.node_only) { fs.push_back(1., (((uint64_t)868771 * cn) << ss) & mask); }
   else
   {
     while (cn > 0)
@@ -286,8 +277,7 @@ bool is_candidate(recall_tree& b, uint32_t cn, example& ec)
   for (node_pred* ls = b.nodes[cn].preds.begin();
        ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
   {
-    if (ls->label == ec.l.multi.label)
-      return true;
+    if (ls->label == ec.l.multi.label) return true;
   }
 
   return false;
@@ -320,8 +310,7 @@ predict_type predict_from(recall_tree& b, single_learner& base, example& ec, uin
     uint32_t newcn = descend(b.nodes[cn], ec.partial_prediction);
     bool cond = stop_recurse_check(b, cn, newcn);
 
-    if (cond)
-      break;
+    if (cond) break;
 
     cn = newcn;
   }
@@ -385,8 +374,7 @@ void learn(recall_tree& b, single_learner& base, example& ec)
     {
       float which = train_node(b, base, ec, cn);
 
-      if (b.randomized_routing)
-        which = (b._random_state->get_and_update_random() > to_prob(which) ? -1.f : 1.f);
+      if (b.randomized_routing) which = (b._random_state->get_and_update_random() > to_prob(which) ? -1.f : 1.f);
 
       uint32_t newcn = descend(b.nodes[cn], which);
       bool cond = stop_recurse_check(b, cn, newcn);
@@ -401,8 +389,7 @@ void learn(recall_tree& b, single_learner& base, example& ec)
       cn = newcn;
     }
 
-    if (!b.nodes[cn].internal)
-      insert_example_at_node(b, cn, ec);
+    if (!b.nodes[cn].internal) insert_example_at_node(b, cn, ec);
 
     if (is_candidate(b, cn, ec))
     {
@@ -418,8 +405,7 @@ void learn(recall_tree& b, single_learner& base, example& ec)
       for (node_pred* ls = b.nodes[cn].preds.begin();
            ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
       {
-        if (ls->label != mc.label)
-          base.learn(ec, b.max_routers + ls->label - 1);
+        if (ls->label != mc.label) base.learn(ec, b.max_routers + ls->label - 1);
       }
 
       remove_node_id_feature(b, cn, ec);
@@ -443,10 +429,7 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
     if (read)
     {
       b.nodes.clear();
-      for (uint32_t j = 0; j < n_nodes; ++j)
-      {
-        b.nodes.push_back(node());
-      }
+      for (uint32_t j = 0; j < n_nodes; ++j) { b.nodes.push_back(node()); }
     }
 
     writeit(b.max_candidates, "max_candidates");
@@ -473,10 +456,7 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
       {
         cn->preds.clear();
 
-        for (uint32_t k = 0; k < n_preds; ++k)
-        {
-          cn->preds.push_back(node_pred(0));
-        }
+        for (uint32_t k = 0; k < n_preds; ++k) { cn->preds.push_back(node_pred(0)); }
       }
 
       for (uint32_t k = 0; k < n_preds; ++k)
@@ -487,10 +467,7 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
         writeit(pred->label_count, "label_count");
       }
 
-      if (read)
-      {
-        compute_recall_lbest(b, cn);
-      }
+      if (read) { compute_recall_lbest(b, cn); }
     }
   }
 }
@@ -533,6 +510,7 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
 
   learner<recall_tree, example>& l = init_multiclass_learner(tree, as_singleline(setup_base(options, all)), learn,
       predict, all.example_parser, tree->max_routers + tree->k, "recall_tree");
+  all.label_type = label_type_t::mc;
   l.set_save_load(save_load_tree);
 
   return make_base(l);

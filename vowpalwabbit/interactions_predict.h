@@ -95,8 +95,8 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 // it must be in header file to avoid compilation problems
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*),
     class W>  // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec,
-    R& dat,
+inline void generate_interactions(std::vector<std::vector<namespace_index>>& interactions, bool permutations,
+    example_predict& ec, R& dat,
     W& weights)  // default value removed to eliminate ambiguity in old complers
 {
   features* features_data = ec.feature_space.data();
@@ -140,21 +140,17 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
           {
             feature_index halfhash = FNV_prime * (uint64_t)first.indicies[i];
             if (audit)
-            {
-              audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS);
-            }
+            { audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS); }
             // next index differs for permutations and simple combinations
             feature_value ft_value = first.values[i];
             features::features_value_index_audit_range range = second.values_indices_audit();
             features::iterator_all begin = range.begin();
-            if (same_namespace)
-              begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1;
+            if (same_namespace) begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1;
 
             features::iterator_all end = range.end();
             inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weights, ft_value, halfhash);
 
-            if (audit)
-              audit_func(dat, nullptr);
+            if (audit) audit_func(dat, nullptr);
           }  // end for(fst)
         }    // end if (data[snd] size > 0)
       }      // end if (data[fst] size > 0)
@@ -176,9 +172,7 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
             for (size_t i = 0; i < first.indicies.size(); ++i)
             {
               if (audit)
-              {
-                audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS);
-              }
+              { audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS); }
               const uint64_t halfhash1 = FNV_prime * (uint64_t)first.indicies[i];
               const float& first_ft_value = first.values[i];
               size_t j = 0;
@@ -201,11 +195,9 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
 
                 features::iterator_all end = range.end();
                 inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weights, ft_value, halfhash);
-                if (audit)
-                  audit_func(dat, nullptr);
+                if (audit) audit_func(dat, nullptr);
               }  // end for (snd)
-              if (audit)
-                audit_func(dat, nullptr);
+              if (audit) audit_func(dat, nullptr);
             }  // end for (fst)
 
           }  // end if (data[thr] size > 0)
@@ -243,8 +235,7 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
       }
 
       // if any of interacting namespace has 0 features - whole interaction is skipped
-      if (must_skip_interaction)
-        continue;  // no_data_to_interact
+      if (must_skip_interaction) continue;  // no_data_to_interact
 
       if (!permutations)  // adjust state_data for simple combinations
       {                   // if permutations mode is disabeled then namespaces in ns are already sorted and thus grouped
@@ -268,12 +259,10 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
             {
               ++margin;  // otherwise margin can't be increased
               must_skip_interaction = loop_end < margin;
-              if (must_skip_interaction)
-                break;
+              if (must_skip_interaction) break;
             }
 
-            if (margin != 0)
-              loop_end -= margin;  // skip some features and increase margin
+            if (margin != 0) loop_end -= margin;  // skip some features and increase margin
           }
           else if (margin != 0)
             margin = 0;
@@ -282,9 +271,8 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
         // if impossible_without_permutations == true then we faced with case like interaction 'aaaa'
         // where namespace 'a' contains less than 4 unique features. It's impossible to make simple
         // combination of length 4 without repetitions from 3 or less elements.
-        if (must_skip_interaction)
-          continue;  // impossible_without_permutations
-      }              // end of state_data adjustment
+        if (must_skip_interaction) continue;  // impossible_without_permutations
+      }                                       // end of state_data adjustment
 
       fgd = state_data.begin();     // always equal to first ns
       fgd2 = state_data.end() - 1;  // always equal to last ns
@@ -319,8 +307,7 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
           else
             next_data->loop_idx = 0;
 
-          if (audit)
-            audit_func(dat, fs.space_names[feature].get());
+          if (audit) audit_func(dat, fs.space_names[feature].get());
 
           if (cur_data == fgd)  // first namespace
           {
@@ -360,8 +347,7 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
           {
             --cur_data;
             go_further = (++cur_data->loop_idx > cur_data->loop_end);  // increment loop_idx
-            if (audit)
-              audit_func(dat, nullptr);
+            if (audit) audit_func(dat, nullptr);
           } while (go_further && cur_data != fgd);
 
           do_it = !(cur_data == fgd && go_further);

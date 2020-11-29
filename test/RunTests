@@ -1129,7 +1129,7 @@ __DATA__
     train-sets/ref/library_train.stderr
 
 # Test 59: cb_adf, sharedfeatures
-{VW}  --dsjson --cb_adf -d train-sets/no_shared_features.json
+{VW}  --dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json
     train-sets/ref/no_shared_features.stderr
 
 # Test 60: empty test, bad builds (without make clean)
@@ -1222,7 +1222,7 @@ echo "" | {VW}
     train-sets/ref/cbify_bag.stderr
 
 # Test 79: cbify, cover
-{VW} --cbify 10 --cover 3 -d train-sets/multiclass
+{VW} --cbify 10 --cover 3 -d train-sets/multiclass --nounif
     train-sets/ref/cbify_cover.stderr
 
 # Test 80: lrq empty namespace
@@ -1527,13 +1527,13 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/explore_eval.predict
 
 # Test 143: Test 1 using JSON
-{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.json --json \
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.json --json --chain_hash \
     -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off
         train-sets/ref/0001.json.stderr
 
 # Test 144: cb_explore_adf with cover exploration + double robust
-{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.json --json --noconstant -p cbe_adf_cover_dr.predict
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.json --json --chain_hash --noconstant -p cbe_adf_cover_dr.predict
     train-sets/ref/cbe_adf_cover_dr.json.stderr
     pred-sets/ref/cbe_adf_cover_dr.predict
 
@@ -1543,7 +1543,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/labeled-unlabeled-mix.stderr
 
 # Test 146: cb_explore_adf with cover exploration + double robust (using more than 256 examples)
-{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test256.json --json --noconstant -p cbe_adf_cover_dr256.predict
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test256.json --json --chain_hash --noconstant -p cbe_adf_cover_dr256.predict
     train-sets/ref/cbe_adf_cover_dr256.json.stderr
     pred-sets/ref/cbe_adf_cover_dr256.predict
 
@@ -1675,53 +1675,53 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     train-sets/ref/audit2.stdout
 
-# Test 178 cb_adf, sharedfeatures
-{VW}  --dsjson --cb_adf -d train-sets/no_shared_features.json
+# Test 178: cb_adf, sharedfeatures
+{VW}  --dsjson --chain_hash --cb_adf -d train-sets/no_shared_features.json
     train-sets/ref/no_shared_features.stderr
 
-# Test 179 warm_cb warm start
+# Test 179: warm_cb warm start
 {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update -d train-sets/multiclass
     train-sets/ref/warm_cb.stderr
 
-# Test 180 warm_cb warm start with lambda set containing 0/1
+# Test 180: warm_cb warm start with lambda set containing 0/1
 {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --lambda_scheme 2 --warm_start_update --interaction_update -d train-sets/multiclass
     train-sets/ref/warm_cb_lambda_zeroone.stderr
 
-# Test 181 warm_cb warm start with warm start update turned off
+# Test 181: warm_cb warm start with warm start update turned off
 {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --interaction_update -d train-sets/multiclass
     train-sets/ref/warm_cb_no_ws_upd.stderr
 
-# Test 182 warm_cb warm start with interaction update turned off
+# Test 182: warm_cb warm start with interaction update turned off
 {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.0 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update -d train-sets/multiclass
     train-sets/ref/warm_cb_no_int_upd.stderr
 
-# Test 183 warm_cb warm start with bandit warm start type (Sim-Bandit)
+# Test 183: warm_cb warm start with bandit warm start type (Sim-Bandit)
 {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 1 --warm_start_update --interaction_update --sim_bandit -d train-sets/multiclass
     train-sets/ref/warm_cb_simbandit.stderr
 
-# Test 184 warm_cb warm start with CYC supervised corruption
+# Test 184: warm_cb warm start with CYC supervised corruption
 {VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update --interaction_update --corrupt_type_warm_start 2 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass
     train-sets/ref/warm_cb_cyc.stderr
 
-# Test 185 warm_cb warm start with input cost-sensitive examples
+# Test 185: warm_cb warm start with input cost-sensitive examples
 {VW} --warm_cb 3 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 1 --interaction 2 --choices_lambda 8 --warm_start_update --interaction_update --warm_cb_cs -d train-sets/cs_cb
     train-sets/ref/warm_cb_cs.stderr
 
-# Test 186 test counting examples with holdout_after option
+# Test 186: test counting examples with holdout_after option
 {VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat
     train-sets/ref/holdout_after.stderr
 
-# Test 187 test counting examples with holdout_after option with 2 passes on the training set
+# Test 187: test counting examples with holdout_after option with 2 passes on the training set
 {VW} -k -P 100 --holdout_after 500 -d train-sets/0002.dat -c --passes 2
     train-sets/ref/holdout_after_2passes.stderr
 
-# Test 188 test cb_adf with softmax
+# Test 188: test cb_adf with softmax
 {VW} --cb_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_adf_sm.predict --cb_type sm
     train-sets/ref/cb_adf_sm.stderr
     pred-sets/ref/cb_adf_sm.predict
 
-# Test 189 test dsjson parser correctly processes checkpoint and dangling observation lines
-{VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --cb_explore_adf -P 1
+# Test 189: test dsjson parser correctly processes checkpoint and dangling observation lines
+{VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -P 1
     train-sets/ref/b1848_dsjson_parser_regression.stderr
 
 # Test 190: one-against-all with subsampling
@@ -1776,7 +1776,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     train-sets/ref/ccb_reuse_small.stderr
 
 # Test 202: Test memory corruption issue in ccb_explore_adf where mtr was leaving a prediction behind
-{VW} --ccb_explore_adf --ring_size 20 --dsjson -d train-sets/ccb_reuse_medium.dsjson
+{VW} --ccb_explore_adf --ring_size 20 --dsjson --chain_hash -d train-sets/ccb_reuse_medium.dsjson
     train-sets/ref/ccb_reuse_medium.stderr
 
 # Test 203: Basic test of cluster. Can't use the VW replacer as it will think this is a VW command append things like --onethread
@@ -1802,7 +1802,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cache_interaction_audit.stderr
 
 # Test 207: Enable chain hash option for json example
-{VW} --audit --json -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash && \
+{VW} --audit --json --chain_hash -d train-sets/chain_hash_json_test.json --invert_hash chain_hash_json_result.cmp --chain_hash && \
     tail -n +2 chain_hash_json_result.cmp > chain_hash_json_result.cmp.new && \
         rm chain_hash_json_result.cmp && \
             mv chain_hash_json_result.cmp.new chain_hash_json_result.cmp
@@ -1857,7 +1857,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/offset_tree_002.pred
 
 # Test 216: Regression test for crash on unlabelled data
-{VW} --dsjson --slates -d train-sets/slates_simple_unlabeled.dsjson
+{VW} --dsjson --chain_hash --slates -d train-sets/slates_simple_unlabeled.dsjson
     train-sets/ref/slates_simple_unlabeled.stderr
 
 # Test 217: check plt training
@@ -1945,5 +1945,106 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} -d train-sets/big_feature_poison.dat --interactions aaaaa --noconstant --power_t 0
     train-sets/ref/big_feature_poison_2.stderr
     train-sets/ref/big_feature_poison_2.stdout
+
+# Test 237: test decision service json parsing including chain hashing
+{VW} -d train-sets/decisionservice.json --dsjson --chain_hash --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson_chain_hash.predict
+    train-sets/ref/cbe_adf_dsjson_chain_hash.stderr
+    pred-sets/ref/cbe_adf_dsjson_chain_hash.predict
+
+# Test 238: same with test 142 but with empty shared features
+{VW} --explore_eval --epsilon 0.2 -d train-sets/cb_test_with_empty_shared_feature.ldf --noconstant -p explore_eval.predict
+    train-sets/ref/explore_eval_with_empty_shared_feature.stderr
+    pred-sets/ref/explore_eval.predict
+
+# Test 239: Flatbuffer Simple Label Test
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.fb \
+    -f models/0001_1.model --invariant --flatbuffer\
+    --ngram 3 --skips 1 --holdout_off
+        train-sets/ref/0001_fb.stderr
+
+# Test 240: Flatbuffer CB Label Test
+{VW} --cb 2 -d train-sets/rcv1_raw_cb_small.fb \
+     --flatbuffer
+        train-sets/ref/rcv1_raw_cb_fb.stderr
+
+# Test 241: Flatbuffer Multilabel Test
+{VW} --multilabel_oaa 10 -d train-sets/multilabel.fb \
+     --flatbuffer
+        train-sets/ref/multilabel_fb.stderr
+
+# Test 242: Flatbuffer Mutliclass Test
+{VW} -d train-sets/multiclass.fb -k --ect 10 \
+     --flatbuffer
+         train-sets/ref/multiclass_fb.stderr
+         
+# Test 243: Flatbuffer CS Test
+{VW} -k -d train-sets/cs.fb --invariant \
+     --csoaa_ldf multiline --flatbuffer
+         train-sets/ref/cs_fb.stderr
+
+# Test 244: Flatbuffer CB_eval test
+{VW} -d train-sets/rcv1_cb_eval.fb --cb 2 --eval \
+     --flatbuffer
+         train-sets/ref/rcv1_cb_eval_fb.stderr
+
+# Test 245: Flatbuffer no label Test (LDA)
+{VW} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/no_label.fb --flatbuffer
+         train-sets/ref/no_label_fb.stderr
+
+# Test 246: Flatbuffer CCB Label Test
+{VW} --ccb_explore_adf -d train-sets/ccb.fb \
+     --flatbuffer
+         train-sets/ref/ccb_fb.stderr
+
+# Test 247: Named Labels FB Test (Based on 88)
+{VW} -d train-sets/named_label.fb --named_labels det,noun,verb \
+     --oaa 3 -k --flatbuffer -c --passes 10 --holdout_off -f models/test_named_fb.model
+         train-sets/ref/named_label_fb.stderr
+
+# Test 248: Named Labels FB at prediction (Based on 89)
+{VW} -i models/test_named_fb.model -t -d train-sets/test_named -p test_named.predict
+    train-sets/ref/named_label_test_fb.stderr
+    pred-sets/ref/test_named.predict
+
+# Test 249: cb_explore with cover epsilon decaying
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
+    train-sets/ref/cbe_cover_e_dec.stderr
+
+# Test 250: cb_explore with cover epsilon decaying predict
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict
+    train-sets/ref/cbe_cover_e_dec_predict.stderr
+    pred-sets/ref/cbe_cover_e_dec.predict
+
+# Test 251: cb_explore with cover epsilon fixed
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5
+    train-sets/ref/cbe_cover_e_fixed.stderr
+
+# Test 252: cb_explore with cover epsilon fixed predict
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed.predict
+    train-sets/ref/cbe_cover_e_fixed_predict.stderr
+    pred-sets/ref/cbe_cover_e_fixed.predict
+
+# Test 253: cb_explore_adf with cover exploration epsilon decaying
+{VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -f models/cover_adf_e_dec.model
+    train-sets/ref/cbe_adf_cover_e_dec.stderr
+
+# Test 254: cb_explore_adf with cover exploration epsilon decaying predict only
+{VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -p cbe_adf_cover_e_dec.predict -i models/cover_adf_e_dec.model -t
+    train-sets/ref/cbe_adf_cover_e_dec_predict.stderr
+    pred-sets/ref/cbe_adf_cover_e_dec.predict
+
+# Test 255: cb_explore_adf with cover epsilon fixed
+{VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf -f models/cover_adf_e_fixed.model --epsilon 0.5
+    train-sets/ref/cbe_adf_cover_e_fixed.stderr
+
+# Test 256: cb_explore_adf with cover epsilon fixed predict
+{VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf -i models/cover_adf_e_fixed.model --epsilon 0.5 -t -p cbe_adf_cover_e_fixed.predict
+    train-sets/ref/cbe_adf_cover_e_fixed_predict.stderr
+    pred-sets/ref/cbe_adf_cover_e_fixed.predict
+
+# Test 257: cb_explore_adf with synthcover exploration
+{VW} --cb_explore_adf --synthcover --epsilon 0.01 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_synthcover.predict
+    train-sets/ref/cbe_adf_synthcover.stderr
+    pred-sets/ref/cbe_adf_synthcover.predict
 
 # Do not delete this line or the empty line above it

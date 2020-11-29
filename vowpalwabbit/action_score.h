@@ -27,7 +27,7 @@ class score_iterator : public virtual std::iterator<std::random_access_iterator_
 {
   action_score* _p;
 
- public:
+public:
   score_iterator(action_score* p) : _p(p) {}
 
   score_iterator& operator++()
@@ -55,10 +55,8 @@ inline score_iterator end_scores(action_scores& a_s) { return {a_s.end()}; }
 
 inline int cmp(size_t a, size_t b)
 {
-  if (a == b)
-    return 0;
-  if (a > b)
-    return 1;
+  if (a == b) return 0;
+  if (a > b) return 1;
   return -1;
 }
 

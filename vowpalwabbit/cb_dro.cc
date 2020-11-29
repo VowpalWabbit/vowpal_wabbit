@@ -36,7 +36,8 @@ struct cb_dro_data
 
     if (is_learn)
     {
-      const auto it = std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
+      const auto it =
+          std::find_if(examples.begin(), examples.end(), [](example *item) { return !item->l.cb.costs.empty(); });
 
       if (it != examples.end())
       {
@@ -49,10 +50,11 @@ struct cb_dro_data
         // cb_adf => first action is a greedy action
 
         const auto maxit = is_explore
-                     ? std::max_element (action_scores.begin(),
-                                         action_scores.end(),
-                                         [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return ACTION_SCORE::score_comp(&a, &b) < 0; })
-                     : action_scores.begin();
+            ? std::max_element(action_scores.begin(), action_scores.end(),
+                  [](const ACTION_SCORE::action_score &a, const ACTION_SCORE::action_score &b) {
+                    return ACTION_SCORE::score_comp(&a, &b) < 0;
+                  })
+            : action_scores.begin();
         const uint32_t chosen_action = maxit->action;
 
         const float w = logged.probability > 0 ? 1 / logged.probability : 0;
@@ -68,20 +70,22 @@ struct cb_dro_data
         // save the original weights and scale the example weights
         save_weight.clear();
         save_weight.reserve(examples.size());
-        std::transform(examples.cbegin(), examples.cend(), std::back_inserter(save_weight), [](example *item) { return item->weight; });
-        std::for_each(examples.begin(), examples.end(), [qlb](example* item) { item->weight *= qlb; });
+        std::transform(examples.cbegin(), examples.cend(), std::back_inserter(save_weight),
+            [](example *item) { return item->weight; });
+        std::for_each(examples.begin(), examples.end(), [qlb](example *item) { item->weight *= qlb; });
 
         // TODO: make sure descendants "do the right thing" with example->weight
         multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
 
         // restore the original weights
         auto save_weight_it = save_weight.begin();
-        std::for_each(examples.begin(), examples.end(), [&save_weight_it](example* item) { item->weight = *save_weight_it++; });
+        std::for_each(
+            examples.begin(), examples.end(), [&save_weight_it](example *item) { item->weight = *save_weight_it++; });
       }
     }
   }
 
- private:
+private:
   VW::distributionally_robust::ChiSquared chisq;
   std::vector<float> save_weight;
 };
@@ -111,30 +115,16 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  if (options.was_supplied("no_predict"))
-  {
-    THROW("cb_dro cannot be used with no_predict");
-  }
+  if (options.was_supplied("no_predict")) { THROW("cb_dro cannot be used with no_predict"); }
 
   if (!options.was_supplied("cb_adf") && !options.was_supplied("cb_explore_adf"))
-  {
-    THROW("cb_dro requires cb_adf or cb_explore_adf");
-  }
+  { THROW("cb_dro requires cb_adf or cb_explore_adf"); }
 
-  if (alpha <= 0 || alpha >= 1)
-  {
-    THROW("cb_dro_alpha must be in (0, 1)");
-  }
+  if (alpha <= 0 || alpha >= 1) { THROW("cb_dro_alpha must be in (0, 1)"); }
 
-  if (tau <= 0 || tau > 1)
-  {
-    THROW("cb_dro_tau must be in (0, 1]");
-  }
+  if (tau <= 0 || tau > 1) { THROW("cb_dro_tau must be in (0, 1]"); }
 
-  if (wmax <= 1)
-  {
-    THROW("cb_dro_wmax must exceed 1");
-  }
+  if (wmax <= 1) { THROW("cb_dro_wmax must exceed 1"); }
 
   if (!all.logger.quiet)
   {
@@ -146,10 +136,7 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
 
   auto data = scoped_calloc_or_throw<cb_dro_data>(alpha, tau, wmax);
 
-  if (!data->isValid())
-  {
-    THROW("invalid cb_dro parameter values supplied");
-  }
+  if (!data->isValid()) { THROW("invalid cb_dro parameter values supplied"); }
 
   if (options.was_supplied("cb_explore_adf"))
   {

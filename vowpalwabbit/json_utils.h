@@ -10,7 +10,6 @@ struct DecisionServiceInteraction
   bool skipLearn{false};
 };
 
-
 template <bool audit>
 struct Namespace
 {
@@ -23,14 +22,12 @@ struct Namespace
   void AddFeature(feature_value v, feature_index i, const char* feature_name)
   {
     // filter out 0-values
-    if (v == 0)
-      return;
+    if (v == 0) return;
 
     ftrs->push_back(v, i);
     feature_count++;
 
-    if (audit)
-      ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, feature_name)));
+    if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, feature_name)));
   }
 
   void AddFeature(vw* all, const char* str)
@@ -38,8 +35,7 @@ struct Namespace
     ftrs->push_back(1., VW::hash_feature_cstr(*all, const_cast<char*>(str), namespace_hash));
     feature_count++;
 
-    if (audit)
-      ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, str)));
+    if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, str)));
   }
 
   void AddFeature(vw* all, const char* key, const char* value)
@@ -49,12 +45,11 @@ struct Namespace
 
     std::stringstream ss;
     ss << key << "^" << value;
-    if (audit)
-      ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, ss.str())));
+    if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, ss.str())));
   }
 };
 
-template<bool audit>
+template <bool audit>
 void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespaces, vw& all)
 {
   Namespace<audit> n;
@@ -66,7 +61,7 @@ void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespa
   namespaces.push_back(std::move(n));
 }
 
-template<bool audit>
+template <bool audit>
 void pop_ns(example* ex, std::vector<Namespace<audit>>& namespaces)
 {
   auto& ns = namespaces.back();
@@ -75,9 +70,7 @@ void pop_ns(example* ex, std::vector<Namespace<audit>>& namespaces)
     auto feature_group = ns.feature_group;
     // Do not insert feature_group if it already exists.
     if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
-    {
-      ex->indices.push_back(feature_group);
-    }
+    { ex->indices.push_back(feature_group); }
   }
   namespaces.pop_back();
 }

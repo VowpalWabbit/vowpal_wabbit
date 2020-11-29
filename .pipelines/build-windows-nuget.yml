@@ -7,6 +7,7 @@ pool:
 
 variables:
   SuppressTag: $[ eq(variables.officialbuild, 'true') ]
+  VCPKG_ARCHIVE_DIR: $(LOCALAPPDATA)\vcpkg\archives
 
 steps:
 - task: VisualStudioTestPlatformInstaller@1
@@ -18,6 +19,11 @@ steps:
     #username: # Optional
     #password: # Optional
     #netShare: # Required when packageFeedSelector == NetShare
+- task: Cache@2
+  inputs:
+    key: 'vcpkg | archives'
+    path: $(VCPKG_ARCHIVE_DIR)
+  displayName: Cache vcpkg dependencies
 - script: CALL .scripts/restore.cmd
   displayName: 'Restore dependencies'
   env:

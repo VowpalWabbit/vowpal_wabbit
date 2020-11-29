@@ -36,8 +36,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
     }
     else
       base.predict(ec, i);
-    if (ec.pred.scalar > 0.)
-      preds.label_v.push_back(i);
+    if (ec.pred.scalar > 0.) preds.label_v.push_back(i);
   }
   if (is_learn)
   {

@@ -65,11 +65,11 @@ private:
  * @brief Error reporting macro that takes a list of parameters
  */
 #ifndef RETURN_ERROR
-#define RETURN_ERROR(status, code)                                                           \
-  do                                                                                         \
-  {                                                                                          \
-    VW::experimental::api_status::try_update(                                                \
-        status, VW::experimental::error_code::code, VW::experimental::error_code::code##_s); \
-    return VW::experimental::error_code::code;                                               \
-  } while (0);
+#  define RETURN_ERROR(status, code)                                                           \
+    do                                                                                         \
+    {                                                                                          \
+      VW::experimental::api_status::try_update(                                                \
+          status, VW::experimental::error_code::code, VW::experimental::error_code::code##_s); \
+      return VW::experimental::error_code::code;                                               \
+    } while (0);
 #endif

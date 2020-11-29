@@ -24,11 +24,11 @@ namespace first
 {
 struct cb_explore_adf_first
 {
- private:
+private:
   size_t _tau;
   float _epsilon;
 
- public:
+public:
   cb_explore_adf_first(size_t tau, float epsilon);
   ~cb_explore_adf_first() = default;
 
@@ -36,7 +36,7 @@ struct cb_explore_adf_first
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
- private:
+private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
@@ -59,8 +59,7 @@ void cb_explore_adf_first::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   {
     float prob = 1.f / (float)num_actions;
     for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
-    if (is_learn)
-      _tau--;
+    if (is_learn) _tau--;
   }
   else
   {
@@ -89,10 +88,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf"))
-  {
-    options.insert("cb_adf", "");
-  }
+  if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
@@ -105,10 +101,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   using explore_type = cb_explore_adf_base<cb_explore_adf_first>;
   auto data = scoped_calloc_or_throw<explore_type>(tau, epsilon);
 
-  if (epsilon < 0.0 || epsilon > 1.0)
-  {
-    THROW("The value of epsilon must be in [0,1]");
-  }
+  if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(data, base, explore_type::learn,
       explore_type::predict, problem_multiplier, prediction_type_t::action_probs, "cb_explore_adf-first");

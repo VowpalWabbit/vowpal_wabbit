@@ -52,8 +52,7 @@ bool baseline_enabled(example* ec)
   auto& fs = ec->feature_space[message_namespace];
   for (auto& f : fs)
   {
-    if (f.index() == baseline_enabled_idx)
-      return f.value() == 1;
+    if (f.index() == baseline_enabled_idx) return f.value() == 1;
   }
   return false;
 }
@@ -78,8 +77,7 @@ struct baseline
 
 void init_global(baseline& data)
 {
-  if (!data.global_only)
-    return;
+  if (!data.global_only) return;
   // use a separate global constant
   data.ec->indices.push_back(constant_namespace);
   // different index from constant to avoid conflicts
@@ -138,8 +136,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
       if (multiplier == 0)
       {
         multiplier = std::max(0.0001f, std::max(std::abs(data.all->sd->min_label), std::abs(data.all->sd->max_label)));
-        if (multiplier > max_multiplier)
-          multiplier = max_multiplier;
+        if (multiplier > max_multiplier) multiplier = max_multiplier;
       }
       data.all->eta *= multiplier;
       base.learn(*data.ec);
@@ -166,11 +163,9 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
 float sensitivity(baseline& data, base_learner& base, example& ec)
 {
   // no baseline if check_enabled is true and example contains flag
-  if (data.check_enabled && !BASELINE::baseline_enabled(&ec))
-    return base.sensitivity(ec);
+  if (data.check_enabled && !BASELINE::baseline_enabled(&ec)) return base.sensitivity(ec);
 
-  if (!data.global_only)
-    THROW("sensitivity for baseline without --global_only not implemented");
+  if (!data.global_only) THROW("sensitivity for baseline without --global_only not implemented");
 
   // sensitivity of baseline term
   VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
@@ -217,8 +212,7 @@ base_learner* baseline_setup(options_i& options, vw& all)
   data->all = &all;
 
   auto loss_function_type = all.loss->getType();
-  if (loss_function_type != "logistic")
-    data->lr_scaling = true;
+  if (loss_function_type != "logistic") data->lr_scaling = true;
 
   auto base = as_singleline(setup_base(options, all));
 

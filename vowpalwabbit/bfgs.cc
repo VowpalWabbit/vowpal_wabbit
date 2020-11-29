@@ -10,7 +10,7 @@ Implementation by Miro Dudik.
 #include <fstream>
 #include <float.h>
 #ifndef _WIN32
-#include <netdb.h>
+#  include <netdb.h>
 #endif
 #include <string.h>
 #include <stdio.h>
@@ -204,8 +204,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
   // compute direction magnitude
   double ret = 0.;
 
-  if (regularizer == 0.)
-    return ret;
+  if (regularizer == 0.) return ret;
 
   if (all.weights.sparse)
     return regularizer_direction_magnitude(all, b, regularizer, all.weights.sparse_weights);
@@ -243,8 +242,7 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
   {
     float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
-    if (b.m > 0)
-      mem1[(MEM_XT + origin) % b.mem_stride] = (&(*w))[W_XT];
+    if (b.m > 0) mem1[(MEM_XT + origin) % b.mem_stride] = (&(*w))[W_XT];
     mem1[(MEM_GT + origin) % b.mem_stride] = (&(*w))[W_GT];
     g1_Hg1 += ((double)(&(*w))[W_GT]) * ((&(*w))[W_GT]) * ((&(*w))[W_COND]);
     g1_g1 += ((double)((&(*w))[W_GT])) * ((&(*w))[W_GT]);
@@ -287,8 +285,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 
     float beta = (float)(g_Hy / g_Hg);
 
-    if (beta < 0.f || std::isnan(beta))
-      beta = 0.f;
+    if (beta < 0.f || std::isnan(beta)) beta = 0.f;
 
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
     {
@@ -299,14 +296,12 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
       (&(*w))[W_DIR] -= ((&(*w))[W_COND]) * ((&(*w))[W_GT]);
       (&(*w))[W_GT] = 0;
     }
-    if (!all.logger.quiet)
-      fprintf(stderr, "%f\t", beta);
+    if (!all.logger.quiet) fprintf(stderr, "%f\t", beta);
     return;
   }
   else
   {
-    if (!all.logger.quiet)
-      fprintf(stderr, "%-10s\t", "");
+    if (!all.logger.quiet) fprintf(stderr, "%-10s\t", "");
   }
 
   // implement bfgs
@@ -326,8 +321,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     s_q += ((double)mem1[(MEM_ST + origin) % b.mem_stride]) * ((&(*w))[W_GT]);
   }
 
-  if (y_s <= 0. || y_Hy <= 0.)
-    throw curv_ex;
+  if (y_s <= 0. || y_Hy <= 0.) throw curv_ex;
   rho[0] = 1 / y_s;
 
   float gamma = (float)(y_s / y_Hy);
@@ -499,27 +493,22 @@ void finalize_preconditioner(vw& /* all */, bfgs& b, float regularization, T& we
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
     {
       (&(*w))[W_COND] += regularization;
-      if ((&(*w))[W_COND] > max_hessian)
-        max_hessian = (&(*w))[W_COND];
-      if ((&(*w))[W_COND] > 0)
-        (&(*w))[W_COND] = 1.f / (&(*w))[W_COND];
+      if ((&(*w))[W_COND] > max_hessian) max_hessian = (&(*w))[W_COND];
+      if ((&(*w))[W_COND] > 0) (&(*w))[W_COND] = 1.f / (&(*w))[W_COND];
     }
   else
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
     {
       (&(*w))[W_COND] += b.regularizers[2 * (w.index() >> weights.stride_shift())];
-      if ((&(*w))[W_COND] > max_hessian)
-        max_hessian = (&(*w))[W_COND];
-      if ((&(*w))[W_COND] > 0)
-        (&(*w))[W_COND] = 1.f / (&(*w))[W_COND];
+      if ((&(*w))[W_COND] > max_hessian) max_hessian = (&(*w))[W_COND];
+      if ((&(*w))[W_COND] > 0) (&(*w))[W_COND] = 1.f / (&(*w))[W_COND];
     }
 
   float max_precond = (max_hessian == 0.f) ? 0.f : max_precond_ratio / max_hessian;
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
   {
-    if (std::isinf(*w) || *w > max_precond)
-      (&(*w))[W_COND] = max_precond;
+    if (std::isinf(*w) || *w > max_precond) (&(*w))[W_COND] = max_precond;
   }
 }
 void finalize_preconditioner(vw& all, bfgs& b, float regularization)
@@ -539,22 +528,19 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization, T& we
   {
     b.regularizers = calloc_or_throw<weight>(2 * length);
 
-    if (b.regularizers == nullptr)
-      THROW("Failed to allocate weight array: try decreasing -b <bits>");
+    if (b.regularizers == nullptr) THROW("Failed to allocate weight array: try decreasing -b <bits>");
 
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
     {
       uint64_t i = w.index() >> weights.stride_shift();
       b.regularizers[2 * i] = regularization;
-      if ((&(*w))[W_COND] > 0.f)
-        b.regularizers[2 * i] += 1.f / (&(*w))[W_COND];
+      if ((&(*w))[W_COND] > 0.f) b.regularizers[2 * i] += 1.f / (&(*w))[W_COND];
     }
   }
   else
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
     {
-      if ((&(*w))[W_COND] > 0.f)
-        b.regularizers[2 * (w.index() >> weights.stride_shift())] += 1.f / (&(*w))[W_COND];
+      if ((&(*w))[W_COND] > 0.f) b.regularizers[2 * (w.index() >> weights.stride_shift())] += 1.f / (&(*w))[W_COND];
     }
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
@@ -655,8 +641,7 @@ int process_pass(vw& all, bfgs& b)
       b.loss_sum = accumulate_scalar(all, temp);  // Accumulate loss_sums
       accumulate(all, all.weights, 1);            // Accumulate gradients from all nodes
     }
-    if (all.l2_lambda > 0.)
-      b.loss_sum += add_regularization(all, b, all.l2_lambda);
+    if (all.l2_lambda > 0.) b.loss_sum += add_regularization(all, b, all.l2_lambda);
     if (!all.logger.quiet)
       fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)b.current_pass + 1, b.loss_sum / b.importance_weight_sum);
 
@@ -674,9 +659,9 @@ int process_pass(vw& all, bfgs& b)
       b.step_size = 0.5;
       float d_mag = direction_magnitude(all);
       b.t_end_global = std::chrono::system_clock::now();
-      b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-      if (!all.logger.quiet)
-        fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
+      b.net_time = static_cast<double>(
+          std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
+      if (!all.logger.quiet) fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
       b.predictions.clear();
       update_weight(all, b.step_size);
     }
@@ -693,8 +678,7 @@ int process_pass(vw& all, bfgs& b)
       b.loss_sum = accumulate_scalar(all, t);  // Accumulate loss_sums
       accumulate(all, all.weights, 1);         // Accumulate gradients from all nodes
     }
-    if (all.l2_lambda > 0.)
-      b.loss_sum += add_regularization(all, b, all.l2_lambda);
+    if (all.l2_lambda > 0.) b.loss_sum += add_regularization(all, b, all.l2_lambda);
     if (!all.logger.quiet)
     {
       if (!all.holdout_set_off && b.current_pass >= 1)
@@ -732,10 +716,10 @@ int process_pass(vw& all, bfgs& b)
     {
       // curvature violated, or we stepped too far last time: step back
       b.t_end_global = std::chrono::system_clock::now();
-      b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
+      b.net_time = static_cast<double>(
+          std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
       float ratio = (b.step_size == 0.f) ? 0.f : (float)new_step / (float)b.step_size;
-      if (!all.logger.quiet)
-        fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step);
+      if (!all.logger.quiet) fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step);
       b.predictions.clear();
       update_weight(all, (float)(-b.step_size + new_step));
       b.step_size = (float)new_step;
@@ -783,9 +767,9 @@ int process_pass(vw& all, bfgs& b)
       {
         float d_mag = direction_magnitude(all);
         b.t_end_global = std::chrono::system_clock::now();
-        b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-        if (!all.logger.quiet)
-          fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
+        b.net_time = static_cast<double>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
+        if (!all.logger.quiet) fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
         b.predictions.clear();
         update_weight(all, b.step_size);
       }
@@ -802,8 +786,7 @@ int process_pass(vw& all, bfgs& b)
       float t = (float)b.curvature;
       b.curvature = accumulate_scalar(all, t);  // Accumulate curvatures
     }
-    if (all.l2_lambda > 0.)
-      b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda);
+    if (all.l2_lambda > 0.) b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda);
     float dd = (float)derivative_in_direction(all, b, b.mem, b.origin);
     if (b.curvature == 0. && dd != 0.)
     {
@@ -825,7 +808,8 @@ int process_pass(vw& all, bfgs& b)
     b.predictions.clear();
     update_weight(all, b.step_size);
     b.t_end_global = std::chrono::system_clock::now();
-    b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
+    b.net_time = static_cast<double>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
     if (!all.logger.quiet)
       fprintf(stderr, "%-10.5f\t%-10.5f\t%-.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
@@ -837,23 +821,21 @@ int process_pass(vw& all, bfgs& b)
 
   if (b.output_regularizer)  // need to accumulate and place the regularizer.
   {
-    if (all.all_reduce != nullptr)
-      accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
+    if (all.all_reduce != nullptr) accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
     // preconditioner_to_regularizer(all, b, all.l2_lambda);
   }
   b.t_end_global = std::chrono::system_clock::now();
-  b.net_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
+  b.net_time = static_cast<double>(
+      std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
-  if (all.save_per_pass)
-    save_predictor(all, all.final_regressor_name, b.current_pass);
+  if (all.save_per_pass) save_predictor(all, all.final_regressor_name, b.current_pass);
   return status;
 }
 
 void process_example(vw& all, bfgs& b, example& ec)
 {
   label_data& ld = ec.l.simple;
-  if (b.first_pass)
-    b.importance_weight_sum += ec.weight;
+  if (b.first_pass) b.importance_weight_sum += ec.weight;
 
   /********************************************************************/
   /* I) GRADIENT CALCULATION ******************************************/
@@ -881,8 +863,7 @@ void process_example(vw& all, bfgs& b, example& ec)
   }
   ec.updated_prediction = ec.pred.scalar;
 
-  if (b.preconditioner_pass)
-    update_preconditioner(all, ec);  // w[3]
+  if (b.preconditioner_pass) update_preconditioner(all, ec);  // w[3]
 }
 
 void end_pass(bfgs& b)
@@ -911,10 +892,7 @@ void end_pass(bfgs& b)
       }
 
       // attain convergence before reaching max iterations
-      if (status != LEARN_OK && b.final_pass > b.current_pass)
-      {
-        b.final_pass = b.current_pass;
-      }
+      if (status != LEARN_OK && b.final_pass > b.current_pass) { b.final_pass = b.current_pass; }
       else
       {
         // Not converged yet.
@@ -923,8 +901,7 @@ void end_pass(bfgs& b)
       }
       if (!all->holdout_set_off)
       {
-        if (summarize_holdout_set(*all, b.no_win_counter))
-          finalize_regressor(*all, all->final_regressor_name);
+        if (summarize_holdout_set(*all, b.no_win_counter)) finalize_regressor(*all, all->final_regressor_name);
         if (b.early_stop_thres == b.no_win_counter)
         {
           set_done(*all);
@@ -948,8 +925,7 @@ void predict(bfgs& b, base_learner&, example& ec)
 {
   vw* all = b.all;
   ec.pred.scalar = bfgs_predict(*all, ec);
-  if (audit)
-    GD::print_audit_features(*(b.all), ec);
+  if (audit) GD::print_audit_features(*(b.all), ec);
 }
 
 template <bool audit>
@@ -973,8 +949,7 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
   uint32_t i = 0;
   size_t brw = 1;
 
-  if (b.output_regularizer && !read)
-    preconditioner_to_regularizer(*(b.all), b, b.all->l2_lambda);
+  if (b.output_regularizer && !read) preconditioner_to_regularizer(*(b.all), b, b.all->l2_lambda);
 
   do
   {
@@ -1005,12 +980,10 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
         brw += bin_text_write_fixed(model_file, (char*)v, sizeof(*v), msg, text);
       }
     }
-    if (!read)
-      i++;
+    if (!read) i++;
   } while ((!read && i < length) || (read && brw > 0));
 
-  if (read)
-    regularizer_to_weight(all, b);
+  if (read) regularizer_to_weight(all, b);
 }
 
 void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
@@ -1025,8 +998,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     if (all->per_feature_regularizer_input != "")
     {
       b.regularizers = calloc_or_throw<weight>(2 * length);
-      if (b.regularizers == nullptr)
-        THROW("Failed to allocate regularizers array: try decreasing -b <bits>");
+      if (b.regularizers == nullptr) THROW("Failed to allocate regularizers array: try decreasing -b <bits>");
     }
     int m = b.m;
 
@@ -1056,8 +1028,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
       std::cerr.precision(5);
     }
 
-    if (b.regularizers != nullptr)
-      all->l2_lambda = 1;  // To make sure we are adding the regularization
+    if (b.regularizers != nullptr) all->l2_lambda = 1;  // To make sure we are adding the regularization
     b.output_regularizer = (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
     reset_state(*all, b, false);
   }
@@ -1118,8 +1089,7 @@ base_learner* bfgs_setup(options_i& options, vw& all)
     b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
-  if (b->m == 0)
-    all.hessian_on = true;
+  if (b->m == 0) all.hessian_on = true;
 
   if (!all.logger.quiet)
   {
@@ -1133,8 +1103,7 @@ base_learner* bfgs_setup(options_i& options, vw& all)
       b->all->trace_message << "**without** curvature calculation" << std::endl;
   }
 
-  if (all.numpasses < 2 && all.training)
-    THROW("you must make at least 2 passes to use BFGS");
+  if (all.numpasses < 2 && all.training) THROW("you must make at least 2 passes to use BFGS");
 
   all.bfgs = true;
   all.weights.stride_shift(2);

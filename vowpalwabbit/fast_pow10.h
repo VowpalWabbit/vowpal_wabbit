@@ -33,17 +33,20 @@ const constexpr uint8_t VALUES_ABOVE_ZERO = FLT_MAX_10_EXP;
 
 constexpr float constexpr_int_pow10(uint8_t exponent)
 {
-  return exponent > VALUES_ABOVE_AND_INCLUDING_ZERO ? std::numeric_limits<float>::infinity()
-                                               : exponent == 0 ? 1 : POW10_BASE * constexpr_int_pow10(exponent - 1);
+  return exponent > VALUES_ABOVE_AND_INCLUDING_ZERO
+      ? std::numeric_limits<float>::infinity()
+      : exponent == 0 ? 1 : POW10_BASE * constexpr_int_pow10(exponent - 1);
 }
 
 constexpr float constexpr_negative_int_pow10(uint8_t exponent)
 {
-  return exponent > VALUES_BELOW_ZERO ? 0.f : exponent == 0 ? 1 : constexpr_negative_int_pow10(exponent - 1) / POW10_BASE;
+  return exponent > VALUES_BELOW_ZERO ? 0.f
+                                      : exponent == 0 ? 1 : constexpr_negative_int_pow10(exponent - 1) / POW10_BASE;
 }
 
-// This function is a simple workaround for the fact it is tricky to generate compile time sequences of numbers that count down to zero from a number instead of up to a number.
-// Please feel free to remove this if a decreasing sequence can be used instead
+// This function is a simple workaround for the fact it is tricky to generate compile time sequences of numbers that
+// count down to zero from a number instead of up to a number. Please feel free to remove this if a decreasing sequence
+// can be used instead
 constexpr float constexpr_negative_int_pow10_with_offset(uint8_t exponent, uint8_t offset)
 {
   return constexpr_negative_int_pow10(offset - exponent);
@@ -83,17 +86,17 @@ static constexpr std::array<float, VALUES_BELOW_ZERO> pow_10_negative_lookup_tab
 
 }  // namespace details
 
-// std::array::operator[] const is made constexpr in C++14, so this can only be guaranteed to be constexpr when this standard
-// is used.
+// std::array::operator[] const is made constexpr in C++14, so this can only be guaranteed to be constexpr when this
+// standard is used.
 VW_STD14_CONSTEXPR inline float fast_pow10(int8_t exponent)
 {
   // If the result would be above the range float can represent, return inf.
   return exponent > details::VALUES_ABOVE_ZERO ? std::numeric_limits<float>::infinity()
-                                          : (exponent < -1 * details::VALUES_BELOW_ZERO)
+                                               : (exponent < -1 * details::VALUES_BELOW_ZERO)
           ? 0.f
           : exponent >= 0 ? details::pow_10_positive_lookup_table[static_cast<size_t>(exponent)]
-                     : details::pow_10_negative_lookup_table[static_cast<size_t>(exponent) +
-                           static_cast<size_t>(details::VALUES_BELOW_ZERO)];
+                          : details::pow_10_negative_lookup_table[static_cast<size_t>(exponent) +
+                                static_cast<size_t>(details::VALUES_BELOW_ZERO)];
 }
 
 }  // namespace VW
