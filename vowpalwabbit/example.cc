@@ -414,5 +414,8 @@ restore_prediction::~restore_prediction() { _ec.pred = _prediction; }
 
 }  // namespace VW
 
-std::string debug_depth_indent_string(const example& ec) { return debug_depth_indent_string(ec._debug_current_reduction_depth); }
+std::string debug_depth_indent_string(const example& ec)
+{
+  return debug_depth_indent_string(ec._debug_current_reduction_depth);
+}
 std::string debug_depth_indent_string(const multi_ex& ec) { return debug_depth_indent_string(*ec[0]); }
