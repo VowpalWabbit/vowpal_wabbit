@@ -217,7 +217,10 @@ public:
   using end_fptr_type = void (*)(vw&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
-  void debug_log_message(example& ec, const std::string& msg) { VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl; }
+  void debug_log_message(example& ec, const std::string& msg)
+  {
+    VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl;
+  }
 
   void debug_log_message(multi_ex& ec, const std::string& msg)
   {
