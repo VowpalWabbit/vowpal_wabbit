@@ -243,7 +243,7 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
         all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
       // the three boolean template parameters are: is_learn, print_all and scores
       l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, true>,
-          predict_or_learn<false, false, true, true>, all.example_parser, data->k, "oaa-prob",
+          predict_or_learn<false, false, true, true>, all.example_parser, data->k, all.get_setup_name(oaa_setup)+"-prob",
           prediction_type_t::scalars);
       all.label_type = label_type_t::mc;
       all.sd->report_multiclass_log_loss = true;
@@ -252,7 +252,7 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     else
     {
       l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, false>,
-          predict_or_learn<false, false, true, false>, all.example_parser, data->k, "oaa-scores",
+          predict_or_learn<false, false, true, false>, all.example_parser, data->k, all.get_setup_name(oaa_setup) + "-scores",
           prediction_type_t::scalars);
       all.label_type = label_type_t::mc;
       l->set_finish_example(finish_example_scores<false>);
@@ -261,14 +261,14 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
   else if (all.raw_prediction != nullptr)
   {
     l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
-        predict_or_learn<false, true, false, false>, all.example_parser, data->k, "oaa-raw",
+        predict_or_learn<false, true, false, false>, all.example_parser, data->k, all.get_setup_name(oaa_setup) + "-raw",
         prediction_type_t::multiclass);
     all.label_type = label_type_t::mc;
   }
   else
   {
     l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, false, false>,
-        predict_or_learn<false, false, false, false>, all.example_parser, data->k, "oaa",
+        predict_or_learn<false, false, false, false>, all.example_parser, data->k, all.get_setup_name(oaa_setup),
         prediction_type_t::multiclass);
     all.label_type = label_type_t::mc;
   }
