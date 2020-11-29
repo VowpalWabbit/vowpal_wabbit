@@ -126,37 +126,37 @@ inline float noop_sensitivity(void*, base_learner&, example&)
 }
 float recur_sensitivity(void*, base_learner&, example&);
 
-inline void increment_depth(example& ex) { ++ex._current_reduction_depth; }
+inline void debug_increment_depth(example& ex) { ++ex._debug_current_reduction_depth; }
 
-inline void increment_depth(multi_ex& ec_seq)
+inline void debug_increment_depth(multi_ex& ec_seq)
 {
-  for (auto& ec : ec_seq) { ++ec->_current_reduction_depth; }
+  for (auto& ec : ec_seq) { ++ec->_debug_current_reduction_depth; }
 }
 
-inline void decrement_depth(example& ex) { --ex._current_reduction_depth; }
+inline void debug_decrement_depth(example& ex) { --ex._debug_current_reduction_depth; }
 
-inline void decrement_depth(multi_ex& ec_seq)
+inline void debug_decrement_depth(multi_ex& ec_seq)
 {
-  for (auto& ec : ec_seq) { --ec->_current_reduction_depth; }
+  for (auto& ec : ec_seq) { --ec->_debug_current_reduction_depth; }
 }
 
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
 {
   ex.ft_offset += static_cast<uint32_t>(increment * i);
-  increment_depth(ex);
+  debug_increment_depth(ex);
 }
 
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
   for (auto& ec : ec_seq) { ec->ft_offset += static_cast<uint32_t>(increment * i); }
-  increment_depth(ec_seq);
+  debug_increment_depth(ec_seq);
 }
 
 inline void decrement_offset(example& ex, const size_t increment, const size_t i)
 {
   assert(ex.ft_offset >= increment * i);
   ex.ft_offset -= static_cast<uint32_t>(increment * i);
-  decrement_depth(ex);
+  debug_decrement_depth(ex);
 }
 
 inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
@@ -166,7 +166,7 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
     assert(ec->ft_offset >= increment * i);
     ec->ft_offset -= static_cast<uint32_t>(increment * i);
   }
-  decrement_depth(ec_seq);
+  debug_decrement_depth(ec_seq);
 }
 
 /// \brief Defines the interface for a learning algorithm.
@@ -217,9 +217,9 @@ public:
   using end_fptr_type = void (*)(vw&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
-  void log_message(example& ec, const std::string& msg) { VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl; }
+  void debug_log_message(example& ec, const std::string& msg) { VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl; }
 
-  void log_message(multi_ex& ec, const std::string& msg)
+  void debug_log_message(multi_ex& ec, const std::string& msg)
   {
     VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
   }
@@ -237,7 +237,7 @@ public:
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
-    log_message(ec, "learn");
+    debug_log_message(ec, "learn");
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     decrement_offset(ec, increment, i);
   }
@@ -256,7 +256,7 @@ public:
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
-    log_message(ec, "predict");
+    debug_log_message(ec, "predict");
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     decrement_offset(ec, increment, i);
   }
@@ -268,7 +268,7 @@ public:
     if (learn_fd.multipredict_f == NULL)
     {
       increment_offset(ec, increment, lo);
-      log_message(ec, "multipredict");
+      debug_log_message(ec, "multipredict");
       for (size_t c = 0; c < count; c++)
       {
         learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
@@ -285,7 +285,7 @@ public:
     else
     {
       increment_offset(ec, increment, lo);
-      log_message(ec, "multipredict");
+      debug_log_message(ec, "multipredict");
       learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, (void*)&ec, count, increment, pred, finalize_predictions);
       decrement_offset(ec, increment, lo);
     }
@@ -321,7 +321,7 @@ public:
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
-    log_message(ec, "update");
+    debug_log_message(ec, "update");
     learn_fd.update_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     decrement_offset(ec, increment, i);
   }
@@ -346,7 +346,7 @@ public:
   inline float sensitivity(example& ec, size_t i = 0)
   {
     increment_offset(ec, increment, i);
-    log_message(ec, "sensitivity");
+    debug_log_message(ec, "sensitivity");
     const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, ec);
     decrement_offset(ec, increment, i);
     return ret;
@@ -430,7 +430,7 @@ public:
   // called after learn example for each example.  Explicitly not recursive.
   inline void finish_example(vw& all, E& ec)
   {
-    log_message(ec, "finish_example");
+    debug_log_message(ec, "finish_example");
     finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
   }
   // called after learn example for each example.  Explicitly not recursive.

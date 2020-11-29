@@ -199,7 +199,7 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->interactions = src->interactions;
-  dst->_current_reduction_depth = src->_current_reduction_depth;
+  dst->_debug_current_reduction_depth = src->_debug_current_reduction_depth;
 }
 
 void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
@@ -414,5 +414,5 @@ restore_prediction::~restore_prediction() { _ec.pred = _prediction; }
 
 }  // namespace VW
 
-std::string depth_indent_string(const example& ec) { return depth_indent_string(ec._current_reduction_depth); }
-std::string depth_indent_string(const multi_ex& ec) { return depth_indent_string(*ec[0]); }
+std::string debug_depth_indent_string(const example& ec) { return debug_depth_indent_string(ec._debug_current_reduction_depth); }
+std::string debug_depth_indent_string(const multi_ex& ec) { return debug_depth_indent_string(*ec[0]); }

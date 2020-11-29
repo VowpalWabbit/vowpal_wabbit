@@ -101,7 +101,7 @@ std::string features_to_string(const example_predict& ec)
   return strstream.str();
 }
 
-std::string depth_indent_string(const int32_t depth)
+std::string debug_depth_indent_string(const int32_t depth)
 {
   constexpr const char* indent_str = "- ";
   constexpr const char* space_str = "  ";
