@@ -130,7 +130,7 @@ base_learner* csoaa_setup(options_i& options, vw& all)
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
 
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
-      predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass, "csoaa");
+      predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass, all.get_setup_name(csoaa_setup));
   all.example_parser->lbl_parser = cs_label;
   all.label_type = label_type_t::cs;
 
@@ -858,21 +858,21 @@ base_learner* csldf_setup(options_i& options, vw& all)
   ld->label_features.reserve(256);
   prediction_type_t pred_type;
 
-  std::string name;
+  std::string name = all.get_setup_name(csldf_setup);
   if (ld->rank)
   {
     pred_type = prediction_type_t::action_scores;
-    name = "csoaa_ldf_rank";
+    name += "-ldf_rank";
   }
   else if (ld->is_probabilities)
   {
     pred_type = prediction_type_t::prob;
-    name = "csoaa_ldf_prob";
+    name += "-ldf_prob";
   }
   else
   {
     pred_type = prediction_type_t::multiclass;
-    name = "csoaa_ldf";
+    name += "-ldf";
   }
 
   ld->read_example_this_loop = 0;
