@@ -94,10 +94,7 @@ std::string vw::get_setup_name(reduction_setup_fn setup_fn)
 
 void vw::map_setup_name()
 {
-  for (auto && setup_tuple : reduction_stack)
-  {
-    _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple);
-  }
+  for (auto&& setup_tuple : reduction_stack) { _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple); }
 }
 
 void print_result(VW::io::writer* f, float res, float unused, v_array<char> tag)
