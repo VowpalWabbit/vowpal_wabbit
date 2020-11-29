@@ -1269,7 +1269,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
     learner<memory_tree, example>& l = init_learner(tree, as_singleline(setup_base(options, all)), learn, predict,
-        num_learners, prediction_type_t::multilabels, "memory_tree-multi");
+        num_learners, prediction_type_t::multilabels, all.get_setup_name(memory_tree_setup));
 
     // all.p->lp = MULTILABEL::multilabel;
     // all.label_type = label_type_t::multi;

@@ -2840,7 +2840,7 @@ base_learner* setup(options_i& options, vw& all)
   cdbg << "num_learners = " << priv.num_learners << endl;
 
   learner<search, multi_ex>& l = init_learner(sch, make_base(*base), do_actual_learning<true>,
-      do_actual_learning<false>, priv.total_number_of_policies * priv.num_learners, "search");
+      do_actual_learning<false>, priv.total_number_of_policies * priv.num_learners, all.get_setup_name(setup));
 
   l.set_finish_example(finish_multiline_example);
   l.set_end_examples(end_examples);
