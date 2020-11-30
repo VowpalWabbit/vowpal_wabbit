@@ -8,5 +8,5 @@ Description: @VW_PROJECT_DESCRIPTION@ (C wrapper)
 URL: @VW_PROJECT_URL@
 Version: @PACKAGE_VERSION@
 Requires: libvw
-Libs: -L${libdir} -lvw_c_wrapper
+Libs: -L${libdir} -lvw_c_wrapper @BOOST_LINK_LIBRARIES@
 Cflags: -I${includedir}
