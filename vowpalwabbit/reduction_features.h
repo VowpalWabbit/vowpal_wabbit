@@ -4,7 +4,7 @@
 
 #pragma once
 #include "ccb_reduction_features.h"
-#include "prob_dist_cont.h"
+#include "continuous_actions_reduction_features.h"
 
 /*
  * class reduction_features

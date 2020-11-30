@@ -48,23 +48,5 @@ void delete_probability_density_function(void* v)
   pdf->delete_v();
 }
 
-reduction_features::reduction_features()
-{
-  pdf = v_init<pdf_segment>();
-  chosen_action = std::numeric_limits<float>::quiet_NaN();
-}
-
-reduction_features::~reduction_features() { pdf.delete_v(); }
-
-bool reduction_features::is_chosen_action_set() const { return !std::isnan(chosen_action); }
-
-bool reduction_features::is_pdf_set() const { return pdf.size() > 0; }
-
-void reduction_features::clear()
-{
-  pdf.clear();
-  chosen_action = std::numeric_limits<float>::quiet_NaN();
-}
-
 }  // namespace continuous_actions
 }  // namespace VW

@@ -63,6 +63,7 @@ set(vw_all_headers
   cbify.h
   ccb_label.h
   ccb_reduction_features.h
+  continuous_actions_reduction_features.h
   classweight.h
   compat.h
   conditional_contextual_bandit.h
