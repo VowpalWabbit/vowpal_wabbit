@@ -114,15 +114,9 @@ void reduction::predict(example& ec)
     const float unit_range = continuous_range / (num_actions - 1);
 
     // discretize chosen action
-    auto start = min_value;
-    uint32_t action = 0;
-    while (start < max_value && chosen_action > start + unit_range)
-    {
-      action++;
-      start += unit_range;
-    }
+    const float ac = (chosen_action - min_value) / unit_range;
+    auto action = static_cast<uint32_t>(floor(ac));
 
-    if (action > num_actions - 1) { action = num_actions - 1; }
     temp_pred_a_s.clear();
     temp_pred_a_s.push_back({action, 1.f});
   }
