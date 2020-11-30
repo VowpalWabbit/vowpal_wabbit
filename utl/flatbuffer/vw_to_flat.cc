@@ -15,6 +15,15 @@
 #include "vw_exception.h"
 #include "options_boost_po.h"
 
+void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder& builder,
+    flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot>& root)
+{
+  builder.FinishSizePrefixed(root);
+  uint8_t* buf = builder.GetBufferPointer();
+  int size = builder.GetSize();
+  outfile.write(reinterpret_cast<char*>(buf), size);
+}
+
 void to_flat::create_simple_label(
     example* v, flatbuffers::Offset<void>& label, VW::parsers::flatbuffer::Label& label_type)
 {
@@ -190,7 +199,12 @@ void to_flat::create_no_label(example* v, flatbuffers::Offset<void>& label, VW::
 
 void to_flat::convert_txt_to_flat(vw& all)
 {
-  std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> examplecollection;
+  std::ofstream outfile;
+  if (output_flatbuffer_name.empty()) { output_flatbuffer_name = all.data_filename + ".fb"; }
+  outfile.open(output_flatbuffer_name, std::ios::binary | std::ios::out);
+  std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> example_collection;
+  size_t collection_count = 0;
+
   example* ae = all.example_parser->ready_parsed_examples.pop();
   int examples = 0;
   while (ae != nullptr && !ae->end_pass)
@@ -254,29 +268,49 @@ void to_flat::convert_txt_to_flat(vw& all)
     }
     std::string tag(ae->tag.begin(), ae->tag.size());
 
-    auto flat_namespaces = _builder.CreateVector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>>(namespaces);
-    auto flat_example = VW::parsers::flatbuffer::CreateExample(
-        _builder, flat_namespaces, label_type, label.Union(), _builder.CreateString(tag.data()));
-    examplecollection.push_back(flat_example);
+    if (collection)
+    {
+      auto flat_namespaces = _builder.CreateVector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>>(namespaces);
+      auto flat_example = VW::parsers::flatbuffer::CreateExample(
+          _builder, flat_namespaces, label_type, label.Union(), _builder.CreateString(tag.data()));
+      example_collection.push_back(flat_example);
+
+      collection_count++;
+      if (collection_count >= collection_size)
+      {
+        auto egcollection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, &example_collection);
+        auto root =
+            CreateExampleRoot(_builder, VW::parsers::flatbuffer::ExampleType_ExampleCollection, egcollection.Union());
+        write_buffer_to_file(outfile, _builder, root);
+        _builder.Clear();
+        example_collection.clear();
+        collection_count = 0;
+      }
+    }
+    else
+    {
+      auto flat_namespaces = _builder.CreateVector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>>(namespaces);
+      auto flat_example = VW::parsers::flatbuffer::CreateExample(
+          _builder, flat_namespaces, label_type, label.Union(), _builder.CreateString(tag.data()));
+      auto root = VW::parsers::flatbuffer::CreateExampleRoot(
+          _builder, VW::parsers::flatbuffer::ExampleType_Example, flat_example.Union());
+      write_buffer_to_file(outfile, _builder, root);
+      _builder.Clear();
+    }
 
     examples++;
     ae = all.example_parser->ready_parsed_examples.pop();
   }
 
+  if (collection && collection_count > 0)
+  {
+    // left over examples that did not fit in collection
+    auto egcollection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, &example_collection);
+    auto root = VW::parsers::flatbuffer::CreateExampleRoot(
+        _builder, VW::parsers::flatbuffer::ExampleType_ExampleCollection, egcollection.Union());
+    write_buffer_to_file(outfile, _builder, root);
+  }
+
   all.trace_message << "Converted " << examples << " examples" << std::endl;
-
-  flatbuffers::Offset<VW::parsers::flatbuffer::ExampleCollection> egcollection =
-      VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, &examplecollection);
-
-  _builder.Finish(egcollection);
-
-  uint8_t* buf = _builder.GetBufferPointer();
-  int size = _builder.GetSize();
-
-  std::ofstream outfile;
-  if (output_flatbuffer_name.empty()) { output_flatbuffer_name = all.data_filename + ".fb"; }
-  outfile.open(output_flatbuffer_name, std::ios::binary | std::ios::out);
-
-  outfile.write(reinterpret_cast<char*>(buf), size);
   all.trace_message << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
 }

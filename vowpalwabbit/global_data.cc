@@ -262,7 +262,6 @@ vw::vw()
   reg_mode = 0;
   current_pass = 0;
 
-  data_filename = "";
   delete_prediction = nullptr;
 
   bfgs = false;

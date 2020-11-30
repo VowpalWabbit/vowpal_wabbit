@@ -69,8 +69,8 @@ int main(int argc, char* argv[])
 
   to_flat converter;
   driver_config.add(make_option("fb_out", converter.output_flatbuffer_name));
+  driver_config.add(make_option("collection_size", converter.collection_size));
 
-  std::vector<std::unique_ptr<options_boost_po>> arguments;
   std::vector<vw*> alls;
 
   std::string q("--quiet");
@@ -79,7 +79,10 @@ int main(int argc, char* argv[])
   std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
   ptr->add_and_parse(driver_config);
   alls.push_back(setup(*ptr));
-  arguments.push_back(std::move(ptr));
+  if (converter.collection_size > 0)
+  {
+    converter.collection = true;
+  }
 
   vw& all = *alls[0];
 

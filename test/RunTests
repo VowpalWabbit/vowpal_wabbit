@@ -1988,7 +1988,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
          train-sets/ref/rcv1_cb_eval_fb.stderr
 
 # Test 245: Flatbuffer no label Test (LDA)
-{VW} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/no_label.fb --flatbuffer
+{VW} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/wiki256_no_label.fb --flatbuffer
          train-sets/ref/no_label_fb.stderr
 
 # Test 246: Flatbuffer CCB Label Test
@@ -1997,7 +1997,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
          train-sets/ref/ccb_fb.stderr
 
 # Test 247: Named Labels FB Test (Based on 88)
-{VW} -d train-sets/named_label.fb --named_labels det,noun,verb \
+{VW} -d train-sets/test_named.fb --named_labels det,noun,verb \
      --oaa 3 -k --flatbuffer -c --passes 10 --holdout_off -f models/test_named_fb.model
          train-sets/ref/named_label_fb.stderr
 
