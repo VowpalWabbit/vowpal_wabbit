@@ -79,10 +79,7 @@ int main(int argc, char* argv[])
   std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
   ptr->add_and_parse(driver_config);
   alls.push_back(setup(*ptr));
-  if (converter.collection_size > 0)
-  {
-    converter.collection = true;
-  }
+  if (converter.collection_size > 0) { converter.collection = true; }
 
   vw& all = *alls[0];
 
