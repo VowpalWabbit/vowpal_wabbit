@@ -101,7 +101,6 @@ set(vw_all_headers
   interactions_predict.h
   interactions.h
   io_buf.h
-  io/io_adapter.h
   kernel_svm.h
   label_dictionary.h
   label_parser.h
@@ -451,4 +450,7 @@ if(VW_INSTALL)
   install(
     FILES ${vw_all_headers} ${CMAKE_CURRENT_BINARY_DIR}/config.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit)
+  install(
+    FILES io/io_adapter.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/io
+  )
 endif()
