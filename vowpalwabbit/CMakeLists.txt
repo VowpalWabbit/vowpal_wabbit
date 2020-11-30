@@ -101,6 +101,7 @@ set(vw_all_headers
   interactions_predict.h
   interactions.h
   io_buf.h
+  json_utils.h
   kernel_svm.h
   label_dictionary.h
   label_parser.h
