@@ -148,6 +148,7 @@ set(vw_all_headers
   rand48.h
   recall_tree.h
   reductions.h
+  reductions_fwd.h
   sample_pdf.h
   scope_exit.h
   scorer.h
