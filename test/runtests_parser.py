@@ -26,7 +26,7 @@ class Test:
         self.backslash_seen = False
         self.vw_command = "" 
         self.is_bash_command = False
-        self.files = []
+        self.diff_files = []
 
     def add_more_comments(self, line):
         self.desc = self.desc + ". " + line.strip()[1:].strip()
@@ -51,7 +51,7 @@ class Test:
             return False
         
     def add_file(self, line):
-        self.files.append(line)
+        self.diff_files.append(line)
 
     def add_bash_command(self, line):
         if self.vw_command:
@@ -62,6 +62,12 @@ class Test:
     def clean(self):
         if not self.is_bash_command:
             self.vw_command = " ".join(self.vw_command.split()[1:])
+
+            # check what input files this command needs
+            files = Parser.get_values_of_vwarg(self.vw_command, "-d")
+            files = files + Parser.get_values_of_vwarg(self.vw_command, "-i")
+            if files:
+                self.input_files = files
 
             # get output files and register as creator of files
             files = Parser.get_values_of_vwarg(self.vw_command, "-f")
@@ -77,11 +83,11 @@ class Test:
             if depends_on:
                 self.depends_on = depends_on
         
-        orig_files = self.files
+        orig_files = self.diff_files
 
-        self.files = {}
+        self.diff_files = {}
         for f in orig_files:
-            self.files[Parser.parse_filetype(f)] = f
+            self.diff_files[Parser.parse_filetype(f)] = f
 
         self.id = int(self.id)
         Test.check_add_unique_id(self.id)
