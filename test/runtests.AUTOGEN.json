@@ -2807,13 +2807,249 @@
   },
   {
     "id": 238,
-    "desc": "Evaluate exploration with uniform probabilities for each action and uniform distributed policy(--epsilon 1). Do not delete this line or the empty line above it",
-    "vw_command": "--explore_eval --epsilon 1 -d train-sets/explore_eval.dat",
+    "desc": "same with test 142 but with empty shared features",
+    "vw_command": "--explore_eval --epsilon 0.2 -d train-sets/cb_test_with_empty_shared_feature.ldf --noconstant -p explore_eval.predict",
     "diff_files": {
-      "stderr": "train-sets/ref/explore_eval_uniform_distributed_policy.stderr"
+      "stderr": "train-sets/ref/explore_eval_with_empty_shared_feature.stderr",
+      "explore_eval.predict": "pred-sets/ref/explore_eval.predict"
     },
     "input_files": [
-      "train-sets/explore_eval.dat"
+      "train-sets/cb_test_with_empty_shared_feature.ldf"
+    ]
+  },
+  {
+    "id": 239,
+    "desc": "Flatbuffer Simple Label Test",
+    "vw_command": "-k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.fb -f models/0001_1.model --invariant --flatbuffer --ngram 3 --skips 1 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/0001_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/0001.fb"
+    ]
+  },
+  {
+    "id": 240,
+    "desc": "Flatbuffer CB Label Test",
+    "vw_command": "--cb 2 -d train-sets/rcv1_raw_cb_small.fb --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_raw_cb_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_raw_cb_small.fb"
+    ]
+  },
+  {
+    "id": 241,
+    "desc": "Flatbuffer Multilabel Test",
+    "vw_command": "--multilabel_oaa 10 -d train-sets/multilabel.fb --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/multilabel_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/multilabel.fb"
+    ]
+  },
+  {
+    "id": 242,
+    "desc": "Flatbuffer Mutliclass Test",
+    "vw_command": "-d train-sets/multiclass.fb -k --ect 10 --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/multiclass_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass.fb"
+    ]
+  },
+  {
+    "id": 243,
+    "desc": "Flatbuffer CS Test",
+    "vw_command": "-k -d train-sets/cs.fb --invariant --csoaa_ldf multiline --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/cs_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/cs.fb"
+    ]
+  },
+  {
+    "id": 244,
+    "desc": "Flatbuffer CB_eval test",
+    "vw_command": "-d train-sets/rcv1_cb_eval.fb --cb 2 --eval --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/rcv1_cb_eval_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_cb_eval.fb"
+    ]
+  },
+  {
+    "id": 245,
+    "desc": "Flatbuffer no label Test (LDA)",
+    "vw_command": "-k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/no_label.fb --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/no_label_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/no_label.fb"
+    ]
+  },
+  {
+    "id": 246,
+    "desc": "Flatbuffer CCB Label Test",
+    "vw_command": "--ccb_explore_adf -d train-sets/ccb.fb --flatbuffer",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb.fb"
+    ]
+  },
+  {
+    "id": 247,
+    "desc": "Named Labels FB Test (Based on 88)",
+    "vw_command": "-d train-sets/named_label.fb --named_labels det,noun,verb --oaa 3 -k --flatbuffer -c --passes 10 --holdout_off -f models/test_named_fb.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/named_label_fb.stderr"
+    },
+    "input_files": [
+      "train-sets/named_label.fb"
+    ]
+  },
+  {
+    "id": 248,
+    "desc": "Named Labels FB at prediction (Based on 89)",
+    "vw_command": "-i models/test_named_fb.model -t -d train-sets/test_named -p test_named.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/named_label_test_fb.stderr",
+      "test_named.predict": "pred-sets/ref/test_named.predict"
+    },
+    "input_files": [
+      "train-sets/test_named",
+      "models/test_named_fb.model"
+    ],
+    "depends_on": [
+      247
+    ]
+  },
+  {
+    "id": 249,
+    "desc": "cb_explore with cover epsilon decaying",
+    "vw_command": "--cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_cover_e_dec.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_explore_cover.dat"
+    ]
+  },
+  {
+    "id": 250,
+    "desc": "cb_explore with cover epsilon decaying predict",
+    "vw_command": "--cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_cover_e_dec_predict.stderr",
+      "cbe_cover_e_dec.predict": "pred-sets/ref/cbe_cover_e_dec.predict"
+    },
+    "input_files": [
+      "train-sets/cb_explore_cover.dat",
+      "models/cover_e_dec.model"
+    ],
+    "depends_on": [
+      249
+    ]
+  },
+  {
+    "id": 251,
+    "desc": "cb_explore with cover epsilon fixed",
+    "vw_command": "--cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_cover_e_fixed.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_explore_cover.dat"
+    ]
+  },
+  {
+    "id": 252,
+    "desc": "cb_explore with cover epsilon fixed predict",
+    "vw_command": "--cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_cover_e_fixed_predict.stderr",
+      "cbe_cover_e_fixed.predict": "pred-sets/ref/cbe_cover_e_fixed.predict"
+    },
+    "input_files": [
+      "train-sets/cb_explore_cover.dat",
+      "models/cover_e_fixed.model"
+    ],
+    "depends_on": [
+      251
+    ]
+  },
+  {
+    "id": 253,
+    "desc": "cb_explore_adf with cover exploration epsilon decaying",
+    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -f models/cover_adf_e_dec.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_cover_e_dec.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test_medium.ldf"
+    ]
+  },
+  {
+    "id": 254,
+    "desc": "cb_explore_adf with cover exploration epsilon decaying predict only",
+    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -p cbe_adf_cover_e_dec.predict -i models/cover_adf_e_dec.model -t",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_cover_e_dec_predict.stderr",
+      "cbe_adf_cover_e_dec.predict": "pred-sets/ref/cbe_adf_cover_e_dec.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test_medium.ldf",
+      "models/cover_adf_e_dec.model"
+    ],
+    "depends_on": [
+      253
+    ]
+  },
+  {
+    "id": 255,
+    "desc": "cb_explore_adf with cover epsilon fixed",
+    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf -f models/cover_adf_e_fixed.model --epsilon 0.5",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_cover_e_fixed.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test_medium.ldf"
+    ]
+  },
+  {
+    "id": 256,
+    "desc": "cb_explore_adf with cover epsilon fixed predict",
+    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf -i models/cover_adf_e_fixed.model --epsilon 0.5 -t -p cbe_adf_cover_e_fixed.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_cover_e_fixed_predict.stderr",
+      "cbe_adf_cover_e_fixed.predict": "pred-sets/ref/cbe_adf_cover_e_fixed.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test_medium.ldf",
+      "models/cover_adf_e_fixed.model"
+    ],
+    "depends_on": [
+      255
+    ]
+  },
+  {
+    "id": 257,
+    "desc": "cb_explore_adf with synthcover exploration. Do not delete this line or the empty line above it",
+    "vw_command": "--cb_explore_adf --synthcover --epsilon 0.01 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_synthcover.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_synthcover.stderr",
+      "cbe_adf_synthcover.predict": "pred-sets/ref/cbe_adf_synthcover.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
     ]
   }
 ]

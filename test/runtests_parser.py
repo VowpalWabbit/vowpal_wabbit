@@ -194,9 +194,18 @@ class Parser:
         else:
             self.curr_test.add_bash_command(line)
     
-    def get_json_str(self):
+    def get_results(self):
         self.commit_parsed_test()
-        return json.dumps(self.results, indent=2, default=lambda x: x.__dict__)
+        return self.results
+
+def file_to_obj(filename):
+    RTParser = Parser()
+
+    with open(filename) as f:
+        for line in f:
+            RTParser.process_line(line)
+    
+    return RTParser.get_results()
 
 def main():
     possible_paths = ["./RunTests", "./test/RunTests"]
@@ -204,14 +213,10 @@ def main():
         if path.exists(p):
             rtfile = p
 
-    RTParser = Parser()
-
-    with open(rtfile) as f:
-        for line in f:
-            RTParser.process_line(line)
+    results = file_to_obj(rtfile)
 
     with open(path.join(path.dirname(rtfile), "runtests.AUTOGEN.json"), "w") as f:
-        f.write(RTParser.get_json_str())
+        f.write(json.dumps(results, indent=2, default=lambda x: x.__dict__))
 
 if __name__ == "__main__":
     main()
