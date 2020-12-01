@@ -21,6 +21,11 @@ add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
 target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
 add_library(VowpalWabbit::io ALIAS vw_io)
 
+add_subdirectory(parser/flatbuffer)
+add_library(FlatbuffersTarget INTERFACE)
+target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
+add_dependencies(FlatbuffersTarget fbschemas)
+
 set(vw_all_headers
   accumulate.h
   action_score.h
@@ -54,6 +59,7 @@ set(vw_all_headers
   cb_explore_adf_greedy.h
   cb_explore_adf_regcb.h
   cb_explore_adf_squarecb.h
+  cb_explore_adf_synthcover.h
   cb_explore_adf_rnd.h
   cb_explore_adf_softmax.h
   cb_explore_pdf.h
@@ -140,6 +146,7 @@ set(vw_all_headers
   parse_regressor.h
   parse_slates_example_json.h
   parser.h
+  parser/flatbuffer/parse_example_flatbuffer.h
   pmf_to_pdf.h
   plt.h
   reduction_features.h
@@ -214,6 +221,7 @@ set(vw_all_sources
   cb_explore_adf_greedy.cc
   cb_explore_adf_regcb.cc
   cb_explore_adf_squarecb.cc
+  cb_explore_adf_synthcover.cc
   cb_explore_adf_rnd.cc
   cb_explore_adf_softmax.cc
   cb_explore_pdf.cc
@@ -275,6 +283,8 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
+  parser/flatbuffer/parse_example_flatbuffer.cc
+  parser/flatbuffer/parse_label.cc
   pmf_to_pdf.cc
   plt.cc
   reduction_features.cc
@@ -318,7 +328,8 @@ target_link_libraries(vw
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
-    $<BUILD_INTERFACE:RapidJSON>)
+    $<BUILD_INTERFACE:RapidJSON>
+    $<BUILD_INTERFACE:FlatbuffersTarget>)
 
 add_library(VowpalWabbit::vw ALIAS vw)
 
