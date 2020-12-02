@@ -312,6 +312,8 @@ endif()
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
+  find_package(Boost REQUIRED COMPONENTS program_options)
+  
   FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
     SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
   ENDFOREACH()
