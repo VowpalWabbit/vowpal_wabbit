@@ -98,6 +98,8 @@ class SearchTask:
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            - 7 : lSLATES
+            - 8 : lCONTINUOUS
             The integer is used to map the corresponding labelType using the
             above available options
 
@@ -149,6 +151,7 @@ def get_prediction(ec, prediction_type):
         - 6: pPROB
         - 7: pMULTICLASSPROBS
         - 8: pDECISION_SCORES
+        - 9: pACTION_PDF_VALUE
 
     Examples
     --------
@@ -176,6 +179,7 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pPROB: ec.get_prob,
         pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars,
         pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores,
+        pylibvw.vw.pACTION_PDF_VALUE: ec.get_action_pdf_value,
     }
     return switch_prediction_type[prediction_type]()
 
@@ -263,6 +267,8 @@ class vw(pylibvw.vw):
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            - 7 : lSLATES
+            - 8 : lCONTINUOUS
             The integer is used to map the corresponding labelType using the
             above available options
 
@@ -501,6 +507,8 @@ class vw(pylibvw.vw):
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            - 7 : lSLATES
+            - 8 : lCONTINUOUS
             The integer is used to map the corresponding labelType using the
             above available options
 
@@ -1029,6 +1037,8 @@ class example(pylibvw.example):
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            - 7 : lSLATES
+            - 8 : lCONTINUOUS
             The integer is used to map the corresponding labelType using the
             above available options
 
