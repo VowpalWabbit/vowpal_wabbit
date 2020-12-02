@@ -59,6 +59,7 @@ set(vw_all_headers
   cb_explore_adf_greedy.h
   cb_explore_adf_regcb.h
   cb_explore_adf_squarecb.h
+  cb_explore_adf_synthcover.h
   cb_explore_adf_rnd.h
   cb_explore_adf_softmax.h
   cb_explore_pdf.h
@@ -92,6 +93,7 @@ set(vw_all_headers
   explore_eval.h
   expreplay.h
   ezexample.h
+  fast_pow10.h
   feature_group.h
   ftrl.h
   gd_mf.h
@@ -106,6 +108,7 @@ set(vw_all_headers
   interactions_predict.h
   interactions.h
   io_buf.h
+  json_utils.h
   kernel_svm.h
   label_dictionary.h
   label_parser.h
@@ -155,6 +158,7 @@ set(vw_all_headers
   rand48.h
   recall_tree.h
   reductions.h
+  reductions_fwd.h
   sample_pdf.h
   scope_exit.h
   scorer.h
@@ -220,6 +224,7 @@ set(vw_all_sources
   cb_explore_adf_greedy.cc
   cb_explore_adf_regcb.cc
   cb_explore_adf_squarecb.cc
+  cb_explore_adf_synthcover.cc
   cb_explore_adf_rnd.cc
   cb_explore_adf_softmax.cc
   cb_explore_pdf.cc
@@ -461,4 +466,7 @@ if(VW_INSTALL)
   install(
     FILES ${vw_all_headers} ${CMAKE_CURRENT_BINARY_DIR}/config.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit)
+  install(
+    FILES io/io_adapter.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/io
+  )
 endif()
