@@ -132,6 +132,7 @@ void copy_example_to_adf(cbify& data, example& ec)
   const uint64_t ss = data.all->weights.stride_shift();
   const uint64_t mask = data.all->weights.mask();
 
+// cb argument for num actions 
   for (size_t a = 0; a < adf_data.num_actions; ++a)
   {
     auto& eca = *adf_data.ecs[a];
@@ -377,6 +378,7 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   else
     ld = ec.l.multi;
 
+  //call this one
   copy_example_to_adf(data, ec);
   base.predict(data.adf_data.ecs);
 
@@ -399,8 +401,15 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
     cl.cost = loss(data, ld.label, cl.action);
 
   // add cb label to chosen action
+  //assign label like below
   auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb;
   lab.costs.clear();
+
+  // no label nothing to assign
+  // if there is a label 
+
+  // then call base
+
   lab.costs.push_back(cl);
 
   if (is_learn) base.learn(data.adf_data.ecs);
