@@ -384,7 +384,7 @@ public:
   {
     if (ctx.all->label_type == label_type_t::ccb)
     {
-      auto ld = (CCB::label*)&ctx.ex->l;
+      auto ld = &ctx.ex->l.conditional_contextual_bandit;
 
       for (auto id : inc) { ld->explicit_included_actions.push_back(id); }
       inc.clear();
@@ -419,7 +419,7 @@ public:
     }
     else if (found_cb)
     {
-      CB::label* ld = (CB::label*)&ctx.ex->l;
+      CB::label* ld = &ctx.ex->l.cb;
       ld->costs.push_back(cb_label);
 
       found_cb = false;
@@ -427,7 +427,7 @@ public:
     }
     else if (found_cb_continuous)
     {
-      auto* ld = (VW::cb_continuous::continuous_label*)&ctx.ex->l;
+      auto* ld = &ctx.ex->l.cb_cont;
       ld->costs.push_back(cont_label_element);
 
       found_cb_continuous = false;

@@ -35,6 +35,7 @@
     <ClCompile Include="error_test.cc" />
     <ClCompile Include="example_header_test.cc" />
     <ClCompile Include="explore_test.cc" />
+    <ClCompile Include="flatbuffer_parser_test.cc" />
     <ClCompile Include="guard_test.cc" />
     <ClCompile Include="initialize_test.cc" />
     <ClCompile Include="io_adapter_test.cc" />

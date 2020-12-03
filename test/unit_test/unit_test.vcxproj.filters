@@ -45,6 +45,9 @@
     <ClCompile Include="explore_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="flatbuffer_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="guard_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
