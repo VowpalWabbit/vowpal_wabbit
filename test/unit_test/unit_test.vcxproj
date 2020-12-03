@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cats_tree_tests.cc" />
+    <ClCompile Include="cats_user_provided_pdf.cc" />
     <ClCompile Include="cb_explore_adf_test.cc" />
     <ClCompile Include="ccb_test.cc" />
     <ClCompile Include="ccb_parser_test.cc" />
