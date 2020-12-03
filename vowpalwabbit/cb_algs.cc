@@ -136,7 +136,7 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   // old behaviour
   option_group_definition new_options("OLD: Contextual Bandit Options");
   new_options
-      .add(make_option("old_cb", data->cbcs.num_actions)
+      .add(make_option("cb", data->cbcs.num_actions)
                .keep()
                .necessary()
                .help("OLD: Use contextual bandit learning with <k> costs"))

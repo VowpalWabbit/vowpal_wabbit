@@ -2047,4 +2047,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbe_adf_synthcover.stderr
     pred-sets/ref/cbe_adf_synthcover.predict
 
+# Test 258: cb with dr
+{VW} -d train-sets/rcv1_raw_cb_small.vw --new_cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25
+    train-sets/ref/rcv1_raw_cb_dr.stderr
+
+
 # Do not delete this line or the empty line above it

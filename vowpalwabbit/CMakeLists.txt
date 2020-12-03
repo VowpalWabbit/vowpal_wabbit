@@ -67,6 +67,7 @@ set(vw_all_headers
   cb_label_parser.h
   cb.h
   cbify.h
+  cb_to_cb_adf.h
   ccb_label.h
   ccb_reduction_features.h
   classweight.h
@@ -232,6 +233,7 @@ set(vw_all_sources
   cb_sample.cc
   cb.cc
   cbify.cc
+  cb_to_cb_adf.cc
   ccb_label.cc
   classweight.cc
   conditional_contextual_bandit.cc

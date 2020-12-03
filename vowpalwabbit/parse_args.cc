@@ -30,6 +30,7 @@
 #include "csoaa.h"
 #include "cb_algs.h"
 #include "cb_adf.h"
+#include "cb_to_cb_adf.h"
 #include "cb_dro.h"
 #include "cb_explore.h"
 #include "cb_explore_adf_bag.h"
@@ -1297,6 +1298,7 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(CSOAA::csldf_setup);
   reductions.push_back(cb_algs_setup);
   reductions.push_back(cb_adf_setup);
+  reductions.push_back(cb_to_cb_adf_setup);
   reductions.push_back(mwt_setup);
   reductions.push_back(VW::cats_tree::setup);
   reductions.push_back(cb_explore_setup);

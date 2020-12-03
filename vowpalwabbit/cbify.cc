@@ -6,6 +6,7 @@
 #include <vector>
 #include "reductions.h"
 #include "cb_algs.h"
+#include "cbify.h"
 #include "vw.h"
 #include "hash.h"
 #include "explore.h"
@@ -25,12 +26,6 @@ using VW::cb_continuous::continuous_label_elm;
 struct cbify;
 
 VW_DEBUG_ENABLE(false)
-
-struct cbify_adf_data
-{
-  multi_ex ecs;
-  size_t num_actions;
-};
 
 struct cbify_reg
 {
@@ -126,11 +121,10 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
   data.cb_cont_label.costs.delete_v();  // todo: instead of above
 }
 
-void copy_example_to_adf(cbify& data, example& ec)
+void copy_example_to_adf(cbify_adf_data& adf_data, parameters& weights, example& ec)
 {
-  cbify_adf_data& adf_data = data.adf_data;
-  const uint64_t ss = data.all->weights.stride_shift();
-  const uint64_t mask = data.all->weights.mask();
+  const uint64_t ss = weights.stride_shift();
+  const uint64_t mask = weights.mask();
 
 // cb argument for num actions 
   for (size_t a = 0; a < adf_data.num_actions; ++a)
@@ -379,7 +373,7 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
     ld = ec.l.multi;
 
   //call this one
-  copy_example_to_adf(data, ec);
+  copy_example_to_adf(data.adf_data, data.all->weights, ec);
   base.predict(data.adf_data.ecs);
 
   auto& out_ec = *data.adf_data.ecs[0];
@@ -417,9 +411,8 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   ec.pred.multiclass = cl.action;
 }
 
-void init_adf_data(cbify& data, const size_t num_actions)
+void init_adf_data(cbify_adf_data& adf_data, const size_t num_actions, std::vector<std::vector<namespace_index>>& interactions)
 {
-  auto& adf_data = data.adf_data;
   adf_data.num_actions = num_actions;
 
   adf_data.ecs.resize(num_actions);
@@ -428,7 +421,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
     adf_data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
     auto& lab = adf_data.ecs[a]->l.cb;
     CB::cb_label.default_label(&lab);
-    adf_data.ecs[a]->interactions = &data.all->interactions;
+    adf_data.ecs[a]->interactions = &interactions;
   }
 }
 
@@ -683,7 +676,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   data->a_s = v_init<action_score>();
   data->all = &all;
 
-  if (data->use_adf) { init_adf_data(*data.get(), num_actions); }
+  if (data->use_adf) { init_adf_data(data->adf_data, num_actions, all.interactions); }
 
   if (use_reg)
   {
