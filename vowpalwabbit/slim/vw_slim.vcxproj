@@ -131,6 +131,7 @@
     <ClInclude Include="include\vw_slim_predict.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\reduction_features.cc" />
     <ClCompile Include="..\example_predict.cc" />
     <ClCompile Include="..\feature_group.cc" />
     <ClCompile Include="src\example_predict_builder.cc" />
