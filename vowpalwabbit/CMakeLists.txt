@@ -291,7 +291,6 @@ set(vw_all_sources
   parser/flatbuffer/parse_label.cc
   pmf_to_pdf.cc
   plt.cc
-  reduction_features.cc
   print.cc
   prob_dist_cont.cc
   rand48.cc

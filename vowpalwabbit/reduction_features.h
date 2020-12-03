@@ -47,14 +47,26 @@ public:
 };
 
 template <>
-CCB::reduction_features& reduction_features::get<CCB::reduction_features>();
-template <>
-
-const CCB::reduction_features& reduction_features::get<CCB::reduction_features>() const;
-
-template <>
-VW::continuous_actions::reduction_features& reduction_features::get<VW::continuous_actions::reduction_features>();
+inline CCB::reduction_features& reduction_features::get<CCB::reduction_features>()
+{
+  return _ccb_reduction_features;
+}
 
 template <>
-const VW::continuous_actions::reduction_features& reduction_features::get<VW::continuous_actions::reduction_features>()
-    const;
+inline const CCB::reduction_features& reduction_features::get<CCB::reduction_features>() const
+{
+  return _ccb_reduction_features;
+}
+
+template <>
+inline VW::continuous_actions::reduction_features& reduction_features::get<VW::continuous_actions::reduction_features>()
+{
+  return _contact_reduction_features;
+}
+
+template <>
+inline const VW::continuous_actions::reduction_features&
+reduction_features::get<VW::continuous_actions::reduction_features>() const
+{
+  return _contact_reduction_features;
+}

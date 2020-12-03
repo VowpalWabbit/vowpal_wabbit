@@ -363,7 +363,6 @@
     <ClCompile Include="parser.cc" />
     <ClCompile Include="pmf_to_pdf.cc" />
     <ClCompile Include="plt.cc" />
-    <ClInclude Include="reduction_features.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="prob_dist_cont.cc" />
     <ClCompile Include="rand48.cc" />
