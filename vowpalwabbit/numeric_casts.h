@@ -5,7 +5,8 @@
 
 #include "vw_exception.h"
 
-namespace VW {
+namespace VW
+{
 template <typename RetType, typename InputType>
 RetType cast_to_smaller_type(InputType input)
 {
@@ -15,10 +16,10 @@ RetType cast_to_smaller_type(InputType input)
   static_assert((std::numeric_limits<RetType>::is_signed && std::numeric_limits<InputType>::is_signed) ||
           (!std::numeric_limits<RetType>::is_signed && !std::numeric_limits<InputType>::is_signed),
       "RetType and InputType must be either both signed or both unsigned");
-  static_assert(
-      static_cast<InputType>(std::numeric_limits<RetType>::max()) <= std::numeric_limits<InputType>::max(), "RetType max value must be less than or equal to InputType max value");
-  static_assert(
-      static_cast<InputType>(std::numeric_limits<RetType>::min()) >= std::numeric_limits<InputType>::min(), "RetType min value must be more than or equal to InputType min value");
+  static_assert(static_cast<InputType>(std::numeric_limits<RetType>::max()) <= std::numeric_limits<InputType>::max(),
+      "RetType max value must be less than or equal to InputType max value");
+  static_assert(static_cast<InputType>(std::numeric_limits<RetType>::min()) >= std::numeric_limits<InputType>::min(),
+      "RetType min value must be more than or equal to InputType min value");
 
   if (input > static_cast<InputType>(std::numeric_limits<RetType>::max()))
   {
@@ -54,4 +55,4 @@ RetType cast_signed_to_unsigned(InputType input)
   return cast_to_smaller_type<RetType>(unsigned_input);
 }
 
-}
+}  // namespace VW
