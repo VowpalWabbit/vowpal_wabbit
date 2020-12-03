@@ -4,6 +4,7 @@
 
 #pragma once
 #include "ccb_reduction_features.h"
+#include "continuous_actions_reduction_features.h"
 
 /*
  * class reduction_features
@@ -27,17 +28,45 @@
 
 class reduction_features
 {
- private:
+private:
   CCB::reduction_features _ccb_reduction_features;
+  VW::continuous_actions::reduction_features _contact_reduction_features;
 
- public:
+public:
   template <typename T>
   T& get();
   template <typename T>
   const T& get() const;
 
   // call clear() on all instantiated types
-  void clear() {
+  void clear()
+  {
     _ccb_reduction_features.clear();
+    _contact_reduction_features.clear();
   }
 };
+
+template <>
+inline CCB::reduction_features& reduction_features::get<CCB::reduction_features>()
+{
+  return _ccb_reduction_features;
+}
+
+template <>
+inline const CCB::reduction_features& reduction_features::get<CCB::reduction_features>() const
+{
+  return _ccb_reduction_features;
+}
+
+template <>
+inline VW::continuous_actions::reduction_features& reduction_features::get<VW::continuous_actions::reduction_features>()
+{
+  return _contact_reduction_features;
+}
+
+template <>
+inline const VW::continuous_actions::reduction_features&
+reduction_features::get<VW::continuous_actions::reduction_features>() const
+{
+  return _contact_reduction_features;
+}
