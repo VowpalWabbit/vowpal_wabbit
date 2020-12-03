@@ -525,6 +525,7 @@ public:
 
   std::string get_setupfn_name(reduction_setup_fn setup);
   void build_setupfn_name_dict();
+
 private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
