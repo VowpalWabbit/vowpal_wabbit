@@ -524,9 +524,8 @@ public:
   vw& operator=(const vw&&) = delete;
 
   std::string get_setupfn_name(reduction_setup_fn setup);
-
-private:
   void build_setupfn_name_dict();
+private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
 

@@ -345,7 +345,7 @@ base_learner* ect_setup(options_i& options, vw& all)
   if (link == "logistic") data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
 
   learner<ect, example>& l = init_multiclass_learner(
-      data, as_singleline(base), learn, predict, all.example_parser, wpp, all.get_setup_name(ect_setup));
+      data, as_singleline(base), learn, predict, all.example_parser, wpp, all.get_setupfn_name(ect_setup));
   all.label_type = label_type_t::mc;
 
   return make_base(l);

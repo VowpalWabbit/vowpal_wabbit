@@ -98,7 +98,7 @@ LEARNER::base_learner* get_pmf_setup(config::options_i& options, vw& all)
   p_reduction->init(as_singleline(p_base), epsilon);
 
   LEARNER::learner<get_pmf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::pdf, all.get_setup_name(get_pmf_setup));
+      predict_or_learn<false>, 1, prediction_type_t::pdf, all.get_setupfn_name(get_pmf_setup));
 
   return make_base(l);
 }

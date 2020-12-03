@@ -400,10 +400,10 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   learner<ftrl, example>* l;
   if (all.audit || all.hash_inv)
     l = &init_learner(b, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift(),
-        all.get_setup_name(ftrl_setup) + "-" + algorithm_name + "-audit");
+        all.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + "-audit");
   else
     l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift(),
-        all.get_setup_name(ftrl_setup) + "-" + algorithm_name);
+        all.get_setupfn_name(ftrl_setup) + "-" + algorithm_name);
   l->set_sensitivity(sensitivity);
   if (all.audit || all.hash_inv)
     l->set_multipredict(multipredict<true>);

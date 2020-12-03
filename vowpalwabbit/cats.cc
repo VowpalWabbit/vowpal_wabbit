@@ -166,7 +166,7 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
   auto p_reduction = scoped_calloc_or_throw<cats>(as_singleline(p_base));
 
   LEARNER::learner<cats, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, all.get_setup_name(setup));
+      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, all.get_setupfn_name(setup));
 
   l.set_finish_example(finish_example);
 

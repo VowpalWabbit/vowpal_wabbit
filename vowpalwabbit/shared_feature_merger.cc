@@ -78,7 +78,7 @@ VW::LEARNER::base_learner* shared_feature_merger_setup(config::options_i& option
 
   auto* base = VW::LEARNER::as_multiline(setup_base(options, all));
   auto& learner = VW::LEARNER::init_learner(
-      data, base, predict_or_learn<true>, predict_or_learn<false>, all.get_setup_name(shared_feature_merger_setup));
+      data, base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(shared_feature_merger_setup));
 
   // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
   //       shared example in a finish_example function. However, its too expensive to perform the full operation.

@@ -1243,7 +1243,7 @@ void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
   }
 
   // populate setup_fn -> name map to be used to lookup names in setup_base
-  all.map_setup_name();
+  all.build_setupfn_name_dict();
 }
 
 void parse_reductions(options_i& options, vw& all)

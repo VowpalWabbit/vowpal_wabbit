@@ -1257,7 +1257,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   {
     num_learners = tree->max_nodes + 1;
     learner<memory_tree, example>& l = init_multiclass_learner(tree, as_singleline(setup_base(options, all)), learn,
-        predict, all.example_parser, num_learners, all.get_setup_name(memory_tree_setup));
+        predict, all.example_parser, num_learners, all.get_setupfn_name(memory_tree_setup));
     all.label_type = label_type_t::mc;
     // srand(time(0));
     l.set_save_load(save_load_memory_tree);
@@ -1269,7 +1269,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
     learner<memory_tree, example>& l = init_learner(tree, as_singleline(setup_base(options, all)), learn, predict,
-        num_learners, prediction_type_t::multilabels, all.get_setup_name(memory_tree_setup));
+        num_learners, prediction_type_t::multilabels, all.get_setupfn_name(memory_tree_setup));
 
     // all.p->lp = MULTILABEL::multilabel;
     // all.label_type = label_type_t::multi;

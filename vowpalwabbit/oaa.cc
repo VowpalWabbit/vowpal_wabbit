@@ -244,7 +244,7 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
       // the three boolean template parameters are: is_learn, print_all and scores
       l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, true>,
           predict_or_learn<false, false, true, true>, all.example_parser, data->k,
-          all.get_setup_name(oaa_setup) + "-prob", prediction_type_t::scalars);
+          all.get_setupfn_name(oaa_setup) + "-prob", prediction_type_t::scalars);
       all.label_type = label_type_t::mc;
       all.sd->report_multiclass_log_loss = true;
       l->set_finish_example(finish_example_scores<true>);
@@ -253,7 +253,7 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     {
       l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, false>,
           predict_or_learn<false, false, true, false>, all.example_parser, data->k,
-          all.get_setup_name(oaa_setup) + "-scores", prediction_type_t::scalars);
+          all.get_setupfn_name(oaa_setup) + "-scores", prediction_type_t::scalars);
       all.label_type = label_type_t::mc;
       l->set_finish_example(finish_example_scores<false>);
     }
@@ -262,13 +262,13 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
   {
     l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
         predict_or_learn<false, true, false, false>, all.example_parser, data->k,
-        all.get_setup_name(oaa_setup) + "-raw", prediction_type_t::multiclass);
+        all.get_setupfn_name(oaa_setup) + "-raw", prediction_type_t::multiclass);
     all.label_type = label_type_t::mc;
   }
   else
   {
     l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, false, false>,
-        predict_or_learn<false, false, false, false>, all.example_parser, data->k, all.get_setup_name(oaa_setup),
+        predict_or_learn<false, false, false, false>, all.example_parser, data->k, all.get_setupfn_name(oaa_setup),
         prediction_type_t::multiclass);
     all.label_type = label_type_t::mc;
   }

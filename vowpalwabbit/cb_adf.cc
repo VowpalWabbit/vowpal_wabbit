@@ -548,7 +548,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   cb_adf* bare = ld.get();
   learner<cb_adf, multi_ex>& l = init_learner(
-      ld, base, learn, predict, problem_multiplier, prediction_type_t::action_scores, all.get_setup_name(cb_adf_setup));
+      ld, base, learn, predict, problem_multiplier, prediction_type_t::action_scores, all.get_setupfn_name(cb_adf_setup));
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   bare->set_scorer(all.scorer);

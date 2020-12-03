@@ -119,7 +119,7 @@ base_learner* confidence_setup(options_i& options, vw& all)
 
   // Create new learner
   learner<confidence, example>& l = init_learner(
-      data, base, learn_with_confidence_ptr, predict_with_confidence_ptr, all.get_setup_name(confidence_setup));
+      data, base, learn_with_confidence_ptr, predict_with_confidence_ptr, all.get_setupfn_name(confidence_setup));
 
   l.set_finish_example(return_confidence_example);
 

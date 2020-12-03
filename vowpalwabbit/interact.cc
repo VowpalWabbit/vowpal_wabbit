@@ -173,7 +173,7 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   VW::LEARNER::learner<interact, example>* l;
   l = &VW::LEARNER::init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-      predict_or_learn<false, true>, 1, all.get_setup_name(interact_setup));
+      predict_or_learn<false, true>, 1, all.get_setupfn_name(interact_setup));
 
   return make_base(*l);
 }

@@ -18,5 +18,5 @@ VW::LEARNER::base_learner* noop_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  return make_base(VW::LEARNER::init_learner(learn, 1, all.get_setup_name(noop_setup)));
+  return make_base(VW::LEARNER::init_learner(learn, 1, all.get_setupfn_name(noop_setup)));
 }

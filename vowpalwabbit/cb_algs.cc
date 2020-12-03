@@ -196,13 +196,13 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   if (eval)
   {
     l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass,
-        all.get_setup_name(cb_algs_setup) + "-eval");
+        all.get_setupfn_name(cb_algs_setup) + "-eval");
     l->set_finish_example(eval_finish_example);
   }
   else
   {
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier,
-        prediction_type_t::multiclass, all.get_setup_name(cb_algs_setup));
+        prediction_type_t::multiclass, all.get_setupfn_name(cb_algs_setup));
     l->set_finish_example(finish_example);
   }
   c.scorer = all.scorer;

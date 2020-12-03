@@ -94,7 +94,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   VW::LEARNER::learner<explore_type, multi_ex>& l =
       VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
-          prediction_type_t::action_probs, all.get_setup_name(setup) + "-softmax");
+          prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-softmax");
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);
 }
