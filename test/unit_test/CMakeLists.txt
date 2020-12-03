@@ -16,6 +16,7 @@ add_executable(vw-unit-test.out
   json_parser_test.cc
   main.cc
   multiclass_label_parser_test.cc
+  numeric_cast_tests.cc
   object_pool_test.cc
   offset_tree_tests.cc
   options_boost_po_test.cc
