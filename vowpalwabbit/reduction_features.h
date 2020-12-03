@@ -28,7 +28,7 @@
 
 class reduction_features
 {
- private:
+private:
   CCB::reduction_features _ccb_reduction_features;
   VW::continuous_actions::reduction_features _contact_reduction_features;
 
@@ -39,8 +39,22 @@ public:
   const T& get() const;
 
   // call clear() on all instantiated types
-  void clear() {
+  void clear()
+  {
     _ccb_reduction_features.clear();
     _contact_reduction_features.clear();
   }
 };
+
+template <>
+CCB::reduction_features& reduction_features::get<CCB::reduction_features>();
+template <>
+
+const CCB::reduction_features& reduction_features::get<CCB::reduction_features>() const;
+
+template <>
+VW::continuous_actions::reduction_features& reduction_features::get<VW::continuous_actions::reduction_features>();
+
+template <>
+const VW::continuous_actions::reduction_features& reduction_features::get<VW::continuous_actions::reduction_features>()
+    const;
