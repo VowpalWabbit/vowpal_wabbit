@@ -24,43 +24,80 @@ int flatbuffer_to_examples(vw* all, v_array<example*>& examples)
   return static_cast<int>(all->flat_converter->parse_examples(all, examples));
 }
 
-parser::parser(std::string filename) : _filename(filename), _flatbuffer_pointer(nullptr), _example_index(0), _c_hash(0)
+const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
+
+bool parser::parse(vw* all, uint8_t* buffer_pointer)
 {
-}
+  if (buffer_pointer)
+  {
+    _flatbuffer_pointer = buffer_pointer;
 
-parser::parser(uint8_t* buffer_pointer)
-    : _filename("empty"), _flatbuffer_pointer(buffer_pointer), _example_index(0), _c_hash(0)
-{
-  _data = VW::parsers::flatbuffer::GetExampleCollection(_flatbuffer_pointer);  // Shift as a separate call
-}
+    _data = VW::parsers::flatbuffer::GetSizePrefixedExampleRoot(_flatbuffer_pointer);
+    return true;
+  }
 
-void parser::init()
-{
-  std::ifstream infile;
-  infile.open(_filename, std::ios::binary | std::ios::in);
-  if (!infile.good()) THROW_EX(VW::vw_argument_invalid_value_exception, "Flatbuffer does not exist");
+  char* line = nullptr;
+  auto len = all->example_parser->input->buf_read(line, sizeof(uint32_t));
 
-  infile.seekg(0, std::ios::end);
-  auto length = infile.tellg();
-  infile.seekg(0, std::ios::beg);
-  buffer.resize(length);
-  infile.read(buffer.data(), length);
-  _flatbuffer_pointer = reinterpret_cast<uint8_t*>(buffer.data());
+  if (len < sizeof(uint32_t)) { return false; }
 
-  infile.close();
+  _object_size = flatbuffers::ReadScalar<flatbuffers::uoffset_t>(line);
 
-  _data = VW::parsers::flatbuffer::GetExampleCollection(_flatbuffer_pointer);
-}
+  // read one object, object size defined by the read prefix
+  all->example_parser->input->buf_read(line, _object_size);
 
-const VW::parsers::flatbuffer::ExampleCollection* parser::data() { return _data; }
-
-bool parser::parse_examples(vw* all, v_array<example*>& examples)
-{
-  if (!flatbuffers::IsFieldPresent(_data, ExampleCollection::VT_EXAMPLES)) { THROW("No examples to parse"); }
-  if (_example_index == _data->examples()->size()) return false;
-  parse_example(all, examples[0], _data->examples()->Get(_example_index));
-  _example_index++;
+  _flatbuffer_pointer = reinterpret_cast<uint8_t*>(line);
+  _data = VW::parsers::flatbuffer::GetExampleRoot(_flatbuffer_pointer);
   return true;
+}
+
+void parser::process_collection_item(vw* all, v_array<example*>& examples)
+{
+  // new example object to process from collection
+  const auto ex = _data->example_obj_as_ExampleCollection()->examples()->Get(_example_index);
+  parse_example(all, examples[0], ex);
+  _example_index++;
+  if (_example_index == _data->example_obj_as_ExampleCollection()->examples()->Length())
+  {
+    _example_index = 0;
+    _active_collection = false;
+  }
+}
+
+bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffer_pointer)
+{
+  if (_active_collection)
+  {
+    process_collection_item(all, examples);
+    return true;
+  }
+  else
+  {
+    // new object to be read from file
+    if (!parse(all, buffer_pointer)) { return false; }
+
+    switch (_data->example_obj_type())
+    {
+      case VW::parsers::flatbuffer::ExampleType_Example:
+      {
+        const auto example = _data->example_obj_as_Example();
+        parse_example(all, examples[0], example);
+        return true;
+      }
+      break;
+      case VW::parsers::flatbuffer::ExampleType_ExampleCollection:
+      {
+        _active_collection = true;
+        process_collection_item(all, examples);
+        return true;
+      }
+      break;
+
+      default:
+        break;
+    }
+    return false;
+  }
 }
 
 void parser::parse_example(vw* all, example* ae, const Example* eg)

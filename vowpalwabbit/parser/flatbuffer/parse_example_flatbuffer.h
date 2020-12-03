@@ -21,21 +21,20 @@ int flatbuffer_to_examples(vw* all, v_array<example*>& examples);
 class parser
 {
 public:
-  bool parse_examples(vw* all, v_array<example*>& examples);
-  void init();
   parser() = default;
-  parser(std::string filename);
-  parser(uint8_t* buffer_pointer);
-  const VW::parsers::flatbuffer::ExampleCollection* data();
+  const VW::parsers::flatbuffer::ExampleRoot* data();
+  bool parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffer_pointer = nullptr);
 
 private:
-  const VW::parsers::flatbuffer::ExampleCollection* _data;
-  std::string _filename;
+  const VW::parsers::flatbuffer::ExampleRoot* _data;
   uint8_t* _flatbuffer_pointer;
-  std::vector<char> buffer;
-  uint32_t _example_index;
-  uint64_t _c_hash;
+  flatbuffers::uoffset_t _object_size = 0;
+  bool _active_collection = false;
+  uint32_t _example_index = 0;
+  uint64_t _c_hash = 0;
 
+  bool parse(vw* all, uint8_t* buffer_pointer = nullptr);
+  void process_collection_item(vw* all, v_array<example*>& examples);
   void parse_example(vw* all, example* ae, const Example* eg);
   void parse_namespaces(vw* all, example* ae, const Namespace* ns);
   void parse_features(vw* all, features& fs, const Feature* feature);
