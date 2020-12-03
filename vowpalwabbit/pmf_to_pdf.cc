@@ -31,7 +31,7 @@ void reduction::transform_prediction(example& ec)
   uint32_t r = 0;
   while (l < n || r < n)
   {
-    if (temp_pred_a_s[l].action >= bandwidth)
+    if (temp_pred_a_s[0].action >= bandwidth)
     {
       if (l == n || temp_pred_a_s[r].action + bandwidth < temp_pred_a_s[l].action - bandwidth)
       {

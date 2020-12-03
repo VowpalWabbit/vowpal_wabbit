@@ -34,7 +34,6 @@ VW_WARNING_STATE_POP
 #include "cb.h"
 #include "conditional_contextual_bandit.h"
 #include "cb_continuous_label.h"
-#include "prob_dist_cont.h"
 
 #include "best_constant.h"
 #include "json_utils.h"
