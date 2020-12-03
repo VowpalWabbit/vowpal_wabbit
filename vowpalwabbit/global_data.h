@@ -522,10 +522,11 @@ public:
   // That pointer would be invalidated if it were to be moved.
   vw(const vw&&) = delete;
   vw& operator=(const vw&&) = delete;
-  std::string get_setup_name(reduction_setup_fn setup);
-  void map_setup_name();
+
+  std::string get_setupfn_name(reduction_setup_fn setup);
 
 private:
+  void build_setupfn_name_dict();
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
 
