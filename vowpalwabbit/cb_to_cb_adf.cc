@@ -79,7 +79,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 {
   bool eval = false;
   std::string type_string = "mtr";
-  size_t num_actions;
+  uint32_t num_actions;
 
   option_group_definition new_options("Contextual Bandit Options");
   new_options

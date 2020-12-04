@@ -63,9 +63,13 @@ internal:
     if (options->was_supplied("cb")) {
       m_numberOfActions = (int)options->get_typed_option<uint32_t>("cb").value();
     }
+    else if (options->was_supplied("old_cb"))
+    {
+      m_numberOfActions = (int)options->get_typed_option<uint32_t>("old_cb").value();
+    }
 
-	m_learning_rate = vw->eta;
-	m_power_t = vw->power_t;
+    m_learning_rate = vw->eta;
+    m_power_t = vw->power_t;
   }
 
 public:

@@ -157,7 +157,7 @@
     <ClInclude Include="cb_explore.h" />
     <ClInclude Include="cb_sample.h" />
     <ClInclude Include="cbify.h" />
-    <ClCompile Include="cb_to_cb_adf.h" />
+    <ClInclude Include="cb_to_cb_adf.h" />
     <ClInclude Include="ccb_label.h" />
     <ClInclude Include="ccb_reduction_features.h" />
     <ClInclude Include="classweight.h" />
