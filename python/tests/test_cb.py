@@ -1,12 +1,18 @@
 import pandas as pd
 import sklearn as sk
 import numpy as np
-import os
+# import os
 from vowpalwabbit import pyvw
 
 import pytest
 
-def test_getting_started_example():
+def test_getting_started_example_cb():
+    return helper_getting_started_example("--cb")
+
+def test_getting_started_example_newcb():
+    return helper_getting_started_example("--new_cb")
+
+def helper_getting_started_example(which_cb):
     train_data = [{'action': 1, 'cost': 2, 'probability': 0.4, 'feature1': 'a', 'feature2': 'c', 'feature3': ''},
                 {'action': 3, 'cost': 0, 'probability': 0.2, 'feature1': 'b', 'feature2': 'd', 'feature3': ''},
                 {'action': 4, 'cost': 1, 'probability': 0.5, 'feature1': 'a', 'feature2': 'b', 'feature3': ''},
@@ -30,7 +36,7 @@ def test_getting_started_example():
     test_df['index'] = range(1, len(test_df) + 1)
     test_df = test_df.set_index("index")
 
-    vw = pyvw.vw("--new_cb 4")
+    vw = pyvw.vw(which_cb + " 4")
 
     for i in train_df.index:
         action = train_df.loc[i, "action"]
@@ -51,9 +57,9 @@ def test_getting_started_example():
         feature3 = test_df.loc[j, "feature3"]
         choice = vw.predict("| "+str(feature1)+" "+str(feature2)+" "+str(feature3))
         assert isinstance(choice, int), "choice should be int"
-        assert choice == 3, f"predicted action should be 3 instead of {choice}"
+        assert choice == 3, "predicted action should be 3 instead of " + choice
 
     vw.finish()
 
-print(os.getpid())
-test_getting_started_example()
+# print(os.getpid())
+# test_getting_started_example()
