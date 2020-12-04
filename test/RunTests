@@ -2047,9 +2047,12 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbe_adf_synthcover.stderr
     pred-sets/ref/cbe_adf_synthcover.predict
 
-# Test 258: cb with dr
+# Test 258: new_cb with dr (see test 39)
 {VW} -d train-sets/rcv1_raw_cb_small.vw --new_cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25
-    train-sets/ref/rcv1_raw_cb_dr.stderr
+    train-sets/ref/rcv1_raw_new_cb_dr.stderr
 
+# Test 259: new_cb redirection when --eval (see test 74)
+{VW} -d train-sets/rcv1_cb_eval --new_cb 2 --eval
+    train-sets/ref/rcv1_cb_eval.stderr
 
 # Do not delete this line or the empty line above it

@@ -62,4 +62,4 @@ def helper_getting_started_example(which_cb):
     vw.finish()
 
 # print(os.getpid())
-# test_getting_started_example()
+# helper_getting_started_example("--new_cb")

@@ -96,11 +96,11 @@ void finish_example(vw& all, cb_to_cb_adf&, example& ec)
 VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 {
   bool eval = false;
-  auto data = scoped_calloc_or_throw<cb_to_cb_adf>();
+  size_t num_actions;
 
   option_group_definition new_options("Contextual Bandit Options");
   new_options
-      .add(make_option("new_cb", data->adf_data.num_actions).keep().necessary().help("Use contextual bandit learning with <k> costs"))
+      .add(make_option("new_cb", num_actions).keep().necessary().help("Use contextual bandit learning with <k> costs"))
       .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."));
 
   if (!options.add_parse_and_check_necessary(new_options))
@@ -109,16 +109,16 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   // not implemented in "new_cb" yet
   if (eval)
   {
-    options.insert("cb", std::to_string(data->adf_data.num_actions));
+    options.insert("cb", std::to_string(num_actions));
     return nullptr;
   }
 
   // force cb_adf; cb_adf will pick up cb_type
   options.insert("cb_adf", "");
 
+  auto data = scoped_calloc_or_throw<cb_to_cb_adf>();
   data->weights = &(all.weights);
-
-  init_adf_data(data->adf_data, data->adf_data.num_actions, all.interactions);
+  init_adf_data(data->adf_data, num_actions, all.interactions);
 
   multi_learner* base = as_multiline(setup_base(options, all));
 
