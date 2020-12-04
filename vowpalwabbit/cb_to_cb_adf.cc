@@ -34,19 +34,19 @@ struct cb_to_cb_adf
 template <bool is_learn>
 void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 {
-//   CB::label ld = ec.l.cb;
   copy_example_to_adf(data.adf_data, *(data.weights), ec);
 
   if (is_learn && !CB::is_test_label(&ec.l.cb))
   {
-    // base.predict(data.adf_data.ecs);
     uint32_t chosen_action = ec.l.cb.costs[0].action - 1;
     if (chosen_action < data.adf_data.num_actions)
     {
-    //   CB::label ld = data.adf_data.ecs[chosen_action]->l.cb;
+      // do i need a guard here?
+      CB::label ld = data.adf_data.ecs[chosen_action]->l.cb;
       data.adf_data.ecs[chosen_action]->l.cb = ec.l.cb;
       base.learn(data.adf_data.ecs);
-    //   data.adf_data.ecs[chosen_action]->l.cb = ld;
+      data.adf_data.ecs[chosen_action]->l.cb = ld;
+
       CB::default_label(&data.adf_data.ecs[chosen_action]->l.cb);  
     }
     else
@@ -57,13 +57,9 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
   }
   else
   {
-    // Guard example state restore against throws
-    // auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cb = ld; });
-
     base.predict(data.adf_data.ecs);
   }
 
-  // prediction from adf_data.ecs -> copy to ec.label -> take argmin
   // cb_adf => first action is a greedy action TODO: is this a contract?
   ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
 }
@@ -110,7 +106,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
 
-  // force cb_adf -> cb_adf will pick up cb_type
+  // force cb_adf; cb_adf will pick up cb_type
   options.insert("cb_adf", "");
 
   data->weights = &(all.weights);
@@ -125,6 +121,8 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   l = &init_learner(
     data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass);
   l->set_finish_example(finish_example);
+
+  all.delete_prediction = nullptr;
 
   return make_base(*l);
 }
