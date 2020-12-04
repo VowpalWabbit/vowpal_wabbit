@@ -9,7 +9,6 @@
 #include "vw.h"
 #include "cbify.h"
 #include "cb_algs.h"
-#include "gen_cs_example.h"
 #include "cb_label_parser.h"
 
 using namespace LEARNER;
@@ -41,7 +40,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
     uint32_t chosen_action = ec.l.cb.costs[0].action - 1;
     if (chosen_action < data.adf_data.num_actions)
     {
-      // do i need a guard here?
+      // TODO: do i need a guard here?
       CB::label ld = data.adf_data.ecs[chosen_action]->l.cb;
       data.adf_data.ecs[chosen_action]->l.cb = ec.l.cb;
       base.learn(data.adf_data.ecs);
@@ -67,24 +66,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 void output_example(vw& all, example& ec, CB::label& ld)
 {
   float loss = CB_ALGS::get_cost_estimate(ld, ec.pred.multiclass);
-
-  all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
-
-  for (auto& sink : all.final_prediction_sink) all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
-
-  if (all.raw_prediction != nullptr)
-  {
-    std::stringstream outputStringStream;
-    for (unsigned int i = 0; i < ld.costs.size(); i++)
-    {
-      CB::cb_class cl = ld.costs[i];
-      if (i > 0) outputStringStream << ' ';
-      outputStringStream << cl.action << ':' << cl.partial_prediction;
-    }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
-  }
-
-  CB::print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
+  CB_ALGS::generic_output_example(all, loss, ec, ld);
 }
 
 void finish_example(vw& all, cb_to_cb_adf&, example& ec)

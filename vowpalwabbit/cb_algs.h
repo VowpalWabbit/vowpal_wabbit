@@ -84,4 +84,7 @@ inline bool example_is_newline_not_header(example const& ec)
 {
   return (example_is_newline(ec) && !CB::ec_is_example_header(ec));
 }
+
+void generic_output_example(vw& all, float loss, example& ec, CB::label& ld);
+
 }  // namespace CB_ALGS
