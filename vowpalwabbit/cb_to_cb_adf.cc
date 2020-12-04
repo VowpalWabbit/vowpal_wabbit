@@ -106,6 +106,13 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options))
     return nullptr;
 
+  // not implemented in "new_cb" yet
+  if (eval)
+  {
+    options.insert("cb", std::to_string(data->adf_data.num_actions));
+    return nullptr;
+  }
+
   // force cb_adf; cb_adf will pick up cb_type
   options.insert("cb_adf", "");
 
