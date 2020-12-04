@@ -1,6 +1,7 @@
 import pandas as pd
 import sklearn as sk
 import numpy as np
+import os
 from vowpalwabbit import pyvw
 
 import pytest
@@ -29,7 +30,7 @@ def test_getting_started_example():
     test_df['index'] = range(1, len(test_df) + 1)
     test_df = test_df.set_index("index")
 
-    vw = pyvw.vw("--cb 4")
+    vw = pyvw.vw("--new_cb 4")
 
     for i in train_df.index:
         action = train_df.loc[i, "action"]
@@ -50,6 +51,9 @@ def test_getting_started_example():
         feature3 = test_df.loc[j, "feature3"]
         choice = vw.predict("| "+str(feature1)+" "+str(feature2)+" "+str(feature3))
         assert isinstance(choice, int), "choice should be int"
-        assert choice == 3, "predicted action should be 3"
+        assert choice == 3, f"predicted action should be 3 instead of {choice}"
 
     vw.finish()
+
+print(os.getpid())
+test_getting_started_example()

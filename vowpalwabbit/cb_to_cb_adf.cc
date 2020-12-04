@@ -9,6 +9,8 @@
 #include "vw.h"
 #include "cbify.h"
 #include "cb_algs.h"
+#include "gen_cs_example.h"
+#include "cb_label_parser.h"
 
 using namespace LEARNER;
 using namespace VW::config;
@@ -35,14 +37,17 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 //   CB::label ld = ec.l.cb;
   copy_example_to_adf(data.adf_data, *(data.weights), ec);
 
-  if (is_learn)
+  if (is_learn && !CB::is_test_label(&ec.l.cb))
   {
     // base.predict(data.adf_data.ecs);
     uint32_t chosen_action = ec.l.cb.costs[0].action - 1;
     if (chosen_action < data.adf_data.num_actions)
     {
+    //   CB::label ld = data.adf_data.ecs[chosen_action]->l.cb;
       data.adf_data.ecs[chosen_action]->l.cb = ec.l.cb;
       base.learn(data.adf_data.ecs);
+    //   data.adf_data.ecs[chosen_action]->l.cb = ld;
+      CB::default_label(&data.adf_data.ecs[chosen_action]->l.cb);  
     }
     else
     {
@@ -60,18 +65,12 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 
   // prediction from adf_data.ecs -> copy to ec.label -> take argmin
   // cb_adf => first action is a greedy action TODO: is this a contract?
-  ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action;
-//   data.adf_data.ecs[0]->pred.a_s[0].score
+  ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
 }
 
-void output_example(vw& all, cb_to_cb_adf& data, example& ec, CB::label& ld)
+void output_example(vw& all, example& ec, CB::label& ld)
 {
-  float loss = 0.;
-
-// inline float get_cost_estimate(ACTION_SCORE::action_score& a_s, float cost, uint32_t action, float offset = 0.)
-// import cb_algs.h -> ips estimate
-// no bueno
-  loss = CB_ALGS::get_cost_estimate(data.adf_data.ecs[0]->pred.a_s[0], ld.costs[0].cost, ld.costs[0].action);
+  float loss = CB_ALGS::get_cost_estimate(ld, ec.pred.multiclass);
 
   all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
 
@@ -92,9 +91,9 @@ void output_example(vw& all, cb_to_cb_adf& data, example& ec, CB::label& ld)
   CB::print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
 }
 
-void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
+void finish_example(vw& all, cb_to_cb_adf&, example& ec)
 {
-  output_example(all, c, ec, ec.l.cb);
+  output_example(all, ec, ec.l.cb);
   VW::finish_example(all, ec);
 }
 

@@ -67,6 +67,13 @@ inline float get_cost_estimate(CB::cb_class* observation, COST_SENSITIVE::label&
   return get_cost_estimate(observation, action);
 }
 
+inline float get_cost_estimate(CB::label& ld, uint32_t action)
+{
+  for (auto& cl : ld.costs)
+    if (cl.action == action) return get_cost_estimate(&cl, action);
+  return 0.0f;
+}
+
 inline float get_cost_estimate(ACTION_SCORE::action_score& a_s, float cost, uint32_t action, float offset = 0.)
 {
   if (action == a_s.action) return (cost - offset) / a_s.score;

@@ -141,7 +141,7 @@ void copy_example_to_adf(cbify_adf_data& adf_data, parameters& weights, example&
     for (features& fs : eca)
     {
       for (feature_index& idx : fs.indicies)
-      { idx = ((((idx >> ss) * 28904713) + 4832917 * (uint64_t)a) << ss) & mask; }
+      { idx = (((idx >> ss) * adf_data.num_actions + a) << ss) & mask; }
     }
 
     // avoid empty example by adding a tag (hacky)
