@@ -47,7 +47,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
       base.learn(data.adf_data.ecs);
       data.adf_data.ecs[chosen_action]->l.cb = ld;
 
-      CB::default_label(&data.adf_data.ecs[chosen_action]->l.cb);  
+      CB::default_label(&data.adf_data.ecs[chosen_action]->l.cb);
     }
     else
     {
@@ -103,8 +103,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
       .add(make_option("new_cb", num_actions).keep().necessary().help("Use contextual bandit learning with <k> costs"))
       .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."));
 
-  if (!options.add_parse_and_check_necessary(new_options))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // not implemented in "new_cb" yet
   if (eval)
@@ -125,8 +124,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   learner<cb_to_cb_adf, example>* l;
   // multiclass is inferior to action_scores (as cb_adf does)
   // for compat reasons we stick to multiclass for now
-  l = &init_learner(
-    data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass);
+  l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass);
   l->set_finish_example(finish_example);
 
   all.delete_prediction = nullptr;

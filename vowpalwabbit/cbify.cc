@@ -126,7 +126,6 @@ void copy_example_to_adf(cbify_adf_data& adf_data, parameters& weights, example&
   const uint64_t ss = weights.stride_shift();
   const uint64_t mask = weights.mask();
 
-// cb argument for num actions 
   for (size_t a = 0; a < adf_data.num_actions; ++a)
   {
     auto& eca = *adf_data.ecs[a];
@@ -140,8 +139,7 @@ void copy_example_to_adf(cbify_adf_data& adf_data, parameters& weights, example&
     // offset indices for given action
     for (features& fs : eca)
     {
-      for (feature_index& idx : fs.indicies)
-      { idx = (((idx >> ss) * adf_data.num_actions + a) << ss) & mask; }
+      for (feature_index& idx : fs.indicies) { idx = (((idx >> ss) * adf_data.num_actions + a) << ss) & mask; }
     }
 
     // avoid empty example by adding a tag (hacky)
@@ -372,7 +370,6 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   else
     ld = ec.l.multi;
 
-  //call this one
   copy_example_to_adf(data.adf_data, data.all->weights, ec);
   base.predict(data.adf_data.ecs);
 
@@ -395,12 +392,12 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
     cl.cost = loss(data, ld.label, cl.action);
 
   // add cb label to chosen action
-  //assign label like below
+  // assign label like below
   auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb;
   lab.costs.clear();
 
   // no label nothing to assign
-  // if there is a label 
+  // if there is a label
 
   // then call base
 
@@ -411,7 +408,8 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   ec.pred.multiclass = cl.action;
 }
 
-void init_adf_data(cbify_adf_data& adf_data, const size_t num_actions, std::vector<std::vector<namespace_index>>& interactions)
+void init_adf_data(
+    cbify_adf_data& adf_data, const size_t num_actions, std::vector<std::vector<namespace_index>>& interactions)
 {
   adf_data.num_actions = num_actions;
 
