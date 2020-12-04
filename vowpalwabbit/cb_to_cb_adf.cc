@@ -4,6 +4,7 @@
 
 #include "cb_to_cb_adf.h"
 
+#include "vw_versions.h"
 #include "reductions.h"
 #include "learner.h"
 #include "vw.h"
@@ -11,7 +12,7 @@
 #include "cb_algs.h"
 #include "cb_label_parser.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 struct cb_to_cb_adf
@@ -89,8 +90,12 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
+  // models created with older version should default to --old_cb
+  bool compat_old_cb = false;
+  if (all.model_file_ver != EMPTY_VERSION_FILE) compat_old_cb = !(all.model_file_ver >= VERSION_FILE_WITH_CB_TO_CBADF);
+
   // not implemented in "new_cb" yet
-  if (eval)
+  if (eval || compat_old_cb)
   {
     options.insert("old_cb", std::to_string(num_actions));
     return nullptr;

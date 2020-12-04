@@ -5,6 +5,7 @@
 #pragma once
 
 /* Define the last version where files are backward compatible. */
+#define EMPTY_VERSION_FILE "0.0.0"  // empty version
 #define LAST_COMPATIBLE_VERSION "7.6.0"
 #define VERSION_FILE_WITH_CUBIC "6.1.3"
 #define VERSION_FILE_WITH_RANK_IN_HEADER "7.8.0"  // version since which rank was moved to vw::file_options
@@ -18,3 +19,4 @@
 #define VERSION_FILE_WITH_CB_ADF_SAVE "8.3.2"  // first version with user supplied header
 #define VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG \
   "8.9.0"  // CCB optimization for models with only single slot used introduced in this version.
+#define VERSION_FILE_WITH_CB_TO_CBADF "8.9.1"  // first version that maps --cb to use cb_adf
