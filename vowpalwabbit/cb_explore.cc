@@ -335,12 +335,12 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
 
   // If neither cb nor cats_tree are present on the reduction stack then
   // add cb to the reduction stack as the default reduction for cb_explore.
-  if (!options.was_supplied("cats_tree") && !options.was_supplied("cb"))
+  if (!options.was_supplied("cats_tree") && !options.was_supplied("old_cb"))
   {
     // none of the relevant options are set, default to cb
     std::stringstream ss;
     ss << data->cbcs.num_actions;
-    options.insert("cb", ss.str());
+    options.insert("old_cb", ss.str());
   }
 
   if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }

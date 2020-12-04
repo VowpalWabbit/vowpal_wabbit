@@ -78,11 +78,13 @@ void finish_example(vw& all, cb_to_cb_adf&, example& ec)
 VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 {
   bool eval = false;
+  std::string type_string = "mtr";
   size_t num_actions;
 
   option_group_definition new_options("Contextual Bandit Options");
   new_options
-      .add(make_option("new_cb", num_actions).keep().necessary().help("Use contextual bandit learning with <k> costs"))
+      .add(make_option("cb", num_actions).keep().necessary().help("Use contextual bandit learning with <k> costs"))
+      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {}"))
       .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
@@ -90,7 +92,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   // not implemented in "new_cb" yet
   if (eval)
   {
-    options.insert("cb", std::to_string(num_actions));
+    options.insert("old_cb", std::to_string(num_actions));
     return nullptr;
   }
 

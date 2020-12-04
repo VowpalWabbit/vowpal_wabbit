@@ -1030,15 +1030,15 @@ __DATA__
     train-sets/ref/nn-1-noquiet.stderr
 
 # Test 39: cb with dr
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25
+{VW} -d train-sets/rcv1_raw_cb_small.vw --old_cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25
     train-sets/ref/rcv1_raw_cb_dr.stderr
 
 # Test 40: cb with ips
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125
+{VW} -d train-sets/rcv1_raw_cb_small.vw --old_cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125
     train-sets/ref/rcv1_raw_cb_ips.stderr
 
 # Test 41: cb with dm
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg
+{VW} -d train-sets/rcv1_raw_cb_small.vw --old_cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg
     train-sets/ref/rcv1_raw_cb_dm.stderr
 
 # Test 42: --lda --passes 2 hang regression
@@ -1202,7 +1202,7 @@ echo "" | {VW}
     pred-sets/ref/0001_ftrl.predict
 
 # Test 74: cb evaluation
-{VW} -d train-sets/rcv1_cb_eval --cb 2 --eval
+{VW} -d train-sets/rcv1_cb_eval --old_cb 2 --eval
     train-sets/ref/rcv1_cb_eval.stderr
 
 # Test 75: Log_multi
@@ -1963,7 +1963,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
         train-sets/ref/0001_fb.stderr
 
 # Test 240: Flatbuffer CB Label Test
-{VW} --cb 2 -d train-sets/rcv1_raw_cb_small.fb \
+{VW} --old_cb 2 -d train-sets/rcv1_raw_cb_small.fb \
      --flatbuffer
         train-sets/ref/rcv1_raw_cb_fb.stderr
 
@@ -1983,7 +1983,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
          train-sets/ref/cs_fb.stderr
 
 # Test 244: Flatbuffer CB_eval test
-{VW} -d train-sets/rcv1_cb_eval.fb --cb 2 --eval \
+{VW} -d train-sets/rcv1_cb_eval.fb --old_cb 2 --eval \
      --flatbuffer
          train-sets/ref/rcv1_cb_eval_fb.stderr
 
@@ -2048,11 +2048,19 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/cbe_adf_synthcover.predict
 
 # Test 258: new_cb with dr (see test 39)
-{VW} -d train-sets/rcv1_raw_cb_small.vw --new_cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25
     train-sets/ref/rcv1_raw_new_cb_dr.stderr
 
-# Test 259: new_cb redirection when --eval (see test 74)
-{VW} -d train-sets/rcv1_cb_eval --new_cb 2 --eval
+# Test 259: cb with ips (see test 40)
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125
+    train-sets/ref/rcv1_raw_new_cb_ips.stderr
+
+# Test 260: cb with dm (see test 41)
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg
+    train-sets/ref/rcv1_raw_new_cb_dm.stderr
+
+# Test 261: new_cb redirection when --eval (see test 74)
+{VW} -d train-sets/rcv1_cb_eval --cb 2 --eval
     train-sets/ref/rcv1_cb_eval.stderr
 
 # Do not delete this line or the empty line above it

@@ -7,7 +7,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/cb_explore_cover.dat
 num sources = 1
-Enabled reductions: gd, scorer, csoaa, cb, cb_explore
+Enabled reductions: gd, scorer, csoaa, old_cb, cb_explore
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0  1:0:0.5 2:0.750000        3
