@@ -392,15 +392,8 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
     cl.cost = loss(data, ld.label, cl.action);
 
   // add cb label to chosen action
-  // assign label like below
   auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb;
   lab.costs.clear();
-
-  // no label nothing to assign
-  // if there is a label
-
-  // then call base
-
   lab.costs.push_back(cl);
 
   if (is_learn) base.learn(data.adf_data.ecs);

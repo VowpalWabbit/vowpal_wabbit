@@ -133,13 +133,12 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   std::string type_string = "dr";
   bool eval = false;
 
-  // old behaviour
-  option_group_definition new_options("OLD: Contextual Bandit Options");
+  option_group_definition new_options("Contextual Bandit Options");
   new_options
       .add(make_option("cb", data->cbcs.num_actions)
                .keep()
                .necessary()
-               .help("OLD: Use contextual bandit learning with <k> costs"))
+               .help("Use contextual bandit learning with <k> costs"))
       .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"))
       .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."));
 
