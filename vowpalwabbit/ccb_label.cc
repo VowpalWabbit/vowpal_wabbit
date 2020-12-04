@@ -14,6 +14,7 @@
 #include "cb_algs.h"
 #include "constant.h"
 #include "example.h"
+#include "vw_math.h"
 
 #include <numeric>
 #include <algorithm>
@@ -21,7 +22,7 @@
 #include <cmath>
 #include "vw_string_view.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
@@ -51,8 +52,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
 
   bool is_outcome_present;
   next_read_size = sizeof(bool);
-  if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
-    return 0;
+  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
   is_outcome_present = *(bool*)read_ptr;
   read_count += sizeof(is_outcome_present);
 
@@ -69,8 +69,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
 
     uint32_t size_probs;
     next_read_size = sizeof(size_probs);
-    if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
-      return 0;
+    if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
     size_probs = *(uint32_t*)read_ptr;
     read_count += sizeof(size_probs);
 
@@ -78,8 +77,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
     {
       ACTION_SCORE::action_score a_s;
       next_read_size = sizeof(a_s);
-      if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
-        return 0;
+      if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
       a_s = *(ACTION_SCORE::action_score*)read_ptr;
       read_count += sizeof(a_s);
 
@@ -89,8 +87,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
 
   uint32_t size_includes;
   next_read_size = sizeof(size_includes);
-  if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
-    return 0;
+  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
   size_includes = *(uint32_t*)read_ptr;
   read_count += sizeof(size_includes);
 
@@ -98,8 +95,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
   {
     uint32_t include;
     next_read_size = sizeof(include);
-    if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
-      return 0;
+    if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
     include = *(uint32_t*)read_ptr;
     read_count += sizeof(include);
     ld.explicit_included_actions.push_back(include);
@@ -179,7 +175,7 @@ void cache_label(polylabel* v, io_buf& cache)
 void default_label(label& ld)
 {
   // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
-  if (ld.outcome)
+  if (ld->outcome != nullptr)
   {
     ld.outcome->probabilities.delete_v();
     delete ld.outcome;
@@ -239,12 +235,12 @@ void copy_label(polylabel* dst, polylabel* src)
   copy_label(dst->conditional_contextual_bandit, src->conditional_contextual_bandit);
 }
 
-ACTION_SCORE::action_score convert_to_score(const VW::string_view& action_id_str, const VW::string_view& probability_str)
+ACTION_SCORE::action_score convert_to_score(
+    const VW::string_view& action_id_str, const VW::string_view& probability_str)
 {
   auto action_id = static_cast<uint32_t>(int_of_string(action_id_str));
   auto probability = float_of_string(probability_str);
-  if (std::isnan(probability))
-    THROW("error NaN probability: " << probability_str);
+  if (std::isnan(probability)) THROW("error NaN probability: " << probability_str);
 
   if (probability > 1.0)
   {
@@ -265,34 +261,28 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view& outco
 {
   auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
-  auto split_commas = v_init<VW::string_view>();
+  std::vector<VW::string_view> split_commas;
   tokenize(',', outcome, split_commas);
 
-  auto split_colons = v_init<VW::string_view>();
+  std::vector<VW::string_view> split_colons;
   tokenize(':', split_commas[0], split_colons);
 
-  if (split_colons.size() != 3)
-    THROW("Malformed ccb label");
+  if (split_colons.size() != 3) THROW("Malformed ccb label");
 
   ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
   ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[2]));
 
   ccb_outcome.cost = float_of_string(split_colons[1]);
-  if (std::isnan(ccb_outcome.cost))
-    THROW("error NaN cost: " << split_colons[1]);
+  if (std::isnan(ccb_outcome.cost)) THROW("error NaN cost: " << split_colons[1]);
 
   split_colons.clear();
 
   for (size_t i = 1; i < split_commas.size(); i++)
   {
     tokenize(':', split_commas[i], split_colons);
-    if (split_colons.size() != 2)
-      THROW("Must be action probability pairs");
+    if (split_colons.size() != 2) THROW("Must be action probability pairs");
     ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[1]));
   }
-
-  split_colons.delete_v();
-  split_commas.delete_v();
 
   return &ccb_outcome;
 }
@@ -309,27 +299,23 @@ void parse_label(parser* p, shared_data*, label& ld, v_array<VW::string_view>& w
 {
   ld.weight = 1.0;
 
-  if (words.size() < 2)
-    THROW("ccb labels may not be empty");
-  if (!(words[0] == "ccb"))
-  {
-    THROW("ccb labels require the first word to be ccb");
-  }
+  if (words.size() < 2) THROW("ccb labels may not be empty");
+  if (!(words[0] == CCB_LABEL)) { THROW("ccb labels require the first word to be ccb"); }
 
   auto type = words[1];
-  if (type == "shared")
+  if (type == SHARED_TYPE)
   {
     if (words.size() > 2)
       THROW("shared labels may not have a cost");
     ld.type = CCB::example_type::shared;
   }
-  else if (type == "action")
+  else if (type == ACTION_TYPE)
   {
     if (words.size() > 2)
       THROW("action labels may not have a cost");
     ld.type = CCB::example_type::action;
   }
-  else if (type == "slot")
+  else if (type == SLOT_TYPE)
   {
     if (words.size() > 4)
       THROW("ccb slot label can only have a type cost and exclude list");
@@ -356,7 +342,7 @@ void parse_label(parser* p, shared_data*, label& ld, v_array<VW::string_view>& w
     }
 
     // If a full distribution has been given, check if it sums to 1, otherwise throw.
-    if (ld.outcome && ld.outcome->probabilities.size() > 1)
+    if ((ld->outcome != nullptr) && ld->outcome->probabilities.size() > 1)
     {
       float total_pred = std::accumulate(ld.outcome->probabilities.begin(), ld.outcome->probabilities.end(), 0.f,
           [](float result_so_far, ACTION_SCORE::action_score action_pred) {
@@ -364,9 +350,9 @@ void parse_label(parser* p, shared_data*, label& ld, v_array<VW::string_view>& w
           });
 
       // TODO do a proper comparison here.
-      if (total_pred > 1.1f || total_pred < 0.9f)
+      if (!VW::math::are_same(total_pred, 1.f))
       {
-        THROW("When providing all predicition probabilties they must add up to 1.f");
+        THROW("When providing all prediction probabilities they must add up to 1.f, instead summed to " << total_pred);
       }
     }
   }

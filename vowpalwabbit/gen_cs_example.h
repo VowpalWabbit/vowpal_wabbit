@@ -8,6 +8,7 @@
 #include "reductions.h"
 #include "cb_algs.h"
 #include "vw_exception.h"
+#include "scope_exit.h"
 
 namespace GEN_CS
 {
@@ -16,7 +17,7 @@ struct cb_to_cs
   size_t cb_type;
   uint32_t num_actions;
   COST_SENSITIVE::label pred_scores;
-  LEARNER::single_learner* scorer;
+  VW::LEARNER::single_learner* scorer;
   float avg_loss_regressors;
   size_t nb_ex_regressors;
   float last_pred_reg;
@@ -38,7 +39,7 @@ struct cb_to_cs_adf
   // for DR
   COST_SENSITIVE::label pred_scores;
   CB::cb_class known_cost;
-  LEARNER::single_learner* scorer;
+  VW::LEARNER::single_learner* scorer;
 };
 
 CB::cb_class* get_observed_cost(CB::label& ld);
@@ -199,8 +200,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
   cs_labels.costs.clear();
   for (size_t i = 0; i < examples.size(); i++)
   {
-    if (CB_ALGS::example_is_newline_not_header(*examples[i]))
-      continue;
+    if (CB_ALGS::example_is_newline_not_header(*examples[i])) continue;
 
     COST_SENSITIVE::wclass wc = {0., (uint32_t)i, 0., 0.};
 
@@ -246,7 +246,7 @@ void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs
 }
 
 template <bool is_learn>
-void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
+void call_cs_ldf(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
     COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset, size_t id = 0)
 {
   cb_labels.clear();
@@ -269,20 +269,23 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
     ec->ft_offset = offset;
   }
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit([&cb_labels, saved_offset, &examples] {
+    // 3rd: restore cb_label for each example
+    // (**ec).l.cb = array.element.
+    // and restore offsets
+    for (size_t i = 0; i < examples.size(); ++i)
+    {
+      examples[i]->l.cb = cb_labels[i];
+      examples[i]->ft_offset = saved_offset;
+    }
+  });
+
   // 2nd: predict for each ex
   // // call base.predict for all examples
   if (is_learn)
     base.learn(examples, (int32_t)id);
   else
     base.predict(examples, (int32_t)id);
-
-  // 3rd: restore cb_label for each example
-  // (**ec).l.cb = array.element.
-  // and restore offsets
-  for (size_t i = 0; i < examples.size(); ++i)
-  {
-    examples[i]->l.cb = cb_labels[i];
-    examples[i]->ft_offset = saved_offset;
-  }
 }
 }  // namespace GEN_CS

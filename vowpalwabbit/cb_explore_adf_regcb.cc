@@ -29,7 +29,7 @@ namespace regcb
 {
 struct cb_explore_adf_regcb
 {
- private:
+private:
   size_t _counter;
   bool _regcbopt;  // use optimistic variant of RegCB
   float _c0;       // mellowness parameter for RegCB
@@ -44,19 +44,19 @@ struct cb_explore_adf_regcb
   std::vector<ACTION_SCORE::action_scores> _ex_as;
   std::vector<v_array<CB::cb_class>> _ex_costs;
 
- public:
+public:
   cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost);
   ~cb_explore_adf_regcb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
- private:
+private:
   template <bool is_learn>
-  void predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
-  void get_cost_ranges(float delta, LEARNER::multi_learner& base, multi_ex& examples, bool min_only);
+  void get_cost_ranges(float delta, VW::LEARNER::multi_learner& base, multi_ex& examples, bool min_only);
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };
 
@@ -71,8 +71,7 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
 {
   const float maxw = (std::min)(fhat / sens, FLT_MAX);
 
-  if (maxw * fhat * fhat <= delta)
-    return maxw;
+  if (maxw * fhat * fhat <= delta) return maxw;
 
   float l = 0;
   float u = maxw;
@@ -86,14 +85,14 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
       u = w;
     else
       l = w;
-    if (fabs(v) <= tol || u - l <= tol)
-      break;
+    if (fabs(v) <= tol || u - l <= tol) break;
   }
 
   return l;
 }
 
-void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& base, multi_ex& examples, bool min_only)
+void cb_explore_adf_regcb::get_cost_ranges(
+    float delta, VW::LEARNER::multi_learner& base, multi_ex& examples, bool min_only)
 {
   const size_t num_actions = examples[0]->pred.a_s.size();
   _min_costs.resize(num_actions);
@@ -110,10 +109,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
   }
 
   // set regressor predictions
-  for (const auto& as : _ex_as[0])
-  {
-    examples[as.action]->pred.scalar = as.score;
-  }
+  for (const auto& as : _ex_as[0]) { examples[as.action]->pred.scalar = as.score; }
 
   const float cmin = _min_cb_cost;
   const float cmax = _max_cb_cost;
@@ -131,24 +127,19 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
     {
       w = binary_search(ec->pred.scalar - cmin + 1, delta, sens);
       _min_costs[a] = (std::max)(ec->pred.scalar - sens * w, cmin);
-      if (_min_costs[a] > cmax)
-        _min_costs[a] = cmax;
+      if (_min_costs[a] > cmax) _min_costs[a] = cmax;
     }
 
     if (!min_only)
     {
       ec->l.simple.label = cmax + 1;
       sens = base.sensitivity(*ec);
-      if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens))
-      {
-        _max_costs[a] = cmax;
-      }
+      if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens)) { _max_costs[a] = cmax; }
       else
       {
         w = binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
         _max_costs[a] = (std::min)(ec->pred.scalar + sens * w, cmax);
-        if (_max_costs[a] < cmin)
-          _max_costs[a] = cmin;
+        if (_max_costs[a] < cmin) _max_costs[a] = cmin;
       }
     }
   }
@@ -162,22 +153,21 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, LEARNER::multi_learner& 
 }
 
 template <bool is_learn>
-void cb_explore_adf_regcb::predict_or_learn_impl(LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_regcb::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   if (is_learn)
   {
     for (size_t i = 0; i < examples.size() - 1; ++i)
     {
       CB::label& ld = examples[i]->l.cb;
-      if (ld.costs.size() == 1)
-        ld.costs[0].probability = 1.f;  // no importance weighting
+      if (ld.costs.size() == 1) ld.costs[0].probability = 1.f;  // no importance weighting
     }
 
-    LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
+    VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
     ++_counter;
   }
   else
-    LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+    VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)preds.size();
@@ -214,8 +204,7 @@ void cb_explore_adf_regcb::predict_or_learn_impl(LEARNER::multi_learner& base, m
     {
       float min_max_cost = FLT_MAX;
       for (size_t a = 0; a < num_actions; ++a)
-        if (_max_costs[a] < min_max_cost)
-          min_max_cost = _max_costs[a];
+        if (_max_costs[a] < min_max_cost) min_max_cost = _max_costs[a];
       for (size_t i = 0; i < preds.size(); ++i)
       {
         if (_min_costs[preds[i].action] <= min_max_cost)
@@ -230,7 +219,7 @@ void cb_explore_adf_regcb::predict_or_learn_impl(LEARNER::multi_learner& base, m
   }
 }
 
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
@@ -256,16 +245,13 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       .add(make_option("cb_type", type_string)
                .keep()
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
+
   options.add_and_parse(new_options);
 
-  if (!cb_explore_adf_option || !(options.was_supplied("regcb") || options.was_supplied("regcbopt")))
-    return nullptr;
+  if (!cb_explore_adf_option || !(options.was_supplied("regcb") || options.was_supplied("regcbopt"))) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf"))
-  {
-    options.insert("cb_adf", "");
-  }
+  if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
   if (type_string != mtr)
   {
     all.trace_message << "warning: bad cb_type, RegCB only supports mtr; resetting to mtr." << std::endl;
@@ -277,13 +263,13 @@ LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   // Set explore_type
   size_t problem_multiplier = 1;
 
-  LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
+  VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
+  all.example_parser->lbl_parser = CB::cb_label;
   all.label_type = label_type_t::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
   auto data = scoped_calloc_or_throw<explore_type>(regcbopt, c0, first_only, min_cb_cost, max_cb_cost);
-  LEARNER::learner<explore_type, multi_ex>& l = LEARNER::init_learner(
+  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
       data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
 
   l.set_finish_example(explore_type::finish_multiline_example);

@@ -10,7 +10,7 @@
 #include "vw.h"
 #include "reductions.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace VW::config;
 
 namespace SVRG
@@ -53,13 +53,13 @@ inline float inline_predict(vw& all, example& ec)
 
 float predict_stable(const svrg& s, example& ec)
 {
-  return GD::finalize_prediction(s.all->sd, inline_predict<W_STABLE>(*s.all, ec));
+  return GD::finalize_prediction(s.all->sd, s.all->logger, inline_predict<W_STABLE>(*s.all, ec));
 }
 
 void predict(svrg& s, single_learner&, example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
-  ec.pred.scalar = GD::finalize_prediction(s.all->sd, ec.partial_prediction);
+  ec.pred.scalar = GD::finalize_prediction(s.all->sd, s.all->logger, ec.partial_prediction);
 }
 
 float gradient_scalar(const svrg& s, const example& ec, float pred)
@@ -114,7 +114,7 @@ void learn(svrg& s, single_learner& base, example& ec)
 
   if (pass % (s.stage_size + 1) == 0)  // Compute exact gradient
   {
-    if (s.prev_pass != pass && !s.all->quiet)
+    if (s.prev_pass != pass && !s.all->logger.quiet)
     {
       std::cout << "svrg pass " << pass << ": committing stable point" << std::endl;
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
@@ -131,10 +131,8 @@ void learn(svrg& s, single_learner& base, example& ec)
   }
   else  // Perform updates
   {
-    if (s.prev_pass != pass && !s.all->quiet)
-    {
-      std::cout << "svrg pass " << pass << ": taking steps" << std::endl;
-    }
+    if (s.prev_pass != pass && !s.all->logger.quiet)
+    { std::cout << "svrg pass " << pass << ": taking steps" << std::endl; }
     update_inner(s, ec);
   }
 
@@ -143,12 +141,9 @@ void learn(svrg& s, single_learner& base, example& ec)
 
 void save_load(svrg& s, io_buf& model_file, bool read, bool text)
 {
-  if (read)
-  {
-    initialize_regressor(*s.all);
-  }
+  if (read) { initialize_regressor(*s.all); }
 
-  if (!model_file.files.empty())
+  if (model_file.num_files() != 0)
   {
     bool resume = s.all->save_resume;
     std::stringstream msg;
@@ -173,14 +168,11 @@ base_learner* svrg_setup(options_i& options, vw& all)
 
   bool svrg_option = false;
   option_group_definition new_options("Stochastic Variance Reduced Gradient");
-  new_options.add(make_option("svrg", svrg_option).keep().help("Streaming Stochastic Variance Reduced Gradient"))
+  new_options
+      .add(make_option("svrg", svrg_option).keep().necessary().help("Streaming Stochastic Variance Reduced Gradient"))
       .add(make_option("stage_size", s->stage_size).default_value(1).help("Number of passes per SVRG stage"));
-  options.add_and_parse(new_options);
 
-  if (!svrg_option)
-  {
-    return nullptr;
-  }
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   s->all = &all;
   s->prev_pass = -1;

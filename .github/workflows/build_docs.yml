@@ -1,0 +1,132 @@
+name: Build Documentation
+
+# Build documentation on:
+# - pushes to master and uploads to latest folder
+# - Released and uploads to folder that matches release tag
+on:
+  push:
+    branches:
+      - master
+  release:
+    types:
+      - created
+
+jobs:
+  CXX:
+    container:
+      image: vowpalwabbit/ubuntu1604-build:latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DBUILD_DOCS=On
+      - name: Build docs
+        run: |
+          cd build
+          make doc
+      - name: Upload built docs
+        uses: actions/upload-artifact@v1
+        with:
+          name: cxx_docs
+          path: doc/html/
+  Python:
+    container:
+      image: vowpalwabbit/ubuntu1604-build:latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Python package
+        run: |
+          /usr/local/miniconda/bin/activate test-python36
+          python setup.py install --user
+          /usr/local/miniconda/bin/deactivate
+      - name: Build docs
+        run: |
+          /usr/local/miniconda/bin/activate test-python36
+          pip install sphinx numpydoc
+          pip install -r requirements.txt
+          cd python/docs
+          make html
+          /usr/local/miniconda/bin/deactivate
+      - name: Upload built docs
+        uses: actions/upload-artifact@v1
+        with:
+          name: python_docs
+          path: python/docs/build/
+  Upload:
+    name: Upload Docs
+    needs: [CXX, Python]
+    runs-on: ubuntu-latest
+    # The upload step should only be run on the main repository.
+    if: github.repository == 'VowpalWabbit/vowpal_wabbit'
+    steps:
+      - name: Set folder name to latest if push
+        if: github.event_name == 'push'
+        run: echo "FOLDER_NAME=latest" >> $GITHUB_ENV
+      - name: Set folder name to version if release
+        if: github.event_name == 'release'
+        run: echo "FOLDER_NAME=$(echo ${GITHUB_REF:10})" >> $GITHUB_ENV
+      - name: Download CXX Docs
+        uses: actions/download-artifact@v1
+        with:
+          name: cxx_docs
+      - name: Download Python Docs
+        uses: actions/download-artifact@v1
+        with:
+          name: python_docs
+      - name: Print contents of directory
+        shell: bash
+        run: |
+          pwd
+          ls
+          echo $GITHUB_WORKSPACE
+      - uses: actions/checkout@v1
+        with:
+          repository: VowpalWabbit/docs
+          ref: master
+          # For some reason, path is relative to the directory above GITHUB_WORKSPACE
+          # To ensure the rest of the script makes sense, we need to place this under vowpal_wabbit
+          path: vowpal_wabbit/docs
+      - name: Print contents of directory
+        shell: bash
+        run: |
+          echo $GITHUB_WORKSPACE
+          pwd
+          ls
+          cd docs
+          pwd
+          ls
+      - name: Copy CXX Docs
+        shell: bash
+        run: |
+          rm -rf docs/vowpal_wabbit/cpp/$FOLDER_NAME/
+          mkdir -p docs/vowpal_wabbit/cpp/$FOLDER_NAME/
+          cp -r cxx_docs/* docs/vowpal_wabbit/cpp/$FOLDER_NAME/
+      - name: Copy Python Docs
+        shell: bash
+        run: |
+          rm -rf docs/vowpal_wabbit/python/$FOLDER_NAME/
+          mkdir -p docs/vowpal_wabbit/python/$FOLDER_NAME/
+          cp -r python_docs/html/* docs/vowpal_wabbit/python/$FOLDER_NAME/
+      - name: Checkout master
+        shell: bash
+        run: |
+          cd docs
+          git checkout master
+      - name: Commit changes
+        shell: bash
+        run: |
+          cd docs
+          git add --all
+          git config --local user.email "WoboWabbit@hunch.net"
+          git config --local user.name "WoboWabbit"
+          git commit -m "Update documentation for commit: VowpalWabbit/vowpal_wabbit@${{ github.sha }}"
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          repository: VowpalWabbit/docs
+          directory: docs
+          github_token: ${{ secrets.automation_github_token }}

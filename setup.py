@@ -26,6 +26,7 @@ class Distribution(_distribution):
     global_options += [
         ('enable-boost-cmake', None, 'Enable boost-cmake'),
         ('cmake-options=', None, 'Additional semicolon-separated cmake setup options list'),
+        ('debug', None, 'Debug build'),
     ]
 
     if system == 'Windows':
@@ -37,6 +38,7 @@ class Distribution(_distribution):
         self.vcpkg_root = None
         self.enable_boost_cmake = None
         self.cmake_options = None
+        self.debug = False
         _distribution.__init__(self, attrs)
 
 class CMakeExtension(Extension):
@@ -85,7 +87,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
         distutils.dir_util.mkpath(lib_output_dir)
 
         # example of cmake args
-        config = 'Debug' if self.debug else 'Release'
+        config = 'Debug' if self.distribution.debug else 'Release'
 
         cmake_args = [
             '-DCMAKE_BUILD_TYPE=' + config,
@@ -105,8 +107,13 @@ class BuildPyLibVWBindingsModule(_build_ext):
             argslist = self.distribution.cmake_options.split(';')
             cmake_args += argslist
         
-        if 'CONDA_PREFIX' in os.environ and not 'BOOST_ROOT' in os.environ:
-            cmake_args.append('-DBOOST_ROOT={}'.format(os.environ['CONDA_PREFIX']))
+        # If we are being installed in a conda environment then use the dependencies from there.
+        if 'CONDA_PREFIX' in os.environ:
+            cmake_args.append('-DCMAKE_PREFIX_PATH={}'.format(os.environ['CONDA_PREFIX']))
+            if version_info[0] == 2 or (version_info[0] == 3 and int(version_info[1]) > 7):
+                cmake_args.append('-DPython_INCLUDE_DIR={}/include/python{v[0]}.{v[1]}/'.format(os.environ['CONDA_PREFIX'], v=version_info))
+            else:
+                cmake_args.append('-DPython_INCLUDE_DIR={}/include/python{v[0]}.{v[1]}m/'.format(os.environ['CONDA_PREFIX'], v=version_info))
 
         # example of build args
         build_args = [

@@ -36,8 +36,7 @@ size_t read_cached_label(shared_data*, polylabel* v, io_buf& cache)
   ld.label_v.clear();
   char* c;
   size_t total = sizeof(size_t);
-  if (cache.buf_read(c, (int)total) < total)
-    return 0;
+  if (cache.buf_read(c, (int)total) < total) return 0;
   bufread_label(ld, c, cache);
 
   return total;
@@ -100,7 +99,7 @@ void copy_label(polylabel* dst, polylabel* src)
   }
 }
 
-void parse_label(parser* p, shared_data*, polylabel* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, polylabel* v, std::vector<VW::string_view>& words)
 {
   auto& ld = v->multilabels;
   switch (words.size())
@@ -110,7 +109,7 @@ void parse_label(parser* p, shared_data*, polylabel* v, v_array<VW::string_view>
     case 1:
       tokenize(',', words[0], p->parse_name);
 
-      for (const auto & parse_name : p->parse_name)
+      for (const auto& parse_name : p->parse_name)
       {
         uint32_t n = int_of_string(parse_name);
         ld.label_v.push_back(n);
@@ -118,7 +117,7 @@ void parse_label(parser* p, shared_data*, polylabel* v, v_array<VW::string_view>
       break;
     default:
       std::cerr << "example with an odd label, what is ";
-      for (const auto & word : words) std::cerr << word << " ";
+      for (const auto& word : words) std::cerr << word << " ";
       std::cerr << std::endl;
   }
 }
@@ -128,7 +127,7 @@ label_parser multilabel = {default_label, parse_label, cache_label, read_cached_
 
 void print_update(vw& all, bool is_test, example& ec)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)
@@ -183,20 +182,21 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
 
-  for (int sink : all.final_prediction_sink)
-    if (sink >= 0)
+  for (auto& sink : all.final_prediction_sink)
+  {
+    if (sink != nullptr)
     {
       std::stringstream ss;
 
       for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
       {
-        if (i > 0)
-          ss << ',';
+        if (i > 0) ss << ',';
         ss << ec.pred.multilabels.label_v[i];
       }
       ss << ' ';
-      all.print_text_by_ref(sink, ss.str(), ec.tag);
+      all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
     }
+  }
 
   print_update(all, test_label(&ld), ec);
 }

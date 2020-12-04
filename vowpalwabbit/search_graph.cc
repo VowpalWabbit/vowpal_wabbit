@@ -123,8 +123,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   D->true_counts_total = (float)(D->K + 1);
   for (size_t k = 0; k <= D->K; k++) D->true_counts[k] = 1.;
 
-  if (D->separate_learners)
-    sch.set_num_learners(D->num_loops);
+  if (D->separate_learners) sch.set_num_learners(D->num_loops);
 
   sch.set_task_data<task_data>(D);
   sch.set_options(0);  // Search::AUTO_HAMMING_LOSS
@@ -196,8 +195,7 @@ void setup(Search::search& sch, multi_ex& ec)
       D.E++;
     else  // it's a node!
     {
-      if (D.E > 0)
-        THROW("error: got a node after getting edges!");
+      if (D.E > 0) THROW("error: got a node after getting edges!");
 
       D.N++;
       if (ec[i]->l.cs.costs.size() > 0)
@@ -207,8 +205,7 @@ void setup(Search::search& sch, multi_ex& ec)
       }
     }
 
-  if ((D.N == 0) && (D.E > 0))
-    THROW("error: got edges without any nodes (perhaps ring_size is too small?)!");
+  if ((D.N == 0) && (D.E > 0)) THROW("error: got edges without any nodes (perhaps ring_size is too small?)!");
 
   D.adj = std::vector<std::vector<size_t>>(D.N, std::vector<size_t>(0));
 
@@ -250,8 +247,7 @@ void add_edge_features_group_fn(task_data& D, float fv, uint64_t fx)
   uint64_t fx2 = fx / (uint64_t)D.multiplier;
   for (size_t k = 0; k < D.numN; k++)
   {
-    if (D.neighbor_predictions[k] == 0.)
-      continue;
+    if (D.neighbor_predictions[k] == 0.) continue;
     node->feature_space[neighbor_namespace].push_back(
         fv * D.neighbor_predictions[k], (uint64_t)((fx2 + 348919043 * k) * D.multiplier) & (uint64_t)D.mask);
   }
@@ -283,8 +279,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
         for (size_t j = 0; j < ec[i]->l.cs.costs.size() - 1; j++)
         {
           size_t m = ec[i]->l.cs.costs[j].class_index;
-          if (m == 0)
-            break;
+          if (m == 0) break;
           if (m - 1 == n)
           {
             n_in_sink = false;
@@ -301,11 +296,9 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
           m_in_sink = true;
           continue;
         }
-        if (j == ec[i]->l.cs.costs.size() - 1)
-          m_in_sink = true;
+        if (j == ec[i]->l.cs.costs.size() - 1) m_in_sink = true;
         m--;
-        if (m == n)
-          continue;
+        if (m == n) continue;
         size_t other_side = (D.directed && (n_in_sink != m_in_sink)) ? (D.K + 1) : 0;
         D.neighbor_predictions[D.pred[m] - 1 + other_side] += 1.;
         pred_total += 1.;
@@ -319,8 +312,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
       last_pred = 0;
     }
 
-    if (pred_total == 0.)
-      continue;
+    if (pred_total == 0.) continue;
     // std::cerr << n << ':' << i << " -> ["; for (size_t k=0; k<D.numN; k++) std::cerr << ' ' <<
     // D.neighbor_predictions[k]; std::cerr
     // << " ]" << std::endl;
@@ -340,8 +332,9 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
   ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 
   vw& all = sch.get_vw_pointer_unsafe();
-  for (std::string& i : all.pairs)
+  for (auto& i : all.interactions)
   {
+    if (i.size() != 2) continue;
     int i0 = (int)i[0];
     int i1 = (int)i[1];
     if ((i0 == (int)neighbor_namespace) || (i1 == (int)neighbor_namespace))
@@ -376,8 +369,7 @@ float macro_f(task_data& D)
       trueC += (float)D.confusion_matrix[IDX(k, j)];
       predC += (float)D.confusion_matrix[IDX(j, k)];
     }
-    if (trueC == 0)
-      continue;
+    if (trueC == 0) continue;
     float correctC = (float)D.confusion_matrix[IDX(k, k)];
     count_f1++;
     if (correctC > 0)
@@ -416,22 +408,10 @@ void run(Search::search& sch, multi_ex& ec)
       bool add_features = /* D.use_structure && */ sch.predictNeedsExample();
       // add_features = false;
 
-      if (add_features)
-        add_edge_features(sch, D, n, ec);
+      if (add_features) add_edge_features(sch, D, n, ec);
       Search::predictor P = Search::predictor(sch, n + 1);
       P.set_input(*ec[n]);
-      if (false && (k > 0))
-      {
-        float min_count = 1e12f;
-        for (size_t k2 = 1; k2 <= D.K; k2++) min_count = std::min(min_count, D.true_counts[k2]);
-        float w = min_count / D.true_counts[k];
-        // float w = D.true_counts_total / D.true_counts[k] / (float)(D.K);
-        P.set_weight(w);
-        // std::cerr << "w = " << D.true_counts_total / D.true_counts[k] / (float)(D.K) << std::endl;
-        // P.set_weight( D.true_counts_total / D.true_counts[k] / (float)(D.K) );
-      }
-      if (D.separate_learners)
-        P.set_learner_id(loop);
+      if (D.separate_learners) P.set_learner_id(loop);
       if (k > 0)  // for test examples
         P.set_oracle(k);
       // add all the conditioning
@@ -440,11 +420,9 @@ void run(Search::search& sch, multi_ex& ec)
         for (size_t j = 0; j < ec[i]->l.cs.costs.size(); j++)
         {
           uint32_t m = ec[i]->l.cs.costs[j].class_index;
-          if (m == 0)
-            continue;
+          if (m == 0) continue;
           m--;
-          if (m == n)
-            continue;
+          if (m == n) continue;
           P.add_condition(m + 1, 'e');
         }
       }
@@ -454,8 +432,7 @@ void run(Search::search& sch, multi_ex& ec)
       if (ec[n]->l.cs.costs.size() > 0)  // for test examples
         sch.loss((ec[n]->l.cs.costs[0].class_index == D.pred[n]) ? 0.f : (last_loop ? 0.5f : loss_val));
 
-      if (add_features)
-        del_edge_features(D, n, ec);
+      if (add_features) del_edge_features(D, n, ec);
     }
   }
 

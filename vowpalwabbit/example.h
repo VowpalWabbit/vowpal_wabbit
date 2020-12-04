@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <cstdint>
+
 #include "v_array.h"
 #include "no_label.h"
 #include "simple_label.h"
@@ -18,7 +18,14 @@
 #include "example_predict.h"
 #include "conditional_contextual_bandit.h"
 #include "ccb_label.h"
+#include "slates_label.h"
+#include "decision_scores.h"
+#include "cb_continuous_label.h"
+#include "prob_dist_cont.h"
+
+#include <cstdint>
 #include <vector>
+#include <iostream>
 
 struct polylabel
 {
@@ -27,7 +34,9 @@ struct polylabel
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
+  VW::cb_continuous::continuous_label cb_cont;
   CCB::label conditional_contextual_bandit;
+  VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
 };
@@ -43,43 +52,61 @@ typedef union
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  CCB::decision_scores_t decision_scores;
+  VW::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
-  float prob;  // for --probabilities --csoaa_ldf=mc
+  float prob;                                                // for --probabilities --csoaa_ldf=mc
+  VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
+  VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
 } polyprediction;
 
-IGNORE_DEPRECATED_USAGE_START
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 struct example : public example_predict  // core example datatype.
 {
+  example();
+  ~example();
+
+  example(const example&) = delete;
+  example& operator=(const example&) = delete;
+  example(example&& other) noexcept;
+  example& operator=(example&& other) noexcept;
+
+  /// Example contains unions for label and prediction. These do not get cleaned
+  /// up by the constructor because the type is not known at that time. To
+  /// ensure correct cleanup delete_unions must be explicitly called.
+  void delete_unions(void (*delete_label)(void*), void (*delete_prediction)(void*));
+
   // input fields
   polylabel l;
 
   // output prediction
   polyprediction pred;
 
-  float weight;       // a relative importance weight for the example, default = 1
-  v_array<char> tag;  // An identifier for the example.
-  size_t example_counter;
+  float weight = 1.f;  // a relative importance weight for the example, default = 1
+  v_array<char> tag;   // An identifier for the example.
+  size_t example_counter = 0;
 
   // helpers
-  size_t num_features;       // precomputed, cause it's fast&easy.
-  float partial_prediction;  // shared data for prediction.
-  float updated_prediction;  // estimated post-update prediction.
-  float loss;
-  float total_sum_feat_sq;  // precomputed, cause it's kind of fast & easy.
-  float confidence;
-  features*
-      passthrough;  // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
+  size_t num_features = 0;         // precomputed, cause it's fast&easy.
+  float partial_prediction = 0.f;  // shared data for prediction.
+  float updated_prediction = 0.f;  // estimated post-update prediction.
+  float loss = 0.f;
+  float total_sum_feat_sq = 0.f;  // precomputed, cause it's kind of fast & easy.
+  float confidence = 0.f;
+  features* passthrough =
+      nullptr;  // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
 
-  bool test_only;
-  bool end_pass;  // special example indicating end of pass.
-  bool sorted;    // Are the features sorted or not?
-  
-  VW_DEPRECATED("in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. Standalone examples are by definition always in use.")
+  bool test_only = false;
+  bool end_pass = false;  // special example indicating end of pass.
+  bool sorted = false;    // Are the features sorted or not?
+
+  VW_DEPRECATED(
+      "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. "
+      "Standalone examples are by definition always in use.")
   bool in_use = true;
 };
-IGNORE_DEPRECATED_USAGE_END
+VW_WARNING_STATE_POP
 
 struct vw;
 
@@ -105,8 +132,7 @@ void free_flatten_example(flat_example* fec);
 
 inline int example_is_newline(example const& ec)
 {  // if only index is constant namespace or no index
-  if (!ec.tag.empty())
-    return false;
+  if (!ec.tag.empty()) return false;
   return ((ec.indices.empty()) || ((ec.indices.size() == 1) && (ec.indices.last() == constant_namespace)));
 }
 
@@ -114,8 +140,7 @@ inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
 
 inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t i, float x)
 {
-  if (ec.passthrough)
-    ec.passthrough->push_back(x, (FNV_prime * magic) ^ i);
+  if (ec.passthrough) ec.passthrough->push_back(x, (FNV_prime * magic) ^ i);
 }
 
 #define add_passthrough_feature(ec, i, x) \
@@ -126,4 +151,24 @@ typedef std::vector<example*> multi_ex;
 namespace VW
 {
 void return_multiple_example(vw& all, v_array<example*>& examples);
+
+struct restore_prediction
+{
+  restore_prediction(example& ec);
+  ~restore_prediction();
+
+private:
+  const polyprediction _prediction;
+  example& _ec;
+};
+
 }  // namespace VW
+std::string features_to_string(const example& ec);
+std::string simple_label_to_string(const example& ec);
+std::string scalar_pred_to_string(const example& ec);
+std::string a_s_pred_to_string(const example& ec);
+std::string prob_dist_pred_to_string(const example& ec);
+std::string multiclass_pred_to_string(const example& ec);
+std::string depth_indent_string(const example& ec);
+std::string depth_indent_string(int32_t stack_depth);
+std::string cb_label_to_string(const example& ec);

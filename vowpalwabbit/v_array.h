@@ -3,7 +3,10 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#define NOMINMAX
+#ifndef NOMINMAX
+#  define NOMINMAX
+#endif
+
 #include <iostream>
 #include <algorithm>
 #include <cstdlib>
@@ -12,13 +15,13 @@
 #include <cstdint>
 
 #ifdef _WIN32
-#define __INLINE
+#  define __INLINE
 #else
-#define __INLINE inline
+#  define __INLINE inline
 #endif
 
 #ifndef VW_NOEXCEPT
-#include "vw_exception.h"
+#  include "vw_exception.h"
 #endif
 
 #include "memory.h"
@@ -32,9 +35,11 @@ struct v_array
   T* _begin;
   T* _end;
 
- public:
+public:
   T* end_array;
   size_t erase_count;
+
+  using iterator = T*;
 
   // enable C++ 11 for loops
   inline T*& begin() { return _begin; }
@@ -58,8 +63,7 @@ struct v_array
   void decr() { _end--; }
   void incr()
   {
-    if (_end == end_array)
-      resize(2 * (end_array - _begin) + 3);
+    if (_end == end_array) resize(2 * (end_array - _begin) + 3);
     _end++;
   }
   T& operator[](size_t i) const { return _begin[i]; }
@@ -71,13 +75,10 @@ struct v_array
       size_t old_len = _end - _begin;
       T* temp = (T*)realloc(_begin, sizeof(T) * length);
       if ((temp == nullptr) && ((sizeof(T) * length) > 0))
-      {
-        THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?");
-      }
+      { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
       else
         _begin = temp;
-      if (old_len < length && _begin + old_len != nullptr)
-        memset(_begin + old_len, 0, (length - old_len) * sizeof(T));
+      if (old_len < length && _begin + old_len != nullptr) memset(_begin + old_len, 0, (length - old_len) * sizeof(T));
       _end = _begin + old_len;
       end_array = _begin + length;
     }
@@ -104,8 +105,7 @@ struct v_array
   }
   void push_back(const T& new_ele)
   {
-    if (_end == end_array)
-      resize(2 * (end_array - _begin) + 3);
+    if (_end == end_array) resize(2 * (end_array - _begin) + 3);
     new (_end++) T(new_ele);
   }
 
@@ -114,8 +114,7 @@ struct v_array
   template <class... Args>
   void emplace_back(Args&&... args)
   {
-    if (_end == end_array)
-      resize(2 * (end_array - _begin) + 3);
+    if (_end == end_array) resize(2 * (end_array - _begin) + 3);
     new (_end++) T(std::forward<Args>(args)...);
   }
 
@@ -152,8 +151,7 @@ struct v_array
 
     if (!contain_sorted(new_ele, index))
     {
-      if (_end == end_array)
-        resize(2 * (end_array - _begin) + 3);
+      if (_end == end_array) resize(2 * (end_array - _begin) + 3);
 
       to_move = size - index;
 
@@ -172,11 +170,9 @@ struct v_array
   {
     index = find_sorted(ele);
 
-    if (index == this->size())
-      return false;
+    if (index == this->size()) return false;
 
-    if (_begin[index] == ele)
-      return true;
+    if (_begin[index] == ele) return true;
 
     return false;
   }
@@ -211,14 +207,14 @@ void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(T&))
 }
 
 template <class T>
-void push_many(v_array<T>& v, const T* _begin, size_t num)
+void push_many(v_array<T>& v, const T* src, size_t num)
 {
   if (v._end + num >= v.end_array)
     v.resize(std::max(2 * (size_t)(v.end_array - v._begin) + 3, v._end - v._begin + num));
 #ifdef _WIN32
-  memcpy_s(v._end, v.size() - (num * sizeof(T)), _begin, num * sizeof(T));
+  memcpy_s(v._end, (v.end_array - v._end) * sizeof(T), src, num * sizeof(T));
 #else
-  memcpy(v._end, _begin, num * sizeof(T));
+  memcpy(v._end, src, num * sizeof(T));
 #endif
   v._end += num;
 }
@@ -244,8 +240,7 @@ template <class T>
 bool v_array_contains(v_array<T>& A, T x)
 {
   for (T* e = A._begin; e != A._end; ++e)
-    if (*e == x)
-      return true;
+    if (*e == x) return true;
   return false;
 }
 
@@ -272,8 +267,7 @@ typedef v_array<unsigned char> v_string;
 inline v_string string2v_string(const std::string& s)
 {
   v_string res = v_init<unsigned char>();
-  if (!s.empty())
-    push_many(res, (unsigned char*)s.data(), s.size());
+  if (!s.empty()) push_many(res, (unsigned char*)s.data(), s.size());
   return res;
 }
 

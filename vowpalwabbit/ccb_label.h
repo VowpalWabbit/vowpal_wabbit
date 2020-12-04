@@ -10,6 +10,8 @@
 #include "label_parser.h"
 #include "v_array.h"
 #include "action_score.h"
+// TODO: This header can be removed once type and explicit_included_actions are removed from the label
+#include "ccb_reduction_features.h"
 
 namespace CCB
 {
@@ -23,14 +25,9 @@ struct conditional_contextual_bandit_outcome
   ACTION_SCORE::action_scores probabilities;
 };
 
-enum example_type : uint8_t
-{
-  unset = 0,
-  shared = 1,
-  action = 2,
-  slot = 3
-};
 
+//TODO: Remove the elements that are in reduction_features
+// ccb_label.cc will need a major revamp before that can happen
 struct label
 {
   example_type type;

@@ -20,7 +20,8 @@ struct input_options
   bool dsjson;
   bool kill_cache;
   bool compressed;
-  bool chain_hash;
+  bool chain_hash_json;
+  bool flatbuffer = false;
 };
 
 // trace listener + context need to be passed at initialization to capture all messages.
@@ -28,6 +29,7 @@ vw& parse_args(VW::config::options_i& options, trace_message_t trace_listener = 
 void parse_modules(VW::config::options_i& options, vw& all);
 void parse_sources(VW::config::options_i& options, vw& all, io_buf& model, bool skipModelLoad = false);
 
-LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all);
 
 std::string spoof_hex_encoded_namespaces(const std::string& arg);
+bool ends_with(const std::string& fullString, const std::string& ending);

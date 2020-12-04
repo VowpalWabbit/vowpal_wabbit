@@ -7,7 +7,7 @@
 #include "baseline.h"
 
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
-LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
 
 #define CB_TYPE_DR 0
 #define CB_TYPE_DM 1
@@ -19,7 +19,7 @@ namespace CB_ALGS
 {
 template <bool is_learn>
 float get_cost_pred(
-    LEARNER::single_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
+    VW::LEARNER::single_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
 {
   CB::label ld = ec.l.cb;
 
@@ -34,7 +34,8 @@ float get_cost_pred(
   BASELINE::set_baseline_enabled(&ec);
   ec.l.simple = simple_temp;
   polyprediction p = ec.pred;
-  if (is_learn && known_cost != nullptr && index == known_cost->action)
+  bool learn = is_learn && known_cost != nullptr && index == known_cost->action;
+  if (learn)
   {
     float old_weight = ec.weight;
     ec.weight /= known_cost->probability;
@@ -44,8 +45,7 @@ float get_cost_pred(
   else
     scorer->predict(ec, index - 1 + base);
 
-  if (!baseline_enabled_old)
-    BASELINE::reset_baseline_disabled(&ec);
+  if (!baseline_enabled_old) BASELINE::reset_baseline_disabled(&ec);
   float pred = ec.pred.scalar;
   ec.pred = p;
 
@@ -56,23 +56,20 @@ float get_cost_pred(
 
 inline float get_cost_estimate(CB::cb_class* observation, uint32_t action, float offset = 0.)
 {
-  if (action == observation->action)
-    return (observation->cost - offset) / observation->probability;
+  if (action == observation->action) return (observation->cost - offset) / observation->probability;
   return 0.;
 }
 
 inline float get_cost_estimate(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
 {
   for (auto& cl : scores.costs)
-    if (cl.class_index == action)
-      return get_cost_estimate(observation, action, cl.x) + cl.x;
+    if (cl.class_index == action) return get_cost_estimate(observation, action, cl.x) + cl.x;
   return get_cost_estimate(observation, action);
 }
 
 inline float get_cost_estimate(ACTION_SCORE::action_score& a_s, float cost, uint32_t action, float offset = 0.)
 {
-  if (action == a_s.action)
-    return (cost - offset) / a_s.score;
+  if (action == a_s.action) return (cost - offset) / a_s.score;
   return 0.;
 }
 

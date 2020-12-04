@@ -39,13 +39,11 @@ size_t read_cached_tag(io_buf& cache, example* ae)
 {
   char* c;
   size_t tag_size;
-  if (cache.buf_read(c, sizeof(tag_size)) < sizeof(tag_size))
-    return 0;
+  if (cache.buf_read(c, sizeof(tag_size)) < sizeof(tag_size)) return 0;
   tag_size = *(size_t*)c;
   c += sizeof(tag_size);
   cache.set(c);
-  if (cache.buf_read(c, tag_size) < tag_size)
-    return 0;
+  if (cache.buf_read(c, tag_size) < tag_size) return 0;
 
   ae->tag.clear();
   push_many(ae->tag, c, tag_size);
@@ -64,22 +62,19 @@ __attribute__((packed))
 int read_cached_features(vw* all, v_array<example*>& examples)
 {
   example* ae = examples[0];
-  ae->sorted = all->p->sorted_cache;
-  io_buf* input = all->p->input;
+  ae->sorted = all->example_parser->sorted_cache;
+  io_buf* input = all->example_parser->input;
 
-  size_t total = all->p->lp.read_cached_label(all->p->_shared_data, &ae->l, *input);
-  if (total == 0)
-    return 0;
-  if (read_cached_tag(*input, ae) == 0)
-    return 0;
+  size_t total = all->example_parser->lbl_parser.read_cached_label(all->example_parser->_shared_data, &ae->l, *input);
+  if (total == 0) return 0;
+  if (read_cached_tag(*input, ae) == 0) return 0;
   char* c;
   unsigned char num_indices = 0;
-  if (input->buf_read(c, sizeof(num_indices)) < sizeof(num_indices))
-    return 0;
+  if (input->buf_read(c, sizeof(num_indices)) < sizeof(num_indices)) return 0;
   num_indices = *(unsigned char*)c;
   c += sizeof(num_indices);
 
-  all->p->input->set(c);
+  all->example_parser->input->set(c);
   for (; num_indices > 0; num_indices--)
   {
     size_t temp;
@@ -96,7 +91,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     features& ours = ae->feature_space[index];
     size_t storage = *(size_t*)c;
     c += sizeof(size_t);
-    all->p->input->set(c);
+    all->example_parser->input->set(c);
     total += storage;
     if (input->buf_read(c, storage) < storage)
     {
@@ -122,13 +117,12 @@ int read_cached_features(vw* all, v_array<example*>& examples)
       }
       uint64_t diff = i >> 2;
       int64_t s_diff = ZigZagDecode(diff);
-      if (s_diff < 0)
-        ae->sorted = false;
+      if (s_diff < 0) ae->sorted = false;
       i = last + s_diff;
       last = i;
       ours.push_back(v, i);
     }
-    all->p->input->set(c);
+    all->example_parser->input->set(c);
   }
 
   return (int)total;
@@ -154,8 +148,7 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
   char* c;
   size_t storage = fs.size() * int_size;
   for (feature_value f : fs.values)
-    if (f != 1. && f != -1.)
-      storage += sizeof(feature_value);
+    if (f != 1. && f != -1.) storage += sizeof(feature_value);
 
   cache.buf_write(c, sizeof(index) + storage + sizeof(size_t));
   *reinterpret_cast<unsigned char*>(c) = index;
@@ -209,9 +202,6 @@ void cache_features(io_buf& cache, example* ae, uint64_t mask)
 
 uint32_t VW::convert(size_t number)
 {
-  if (number > UINT32_MAX)
-  {
-    THROW("size_t value is out of bounds of uint32_t.")
-  }
+  if (number > UINT32_MAX) { THROW("size_t value is out of bounds of uint32_t.") }
   return static_cast<uint32_t>(number);
 }

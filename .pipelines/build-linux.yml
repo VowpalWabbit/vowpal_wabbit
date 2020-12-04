@@ -5,7 +5,7 @@ pool:
   vmImage: 'ubuntu-16.04'
 
 container:
-  image: vowpalwabbit/ubuntu1604-build:0.3.0
+  image: vowpalwabbit/ubuntu1604-build:latest
   endpoint: DockerHub
 
 strategy:
@@ -17,8 +17,6 @@ strategy:
   maxParallel: 2
 
 steps:
-- bash: ./.scripts/linux/clang-format-check.sh
-  displayName: Clang format check
 - bash: ./.scripts/linux/build.sh $(BUILD_CONFIGURATION)
   displayName: Build C++
 - bash: ./.scripts/linux/test.sh
@@ -29,12 +27,3 @@ steps:
   displayName: Build + test Python 2.7
 - bash: ./.scripts/linux/python36.sh
   displayName: Build + test Python 3.6
-
-# TODO: Turn on build with coverage once Azure Pipelines is reporting test coverage instead of Travis CI.
-# - bash: ./.scripts/linux/build-with-coverage.sh
-#   displayName: Build with coverage C++
-# - bash: ./.scripts/linux/test-with-coverage.sh
-#   displayName: Test with coverage C++
-
-# TODO: incorporate coverall coverage uploading. See below for command used on Travis CI
-# docker run -e TRAVIS_JOB_ID -e TRAVIS_BRANCH -a STDOUT -v `pwd`:/vw -t vowpalwabbit/travis-base:20190202.1 /bin/bash -c "cd /vw && coveralls --include explore --include vowpalwabbit --gcov-options '\-lp'"

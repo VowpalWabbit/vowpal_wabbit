@@ -1,0 +1,18 @@
+# Don't add the PR comment
+comment: false
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        base: auto
+        # Coverage can drop by 0.5% before it is a failure.
+        threshold: 0.5%
+        paths:
+          - vowpalwabbit
+          - explore
+          - "!test"
+
+ignore:
+  - "test"

@@ -8,15 +8,23 @@
 #include "bs.h"
 #include "gen_cs_example.h"
 #include "explore.h"
+#include "debug_log.h"
+#include "scope_exit.h"
+#include "vw_versions.h"
+#include "version.h"
+
 #include <memory>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace ACTION_SCORE;
 using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace exploration;
 using namespace VW::config;
+using std::endl;
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
+
+VW_DEBUG_ENABLE(false)
 
 namespace CB_EXPLORE
 {
@@ -38,6 +46,9 @@ struct cb_explore
   size_t bag_size;
   size_t cover_size;
   float psi;
+  bool nounif;
+  bool epsilon_decay;
+  VW::version_struct model_file_version;
 
   size_t counter;
 
@@ -56,8 +67,8 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
 {
   // Explore tau times, then act according to optimal.
   action_scores probs = ec.pred.a_s;
-
-  if (is_learn && ec.l.cb.costs[0].probability < 1)
+  bool learn = is_learn && ec.l.cb.costs[0].probability < 1;
+  if (learn)
     base.learn(ec);
   else
     base.predict(ec);
@@ -94,6 +105,9 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
     base.predict(ec);
 
   // pre-allocate pdf
+
+  VW_DBG(ec) << "cb_explore: " << (is_learn ? "learn() " : "predict() ") << multiclass_pred_to_string(ec) << endl;
+
   probs.resize(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
   generate_epsilon_greedy(data.epsilon, ec.pred.multiclass - 1, begin_scores(probs), end_scores(probs));
@@ -113,7 +127,8 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
   for (size_t i = 0; i < data.bag_size; i++)
   {
     uint32_t count = BS::weight_gen(data._random_state);
-    if (is_learn && count > 0)
+    bool learn = is_learn && count > 0;
+    if (learn)
       base.learn(ec, i);
     else
       base.predict(ec, i);
@@ -126,7 +141,8 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
   ec.pred.a_s = probs;
 }
 
-void get_cover_probabilities(cb_explore& data, single_learner& /* base */, example& ec, v_array<action_score>& probs)
+void get_cover_probabilities(
+    cb_explore& data, single_learner& /* base */, example& ec, v_array<action_score>& probs, float min_prob)
 {
   float additive_probability = 1.f / (float)data.cover_size;
   data.preds.clear();
@@ -146,11 +162,7 @@ void get_cover_probabilities(cb_explore& data, single_learner& /* base */, examp
   }
   uint32_t num_actions = data.cbcs.num_actions;
 
-  float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(data.counter * num_actions));
-
-  enforce_minimum_probability(min_prob * num_actions, false, begin_scores(probs), end_scores(probs));
-
-  data.counter++;
+  enforce_minimum_probability(min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
 }
 
 template <bool is_learn>
@@ -168,21 +180,27 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
   for (uint32_t j = 0; j < num_actions; j++) data.cs_label.costs.push_back({FLT_MAX, j + 1, 0., 0.});
 
   size_t cover_size = data.cover_size;
-  size_t counter = data.counter;
   v_array<float>& probabilities = data.cover_probs;
   v_array<uint32_t>& predictions = data.preds;
 
   float additive_probability = 1.f / (float)cover_size;
 
-  float min_prob = std::min(1.f / num_actions, 1.f / (float)std::sqrt(counter * num_actions));
-
   data.cb_label = ec.l.cb;
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit([&data, &ec] { ec.l.cb = data.cb_label; });
+
   ec.l.cs = data.cs_label;
-  get_cover_probabilities(data, base, ec, probs);
+
+  float min_prob = data.epsilon_decay
+      ? std::min(data.epsilon / num_actions, data.epsilon / (float)std::sqrt(data.counter * num_actions))
+      : data.epsilon / num_actions;
+
+  get_cover_probabilities(data, base, ec, probs, min_prob);
 
   if (is_learn)
   {
+    data.counter++;
     ec.l.cb = data.cb_label;
     base.learn(ec);
 
@@ -208,8 +226,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
         data.second_cs_label.costs[j].class_index = j + 1;
         data.second_cs_label.costs[j].x = pseudo_cost;
       }
-      if (i != 0)
-        data.cs->learn(ec, i + 1);
+      if (i != 0) data.cs->learn(ec, i + 1);
       if (probabilities[predictions[i] - 1] < min_prob)
         norm += std::max(0.f, additive_probability - (min_prob - probabilities[predictions[i] - 1]));
       else
@@ -218,19 +235,21 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     }
   }
 
-  ec.l.cb = data.cb_label;
   ec.pred.a_s = probs;
 }
 
 void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstream& pred_string)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test)
       label_string << " unknown";
     else
-      label_string << ec.l.cb.costs[0].action;
+    {
+      const auto& cost = ec.l.cb.costs[0];
+      label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
+    }
     all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
         all.progress_add, all.progress_arg);
   }
@@ -260,7 +279,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
       maxid = i + 1;
     }
   }
-  for (int sink : all.final_prediction_sink) all.print_text_by_ref(sink, ss.str(), ec.tag);
+  for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;
@@ -272,6 +291,18 @@ void finish_example(vw& all, cb_explore& c, example& ec)
   output_example(all, c, ec, ec.l.cb);
   VW::finish_example(all, ec);
 }
+
+void save_load(cb_explore& cb, io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+
+  if (!read || cb.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  {
+    std::stringstream msg;
+    if (!read) { msg << "cb cover storing example counter:  = " << cb.counter << "\n"; }
+    bin_text_read_write_fixed_validated(io, (char*)&cb.counter, sizeof(cb.counter), "", read, msg, text);
+  }
+}
 }  // namespace CB_EXPLORE
 using namespace CB_EXPLORE;
 
@@ -282,26 +313,37 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   new_options
       .add(make_option("cb_explore", data->cbcs.num_actions)
                .keep()
+               .necessary()
                .help("Online explore-exploit for a <k> action contextual bandit problem"))
       .add(make_option("first", data->tau).keep().help("tau-first exploration"))
-      .add(make_option("epsilon", data->epsilon).keep().allow_override().default_value(0.05f).help("epsilon-greedy exploration"))
+      .add(make_option("epsilon", data->epsilon)
+               .keep()
+               .allow_override()
+               .default_value(0.05f)
+               .help("epsilon-greedy exploration"))
       .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
       .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
+      .add(make_option("nounif", data->nounif)
+               .keep()
+               .help("do not explore uniformly on zero-probability actions in cover"))
       .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
-  options.add_and_parse(new_options);
 
-  if (!options.was_supplied("cb_explore"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
 
-  if (!options.was_supplied("cb"))
+  // If neither cb nor cats_tree are present on the reduction stack then
+  // add cb to the reduction stack as the default reduction for cb_explore.
+  if (!options.was_supplied("cats_tree") && !options.was_supplied("cb"))
   {
+    // none of the relevant options are set, default to cb
     std::stringstream ss;
     ss << data->cbcs.num_actions;
     options.insert("cb", ss.str());
   }
+
+  if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   all.delete_prediction = delete_action_scores;
   data->cbcs.cb_type = CB_TYPE_DR;
@@ -312,6 +354,16 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   learner<cb_explore, example>* l;
   if (options.was_supplied("cover"))
   {
+    if (options.was_supplied("epsilon"))
+    {
+      // fixed epsilon during learning
+      data->epsilon_decay = false;
+    }
+    else
+    {
+      data->epsilon = 1.f;
+      data->epsilon_decay = true;
+    }
     data->cs = (learner<cb_explore, example>*)(as_singleline(all.cost_sensitive));
     data->second_cs_label.costs.resize(num_actions);
     data->second_cs_label.costs.end() = data->second_cs_label.costs.begin() + num_actions;
@@ -319,6 +371,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     data->cover_probs.resize(num_actions);
     data->preds = v_init<uint32_t>();
     data->preds.resize(data->cover_size);
+    data->model_file_version = all.model_file_ver;
     l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1,
         prediction_type_t::action_probs);
   }
@@ -333,5 +386,6 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
         data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type_t::action_probs);
 
   l->set_finish_example(finish_example);
+  l->set_save_load(save_load);
   return make_base(*l);
 }

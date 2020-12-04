@@ -4,10 +4,4 @@
 #pragma once
 #include "reductions_fwd.h"
 
-namespace LEARNER
-{
-template <class T, class E>
-struct learner;
-}
-
-LEARNER::base_learner* cb_explore_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* cb_explore_setup(VW::config::options_i& options, vw& all);

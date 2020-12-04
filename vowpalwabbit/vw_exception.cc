@@ -5,43 +5,12 @@
 #include "vw_exception.h"
 
 #ifdef _WIN32
-#define NOMINMAX
-#include <Windows.h>
+#  define NOMINMAX
+#  include <Windows.h>
 #endif
 
 namespace VW
 {
-vw_exception::vw_exception(const char* pfile, int plineNumber, std::string const& pmessage) noexcept
-    : file(pfile), message(pmessage), lineNumber(plineNumber)
-{
-}
-
-vw_exception::vw_exception(const vw_exception& ex) noexcept
-    : file(ex.file), message(ex.message), lineNumber(ex.lineNumber)
-{
-}
-
-vw_exception& vw_exception::operator=(const vw_exception& other) noexcept
-{
-  // check for self-assignment
-  if (&other == this)
-    return *this;
-
-  file = other.file;
-  message = other.message;
-  lineNumber = other.lineNumber;
-
-  return *this;
-}
-
-vw_exception::~vw_exception() noexcept = default;
-
-const char* vw_exception::what() const noexcept { return message.c_str(); }
-
-const char* vw_exception::Filename() const { return file; }
-
-int vw_exception::LineNumber() const { return lineNumber; }
-
 #ifdef _WIN32
 
 void vw_trace(const char* filename, int linenumber, const char* fmt, ...)
@@ -67,8 +36,7 @@ struct StopWatchData
 
 StopWatch::StopWatch() : data(new StopWatchData())
 {
-  if (!::QueryPerformanceFrequency(&data->frequency_))
-    THROW("Error with QueryPerformanceFrequency");
+  if (!::QueryPerformanceFrequency(&data->frequency_)) THROW("Error with QueryPerformanceFrequency");
   ::QueryPerformanceCounter(&data->startTime_);
 }
 
@@ -87,8 +55,7 @@ bool launchDebugger()
   // Get System directory, typically c:\windows\system32
   std::wstring systemDir(MAX_PATH + 1, '\0');
   UINT nChars = GetSystemDirectoryW(&systemDir[0], (UINT)systemDir.length());
-  if (nChars == 0)
-    return false;  // failed to get system directory
+  if (nChars == 0) return false;  // failed to get system directory
   systemDir.resize(nChars);
 
   // Get process ID and create the command line
@@ -105,8 +72,7 @@ bool launchDebugger()
   PROCESS_INFORMATION pi;
   ZeroMemory(&pi, sizeof(pi));
 
-  if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
-    return false;
+  if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) return false;
 
   // Close debugger process handles to eliminate resource leak
   CloseHandle(pi.hThread);

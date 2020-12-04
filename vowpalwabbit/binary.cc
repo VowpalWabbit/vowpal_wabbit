@@ -6,14 +6,20 @@
 #include "reductions.h"
 
 using namespace VW::config;
+using std::endl;
 
-template <bool is_learn>
-void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
+namespace VW
 {
-  if (is_learn)
-    base.learn(ec);
+namespace binary
+{
+template <bool is_learn>
+void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
+{
+  if (is_learn) { base.learn(ec); }
   else
+  {
     base.predict(ec);
+  }
 
   if (ec.pred.scalar > 0)
     ec.pred.scalar = 1;
@@ -31,17 +37,19 @@ void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
   }
 }
 
-LEARNER::base_learner* binary_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* binary_setup(options_i& options, vw& all)
 {
   bool binary = false;
   option_group_definition new_options("Binary loss");
-  new_options.add(make_option("binary", binary).keep().help("report loss as binary classification on -1,1"));
-  options.add_and_parse(new_options);
+  new_options.add(
+      make_option("binary", binary).keep().necessary().help("report loss as binary classification on -1,1"));
 
-  if (!binary)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  LEARNER::learner<char, example>& ret =
-      LEARNER::init_learner(as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
+  VW::LEARNER::learner<char, example>& ret = VW::LEARNER::init_learner(
+      as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
   return make_base(ret);
 }
+
+}  // namespace binary
+}  // namespace VW

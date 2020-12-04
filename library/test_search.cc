@@ -27,7 +27,8 @@ public:
   // using vanilla vw interface
   void _run(Search::search& sch, std::vector<wt> & input_example, std::vector<uint32_t> & output)
   { output.clear();
-    for (size_t i=0; i<input_example.size(); i++)
+    //ptag currently uint32_t
+    for (ptag i=0; i<input_example.size(); i++)
     { example* ex = VW::read_example(vw_obj, std::string("1 |w ") + input_example[i].word);
       action p  = Search::predictor(sch, i+1).set_input(*ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
       VW::finish_example(vw_obj, *ex);
@@ -38,7 +39,8 @@ public:
   // using ezexample
   void _run2(Search::search& sch, std::vector<wt> & input_example, std::vector<uint32_t> & output)
   { output.clear();
-    for (size_t i=0; i<input_example.size(); i++)
+    //ptag currently uint32_t
+    for (ptag i=0; i<input_example.size(); i++)
     { ezexample ex(&vw_obj);
       ex(vw_namespace('w'))(input_example[i].word);  // add the feature
       action p  = Search::predictor(sch, i+1).set_input(*ex.get()).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();

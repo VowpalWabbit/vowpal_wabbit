@@ -3,11 +3,27 @@
 // license as described in the file LICENSE.
 #pragma once
 
+/*! \mainpage
+ *
+ * For the primary interface see:
+ * - \link VW VW namespace documentation \endlink
+ *
+ * For other docs see:
+ * - [Project website](https://vowpalwabbit.org)
+ * - [Wiki](https://github.com/VowpalWabbit/vowpal_wabbit/wiki)
+ * - C++ build instructions:
+ *     - [Install dependencies](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Dependencies)
+ *     - [Build](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Building)
+ *     - [Install](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Installing)
+ * - [Install other languages](https://vowpalwabbit.org/start.html)
+ * - [Tutorials](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Tutorial)
+ */
+
 #ifdef _WIN32
-#ifdef LEAKCHECK
+#  ifdef LEAKCHECK
 // Visual Leak Detector for memory leak detection on Windows
-#include <vld.h>
-#endif
+#    include <vld.h>
+#  endif
 #endif
 
 #include "global_data.h"
@@ -18,6 +34,8 @@
 #include "parse_example.h"
 
 #include "options.h"
+
+#include "compat.h"
 
 namespace VW
 {
@@ -134,7 +152,7 @@ void save_predictor(vw& all, io_buf& buf);
 // First create the hash of a namespace.
 inline uint64_t hash_space(vw& all, const std::string& s)
 {
-  return all.p->hasher(s.data(), s.length(), all.hash_seed);
+  return all.example_parser->hasher(s.data(), s.length(), all.hash_seed);
 }
 inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
@@ -142,12 +160,12 @@ inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 }
 inline uint64_t hash_space_cstr(vw& all, const char* fstr)
 {
-  return all.p->hasher(fstr, strlen(fstr), all.hash_seed);
+  return all.example_parser->hasher(fstr, strlen(fstr), all.hash_seed);
 }
 // Then use it as the seed for hashing features.
 inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u)
 {
-  return all.p->hasher(s.data(), s.length(), u) & all.parse_mask;
+  return all.example_parser->hasher(s.data(), s.length(), u) & all.parse_mask;
 }
 inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {
@@ -157,7 +175,15 @@ inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std:
 
 inline uint64_t hash_feature_cstr(vw& all, char* fstr, uint64_t u)
 {
-  return all.p->hasher(fstr, strlen(fstr), u) & all.parse_mask;
+  return all.example_parser->hasher(fstr, strlen(fstr), u) & all.parse_mask;
+}
+
+inline uint64_t chain_hash(vw& all, const std::string& name, const std::string& value, uint64_t u)
+{
+  // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
+  return all.example_parser->hasher(
+             value.data(), value.length(), all.example_parser->hasher(name.data(), name.length(), u)) &
+      all.parse_mask;
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)

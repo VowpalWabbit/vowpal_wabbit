@@ -13,7 +13,7 @@
 //#define B_SEARCH_MAX_ITER 50
 #define B_SEARCH_MAX_ITER 20
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
 
@@ -29,7 +29,7 @@ struct lq_data
   bool is_range_overlapped;  // Indicator of whether this label's cost range overlaps with the cost range that has the
                              // minimnum max_pred
   bool query_needed;         // Used in reduction mode: tell upper-layer whether a query is needed for this label
-  COST_SENSITIVE::wclass& cl;
+  COST_SENSITIVE::wclass* cl;
 };
 
 struct cs_active
@@ -51,7 +51,7 @@ struct cs_active
   bool use_domination;
 
   vw* all;  // statistics, loss
-  LEARNER::base_learner* l;
+  VW::LEARNER::base_learner* l;
 
   v_array<lq_data> query_data;
 
@@ -62,15 +62,18 @@ struct cs_active
   float distance_to_range;
   float range;
 
-  ~cs_active() { examples_by_queries.delete_v(); }
+  ~cs_active()
+  {
+    examples_by_queries.delete_v();
+    query_data.delete_v();
+  }
 };
 
 float binarySearch(float fhat, float delta, float sens, float tol)
 {
   float maxw = std::min(fhat / sens, FLT_MAX);
 
-  if (maxw * fhat * fhat <= delta)
-    return maxw;
+  if (maxw * fhat * fhat <= delta) return maxw;
 
   float l = 0, u = maxw, w, v;
 
@@ -82,8 +85,7 @@ float binarySearch(float fhat, float delta, float sens, float tol)
       u = w;
     else
       l = w;
-    if (fabs(v) <= tol || u - l <= tol)
-      break;
+    if (fabs(v) <= tol || u - l <= tol) break;
   }
 
   return l;
@@ -127,8 +129,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
         ec.l.simple.label = FLT_MAX;
     }
 
-    if (ec.l.simple.label != FLT_MAX)
-      base.learn(ec, i - 1);
+    if (ec.l.simple.label != FLT_MAX) base.learn(ec, i - 1);
   }
   else if (!is_simulation)
     // Prediction in reduction mode could be used by upper layer to ask whether this label needs to be queried.
@@ -193,9 +194,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     // Double label query budget
     cs_a.min_labels *= 2;
     for (size_t i = 0; i < cs_a.examples_by_queries.size(); i++)
-    {
-      cerr << endl << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i];
-    }
+    { cerr << endl << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i]; }
 
     cerr << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
     cerr << endl << "average distance to range = " << cs_a.distance_to_range / ((float)cs_a.labels_outside_range);
@@ -210,8 +209,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     cerr << endl << endl;
   }
 
-  if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes)
-    return;
+  if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes) return;
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
@@ -230,13 +228,13 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     // Create metadata structure
     for (COST_SENSITIVE::wclass& cl : ld.costs)
     {
-      lq_data f = {0.0, 0.0, 0, 0, 0, cl};
+      lq_data f = {0.0, 0.0, 0, 0, 0, &cl};
       cs_a.query_data.push_back(f);
     }
     uint32_t n_overlapped = 0;
     for (lq_data& lqd : cs_a.query_data)
     {
-      find_cost_range(cs_a, base, ec, lqd.cl.class_index, delta, eta, lqd.min_pred, lqd.max_pred, lqd.is_range_large);
+      find_cost_range(cs_a, base, ec, lqd.cl->class_index, delta, eta, lqd.min_pred, lqd.max_pred, lqd.is_range_large);
       min_max_cost = std::min(min_max_cost, lqd.max_pred);
     }
     for (lq_data& lqd : cs_a.query_data)
@@ -250,11 +248,11 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
       // is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << endl;
       //}
       cs_a.overlapped_and_range_small += (size_t)(lqd.is_range_overlapped && !lqd.is_range_large);
-      if (lqd.cl.x > lqd.max_pred || lqd.cl.x < lqd.min_pred)
+      if (lqd.cl->x > lqd.max_pred || lqd.cl->x < lqd.min_pred)
       {
         cs_a.labels_outside_range++;
         // cs_a.all->sd->distance_to_range[cl.class_index-1] += std::max(cl.x - cl.max_pred, cl.min_pred - cl.x);
-        cs_a.distance_to_range += std::max(lqd.cl.x - lqd.max_pred, lqd.min_pred - lqd.cl.x);
+        cs_a.distance_to_range += std::max(lqd.cl->x - lqd.max_pred, lqd.min_pred - lqd.cl->x);
         cs_a.range += lqd.max_pred - lqd.min_pred;
       }
     }
@@ -266,42 +264,35 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     {
       bool query_label = ((query && cs_a.is_baseline) || (!cs_a.use_domination && lqd.is_range_large) ||
           (query && lqd.is_range_overlapped && lqd.is_range_large));
-      inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl.class_index, lqd.cl.x, prediction, score,
-          lqd.cl.partial_prediction, query_label, lqd.query_needed);
-      if (lqd.query_needed)
-        ec.pred.multilabels.label_v.push_back(lqd.cl.class_index);
+      inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl->class_index, lqd.cl->x, prediction, score,
+          lqd.cl->partial_prediction, query_label, lqd.query_needed);
+      if (lqd.query_needed) ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
       if (cs_a.print_debug_stuff)
-        cerr << "label=" << lqd.cl.class_index << " x=" << lqd.cl.x << " prediction=" << prediction
-             << " score=" << score << " pp=" << lqd.cl.partial_prediction << " ql=" << query_label
+        cerr << "label=" << lqd.cl->class_index << " x=" << lqd.cl->x << " prediction=" << prediction
+             << " score=" << score << " pp=" << lqd.cl->partial_prediction << " ql=" << query_label
              << " qn=" << lqd.query_needed << " ro=" << lqd.is_range_overlapped << " rl=" << lqd.is_range_large << " ["
              << lqd.min_pred << ", " << lqd.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped
              << " is_baseline=" << cs_a.is_baseline << endl;
     }
 
     // Need to pop metadata
-    cs_a.query_data.delete_v();
+    cs_a.query_data.clear();
 
-    if (cs_a.all->sd->queries - queries > 0)
-      cs_a.num_any_queries++;
+    if (cs_a.all->sd->queries - queries > 0) cs_a.num_any_queries++;
 
     cs_a.examples_by_queries[cs_a.all->sd->queries - queries] += 1;
     // if(any_query)
     // cs_a.num_any_queries++;
 
     ec.partial_prediction = score;
-    if (is_learn)
-    {
-      cs_a.t++;
-    }
+    if (is_learn) { cs_a.t++; }
   }
   else
   {
     float temp = 0.f;
     bool temp2 = false, temp3 = false;
     for (uint32_t i = 1; i <= cs_a.num_classes; i++)
-    {
-      inner_loop<false, is_simulation>(cs_a, base, ec, i, FLT_MAX, prediction, score, temp, temp2, temp3);
-    }
+    { inner_loop<false, is_simulation>(cs_a, base, ec, i, FLT_MAX, prediction, score, temp, temp2, temp3); }
   }
 
   ec.pred.multiclass = prediction;
@@ -318,7 +309,10 @@ base_learner* cs_active_setup(options_i& options, vw& all)
   int domination;
   option_group_definition new_options("Cost-sensitive Active Learning");
   new_options
-      .add(make_option("cs_active", data->num_classes).keep().help("Cost-sensitive active learning with <k> costs"))
+      .add(make_option("cs_active", data->num_classes)
+               .keep()
+               .necessary()
+               .help("Cost-sensitive active learning with <k> costs"))
       .add(make_option("simulation", simulation).help("cost-sensitive active learning simulation mode"))
       .add(make_option("baseline", data->is_baseline).help("cost-sensitive active learning baseline"))
       .add(make_option("domination", domination)
@@ -328,44 +322,41 @@ base_learner* cs_active_setup(options_i& options, vw& all)
       .add(make_option("range_c", data->c1)
                .default_value(0.5f)
                .help("parameter controlling the threshold for per-label cost uncertainty. Default 0.5."))
-      .add(make_option("max_labels", data->max_labels).default_value(-1).help("maximum number of label queries."))
-      .add(make_option("min_labels", data->min_labels).default_value(-1).help("minimum number of label queries."))
+      .add(make_option("max_labels", data->max_labels)
+               .default_value(std::numeric_limits<size_t>::max())
+               .help("maximum number of label queries."))
+      .add(make_option("min_labels", data->min_labels)
+               .default_value(std::numeric_limits<size_t>::max())
+               .help("minimum number of label queries."))
       .add(make_option("cost_max", data->cost_max).default_value(1.f).help("cost upper bound. Default 1."))
       .add(make_option("cost_min", data->cost_min).default_value(0.f).help("cost lower bound. Default 0."))
       // TODO replace with trace and quiet
       .add(make_option("csa_debug", data->print_debug_stuff).help("print debug stuff for cs_active"));
-  options.add_and_parse(new_options);
+
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->use_domination = true;
-  if (options.was_supplied("domination") && !domination)
-    data->use_domination = false;
-
-  if (!options.was_supplied("cs_active"))
-    return nullptr;
+  if (options.was_supplied("domination") && !domination) data->use_domination = false;
 
   data->all = &all;
   data->t = 1;
 
   auto loss_function_type = all.loss->getType();
-  if (loss_function_type != "squared")
-    THROW("error: you can't use non-squared loss with cs_active");
+  if (loss_function_type != "squared") THROW("error: you can't use non-squared loss with cs_active");
 
-  if (options.was_supplied("lda"))
-    THROW("error: you can't combine lda and active learning");
+  if (options.was_supplied("lda")) THROW("error: you can't combine lda and active learning");
 
-  if (options.was_supplied("active"))
-    THROW("error: you can't use --cs_active and --active at the same time");
+  if (options.was_supplied("active")) THROW("error: you can't use --cs_active and --active at the same time");
 
   if (options.was_supplied("active_cover"))
     THROW("error: you can't use --cs_active and --active_cover at the same time");
 
-  if (options.was_supplied("csoaa"))
-    THROW("error: you can't use --cs_active and --csoaa at the same time");
+  if (options.was_supplied("csoaa")) THROW("error: you can't use --cs_active and --csoaa at the same time");
 
-  if (!options.was_supplied("adax"))
-    all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
+  if (!options.was_supplied("adax")) all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
 
-  all.p->lp = cs_label;  // assigning the label parser
+  all.example_parser->lbl_parser = cs_label;  // assigning the label parser
+  all.label_type = label_type_t::cs;
   all.set_minmax(all.sd, data->cost_max);
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);

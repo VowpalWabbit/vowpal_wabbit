@@ -76,7 +76,7 @@ bool test_label(polylabel* v)
 void delete_label(label_t&) {}
 void delete_label(polylabel*) {}
 
-void parse_label(parser*, shared_data* sd, polylabel* v, v_array<VW::string_view>& words)
+void parse_label(parser*, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words)
 {
   auto& ld = v->multi;
 
@@ -85,16 +85,29 @@ void parse_label(parser*, shared_data* sd, polylabel* v, v_array<VW::string_view
     case 0:
       break;
     case 1:
-      ld.label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
-      ld.weight = 1.0;
+      if (sd->ldict) { ld->label = (uint32_t)sd->ldict->get(words[0]); }
+      else
+      {
+        char* char_after_int = nullptr;
+        ld->label = int_of_string(words[0], char_after_int);
+        if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
+        { THROW("malformed example: label has trailing character(s): " << *char_after_int); }
+      }
+      ld->weight = 1.0;
       break;
     case 2:
-      ld.label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
-      ld.weight = float_of_string(words[1]);
+      if (sd->ldict) { ld->label = (uint32_t)sd->ldict->get(words[0]); }
+      else
+      {
+        char* char_after_int = nullptr;
+        ld->label = int_of_string(words[0], char_after_int);
+        if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
+        { THROW("malformed example: label has trailing character(s): " << *char_after_int); }
+      }
+      ld->weight = float_of_string(words[1]);
       break;
     default:
-      std::cerr << "malformed example!\n";
-      std::cerr << "words.size() = " << words.size() << std::endl;
+      THROW("malformed example, words.size() = " << words.size());
   }
   if (ld.label == 0)
     THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}"
@@ -108,10 +121,8 @@ void print_label_pred(vw& all, example& ec, uint32_t prediction)
 {
   VW::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
   VW::string_view sv_pred = all.sd->ldict->get(prediction);
-  all.sd->print_update(all.holdout_set_off, all.current_pass,
-      sv_label.empty() ? "unknown" : sv_label.to_string(),
-      sv_pred.empty() ? "unknown" : sv_pred.to_string(), ec.num_features,
-      all.progress_add, all.progress_arg);
+  all.sd->print_update(all.holdout_set_off, all.current_pass, sv_label.empty() ? "unknown" : sv_label.to_string(),
+      sv_pred.empty() ? "unknown" : sv_pred.to_string(), ec.num_features, all.progress_add, all.progress_arg);
 }
 
 void print_probability(vw& all, example& ec, uint32_t prediction)
@@ -148,7 +159,7 @@ void direct_print_update(vw& all, example& ec, uint32_t prediction)
 template <void (*T)(vw&, example&, uint32_t)>
 void print_update(vw& all, example& ec, uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     if (!all.sd->ldict)
       T(all, ec, prediction);
@@ -166,18 +177,17 @@ void print_update_with_score(vw& all, example& ec, uint32_t pred) { print_update
 void finish_example(vw& all, example& ec, bool update_loss)
 {
   float loss = 0;
-  if (ec.l.multi.label != (uint32_t)ec.pred.multiclass && ec.l.multi.label != (uint32_t)-1)
-    loss = ec.weight;
+  if (ec.l.multi.label != (uint32_t)ec.pred.multiclass && ec.l.multi.label != (uint32_t)-1) loss = ec.weight;
 
   all.sd->update(ec.test_only, update_loss && (ec.l.multi.label != (uint32_t)-1), loss, ec.weight, ec.num_features);
 
-  for (int sink : all.final_prediction_sink)
+  for (auto& sink : all.final_prediction_sink)
     if (!all.sd->ldict)
-      all.print_by_ref(sink, (float)ec.pred.multiclass, 0, ec.tag);
+      all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text_by_ref(sink, sv_pred.to_string(), ec.tag);
+      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag);
     }
 
   MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);

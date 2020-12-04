@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "io/io_adapter.h"
 #include <iterator>
 #include "v_array.h"
 
@@ -26,7 +27,7 @@ class score_iterator : public virtual std::iterator<std::random_access_iterator_
 {
   action_score* _p;
 
- public:
+public:
   score_iterator(action_score* p) : _p(p) {}
 
   score_iterator& operator++()
@@ -54,10 +55,8 @@ inline score_iterator end_scores(action_scores& a_s) { return {a_s.end()}; }
 
 inline int cmp(size_t a, size_t b)
 {
-  if (a == b)
-    return 0;
-  if (a > b)
-    return 1;
+  if (a == b) return 0;
+  if (a > b) return 1;
   return -1;
 }
 
@@ -78,7 +77,7 @@ inline int score_comp(const void* p1, const void* p2)
 
 inline int reverse_order(const void* p1, const void* p2) { return score_comp(p2, p1); }
 
-void print_action_score(int f, v_array<action_score>& a_s, v_array<char>&);
+void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>&);
 
 void delete_action_scores(void* v);
 }  // namespace ACTION_SCORE

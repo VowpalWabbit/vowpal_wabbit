@@ -49,8 +49,7 @@ void run(Search::search& sch, multi_ex& ec)
                             .set_condition_range((ptag)i, sch.get_history_length(), 'p')
                             .predict();
 
-    if (sch.output().good())
-      sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
+    if (sch.output().good()) sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
   }
 }
 }  // namespace SequenceTask
@@ -187,8 +186,7 @@ void finish(Search::search& sch)
 void setup(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
-  if (D.encoding == BILOU)
-    convert_bio_to_bilou(ec);
+  if (D.encoding == BILOU) convert_bio_to_bilou(ec);
 }
 
 void takedown(Search::search& sch, multi_ex& ec)
@@ -241,22 +239,19 @@ void run(Search::search& sch, multi_ex& ec)
         {
           P.set_allowed(D.allowed_actions);
           // we cannot allow in-X or last-X next
-          if ((oracle > 1) && (((oracle - 2) % 4 == 2) || ((oracle - 2) % 4 == 3)))
-            oracle = 1;
+          if ((oracle > 1) && (((oracle - 2) % 4 == 2) || ((oracle - 2) % 4 == 3))) oracle = 1;
         }
         else  // begin-X or in-X
         {
           action other = ((last_prediction - 2) % 4 == 1) ? (last_prediction + 2) : last_prediction;
           P.set_allowed(last_prediction + 1);
           P.add_allowed(other);
-          if ((oracle != last_prediction + 1) && (oracle != other))
-            oracle = other;
+          if ((oracle != last_prediction + 1) && (oracle != other)) oracle = other;
         }
       }
       P.set_input(*ec[i]);
       P.set_condition_range((ptag)i, sch.get_history_length(), 'p');
-      if (pass > 1)
-        P.add_condition_range((ptag)(i + 1 + sch.get_history_length()), sch.get_history_length() + 1, 'a');
+      if (pass > 1) P.add_condition_range((ptag)(i + 1 + sch.get_history_length()), sch.get_history_length() + 1, 'a');
       P.set_oracle(oracle);
       last_prediction = P.predict();
 
@@ -294,8 +289,7 @@ void run(Search::search& sch, multi_ex& ec)
                             .set_allowed(nullptr, costs, K)
                             .set_condition_range((ptag)i, sch.get_history_length(), 'p')
                             .predict();
-    if (sch.output().good())
-      sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
+    if (sch.output().good()) sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
   }
   free(costs);
 }
@@ -360,8 +354,7 @@ void run(Search::search& sch, multi_ex& ec)
     loss = 1.;
   sch.loss(loss);
 
-  if (sch.output().good())
-    sch.output() << max_prediction;
+  if (sch.output().good()) sch.output() << max_prediction;
 }
 }  // namespace ArgmaxTask
 
@@ -446,8 +439,7 @@ void run(Search::search& sch, multi_ex& ec)
                          .predict();
     action prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
 
-    if (sch.output().good())
-      sch.output() << prediction << ' ';
+    if (sch.output().good()) sch.output() << prediction << ' ';
   }
 }
 }  // namespace SequenceTask_DemoLDF

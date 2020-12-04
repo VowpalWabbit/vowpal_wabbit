@@ -5,8 +5,8 @@
 
 namespace vw_slim
 {
-// && used to avoid constant string copying
-void find_opt(std::string const& command_line_args, std::string arg_name, std::vector<std::string>& out_values)
+template <class T>
+void find_opt(std::string const& command_line_args, std::string arg_name, std::vector<T>& out_values)
 {
   // append space to search for '--quadratic '
   arg_name += ' ';
@@ -15,8 +15,7 @@ void find_opt(std::string const& command_line_args, std::string arg_name, std::v
   for (size_t start = 0; start < command_line_args.size();)
   {
     auto idx = command_line_args.find(arg_name, start);
-    if (idx == std::string::npos)
-      return;  // no more occurences found, exit
+    if (idx == std::string::npos) return;  // no more occurences found, exit
 
     auto idx_after_arg = idx + arg_name.size();
 
@@ -24,8 +23,7 @@ void find_opt(std::string const& command_line_args, std::string arg_name, std::v
     for (; idx_after_arg < command_line_args.size() && std::isspace(command_line_args[idx_after_arg]); ++idx_after_arg)
       ;
 
-    if (idx_after_arg == command_line_args.size())
-      return;
+    if (idx_after_arg == command_line_args.size()) return;
 
     if (command_line_args[idx_after_arg] == '-' &&
         // make sure we allow -5.2 (negative numbers)
@@ -44,11 +42,19 @@ void find_opt(std::string const& command_line_args, std::string arg_name, std::v
 
     auto value_size = idx_after_value - idx_after_arg;
     if (value_size > 0)
-      out_values.push_back(command_line_args.substr(idx_after_arg, value_size));
-
+    {
+      std::string args = command_line_args.substr(idx_after_arg, value_size);
+      out_values.emplace_back(args.begin(), args.end());
+    }
     start = idx_after_arg + 1;
   }
 }
+
+template void find_opt<std::string>(
+    std::string const& command_line_args, std::string arg_name, std::vector<std::string>& out_values);
+
+template void find_opt<std::vector<namespace_index>>(
+    std::string const& command_line_args, std::string arg_name, std::vector<std::vector<namespace_index>>& out_values);
 
 std::vector<std::string> find_opt(std::string const& command_line_args, std::string arg_name)
 {
@@ -62,8 +68,7 @@ bool find_opt_parse(std::string const& command_line_args, std::string arg_name, 
 {
   std::vector<std::string> opts = find_opt(command_line_args, arg_name);
 
-  if (opts.size() != 1)
-    return false;
+  if (opts.size() != 1) return false;
 
   value = (T)F(opts[0].c_str());
 

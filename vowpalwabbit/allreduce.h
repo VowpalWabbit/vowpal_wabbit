@@ -9,14 +9,16 @@
 #include <algorithm>
 
 #ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
-#include <WS2tcpip.h>
+#  define NOMINMAX
+#  include <WinSock2.h>
+#  include <Windows.h>
+#  include <WS2tcpip.h>
+#  include <io.h>
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
 typedef int socklen_t;
 typedef SOCKET socket_t;
-#define CLOSESOCK closesocket
+#  define CLOSESOCK closesocket
 namespace std
 {
 // forward declare promise as C++/CLI doesn't allow usage in header files
@@ -28,20 +30,21 @@ class condition_variable;
 class mutex;
 }  // namespace std
 #else
-#include <sys/socket.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <netdb.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
+#  include <sys/socket.h>
+#  include <sys/socket.h>
+#  include <netinet/in.h>
+#  include <netinet/tcp.h>
+#  include <netdb.h>
+#  include <stdlib.h>
+#  include <stdio.h>
+#  include <unistd.h>
+#  include <string.h>
 typedef int socket_t;
-#define CLOSESOCK close
-#include <future>
+#  define CLOSESOCK close
+#  include <future>
 #endif
 #include "vw_exception.h"
+#include "vwvis.h"
 #include <cassert>
 
 constexpr size_t ar_buf_size = 1 << 16;
@@ -55,12 +58,9 @@ struct node_socks
   {
     if (current_master != "")
     {
-      if (parent != -1)
-        CLOSESOCK(this->parent);
-      if (children[0] != -1)
-        CLOSESOCK(this->children[0]);
-      if (children[1] != -1)
-        CLOSESOCK(this->children[1]);
+      if (parent != -1) CLOSESOCK(this->parent);
+      if (children[0] != -1) CLOSESOCK(this->children[0]);
+      if (children[1] != -1) CLOSESOCK(this->children[1]);
     }
   }
   node_socks() { current_master = ""; }
@@ -74,7 +74,7 @@ void addbufs(T* buf1, const T* buf2, const size_t n)
 
 class AllReduce
 {
- public:
+public:
   const size_t total;  // total number of nodes
   const size_t node;   // node id number
   bool quiet;
@@ -95,7 +95,7 @@ struct Data
 
 class AllReduceSync
 {
- private:
+private:
   std::mutex* m_mutex;
   std::condition_variable* m_cv;
 
@@ -108,7 +108,7 @@ class AllReduceSync
   // current wait-barrier-run required to protect against spurious wakeups of m_cv->wait(...)
   bool m_run;
 
- public:
+public:
   AllReduceSync(const size_t total);
 
   ~AllReduceSync();
@@ -120,11 +120,11 @@ class AllReduceSync
 
 class AllReduceThreads : public AllReduce
 {
- private:
+private:
   AllReduceSync* m_sync;
   bool m_syncOwner;
 
- public:
+public:
   AllReduceThreads(AllReduceThreads* root, const size_t ptotal, const size_t pnode, bool quiet = false);
 
   AllReduceThreads(const size_t ptotal, const size_t pnode, bool quiet = false);
@@ -176,7 +176,7 @@ class AllReduceThreads : public AllReduce
 
 class AllReduceSockets : public AllReduce
 {
- private:
+private:
   node_socks socks;
   std::string span_server;
   int port;
@@ -206,10 +206,8 @@ class AllReduceSockets : public AllReduce
   {
     fd_set fds;
     FD_ZERO(&fds);
-    if (socks.children[0] != -1)
-      FD_SET(socks.children[0], &fds);
-    if (socks.children[1] != -1)
-      FD_SET(socks.children[1], &fds);
+    if (socks.children[0] != -1) FD_SET(socks.children[0], &fds);
+    if (socks.children[1] != -1) FD_SET(socks.children[1], &fds);
 
     socket_t max_fd = std::max(socks.children[0], socks.children[1]) + 1;
     size_t child_read_pos[2] = {0, 0};  // First unread float from left and right children
@@ -219,27 +217,18 @@ class AllReduceSockets : public AllReduce
     // parent_sent_pos <= left_read_pos
     // parent_sent_pos <= right_read_pos
 
-    if (socks.children[0] == -1)
-    {
-      child_read_pos[0] = n;
-    }
-    if (socks.children[1] == -1)
-    {
-      child_read_pos[1] = n;
-    }
+    if (socks.children[0] == -1) { child_read_pos[0] = n; }
+    if (socks.children[1] == -1) { child_read_pos[1] = n; }
 
     while (parent_sent_pos < n || child_read_pos[0] < n || child_read_pos[1] < n)
     {
-      if (socks.parent != -1)
-        pass_up<T>(buffer, child_read_pos[0], child_read_pos[1], parent_sent_pos);
+      if (socks.parent != -1) pass_up<T>(buffer, child_read_pos[0], child_read_pos[1], parent_sent_pos);
 
-      if (parent_sent_pos >= n && child_read_pos[0] >= n && child_read_pos[1] >= n)
-        break;
+      if (parent_sent_pos >= n && child_read_pos[0] >= n && child_read_pos[1] >= n) break;
 
       if (child_read_pos[0] < n || child_read_pos[1] < n)
       {
-        if (max_fd > 0 && select((int)max_fd, &fds, nullptr, nullptr, nullptr) == -1)
-          THROWERRNO("select");
+        if (max_fd > 0 && select((int)max_fd, &fds, nullptr, nullptr, nullptr) == -1) THROWERRNO("select");
 
         for (int i = 0; i < 2; i++)
         {
@@ -251,8 +240,7 @@ class AllReduceSockets : public AllReduce
 
             size_t count = std::min(ar_buf_size, n - child_read_pos[i]);
             int read_size = recv(socks.children[i], &child_read_buf[i][child_unprocessed[i]], (int)count, 0);
-            if (read_size == -1)
-              THROWERRNO("recv from child");
+            if (read_size == -1) THROWERRNO("recv from child");
 
             addbufs<T, f>((T*)buffer + child_read_pos[i] / sizeof(T), (T*)child_read_buf[i],
                 (child_read_pos[i] + read_size) / sizeof(T) - child_read_pos[i] / sizeof(T));
@@ -273,8 +261,7 @@ class AllReduceSockets : public AllReduce
             FD_SET(socks.children[i], &fds);
         }
       }
-      if (socks.parent == -1 && child_read_pos[0] == n && child_read_pos[1] == n)
-        parent_sent_pos = n;
+      if (socks.parent == -1 && child_read_pos[0] == n && child_read_pos[1] == n) parent_sent_pos = n;
     }
   }
 
@@ -284,7 +271,7 @@ class AllReduceSockets : public AllReduce
   socket_t sock_connect(const uint32_t ip, const int port);
   socket_t getsock();
 
- public:
+public:
   AllReduceSockets(std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal,
       const size_t pnode, bool pquiet)
       : AllReduce(ptotal, pnode, pquiet), span_server(pspan_server), port(pport), unique_id(punique_id)
@@ -296,8 +283,7 @@ class AllReduceSockets : public AllReduce
   template <class T, void (*f)(T&, const T&)>
   void all_reduce(T* buffer, const size_t n)
   {
-    if (span_server != socks.current_master)
-      all_reduce_init();
+    if (span_server != socks.current_master) all_reduce_init();
     reduce<T, f>((char*)buffer, n * sizeof(T));
     broadcast((char*)buffer, n * sizeof(T));
   }

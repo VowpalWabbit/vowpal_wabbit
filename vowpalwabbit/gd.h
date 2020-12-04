@@ -12,11 +12,11 @@
 
 namespace GD
 {
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 
 struct gd;
 
-float finalize_prediction(shared_data* sd, float ret);
+float finalize_prediction(shared_data* sd, vw_logger& logger, float ret);
 void print_audit_features(vw&, example& ec);
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, double& total_weight,
@@ -35,8 +35,7 @@ struct multipredict_info
 template <class T>
 inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint64_t fi)
 {
-  if ((-1e-10 < fx) && (fx < 1e-10))
-    return;
+  if ((-1e-10 < fx) && (fx < 1e-10)) return;
   uint64_t mask = mp.weights.mask();
   polyprediction* p = mp.pred;
   fi &= mask;

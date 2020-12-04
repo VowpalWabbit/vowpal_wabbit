@@ -1,4 +1,6 @@
+#ifndef STATIC_LINK_VW
 #define BOOST_TEST_DYN_LINK
+#endif
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -18,23 +20,23 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
   actions.push_back(VW::read_example(vw, std::string("ccb action |Action f")));
   actions.push_back(VW::read_example(vw, std::string("ccb action |Other f |Action f")));
 
-  std::vector<std::string> interactions;
-  std::vector<std::string> compare_set = {{'U', (char)ccb_id_namespace}, {'A', (char)ccb_id_namespace},
-      {'O', (char)ccb_id_namespace}};
+  std::vector<std::vector<namespace_index>> interactions;
+  std::vector<std::vector<namespace_index>> compare_set = {{'U', ccb_id_namespace}, {'A', ccb_id_namespace},
+      {'O', ccb_id_namespace}};
   CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.begin(), interactions.end());
-  check_vectors(interactions, compare_set);
+  check_vector_of_vectors_exact(interactions, compare_set);
 
-  interactions = {"UA", "UO", "UOA"};
-  compare_set = {"UA", "UO", "UOA", {'U', 'A', (char)ccb_id_namespace}, {'U', 'O', (char)ccb_id_namespace},
-      {'U', 'O', 'A', (char)ccb_id_namespace}, {'U', (char)ccb_id_namespace}, {'A', (char)ccb_id_namespace},
-      {'O', (char)ccb_id_namespace}};
+  interactions = {{'U','A'}, {'U','O'}, {'U','O','A'}};
+  compare_set = {{'U','A'}, {'U','O'}, {'U','O','A'}, {'U', 'A', ccb_id_namespace}, {'U', 'O', ccb_id_namespace},
+      {'U', 'O', 'A', ccb_id_namespace}, {'U', ccb_id_namespace}, {'A', ccb_id_namespace},
+      {'O', ccb_id_namespace}};
   CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.begin(), interactions.end());
 
-  check_vectors(interactions, compare_set);
+  check_vector_of_vectors_exact(interactions, compare_set);
   VW::finish_example(vw, actions);
   VW::finish_example(vw, *shared_ex);
   VW::finish(vw);
@@ -73,4 +75,46 @@ BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 
   vw.finish_example(examples);
   VW::finish(vw);
+}
+
+BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
+{
+  auto vw = VW::initialize(
+      "--ccb_explore_adf --epsilon 0.2 --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+
+  std::vector<uint32_t> previous;
+  const size_t iterations = 10;
+  const std::vector<std::string> event_ids = {"slot1", "slot2"};
+  const std::string SEED_TAG = "seed=";
+  for (size_t iteration = 0; iteration < iterations; ++iteration)
+  {
+    const std::string json =
+        R"({"GUser":{"shared_feature":"feature"},"_multi":[{"TAction":{"feature1":3.0,"feature2":"name1"}},{"TAction":{"feature1":3.0,"feature2":"name1"}},{"TAction":{"feature1":3.0,"feature2":"name1"}}],"_slots":[{"_id":"slot1"},{"_id":"slot2"}]})";
+    auto examples = parse_json(*vw, json);
+    for (int i = 0; i < event_ids.size(); i++)
+    {
+      const size_t slot_example_indx = examples.size() - event_ids.size() + i;
+      push_many(examples[slot_example_indx]->tag, SEED_TAG.c_str(), SEED_TAG.size());
+      push_many(examples[slot_example_indx]->tag, event_ids[i].c_str(), event_ids[i].size());
+    }
+
+    vw->predict(examples);
+    auto& decision_scores = examples[0]->pred.decision_scores;
+    std::vector<uint32_t> current;
+    for (size_t i = 0; i < decision_scores.size(); ++i)
+    {
+      current.push_back(decision_scores[i][0].action);
+    }
+    if (!previous.empty())
+    {
+      BOOST_CHECK_EQUAL(current.size(), previous.size());
+      for (size_t i = 0; i < current.size(); ++i)
+      {
+        BOOST_CHECK_EQUAL(current[i], previous[i]);
+      }
+    }
+    previous = current;
+    vw->finish_example(examples);
+  }
+  VW::finish(*vw);
 }

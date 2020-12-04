@@ -14,19 +14,16 @@
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
   line = nullptr;
-  size_t num_chars_initial = readto(*(all->p->input), line, '\n');
-  if (num_chars_initial < 1)
-    return num_chars_initial;
+  size_t num_chars_initial = all->example_parser->input->readto(line, '\n');
+  if (num_chars_initial < 1) return num_chars_initial;
   num_chars = num_chars_initial;
   if (line[0] == '\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf')
   {
     line += 3;
     num_chars -= 3;
   }
-  if (num_chars > 0 && line[num_chars - 1] == '\n')
-    num_chars--;
-  if (num_chars > 0 && line[num_chars - 1] == '\r')
-    num_chars--;
+  if (num_chars > 0 && line[num_chars - 1] == '\n') num_chars--;
+  if (num_chars > 0 && line[num_chars - 1] == '\r') num_chars--;
   return num_chars_initial;
 }
 
@@ -35,8 +32,7 @@ int read_features_string(vw* all, v_array<example*>& examples)
   char* line;
   size_t num_chars;
   size_t num_chars_initial = read_features(all, line, num_chars);
-  if (num_chars_initial < 1)
-    return (int)num_chars_initial;
+  if (num_chars_initial < 1) return (int)num_chars_initial;
 
   VW::string_view example(line, num_chars);
   substring_to_example(all, examples[0], example);
@@ -47,7 +43,7 @@ int read_features_string(vw* all, v_array<example*>& examples)
 template <bool audit>
 class TC_parser
 {
- public:
+public:
   VW::string_view _line;
   size_t _read_idx;
   float _cur_channel_v;
@@ -66,7 +62,6 @@ class TC_parser
   v_array<char> _spelling;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
-  bool _chain_hash;
 
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
 
@@ -81,12 +76,9 @@ class TC_parser
     // TODO: Find a sane way to handle nulls in the middle of a string (either VW::string_view or substring)
     auto tmp_view = _line.substr(0, _line.find('\0'));
     std::stringstream ss;
-    ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples.load() << ": \"" << tmp_view << "\""
-       << std::endl;
-    if (_p->strict_parse)
-    {
-      THROW_EX(VW::strict_parse_exception, ss.str());
-    }
+    ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples.load() << ": \"" << tmp_view
+       << "\"" << std::endl;
+    if (_p->strict_parse) { THROW_EX(VW::strict_parse_exception, ss.str()); }
     else
     {
       std::cerr << ss.str();
@@ -103,10 +95,7 @@ class TC_parser
     }
 
     size_t end_idx = sv.find_first_of(" \t\r\n");
-    if (end_idx == std::string::npos)
-    {
-      end_idx = sv.size();
-    }
+    if (end_idx == std::string::npos) { end_idx = sv.size(); }
     _read_idx += end_idx;
     return sv.substr(0, end_idx);
   }
@@ -127,10 +116,7 @@ class TC_parser
       size_t end_read = 0;
       VW::string_view sv = _line.substr(_read_idx);
       _v = float_feature_value = parseFloat(sv.begin(), end_read, sv.end());
-      if (end_read == 0)
-      {
-        return false;
-      }
+      if (end_read == 0) { return false; }
       if (std::isnan(_v))
       {
         _v = float_feature_value = 0.f;
@@ -161,8 +147,8 @@ class TC_parser
 
   inline void maybeFeature()
   {
-    if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' ||
-        _line[_read_idx] == '|' || _line[_read_idx] == '\r')
+    if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
+        _line[_read_idx] == '\r')
     {
       // maybeFeature --> ø
     }
@@ -175,7 +161,7 @@ class TC_parser
       float float_feature_value = 0.f;
       bool is_feature_float = isFeatureValueFloat(float_feature_value);
 
-      if (_chain_hash && !is_feature_float)
+      if (!is_feature_float)
       {
         string_feature_value = stringFeatureValue(_line.substr(_read_idx));
         _v = 1;
@@ -185,31 +171,33 @@ class TC_parser
         _v = _cur_channel_v * float_feature_value;
       }
 
-
       uint64_t word_hash;
-
-      if (_chain_hash && !string_feature_value.empty())
+      // Case where string:string or :string
+      if (!string_feature_value.empty())
       {
-        word_hash = (_p->hasher(feature_name.begin(), feature_name.length(),
-                         _p->hasher(string_feature_value.begin(), string_feature_value.length(), _channel_hash)) & _parse_mask);
+        // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
+        word_hash = (_p->hasher(string_feature_value.begin(), string_feature_value.length(),
+                         _p->hasher(feature_name.begin(), feature_name.length(), _channel_hash)) &
+            _parse_mask);
       }
+      // Case where string:float
       else if (!feature_name.empty())
       {
         word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _channel_hash) & _parse_mask);
       }
+      // Case where :float
       else
       {
         word_hash = _channel_hash + _anon++;
       }
 
-      if (_v == 0)
-        return;  // dont add 0 valued features to list of features
+      if (_v == 0) return;  // dont add 0 valued features to list of features
       features& fs = _ae->feature_space[_index];
       fs.push_back(_v, word_hash);
 
       if (audit)
       {
-        if (_chain_hash && !string_feature_value.empty())
+        if (!string_feature_value.empty())
         {
           std::stringstream ss;
           ss << feature_name << "^" << string_feature_value;
@@ -224,8 +212,7 @@ class TC_parser
       if (((*_affix_features)[_index] > 0) && (!feature_name.empty()))
       {
         features& affix_fs = _ae->feature_space[affix_namespace];
-        if (affix_fs.size() == 0)
-          _ae->indices.push_back(affix_namespace);
+        if (affix_fs.size() == 0) _ae->indices.push_back(affix_namespace);
         uint64_t affix = (*_affix_features)[_index];
 
         while (affix > 0)
@@ -241,13 +228,13 @@ class TC_parser
               affix_name.remove_prefix(affix_name.size() - len);
           }
 
-          word_hash = _p->hasher(affix_name.begin(), affix_name.length(), (uint64_t)_channel_hash) * (affix_constant + (affix & 0xF) * quadratic_constant);
+          word_hash = _p->hasher(affix_name.begin(), affix_name.length(), (uint64_t)_channel_hash) *
+              (affix_constant + (affix & 0xF) * quadratic_constant);
           affix_fs.push_back(_v, word_hash);
           if (audit)
           {
             v_array<char> affix_v = v_init<char>();
-            if (_index != ' ')
-              affix_v.push_back(_index);
+            if (_index != ' ') affix_v.push_back(_index);
             affix_v.push_back(is_prefix ? '+' : '-');
             affix_v.push_back('0' + (char)len);
             affix_v.push_back('=');
@@ -261,8 +248,7 @@ class TC_parser
       if ((*_spelling_features)[_index])
       {
         features& spell_fs = _ae->feature_space[spelling_namespace];
-        if (spell_fs.size() == 0)
-          _ae->indices.push_back(spelling_namespace);
+        if (spell_fs.size() == 0) _ae->indices.push_back(spelling_namespace);
         // v_array<char> spelling;
         _spelling.clear();
         for (char c : feature_name)
@@ -283,7 +269,7 @@ class TC_parser
         }
 
         VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
-        uint64_t word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
+        word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
         spell_fs.push_back(_v, word_hash);
         if (audit)
         {
@@ -310,8 +296,7 @@ class TC_parser
           {
             const auto& feats = feats_it->second;
             features& dict_fs = _ae->feature_space[dictionary_namespace];
-            if (dict_fs.size() == 0)
-              _ae->indices.push_back(dictionary_namespace);
+            if (dict_fs.size() == 0) _ae->indices.push_back(dictionary_namespace);
             push_many(dict_fs.values, feats->values.begin(), feats->values.size());
             push_many(dict_fs.indicies, feats->indicies.begin(), feats->indicies.size());
             dict_fs.sum_feat_sq += feats->sum_feat_sq;
@@ -332,8 +317,8 @@ class TC_parser
 
   inline void nameSpaceInfoValue()
   {
-    if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' ||
-        _line[_read_idx] == '|' || _line[_read_idx] == '\r')
+    if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
+        _line[_read_idx] == '\r')
     {
       // nameSpaceInfoValue -->  ø
     }
@@ -345,9 +330,7 @@ class TC_parser
       VW::string_view sv = _line.substr(_read_idx);
       _cur_channel_v = parseFloat(sv.begin(), end_read, sv.end());
       if (end_read + _read_idx >= _line.size())
-      {
-        parserWarning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"");
-      }
+      { parserWarning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\""); }
       if (std::isnan(_cur_channel_v))
       {
         _cur_channel_v = 1.f;
@@ -365,8 +348,8 @@ class TC_parser
 
   inline void nameSpaceInfo()
   {
-    if (_read_idx >= _line.size() || _line[_read_idx] == '|' || _line[_read_idx] == ' ' ||
-        _line[_read_idx] == '\t' || _line[_read_idx] == ':' || _line[_read_idx] == '\r')
+    if (_read_idx >= _line.size() || _line[_read_idx] == '|' || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' ||
+        _line[_read_idx] == ':' || _line[_read_idx] == '\r')
     {
       // syntax error
       parserWarning("malformed example! String expected after : \"", _line.substr(0, _read_idx), "\"");
@@ -375,15 +358,10 @@ class TC_parser
     {
       // NameSpaceInfo --> 'String' NameSpaceInfoValue
       _index = (unsigned char)(_line[_read_idx]);
-      if (_redefine_some)
-        _index = (*_redefine)[_index];  // redefine _index
-      if (_ae->feature_space[_index].size() == 0)
-        _new_index = true;
+      if (_redefine_some) _index = (*_redefine)[_index];  // redefine _index
+      if (_ae->feature_space[_index].size() == 0) _new_index = true;
       VW::string_view name = read_name();
-      if (audit)
-      {
-        _base = name;
-      }
+      if (audit) { _base = name; }
       _channel_hash = _p->hasher(name.begin(), name.length(), this->_hash_seed);
       nameSpaceInfoValue();
     }
@@ -410,13 +388,12 @@ class TC_parser
     _index = 0;
     _new_index = false;
     _anon = 0;
-    if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' ||
-        _line[_read_idx] == '|' || _line[_read_idx] == '\r')
+    if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
+        _line[_read_idx] == '\r')
     {
       // NameSpace --> ListFeatures
       _index = (unsigned char)' ';
-      if (_ae->feature_space[_index].size() == 0)
-        _new_index = true;
+      if (_ae->feature_space[_index].size() == 0) _new_index = true;
       if (audit)
       {
         // TODO: c++17 allows VW::string_view literals, eg: " "sv
@@ -438,8 +415,7 @@ class TC_parser
       parserWarning(
           "malformed example! '|',String,space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
     }
-    if (_new_index && _ae->feature_space[_index].size() > 0)
-      _ae->indices.push_back(_index);
+    if (_new_index && _ae->feature_space[_index].size() > 0) _ae->indices.push_back(_index);
   }
 
   inline void listNameSpace()
@@ -462,7 +438,7 @@ class TC_parser
     if (!_line.empty())
     {
       this->_read_idx = 0;
-      this->_p = all.p;
+      this->_p = all.example_parser;
       this->_redefine_some = all.redefine_some;
       this->_redefine = &all.redefine;
       this->_ae = ae;
@@ -471,7 +447,6 @@ class TC_parser
       this->_namespace_dictionaries = &all.namespace_dictionaries;
       this->_hash_seed = all.hash_seed;
       this->_parse_mask = all.parse_mask;
-      this->_chain_hash = all.chain_hash;
       listNameSpace();
     }
   }
@@ -479,11 +454,11 @@ class TC_parser
 
 void substring_to_example(vw* all, example* ae, VW::string_view example)
 {
-  all->p->lp.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(&ae->l);
 
   size_t bar_idx = example.find('|');
 
-  all->p->words.clear();
+  all->example_parser->words.clear();
   if (bar_idx != 0)
   {
     VW::string_view label_space(example);
@@ -494,26 +469,23 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
       label_space.remove_suffix(label_space.size() - bar_idx);
     }
     size_t tab_idx = label_space.find('\t');
-    if (tab_idx != VW::string_view::npos)
-    {
-      label_space.remove_prefix(tab_idx + 1);
-    }
+    if (tab_idx != VW::string_view::npos) { label_space.remove_prefix(tab_idx + 1); }
 
-    std::vector<VW::string_view> tokenized;
-    tokenize(' ', label_space, all->p->words);
-    if (all->p->words.size() > 0 &&
-        (all->p->words.last().end() == label_space.end() ||
-        all->p->words.last().front() == '\''))  // The last field is a tag, so record and strip it off
+    tokenize(' ', label_space, all->example_parser->words);
+    if (all->example_parser->words.size() > 0 &&
+        (all->example_parser->words.back().end() == label_space.end() ||
+            all->example_parser->words.back().front() == '\''))  // The last field is a tag, so record and strip it off
     {
-      VW::string_view tag = all->p->words.pop();
-      if (tag.front() == '\'')
-        tag.remove_prefix(1);
+      VW::string_view tag = all->example_parser->words.back();
+      all->example_parser->words.pop_back();
+      if (tag.front() == '\'') tag.remove_prefix(1);
       push_many(ae->tag, tag.begin(), tag.size());
     }
   }
 
-  if (!all->p->words.empty())
-    all->p->lp.parse_label(all->p, all->p->_shared_data, &ae->l, all->p->words);
+  if (!all->example_parser->words.empty())
+    all->example_parser->lbl_parser.parse_label(
+        all->example_parser, all->example_parser->_shared_data, &ae->l, all->example_parser->words);
 
   if (bar_idx != VW::string_view::npos)
   {
@@ -541,10 +513,7 @@ void read_lines(vw* all, char* line, size_t /*len*/, v_array<example*>& examples
   for (size_t i = 0; i < lines.size(); i++)
   {
     // Check if a new empty example needs to be added.
-    if (examples.size() < i + 1)
-    {
-      examples.push_back(&VW::get_unused_example(all));
-    }
+    if (examples.size() < i + 1) { examples.push_back(&VW::get_unused_example(all)); }
     read_line(*all, examples[i], lines[i]);
   }
 }

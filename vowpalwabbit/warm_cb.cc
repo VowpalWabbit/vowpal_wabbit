@@ -11,11 +11,12 @@
 #include "hash.h"
 #include "explore.h"
 #include "vw_exception.h"
+#include "scope_exit.h"
 
 #include <vector>
 #include <memory>
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 using namespace VW::config;
@@ -157,7 +158,7 @@ void finish(warm_cb& data)
 {
   uint32_t argmin = find_min(data.cumulative_costs);
 
-  if (!data.all->quiet)
+  if (!data.all->logger.quiet)
   {
     std::cerr << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
     std::cerr << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
@@ -185,16 +186,11 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     for (features& fs : eca)
     {
       for (feature_index& idx : fs.indicies)
-      {
-        idx = ((((idx >> ss) * 28904713) + 4832917 * (uint64_t)a) << ss) & mask;
-      }
+      { idx = ((((idx >> ss) * 28904713) + 4832917 * (uint64_t)a) << ss) & mask; }
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l))
-    {
-      eca.tag.push_back('n');
-    }
+    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l)) { eca.tag.push_back('n'); }
   }
 }
 
@@ -247,8 +243,7 @@ uint32_t generate_uar_action(warm_cb& data)
 
   for (uint32_t i = 1; i <= data.num_actions; i++)
   {
-    if (randf <= float(i) / data.num_actions)
-      return i;
+    if (randf <= float(i) / data.num_actions) return i;
   }
   return data.num_actions;
 }
@@ -319,8 +314,7 @@ void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, example& ec)
   {
     uint32_t action = predict_sublearner_adf(data, base, ec, i);
 
-    if (action == cl.action)
-      data.cumulative_costs[i] += cl.cost / cl.probability;
+    if (action == cl.action) data.cumulative_costs[i] += cl.cost / cl.probability;
   }
 }
 
@@ -386,8 +380,7 @@ void predict_or_learn_sup_adf(warm_cb& data, multi_learner& base, example& ec, i
 {
   uint32_t action = predict_sup_adf(data, base, ec);
 
-  if (ind_update(data, ec_type))
-    learn_sup_adf<use_cs>(data, ec, ec_type);
+  if (ind_update(data, ec_type)) learn_sup_adf<use_cs>(data, ec, ec_type);
 
   ec.pred.multiclass = action;
 }
@@ -423,14 +416,17 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
   std::vector<float> old_weights;
   for (size_t a = 0; a < data.num_actions; ++a) old_weights.push_back(data.ecs[a]->weight);
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit([&old_weights, &data] {
+    for (size_t a = 0; a < data.num_actions; ++a) { data.ecs[a]->weight = old_weights[a]; }
+  });
+
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
     float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
     for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a] * weight_multiplier;
     base.learn(data.ecs, i);
   }
-
-  for (size_t a = 0; a < data.num_actions; ++a) data.ecs[a]->weight = old_weights[a];
 }
 
 template <bool use_cs>
@@ -443,19 +439,16 @@ void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec
   cl.action = a_s[chosen_action].action + 1;
   cl.probability = a_s[chosen_action].score;
 
-  if (!cl.action)
-    THROW("No action with non-zero probability found!");
+  if (!cl.action) THROW("No action with non-zero probability found!");
 
   if (use_cs)
     cl.cost = loss_cs(data, ec.l.cs.costs, cl.action);
   else
     cl.cost = loss(data, ec.l.multi.label, cl.action);
 
-  if (ec_type == INTERACTION)
-    accumu_costs_iv_adf(data, base, ec);
+  if (ec_type == INTERACTION) accumu_costs_iv_adf(data, base, ec);
 
-  if (ind_update(data, ec_type))
-    learn_bandit_adf(data, base, ec, ec_type);
+  if (ind_update(data, ec_type)) learn_bandit_adf(data, base, ec, ec_type);
 
   ec.pred.multiclass = cl.action;
 }
@@ -466,8 +459,7 @@ void accumu_var_adf(warm_cb& data, multi_learner& base, example& ec)
   float temp_var = 0.f;
 
   for (size_t a = 0; a < data.num_actions; ++a)
-    if (pred_best_approx == data.a_s_adf[a].action + 1)
-      temp_var = 1.0f / data.a_s_adf[a].score;
+    if (pred_best_approx == data.a_s_adf[a].action + 1) temp_var = 1.0f / data.a_s_adf[a].score;
 
   data.cumu_var += temp_var;
 }
@@ -481,8 +473,7 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
   else
   {
     data.mc_label = ec.l.multi;
-    if (data.ws_iter < data.ws_period)
-      ec.l.multi.label = corrupt_action(data, data.mc_label.label, WARM_START);
+    if (data.ws_iter < data.ws_period) ec.l.multi.label = corrupt_action(data, data.mc_label.label, WARM_START);
   }
 
   // Warm start phase
@@ -564,6 +555,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   new_options
       .add(make_option("warm_cb", num_actions)
                .keep()
+               .necessary()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
       .add(make_option("warm_cb_cs", use_cs)
                .help("consume cost-sensitive classification examples instead of multiclass"))
@@ -601,17 +593,10 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
       .add(make_option("sim_bandit", data->sim_bandit)
                .help("simulate contextual bandit updates on warm start examples"));
 
-  options.add_and_parse(new_options);
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (use_cs && (options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start")))
-  {
-    THROW("label corruption on cost-sensitive examples not currently supported");
-  }
-
-  if (!options.was_supplied("warm_cb"))
-  {
-    return nullptr;
-  }
+  { THROW("label corruption on cost-sensitive examples not currently supported"); }
 
   data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();
@@ -645,11 +630,17 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   }
 
   if (use_cs)
-    l = &init_cost_sensitive_learner(
-        data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, data->choices_lambda);
+  {
+    l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>,
+        all.example_parser, data->choices_lambda);
+    all.label_type = label_type_t::cs;
+  }
   else
-    l = &init_multiclass_learner(
-        data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, data->choices_lambda);
+  {
+    l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>,
+        all.example_parser, data->choices_lambda);
+    all.label_type = label_type_t::mc;
+  }
 
   l->set_finish(finish);
   all.delete_prediction = nullptr;

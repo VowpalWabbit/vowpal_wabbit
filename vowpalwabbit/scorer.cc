@@ -15,10 +15,11 @@ struct scorer
 };  // for set_minmax, loss
 
 template <bool is_learn, float (*link)(float in)>
-void predict_or_learn(scorer& s, LEARNER::single_learner& base, example& ec)
+void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
 {
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
-  if (is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0)
+  bool learn = is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0;
+  if (learn)
     base.learn(ec);
   else
     base.predict(ec);
@@ -30,14 +31,14 @@ void predict_or_learn(scorer& s, LEARNER::single_learner& base, example& ec)
 }
 
 template <float (*link)(float in)>
-inline void multipredict(scorer&, LEARNER::single_learner& base, example& ec, size_t count, size_t,
+inline void multipredict(scorer&, VW::LEARNER::single_learner& base, example& ec, size_t count, size_t,
     polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, 0, count, pred, finalize_predictions);  // TODO: need to thread step through???
   for (size_t c = 0; c < count; c++) pred[c].scalar = link(pred[c].scalar);
 }
 
-void update(scorer& s, LEARNER::single_learner& base, example& ec)
+void update(scorer& s, VW::LEARNER::single_learner& base, example& ec)
 {
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   base.update(ec);
@@ -54,7 +55,7 @@ inline float glf1(float in) { return 2.f / (1.f + correctedExp(-in)) - 1.f; }
 
 inline float id(float in) { return in; }
 
-LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
 {
   auto s = scoped_calloc_or_throw<scorer>();
   std::string link;
@@ -70,8 +71,8 @@ LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
   s->all = &all;
 
   auto base = as_singleline(setup_base(options, all));
-  LEARNER::learner<scorer, example>* l;
-  void (*multipredict_f)(scorer&, LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool) =
+  VW::LEARNER::learner<scorer, example>* l;
+  void (*multipredict_f)(scorer&, VW::LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool) =
       multipredict<id>;
 
   if (link == "identity")
@@ -96,7 +97,7 @@ LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
 
   l->set_multipredict(multipredict_f);
   l->set_update(update);
-  all.scorer = LEARNER::as_singleline(l);
+  all.scorer = VW::LEARNER::as_singleline(l);
 
   return make_base(*all.scorer);
 }

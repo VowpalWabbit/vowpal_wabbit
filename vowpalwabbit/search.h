@@ -7,9 +7,7 @@
 #define cdbg std::clog
 #undef cdbg
 #define cdbg \
-  if (1)     \
-  {          \
-  }          \
+  if (1) {}  \
   else       \
     std::clog
 // comment the previous two lines if you want loads of debug output :)
@@ -28,7 +26,7 @@ struct search;
 
 class BaseTask
 {
- public:
+public:
   BaseTask(search* _sch, multi_ex& _ec) : sch(_sch), ec(_ec)
   {
     _foreach_action = nullptr;
@@ -253,7 +251,7 @@ struct search_metatask
 // want to use crazy combinations of arguments
 class predictor
 {
- public:
+public:
   predictor(search& sch, ptag my_tag);
   ~predictor();
 
@@ -301,11 +299,13 @@ class predictor
   // set/add allowed but with per-actions costs specified
   predictor& add_allowed(action a, float cost);
   predictor& add_allowed(action* a, float* costs, size_t action_count);
+  VW_DEPRECATED("Use the std::vector variant of add_allowed.")
   predictor& add_allowed(v_array<std::pair<action, float> >& a);
   predictor& add_allowed(std::vector<std::pair<action, float> >& a);
 
   predictor& set_allowed(action a, float cost);
   predictor& set_allowed(action* a, float* costs, size_t action_count);
+  VW_DEPRECATED("Use the std::vector variant of set_allowed.")
   predictor& set_allowed(v_array<std::pair<action, float> >& a);
   predictor& set_allowed(std::vector<std::pair<action, float> >& a);
 
@@ -327,7 +327,7 @@ class predictor
   // make a prediction
   action predict();
 
- private:
+private:
   bool is_ldf;
   ptag my_tag;
   example* ec;
@@ -374,5 +374,5 @@ default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const 
 // char* mismatch_error_string);
 
 // our interface within VW
-LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 }  // namespace Search

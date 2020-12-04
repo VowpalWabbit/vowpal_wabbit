@@ -81,7 +81,7 @@ bool test_label(polylabel* v)
 
 void delete_simple_label(polylabel*) {}
 
-void parse_simple_label(parser*, shared_data* sd, polylabel* v, v_array<VW::string_view>& words)
+void parse_simple_label(parser*, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words)
 {
   label_data& ld = v->simple;
 
@@ -103,19 +103,19 @@ void parse_simple_label(parser*, shared_data* sd, polylabel* v, v_array<VW::stri
       break;
     default:
       std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-      for (const auto & word : words) std::cout << word;
+      for (const auto& word : words) std::cout << word;
       std::cout << std::endl;
   }
   count_label(sd, ld.label);
 }
 
-label_parser simple_label = {default_simple_label, parse_simple_label, cache_simple_label, read_cached_simple_label,
-    delete_simple_label, get_weight, nullptr, test_label, sizeof(label_data)};
+label_parser simple_label_parser = {default_simple_label, parse_simple_label, cache_simple_label,
+    read_cached_simple_label, delete_simple_label, get_weight, nullptr, test_label, sizeof(label_data)};
 
 void print_update(vw& all, example& ec)
 {
-  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
-      !all.bfgs)
+  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
+      !all.logger.quiet && !all.bfgs)
   {
     all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar, ec.num_features,
         all.progress_add, all.progress_arg);
@@ -127,15 +127,10 @@ void output_and_account_example(vw& all, example& ec)
   label_data ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX && !ec.test_only)
-    all.sd->weighted_labels += ((double)ld.label) * ec.weight;
+  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
-  all.print_by_ref(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
-  {
-    int f = (int)all.final_prediction_sink[i];
-    all.print_by_ref(f, ec.pred.scalar, 0, ec.tag);
-  }
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
+  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag); }
 
   print_update(all, ec);
 }
@@ -151,8 +146,7 @@ bool summarize_holdout_set(vw& all, size_t& no_win_counter)
   float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0)
       ? (float)(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass)
       : FLT_MAX * 0.5f;
-  if (all.all_reduce != nullptr)
-    thisLoss = accumulate_scalar(all, thisLoss);
+  if (all.all_reduce != nullptr) thisLoss = accumulate_scalar(all, thisLoss);
 
   all.sd->weighted_holdout_examples_since_last_pass = 0;
   all.sd->holdout_sum_loss_since_last_pass = 0;

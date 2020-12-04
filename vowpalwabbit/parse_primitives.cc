@@ -31,13 +31,13 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
 
   while (!s.empty() && ((end_pos = s.find_first_of(delims)) != VW::string_view::npos))
   {
-    if(s[end_pos] == '\\')
+    if (s[end_pos] == '\\')
     {
       current.append(s.begin(), end_pos);
       s.remove_prefix(end_pos + 1);
 
       // always insert the next character after an escape if it exists
-      if(!s.empty())
+      if (!s.empty())
       {
         current.append(s.begin(), 1);
         s.remove_prefix(1);
@@ -48,10 +48,7 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
       last_space = end_pos == 0;
       current.append(s.begin(), end_pos);
       s.remove_prefix(end_pos + 1);
-      if(!current.empty() || allow_empty)
-      {
-        tokens.push_back(current);
-      }
+      if (!current.empty() || allow_empty) { tokens.push_back(current); }
       current.clear();
     }
   }
@@ -62,24 +59,4 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
     tokens.push_back(current);
   }
   return tokens;
-}
-
-std::ostream& operator<<(std::ostream& os, const v_array<VW::string_view>& ss)
-{
-  VW::string_view* it = ss.cbegin();
-
-  if (it == ss.cend())
-  {
-    return os;
-  }
-
-  os << *it;
-
-  for (it++; it != ss.cend(); it++)
-  {
-    os << ",";
-    os << *it;
-  }
-
-  return os;
 }

@@ -8,29 +8,17 @@
 #include <vector>
 #include <string>
 
-#include "v_array.h"
+#include "reductions_fwd.h"
 #include "action_score.h"
-#include "options.h"
-
-namespace LEARNER
-{
-template <class T, class E>
-struct learner;
-using base_learner = learner<char, char>;
-}  // namespace LEARNER
-
-struct vw;
-struct example;
+#include "example_predict.h"
 
 namespace CCB
 {
-void calculate_and_insert_interactions(
-    example* shared, std::vector<example*> actions, std::vector<std::string>& generated_interactions);
+void calculate_and_insert_interactions(example* shared, const std::vector<example*>& actions,
+    std::vector<std::vector<namespace_index>>& generated_interactions);
 
-// Each position in outer array is implicitly the decision corresponding to that index. Each inner array is the result
-// of CB for that call.
-typedef v_array<ACTION_SCORE::action_scores> decision_scores_t;
-
-LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
 bool ec_is_example_header(example const& ec);
+std::string generate_ccb_label_printout(const std::vector<example*>& slots);
+
 }  // namespace CCB

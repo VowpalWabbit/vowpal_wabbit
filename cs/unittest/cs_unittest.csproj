@@ -153,9 +153,15 @@
   <ItemGroup>
     <Compile Include="BaseData.cs" />
     <Compile Include="CbAdfData.cs" />
+    <Compile Include="RunTests.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>RunTests.tt</DependentUpon>
+    </Compile>
     <Compile Include="RunTestsHelper.cs" />
     <Compile Include="TestConfidence.cs" />
     <Compile Include="TestMultiClassPredictionFactory.cs" />
+    <Compile Include="TestSearch.cs" />
     <Compile Include="TestTelemetryProcessor.cs" />
     <Compile Include="TestTracing.cs" />
     <Compile Include="TestWiki.cs" />
@@ -258,6 +264,7 @@
   <ItemGroup>
     <None Include="RunTests.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>RunTests.cs</LastGenOutput>
     </None>
     <None Include="TestMarshalNumeric.tt">
       <Generator>TextTemplatingFileGenerator</Generator>

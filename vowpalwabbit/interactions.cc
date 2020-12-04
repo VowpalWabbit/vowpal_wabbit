@@ -15,8 +15,8 @@ namespace INTERACTIONS
 
 // expand namespace interactions if contain wildcards
 // recursive function used internally in this module
-void expand_namespaces_with_recursion(
-    std::string const& ns, std::vector<std::string>& res, std::string& val, size_t pos)
+void expand_namespaces_with_recursion(std::vector<namespace_index> const& ns,
+    std::vector<std::vector<namespace_index>>& res, std::vector<namespace_index>& val, size_t pos)
 {
   assert(pos <= ns.size());
 
@@ -25,7 +25,7 @@ void expand_namespaces_with_recursion(
     // we're at the end of interaction
 
     // and store it in res
-    res.push_back(val);
+    res.emplace_back(val);
     // don't free s memory as it's data will be used later
   }
   else
@@ -57,14 +57,14 @@ void expand_namespaces_with_recursion(
 // called from parse_args.cc
 // process all interactions in a vector
 
-std::vector<std::string> expand_interactions(
-    const std::vector<std::string>& vec, const size_t required_length, const std::string& err_msg)
+std::vector<std::vector<namespace_index>> expand_interactions(
+    const std::vector<std::vector<namespace_index>>& vec, const size_t required_length, const std::string& err_msg)
 {
-  std::vector<std::string> res;
+  std::vector<std::vector<namespace_index>> res;
 
-  for (std::string const& i : vec)
+  for (auto const& i : vec)
   {
-    const size_t len = i.length();
+    const size_t len = i.size();
     if (required_length > 0 && len != required_length)
     // got strict requirement of interaction length and it was failed.
     {
@@ -74,7 +74,7 @@ std::vector<std::string> expand_interactions(
       // regardles of required_length value this check is always performed
       THROW("error, feature interactions must involve at least two namespaces" << err_msg);
 
-    std::string temp;
+    std::vector<namespace_index> temp;
     expand_namespaces_with_recursion(i, res, temp, 0);
   }
   return res;
@@ -88,10 +88,9 @@ std::vector<std::string> expand_interactions(
 // with one exeption - returns false if interaction made of one namespace
 // like 'aaa' as it has no sense to sort such things.
 
-inline bool must_be_left_sorted(const std::string& oi)
+inline bool must_be_left_sorted(const std::vector<namespace_index>& oi)
 {
-  if (oi.size() <= 1)
-    return true;  // one letter in std::string - no need to sort
+  if (oi.size() <= 1) return true;  // one letter in std::string - no need to sort
 
   bool diff_ns_found = false;
   bool pair_found = false;
@@ -99,14 +98,12 @@ inline bool must_be_left_sorted(const std::string& oi)
   for (auto i = std::begin(oi); i != std::end(oi) - 1; ++i)
     if (*i == *(i + 1))  // pair found
     {
-      if (diff_ns_found)
-        return true;  // case 'abb'
+      if (diff_ns_found) return true;  // case 'abb'
       pair_found = true;
     }
     else
     {
-      if (pair_found)
-        return true;  // case 'aab'
+      if (pair_found) return true;  // case 'aab'
       diff_ns_found = true;
     }
 
@@ -118,17 +115,17 @@ inline bool must_be_left_sorted(const std::string& oi)
 // also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
 
 void sort_and_filter_duplicate_interactions(
-    std::vector<std::string>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
+    std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
 {
   // 2 out parameters
   removed_cnt = 0;
   sorted_cnt = 0;
 
   // interaction value sort + original position
-  std::vector<std::pair<std::string, size_t>> vec_sorted;
+  std::vector<std::pair<std::vector<namespace_index>, size_t>> vec_sorted;
   for (size_t i = 0; i < vec.size(); ++i)
   {
-    std::string sorted_i(vec[i]);
+    std::vector<namespace_index> sorted_i(vec[i]);
     std::stable_sort(std::begin(sorted_i), std::end(sorted_i));
     vec_sorted.push_back(std::make_pair(sorted_i, i));
   }
@@ -137,13 +134,11 @@ void sort_and_filter_duplicate_interactions(
   {
     // remove duplicates
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
-          return a.first < b.first;
-        });
+        [](std::pair<std::vector<namespace_index>, size_t> const& a,
+            std::pair<std::vector<namespace_index>, size_t> const& b) { return a.first < b.first; });
     auto last = unique(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
-          return a.first == b.first;
-        });
+        [](std::pair<std::vector<namespace_index>, size_t> const& a,
+            std::pair<std::vector<namespace_index>, size_t> const& b) { return a.first == b.first; });
     vec_sorted.erase(last, vec_sorted.end());
 
     // report number of removed interactions
@@ -151,15 +146,14 @@ void sort_and_filter_duplicate_interactions(
 
     // restore original order
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
-          return a.second < b.second;
-        });
+        [](std::pair<std::vector<namespace_index>, size_t> const& a,
+            std::pair<std::vector<namespace_index>, size_t> const& b) { return a.second < b.second; });
   }
 
   // we have original vector and vector with duplicates removed + corresponding indexes in original vector
   // plus second vector's data is sorted. We can reuse it if we need interaction to be left sorted.
   // let's make a new vector from these two sources - without dulicates and with sorted data whenever it's needed.
-  std::vector<std::string> res;
+  std::vector<std::vector<namespace_index>> res;
   for (auto& i : vec_sorted)
   {
     if (must_be_left_sorted(i.first))
@@ -217,10 +211,8 @@ constexpr size_t size_fast_factorial = sizeof(fast_factorial) / sizeof(*fast_fac
 
 inline size_t factor(const size_t n, const size_t start_from = 1)
 {
-  if (n <= 0)
-    return 1;
-  if (start_from == 1 && n < size_fast_factorial)
-    return (size_t)fast_factorial[n];
+  if (n <= 0) return 1;
+  if (start_from == 1 && n < size_fast_factorial) return (size_t)fast_factorial[n];
 
   size_t res = 1;
   for (size_t i = start_from + 1; i <= n; ++i) res *= i;
@@ -239,7 +231,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
   if (all.permutations)
   {
     // just multiply precomputed values for all namespaces
-    for (std::string& inter : *ec.interactions)
+    for (const auto& inter : *ec.interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
@@ -248,12 +240,10 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
       {
         num_features_in_inter *= ec.feature_space[ns].size();
         sum_feat_sq_in_inter *= ec.feature_space[ns].sum_feat_sq;
-        if (num_features_in_inter == 0)
-          break;
+        if (num_features_in_inter == 0) break;
       }
 
-      if (num_features_in_inter == 0)
-        continue;
+      if (num_features_in_inter == 0) continue;
 
       new_features_cnt += num_features_in_inter;
       new_features_value += sum_feat_sq_in_inter;
@@ -268,7 +258,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
     generate_interactions<eval_gen_data, uint64_t, ft_cnt>(all, ec, dat);
 #endif
 
-    for (std::string& inter : *ec.interactions)
+    for (auto& inter : *ec.interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
@@ -281,8 +271,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
           const int nsc = *ns;
           num_features_in_inter *= ec.feature_space[nsc].size();
           sum_feat_sq_in_inter *= ec.feature_space[nsc].sum_feat_sq;
-          if (num_features_in_inter == 0)
-            break;  // one of namespaces has no features - go to next interaction
+          if (num_features_in_inter == 0) break;  // one of namespaces has no features - go to next interaction
         }
         else  // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
         {
@@ -290,11 +279,10 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
           size_t order_of_inter = 2;  // alredy compared ns == ns+1
 
           for (auto ns_end = ns + 2; ns_end < inter.end(); ++ns_end)
-            if (*ns == *ns_end)
-              ++order_of_inter;
+            if (*ns == *ns_end) ++order_of_inter;
 
           // namespace is same for whole block
-          features& fs = ec.feature_space[(const int)*ns];
+          features& fs = ec.feature_space[static_cast<int>(*ns)];
 
           // count number of features with value != 1.;
           size_t cnt_ft_value_non_1 = 0;
@@ -315,7 +303,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
             if (!PROCESS_SELF_INTERACTIONS(fs.values[i]))
             {
-              for (size_t i = order_of_inter - 1; i > 0; --i) results[i] += results[i - 1] * x;
+              for (size_t j = order_of_inter - 1; j > 0; --j) results[j] += results[j - 1] * x;
 
               results[0] += x;
             }
@@ -323,7 +311,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
             {
               results[0] += x;
 
-              for (size_t i = 1; i < order_of_inter; ++i) results[i] += results[i - 1] * x;
+              for (size_t j = 1; j < order_of_inter; ++j) results[j] += results[j - 1] * x;
 
               ++cnt_ft_value_non_1;
             }
@@ -345,9 +333,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
           size_t n;
           if (cnt_ft_value_non_1 == 0)  // number of generated simple combinations is C(n,k)
-          {
-            n = (size_t)choose((int64_t)ft_size, (int64_t)order_of_inter);
-          }
+          { n = (size_t)choose((int64_t)ft_size, (int64_t)order_of_inter); }
           else
           {
             n = 0;
@@ -372,8 +358,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
         }
       }
 
-      if (num_features_in_inter == 0)
-        continue;  // signal that values should be ignored (as default value is 1)
+      if (num_features_in_inter == 0) continue;  // signal that values should be ignored (as default value is 1)
 
       new_features_cnt += num_features_in_inter;
       new_features_value += sum_feat_sq_in_inter;

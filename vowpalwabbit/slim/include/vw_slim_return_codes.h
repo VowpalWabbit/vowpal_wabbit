@@ -11,15 +11,13 @@
 #define E_VW_PREDICT_ERR_EXPLORATION_FAILED 8
 #define E_VW_PREDICT_ERR_INVALID_MODEL_CHECK_SUM 9
 #define E_VW_PREDICT_ERR_HASH_SEED_NOT_SUPPORTED 10
-#define RETURN_ON_FAIL(stmt)              \
-  {                                       \
-    int ret##__LINE__ = stmt;             \
-    if (ret##__LINE__ != S_VW_PREDICT_OK) \
-      return ret##__LINE__;               \
+#define RETURN_ON_FAIL(stmt)                                    \
+  {                                                             \
+    int ret##__LINE__ = stmt;                                   \
+    if (ret##__LINE__ != S_VW_PREDICT_OK) return ret##__LINE__; \
   }
-#define RETURN_EXPLORATION_ON_FAIL(stmt)                                  \
-  {                                                                       \
-    int ret##__LINE__ = stmt;                                             \
-    if (ret##__LINE__ != S_EXPLORATION_OK)                                \
-      return E_VW_PREDICT_ERR_EXPLORATION_FAILED | (ret##__LINE__ << 16); \
+#define RETURN_EXPLORATION_ON_FAIL(stmt)                                                                       \
+  {                                                                                                            \
+    int ret##__LINE__ = stmt;                                                                                  \
+    if (ret##__LINE__ != S_EXPLORATION_OK) return E_VW_PREDICT_ERR_EXPLORATION_FAILED | (ret##__LINE__ << 16); \
   }

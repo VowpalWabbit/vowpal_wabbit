@@ -8,6 +8,22 @@ file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
+string(REPLACE "." ";" VW_VERSION_LIST ${PACKAGE_VERSION})
+list(GET VW_VERSION_LIST 0 VW_VERSION_MAJOR)
+list(GET VW_VERSION_LIST 1 VW_VERSION_MINOR)
+list(GET VW_VERSION_LIST 2 VW_VERSION_PATCH)
+
+# Set this to on so that tooling can make use of the outputted compile commands (such as clang-tidy)
+set(CMAKE_EXPORT_COMPILE_COMMANDS On)
+
+if(MSVC)
+  # Do nothing as the default compile flags for MSVC are okay.
+else()
+  # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
+  # is O2 and Release is O3, override that here:
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
+endif()
+
 set(DEFAULT_BUILD_TYPE "Release")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
@@ -23,7 +39,7 @@ if(WIN32)
   set(CMAKE_SYSTEM_VERSION "10.0.16299.0" CACHE INTERNAL "Windows SDK version to target.")
 endif()
 
-project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES CXX)
+project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
@@ -57,17 +73,21 @@ option(PROFILE "Turn on flags required for profiling" OFF)
 option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF)
 option(GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
+option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
 
 option(VW_INSTALL "Add install targets." ON)
 option(BUILD_TESTS "Build and enable tests." ON)
+option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
+option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
+option(BUILD_FLATBUFFER_UTILS "Build the flatbuffer data converter utility in utl/flatbuffer" ON)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -131,13 +151,19 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(explore_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/explore/")
 
+if(WIN32)
+  set(STATIC_LIB_SUFFIXES ".lib" ".a")
+else()
+  set(STATIC_LIB_SUFFIXES ".a")
+endif()
+
 if(STATIC_LINK_VW_JAVA)
   set(Boost_USE_STATIC_LIBS ON)
-  SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
 else()
   if(STATIC_LINK_VW)
     set(Boost_USE_STATIC_LIBS ON)
-    SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
     SET(BUILD_SHARED_LIBS OFF)
   else()
     set(Boost_USE_STATIC_LIBS OFF)
@@ -169,8 +195,9 @@ if(STATIC_LINK_VW)
 endif()
 
 # Align and foreach are also required, for some reason they can't be specified as components though.
-find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
+find_package(Boost REQUIRED COMPONENTS program_options system)
 find_package(ZLIB REQUIRED)
+find_package(flatbuffers REQUIRED)
 
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
@@ -223,6 +250,10 @@ add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
 
+if (BUILD_FLATBUFFER_UTILS)
+  add_subdirectory(utl/flatbuffer)
+endif()
+
 if(BUILD_DOCS)
   add_subdirectory(doc)
 endif()
@@ -239,18 +270,41 @@ if(BUILD_SLIM_VW)
   add_subdirectory(vowpalwabbit/slim)
 endif()
 
+if(BUILD_BENCHMARKS)
+  add_subdirectory(test/benchmarks)
+endif()
+
 if(BUILD_TESTS)
+  # Boost test is only required if we are building tests
+  find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+
   enable_testing()
   add_subdirectory(test)
 
+  set(vw_c_api_unit_test_target "")
+  if(BUILD_EXPERIMENTAL_BINDING)
+    set(vw_c_api_unit_test_target "vw_c_api_unit_test")
+  endif()
+
+  # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
+  add_custom_target(test_with_output
+    COMMAND ${CMAKE_CTEST_COMMAND} --verbose
+    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target}
+  )
+
   # Don't offer these make dependent targets on Windows
   if(NOT WIN32)
-  # make bigtests BIG_TEST_ARGS="<args here>"
-  add_custom_target(bigtests
-    DEPENDS vw
-    COMMAND make \${BIG_TEST_ARGS}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/big_tests)
+    # make bigtests BIG_TEST_ARGS="<args here>"
+    add_custom_target(bigtests
+      DEPENDS vw
+      COMMAND make \${BIG_TEST_ARGS}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/big_tests)
   endif()
+endif()
+
+# Must be done after the test block so that enable_testing() has been called
+if(BUILD_EXPERIMENTAL_BINDING)
+  add_subdirectory(bindings)
 endif()
 
 # TODO convert cs directory to cmake
@@ -258,6 +312,8 @@ endif()
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
+  find_package(Boost REQUIRED COMPONENTS program_options)
+  
   FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
     SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
   ENDFOREACH()
@@ -295,3 +351,18 @@ if(VW_INSTALL)
       ${CMAKE_INSTALL_LIBDIR}/cmake/VowpalWabbit)
 
 endif()
+
+set(CPACK_PACKAGE_VENDOR "Vowpal Wabbit")
+set(CPACK_PACKAGE_NAME "vowpal-wabbit")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Vowpal Wabbit is a machine learning system which pushes the frontier of machine learning with techniques such as online, hashing, allreduce, reductions, learning2search, active, and interactive learning.")
+set(CPACK_PACKAGE_VERSION_MAJOR ${VW_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${VW_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${VW_VERSION_PATCH})
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+# TODO Make this an email address or contact page
+set(CPACK_PACKAGE_CONTACT "https://github.com/VowpalWabbit/vowpal_wabbit")
+# Generates a package dependency list in the deb control file
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS On)
+
+include(CPack)

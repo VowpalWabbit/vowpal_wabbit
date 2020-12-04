@@ -3,37 +3,55 @@
 // license as described in the file LICENSE.
 #pragma once
 // This is the interface for a learning algorithm
+
 #include <iostream>
+#include <memory>
+
 #include "memory.h"
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
 #include "future_compat.h"
+#include "example.h"
 #include <memory>
-
+#include "scope_exit.h"
 
 enum class prediction_type_t
 {
   scalar,
   scalars,
   action_scores,
+  pdf,
   action_probs,
   multiclass,
   multilabels,
   prob,
   multiclassprobs,
-  decision_probs
+  decision_probs,
+  action_pdf_value
 };
 
 const char* to_string(prediction_type_t prediction_type);
 
+namespace VW
+{
+/// \brief Contains the VW::LEARNER::learner object and utilities for
+/// interacting with it.
 namespace LEARNER
 {
 template <class T, class E>
 struct learner;
 
+/// \brief Used to type erase the object and pass around common type.
 using base_learner = learner<char, char>;
+
+/// \brief Used for reductions that process single ::example objects at at time.
+/// It type erases the specific reduction object type.
 using single_learner = learner<char, example>;
+
+/// \brief Used for multiline examples where there are several ::example objects
+/// required to describe the overall example. It type erases the specific
+/// reduction object type.
 using multi_learner = learner<char, multi_ex>;
 
 struct func_data
@@ -105,22 +123,26 @@ float recur_sensitivity(void*, base_learner&, example&);
 
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
 {
+  ++ex._current_reduction_depth;
   ex.ft_offset += static_cast<uint32_t>(increment * i);
 }
 
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
-  for (auto ec : ec_seq) ec->ft_offset += static_cast<uint32_t>(increment * i);
+  if (ec_seq.size() > 0) ++ec_seq[0]->_current_reduction_depth;
+  for (auto& ec : ec_seq) ec->ft_offset += static_cast<uint32_t>(increment * i);
 }
 
 inline void decrement_offset(example& ex, const size_t increment, const size_t i)
 {
+  --ex._current_reduction_depth;
   assert(ex.ft_offset >= increment * i);
   ex.ft_offset -= static_cast<uint32_t>(increment * i);
 }
 
 inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
+  if (ec_seq.size() > 0) --ec_seq[0]->_current_reduction_depth;
   for (auto ec : ec_seq)
   {
     assert(ec->ft_offset >= increment * i);
@@ -128,10 +150,33 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
   }
 }
 
+/// \brief Defines the interface for a learning algorithm.
+///
+/// Learner is implemented as a struct of pointers, and associated methods. It
+/// implements a sort of virtual inheritance through the use of bundling
+/// function pointers with the associated objects to call them with. A reduction
+/// will recursively call the base given to it, whereas a base learner will not
+/// recurse and will simply return the result. Learner is not intended to be
+/// inherited from. Instead it is used through composition, and created through
+/// the various VW::LEARNER::init_learner overloaded functions that chain to the
+/// central factor function VW::LEARNER::learner::init_learner The state of this
+/// learner, or reduction, is stored in the learner_data field. A
+/// <code>std::shared_pointer<void></code> is used as this class uses type
+/// erasure to allow for an arbitrary reduction to be implemented. It is
+/// extremely important that the function pointers given to the class match the
+/// expected types of the object. If the learner is constructed using
+/// VW::LEARNER::learner::init_learner and assembled before it is transformed
+/// into a VW::LEARNER::base_learner with VW::LEARNER::make_base then the usage
+/// of the templated functions should ensure types are correct.
+///
+/// \tparam T Type of the reduction data object stored. This allows this
+/// specific reduction to have it's own state.
+/// \tparam E Example type this reduction supports. Must be one of ::example or
+/// ::multi_ex
 template <class T, class E>
 struct learner
 {
- private:
+private:
   func_data init_fd;
   learn_data learn_fd;
   sensitivity_data sensitivity_fd;
@@ -143,7 +188,7 @@ struct learner
 
   std::shared_ptr<void> learner_data;
   learner(){};  // Should only be able to construct a learner through init_learner function
- public:
+public:
   prediction_type_t pred_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
@@ -152,7 +197,14 @@ struct learner
   using end_fptr_type = void (*)(vw&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
-  // called once for each example.  Must work under reduction.
+  /// \brief Will update the model according to the labels and examples supplied.
+  /// \param ec The ::example object or ::multi_ex to be operated on. This
+  /// object **must** have a valid label set for every ::example in the field
+  /// example::l that corresponds to the type this reduction expects.
+  /// \param i This is the offset used for the weights in this call. If using
+  /// multiple regressors/learners you can increment this value for each call.
+  /// \returns While some reductions may fill the example::pred, this is not
+  /// guaranteed and is undefined behavior if accessed.
   inline void learn(E& ec, size_t i = 0)
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
@@ -162,6 +214,15 @@ struct learner
     decrement_offset(ec, increment, i);
   }
 
+  /// \brief Make a prediction for the given example.
+  /// \param ec The ::example object or ::multi_ex to be operated on. This
+  /// object **must** have a valid prediction allocated in the field
+  /// example::pred that corresponds to this reduction type.
+  /// \param i This is the offset used for the weights in this call. If using
+  /// multiple regressors/learners you can increment this value for each call.
+  /// \returns The prediction calculated by this reduction be set on
+  /// example::pred. If <code>E</code> is ::multi_ex then the prediction is set
+  /// on the 0th item in the list.
   inline void predict(E& ec, size_t i = 0)
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
@@ -202,17 +263,26 @@ struct learner
   template <class L>
   inline void set_predict(void (*u)(T&, L&, E&))
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
     learn_fd.predict_f = (learn_data::fn)u;
+    VW_WARNING_STATE_POP
   }
   template <class L>
   inline void set_learn(void (*u)(T&, L&, E&))
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
     learn_fd.learn_f = (learn_data::fn)u;
+    VW_WARNING_STATE_POP
   }
   template <class L>
   inline void set_multipredict(void (*u)(T&, L&, E&, size_t, size_t, polyprediction*, bool))
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
     learn_fd.multipredict_f = (learn_data::multi_fn)u;
+    VW_WARNING_STATE_POP
   }
 
   inline void update(E& ec, size_t i = 0)
@@ -226,14 +296,20 @@ struct learner
   template <class L>
   inline void set_update(void (*u)(T& data, L& base, E&))
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
     learn_fd.update_f = (learn_data::fn)u;
+    VW_WARNING_STATE_POP
   }
 
   // used for active learning and confidence to determine how easily predictions are changed
   inline void set_sensitivity(float (*u)(T& data, base_learner& base, example&))
   {
     sensitivity_fd.data = learn_fd.data;
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
     sensitivity_fd.sensitivity_f = (sensitivity_data::fn)u;
+    VW_WARNING_STATE_POP
   }
   inline float sensitivity(example& ec, size_t i = 0)
   {
@@ -247,24 +323,30 @@ struct learner
   inline void save_load(io_buf& io, const bool read, const bool text)
   {
     save_load_fd.save_load_f(save_load_fd.data, io, read, text);
-    if (save_load_fd.base)
-      save_load_fd.base->save_load(io, read, text);
+    if (save_load_fd.base) save_load_fd.base->save_load(io, read, text);
   }
   inline void set_save_load(void (*sl)(T&, io_buf&, bool, bool))
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
     save_load_fd.save_load_f = (save_load_data::fn)sl;
+    VW_WARNING_STATE_POP
     save_load_fd.data = learn_fd.data;
     save_load_fd.base = learn_fd.base;
   }
 
   // called to clean up state.  Autorecursive.
-  void set_finish(void (*f)(T&)) { finisher_fd = tuple_dbf(learn_fd.data, learn_fd.base, (finish_fptr_type)(f)); }
+  void set_finish(void (*f)(T&))
+  {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
+    finisher_fd = tuple_dbf(learn_fd.data, learn_fd.base, (finish_fptr_type)(f));
+    VW_WARNING_STATE_POP
+  }
+
   inline void finish()
   {
-    if (finisher_fd.data)
-    {
-      finisher_fd.func(finisher_fd.data);
-    }
+    if (finisher_fd.data) { finisher_fd.func(finisher_fd.data); }
     learner_data.~shared_ptr<void>();
     if (finisher_fd.base)
     {
@@ -276,23 +358,40 @@ struct learner
   void end_pass()
   {
     end_pass_fd.func(end_pass_fd.data);
-    if (end_pass_fd.base)
-      end_pass_fd.base->end_pass();
+    if (end_pass_fd.base) end_pass_fd.base->end_pass();
   }  // autorecursive
-  void set_end_pass(void (*f)(T&)) { end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f); }
+
+  void set_end_pass(void (*f)(T&))
+  {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
+    end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
+    VW_WARNING_STATE_POP
+  }
 
   // called after parsing of examples is complete.  Autorecursive.
   void end_examples()
   {
     end_examples_fd.func(end_examples_fd.data);
-    if (end_examples_fd.base)
-      end_examples_fd.base->end_examples();
+    if (end_examples_fd.base) end_examples_fd.base->end_examples();
   }
-  void set_end_examples(void (*f)(T&)) { end_examples_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f); }
+  void set_end_examples(void (*f)(T&))
+  {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
+    end_examples_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
+    VW_WARNING_STATE_POP
+  }
 
   // Called at the beginning by the driver.  Explicitly not recursive.
   void init_driver() { init_fd.func(init_fd.data); }
-  void set_init_driver(void (*f)(T&)) { init_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f); }
+  void set_init_driver(void (*f)(T&))
+  {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
+    init_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
+    VW_WARNING_STATE_POP
+  }
 
   // called after learn example for each example.  Explicitly not recursive.
   inline void finish_example(vw& all, E& ec)
@@ -303,12 +402,15 @@ struct learner
   void set_finish_example(void (*f)(vw& all, T&, E&))
   {
     finish_example_fd.data = learn_fd.data;
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
     finish_example_fd.finish_example_f = (end_fptr_type)(f);
+    VW_WARNING_STATE_POP
   }
 
   template <class L>
-  static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
-      prediction_type_t pred_type)
+  static learner<T, E>& init_learner(
+      T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws, prediction_type_t pred_type)
   {
     learner<T, E>& ret = calloc_or_throw<learner<T, E> >();
 
@@ -341,7 +443,10 @@ struct learner
       ret.finisher_fd.func = (func_data::fn)noop;
       ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity;
       ret.finish_example_fd.data = dat;
+      VW_WARNING_STATE_PUSH
+      VW_WARNING_DISABLE_CAST_FUNC_TYPE
       ret.finish_example_fd.finish_example_f = (finish_example_data::fn)return_simple_example;
+      VW_WARNING_STATE_POP
     }
 
     ret.learner_data = std::shared_ptr<T>(dat, [](T* ptr) {
@@ -350,9 +455,12 @@ struct learner
     });
 
     ret.learn_fd.data = dat;
-    ret.learn_fd.learn_f = (learn_data::fn)learn;
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
+    ret.learn_fd.learn_f = reinterpret_cast<learn_data::fn>(learn);
     ret.learn_fd.update_f = (learn_data::fn)learn;
     ret.learn_fd.predict_f = (learn_data::fn)predict;
+    VW_WARNING_STATE_POP
     ret.learn_fd.multipredict_f = nullptr;
     ret.pred_type = pred_type;
     ret.is_multiline = std::is_same<multi_ex, E>::value;
@@ -376,8 +484,8 @@ template <class T, class E, class L>
 learner<T, E>& init_learner(
     free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t params_per_weight)
 {
-  auto ret =
-      &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type_t::scalar);
+  auto ret = &learner<T, E>::init_learner(
+      dat.get(), (L*)nullptr, learn, predict, params_per_weight, prediction_type_t::scalar);
 
   dat.release();
   return *ret;
@@ -431,26 +539,24 @@ learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(
 // multiclass reduction
 template <class T, class E, class L>
 learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&), parser* p, size_t ws,
-    prediction_type_t pred_type = prediction_type_t::multiclass)
+    void (*predict)(T&, L&, E&), parser* p, size_t ws, prediction_type_t pred_type = prediction_type_t::multiclass)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
 
   dat.release();
   l.set_finish_example(MULTICLASS::finish_example<T>);
-  p->lp = MULTICLASS::mc_label;
+  p->lbl_parser = MULTICLASS::mc_label;
   return l;
 }
 
 template <class T, class E, class L>
 learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&), parser* p, size_t ws,
-    prediction_type_t pred_type = prediction_type_t::multiclass)
+    void (*predict)(T&, L&, E&), parser* p, size_t ws, prediction_type_t pred_type = prediction_type_t::multiclass)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
   dat.release();
   l.set_finish_example(COST_SENSITIVE::finish_example);
-  p->lp = COST_SENSITIVE::cs_label;
+  p->lbl_parser = COST_SENSITIVE::cs_label;
   return l;
 }
 
@@ -487,11 +593,15 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
     ec->ft_offset = offset;
   }
 
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit([&saved_offsets, &examples] {
+    for (size_t i = 0; i < examples.size(); i++) { examples[i]->ft_offset = saved_offsets[i]; }
+  });
+
   if (is_learn)
     base.learn(examples, id);
   else
     base.predict(examples, id);
-
-  for (size_t i = 0; i < examples.size(); i++) examples[i]->ft_offset = saved_offsets[i];
 }
 }  // namespace LEARNER
+}  // namespace VW

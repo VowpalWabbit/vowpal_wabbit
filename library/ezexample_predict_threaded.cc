@@ -1,8 +1,8 @@
-#include <stdio.h>
-#include "../vowpalwabbit/vw.h"
-#include "../vowpalwabbit/ezexample.h"
+#include <cstdio>
+#include <vw.h>
+#include <ezexample.h>
 
-#include <boost/thread/thread.hpp>
+#include <thread>
 
 int runcount = 100;
 
@@ -127,12 +127,18 @@ int main(int argc, char *argv[])
     w();
   }
   else
-  { boost::thread_group tg;
+  {
+    std::vector<std::thread> threads;
     for (int t = 0; t < threadcount; ++t)
-    { cerr << "starting thread " << t << endl;
-      boost::thread * pt = tg.create_thread(Worker(*vw, vw_init_string_parser, results));
+    {
+      cerr << "starting thread " << t << endl;
+      threads.emplace_back(Worker(*vw, vw_init_string_parser, results));
     }
-    tg.join_all();
+
+    for(auto& thread : threads)
+    {
+      thread.join();
+    }
     cerr << "finished!" << endl;
   }
 

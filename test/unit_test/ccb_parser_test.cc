@@ -1,4 +1,6 @@
+#ifndef STATIC_LINK_VW
 #define BOOST_TEST_DYN_LINK
+#endif
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -8,6 +10,7 @@
 #include <vector>
 #include "conditional_contextual_bandit.h"
 #include "parser.h"
+#include <memory>
 
 void parse_ccb_label(parser* p, VW::string_view label, CCB::label& l)
 {
@@ -20,8 +23,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
 {
   auto lp = CCB::ccb_label_parser;
   parser p{8 /*ring_size*/, false /*strict parse*/};
-  p.words = v_init<VW::string_view>();
-  p.parse_name = v_init<VW::string_view>();
 
   {
     auto label = scoped_calloc_or_throw<CCB::label>();
@@ -112,29 +113,29 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_REQUIRE_THROW(parse_ccb_label(&p, "ccb slot 1:1.0:0.5,4:0.7", *label.get()), VW::vw_exception);
     CCB::delete_label(*label);
   }
-  p.words.delete_v();
-  p.parse_name.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(ccb_cache_label)
 {
-  io_buf io;
+  auto backing_vector = std::make_shared<std::vector<char>>();
+  io_buf io_writer;
+  io_writer.add_file(VW::io::create_vector_writer(backing_vector));
   //io.init();      TODO: figure out and fix leak caused by double init()
 
   parser p{8 /*ring_size*/, false /*strict parse*/};
-  p.words = v_init<VW::string_view>();
-  p.parse_name = v_init<VW::string_view>();
 
   auto lp = CCB::ccb_label_parser;
   auto label = scoped_calloc_or_throw<CCB::label>();
   parse_ccb_label(&p, "ccb slot 1:-2.0:0.5,2:0.25,3:0.25 3,4", *label.get());
   CCB::cache_label(*label, io);
-  io.space.end() = io.head;
-  io.head = io.space.begin();
+  io_writer.flush();
+
+  io_buf io_reader;
+  io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   auto uncached_label = scoped_calloc_or_throw<CCB::label>();
   CCB::default_label(*uncached_label);
-  CCB::read_cached_label(nullptr, *uncached_label, io);
+  CCB::read_cached_label(nullptr, uncached_label.get(), io_reader);
 
   BOOST_CHECK_EQUAL(uncached_label->explicit_included_actions.size(), 2);
   BOOST_CHECK_EQUAL(uncached_label->explicit_included_actions[0], 3);
@@ -150,15 +151,11 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   BOOST_CHECK_EQUAL(uncached_label->type, CCB::example_type::slot);
   CCB::delete_label(*label);
   CCB::delete_label(*uncached_label);
-  p.words.delete_v();
-  p.parse_name.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(ccb_copy_label)
 {
   parser p{8 /*ring_size*/, false /*strict parse*/};
-  p.words = v_init<VW::string_view>();
-  p.parse_name = v_init<VW::string_view>();
   auto lp = CCB::ccb_label_parser;
 
   auto label = scoped_calloc_or_throw<CCB::label>();
@@ -181,8 +178,4 @@ BOOST_AUTO_TEST_CASE(ccb_copy_label)
   BOOST_CHECK_EQUAL(copied_to->outcome->probabilities[2].action, 3);
   BOOST_CHECK_CLOSE(copied_to->outcome->probabilities[2].score, .25f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(copied_to->type, CCB::example_type::slot);
-  CCB::delete_label(*label);
-  CCB::delete_label(*copied_to);
-  p.words.delete_v();
-  p.parse_name.delete_v();
 }

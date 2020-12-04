@@ -13,13 +13,13 @@ struct vw_namespace
 {
   char namespace_letter;
 
- public:
+public:
   vw_namespace(const char c) : namespace_letter(c) {}
 };
 
 class ezexample
 {
- private:
+private:
   vw* vw_ref;
   vw* vw_par_ref;  // an extra parser if we're multithreaded
   bool is_multiline;
@@ -43,7 +43,7 @@ class ezexample
   example* get_new_example()
   {
     example* new_ec = VW::new_unused_example(*vw_par_ref);
-    vw_par_ref->p->lp.default_label(&new_ec->l);
+    vw_par_ref->example_parser->lbl_parser.default_label(&new_ec->l);
     new_ec->tag.clear();
     new_ec->indices.clear();
     for (auto& i : new_ec->feature_space) i.clear();
@@ -85,13 +85,12 @@ class ezexample
     {
       mini_setup_example();
       vw_ref->learn(*ec);
-      if (is_multiline)
-        vw_ref->learn(*empty_example);
+      if (is_multiline) vw_ref->learn(*empty_example);
       example_changed_since_prediction = false;
     }
   }
 
- public:
+public:
   // REAL FUNCTIONALITY
   // create a new ezexample by asking the vw parser for an example
   ezexample(vw* this_vw, bool multiline = false, vw* this_vw_parser = nullptr)
@@ -101,8 +100,7 @@ class ezexample
     ec = get_new_example();
     we_create_ec = true;
 
-    if (vw_ref->add_constant)
-      VW::add_constant_feature(*vw_ref, ec);
+    if (vw_ref->add_constant) VW::add_constant_feature(*vw_ref, ec);
   }
 
   // create a new ezexample by wrapping around an already existing example
@@ -119,27 +117,23 @@ class ezexample
     if (current_ns != 0)
     {
       str[0] = current_ns;
-      current_seed = VW::hash_space(*vw_ref, str);
+      current_seed = static_cast<fid>(VW::hash_space(*vw_ref, str));
     }
   }
 
   ~ezexample()  // calls finish_example *only* if we created our own example!
   {
-    if (VW::is_ring_example(*vw_par_ref, ec))
-      VW::finish_example(*vw_par_ref, *ec);
+    if (VW::is_ring_example(*vw_par_ref, ec)) VW::finish_example(*vw_par_ref, *ec);
     for (auto ecc : example_copies)
-      if (VW::is_ring_example(*vw_par_ref, ec))
-        VW::finish_example(*vw_par_ref, *ecc);
+      if (VW::is_ring_example(*vw_par_ref, ec)) VW::finish_example(*vw_par_ref, *ecc);
     example_copies.clear();
     free(example_copies.begin());
   }
 
   bool ensure_ns_exists(char c)  // returns TRUE iff we should ignore it :)
   {
-    if (vw_ref->ignore_some && vw_ref->ignore[(int)c])
-      return true;
-    if (ns_exists[(int)c])
-      return false;
+    if (vw_ref->ignore_some && vw_ref->ignore[(int)c]) return true;
+    if (ns_exists[(int)c]) return false;
     ec->indices.push_back((size_t)c);
     ns_exists[(int)c] = true;
     return false;
@@ -147,14 +141,13 @@ class ezexample
 
   void addns(char c)
   {
-    if (ensure_ns_exists(c))
-      return;
+    if (ensure_ns_exists(c)) return;
 
     ec->feature_space[(int)c].clear();
     past_seeds.push_back(current_seed);
     current_ns = c;
     str[0] = c;
-    current_seed = VW::hash_space(*vw_ref, str);
+    current_seed = static_cast<fid>(VW::hash_space(*vw_ref, str));
   }
 
   void remns()
@@ -184,10 +177,8 @@ class ezexample
 
   inline fid addf(char to_ns, fid fint, float v)
   {
-    if (to_ns == 0)
-      return 0;
-    if (ensure_ns_exists(to_ns))
-      return 0;
+    if (to_ns == 0) return 0;
+    if (ensure_ns_exists(to_ns)) return 0;
 
     ec->feature_space[(int)to_ns].push_back(v, fint << vw_ref->weights.stride_shift());
     ec->total_sum_feat_sq += v * v;
@@ -201,8 +192,7 @@ class ezexample
   // copy an entire namespace from this other example, you can even give it a new namespace name if you want!
   void add_other_example_ns(example& other, char other_ns, char to_ns)
   {
-    if (ensure_ns_exists(to_ns))
-      return;
+    if (ensure_ns_exists(to_ns)) return;
     features& fs = other.feature_space[(int)other_ns];
     for (size_t i = 0; i < fs.size(); i++) ec->feature_space[(int)to_ns].push_back(fs.values[i], fs.indicies[i]);
     ec->total_sum_feat_sq += fs.sum_feat_sq;
@@ -230,7 +220,7 @@ class ezexample
   void mini_setup_example()
   {
     ec->partial_prediction = 0.;
-    ec->weight = vw_par_ref->p->lp.get_weight(&ec->l);
+    ec->weight = vw_par_ref->example_parser->lbl_parser.get_weight(&ec->l);
 
     ec->num_features -= quadratic_features_num;
     ec->total_sum_feat_sq -= quadratic_features_sqr;
@@ -238,22 +228,24 @@ class ezexample
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (auto const& pair : vw_ref->pairs)
+    for (auto const& interaction : vw_ref->interactions)
     {
-      quadratic_features_num += ec->feature_space[(int)pair[0]].size() * ec->feature_space[(int)pair[1]].size();
+      if (interaction.size() != 2) continue;
+      quadratic_features_num +=
+          ec->feature_space[(int)interaction[0]].size() * ec->feature_space[(int)interaction[1]].size();
       quadratic_features_sqr +=
-          ec->feature_space[(int)pair[0]].sum_feat_sq * ec->feature_space[(int)pair[1]].sum_feat_sq;
+          ec->feature_space[(int)interaction[0]].sum_feat_sq * ec->feature_space[(int)interaction[1]].sum_feat_sq;
     }
     ec->num_features += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;
+    ec->interactions = &vw_ref->interactions;
   }
 
   size_t get_num_features() { return ec->num_features; }
 
   example* get()
   {
-    if (example_changed_since_prediction)
-      mini_setup_example();
+    if (example_changed_since_prediction) mini_setup_example();
     return ec;
   }
 
@@ -277,14 +269,12 @@ class ezexample
       example_changed_since_prediction = false;
     }
 
-    if (!is_multiline)
-    {
-      vw_ref->learn(*ec);
-    }
+    if (!is_multiline) { vw_ref->learn(*ec); }
     else  // is multiline
     {     // we need to make a copy
       example* copy = get_new_example();
-      VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->p->lp.label_size, vw_par_ref->p->lp.copy_label);
+      VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->example_parser->lbl_parser.label_size,
+          vw_par_ref->example_parser->lbl_parser.copy_label);
       vw_ref->learn(*copy);
       example_copies.push_back(copy);
     }
@@ -294,8 +284,7 @@ class ezexample
   {
     for (size_t i = 0; i < 256; i++)
     {
-      if (current_ns == 0)
-        break;
+      if (current_ns == 0) break;
       remns();
     }
   }
@@ -306,25 +295,24 @@ class ezexample
     if (is_multiline)
     {
       vw_ref->learn(*empty_example);
-      for (auto ecc : example_copies)
-        VW::finish_example(*vw_par_ref, *ecc);
+      for (auto ecc : example_copies) VW::finish_example(*vw_par_ref, *ecc);
       example_copies.clear();
     }
   }
 
   // HELPER FUNCTIONALITY
 
-  inline fid hash(std::string fstr) { return VW::hash_feature(*vw_ref, fstr, current_seed); }
-  inline fid hash(char* fstr) { return VW::hash_feature_cstr(*vw_ref, fstr, current_seed); }
+  inline fid hash(std::string fstr) { return static_cast<fid>(VW::hash_feature(*vw_ref, fstr, current_seed)); }
+  inline fid hash(char* fstr) { return static_cast<fid>(VW::hash_feature_cstr(*vw_ref, fstr, current_seed)); }
   inline fid hash(char c, std::string fstr)
   {
     str[0] = c;
-    return VW::hash_feature(*vw_ref, fstr, VW::hash_space(*vw_ref, str));
+    return static_cast<fid>(VW::hash_feature(*vw_ref, fstr, VW::hash_space(*vw_ref, str)));
   }
   inline fid hash(char c, char* fstr)
   {
     str[0] = c;
-    return VW::hash_feature_cstr(*vw_ref, fstr, VW::hash_space(*vw_ref, str));
+    return static_cast<fid>(VW::hash_feature_cstr(*vw_ref, fstr, VW::hash_space(*vw_ref, str)));
   }
 
   inline fid addf(fid fint) { return addf(fint, 1.0); }

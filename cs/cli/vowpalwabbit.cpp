@@ -2,13 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw_allreduce.h"
 #include "vw_clr.h"
 #include "vowpalwabbit.h"
 #include "best_constant.h"
 #include "parser.h"
 #include "hash.h"
 #include "vw_example.h"
-#include "vw_allreduce.h"
 #include "vw_builder.h"
 #include "clr_io.h"
 #include "lda_core.h"
@@ -788,7 +788,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
   if (ex == nullptr)
   { try
     { auto ex = VW::alloc_examples(0, 1);
-      m_vw->p->lp.default_label(&ex->l);
+      m_vw->example_parser->lbl_parser.default_label(&ex->l);
       return gcnew VowpalWabbitExample(this, ex);
     }
     CATCHRETHROW
@@ -796,7 +796,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
 
   try
   { VW::empty_example(*m_vw, *ex->m_example);
-    m_vw->p->lp.default_label(&ex->m_example->l);
+    m_vw->example_parser->lbl_parser.default_label(&ex->m_example->l);
 
     return ex;
   }

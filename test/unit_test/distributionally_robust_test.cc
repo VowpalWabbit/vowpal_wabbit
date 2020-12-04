@@ -6,6 +6,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "distributionally_robust.h"
+#include "memory.h"
 
 BOOST_AUTO_TEST_CASE(distributionally_robust_inverse_chisq, *boost::unit_test::tolerance(1e-5))
 {
@@ -26,7 +27,7 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_inverse_chisq, *boost::unit_test::t
 BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals, *boost::unit_test::tolerance(1e-5))
 {
   // to generate this data:
-  // 
+  //
   // python ./DistributionallyRobustUnitTestData.py
 
   std::pair<double, double> data[] = {{0.4692680899768591, 0.08779271803562538},
@@ -47,7 +48,7 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals, *boost::unit_test:
       {false, 0.5602916549924593, -0.9880343238436395, 0, 8.964083874125915},
       {false, 0.5684515391242324, -1.0040272155608332, 0, 9.95511979025179}};
 
-  auto onlinechisq = std::make_unique<VW::distributionally_robust::ChiSquared>(0.05, 0.999);
+  auto onlinechisq = VW::make_unique<VW::distributionally_robust::ChiSquared>(0.05, 0.999);
 
   {
     auto d = onlinechisq->recompute_duals();
@@ -75,7 +76,7 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals, *boost::unit_test:
 BOOST_AUTO_TEST_CASE(distributionally_robust_qlb, *boost::unit_test::tolerance(2e-5))
 {
   // to generate this data:
-  // 
+  //
   // python ./DistributionallyRobustUnitTestData.py
 
   std::pair<double, double> data[] = {{0.4692680899768591, 0.08779271803562538},
@@ -88,7 +89,7 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_qlb, *boost::unit_test::tolerance(2
   double qlbs[] = {1, 0.13620517641052662, -0.17768396518176874, 0.03202698335276157, 0.20163624787093867,
       0.19427440609482105, 0.22750472815940542, 0.01392757858090217, 0.10533233309112934, 0.08141788541188416};
 
-  auto onlinechisq = std::make_unique<VW::distributionally_robust::ChiSquared>(0.05, 0.999);
+  auto onlinechisq = VW::make_unique<VW::distributionally_robust::ChiSquared>(0.05, 0.999);
 
   for (int i = 0; i < std::extent<decltype(data)>::value; ++i)
   {

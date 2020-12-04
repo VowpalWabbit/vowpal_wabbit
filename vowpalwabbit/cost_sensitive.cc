@@ -12,7 +12,7 @@
 
 namespace COST_SENSITIVE
 {
-void name_value(VW::string_view& s, v_array<VW::string_view>& name, float& v)
+void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v)
 {
   tokenize(':', s, name);
 
@@ -24,8 +24,7 @@ void name_value(VW::string_view& s, v_array<VW::string_view>& name, float& v)
       break;
     case 2:
       v = float_of_string(name[1]);
-      if (std::isnan(v))
-        THROW("error NaN value for: " << name[0]);
+      if (std::isnan(v)) THROW("error NaN value for: " << name[0]);
       break;
     default:
       std::cerr << "example with a wierd name.  What is '" << s << "'?\n";
@@ -59,8 +58,7 @@ size_t read_cached_label(shared_data*, polylabel* v, io_buf& cache)
   ld.costs.clear();
   char* c;
   size_t total = sizeof(size_t);
-  if (cache.buf_read(c, (int)total) < total)
-    return 0;
+  if (cache.buf_read(c, (int)total) < total) return 0;
   bufread_label(ld, c, cache);
 
   return total;
@@ -128,7 +126,7 @@ void copy_label(polylabel* dst, polylabel* src)
   }
 }
 
-void parse_label(parser* p, shared_data* sd, polylabel* v, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words)
 {
   auto& ld = v->cs;
   ld.costs.clear();
@@ -177,8 +175,7 @@ void parse_label(parser* p, shared_data* sd, polylabel* v, v_array<VW::string_vi
     wclass f = {0., 0, 0., 0.};
     name_value(words[i], p->parse_name, f.x);
 
-    if (p->parse_name.size() == 0)
-      THROW(" invalid cost: specification -- no names on: " << words[i]);
+    if (p->parse_name.size() == 0) THROW(" invalid cost: specification -- no names on: " << words[i]);
 
     if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3)
     {
@@ -199,7 +196,7 @@ label_parser cs_label = {default_label, parse_label, cache_label, read_cached_la
 
 void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     size_t num_current_features = ec.num_features;
     // for csoaa_ldf we want features from the whole (multiline example),
@@ -231,8 +228,7 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
       }
       else
         pred_buf << ec.pred.a_s[0].action;
-      if (action_scores)
-        pred_buf << ".....";
+      if (action_scores) pred_buf << ".....";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_current_features,
           all.progress_add, all.progress_arg);
       ;
@@ -257,10 +253,8 @@ void output_example(vw& all, example& ec)
     float min = FLT_MAX;
     for (auto& cl : ld.costs)
     {
-      if (cl.class_index == pred)
-        chosen_loss = cl.x;
-      if (cl.x < min)
-        min = cl.x;
+      if (cl.class_index == pred) chosen_loss = cl.x;
+      if (cl.x < min) min = cl.x;
     }
     if (chosen_loss == FLT_MAX)
       std::cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?"
@@ -273,26 +267,26 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, !test_label(&ec.l), loss, ec.weight, ec.num_features);
 
-  for (int sink : all.final_prediction_sink)
-    if (!all.sd->ldict)
-      all.print_by_ref(sink, (float)ec.pred.multiclass, 0, ec.tag);
+  for (auto& sink : all.final_prediction_sink)
+  {
+    if (!all.sd->ldict) { all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag); }
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text_by_ref(sink, sv_pred.to_string(), ec.tag);
+      all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag);
     }
+  }
 
-  if (all.raw_prediction > 0)
+  if (all.raw_prediction != nullptr)
   {
     std::stringstream outputStringStream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
       wclass cl = ld.costs[i];
-      if (i > 0)
-        outputStringStream << ' ';
+      if (i > 0) outputStringStream << ' ';
       outputStringStream << cl.class_index << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction, outputStringStream.str(), ec.tag);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
   print_update(all, test_label(&ec.l), ec, nullptr, false, ec.pred.multiclass);
@@ -307,23 +301,18 @@ void finish_example(vw& all, example& ec)
 bool example_is_test(example& ec)
 {
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
-  if (costs.size() == 0)
-    return true;
+  if (costs.size() == 0) return true;
   for (size_t j = 0; j < costs.size(); j++)
-    if (costs[j].x != FLT_MAX)
-      return false;
+    if (costs[j].x != FLT_MAX) return false;
   return true;
 }
 
 bool ec_is_example_header(example const& ec)  // example headers look like "shared"
 {
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
-  if (costs.size() != 1)
-    return false;
-  if (costs[0].class_index != 0)
-    return false;
-  if (costs[0].x != -FLT_MAX)
-    return false;
+  if (costs.size() != 1) return false;
+  if (costs[0].class_index != 0) return false;
+  if (costs[0].x != -FLT_MAX) return false;
   return true;
 }
 }  // namespace COST_SENSITIVE

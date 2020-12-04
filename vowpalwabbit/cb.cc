@@ -3,14 +3,17 @@
 // license as described in the file LICENSE.
 
 #include <cfloat>
+#include <algorithm>
 
 #include "example.h"
 #include "parse_primitives.h"
 #include "vw.h"
 #include "vw_exception.h"
 #include "example.h"
+#include "cb_label_parser.h"
+#include "vw_string_view.h"
 
-using namespace LEARNER;
+using namespace VW::LEARNER;
 
 namespace CB
 {
@@ -132,7 +135,7 @@ void copy_label(polylabel* dst, polylabel* src)
   copy_label(dst->cb, src->cb);
 }
 
-void parse_label(parser* p, shared_data*, CB::label& ld, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
 {
   ld.costs.clear();
   ld.weight = 1.0;
@@ -142,22 +145,18 @@ void parse_label(parser* p, shared_data*, CB::label& ld, v_array<VW::string_view
     cb_class f;
     tokenize(':', word, p->parse_name);
 
-    if (p->parse_name.empty() || p->parse_name.size() > 3)
-      THROW("malformed cost specification: " << p->parse_name);
+    if (p->parse_name.empty() || p->parse_name.size() > 3) { THROW("malformed cost specification: " << word); }
 
     f.partial_prediction = 0.;
     f.action = (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
     f.cost = FLT_MAX;
 
-    if (p->parse_name.size() > 1)
-      f.cost = float_of_string(p->parse_name[1]);
+    if (p->parse_name.size() > 1) f.cost = float_of_string(p->parse_name[1]);
 
-    if (std::isnan(f.cost))
-      THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
+    if (std::isnan(f.cost)) THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
 
     f.probability = .0;
-    if (p->parse_name.size() > 2)
-      f.probability = float_of_string(p->parse_name[2]);
+    if (p->parse_name.size() > 2) f.probability = float_of_string(p->parse_name[2]);
 
     if (std::isnan(f.probability))
       THROW("error NaN probability (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
@@ -174,10 +173,7 @@ void parse_label(parser* p, shared_data*, CB::label& ld, v_array<VW::string_view
     }
     if (p->parse_name[0] == "shared")
     {
-      if (p->parse_name.size() == 1)
-      {
-        f.probability = -1.f;
-      }
+      if (p->parse_name.size() == 1) { f.probability = -1.f; }
       else
         std::cerr << "shared feature vectors should not have costs" << std::endl;
     }
@@ -187,27 +183,26 @@ void parse_label(parser* p, shared_data*, CB::label& ld, v_array<VW::string_view
 }
 
 
-void parse_label(parser* p, shared_data* sd, polylabel* v, v_array<VW::string_view>& words)
-{
-  parse_label(p, sd, v->cb, words);
-}
+// void parse_label(parser* p, shared_data* sd, polylabel* v, v_array<VW::string_view>& words)
+// {
+//   parse_label(p, sd, v->cb, words);
+// }
+float weight(void*) { return 1.; }
 
 label_parser cb_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
-    test_label, sizeof(label)};
+    is_test_label, sizeof(label)};
 
 bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
   const auto& costs = ec.l.cb.costs;
-  if (costs.size() != 1)
-    return false;
-  if (costs[0].probability == -1.f)
-    return true;
+  if (costs.size() != 1) return false;
+  if (costs[0].probability == -1.f) return true;
   return false;
 }
 
 void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
     size_t num_features = ec.num_features;
 
@@ -217,8 +212,7 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
       num_features = 0;
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
       for (size_t i = 0; i < (*ec_seq).size(); i++)
-        if (!CB::ec_is_example_header(*(*ec_seq)[i]))
-          num_features += (*ec_seq)[i]->num_features;
+        if (!CB::ec_is_example_header(*(*ec_seq)[i])) num_features += (*ec_seq)[i]->num_features;
     }
     std::string label_buf;
     if (is_test)
@@ -300,19 +294,18 @@ void copy_label(polylabel* dst, polylabel* src)
 }
 
 void parse_label(parser* p, shared_data* sd, polylabel* v, v_array<VW::string_view>& words)
-{
   auto& ld = v->cb_eval;
-
-  if (words.size() < 2)
-    THROW("Evaluation can not happen without an action and an exploration");
-
   ld.action = (uint32_t)hashstring(words[0].begin(), words[0].length(), 0);
+//   words.begin()++;
 
-  words.begin()++;
+//   CB::parse_label(p, sd, ld.event, words);
 
-  CB::parse_label(p, sd, ld.event, words);
-
-  words.begin()--;
+//   words.begin()--;
+  // Removing the first element of a vector is not efficient at all, every element must be copied/moved.
+  const auto stashed_first_token = std::move(words[0]);
+  words.erase(words.begin());
+  CB::parse_label(p, sd, &(ld->event), words);
+  words.insert(words.begin(), std::move(stashed_first_token));
 }
 
 label_parser cb_eval = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
