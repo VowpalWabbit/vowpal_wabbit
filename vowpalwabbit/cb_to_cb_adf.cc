@@ -19,22 +19,12 @@ struct cb_to_cb_adf
 {
   parameters* weights;
   cbify_adf_data adf_data;
-
-  ~cb_to_cb_adf()
-  {
-    for (size_t a = 0; a < adf_data.num_actions; ++a)
-    {
-      adf_data.ecs[a]->pred.a_s.delete_v();
-      VW::dealloc_example(CB::cb_label.delete_label, *adf_data.ecs[a]);
-      free_it(adf_data.ecs[a]);
-    }
-  }
 };
 
 template <bool is_learn>
 void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 {
-  copy_example_to_adf(data.adf_data, *(data.weights), ec);
+  data.adf_data.copy_example_to_adf(*data.weights, ec);
 
   if (is_learn && !CB::is_test_label(&ec.l.cb))
   {
@@ -78,6 +68,7 @@ void finish_example(vw& all, cb_to_cb_adf&, example& ec)
 
 VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 {
+  bool compat_old_cb = false;
   bool eval = false;
   std::string type_string = "mtr";
   uint32_t num_actions;
@@ -91,8 +82,10 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // models created with older version should default to --old_cb
-  bool compat_old_cb = false;
   if (all.model_file_ver != EMPTY_VERSION_FILE) compat_old_cb = !(all.model_file_ver >= VERSION_FILE_WITH_CB_TO_CBADF);
+
+  // if user specified both old_cb and cb, we default to old_cb
+  if (options.was_supplied("old_cb")) return nullptr;
 
   // not implemented in "new_cb" yet
   if (eval || compat_old_cb)
@@ -106,7 +99,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   auto data = scoped_calloc_or_throw<cb_to_cb_adf>();
   data->weights = &(all.weights);
-  init_adf_data(data->adf_data, num_actions, all.interactions);
+  data->adf_data.init_adf_data(num_actions, all.interactions);
 
   multi_learner* base = as_multiline(setup_base(options, all));
 

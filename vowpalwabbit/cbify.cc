@@ -67,12 +67,6 @@ struct cbify
 
     if (use_adf)
     {
-      for (size_t a = 0; a < adf_data.num_actions; ++a)
-      {
-        adf_data.ecs[a]->pred.a_s.delete_v();
-        VW::dealloc_example(CB::cb_label.delete_label, *adf_data.ecs[a]);
-        free_it(adf_data.ecs[a]);
-      }
       for (auto& as : cb_as) as.delete_v();
     }
   }
@@ -121,14 +115,38 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
   data.cb_cont_label.costs.delete_v();  // todo: instead of above
 }
 
-void copy_example_to_adf(cbify_adf_data& adf_data, parameters& weights, example& ec)
+void cbify_adf_data::init_adf_data(const size_t num_actions, std::vector<std::vector<namespace_index>>& interactions)
+{
+  this->num_actions = num_actions;
+
+  ecs.resize(num_actions);
+  for (size_t a = 0; a < num_actions; ++a)
+  {
+    ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
+    auto& lab = ecs[a]->l.cb;
+    CB::cb_label.default_label(&lab);
+    ecs[a]->interactions = &interactions;
+  }
+}
+
+cbify_adf_data::~cbify_adf_data()
+{
+  for (size_t a = 0; a < ecs.size(); ++a)
+  {
+    ecs[a]->pred.a_s.delete_v();
+    VW::dealloc_example(CB::cb_label.delete_label, *ecs[a]);
+    free_it(ecs[a]);
+  }
+}
+
+void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
 {
   const uint64_t ss = weights.stride_shift();
   const uint64_t mask = weights.mask();
 
-  for (size_t a = 0; a < adf_data.num_actions; ++a)
+  for (size_t a = 0; a < num_actions; ++a)
   {
-    auto& eca = *adf_data.ecs[a];
+    auto& eca = *ecs[a];
     // clear label
     auto& lab = eca.l.cb;
     CB::cb_label.default_label(&lab);
@@ -139,7 +157,7 @@ void copy_example_to_adf(cbify_adf_data& adf_data, parameters& weights, example&
     // offset indices for given action
     for (features& fs : eca)
     {
-      for (feature_index& idx : fs.indicies) { idx = (((idx >> ss) * adf_data.num_actions + a) << ss) & mask; }
+      for (feature_index& idx : fs.indicies) { idx = (((idx >> ss) * num_actions + a) << ss) & mask; }
     }
 
     // avoid empty example by adding a tag (hacky)
@@ -370,7 +388,7 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   else
     ld = ec.l.multi;
 
-  copy_example_to_adf(data.adf_data, data.all->weights, ec);
+  data.adf_data.copy_example_to_adf(data.all->weights, ec);
   base.predict(data.adf_data.ecs);
 
   auto& out_ec = *data.adf_data.ecs[0];
@@ -399,21 +417,6 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   if (is_learn) base.learn(data.adf_data.ecs);
 
   ec.pred.multiclass = cl.action;
-}
-
-void init_adf_data(
-    cbify_adf_data& adf_data, const size_t num_actions, std::vector<std::vector<namespace_index>>& interactions)
-{
-  adf_data.num_actions = num_actions;
-
-  adf_data.ecs.resize(num_actions);
-  for (size_t a = 0; a < num_actions; ++a)
-  {
-    adf_data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
-    auto& lab = adf_data.ecs[a]->l.cb;
-    CB::cb_label.default_label(&lab);
-    adf_data.ecs[a]->interactions = &interactions;
-  }
 }
 
 template <bool is_learn>
@@ -667,7 +670,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   data->a_s = v_init<action_score>();
   data->all = &all;
 
-  if (data->use_adf) { init_adf_data(data->adf_data, num_actions, all.interactions); }
+  if (data->use_adf) { data->adf_data.init_adf_data(num_actions, all.interactions); }
 
   if (use_reg)
   {
