@@ -79,20 +79,19 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
       .add(make_option("cb", num_actions).keep().necessary().help("Use contextual bandit learning with <k> costs"))
       .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {}"))
       .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."))
-      .add(make_option("cb_force_legacy", force_legacy).help("Default to old cb implementation"));
+      .add(make_option("cb_force_legacy", force_legacy).keep().help("Default to old cb implementation"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  // if user specified both old_cb and cb, we default to old_cb
-  if (options.was_supplied("old_cb")) return nullptr;
+  if (force_legacy) return nullptr;
 
   // models created with older version should default to --old_cb
   if (all.model_file_ver != EMPTY_VERSION_FILE) compat_old_cb = !(all.model_file_ver >= VERSION_FILE_WITH_CB_TO_CBADF);
 
   // not implemented in "new_cb" yet
-  if (eval || compat_old_cb || force_legacy)
+  if (eval || compat_old_cb)
   {
-    options.insert("old_cb", std::to_string(num_actions));
+    options.insert("cb_force_legacy", "");
     return nullptr;
   }
 

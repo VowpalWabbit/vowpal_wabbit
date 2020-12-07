@@ -10,7 +10,7 @@ def test_getting_started_example_cb():
     return helper_getting_started_example("--cb")
 
 def test_getting_started_example_newcb():
-    return helper_getting_started_example("--old_cb")
+    return helper_getting_started_example("--cb_force_legacy --cb")
 
 def helper_getting_started_example(which_cb):
     train_data = [{'action': 1, 'cost': 2, 'probability': 0.4, 'feature1': 'a', 'feature2': 'c', 'feature3': ''},

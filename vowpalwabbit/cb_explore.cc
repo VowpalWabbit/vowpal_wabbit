@@ -341,6 +341,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     std::stringstream ss;
     ss << data->cbcs.num_actions;
     options.insert("cb", ss.str());
+    // --cb_explore only works with legacy cb
     options.insert("cb_force_legacy", "");
   }
 
