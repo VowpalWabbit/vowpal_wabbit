@@ -31,7 +31,7 @@ void reduction::transform_prediction(example& ec)
   uint32_t r = 0;
   while (l < n || r < n)
   {
-    if (temp_pred_a_s[l].action >= bandwidth)
+    if (temp_pred_a_s[0].action >= bandwidth)
     {
       if (l == n || temp_pred_a_s[r].action + bandwidth < temp_pred_a_s[l].action - bandwidth)
       {
@@ -105,7 +105,24 @@ reduction::~reduction()
 void reduction::predict(example& ec)
 {
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
-  {  // scope for saving / restoring prediction
+
+  const auto& reduction_features = ec._reduction_features.template get<VW::continuous_actions::reduction_features>();
+  if (first_only && reduction_features.is_chosen_action_set())
+  {
+    float chosen_action = reduction_features.chosen_action;
+    const float continuous_range = max_value - min_value;
+    const float unit_range = continuous_range / (num_actions - 1);
+
+    // discretize chosen action
+    const float ac = (chosen_action - min_value) / unit_range;
+    auto action = static_cast<uint32_t>(floor(ac));
+
+    temp_pred_a_s.clear();
+    temp_pred_a_s.push_back({action, 1.f});
+  }
+  else
+  {
+    // scope for saving / restoring prediction
     auto save_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
     _p_base->predict(ec);
   }
@@ -236,7 +253,10 @@ base_learner* setup(options_i& options, vw& all)
       .add(make_option("bandwidth", data->bandwidth)
                .default_value(1)
                .keep()
-               .help("Bandwidth (radius) of randomization around discrete actions in number of actions."));
+               .help("Bandwidth (radius) of randomization around discrete actions in number of actions."))
+      .add(make_option("first_only", data->first_only)
+               .keep()
+               .help("Use user provided first action or user provided pdf or uniform random"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 

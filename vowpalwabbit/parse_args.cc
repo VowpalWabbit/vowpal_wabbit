@@ -38,6 +38,7 @@
 #include "cb_explore_adf_greedy.h"
 #include "cb_explore_adf_regcb.h"
 #include "cb_explore_adf_squarecb.h"
+#include "cb_explore_adf_synthcover.h"
 #include "cb_explore_adf_rnd.h"
 #include "cb_explore_adf_softmax.h"
 #include "slates.h"
@@ -439,7 +440,9 @@ input_options parse_source(vw& all, options_i& options)
                .help("Enable chain hash in JSON for feature name and string feature value. e.g. {'A': {'B': 'C'}} is "
                      "hashed as "
                      "A^B^C. Note: this will become the default in a future version, so enabling this option will "
-                     "migrate you to the new behavior and silence the warning."));
+                     "migrate you to the new behavior and silence the warning."))
+      .add(make_option("flatbuffer", parsed_options.flatbuffer)
+               .help("data file will be interpreted as a flatbuffer file"));
 
   options.add_and_parse(input_options);
 
@@ -1302,11 +1305,13 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(VW::cb_explore_adf::rnd::setup);
   reductions.push_back(VW::cb_explore_adf::regcb::setup);
   reductions.push_back(VW::cb_explore_adf::squarecb::setup);
+  reductions.push_back(VW::cb_explore_adf::synthcover::setup);
   reductions.push_back(VW::cb_explore_adf::first::setup);
   reductions.push_back(VW::cb_explore_adf::cover::setup);
   reductions.push_back(VW::cb_explore_adf::bag::setup);
   reductions.push_back(cb_dro_setup);
   reductions.push_back(cb_sample_setup);
+  reductions.push_back(explore_eval_setup);
   reductions.push_back(VW::shared_feature_merger::shared_feature_merger_setup);
   reductions.push_back(CCB::ccb_explore_adf_setup);
   reductions.push_back(VW::slates::slates_setup);
@@ -1321,7 +1326,6 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(cbify_setup);
   reductions.push_back(cbifyldf_setup);
   reductions.push_back(VW::offset_tree::setup);
-  reductions.push_back(explore_eval_setup);
   reductions.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   reductions.push_back(Search::setup);
   reductions.push_back(audit_regressor_setup);

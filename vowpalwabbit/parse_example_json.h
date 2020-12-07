@@ -128,6 +128,97 @@ struct BaseState
 };
 
 template <bool audit>
+class ArrayToPdfState : public BaseState<audit>
+{
+private:
+  BaseState<audit>* obj_return_state;
+
+public:
+  VW::continuous_actions::pdf_segment segment;
+
+  BaseState<audit>* return_state;
+
+  ArrayToPdfState() : BaseState<audit>("ArrayToPdfObject") {}
+
+  BaseState<audit>* StartObject(Context<audit>& ctx) override
+  {
+    obj_return_state = ctx.previous_state;
+    return this;
+  }
+
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool /* copy */) override
+  {
+    ctx.key = str;
+    ctx.key_length = len;
+    return this;
+  }
+
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool) override
+  {
+    if (_stricmp(str, "NaN") != 0)
+    {
+      ctx.error() << "The only supported string in the array is 'NaN'";
+      return nullptr;
+    }
+
+    return this;
+  }
+
+  BaseState<audit>* StartArray(Context<audit>&) override
+  {
+    segment = {0., 0., 0.};
+    return this;
+  }
+
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
+  {
+    // check valid pdf else remove
+    auto& pdf = ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().pdf;
+    float mass = 0.f;
+    for (const auto& segment : pdf) { mass += (segment.right - segment.left) * segment.pdf_value; }
+    if (mass < 0.9999 || mass > 1.0001)
+    {
+      // not using pdf provided as it does not sum to 1
+      pdf.clear();
+    }
+    return return_state;
+  }
+
+  BaseState<audit>* Float(Context<audit>& ctx, float v) override
+  {
+    if (!_stricmp(ctx.key, "left")) { segment.left = v; }
+    else if (!_stricmp(ctx.key, "right"))
+    {
+      segment.right = v;
+    }
+    else if (!_stricmp(ctx.key, "pdf_value"))
+    {
+      segment.pdf_value = v;
+    }
+    else if (!_stricmp(ctx.key, "chosen_action"))
+    {
+      ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().chosen_action = v;
+    }
+    else
+    {
+      ctx.error() << "Unsupported label property: '" << ctx.key << "' len: " << ctx.key_length;
+      return nullptr;
+    }
+
+    return this;
+  }
+
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override { return Float(ctx, (float)v); }
+
+  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
+  {
+    ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().pdf.push_back(segment);
+    segment = {0., 0., 0.};
+    return obj_return_state;
+  }
+};
+
+template <bool audit>
 class LabelObjectState : public BaseState<audit>
 {
 private:
@@ -293,7 +384,7 @@ public:
   {
     if (ctx.all->label_type == label_type_t::ccb)
     {
-      auto ld = (CCB::label*)&ctx.ex->l;
+      auto ld = &ctx.ex->l.conditional_contextual_bandit;
 
       for (auto id : inc) { ld->explicit_included_actions.push_back(id); }
       inc.clear();
@@ -328,7 +419,7 @@ public:
     }
     else if (found_cb)
     {
-      CB::label* ld = (CB::label*)&ctx.ex->l;
+      CB::label* ld = &ctx.ex->l.cb;
       ld->costs.push_back(cb_label);
 
       found_cb = false;
@@ -336,7 +427,7 @@ public:
     }
     else if (found_cb_continuous)
     {
-      auto* ld = (VW::cb_continuous::continuous_label*)&ctx.ex->l;
+      auto* ld = &ctx.ex->l.cb_cont;
       ld->costs.push_back(cont_label_element);
 
       found_cb_continuous = false;
@@ -1240,6 +1331,11 @@ public:
           return &ctx.default_state;
       }
     }
+    else if (length == 3 && !strcmp(str, "pdf"))
+    {
+      ctx.array_pdf_state.return_state = this;
+      return &ctx.array_pdf_state;
+    }
     else if (length == 5 && !strcmp(str, "pdrop"))
     {
       ctx.float_state.output_float = &data->probabilityOfDrop;
@@ -1334,6 +1430,7 @@ public:
   IgnoreState<audit> ignore_state;
   ArrayState<audit> array_state;
   SlotsState<audit> slots_state;
+  ArrayToPdfState<audit> array_pdf_state;
 
   // DecisionServiceState
   DecisionServiceState<audit> decision_service_state;

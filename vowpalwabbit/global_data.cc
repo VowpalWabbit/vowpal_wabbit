@@ -16,6 +16,7 @@
 #include "future_compat.h"
 #include "vw_allreduce.h"
 #include "named_labels.h"
+#include "parser/flatbuffer/parse_example_flatbuffer.h"
 
 struct global_prediction
 {
@@ -261,7 +262,6 @@ vw::vw()
   reg_mode = 0;
   current_pass = 0;
 
-  data_filename = "";
   delete_prediction = nullptr;
 
   bfgs = false;
