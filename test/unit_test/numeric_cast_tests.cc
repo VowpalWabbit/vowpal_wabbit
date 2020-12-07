@@ -25,4 +25,6 @@ BOOST_AUTO_TEST_CASE(numeric_cast_tests)
   BOOST_CHECK_THROW(VW::cast_signed_to_unsigned<uint32_t>(static_cast<int32_t>(-5)), VW::vw_exception);
   // Correct
   BOOST_CHECK_EQUAL(VW::cast_signed_to_unsigned<uint32_t>(static_cast<int32_t>(10)), 10);
+  // Larger unsigned to smaller signed
+  BOOST_CHECK_EQUAL(VW::cast_signed_to_unsigned<uint8_t>(static_cast<int32_t>(10)), 10);
 }
