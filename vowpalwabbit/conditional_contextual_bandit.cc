@@ -274,22 +274,19 @@ void calculate_and_insert_interactions(example* shared, const std::vector<exampl
 
   auto original_size = generated_interactions.size();
 
-  if (shared->feature_space[ccb_slot_namespace].size() > 0)
-  {
-    // add ccb_slot_namespace to original printable interactions
-    generated_interactions.push_back({ccb_slot_namespace, ccb_slot_namespace});
+  // add ccb_slot_namespace to original printable interactions
+  generated_interactions.push_back({ccb_slot_namespace, ccb_slot_namespace});
 
-    unsigned char prev_found = 0;
-    for (size_t i = 0; i < original_size; i++)
+  unsigned char prev_found = 0;
+  for (size_t i = 0; i < original_size; i++)
+  {
+    if (generated_interactions[i].size() > 0 && prev_found != generated_interactions[i][0])
     {
-      if (generated_interactions[i].size() > 0 && prev_found != generated_interactions[i][0])
-      {
-        prev_found = generated_interactions[i][0];
-        generated_interactions.push_back({generated_interactions[i][0], ccb_slot_namespace});
-      }
+      prev_found = generated_interactions[i][0];
+      generated_interactions.push_back({generated_interactions[i][0], ccb_slot_namespace});
     }
-    original_size = generated_interactions.size();
   }
+  original_size = generated_interactions.size();
 
   for (size_t i = 0; i < original_size; i++)
   {
