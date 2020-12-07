@@ -8,12 +8,14 @@ import errno
 import subprocess
 import sys
 import hashlib
+import traceback
 
 from typing import Optional
 import asyncio
 import json
 import os.path
 from concurrent.futures import ThreadPoolExecutor
+from enum import Enum
 
 
 class Color():
@@ -27,6 +29,10 @@ class Color():
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+class Result(Enum):
+    SUCCESS = 1
+    FAIL = 2
+    SKIPPED = 3
 
 def try_decode(binary_object: Optional[bytes]) -> Optional[str]:
     return binary_object.decode("utf-8") if binary_object is not None else ""
@@ -55,7 +61,7 @@ def find_vw(paths):
         else:
             # path does not exist
             continue
-    raise ValueError("none found.")
+    raise ValueError("Couldn't find VW")
 
 
 def line_diff_text(text_one, file_name_one, text_two, file_name_two):
@@ -177,70 +183,110 @@ def print_colored_diff(diff):
             print(line)
 
 
-def run_command_line_test(id, command_line, comparison_files, overwrite, epsilon, dependencies=None):
+def run_command_line_test(id, command_line, comparison_files, overwrite, epsilon, is_shell, input_files, base_working_dir, ref_dir, dependencies=None):
     if dependencies is not None:
         for dep in dependencies:
-            completed_tests.wait_for_completion(dep)
-
-    result = subprocess.run(
-        (f"{command_line}").split(),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
-    return_code = result.returncode
-    stdout = try_decode(result.stdout)
-    stderr = try_decode(result.stderr)
-
-    checks = dict()
-    checks["error_code"] = {
-        "success": return_code == 0,
-        "message": f"Exited with {return_code}",
-        "stdout": stdout,
-        "stderr": stderr
-    }
-
-    for output_file, ref_file in comparison_files.items():
-
-        if output_file == "stdout":
-            output_content = stdout
-        elif output_file == "stderr":
-            output_content = stderr
+            success = completed_tests.wait_for_completion_get_success(dep)
+            if not success:
+                return (id, {
+                    "result": Result.SKIPPED,
+                    "checks": {}
+                })
+                
+    try:
+        if is_shell:
+            working_dir = os.getcwd()
+            cmd = command_line
         else:
-            if os.path.isfile(output_file):
-                output_content = open(output_file, 'r').read()
+            working_dir = create_test_dir(id, input_files, base_working_dir, ref_dir, dependencies=dependencies)
+            cmd = f"{command_line}".split()
+
+        try:
+            result = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=working_dir,
+                shell=is_shell,
+                timeout=10)
+        except subprocess.TimeoutExpired as e:
+            stdout = try_decode(e.stdout)
+            stderr = try_decode(e.stderr)
+            checks = dict()
+            checks["timeout"] = {
+                "success": False,
+                "message": f"{e.cmd} timed out",
+                "stdout": stdout,
+                "stderr": stderr
+            }
+
+            return (id, {
+                "result": Result.FAIL,
+                "checks": checks
+            })
+            
+        return_code = result.returncode
+        stdout = try_decode(result.stdout)
+        stderr = try_decode(result.stderr)
+
+        checks = dict()
+        checks["error_code"] = {
+            "success": return_code == 0,
+            "message": f"Exited with {return_code}",
+            "stdout": stdout,
+            "stderr": stderr
+        }
+
+        for output_file, ref_file in comparison_files.items():
+
+            if output_file == "stdout":
+                output_content = stdout
+            elif output_file == "stderr":
+                output_content = stderr
+            else:
+                output_file_working_dir = os.path.join(working_dir,output_file)
+                if os.path.isfile(output_file_working_dir):
+                    output_content = open(output_file_working_dir, 'r').read()
+                else:
+                    checks[output_file] = {
+                        "success": False,
+                        "message": f"Failed to open output file: {output_file}",
+                        "diff": []
+                    }
+                    continue
+
+            if os.path.isfile(ref_file):
+                ref_file_ref_dir = os.path.join(ref_dir,ref_file)
+                ref_content = open(ref_file_ref_dir, 'r').read()
             else:
                 checks[output_file] = {
                     "success": False,
-                    "message": f"Failed to open output file: {output_file}",
+                    "message": f"Failed to open ref file: {ref_file}",
                     "diff": []
                 }
                 continue
+            are_different, diff, reason = are_outputs_different(output_content, output_file,
+                                                                ref_content, ref_file, overwrite, epsilon)
 
-        if os.path.isfile(ref_file):
-            ref_content = open(ref_file, 'r').read()
-        else:
+            if are_different:
+                message = f"Diff not OK, {reason}"
+            else:
+                message = f"Diff OK, {reason}"
+
             checks[output_file] = {
-                "success": False,
-                "message": f"Failed to open ref file: {ref_file}",
-                "diff": []
+                "success": are_different == False,
+                "message": message,
+                "diff": diff
             }
-            continue
-        are_different, diff, reason = are_outputs_different(output_content, output_file,
-                                                            ref_content, ref_file, overwrite, epsilon)
+    except:
+        completed_tests.report_completion(id, False)
+        raise
 
-        if are_different:
-            message = f"Diff not OK, {reason}"
-        else:
-            message = f"Diff OK, {reason}"
+    success = all(check["success"] == True for name, check in checks.items())
+    completed_tests.report_completion(id, success)
 
-        checks[output_file] = {
-            "success": are_different == False,
-            "message": message,
-            "diff": diff
-        }
-
-    completed_tests.report_completion(id)
     return (id, {
-        "success": all(check["success"] == True for name, check in checks.items()),
+        "result": Result.SUCCESS if success else Result.FAIL,
         "checks": checks
     })
 
@@ -251,24 +297,57 @@ class Completion():
     def __init__(self):
         self.lock = threading.Lock()
         self.condition = threading.Condition(self.lock)
-        self.completed = set()
+        self.completed = dict()
 
-    def report_completion(self, id):
+    def report_completion(self, id, success):
         self.lock.acquire()
-        self.completed.add(id)
+        self.completed[id] = success
         self.condition.notify_all()
         self.lock.release()
 
-    def wait_for_completion(self, id):
+    def wait_for_completion_get_success(self, id):
         def is_complete():
             return id in self.completed
         self.lock.acquire()
         if not is_complete():
             self.condition.wait_for(is_complete)
+        success = self.completed[id]
         self.lock.release()
+        return success
 
 
 completed_tests = Completion()
+
+from pathlib import Path
+import shutil
+
+def create_test_dir(id, input_files, test_base_dir, test_ref_dir, dependencies=None):
+    test_working_dir = Path(test_base_dir).joinpath(f"test_{id}")
+    Path(test_working_dir).mkdir(parents=True, exist_ok=True)
+
+    # Required as workaround until #2686 is fixed.
+    Path(test_working_dir.joinpath("models")).mkdir(parents=True, exist_ok=True)
+
+    for file in input_files:
+        file_to_copy = None
+        search_paths = [Path(test_ref_dir).joinpath(file)]
+        if dependencies is not None:
+            search_paths.extend([Path(test_base_dir).joinpath(f"test_{x}", file) for x in dependencies])
+        for search_path in search_paths:
+            if search_path.exists() and not search_path.is_dir():
+                file_to_copy = search_path
+                break
+        
+        if file_to_copy is None:
+            raise ValueError(f"{file} couldn't be found for test {id}")
+
+        test_dest_file = Path(test_working_dir).joinpath(file)
+        Path(test_dest_file.parent).mkdir(parents=True, exist_ok=True)
+        # We always want to replace this file in case it is the output of another test
+        if test_dest_file.exists():
+            test_dest_file.unlink()
+        shutil.copyfile(file_to_copy, test_dest_file)
+    return test_working_dir
 
 def main():
     parser = argparse.ArgumentParser()
@@ -276,13 +355,18 @@ def main():
     parser.add_argument('-E', "--epsilon", type=float, default=1e-4)
     parser.add_argument('-e', "--exit_first_fail", action='store_true')
     parser.add_argument('-o', "--overwrite", action='store_true')
-    parser.add_argument('-j', "--jobs", type=int, default=4)
+    parser.add_argument('-j', "--jobs", type=int, default=1)
     args = parser.parse_args()
 
     vw = find_vw(SEARCH_PATHS)
 
-    with open("test_spec.json", 'r') as f:
-        tests = json.load(f)["tests"]
+    with open("runtests.AUTOGEN.json", 'r') as f:
+        tests = json.load(f)
+
+
+    TEST_BASE_WORKING_DIR = "/Users/jagerrit/w/test_temp_dir"
+    TEST_BASE_REF_DIR = "/Users/jagerrit/w/repos/vowpal_wabbit/test/"
+    
 
     tasks = []
     executor = ThreadPoolExecutor(max_workers=args.jobs)
@@ -295,32 +379,56 @@ def main():
         if "depends_on" in test:
             dependencies = test["depends_on"]
 
+        input_files = []
+        if "input_files" in test:
+            input_files = test["input_files"]
+
+        is_shell = False
         if "bash_command" in test:
             if sys.platform == "win32":
                 print(
                     f"Skipping test number '{test_number}' as bash_command is unsupported on Windows.")
                 continue
             command_line = test['bash_command'].format(VW=vw)
+            is_shell = True
         elif "vw_command" in test:
             command_line = f"{vw} {test['vw_command']}"
         else:
             print(f"{test_number} is an unknown type. Skipping...")
             continue
 
-        tasks.append(executor.submit(run_command_line_test, test_number, command_line, test["files"],
-                                 overwrite=args.overwrite, epsilon=args.epsilon, dependencies=dependencies))
+        tasks.append(executor.submit(run_command_line_test, test_number, command_line, test["diff_files"],
+                                 overwrite=args.overwrite, epsilon=args.epsilon, is_shell=is_shell, input_files=input_files, base_working_dir=TEST_BASE_WORKING_DIR,ref_dir=TEST_BASE_REF_DIR, dependencies=dependencies))
 
     num_success = 0
     num_fail = 0
+    num_skip = 0
     while len(tasks) > 0:
-        test_number, result = tasks[0].result()
+        try:
+            test_number, result = tasks[0].result()
+        except Exception:
+            print("----------------")
+            traceback.print_exc()
+            continue
+            print("----------------")
+
         tasks.pop(0)
         success_text = f"{Color.OKGREEN}Success{Color.ENDC}"
         fail_text = f"{Color.FAIL}Fail{Color.ENDC}"
-        num_success += 1 if result['success'] else 0
-        num_fail += 0 if result['success'] else 1
-        print(f"Test {test_number}: {success_text if result['success'] else fail_text}")
-        if not result['success']:
+        skipped_text = f"{Color.OKCYAN}Skip{Color.ENDC}"
+        num_success += result['result'] == Result.SUCCESS
+        num_fail += result['result'] == Result.FAIL
+        num_skip += result['result'] == Result.SKIPPED
+
+        if result['result'] == Result.SUCCESS:
+            result_text = success_text
+        elif result['result'] == Result.FAIL:
+            result_text = fail_text
+        else:
+            result_text = skipped_text
+
+        print(f"Test {test_number}: {result_text}")
+        if not result['result'] == Result.SUCCESS:
             test = tests[test_number - 1]
             print(f"\tDescription: {test['desc']}")
             if 'vw_command' in test:
@@ -351,6 +459,7 @@ def main():
     print(f"-----")
     print(f"# Success: {num_success}")
     print(f"# Fail: {num_fail}")
+    print(f"# Skip: {num_skip}")
 
 
 if __name__ == "__main__":
