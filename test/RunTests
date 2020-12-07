@@ -1210,19 +1210,19 @@ echo "" | {VW}
     train-sets/ref/log_multi.stderr
 
 # Test 76: cbify, epsilon-greedy
-{VW} --cbify 10 --epsilon 0.05 -d train-sets/multiclass
+{VW} --cbify 10 --epsilon 0.05 -d train-sets/multiclass --force_legacy
     train-sets/ref/cbify_epsilon.stderr
 
 # Test 77: cbify, tau first
-{VW} --cbify 10 --first 5 -d train-sets/multiclass
+{VW} --cbify 10 --first 5 -d train-sets/multiclass --force_legacy
     train-sets/ref/cbify_first.stderr
 
 # Test 78: cbify, bag
-{VW} --cbify 10 --bag 7 -d train-sets/multiclass
+{VW} --cbify 10 --bag 7 -d train-sets/multiclass --force_legacy
     train-sets/ref/cbify_bag.stderr
 
 # Test 79: cbify, cover
-{VW} --cbify 10 --cover 3 -d train-sets/multiclass --nounif
+{VW} --cbify 10 --cover 3 -d train-sets/multiclass --nounif --force_legacy
     train-sets/ref/cbify_cover.stderr
 
 # Test 80: lrq empty namespace
@@ -1412,17 +1412,17 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/csoaa.audit_regr
 
 # Test 119: MWT learn test
-{VW} -d train-sets/cb_eval --multiworld_test f --learn 2 -p mwt_learn.preds
+{VW} -d train-sets/cb_eval --multiworld_test f --learn 2 -p mwt_learn.preds --force_legacy
     train-sets/ref/mwt_learn.stderr
     pred-sets/ref/mwt_learn.preds
 
 # Test 120: MWT learn exclude test
-{VW} -d train-sets/cb_eval --multiworld_test f --learn 2 --exclude_eval -p mwt_learn_exclude.preds
+{VW} -d train-sets/cb_eval --multiworld_test f --learn 2 --exclude_eval -p mwt_learn_exclude.preds --force_legacy
     train-sets/ref/mwt_learn_exclude.stderr
     pred-sets/ref/mwt_learn_exclude.preds
 
 # Test 121: cb_explore
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds --force_legacy
     train-sets/ref/rcv1_raw_cb_explore.stderr
     pred-sets/ref/rcv1_raw_cb_explore.preds
 
@@ -1641,15 +1641,15 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/rcv1_raw_cb_dm_test.stderr
 
 # Test 169: test cbify large
-{VW} -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05
+{VW} -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05 --force_legacy
     train-sets/ref/rcv1_multiclass.stderr
 
 # Test 170: cbify adf, epsilon-greedy
-{VW} --cbify 10 --cb_explore_adf --epsilon 0.05 -d train-sets/multiclass
+{VW} --cbify 10 --cb_explore_adf --epsilon 0.05 -d train-sets/multiclass --force_legacy
     train-sets/ref/cbify_epsilon_adf.stderr
 
 # Test 171: cbify cs, epsilon-greedy
-{VW} --cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb
+{VW} --cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb --force_legacy
     train-sets/ref/cbify_epsilon_cs.stderr
 
 # Test 172: cbify adf cs, epsilon-greedy
@@ -1842,17 +1842,17 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/slates_simple.predict
 
 # Test 213: offset_tree, 2 actions
-{VW} --ot 2 -k -d train-sets/offset_tree_000.dat -p offset_tree_000.pred -P 1
+{VW} --ot 2 -k -d train-sets/offset_tree_000.dat -p offset_tree_000.pred -P 1 --force_legacy
     test-sets/ref/offset_tree_000.stderr
     pred-sets/ref/offset_tree_000.pred
 
 # Test 214: offset_tree, 3 actions
-{VW} --ot 3 -k -d train-sets/offset_tree_001.dat -p offset_tree_001.pred -P 1
+{VW} --ot 3 -k -d train-sets/offset_tree_001.dat -p offset_tree_001.pred -P 1 --force_legacy
     test-sets/ref/offset_tree_001.stderr
     pred-sets/ref/offset_tree_001.pred
 
 # Test 215: offset_tree, 4 actions
-{VW} --ot 4 -k -d train-sets/offset_tree_002.dat -p offset_tree_002.pred -P 1
+{VW} --ot 4 -k -d train-sets/offset_tree_002.dat -p offset_tree_002.pred -P 1 --force_legacy
     test-sets/ref/offset_tree_002.stderr
     pred-sets/ref/offset_tree_002.pred
 
@@ -1921,7 +1921,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbify_reg.stderr
 
 # Test 231: cbify-reg cb_discrete
-{VW} --cbify 2048 --cbify_reg --cb_discrete --min_value=185 --max_value=23959 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+{VW} --cbify 2048 --cbify_reg --cb_discrete --min_value=185 --max_value=23959 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1 --force_legacy
     train-sets/ref/cbify_reg_discrete.stderr
 
 # Test 232: cbify-reg discrete cats_tree
@@ -2007,7 +2007,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/test_named.predict
 
 # Test 249: cb_explore with cover epsilon decaying
-{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model --force_legacy
     train-sets/ref/cbe_cover_e_dec.stderr
 
 # Test 250: cb_explore with cover epsilon decaying predict
@@ -2016,7 +2016,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/cbe_cover_e_dec.predict
 
 # Test 251: cb_explore with cover epsilon fixed
-{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5 --force_legacy
     train-sets/ref/cbe_cover_e_fixed.stderr
 
 # Test 252: cb_explore with cover epsilon fixed predict

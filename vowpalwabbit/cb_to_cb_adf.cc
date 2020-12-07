@@ -69,6 +69,7 @@ void finish_example(vw& all, cb_to_cb_adf&, example& ec)
 VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 {
   bool compat_old_cb = false;
+  bool force_legacy = false;
   bool eval = false;
   std::string type_string = "mtr";
   uint32_t num_actions;
@@ -77,18 +78,19 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   new_options
       .add(make_option("cb", num_actions).keep().necessary().help("Use contextual bandit learning with <k> costs"))
       .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {}"))
-      .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."));
+      .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."))
+      .add(make_option("force_legacy", force_legacy).help("Default to old cb implementation"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
-
-  // models created with older version should default to --old_cb
-  if (all.model_file_ver != EMPTY_VERSION_FILE) compat_old_cb = !(all.model_file_ver >= VERSION_FILE_WITH_CB_TO_CBADF);
 
   // if user specified both old_cb and cb, we default to old_cb
   if (options.was_supplied("old_cb")) return nullptr;
 
+  // models created with older version should default to --old_cb
+  if (all.model_file_ver != EMPTY_VERSION_FILE) compat_old_cb = !(all.model_file_ver >= VERSION_FILE_WITH_CB_TO_CBADF);
+
   // not implemented in "new_cb" yet
-  if (eval || compat_old_cb)
+  if (eval || compat_old_cb || force_legacy)
   {
     options.insert("old_cb", std::to_string(num_actions));
     return nullptr;

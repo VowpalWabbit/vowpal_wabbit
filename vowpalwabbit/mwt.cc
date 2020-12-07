@@ -251,11 +251,11 @@ base_learner* mwt_setup(options_i& options, vw& all)
   {
     c->learn = true;
 
-    if (!options.was_supplied("old_cb"))
+    if (!options.was_supplied("cb"))
     {
       std::stringstream ss;
       ss << c->num_classes;
-      options.insert("old_cb", ss.str());
+      options.insert("cb", ss.str());
     }
   }
 
