@@ -99,4 +99,11 @@ table ExampleCollection {
   examples:[Example];
 }
 
-root_type ExampleCollection;
+union ExampleType {Example, ExampleCollection}
+
+table ExampleRoot
+{
+  example_obj:ExampleType;
+}
+
+root_type ExampleRoot;

@@ -79,8 +79,8 @@ void check_pdf_sums_to_one(VW::continuous_actions::probability_density_function&
   BOOST_CHECK_CLOSE(1.0f, sum, .0001f);
 }
 
-void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_function& pdf, uint32_t min_value,
-    uint32_t max_value, uint32_t bandwidth, uint32_t num_actions, uint32_t action)
+void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_function& pdf, float min_value,
+    float max_value, uint32_t bandwidth, uint32_t num_actions, uint32_t action)
 {
   // check that left <= right for all pdf
   float prev_pdf_limit = 0;
