@@ -162,7 +162,7 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
 void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_scores)
 {
   const auto test_base = get_test_harness_reduction(base_reduction_predictions);
-  VW::offset_tree::offset_tree tree(expected_scores.size());
+  VW::offset_tree::offset_tree tree(static_cast<uint32_t>(expected_scores.size()));
   tree.init();
   example ec;
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();

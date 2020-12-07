@@ -564,9 +564,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       }
       else if (input_options.flatbuffer)
       {
-        all.flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>(all.data_filename);
-        all.flat_converter->init();
-
+        all.flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>();
         all.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
       }
       else
