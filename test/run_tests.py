@@ -17,7 +17,7 @@ import os.path
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 
-
+import runtests_parser
 class Color():
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -42,27 +42,21 @@ def fuzzy_float_compare(f1, f2, epsilon):
     return (abs(float(f1)-float(f2)) < epsilon)
 
 
-def is_vw_binary(file_path):
-    file_name = os.path.basename(file_path)
-    return file_name == "vw"
-
-
-def find_vw(paths):
+def find_in_path(paths, file_matcher):
     for path in paths:
         absolute_path = os.path.abspath(path)
         if os.path.isdir(absolute_path):
             for file in os.listdir(absolute_path):
                 absolute_file = os.path.join(absolute_path, file)
-                if is_vw_binary(absolute_file):
+                if file_matcher(absolute_file):
                     return absolute_file
         elif os.path.isfile(absolute_path):
-            if is_vw_binary(absolute_path):
+            if file_matcher(absolute_path):
                 return absolute_path
         else:
             # path does not exist
             continue
     raise ValueError("Couldn't find VW")
-
 
 def line_diff_text(text_one, file_name_one, text_two, file_name_two):
     text_one = [line.strip() for line in text_one.strip().splitlines()]
@@ -358,15 +352,24 @@ def main():
     parser.add_argument('-j', "--jobs", type=int, default=1)
     args = parser.parse_args()
 
-    vw = find_vw(SEARCH_PATHS)
 
-    with open("runtests.AUTOGEN.json", 'r') as f:
-        tests = json.load(f)
 
+    def is_vw_binary(file_path):
+        file_name = os.path.basename(file_path)
+        return file_name == "vw"
+    vw = find_in_path(SEARCH_PATHS, is_vw_binary)
+
+    def is_runtests_file(file_path):
+        file_name = os.path.basename(file_path)
+        return file_name == "RunTests"
+
+    possible_runtests_paths = ["./RunTests", "./test/RunTests"]
+    runtests_file = find_in_path(possible_runtests_paths, is_runtests_file)
+    tests = runtests_parser.file_to_obj(runtests_file)
+    tests = [x.__dict__ for x in tests]
 
     TEST_BASE_WORKING_DIR = "/Users/jagerrit/w/test_temp_dir"
     TEST_BASE_REF_DIR = "/Users/jagerrit/w/repos/vowpal_wabbit/test/"
-    
 
     tasks = []
     executor = ThreadPoolExecutor(max_workers=args.jobs)
