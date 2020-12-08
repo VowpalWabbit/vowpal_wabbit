@@ -73,20 +73,37 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   bool eval = false;
   std::string type_string = "mtr";
   uint32_t num_actions;
+  uint32_t cbx_num_actions;
+  uint32_t cbi_num_actions;
 
   option_group_definition new_options("Contextual Bandit Options");
   new_options
-      .add(make_option("cb", num_actions).keep().necessary().help("Use contextual bandit learning with <k> costs"))
+      .add(make_option("cb_to_cbadf", num_actions).keep().necessary().help("Maps cb_adf to cb. Disable with cb_force_legacy."))
+      .add(make_option("cb", num_actions).keep().help("Maps cb_adf to cb. Disable with cb_force_legacy."))
+      .add(make_option("cb_explore", cbx_num_actions).keep().help("Translate cb explore to cbexploreadf. Disable with cb_force_legacy."))
+      .add(make_option("cbify", cbi_num_actions).keep().help("Translate cb explore to cbexploreadf. Disable with cb_force_legacy."))
       .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {}"))
       .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."))
       .add(make_option("cb_force_legacy", force_legacy).keep().help("Default to old cb implementation"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  options.add_parse_and_check_necessary(new_options);
+
+  bool override_cb = options.was_supplied("cb");
+  bool override_cb_explore = options.was_supplied("cb_explore");
+  bool override_cbify = options.was_supplied("cbify");
+
+  if (!override_cb && !override_cb_explore && !override_cbify) return nullptr;
+
+  // if cb_explore_adf is being specified this is a noop
+  if (options.was_supplied("cb_explore_adf")) return nullptr;
 
   if (force_legacy) return nullptr;
 
-  // models created with older version should default to --old_cb
+  // ANY model created with older version should default to --cb_force_legacy
   if (all.model_file_ver != EMPTY_VERSION_FILE) compat_old_cb = !(all.model_file_ver >= VERSION_FILE_WITH_CB_TO_CBADF);
+
+  // not compatible with adf
+  if (options.was_supplied("cbify_reg")) compat_old_cb |= true;
 
   // not implemented in "new_cb" yet
   if (eval || compat_old_cb)
@@ -95,8 +112,23 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
     return nullptr;
   }
 
-  // force cb_adf; cb_adf will pick up cb_type
-  options.insert("cb_adf", "");
+  // user specified "cb_explore" but we're not using an old model file
+  if (override_cb_explore)
+  {
+    num_actions = cbx_num_actions;
+    options.insert("cb_explore_adf", "");
+  }
+  else if (override_cbify)
+  {
+    num_actions = cbi_num_actions;
+    options.insert("cb_explore_adf", "");
+    return setup_base(options, all);
+  }
+  else
+  {
+    // force cb_adf; cb_adf will pick up cb_type
+    options.insert("cb_adf", "");
+  }
 
   auto data = scoped_calloc_or_throw<cb_to_cb_adf>();
   data->weights = &(all.weights);
@@ -107,7 +139,15 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   learner<cb_to_cb_adf, example>* l;
   // multiclass is inferior to action_scores (as cb_adf does)
   // for compat reasons we stick to multiclass for now
-  l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass);
+  if (override_cb_explore)
+  {
+    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::action_probs);
+  }
+  else
+  {
+    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass);
+  }
+  
   l->set_finish_example(finish_example);
 
   all.delete_prediction = nullptr;

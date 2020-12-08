@@ -330,6 +330,8 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
+  if (!options.was_supplied("cb_force_legacy")) return nullptr;
+
   data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
 

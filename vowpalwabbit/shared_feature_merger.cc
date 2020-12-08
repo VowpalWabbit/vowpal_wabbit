@@ -23,6 +23,7 @@ static const std::vector<std::string> option_strings = {
 
 bool use_reduction(config::options_i& options)
 {
+  // todo add clause here to not run when using cb_to_cbadf?
   for (const auto& opt : option_strings)
   {
     if (options.was_supplied(opt)) return true;

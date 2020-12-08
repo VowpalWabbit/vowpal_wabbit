@@ -2007,20 +2007,20 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/test_named.predict
 
 # Test 249: cb_explore with cover epsilon decaying
-{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
-    train-sets/ref/cbe_cover_e_dec.stderr
+{VW} --cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
+    train-sets/ref/cbe_cover_e_dec_legacy.stderr
 
 # Test 250: cb_explore with cover epsilon decaying predict
-{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict
-    train-sets/ref/cbe_cover_e_dec_predict.stderr
+{VW} --cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict
+    train-sets/ref/cbe_cover_e_dec_predict_legacy.stderr
     pred-sets/ref/cbe_cover_e_dec.predict
 
 # Test 251: cb_explore with cover epsilon fixed
-{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5
+{VW} --cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5
     train-sets/ref/cbe_cover_e_fixed.stderr
 
 # Test 252: cb_explore with cover epsilon fixed predict
-{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed.predict
+{VW} --cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed.predict
     train-sets/ref/cbe_cover_e_fixed_predict.stderr
     pred-sets/ref/cbe_cover_e_fixed.predict
 
@@ -2062,5 +2062,49 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 # Test 261: cb redirection when --eval (see test 74)
 {VW} -d train-sets/rcv1_cb_eval --cb 2 --eval
     train-sets/ref/rcv1_cb_eval.stderr
+
+# Test 262: cbify, epsilon-greedy (see test 76)
+{VW} --cbify 10 --epsilon 0.05 -d train-sets/multiclass --cb_force_legacy
+    train-sets/ref/cbify_epsilon_legacy.stderr
+
+# Test 263: cbify, tau first (see test 77)
+{VW} --cbify 10 --first 5 -d train-sets/multiclass --cb_force_legacy
+    train-sets/ref/cbify_first_legacy.stderr
+
+# Test 264: cbify, bag (see test 78)
+{VW} --cbify 10 --bag 7 -d train-sets/multiclass --cb_force_legacy
+    train-sets/ref/cbify_bag_legacy.stderr
+
+# Test 265: cbify, cover (see test 79)
+{VW} --cbify 10 --cover 3 -d train-sets/multiclass --nounif --cb_force_legacy
+    train-sets/ref/cbify_cover_legacy.stderr
+
+# Test 266: cb_explore (see test 121)
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore_legacy.preds --cb_force_legacy
+    train-sets/ref/rcv1_raw_cb_explore_legacy.stderr
+    pred-sets/ref/rcv1_raw_cb_explore_legacy.preds
+
+# Test 267: test cbify large (see test 169)
+{VW} -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05 --cb_force_legacy
+    train-sets/ref/rcv1_multiclass_legacy.stderr
+
+# Test 268: cbify cs, epsilon-greedy (see test 171)
+{VW} --cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb --cb_force_legacy
+    train-sets/ref/cbify_epsilon_cs_legacy.stderr
+
+# Test 269: cb_explore with cover epsilon decaying (see test 249)
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model --cb_force_legacy
+    train-sets/ref/cbe_cover_e_dec_legacy.stderr
+
+# Test 270: cb_explore with cover epsilon decaying predict (see test 250)
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict
+    train-sets/ref/cbe_cover_e_dec_predict_legacy.stderr
+    pred-sets/ref/cbe_cover_e_dec.predict
+
+# # Test 271: legacy model
+# {VW} -i models/cb_legacy.model -t -p cbe_cover_e_dec.predict
+#     train-sets/ref/cbe_cover_e_dec_legacy.stderr
+#     pred-sets/ref/cbe_cover_e_dec.predict
+
 
 # Do not delete this line or the empty line above it
