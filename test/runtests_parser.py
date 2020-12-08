@@ -67,11 +67,19 @@ class Test:
             input_file_flags = ["-d", "-i", "--dictionary", "--feature_mask"]
             files = []
             for flag in input_file_flags:
-                files = files + Parser.get_values_of_vwarg(self.vw_command, flag)
+                next_files = Parser.get_values_of_vwarg(self.vw_command, flag)
+
+                # some cleanup only when its dictionary
+                if flag is "--dictionary":
+                    next_files = [f.split(":")[-1]  for f in next_files]
+                    dpath = Parser.get_values_of_vwarg(self.vw_command, "--dictionary_path")
+                    if dpath:
+                        next_files = [ dpath[0]+"/"+f  for f in next_files]
+
+                files = files + next_files
             if files:
-                # some cleanup
-                files = [f.split("w:")[-1]  for f in files]
                 self.input_files = files
+
 
             # get output files and register as creator of files
             files = Parser.get_values_of_vwarg(self.vw_command, "-f")

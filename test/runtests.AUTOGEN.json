@@ -810,8 +810,8 @@
     },
     "input_files": [
       "train-sets/dictionary_test.dat",
-      "dictionary_test.dict",
-      "dictionary_test.dict.gz"
+      "train-sets/dictionary_test.dict",
+      "train-sets/dictionary_test.dict.gz"
     ]
   },
   {
