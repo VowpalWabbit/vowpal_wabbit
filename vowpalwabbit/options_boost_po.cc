@@ -22,10 +22,7 @@ std::ostream& std::operator<<(std::ostream& os, const std::vector<bool>& vec)
   return os;
 }
 
-bool is_number(const std::string& s)
-{
-  return !s.empty() && s.find_first_not_of("-.0123456789") == std::string::npos;
-}
+bool is_number(const std::string& s) { return !s.empty() && s.find_first_not_of("-.0123456789") == std::string::npos; }
 
 template <>
 po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<bool>>& opt)
