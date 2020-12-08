@@ -1975,23 +1975,23 @@
   {
     "id": 164,
     "desc": "cs_active low mellowness",
-    "vw_command": "--cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 0.01 --simulation --adax",
+    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 0.01 --simulation --adax",
     "diff_files": {
       "stderr": "train-sets/ref/cs_active_0.01.stderr"
     },
     "input_files": [
-      "../test/train-sets/cs_test"
+      "train-sets/cs_test"
     ]
   },
   {
     "id": 165,
     "desc": "cs_active high mellowness",
-    "vw_command": "--cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 1.0 --simulation --adax",
+    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 1.0 --simulation --adax",
     "diff_files": {
       "stderr": "train-sets/ref/cs_active_1.0.stderr"
     },
     "input_files": [
-      "../test/train-sets/cs_test"
+      "train-sets/cs_test"
     ]
   },
   {
