@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
   {
     std::cout << argv[0] << ": " << e.what() << std::endl << std::endl;
     usage(desc);
-    exit(1);
+    return 1;
   }
 
   if (vm.count("help"))
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
       if (!pid_file.is_open())
       {
         std::cerr << "error writing pid file" << std::endl;
-        exit(1);
+        return 1;
       }
       pid_file << getpid() << std::endl;
       pid_file.close();
