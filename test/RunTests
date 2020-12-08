@@ -15,7 +15,7 @@ use File::Basename;
 
 use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
             $opt_E $opt_o $opt_w $opt_y $opt_t
-            $opt_v $opt_V $opt_O);
+            $opt_v $opt_V $opt_F $opt_O);
 
 my $Epsilon = 1e-4;
 
@@ -88,6 +88,7 @@ sub usage(@) {
         -y      On error, copy bad files to (eg stderr.test21) for later comparison
         -v<L>   Verbosity <L> (small integer) is verbosity level
         -V      apply valgrind to vw commands
+        -F      include flatbuffer tests
         -t<T>   Apply timeout <T> (default $TimeOutSec) secs to individual tests
                 (will only work where GNU coreutils 'timeout' is present)
         -O<O>   Add <O> option(s) to all vw commands
@@ -162,7 +163,7 @@ sub which_vw() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdDefyE:ov:Vt:O:') || usage();
+    getopts('wcdDefyE:ov:VFt:O:') || usage();
     $opt_v = 0 unless (defined $opt_v and $opt_v);
     if (defined $opt_O) {
         $opt_O = " $opt_O";
@@ -327,6 +328,13 @@ sub next_test() {
     if ($cmd =~ /{VW}/) {
          $cmd = trim_spaces($cmd);
          $cmd =~ s/{VW}/$VW$opt_O/g;
+    }
+
+    if ($cmd =~ /--flatbuffer/) {
+         if (!$opt_F)
+         {
+             next;
+         }
     }
 
     unless (defined $cmd) {
