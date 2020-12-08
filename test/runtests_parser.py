@@ -66,6 +66,8 @@ class Test:
             # check what input files this command needs
             files = Parser.get_values_of_vwarg(self.vw_command, "-d")
             files = files + Parser.get_values_of_vwarg(self.vw_command, "-i")
+            files = files + Parser.get_values_of_vwarg(self.vw_command, "--dictionary")
+            files = files + Parser.get_values_of_vwarg(self.vw_command, "--feature_mask")
             if files:
                 self.input_files = files
 
