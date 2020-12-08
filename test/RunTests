@@ -2047,4 +2047,8 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbe_adf_synthcover.stderr
     pred-sets/ref/cbe_adf_synthcover.predict
 
+# Test 258: cb data consumed by ccb_explore_adf reduction
+{VW} --ccb_explore_adf --dsjson --epsilon 0.2 -d train-sets/cb_as_ccb.json
+    train-sets/ref/cb_as_ccb.stderr
+
 # Do not delete this line or the empty line above it
