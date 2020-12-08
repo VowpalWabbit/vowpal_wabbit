@@ -17,6 +17,19 @@ else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
 
+add_library(vw_boost_cmdline_options STATIC 
+  options_boost_po.cc
+  options_boost_po.h 
+  options_serializer_boost_po.cc
+  options_serializer_boost_po.h
+  options_types.h
+  options.h
+)
+target_link_libraries(vw_boost_cmdline_options PUBLIC Boost::program_options)
+target_include_directories(vw_boost_cmdline_options PUBLIC 
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
 add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
 target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
 add_library(VowpalWabbit::io ALIAS vw_io)
@@ -138,8 +151,6 @@ set(vw_all_headers
   object_pool.h
   offset_tree.h
   OjaNewton.h
-  options_boost_po.h
-  options_serializer_boost_po.h
   options_types.h
   options.h
   parse_args.h
@@ -281,8 +292,6 @@ set(vw_all_sources
   oaa.cc
   offset_tree.cc
   OjaNewton.cc
-  options_boost_po.cc
-  options_serializer_boost_po.cc
   parse_args.cc
   parse_example.cc
   parse_primitives.cc
@@ -328,7 +337,7 @@ target_link_libraries(vw
   PUBLIC
     VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
   PRIVATE
-    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
+    vw_boost_cmdline_options Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
@@ -457,7 +466,7 @@ endif()
 
 if(VW_INSTALL)
   install(
-    TARGETS vw vw-bin allreduce vw_io
+    TARGETS vw vw-bin allreduce vw_io vw_boost_cmdline_options
     EXPORT VowpalWabbitConfig
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

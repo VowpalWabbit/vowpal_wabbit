@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 
 #include "options_boost_po.h"
-#include "parse_primitives.h"
 
 #include <sstream>
 
@@ -23,13 +22,9 @@ std::ostream& std::operator<<(std::ostream& os, const std::vector<bool>& vec)
   return os;
 }
 
-bool is_number(const VW::string_view& s)
+bool is_number(const std::string& s)
 {
-  size_t endidx = 0;
-  auto f = parseFloat(s.begin(), endidx, s.end());
-  if ((endidx == 0 && !s.empty()) || std::isnan(f)) { return false; }
-
-  return true;
+  return !s.empty() && s.find_first_not_of("-.0123456789") == std::string::npos;
 }
 
 template <>
