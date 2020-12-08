@@ -15,8 +15,7 @@ if(STATIC_LINK_VW)
 endif()
 
 target_include_directories(spanning_tree PRIVATE ${vowpal_wabbit_dir})
-target_link_libraries(spanning_tree PRIVATE vw_boost_cmdline_options ${LINK_THREADS})
-
+target_link_libraries(spanning_tree PRIVATE Boost::program_options ${LINK_THREADS})
 
 if(VW_INSTALL)
   install(

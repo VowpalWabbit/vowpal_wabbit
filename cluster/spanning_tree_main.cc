@@ -10,8 +10,6 @@ This creates a binary tree topology over a set of n nodes that connect.
 #include "spanning_tree.h"
 #include "vw_exception.h"
 
-#include "options_boost_po.h"
-
 #ifdef _WIN32
 int daemon(int a, int b) { return 0; }
 int getpid() { return (int)::GetCurrentProcessId(); }
@@ -19,42 +17,55 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 
 #include <iostream>
 #include <fstream>
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
 
 using namespace VW;
 
-void usage(const VW::config::options_boost_po& options)
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+
+void usage(const po::options_description& desc)
 {
-  std::cout << "usage: spanning_tree [--port number] [--nondaemon] [--help] [pid_file]" << std::endl;
-  std::cout << options.help() << std::endl;
-  exit(0);
+  std::cout << "usage: spanning_tree [--port,-p number] [--nondaemon] [--help,-h] [pid_file]" << std::endl;
+  std::cout << desc << std::endl;
 }
 
 int main(int argc, char* argv[])
 {
-  int port;
+  int port = 26543;
   bool nondaemon = false;
-  bool help = false;
-  VW::config::options_boost_po options(argc, argv);
-  VW::config::option_group_definition spanning_tree_options_group("Spanning Tree");
-  spanning_tree_options_group.add(
-      VW::config::make_option("port", port).default_value(26543).help("Port number for spanning tree to listen on"));
-  spanning_tree_options_group.add(
-      VW::config::make_option("nondaemon", nondaemon).help("Run spanning tree in foreground"));
-  spanning_tree_options_group.add(VW::config::make_option("help", help).help("Print help message"));
-  options.add_and_parse(spanning_tree_options_group);
-  options.check_unregistered();
 
-  if (help) { usage(options); }
+  po::variables_map vm;
+  po::options_description desc("Spanning Tree");
+  desc.add_options()("nondaemon", po::bool_switch(&nondaemon), "Run spanning tree in foreground")(
+      "help,h", "Print help message")("port,p", po::value<int>(&port), "Port number for spanning tree to listen on");
 
-  auto positional_tokens = options.get_positional_tokens();
-  std::string pid_file_name = "";
-  if (positional_tokens.size() == 1) { pid_file_name = positional_tokens[0]; }
-  else if (positional_tokens.size() > 1)
+  std::string pid_file_name;
+  po::options_description hidden;
+  hidden.add_options()("pid_file", po::value<std::string>(&pid_file_name), "File to write PID value to.");
+
+  po::options_description all_options;
+  all_options.add(desc);
+  all_options.add(hidden);
+
+  po::positional_options_description pos;
+  pos.add("pid_file", -1);
+
+  try
   {
-    usage(options);
+    po::store(po::command_line_parser(argc, argv).options(all_options).positional(pos).run(), vm);
+    po::notify(vm);
+  }
+  catch (std::exception& e)
+  {
+    std::cout << argv[0] << ": " << e.what() << std::endl << std::endl;
+    usage(desc);
+    exit(1);
+  }
+
+  if (vm.count("help"))
+  {
+    usage(desc);
+    return 0;
   }
 
   try
@@ -66,7 +77,7 @@ int main(int argc, char* argv[])
 
     SpanningTree spanningTree(port);
 
-    if (!pid_file_name.empty())
+    if (vm.count("pid_file"))
     {
       std::ofstream pid_file;
       pid_file.open(pid_file_name);
