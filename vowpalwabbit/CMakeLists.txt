@@ -128,6 +128,7 @@ set(vw_all_headers
   multilabel_oaa.h
   multilabel.h
   mwt.h
+  numeric_casts.h
   named_labels.h
   network.h
   kskip_ngram_transformer.h
