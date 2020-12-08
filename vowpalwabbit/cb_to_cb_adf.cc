@@ -10,6 +10,7 @@
 #include "vw.h"
 #include "cbify.h"
 #include "cb_algs.h"
+#include "cb_explore.h"
 #include "cb_label_parser.h"
 
 using namespace VW::LEARNER;
@@ -19,6 +20,7 @@ struct cb_to_cb_adf
 {
   parameters* weights;
   cbify_adf_data adf_data;
+  bool explore_mode;
 };
 
 template <bool is_learn>
@@ -50,19 +52,33 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
     base.predict(data.adf_data.ecs);
   }
 
-  // cb_adf => first action is a greedy action TODO: is this a contract?
-  ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
+  if (data.explore_mode)
+  {
+    ec.pred.a_s = data.adf_data.ecs[0]->pred.a_s;
+  }
+  else 
+  {
+    // cb_adf => first action is a greedy action TODO: is this a contract?
+    ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
+  }
 }
 
-void output_example(vw& all, example& ec, CB::label& ld)
+void output_example(vw& all, bool explore_mode, example& ec, CB::label& ld)
 {
-  float loss = CB_ALGS::get_cost_estimate(ld, ec.pred.multiclass);
-  CB_ALGS::generic_output_example(all, loss, ec, ld);
+  if (explore_mode)
+  {
+    CB_EXPLORE::generic_output_example(all, ec, ld);
+  }
+  else 
+  {
+    float loss = CB_ALGS::get_cost_estimate(ld, ec.pred.multiclass);
+    CB_ALGS::generic_output_example(all, loss, ec, ld);
+  }
 }
 
-void finish_example(vw& all, cb_to_cb_adf&, example& ec)
+void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
 {
-  output_example(all, ec, ec.l.cb);
+  output_example(all, c.explore_mode, ec, ec.l.cb);
   VW::finish_example(all, ec);
 }
 
@@ -131,6 +147,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   }
 
   auto data = scoped_calloc_or_throw<cb_to_cb_adf>();
+  data->explore_mode = override_cb_explore;
   data->weights = &(all.weights);
   data->adf_data.init_adf_data(num_actions, all.interactions);
 

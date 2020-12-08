@@ -3,5 +3,11 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "reductions_fwd.h"
+#include "cb.h"
 
 VW::LEARNER::base_learner* cb_explore_setup(VW::config::options_i& options, vw& all);
+
+namespace CB_EXPLORE
+{
+  void generic_output_example(vw& all, example& ec, CB::label& ld);
+}

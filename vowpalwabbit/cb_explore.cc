@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "cb_explore.h"
 #include "reductions.h"
 #include "cb_algs.h"
 #include "rand48.h"
@@ -255,15 +256,13 @@ void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstre
   }
 }
 
-void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
+void generic_output_example(vw& all, example& ec, CB::label& ld)
 {
   float loss = 0.;
+  auto known_cost = get_observed_cost(ld);
 
-  cb_to_cs& c = data.cbcs;
-
-  if ((c.known_cost = get_observed_cost(ld)) != nullptr)
-    for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-      loss += get_cost_estimate(c.known_cost, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
+  if (known_cost != nullptr)
+    loss = CB_ALGS::get_cost_estimate(known_cost, known_cost->action) * ec.pred.a_s[known_cost->action - 1].score;
 
   all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
@@ -286,9 +285,9 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   print_update_cb_explore(all, CB::cb_label.test_label(&ld), ec, sso);
 }
 
-void finish_example(vw& all, cb_explore& c, example& ec)
+void finish_example(vw& all, cb_explore&, example& ec)
 {
-  output_example(all, c, ec, ec.l.cb);
+  CB_EXPLORE::generic_output_example(all, ec, ec.l.cb);
   VW::finish_example(all, ec);
 }
 
