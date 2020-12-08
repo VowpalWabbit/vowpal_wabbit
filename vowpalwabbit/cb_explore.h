@@ -9,5 +9,5 @@ VW::LEARNER::base_learner* cb_explore_setup(VW::config::options_i& options, vw& 
 
 namespace CB_EXPLORE
 {
-  void generic_output_example(vw& all, example& ec, CB::label& ld);
+void generic_output_example(vw& all, example& ec, CB::label& ld);
 }

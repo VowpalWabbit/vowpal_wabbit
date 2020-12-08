@@ -52,11 +52,8 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
     base.predict(data.adf_data.ecs);
   }
 
-  if (data.explore_mode)
-  {
-    ec.pred.a_s = data.adf_data.ecs[0]->pred.a_s;
-  }
-  else 
+  if (data.explore_mode) { ec.pred.a_s = data.adf_data.ecs[0]->pred.a_s; }
+  else
   {
     // cb_adf => first action is a greedy action TODO: is this a contract?
     ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
@@ -65,11 +62,8 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 
 void output_example(vw& all, bool explore_mode, example& ec, CB::label& ld)
 {
-  if (explore_mode)
-  {
-    CB_EXPLORE::generic_output_example(all, ec, ld);
-  }
-  else 
+  if (explore_mode) { CB_EXPLORE::generic_output_example(all, ec, ld); }
+  else
   {
     float loss = CB_ALGS::get_cost_estimate(ld, ec.pred.multiclass);
     CB_ALGS::generic_output_example(all, loss, ec, ld);
@@ -94,10 +88,17 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   option_group_definition new_options("Contextual Bandit Options");
   new_options
-      .add(make_option("cb_to_cbadf", num_actions).keep().necessary().help("Maps cb_adf to cb. Disable with cb_force_legacy."))
+      .add(make_option("cb_to_cbadf", num_actions)
+               .keep()
+               .necessary()
+               .help("Maps cb_adf to cb. Disable with cb_force_legacy."))
       .add(make_option("cb", num_actions).keep().help("Maps cb_adf to cb. Disable with cb_force_legacy."))
-      .add(make_option("cb_explore", cbx_num_actions).keep().help("Translate cb explore to cbexploreadf. Disable with cb_force_legacy."))
-      .add(make_option("cbify", cbi_num_actions).keep().help("Translate cb explore to cbexploreadf. Disable with cb_force_legacy."))
+      .add(make_option("cb_explore", cbx_num_actions)
+               .keep()
+               .help("Translate cb explore to cbexploreadf. Disable with cb_force_legacy."))
+      .add(make_option("cbify", cbi_num_actions)
+               .keep()
+               .help("Translate cb explore to cbexploreadf. Disable with cb_force_legacy."))
       .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {}"))
       .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."))
       .add(make_option("cb_force_legacy", force_legacy).keep().help("Default to old cb implementation"));
@@ -164,7 +165,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   {
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass);
   }
-  
+
   l->set_finish_example(finish_example);
 
   all.delete_prediction = nullptr;
