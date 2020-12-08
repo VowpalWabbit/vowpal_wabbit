@@ -69,6 +69,8 @@ class Test:
             for flag in input_file_flags:
                 files = files + Parser.get_values_of_vwarg(self.vw_command, flag)
             if files:
+                # some cleanup
+                files = [f.split("w:")[-1]  for f in files]
                 self.input_files = files
 
             # get output files and register as creator of files
