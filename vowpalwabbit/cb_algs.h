@@ -54,12 +54,14 @@ float get_cost_pred(
   return pred;
 }
 
+// IPS estimate
 inline float get_cost_estimate(CB::cb_class* observation, uint32_t action, float offset = 0.)
 {
   if (action == observation->action) return (observation->cost - offset) / observation->probability;
   return 0.;
 }
 
+// doubly robust estimate
 inline float get_cost_estimate(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
 {
   for (auto& cl : scores.costs)

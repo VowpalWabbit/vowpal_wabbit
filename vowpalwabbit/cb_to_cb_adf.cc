@@ -98,12 +98,32 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
                .help("Translate cb explore to cbexploreadf. Disable with cb_force_legacy."))
       .add(make_option("cbify", cbi_num_actions)
                .keep()
-               .help("Translate cb explore to cbexploreadf. Disable with cb_force_legacy."))
+               .help("Translate cbify to cbexploreadf. Disable with cb_force_legacy."))
       .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {}"))
       .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."))
       .add(make_option("cb_force_legacy", force_legacy).keep().help("Default to old cb implementation"));
 
   options.add_parse_and_check_necessary(new_options);
+
+  // ANY model created with older version should default to --cb_force_legacy
+  if (all.model_file_ver != EMPTY_VERSION_FILE) compat_old_cb = !(all.model_file_ver >= VERSION_FILE_WITH_CB_TO_CBADF);
+
+  // not compatible with adf
+  if (options.was_supplied("cbify_reg")) compat_old_cb = true;
+
+  // dm not implemented in cb_adf
+  if (type_string == "dm") compat_old_cb = true;
+
+  if (eval) compat_old_cb = true;
+
+  if (force_legacy) compat_old_cb = true;
+
+  // not implemented in "new_cb" yet
+  if (compat_old_cb)
+  {
+    options.insert("cb_force_legacy", "");
+    return nullptr;
+  }
 
   bool override_cb = options.was_supplied("cb");
   bool override_cb_explore = options.was_supplied("cb_explore");
@@ -113,21 +133,6 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   // if cb_explore_adf is being specified this is a noop
   if (override_cbify && options.was_supplied("cb_explore_adf")) return nullptr;
-
-  if (force_legacy) return nullptr;
-
-  // ANY model created with older version should default to --cb_force_legacy
-  if (all.model_file_ver != EMPTY_VERSION_FILE) compat_old_cb = !(all.model_file_ver >= VERSION_FILE_WITH_CB_TO_CBADF);
-
-  // not compatible with adf
-  if (options.was_supplied("cbify_reg")) compat_old_cb |= true;
-
-  // not implemented in "new_cb" yet
-  if (eval || compat_old_cb)
-  {
-    options.insert("cb_force_legacy", "");
-    return nullptr;
-  }
 
   // user specified "cb_explore" but we're not using an old model file
   if (override_cb_explore)
