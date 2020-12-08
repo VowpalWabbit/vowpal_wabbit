@@ -381,7 +381,8 @@
       "stderr": "train-sets/ref/remask.stderr"
     },
     "input_files": [
-      "train-sets/0001.dat"
+      "train-sets/0001.dat",
+      "models/mask.model"
     ]
   },
   {
@@ -393,7 +394,8 @@
     },
     "input_files": [
       "train-sets/0001.dat",
-      "models/remask.model"
+      "models/remask.model",
+      "models/mask.model"
     ],
     "depends_on": [
       31
@@ -807,7 +809,9 @@
       "stderr": "train-sets/ref/dictionary_test.stderr"
     },
     "input_files": [
-      "train-sets/dictionary_test.dat"
+      "train-sets/dictionary_test.dat",
+      "train-sets/dictionary_test.dict",
+      "train-sets/dictionary_test.dict.gz"
     ]
   },
   {
@@ -2334,7 +2338,7 @@
   {
     "id": 197,
     "desc": "offline contextual memory tree",
-    "vw_command": "-d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off",
+    "vw_command": "-d train-sets/rcv1_smaller.dat -k --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/cmt_rcv1_smaller_offline.stderr"
     },
@@ -2886,12 +2890,12 @@
   {
     "id": 245,
     "desc": "Flatbuffer no label Test (LDA)",
-    "vw_command": "-k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/no_label.fb --flatbuffer",
+    "vw_command": "-k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/wiki256_no_label.fb --flatbuffer",
     "diff_files": {
       "stderr": "train-sets/ref/no_label_fb.stderr"
     },
     "input_files": [
-      "train-sets/no_label.fb"
+      "train-sets/wiki256_no_label.fb"
     ]
   },
   {
@@ -2908,12 +2912,12 @@
   {
     "id": 247,
     "desc": "Named Labels FB Test (Based on 88)",
-    "vw_command": "-d train-sets/named_label.fb --named_labels det,noun,verb --oaa 3 -k --flatbuffer -c --passes 10 --holdout_off -f models/test_named_fb.model",
+    "vw_command": "-d train-sets/test_named.fb --named_labels det,noun,verb --oaa 3 -k --flatbuffer -c --passes 10 --holdout_off -f models/test_named_fb.model",
     "diff_files": {
       "stderr": "train-sets/ref/named_label_fb.stderr"
     },
     "input_files": [
-      "train-sets/named_label.fb"
+      "train-sets/test_named.fb"
     ]
   },
   {
