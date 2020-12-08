@@ -64,10 +64,10 @@ class Test:
             self.vw_command = " ".join(self.vw_command.split()[1:])
 
             # check what input files this command needs
-            files = Parser.get_values_of_vwarg(self.vw_command, "-d")
-            files = files + Parser.get_values_of_vwarg(self.vw_command, "-i")
-            files = files + Parser.get_values_of_vwarg(self.vw_command, "--dictionary")
-            files = files + Parser.get_values_of_vwarg(self.vw_command, "--feature_mask")
+            input_file_flags = ["-d", "-i", "--dictionary", "--feature_mask"]
+            files = []
+            for flag in input_file_flags:
+                files = files + Parser.get_values_of_vwarg(self.vw_command, flag)
             if files:
                 self.input_files = files
 
