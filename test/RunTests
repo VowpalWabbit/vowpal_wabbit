@@ -2114,10 +2114,5 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} -d train-sets/rcv1_raw_cb_small.vw -t -i cb_dm.reg
     train-sets/ref/rcv1_raw_cb_dm_test_legacy.stderr
 
-# # Test 274: legacy model
-# {VW} -i models/cb_legacy.model -t -p cbe_cover_e_dec_legacy.predict
-#     train-sets/ref/cbe_cover_e_dec_legacy.stderr
-#     pred-sets/ref/cbe_cover_e_dec_legacy.predict
-
 
 # Do not delete this line or the empty line above it
