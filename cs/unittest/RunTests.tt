@@ -15,7 +15,7 @@ var lines = File.ReadAllLines(Path.Combine(testRoot, "RunTests"))
     .SkipWhile(l => l != "__DATA__")
     .ToList();
 
-var skipList = new[] { 13, 32, 39, 40, 41, 59, 60, 61, 66, 68, 90,
+var skipList = new[] { 13, 32, 39, 258, 40, 259, 41, 260, 59, 60, 61, 66, 68, 90,
 	25, 26, // crash
 	92, 95, 96, 98,	91, 99, 118, 119, 120,
 	176, 177, 207, 208, //depend on shell scripts for input/output
@@ -81,7 +81,7 @@ for (var i = 0; i < lines.Count; i++)
 			// testcase.Dependency = outputModels["models/mask.model"];
 
 		if (testcases.ContainsKey(testcase.Id))
-			throw new Exception("Testcase IDs must be unique: duplicate # Test " + testcase.Id + " in line " + i);
+			throw new Exception("Testcase IDs must be unique: duplicate # Test " + testcase.Id + " in line " + i + " total tests cases: " + testcases.Count);
 
         testcases.Add(testcase.Id, testcase);
 
