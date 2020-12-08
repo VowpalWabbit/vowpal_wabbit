@@ -1030,16 +1030,16 @@ __DATA__
     train-sets/ref/nn-1-noquiet.stderr
 
 # Test 39: cb with dr
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25 --cb_force_legacy
-    train-sets/ref/rcv1_raw_cb_dr.stderr
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25
+    train-sets/ref/rcv1_raw_new_cb_dr.stderr
 
 # Test 40: cb with ips
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125 --cb_force_legacy
-    train-sets/ref/rcv1_raw_cb_ips.stderr
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125
+    train-sets/ref/rcv1_raw_new_cb_ips.stderr
 
 # Test 41: cb with dm
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg --cb_force_legacy
-    train-sets/ref/rcv1_raw_cb_dm.stderr
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg
+    train-sets/ref/rcv1_raw_new_cb_dm.stderr
 
 # Test 42: --lda --passes 2 hang regression
 {VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off
@@ -2007,20 +2007,20 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/test_named.predict
 
 # Test 249: cb_explore with cover epsilon decaying
-{VW} --cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
-    train-sets/ref/cbe_cover_e_dec_legacy.stderr
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
+    train-sets/ref/cbe_cover_e_dec.stderr
 
 # Test 250: cb_explore with cover epsilon decaying predict
-{VW} --cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict
-    train-sets/ref/cbe_cover_e_dec_predict_legacy.stderr
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict
+    train-sets/ref/cbe_cover_e_dec_predict.stderr
     pred-sets/ref/cbe_cover_e_dec.predict
 
 # Test 251: cb_explore with cover epsilon fixed
-{VW} --cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5
     train-sets/ref/cbe_cover_e_fixed.stderr
 
 # Test 252: cb_explore with cover epsilon fixed predict
-{VW} --cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed.predict
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed.predict
     train-sets/ref/cbe_cover_e_fixed_predict.stderr
     pred-sets/ref/cbe_cover_e_fixed.predict
 
@@ -2048,16 +2048,16 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/cbe_adf_synthcover.predict
 
 # Test 258: cb with dr (see test 39)
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25
-    train-sets/ref/rcv1_raw_new_cb_dr.stderr
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25 --cb_force_legacy
+    train-sets/ref/rcv1_raw_cb_dr.stderr
 
 # Test 259: cb with ips (see test 40)
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125
-    train-sets/ref/rcv1_raw_new_cb_ips.stderr
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125 --cb_force_legacy
+    train-sets/ref/rcv1_raw_cb_ips.stderr
 
 # Test 260: cb with dm (see test 41)
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg
-    train-sets/ref/rcv1_raw_new_cb_dm.stderr
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg --cb_force_legacy
+    train-sets/ref/rcv1_raw_cb_dm.stderr
 
 # Test 261: cb redirection when --eval (see test 74)
 {VW} -d train-sets/rcv1_cb_eval --cb 2 --eval
@@ -2097,14 +2097,27 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbe_cover_e_dec_legacy.stderr
 
 # Test 270: cb_explore with cover epsilon decaying predict (see test 250)
-{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec_legacy.predict
     train-sets/ref/cbe_cover_e_dec_predict_legacy.stderr
-    pred-sets/ref/cbe_cover_e_dec.predict
+    pred-sets/ref/cbe_cover_e_dec_legacy.predict
 
-# # Test 271: legacy model
-# {VW} -i models/cb_legacy.model -t -p cbe_cover_e_dec.predict
+# Test 271: cb_explore with cover epsilon fixed (see test 251)
+{VW} --cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5
+    train-sets/ref/cbe_cover_e_fixed_legacy.stderr
+
+# Test 272: cb_explore with cover epsilon fixed predict (see test 252)
+{VW} --cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed_legacy.predict
+    train-sets/ref/cbe_cover_e_fixed_predict_legacy.stderr
+    pred-sets/ref/cbe_cover_e_fixed_legacy.predict
+
+# Test 273: test cb with dm (see test 168)
+{VW} -d train-sets/rcv1_raw_cb_small.vw -t -i cb_dm.reg
+    train-sets/ref/rcv1_raw_cb_dm_test_legacy.stderr
+
+# # Test 274: legacy model
+# {VW} -i models/cb_legacy.model -t -p cbe_cover_e_dec_legacy.predict
 #     train-sets/ref/cbe_cover_e_dec_legacy.stderr
-#     pred-sets/ref/cbe_cover_e_dec.predict
+#     pred-sets/ref/cbe_cover_e_dec_legacy.predict
 
 
 # Do not delete this line or the empty line above it

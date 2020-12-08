@@ -112,7 +112,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   if (!override_cb && !override_cb_explore && !override_cbify) return nullptr;
 
   // if cb_explore_adf is being specified this is a noop
-  if (options.was_supplied("cb_explore_adf")) return nullptr;
+  if (override_cbify && options.was_supplied("cb_explore_adf")) return nullptr;
 
   if (force_legacy) return nullptr;
 
