@@ -200,7 +200,7 @@ find_package(Boost REQUIRED COMPONENTS program_options system)
 find_package(ZLIB REQUIRED)
 if(BUILD_FLATBUFFERS)
   find_package(flatbuffers REQUIRED)
-  add_definitions(-DFB_ENABLED)
+  add_definitions(-DBUILD_FLATBUFFERS)
 endif()
 
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
