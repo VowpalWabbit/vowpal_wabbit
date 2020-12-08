@@ -2048,7 +2048,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/cbe_adf_synthcover.predict
 
 # Test 258: CCB interactions with slot with default namespace
-{VW} -d train-sets/ccb_test.dat --ccb_explore_adf --invert_hash w_out_slot_ns.interactions -q ::
+{VW} -d train-sets/ccb_test_interactions.dat --ccb_explore_adf --invert_hash w_out_slot_ns.interactions -q ::
     train-sets/ref/ccb_test_interactions.stderr
     train-sets/ref/w_out_slot_ns.interactions
 

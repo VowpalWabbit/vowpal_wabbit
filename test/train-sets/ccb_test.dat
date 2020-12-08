@@ -6,7 +6,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 0:0:0.2 |Slot h
 ccb slot 1:0:0.25 |Slot i
-ccb slot 2:0:0.333333 | j
+ccb slot 2:0:0.333333 |Slot j
 
 ccb shared |User b
 ccb action |Action d
@@ -16,7 +16,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 3:0:0.2 |Slot h
 ccb slot 4:0:0.25 |Slot i
-ccb slot 0:0:0.333333 | j
+ccb slot 0:0:0.333333 |Slot j
 
 ccb shared |User c
 ccb action |Action d
@@ -26,7 +26,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 4:0:0.2 |Slot h
 ccb slot 3:0:0.25 |Slot i
-ccb slot 2:0:0.333333 | j
+ccb slot 2:0:0.333333 |Slot j
 
 ccb shared |User a
 ccb action |Action d
@@ -36,7 +36,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 1:0:0.2 |Slot h
 ccb slot 4:-1:0.25 |Slot i
-ccb slot 2:0:0.333333 | j
+ccb slot 2:0:0.333333 |Slot j
 
 ccb shared |User a
 ccb action |Action d
@@ -46,7 +46,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 4:0:0.84 |Slot h
 ccb slot 3:0:0.316667 |Slot i
-ccb slot 1:-1:0.466667 | j
+ccb slot 1:-1:0.466667 |Slot j
 
 ccb shared |User b
 ccb action |Action d
@@ -56,7 +56,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 1:0:0.04 |Slot h
 ccb slot 4:-1:0.85 |Slot i
-ccb slot 0:0:0.866667 | j
+ccb slot 0:0:0.866667 |Slot j
 
 ccb shared |User c
 ccb action |Action d
@@ -66,7 +66,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 4:-1:0.84 |Slot h
 ccb slot 1:0:0.85 |Slot i
-ccb slot 2:0:0.0666667 | j
+ccb slot 2:0:0.0666667 |Slot j
 
 ccb shared |User c
 ccb action |Action d
@@ -76,7 +76,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 4:-1:0.84 |Slot h
 ccb slot 1:0:0.85 |Slot i
-ccb slot 0:0:0.866667 | j
+ccb slot 0:0:0.866667 |Slot j
 
 ccb shared |User a
 ccb action |Action d
@@ -86,7 +86,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 4:0:0.84 |Slot h
 ccb slot 1:0:0.85 |Slot i
-ccb slot 2:0:0.0666667 | j
+ccb slot 2:0:0.0666667 |Slot j
 
 ccb shared |User c
 ccb action |Action d
@@ -96,7 +96,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 4:0:0.84 |Slot h
 ccb slot 1:0:0.85 |Slot i
-ccb slot 0:0:0.0666667 | j
+ccb slot 0:0:0.0666667 |Slot j
 
 ccb shared |User b
 ccb action |Action d
@@ -106,7 +106,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 4:0:0.84 |Slot h
 ccb slot 1:0:0.85 |Slot i
-ccb slot 3:0:0.866667 | j
+ccb slot 3:0:0.866667 |Slot j
 
 ccb shared |User b
 ccb action |Action d
@@ -116,7 +116,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 4:0:0.84 |Slot h
 ccb slot 1:0:0.85 |Slot i
-ccb slot 2:0:0.0666667 | j
+ccb slot 2:0:0.0666667 |Slot j
 
 ccb shared |User a
 ccb action |Action d
@@ -126,7 +126,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 4:0:0.84 |Slot h
 ccb slot 1:0:0.85 |Slot i
-ccb slot 3:0:0.866667 | j
+ccb slot 3:0:0.866667 |Slot j
 
 ccb shared |User a
 ccb action |Action d
@@ -136,7 +136,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 4:0:0.84 |Slot h
 ccb slot 2:-1:0.05 |Slot i
-ccb slot 1:0:0.866667 | j
+ccb slot 1:0:0.866667 |Slot j
 
 ccb shared |User b
 ccb action |Action d
@@ -146,7 +146,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot 2:0:0.84 |Slot h
 ccb slot 4:0:0.85 |Slot i
-ccb slot 1:0:0.866667 | j
+ccb slot 1:0:0.866667 |Slot j
 
 ccb shared |User a
 ccb action |Action d
@@ -156,7 +156,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot |Slot h
 ccb slot |Slot i
-ccb slot | j
+ccb slot |Slot j
 
 ccb shared |User b
 ccb action |Action d
@@ -166,7 +166,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot |Slot h
 ccb slot |Slot i
-ccb slot | j
+ccb slot |Slot j
 
 ccb shared |User c
 ccb action |Action d
@@ -176,7 +176,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot |Slot h
 ccb slot |Slot i
-ccb slot | j
+ccb slot |Slot j
 
 ccb shared |User b
 ccb action |Action d
@@ -186,7 +186,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot |Slot h
 ccb slot |Slot i
-ccb slot | j
+ccb slot |Slot j
 
 ccb shared |User a
 ccb action |Action d
@@ -196,7 +196,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot |Slot h
 ccb slot |Slot i
-ccb slot | j
+ccb slot |Slot j
 
 ccb shared |User c
 ccb action |Action d
@@ -206,7 +206,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot |Slot h
 ccb slot |Slot i
-ccb slot | j
+ccb slot |Slot j
 
 ccb shared |User b
 ccb action |Action d
@@ -216,7 +216,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot |Slot h
 ccb slot |Slot i
-ccb slot | j
+ccb slot |Slot j
 
 ccb shared |User b
 ccb action |Action d
@@ -226,7 +226,7 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot |Slot h
 ccb slot |Slot i
-ccb slot | j
+ccb slot |Slot j
 
 ccb shared |User a
 ccb action |Action d
@@ -236,5 +236,5 @@ ccb action |Action ff
 ccb action |Action fff
 ccb slot |Slot h
 ccb slot |Slot i
-ccb slot | j
+ccb slot |Slot j
 
