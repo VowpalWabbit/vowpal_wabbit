@@ -1754,7 +1754,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     train-sets/ref/cmt_rcv1_smaller_online.stderr
 
 # Test 197: offline contextual memory tree
-{VW} -d train-sets/rcv1_smaller.dat --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off
+{VW} -d train-sets/rcv1_smaller.dat -k --memory_tree 10 --learn_at_leaf --max_number_of_labels 2 --dream_at_update 0 --dream_repeats 3 --leaf_example_multiplier 10 --alpha 0.1 -l 0.001 -b 15 -c --passes 2 --loss_function squared --holdout_off
     train-sets/ref/cmt_rcv1_smaller_offline.stderr
 
 # Test 198: test cb_sample
