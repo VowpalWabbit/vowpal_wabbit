@@ -1024,7 +1024,7 @@ public:
           auto outcome = new CCB::conditional_contextual_bandit_outcome();
           outcome->cost = ctx.label_object_state.cb_label.cost;
           outcome->probabilities.push_back(
-              {ctx.label_object_state.cb_label.action, ctx.label_object_state.cb_label.probability});
+              {ctx.label_object_state.cb_label.action - 1, ctx.label_object_state.cb_label.probability});
           ctx.ex->l.conditional_contextual_bandit.outcome = outcome;
         }
       }
