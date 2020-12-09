@@ -45,9 +45,6 @@
     <ClCompile Include="explore_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="flatbuffer_parser_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="guard_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -126,12 +123,24 @@
     <ClCompile Include="vwdll_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="numeric_cast_tests.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="weights_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="chain_hashing.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="multiclass_label_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tokenize_tests.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test_common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="cats_tree_tests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

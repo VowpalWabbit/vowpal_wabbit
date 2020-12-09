@@ -98,6 +98,6 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
+  <Import Project="$(VWVcpkgIntegration)" Condition="Exists('$(VWVcpkgIntegration)')" />
   <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>

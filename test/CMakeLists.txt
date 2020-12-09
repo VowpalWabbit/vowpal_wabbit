@@ -1,9 +1,9 @@
 add_subdirectory(unit_test)
 add_subdirectory(tools)
 
-set(FB_FLAG "")
-if(BUILD_FLATBUFFERS)
-  set(FB_FLAG "-F")
+set(FB_FLAG "") # flatbuffers are on by default
+if(not BUILD_FLATBUFFERS)
+  set(FB_FLAG "-F") # exclude flatbuffer tests from RunTests
 endif()
 
 # Don't offer target on Windows
