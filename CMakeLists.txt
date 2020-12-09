@@ -88,7 +88,6 @@ option(LTO "Enable Link Time optimization (Requires Release build, only works wi
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
 option(BUILD_FLATBUFFER_UTILS "Build the flatbuffer data converter utility in utl/flatbuffer" ON)
-option(BUILD_FLATBUFFERS "Build flatbuffers" ON)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -198,10 +197,7 @@ endif()
 # Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system)
 find_package(ZLIB REQUIRED)
-if(BUILD_FLATBUFFERS)
-  find_package(flatbuffers REQUIRED)
-  add_definitions(-DBUILD_FLATBUFFERS)
-endif()
+find_package(flatbuffers REQUIRED)
 
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
@@ -254,7 +250,7 @@ add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
 
-if (BUILD_FLATBUFFER_UTILS AND BUILD_FLATBUFFERS)
+if (BUILD_FLATBUFFER_UTILS)
   add_subdirectory(utl/flatbuffer)
 endif()
 

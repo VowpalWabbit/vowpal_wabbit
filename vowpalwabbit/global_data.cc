@@ -16,9 +16,7 @@
 #include "future_compat.h"
 #include "vw_allreduce.h"
 #include "named_labels.h"
-#ifdef BUILD_FLATBUFFERS
-#  include "parser/flatbuffer/parse_example_flatbuffer.h"
-#endif
+#include "parser/flatbuffer/parse_example_flatbuffer.h"
 
 struct global_prediction
 {

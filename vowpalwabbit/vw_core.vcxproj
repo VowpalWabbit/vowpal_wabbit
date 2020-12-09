@@ -84,7 +84,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include;$(ProjectDir)\..\explore</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>ZLIB_WINAPI;BUILD_FLATBUFFERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -102,7 +102,7 @@
     <Link>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PreBuildEvent Condition="Exists('$(VcpkgIntegration)')">
+    <PreBuildEvent>
       <Message>Generate FlatBuffer</Message>
       <Command>
         $(flatcPath) -o $(SolutionDir)parser\flatbuffer\generated\ --cpp $(SolutionDir)parser\flatbuffer\schema\example.fbs
@@ -216,7 +216,7 @@
     <ClInclude Include="options_serializer_boost_po.h" />
     <ClInclude Include="options_types.h" />
     <ClInclude Include="options.h" />
-    <ClInclude Condition="Exists('$(VcpkgIntegration)')" Include="parser\flatbuffer\parse_example_flatbuffer.h" />
+    <ClInclude Include="parser\flatbuffer\parse_example_flatbuffer.h" />
     <ClInclude Include="parse_args.h" />
     <ClInclude Include="parse_dispatch_loop.h" />
     <ClInclude Include="parse_example_json.h" />
@@ -354,8 +354,8 @@
     <ClCompile Include="OjaNewton.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
-    <ClCompile Condition="Exists('$(VcpkgIntegration)')" Include="parser\flatbuffer\parse_example_flatbuffer.cc" />
-    <ClCompile Condition="Exists('$(VcpkgIntegration)')" Include="parser\flatbuffer\parse_label.cc" />
+    <ClCompile Include="parser\flatbuffer\parse_example_flatbuffer.cc" />
+    <ClCompile Include="parser\flatbuffer\parse_label.cc" />
     <ClCompile Include="parse_args.cc" />
     <ClCompile Include="parse_example.cc" />
     <ClCompile Include="parse_primitives.cc" />
@@ -392,7 +392,12 @@
     <ClCompile Include="vw_exception.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClCompile Include="warm_cb.cc" />
-    <ClCompile Include="get_pmf.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="get_pmf.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="vw_types.natvis" />

@@ -56,9 +56,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
 #include "io/io_adapter.h"
-#ifdef BUILD_FLATBUFFERS
-#  include "parser/flatbuffer/parse_example_flatbuffer.h"
-#endif
+#include "parser/flatbuffer/parse_example_flatbuffer.h"
 
 // OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
 #if !defined(SOL_TCP) && defined(IPPROTO_TCP)
@@ -564,13 +562,11 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         }
         set_json_reader(all, input_options.dsjson);
       }
-#ifdef BUILD_FLATBUFFERS
       else if (input_options.flatbuffer)
       {
         all.flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>();
         all.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
       }
-#endif
       else
       {
         set_string_reader(all);

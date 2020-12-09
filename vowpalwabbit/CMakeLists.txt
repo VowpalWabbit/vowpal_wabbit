@@ -21,12 +21,10 @@ add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
 target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
 add_library(VowpalWabbit::io ALIAS vw_io)
 
-if(BUILD_FLATBUFFERS)
-  add_subdirectory(parser/flatbuffer)
-  add_library(FlatbuffersTarget INTERFACE)
-  target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
-  add_dependencies(FlatbuffersTarget fbschemas)
-endif()
+add_subdirectory(parser/flatbuffer)
+add_library(FlatbuffersTarget INTERFACE)
+target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
+add_dependencies(FlatbuffersTarget fbschemas)
 
 set(vw_all_headers
   accumulate.h
@@ -152,6 +150,7 @@ set(vw_all_headers
   parse_regressor.h
   parse_slates_example_json.h
   parser.h
+  parser/flatbuffer/parse_example_flatbuffer.h
   pmf_to_pdf.h
   plt.h
   reduction_features.h
@@ -198,10 +197,6 @@ set(vw_all_headers
   vwvis.h
   warm_cb.h
 )
-
-if(BUILD_FLATBUFFERS)
-  set(vw_all_headers ${vw_all_headers} parser/flatbuffer/parse_example_flatbuffer.h)
-endif()
 
 set(vw_all_sources
   accumulate.cc
@@ -293,6 +288,8 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
+  parser/flatbuffer/parse_example_flatbuffer.cc
+  parser/flatbuffer/parse_label.cc
   pmf_to_pdf.cc
   plt.cc
   print.cc
@@ -325,12 +322,6 @@ set(vw_all_sources
   warm_cb.cc
 )
 
-if(BUILD_FLATBUFFERS)
-  set(vw_all_sources ${vw_all_sources}
-    parser/flatbuffer/parse_example_flatbuffer.cc
-    parser/flatbuffer/parse_label.cc)
-endif()
-
 add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
@@ -341,13 +332,9 @@ target_link_libraries(vw
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
-    $<BUILD_INTERFACE:RapidJSON>)
+    $<BUILD_INTERFACE:RapidJSON>
+    $<BUILD_INTERFACE:FlatbuffersTarget>)
 
-if(BUILD_FLATBUFFERS)
-  target_link_libraries(vw
-      PRIVATE
-      $<BUILD_INTERFACE:FlatbuffersTarget>)
-endif()
 
 add_library(VowpalWabbit::vw ALIAS vw)
 

@@ -1,18 +1,13 @@
 add_subdirectory(unit_test)
 add_subdirectory(tools)
 
-set(FB_FLAG "") # flatbuffers are on by default
-if(NOT BUILD_FLATBUFFERS)
-  set(FB_FLAG "-F") # exclude flatbuffer tests from RunTests
-endif()
-
 # Don't offer target on Windows
 if(NOT WIN32)
   add_test(
     NAME RunTests_pass_1_onethread
     COMMAND
       ${CMAKE_COMMAND} -E env PATH=${CMAKE_CURRENT_BINARY_DIR}/../vowpalwabbit/:$ENV{PATH}
-      ./RunTests -d -fe -E 0.001 -O --onethread ${FB_FLAG}
+      ./RunTests -d -fe -E 0.001 -O --onethread
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
@@ -20,7 +15,7 @@ if(NOT WIN32)
     NAME RunTests_pass_2
     COMMAND
       ${CMAKE_COMMAND} -E env PATH=${CMAKE_CURRENT_BINARY_DIR}/../vowpalwabbit/:$ENV{PATH}
-      ./RunTests -d -fe -E 0.001 ${FB_FLAG}
+      ./RunTests -d -fe -E 0.001
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
