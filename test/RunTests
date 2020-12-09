@@ -1203,7 +1203,7 @@ echo "" | {VW}
     pred-sets/ref/0001_ftrl.predict
 
 # Test 74: cb evaluation
-{VW} -d train-sets/rcv1_cb_eval --cb 2 --cb_force_legacy --eval
+{VW} --cb_force_legacy -d train-sets/rcv1_cb_eval --cb 2 --eval
     train-sets/ref/rcv1_cb_eval.stderr
 
 # Test 75: Log_multi
@@ -1413,12 +1413,12 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/csoaa.audit_regr
 
 # Test 119: MWT learn test
-{VW} -d train-sets/cb_eval --multiworld_test f --learn 2 -p mwt_learn.preds --cb_force_legacy
+{VW} --cb_force_legacy -d train-sets/cb_eval --multiworld_test f --learn 2 -p mwt_learn.preds
     train-sets/ref/mwt_learn.stderr
     pred-sets/ref/mwt_learn.preds
 
 # Test 120: MWT learn exclude test
-{VW} -d train-sets/cb_eval --multiworld_test f --learn 2 --exclude_eval -p mwt_learn_exclude.preds --cb_force_legacy
+{VW} --cb_force_legacy -d train-sets/cb_eval --multiworld_test f --learn 2 --exclude_eval -p mwt_learn_exclude.preds
     train-sets/ref/mwt_learn_exclude.stderr
     pred-sets/ref/mwt_learn_exclude.preds
 
@@ -1965,7 +1965,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
         train-sets/ref/0001_fb.stderr
 
 # Test 240: Flatbuffer CB Label Test
-{VW} --cb 2 --cb_force_legacy -d train-sets/rcv1_raw_cb_small.fb \
+{VW} --cb_force_legacy --cb 2 -d train-sets/rcv1_raw_cb_small.fb \
      --flatbuffer
         train-sets/ref/rcv1_raw_cb_fb.stderr
 
@@ -1985,7 +1985,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
          train-sets/ref/cs_fb.stderr
 
 # Test 244: Flatbuffer CB_eval test
-{VW} -d train-sets/rcv1_cb_eval.fb --cb 2 --cb_force_legacy --eval \
+{VW} --cb_force_legacy -d train-sets/rcv1_cb_eval.fb --cb 2 --eval \
      --flatbuffer
          train-sets/ref/rcv1_cb_eval_fb.stderr
 
@@ -2050,15 +2050,15 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/cbe_adf_synthcover.predict
 
 # Test 258: cb with dr (see test 39)
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25 --cb_force_legacy
+{VW} --cb_force_legacy -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25
     train-sets/ref/rcv1_raw_cb_dr.stderr
 
 # Test 259: cb with ips (see test 40)
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125 --cb_force_legacy
+{VW} --cb_force_legacy -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type ips --ngram 2 --skips 4 -b 24 -l 0.125
     train-sets/ref/rcv1_raw_cb_ips.stderr
 
 # Test 260: cb with dm (see test 41)
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg --cb_force_legacy
+{VW} --cb_force_legacy -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg
     train-sets/ref/rcv1_raw_cb_dm.stderr
 
 # Test 261: cb redirection when --eval (see test 74)
@@ -2066,36 +2066,36 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/rcv1_cb_eval.stderr
 
 # Test 262: cbify, epsilon-greedy (see test 76)
-{VW} --cbify 10 --epsilon 0.05 -d train-sets/multiclass --cb_force_legacy
+{VW} --cb_force_legacy --cbify 10 --epsilon 0.05 -d train-sets/multiclass
     train-sets/ref/cbify_epsilon_legacy.stderr
 
 # Test 263: cbify, tau first (see test 77)
-{VW} --cbify 10 --first 5 -d train-sets/multiclass --cb_force_legacy
+{VW} --cb_force_legacy --cbify 10 --first 5 -d train-sets/multiclass
     train-sets/ref/cbify_first_legacy.stderr
 
 # Test 264: cbify, bag (see test 78)
-{VW} --cbify 10 --bag 7 -d train-sets/multiclass --cb_force_legacy
+{VW} --cb_force_legacy --cbify 10 --bag 7 -d train-sets/multiclass
     train-sets/ref/cbify_bag_legacy.stderr
 
 # Test 265: cbify, cover (see test 79)
-{VW} --cbify 10 --cover 3 -d train-sets/multiclass --nounif --cb_force_legacy
+{VW} --cb_force_legacy --cbify 10 --cover 3 -d train-sets/multiclass --nounif
     train-sets/ref/cbify_cover_legacy.stderr
 
 # Test 266: cb_explore (see test 121)
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore_legacy.preds --cb_force_legacy
+{VW} --cb_force_legacy -d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore_legacy.preds
     train-sets/ref/rcv1_raw_cb_explore_legacy.stderr
     pred-sets/ref/rcv1_raw_cb_explore_legacy.preds
 
 # Test 267: test cbify large (see test 169)
-{VW} -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05 --cb_force_legacy
+{VW} --cb_force_legacy -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05
     train-sets/ref/rcv1_multiclass_legacy.stderr
 
 # Test 268: cbify cs, epsilon-greedy (see test 171)
-{VW} --cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb --cb_force_legacy
+{VW} --cb_force_legacy --cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb
     train-sets/ref/cbify_epsilon_cs_legacy.stderr
 
 # Test 269: cb_explore with cover epsilon decaying (see test 249)
-{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model --cb_force_legacy
+{VW} --cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
     train-sets/ref/cbe_cover_e_dec_legacy.stderr
 
 # Test 270: cb_explore with cover epsilon decaying predict (see test 250)
@@ -2108,12 +2108,8 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbe_cover_e_fixed_legacy.stderr
 
 # Test 272: cb_explore with cover epsilon fixed predict (see test 252)
-{VW} --cb_force_legacy --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed_legacy.predict
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed_legacy.predict
     train-sets/ref/cbe_cover_e_fixed_predict_legacy.stderr
     pred-sets/ref/cbe_cover_e_fixed_legacy.predict
-
-# Test 273: test cb with dm (see test 168)
-{VW} -d train-sets/rcv1_raw_cb_small.vw -t -i cb_dm.reg
-    train-sets/ref/rcv1_raw_cb_dm_test_legacy.stderr
 
 # Do not delete this line or the empty line above it
