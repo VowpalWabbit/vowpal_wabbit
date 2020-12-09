@@ -128,10 +128,7 @@ BOOST_AUTO_TEST_CASE(ccb_invalid_example_checks)
   examples.push_back(VW::read_example(vw, std::string("ccb slot 0 |")));
   examples.push_back(VW::read_example(vw, std::string("ccb slot 3 |")));
 
-  for (auto* example : examples)
-  {
-    VW::setup_example(vw, example);
-  }
+  for (auto* example : examples) { VW::setup_example(vw, example); }
 
   // Check that number of actions is greater than slots
   BOOST_REQUIRE_THROW(vw.predict(examples), VW::vw_exception);
