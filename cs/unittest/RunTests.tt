@@ -32,7 +32,7 @@ var skipList = new[] { 13, 32, 39, 258, 40, 259, 41, 260, 59, 60, 61, 66, 68, 90
     227, // "single continuous action, pdf value" prediction type for cats not yet supported
     229,  // "continous action with probability density function" prediction type for cats_pdf not yet supported
     239, 240, 241, 242, 243, 244, 245, 246, 247, 248, // flatbuffer input tests, to be enabled in due course
-    258 // DSJSON not supported
+    273 // DSJSON not supported
 	};
 
 var outputModels = new Dictionary<string, TestCase>();
