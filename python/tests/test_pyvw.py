@@ -371,3 +371,10 @@ def check_error_raises(type, argument):
     """
     with pytest.raises(type) as error:
         argument()
+
+def test_dsjson():
+    vw = pyvw.vw('--cb_explore_adf --epsilon 0.2 --dsjson')
+
+    ex='{"_label_cost":-1.0,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
+
+    assert vw.predict(ex) == [0.5, 0.5]
