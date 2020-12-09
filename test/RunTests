@@ -914,7 +914,6 @@ __DATA__
     --search_task sequence --search 45 --search_alpha 1e-6 \
     --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 \
     --holdout_off --search_passes_per_policy 3 --search_interpolation policy
-        train-sets/ref/search_wsj2.dat.stdout
         train-sets/ref/search_wsj2.dat.stderr
 
 # Test 15: LBFGS on zero derivative input
@@ -1139,7 +1138,7 @@ echo "" | {VW}
     train-sets/ref/empty-set.stderr
 
 # Test 61: daemon test
-./daemon-test.sh
+./daemon-test.sh --port 54249
     test-sets/ref/vw-daemon.stdout
 
 # Test 62: SVM linear kernel
@@ -1572,7 +1571,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/0151.stderr
 
 # Test 152: daemon on the foreground test
-./daemon-test.sh --foreground
+./daemon-test.sh --foreground --port 54250
     test-sets/ref/vw-daemon.stdout
 
 # Test 153: marginal features
@@ -1877,7 +1876,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/plt_top1_multilabel.predict
 
 # Test 220: daemon test with json
-./daemon-test.sh --json
+./daemon-test.sh --json --port 54251
     test-sets/ref/vw-daemon.stdout
 
 # Test 221: cbify adf, squarecb
@@ -2111,5 +2110,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed_legacy.predict
     train-sets/ref/cbe_cover_e_fixed_predict_legacy.stderr
     pred-sets/ref/cbe_cover_e_fixed_legacy.predict
+
+# Test 273: cb data consumed by ccb_explore_adf reduction
+{VW} --ccb_explore_adf --dsjson --epsilon 0.2 -d train-sets/cb_as_ccb.json
+    train-sets/ref/cb_as_ccb.stderr
 
 # Do not delete this line or the empty line above it
