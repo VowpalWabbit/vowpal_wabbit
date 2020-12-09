@@ -566,7 +566,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb_as_ccb)
   BOOST_CHECK_EQUAL(label2.explicit_included_actions.size(), 0);
   BOOST_CHECK_CLOSE(label2.outcome->cost, -1.f, .0001f);
   BOOST_CHECK_EQUAL(label2.outcome->probabilities.size(), 1);
-  BOOST_CHECK_EQUAL(label2.outcome->probabilities[0].action, 2);
+  BOOST_CHECK_EQUAL(label2.outcome->probabilities[0].action, 1);
   BOOST_CHECK_CLOSE(label2.outcome->probabilities[0].score, 0.8166667f, .0001f);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);

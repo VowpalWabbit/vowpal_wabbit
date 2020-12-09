@@ -35,7 +35,7 @@
     <ClCompile Include="error_test.cc" />
     <ClCompile Include="example_header_test.cc" />
     <ClCompile Include="explore_test.cc" />
-    <ClCompile Include="flatbuffer_parser_test.cc" Condition="Exists('$(VWVcpkgIntegration)')" />
+    <ClCompile Include="flatbuffer_parser_test.cc" Condition="Exists('$(VcpkgIntegration)')" />
     <ClCompile Include="guard_test.cc" />
     <ClCompile Include="initialize_test.cc" />
     <ClCompile Include="io_adapter_test.cc" />
@@ -76,7 +76,7 @@
     <RootNamespace>unit_test</RootNamespace>
     <ProjectName>vw_unit_test</ProjectName>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
-    <VcpkgOSTarget Condition="'$(VWVcpkgPlatformToolset)'=='v141'">windows-v141</VcpkgOSTarget>
+    <VcpkgOSTarget Condition="'$(VcpkgPlatformToolset)'=='v141'">windows-v141</VcpkgOSTarget>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -164,7 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Import Project="$(VWVcpkgIntegration)" Condition="Exists('$(VWVcpkgIntegration)')" />
+  <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemDefinitionGroup>

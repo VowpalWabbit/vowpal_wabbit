@@ -78,9 +78,6 @@
     <ClCompile Include="options_boost_po_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="options_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="stable_unique_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -121,21 +118,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vwdll_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="numeric_cast_tests.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="weights_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="chain_hashing.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="multiclass_label_parser_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tokenize_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
