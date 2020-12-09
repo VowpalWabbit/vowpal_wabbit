@@ -109,31 +109,6 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
   return true;
 }
 
-template <bool is_learn>
-bool sanity_checks(ccb& data)
-{
-  if (data.slots.size() > data.actions.size())
-  {
-    std::cerr << "ccb_adf_explore: badly formatted example - number of actions " << data.actions.size()
-              << " must be greater than the number of slots " << data.slots.size();
-    return false;
-  }
-
-  if (is_learn)
-  {
-    for (auto* slot : data.slots)
-    {
-      if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
-          slot->l.conditional_contextual_bandit.outcome->probabilities.empty())
-      {
-        std::cerr << "ccb_adf_explore: badly formatted example - missing label probability";
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
 // create empty/default cb labels
 void create_cb_labels(ccb& data)
 {
@@ -373,9 +348,25 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // split shared, actions and slots
   if (!split_multi_example_and_stash_labels(examples, data)) { return; }
 
-#ifndef NDEBUG
-  if (!sanity_checks<is_learn>(data)) { return; }
-#endif
+  if (data.slots.size() > data.actions.size())
+  {
+    std::stringstream msg;
+    msg << "ccb_adf_explore: badly formatted example - number of actions " << data.actions.size()
+        << " must be greater than the number of slots " << data.slots.size();
+    THROW(msg.str())
+  }
+
+  if (is_learn)
+  {
+    for (auto* slot : data.slots)
+    {
+      if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
+          slot->l.conditional_contextual_bandit.outcome->probabilities.empty())
+      {
+        THROW("ccb_adf_explore: badly formatted example - missing label probability");
+      }
+    }
+  }
 
   data.has_seen_multi_slot_example = data.has_seen_multi_slot_example || data.slots.size() > 1;
 

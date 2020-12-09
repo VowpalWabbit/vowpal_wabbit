@@ -118,3 +118,27 @@ BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
   }
   VW::finish(*vw);
 }
+
+BOOST_AUTO_TEST_CASE(ccb_invalid_example_checks)
+{
+  auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
+  multi_ex examples;
+  examples.push_back(VW::read_example(vw, std::string("ccb shared |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb slot 0 |")));
+  examples.push_back(VW::read_example(vw, std::string("ccb slot 3 |")));
+
+  for (auto* example : examples)
+  {
+    VW::setup_example(vw, example);
+  }
+
+  // Check that number of actions is greater than slots
+  BOOST_REQUIRE_THROW(vw.predict(examples), VW::vw_exception);
+
+  // Examples are unlabeled, so should not work for learn.
+  BOOST_REQUIRE_THROW(vw.learn(examples), VW::vw_exception);
+
+  vw.finish_example(examples);
+  VW::finish(vw);
+}
