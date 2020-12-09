@@ -352,6 +352,10 @@ def test_example_features():
     ex.push_namespace(ns2)
     assert ex.pop_namespace()
 
+def test_runparser_cmd_string():
+    vw = pyvw.vw("--data ./test/train-sets/rcv1_small.dat")
+    assert vw.parser_ran == True, "vw should set parser_ran to true if --data present"
+    vw.finish()
 
 def check_error_raises(type, argument):
     """

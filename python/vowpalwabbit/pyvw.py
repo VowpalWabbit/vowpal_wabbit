@@ -245,6 +245,12 @@ class vw(pylibvw.vw):
         ext_file_args = ["d", "data", "passes"]
         if any(x in kw for x in ext_file_args):
             pylibvw.vw.run_parser(self)
+            self.parser_ran = True
+        elif arg_str:
+            ext_file_cmd_str = [" -d", "--data", "--passes"]
+            if [cmd for cmd in ext_file_cmd_str if(cmd in arg_str)]:
+                pylibvw.vw.run_parser(self)
+                self.parser_ran = True
 
         self.finished = False
 
