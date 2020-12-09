@@ -241,6 +241,8 @@ class vw(pylibvw.vw):
 
         pylibvw.vw.__init__(self, " ".join(l))
 
+        self.parser_ran = False
+
         # check to see if native parser needs to run
         ext_file_args = ["d", "data", "passes"]
         if any(x in kw for x in ext_file_args):

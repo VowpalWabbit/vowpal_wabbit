@@ -357,6 +357,11 @@ def test_runparser_cmd_string():
     assert vw.parser_ran == True, "vw should set parser_ran to true if --data present"
     vw.finish()
 
+def test_not_runparser_cmd_string():
+    vw = pyvw.vw("")
+    assert vw.parser_ran == False, "vw should set parser_ran to false"
+    vw.finish()
+
 def check_error_raises(type, argument):
     """
     This function is used to check whether the exception is raised or not.
