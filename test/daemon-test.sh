@@ -12,7 +12,13 @@ TRAINSET=$NAME.train
 PREDREF=$NAME.predref
 PREDOUT=$NAME.predict
 NETCAT_STATUS=$NAME.netcat-status
-PORT=54248
+
+if [[ -z "${DAEMON_PORT}" ]]; then
+  PORT=54248
+else
+  PORT="${DAEMON_PORT}"
+fi
+
 
 while [ $# -gt 0 ]
 do

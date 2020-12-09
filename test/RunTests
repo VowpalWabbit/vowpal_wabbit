@@ -1138,7 +1138,7 @@ echo "" | {VW}
     train-sets/ref/empty-set.stderr
 
 # Test 61: daemon test
-./daemon-test.sh
+export PORT=54249 && ./daemon-test.sh
     test-sets/ref/vw-daemon.stdout
 
 # Test 62: SVM linear kernel
@@ -1571,7 +1571,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/0151.stderr
 
 # Test 152: daemon on the foreground test
-./daemon-test.sh --foreground
+export PORT=54250 && ./daemon-test.sh --foreground
     test-sets/ref/vw-daemon.stdout
 
 # Test 153: marginal features
