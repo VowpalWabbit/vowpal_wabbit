@@ -88,9 +88,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   option_group_definition new_options("Contextual Bandit Options");
   new_options
-      .add(make_option("cb_to_cbadf", num_actions)
-               .necessary()
-               .help("Maps cb_adf to cb. Disable with cb_force_legacy."))
+      .add(make_option("cb_to_cbadf", num_actions).necessary().help("Maps cb_adf to cb. Disable with cb_force_legacy."))
       .add(make_option("cb", num_actions).keep().help("Maps cb_adf to cb. Disable with cb_force_legacy."))
       .add(make_option("cb_explore", cbx_num_actions)
                .keep()
