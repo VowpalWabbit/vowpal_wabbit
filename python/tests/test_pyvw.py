@@ -6,6 +6,11 @@ import pytest
 
 BIT_SIZE = 18
 
+# Since these tests still run with Python 2, this is required.
+# Otherwise we could use math.isclose
+def isclose(a, b, rel_tol=1e-05, abs_tol=0.0):
+    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
 class TestVW:
 
     model = vw(quiet=True, b=BIT_SIZE)
@@ -385,3 +390,23 @@ def check_error_raises(type, argument):
     """
     with pytest.raises(type) as error:
         argument()
+
+def test_dsjson():
+    vw = pyvw.vw('--cb_explore_adf --epsilon 0.2 --dsjson')
+
+    ex_l_str='{"_label_cost":-1.0,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
+    ex_l = vw.parse(ex_l_str)
+    vw.learn(ex_l)
+    pred = ex_l[0].get_action_scores()
+    expected = [0.5, 0.5]
+    assert len(pred) == len(expected)
+    for a,b in zip(pred, expected):
+        assert isclose(a, b)
+    vw.finish_example(ex_l)
+
+    ex_p='{"_label_cost":-1.0,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
+    pred = vw.predict(ex_p)
+    expected = [0.9, 0.1]
+    assert len(pred) == len(expected)
+    for a,b in zip(pred, expected):
+        assert isclose(a, b)
