@@ -23,23 +23,15 @@ do
         --json)
             JSON="$1 --chain_hash"
             ;;
+        --port)
+            PORT="$2"
+            shift 
+            ;;
         *)
             echo "$NAME: unknown argument $1"
             exit 1
             ;;
     esac
-    if [ -n "$2" ];
-    then
-        case "$2" in
-            --json)
-                JSON="$2 --chain_hash"
-                ;;
-            *)
-                echo "$NAME: unknown argument $2"
-                exit 1
-                ;;
-        esac
-    fi
     shift
 done
 
