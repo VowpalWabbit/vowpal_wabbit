@@ -335,6 +335,7 @@ target_link_libraries(vw
     $<BUILD_INTERFACE:RapidJSON>
     $<BUILD_INTERFACE:FlatbuffersTarget>)
 
+
 add_library(VowpalWabbit::vw ALIAS vw)
 
 if(GCOV)

@@ -914,7 +914,6 @@ __DATA__
     --search_task sequence --search 45 --search_alpha 1e-6 \
     --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 \
     --holdout_off --search_passes_per_policy 3 --search_interpolation policy
-        train-sets/ref/search_wsj2.dat.stdout
         train-sets/ref/search_wsj2.dat.stderr
 
 # Test 15: LBFGS on zero derivative input
@@ -2050,5 +2049,10 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 # Test 258: cb data consumed by ccb_explore_adf reduction
 {VW} --ccb_explore_adf --dsjson --epsilon 0.2 -d train-sets/cb_as_ccb.json
     train-sets/ref/cb_as_ccb.stderr
+
+# Test 259: CCB interactions with slot with default namespace
+{VW} -d train-sets/ccb_test_interactions.dat --ccb_explore_adf --invert_hash w_out_slot_ns.interactions -q ::
+    train-sets/ref/ccb_test_interactions.stderr
+    train-sets/ref/w_out_slot_ns.interactions
 
 # Do not delete this line or the empty line above it
