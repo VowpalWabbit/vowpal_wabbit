@@ -76,6 +76,16 @@ void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
   VW::finish_example(all, ec);
 }
 
+/*
+    Purpose: run before cb, cb_explore, cbify and cb_adf related reductions
+    This will 'translate' cb (non adf) input commands into their cb_adf counterparts
+    Except when:
+        - the model file loaded is from a version older or including 8.9.0
+        - user bypasses this translation step using '--cb_force_legacy'
+        - user specifies the cb_type to 'dm' (not implemented in adf)
+
+    Related files: cb_algs.cc, cb_explore.cc, cbify.cc
+*/
 VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 {
   bool compat_old_cb = false;
@@ -131,19 +141,20 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   // if cb_explore_adf is being specified this is a noop
   if (override_cbify && options.was_supplied("cb_explore_adf")) return nullptr;
 
+  if (override_cbify)
+  {
+    options.insert("cb_explore_adf", "");
+    // no need to register custom predict/learn, cbify will take care of that
+    return setup_base(options, all);
+  }
+
   // user specified "cb_explore" but we're not using an old model file
   if (override_cb_explore)
   {
     num_actions = cbx_num_actions;
     options.insert("cb_explore_adf", "");
   }
-  else if (override_cbify)
-  {
-    num_actions = cbi_num_actions;
-    options.insert("cb_explore_adf", "");
-    return setup_base(options, all);
-  }
-  else
+  else  // if (override_cb) case
   {
     // force cb_adf; cb_adf will pick up cb_type
     options.insert("cb_adf", "");
@@ -157,9 +168,8 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   multi_learner* base = as_multiline(setup_base(options, all));
 
   learner<cb_to_cb_adf, example>* l;
-  // multiclass is inferior to action_scores (as cb_adf does)
-  // for compat reasons we stick to multiclass for now
-  if (override_cb_explore)
+
+  if (data->explore_mode)
   {
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::action_probs);
   }
