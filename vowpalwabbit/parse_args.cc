@@ -341,7 +341,7 @@ void parse_affix_argument(vw& all, std::string str)
   free(cstr);
 }
 
-void parse_diagnostics(vw& all)
+void parse_diagnostics(options_i& options, vw& all)
 {
   bool version_arg = false;
   bool help = false;
@@ -358,7 +358,7 @@ void parse_diagnostics(vw& all)
                .help("Parse arguments and print corresponding metadata. Will not execute driver."))
       .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
-  all.options->add_and_parse(diagnostic_group);
+  options.add_and_parse(diagnostic_group);
 
   // pass all.logger.quiet around
   if (all.all_reduce) all.all_reduce->quiet = all.logger.quiet;
@@ -370,7 +370,7 @@ void parse_diagnostics(vw& all)
     exit(0);
   }
 
-  if (all.options->was_supplied("progress") && !all.logger.quiet)
+  if (options.was_supplied("progress") && !all.logger.quiet)
   {
     all.progress_arg = (float)::atof(progress_arg.c_str());
     // --progress interval is dual: either integer or floating-point
@@ -1405,8 +1405,10 @@ vw& parse_args(std::unique_ptr<options_i> options, trace_message_t trace_listene
     all.options->add_and_parse(parallelization_args);
 
     // total, unique_id and node must be specified together.
-    if ((all.options->was_supplied("total") || all.options->was_supplied("node") || all.options->was_supplied("unique_id")) &&
-        !(all.options->was_supplied("total") && all.options->was_supplied("node") && all.options->was_supplied("unique_id")))
+    if ((all.options->was_supplied("total") || all.options->was_supplied("node") ||
+            all.options->was_supplied("unique_id")) &&
+        !(all.options->was_supplied("total") && all.options->was_supplied("node") &&
+            all.options->was_supplied("unique_id")))
     { THROW("you must specificy unique_id, total, and node if you specify any"); }
 
     if (all.options->was_supplied("span_server"))
@@ -1416,7 +1418,7 @@ vw& parse_args(std::unique_ptr<options_i> options, trace_message_t trace_listene
           span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.logger.quiet);
     }
 
-    parse_diagnostics(all);
+    parse_diagnostics(*all.options.get(), all);
 
     all.initial_t = (float)all.sd->t;
     return all;
@@ -1671,17 +1673,18 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-vw* initialize(config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
-  {
-    std::unique_ptr<options_i> opts;
-    opts.reset(&options);
-    auto* all = initialize(std::move(opts), model, skipModelLoad, trace_listener, trace_context);
-    all->should_release_options = true;
-    return all;
-  }
-
 vw* initialize(
-    std::unique_ptr<options_i> options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+    config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+{
+  std::unique_ptr<options_i> opts;
+  opts.reset(&options);
+  auto* all = initialize(std::move(opts), model, skipModelLoad, trace_listener, trace_context);
+  all->should_release_options = true;
+  return all;
+}
+
+vw* initialize(std::unique_ptr<options_i> options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener,
+    void* trace_context)
 {
   vw& all = parse_args(std::move(options), trace_listener, trace_context);
 
