@@ -100,7 +100,7 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Import Project="$(VWVcpkgIntegration)" Condition="Exists('$(VWVcpkgIntegration)')" />
+  <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)packages\boost_python-vc140.1.63.0.0\build\native\boost_python-vc140.targets" Condition="Exists('$(SolutionDir)packages\boost_python-vc140.1.63.0.0\build\native\boost_python-vc140.targets')" />
     <Import Project="$(SolutionDir)packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets" Condition="Exists('$(SolutionDir)packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" />
