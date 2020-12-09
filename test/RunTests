@@ -1138,7 +1138,7 @@ echo "" | {VW}
     train-sets/ref/empty-set.stderr
 
 # Test 61: daemon test
-export PORT=54249 && ./daemon-test.sh
+./daemon-test.sh --port 54249
     test-sets/ref/vw-daemon.stdout
 
 # Test 62: SVM linear kernel
@@ -1571,7 +1571,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/0151.stderr
 
 # Test 152: daemon on the foreground test
-export PORT=54250 && ./daemon-test.sh --foreground
+./daemon-test.sh --foreground --port 54250
     test-sets/ref/vw-daemon.stdout
 
 # Test 153: marginal features
@@ -1875,7 +1875,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/plt_top1_multilabel.predict
 
 # Test 220: daemon test with json
-./daemon-test.sh --json
+./daemon-test.sh --json --port 54251
     test-sets/ref/vw-daemon.stdout
 
 # Test 221: cbify adf, squarecb
