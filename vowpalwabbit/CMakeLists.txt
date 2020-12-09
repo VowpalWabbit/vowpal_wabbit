@@ -347,6 +347,7 @@ if(BUILD_FLATBUFFERS)
   target_link_libraries(vw
       PRIVATE
       $<BUILD_INTERFACE:FlatbuffersTarget>)
+  target_compile_definitions(vw PUBLIC BUILD_FLATBUFFERS)
 endif()
 
 add_library(VowpalWabbit::vw ALIAS vw)
