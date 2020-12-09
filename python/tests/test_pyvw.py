@@ -357,6 +357,11 @@ def test_runparser_cmd_string():
     assert vw.parser_ran == True, "vw should set parser_ran to true if --data present"
     vw.finish()
 
+def test_runparser_cmd_string_short():
+    vw = pyvw.vw("-d ./test/train-sets/rcv1_small.dat")
+    assert vw.parser_ran == True, "vw should set parser_ran to true if --data present"
+    vw.finish()
+
 def test_not_runparser_cmd_string():
     vw = pyvw.vw("")
     assert vw.parser_ran == False, "vw should set parser_ran to false"

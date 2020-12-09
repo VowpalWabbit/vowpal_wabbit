@@ -249,7 +249,8 @@ class vw(pylibvw.vw):
             pylibvw.vw.run_parser(self)
             self.parser_ran = True
         elif arg_str:
-            ext_file_cmd_str = [" -d", "--data", "--passes"]
+            # space after -d to avoid matching with other substrings
+            ext_file_cmd_str = ["-d ", "--data", "--passes"]
             if [cmd for cmd in ext_file_cmd_str if(cmd in arg_str)]:
                 pylibvw.vw.run_parser(self)
                 self.parser_ran = True
