@@ -42,10 +42,10 @@ vw* setup(options_i& options)
   }
   all->vw_is_main = true;
 
-  auto skip_driver = options.get_typed_option<bool>("dry_run").value();
+  auto skip_driver = all->options->get_typed_option<bool>("dry_run").value();
 
   // output list of enabled reductions
-  if (!all->logger.quiet && !options.was_supplied("audit_regressor") && !all->enabled_reductions.empty())
+  if (!all->logger.quiet && !all->options->was_supplied("audit_regressor") && !all->enabled_reductions.empty())
   {
     const char* const delim = ", ";
     std::ostringstream imploded;
@@ -55,7 +55,7 @@ vw* setup(options_i& options)
     all->trace_message << "Enabled reductions: " << imploded.str() << all->enabled_reductions.back() << std::endl;
   }
 
-  if (!skip_driver && !all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
+  if (!skip_driver && !all->logger.quiet && !all->bfgs && !all->searchstr && !all->options->was_supplied("audit_regressor"))
   {
     all->trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
                        << " " << std::setw(shared_data::col_since_last) << std::left << "since"

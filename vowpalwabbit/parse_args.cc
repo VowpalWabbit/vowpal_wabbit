@@ -341,7 +341,7 @@ void parse_affix_argument(vw& all, std::string str)
   free(cstr);
 }
 
-void parse_diagnostics(options_i& options, vw& all)
+void parse_diagnostics(vw& all)
 {
   bool version_arg = false;
   bool help = false;
@@ -358,7 +358,7 @@ void parse_diagnostics(options_i& options, vw& all)
                .help("Parse arguments and print corresponding metadata. Will not execute driver."))
       .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
-  options.add_and_parse(diagnostic_group);
+  all.options->add_and_parse(diagnostic_group);
 
   // pass all.logger.quiet around
   if (all.all_reduce) all.all_reduce->quiet = all.logger.quiet;
@@ -370,7 +370,7 @@ void parse_diagnostics(options_i& options, vw& all)
     exit(0);
   }
 
-  if (options.was_supplied("progress") && !all.logger.quiet)
+  if (all.options->was_supplied("progress") && !all.logger.quiet)
   {
     all.progress_arg = (float)::atof(progress_arg.c_str());
     // --progress interval is dual: either integer or floating-point
@@ -1334,10 +1334,10 @@ void parse_reductions(options_i& options, vw& all)
   all.l = setup_base(options, all);
 }
 
-vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_context)
+vw& parse_args(std::unique_ptr<options_i> options, trace_message_t trace_listener, void* trace_context)
 {
   vw& all = *(new vw());
-  all.options = &options;
+  all.options = std::move(options);
 
   if (trace_listener)
   {
@@ -1354,7 +1354,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     option_group_definition vw_args("VW options");
     vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
-    options.add_and_parse(vw_args);
+    all.options->add_and_parse(vw_args);
 
     if (ring_size_tmp <= 0) { THROW("ring_size should be positive"); }
     size_t ring_size = static_cast<size_t>(ring_size_tmp);
@@ -1371,7 +1371,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("feature_mask", all.feature_mask)
                  .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
                        "given, also used for initial weights."));
-    options.add_and_parse(update_args);
+    all.options->add_and_parse(update_args);
 
     option_group_definition weight_args("Weight options");
     weight_args
@@ -1383,7 +1383,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
         .add(make_option("input_feature_regularizer", all.per_feature_regularizer_input)
                  .help("Per feature regularization input file"));
-    options.add_and_parse(weight_args);
+    all.options->add_and_parse(weight_args);
 
     std::string span_server_arg;
     int span_server_port_arg;
@@ -1402,21 +1402,21 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("span_server_port", span_server_port_arg)
                  .default_value(26543)
                  .help("Port of the server for setting up spanning tree"));
-    options.add_and_parse(parallelization_args);
+    all.options->add_and_parse(parallelization_args);
 
     // total, unique_id and node must be specified together.
-    if ((options.was_supplied("total") || options.was_supplied("node") || options.was_supplied("unique_id")) &&
-        !(options.was_supplied("total") && options.was_supplied("node") && options.was_supplied("unique_id")))
+    if ((all.options->was_supplied("total") || all.options->was_supplied("node") || all.options->was_supplied("unique_id")) &&
+        !(all.options->was_supplied("total") && all.options->was_supplied("node") && all.options->was_supplied("unique_id")))
     { THROW("you must specificy unique_id, total, and node if you specify any"); }
 
-    if (options.was_supplied("span_server"))
+    if (all.options->was_supplied("span_server"))
     {
       all.all_reduce_type = AllReduceType::Socket;
       all.all_reduce = new AllReduceSockets(
           span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.logger.quiet);
     }
 
-    parse_diagnostics(options, all);
+    parse_diagnostics(all);
 
     all.initial_t = (float)all.sd->t;
     return all;
@@ -1671,10 +1671,19 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
+vw* initialize(config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+  {
+    std::unique_ptr<options_i> opts;
+    opts.reset(&options);
+    auto* all = initialize(std::move(opts), model, skipModelLoad, trace_listener, trace_context);
+    all->should_release_options = true;
+    return all;
+  }
+
 vw* initialize(
-    options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+    std::unique_ptr<options_i> options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
-  vw& all = parse_args(options, trace_listener, trace_context);
+  vw& all = parse_args(std::move(options), trace_listener, trace_context);
 
   try
   {
@@ -1683,32 +1692,32 @@ vw* initialize(
     if (!model)
     {
       std::vector<std::string> all_initial_regressor_files(all.initial_regressors);
-      if (options.was_supplied("input_feature_regularizer"))
+      if (all.options->was_supplied("input_feature_regularizer"))
       { all_initial_regressor_files.push_back(all.per_feature_regularizer_input); }
       read_regressor_file(all, all_initial_regressor_files, localModel);
       model = &localModel;
     }
 
     // Loads header of model files and loads the command line options into the options object.
-    load_header_merge_options(options, all, *model);
+    load_header_merge_options(*all.options.get(), all, *model);
 
     std::vector<std::string> dictionary_nses;
-    parse_modules(options, all, dictionary_nses);
-    parse_sources(options, all, *model, skipModelLoad);
+    parse_modules(*all.options.get(), all, dictionary_nses);
+    parse_sources(*all.options.get(), all, *model, skipModelLoad);
 
     // we must delay so parse_mask is fully defined.
     for (size_t id = 0; id < dictionary_nses.size(); id++) parse_dictionary_argument(all, dictionary_nses[id]);
 
-    options.check_unregistered();
+    all.options->check_unregistered();
 
     // upon direct query for help -- spit it out to stdout;
-    if (options.get_typed_option<bool>("help").value())
+    if (all.options->get_typed_option<bool>("help").value())
     {
-      cout << options.help();
+      cout << all.options->help();
       exit(0);
     }
 
-    if (!options.get_typed_option<bool>("dry_run").value()) { all.l->init_driver(); }
+    if (!all.options->get_typed_option<bool>("dry_run").value()) { all.l->init_driver(); }
 
     return &all;
   }
@@ -1769,11 +1778,11 @@ vw* initialize_escaped(
 vw* initialize(
     int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
-  options_i* options = new config::options_boost_po(argc, argv);
-  vw* all = initialize(*options, model, skipModelLoad, trace_listener, trace_context);
+  std::unique_ptr<options_i> options = VW::make_unique<config::options_boost_po>(argc, argv);
+  vw* all = initialize(std::move(options), model, skipModelLoad, trace_listener, trace_context);
 
   // When VW is deleted the options object will be cleaned up too.
-  all->should_delete_options = true;
+  all->should_release_options = false;
   return all;
 }
 

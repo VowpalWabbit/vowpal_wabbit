@@ -43,6 +43,8 @@ namespace VW
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
+vw* initialize(std::unique_ptr<config::options_i> options, io_buf* model = nullptr, bool skipModelLoad = false,
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,

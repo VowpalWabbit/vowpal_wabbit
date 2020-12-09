@@ -366,7 +366,7 @@ vw::~vw()
   }
 
   // Check if options object lifetime is managed internally.
-  if (should_delete_options) delete options;
+  if (should_release_options) options.release();
 
   // TODO: migrate all finalization into parser destructor
   if (example_parser != nullptr)
