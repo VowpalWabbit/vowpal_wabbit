@@ -9,15 +9,15 @@ MODEL_0=models/${TEST_NAME}.0.txt
 MODEL_1=models/${TEST_NAME}.1.txt
 
 # train on cluster mode
-../cluster/spanning_tree
+../cluster/spanning_tree -p 26544
 
 ../vowpalwabbit/vw -d ${TRAIN_SET_0} --readable_model ${MODEL_0} \
 --span_server localhost --total 2 --node 0 --unique_id 2333 \
--q ab --passes 1 --holdout_off &
+-q ab --passes 1 --holdout_off --span_server_port 26544 &
 
 ../vowpalwabbit/vw -d ${TRAIN_SET_1} --readable_model ${MODEL_1} \
 --span_server localhost --total 2 --node 1 --unique_id 2333 \
--q ab --passes 1 --holdout_off
+-q ab --passes 1 --holdout_off --span_server_port 26544
 
 killall spanning_tree
 
