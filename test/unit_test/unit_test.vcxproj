@@ -196,6 +196,10 @@
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />
   </Target>
   <ItemDefinitionGroup>
+    <ClCompile>	
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>	
+      <UseFullPaths>true</UseFullPaths>	
+    </ClCompile>
     <PostBuildEvent>
       <!-- This goes away if we switch to pulling in all of our boost dependencies via vcpkg -->
       <Command>xcopy /Y $(SolutionDir)packages\boost_unit_test_framework-vc141.1.70.0.0\lib\native\*.dll $(OutDir)</Command>
