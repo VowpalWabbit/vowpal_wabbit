@@ -914,7 +914,6 @@ __DATA__
     --search_task sequence --search 45 --search_alpha 1e-6 \
     --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 \
     --holdout_off --search_passes_per_policy 3 --search_interpolation policy
-        train-sets/ref/search_wsj2.dat.stdout
         train-sets/ref/search_wsj2.dat.stderr
 
 # Test 15: LBFGS on zero derivative input
