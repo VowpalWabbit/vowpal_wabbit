@@ -935,7 +935,7 @@ class DFtoVW:
         pandas.Series
             A column of empty string with as much rows as the input dataframe.
         """
-        return pd.Series([""] * self.n_rows)
+        return pd.Series(data=[""] * self.n_rows, index=self.df.index)
 
     def process_label_and_tag(self):
         """Process the label and tag into a unique column.
