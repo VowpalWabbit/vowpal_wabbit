@@ -327,7 +327,7 @@ private:
   std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
 
 public:
-  std::streambuf *cerr_backup;
+  std::streambuf* cerr_backup;
   std::ofstream cerr_filestr;
   shared_data* sd;
 

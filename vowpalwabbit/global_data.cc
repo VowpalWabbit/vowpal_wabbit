@@ -368,7 +368,7 @@ vw::~vw()
 
   if (cerr_backup)
   {
-    std::cerr.rdbuf(cerr_backup);  
+    std::cerr.rdbuf(cerr_backup);
     cerr_filestr.close();
     cerr_backup = nullptr;
   }
