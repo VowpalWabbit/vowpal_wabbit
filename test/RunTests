@@ -2055,4 +2055,10 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/ccb_test_interactions.stderr
     train-sets/ref/w_out_slot_ns.interactions
 
+# Test 260: test cerr redirect
+{VW} --cb_explore_adf --synthcover --epsilon 0.01 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_synthcover.predict --cerr cbe_adf_synthcover_cerr.txt
+    train-sets/ref/empty.stderr
+    train-sets/ref/cbe_adf_synthcover_cerr.txt
+    pred-sets/ref/cbe_adf_synthcover.predict
+
 # Do not delete this line or the empty line above it
