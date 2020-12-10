@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
   argv[argc++] = const_cast<char*>(q.c_str());
 
   std::unique_ptr<options_boost_po, options_deleter_type> ptr(
-      new options_boost_po(argc, argv), default_options_deleter);
+      new options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
   ptr->add_and_parse(driver_config);
   alls.push_back(setup(std::move(ptr)));
   if (converter.collection_size > 0) { converter.collection = true; }

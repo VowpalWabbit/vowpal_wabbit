@@ -58,7 +58,6 @@ typedef float weight;
 typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
 typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::config::options_i&, vw&);
 
-auto default_options_deleter = [](VW::config::options_i* ptr) { delete ptr; };
 using options_deleter_type = std::function<void(VW::config::options_i*)>;
 
 struct dictionary_info

@@ -1781,7 +1781,7 @@ vw* initialize(
     int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   std::unique_ptr<options_i, options_deleter_type> options(
-      new config::options_boost_po(argc, argv), default_options_deleter);
+      new config::options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
   return initialize(std::move(options), model, skipModelLoad, trace_listener, trace_context);
 }
 
