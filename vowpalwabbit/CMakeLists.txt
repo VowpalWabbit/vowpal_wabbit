@@ -350,6 +350,7 @@ if(BUILD_FLATBUFFERS)
   target_compile_definitions(vw PUBLIC BUILD_FLATBUFFERS)
 endif()
 
+
 add_library(VowpalWabbit::vw ALIAS vw)
 
 if(GCOV)

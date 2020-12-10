@@ -981,8 +981,14 @@ class VWMultiClassifier(VWClassifier):
         >>> y = np.array([1, 1, 2, 2, 3, 3])
         >>> from vowpalwabbit.sklearn_vw import VWMultiClassifier
         >>> model = VWMultiClassifier(oaa=3, loss_function='logistic')
-        >>> model.fit(X, y)
+        >>> _ = model.fit(X, y)
         >>> model.predict_proba(X)
+        array([[0.38928846, 0.30534211, 0.30536944],
+               [0.40664235, 0.29666999, 0.29668769],
+               [0.52324486, 0.23841164, 0.23834346],
+               [0.5268591 , 0.23660533, 0.23653553],
+               [0.65397811, 0.17312808, 0.17289382],
+               [0.61190444, 0.19416356, 0.19393198]])
         """
         return VW.predict(self, X=X)
 
@@ -1032,6 +1038,7 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
     >>> hv = HashingVectorizer()
     >>> hashed = hv.fit_transform(X)
     >>> tovw(x=hashed, y=y)
+    ['-1 1 | 300839:1', '1 1 | 980517:-1', '-1 1 | 300839:1', '-1 1 | 300839:1']
     """
 
     use_truth = y is not None
