@@ -14,7 +14,7 @@ using namespace VW::config;
 
 #define NORM2 (m + 1)
 
-struct oja_n_update_data
+struct update_data
 {
   struct OjaNewton* ON;
   float g;
@@ -49,7 +49,7 @@ struct OjaNewton
 
   example** buffer;
   float* weight_buffer;
-  struct oja_n_update_data data;
+  struct update_data data;
 
   float learning_rate_cnt;
   bool normalize;
@@ -338,7 +338,7 @@ struct OjaNewton
 
 void keep_example(vw& all, OjaNewton& /* ON */, example& ec) { output_and_account_example(all, ec); }
 
-void make_pred(oja_n_update_data& data, float x, float& wref)
+void make_pred(update_data& data, float x, float& wref)
 {
   int m = data.ON->m;
   float* w = &wref;
@@ -352,12 +352,12 @@ void make_pred(oja_n_update_data& data, float x, float& wref)
 void predict(OjaNewton& ON, base_learner&, example& ec)
 {
   ON.data.prediction = 0;
-  GD::foreach_feature<oja_n_update_data, make_pred>(*ON.all, ec, ON.data);
+  GD::foreach_feature<update_data, make_pred>(*ON.all, ec, ON.data);
   ec.partial_prediction = (float)ON.data.prediction;
   ec.pred.scalar = GD::finalize_prediction(ON.all->sd, ON.all->logger, ec.partial_prediction);
 }
 
-void update_Z_and_wbar(oja_n_update_data& data, float x, float& wref)
+void update_Z_and_wbar(update_data& data, float x, float& wref)
 {
   float* w = &wref;
   int m = data.ON->m;
@@ -368,7 +368,7 @@ void update_Z_and_wbar(oja_n_update_data& data, float x, float& wref)
   w[0] -= s * data.bdelta;
 }
 
-void compute_Zx_and_norm(oja_n_update_data& data, float x, float& wref)
+void compute_Zx_and_norm(update_data& data, float x, float& wref)
 {
   float* w = &wref;
   int m = data.ON->m;
@@ -378,7 +378,7 @@ void compute_Zx_and_norm(oja_n_update_data& data, float x, float& wref)
   data.norm2_x += x * x;
 }
 
-void update_wbar_and_Zx(oja_n_update_data& data, float x, float& wref)
+void update_wbar_and_Zx(update_data& data, float x, float& wref)
 {
   float* w = &wref;
   int m = data.ON->m;
@@ -390,7 +390,7 @@ void update_wbar_and_Zx(oja_n_update_data& data, float x, float& wref)
   w[0] -= g / data.ON->alpha;
 }
 
-void update_normalization(oja_n_update_data& data, float x, float& wref)
+void update_normalization(update_data& data, float x, float& wref)
 {
   float* w = &wref;
   int m = data.ON->m;
@@ -403,11 +403,11 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
   // predict
   predict(ON, base, ec);
 
-  oja_n_update_data& data = ON.data;
+  update_data& data = ON.data;
   data.g = ON.all->loss->first_derivative(ON.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.l.simple.weight;
   data.g /= 2;  // for half square loss
 
-  if (ON.normalize) GD::foreach_feature<oja_n_update_data, update_normalization>(*ON.all, ec, data);
+  if (ON.normalize) GD::foreach_feature<update_data, update_normalization>(*ON.all, ec, data);
 
   ON.buffer[ON.cnt] = &ec;
   ON.weight_buffer[ON.cnt++] = data.g / 2;
@@ -421,7 +421,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
 
       data.norm2_x = 0;
       memset(data.Zx, 0, sizeof(float) * (ON.m + 1));
-      GD::foreach_feature<oja_n_update_data, compute_Zx_and_norm>(*ON.all, ex, data);
+      GD::foreach_feature<update_data, compute_Zx_and_norm>(*ON.all, ex, data);
       ON.compute_AZx();
 
       ON.update_eigenvalues();
@@ -429,7 +429,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
 
       ON.update_K();
 
-      GD::foreach_feature<oja_n_update_data, update_Z_and_wbar>(*ON.all, ex, data);
+      GD::foreach_feature<update_data, update_Z_and_wbar>(*ON.all, ex, data);
     }
 
     ON.update_A();
@@ -437,7 +437,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
   }
 
   memset(data.Zx, 0, sizeof(float) * (ON.m + 1));
-  GD::foreach_feature<oja_n_update_data, update_wbar_and_Zx>(*ON.all, ec, data);
+  GD::foreach_feature<update_data, update_wbar_and_Zx>(*ON.all, ec, data);
   ON.compute_AZx();
 
   ON.update_b();
