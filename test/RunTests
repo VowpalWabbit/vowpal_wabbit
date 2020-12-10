@@ -914,7 +914,6 @@ __DATA__
     --search_task sequence --search 45 --search_alpha 1e-6 \
     --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 \
     --holdout_off --search_passes_per_policy 3 --search_interpolation policy
-        train-sets/ref/search_wsj2.dat.stdout
         train-sets/ref/search_wsj2.dat.stderr
 
 # Test 15: LBFGS on zero derivative input
@@ -1138,7 +1137,7 @@ echo "" | {VW}
     train-sets/ref/empty-set.stderr
 
 # Test 61: daemon test
-./daemon-test.sh
+./daemon-test.sh --port 54249
     test-sets/ref/vw-daemon.stdout
 
 # Test 62: SVM linear kernel
@@ -1571,7 +1570,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/0151.stderr
 
 # Test 152: daemon on the foreground test
-./daemon-test.sh --foreground
+./daemon-test.sh --foreground --port 54250
     test-sets/ref/vw-daemon.stdout
 
 # Test 153: marginal features
@@ -1621,11 +1620,11 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/classweight_recall_tree.stderr
 
 # Test 164: cs_active low mellowness
-{VW} --cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 0.01 --simulation --adax
+{VW} --cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 0.01 --simulation --adax
     train-sets/ref/cs_active_0.01.stderr
 
 # Test 165: cs_active high mellowness
-{VW} --cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 1.0 --simulation --adax
+{VW} --cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 1.0 --simulation --adax
     train-sets/ref/cs_active_1.0.stderr
 
 # Test 166: hash_seed train
@@ -1875,7 +1874,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/plt_top1_multilabel.predict
 
 # Test 220: daemon test with json
-./daemon-test.sh --json
+./daemon-test.sh --json --port 54251
     test-sets/ref/vw-daemon.stdout
 
 # Test 221: cbify adf, squarecb
@@ -2046,5 +2045,14 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} --cb_explore_adf --synthcover --epsilon 0.01 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_synthcover.predict
     train-sets/ref/cbe_adf_synthcover.stderr
     pred-sets/ref/cbe_adf_synthcover.predict
+
+# Test 258: cb data consumed by ccb_explore_adf reduction
+{VW} --ccb_explore_adf --dsjson --epsilon 0.2 -d train-sets/cb_as_ccb.json
+    train-sets/ref/cb_as_ccb.stderr
+
+# Test 259: CCB interactions with slot with default namespace
+{VW} -d train-sets/ccb_test_interactions.dat --ccb_explore_adf --invert_hash w_out_slot_ns.interactions -q ::
+    train-sets/ref/ccb_test_interactions.stderr
+    train-sets/ref/w_out_slot_ns.interactions
 
 # Do not delete this line or the empty line above it
