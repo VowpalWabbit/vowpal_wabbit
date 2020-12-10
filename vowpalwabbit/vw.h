@@ -99,7 +99,7 @@ example* read_example(vw& all, std::string example_line);
 // after you create and fill feature_spaces, get an example with everything filled in.
 example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len);
 
-// callers must free memory using release_example
+// callers must free memory using dealloc_example
 // this interface must be used with care as finish_example is a no-op for these examples.
 // thus any delay introduced when freeing examples must be at least as long as the one
 // introduced by all.l->finish_example implementations.
