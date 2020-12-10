@@ -1334,7 +1334,8 @@ void parse_reductions(options_i& options, vw& all)
   all.l = setup_base(options, all);
 }
 
-vw& parse_args(std::unique_ptr<options_i> options, trace_message_t trace_listener, void* trace_context)
+vw& parse_args(
+    std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener, void* trace_context)
 {
   vw& all = *(new vw());
   all.options = std::move(options);
@@ -1676,15 +1677,13 @@ void free_args(int argc, char* argv[])
 vw* initialize(
     config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
-  std::unique_ptr<options_i> opts;
-  opts.reset(&options);
-  auto* all = initialize(std::move(opts), model, skipModelLoad, trace_listener, trace_context);
-  all->should_release_options = true;
-  return all;
+  std::unique_ptr<options_i, options_deleter_type> opts(&options, [](VW::config::options_i*) {});
+
+  return initialize(std::move(opts), model, skipModelLoad, trace_listener, trace_context);
 }
 
-vw* initialize(std::unique_ptr<options_i> options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener,
-    void* trace_context)
+vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skipModelLoad,
+    trace_message_t trace_listener, void* trace_context)
 {
   vw& all = parse_args(std::move(options), trace_listener, trace_context);
 
@@ -1781,12 +1780,9 @@ vw* initialize_escaped(
 vw* initialize(
     int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
-  std::unique_ptr<options_i> options = VW::make_unique<config::options_boost_po>(argc, argv);
-  vw* all = initialize(std::move(options), model, skipModelLoad, trace_listener, trace_context);
-
-  // When VW is deleted the options object will be cleaned up too.
-  all->should_release_options = false;
-  return all;
+  std::unique_ptr<options_i, options_deleter_type> options(
+      new config::options_boost_po(argc, argv), default_options_deleter);
+  return initialize(std::move(options), model, skipModelLoad, trace_listener, trace_context);
 }
 
 // Create a new VW instance while sharing the model with another instance

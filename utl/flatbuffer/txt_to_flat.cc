@@ -23,7 +23,7 @@
 
 using namespace VW::config;
 
-vw* setup(std::unique_ptr<options_i> options)
+vw* setup(std::unique_ptr<options_i, options_deleter_type> options)
 {
   vw* all = nullptr;
   try
@@ -76,7 +76,8 @@ int main(int argc, char* argv[])
   std::string q("--quiet");
   argv[argc++] = const_cast<char*>(q.c_str());
 
-  std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
+  std::unique_ptr<options_boost_po, options_deleter_type> ptr(
+      new options_boost_po(argc, argv), default_options_deleter);
   ptr->add_and_parse(driver_config);
   alls.push_back(setup(std::move(ptr)));
   if (converter.collection_size > 0) { converter.collection = true; }
