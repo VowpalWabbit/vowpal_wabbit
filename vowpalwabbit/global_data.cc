@@ -243,6 +243,7 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 
 vw::vw()
 {
+  cerr_backup = nullptr;
   sd = &calloc_or_throw<shared_data>();
   sd->dump_interval = 1.;  // next update progress dump
   sd->contraction = 1.;
@@ -363,6 +364,13 @@ vw::~vw()
   {
     l->finish();
     free(l);
+  }
+
+  if (cerr_backup)
+  {
+    std::cerr.rdbuf(cerr_backup);  
+    cerr_filestr.close();
+    cerr_backup = nullptr;
   }
 
   // Check if options object lifetime is managed internally.

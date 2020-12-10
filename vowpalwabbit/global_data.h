@@ -18,6 +18,7 @@
 #include <array>
 #include <memory>
 #include <atomic>
+#include <fstream>
 #include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
@@ -326,6 +327,8 @@ private:
   std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
 
 public:
+  std::streambuf *cerr_backup;
+  std::ofstream cerr_filestr;
   shared_data* sd;
 
   parser* example_parser;
