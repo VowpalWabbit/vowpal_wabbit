@@ -101,8 +101,9 @@ table MultiExample
   // TODO rename to examples?
   namespaces:[Namespace];
   shared:Label;
-  label:Label; // right now just cb_label
+  labels:[Label];
   label_index:uint32; // TODO rename to index
+  label_index_set:bool = false;
   /// tag?
 }
 

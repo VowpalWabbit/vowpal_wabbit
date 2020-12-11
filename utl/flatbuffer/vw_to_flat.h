@@ -16,8 +16,8 @@ struct MultiExampleBuilder
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;
   VW::parsers::flatbuffer::Label shared_type = VW::parsers::flatbuffer::Label_NONE;
   flatbuffers::Offset<void> shared;
-  VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
-  flatbuffers::Offset<void> label;
+  std::vector<uint8_t> label_types;
+  std::vector<flatbuffers::Offset<void>> labels;
   uint32_t label_index = 0;
   bool label_index_set = false;
 };
@@ -45,6 +45,7 @@ private:
   void create_cb_label(example* v, ExampleBuilder& ex_builder);
   void create_cb_label_multi_ex(example* v, MultiExampleBuilder& ex_builder);
   void create_ccb_label(example* v, ExampleBuilder& ex_builder);
+  void create_ccb_label_multi_ex(example* v, MultiExampleBuilder& ex_builder);
   void create_cb_eval_label(example* v, ExampleBuilder& ex_builder);
   void create_mc_label(VW::named_labels* ldict, example* v, ExampleBuilder& ex_builder);
   void create_multi_label(example* v, ExampleBuilder& ex_builder);

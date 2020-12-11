@@ -150,19 +150,33 @@ void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
   all->example_parser->lbl_parser.default_label(&ae->l);
   if (_multi_ex_index >= eg->namespaces()->Length())
   {
+    // TODO make object and reset?
     // done with multi example, send a newline example and reset
     _multi_ex_index = 0;
     _active_multi_ex = 0;
     _multi_example_object = nullptr;
+    _shared_found = false;
     return;
   }
 
   if ((eg->shared_type() != VW::parsers::flatbuffer::Label_NONE) && _multi_ex_index == 0)
-  { parse_flat_label(all->sd, ae, eg->shared_type(), eg->shared(), all->label_type); }
-  else if (eg->label_type() != VW::parsers::flatbuffer::Label_NONE)
   {
-    if (eg->label_index() == _multi_ex_index)
-    { parse_flat_label(all->sd, ae, eg->label_type(), eg->label(), all->label_type); }
+    parse_flat_label(all->sd, ae, eg->shared_type(), eg->shared(), all->label_type);
+    _shared_found = true;
+  }
+  else if (eg->label_index() == _multi_ex_index && eg->label_index_set())
+  {
+    parse_flat_label(all->sd, ae, static_cast<VW::parsers::flatbuffer::Label>(eg->labels_type()->Get(0)),
+        eg->labels()->Get(0), all->label_type);
+    // if (eg->label_index() == _multi_ex_index)
+    // { parse_flat_label(all->sd, ae, eg->label_type(), eg->label(), all->label_type); }
+  }
+  else if (eg->labels()->Length() > 1)
+  {
+    auto i = _multi_ex_index;
+    if (_shared_found) { i--; }
+    parse_flat_label(all->sd, ae, static_cast<VW::parsers::flatbuffer::Label>(eg->labels_type()->Get(i)),
+        eg->labels()->Get(i), all->label_type);
   }
 
   parse_namespaces(all, ae, eg->namespaces()->Get(_multi_ex_index));
