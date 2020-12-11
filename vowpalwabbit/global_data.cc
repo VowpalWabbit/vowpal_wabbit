@@ -374,7 +374,7 @@ vw::~vw()
     cerr_filestr.close();
     cerr_backup = nullptr;
   }
-  
+
   if (cout_backup)
   {
     std::cout.rdbuf(cout_backup);

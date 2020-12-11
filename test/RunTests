@@ -2060,7 +2060,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/help.stderr
     train-sets/ref/help.stdout
 
-# Test 261: test cerr redirect
+# Test 261: test cerr/cout redirect
 {VW} --cb_explore_adf --synthcover --epsilon 0.01 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_synthcover.predict --cerr cbe_adf_synthcover_cerr.txt --cout cbe_adf_synthcover_cout.txt
     train-sets/ref/empty.stderr
     train-sets/ref/empty.stdout
