@@ -28,6 +28,8 @@
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v141</PlatformToolset>
     <VcpkgOSTarget Condition="'$(VcpkgPlatformToolset)'=='v141'">windows-v141</VcpkgOSTarget>
+    <VWFlatbufferSchemaLoc>$(SolutionDir)</VWFlatbufferSchemaLoc>
+    <VWFlatbufferSchemaLoc Condition="!Exists('$(SolutionDir)\parser\flatbuffer\schema\example.fbs')">$(SolutionDir)\ext_libs\vowpal_wabbit\vowpalwabbit</VWFlatbufferSchemaLoc>
     <!-- This is the ruleset file for code analysis, you can change it in VS -->
     <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
@@ -105,7 +107,7 @@
     <PreBuildEvent>
       <Message>Generate FlatBuffer</Message>
       <Command>
-        $(flatcPath) -o $(SolutionDir)parser\flatbuffer\generated\ --cpp $(SolutionDir)parser\flatbuffer\schema\example.fbs
+        $(flatcPath) -o $(VWFlatbufferSchemaLoc)\parser\flatbuffer\generated\ --cpp $(VWFlatbufferSchemaLoc)\parser\flatbuffer\schema\example.fbs
         win32\make_config_h.exe
       </Command>
     </PreBuildEvent>
