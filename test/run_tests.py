@@ -114,10 +114,10 @@ def is_line_different(output_line, ref_line, epsilon):
                 found_close_floats = True
                 continue
             else:
-                return True, f"Floats don't match {output_token} {ref_token}", found_close_floats
+                return True, "Floats don't match {} {}".format((output_token), (ref_token)), found_close_floats
         else:
             if output_token != ref_token:
-                return True, f"Mismatch at token {output_token} {ref_token}", found_close_floats
+                return True, "Mismatch at token {} {}".format((output_token), (ref_token)), found_close_floats
 
     return False, "", found_close_floats
 
@@ -139,7 +139,7 @@ def are_lines_different(output_lines, ref_lines, epsilon, fuzzy_compare=False):
                 return True, reason
         else:
             if output_line != ref_line:
-                return True, f"Lines differ - ref vs output: '{ref_line}' vs '{output_line}'"
+                return True, "Lines differ - ref vs output: '{}' vs '{}'".format((ref_line), (output_line))
 
     return False, "Minor float difference ignored" if found_close_floats else ""
 
@@ -236,7 +236,7 @@ def run_command_line_test(id,
         else:
             working_dir = create_test_dir(
                 id, input_files, base_working_dir, ref_dir, dependencies=dependencies)
-            cmd = f"{command_line}".split()
+            cmd = "{}".format((command_line)).split()
 
         try:
             result = subprocess.run(
@@ -252,7 +252,7 @@ def run_command_line_test(id,
             checks = dict()
             checks["timeout"] = {
                 "success": False,
-                "message": f"{e.cmd} timed out",
+                "message": "{} timed out".format((e.cmd)),
                 "stdout": stdout,
                 "stderr": stderr
             }
@@ -269,7 +269,7 @@ def run_command_line_test(id,
         checks = dict()
         checks["error_code"] = {
             "success": return_code == 0,
-            "message": f"Exited with {return_code}",
+            "message": "Exited with {}".format((return_code)),
             "stdout": stdout,
             "stderr": stderr
         }
@@ -288,7 +288,7 @@ def run_command_line_test(id,
                 else:
                     checks[output_file] = {
                         "success": False,
-                        "message": f"Failed to open output file: {output_file}",
+                        "message": "Failed to open output file: {}".format((output_file)),
                         "diff": []
                     }
                     continue
@@ -299,7 +299,7 @@ def run_command_line_test(id,
             else:
                 checks[output_file] = {
                     "success": False,
-                    "message": f"Failed to open ref file: {ref_file}",
+                    "message": "Failed to open ref file: {}".format((ref_file)),
                     "diff": []
                 }
                 continue
@@ -307,9 +307,9 @@ def run_command_line_test(id,
                                                                 ref_content, ref_file, overwrite, epsilon, fuzzy_compare=fuzzy_compare)
 
             if are_different:
-                message = f"Diff not OK, {reason}"
+                message = "Diff not OK, {}".format((reason))
             else:
-                message = f"Diff OK, {reason}"
+                message = "Diff OK, {}".format((reason))
 
             checks[output_file] = {
                 "success": are_different == False,
@@ -356,7 +356,7 @@ completed_tests = Completion()
 
 
 def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependencies=None):
-    test_working_dir = Path(test_base_dir).joinpath(f"test_{test_id}")
+    test_working_dir = Path(test_base_dir).joinpath("test_{}".format((test_id)))
     Path(test_working_dir).mkdir(parents=True, exist_ok=True)
 
     # Required as workaround until #2686 is fixed.
@@ -368,14 +368,14 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
         search_paths = [Path(test_ref_dir).joinpath(file)]
         if dependencies is not None:
             search_paths.extend([Path(test_base_dir).joinpath(
-                f"test_{x}", file) for x in dependencies])
+                "test_{}".format((x)), file) for x in dependencies])
         for search_path in search_paths:
             if search_path.exists() and not search_path.is_dir():
                 file_to_copy = search_path
                 break
 
         if file_to_copy is None:
-            raise ValueError(f"{file} couldn't be found for test {test_id}")
+            raise ValueError("{} couldn't be found for test {}".format((file), (test_id)))
 
         test_dest_file = Path(test_working_dir).joinpath(file)
         Path(test_dest_file.parent).mkdir(parents=True, exist_ok=True)
@@ -424,14 +424,14 @@ def main():
     TEST_BASE_REF_DIR = args.ref_dir
 
     if Path(TEST_BASE_WORKING_DIR).is_file():
-        print(f"--working_dir='{TEST_BASE_WORKING_DIR}' cannot be a file")
+        print("--working_dir='{}' cannot be a file".format((TEST_BASE_WORKING_DIR)))
         sys.exit(1)
 
     if not Path(TEST_BASE_WORKING_DIR).exists():
         Path(TEST_BASE_WORKING_DIR).mkdir(parents=True, exist_ok=True)
 
     if not Path(TEST_BASE_REF_DIR):
-        print(f"--ref_dir='{TEST_BASE_REF_DIR}' doesn't exist")
+        print("--ref_dir='{}' doesn't exist".format((TEST_BASE_REF_DIR)))
         sys.exit(1)
 
     if not args.ignore_dirty:
@@ -451,7 +451,7 @@ def main():
             print(stdout)
             sys.exit(1)
 
-    print(f"Testing on: hostname={socket.gethostname()}, OS={sys.platform}")
+    print("Testing on: hostname={}, OS={}".format((socket.gethostname()), (sys.platform)))
 
     if args.vw_bin_path is None:
         vw_search_paths = [
@@ -464,10 +464,10 @@ def main():
         vw_bin = find_in_path(vw_search_paths, is_vw_binary)
     else:
         if not Path(args.vw_bin_path).exists() or not Path(args.vw_bin_path).is_file():
-            print(f"Invalid vw binary path: {args.vw_bin_path}")
+            print("Invalid vw binary path: {}".format((args.vw_bin_path)))
         vw_bin = args.vw_bin_path
 
-    print(f"Using VW binary: {vw_bin}")
+    print("Using VW binary: {}".format((vw_bin)))
 
     if args.spanning_tree_bin_path is None:
         spanning_tree_search_path = [
@@ -482,10 +482,10 @@ def main():
     else:
         if not Path(args.spanning_tree_bin_path).exists() or not Path(args.spanning_tree_bin_path).is_file():
             print(
-                f"Invalid spanning tree binary path: {args.spanning_tree_bin_path}")
+                "Invalid spanning tree binary path: {}".format((args.spanning_tree_bin_path)))
         spanning_tree_bin = args.spanning_tree_bin_path
 
-    print(f"Using spanning tree binary: {spanning_tree_bin}")
+    print("Using spanning tree binary: {}".format((spanning_tree_bin)))
 
     if args.test_spec is None:
         def is_runtests_file(file_path):
@@ -497,11 +497,11 @@ def main():
         runtests_file = find_in_path(possible_runtests_paths, is_runtests_file)
         tests = runtests_parser.file_to_obj(runtests_file)
         tests = [x.__dict__ for x in tests]
-        print(f"Tests parsed from RunTests file: {runtests_file}")
+        print("Tests parsed from RunTests file: {}".format((runtests_file)))
     else:
         json_test_spec_content = open(args.test_spec).read()
         tests = json.loads(json_test_spec_content)
-        print(f"Tests read from test spec file: {args.test_spec}")
+        print("Tests read from test spec file: {}".format((args.test_spec)))
 
     print()
 
@@ -523,10 +523,10 @@ def main():
             tests_to_run_explicitly.add(test_number)
             tests_to_run_explicitly = set.union(
                 tests_to_run_explicitly, get_deps(test_number, tests))
-        print(f"Running tests: {list(tests_to_run_explicitly)}")
+        print("Running tests: {}".format((list(tests_to_run_explicitly))))
         if len(args.test) != len(tests_to_run_explicitly):
             print(
-                f"Note: due to test dependencies, more than just tests {args.test} must be run")
+                "Note: due to test dependencies, more than just tests {} must be run".format((args.test)))
 
     executor = ThreadPoolExecutor(max_workers=args.jobs)
     for test in tests:
@@ -546,15 +546,15 @@ def main():
         if "bash_command" in test:
             if sys.platform == "win32":
                 print(
-                    f"Skipping test number '{test_number}' as bash_command is unsupported on Windows.")
+                    "Skipping test number '{}' as bash_command is unsupported on Windows.".format((test_number)))
                 continue
             command_line = test['bash_command'].format(
                 VW=vw_bin, SPANNING_TREE=spanning_tree_bin)
             is_shell = True
         elif "vw_command" in test:
-            command_line = f"{vw_bin} {test['vw_command']}"
+            command_line = "{} {}".format((vw_bin), (test['vw_command']))
         else:
-            print(f"{test_number} is an unknown type. Skipping...")
+            print("{} is an unknown type. Skipping...".format((test_number)))
             continue
 
         tasks.append(executor.submit(run_command_line_test, test_number, command_line, test["diff_files"],
@@ -579,9 +579,9 @@ def main():
         finally:
             tasks.pop(0)
 
-        success_text = f"{Color.OKGREEN}Success{Color.ENDC}"
-        fail_text = f"{Color.FAIL}Fail{Color.ENDC}"
-        skipped_text = f"{Color.OKCYAN}Skip{Color.ENDC}"
+        success_text = "{}Success{}".format((Color.OKGREEN), (Color.ENDC))
+        fail_text = "{}Fail{}".format((Color.FAIL), (Color.ENDC))
+        skipped_text = "{}Skip{}".format((Color.OKCYAN), (Color.ENDC))
         num_success += result['result'] == Result.SUCCESS
         num_fail += result['result'] == Result.FAIL
         num_skip += result['result'] == Result.SKIPPED
@@ -593,17 +593,17 @@ def main():
         else:
             result_text = skipped_text
 
-        print(f"Test {test_number}: {result_text}")
+        print("Test {}: {}".format((test_number), (result_text)))
         if not result['result'] == Result.SUCCESS:
             test = tests[test_number - 1]
-            print(f"\tDescription: {test['desc']}")
+            print("\tDescription: {}".format((test['desc'])))
             if 'vw_command' in test:
-                print(f"\tvw_command: \"{test['vw_command']}\"")
+                print("\tvw_command: \"{}\"".format((test['vw_command'])))
             if 'bash_command' in test:
-                print(f"\tbash_command: \"{test['bash_command']}\"")
+                print("\tbash_command: \"{}\"".format((test['bash_command'])))
         for name, check in result["checks"].items():
             print(
-                f"\t[{name}] {success_text if check['success'] else fail_text}: {check['message']}")
+                "\t[{}] {}: {}".format((name), (success_text if check['success'] else fail_text), (check['message'])))
             if not check['success']:
                 if name == "error_code":
                     print("---- stdout ----")
@@ -623,9 +623,9 @@ def main():
                         task.cancel()
                     sys.exit(1)
     print("-----")
-    print(f"# Success: {num_success}")
-    print(f"# Fail: {num_fail}")
-    print(f"# Skip: {num_skip}")
+    print("# Success: {}".format((num_success)))
+    print("# Fail: {}".format((num_fail)))
+    print("# Skip: {}".format((num_skip)))
 
 
 if __name__ == "__main__":
