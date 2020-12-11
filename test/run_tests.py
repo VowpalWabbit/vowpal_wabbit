@@ -346,10 +346,10 @@ def create_test_dir(id, input_files, test_base_dir, test_ref_dir, dependencies=N
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', "--test", type=int, help="Run a single test")
-    parser.add_argument('-E', "--epsilon", type=float, default=1e-4)
+    parser.add_argument('-E', "--epsilon", type=float, default=1e-3)
     parser.add_argument('-e', "--exit_first_fail", action='store_true')
     parser.add_argument('-o', "--overwrite", action='store_true')
-    parser.add_argument('-j', "--jobs", type=int, default=1)
+    parser.add_argument('-j', "--jobs", type=int, default=4)
     args = parser.parse_args()
 
 
