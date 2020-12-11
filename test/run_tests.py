@@ -267,7 +267,7 @@ def run_command_line_test(id,
         stderr = try_decode(result.stderr)
 
         checks = dict()
-        checks["error_code"] = {
+        checks["exit_code"] = {
             "success": return_code == 0,
             "message": "Exited with {}".format((return_code)),
             "stdout": stdout,
@@ -426,7 +426,8 @@ def main():
 
     # Flatten nested lists for arg.test argument.
     # Ideally we would have used action="extend", but that was added in 3.8
-    args.test = [item for sublist in args.test for item in sublist]
+    if args.test is not None:
+        args.test = [item for sublist in args.test for item in sublist]
 
     if Path(TEST_BASE_WORKING_DIR).is_file():
         print("--working_dir='{}' cannot be a file".format((TEST_BASE_WORKING_DIR)))
@@ -607,21 +608,21 @@ def main():
             if 'bash_command' in test:
                 print("\tbash_command: \"{}\"".format((test['bash_command'])))
         for name, check in result["checks"].items():
+            # Don't print exit_code check as it is too much noise.
+            if check['success'] and name == "exit_code":
+                continue
             print(
                 "\t[{}] {}: {}".format((name), (success_text if check['success'] else fail_text), (check['message'])))
             if not check['success']:
-                if name == "error_code":
+                if name == "exit_code":
                     print("---- stdout ----")
-                    print(result["checks"]["error_code"]["stdout"])
+                    print(result["checks"]["exit_code"]["stdout"])
                     print("---- stderr ----")
-                    print(result["checks"]["error_code"]["stderr"])
+                    print(result["checks"]["exit_code"]["stderr"])
 
                 if "diff" in check:
                     print()
-                    if(len(check["diff"]) > 100):
-                        print("Skipping large diff for now...")
-                    else:
-                        print_colored_diff(check["diff"])
+                    print_colored_diff(check["diff"])
                     print()
                 if args.exit_first_fail:
                     for task in tasks:
