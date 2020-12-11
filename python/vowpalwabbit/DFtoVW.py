@@ -649,7 +649,7 @@ class DFtoVW:
         ...                            Namespace(name="NS2", features=Feature("b"))])
         >>> conv4.convert_df()
         ['1 |NS1 a:2 c:4 |NS2 b:3']
-        
+
         Returns
         -------
         self : DFtoVW
@@ -676,14 +676,14 @@ class DFtoVW:
 
         Parameters
         ----------
-        y : str/list of str
+        y : (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
             The column for the label.
-        x : str/list of str
+        x : (list of) any hashable type (str/int/float/tuple/etc.) representing a column name
             The column(s) for the feature(s).
         df : pandas.DataFrame
             The dataframe used.
         label_type: str (default: 'simple_label')
-            The type of the label. Available labels: 'simple_label', 'multiclass', 'multilabel'.
+            The type of the label. Available labels: 'simple_label', 'multiclass_label', 'multi_label', 'contextual_bandit_label'
 
         Raises
         ------
@@ -713,8 +713,9 @@ class DFtoVW:
         """
         dict_label_type = {
             "simple_label": SimpleLabel,
-            "multiclass": MulticlassLabel,
-            "multilabel": MultiLabel,
+            "multiclass_label": MulticlassLabel,
+            "multi_label": MultiLabel,
+            "contextual_bandit_label": ContextualBanditLabel,
         }
 
         if label_type not in dict_label_type:
@@ -725,26 +726,19 @@ class DFtoVW:
             )
 
         y = y if isinstance(y, list) else [y]
-        if not all(isinstance(yi, str) for yi in y):
-            raise TypeError(
-                "Argument 'y' should be a string or a list of string(s)."
-            )
 
-        if label_type != "multilabel":
-            if len(y) == 1:
-                y = y[0]
+        if label_type not in ["multi_label", "contextual_bandit_label"]:
+            if len(y) > 1:
+                raise TypeError(
+                "When label_type is 'simple_label' or 'multiclass', argument 'y' should be a string (or any hashable type) "+
+                "or a list of exactly one string (or any hashable type)."
+            )
             else:
-                raise ValueError(
-                    "When label_type is 'simple_label' or 'multiclass', argument 'y' should be a string or a list of exactly one string."
-                )
+                y = y[0]
 
         label = dict_label_type[label_type](y)
 
         x = x if isinstance(x, list) else [x]
-        if not all(isinstance(xi, str) for xi in x):
-            raise TypeError(
-                "Argument 'x' should be a string or a list of string."
-            )
 
         namespaces = Namespace(
             features=[Feature(value=colname) for colname in x]
