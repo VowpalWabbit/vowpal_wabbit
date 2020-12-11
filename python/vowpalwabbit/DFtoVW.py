@@ -253,7 +253,7 @@ class SimpleLabel(object):
 
         Returns
         -------
-        str or pandas.Series
+        pandas.Series
             The SimpleLabel string representation.
         """
         return self.label.get_col(df)
@@ -294,7 +294,7 @@ class MulticlassLabel(object):
 
         Returns
         -------
-        str or pandas.Series
+        pandas.Series
             The MulticlassLabel string representation.
         """
         label_col = self.label.get_col(df)
@@ -335,7 +335,7 @@ class MultiLabel(object):
 
         Returns
         -------
-        str or pandas.Series
+        pandas.Series
             The MultiLabel string representation.
         """
         labels = self.label if isinstance(self.label, list) else [self.label]
@@ -386,7 +386,7 @@ class ContextualBanditLabel(object):
 
         Returns
         -------
-        str or pandas.Series
+        pandas.Series
             The ContextualBanditLabel string representation.
         """
         if self.is_list:
@@ -439,7 +439,7 @@ class Feature(object):
 
         Returns
         -------
-        out : str or pandas.Series
+        pandas.Series
             The Feature string representation.
         """
         name = self.rename_feature if self.rename_feature is not None else self.value.get_colname()
@@ -483,7 +483,7 @@ class _Tag(object):
 
         Returns
         -------
-        out : str or pandas.Series
+        pandas.Series
             The Tag string representation.
         """
         return self.tag.get_col(df)
