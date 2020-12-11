@@ -336,10 +336,10 @@ void to_flat::convert_txt_to_flat(vw& all)
       if (!example_is_newline(*ae))
       {
         multi_ex_builder.namespaces.insert(multi_ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
-        if (multi_ex_builder.label_index_set && multi_ex_builder.label_not_yet_set)
+        if (multi_ex_builder.label_index_set && multi_ex_builder.update_label)
         {
           multi_ex_builder.label_index = multi_ex_index;
-          multi_ex_builder.label_not_yet_set = false;
+          multi_ex_builder.update_label = false;
         }
         multi_ex_index++;
         // TODO share the namespaces

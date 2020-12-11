@@ -18,7 +18,7 @@ struct MultiExampleBuilder
   std::vector<flatbuffers::Offset<void>> labels;
   uint32_t label_index = 0;
   bool label_index_set = false;
-  bool label_not_yet_set = true;
+  bool update_label = true;
   bool shared_set = false;
   void clear()
   {
@@ -27,7 +27,7 @@ struct MultiExampleBuilder
     labels.clear();
     label_index = 0;
     label_index_set = false;
-    label_not_yet_set = true;
+    update_label = true;
     shared_set = false;
   }
 };
