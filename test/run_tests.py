@@ -234,8 +234,8 @@ def run_command_line_test(id,
             working_dir = ref_dir
             cmd = command_line
         else:
-            working_dir = create_test_dir(
-                id, input_files, base_working_dir, ref_dir, dependencies=dependencies)
+            working_dir = str(create_test_dir(
+                id, input_files, base_working_dir, ref_dir, dependencies=dependencies))
             cmd = "{}".format((command_line)).split()
 
         try:
