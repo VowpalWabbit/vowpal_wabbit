@@ -12,5 +12,7 @@ cd $REPO_DIR
 python --version
 python3 --version
 
+python3 -m pip install future-fstrings
+
 cd test
 python3 run_tests.py -f -j $(nproc)
