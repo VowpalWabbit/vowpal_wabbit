@@ -88,6 +88,7 @@ class Test:
 
             # check who produces the input files of this test
             files = Parser.get_values_of_vwarg(self.vw_command, "-i")
+            files += Parser.get_values_of_vwarg(self.vw_command, "--feature_mask")
             depends_on = []
             for f in files:
                 if "model-sets" not in f:
