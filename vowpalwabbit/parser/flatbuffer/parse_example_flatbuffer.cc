@@ -148,7 +148,7 @@ void parser::parse_example(vw* all, example* ae, const Example* eg)
 void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
 {
   all->example_parser->lbl_parser.default_label(&ae->l);
-  if (_multi_ex_index >= eg->namespaces()->Length())
+  if (_multi_ex_index >= eg->examples()->Length())
   {
     // done with multi example, send a newline example and reset
     _multi_ex_index = 0;
@@ -157,27 +157,7 @@ void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
     return;
   }
 
-  if (eg->shared_set() || eg->label_index_set())  // cb multi example
-  {
-    if (eg->shared_set() && _multi_ex_index == 0)
-    {
-      parse_flat_label(
-          all->sd, ae, static_cast<VW::parsers::flatbuffer::Label>(eg->labels_type()->Get(0)), eg->labels()->Get(0));
-    }
-    else if (eg->label_index_set() && _multi_ex_index == eg->label_index())
-    {
-      size_t i = eg->shared_set() ? 1 : 0;
-      parse_flat_label(
-          all->sd, ae, static_cast<VW::parsers::flatbuffer::Label>(eg->labels_type()->Get(i)), eg->labels()->Get(i));
-    }
-  }
-  else if (eg->labels()->Length() > 0)  // ccb/slates/other pure multiex
-  {
-    parse_flat_label(all->sd, ae, static_cast<VW::parsers::flatbuffer::Label>(eg->labels_type()->Get(_multi_ex_index)),
-        eg->labels()->Get(_multi_ex_index));
-  }
-
-  parse_namespaces(all, ae, eg->namespaces()->Get(_multi_ex_index));
+  parse_example(all, ae, eg->examples()->Get(_multi_ex_index));
   _multi_ex_index++;
 }
 
@@ -266,9 +246,7 @@ void parser::parse_flat_label(
       parse_slates_label(&(ae->l), slates_label);
       break;
     }
-    case Label_no_label:
-      // auto label = static_cast<const no_label*>(label);
-      parse_no_label();
+    case Label_NONE:
       break;
     default:
       THROW("Label type in Flatbuffer not understood");

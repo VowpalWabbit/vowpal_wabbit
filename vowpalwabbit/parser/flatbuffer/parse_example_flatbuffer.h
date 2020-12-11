@@ -53,7 +53,6 @@ private:
   void parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label);
   void parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label);
   void parse_multi_label(polylabel* l, const MultiLabel* label);
-  void parse_no_label();
   void parse_slates_label(polylabel* l, const Slates_Label* label);
 };
 }  // namespace flatbuffer
