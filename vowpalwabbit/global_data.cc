@@ -243,7 +243,6 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 
 vw::vw() : options(nullptr, nullptr)
 {
-  cerr_backup = nullptr;
   sd = &calloc_or_throw<shared_data>();
   sd->dump_interval = 1.;  // next update progress dump
   sd->contraction = 1.;
@@ -355,6 +354,9 @@ vw::vw() : options(nullptr, nullptr)
   sd->report_multiclass_log_loss = false;
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
+
+  cerr_backup = nullptr;
+  cout_backup = nullptr;
 }
 VW_WARNING_STATE_POP
 
@@ -371,6 +373,13 @@ vw::~vw()
     std::cerr.rdbuf(cerr_backup);
     cerr_filestr.close();
     cerr_backup = nullptr;
+  }
+  
+  if (cout_backup)
+  {
+    std::cout.rdbuf(cout_backup);
+    cout_filestr.close();
+    cout_backup = nullptr;
   }
 
   // TODO: migrate all finalization into parser destructor

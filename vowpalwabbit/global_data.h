@@ -329,8 +329,6 @@ private:
   std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
 
 public:
-  std::streambuf* cerr_backup;
-  std::ofstream cerr_filestr;
   shared_data* sd;
 
   parser* example_parser;
@@ -513,6 +511,11 @@ public:
   std::map<uint64_t, std::string> index_name_map;
 
   label_type_t label_type;
+
+  std::streambuf* cerr_backup;
+  std::ofstream cerr_filestr;
+  std::streambuf* cout_backup;
+  std::ofstream cout_filestr;
 
   vw();
   ~vw();
