@@ -105,7 +105,7 @@
     <PreBuildEvent>
       <Message>Generate FlatBuffer</Message>
       <Command>
-        $(flatcPath) -o $(SolutionDir)parser\flatbuffer\generated\ --cpp $(SolutionDir)parser\flatbuffer\schema\example.fbs
+        $(flatcPath) -o $(ProjectDir)\parser\flatbuffer\generated\ --cpp $(ProjectDir)\parser\flatbuffer\schema\example.fbs
         win32\make_config_h.exe
       </Command>
     </PreBuildEvent>
