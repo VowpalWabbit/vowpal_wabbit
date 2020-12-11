@@ -165,7 +165,6 @@
     "desc": "Run search (searn) on wsj_small for 6 passes extra features",
     "vw_command": "-k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off --search_passes_per_policy 3 --search_interpolation policy",
     "diff_files": {
-      "stdout": "train-sets/ref/search_wsj2.dat.stdout",
       "stderr": "train-sets/ref/search_wsj2.dat.stderr"
     },
     "input_files": [
@@ -383,6 +382,9 @@
     "input_files": [
       "train-sets/0001.dat",
       "models/mask.model"
+    ],
+    "depends_on": [
+      30
     ]
   },
   {
@@ -398,7 +400,8 @@
       "models/mask.model"
     ],
     "depends_on": [
-      31
+      31,
+      30
     ]
   },
   {
@@ -741,7 +744,7 @@
     "diff_files": {
       "stdout": "test-sets/ref/vw-daemon.stdout"
     },
-    "bash_command": "./daemon-test.sh"
+    "bash_command": "./daemon-test.sh --port 54249"
   },
   {
     "id": 62,
@@ -1848,7 +1851,7 @@
     "diff_files": {
       "stdout": "test-sets/ref/vw-daemon.stdout"
     },
-    "bash_command": "./daemon-test.sh --foreground"
+    "bash_command": "./daemon-test.sh --foreground --port 54250"
   },
   {
     "id": 153,
@@ -2607,7 +2610,7 @@
     "diff_files": {
       "stdout": "test-sets/ref/vw-daemon.stdout"
     },
-    "bash_command": "./daemon-test.sh --json"
+    "bash_command": "./daemon-test.sh --json --port 54251"
   },
   {
     "id": 221,
@@ -3046,7 +3049,7 @@
   },
   {
     "id": 257,
-    "desc": "cb_explore_adf with synthcover exploration. Do not delete this line or the empty line above it",
+    "desc": "cb_explore_adf with synthcover exploration",
     "vw_command": "--cb_explore_adf --synthcover --epsilon 0.01 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_synthcover.predict",
     "diff_files": {
       "stderr": "train-sets/ref/cbe_adf_synthcover.stderr",
@@ -3055,5 +3058,37 @@
     "input_files": [
       "train-sets/cb_test.ldf"
     ]
+  },
+  {
+    "id": 258,
+    "desc": "cb data consumed by ccb_explore_adf reduction",
+    "vw_command": "--ccb_explore_adf --dsjson --epsilon 0.2 -d train-sets/cb_as_ccb.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_as_ccb.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_as_ccb.json"
+    ]
+  },
+  {
+    "id": 259,
+    "desc": "CCB interactions with slot with default namespace",
+    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf --invert_hash w_out_slot_ns.interactions -q ::",
+    "diff_files": {
+      "stderr": "train-sets/ref/ccb_test_interactions.stderr",
+      "w_out_slot_ns.interactions": "train-sets/ref/w_out_slot_ns.interactions"
+    },
+    "input_files": [
+      "train-sets/ccb_test_interactions.dat"
+    ]
+  },
+  {
+    "id": 260,
+    "desc": "vw --help",
+    "vw_command": "--help",
+    "diff_files": {
+      "stderr": "train-sets/ref/help.stderr",
+      "stdout": "train-sets/ref/help.stdout"
+    }
   }
 ]
