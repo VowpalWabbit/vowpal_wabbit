@@ -3081,5 +3081,14 @@
     "input_files": [
       "train-sets/ccb_test_interactions.dat"
     ]
+  },
+  {
+    "id": 260,
+    "desc": "vw --help",
+    "vw_command": "--help",
+    "diff_files": {
+      "stderr": "train-sets/ref/help.stderr",
+      "stdout": "train-sets/ref/help.stdout"
+    }
   }
 ]
