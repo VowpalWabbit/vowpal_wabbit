@@ -1353,9 +1353,9 @@ vw& parse_args(
     std::string cerr_filename;
     option_group_definition cerr_args("Redirect std::cerr to filename");
     cerr_args.hide().add(make_option("cerr", cerr_filename).help("filename to redirect to"));
-    options.add_and_parse(cerr_args);
+    all.options->add_and_parse(cerr_args);
 
-    if (options.was_supplied("cerr"))
+    if (all.options->was_supplied("cerr"))
     {
       all.cerr_filestr.open(cerr_filename);
       all.cerr_backup = std::cerr.rdbuf();
