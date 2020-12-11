@@ -356,7 +356,8 @@ completed_tests = Completion()
 
 
 def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependencies=None):
-    test_working_dir = Path(test_base_dir).joinpath("test_{}".format((test_id)))
+    test_working_dir = Path(test_base_dir).joinpath(
+        "test_{}".format((test_id)))
     Path(test_working_dir).mkdir(parents=True, exist_ok=True)
 
     # Required as workaround until #2686 is fixed.
@@ -375,7 +376,8 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
                 break
 
         if file_to_copy is None:
-            raise ValueError("{} couldn't be found for test {}".format((file), (test_id)))
+            raise ValueError(
+                "{} couldn't be found for test {}".format((file), (test_id)))
 
         test_dest_file = Path(test_working_dir).joinpath(file)
         Path(test_dest_file.parent).mkdir(parents=True, exist_ok=True)
@@ -456,7 +458,8 @@ def main():
             print(stdout)
             sys.exit(1)
 
-    print("Testing on: hostname={}, OS={}".format((socket.gethostname()), (sys.platform)))
+    print("Testing on: hostname={}, OS={}".format(
+        (socket.gethostname()), (sys.platform)))
 
     if args.vw_bin_path is None:
         vw_search_paths = [
@@ -631,6 +634,9 @@ def main():
     print("# Success: {}".format((num_success)))
     print("# Fail: {}".format((num_fail)))
     print("# Skip: {}".format((num_skip)))
+
+    if num_fail > 0:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
