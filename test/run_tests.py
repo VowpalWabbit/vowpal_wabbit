@@ -394,7 +394,7 @@ def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-t', "--test", type=int,
-                        action='extend', nargs='+', help="Run specific tests and ignore all others")
+                        action='append', nargs='+', help="Run specific tests and ignore all others")
     parser.add_argument('-E', "--epsilon", type=float, default=1e-3,
                         help="Tolerance used when comparing floats. Only used if --fuzzy_compare is also supplied")
     parser.add_argument('-e', "--exit_first_fail", action='store_true',
@@ -422,6 +422,11 @@ def main():
 
     TEST_BASE_WORKING_DIR = args.working_dir
     TEST_BASE_REF_DIR = args.ref_dir
+
+
+    # Flatten nested lists for arg.test argument.
+    # Ideally we would have used action="extend", but that was added in 3.8
+    args.test = [item for sublist in args.test for item in sublist]
 
     if Path(TEST_BASE_WORKING_DIR).is_file():
         print("--working_dir='{}' cannot be a file".format((TEST_BASE_WORKING_DIR)))
