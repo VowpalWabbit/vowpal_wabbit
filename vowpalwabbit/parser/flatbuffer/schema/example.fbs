@@ -87,6 +87,7 @@ table Slates_Label {
   probabilities:[action_score];
 }
 
+// TODO rethink the CB_class here
 union Label {SimpleLabel, CBLabel, CCBLabel, MultiClass, MultiLabel, CB_EVAL_Label, CS_Label, no_label, Slates_Label}
 
 table Example {
@@ -95,11 +96,23 @@ table Example {
   tag:string;
 }
 
-table ExampleCollection {
-  examples:[Example];
+table MultiExample
+{
+  // TODO rename to examples?
+  namespaces:[Namespace];
+  shared:Label;
+  label:Label; // right now just cb_label
+  label_index:uint32; // TODO rename to index
+  /// tag?
 }
 
-union ExampleType {Example, ExampleCollection}
+table ExampleCollection {
+  examples:[Example];
+  multi_examples:[MultiExample];
+  is_multiline:bool;
+}
+
+union ExampleType {Example, ExampleCollection, MultiExample}
 
 table ExampleRoot
 {
