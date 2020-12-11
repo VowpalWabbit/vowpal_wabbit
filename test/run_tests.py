@@ -5,21 +5,18 @@ import difflib
 from pathlib import Path
 import re
 import os
-import errno
+import os.path
 import subprocess
 import sys
-import hashlib
 import traceback
 
-from typing import Optional
-import asyncio
 import json
-import os.path
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 import socket
 
 import runtests_parser
+
 
 class Color():
     HEADER = '\033[95m'
@@ -39,15 +36,15 @@ class Result(Enum):
     SKIPPED = 3
 
 
-def try_decode(binary_object: Optional[bytes]) -> Optional[str]:
+def try_decode(binary_object):
     return binary_object.decode("utf-8") if binary_object is not None else ""
 
 
 # Returns true if they are close enough to be considered equal.
-def fuzzy_float_compare(f1, f2, epsilon):
-    f1 = float(f1)
-    f2 = float(f2)
-    delta = abs(f1 - f2)
+def fuzzy_float_compare(float_one, float_two, epsilon):
+    float_one = float(float_one)
+    float_two = float(float_two)
+    delta = abs(float_one - float_two)
     if delta < epsilon:
         return True
 
@@ -61,11 +58,11 @@ def fuzzy_float_compare(f1, f2, epsilon):
     # If numbers are so small (close to zero),
     # ($delta > $Epsilon) suffices for deciding that
     # the numbers are meaningfully different
-    if (abs(f2) <= 1.0):
+    if abs(float_two) <= 1.0:
         return False
 
     # Now we can safely divide (since abs($word2) > 0) and determine the ratio difference from 1.0
-    ratio_delta = abs(f1/f2 - 1.0)
+    ratio_delta = abs(float_one/float_two - 1.0)
     return ratio_delta < epsilon
 
 
@@ -211,7 +208,17 @@ def print_colored_diff(diff):
             print(line)
 
 
-def run_command_line_test(id, command_line, comparison_files, overwrite, epsilon, is_shell, input_files, base_working_dir, ref_dir, dependencies=None, fuzzy_compare=False):
+def run_command_line_test(id,
+                          command_line,
+                          comparison_files,
+                          overwrite,
+                          epsilon,
+                          is_shell,
+                          input_files,
+                          base_working_dir,
+                          ref_dir,
+                          dependencies=None,
+                          fuzzy_compare=False):
     if dependencies is not None:
         for dep in dependencies:
             success = completed_tests.wait_for_completion_get_success(dep)
@@ -321,6 +328,7 @@ def run_command_line_test(id, command_line, comparison_files, overwrite, epsilon
         "checks": checks
     })
 
+
 class Completion():
     def __init__(self):
         self.lock = threading.Lock()
@@ -347,8 +355,8 @@ class Completion():
 completed_tests = Completion()
 
 
-def create_test_dir(id, input_files, test_base_dir, test_ref_dir, dependencies=None):
-    test_working_dir = Path(test_base_dir).joinpath(f"test_{id}")
+def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependencies=None):
+    test_working_dir = Path(test_base_dir).joinpath(f"test_{test_id}")
     Path(test_working_dir).mkdir(parents=True, exist_ok=True)
 
     # Required as workaround until #2686 is fixed.
@@ -367,7 +375,7 @@ def create_test_dir(id, input_files, test_base_dir, test_ref_dir, dependencies=N
                 break
 
         if file_to_copy is None:
-            raise ValueError(f"{file} couldn't be found for test {id}")
+            raise ValueError(f"{file} couldn't be found for test {test_id}")
 
         test_dest_file = Path(test_working_dir).joinpath(file)
         Path(test_dest_file.parent).mkdir(parents=True, exist_ok=True)
@@ -380,24 +388,35 @@ def create_test_dir(id, input_files, test_base_dir, test_ref_dir, dependencies=N
 
 def main():
 
-    working_dir = Path.home().joinpath(f".vw_runtests_working_dir")
+    working_dir = Path.home().joinpath(".vw_runtests_working_dir")
     test_ref_dir = Path(os.path.dirname(os.path.abspath(__file__)))
 
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-t', "--test", type=int,
                         action='extend', nargs='+', help="Run specific tests and ignore all others")
-    parser.add_argument('-E', "--epsilon", type=float, default=1e-3, help="Tolerance used when comparing floats. Only used if --fuzzy_compare is also supplied")
-    parser.add_argument('-e', "--exit_first_fail", action='store_true', help="If supplied, will exit after the first failure")
-    parser.add_argument('-o', "--overwrite", action='store_true', help="If test output differs from the reference file, overwrite the contents")
-    parser.add_argument('-f', "--fuzzy_compare", action='store_true', help="Allow for some tolerance when comparing floats")
-    parser.add_argument("--ignore_dirty", action='store_true', help="The test ref dir is checked for dirty files which may cause false negatives. Pass this flag to skip this check.")
-    parser.add_argument("--working_dir", default=working_dir, help="Directory to save test outputs to")
-    parser.add_argument("--ref_dir", default=test_ref_dir, help="Directory to read test input files from")
-    parser.add_argument('-j', "--jobs", type=int, default=4, help="Number of tests to run in parallel")
-    parser.add_argument('--vw_bin_path', help="Specify VW binary to use. Otherwise, binary will be searched for in build directory")
-    parser.add_argument('--spanning_tree_bin_path', help="Specify spanning tree binary to use. Otherwise, binary will be searched for in build directory")
+    parser.add_argument('-E', "--epsilon", type=float, default=1e-3,
+                        help="Tolerance used when comparing floats. Only used if --fuzzy_compare is also supplied")
+    parser.add_argument('-e', "--exit_first_fail", action='store_true',
+                        help="If supplied, will exit after the first failure")
+    parser.add_argument('-o', "--overwrite", action='store_true',
+                        help="If test output differs from the reference file, overwrite the contents")
+    parser.add_argument('-f', "--fuzzy_compare", action='store_true',
+                        help="Allow for some tolerance when comparing floats")
+    parser.add_argument("--ignore_dirty", action='store_true',
+                        help="The test ref dir is checked for dirty files which may cause false negatives. Pass this flag to skip this check.")
+    parser.add_argument("--working_dir", default=working_dir,
+                        help="Directory to save test outputs to")
+    parser.add_argument("--ref_dir", default=test_ref_dir,
+                        help="Directory to read test input files from")
+    parser.add_argument('-j', "--jobs", type=int, default=4,
+                        help="Number of tests to run in parallel")
+    parser.add_argument(
+        '--vw_bin_path', help="Specify VW binary to use. Otherwise, binary will be searched for in build directory")
+    parser.add_argument('--spanning_tree_bin_path',
+                        help="Specify spanning tree binary to use. Otherwise, binary will be searched for in build directory")
     parser.add_argument("--test_spec", type=str,
-                        help="Optional. If passed the given JSON test spec will be used, " + 
+                        help="Optional. If passed the given JSON test spec will be used, " +
                         "otherwise a test spec will be autogenerated from the RunTests test definitions")
     args = parser.parse_args()
 
@@ -407,7 +426,7 @@ def main():
     if Path(TEST_BASE_WORKING_DIR).is_file():
         print(f"--working_dir='{TEST_BASE_WORKING_DIR}' cannot be a file")
         sys.exit(1)
-    
+
     if not Path(TEST_BASE_WORKING_DIR).exists():
         Path(TEST_BASE_WORKING_DIR).mkdir(parents=True, exist_ok=True)
 
@@ -427,44 +446,47 @@ def main():
             print("Failed to run 'git clean --dry-run -d -x -e __pycache__'")
         stdout = try_decode(result.stdout)
         if len(stdout) != 0:
-            print(f"Error: Test dir is not clean, this can result in false negatives. To ignore this and continue anyway pass --ignore_dirty")
-            print(f"'git clean --dry-run -d -x -e __pycache__' output:\n---")
+            print("Error: Test dir is not clean, this can result in false negatives. To ignore this and continue anyway pass --ignore_dirty")
+            print("'git clean --dry-run -d -x -e __pycache__' output:\n---")
             print(stdout)
             sys.exit(1)
-    
+
     print(f"Testing on: hostname={socket.gethostname()}, OS={sys.platform}")
-    
+
     if args.vw_bin_path is None:
         vw_search_paths = [
             Path(TEST_BASE_REF_DIR).joinpath("../build/vowpalwabbit")
         ]
+
         def is_vw_binary(file_path):
             file_name = os.path.basename(file_path)
             return file_name == "vw"
         vw_bin = find_in_path(vw_search_paths, is_vw_binary)
     else:
-        if not Path(args.vw_bin_path).exists() or not Path(args.vw_bin_path).is_file() :
+        if not Path(args.vw_bin_path).exists() or not Path(args.vw_bin_path).is_file():
             print(f"Invalid vw binary path: {args.vw_bin_path}")
         vw_bin = args.vw_bin_path
-    
+
     print(f"Using VW binary: {vw_bin}")
 
     if args.spanning_tree_bin_path is None:
         spanning_tree_search_path = [
             Path(TEST_BASE_REF_DIR).joinpath("../build/cluster")
         ]
+
         def is_spanning_tree_binary(file_path):
             file_name = os.path.basename(file_path)
             return file_name == "spanning_tree"
-        spanning_tree_bin = find_in_path(spanning_tree_search_path, is_spanning_tree_binary)
+        spanning_tree_bin = find_in_path(
+            spanning_tree_search_path, is_spanning_tree_binary)
     else:
-        if not Path(args.spanning_tree_bin_path).exists() or not Path(args.spanning_tree_bin_path).is_file() :
-            print(f"Invalid spanning tree binary path: {args.spanning_tree_bin_path}")
+        if not Path(args.spanning_tree_bin_path).exists() or not Path(args.spanning_tree_bin_path).is_file():
+            print(
+                f"Invalid spanning tree binary path: {args.spanning_tree_bin_path}")
         spanning_tree_bin = args.spanning_tree_bin_path
 
     print(f"Using spanning tree binary: {spanning_tree_bin}")
 
-    
     if args.test_spec is None:
         def is_runtests_file(file_path):
             file_name = os.path.basename(file_path)
@@ -487,7 +509,7 @@ def main():
 
     def get_deps(test_number, tests):
         deps = set()
-        test_index = test_number - 1 
+        test_index = test_number - 1
         if "depends_on" in tests[test_index]:
             for dep in tests[test_index]["depends_on"]:
                 deps.add(dep)
@@ -499,10 +521,12 @@ def main():
         tests_to_run_explicitly = set()
         for test_number in args.test:
             tests_to_run_explicitly.add(test_number)
-            tests_to_run_explicitly = set.union(tests_to_run_explicitly, get_deps(test_number, tests))
+            tests_to_run_explicitly = set.union(
+                tests_to_run_explicitly, get_deps(test_number, tests))
         print(f"Running tests: {list(tests_to_run_explicitly)}")
         if len(args.test) != len(tests_to_run_explicitly):
-            print(f"Note: due to test dependencies, more than just tests {args.test} must be run")
+            print(
+                f"Note: due to test dependencies, more than just tests {args.test} must be run")
 
     executor = ThreadPoolExecutor(max_workers=args.jobs)
     for test in tests:
@@ -524,7 +548,8 @@ def main():
                 print(
                     f"Skipping test number '{test_number}' as bash_command is unsupported on Windows.")
                 continue
-            command_line = test['bash_command'].format(VW=vw_bin, SPANNING_TREE=spanning_tree_bin)
+            command_line = test['bash_command'].format(
+                VW=vw_bin, SPANNING_TREE=spanning_tree_bin)
             is_shell = True
         elif "vw_command" in test:
             command_line = f"{vw_bin} {test['vw_command']}"
@@ -597,7 +622,7 @@ def main():
                     for task in tasks:
                         task.cancel()
                     sys.exit(1)
-    print(f"-----")
+    print("-----")
     print(f"# Success: {num_success}")
     print(f"# Fail: {num_fail}")
     print(f"# Skip: {num_skip}")
