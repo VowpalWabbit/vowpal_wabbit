@@ -506,7 +506,7 @@ void read_line(vw& all, example* ex, VW::string_view line)
 
 void read_line(vw& all, example* ex, char* line) { return read_line(all, ex, VW::string_view(line)); }
 
-void read_lines(vw* all, char* line, size_t /*len*/, v_array<example*>& examples)
+void read_lines(vw* all, const char* line, size_t /*len*/, v_array<example*>& examples)
 {
   std::vector<VW::string_view> lines;
   tokenize('\n', line, lines);
