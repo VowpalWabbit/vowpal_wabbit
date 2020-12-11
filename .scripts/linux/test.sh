@@ -9,5 +9,8 @@ cd $REPO_DIR
 # cd build
 # make test_with_output
 
+python --version
+python3 --version
+
 cd test
 python3 run_tests.py -f -j $(nproc)
