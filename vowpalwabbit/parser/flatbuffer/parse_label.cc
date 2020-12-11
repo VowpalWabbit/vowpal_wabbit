@@ -36,6 +36,7 @@ void parser::parse_cb_label(polylabel* l, const CBLabel* label)
     f.action = cost->action();
     f.cost = cost->cost();
     f.probability = cost->probability();
+    if (f.probability == -1.f) { f.cost = FLT_MAX; }
     f.partial_prediction = cost->partial_pred();
     l->cb.costs.push_back(f);
   }

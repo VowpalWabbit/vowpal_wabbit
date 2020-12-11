@@ -14,12 +14,22 @@ VW_WARNING_STATE_POP
 struct MultiExampleBuilder
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;
-  VW::parsers::flatbuffer::Label shared_type = VW::parsers::flatbuffer::Label_NONE;
-  flatbuffers::Offset<void> shared;
   std::vector<uint8_t> label_types;
   std::vector<flatbuffers::Offset<void>> labels;
   uint32_t label_index = 0;
   bool label_index_set = false;
+  bool label_not_yet_set = true;
+  bool shared_set = false;
+  void clear()
+  {
+    namespaces.clear();
+    label_types.clear();
+    labels.clear();
+    label_index = 0;
+    label_index_set = false;
+    label_not_yet_set = true;
+    shared_set = false;
+  }
 };
 
 struct ExampleBuilder

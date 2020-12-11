@@ -51,15 +51,15 @@ void to_flat::create_cb_label_multi_ex(example* v, MultiExampleBuilder& ex_build
     costs.push_back(VW::parsers::flatbuffer::CreateCB_class(
         _builder, cost.cost, cost.action, cost.probability, cost.partial_prediction));
   }
-  if (CB::ec_is_example_header(*v))
-  {
-    ex_builder.shared = VW::parsers::flatbuffer::CreateCBLabelDirect(_builder, v->l.cb.weight, &costs).Union();
-    ex_builder.shared_type = VW::parsers::flatbuffer::Label_CBLabel;
-  }
-  else if (v->l.cb.costs.size())
+  if (CB::ec_is_example_header(*v) || v->l.cb.costs.size())
   {
     ex_builder.labels.push_back(VW::parsers::flatbuffer::CreateCBLabelDirect(_builder, v->l.cb.weight, &costs).Union());
     ex_builder.label_types.push_back(VW::parsers::flatbuffer::Label_CBLabel);
+    if (CB::ec_is_example_header(*v)) { ex_builder.shared_set = true; }
+    else
+    {
+      ex_builder.label_index_set = true;
+    }
   }
 }
 
@@ -71,8 +71,9 @@ void to_flat::create_ccb_label_multi_ex(example* v, MultiExampleBuilder& ex_buil
   if (e_type == CCB::example_type::shared)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_shared;
-    ex_builder.shared = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
-    ex_builder.shared_type = VW::parsers::flatbuffer::Label_CCBLabel;
+    ex_builder.labels.push_back(
+        VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union());
+    ex_builder.label_types.push_back(VW::parsers::flatbuffer::Label_CCBLabel);
   }
   else if (e_type == CCB::example_type::action)
   {
@@ -335,6 +336,11 @@ void to_flat::convert_txt_to_flat(vw& all)
       if (!example_is_newline(*ae))
       {
         multi_ex_builder.namespaces.insert(multi_ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
+        if (multi_ex_builder.label_index_set && multi_ex_builder.label_not_yet_set)
+        {
+          multi_ex_builder.label_index = multi_ex_index;
+          multi_ex_builder.label_not_yet_set = false;
+        }
         multi_ex_index++;
         // TODO share the namespaces
         examples++;
@@ -354,19 +360,12 @@ void to_flat::convert_txt_to_flat(vw& all)
       if (all.l->is_multiline)
       {
         auto multi_ex = VW::parsers::flatbuffer::CreateMultiExampleDirect(_builder, &multi_ex_builder.namespaces,
-            multi_ex_builder.shared_type, multi_ex_builder.shared, &multi_ex_builder.label_types,
-            &multi_ex_builder.labels, multi_ex_builder.label_index, multi_ex_builder.label_index_set);
+            &multi_ex_builder.label_types, &multi_ex_builder.labels, multi_ex_builder.label_index,
+            multi_ex_builder.label_index_set, multi_ex_builder.shared_set);
 
         multi_example_collection.push_back(multi_ex);
         multi_ex_index = 0;
-
-        multi_ex_builder.namespaces.clear();
-        multi_ex_builder.shared_type = VW::parsers::flatbuffer::Label_NONE;
-        multi_ex_builder.shared = 0;
-        multi_ex_builder.label_types.clear();
-        multi_ex_builder.labels.clear();
-        multi_ex_builder.label_index = 0;
-        multi_ex_builder.label_index_set = false;
+        multi_ex_builder.clear();
       }
       else
       {
@@ -406,18 +405,11 @@ void to_flat::convert_txt_to_flat(vw& all)
       if (all.l->is_multiline)
       {
         auto multi_ex = VW::parsers::flatbuffer::CreateMultiExampleDirect(_builder, &multi_ex_builder.namespaces,
-            multi_ex_builder.shared_type, multi_ex_builder.shared, &multi_ex_builder.label_types,
-            &multi_ex_builder.labels, multi_ex_builder.label_index, multi_ex_builder.label_index_set);
+            &multi_ex_builder.label_types, &multi_ex_builder.labels, multi_ex_builder.label_index,
+            multi_ex_builder.label_index_set, multi_ex_builder.shared_set);
 
         multi_ex_index = 0;
-
-        multi_ex_builder.namespaces.clear();
-        multi_ex_builder.shared_type = VW::parsers::flatbuffer::Label_NONE;
-        multi_ex_builder.shared = flatbuffers::Offset<void>();
-        multi_ex_builder.label_types.clear();
-        multi_ex_builder.labels.clear();
-        multi_ex_builder.label_index_set = 0;
-        multi_ex_builder.label_index_set = false;
+        multi_ex_builder.clear();
 
         auto root = VW::parsers::flatbuffer::CreateExampleRoot(
             _builder, VW::parsers::flatbuffer::ExampleType_MultiExample, multi_ex.Union());

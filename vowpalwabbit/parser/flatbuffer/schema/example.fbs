@@ -99,10 +99,10 @@ table MultiExample
 {
   // TODO rename to examples?
   namespaces:[Namespace];
-  shared:Label;
   labels:[Label];
   label_index:uint32;
   label_index_set:bool = false;
+  shared_set:bool = false;
   /// tag?
 }
 

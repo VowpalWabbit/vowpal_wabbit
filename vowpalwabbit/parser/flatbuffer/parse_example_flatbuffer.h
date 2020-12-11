@@ -32,7 +32,6 @@ private:
   bool _active_collection = false;
   uint32_t _example_index = 0;
   uint32_t _multi_ex_index = 0;
-  bool _shared_found = false;
   bool _active_multi_ex = false;
   const VW::parsers::flatbuffer::MultiExample* _multi_example_object = nullptr;
   uint32_t _labeled_action = 0;
@@ -44,8 +43,8 @@ private:
   void parse_multi_example(vw* all, example* ae, const MultiExample* eg);
   void parse_namespaces(vw* all, example* ae, const Namespace* ns);
   void parse_features(vw* all, features& fs, const Feature* feature);
-  void parse_flat_label(shared_data* sd, example* ae, const VW::parsers::flatbuffer::Label& label_type,
-      const void* label, label_type_t& all_label_type);
+  void parse_flat_label(
+      shared_data* sd, example* ae, const VW::parsers::flatbuffer::Label& label_type, const void* label);
 
   void parse_simple_label(shared_data* sd, polylabel* l, const SimpleLabel* label);
   void parse_cb_label(polylabel* l, const CBLabel* label);
