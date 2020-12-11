@@ -3072,7 +3072,7 @@
   },
   {
     "id": 259,
-    "desc": "CCB interactions with slot with default namespace. Do not delete this line or the empty line above it",
+    "desc": "CCB interactions with slot with default namespace",
     "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf --invert_hash w_out_slot_ns.interactions -q ::",
     "diff_files": {
       "stderr": "train-sets/ref/ccb_test_interactions.stderr",
