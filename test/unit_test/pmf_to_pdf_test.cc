@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   ec.l.cb_cont.costs.clear();
   ec.l.cb_cont.costs.push_back({1010.17f, .5f, .05f});  // action, cost, prob
 
-  VW::cb_continuous::continuous_label_elm exp_val{1010.17, 0.5, 0.05};
+  VW::cb_continuous::continuous_label_elm exp_val{1010.17f, 0.5f, 0.05f};
 
   BOOST_CHECK_EQUAL(1010.17f, ec.l.cb_cont.costs[0].action);
   BOOST_CHECK_EQUAL(0.5f, ec.l.cb_cont.costs[0].cost);

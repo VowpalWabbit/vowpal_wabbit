@@ -2055,4 +2055,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/ccb_test_interactions.stderr
     train-sets/ref/w_out_slot_ns.interactions
 
+# Test 260: vw --help
+{VW} --help
+    train-sets/ref/help.stderr
+    train-sets/ref/help.stdout
+
 # Do not delete this line or the empty line above it
