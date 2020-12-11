@@ -6,7 +6,8 @@ set -x
 cd $1
 
 cd test
-python3 run_tests.py -f -j $(nproc)
+NUM_PROCESSORS=$(cat ../build/nprocs.txt)
+python3 run_tests.py -f -j ${NUM_PROCESSORS}
 
 cd ../build
 make test_with_output
