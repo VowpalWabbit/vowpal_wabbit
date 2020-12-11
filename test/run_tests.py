@@ -416,18 +416,18 @@ def main():
 
     if not args.ignore_dirty:
         result = subprocess.run(
-            "git clean -n".split(),
+            "git clean --dry-run -d -x -e __pycache__".split(),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=TEST_BASE_REF_DIR,
             timeout=10)
         return_code = result.returncode
         if return_code != 0:
-            print("Failed to run 'git clean -n'")
+            print("Failed to run 'git clean --dry-run -d -x -e __pycache__'")
         stdout = try_decode(result.stdout)
         if len(stdout) != 0:
             print(f"Error: Test dir is not clean, this can result in false negatives. To ignore this and continue anyway pass --ignore_dirty")
-            print(f"`git clean -n` output:\n---")
+            print(f"'git clean --dry-run -d -x -e __pycache__' output:\n---")
             print(stdout)
             sys.exit(1)
     
