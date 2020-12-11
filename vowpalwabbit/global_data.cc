@@ -241,7 +241,7 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 
-vw::vw()
+vw::vw() : options(nullptr, nullptr)
 {
   cerr_backup = nullptr;
   sd = &calloc_or_throw<shared_data>();
@@ -372,9 +372,6 @@ vw::~vw()
     cerr_filestr.close();
     cerr_backup = nullptr;
   }
-
-  // Check if options object lifetime is managed internally.
-  if (should_delete_options) delete options;
 
   // TODO: migrate all finalization into parser destructor
   if (example_parser != nullptr)
