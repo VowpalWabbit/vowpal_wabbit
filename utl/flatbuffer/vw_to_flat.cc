@@ -124,58 +124,6 @@ void to_flat::create_ccb_label_multi_ex(example* v, MultiExampleBuilder& ex_buil
   }
 }
 
-void to_flat::create_ccb_label(example* v, ExampleBuilder& ex_builder)
-{
-  auto weight = v->l.conditional_contextual_bandit.weight;
-  auto e_type = v->l.conditional_contextual_bandit.type;
-  ex_builder.label_type = VW::parsers::flatbuffer::Label_CCBLabel;
-
-  if (e_type == CCB::example_type::shared)
-  {
-    auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_shared;
-    ex_builder.label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
-  }
-  else if (e_type == CCB::example_type::action)
-  {
-    auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_action;
-    ex_builder.label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
-  }
-  else if (e_type == CCB::example_type::slot)
-  {
-    auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_slot;
-    std::vector<uint32_t> explicit_included_actions;
-    std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::action_score>> action_scores;
-    if (v->l.conditional_contextual_bandit.outcome != nullptr)
-    {
-      for (const auto& probability : v->l.conditional_contextual_bandit.outcome->probabilities)
-      {
-        auto action = probability.action;
-        auto score = probability.score;
-        action_scores.push_back(VW::parsers::flatbuffer::Createaction_score(_builder, action, score));
-      }
-      auto cost = v->l.conditional_contextual_bandit.outcome->cost;
-      auto outcome = VW::parsers::flatbuffer::CreateCCB_outcomeDirect(_builder, cost, &action_scores);
-      ex_builder.label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, outcome, nullptr).Union();
-    }
-    else if (&(v->l.conditional_contextual_bandit.explicit_included_actions) != nullptr)
-    {
-      for (auto const& action : v->l.conditional_contextual_bandit.explicit_included_actions)
-      { explicit_included_actions.push_back(action); }
-      ex_builder.label =
-          VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, &explicit_included_actions).Union();
-    }
-    else
-    {
-      ex_builder.label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
-    }
-  }
-  else
-  {
-    auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_unset;
-    ex_builder.label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
-  }
-}
-
 void to_flat::create_cb_eval_label(example* v, ExampleBuilder& ex_builder)
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::CB_class>> costs;
@@ -307,16 +255,7 @@ void to_flat::convert_txt_to_flat(vw& all)
         break;
       case label_type_t::cb:
       {
-        if (all.l->is_multiline)
-        {
-          to_flat::create_cb_label_multi_ex(ae, multi_ex_builder);
-          // if (!CB::ec_is_example_header(*ae) && ae->l.cb.costs.size() > 0 && !multi_ex_builder.label_index_set)
-          // {
-          //   // this example has a label, need to note which example it is
-          //   multi_ex_builder.label_index = multi_ex_index;
-          //   multi_ex_builder.label_index_set = true;
-          // }
-        }
+        if (all.l->is_multiline) { to_flat::create_cb_label_multi_ex(ae, multi_ex_builder); }
         else
         {
           to_flat::create_cb_label(ae, ex_builder);
@@ -324,15 +263,8 @@ void to_flat::convert_txt_to_flat(vw& all)
       }
       break;
       case label_type_t::ccb:
-      {
-        if (all.l->is_multiline) { to_flat::create_ccb_label_multi_ex(ae, multi_ex_builder); }
-        else
-        {
-          // TODO will it ever not be multiline? I don't think so
-          to_flat::create_ccb_label(ae, ex_builder);
-        }
-      }
-      break;
+        to_flat::create_ccb_label_multi_ex(ae, multi_ex_builder);
+        break;
       case label_type_t::multi:
         to_flat::create_multi_label(ae, ex_builder);
         break;

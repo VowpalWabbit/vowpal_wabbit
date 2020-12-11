@@ -44,7 +44,6 @@ private:
   void create_simple_label(example* v, ExampleBuilder& ex_builder);
   void create_cb_label(example* v, ExampleBuilder& ex_builder);
   void create_cb_label_multi_ex(example* v, MultiExampleBuilder& ex_builder);
-  void create_ccb_label(example* v, ExampleBuilder& ex_builder);
   void create_ccb_label_multi_ex(example* v, MultiExampleBuilder& ex_builder);
   void create_cb_eval_label(example* v, ExampleBuilder& ex_builder);
   void create_mc_label(VW::named_labels* ldict, example* v, ExampleBuilder& ex_builder);
