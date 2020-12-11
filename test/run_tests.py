@@ -223,7 +223,8 @@ def run_command_line_test(id, command_line, comparison_files, overwrite, epsilon
 
     try:
         if is_shell:
-            working_dir = os.getcwd()
+            # Because we don't really know what shell scripts do, we need to run them in the tests dir.
+            working_dir = ref_dir
             cmd = command_line
         else:
             working_dir = create_test_dir(
@@ -285,8 +286,8 @@ def run_command_line_test(id, command_line, comparison_files, overwrite, epsilon
                     }
                     continue
 
-            if os.path.isfile(ref_file):
-                ref_file_ref_dir = os.path.join(ref_dir, ref_file)
+            ref_file_ref_dir = os.path.join(ref_dir, ref_file)
+            if os.path.isfile(ref_file_ref_dir):
                 ref_content = open(ref_file_ref_dir, 'r').read()
             else:
                 checks[output_file] = {
