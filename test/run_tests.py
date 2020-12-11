@@ -345,14 +345,13 @@ def create_test_dir(id, input_files, test_base_dir, test_ref_dir, dependencies=N
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', "--test", type=int, help="Run a single test")
+    parser.add_argument('-t', "--test", type=int, action='extend', nargs='+', help="Run specific tests")
+    # parser.add_argument('-s', "--skip", type=int, action='extend', nargs='+', help="Skip specific tests")
     parser.add_argument('-E', "--epsilon", type=float, default=1e-3)
     parser.add_argument('-e', "--exit_first_fail", action='store_true')
     parser.add_argument('-o', "--overwrite", action='store_true')
     parser.add_argument('-j', "--jobs", type=int, default=4)
     args = parser.parse_args()
-
-
 
     def is_vw_binary(file_path):
         file_name = os.path.basename(file_path)
@@ -375,7 +374,7 @@ def main():
     executor = ThreadPoolExecutor(max_workers=args.jobs)
     for test in tests:
         test_number = test["id"]
-        if args.test is not None and args.test != test_number:
+        if args.test is not None and test_number not in args.test:
             continue
 
         dependencies = None
@@ -412,10 +411,11 @@ def main():
         except Exception:
             print("----------------")
             traceback.print_exc()
-            continue
             print("----------------")
+            continue
+        finally:
+             tasks.pop(0)
 
-        tasks.pop(0)
         success_text = f"{Color.OKGREEN}Success{Color.ENDC}"
         fail_text = f"{Color.FAIL}Fail{Color.ENDC}"
         skipped_text = f"{Color.OKCYAN}Skip{Color.ENDC}"
