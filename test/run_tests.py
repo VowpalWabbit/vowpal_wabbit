@@ -395,7 +395,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-t', "--test", type=int,
                         action='append', nargs='+', help="Run specific tests and ignore all others")
-    parser.add_argument('-E', "--epsilon", type=float, default=1e-3,
+    parser.add_argument('-E', "--epsilon", type=float, default=1e-4,
                         help="Tolerance used when comparing floats. Only used if --fuzzy_compare is also supplied")
     parser.add_argument('-e', "--exit_first_fail", action='store_true',
                         help="If supplied, will exit after the first failure")
