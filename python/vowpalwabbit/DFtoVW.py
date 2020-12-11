@@ -4,7 +4,7 @@ import pandas as pd
 class _Col:
     """_Col class. It refers to a column of a dataframe."""
 
-    def __init__(self, colname, expected_type, min_value=None):
+    def __init__(self, colname, expected_type, min_value=None, max_value=None):
         """Initialize a _Col instance
 
         Parameters
@@ -14,11 +14,14 @@ class _Col:
         expected_type: tuple
             The expected type of the column.
         min_value: int/float
-            The minimum value to which the column must be superior or equal.
+            The minimum value to which the column must be superior or equal to.
+        max_value: int/float
+            The maximum value to which the column must be inferior or equal to.
         """
         self.colname = colname
         self.expected_type = expected_type
         self.min_value = min_value
+        self.max_value = max_value
 
     def get_col(self, df):
         """Returns the column defined in attribute 'colname' from the dataframe 'df'.
@@ -115,9 +118,15 @@ class _Col:
         ValueError
             If the values of the column are not valid.
         """
-        if self.min_value is None:
-            pass
-        else:
+        if self.min_value is not None and self.max_value is not None:
+            col_value = df[self.colname]
+            if not ((col_value >= self.min_value).all() and (col_value <= self.max_value).all()):
+                raise ValueError(
+                    "column '{colname}' must be >= {min_value} and <= {max_value}.".format(
+                        colname=self.colname, min_value=self.min_value, max_value=self.max_value
+                    )
+                )
+        elif self.min_value is not None:
             col_value = df[self.colname]
             if not (col_value >= self.min_value).all():
                 raise ValueError(
@@ -125,6 +134,8 @@ class _Col:
                         colname=self.colname, min_value=self.min_value
                     )
                 )
+        else:
+            pass
 
 
 class AttributeDescriptor(object):
@@ -134,7 +145,7 @@ class AttributeDescriptor(object):
     class is used in the following managed class: SimpleLabel, MulticlassLabel, Feature, etc.
     """
 
-    def __init__(self, attribute_name, expected_type, min_value=None):
+    def __init__(self, attribute_name, expected_type, min_value=None, max_value=None):
         """Initialize an AttributeDescriptor instance
 
         Parameters
@@ -145,6 +156,8 @@ class AttributeDescriptor(object):
             The expected type of the attribute.
         min_value: str/int/float
             The minimum value of the attribute.
+        max_value: str/int/float
+            The maximum value of the attribute.
 
         Raises
         ------
@@ -158,6 +171,7 @@ class AttributeDescriptor(object):
             raise TypeError("Argument 'expected_type' must be a tuple")
         self.expected_type = expected_type
         self.min_value = min_value
+        self.max_value = max_value
 
     def __set__(self, instance, arg):
         """Implement set protocol to enforce type (and value range) checking
@@ -198,6 +212,7 @@ class AttributeDescriptor(object):
                 colname=col,
                 expected_type=self.expected_type,
                 min_value=self.min_value,
+                max_value=self.max_value
             ) for col in colname ]
         else:
             instance.__dict__["columns"].add(colname)
@@ -205,6 +220,7 @@ class AttributeDescriptor(object):
                 colname=colname,
                 expected_type=self.expected_type,
                 min_value=self.min_value,
+                max_value=self.max_value
             )
 
 
@@ -329,6 +345,60 @@ class MultiLabel(object):
                 out = label_col
             else:
                 out += "," + label_col
+        return out
+
+
+class ContextualBanditLabel(object):
+    """The contextual bandit label type for the constructor of DFtoVW."""
+
+    action = AttributeDescriptor("action", expected_type=(int,), min_value=1)
+    cost = AttributeDescriptor("cost", expected_type=(float, int))
+    proba = AttributeDescriptor("proba", expected_type=(float,), min_value=0, max_value=1)
+
+    def __init__(self, label):
+        """Initialize a ContextualBanditLabel instance.
+
+        Parameters
+        ----------
+        label : tuple/list or list of tuple/list
+            The (list of) column name(s) of the contextual bandit label.
+
+        Returns
+        -------
+        self : ContextualBanditLabel
+        """
+        try:
+            list_of_labels = [[x[i] for x in label] for i in range(3)]
+        except IndexError:
+            self.action, self.cost, self.proba = label
+            self.is_list = False
+        else:
+            self.action, self.cost, self.proba = list_of_labels
+            self.is_list = True
+
+    def process(self, df):
+        """Returns the ContextualBanditLabel string representation.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to select the column(s).
+
+        Returns
+        -------
+        str or pandas.Series
+            The ContextualBanditLabel string representation.
+        """
+        if self.is_list:
+            for i, (action, cost, proba) in enumerate(zip(self.action, self.cost, self.proba)):
+                parsed_label = action.get_col(df) + ":" + cost.get_col(df) + ":" + proba.get_col(df)
+                if i == 0:
+                    out = parsed_label
+                else:
+                    out += " " + parsed_label
+        else:
+            out = self.action.get_col(df) + ":" + self.cost.get_col(df) + ":" + self.proba.get_col(df)
+
         return out
 
 
@@ -746,7 +816,7 @@ class DFtoVW:
         TypeError
             If label is not of type SimpleLabel or MulticlassLabel.
         """
-        available_labels = (SimpleLabel, MulticlassLabel, MultiLabel)
+        available_labels = (SimpleLabel, MulticlassLabel, MultiLabel, ContextualBanditLabel)
 
         if self.label is None:
             pass
