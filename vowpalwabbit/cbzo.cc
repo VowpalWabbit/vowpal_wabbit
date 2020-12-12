@@ -351,7 +351,7 @@ base_learner* setup(options_i& options, vw& all)
                         << std::endl;
   }
 
-  all.p->lp = cb_continuous::the_label_parser;
+  all.example_parser->lbl_parser = cb_continuous::the_label_parser;
   all.delete_prediction = delete_probability_density_function;
   data->all = &all;
   data->min_prediction_supplied = options.was_supplied("min_prediction");
