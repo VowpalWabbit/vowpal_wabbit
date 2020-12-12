@@ -10,10 +10,13 @@
 #include "cbzo.h"
 #include "vw.h"
 #include "vw_math.h"
+#include "prob_dist_cont.h"
 
 using namespace std;
 using namespace VW::LEARNER;
 using namespace VW::config;
+using VW::continuous_actions::probability_density_function;
+using VW::continuous_actions::delete_probability_density_function;
 
 namespace VW
 {
@@ -46,15 +49,6 @@ inline float get_weight(vw& all, uint64_t index, uint32_t offset)
 inline void set_weight(vw& all, uint64_t index, uint32_t offset, float value)
 {
   (&all.weights[(index) << all.weights.stride_shift()])[offset] = value;
-}
-
-// Checks if dir is a unit scalar with some tolerance. If yes, returns
-// true and optionally fixes that tol difference.
-inline bool check_fix_unit(float& dir, float tol = 0.01f, bool fix = true)
-{
-  if (!(VW::math::are_same(dir, 1.0f, tol) || VW::math::are_same(dir, -1.0f, tol))) return false;
-  if (fix) dir = dir >= 0 ? 1.0f : -1.0f;
-  return true;
 }
 
 float l1_grad(vw& all, uint64_t fi)
@@ -101,28 +95,14 @@ float inference(vw& all, example& ec)
     THROW("Unknown policy encountered: " << policy);
 }
 
-template <uint8_t policy>
-inline float compute_explore_dir(cbzo& data, example& ec)
-{
-  return (ec.l.cb_cont.costs[0].action - inference<policy>(*data.all, ec)) / data.radius;
-}
-
 template <bool feature_mask_off>
 void constant_update(cbzo& data, example& ec)
 {
-  float dir = compute_explore_dir<constant_policy>(data, ec);
-  if (!check_fix_unit(dir))
-  {
-    // The action is not part of the set of actions that was suggested to be explored by the
-    // latest predict() and thus can't be used to learn.
-    data.all->trace_message << "encountered example that does not help in learning" << std::endl;
-    return;
-  }
-
   float fw = get_weight(*data.all, constant, 0);
   if (feature_mask_off || fw != 0.0f)
   {
-    float grad = (1 / data.radius) * ec.l.cb_cont.costs[0].cost * dir;
+    float action_centroid = inference<constant_policy>(*data.all, ec);
+    float grad = ec.l.cb_cont.costs[0].cost / (ec.l.cb_cont.costs[0].action - action_centroid);
     float update = -data.all->eta * (grad + l1_grad(*data.all, constant) + l2_grad(*data.all, constant));
 
     set_weight(*data.all, constant, 0, fw + update);
@@ -136,7 +116,7 @@ void linear_per_feature_update(linear_update_data& upd_data, float x, uint64_t f
 
   if (feature_mask_off || fw != 0.0f)
   {
-    float update = upd_data.mult * (upd_data.part_grad * x + l1_grad(*upd_data.all, fi) + l2_grad(*upd_data.all, fi));
+    float update = upd_data.mult * (upd_data.part_grad * x + (l1_grad(*upd_data.all, fi) + l2_grad(*upd_data.all, fi)));
     set_weight(*upd_data.all, fi, 0, fw + update);
   }
 }
@@ -144,17 +124,10 @@ void linear_per_feature_update(linear_update_data& upd_data, float x, uint64_t f
 template <bool feature_mask_off>
 void linear_update(cbzo& data, example& ec)
 {
-  float dir = compute_explore_dir<linear_policy>(data, ec);
-  if (!check_fix_unit(dir))
-  {
-    // The action is not part of the set of actions that was suggested - to be explored - by the
-    // latest predict() and thus can't be used to learn.
-    data.all->trace_message << "encountered example that does not help in learning" << std::endl;
-    return;
-  }
-
   float mult = -data.all->eta;
-  float part_grad = (1 / data.radius) * ec.l.cb_cont.costs[0].cost * dir;
+
+  float action_centroid = inference<linear_policy>(*data.all, ec);
+  float part_grad = ec.l.cb_cont.costs[0].cost / (ec.l.cb_cont.costs[0].action - action_centroid);
 
   linear_update_data upd_data;
   upd_data.mult = mult;
@@ -184,11 +157,9 @@ void set_minmax(shared_data* sd, float label, bool min_fixed, bool max_fixed)
   if (!max_fixed) sd->max_label = std::max(label, sd->max_label);
 }
 
-std::string get_pred_repr(example& ec)
+inline std::string get_pred_repr(example& ec)
 {
-  std::stringstream ss;
-  ss << ec.pred.scalars[0] << "," << ec.pred.scalars[1];  // <action_centroid>,<radius>
-  return ss.str();
+  return continuous_actions::to_string(ec.pred.pdf, false, numeric_limits<float>::max_digits10);
 }
 
 void print_audit_features(vw& all, example& ec)
@@ -200,17 +171,42 @@ void print_audit_features(vw& all, example& ec)
   GD::print_features(all, ec);
 }
 
+// Returns a value close to x and greater than it
+inline float close_greater_value(float x) {
+  if (x != 0.f)
+    return nextafter(x, numeric_limits<float>::infinity());
+  return 1e-5;
+}
+
+// Returns a value close to x and lesser than it
+inline float close_lesser_value(float x) {
+  if (x != 0.f)
+    return nextafter(x, -numeric_limits<float>::infinity());
+  return -1e-5;
+}
+
+// Approximates a uniform pmf over two values 'a' and 'b' as a 2 spike pdf
+void approx_pmf_to_pdf(float a, float b, probability_density_function& pdf) {
+  float left = close_lesser_value(a), right = close_greater_value(a);
+  float pdf_val = 0.5 / (right - left);
+  pdf.push_back({left, right, pdf_val});
+
+  left = close_lesser_value(b);
+  right = close_greater_value(b);
+  pdf_val = 0.5 / (right - left);
+  pdf.push_back({left, right, pdf_val});
+}
+
 template <uint8_t policy, bool audit_or_hash_inv>
 void predict(cbzo& data, base_learner&, example& ec)
 {
-  ec.pred.scalars.clear();
+  ec.pred.pdf.clear();
 
   float action_centroid = inference<policy>(*data.all, ec);
   set_minmax(data.all->sd, action_centroid, data.min_prediction_supplied, data.max_prediction_supplied);
-  float clipped_action_centroid = std::min(std::max(action_centroid, data.all->sd->min_label), data.all->sd->max_label);
+  action_centroid = std::min(std::max(action_centroid, data.all->sd->min_label), data.all->sd->max_label);
 
-  ec.pred.scalars.push_back(clipped_action_centroid);
-  ec.pred.scalars.push_back(data.radius);
+  approx_pmf_to_pdf(action_centroid - data.radius, action_centroid + data.radius, ec.pred.pdf);
 
   if (audit_or_hash_inv) print_audit_features(*data.all, ec);
 }
@@ -355,7 +351,7 @@ base_learner* setup(options_i& options, vw& all)
   }
 
   all.p->lp = cb_continuous::the_label_parser;
-  all.delete_prediction = delete_scalars;
+  all.delete_prediction = delete_probability_density_function;
   data->all = &all;
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");

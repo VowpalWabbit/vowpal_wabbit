@@ -28,9 +28,12 @@ std::string to_string(const pdf_segment& seg)
 }
 
 // Convert pdf to string of form 'begin-end:pdf_value, ... '
-std::string to_string(const probability_density_function& pdf, bool newline)
+std::string to_string(const probability_density_function& pdf, bool newline, int precision)
 {
   std::stringstream ss;
+  if (precision >= 0)
+    ss << std::setprecision(precision);
+
   for (size_t i = 0; i < pdf.size(); i++)
   {
     if (i > 0) ss << ',';

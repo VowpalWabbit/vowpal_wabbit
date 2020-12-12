@@ -1,11 +1,11 @@
 Version 8.8.1
 Id
-Min label:-3.30848
-Max label:2.95908
+Min label:-1.13836
+Max label:3.60884
 bits:18
 lda:0
 0 ngram:
 0 skip:
 options: --cbzo --policy constant
-Checksum: 254255778
-116060:2.84215
+Checksum: 2756831268
+116060:3.57507
