@@ -31,8 +31,7 @@ std::string to_string(const pdf_segment& seg)
 std::string to_string(const probability_density_function& pdf, bool newline, int precision)
 {
   std::stringstream ss;
-  if (precision >= 0)
-    ss << std::setprecision(precision);
+  if (precision >= 0) ss << std::setprecision(precision);
 
   for (size_t i = 0; i < pdf.size(); i++)
   {
