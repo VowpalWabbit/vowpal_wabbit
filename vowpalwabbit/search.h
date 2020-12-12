@@ -7,9 +7,7 @@
 #define cdbg std::clog
 #undef cdbg
 #define cdbg \
-  if (1)     \
-  {          \
-  }          \
+  if (1) {}  \
   else       \
     std::clog
 // comment the previous two lines if you want loads of debug output :)
@@ -28,7 +26,7 @@ struct search;
 
 class BaseTask
 {
- public:
+public:
   BaseTask(search* _sch, multi_ex& _ec) : sch(_sch), ec(_ec)
   {
     _foreach_action = nullptr;
@@ -253,7 +251,7 @@ struct search_metatask
 // want to use crazy combinations of arguments
 class predictor
 {
- public:
+public:
   predictor(search& sch, ptag my_tag);
   ~predictor();
 
@@ -329,7 +327,7 @@ class predictor
   // make a prediction
   action predict();
 
- private:
+private:
   bool is_ldf;
   ptag my_tag;
   example* ec;

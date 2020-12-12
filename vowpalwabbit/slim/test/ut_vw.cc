@@ -316,8 +316,7 @@ TEST_P(InvalidModelTest, Run)
   for (size_t end = 0; end < model_file_size - 1; ++end)
   {
     // we're not able to detect if complete index:weight pairs are missing
-    if (undetectable_offsets.find(end) != undetectable_offsets.end())
-      continue;
+    if (undetectable_offsets.find(end) != undetectable_offsets.end()) continue;
 
     // type parameterized and value parameterized test cases can't be combined:
     // https://stackoverflow.com/questions/8507385/google-test-is-there-a-way-to-combine-a-test-which-is-both-type-parameterized-a

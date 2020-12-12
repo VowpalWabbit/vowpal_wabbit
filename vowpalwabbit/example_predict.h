@@ -5,10 +5,12 @@
 
 typedef unsigned char namespace_index;
 
-#include "v_array.h"
-#include "feature_group.h"
 #include "constant.h"
 #include "future_compat.h"
+#include "reduction_features.h"
+#include "feature_group.h"
+#include "v_array.h"
+
 #include <vector>
 #include <array>
 
@@ -19,7 +21,7 @@ struct example_predict
     features* _feature_space;
     v_array<namespace_index>::iterator _index;
 
-   public:
+  public:
     iterator(features* feature_space, namespace_index* index);
     features& operator*();
     iterator& operator++();
@@ -47,6 +49,7 @@ struct example_predict
   // Interactions are specified by this vector of vectors of unsigned characters, where each vector is an interaction
   // and each char is a namespace.
   std::vector<std::vector<namespace_index>>* interactions;
+  reduction_features _reduction_features;
 
   uint32_t _current_reduction_depth;  // Used for debugging reductions.  Keeps track of current reduction level
 };
@@ -56,7 +59,7 @@ struct example_predict
 class VW_DEPRECATED("example_predict is now RAII based. That class can be used instead.") safe_example_predict
     : public example_predict
 {
- public:
+public:
   safe_example_predict();
   ~safe_example_predict();
 

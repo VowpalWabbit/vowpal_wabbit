@@ -18,7 +18,7 @@ namespace slates
 {
 struct slates_data
 {
- private:
+private:
   std::vector<label> _stashed_labels;
 
   /*
@@ -47,7 +47,7 @@ struct slates_data
   template <bool is_learn>
   void learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
- public:
+public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };

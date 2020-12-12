@@ -9,15 +9,15 @@
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
 #ifdef _M_CEE
-#pragma managed(push, off)
-#undef _M_CEE
-#include <mutex>
-#include <condition_variable>
-#define _M_CEE 001
-#pragma managed(pop)
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <mutex>
+#  include <condition_variable>
+#  define _M_CEE 001
+#  pragma managed(pop)
 #else
-#include <mutex>
-#include <condition_variable>
+#  include <mutex>
+#  include <condition_variable>
 #endif
 
 namespace VW
@@ -25,21 +25,15 @@ namespace VW
 template <typename T>
 class ptr_queue
 {
- public:
+public:
   ptr_queue(size_t max_size) : max_size(max_size) {}
 
   T* pop()
   {
     std::unique_lock<std::mutex> lock(mut);
-    while (object_queue.size() == 0 && !done)
-    {
-      is_not_empty.wait(lock);
-    }
+    while (object_queue.size() == 0 && !done) { is_not_empty.wait(lock); }
 
-    if (done && object_queue.size() == 0)
-    {
-      return nullptr;
-    }
+    if (done && object_queue.size() == 0) { return nullptr; }
 
     auto item = object_queue.front();
     object_queue.pop();
@@ -51,10 +45,7 @@ class ptr_queue
   void push(T* item)
   {
     std::unique_lock<std::mutex> lock(mut);
-    while (object_queue.size() == max_size)
-    {
-      is_not_full.wait(lock);
-    }
+    while (object_queue.size() == max_size) { is_not_full.wait(lock); }
     object_queue.push(item);
 
     is_not_empty.notify_all();
@@ -76,7 +67,7 @@ class ptr_queue
     return object_queue.size();
   }
 
- private:
+private:
   size_t max_size;
   std::queue<T*> object_queue;
   mutable std::mutex mut;

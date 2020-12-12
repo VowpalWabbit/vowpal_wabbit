@@ -88,7 +88,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   // This basically runs if none of the other explore strategies are used
   bool use_greedy = !(options.was_supplied("first") || options.was_supplied("bag") || options.was_supplied("cover") ||
       options.was_supplied("regcb") || options.was_supplied("regcbopt") || options.was_supplied("squarecb") ||
-      options.was_supplied("rnd") || options.was_supplied("softmax"));
+      options.was_supplied("rnd") || options.was_supplied("softmax") || options.was_supplied("synthcover"));
 
   if (!cb_explore_adf_option || !use_greedy) return nullptr;
 
@@ -102,7 +102,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   if (!options.was_supplied("epsilon")) epsilon = 0.05f;
 
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
+  all.example_parser->lbl_parser = CB::cb_label;
   all.label_type = label_type_t::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;

@@ -1,0 +1,8 @@
+1:0:0.5 |features a b
+2:1:0.5 |features a c
+2:0:0.5 |features b c
+1:2:0.5 |features b d
+2:0:0.5 |features a d
+1:0:0.5 |features a c d
+1:1:0.5 |features a c
+2:1:0.5 |features a c

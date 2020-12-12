@@ -23,9 +23,11 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>vw</RootNamespace>
     <ProjectName>vw_core</ProjectName>
+    <flatcPath Condition="'$(flatcPath)'==''">flatc.exe</flatcPath>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v141</PlatformToolset>
+    <VcpkgOSTarget Condition="'$(VcpkgPlatformToolset)'=='v141'">windows-v141</VcpkgOSTarget>
     <!-- This is the ruleset file for code analysis, you can change it in VS -->
     <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
@@ -101,7 +103,11 @@
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>win32\make_config_h.exe</Command>
+      <Message>Generate FlatBuffer</Message>
+      <Command>
+        $(flatcPath) -o $(ProjectDir)\parser\flatbuffer\generated\ --cpp $(ProjectDir)\parser\flatbuffer\schema\example.fbs
+        win32\make_config_h.exe
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <PropertyGroup>
@@ -147,10 +153,13 @@
     <ClInclude Include="cb_explore_adf_squarecb.h" />
     <ClInclude Include="cb_explore_adf_rnd.h" />
     <ClInclude Include="cb_explore_adf_softmax.h" />
+    <ClInclude Include="cb_explore_adf_synthcover.h" />
     <ClInclude Include="cb_explore.h" />
     <ClInclude Include="cb_sample.h" />
     <ClInclude Include="cbify.h" />
     <ClInclude Include="ccb_label.h" />
+    <ClInclude Include="ccb_reduction_features.h" />
+    <ClInclude Include="continuous_actions_reduction_features.h" />
     <ClInclude Include="classweight.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />
@@ -208,6 +217,7 @@
     <ClInclude Include="options_serializer_boost_po.h" />
     <ClInclude Include="options_types.h" />
     <ClInclude Include="options.h" />
+    <ClInclude Include="parser\flatbuffer\parse_example_flatbuffer.h" />
     <ClInclude Include="parse_args.h" />
     <ClInclude Include="parse_dispatch_loop.h" />
     <ClInclude Include="parse_example_json.h" />
@@ -219,6 +229,7 @@
     <ClInclude Include="pmf_to_pdf.h" />
     <ClInclude Include="primitives.h" />
     <ClInclude Include="plt.h" />
+    <ClInclude Include="reduction_features.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="prob_dist_cont.h" />
     <ClInclude Include="queue.h" />
@@ -290,6 +301,7 @@
     <ClCompile Include="cb_explore_adf_squarecb.cc" />
     <ClCompile Include="cb_explore_adf_rnd.cc" />
     <ClCompile Include="cb_explore_adf_softmax.cc" />
+    <ClCompile Include="cb_explore_adf_synthcover.cc" />
     <ClCompile Include="cb_explore.cc" />
     <ClCompile Include="cb_sample.cc" />
     <ClCompile Include="cb.cc" />
@@ -344,6 +356,8 @@
     <ClCompile Include="OjaNewton.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
+    <ClCompile Include="parser\flatbuffer\parse_example_flatbuffer.cc" />
+    <ClCompile Include="parser\flatbuffer\parse_label.cc" />
     <ClCompile Include="parse_args.cc" />
     <ClCompile Include="parse_example.cc" />
     <ClCompile Include="parse_primitives.cc" />
@@ -390,6 +404,9 @@
   <ItemGroup>
     <Natvis Include="vw_types.natvis" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="parser\flatbuffer\schema\example.fbs" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets" Condition="Exists('$(SolutionDir)packages\boost.1.70.0.0\build\boost.targets')" />
@@ -397,6 +414,7 @@
     <Import Project="$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" />
     <Import Project="$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" />
   </ImportGroup>
+  <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
@@ -405,6 +423,9 @@
     <Error Condition="!Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />
+  </Target>
+  <Target Name="AfterClean">
+    <RemoveDir Directories="$(SolutionDir)parser\flatbuffer\generated" />
   </Target>
   <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>

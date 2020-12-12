@@ -17,8 +17,7 @@ struct print
 void print_feature(vw& /* all */, float value, uint64_t index)
 {
   cout << index;
-  if (value != 1.)
-    cout << ":" << value;
+  if (value != 1.) cout << ":" << value;
   cout << " ";
 }
 
@@ -31,8 +30,7 @@ void learn(print& p, VW::LEARNER::base_learner&, example& ec)
     if (ec.weight != 1 || ld.initial != 0)
     {
       cout << ec.weight << " ";
-      if (ld.initial != 0)
-        cout << ld.initial << " ";
+      if (ld.initial != 0) cout << ld.initial << " ";
     }
   }
   if (!ec.tag.empty())

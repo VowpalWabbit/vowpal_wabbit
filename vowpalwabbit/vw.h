@@ -20,10 +20,10 @@
  */
 
 #ifdef _WIN32
-#ifdef LEAKCHECK
+#  ifdef LEAKCHECK
 // Visual Leak Detector for memory leak detection on Windows
-#include <vld.h>
-#endif
+#    include <vld.h>
+#  endif
 #endif
 
 #include "global_data.h"
@@ -43,6 +43,8 @@ namespace VW
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
+vw* initialize(std::unique_ptr<config::options_i, options_deleter_type> options, io_buf* model = nullptr,
+    bool skipModelLoad = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,
@@ -97,7 +99,7 @@ example* read_example(vw& all, std::string example_line);
 // after you create and fill feature_spaces, get an example with everything filled in.
 example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len);
 
-// callers must free memory using release_example
+// callers must free memory using dealloc_example
 // this interface must be used with care as finish_example is a no-op for these examples.
 // thus any delay introduced when freeing examples must be at least as long as the one
 // introduced by all.l->finish_example implementations.
@@ -152,7 +154,7 @@ void save_predictor(vw& all, io_buf& buf);
 // First create the hash of a namespace.
 inline uint64_t hash_space(vw& all, const std::string& s)
 {
-  return all.p->hasher(s.data(), s.length(), all.hash_seed);
+  return all.example_parser->hasher(s.data(), s.length(), all.hash_seed);
 }
 inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
@@ -160,12 +162,12 @@ inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 }
 inline uint64_t hash_space_cstr(vw& all, const char* fstr)
 {
-  return all.p->hasher(fstr, strlen(fstr), all.hash_seed);
+  return all.example_parser->hasher(fstr, strlen(fstr), all.hash_seed);
 }
 // Then use it as the seed for hashing features.
 inline uint64_t hash_feature(vw& all, const std::string& s, uint64_t u)
 {
-  return all.p->hasher(s.data(), s.length(), u) & all.parse_mask;
+  return all.example_parser->hasher(s.data(), s.length(), u) & all.parse_mask;
 }
 inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {
@@ -175,13 +177,15 @@ inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std:
 
 inline uint64_t hash_feature_cstr(vw& all, char* fstr, uint64_t u)
 {
-  return all.p->hasher(fstr, strlen(fstr), u) & all.parse_mask;
+  return all.example_parser->hasher(fstr, strlen(fstr), u) & all.parse_mask;
 }
 
 inline uint64_t chain_hash(vw& all, const std::string& name, const std::string& value, uint64_t u)
 {
   // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-  return all.p->hasher(value.data(), value.length(), all.p->hasher(name.data(), name.length(), u)) & all.parse_mask;
+  return all.example_parser->hasher(
+             value.data(), value.length(), all.example_parser->hasher(name.data(), name.length(), u)) &
+      all.parse_mask;
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)

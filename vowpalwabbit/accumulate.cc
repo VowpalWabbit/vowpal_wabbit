@@ -75,8 +75,7 @@ float max_elem(float* arr, int length)
 {
   float max = arr[0];
   for (int i = 1; i < length; i++)
-    if (arr[i] > max)
-      max = arr[i];
+    if (arr[i] > max) max = arr[i];
   return max;
 }
 
@@ -84,8 +83,7 @@ float min_elem(float* arr, int length)
 {
   float min = arr[0];
   for (int i = 1; i < length; i++)
-    if (arr[i] < min && arr[i] > 0.001)
-      min = arr[i];
+    if (arr[i] < min && arr[i] > 0.001) min = arr[i];
   return min;
 }
 
@@ -100,9 +98,8 @@ void do_weighting(vw& all, uint64_t length, float* local_weights, T& weights)
       float ratio = weight[1] / local_weights[i];
       local_weights[i] = weight[0] * ratio;
       weight[0] *= ratio;
-      weight[1] *= ratio;  // A crude max
-      if (all.normalized_idx > 0)
-        weight[all.normalized_idx] *= ratio;  // A crude max
+      weight[1] *= ratio;                                               // A crude max
+      if (all.normalized_idx > 0) weight[all.normalized_idx] *= ratio;  // A crude max
     }
     else
     {

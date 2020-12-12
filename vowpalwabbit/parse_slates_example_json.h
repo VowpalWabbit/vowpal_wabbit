@@ -17,14 +17,8 @@ using namespace rapidjson;
 inline float get_number(const rapidjson::Value& value)
 {
   float number = 0.f;
-  if (value.IsInt())
-  {
-    number = static_cast<float>(value.GetInt());
-  }
-  if (value.IsUint())
-  {
-    number = static_cast<float>(value.GetUint());
-  }
+  if (value.IsInt()) { number = static_cast<float>(value.GetInt()); }
+  if (value.IsUint()) { number = static_cast<float>(value.GetUint()); }
   else if (value.IsFloat())
   {
     number = value.GetFloat();
@@ -48,10 +42,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
   assert(key_namespace != nullptr);
   assert(std::strlen(key_namespace) != 0);
   // Check if it is a reserved field, and if so move on.
-  if (key_namespace[0] == '_')
-  {
-    return;
-  }
+  if (key_namespace[0] == '_') { return; }
 
   const auto key_namespace_length = std::strlen(key_namespace);
   switch (value.GetType())
@@ -72,9 +63,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
     {
       push_ns(current_example, key_namespace, namespaces, all);
       for (auto& object_value : value.GetObject())
-      {
-        handle_features_value(object_value.name.GetString(), object_value.value, current_example, namespaces, all);
-      }
+      { handle_features_value(object_value.name.GetString(), object_value.value, current_example, namespaces, all); }
       pop_ns(current_example, namespaces);
     }
     break;
@@ -133,10 +122,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
         }
       }
 
-      if (all.chain_hash)
-      {
-        namespaces.back().AddFeature(&all, key_namespace, str);
-      }
+      if (all.chain_hash_json) { namespaces.back().AddFeature(&all, key_namespace, str); }
       else
       {
         char* prepend = (char*)str - key_namespace_length;
@@ -166,7 +152,7 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
 {
   std::vector<Namespace<audit>> namespaces;
   handle_features_value(" ", context, examples[0], namespaces, all);
-  all.p->lp.default_label(&examples[0]->l);
+  all.example_parser->lbl_parser.default_label(&examples[0]->l);
   examples[0]->l.slates.type = VW::slates::example_type::shared;
 
   assert(namespaces.size() == 0);
@@ -175,7 +161,7 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
   for (const Value& obj : multi)
   {
     auto ex = &(*example_factory)(ex_factory_context);
-    all.p->lp.default_label(&ex->l);
+    all.example_parser->lbl_parser.default_label(&ex->l);
     ex->l.slates.type = VW::slates::example_type::action;
     examples.push_back(ex);
     auto slot_id = obj["_slot_id"].GetInt();
@@ -188,7 +174,7 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
   for (const Value& slot_object : slots)
   {
     auto ex = &(*example_factory)(ex_factory_context);
-    all.p->lp.default_label(&ex->l);
+    all.example_parser->lbl_parser.default_label(&ex->l);
     ex->l.slates.type = VW::slates::example_type::slot;
     examples.push_back(ex);
     slot_examples.push_back(ex);
@@ -225,26 +211,14 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
   if (document.HasMember("_label_cost"))
   {
     examples[0]->l.slates.cost = document["_label_cost"].GetFloat();
-    for (auto ex : examples)
-    {
-      ex->l.slates.labeled = true;
-    }
+    for (auto ex : examples) { ex->l.slates.labeled = true; }
   }
 
-  if (document.HasMember("EventId"))
-  {
-    data->eventId = document["EventId"].GetString();
-  }
+  if (document.HasMember("EventId")) { data->eventId = document["EventId"].GetString(); }
 
-  if (document.HasMember("_skipLearn"))
-  {
-    data->skipLearn = document["_skipLearn"].GetBool();
-  }
+  if (document.HasMember("_skipLearn")) { data->skipLearn = document["_skipLearn"].GetBool(); }
 
-  if (document.HasMember("pdrop"))
-  {
-    data->probabilityOfDrop = document["pdrop"].GetFloat();
-  }
+  if (document.HasMember("pdrop")) { data->probabilityOfDrop = document["pdrop"].GetFloat(); }
 
   if (document.HasMember("_outcomes"))
   {
@@ -255,16 +229,10 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
       auto& current_obj = outcomes[i];
       auto& destination = slot_examples[i]->l.slates.probabilities;
       auto& actions = current_obj["_a"];
-      if (actions.GetType() == rapidjson::kNumberType)
-      {
-        destination.push_back({actions.GetUint(), 0.f});
-      }
+      if (actions.GetType() == rapidjson::kNumberType) { destination.push_back({actions.GetUint(), 0.f}); }
       else if (actions.GetType() == rapidjson::kArrayType)
       {
-        for (auto& val : actions.GetArray())
-        {
-          destination.push_back({val.GetUint(), 0.f});
-        }
+        for (auto& val : actions.GetArray()) { destination.push_back({val.GetUint(), 0.f}); }
       }
       else
       {
@@ -282,9 +250,7 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
         assert(probs.Size() == destination.size());
         const auto& probs_array = probs.GetArray();
         for (rapidjson::SizeType j = 0; j < probs_array.Size(); j++)
-        {
-          destination[j].score = probs_array[j].GetFloat();
-        }
+        { destination[j].score = probs_array[j].GetFloat(); }
       }
       else
       {
