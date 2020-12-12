@@ -193,7 +193,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
       p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf);
 
   l.set_finish_example(finish_example);
-  all.p->lp = cb_continuous::the_label_parser;
+  all.example_parser->lbl_parser = cb_continuous::the_label_parser;
 
   return make_base(l);
 }

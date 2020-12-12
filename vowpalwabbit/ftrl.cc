@@ -15,7 +15,7 @@ using namespace VW::config;
 #define W_WE 4  // Wealth
 #define W_MG 5  // maximum gradient
 
-struct update_data
+struct ftrl_update_data
 {
   float update;
   float ftrl_alpha;
@@ -31,7 +31,7 @@ struct ftrl
   vw* all;  // features, finalize, l1, l2,
   float ftrl_alpha;
   float ftrl_beta;
-  struct update_data data;
+  struct ftrl_update_data data;
   size_t no_win_counter;
   size_t early_stop_thres;
   uint32_t ftrl_size;
@@ -78,8 +78,7 @@ void predict(ftrl& b, single_learner&, example& ec)
 {
   ec.partial_prediction = GD::inline_predict(*b.all, ec);
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
-  if (audit)
-    GD::print_audit_features(*(b.all), ec);
+  if (audit) GD::print_audit_features(*(b.all), ec);
 }
 
 template <bool audit>
@@ -115,7 +114,7 @@ void multipredict(
   }
 }
 
-void inner_update_proximal(update_data& d, float x, float& wref)
+void inner_update_proximal(ftrl_update_data& d, float x, float& wref)
 {
   float* w = &wref;
   float gradient = d.update * x;
@@ -137,13 +136,12 @@ void inner_update_proximal(update_data& d, float x, float& wref)
   }
 }
 
-void inner_update_pistol_state_and_predict(update_data& d, float x, float& wref)
+void inner_update_pistol_state_and_predict(ftrl_update_data& d, float x, float& wref)
 {
   float* w = &wref;
 
   float fabs_x = fabs(x);
-  if (fabs_x > w[W_MX])
-    w[W_MX] = fabs_x;
+  if (fabs_x > w[W_MX]) w[W_MX] = fabs_x;
 
   float squared_theta = w[W_ZT] * w[W_ZT];
   float tmp = 1.f / (d.ftrl_alpha * w[W_MX] * (w[W_G2] + w[W_MX]));
@@ -152,7 +150,7 @@ void inner_update_pistol_state_and_predict(update_data& d, float x, float& wref)
   d.predict += w[W_XT] * x;
 }
 
-void inner_update_pistol_post(update_data& d, float x, float& wref)
+void inner_update_pistol_post(ftrl_update_data& d, float x, float& wref)
 {
   float* w = &wref;
   float gradient = d.update * x;
@@ -168,41 +166,32 @@ void inner_update_pistol_post(update_data& d, float x, float& wref)
 // W_MX 3  maximum absolute value
 // W_WE 4  Wealth
 // W_MG 5  Maximum Lipschitz constant
-void inner_coin_betting_predict(update_data& d, float x, float& wref)
+void inner_coin_betting_predict(ftrl_update_data& d, float x, float& wref)
 {
   float* w = &wref;
   float w_mx = w[W_MX];
   float w_xt = 0.0;
 
   float fabs_x = fabs(x);
-  if (fabs_x > w_mx)
-  {
-    w_mx = fabs_x;
-  }
+  if (fabs_x > w_mx) { w_mx = fabs_x; }
 
   // COCOB update without sigmoid
-  if (w[W_MG] * w_mx > 0)
-    w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT];
+  if (w[W_MG] * w_mx > 0) w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT];
 
   d.predict += w_xt * x;
-  if (w_mx > 0)
-    d.normalized_squared_norm_x += x * x / (w_mx * w_mx);
+  if (w_mx > 0) d.normalized_squared_norm_x += x * x / (w_mx * w_mx);
 }
 
-void inner_coin_betting_update_after_prediction(update_data& d, float x, float& wref)
+void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, float& wref)
 {
   float* w = &wref;
   float fabs_x = fabs(x);
   float gradient = d.update * x;
 
-  if (fabs_x > w[W_MX])
-  {
-    w[W_MX] = fabs_x;
-  }
+  if (fabs_x > w[W_MX]) { w[W_MX] = fabs_x; }
 
   float fabs_gradient = fabs(d.update);
-  if (fabs_gradient > w[W_MG])
-    w[W_MG] = fabs_gradient > d.ftrl_beta ? fabs_gradient : d.ftrl_beta;
+  if (fabs_gradient > w[W_MG]) w[W_MG] = fabs_gradient > d.ftrl_beta ? fabs_gradient : d.ftrl_beta;
 
   // COCOB update without sigmoid.
   // If a new Lipschitz constant and/or magnitude of x is found, the w is
@@ -222,7 +211,7 @@ void coin_betting_predict(ftrl& b, single_learner&, example& ec)
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
 
-  GD::foreach_feature<update_data, inner_coin_betting_predict>(*b.all, ec, b.data);
+  GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data);
 
   b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
@@ -236,7 +225,7 @@ void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
 {
   b.data.predict = 0;
 
-  GD::foreach_feature<update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data);
+  GD::foreach_feature<ftrl_update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data);
   ec.partial_prediction = b.data.predict;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
@@ -245,20 +234,20 @@ void update_after_prediction_proximal(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
-  GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, b.data);
+  GD::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_pistol(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
-  GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
+  GD::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
 void coin_betting_update_after_prediction(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  GD::foreach_feature<update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
+  GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
 }
 
 template <bool audit>
@@ -292,8 +281,7 @@ void learn_coin_betting(ftrl& a, single_learner& base, example& ec)
 void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 {
   vw* all = b.all;
-  if (read)
-    initialize_regressor(*all);
+  if (read) initialize_regressor(*all);
 
   if (model_file.num_files() != 0)
   {
@@ -315,8 +303,7 @@ void end_pass(ftrl& g)
 
   if (!all.holdout_set_off)
   {
-    if (summarize_holdout_set(all, g.no_win_counter))
-      finalize_regressor(all, all.final_regressor_name);
+    if (summarize_holdout_set(all, g.no_win_counter)) finalize_regressor(all, all.final_regressor_name);
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
       set_done(all);
@@ -339,10 +326,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   options.add_and_parse(new_options);
 
-  if (!ftrl_option && !pistol && !coin)
-  {
-    return nullptr;
-  }
+  if (!ftrl_option && !pistol && !coin) { return nullptr; }
 
   // Defaults that are specific to the mode that was chosen.
   if (ftrl_option)

@@ -69,10 +69,7 @@ features& features::operator=(features&& other) noexcept
   return *this;
 }
 
-void features::free_space_names(size_t i)
-{
-  space_names.erase(space_names.begin() + i, space_names.end());
-}
+void features::free_space_names(size_t i) { space_names.erase(space_names.begin() + i, space_names.end()); }
 
 void features::clear()
 {
@@ -86,29 +83,17 @@ void features::truncate_to(const features_value_iterator& pos)
 {
   auto i = pos._begin - values.begin();
   values.end() = pos._begin;
-  if (indicies.end() != indicies.begin())
-  {
-    indicies.end() = indicies.begin() + i;
-  }
+  if (indicies.end() != indicies.begin()) { indicies.end() = indicies.begin() + i; }
 
-  if (space_names.begin() != space_names.end())
-  {
-    space_names.erase(space_names.begin() + i, space_names.end());
-  }
+  if (space_names.begin() != space_names.end()) { space_names.erase(space_names.begin() + i, space_names.end()); }
 }
 
 void features::truncate_to(size_t i)
 {
   values.end() = values.begin() + i;
-  if (indicies.end() != indicies.begin())
-  {
-    indicies.end() = indicies.begin() + i;
-  }
+  if (indicies.end() != indicies.begin()) { indicies.end() = indicies.begin() + i; }
 
-  if (space_names.size() > i )
-  {
-    space_names.erase(space_names.begin() + i, space_names.end());
-  }
+  if (space_names.size() > i) { space_names.erase(space_names.begin() + i, space_names.end()); }
 }
 
 void features::push_back(feature_value v, feature_index i)
@@ -120,19 +105,14 @@ void features::push_back(feature_value v, feature_index i)
 
 bool features::sort(uint64_t parse_mask)
 {
-  if (indicies.empty())
-  {
-    return false;
-  }
+  if (indicies.empty()) { return false; }
 
   if (!space_names.empty())
   {
     std::vector<feature_slice> slice;
     slice.reserve(indicies.size());
     for (size_t i = 0; i < indicies.size(); i++)
-    {
-      slice.push_back({values[i], indicies[i] & parse_mask, *space_names[i]});
-    }
+    { slice.push_back({values[i], indicies[i] & parse_mask, *space_names[i]}); }
     // The comparator should return true if the first element is less than the second.
     std::sort(slice.begin(), slice.end(), [](const feature_slice& first, const feature_slice& second) {
       return (first.weight_index < second.weight_index) ||
@@ -151,10 +131,7 @@ bool features::sort(uint64_t parse_mask)
     std::vector<feature> slice;
     slice.reserve(indicies.size());
 
-    for (size_t i = 0; i < indicies.size(); i++)
-    {
-      slice.emplace_back(values[i], indicies[i] & parse_mask);
-    }
+    for (size_t i = 0; i < indicies.size(); i++) { slice.emplace_back(values[i], indicies[i] & parse_mask); }
     // The comparator should return true if the first element is less than the second.
     std::sort(slice.begin(), slice.end(), [](const feature& first, const feature& second) {
       return (first.weight_index < second.weight_index) ||

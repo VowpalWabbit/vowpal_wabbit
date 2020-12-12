@@ -4,29 +4,29 @@
 
 #pragma once
 #ifndef VW_NOEXCEPT
-#include <stdexcept>
-#include <sstream>
-#include <array>
-#include <string>
+#  include <stdexcept>
+#  include <sstream>
+#  include <array>
+#  include <string>
 
-#include <cstring>
-#include <string.h>
+#  include <cstring>
+#  include <string.h>
 
-#ifndef _WIN32
-#include <locale.h>
-#endif
+#  ifndef _WIN32
+#    include <locale.h>
+#  endif
 
-#ifdef _WIN32
-#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
-#else
-#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#endif
+#  ifdef _WIN32
+#    define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#  else
+#    define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#  endif
 
 namespace VW
 {
 class vw_exception : public std::exception
 {
- private:
+private:
   // Source file exception was thrown in.
   const char* _file;
 
@@ -35,7 +35,7 @@ class vw_exception : public std::exception
   // Line number exception was thrown in.
   int _line_number;
 
- public:
+public:
   vw_exception(const char* file, int lineNumber, std::string const& message)
       : _file(file), _message(message), _line_number(lineNumber)
   {
@@ -53,7 +53,7 @@ class vw_exception : public std::exception
 
 class vw_argument_disagreement_exception : public vw_exception
 {
- public:
+public:
   vw_argument_disagreement_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {
@@ -68,7 +68,7 @@ class vw_argument_disagreement_exception : public vw_exception
 
 class vw_argument_invalid_value_exception : public vw_exception
 {
- public:
+public:
   vw_argument_invalid_value_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {
@@ -83,7 +83,7 @@ class vw_argument_invalid_value_exception : public vw_exception
 
 class vw_unrecognised_option_exception : public vw_exception
 {
- public:
+public:
   vw_unrecognised_option_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {
@@ -98,7 +98,7 @@ class vw_unrecognised_option_exception : public vw_exception
 
 class strict_parse_exception : public vw_exception
 {
- public:
+public:
   strict_parse_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {
@@ -113,7 +113,7 @@ class strict_parse_exception : public vw_exception
 
 inline std::string strerror_to_string(int error_number)
 {
-#ifdef _WIN32
+#  ifdef _WIN32
   constexpr auto BUFFER_SIZE = 256;
   std::array<char, BUFFER_SIZE> error_message_buffer;
   auto result = strerror_s(error_message_buffer.data(), error_message_buffer.size() - 1, error_number);
@@ -121,40 +121,39 @@ inline std::string strerror_to_string(int error_number)
 
   auto length = std::strlen(error_message_buffer.data());
   return std::string(error_message_buffer.data(), length);
-#elif __APPLE__
+#  elif __APPLE__
   constexpr auto BUFFER_SIZE = 256;
   std::array<char, BUFFER_SIZE> error_message_buffer;
-  #if defined(__GLIBC__) && defined(_GNU_SOURCE)
-    // You must use the returned bffer and not the passed in buffer the GNU version.
-    char* message_buffer = strerror_r(error_number, error_message_buffer.data(), error_message_buffer.size() - 1);
-    auto length = std::strlen(message_buffer);
-    return std::string(message_buffer, length);
-  #else
-    auto result = strerror_r(error_number, error_message_buffer.data(), error_message_buffer.size() - 1);
+#    if defined(__GLIBC__) && defined(_GNU_SOURCE)
+  // You must use the returned bffer and not the passed in buffer the GNU version.
+  char* message_buffer = strerror_r(error_number, error_message_buffer.data(), error_message_buffer.size() - 1);
+  auto length = std::strlen(message_buffer);
+  return std::string(message_buffer, length);
+#    else
+  auto result = strerror_r(error_number, error_message_buffer.data(), error_message_buffer.size() - 1);
   if (result != 0) { return "unknown message for errno: " + std::to_string(error_number); }
-    auto length = std::strlen(error_message_buffer.data());
-    return std::string(error_message_buffer.data(), length);
-  #endif
-#else
+  auto length = std::strlen(error_message_buffer.data());
+  return std::string(error_message_buffer.data(), length);
+#    endif
+#  else
   // Passing "" for the locale means use the default system locale
   locale_t locale = newlocale(LC_ALL_MASK, "", static_cast<locale_t>(0));
 
-  if (locale == static_cast<locale_t>(0)) {
-    return "Failed to create locale when getting error message for errno: " + std::to_string(error_number);
-  }
+  if (locale == static_cast<locale_t>(0))
+  { return "Failed to create locale when getting error message for errno: " + std::to_string(error_number); }
 
   // Even if error_number is unknown, will return a "Unknown error nnn" message.
   std::string message = strerror_l(error_number, locale);
   freelocale(locale);
   return message;
-#endif
+#  endif
 }
 
-#ifdef _WIN32
+#  ifdef _WIN32
 void vw_trace(const char* filename, int linenumber, const char* fmt, ...);
 
 // useful when hunting down release mode bugs
-#define VW_TRACE(fmt, ...) VW::vw_trace(__FILE__, __LINE__, fmt, __VA_ARGS__)
+#    define VW_TRACE(fmt, ...) VW::vw_trace(__FILE__, __LINE__, fmt, __VA_ARGS__)
 
 struct StopWatchData;
 
@@ -162,7 +161,7 @@ class StopWatch
 {
   StopWatchData* data;
 
- public:
+public:
   StopWatch();
   ~StopWatch();
 
@@ -172,44 +171,41 @@ class StopWatch
 // Equivalent to System::Diagnostics::Debugger::Launch();
 bool launchDebugger();
 
-#define THROWERRNO(args)                                         \
-  {                                                              \
-    std::stringstream __msg;                                     \
-    __msg << args;                                               \
-    __msg << ", errno = " << VW::strerror_to_string(errno);          \
-    throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
-  }
-#else
-#define THROWERRNO(args)                                         \
-  {                                                              \
-    std::stringstream __msg;                                     \
-    __msg << args;                                               \
-    __msg << ", errno = " << VW::strerror_to_string(errno);          \
-    throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
-  }
-#endif
+#    define THROWERRNO(args)                                         \
+      {                                                              \
+        std::stringstream __msg;                                     \
+        __msg << args;                                               \
+        __msg << ", errno = " << VW::strerror_to_string(errno);      \
+        throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
+      }
+#  else
+#    define THROWERRNO(args)                                         \
+      {                                                              \
+        std::stringstream __msg;                                     \
+        __msg << args;                                               \
+        __msg << ", errno = " << VW::strerror_to_string(errno);      \
+        throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
+      }
+#  endif
 
 // ease error handling and also log filename and line number
-#define THROW(args)                                              \
-  {                                                              \
-    std::stringstream __msg;                                     \
-    __msg << args;                                               \
-    throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
-  }
+#  define THROW(args)                                              \
+    {                                                              \
+      std::stringstream __msg;                                     \
+      __msg << args;                                               \
+      throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
+    }
 
-#define THROW_EX(ex, args)                         \
-  {                                                \
-    std::stringstream __msg;                       \
-    __msg << args;                                 \
-    throw ex(__FILENAME__, __LINE__, __msg.str()); \
-  }
+#  define THROW_EX(ex, args)                         \
+    {                                                \
+      std::stringstream __msg;                       \
+      __msg << args;                                 \
+      throw ex(__FILENAME__, __LINE__, __msg.str()); \
+    }
 }  // namespace VW
 
-#define VW_ASSERT(condition, args) \
-  if (!(condition))                \
-  {                                \
-    THROW(args);                   \
-  }
+#  define VW_ASSERT(condition, args) \
+    if (!(condition)) { THROW(args); }
 
 #endif
 
@@ -222,35 +218,35 @@ bool launchDebugger();
 
 #ifdef VW_NOEXCEPT
 
-#define THROW_OR_RETURN_NORMAL(args, retval) \
-  do                                         \
-  {                                          \
-    return retval;                           \
-  } while (0)
+#  define THROW_OR_RETURN_NORMAL(args, retval) \
+    do                                         \
+    {                                          \
+      return retval;                           \
+    } while (0)
 
-#define THROW_OR_RETURN_VOID(args) \
-  do                               \
-  {                                \
-    return;                        \
-  } while (0)
+#  define THROW_OR_RETURN_VOID(args) \
+    do                               \
+    {                                \
+      return;                        \
+    } while (0)
 
 #else  // VW_NOEXCEPT defined
 
-#define THROW_OR_RETURN_NORMAL(args, retval)                  \
-  do                                                          \
-  {                                                           \
-    std::stringstream __msgA;                                 \
-    __msgA << args;                                           \
-    throw VW::vw_exception(__FILE__, __LINE__, __msgA.str()); \
-  } while (0)
+#  define THROW_OR_RETURN_NORMAL(args, retval)                  \
+    do                                                          \
+    {                                                           \
+      std::stringstream __msgA;                                 \
+      __msgA << args;                                           \
+      throw VW::vw_exception(__FILE__, __LINE__, __msgA.str()); \
+    } while (0)
 
-#define THROW_OR_RETURN_VOID(args)                            \
-  do                                                          \
-  {                                                           \
-    std::stringstream __msgB;                                 \
-    __msgB << args;                                           \
-    throw VW::vw_exception(__FILE__, __LINE__, __msgB.str()); \
-  } while (0)
+#  define THROW_OR_RETURN_VOID(args)                            \
+    do                                                          \
+    {                                                           \
+      std::stringstream __msgB;                                 \
+      __msgB << args;                                           \
+      throw VW::vw_exception(__FILE__, __LINE__, __msgB.str()); \
+    } while (0)
 
 #endif
 #define _UNUSED(x) ((void)(x))

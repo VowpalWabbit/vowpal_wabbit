@@ -16,7 +16,6 @@ using namespace VW::LEARNER;
 
 namespace CB
 {
-
 void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
 {
   CB::label* ld = (CB::label*)v;
@@ -28,24 +27,18 @@ void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>&
     cb_class f;
     tokenize(':', word, p->parse_name);
 
-    if (p->parse_name.empty() || p->parse_name.size() > 3)
-    {
-      THROW("malformed cost specification: " << word);
-    }
+    if (p->parse_name.empty() || p->parse_name.size() > 3) { THROW("malformed cost specification: " << word); }
 
     f.partial_prediction = 0.;
     f.action = (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
     f.cost = FLT_MAX;
 
-    if (p->parse_name.size() > 1)
-      f.cost = float_of_string(p->parse_name[1]);
+    if (p->parse_name.size() > 1) f.cost = float_of_string(p->parse_name[1]);
 
-    if (std::isnan(f.cost))
-      THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
+    if (std::isnan(f.cost)) THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
 
     f.probability = .0;
-    if (p->parse_name.size() > 2)
-      f.probability = float_of_string(p->parse_name[2]);
+    if (p->parse_name.size() > 2) f.probability = float_of_string(p->parse_name[2]);
 
     if (std::isnan(f.probability))
       THROW("error NaN probability (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
@@ -62,10 +55,7 @@ void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>&
     }
     if (p->parse_name[0] == "shared")
     {
-      if (p->parse_name.size() == 1)
-      {
-        f.probability = -1.f;
-      }
+      if (p->parse_name.size() == 1) { f.probability = -1.f; }
       else
         std::cerr << "shared feature vectors should not have costs" << std::endl;
     }
@@ -82,10 +72,8 @@ label_parser cb_label = {default_label, parse_label, cache_label, read_cached_la
 bool ec_is_example_header(example const& ec)  // example headers just have "shared"
 {
   const auto& costs = ec.l.cb.costs;
-  if (costs.size() != 1)
-    return false;
-  if (costs[0].probability == -1.f)
-    return true;
+  if (costs.size() != 1) return false;
+  if (costs[0].probability == -1.f) return true;
   return false;
 }
 
@@ -101,8 +89,7 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
       num_features = 0;
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
       for (size_t i = 0; i < (*ec_seq).size(); i++)
-        if (!CB::ec_is_example_header(*(*ec_seq)[i]))
-          num_features += (*ec_seq)[i]->num_features;
+        if (!CB::ec_is_example_header(*(*ec_seq)[i])) num_features += (*ec_seq)[i]->num_features;
     }
     std::string label_buf;
     if (is_test)
@@ -141,8 +128,7 @@ size_t read_cached_label(shared_data* sd, void* v, io_buf& cache)
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
   char* c;
   size_t total = sizeof(uint32_t);
-  if (cache.buf_read(c, total) < total)
-    return 0;
+  if (cache.buf_read(c, total) < total) return 0;
   ld->action = *(uint32_t*)c;
 
   return total + CB::read_cached_label(sd, &(ld->event), cache);
@@ -189,8 +175,7 @@ void parse_label(parser* p, shared_data* sd, void* v, std::vector<VW::string_vie
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
 
-  if (words.size() < 2)
-    THROW("Evaluation can not happen without an action and an exploration");
+  if (words.size() < 2) THROW("Evaluation can not happen without an action and an exploration");
 
   ld->action = (uint32_t)hashstring(words[0].begin(), words[0].length(), 0);
 

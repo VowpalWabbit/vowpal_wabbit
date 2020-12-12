@@ -58,10 +58,7 @@ void VW::topk::learn(VW::LEARNER::single_learner& base, multi_ex& ec_seq)
 
 void VW::topk::update_priority_queue(float pred, v_array<char>& tag)
 {
-  if (_pr_queue.size() < _k_num)
-  {
-    _pr_queue.insert({pred, tag});
-  }
+  if (_pr_queue.size() < _k_num) { _pr_queue.insert({pred, tag}); }
   else if (_pr_queue.begin()->first < pred)
   {
     _pr_queue.erase(_pr_queue.begin());

@@ -14,7 +14,7 @@ using namespace VW::config;
 
 class node_pred
 {
- public:
+public:
   double Ehk;
   float norm_Ehk;
   uint32_t nk;
@@ -23,15 +23,9 @@ class node_pred
 
   bool operator==(node_pred v) const { return (label == v.label); }
 
-  bool operator>(node_pred v) const
-  {
-    return label > v.label;
-  }
+  bool operator>(node_pred v) const { return label > v.label; }
 
-  bool operator<(node_pred v) const
-  {
-    return label < v.label;
-  }
+  bool operator<(node_pred v) const { return label < v.label; }
 
   node_pred() = default;
   node_pred(uint32_t l)
@@ -319,8 +313,7 @@ void predict(log_multi& b, single_learner& base, example& ec)
 void learn(log_multi& b, single_learner& base, example& ec)
 {
   //    verify_min_dfs(b, b.nodes[0]);
-  if (ec.l.multi.label == (uint32_t)-1 || b.progress)
-    predict(b, base, ec);
+  if (ec.l.multi.label == (uint32_t)-1 || b.progress) predict(b, base, ec);
 
   if (ec.l.multi.label != (uint32_t)-1)  // if training the tree
   {
@@ -360,17 +353,12 @@ void save_node_stats(log_multi& d)
         b->nodes[i].Eh / b->nodes[i].n, b->nodes[i].n);
 
     fprintf(fp, "Label:, ");
-    for (j = 0; j < b->nodes[i].preds.size(); j++)
-    {
-      fprintf(fp, "%6d,", (int)b->nodes[i].preds[j].label);
-    }
+    for (j = 0; j < b->nodes[i].preds.size(); j++) { fprintf(fp, "%6d,", (int)b->nodes[i].preds[j].label); }
     fprintf(fp, "\n");
 
     fprintf(fp, "Ehk:, ");
     for (j = 0; j < b->nodes[i].preds.size(); j++)
-    {
-      fprintf(fp, "%7.4f,", b->nodes[i].preds[j].Ehk / b->nodes[i].preds[j].nk);
-    }
+    { fprintf(fp, "%7.4f,", b->nodes[i].preds[j].Ehk / b->nodes[i].preds[j].nk); }
     fprintf(fp, "\n");
 
     total = 0;
@@ -507,14 +495,14 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
 
   std::string loss_function = "quantile";
   float loss_parameter = 0.5;
-  delete (all.loss);
   all.loss = getLossFunction(all, loss_function, loss_parameter);
 
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
   learner<log_multi, example>& l = init_multiclass_learner(
-      data, as_singleline(setup_base(options, all)), learn, predict, all.p, data->max_predictors);
+      data, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, data->max_predictors);
+  all.label_type = label_type_t::mc;
   l.set_save_load(save_load_tree);
 
   return make_base(l);

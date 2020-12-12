@@ -17,8 +17,7 @@ void validate_version(vw& all)
 
 void validate_min_max_label(vw& all)
 {
-  if (all.sd->max_label < all.sd->min_label)
-    THROW("Max label cannot be less than min label.");
+  if (all.sd->max_label < all.sd->min_label) THROW("Max label cannot be less than min label.");
 }
 
 void validate_default_bits(vw& all, uint32_t local_num_bits)

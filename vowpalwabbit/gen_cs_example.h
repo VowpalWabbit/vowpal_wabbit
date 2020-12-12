@@ -200,8 +200,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
   cs_labels.costs.clear();
   for (size_t i = 0; i < examples.size(); i++)
   {
-    if (CB_ALGS::example_is_newline_not_header(*examples[i]))
-      continue;
+    if (CB_ALGS::example_is_newline_not_header(*examples[i])) continue;
 
     COST_SENSITIVE::wclass wc = {0., (uint32_t)i, 0., 0.};
 
@@ -271,18 +270,16 @@ void call_cs_ldf(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<C
   }
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit(
-    [&cb_labels, saved_offset, &examples]
+  auto restore_guard = VW::scope_exit([&cb_labels, saved_offset, &examples] {
+    // 3rd: restore cb_label for each example
+    // (**ec).l.cb = array.element.
+    // and restore offsets
+    for (size_t i = 0; i < examples.size(); ++i)
     {
-      // 3rd: restore cb_label for each example
-      // (**ec).l.cb = array.element.
-      // and restore offsets
-      for (size_t i = 0; i < examples.size(); ++i)
-      {
-        examples[i]->l.cb = cb_labels[i];
-        examples[i]->ft_offset = saved_offset;
-      }
-    });
+      examples[i]->l.cb = cb_labels[i];
+      examples[i]->ft_offset = saved_offset;
+    }
+  });
 
   // 2nd: predict for each ex
   // // call base.predict for all examples

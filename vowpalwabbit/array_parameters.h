@@ -9,14 +9,14 @@
 #include <functional>
 
 #ifndef _WIN32
-#define NOMINMAX
-#include <sys/mman.h>
+#  define NOMINMAX
+#  include <sys/mman.h>
 #endif
 
 // It appears that on OSX MAP_ANONYMOUS is mapped to MAP_ANON
 // https://github.com/leftmike/foment/issues/4
 #ifdef __APPLE__
-#define MAP_ANONYMOUS MAP_ANON
+#  define MAP_ANONYMOUS MAP_ANON
 #endif
 
 #include "array_parameters_dense.h"
@@ -28,11 +28,11 @@ typedef std::unordered_map<uint64_t, weight*> weight_map;
 template <typename T>
 class sparse_iterator
 {
- private:
+private:
   weight_map::iterator _iter;
   uint32_t _stride;
 
- public:
+public:
   typedef std::forward_iterator_tag iterator_category;
   typedef T value_type;
   typedef ptrdiff_t difference_type;
@@ -62,7 +62,7 @@ class sparse_iterator
 
 class sparse_parameters
 {
- private:
+private:
   // This must be mutable because the const operator[] must be able to intialize default weights to return.
   mutable weight_map _map;
   uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
@@ -81,10 +81,7 @@ class sparse_parameters
     {
       _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(stride())));
       iter = _map.find(index);
-      if (_default_func != nullptr)
-      {
-        _default_func(iter->second, index);
-      }
+      if (_default_func != nullptr) { _default_func(iter->second, index); }
     }
     return iter->second;
   }
@@ -141,15 +138,9 @@ public:
     return const_iterator(i, stride());
   }
 
-  inline weight& operator[](size_t i)
-  {
-    return *(get_or_default_and_get(i));
-  }
+  inline weight& operator[](size_t i) { return *(get_or_default_and_get(i)); }
 
-  inline const weight& operator[](size_t i) const
-  {
-    return *(get_or_default_and_get(i));
-  }
+  inline const weight& operator[](size_t i) const { return *(get_or_default_and_get(i)); }
 
   inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
 
@@ -170,7 +161,7 @@ public:
     _seeded = true;
   }
 
-  template<typename Lambda>
+  template <typename Lambda>
   void set_default(Lambda&& default_func)
   {
     _default_func = default_func;
@@ -178,10 +169,7 @@ public:
 
   void set_zero(size_t offset)
   {
-    for (auto& iter : _map)
-    {
-      (&(*(iter.second)))[offset] = 0;
-    }
+    for (auto& iter : _map) { (&(*(iter.second)))[offset] = 0; }
   }
 
   uint64_t mask() const { return _weight_mask; }
@@ -192,10 +180,7 @@ public:
 
   uint32_t stride_shift() const { return _stride_shift; }
 
-  void stride_shift(uint32_t stride_shift)
-  {
-    _stride_shift = stride_shift;
-  }
+  void stride_shift(uint32_t stride_shift) { _stride_shift = stride_shift; }
 
 #ifndef _WIN32
   void share(size_t /* length */) { THROW_OR_RETURN("Operation not supported on Windows"); }
@@ -218,7 +203,7 @@ public:
 
 class parameters
 {
- public:
+public:
   bool adaptive;
   bool normalized;
 
@@ -237,10 +222,7 @@ class parameters
   template <typename Lambda>
   void set_default(Lambda&& default_func)
   {
-    if (sparse)
-    {
-      sparse_weights.set_default(std::forward<Lambda>(default_func));
-    }
+    if (sparse) { sparse_weights.set_default(std::forward<Lambda>(default_func)); }
     else
     {
       dense_weights.set_default(std::forward<Lambda>(default_func));
@@ -295,7 +277,7 @@ class parameters
       dense_weights.set_zero(offset);
   }
 #ifndef _WIN32
-#ifndef DISABLE_SHARED_WEIGHTS
+#  ifndef DISABLE_SHARED_WEIGHTS
   inline void share(size_t length)
   {
     if (sparse)
@@ -303,7 +285,7 @@ class parameters
     else
       dense_weights.share(length);
   }
-#endif
+#  endif
 #endif
 
   inline void stride_shift(uint32_t stride_shift)

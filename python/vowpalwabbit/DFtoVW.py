@@ -444,7 +444,7 @@ class Namespace(object):
 
         Examples
         --------
-        >>> from pyvw import Namespace, Feature
+        >>> from vowpalwabbit.DFtoVW import Namespace, Feature
         >>> ns_one_feature = Namespace(Feature("a"))
         >>> ns_multi_features = Namespace([Feature("a"), Feature("b")])
         >>> ns_one_feature_with_name = Namespace(Feature("a"), name="FirstNamespace")
@@ -549,33 +549,37 @@ class DFtoVW:
 
         Examples
         --------
-        >>> from vowpalwabbit.pyvw import DFtoVW
-        >>> from pandas as pd
+        >>> from vowpalwabbit.DFtoVW import DFtoVW, SimpleLabel, Feature, Namespace
+        >>> import pandas as pd
 
         >>> df = pd.DataFrame({"y": [1], "a": [2], "b": [3], "c": [4]})
         >>> conv1 = DFtoVW(df=df,
-                           label=SimpleLabel("y"),
-                           features=Feature("a"))
+        ...                label=SimpleLabel("y"),
+        ...                features=Feature("a"))
         >>> conv1.convert_df()
+        ['1 | a:2']
 
         >>> conv2 = DFtoVW(df=df,
-                           label=SimpleLabel("y"),
-                           features=[Feature(col) for col in ["a", "b"]])
+        ...                label=SimpleLabel("y"),
+        ...                features=[Feature(col) for col in ["a", "b"]])
         >>> conv2.convert_df()
+        ['1 | a:2 b:3']
 
         >>> conv3 = DFtoVW(df=df,
-                           label=SimpleLabel("y"),
-                           namespaces=Namespace(
-                                   name="DoubleIt", value=2,
-                                   features=Feature(value="a", rename_feature="feat_a")))
+        ...                label=SimpleLabel("y"),
+        ...                namespaces=Namespace(
+        ...                        name="DoubleIt", value=2,
+        ...                        features=Feature(value="a", rename_feature="feat_a")))
         >>> conv3.convert_df()
+        ['1 |DoubleIt:2 feat_a:2']
 
         >>> conv4 = DFtoVW(df=df,
-                           label=SimpleLabel("y"),
-                           namespaces=[Namespace(name="NS1", features=[Feature(col) for col in ["a", "c"]]),
-                                       Namespace(name="NS2", features=Feature("b"))])
+        ...                label=SimpleLabel("y"),
+        ...                namespaces=[Namespace(name="NS1", features=[Feature(col) for col in ["a", "c"]]),
+        ...                            Namespace(name="NS2", features=Feature("b"))])
         >>> conv4.convert_df()
-
+        ['1 |NS1 a:2 c:4 |NS2 b:3']
+        
         Returns
         -------
         self : DFtoVW
@@ -620,15 +624,17 @@ class DFtoVW:
 
         Examples
         --------
-        >>> from vowpalwabbit.pyvw import DFtoVW
-        >>> from pandas as pd
+        >>> from vowpalwabbit.DFtoVW import DFtoVW
+        >>> import pandas as pd
         >>> df = pd.DataFrame({"y": [1], "x": [2]})
         >>> conv = DFtoVW.from_colnames(y="y", x="x", df=df)
         >>> conv.convert_df()
+        ['1 | x:2']
 
         >>> df2 = pd.DataFrame({"y": [1], "x1": [2], "x2": [3], "x3": [4]})
-        >>> conv2 = DFtoVW.from_colnames(y="y", x=set(df2.columns) - set("y"), df=df2)
+        >>> conv2 = DFtoVW.from_colnames(y="y", x=sorted(list(set(df2.columns) - set("y"))), df=df2)
         >>> conv2.convert_df()
+        ['1 | x1:2 x2:3 x3:4']
 
         Returns
         -------
@@ -935,7 +941,7 @@ class DFtoVW:
         pandas.Series
             A column of empty string with as much rows as the input dataframe.
         """
-        return pd.Series([""] * self.n_rows)
+        return pd.Series(data=[""] * self.n_rows, index=self.df.index)
 
     def process_label_and_tag(self):
         """Process the label and tag into a unique column.

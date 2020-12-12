@@ -79,6 +79,7 @@ option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by defaul
 
 option(VW_INSTALL "Add install targets." ON)
 option(BUILD_TESTS "Build and enable tests." ON)
+option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
@@ -86,6 +87,7 @@ option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
+option(BUILD_FLATBUFFER_UTILS "Build the flatbuffer data converter utility in utl/flatbuffer" ON)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -195,6 +197,7 @@ endif()
 # Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system)
 find_package(ZLIB REQUIRED)
+find_package(flatbuffers REQUIRED)
 
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
@@ -247,6 +250,10 @@ add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
 
+if (BUILD_FLATBUFFER_UTILS)
+  add_subdirectory(utl/flatbuffer)
+endif()
+
 if(BUILD_DOCS)
   add_subdirectory(doc)
 endif()
@@ -261,6 +268,10 @@ endif()
 
 if(BUILD_SLIM_VW)
   add_subdirectory(vowpalwabbit/slim)
+endif()
+
+if(BUILD_BENCHMARKS)
+  add_subdirectory(test/benchmarks)
 endif()
 
 if(BUILD_TESTS)
@@ -301,6 +312,8 @@ endif()
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
+  find_package(Boost REQUIRED COMPONENTS program_options)
+  
   FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
     SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
   ENDFOREACH()
