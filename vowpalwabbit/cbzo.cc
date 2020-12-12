@@ -15,8 +15,8 @@
 using namespace std;
 using namespace VW::LEARNER;
 using namespace VW::config;
-using VW::continuous_actions::probability_density_function;
 using VW::continuous_actions::delete_probability_density_function;
+using VW::continuous_actions::probability_density_function;
 
 namespace VW
 {
@@ -172,21 +172,22 @@ void print_audit_features(vw& all, example& ec)
 }
 
 // Returns a value close to x and greater than it
-inline float close_greater_value(float x) {
-  if (x != 0.f)
-    return nextafter(x, numeric_limits<float>::infinity());
+inline float close_greater_value(float x)
+{
+  if (x != 0.f) return nextafter(x, numeric_limits<float>::infinity());
   return 1e-5;
 }
 
 // Returns a value close to x and lesser than it
-inline float close_lesser_value(float x) {
-  if (x != 0.f)
-    return nextafter(x, -numeric_limits<float>::infinity());
+inline float close_lesser_value(float x)
+{
+  if (x != 0.f) return nextafter(x, -numeric_limits<float>::infinity());
   return -1e-5;
 }
 
 // Approximates a uniform pmf over two values 'a' and 'b' as a 2 spike pdf
-void approx_pmf_to_pdf(float a, float b, probability_density_function& pdf) {
+void approx_pmf_to_pdf(float a, float b, probability_density_function& pdf)
+{
   float left = close_lesser_value(a), right = close_greater_value(a);
   float pdf_val = 0.5 / (right - left);
   pdf.push_back({left, right, pdf_val});
