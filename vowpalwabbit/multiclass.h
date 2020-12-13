@@ -15,8 +15,13 @@ struct label_t
   float weight;
 };
 
-bool test_label(label_t& ld);
-void delete_label(label_t&);
+//void default_label(label_t& ld);
+//void parse_label(parser*, shared_data* sd, label_t& ld, std::vector<VW::string_view>& words);
+//void cache_label(const label_t& ld, io_buf& cache);
+//size_t read_cached_label(shared_data*, label_t& ld, io_buf& cache);
+//float weight(label_t& ld);
+//bool test_label(const label_t& ld);
+
 extern label_parser mc_label;
 
 void print_update_with_probability(vw& all, example& ec, uint32_t prediction);

@@ -12,99 +12,38 @@
 
 namespace MULTICLASS
 {
-char* bufread_label(label_t& ld, char* c)
+void default_label(label_t& ld)
 {
-  memcpy(&ld.label, c, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(&ld.weight, c, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  return c;
-}
-
-size_t read_cached_label(shared_data*, polylabel* v, io_buf& cache)
-{
-  auto& ld = v->multi;
-  char* c;
-  size_t total = sizeof(ld.label) + sizeof(ld.weight);
-  if (cache.buf_read(c, total) < total)
-    return 0;
-  bufread_label(ld, c);
-
-  return total;
-}
-
-float weight(polylabel* v)
-{
-  auto& ld = v->multi;
-  return (ld.weight > 0) ? ld.weight : 0.f;
-}
-
-char* bufcache_label(label_t& ld, char* c)
-{
-  memcpy(c, &ld.label, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(c, &ld.weight, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  return c;
-}
-
-void cache_label(polylabel* v, io_buf& cache)
-{
-  char* c;
-  auto& ld = v->multi;
-  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight));
-  bufcache_label(ld, c);
-}
-
-void default_label(polylabel* v)
-{
-  auto& ld = v->multi;
   ld.label = (uint32_t)-1;
   ld.weight = 1.;
 }
-
-bool test_label(label_t& ld)
-{ 
-  return ld.label == (uint32_t)-1;
-}
-
-bool test_label(polylabel* v)
+void parse_label(parser*, shared_data* sd, label_t& ld, std::vector<VW::string_view>& words)
 {
-  return test_label(v->multi);
-}
-
-void delete_label(label_t&) {}
-void delete_label(polylabel*) {}
-
-void parse_label(parser*, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words)
-{
-  auto& ld = v->multi;
-
   switch (words.size())
   {
     case 0:
       break;
     case 1:
-      if (sd->ldict) { ld->label = (uint32_t)sd->ldict->get(words[0]); }
+      if (sd->ldict) { ld.label = (uint32_t)sd->ldict->get(words[0]); }
       else
       {
         char* char_after_int = nullptr;
-        ld->label = int_of_string(words[0], char_after_int);
+        ld.label = int_of_string(words[0], char_after_int);
         if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
         { THROW("malformed example: label has trailing character(s): " << *char_after_int); }
       }
-      ld->weight = 1.0;
+      ld.weight = 1.0;
       break;
     case 2:
-      if (sd->ldict) { ld->label = (uint32_t)sd->ldict->get(words[0]); }
+      if (sd->ldict) { ld.label = (uint32_t)sd->ldict->get(words[0]); }
       else
       {
         char* char_after_int = nullptr;
-        ld->label = int_of_string(words[0], char_after_int);
+        ld.label = int_of_string(words[0], char_after_int);
         if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
         { THROW("malformed example: label has trailing character(s): " << *char_after_int); }
       }
-      ld->weight = float_of_string(words[1]);
+      ld.weight = float_of_string(words[1]);
       break;
     default:
       THROW("malformed example, words.size() = " << words.size());
@@ -113,9 +52,53 @@ void parse_label(parser*, shared_data* sd, polylabel* v, std::vector<VW::string_
     THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}"
         << (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
 }
+void cache_label(const label_t& ld, io_buf& cache)
+{
+  char* c;
+  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight));
+  memcpy(c, &ld.label, sizeof(ld.label));
+  c += sizeof(ld.label);
+  memcpy(c, &ld.weight, sizeof(ld.weight));
+  c += sizeof(ld.weight);
+}
+size_t read_cached_label(shared_data*, label_t& ld, io_buf& cache)
+{
+  char* c;
+  size_t total = sizeof(ld.label) + sizeof(ld.weight);
+  if (cache.buf_read(c, total) < total) return 0;
+  memcpy(&ld.label, c, sizeof(ld.label));
+  c += sizeof(ld.label);
+  memcpy(&ld.weight, c, sizeof(ld.weight));
+  c += sizeof(ld.weight);
+  return total;
+}
+float weight(label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
+bool test_label(const label_t& ld) { return ld.label == (uint32_t)-1; }
 
-label_parser mc_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, nullptr,
-    test_label, sizeof(label_t)};
+// clang-format off
+label_parser mc_label = {
+  // default_label 
+  [](polylabel* v) { default_label(v->multi); },
+  // parse_label 
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
+    parse_label(p, sd, v->multi, words);
+  },
+  // cache_label 
+  [](polylabel* v, io_buf& cache) { cache_label(v->multi, cache); },
+  // read_cached_label 
+  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->multi, cache); },
+  // delete_label 
+  [](polylabel*) {},
+   // get_weight 
+  [](polylabel* v) { return weight(v->multi); },
+  // copy_label
+  nullptr,
+  // test_label
+  [](polylabel* v) { return test_label(v->multi); },
+  // label_size
+  sizeof(label_t)
+};
+// clang-format on
 
 void print_label_pred(vw& all, example& ec, uint32_t prediction)
 {

@@ -191,8 +191,32 @@ void parse_label(parser* p, shared_data* sd, polylabel* v, std::vector<VW::strin
   }
 }
 
-label_parser cs_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
-    test_label, sizeof(label)};
+
+
+// clang-format off
+label_parser cs_label = {
+  // default_label 
+  [](polylabel* v) { default_label(v->cs); },
+  // parse_label 
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
+    parse_label(p, sd, v->cs, words);
+  },
+  // cache_label 
+  [](polylabel* v, io_buf& cache) { cache_label(v->cs, cache); },
+  // read_cached_label 
+  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->cs, cache); },
+  // delete_label 
+  [](polylabel*) {},
+   // get_weight 
+  [](polylabel* v) { return weight(v->cs); },
+  // copy_label
+  nullptr,
+  // test_label
+  [](polylabel* v) { return test_label(v->cs); },
+  // label_size
+  sizeof(label_t)
+};
+// clang-format on
 
 void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)
 {
