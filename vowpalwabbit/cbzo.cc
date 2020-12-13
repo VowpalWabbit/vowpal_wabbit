@@ -175,14 +175,14 @@ void print_audit_features(vw& all, example& ec)
 inline float close_greater_value(float x)
 {
   if (x != 0.f) return nextafter(x, numeric_limits<float>::infinity());
-  return 1e-5;
+  return 1e-5f;
 }
 
 // Returns a value close to x and lesser than it
 inline float close_lesser_value(float x)
 {
   if (x != 0.f) return nextafter(x, -numeric_limits<float>::infinity());
-  return -1e-5;
+  return -1e-5f;
 }
 
 // Approximates a uniform pmf over two values 'a' and 'b' as a 2 spike pdf
