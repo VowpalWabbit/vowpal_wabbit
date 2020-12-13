@@ -189,12 +189,12 @@ inline float close_lesser_value(float x)
 void approx_pmf_to_pdf(float a, float b, probability_density_function& pdf)
 {
   float left = close_lesser_value(a), right = close_greater_value(a);
-  float pdf_val = 0.5 / (right - left);
+  float pdf_val = static_cast<float>(0.5 / (right - left));
   pdf.push_back({left, right, pdf_val});
 
   left = close_lesser_value(b);
   right = close_greater_value(b);
-  pdf_val = 0.5 / (right - left);
+  pdf_val = static_cast<float>(0.5 / (right - left));
   pdf.push_back({left, right, pdf_val});
 }
 
