@@ -1724,9 +1724,16 @@ inline void append_empty_newline_example_for_driver(vw* all, v_array<example*>& 
 
 // This is used by the python parser
 template <bool audit>
-void line_to_examples_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
+void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<example*>& examples)
 {
-  bool good_example = parse_line_json<audit>(all, line, num_chars, examples);
+  // The JSON reader does insitu parsing and therefore modifies the input
+  // string, so we make a copy since this function cannot modify the input
+  // string.
+  std::vector<char> owned_str;
+  owned_str.resize(strlen(line) + 1);
+  std::strcpy(owned_str.data(), line);
+
+  bool good_example = parse_line_json<audit>(all, owned_str.data(), num_chars, examples);
   if (!good_example)
   {
     VW::return_multiple_example(*all, examples);

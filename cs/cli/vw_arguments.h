@@ -39,7 +39,7 @@ internal:
     m_testonly(!vw->training),
     m_passes((int)vw->numpasses)
   {
-    auto options = vw->options;
+    auto options = vw->options.get();
 
     if (vw->initial_regressors.size() > 0)
     { m_regressors = gcnew List<String^>;

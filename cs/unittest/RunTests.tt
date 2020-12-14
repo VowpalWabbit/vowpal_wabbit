@@ -24,7 +24,7 @@ var skipList = new[] { 13, 32, 39, 258, 40, 259, 41, 260, 59, 60, 61, 66, 68, 90
 	143, 144, 146, 158, 189, 202, 237, // native json parsing
 	149, 152, 156, 193, 194, 217, // bash script
 	188, // possibly float delta
-	195, //--onethread is a shell option, not available via library
+	195, 260, //--onethread is a shell option, not available via library
 	203, // Cluster mode test
 	204, // Testing option usage
     216, // DSJSON not supported
