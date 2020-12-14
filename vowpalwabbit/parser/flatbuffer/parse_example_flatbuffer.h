@@ -43,8 +43,7 @@ private:
   void parse_multi_example(vw* all, example* ae, const MultiExample* eg);
   void parse_namespaces(vw* all, example* ae, const Namespace* ns);
   void parse_features(vw* all, features& fs, const Feature* feature);
-  void parse_flat_label(
-      shared_data* sd, example* ae, const VW::parsers::flatbuffer::Label& label_type, const void* label);
+  void parse_flat_label(shared_data* sd, example* ae, const Example* eg);
 
   void parse_simple_label(shared_data* sd, polylabel* l, const SimpleLabel* label);
   void parse_cb_label(polylabel* l, const CBLabel* label);

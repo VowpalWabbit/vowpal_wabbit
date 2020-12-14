@@ -134,7 +134,7 @@ bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffe
 void parser::parse_example(vw* all, example* ae, const Example* eg)
 {
   all->example_parser->lbl_parser.default_label(&ae->l);
-  parse_flat_label(all->sd, ae, eg->label_type(), eg->label());
+  parse_flat_label(all->sd, ae, eg);
 
   if (flatbuffers::IsFieldPresent(eg, Example::VT_TAG))
   {
@@ -193,56 +193,55 @@ void parser::parse_features(vw* all, features& fs, const Feature* feature)
   }
 }
 
-void parser::parse_flat_label(
-    shared_data* sd, example* ae, const VW::parsers::flatbuffer::Label& label_type, const void* label)
+void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg)
 {
-  switch (label_type)
+  switch (eg->label_type())
   {
     case Label_SimpleLabel:
     {
-      const SimpleLabel* simple_lbl = static_cast<const SimpleLabel*>(label);
+      const SimpleLabel* simple_lbl = static_cast<const SimpleLabel*>(eg->label());
       parse_simple_label(sd, &(ae->l), simple_lbl);
       break;
     }
     case Label_CBLabel:
     {
-      const CBLabel* cb_label = static_cast<const CBLabel*>(label);
+      const CBLabel* cb_label = static_cast<const CBLabel*>(eg->label());
       parse_cb_label(&(ae->l), cb_label);
       break;
     }
     case Label_CCBLabel:
     {
-      const CCBLabel* ccb_label = static_cast<const CCBLabel*>(label);
+      const CCBLabel* ccb_label = static_cast<const CCBLabel*>(eg->label());
       parse_ccb_label(&(ae->l), ccb_label);
       break;
     }
     case Label_CB_EVAL_Label:
     {
-      auto cb_eval_label = static_cast<const CB_EVAL_Label*>(label);
+      auto cb_eval_label = static_cast<const CB_EVAL_Label*>(eg->label());
       parse_cb_eval_label(&(ae->l), cb_eval_label);
       break;
     }
     case Label_CS_Label:
     {
-      auto cs_label = static_cast<const CS_Label*>(label);
+      auto cs_label = static_cast<const CS_Label*>(eg->label());
       parse_cs_label(&(ae->l), cs_label);
       break;
     }
     case Label_MultiClass:
     {
-      auto mc_label = static_cast<const MultiClass*>(label);
+      auto mc_label = static_cast<const MultiClass*>(eg->label());
       parse_mc_label(sd, &(ae->l), mc_label);
       break;
     }
     case Label_MultiLabel:
     {
-      auto multi_label = static_cast<const MultiLabel*>(label);
+      auto multi_label = static_cast<const MultiLabel*>(eg->label());
       parse_multi_label(&(ae->l), multi_label);
       break;
     }
     case Label_Slates_Label:
     {
-      auto slates_label = static_cast<const Slates_Label*>(label);
+      auto slates_label = static_cast<const Slates_Label*>(eg->label());
       parse_slates_label(&(ae->l), slates_label);
       break;
     }
