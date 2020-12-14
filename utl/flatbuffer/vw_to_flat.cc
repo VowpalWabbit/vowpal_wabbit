@@ -24,23 +24,69 @@ void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder
   outfile.write(reinterpret_cast<char*>(buf), size);
 }
 
-void to_flat::write_collection_to_file(bool is_multiline,
-    std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::MultiExample>>& multi_example_collection,
-    std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>>& example_collection, std::ofstream& outfile)
+void to_flat::write_collection_to_file(bool is_multiline, std::ofstream& outfile)
 {
   flatbuffers::Offset<VW::parsers::flatbuffer::ExampleCollection> egcollection;
   if (is_multiline)
   {
     egcollection =
-        VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, nullptr, &multi_example_collection, true);
+        VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, nullptr, &_multi_example_collection, true);
+    _multi_example_collection.clear();
   }
   else
   {
     egcollection =
-        VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, &example_collection, nullptr, false);
+        VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, &_example_collection, nullptr, false);
+    _example_collection.clear();
   }
   auto root = CreateExampleRoot(_builder, VW::parsers::flatbuffer::ExampleType_ExampleCollection, egcollection.Union());
   write_buffer_to_file(outfile, _builder, root);
+}
+
+void to_flat::write_to_file(bool collection, bool is_multiline, MultiExampleBuilder& multi_ex_builder,
+    ExampleBuilder& ex_builder, std::ofstream& outfile)
+{
+  if (collection)
+  {
+    if (is_multiline)
+    {
+      auto multi_ex = multi_ex_builder.to_flat_example(_builder);
+      _multi_example_collection.push_back(multi_ex);
+      _multi_ex_index = 0;
+    }
+    else
+    {
+      auto ex = ex_builder.to_flat_example(_builder);
+      _example_collection.push_back(ex);
+    }
+    _collection_count++;
+    if (_collection_count >= collection_size)
+    {
+      write_collection_to_file(is_multiline, outfile);
+      _builder.Clear();
+      _collection_count = 0;
+    }
+  }
+  else
+  {
+    if (is_multiline)
+    {
+      auto multi_ex = multi_ex_builder.to_flat_example(_builder);
+      _multi_ex_index = 0;
+
+      auto root = VW::parsers::flatbuffer::CreateExampleRoot(
+          _builder, VW::parsers::flatbuffer::ExampleType_MultiExample, multi_ex.Union());
+      write_buffer_to_file(outfile, _builder, root);
+    }
+    else
+    {
+      auto ex = ex_builder.to_flat_example(_builder);
+
+      auto root = VW::parsers::flatbuffer::CreateExampleRoot(
+          _builder, VW::parsers::flatbuffer::ExampleType_Example, ex.Union());
+      write_buffer_to_file(outfile, _builder, root);
+    }
+  }
 }
 
 void to_flat::create_simple_label(example* v, ExampleBuilder& ex_builder)
@@ -224,11 +270,6 @@ void to_flat::convert_txt_to_flat(vw& all)
   std::ofstream outfile;
   if (output_flatbuffer_name.empty()) { output_flatbuffer_name = all.data_filename + ".fb"; }
   outfile.open(output_flatbuffer_name, std::ios::binary | std::ios::out);
-  std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> example_collection;
-  std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::MultiExample>> multi_example_collection;
-  size_t collection_count = 0;
-  uint32_t multi_ex_index = 0;
-  int examples = 0;
 
   MultiExampleBuilder multi_ex_builder;
   ExampleBuilder ex_builder;
@@ -304,8 +345,8 @@ void to_flat::convert_txt_to_flat(vw& all)
         ex_builder.tag = _builder.CreateString(tag);
         multi_ex_builder.examples.push_back(ex_builder);
         ex_builder.clear();
-        multi_ex_index++;
-        examples++;
+        _multi_ex_index++;
+        _examples++;
         ae = all.example_parser->ready_parsed_examples.pop();
         continue;
       }
@@ -314,63 +355,20 @@ void to_flat::convert_txt_to_flat(vw& all)
     {
       ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
       ex_builder.tag = _builder.CreateString(tag);
-      examples++;
+      _examples++;
     }
 
-    if (collection)
-    {
-      if (all.l->is_multiline)
-      {
-        auto multi_ex = multi_ex_builder.to_flat_example(_builder);
-        multi_example_collection.push_back(multi_ex);
-        multi_ex_index = 0;
-      }
-      else
-      {
-        // TODO share namespaces here
-        auto ex = ex_builder.to_flat_example(_builder);
-        example_collection.push_back(ex);
-      }
-      collection_count++;
-      if (collection_count >= collection_size)
-      {
-        write_collection_to_file(all.l->is_multiline, multi_example_collection, example_collection, outfile);
-        _builder.Clear();
-        example_collection.clear();
-        multi_example_collection.clear();
-        collection_count = 0;
-      }
-    }
-    else
-    {
-      if (all.l->is_multiline)
-      {
-        auto multi_ex = multi_ex_builder.to_flat_example(_builder);
-        multi_ex_index = 0;
-
-        auto root = VW::parsers::flatbuffer::CreateExampleRoot(
-            _builder, VW::parsers::flatbuffer::ExampleType_MultiExample, multi_ex.Union());
-        write_buffer_to_file(outfile, _builder, root);
-      }
-      else
-      {
-        auto ex = ex_builder.to_flat_example(_builder);
-
-        auto root = VW::parsers::flatbuffer::CreateExampleRoot(
-            _builder, VW::parsers::flatbuffer::ExampleType_Example, ex.Union());
-        write_buffer_to_file(outfile, _builder, root);
-      }
-    }
+    write_to_file(collection, all.l->is_multiline, multi_ex_builder, ex_builder, outfile);
 
     ae = all.example_parser->ready_parsed_examples.pop();
   }
 
-  if (collection && collection_count > 0)
+  if (collection && _collection_count > 0)
   {
     // left over examples that did not fit in collection
-    write_collection_to_file(all.l->is_multiline, multi_example_collection, example_collection, outfile);
+    write_collection_to_file(all.l->is_multiline, outfile);
   }
 
-  all.trace_message << "Converted " << examples << " examples" << std::endl;
+  all.trace_message << "Converted " << _examples << " examples" << std::endl;
   all.trace_message << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
 }

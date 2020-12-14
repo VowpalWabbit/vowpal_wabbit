@@ -42,7 +42,6 @@ struct MultiExampleBuilder
     std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> exs;
     for (auto& ex : examples)
     {
-      // TODO share namespaces here
       auto flat_ex = ex.to_flat_example(builder);
       exs.push_back(flat_ex);
     }
@@ -62,6 +61,12 @@ public:
 
 private:
   flatbuffers::FlatBufferBuilder _builder;
+  std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> _example_collection;
+  std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::MultiExample>> _multi_example_collection;
+  size_t _collection_count = 0;
+  uint32_t _multi_ex_index = 0;
+  int _examples = 0;
+
   void create_simple_label(example* v, ExampleBuilder& ex_builder);
   void create_cb_label(example* v, ExampleBuilder& ex_builder);
   void create_ccb_label(example* v, ExampleBuilder& ex_builder);
@@ -72,7 +77,7 @@ private:
   void create_cs_label(example* v, ExampleBuilder& ex_builder);
   void create_no_label(example* v, ExampleBuilder& ex_builder);
   // helpers
-  void write_collection_to_file(bool is_multiline,
-      std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::MultiExample>>& multi_example_collection,
-      std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>>& example_collection, std::ofstream& outfile);
+  void write_collection_to_file(bool is_multiline, std::ofstream& outfile);
+  void write_to_file(bool collection, bool is_multiline, MultiExampleBuilder& multi_ex_builder,
+      ExampleBuilder& ex_builder, std::ofstream& outfile);
 };
