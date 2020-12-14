@@ -321,7 +321,7 @@ struct buffer_restore
 
   buffer_restore(std::ios& target, std::string filename) : m_target(target), m_filename(filename)
   {
-    m_filestr.open(m_filename);
+    m_filestr.open(m_filename, std::ofstream::out | std::ofstream::app);
     m_backup = target.rdbuf();
     target.rdbuf(m_filestr.rdbuf());
   }
