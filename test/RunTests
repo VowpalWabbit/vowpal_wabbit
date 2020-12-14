@@ -1037,7 +1037,7 @@ __DATA__
     train-sets/ref/rcv1_raw_new_cb_ips.stderr
 
 # Test 41: cb with dm
-# this test defaults to cb_force_legacy bc it uses dm
+# this test defaults to cb_force_legacy (even if the flag is not specified) bc it uses dm
 {VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg
     train-sets/ref/rcv1_raw_cb_dm.stderr
 
@@ -1202,7 +1202,7 @@ echo "" | {VW}
     pred-sets/ref/0001_ftrl.predict
 
 # Test 74: cb evaluation
-{VW} --cb_force_legacy -d train-sets/rcv1_cb_eval --cb 2 --eval
+{VW} -d train-sets/rcv1_cb_eval --cb 2 --eval
     train-sets/ref/rcv1_cb_eval.stderr
 
 # Test 75: Log_multi
@@ -2119,5 +2119,14 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} -d train-sets/ccb_test_interactions.dat --ccb_explore_adf --invert_hash w_out_slot_ns.interactions -q ::
     train-sets/ref/ccb_test_interactions.stderr
     train-sets/ref/w_out_slot_ns.interactions
+
+# Test 275: cb evaluation (see test 74)
+{VW} --cb_force_legacy -d train-sets/rcv1_cb_eval --cb 2 --eval
+    train-sets/ref/rcv1_cb_eval.stderr
+
+# Test 276: 8.8.0 old model, test cb compat
+{VW} -i model-sets/cb_compat_test.vwmodel -d train-sets/cb_compat_test.dat -p cb_compat_test.predict
+    train-sets/ref/cb_old_model.compat.stderr
+    pred-sets/ref/cb_compat_test.predict
 
 # Do not delete this line or the empty line above it
