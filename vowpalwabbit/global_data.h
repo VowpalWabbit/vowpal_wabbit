@@ -312,6 +312,28 @@ struct vw_logger
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
+struct buffer_restore
+{
+  std::ios& m_target;
+  std::streambuf* m_backup = nullptr;
+  std::ofstream m_filestr;
+  std::string m_filename;
+
+  buffer_restore(std::ios& target, std::string filename) : m_target(target), m_filename(filename)
+  {
+    m_filestr.open(m_filename);
+    m_backup = target.rdbuf();
+    target.rdbuf(m_filestr.rdbuf());
+  }
+
+  ~buffer_restore()
+  {
+    m_target.rdbuf(m_backup);
+    m_filestr.close();
+    m_backup = nullptr;
+  };
+};
+
 namespace VW
 {
 namespace parsers
@@ -512,10 +534,8 @@ public:
 
   label_type_t label_type;
 
-  std::streambuf* cerr_backup;
-  std::ofstream cerr_filestr;
-  std::streambuf* cout_backup;
-  std::ofstream cout_filestr;
+  std::unique_ptr<buffer_restore> cerr_buffer;
+  std::unique_ptr<buffer_restore> cout_buffer;
 
   vw();
   ~vw();

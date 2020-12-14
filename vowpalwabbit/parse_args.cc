@@ -1356,19 +1356,9 @@ vw& parse_args(
     redirect_args.hide().add(make_option("cout", cout_filename).help("filename to redirect cout to"));
     all.options->add_and_parse(redirect_args);
 
-    if (all.options->was_supplied("cerr"))
-    {
-      all.cerr_filestr.open(cerr_filename);
-      all.cerr_backup = std::cerr.rdbuf();
-      std::cerr.rdbuf(all.cerr_filestr.rdbuf());
-    }
+    if (all.options->was_supplied("cerr")) all.cerr_buffer = VW::make_unique<buffer_restore>(std::cerr, cerr_filename);
 
-    if (all.options->was_supplied("cout"))
-    {
-      all.cout_filestr.open(cout_filename);
-      all.cout_backup = std::cout.rdbuf();
-      std::cout.rdbuf(all.cout_filestr.rdbuf());
-    }
+    if (all.options->was_supplied("cout")) all.cout_buffer = VW::make_unique<buffer_restore>(std::cout, cout_filename);
 
     bool strict_parse = false;
     int ring_size_tmp;

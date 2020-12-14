@@ -355,8 +355,8 @@ vw::vw() : options(nullptr, nullptr)
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
 
-  cerr_backup = nullptr;
-  cout_backup = nullptr;
+  cerr_buffer = nullptr;
+  cout_buffer = nullptr;
 }
 VW_WARNING_STATE_POP
 
@@ -366,20 +366,6 @@ vw::~vw()
   {
     l->finish();
     free(l);
-  }
-
-  if (cerr_backup)
-  {
-    std::cerr.rdbuf(cerr_backup);
-    cerr_filestr.close();
-    cerr_backup = nullptr;
-  }
-
-  if (cout_backup)
-  {
-    std::cout.rdbuf(cout_backup);
-    cout_filestr.close();
-    cout_backup = nullptr;
   }
 
   // TODO: migrate all finalization into parser destructor
