@@ -65,7 +65,6 @@ void parser::process_collection_item(vw* all, v_array<example*>& examples)
     {
       _example_index = 0;
       _active_collection = false;
-      _active_multi_ex = false;
     }
   }
   else
@@ -133,6 +132,7 @@ bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffe
 
 void parser::parse_example(vw* all, example* ae, const Example* eg)
 {
+  _all_ex++;
   all->example_parser->lbl_parser.default_label(&ae->l);
   parse_flat_label(all->sd, ae, eg);
 
@@ -152,7 +152,7 @@ void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
   {
     // done with multi example, send a newline example and reset
     _multi_ex_index = 0;
-    _active_multi_ex = 0;
+    _active_multi_ex = false;
     _multi_example_object = nullptr;
     return;
   }

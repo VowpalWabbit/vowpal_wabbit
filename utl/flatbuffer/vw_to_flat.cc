@@ -21,6 +21,7 @@ void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder
   builder.FinishSizePrefixed(root);
   uint8_t* buf = builder.GetBufferPointer();
   int size = builder.GetSize();
+  builder.Clear();
   outfile.write(reinterpret_cast<char*>(buf), size);
 }
 
@@ -63,7 +64,6 @@ void to_flat::write_to_file(bool collection, bool is_multiline, MultiExampleBuil
     if (_collection_count >= collection_size)
     {
       write_collection_to_file(is_multiline, outfile);
-      _builder.Clear();
       _collection_count = 0;
     }
   }
