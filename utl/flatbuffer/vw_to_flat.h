@@ -18,6 +18,13 @@ struct ExampleBuilder
   flatbuffers::Offset<void> label = 0;
   flatbuffers::Offset<flatbuffers::String> tag;
 
+  flatbuffers::Offset<VW::parsers::flatbuffer::Example> to_flat_example(flatbuffers::FlatBufferBuilder& builder)
+  {
+    auto ex = VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label);
+    clear();
+    return ex;
+  }
+
   void clear()
   {
     namespaces.clear();
@@ -30,6 +37,18 @@ struct ExampleBuilder
 struct MultiExampleBuilder
 {
   std::vector<ExampleBuilder> examples;
+  flatbuffers::Offset<VW::parsers::flatbuffer::MultiExample> to_flat_example(flatbuffers::FlatBufferBuilder& builder)
+  {
+    std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> exs;
+    for (auto& ex : examples)
+    {
+      // TODO share namespaces here
+      auto flat_ex = ex.to_flat_example(builder);
+      exs.push_back(flat_ex);
+    }
+    examples.clear();
+    return VW::parsers::flatbuffer::CreateMultiExampleDirect(builder, &exs);
+  }
 };
 
 class to_flat
@@ -45,12 +64,15 @@ private:
   flatbuffers::FlatBufferBuilder _builder;
   void create_simple_label(example* v, ExampleBuilder& ex_builder);
   void create_cb_label(example* v, ExampleBuilder& ex_builder);
-  void create_cb_label_multi_ex(example* v, ExampleBuilder& ex_builder);
-  void create_ccb_label_multi_ex(example* v, ExampleBuilder& ex_builder);
+  void create_ccb_label(example* v, ExampleBuilder& ex_builder);
   void create_cb_eval_label(example* v, ExampleBuilder& ex_builder);
   void create_mc_label(VW::named_labels* ldict, example* v, ExampleBuilder& ex_builder);
   void create_multi_label(example* v, ExampleBuilder& ex_builder);
   void create_slates_label(example* v, ExampleBuilder& ex_builder);
   void create_cs_label(example* v, ExampleBuilder& ex_builder);
   void create_no_label(example* v, ExampleBuilder& ex_builder);
+  // helpers
+  void write_collection_to_file(bool is_multiline,
+      std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::MultiExample>>& multi_example_collection,
+      std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>>& example_collection, std::ofstream& outfile);
 };

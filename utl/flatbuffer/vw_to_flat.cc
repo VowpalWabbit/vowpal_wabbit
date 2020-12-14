@@ -24,6 +24,25 @@ void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder
   outfile.write(reinterpret_cast<char*>(buf), size);
 }
 
+void to_flat::write_collection_to_file(bool is_multiline,
+    std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::MultiExample>>& multi_example_collection,
+    std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>>& example_collection, std::ofstream& outfile)
+{
+  flatbuffers::Offset<VW::parsers::flatbuffer::ExampleCollection> egcollection;
+  if (is_multiline)
+  {
+    egcollection =
+        VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, nullptr, &multi_example_collection, true);
+  }
+  else
+  {
+    egcollection =
+        VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, &example_collection, nullptr, false);
+  }
+  auto root = CreateExampleRoot(_builder, VW::parsers::flatbuffer::ExampleType_ExampleCollection, egcollection.Union());
+  write_buffer_to_file(outfile, _builder, root);
+}
+
 void to_flat::create_simple_label(example* v, ExampleBuilder& ex_builder)
 {
   ex_builder.label =
@@ -43,22 +62,7 @@ void to_flat::create_cb_label(example* v, ExampleBuilder& ex_builder)
   ex_builder.label_type = VW::parsers::flatbuffer::Label_CBLabel;
 }
 
-void to_flat::create_cb_label_multi_ex(example* v, ExampleBuilder& ex_builder)
-{
-  std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::CB_class>> costs;
-  for (auto const& cost : v->l.cb.costs)
-  {
-    costs.push_back(VW::parsers::flatbuffer::CreateCB_class(
-        _builder, cost.cost, cost.action, cost.probability, cost.partial_prediction));
-  }
-  if (CB::ec_is_example_header(*v) || v->l.cb.costs.size())
-  {
-    ex_builder.label = VW::parsers::flatbuffer::CreateCBLabelDirect(_builder, v->l.cb.weight, &costs).Union();
-    ex_builder.label_type = VW::parsers::flatbuffer::Label_CBLabel;
-  }
-}
-
-void to_flat::create_ccb_label_multi_ex(example* v, ExampleBuilder& ex_builder)
+void to_flat::create_ccb_label(example* v, ExampleBuilder& ex_builder)
 {
   auto weight = v->l.conditional_contextual_bandit.weight;
   auto e_type = v->l.conditional_contextual_bandit.type;
@@ -242,16 +246,10 @@ void to_flat::convert_txt_to_flat(vw& all)
         to_flat::create_no_label(ae, ex_builder);
         break;
       case label_type_t::cb:
-      {
-        if (all.l->is_multiline) { to_flat::create_cb_label_multi_ex(ae, ex_builder); }
-        else
-        {
-          to_flat::create_cb_label(ae, ex_builder);
-        }
-      }
-      break;
+        to_flat::create_cb_label(ae, ex_builder);
+        break;
       case label_type_t::ccb:
-        to_flat::create_ccb_label_multi_ex(ae, ex_builder);
+        to_flat::create_ccb_label(ae, ex_builder);
         break;
       case label_type_t::multi:
         to_flat::create_multi_label(ae, ex_builder);
@@ -323,45 +321,20 @@ void to_flat::convert_txt_to_flat(vw& all)
     {
       if (all.l->is_multiline)
       {
-        std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> exs;
-        for (auto& ex : multi_ex_builder.examples)
-        {
-          // TODO share namespaces here
-          // TODO check example tag/all else is populated OK
-          auto flat_ex =
-              VW::parsers::flatbuffer::CreateExampleDirect(_builder, &ex.namespaces, ex.label_type, ex.label);
-          exs.push_back(flat_ex);
-        }
-        auto multi_ex = VW::parsers::flatbuffer::CreateMultiExampleDirect(_builder, &exs);
-
+        auto multi_ex = multi_ex_builder.to_flat_example(_builder);
         multi_example_collection.push_back(multi_ex);
         multi_ex_index = 0;
-        multi_ex_builder.examples.clear();
       }
       else
       {
-        auto ex = VW::parsers::flatbuffer::CreateExampleDirect(
-            _builder, &ex_builder.namespaces, ex_builder.label_type, ex_builder.label);
+        // TODO share namespaces here
+        auto ex = ex_builder.to_flat_example(_builder);
         example_collection.push_back(ex);
-        ex_builder.clear();
       }
       collection_count++;
       if (collection_count >= collection_size)
       {
-        flatbuffers::Offset<VW::parsers::flatbuffer::ExampleCollection> egcollection;
-        if (all.l->is_multiline)
-        {
-          egcollection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(
-              _builder, nullptr, &multi_example_collection, true);
-        }
-        else
-        {
-          egcollection =
-              VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, &example_collection, nullptr, false);
-        }
-        auto root =
-            CreateExampleRoot(_builder, VW::parsers::flatbuffer::ExampleType_ExampleCollection, egcollection.Union());
-        write_buffer_to_file(outfile, _builder, root);
+        write_collection_to_file(all.l->is_multiline, multi_example_collection, example_collection, outfile);
         _builder.Clear();
         example_collection.clear();
         multi_example_collection.clear();
@@ -372,19 +345,8 @@ void to_flat::convert_txt_to_flat(vw& all)
     {
       if (all.l->is_multiline)
       {
-        std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> exs;
-        for (auto& ex : multi_ex_builder.examples)
-        {
-          // TODO share namespaces here
-          // TODO check example tag/all else is populated OK
-          auto flat_ex =
-              VW::parsers::flatbuffer::CreateExampleDirect(_builder, &ex.namespaces, ex.label_type, ex.label);
-          exs.push_back(flat_ex);
-        }
-        auto multi_ex = VW::parsers::flatbuffer::CreateMultiExampleDirect(_builder, &exs);
-
+        auto multi_ex = multi_ex_builder.to_flat_example(_builder);
         multi_ex_index = 0;
-        multi_ex_builder.examples.clear();
 
         auto root = VW::parsers::flatbuffer::CreateExampleRoot(
             _builder, VW::parsers::flatbuffer::ExampleType_MultiExample, multi_ex.Union());
@@ -392,9 +354,7 @@ void to_flat::convert_txt_to_flat(vw& all)
       }
       else
       {
-        auto ex = VW::parsers::flatbuffer::CreateExampleDirect(
-            _builder, &ex_builder.namespaces, ex_builder.label_type, ex_builder.label);
-        ex_builder.clear();
+        auto ex = ex_builder.to_flat_example(_builder);
 
         auto root = VW::parsers::flatbuffer::CreateExampleRoot(
             _builder, VW::parsers::flatbuffer::ExampleType_Example, ex.Union());
@@ -402,28 +362,13 @@ void to_flat::convert_txt_to_flat(vw& all)
       }
     }
 
-    // examples++;
     ae = all.example_parser->ready_parsed_examples.pop();
   }
 
   if (collection && collection_count > 0)
   {
     // left over examples that did not fit in collection
-
-    flatbuffers::Offset<VW::parsers::flatbuffer::ExampleCollection> egcollection;
-    if (all.l->is_multiline)
-    {
-      egcollection =
-          VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, nullptr, &multi_example_collection, true);
-    }
-    else
-    {
-      egcollection =
-          VW::parsers::flatbuffer::CreateExampleCollectionDirect(_builder, &example_collection, nullptr, false);
-    }
-    auto root =
-        CreateExampleRoot(_builder, VW::parsers::flatbuffer::ExampleType_ExampleCollection, egcollection.Union());
-    write_buffer_to_file(outfile, _builder, root);
+    write_collection_to_file(all.l->is_multiline, multi_example_collection, example_collection, outfile);
   }
 
   all.trace_message << "Converted " << examples << " examples" << std::endl;
