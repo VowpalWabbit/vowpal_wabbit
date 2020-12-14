@@ -71,7 +71,7 @@ struct parser
   /// reader consumes the input io_buf in the vw object and is generally for file based parsing
   int (*reader)(vw*, v_array<example*>& examples);
   /// text_reader consumes the char* input and is for text based parsing
-  void (*text_reader)(vw*, char*, size_t, v_array<example*>&);
+  void (*text_reader)(vw*, const char*, size_t, v_array<example*>&);
 
   shared_data* _shared_data = nullptr;
 
