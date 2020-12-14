@@ -214,6 +214,16 @@ Experience Replay:
                               example be played (default: 1 = permuting)
 Offset tree Options:
   --ot arg              Offset tree with <k> labels
+Contextual Bandit Options:
+  --cb_to_cbadf arg     Maps cb_adf to cb. Disable with cb_force_legacy.
+  --cb arg              Maps cb_adf to cb. Disable with cb_force_legacy.
+  --cb_explore arg      Translate cb explore to cbexploreadf. Disable with 
+                        cb_force_legacy.
+  --cbify arg           Translate cbify to cbexploreadf. Disable with 
+                        cb_force_legacy.
+  --cb_type arg         contextual bandit method to use in {}
+  --eval                Evaluate a policy rather than optimizing.
+  --cb_force_legacy     Default to old cb implementation
 Make csoaa_ldf into Contextual Bandit:
   --cbify_ldf           Convert csoaa_ldf into a contextual bandit problem
   --loss0 arg (=0, )    loss for correct label
@@ -424,8 +434,9 @@ Contextual Bandit with Action Dependent Features:
                         (no clipping).
   --cb_type arg         contextual bandit method to use in {ips, dm, dr, mtr, 
                         sm}. Default: mtr
-Contextual Bandit Options:
-  --cb arg              Use contextual bandit learning with <k> costs
+Deprecated: Contextual Bandit Options:
+  --cb arg              Deprecated: Use contextual bandit learning with <k> 
+                        costs
   --cb_type arg         contextual bandit method to use in {ips,dm,dr}
   --eval                Evaluate a policy rather than optimizing.
 Cost Sensitive One Against All with Label Dependent Features:
