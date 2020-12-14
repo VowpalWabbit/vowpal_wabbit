@@ -56,7 +56,6 @@ public:
   std::string output_flatbuffer_name;
   size_t collection_size = 0;
   bool collection = false;
-  bool is_multiline = false;
   void convert_txt_to_flat(vw& all);
 
 private:
