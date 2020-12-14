@@ -132,7 +132,6 @@ bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffe
 
 void parser::parse_example(vw* all, example* ae, const Example* eg)
 {
-  _all_ex++;
   all->example_parser->lbl_parser.default_label(&ae->l);
   parse_flat_label(all->sd, ae, eg);
 
