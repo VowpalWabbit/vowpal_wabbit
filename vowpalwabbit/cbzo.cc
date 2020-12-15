@@ -173,7 +173,7 @@ void print_audit_features(vw& all, example& ec)
 // Returns a value close to x and greater than it
 inline float close_greater_value(float x)
 {
-  if (x != 0.f) return nextafter(x, std::numeric_limits<float>::infinity());
+  if (x != 0.f) return std::nextafter(x, std::numeric_limits<float>::infinity());
 
   // When x==0, nextafter returns a very small value, thus use this instead
   return 1e-5f;
@@ -182,7 +182,7 @@ inline float close_greater_value(float x)
 // Returns a value close to x and lesser than it
 inline float close_lesser_value(float x)
 {
-  if (x != 0.f) return nextafter(x, -std::numeric_limits<float>::infinity());
+  if (x != 0.f) return std::nextafter(x, -std::numeric_limits<float>::infinity());
 
   // When x==0, nextafter returns a very small value, thus use this instead
   return -1e-5f;
