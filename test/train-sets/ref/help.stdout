@@ -1,3 +1,12 @@
+Gradient Descent options:
+  --sgd                  use regular stochastic gradient descent update.
+  --adaptive             use adaptive, individual learning rates.
+  --adax                 use adaptive learning rates with x^2 instead of g^2x^2
+  --invariant            use safe/importance aware updates.
+  --normalized           use per feature normalized updates
+  --sparse_l2 arg (=0, ) use per feature normalized updates
+  --l1_state arg (=0, )  use per feature normalized updates
+  --l2_state arg (=1, )  use per feature normalized updates
 driver:
   --onethread           Disable parse thread
 VW options:
@@ -655,15 +664,6 @@ Kernel SVM:
   --kernel arg (=linear, ) type of kernel (rbf or linear (default))
   --bandwidth arg (=1, )   bandwidth of rbf kernel
   --degree arg (=2, )      degree of poly kernel
-Gradient Descent options:
-  --sgd                  use regular stochastic gradient descent update.
-  --adaptive             use adaptive, individual learning rates.
-  --adax                 use adaptive learning rates with x^2 instead of g^2x^2
-  --invariant            use safe/importance aware updates.
-  --normalized           use per feature normalized updates
-  --sparse_l2 arg (=0, ) use per feature normalized updates
-  --l1_state arg (=0, )  use per feature normalized updates
-  --l2_state arg (=1, )  use per feature normalized updates
 Input options:
   -d [ --data ] arg     Example set
   --daemon              persistent daemon mode on port 26542

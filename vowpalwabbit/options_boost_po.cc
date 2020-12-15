@@ -70,7 +70,7 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
   }
 
   // Add the help for the given options.
-  new_options.print(m_help_stringstream);
+  new_options.print(m_help_stringstream[group.m_importance]);
 
   try
   {
@@ -151,7 +151,17 @@ bool options_boost_po::was_supplied(const std::string& key) const
       std::end(m_command_line);
 }
 
-std::string options_boost_po::help() const { return m_help_stringstream.str(); }
+std::string options_boost_po::help() const
+{ 
+  std::stringstream help;
+
+  for (const auto &one : m_help_stringstream)
+  {
+    help << one.second.rdbuf();
+  }
+
+  return help.str();
+}
 
 std::vector<std::shared_ptr<base_option>> options_boost_po::get_all_options()
 {

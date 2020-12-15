@@ -147,7 +147,7 @@ private:
 
   std::vector<std::string> m_command_line;
 
-  std::stringstream m_help_stringstream;
+  std::map<int, std::stringstream> m_help_stringstream;
 
   // All options that were supplied on the command line.
   std::set<std::string> m_supplied_options;

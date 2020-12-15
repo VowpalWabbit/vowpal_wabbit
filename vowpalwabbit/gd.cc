@@ -1107,7 +1107,7 @@ base_learner* setup(options_i& options, vw& all)
   bool normalized = false;
 
   option_group_definition new_options("Gradient Descent options");
-  new_options.add(make_option("sgd", sgd).help("use regular stochastic gradient descent update.").keep(all.save_resume))
+  new_options.importance(-1).add(make_option("sgd", sgd).help("use regular stochastic gradient descent update.").keep(all.save_resume))
       .add(make_option("adaptive", adaptive).help("use adaptive, individual learning rates.").keep(all.save_resume))
       .add(make_option("adax", adax).help("use adaptive learning rates with x^2 instead of g^2x^2"))
       .add(make_option("invariant", invariant).help("use safe/importance aware updates.").keep(all.save_resume))

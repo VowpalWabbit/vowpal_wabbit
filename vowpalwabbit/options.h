@@ -185,7 +185,7 @@ struct options_i
 struct option_group_definition
 {
   // add second parameter for const string short name
-  option_group_definition(const std::string& name) : m_name(name) {}
+  option_group_definition(const std::string& name) : m_name(name) { m_importance = 0; }
 
   template <typename T>
   option_group_definition& add(T&& op)
@@ -222,9 +222,18 @@ struct option_group_definition
     return *this;
   }
 
+  // the smaller the number the more importance
+  // used only to order the --help page
+  option_group_definition& importance(int imp)
+  {
+    m_importance = imp;
+    return *this;
+  }
+
   std::string m_name;
   std::unordered_set<std::string> m_necessary_flags;
   std::vector<std::shared_ptr<base_option>> m_options;
+  int m_importance;
 };
 
 struct options_name_extractor : options_i
