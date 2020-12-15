@@ -152,13 +152,10 @@ bool options_boost_po::was_supplied(const std::string& key) const
 }
 
 std::string options_boost_po::help() const
-{ 
+{
   std::stringstream help;
 
-  for (const auto &one : m_help_stringstream)
-  {
-    help << one.second.rdbuf();
-  }
+  for (const auto& curr : m_help_stringstream) { help << curr.second.rdbuf(); }
 
   return help.str();
 }
