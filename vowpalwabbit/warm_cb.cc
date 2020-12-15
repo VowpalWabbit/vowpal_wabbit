@@ -516,7 +516,7 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   data.ecs.resize(num_actions);
   for (size_t a = 0; a < num_actions; ++a)
   {
-    data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
+    data.ecs[a] = VW::alloc_examples(0, 1);
     auto& lab = data.ecs[a]->l.cb;
     CB::cb_label.default_label(&lab);
   }

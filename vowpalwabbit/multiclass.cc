@@ -108,7 +108,7 @@ void parse_label(parser*, shared_data* sd, void* v, std::vector<VW::string_view>
 }
 
 label_parser mc_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, nullptr,
-    test_label, sizeof(label_t)};
+    test_label};
 
 void print_label_pred(vw& all, example& ec, uint32_t prediction)
 {

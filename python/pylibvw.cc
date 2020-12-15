@@ -203,7 +203,7 @@ void my_delete_example(void* voidec)
 example* my_empty_example0(vw_ptr vw, size_t labelType)
 {
   label_parser* lp = get_label_parser(&*vw, labelType);
-  example* ec = VW::alloc_examples(lp->label_size, 1);
+  example* ec = VW::alloc_examples(0, 1);
   lp->default_label(&ec->l);
   ec->interactions = &vw->interactions;
   if (labelType == lCOST_SENSITIVE)

@@ -17,7 +17,7 @@ template<class INPUT, class OUTPUT> class SearchTask
 public:
   SearchTask(vw& vw_obj) : vw_obj(vw_obj), sch(*(Search::search*)vw_obj.searchstr)
   {
-    bogus_example = VW::alloc_examples(vw_obj.example_parser->lbl_parser.label_size, 1);
+    bogus_example = VW::alloc_examples(0, 1);
     VW::read_line(vw_obj, bogus_example, (char*)"1 | x");
     VW::setup_example(vw_obj, bogus_example);
 

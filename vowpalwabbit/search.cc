@@ -3108,7 +3108,7 @@ void predictor::set_input_at(size_t posn, example& ex)
     THROW("call to set_input_at with too large a position: posn (" << posn << ") >= ec_cnt(" << ec_cnt << ")");
 
   VW::copy_example_data(
-      false, ec + posn, &ex, CS::cs_label.label_size, CS::cs_label.copy_label);  // TODO: the false is "audit"
+      false, ec + posn, &ex, 0, CS::cs_label.copy_label);  // TODO: the false is "audit"
 }
 
 template <class T>
