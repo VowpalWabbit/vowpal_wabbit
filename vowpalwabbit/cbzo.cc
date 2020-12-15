@@ -12,7 +12,6 @@
 #include "vw_math.h"
 #include "prob_dist_cont.h"
 
-using namespace std;
 using namespace VW::LEARNER;
 using namespace VW::config;
 using VW::continuous_actions::delete_probability_density_function;
@@ -159,7 +158,7 @@ void set_minmax(shared_data* sd, float label, bool min_fixed, bool max_fixed)
 
 inline std::string get_pred_repr(example& ec)
 {
-  return continuous_actions::to_string(ec.pred.pdf, false, numeric_limits<float>::max_digits10);
+  return continuous_actions::to_string(ec.pred.pdf, false, std::numeric_limits<float>::max_digits10);
 }
 
 void print_audit_features(vw& all, example& ec)
@@ -174,14 +173,14 @@ void print_audit_features(vw& all, example& ec)
 // Returns a value close to x and greater than it
 inline float close_greater_value(float x)
 {
-  if (x != 0.f) return nextafter(x, numeric_limits<float>::infinity());
+  if (x != 0.f) return nextafter(x, std::numeric_limits<float>::infinity());
   return 1e-5f;
 }
 
 // Returns a value close to x and lesser than it
 inline float close_lesser_value(float x)
 {
-  if (x != 0.f) return nextafter(x, -numeric_limits<float>::infinity());
+  if (x != 0.f) return nextafter(x, -std::numeric_limits<float>::infinity());
   return -1e-5f;
 }
 
