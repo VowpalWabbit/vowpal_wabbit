@@ -195,9 +195,9 @@ search_ptr get_search_ptr(vw_ptr all)
   return boost::shared_ptr<Search::search>((Search::search*)(all->searchstr), dont_delete_me);
 }
 
-op_manager_ptr get_op_manager_ptr(vw_ptr all, py::object cla)
-{  // remove dont_delete_me?, verify its sane
-  return op_manager_ptr(new OptionManager(*all->options, cla), dont_delete_me);
+op_manager_ptr get_op_manager_ptr(vw_ptr all, py::object py_class)
+{
+  return op_manager_ptr(new OptionManager(*all->options, py_class));
 }
 
 void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*all, *ec); }

@@ -21,8 +21,7 @@ def test_vw_config_manager():
     vw.finish()
 
 def test_vw_get_all_options():
-    vw = pyvw.vw("--dry_run")
-    config = vw.get_config(filtered_enabled_reductions_only=False)
+    config = pyvw.get_all_vw_options()
 
     cmd_str_list = set()
 

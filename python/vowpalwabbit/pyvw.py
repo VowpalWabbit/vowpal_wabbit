@@ -258,6 +258,11 @@ def get_prediction(ec, prediction_type):
     }
     return switch_prediction_type[prediction_type]()
 
+def get_all_vw_options():
+    temp = vw("--dry_run")
+    config = temp.get_config(filtered_enabled_reductions_only=False)
+    temp.finish()
+    return config
 
 class vw(pylibvw.vw):
     """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
