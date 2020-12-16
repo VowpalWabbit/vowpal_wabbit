@@ -164,9 +164,7 @@ inline std::string get_pred_repr(example& ec)
 void print_audit_features(vw& all, example& ec)
 {
   if (all.audit) all.print_text_by_ref(all.stdout_adapter.get(), get_pred_repr(ec), ec.tag);
-  fflush(stdout);
-  // Note: print_features() declaration was brought to gd.h so it can be used here. If it's
-  // no longer used here, consider removing the declaration from gd.h.
+
   GD::print_features(all, ec);
 }
 
