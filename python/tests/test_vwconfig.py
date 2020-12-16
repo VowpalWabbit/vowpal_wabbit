@@ -19,3 +19,14 @@ def test_vw_config_manager():
     assert set(cmd_str_list) == expected_set
 
     vw.finish()
+
+def test_vw_get_all_options():
+    vw = pyvw.vw("--dry_run")
+    config = vw.get_config(filtered_enabled_reductions_only=False)
+
+    cmd_str_list = set()
+
+    for name, config_group in config.items():
+        cmd_str_list.add(name)
+
+    assert len(cmd_str_list) >= 74
