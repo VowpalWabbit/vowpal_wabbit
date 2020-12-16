@@ -74,6 +74,7 @@ public:
   {
   }
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
+  static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
@@ -194,5 +195,13 @@ void cb_explore_adf_base<ExploreType>::finish_multiline_example(
 
   VW::finish_example(all, ec_seq);
 }
+
+template <typename ExploreType>
+inline void cb_explore_adf_base<ExploreType>::save_load(
+    cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text)
+{
+  data.explore.save_load(io, read, text);
+}
+
 }  // namespace cb_explore_adf
 }  // namespace VW

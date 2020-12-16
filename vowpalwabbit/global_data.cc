@@ -16,6 +16,7 @@
 #include "future_compat.h"
 #include "vw_allreduce.h"
 #include "named_labels.h"
+#include "parser/flatbuffer/parse_example_flatbuffer.h"
 
 struct global_prediction
 {
@@ -240,7 +241,7 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 
-vw::vw()
+vw::vw() : options(nullptr, nullptr)
 {
   sd = &calloc_or_throw<shared_data>();
   sd->dump_interval = 1.;  // next update progress dump
@@ -261,7 +262,6 @@ vw::vw()
   reg_mode = 0;
   current_pass = 0;
 
-  data_filename = "";
   delete_prediction = nullptr;
 
   bfgs = false;
@@ -364,9 +364,6 @@ vw::~vw()
     l->finish();
     free(l);
   }
-
-  // Check if options object lifetime is managed internally.
-  if (should_delete_options) delete options;
 
   // TODO: migrate all finalization into parser destructor
   if (example_parser != nullptr)

@@ -173,6 +173,8 @@ class SearchTask:
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            - 7 : lSLATES
+            - 8 : lCONTINUOUS
             The integer is used to map the corresponding labelType using the
             above available options
 
@@ -224,6 +226,7 @@ def get_prediction(ec, prediction_type):
         - 6: pPROB
         - 7: pMULTICLASSPROBS
         - 8: pDECISION_SCORES
+        - 9: pACTION_PDF_VALUE
 
     Examples
     --------
@@ -251,6 +254,7 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pPROB: ec.get_prob,
         pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars,
         pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores,
+        pylibvw.vw.pACTION_PDF_VALUE: ec.get_action_pdf_value,
     }
     return switch_prediction_type[prediction_type]()
 
@@ -275,11 +279,11 @@ class vw(pylibvw.vw):
         Examples
         --------
 
-        >>> from vowpalwabbit import vw
+        >>> from vowpalwabbit import pyvw
         >>> vw1 = pyvw.vw('--audit')
         >>> vw2 = pyvw.vw(audit=True, b=24, k=True, c=True, l2=0.001)
         >>> vw3 = pyvw.vw("--audit", b=26)
-        >>> vw4 = pyvw.vw("-q", ["ab", "ac"])
+        >>> vw4 = pyvw.vw(q=["ab", "ac"])
 
         Returns
         -------
@@ -312,10 +316,19 @@ class vw(pylibvw.vw):
 
         pylibvw.vw.__init__(self, " ".join(l))
 
+        self.parser_ran = False
+
         # check to see if native parser needs to run
         ext_file_args = ["d", "data", "passes"]
         if any(x in kw for x in ext_file_args):
             pylibvw.vw.run_parser(self)
+            self.parser_ran = True
+        elif arg_str:
+            # space after -d to avoid matching with other substrings
+            ext_file_cmd_str = ["-d ", "--data", "--passes"]
+            if [cmd for cmd in ext_file_cmd_str if(cmd in arg_str)]:
+                pylibvw.vw.run_parser(self)
+                self.parser_ran = True
 
         self.finished = False
     
@@ -341,6 +354,8 @@ class vw(pylibvw.vw):
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            - 7 : lSLATES
+            - 8 : lCONTINUOUS
             The integer is used to map the corresponding labelType using the
             above available options
 
@@ -350,10 +365,12 @@ class vw(pylibvw.vw):
         >>> from vowpalwabbit import pyvw
         >>> model = pyvw.vw(quiet=True)
         >>> ex = model.parse("0:0.1:0.75 | a:0.5 b:1 c:2")
-        >>> len(ex)
-        1
-        >>> model = vw(quiet=True, cb_adf=True)
+        >>> type(ex)
+        <class 'vowpalwabbit.pyvw.example'>
+        >>> model = pyvw.vw(quiet=True, cb_adf=True)
         >>> ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
+        >>> type(ex)
+        <class 'list'>
         >>> len(ex) # Shows the multiline example is parsed
         2
 
@@ -579,6 +596,8 @@ class vw(pylibvw.vw):
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            - 7 : lSLATES
+            - 8 : lCONTINUOUS
             The integer is used to map the corresponding labelType using the
             above available options
 
@@ -1107,6 +1126,8 @@ class example(pylibvw.example):
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            - 7 : lSLATES
+            - 8 : lCONTINUOUS
             The integer is used to map the corresponding labelType using the
             above available options
 

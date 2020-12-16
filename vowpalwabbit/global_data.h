@@ -58,6 +58,8 @@ typedef float weight;
 typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
 typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::config::options_i&, vw&);
 
+using options_deleter_type = void (*)(VW::config::options_i*);
+
 struct dictionary_info
 {
   std::string name;
@@ -280,7 +282,8 @@ enum class label_type_t
   multi,
   mc,
   ccb,  // conditional contextual-bandit
-  slates
+  slates,
+  nolabel
 };
 
 struct rand_state
@@ -308,6 +311,17 @@ struct vw_logger
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
+namespace VW
+{
+namespace parsers
+{
+namespace flatbuffer
+{
+class parser;
+}
+}  // namespace parsers
+}  // namespace VW
+
 struct vw
 {
 private:
@@ -322,7 +336,7 @@ public:
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
 
-  bool chain_hash = false;
+  bool chain_hash_json = false;
 
   VW::LEARNER::base_learner* l;         // the top level learner
   VW::LEARNER::single_learner* scorer;  // a scoring function
@@ -345,7 +359,8 @@ public:
 
   uint32_t hash_seed;
 
-  std::string data_filename;  // was vm["data"]
+  std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
+  std::string data_filename;
 
   bool daemon;
   size_t num_children;
@@ -368,9 +383,7 @@ public:
   // error reporting
   vw_ostream trace_message;
 
-  // Flag used when VW internally manages lifetime of options object.
-  bool should_delete_options = false;
-  VW::config::options_i* options;
+  std::unique_ptr<VW::config::options_i, options_deleter_type> options;
 
   void* /*Search::search*/ searchstr;
 

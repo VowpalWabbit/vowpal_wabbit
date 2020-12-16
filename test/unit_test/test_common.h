@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 
+#include "parse_example_json.h"
 #include "action_score.h"
 #include "vw.h"
 
@@ -38,11 +39,14 @@ void check_collections_exact(const ContainerOneT<T>& lhs, const ContainerTwoT<T>
 
 template <typename T>
 void check_vector_of_vectors_exact(const std::vector<std::vector<T>>& lhs, const std::vector<std::vector<T>>& rhs) {
+  BOOST_CHECK_EQUAL(lhs.size(), rhs.size());
   for (size_t i=0; i < lhs.size(); i++){
     BOOST_CHECK_EQUAL_COLLECTIONS(lhs[i].begin(), lhs[i].end(), rhs[i].begin(), rhs[i].end());
   }
 }
 
 multi_ex parse_json(vw& all, const std::string& line);
+
+multi_ex parse_dsjson(vw& all, std::string line, DecisionServiceInteraction* interaction = nullptr);
 
 bool is_invoked_with(const std::string& arg);

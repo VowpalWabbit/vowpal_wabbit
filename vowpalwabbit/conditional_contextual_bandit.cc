@@ -14,6 +14,8 @@
 #include "constant.h"
 #include "v_array_pool.h"
 #include "decision_scores.h"
+#include "vw_versions.h"
+#include "version.h"
 
 #include <numeric>
 #include <algorithm>
@@ -56,6 +58,11 @@ struct ccb
 
   VW::v_array_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
+
+  VW::version_struct model_file_version;
+  // If the reduction has not yet seen a multi slot example, it will behave the same as if it were CB.
+  // This means the interactions aren't added and the slot feature is not added.
+  bool has_seen_multi_slot_example = false;
 };
 
 namespace CCB
@@ -99,31 +106,6 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
         ex->l.conditional_contextual_bandit.explicit_included_actions, 0.});
   }
 
-  return true;
-}
-
-template <bool is_learn>
-bool sanity_checks(ccb& data)
-{
-  if (data.slots.size() > data.actions.size())
-  {
-    std::cerr << "ccb_adf_explore: badly formatted example - number of actions " << data.actions.size()
-              << " must be greater than the number of slots " << data.slots.size();
-    return false;
-  }
-
-  if (is_learn)
-  {
-    for (auto* slot : data.slots)
-    {
-      if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
-          slot->l.conditional_contextual_bandit.outcome->probabilities.empty())
-      {
-        std::cerr << "ccb_adf_explore: badly formatted example - missing label probability";
-        return false;
-      }
-    }
-  }
   return true;
 }
 
@@ -265,7 +247,22 @@ void calculate_and_insert_interactions(example* shared, const std::vector<exampl
 {
   std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 
-  const auto original_size = generated_interactions.size();
+  auto original_size = generated_interactions.size();
+
+  // add ccb_slot_namespace to original printable interactions
+  generated_interactions.push_back({ccb_slot_namespace, ccb_slot_namespace});
+
+  unsigned char prev_found = 0;
+  for (size_t i = 0; i < original_size; i++)
+  {
+    if (generated_interactions[i].size() > 0 && prev_found != generated_interactions[i][0])
+    {
+      prev_found = generated_interactions[i][0];
+      generated_interactions.push_back({generated_interactions[i][0], ccb_slot_namespace});
+    }
+  }
+  original_size = generated_interactions.size();
+
   for (size_t i = 0; i < original_size; i++)
   {
     auto interaction_copy = generated_interactions[i];
@@ -366,9 +363,37 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // split shared, actions and slots
   if (!split_multi_example_and_stash_labels(examples, data)) { return; }
 
-#ifndef NDEBUG
-  if (!sanity_checks<is_learn>(data)) { return; }
-#endif
+  if (data.slots.size() > data.actions.size())
+  {
+    std::stringstream msg;
+    msg << "ccb_adf_explore: badly formatted example - number of actions " << data.actions.size()
+        << " must be greater than the number of slots " << data.slots.size();
+    THROW(msg.str())
+  }
+
+  if (is_learn)
+  {
+    for (auto* slot : data.slots)
+    {
+      if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
+          slot->l.conditional_contextual_bandit.outcome->probabilities.empty())
+      { THROW("ccb_adf_explore: badly formatted example - missing label probability"); }
+    }
+  }
+
+  data.has_seen_multi_slot_example = data.has_seen_multi_slot_example || data.slots.size() > 1;
+
+  // If we have not seen more than one slot, we need to check if the user has supplied slot features.
+  // In that case we will turn on CCB slot id/interactions.
+  if (!data.has_seen_multi_slot_example)
+  {
+    // We decide that user defined features exist if there is at least one feature space which is not the constant
+    // namespace.
+    const bool user_defined_slot_features_exist =
+        !data.slots.empty() && !data.slots[0]->indices.empty() && data.slots[0]->indices[0] != constant_namespace;
+    data.has_seen_multi_slot_example = data.has_seen_multi_slot_example || user_defined_slot_features_exist;
+  }
+  const bool should_augment_with_slot_info = data.has_seen_multi_slot_example;
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
@@ -395,21 +420,27 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     size_t slot_id = 0;
     for (example* slot : data.slots)
     {
-      // Namespace crossing for slot features.
-      data.generated_interactions.clear();
-      std::copy(data.original_interactions->begin(), data.original_interactions->end(),
-          std::back_inserter(data.generated_interactions));
-      calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
-      data.shared->interactions = &data.generated_interactions;
-      for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
+      if (should_augment_with_slot_info)
+      {
+        // Namespace crossing for slot features.
+        data.generated_interactions.clear();
+        std::copy(data.original_interactions->begin(), data.original_interactions->end(),
+            std::back_inserter(data.generated_interactions));
+        calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
+        data.shared->interactions = &data.generated_interactions;
+        for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
+      }
 
       data.include_list.clear();
       build_cb_example<is_learn>(data.cb_ex, slot, data);
 
-      if (data.all->audit) { inject_slot_id<true>(data, data.shared, slot_id); }
-      else
+      if (should_augment_with_slot_info)
       {
-        inject_slot_id<false>(data, data.shared, slot_id);
+        if (data.all->audit) { inject_slot_id<true>(data, data.shared, slot_id); }
+        else
+        {
+          inject_slot_id<false>(data, data.shared, slot_id);
+        }
       }
 
       if (has_action(data.cb_ex))
@@ -425,14 +456,20 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         decision_scores.push_back(data.action_score_pool.get_object());
       }
 
-      data.shared->interactions = data.original_interactions;
-      for (auto* ex : data.actions) { ex->interactions = data.original_interactions; }
+      if (should_augment_with_slot_info)
+      {
+        data.shared->interactions = data.original_interactions;
+        for (auto* ex : data.actions) { ex->interactions = data.original_interactions; }
+      }
       remove_slot_features(data.shared, slot);
 
-      if (data.all->audit) { remove_slot_id<true>(data.shared); }
-      else
+      if (should_augment_with_slot_info)
       {
-        remove_slot_id<false>(data.shared);
+        if (data.all->audit) { remove_slot_id<true>(data.shared); }
+        else
+        {
+          remove_slot_id<false>(data.shared);
+        }
       }
 
       // Put back the original shared example tag.
@@ -541,6 +578,21 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
+void save_load(ccb& sm, io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+
+  // We want to enter this block if either we are writing, or reading a model file after the version in which this was
+  // added.
+  if (!read || sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  {
+    std::stringstream msg;
+    if (!read) { msg << "CCB: has_seen_multi_slot_example = " << sm.has_seen_multi_slot_example << "\n"; }
+    bin_text_read_write_fixed_validated(
+        io, (char*)&sm.has_seen_multi_slot_example, sizeof(sm.has_seen_multi_slot_example), "", read, msg, text);
+  }
+}
+
 base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ccb>();
@@ -582,6 +634,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->shared = nullptr;
   data->original_interactions = &all.interactions;
   data->all = &all;
+  data->model_file_version = all.model_file_ver;
 
   data->id_namespace_str.push_back((char)ccb_id_namespace);
   data->id_namespace_str.append("_id");
@@ -593,6 +646,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   l.set_finish_example(finish_multiline_example);
+  l.set_save_load(save_load);
   return make_base(l);
 }
 

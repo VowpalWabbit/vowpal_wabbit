@@ -44,6 +44,7 @@ const size_t lCONTEXTUAL_BANDIT = 4;
 const size_t lMAX = 5;
 const size_t lCONDITIONAL_CONTEXTUAL_BANDIT = 6;
 const size_t lSLATES = 7;
+const size_t lCONTINUOUS = 8;
 
 const size_t pSCALAR = 0;
 const size_t pSCALARS = 1;
@@ -54,6 +55,7 @@ const size_t pMULTILABELS = 5;
 const size_t pPROB = 6;
 const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
+const size_t pACTION_PDF_VALUE = 9;
 
 void dont_delete_me(void* arg) {}
 
@@ -234,6 +236,8 @@ label_parser* get_label_parser(vw* all, size_t labelType)
       return &CCB::ccb_label_parser;
     case lSLATES:
       return &VW::slates::slates_label_parser;
+    case lCONTINUOUS:
+      return &VW::cb_continuous::the_label_parser;
     default:
       THROW("get_label_parser called on invalid label type");
   }
@@ -263,6 +267,10 @@ size_t my_get_label_type(vw* all)
   {
     return lSLATES;
   }
+  else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label)
+  {
+    return lCONTINUOUS;
+  }
   else
   {
     THROW("unsupported label parser used");
@@ -291,6 +299,8 @@ size_t my_get_prediction_type(vw_ptr all)
       return pMULTICLASSPROBS;
     case prediction_type_t::decision_probs:
       return pDECISION_SCORES;
+    case prediction_type_t::action_pdf_value:
+      return pACTION_PDF_VALUE;
     default:
       THROW("unsupported prediction type used");
   }
@@ -659,6 +669,11 @@ py::list ex_get_decision_scores(example_ptr ec)
   }
 
   return values;
+}
+
+py::tuple ex_get_action_pdf_value(example_ptr ec)
+{
+  return py::make_tuple(ec->pred.pdf_value.action, ec->pred.pdf_value.pdf_value);
 }
 
 py::list ex_get_multilabel_predictions(example_ptr ec)
@@ -1039,6 +1054,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("lConditionalContextualBandit", lCONDITIONAL_CONTEXTUAL_BANDIT,
           "Conditional Contextual bandit label type -- used as input to the example() initializer")
       .def_readonly("lSlates", lSLATES, "Slates label type -- used as input to the example() initializer")
+      .def_readonly("lContinuous", lCONTINUOUS, "Continuous label type -- used as input to the example() initializer")
 
       .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
       .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")
@@ -1048,7 +1064,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pMULTILABELS", pMULTILABELS, "Multilabel prediction type")
       .def_readonly("pPROB", pPROB, "Probability prediction type")
       .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
-      .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type");
+      .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
+      .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1117,6 +1134,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_scalars", &ex_get_scalars, "Get scalar values from example prediction")
       .def("get_action_scores", &ex_get_action_scores, "Get action scores from example prediction")
       .def("get_decision_scores", &ex_get_decision_scores, "Get decision scores from example prediction")
+      .def("get_action_pdf_value", &ex_get_action_pdf_value, "Get action and pdf value from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
