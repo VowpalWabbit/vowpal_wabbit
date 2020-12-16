@@ -5,7 +5,6 @@ import pytest
 def test_vw_config_manager():
     vw = pyvw.vw(arg_str="--save_resume --loss_function logistic -d /root/vowpal_wabbit/test/train-sets/rcv1_small.dat --quiet")
     config = vw.get_config()
-    print(config)
 
     cmd_str_list = []
 

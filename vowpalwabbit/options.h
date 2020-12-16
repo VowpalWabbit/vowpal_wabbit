@@ -114,6 +114,7 @@ struct options_i
 {
   virtual void add_and_parse(const option_group_definition& group) = 0;
   virtual void tint(const std::string& reduction_name) = 0;
+  virtual void reset_tint() = 0;
   virtual bool add_parse_and_check_necessary(const option_group_definition& group) = 0;
   virtual bool was_supplied(const std::string& key) const = 0;
   virtual std::string help() const = 0;
@@ -262,6 +263,8 @@ struct options_name_extractor : options_i
   bool was_supplied(const std::string&) const override { return false; };
 
   void tint(const std::string&) override { THROW("options_name_extractor does not implement this method"); };
+
+  void reset_tint() override { THROW("options_name_extractor does not implement this method"); };
 
   std::string help() const override { THROW("options_name_extractor does not implement this method"); };
 

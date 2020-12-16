@@ -61,6 +61,8 @@ struct options_boost_po : public options_i
 
   void tint(const std::string& reduction_name) override { m_current_reduction_tint = reduction_name; }
 
+  void reset_tint() override { m_current_reduction_tint = m_default_tint; }
+
   void insert(const std::string& key, const std::string& value) override
   {
     m_command_line.push_back("--" + key);
@@ -113,6 +115,8 @@ struct options_boost_po : public options_i
     return m_option_group_dic;
   }
 
+  const std::string m_default_tint = "general";
+
 private:
   template <typename T>
   typename po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_option<T>>& opt);
@@ -156,7 +160,7 @@ private:
   // setup_function_id (str) -> list of option_group_definition
   std::map<std::string, std::vector<option_group_definition>> m_option_group_dic;
 
-  std::string m_current_reduction_tint = "general";
+  std::string m_current_reduction_tint = m_default_tint;
 
   std::map<std::string, std::shared_ptr<base_option>> m_options;
 

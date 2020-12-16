@@ -1209,8 +1209,7 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
   // 'hacky' way of keeping track of the option group created by the setup_func about to be created
   options.tint(setup_func_name);
   auto base = setup_func(options, all);
-  // reset back to general
-  options.tint("general");
+  options.reset_tint();
 
   // returning nullptr means that setup_func (any reduction) was not 'enabled' but
   // only added their respective command args and did not add itself into the

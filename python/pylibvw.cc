@@ -11,6 +11,7 @@
 #include "search_hooktask.h"
 #include "parse_example.h"
 #include "gd.h"
+#include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
 #include "future_compat.h"
 #include "slates_label.h"
@@ -62,21 +63,23 @@ void dont_delete_me(void* arg) {}
 class OptionManager
 {
   std::map<std::string, std::vector<VW::config::option_group_definition>> m_option_group_dic;
-  py::object m_cla;
+  py::object m_py_opt_class;
   VW::config::options_i& m_opt;
+  std::string default_group_name;
 
 public:
-  OptionManager(VW::config::options_i& options, py::object cla)
-      : m_opt(options), m_option_group_dic(options.get_collection_of_options()), m_cla(cla)
+  OptionManager(VW::config::options_i& options, py::object py_class)
+      : m_opt(options), m_option_group_dic(options.get_collection_of_options()), m_py_opt_class(py_class)
   {
+    default_group_name = static_cast<VW::config::options_boost_po*>(&options)->m_default_tint;
   }
 
   template <typename T>
   py::object* value_to_pyobject(VW::config::typed_option<T>& opt)
   {
     return new py::object(
-        m_cla(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary, opt.m_allow_override, opt.value(),
-            m_opt.was_supplied(opt.m_name), opt.default_value(), opt.default_value_supplied()));
+        m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary, opt.m_allow_override,
+            opt.value(), m_opt.was_supplied(opt.m_name), opt.default_value(), opt.default_value_supplied()));
   }
 
   template <typename T>
@@ -90,7 +93,7 @@ public:
       for (auto const& opt : vec) { values.append(py::object(opt)); }
     }
 
-    return new py::object(m_cla(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+    return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
         opt.m_allow_override, values, m_opt.was_supplied(opt.m_name), py::list(), opt.default_value_supplied()));
   }
 
@@ -132,7 +135,7 @@ public:
       auto reduction_enabled =
           std::find(enabled_reductions.begin(), enabled_reductions.end(), it->first) != enabled_reductions.end();
 
-      if (((it->first).compare("general") != 0) && enabled_only && !reduction_enabled)
+      if (((it->first).compare(default_group_name) != 0) && enabled_only && !reduction_enabled)
       {
         it++;
         continue;
@@ -1194,7 +1197,7 @@ BOOST_PYTHON_MODULE(pylibvw)
 
   py::class_<OptionManager, op_manager_ptr>("option_manager", py::no_init)
       .def("get_options", &OptionManager::get_vw_option_pyobjects, py::return_value_policy<py::return_by_value>(),
-          "do something");
+          "get available vw options");
 
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
