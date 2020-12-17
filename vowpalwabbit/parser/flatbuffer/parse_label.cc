@@ -149,10 +149,6 @@ void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
   }
 }
 
-void parser::parse_no_label()
-{
-  // No Label
-}
 }  // namespace flatbuffer
 }  // namespace parsers
 }  // namespace VW

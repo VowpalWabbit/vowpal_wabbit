@@ -95,11 +95,18 @@ table Example {
   tag:string;
 }
 
-table ExampleCollection {
+table MultiExample
+{
   examples:[Example];
 }
 
-union ExampleType {Example, ExampleCollection}
+table ExampleCollection {
+  examples:[Example];
+  multi_examples:[MultiExample];
+  is_multiline:bool;
+}
+
+union ExampleType {Example, ExampleCollection, MultiExample}
 
 table ExampleRoot
 {
