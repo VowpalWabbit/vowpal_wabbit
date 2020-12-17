@@ -30,9 +30,8 @@ char* bufread_label(labels& ld, char* c, io_buf& cache)
   return c;
 }
 
-size_t read_cached_label(shared_data*, polylabel* v, io_buf& cache)
+size_t read_cached_label(shared_data*, MULTILABEL::labels& ld, io_buf& cache)
 {
-  auto& ld = v->multilabels;
   ld.label_v.clear();
   char* c;
   size_t total = sizeof(size_t);
@@ -42,7 +41,7 @@ size_t read_cached_label(shared_data*, polylabel* v, io_buf& cache)
   return total;
 }
 
-float weight(polylabel*) { return 1.; }
+float weight(MULTILABEL::labels& ld) { return 1.; }
 
 char* bufcache_label(labels& ld, char* c)
 {
@@ -56,52 +55,35 @@ char* bufcache_label(labels& ld, char* c)
   return c;
 }
 
-void cache_label(polylabel* v, io_buf& cache)
+void cache_label(MULTILABEL::labels& ld, io_buf& cache)
 {
   char* c;
-  auto& ld = v->multilabels;
   cache.buf_write(c, sizeof(size_t) + sizeof(uint32_t) * ld.label_v.size());
   bufcache_label(ld, c);
 }
 
-void default_label(polylabel* v)
+void default_label(MULTILABEL::labels& ld)
 {
-  auto& ld = v->multilabels;
   ld.label_v.clear();
 }
 
-bool test_label(polylabel* v)
+bool test_label(MULTILABEL::labels& ld)
 {
-  auto& ld = v->multilabels;
   return ld.label_v.size() == 0;
 }
 
-void delete_label(void* v)
+void delete_label(MULTILABEL::labels& ld)
 {
-  if(v)
-  {
-    labels* ld = reinterpret_cast<labels*>(v);
-    ld->label_v.delete_v();
-  }
+  ld.label_v.delete_v();
 }
 
-void delete_label(polylabel* v)
+void copy_label(MULTILABEL::labels& dst, MULTILABEL::labels& src)
 {
-  if (v)
-    v->multilabels.label_v.delete_v();
+  copy_array(dst.label_v, src.label_v);
 }
 
-void copy_label(polylabel* dst, polylabel* src)
+void parse_label(parser* p, shared_data*, MULTILABEL::labels& ld, std::vector<VW::string_view>& words)
 {
-  if (dst && src)
-  {
-    copy_array(dst->multilabels.label_v, src->multilabels.label_v);
-  }
-}
-
-void parse_label(parser* p, shared_data*, polylabel* v, std::vector<VW::string_view>& words)
-{
-  auto& ld = v->multilabels;
   switch (words.size())
   {
     case 0:
@@ -122,8 +104,32 @@ void parse_label(parser* p, shared_data*, polylabel* v, std::vector<VW::string_v
   }
 }
 
-label_parser multilabel = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
-    test_label, sizeof(labels)};
+// clang-format off
+label_parser cb_label = {
+  // default_label
+  [](polylabel* v) { default_label(v->multilabels); },
+  // parse_label
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
+    parse_label(p, sd, v->multilabels, words);
+  },
+  // cache_label
+  [](polylabel* v, io_buf& cache) { cache_label(v->multilabels, cache); },
+  // read_cached_label
+  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->multilabels, cache); },
+  // delete_label
+  [](polylabel* v) { if (v) delete_label(v->multilabels); },
+   // get_weight
+  [](polylabel* v) { return weight(v->multilabels); },
+  // copy_label
+  [](polylabel* dst, polylabel* src) {
+    if (dst && src) {
+      copy_label(dst->multilabels, src->multilabels);
+    }
+  },
+  // test_label
+  [](polylabel* v) { return test_label(v->multilabels); },
+};
+// clang-format on
 
 void print_update(vw& all, bool is_test, example& ec)
 {
@@ -146,10 +152,10 @@ void print_update(vw& all, bool is_test, example& ec)
 
 void output_example(vw& all, example& ec)
 {
-  auto& ld = ec.l;
+  auto& ld = ec.l.multilabels;
 
   float loss = 0.;
-  if (!test_label(&ld))
+  if (!test_label(ld))
   {
     // need to compute exact loss
     labels preds = ec.pred.multilabels;
@@ -180,7 +186,7 @@ void output_example(vw& all, example& ec)
     loss += preds.label_v.size() - preds_index;
   }
 
-  all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !test_label(ld), loss, 1.f, ec.num_features);
 
   for (auto& sink : all.final_prediction_sink)
   {
@@ -198,6 +204,6 @@ void output_example(vw& all, example& ec)
     }
   }
 
-  print_update(all, test_label(&ld), ec);
+  print_update(all, test_label(ld), ec);
 }
 }  // namespace MULTILABEL

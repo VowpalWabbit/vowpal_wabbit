@@ -28,7 +28,8 @@ using namespace VW::config;
 
 namespace CCB
 {
-void default_label(polylabel* v);
+void default_label(label& ld);
+
 
 size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
 {
@@ -108,14 +109,9 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
   return read_count;
 }
 
-size_t read_cached_label(shared_data* sd, polylabel* v, io_buf& cache)
-{
-  return read_cached_label(sd, v, cache);
-}
 
-float ccb_weight(polylabel* v)
+float ccb_weight(CCB::label& ld)
 {
-  auto& ld = v->conditional_contextual_bandit;
   return ld.weight;
 }
 
@@ -167,15 +163,10 @@ void cache_label(label& ld, io_buf& cache)
   c += sizeof(ld.weight);
 }
 
-void cache_label(polylabel* v, io_buf& cache)
-{
-  cache_label(v->conditional_contextual_bandit, cache);
-}
-
 void default_label(label& ld)
 {
   // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
-  if (ld->outcome != nullptr)
+  if (ld.outcome != nullptr)
   {
     ld.outcome->probabilities.delete_v();
     delete ld.outcome;
@@ -187,14 +178,9 @@ void default_label(label& ld)
   ld.weight = 1.0;
 }
 
-void default_label(polylabel* v)
-{
-  default_label(v->conditional_contextual_bandit);
-}
 
-bool test_label(polylabel* v)
+bool test_label(CCB::label& ld)
 {
-  auto& ld = v->conditional_contextual_bandit;
   return ld.outcome == nullptr;
 }
 
@@ -207,11 +193,6 @@ void delete_label(label& ld)
     ld.outcome = nullptr;
   }
   ld.explicit_included_actions.delete_v();
-}
-
-void delete_label(polylabel* v)
-{
-  delete_label(v->conditional_contextual_bandit);
 }
 
 void copy_label(label& ldDst, label& ldSrc)
@@ -228,11 +209,6 @@ void copy_label(label& ldDst, label& ldSrc)
   copy_array(ldDst.explicit_included_actions, ldSrc.explicit_included_actions);
   ldDst.type = ldSrc.type;
   ldDst.weight = ldSrc.weight;
-}
-
-void copy_label(polylabel* dst, polylabel* src)
-{
-  copy_label(dst->conditional_contextual_bandit, src->conditional_contextual_bandit);
 }
 
 ACTION_SCORE::action_score convert_to_score(
@@ -287,7 +263,7 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view& outco
   return &ccb_outcome;
 }
 
-void parse_explicit_inclusions(CCB::label& ld, v_array<VW::string_view>& split_inclusions)
+void parse_explicit_inclusions(CCB::label& ld, const std::vector<VW::string_view>& split_inclusions)
 {
   for (const auto& inclusion : split_inclusions)
   {
@@ -295,7 +271,7 @@ void parse_explicit_inclusions(CCB::label& ld, v_array<VW::string_view>& split_i
   }
 }
 
-void parse_label(parser* p, shared_data*, label& ld, v_array<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, label& ld, std::vector<VW::string_view>& words)
 {
   ld.weight = 1.0;
 
@@ -342,7 +318,7 @@ void parse_label(parser* p, shared_data*, label& ld, v_array<VW::string_view>& w
     }
 
     // If a full distribution has been given, check if it sums to 1, otherwise throw.
-    if ((ld->outcome != nullptr) && ld->outcome->probabilities.size() > 1)
+    if ((ld.outcome != nullptr) && ld.outcome->probabilities.size() > 1)
     {
       float total_pred = std::accumulate(ld.outcome->probabilities.begin(), ld.outcome->probabilities.end(), 0.f,
           [](float result_so_far, ACTION_SCORE::action_score action_pred) {
@@ -362,13 +338,31 @@ void parse_label(parser* p, shared_data*, label& ld, v_array<VW::string_view>& w
   }
 }
 
+// clang-format off
+label_parser cb_label = {
+  // default_label
+  [](polylabel* v) { default_label(v->conditional_contextual_bandit); },
+  // parse_label
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
+    parse_label(p, sd, v->conditional_contextual_bandit, words);
+  },
+  // cache_label
+  [](polylabel* v, io_buf& cache) { cache_label(v->conditional_contextual_bandit, cache); },
+  // read_cached_label
+  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->conditional_contextual_bandit, cache); },
+  // delete_label
+  [](polylabel* v) { delete_label(v->conditional_contextual_bandit); },
+   // get_weight
+  [](polylabel* v) { return ccb_weight(v->conditional_contextual_bandit); },
+  // copy_label
+  [](polylabel* dst, polylabel* src) {
+    if (dst && src) {
+      copy_label(dst->conditional_contextual_bandit, src->conditional_contextual_bandit);
+    }
+  },
+  // test_label
+  [](polylabel* v) { return test_label(v->conditional_contextual_bandit); },
+};
+// clang-format on
 
-void parse_label(parser* p, shared_data* sd, polylabel* v, v_array<VW::string_view>& words)
-{
-  parse_label(p, sd, v->conditional_contextual_bandit, words);
-}
-
-// Export the definition of this label parser.
-label_parser ccb_label_parser = {default_label, parse_label, cache_label, read_cached_label, delete_label, ccb_weight,
-    copy_label, test_label, sizeof(CCB::label)};
 }  // namespace CCB

@@ -77,26 +77,24 @@ bool test_label(const label_t& ld) { return ld.label == (uint32_t)-1; }
 
 // clang-format off
 label_parser mc_label = {
-  // default_label 
+  // default_label
   [](polylabel* v) { default_label(v->multi); },
-  // parse_label 
+  // parse_label
   [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
     parse_label(p, sd, v->multi, words);
   },
-  // cache_label 
+  // cache_label
   [](polylabel* v, io_buf& cache) { cache_label(v->multi, cache); },
-  // read_cached_label 
+  // read_cached_label
   [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->multi, cache); },
-  // delete_label 
+  // delete_label
   [](polylabel*) {},
-   // get_weight 
+   // get_weight
   [](polylabel* v) { return weight(v->multi); },
   // copy_label
   nullptr,
   // test_label
   [](polylabel* v) { return test_label(v->multi); },
-  // label_size
-  sizeof(label_t)
 };
 // clang-format on
 

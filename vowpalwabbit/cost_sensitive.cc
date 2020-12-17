@@ -52,9 +52,8 @@ char* bufread_label(label& ld, char* c, io_buf& cache)
   return c;
 }
 
-size_t read_cached_label(shared_data*, polylabel* v, io_buf& cache)
+size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
 {
-  auto& ld = v->cs;
   ld.costs.clear();
   char* c;
   size_t total = sizeof(size_t);
@@ -64,7 +63,7 @@ size_t read_cached_label(shared_data*, polylabel* v, io_buf& cache)
   return total;
 }
 
-float weight(polylabel*) { return 1.; }
+float weight(label& ld) { return 1.; }
 
 char* bufcache_label(label& ld, char* c)
 {
@@ -78,10 +77,9 @@ char* bufcache_label(label& ld, char* c)
   return c;
 }
 
-void cache_label(polylabel* v, io_buf& cache)
+void cache_label(label& ld, io_buf& cache)
 {
   char* c;
-  auto& ld = v->cs;
   cache.buf_write(c, sizeof(size_t) + sizeof(wclass) * ld.costs.size());
   bufcache_label(ld, c);
 }
@@ -91,14 +89,8 @@ void default_label(label& ld)
   ld.costs.clear();
 }
 
-void default_label(polylabel* v)
+bool test_label(label& ld)
 {
-  default_label(v->cs);
-}
-
-bool test_label(polylabel* v)
-{
-  auto& ld = v->cs;
   if (ld.costs.size() == 0)
     return true;
   for (unsigned int i = 0; i < ld.costs.size(); i++)
@@ -112,23 +104,13 @@ void delete_label(label& ld)
   ld.costs.delete_v();
 }
 
-void delete_label(polylabel* v)
+void copy_label(label& dst, label& src)
 {
-  if (v)
-    v->cs.costs.delete_v();
+  copy_array(dst.costs, src.costs);
 }
 
-void copy_label(polylabel* dst, polylabel* src)
+void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_view>& words)
 {
-  if (dst && src)
-  {
-    copy_array(dst->cs.costs, src->cs.costs);
-  }
-}
-
-void parse_label(parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words)
-{
-  auto& ld = v->cs;
   ld.costs.clear();
 
   // handle shared and label first
@@ -191,30 +173,30 @@ void parse_label(parser* p, shared_data* sd, polylabel* v, std::vector<VW::strin
   }
 }
 
-
-
 // clang-format off
 label_parser cs_label = {
-  // default_label 
+  // default_label
   [](polylabel* v) { default_label(v->cs); },
-  // parse_label 
+  // parse_label
   [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
     parse_label(p, sd, v->cs, words);
   },
-  // cache_label 
+  // cache_label
   [](polylabel* v, io_buf& cache) { cache_label(v->cs, cache); },
-  // read_cached_label 
+  // read_cached_label
   [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->cs, cache); },
-  // delete_label 
-  [](polylabel*) {},
-   // get_weight 
+  // delete_label
+  [](polylabel* v) { if (v) delete_label(v->cs); },
+   // get_weight
   [](polylabel* v) { return weight(v->cs); },
   // copy_label
-  nullptr,
+  [](polylabel* dst, polylabel* src) {
+    if (dst && src) {
+      copy_label(dst->cs, src->cs);
+    }
+  },
   // test_label
-  [](polylabel* v) { return test_label(v->cs); },
-  // label_size
-  sizeof(label_t)
+  [](polylabel* v) { return test_label(v->cs); }
 };
 // clang-format on
 
@@ -268,7 +250,7 @@ void output_example(vw& all, example& ec)
   label& ld = ec.l.cs;
 
   float loss = 0.;
-  if (!test_label(&ec.l))
+  if (!test_label(ec.l.cs))
   {
     // need to compute exact loss
     size_t pred = (size_t)ec.pred.multiclass;
@@ -289,7 +271,7 @@ void output_example(vw& all, example& ec)
     // loss = chosen_loss;
   }
 
-  all.sd->update(ec.test_only, !test_label(&ec.l), loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, !test_label(ec.l.cs), loss, ec.weight, ec.num_features);
 
   for (auto& sink : all.final_prediction_sink)
   {
@@ -313,7 +295,7 @@ void output_example(vw& all, example& ec)
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, test_label(&ec.l), ec, nullptr, false, ec.pred.multiclass);
+  print_update(all, test_label(ec.l.cs), ec, nullptr, false, ec.pred.multiclass);
 }
 
 void finish_example(vw& all, example& ec)

@@ -28,9 +28,8 @@ char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
   return c;
 }
 
-size_t read_cached_simple_label(shared_data* sd, polylabel* v, io_buf& cache)
+size_t read_cached_simple_label(shared_data* sd, label_data& ld, io_buf& cache)
 {
-  label_data& ld = v->simple;
   char* c;
   size_t total = sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial);
   if (cache.buf_read(c, total) < total)
@@ -40,9 +39,8 @@ size_t read_cached_simple_label(shared_data* sd, polylabel* v, io_buf& cache)
   return total;
 }
 
-float get_weight(polylabel* v)
+float get_weight(label_data& ld)
 {
-  label_data& ld = v->simple;
   return ld.weight;
 }
 
@@ -57,34 +55,27 @@ char* bufcache_simple_label(label_data& ld, char* c)
   return c;
 }
 
-void cache_simple_label(polylabel* v, io_buf& cache)
+void cache_simple_label(label_data& ld, io_buf& cache)
 {
   char* c;
-  label_data& ld = v->simple;
   cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial));
   bufcache_simple_label(ld, c);
 }
 
-void default_simple_label(polylabel* v)
+void default_simple_label(label_data& ld)
 {
-  label_data& ld = v->simple;
   ld.label = FLT_MAX;
   ld.weight = 1.;
   ld.initial = 0.;
 }
 
-bool test_label(polylabel* v)
+bool test_label(label_data& ld)
 {
-  label_data& ld = v->simple;
   return ld.label == FLT_MAX;
 }
 
-void delete_simple_label(polylabel*) {}
-
-void parse_simple_label(parser*, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words)
+void parse_simple_label(parser*, shared_data* sd, label_data& ld, std::vector<VW::string_view>& words)
 {
-  label_data& ld = v->simple;
-
   switch (words.size())
   {
     case 0:
@@ -109,8 +100,28 @@ void parse_simple_label(parser*, shared_data* sd, polylabel* v, std::vector<VW::
   count_label(sd, ld.label);
 }
 
-label_parser simple_label_parser = {default_simple_label, parse_simple_label, cache_simple_label,
-    read_cached_simple_label, delete_simple_label, get_weight, nullptr, test_label, sizeof(label_data)};
+// clang-format off
+label_parser mc_label = {
+  // default_label
+  [](polylabel* v) { default_simple_label(v->simple); },
+  // parse_label
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
+    parse_simple_label(p, sd, v->simple, words);
+  },
+  // cache_label
+  [](polylabel* v, io_buf& cache) { cache_simple_label(v->simple, cache); },
+  // read_cached_label
+  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_simple_label(sd, v->simple, cache); },
+  // delete_label
+  [](polylabel*) {},
+   // get_weight
+  [](polylabel* v) { return get_weight(v->simple); },
+  // copy_label
+  nullptr,
+  // test_label
+  [](polylabel* v) { return test_label(v->simple); },
+};
+// clang-format on
 
 void print_update(vw& all, example& ec)
 {
@@ -124,7 +135,7 @@ void print_update(vw& all, example& ec)
 
 void output_and_account_example(vw& all, example& ec)
 {
-  label_data ld = ec.l.simple;
+  const label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
