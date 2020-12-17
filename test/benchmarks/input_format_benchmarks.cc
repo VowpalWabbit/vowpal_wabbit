@@ -73,12 +73,9 @@ static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
   examples.push_back(&VW::get_unused_example(vw));
   for (auto _ : state)
   {
-    for (size_t i = 0; i < 20000; i++)
-    {
-      VW::read_line(*vw, examples[0], es);
-      VW::empty_example(*vw, *examples[0]);
-      benchmark::ClobberMemory();
-    }
+    VW::read_line(*vw, examples[0], es);
+    VW::empty_example(*vw, *examples[0]);
+    benchmark::ClobberMemory();
   }
   examples.delete_v();
 }
@@ -123,13 +120,10 @@ static void bench_cache_io_buf(benchmark::State& state, ExtraArgs&&... extra_arg
 
   for (auto _ : state)
   {
-    for (size_t i = 0; i < 20000; i++)
-    {
-      reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size()));
-      read_cached_features(vw, examples);
-      VW::empty_example(*vw, *examples[0]);
-      benchmark::ClobberMemory();
-    }
+    reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size()));
+    read_cached_features(vw, examples);
+    VW::empty_example(*vw, *examples[0]);
+    benchmark::ClobberMemory();
   }
   examples.delete_v();
 }
@@ -174,13 +168,10 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
 
   for (auto _ : state)
   {
-    for (size_t i = 0; i < 20000; i++)
-    {
-      reader_view_of_buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
-      vw->example_parser->reader(vw, examples);
-      VW::empty_example(*vw, *examples[0]);
-      benchmark::ClobberMemory();
-    }
+    reader_view_of_buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
+    vw->example_parser->reader(vw, examples);
+    VW::empty_example(*vw, *examples[0]);
+    benchmark::ClobberMemory();
   }
   examples.delete_v();
 }
@@ -200,39 +191,29 @@ static void benchmark_example_reuse(benchmark::State& state)
 
   for (auto _ : state)
   {
-    for (size_t i = 0; i < 20000; i++)
-    {
-      examples.push_back(&VW::get_unused_example(vw));
-      reader_view_of_buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
-      vw->example_parser->reader(vw, examples);
-      VW::finish_example(*vw, *examples[0]);
-      examples.clear();
-      benchmark::ClobberMemory();
-    }
+    examples.push_back(&VW::get_unused_example(vw));
+    reader_view_of_buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
+    vw->example_parser->reader(vw, examples);
+    VW::finish_example(*vw, *examples[0]);
+    examples.clear();
+    benchmark::ClobberMemory();
   }
   examples.delete_v();
 }
 
-static void benchmark_learn_simple(benchmark::State& state)
+static void benchmark_learn_simple(benchmark::State& state, std::string example_string)
 {
-  std::string example_string =
-      "1 zebra|MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures "
-      "NumberOfLegs:4.0 HasStripes";
-
   auto vw = VW::initialize("--quiet", nullptr, false, nullptr, nullptr);
 
-  multi_ex examples;
-  examples.push_back(VW::read_example(*vw, example_string));
+  auto* example = VW::read_example(*vw, example_string);
+  VW::setup_example(*vw, example);
 
   for (auto _ : state)
   {
-    for (size_t i = 0; i < 20000; i++)
-    {
-      vw->learn(*examples[0]);
-      benchmark::ClobberMemory();
-    }
+    vw->learn(*example);
+    benchmark::ClobberMemory();
   }
-  vw->finish_example(*examples[0]);
+  vw->finish_example(*example);
 }
 
 static void benchmark_cb_adf_learn(benchmark::State& state)
@@ -243,40 +224,36 @@ static void benchmark_cb_adf_learn(benchmark::State& state)
   examples.push_back(VW::read_example(*vw, std::string("0:1.0:0.5 | a_1 b_1 c_1")));
   examples.push_back(VW::read_example(*vw, std::string("| a_2 b_2 c_2")));
   examples.push_back(VW::read_example(*vw, std::string("| a_3 b_3 c_3")));
+  for (auto* example : examples) { VW::setup_example(*vw, example); }
 
   for (auto _ : state)
   {
-    for (size_t i = 0; i < 20000; i++)
-    {
-      vw->learn(examples);
-      benchmark::ClobberMemory();
-    }
+    vw->learn(examples);
+    benchmark::ClobberMemory();
   }
   vw->finish_example(examples);
 }
 
-static void benchmark_ccb_adf_learn(benchmark::State& state)
+static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature_string)
 {
   auto vw = VW::initialize("--ccb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
 
   multi_ex examples;
-  examples.push_back(VW::read_example(*vw, std::string("ccb shared |User b")));
-  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action d")));
-  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action e")));
-  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action f")));
-  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action ff")));
-  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action fff")));
+  examples.push_back(VW::read_example(*vw, std::string("ccb shared |User " + feature_string)));
+  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action1 " + feature_string)));
+  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action2 " + feature_string)));
+  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action3 " + feature_string)));
+  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action4 " + feature_string)));
+  examples.push_back(VW::read_example(*vw, std::string("ccb action |Action5 " + feature_string)));
   examples.push_back(VW::read_example(*vw, std::string("ccb slot 0:0:0.2 |Slot h")));
   examples.push_back(VW::read_example(*vw, std::string("ccb slot 1:0:0.25 |Slot i")));
   examples.push_back(VW::read_example(*vw, std::string("ccb slot 2:0:0.333333 |Slot j")));
+  for (auto* example : examples) { VW::setup_example(*vw, example); }
 
   for (auto _ : state)
   {
-    for (size_t i = 0; i < 20000; i++)
-    {
-      vw->learn(examples);
-      benchmark::ClobberMemory();
-    }
+    vw->learn(examples);
+    benchmark::ClobberMemory();
   }
   vw->finish_example(examples);
 }
@@ -289,7 +266,13 @@ BENCHMARK_CAPTURE(bench_text, 120_num_fts, get_x_numerical_fts(120));
 BENCHMARK_CAPTURE(bench_cache_io_buf, 120_num_fts, get_x_numerical_fts(120));
 BENCHMARK_CAPTURE(bench_text_io_buf, 120_num_fts, get_x_numerical_fts(120));
 
+BENCHMARK_CAPTURE(benchmark_learn_simple, 8_features,
+    "1 zebra|MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures NumberOfLegs:4.0 "
+    "HasStripes");
+BENCHMARK_CAPTURE(benchmark_learn_simple, 1_feature, "1 | a");
+
+BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, few_features, "a");
+BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, many_features, "a b c d e f g h i j k l m n o p q r s t u v w x y z");
+
 BENCHMARK(benchmark_example_reuse);
-BENCHMARK(benchmark_learn_simple);
 BENCHMARK(benchmark_cb_adf_learn);
-BENCHMARK(benchmark_ccb_adf_learn);
