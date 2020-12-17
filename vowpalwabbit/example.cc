@@ -417,10 +417,7 @@ example* alloc_examples(size_t, size_t count)
   return ec;
 }
 
-example* alloc_examples(size_t count)
-{
-  return alloc_examples(0, count);
-}
+example* alloc_examples(size_t count) { return alloc_examples(0, count); }
 
 void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
 {
