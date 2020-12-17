@@ -3,7 +3,7 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 using no cache
-Reading datafile = ../test/train-sets/cs_test
+Reading datafile = train-sets/cs_test
 num sources = 1
 Enabled reductions: gd, scorer, cs_active
 average  since         example        example  current  current  current

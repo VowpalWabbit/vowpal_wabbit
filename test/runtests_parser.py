@@ -64,10 +64,22 @@ class Test:
             self.vw_command = " ".join(self.vw_command.split()[1:])
 
             # check what input files this command needs
-            files = Parser.get_values_of_vwarg(self.vw_command, "-d")
-            files = files + Parser.get_values_of_vwarg(self.vw_command, "-i")
+            input_file_flags = ["-d", "-i", "--dictionary", "--feature_mask"]
+            files = []
+            for flag in input_file_flags:
+                next_files = Parser.get_values_of_vwarg(self.vw_command, flag)
+
+                # some cleanup only when its dictionary
+                if flag is "--dictionary":
+                    next_files = [f.split(":")[-1]  for f in next_files]
+                    dpath = Parser.get_values_of_vwarg(self.vw_command, "--dictionary_path")
+                    if dpath:
+                        next_files = [ dpath[0]+"/"+f  for f in next_files]
+
+                files = files + next_files
             if files:
                 self.input_files = files
+
 
             # get output files and register as creator of files
             files = Parser.get_values_of_vwarg(self.vw_command, "-f")
@@ -76,6 +88,7 @@ class Test:
 
             # check who produces the input files of this test
             files = Parser.get_values_of_vwarg(self.vw_command, "-i")
+            files += Parser.get_values_of_vwarg(self.vw_command, "--feature_mask")
             depends_on = []
             for f in files:
                 if "model-sets" not in f:
@@ -143,6 +156,11 @@ class Parser:
         tokens = line.split("/")
         return tokens[0] in ["train-sets", "pred-sets", "test-sets"]
 
+    # RunTests has the contract of ending with this perl commment
+    @staticmethod
+    def is_last_comment(line):
+        return "Do not delete this line or the empty line above it" in line
+
     # returns a Test(n, ...) instance if line has format:
     # '# Test n:'...
     @staticmethod
@@ -183,7 +201,7 @@ class Parser:
             if new_test: # we reached a perl comment that declares a new test
                 self.commit_parsed_test()
                 self.curr_test = new_test
-            else: # its any other perl comment
+            elif not self.is_last_comment(line): # its any other perl comment
                 self.curr_test.add_more_comments(line)
         elif self.curr_test.append_cmd_if_incomplete(line): # check case if previous line ended in \
             pass

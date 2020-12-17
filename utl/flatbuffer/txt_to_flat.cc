@@ -23,12 +23,12 @@
 
 using namespace VW::config;
 
-vw* setup(options_i& options)
+vw* setup(std::unique_ptr<options_i, options_deleter_type> options)
 {
   vw* all = nullptr;
   try
   {
-    all = VW::initialize(options);
+    all = VW::initialize(std::move(options));
   }
   catch (const std::exception& ex)
   {
@@ -42,7 +42,7 @@ vw* setup(options_i& options)
   }
   all->vw_is_main = true;
 
-  if (!all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
+  if (!all->logger.quiet && !all->bfgs && !all->searchstr && !all->options->was_supplied("audit_regressor"))
   {
     all->trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
                        << " " << std::setw(shared_data::col_since_last) << std::left << "since"
@@ -76,9 +76,10 @@ int main(int argc, char* argv[])
   std::string q("--quiet");
   argv[argc++] = const_cast<char*>(q.c_str());
 
-  std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
+  std::unique_ptr<options_boost_po, options_deleter_type> ptr(
+      new options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
   ptr->add_and_parse(driver_config);
-  alls.push_back(setup(*ptr));
+  alls.push_back(setup(std::move(ptr)));
   if (converter.collection_size > 0) { converter.collection = true; }
 
   vw& all = *alls[0];

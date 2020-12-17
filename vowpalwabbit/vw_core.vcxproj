@@ -34,6 +34,10 @@
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
+  <PropertyGroup Condition="'$(VcpkgAutoLink)'!=''">
+    <VcpkgAutoLink>false</VcpkgAutoLink>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
@@ -105,7 +109,7 @@
     <PreBuildEvent>
       <Message>Generate FlatBuffer</Message>
       <Command>
-        $(flatcPath) -o $(SolutionDir)parser\flatbuffer\generated\ --cpp $(SolutionDir)parser\flatbuffer\schema\example.fbs
+        $(flatcPath) -o $(ProjectDir)\parser\flatbuffer\generated\ --cpp $(ProjectDir)\parser\flatbuffer\schema\example.fbs
         win32\make_config_h.exe
       </Command>
     </PreBuildEvent>
@@ -159,6 +163,7 @@
     <ClInclude Include="cbify.h" />
     <ClInclude Include="ccb_label.h" />
     <ClInclude Include="ccb_reduction_features.h" />
+    <ClInclude Include="continuous_actions_reduction_features.h" />
     <ClInclude Include="classweight.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />
@@ -362,7 +367,6 @@
     <ClCompile Include="parser.cc" />
     <ClCompile Include="pmf_to_pdf.cc" />
     <ClCompile Include="plt.cc" />
-    <ClInclude Include="reduction_features.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="prob_dist_cont.cc" />
     <ClCompile Include="rand48.cc" />
@@ -412,7 +416,6 @@
     <Import Project="$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" />
     <Import Project="$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" />
   </ImportGroup>
-  <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
@@ -421,6 +424,9 @@
     <Error Condition="!Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />
+  </Target>
+  <Target Name="Check Vcpkg" AfterTargets="PrepareForBuild">
+    <Error Condition="'$(VcpkgAutoLink)'==''" Text="Vcpkg version is too old, doesn't contain VcpkgAutoLink flag, please upgrade to avoid linking problems" />
   </Target>
   <Target Name="AfterClean">
     <RemoveDir Directories="$(SolutionDir)parser\flatbuffer\generated" />

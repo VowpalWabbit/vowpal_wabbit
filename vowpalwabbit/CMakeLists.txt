@@ -69,6 +69,7 @@ set(vw_all_headers
   cbify.h
   ccb_label.h
   ccb_reduction_features.h
+  continuous_actions_reduction_features.h
   classweight.h
   compat.h
   conditional_contextual_bandit.h
@@ -126,6 +127,7 @@ set(vw_all_headers
   multilabel_oaa.h
   multilabel.h
   mwt.h
+  numeric_casts.h
   named_labels.h
   network.h
   kskip_ngram_transformer.h
@@ -290,7 +292,6 @@ set(vw_all_sources
   parser/flatbuffer/parse_label.cc
   pmf_to_pdf.cc
   plt.cc
-  reduction_features.cc
   print.cc
   prob_dist_cont.cc
   rand48.cc
@@ -333,6 +334,7 @@ target_link_libraries(vw
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
     $<BUILD_INTERFACE:RapidJSON>
     $<BUILD_INTERFACE:FlatbuffersTarget>)
+
 
 add_library(VowpalWabbit::vw ALIAS vw)
 
