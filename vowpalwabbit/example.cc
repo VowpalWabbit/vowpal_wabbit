@@ -156,7 +156,7 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, size_t, void (*copy_label)(void*, void*))
+void copy_example_label(example* dst, example* src, void (*copy_label)(void*, void*))
 {
   if (copy_label)
     copy_label(&dst->l, &src->l);  // TODO: we really need to delete_label on dst :(
@@ -201,10 +201,15 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->interactions = src->interactions;
 }
 
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
+void copy_example_data(bool audit, example* dst, example* src, void (*copy_label)(void*, void*))
 {
   copy_example_data(audit, dst, src);
-  copy_example_label(dst, src, label_size, copy_label);
+  copy_example_label(dst, src, copy_label);
+}
+
+void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
+{
+  copy_example_data(audit, dst, src, copy_label);
 }
 
 void move_feature_namespace(example* dst, example* src, namespace_index c)
@@ -401,17 +406,20 @@ std::string prob_dist_pred_to_string(const example& ec)
 
 namespace VW
 {
-example* alloc_examples(size_t, size_t count = 1)
+example* alloc_examples(size_t, size_t count)
 {
   example* ec = calloc_or_throw<example>(count);
   if (ec == nullptr) return nullptr;
   for (size_t i = 0; i < count; i++)
   {
     ec[i].ft_offset = 0;
-    //  std::cerr << "  alloc_example.indices.begin()=" << ec->indices.begin() << " end=" << ec->indices.end() << " //
-    //  ld = " << ec->ld << "\t|| me = " << ec << std::endl;
   }
   return ec;
+}
+
+example* alloc_examples(size_t count)
+{
+  return alloc_examples(0, count);
 }
 
 void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
