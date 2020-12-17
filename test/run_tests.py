@@ -68,7 +68,7 @@ def fuzzy_float_compare(float_one, float_two, epsilon):
     return ratio_delta < epsilon
 
 
-def find_in_path(paths, file_matcher):
+def find_in_path(paths, file_matcher, debug_file_name):
     for path in paths:
         absolute_path = os.path.abspath(str(path))
         if os.path.isdir(absolute_path):
@@ -82,7 +82,7 @@ def find_in_path(paths, file_matcher):
         else:
             # path does not exist
             continue
-    raise ValueError("Couldn't find VW")
+    raise ValueError("Couldn't find {}".format(debug_file_name))
 
 
 def line_diff_text(text_one, file_name_one, text_two, file_name_two):
@@ -387,6 +387,96 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
     return test_working_dir
 
 
+def find_vw_binary(test_base_ref_dir, user_supplied_bin_path):
+    vw_search_paths = [
+        Path(test_base_ref_dir).joinpath("../build/vowpalwabbit")
+    ]
+
+    def is_vw_binary(file_path):
+        file_name = os.path.basename(file_path)
+        return file_name == "vw"
+
+    return find_or_use_user_supplied_path(
+        test_base_ref_dir=test_base_ref_dir,
+        user_supplied_bin_path=user_supplied_bin_path,
+        search_paths=vw_search_paths,
+        is_correct_bin_func=is_vw_binary,
+        debug_file_name="vw")
+
+
+def find_spanning_tree_binary(test_base_ref_dir, user_supplied_bin_path):
+    spanning_tree_search_path = [
+        Path(test_base_ref_dir).joinpath("../build/cluster")
+    ]
+
+    def is_spanning_tree_binary(file_path):
+        file_name = os.path.basename(file_path)
+        return file_name == "spanning_tree"
+
+    return find_or_use_user_supplied_path(
+        test_base_ref_dir=test_base_ref_dir,
+        user_supplied_bin_path=user_supplied_bin_path,
+        search_paths=spanning_tree_search_path,
+        is_correct_bin_func=is_spanning_tree_binary,
+        debug_file_name="spanning_tree")
+
+
+def find_or_use_user_supplied_path(test_base_ref_dir, user_supplied_bin_path, search_paths, is_correct_bin_func, debug_file_name):
+    if user_supplied_bin_path is None:
+        return find_in_path(search_paths, is_correct_bin_func, debug_file_name)
+    else:
+        if not Path(user_supplied_bin_path).exists() or not Path(user_supplied_bin_path).is_file():
+            raise ValueError("Invalid {debug_file_name} binary path: {}".format(
+                (user_supplied_bin_path)))
+        return user_supplied_bin_path
+
+def find_runtests_file(test_base_ref_dir):
+    def is_runtests_file(file_path):
+            file_name = os.path.basename(file_path)
+            return file_name == "RunTests"
+    possible_runtests_paths = [
+        Path(test_base_ref_dir)
+    ]
+    return find_in_path(possible_runtests_paths, is_runtests_file, "RunTests")
+
+
+def do_dirty_check(test_base_ref_dir):
+    result = subprocess.run(
+        "git clean --dry-run -d -x -e __pycache__".split(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=test_base_ref_dir,
+        timeout=10)
+    return_code = result.returncode
+    if return_code != 0:
+        print("Failed to run 'git clean --dry-run -d -x -e __pycache__'")
+    stdout = try_decode(result.stdout)
+    if len(stdout) != 0:
+        print("Error: Test dir is not clean, this can result in false negatives. To ignore this and continue anyway pass --ignore_dirty")
+        print("'git clean --dry-run -d -x -e __pycache__' output:\n---")
+        print(stdout)
+        sys.exit(1)
+
+
+def calculate_test_to_run_explicitly(explicit_tests, tests):
+    def get_deps(test_number, tests):
+        deps = set()
+        test_index = test_number - 1
+        if "depends_on" in tests[test_index]:
+            for dep in tests[test_index]["depends_on"]:
+                deps.add(dep)
+                deps = set.union(deps, get_deps(dep, tests))
+        return deps
+
+    tests_to_run_explicitly = set()
+    for test_number in explicit_tests:
+        tests_to_run_explicitly.add(test_number)
+        tests_to_run_explicitly = set.union(
+            tests_to_run_explicitly, get_deps(test_number, tests))
+
+    return list(tests_to_run_explicitly)
+
+
 def main():
 
     working_dir = Path.home().joinpath(".vw_runtests_working_dir")
@@ -427,7 +517,6 @@ def main():
     test_base_ref_dir = str(args.ref_dir)
 
     color_enum = NoColor if args.no_color else Color
-    print(color_enum)
 
     # Flatten nested lists for arg.test argument.
     # Ideally we would have used action="extend", but that was added in 3.8
@@ -446,67 +535,20 @@ def main():
         sys.exit(1)
 
     if not args.ignore_dirty:
-        result = subprocess.run(
-            "git clean --dry-run -d -x -e __pycache__".split(),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd=test_base_ref_dir,
-            timeout=10)
-        return_code = result.returncode
-        if return_code != 0:
-            print("Failed to run 'git clean --dry-run -d -x -e __pycache__'")
-        stdout = try_decode(result.stdout)
-        if len(stdout) != 0:
-            print("Error: Test dir is not clean, this can result in false negatives. To ignore this and continue anyway pass --ignore_dirty")
-            print("'git clean --dry-run -d -x -e __pycache__' output:\n---")
-            print(stdout)
-            sys.exit(1)
+        do_dirty_check(test_base_ref_dir)
 
-    print("Testing on: hostname={}, OS={}".format(
-        (socket.gethostname()), (sys.platform)))
+    print("Testing on: hostname={}, OS={}, num_jobs={}".format(
+        (socket.gethostname()), (sys.platform), (args.jobs)))
 
-    if args.vw_bin_path is None:
-        vw_search_paths = [
-            Path(test_base_ref_dir).joinpath("../build/vowpalwabbit")
-        ]
-
-        def is_vw_binary(file_path):
-            file_name = os.path.basename(file_path)
-            return file_name == "vw"
-        vw_bin = find_in_path(vw_search_paths, is_vw_binary)
-    else:
-        if not Path(args.vw_bin_path).exists() or not Path(args.vw_bin_path).is_file():
-            print("Invalid vw binary path: {}".format((args.vw_bin_path)))
-        vw_bin = args.vw_bin_path
-
+    vw_bin = find_vw_binary(test_base_ref_dir, args.vw_bin_path)
     print("Using VW binary: {}".format((vw_bin)))
 
-    if args.spanning_tree_bin_path is None:
-        spanning_tree_search_path = [
-            Path(test_base_ref_dir).joinpath("../build/cluster")
-        ]
-
-        def is_spanning_tree_binary(file_path):
-            file_name = os.path.basename(file_path)
-            return file_name == "spanning_tree"
-        spanning_tree_bin = find_in_path(
-            spanning_tree_search_path, is_spanning_tree_binary)
-    else:
-        if not Path(args.spanning_tree_bin_path).exists() or not Path(args.spanning_tree_bin_path).is_file():
-            print(
-                "Invalid spanning tree binary path: {}".format((args.spanning_tree_bin_path)))
-        spanning_tree_bin = args.spanning_tree_bin_path
-
+    spanning_tree_bin = find_spanning_tree_binary(
+        test_base_ref_dir, args.spanning_tree_bin_path)
     print("Using spanning tree binary: {}".format((spanning_tree_bin)))
 
     if args.test_spec is None:
-        def is_runtests_file(file_path):
-            file_name = os.path.basename(file_path)
-            return file_name == "RunTests"
-        possible_runtests_paths = [
-            Path(test_base_ref_dir)
-        ]
-        runtests_file = find_in_path(possible_runtests_paths, is_runtests_file)
+        runtests_file = find_runtests_file(test_base_ref_dir)
         tests = runtests_parser.file_to_obj(runtests_file)
         tests = [x.__dict__ for x in tests]
         print("Tests parsed from RunTests file: {}".format((runtests_file)))
@@ -519,23 +561,9 @@ def main():
 
     tasks = []
     completed_tests = Completion()
-
-    def get_deps(test_number, tests):
-        deps = set()
-        test_index = test_number - 1
-        if "depends_on" in tests[test_index]:
-            for dep in tests[test_index]["depends_on"]:
-                deps.add(dep)
-                deps = set.union(deps, get_deps(dep, tests))
-        return deps
-
     tests_to_run_explicitly = None
     if args.test is not None:
-        tests_to_run_explicitly = set()
-        for test_number in args.test:
-            tests_to_run_explicitly.add(test_number)
-            tests_to_run_explicitly = set.union(
-                tests_to_run_explicitly, get_deps(test_number, tests))
+        tests_to_run_explicitly = calculate_test_to_run_explicitly(args.test, tests)
         print("Running tests: {}".format((list(tests_to_run_explicitly))))
         if len(args.test) != len(tests_to_run_explicitly):
             print(
