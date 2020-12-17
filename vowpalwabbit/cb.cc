@@ -311,4 +311,5 @@ label_parser cb_eval = {
   [](polylabel* v) { return CB_EVAL::test_label(v->cb_eval); },
 };
 // clang-format on
+
 }  // namespace CB_EVAL

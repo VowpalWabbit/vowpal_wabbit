@@ -322,12 +322,12 @@ template <bool use_cs>
 void add_to_vali(warm_cb& data, example& ec)
 {
   // TODO: set the first parameter properly
-  example* ec_copy = VW::alloc_examples(sizeof(polylabel), 1);
+  example* ec_copy = VW::alloc_examples(1);
 
   if (use_cs)
-    VW::copy_example_data(false, ec_copy, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
+    VW::copy_example_data(false, ec_copy, &ec, COST_SENSITIVE::cs_label.copy_label);
   else
-    VW::copy_example_data(false, ec_copy, &ec, 0, MULTICLASS::mc_label.copy_label);
+    VW::copy_example_data(false, ec_copy, &ec, MULTICLASS::mc_label.copy_label);
 
   data.ws_vali.push_back(ec_copy);
 }
@@ -519,7 +519,7 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   data.ecs.resize(num_actions);
   for (size_t a = 0; a < num_actions; ++a)
   {
-    data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
+    data.ecs[a] = VW::alloc_examples(1);
     auto& lab = data.ecs[a]->l.cb;
     CB::default_label(lab);
   }

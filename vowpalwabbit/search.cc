@@ -1675,12 +1675,11 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         priv.learn_ec_ref = ecs;
       else
       {
-        size_t label_size = priv.is_ldf ? sizeof(CS::label) : sizeof(MC::label_t);
         void (*label_copy_fn)(polylabel*, polylabel*) = priv.is_ldf ? CS::cs_label.copy_label : nullptr;
 
         priv.learn_ec_copy.resize(ec_cnt);
         for (size_t i = 0; i < ec_cnt; i++)
-          VW::copy_example_data(priv.all->audit, &priv.learn_ec_copy[i], ecs + i, label_size, label_copy_fn);
+          VW::copy_example_data(priv.all->audit, &priv.learn_ec_copy[i], ecs + i, label_copy_fn);
 
         priv.learn_ec_ref = priv.learn_ec_copy.data();
       }
@@ -3108,8 +3107,7 @@ void predictor::set_input_at(size_t posn, example& ex)
   if (posn >= ec_cnt)
     THROW("call to set_input_at with too large a position: posn (" << posn << ") >= ec_cnt(" << ec_cnt << ")");
 
-  VW::copy_example_data(
-      false, ec + posn, &ex, CS::cs_label.label_size, CS::cs_label.copy_label);  // TODO: the false is "audit"
+  VW::copy_example_data(false, ec + posn, &ex, CS::cs_label.copy_label);  // TODO: the false is "audit"
 }
 
 template <class T>

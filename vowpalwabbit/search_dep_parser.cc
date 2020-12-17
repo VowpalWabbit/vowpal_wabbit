@@ -74,7 +74,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
       make_option("old_style_labels", data->old_style_labels).keep().help("Use old hack of label information"));
   options.add_and_parse(new_options);
 
-  data->ex = VW::alloc_examples(sizeof(polylabel), 1);
+  data->ex = VW::alloc_examples(1);
   data->ex->indices.push_back(val_namespace);
   for (size_t i = 1; i < 14; i++) data->ex->indices.push_back((unsigned char)i + 'A');
   data->ex->indices.push_back(constant_namespace);
