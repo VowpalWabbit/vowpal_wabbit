@@ -1,7 +1,3 @@
-#ifndef STATIC_LINK_VW
-#  define BOOST_TEST_DYN_LINK
-#endif
-
 #include <benchmark/benchmark.h>
 
 #include <vector>
@@ -280,6 +276,3 @@ BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, many_features, "a b c d e f g h i j k
 
 BENCHMARK(benchmark_example_reuse);
 BENCHMARK(benchmark_cb_adf_learn);
-
-// Run the benchmark
-BENCHMARK_MAIN();
