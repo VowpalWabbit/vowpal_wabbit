@@ -207,7 +207,7 @@ void copy_example_data(bool audit, example* dst, example* src, void (*copy_label
   copy_example_label(dst, src, copy_label);
 }
 
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
+void copy_example_data(bool audit, example* dst, example* src, size_t /*label_size*/, void (*copy_label)(void*, void*))
 {
   copy_example_data(audit, dst, src, copy_label);
 }
