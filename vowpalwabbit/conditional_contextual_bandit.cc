@@ -141,7 +141,6 @@ void attach_label_to_example(
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
   auto& pred = data.shared->pred.a_s;
-  decision_scores.push_back(pred);
 
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
   for (auto& action_score : pred) { action_score.action = data.origin_index[action_score.action]; }
@@ -149,6 +148,9 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   // Exclude the chosen action from next slots.
   auto original_index_of_chosen_action = pred[0].action;
   data.exclude_list[original_index_of_chosen_action] = true;
+
+  decision_scores.push_back(pred);
+  data.shared->pred.a_s = v_init<ACTION_SCORE::action_score>();
 }
 
 void clear_pred_and_label(ccb& data)
@@ -572,7 +574,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
-  for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_v_array(a_s, data.action_score_pool); }
+  // for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_v_array(a_s, data.action_score_pool); }
   ec_seq[0]->pred.decision_scores.clear();
 
   VW::finish_example(all, ec_seq);

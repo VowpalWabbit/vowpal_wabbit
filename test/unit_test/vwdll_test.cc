@@ -74,6 +74,7 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
   VW_Finish(handle2);
 }
 
+#ifndef __APPLE__
 BOOST_AUTO_TEST_CASE(vw_dll_parse_escaped)
 {
   // This call doesn't escape and so sees --nonexistent_option as a standalone invalid argument.
@@ -84,3 +85,4 @@ BOOST_AUTO_TEST_CASE(vw_dll_parse_escaped)
   BOOST_CHECK(handle1 != nullptr);
   VW_Finish(handle1);
 }
+#endif
