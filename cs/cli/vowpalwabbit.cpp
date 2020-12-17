@@ -787,7 +787,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
 
   if (ex == nullptr)
   { try
-    { auto ex = VW::alloc_examples(0, 1);
+    { auto ex = VW::alloc_examples(1);
       m_vw->example_parser->lbl_parser.default_label(&ex->l);
       return gcnew VowpalWabbitExample(this, ex);
     }

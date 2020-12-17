@@ -201,7 +201,7 @@ void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string
 }
 
 // Export the definition of this label parser.
-label_parser slates_label_parser = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight,
-    copy_label, test_label, sizeof(slates::label)};
+label_parser slates_label_parser = {
+    default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label, test_label};
 }  // namespace slates
 }  // namespace VW

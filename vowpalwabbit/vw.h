@@ -104,7 +104,9 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
 // thus any delay introduced when freeing examples must be at least as long as the one
 // introduced by all.l->finish_example implementations.
 // e.g. multiline examples as used by cb_adf must not be released before the finishing newline example.
+VW_DEPRECATED("label size is no longer used, please use the other overload")
 example* alloc_examples(size_t, size_t);
+example* alloc_examples(size_t);
 void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*) = nullptr);
 
 void parse_example_label(vw& all, example& ec, std::string label);
@@ -137,7 +139,9 @@ void finish_example(vw& all, example& ec);
 void finish_example(vw& all, multi_ex& ec);
 void empty_example(vw& all, example& ec);
 
+VW_DEPRECATED("label size is no longer used, please use the other overload")
 void copy_example_data(bool audit, example*, example*, size_t, void (*copy_label)(void*, void*));
+void copy_example_data(bool audit, example*, example*, void (*copy_label)(void*, void*));
 void copy_example_metadata(bool audit, example*, example*);
 void copy_example_data(bool audit, example*, example*);  // metadata + features, don't copy the label
 void move_feature_namespace(example* dst, example* src, namespace_index c);
