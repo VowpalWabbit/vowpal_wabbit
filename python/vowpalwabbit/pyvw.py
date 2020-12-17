@@ -338,7 +338,7 @@ class vw(pylibvw.vw):
         self.finished = False
     
     def get_config(self, filtered_enabled_reductions_only=True):
-        return self.get_option_manager_ptr(VWOption).get_options(self, filtered_enabled_reductions_only)
+        return self.get_options(VWOption, filtered_enabled_reductions_only)
 
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
         """Returns a collection of examples for a multiline example learner or
