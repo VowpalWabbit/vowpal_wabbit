@@ -59,9 +59,7 @@ auto get_x_string_fts_multi_ex = [](int feature_size, size_t actions, bool share
   {
     ss << " | ";
     for (size_t j = start_index; j < start_index + feature_size; j++)
-    {
-      ss << std::to_string(i) + "_" + std::to_string(j) << +" ";
-    }
+    { ss << std::to_string(i) + "_" + std::to_string(j) << +" "; }
     ss << std::endl;
   }
   return ss.str();
@@ -152,9 +150,7 @@ static void bench_cache_io_buf_collections(benchmark::State& state, ExtraArgs&&.
   for (auto _ : state)
   {
     for (size_t i = 0; i < examples_size; i++)
-    {
-      reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size()));
-    }
+    { reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size())); }
     while (read_cached_features(vw, examples)) { VW::empty_example(*vw, *examples[0]); }
     benchmark::ClobberMemory();
   }
