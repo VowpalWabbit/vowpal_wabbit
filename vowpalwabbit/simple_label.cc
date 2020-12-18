@@ -32,17 +32,13 @@ size_t read_cached_simple_label(shared_data* sd, label_data& ld, io_buf& cache)
 {
   char* c;
   size_t total = sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial);
-  if (cache.buf_read(c, total) < total)
-    return 0;
+  if (cache.buf_read(c, total) < total) return 0;
   bufread_simple_label(sd, ld, c);
 
   return total;
 }
 
-float get_weight(label_data& ld)
-{
-  return ld.weight;
-}
+float get_weight(label_data& ld) { return ld.weight; }
 
 char* bufcache_simple_label(label_data& ld, char* c)
 {
@@ -69,12 +65,10 @@ void default_simple_label(label_data& ld)
   ld.initial = 0.;
 }
 
-bool test_label(label_data& ld)
-{
-  return ld.label == FLT_MAX;
-}
+bool test_label(label_data& ld) { return ld.label == FLT_MAX; }
 
-void parse_simple_label(parser*, shared_data* sd, label_data& ld, std::vector<VW::string_view>& words, reduction_features&)
+void parse_simple_label(
+    parser*, shared_data* sd, label_data& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   switch (words.size())
   {

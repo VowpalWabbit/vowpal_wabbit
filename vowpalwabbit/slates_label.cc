@@ -82,15 +82,9 @@ void default_label(slates::label& ld)
   ld.probabilities.clear();
 }
 
-bool test_label(slates::label& ld)
-{
-  return ld.labeled == false;
-}
+bool test_label(slates::label& ld) { return ld.labeled == false; }
 
-void delete_label(slates::label& ld)
-{
-  ld.probabilities.delete_v();
-}
+void delete_label(slates::label& ld) { ld.probabilities.delete_v(); }
 
 void copy_label(slates::label& dst, slates::label& src)
 {
@@ -109,7 +103,8 @@ void copy_label(slates::label& dst, slates::label& src)
 //
 // For a more complete description of the grammar, including examples see:
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
-void parse_label(parser* p, shared_data* /*sd*/, slates::label& ld, std::vector<VW::string_view>& words, reduction_features&)
+void parse_label(
+    parser* p, shared_data* /*sd*/, slates::label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   ld.weight = 1;
 

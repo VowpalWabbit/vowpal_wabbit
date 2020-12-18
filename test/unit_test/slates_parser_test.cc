@@ -62,7 +62,8 @@ BOOST_AUTO_TEST_CASE(slates_parse_label)
     parse_slates_label(&p, "slates slot 0:0.2", *label);
     BOOST_CHECK_EQUAL(label->type, VW::slates::example_type::slot);
     BOOST_CHECK_EQUAL(label->labeled, true);
-    check_collections_with_float_tolerance(label->probabilities, std::vector<ACTION_SCORE::action_score>{{0,0.2f}}, FLOAT_TOL);
+    check_collections_with_float_tolerance(
+        label->probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.2f}}, FLOAT_TOL);
     VW::slates::delete_label(*label);
   }
 

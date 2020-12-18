@@ -89,10 +89,7 @@ struct warm_cb
     CB::delete_label(cb_label);
     a_s.delete_v();
 
-    for (size_t a = 0; a < num_actions; ++a)
-    {
-      COST_SENSITIVE::delete_label(csls[a]);
-    }
+    for (size_t a = 0; a < num_actions; ++a) { COST_SENSITIVE::delete_label(csls[a]); }
     free(csls);
     free(cbls);
 

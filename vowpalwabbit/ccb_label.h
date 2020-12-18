@@ -36,8 +36,10 @@ struct label
   v_array<uint32_t> explicit_included_actions;
   float weight;
 
-  // label() : type(example_type::unset), outcome(nullptr), explicit_included_actions({nullptr, nullptr, nullptr, 0}), weight(1.f) {}
-  // label(example_type type, conditional_contextual_bandit_outcome* outcome, v_array<uint32_t>& explicit_included_actions, float weight) : type(type), outcome(outcome), explicit_included_actions(explicit_included_actions), weight(weight) {}
+  // label() : type(example_type::unset), outcome(nullptr), explicit_included_actions({nullptr, nullptr, nullptr, 0}),
+  // weight(1.f) {} label(example_type type, conditional_contextual_bandit_outcome* outcome, v_array<uint32_t>&
+  // explicit_included_actions, float weight) : type(type), outcome(outcome),
+  // explicit_included_actions(explicit_included_actions), weight(weight) {}
 };
 
 void default_label(CCB::label& ld);

@@ -48,7 +48,8 @@ namespace cb_continuous
 {
 ////////////////////////////////////////////////////
 // Begin: parse a,c,p label format
-void parse_label(parser* p, shared_data*, continuous_label& ld, std::vector<VW::string_view>& words, reduction_features&)
+void parse_label(
+    parser* p, shared_data*, continuous_label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   ld.costs.clear();
 

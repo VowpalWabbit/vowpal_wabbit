@@ -44,17 +44,13 @@ size_t read_cached_label(shared_data*, CB::label& ld, io_buf& cache)
   ld.costs.clear();
   char* c;
   size_t total = sizeof(size_t);
-  if (cache.buf_read(c, total) < total)
-    return 0;
+  if (cache.buf_read(c, total) < total) return 0;
   bufread_label(ld, c, cache);
 
   return total;
 }
 
-float weight(CB::label& ld)
-{
-  return ld.weight;
-}
+float weight(CB::label& ld) { return ld.weight; }
 
 char* bufcache_label(CB::label& ld, char* c)
 {
@@ -85,18 +81,13 @@ void default_label(CB::label& ld)
 
 bool test_label(CB::label& ld)
 {
-  if (ld.costs.empty())
-    return true;
+  if (ld.costs.empty()) return true;
   for (auto const& cost : ld.costs)
-    if (FLT_MAX != cost.cost && cost.probability > 0.)
-      return false;
+    if (FLT_MAX != cost.cost && cost.probability > 0.) return false;
   return true;
 }
 
-void delete_label(CB::label& ld)
-{
-  ld.costs.delete_v();
-}
+void delete_label(CB::label& ld) { ld.costs.delete_v(); }
 
 void copy_label(CB::label& dst, CB::label& src)
 {
@@ -225,17 +216,13 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
 
 namespace CB_EVAL
 {
-float weight(CB_EVAL::label& ld)
-{
-  return ld.event.weight;
-}
+float weight(CB_EVAL::label& ld) { return ld.event.weight; }
 
 size_t read_cached_label(shared_data* sd, CB_EVAL::label& ld, io_buf& cache)
 {
   char* c;
   size_t total = sizeof(uint32_t);
-  if (cache.buf_read(c, total) < total)
-    return 0;
+  if (cache.buf_read(c, total) < total) return 0;
   ld.action = *(uint32_t*)c;
 
   return total + CB::read_cached_label(sd, ld.event, cache);
@@ -256,15 +243,9 @@ void default_label(CB_EVAL::label& ld)
   ld.action = 0;
 }
 
-bool test_label(CB_EVAL::label& ld)
-{
-  return CB::test_label(ld.event);
-}
+bool test_label(CB_EVAL::label& ld) { return CB::test_label(ld.event); }
 
-void delete_label(CB_EVAL::label& ld)
-{
-  CB::delete_label(ld.event);
-}
+void delete_label(CB_EVAL::label& ld) { CB::delete_label(ld.event); }
 
 void copy_label(CB_EVAL::label& dst, CB_EVAL::label& src)
 {
@@ -272,7 +253,8 @@ void copy_label(CB_EVAL::label& dst, CB_EVAL::label& src)
   dst.action = src.action;
 }
 
-void parse_label(parser* p, shared_data* sd, CB_EVAL::label& ld, std::vector<VW::string_view>& words, reduction_features& red_features)
+void parse_label(parser* p, shared_data* sd, CB_EVAL::label& ld, std::vector<VW::string_view>& words,
+    reduction_features& red_features)
 {
   if (words.size() < 2) THROW("Evaluation can not happen without an action and an exploration");
 

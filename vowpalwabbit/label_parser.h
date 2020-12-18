@@ -25,9 +25,10 @@ struct label_parser
   size_t (*read_cached_label)(shared_data*, polylabel*, io_buf& cache);
   void (*delete_label)(polylabel*);
   float (*get_weight)(polylabel*);
-  void (*copy_label)(polylabel*, polylabel*);  // copy_label(dst,src) performs a DEEP copy of src into dst (dst is allocated
-                                     // correctly).  if this function is nullptr, then we assume that a memcpy of size
-                                     // label_size is sufficient, so you need only specify this function if your label
-                                     // constains, for instance, pointers (otherwise you'll get double-free errors)
+  void (*copy_label)(
+      polylabel*, polylabel*);  // copy_label(dst,src) performs a DEEP copy of src into dst (dst is allocated
+                                // correctly).  if this function is nullptr, then we assume that a memcpy of size
+                                // label_size is sufficient, so you need only specify this function if your label
+                                // constains, for instance, pointers (otherwise you'll get double-free errors)
   bool (*test_label)(polylabel*);
 };

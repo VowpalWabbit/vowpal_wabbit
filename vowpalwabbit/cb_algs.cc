@@ -93,8 +93,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if (!CB::test_label(ld))
-    loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
+  if (!CB::test_label(ld)) loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
   all.sd->update(ec.test_only, !CB::test_label(ld), loss, 1.f, ec.num_features);
 

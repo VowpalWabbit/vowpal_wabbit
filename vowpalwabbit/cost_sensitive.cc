@@ -84,30 +84,19 @@ void cache_label(label& ld, io_buf& cache)
   bufcache_label(ld, c);
 }
 
-void default_label(label& ld)
-{
-  ld.costs.clear();
-}
+void default_label(label& ld) { ld.costs.clear(); }
 
 bool test_label(label& ld)
 {
-  if (ld.costs.size() == 0)
-    return true;
+  if (ld.costs.size() == 0) return true;
   for (unsigned int i = 0; i < ld.costs.size(); i++)
-    if (FLT_MAX != ld.costs[i].x)
-      return false;
+    if (FLT_MAX != ld.costs[i].x) return false;
   return true;
 }
 
-void delete_label(label& ld)
-{
-  ld.costs.delete_v();
-}
+void delete_label(label& ld) { ld.costs.delete_v(); }
 
-void copy_label(label& dst, label& src)
-{
-  copy_array(dst.costs, src.costs);
-}
+void copy_label(label& dst, label& src) { copy_array(dst.costs, src.costs); }
 
 void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {

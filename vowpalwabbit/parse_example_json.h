@@ -626,9 +626,7 @@ struct MultiState : BaseState<audit>
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
     if (ctx.all->label_type == label_type_t::ccb)
-    {
-      ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action;
-    }
+    { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action; }
     else if (ctx.all->label_type == label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::action;
@@ -675,9 +673,7 @@ struct SlotsState : BaseState<audit>
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
     if (ctx.all->label_type == label_type_t::ccb)
-    {
-      ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
-    }
+    { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot; }
     else if (ctx.all->label_type == label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::slot;
@@ -1240,9 +1236,7 @@ public:
       if ((ctx.all->label_type == label_type_t::ccb &&
               ex->l.conditional_contextual_bandit.type != CCB::example_type::slot) ||
           (ctx.all->label_type == label_type_t::slates && ex->l.slates.type != VW::slates::example_type::slot))
-      {
-        slot_object_index++;
-      }
+      { slot_object_index++; }
     }
     old_root = ctx.root_state;
     ctx.root_state = this;
@@ -1500,9 +1494,7 @@ public:
       auto feature_group = ns.feature_group;
       // Do not insert feature_group if it already exists.
       if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
-      {
-        ex->indices.push_back(feature_group);
-      }
+      { ex->indices.push_back(feature_group); }
     }
 
     auto return_state = return_path.back();
@@ -1755,7 +1747,8 @@ int read_features_json(vw* all, v_array<example*>& examples)
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;
-  do {
+  do
+  {
     reread = false;
 
     char* line;

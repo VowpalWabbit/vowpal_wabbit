@@ -120,7 +120,7 @@ example& example::operator=(example&& other) noexcept
   return *this;
 }
 
-void example::delete_unions(void (* /*delete_label*/)(polylabel*), void (*delete_prediction)(void*))
+void example::delete_unions(void (*/*delete_label*/)(polylabel*), void (*delete_prediction)(void*))
 {
   // Label uses a destructor so we dont need to *delete* here.
 
@@ -207,7 +207,8 @@ void copy_example_data(bool audit, example* dst, example* src, void (*copy_label
   copy_example_label(dst, src, copy_label);
 }
 
-void copy_example_data(bool audit, example* dst, example* src, size_t /*label_size*/, void (*copy_label)(polylabel*, polylabel*))
+void copy_example_data(
+    bool audit, example* dst, example* src, size_t /*label_size*/, void (*copy_label)(polylabel*, polylabel*))
 {
   copy_example_data(audit, dst, src, copy_label);
 }

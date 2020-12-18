@@ -42,7 +42,6 @@ size_t read_cached_label(shared_data*, label_t& ld, io_buf& cache)
 float weight(label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
 bool test_label(const label_t& ld) { return ld.label == (uint32_t)-1; }
 
-
 void parse_label(parser*, shared_data* sd, label_t& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   switch (words.size())
