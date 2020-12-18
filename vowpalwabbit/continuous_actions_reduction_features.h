@@ -33,6 +33,17 @@ struct reduction_features
     pdf.clear();
     chosen_action = std::numeric_limits<float>::quiet_NaN();
   }
+
+  void check_valid_pdf_or_clear()
+  {
+    float mass = 0.f;
+    for (const auto& segment : pdf) { mass += (segment.right - segment.left) * segment.pdf_value; }
+    if (mass < 0.9999 || mass > 1.0001)
+    {
+      // not using pdf provided as it does not sum to 1
+      pdf.clear();
+    }
+  }
 };
 
 }  // namespace continuous_actions

@@ -42,10 +42,34 @@ void copy_label_additional_fields<VW::cb_continuous::continuous_label>(
 }
 }  // namespace CB
 
-
-void populate_pdf(std::vector<VW::string_view>& words)
+void parse_pdf(std::vector<VW::string_view>& words, size_t words_index, parser* p, reduction_features& red_features)
 {
-  VW::cb_continuous::continuous_label ld;
+  auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
+  for (size_t i = words_index; i < words.size(); i++)
+  {
+    if (words[i] == CHOSEN_ACTION) { break; /* no more pdf to parse*/ }
+    tokenize(':', words[i], p->parse_name);
+    if (p->parse_name.empty() || p->parse_name.size() < 3) { continue; }
+    VW::continuous_actions::pdf_segment seg;
+    seg.left = float_of_string(p->parse_name[0]);
+    seg.right = float_of_string(p->parse_name[1]);
+    seg.pdf_value = float_of_string(p->parse_name[2]);
+    cats_reduction_features.pdf.push_back(seg);
+  }
+  cats_reduction_features.check_valid_pdf_or_clear();
+}
+
+void parse_chosen_action(
+    std::vector<VW::string_view>& words, size_t words_index, parser* p, reduction_features& red_features)
+{
+  auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
+  for (size_t i = words_index; i < words.size(); i++)
+  {
+    tokenize(':', words[i], p->parse_name);
+    if (p->parse_name.empty() || p->parse_name.size() < 1) { continue; }
+    cats_reduction_features.chosen_action = float_of_string(p->parse_name[0]);
+    break;  // there can only be one chosen action
+  }
 }
 
 namespace VW
@@ -54,7 +78,8 @@ namespace cb_continuous
 {
 ////////////////////////////////////////////////////
 // Begin: parse a,c,p label format
-void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words, reduction_features&)
+void parse_label(
+    parser* p, shared_data*, void* v, std::vector<VW::string_view>& words, reduction_features& red_features)
 {
   auto* ld = static_cast<continuous_label*>(v);
   ld->costs.clear();
@@ -62,29 +87,20 @@ void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>&
   if (words.empty()) { return; }
 
   if (!(words[0] == CA_LABEL)) { THROW("Continuous actions labels require the first word to be ca"); }
-  //   parse_label(lp, &p, "ca 185.121:0.657567:6.20426e-05 pdf 1:2:3 4:5:6", *label);
-  //   parse_label(lp, &p, "ca pdf 1:2:3 4:5:6", *label);
-  //   parse_label(lp, &p, "ca chosen_action 185.121", *label);
 
-  // "pdf": [{"left": 185, "right": 8109.67, "pdf_value": 2.10314e-06},
-  //     {"left": 8109.67, "right": 23959, "pdf_value": 6.20426e-05}],
   for (size_t i = 1; i < words.size(); i++)
   {
-    if (words[i] == "pdf")
+    if (words[i] == PDF) { parse_pdf(words, i + 1, p, red_features); }
+    else if (words[i] == CHOSEN_ACTION)
     {
-      // consume pdf
-      populate_pdf(words);
-    }
-    else if (words[i] == "chosen_action")
-    {
-      // consume chosen action
+      parse_chosen_action(words, i + 1, p, red_features);
     }
     else if (words[i - 1] == CA_LABEL)
     {
       continuous_label_elm f{0.f, FLT_MAX, 0.f};
       tokenize(':', words[i], p->parse_name);
 
-      if (p->parse_name.empty() /*|| p->parse_name.size() > 4 */)
+      if (p->parse_name.empty() || p->parse_name.size() > 4)
         THROW("malformed cost specification: "
             << "p->parse_name");
 
