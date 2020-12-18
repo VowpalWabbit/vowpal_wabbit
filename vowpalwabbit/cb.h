@@ -30,11 +30,6 @@ struct label
   float weight;
 };
 
-void default_label(CB::label& ld);
-bool test_label(CB::label& ld);
-void delete_label(CB::label& ld);
-void default_label(CB::label& ld);
-
 extern label_parser cb_label;                  // for learning
 bool ec_is_example_header(example const& ec);  // example headers look like "shared"
 

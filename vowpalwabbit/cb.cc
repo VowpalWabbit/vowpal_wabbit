@@ -17,84 +17,6 @@ using namespace VW::LEARNER;
 
 namespace CB
 {
-char* bufread_label(CB::label& ld, char* c, io_buf& cache)
-{
-  size_t num = *(size_t*)c;
-  ld.costs.clear();
-  c += sizeof(size_t);
-  size_t total = sizeof(cb_class) * num + sizeof(ld.weight);
-  if (cache.buf_read(c, total) < total)
-  {
-    std::cout << "error in demarshal of cost data" << std::endl;
-    return c;
-  }
-  for (size_t i = 0; i < num; i++)
-  {
-    cb_class temp = *(cb_class*)c;
-    c += sizeof(cb_class);
-    ld.costs.push_back(temp);
-  }
-  memcpy(&ld.weight, c, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  return c;
-}
-
-size_t read_cached_label(shared_data*, CB::label& ld, io_buf& cache)
-{
-  ld.costs.clear();
-  char* c;
-  size_t total = sizeof(size_t);
-  if (cache.buf_read(c, total) < total) return 0;
-  bufread_label(ld, c, cache);
-
-  return total;
-}
-
-float weight(CB::label& ld) { return ld.weight; }
-
-char* bufcache_label(CB::label& ld, char* c)
-{
-  *(size_t*)c = ld.costs.size();
-  c += sizeof(size_t);
-  for (auto const& cost : ld.costs)
-  {
-    *(cb_class*)c = cost;
-    c += sizeof(cb_class);
-  }
-  memcpy(c, &ld.weight, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  return c;
-}
-
-void cache_label(CB::label& ld, io_buf& cache)
-{
-  char* c;
-  cache.buf_write(c, sizeof(size_t) + sizeof(cb_class) * ld.costs.size() + sizeof(ld.weight));
-  bufcache_label(ld, c);
-}
-
-void default_label(CB::label& ld)
-{
-  ld.costs.clear();
-  ld.weight = 1;
-}
-
-bool test_label(CB::label& ld)
-{
-  if (ld.costs.empty()) return true;
-  for (auto const& cost : ld.costs)
-    if (FLT_MAX != cost.cost && cost.probability > 0.) return false;
-  return true;
-}
-
-void delete_label(CB::label& ld) { ld.costs.delete_v(); }
-
-void copy_label(CB::label& dst, CB::label& src)
-{
-  copy_array(dst.costs, dst.costs);
-  dst.weight = src.weight;
-}
-
 void parse_label(parser* p, shared_data*, CB::label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   ld.weight = 1.0;
@@ -164,7 +86,7 @@ label_parser cb_label = {
     }
   },
   // test_label
-  [](polylabel* v) { return CB::test_label(v->cb); },
+  [](polylabel* v) { return CB::is_test_label(v->cb); },
 };
 // clang-format on
 
@@ -243,7 +165,7 @@ void default_label(CB_EVAL::label& ld)
   ld.action = 0;
 }
 
-bool test_label(CB_EVAL::label& ld) { return CB::test_label(ld.event); }
+bool test_label(CB_EVAL::label& ld) { return CB::is_test_label(ld.event); }
 
 void delete_label(CB_EVAL::label& ld) { CB::delete_label(ld.event); }
 

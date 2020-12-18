@@ -12,6 +12,7 @@
 #include "explore.h"
 #include "vw_exception.h"
 #include "scope_exit.h"
+#include "cb_label_parser.h"
 
 #include <vector>
 #include <memory>

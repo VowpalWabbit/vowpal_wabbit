@@ -12,6 +12,7 @@
 #include "scope_exit.h"
 #include "vw_versions.h"
 #include "version.h"
+#include "cb_label_parser.h"
 
 #include <memory>
 
@@ -283,7 +284,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;
-  print_update_cb_explore(all, CB::test_label(ld), ec, sso);
+  print_update_cb_explore(all, CB::is_test_label(ld), ec, sso);
 }
 
 void finish_example(vw& all, cb_explore& c, example& ec)
