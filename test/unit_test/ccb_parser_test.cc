@@ -1,5 +1,5 @@
 #ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
+#  define BOOST_TEST_DYN_LINK
 #endif
 
 #include <boost/test/unit_test.hpp>
@@ -16,7 +16,8 @@ void parse_label(label_parser& lp, parser* p, VW::string_view label, CCB::label&
 {
   tokenize(' ', label, p->words);
   lp.default_label(&l);
-  lp.parse_label(p, nullptr, &l, p->words);
+  reduction_features red_fts;
+  lp.parse_label(p, nullptr, &l, p->words, red_fts);
 }
 
 BOOST_AUTO_TEST_CASE(ccb_parse_label)
@@ -120,7 +121,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   auto backing_vector = std::make_shared<std::vector<char>>();
   io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
-  //io.init();      TODO: figure out and fix leak caused by double init()
+  // io.init();      TODO: figure out and fix leak caused by double init()
 
   parser p{8 /*ring_size*/, false /*strict parse*/};
 

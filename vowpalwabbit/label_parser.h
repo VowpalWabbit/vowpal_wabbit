@@ -7,6 +7,7 @@
 #include "v_array.h"
 #include "parse_primitives.h"
 #include "io_buf.h"
+#include "reduction_features.h"
 
 #include "vw_string_view.h"
 
@@ -18,7 +19,7 @@ struct shared_data;
 struct label_parser
 {
   void (*default_label)(void*);
-  void (*parse_label)(parser*, shared_data*, void*, std::vector<VW::string_view>&);
+  void (*parse_label)(parser*, shared_data*, void*, std::vector<VW::string_view>&, reduction_features&);
   void (*cache_label)(void*, io_buf& cache);
   size_t (*read_cached_label)(shared_data*, void*, io_buf& cache);
   void (*delete_label)(void*);
@@ -28,5 +29,4 @@ struct label_parser
                                      // label_size is sufficient, so you need only specify this function if your label
                                      // constains, for instance, pointers (otherwise you'll get double-free errors)
   bool (*test_label)(void*);
-  size_t label_size;
 };

@@ -268,7 +268,7 @@ void parse_explicit_inclusions(CCB::label* ld, std::vector<VW::string_view>& spl
   for (const auto& inclusion : split_inclusions) { ld->explicit_included_actions.push_back(int_of_string(inclusion)); }
 }
 
-void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string_view>& words)
+void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string_view>& words, ::reduction_features&)
 {
   auto* ld = static_cast<CCB::label*>(v);
   ld->weight = 1.0;
@@ -331,6 +331,6 @@ void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string
 }
 
 // Export the definition of this label parser.
-label_parser ccb_label_parser = {default_label, parse_label, cache_label, read_cached_label, delete_label, ccb_weight,
-    copy_label, test_label, sizeof(CCB::label)};
+label_parser ccb_label_parser = {
+    default_label, parse_label, cache_label, read_cached_label, delete_label, ccb_weight, copy_label, test_label};
 }  // namespace CCB
