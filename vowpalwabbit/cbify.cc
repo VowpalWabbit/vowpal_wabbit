@@ -45,6 +45,13 @@ struct cbify_reg
   float max_cost = std::numeric_limits<float>::lowest();
 };
 
+template<typename T>
+void v_move(v_array<T> &dst, v_array<T> &src)
+{
+  dst = src;
+  src = v_init<T>();
+}
+
 struct cbify
 {
   CB::label cb_label;
@@ -187,7 +194,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   label_data regression_label = ec.l.simple;
   data.cb_label.costs.clear();
   ec.l.cb = data.cb_label;
-  ec.pred.a_s = data.a_s;
+  v_move(ec.pred.a_s, data.a_s);
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
@@ -235,7 +242,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
     }
   }
 
-  data.a_s = ec.pred.a_s;
+  v_move(data.a_s, ec.pred.a_s);
   data.a_s.clear();
 
   ec.l.simple = regression_label;
@@ -328,7 +335,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
 
   data.cb_label.costs.clear();
   ec.l.cb = data.cb_label;
-  ec.pred.a_s = data.a_s;
+  v_move(ec.pred.a_s, data.a_s);
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
@@ -355,7 +362,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
 
   if (is_learn) base.learn(ec);
 
-  data.a_s = ec.pred.a_s;
+  v_move(data.a_s, ec.pred.a_s);
   data.a_s.clear();
 
   if (use_cs)
