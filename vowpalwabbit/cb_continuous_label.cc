@@ -42,6 +42,12 @@ void copy_label_additional_fields<VW::cb_continuous::continuous_label>(
 }
 }  // namespace CB
 
+
+void populate_pdf(std::vector<VW::string_view>& words)
+{
+  VW::cb_continuous::continuous_label ld;
+}
+
 namespace VW
 {
 namespace cb_continuous
@@ -56,35 +62,52 @@ void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>&
   if (words.empty()) { return; }
 
   if (!(words[0] == CA_LABEL)) { THROW("Continuous actions labels require the first word to be ca"); }
+  //   parse_label(lp, &p, "ca 185.121:0.657567:6.20426e-05 pdf 1:2:3 4:5:6", *label);
+  //   parse_label(lp, &p, "ca pdf 1:2:3 4:5:6", *label);
+  //   parse_label(lp, &p, "ca chosen_action 185.121", *label);
 
+  // "pdf": [{"left": 185, "right": 8109.67, "pdf_value": 2.10314e-06},
+  //     {"left": 8109.67, "right": 23959, "pdf_value": 6.20426e-05}],
   for (size_t i = 1; i < words.size(); i++)
   {
-    continuous_label_elm f{0.f, FLT_MAX, 0.f};
-    tokenize(':', words[i], p->parse_name);
-
-    if (p->parse_name.empty() || p->parse_name.size() > 4)
-      THROW("malformed cost specification: "
-          << "p->parse_name");
-
-    f.action = float_of_string(p->parse_name[0]);
-
-    if (p->parse_name.size() > 1) f.cost = float_of_string(p->parse_name[1]);
-
-    if (std::isnan(f.cost)) THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
-
-    f.pdf_value = .0;
-    if (p->parse_name.size() > 2) f.pdf_value = float_of_string(p->parse_name[2]);
-
-    if (std::isnan(f.pdf_value))
-      THROW("error NaN pdf_value (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
-
-    if (f.pdf_value < 0.0)
+    if (words[i] == "pdf")
     {
-      std::cerr << "invalid pdf_value < 0 specified for an action, resetting to 0." << endl;
-      f.pdf_value = .0;
+      // consume pdf
+      populate_pdf(words);
     }
+    else if (words[i] == "chosen_action")
+    {
+      // consume chosen action
+    }
+    else if (words[i - 1] == CA_LABEL)
+    {
+      continuous_label_elm f{0.f, FLT_MAX, 0.f};
+      tokenize(':', words[i], p->parse_name);
 
-    ld->costs.push_back(f);
+      if (p->parse_name.empty() /*|| p->parse_name.size() > 4 */)
+        THROW("malformed cost specification: "
+            << "p->parse_name");
+
+      f.action = float_of_string(p->parse_name[0]);
+
+      if (p->parse_name.size() > 1) f.cost = float_of_string(p->parse_name[1]);
+
+      if (std::isnan(f.cost)) THROW("error NaN cost (" << p->parse_name[1] << " for action: " << p->parse_name[0]);
+
+      f.pdf_value = .0;
+      if (p->parse_name.size() > 2) f.pdf_value = float_of_string(p->parse_name[2]);
+
+      if (std::isnan(f.pdf_value))
+        THROW("error NaN pdf_value (" << p->parse_name[2] << " for action: " << p->parse_name[0]);
+
+      if (f.pdf_value < 0.0)
+      {
+        std::cerr << "invalid pdf_value < 0 specified for an action, resetting to 0." << endl;
+        f.pdf_value = .0;
+      }
+
+      ld->costs.push_back(f);
+    }
   }
 }
 
