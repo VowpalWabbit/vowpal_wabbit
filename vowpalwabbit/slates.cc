@@ -31,7 +31,7 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
   for (auto& example : examples) { _stashed_labels.push_back(std::move(example->l.slates)); }
 
   const size_t num_slots = std::count_if(examples.begin(), examples.end(),
-      [](const example* example) { return example->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
+      [](const example* example) { return example->l.slates.type == VW::slates::example_type::slot; });
 
   float global_cost = 0.f;
   bool global_cost_found = false;
