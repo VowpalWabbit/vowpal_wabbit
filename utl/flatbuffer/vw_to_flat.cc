@@ -14,6 +14,7 @@
 #include "best_constant.h"
 #include "vw_exception.h"
 #include "options_boost_po.h"
+#include "hash.h"
 
 void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder& builder,
     flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot>& root)
@@ -65,10 +66,12 @@ void to_flat::write_to_file(bool collection, bool is_multiline, MultiExampleBuil
     {
       write_collection_to_file(is_multiline, outfile);
       _collection_count = 0;
+      _share_examples.clear();  // can't share between collections
     }
   }
   else
   {
+    _share_examples.clear();  // not in collection mode, there is not sharing
     if (is_multiline)
     {
       auto multi_ex = multi_ex_builder.to_flat_example(_builder);
@@ -331,9 +334,30 @@ void to_flat::convert_txt_to_flat(vw& all)
 
       std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
 
-      for (features::iterator& f : ae->feature_space[ns])
-      { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index())); }
-      namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, ns, &fts));
+      std::stringstream ss;
+      ss << ns;
+
+      for (features::iterator& f : ae->feature_space[ns]) { ss << f.index() << f.value(); }
+
+      std::string s = ss.str();
+      auto refid = uniform_hash(s.c_str(), s.size(), 0);
+      flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> namespace_offset;
+      auto find_ns_offset = _share_examples.find(refid);
+
+      if (find_ns_offset == _share_examples.end())
+      {
+        // new namespace
+        for (features::iterator& f : ae->feature_space[ns])
+        { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index())); }
+        namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, ns, &fts);
+        _share_examples[refid] = namespace_offset;
+      }
+      else
+      {
+        // offset already exists
+        namespace_offset = find_ns_offset->second;
+      }
+      namespaces.push_back(namespace_offset);
     }
     std::string tag(ae->tag.begin(), ae->tag.size());
 
