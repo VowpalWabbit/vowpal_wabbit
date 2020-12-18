@@ -120,7 +120,7 @@ example& example::operator=(example&& other) noexcept
   return *this;
 }
 
-void example::delete_unions(void (*/*delete_label*/)(polylabel*), void (*delete_prediction)(void*))
+void example::delete_unions(void (*)(polylabel*), void (*delete_prediction)(void*))
 {
   // Label uses a destructor so we dont need to *delete* here.
 
