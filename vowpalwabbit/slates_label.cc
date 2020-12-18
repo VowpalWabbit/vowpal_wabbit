@@ -109,7 +109,7 @@ void copy_label(slates::label& dst, slates::label& src)
 //
 // For a more complete description of the grammar, including examples see:
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
-void parse_label(parser* p, shared_data* /*sd*/, slates::label& ld, std::vector<VW::string_view>& words)
+void parse_label(parser* p, shared_data* /*sd*/, slates::label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   ld.weight = 1;
 
@@ -196,8 +196,8 @@ label_parser slates_label_parser = {
   // default_label
   [](polylabel* v) { default_label(v->slates); },
   // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
-    parse_label(p, sd, v->slates, words);
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
+    parse_label(p, sd, v->slates, words, red_features);
   },
   // cache_label
   [](polylabel* v, io_buf& cache) { cache_label(v->slates, cache); },

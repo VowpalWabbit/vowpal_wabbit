@@ -48,7 +48,7 @@ namespace cb_continuous
 {
 ////////////////////////////////////////////////////
 // Begin: parse a,c,p label format
-void parse_label(parser* p, shared_data*, continuous_label& ld, std::vector<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, continuous_label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   ld.costs.clear();
 
@@ -92,8 +92,8 @@ label_parser the_label_parser = {
   // default_label
   [](polylabel* v) { CB::default_label<continuous_label>(v->cb_cont); },
   // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
-    parse_label(p, sd, v->cb_cont, words);
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
+    parse_label(p, sd, v->cb_cont, words, red_features);
   },
   // cache_label
   [](polylabel* v, io_buf& cache) { CB::cache_label<continuous_label, continuous_label_elm>(v->cb_cont, cache); },

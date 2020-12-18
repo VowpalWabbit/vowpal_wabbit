@@ -33,7 +33,7 @@ label_parser no_label_parser = {
   // default_label
   [](polylabel*) {},
   // parse_label
-  [](parser*, shared_data*, polylabel*, std::vector<VW::string_view>& words) {
+  [](parser*, shared_data*, polylabel*, std::vector<VW::string_view>& words, reduction_features&) {
     parse_no_label(words);
   },
   // cache_label

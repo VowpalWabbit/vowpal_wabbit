@@ -1,5 +1,5 @@
 #ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
+#  define BOOST_TEST_DYN_LINK
 #endif
 
 #include <boost/test/unit_test.hpp>
@@ -14,7 +14,8 @@ void parse_label(label_parser& lp, parser* p, shared_data* sd, VW::string_view l
 {
   tokenize(' ', label, p->words);
   lp.default_label(&l);
-  lp.parse_label(p, sd, &l, p->words);
+  reduction_features red_fts;
+  lp.parse_label(p, sd, &l, p->words, red_fts);
 }
 
 BOOST_AUTO_TEST_CASE(multiclass_label_parser)

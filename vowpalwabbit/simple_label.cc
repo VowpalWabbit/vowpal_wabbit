@@ -74,7 +74,7 @@ bool test_label(label_data& ld)
   return ld.label == FLT_MAX;
 }
 
-void parse_simple_label(parser*, shared_data* sd, label_data& ld, std::vector<VW::string_view>& words)
+void parse_simple_label(parser*, shared_data* sd, label_data& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   switch (words.size())
   {
@@ -105,8 +105,8 @@ label_parser simple_label_parser = {
   // default_label
   [](polylabel* v) { default_simple_label(v->simple); },
   // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
-    parse_simple_label(p, sd, v->simple, words);
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
+    parse_simple_label(p, sd, v->simple, words, red_features);
   },
   // cache_label
   [](polylabel* v, io_buf& cache) { cache_simple_label(v->simple, cache); },

@@ -104,7 +104,7 @@ void copy_label(CB::label& dst, CB::label& src)
   dst.weight = src.weight;
 }
 
-void parse_label(parser* p, shared_data*, CB::label& ld, std::vector<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, CB::label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   ld.weight = 1.0;
 
@@ -155,8 +155,8 @@ label_parser cb_label = {
   // default_label
   [](polylabel* v) { CB::default_label(v->cb); },
   // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
-    CB::parse_label(p, sd, v->cb, words);
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
+    CB::parse_label(p, sd, v->cb, words, red_features);
   },
   // cache_label
   [](polylabel* v, io_buf& cache) { CB::cache_label(v->cb, cache); },
@@ -272,7 +272,7 @@ void copy_label(CB_EVAL::label& dst, CB_EVAL::label& src)
   dst.action = src.action;
 }
 
-void parse_label(parser* p, shared_data* sd, CB_EVAL::label& ld, std::vector<VW::string_view>& words)
+void parse_label(parser* p, shared_data* sd, CB_EVAL::label& ld, std::vector<VW::string_view>& words, reduction_features& red_features)
 {
   if (words.size() < 2) THROW("Evaluation can not happen without an action and an exploration");
 
@@ -281,7 +281,7 @@ void parse_label(parser* p, shared_data* sd, CB_EVAL::label& ld, std::vector<VW:
   // Removing the first element of a vector is not efficient at all, every element must be copied/moved.
   const auto stashed_first_token = std::move(words[0]);
   words.erase(words.begin());
-  CB::parse_label(p, sd, ld.event, words);
+  CB::parse_label(p, sd, ld.event, words, red_features);
   words.insert(words.begin(), std::move(stashed_first_token));
 }
 
@@ -290,8 +290,8 @@ label_parser cb_eval = {
   // default_label
   [](polylabel* v) { CB_EVAL::default_label(v->cb_eval); },
   // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
-    CB_EVAL::parse_label(p, sd, v->cb_eval, words);
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
+    CB_EVAL::parse_label(p, sd, v->cb_eval, words, red_features);
   },
   // cache_label
   [](polylabel* v, io_buf& cache) { CB_EVAL::cache_label(v->cb_eval, cache); },

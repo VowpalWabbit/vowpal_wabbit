@@ -82,13 +82,13 @@ void delete_prediction(void* v)
   delete_label(*reinterpret_cast<MULTILABEL::labels*>(v));
 }
 
-
 void copy_label(MULTILABEL::labels& dst, MULTILABEL::labels& src)
 {
   copy_array(dst.label_v, src.label_v);
 }
 
-void parse_label(parser* p, shared_data*, MULTILABEL::labels& ld, std::vector<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, MULTILABEL::labels& ld, std::vector<VW::string_view>& words,
+    reduction_features&)
 {
   switch (words.size())
   {
@@ -115,8 +115,8 @@ label_parser multilabel = {
   // default_label
   [](polylabel* v) { default_label(v->multilabels); },
   // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
-    parse_label(p, sd, v->multilabels, words);
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
+    parse_label(p, sd, v->multilabels, words, red_features);
   },
   // cache_label
   [](polylabel* v, io_buf& cache) { cache_label(v->multilabels, cache); },

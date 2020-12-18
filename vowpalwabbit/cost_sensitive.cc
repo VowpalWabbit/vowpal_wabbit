@@ -109,7 +109,7 @@ void copy_label(label& dst, label& src)
   copy_array(dst.costs, src.costs);
 }
 
-void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_view>& words)
+void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   ld.costs.clear();
 
@@ -178,8 +178,8 @@ label_parser cs_label = {
   // default_label
   [](polylabel* v) { default_label(v->cs); },
   // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
-    parse_label(p, sd, v->cs, words);
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
+    parse_label(p, sd, v->cs, words, red_features);
   },
   // cache_label
   [](polylabel* v, io_buf& cache) { cache_label(v->cs, cache); },
