@@ -16,7 +16,7 @@ using namespace VW::LEARNER;
 
 namespace CB
 {
-void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words)
+void parse_label(parser* p, shared_data*, void* v, std::vector<VW::string_view>& words, reduction_features&)
 {
   CB::label* ld = (CB::label*)v;
   ld->costs.clear();
@@ -171,7 +171,8 @@ void copy_label(void* dst, void* src)
   ldD->action = ldS->action;
 }
 
-void parse_label(parser* p, shared_data* sd, void* v, std::vector<VW::string_view>& words)
+void parse_label(
+    parser* p, shared_data* sd, void* v, std::vector<VW::string_view>& words, reduction_features& red_features)
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
 
@@ -182,7 +183,7 @@ void parse_label(parser* p, shared_data* sd, void* v, std::vector<VW::string_vie
   // Removing the first element of a vector is not efficient at all, every element must be copied/moved.
   const auto stashed_first_token = std::move(words[0]);
   words.erase(words.begin());
-  CB::parse_label(p, sd, &(ld->event), words);
+  CB::parse_label(p, sd, &(ld->event), words, red_features);
   words.insert(words.begin(), std::move(stashed_first_token));
 }
 
