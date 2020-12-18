@@ -117,7 +117,7 @@ void copy_label(void* dst, void* src)
 //
 // For a more complete description of the grammar, including examples see:
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
-void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string_view>& words)
+void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string_view>& words, reduction_features&)
 {
   auto& ld = static_cast<polylabel*>(v)->slates;
   ld.weight = 1;
