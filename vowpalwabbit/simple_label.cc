@@ -101,7 +101,7 @@ void parse_simple_label(parser*, shared_data* sd, label_data& ld, std::vector<VW
 }
 
 // clang-format off
-label_parser mc_label = {
+label_parser simple_label_parser = {
   // default_label
   [](polylabel* v) { default_simple_label(v->simple); },
   // parse_label

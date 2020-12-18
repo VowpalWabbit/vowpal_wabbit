@@ -70,7 +70,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
   l.set_finish_example(finish_example);
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
   all.label_type = label_type_t::multi;
-  all.delete_prediction = MULTILABEL::delete_label;
+  all.delete_prediction = MULTILABEL::delete_prediction;
 
   return make_base(l);
 }

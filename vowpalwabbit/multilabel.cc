@@ -41,7 +41,7 @@ size_t read_cached_label(shared_data*, MULTILABEL::labels& ld, io_buf& cache)
   return total;
 }
 
-float weight(MULTILABEL::labels& ld) { return 1.; }
+float weight(MULTILABEL::labels&) { return 1.; }
 
 char* bufcache_label(labels& ld, char* c)
 {
@@ -77,6 +77,12 @@ void delete_label(MULTILABEL::labels& ld)
   ld.label_v.delete_v();
 }
 
+void delete_prediction(void* v)
+{
+  delete_label(*reinterpret_cast<MULTILABEL::labels*>(v));
+}
+
+
 void copy_label(MULTILABEL::labels& dst, MULTILABEL::labels& src)
 {
   copy_array(dst.label_v, src.label_v);
@@ -105,7 +111,7 @@ void parse_label(parser* p, shared_data*, MULTILABEL::labels& ld, std::vector<VW
 }
 
 // clang-format off
-label_parser cb_label = {
+label_parser multilabel = {
   // default_label
   [](polylabel* v) { default_label(v->multilabels); },
   // parse_label

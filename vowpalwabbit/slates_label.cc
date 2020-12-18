@@ -192,7 +192,7 @@ void parse_label(parser* p, shared_data* /*sd*/, slates::label& ld, std::vector<
 }
 
 // clang-format off
-label_parser cb_label = {
+label_parser slates_label_parser = {
   // default_label
   [](polylabel* v) { default_label(v->slates); },
   // parse_label
@@ -214,7 +214,7 @@ label_parser cb_label = {
     }
   },
   // test_label
-  [](polylabel* v) { return test_label(v->slates); },
+  [](polylabel* v) { return test_label(v->slates); }
 };
 // clang-format on
 

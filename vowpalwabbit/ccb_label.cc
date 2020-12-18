@@ -30,24 +30,19 @@ namespace CCB
 {
 void default_label(label& ld);
 
-
 size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
 {
   // Since read_cached_features doesn't default the label we must do it here.
   default_label(ld);
 
-  if (ld.outcome)
-  {
-    ld.outcome->probabilities.clear();
-  }
+  if (ld.outcome) { ld.outcome->probabilities.clear(); }
   ld.explicit_included_actions.clear();
 
   size_t read_count = 0;
   char* read_ptr;
 
   size_t next_read_size = sizeof(ld.type);
-  if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
-    return 0;
+  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0;
   ld.type = *(CCB::example_type*)read_ptr;
   read_count += sizeof(ld.type);
 
@@ -63,8 +58,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
     ld.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
     next_read_size = sizeof(ld.outcome->cost);
-    if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
-      return 0;
+    if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0;
     ld.outcome->cost = *(float*)read_ptr;
     read_count += sizeof(ld.outcome->cost);
 
@@ -103,17 +97,12 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
   }
 
   next_read_size = sizeof(ld.weight);
-  if (cache.buf_read(read_ptr, next_read_size) < next_read_size)
-    return 0;
+  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0;
   ld.weight = *(float*)read_ptr;
   return read_count;
 }
 
-
-float ccb_weight(CCB::label& ld)
-{
-  return ld.weight;
-}
+float ccb_weight(CCB::label& ld) { return ld.weight; }
 
 void cache_label(label& ld, io_buf& cache)
 {
@@ -121,8 +110,8 @@ void cache_label(label& ld, io_buf& cache)
   size_t size = sizeof(uint8_t)  // type
       + sizeof(bool)             // outcome exists?
       + (ld.outcome == nullptr ? 0
-                                : sizeof(ld.outcome->cost)                                    // cost
-                    + sizeof(uint32_t)                                                         // probabilities size
+                               : sizeof(ld.outcome->cost)                                     // cost
+                    + sizeof(uint32_t)                                                        // probabilities size
                     + sizeof(ACTION_SCORE::action_score) * ld.outcome->probabilities.size())  // probabilities
       + sizeof(uint32_t)  // explicit_included_actions size
       + sizeof(uint32_t) * ld.explicit_included_actions.size() + sizeof(ld.weight);
@@ -178,11 +167,7 @@ void default_label(label& ld)
   ld.weight = 1.0;
 }
 
-
-bool test_label(CCB::label& ld)
-{
-  return ld.outcome == nullptr;
-}
+bool test_label(CCB::label& ld) { return ld.outcome == nullptr; }
 
 void delete_label(label& ld)
 {
@@ -265,10 +250,7 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view& outco
 
 void parse_explicit_inclusions(CCB::label& ld, const std::vector<VW::string_view>& split_inclusions)
 {
-  for (const auto& inclusion : split_inclusions)
-  {
-    ld.explicit_included_actions.push_back(int_of_string(inclusion));
-  }
+  for (const auto& inclusion : split_inclusions) { ld.explicit_included_actions.push_back(int_of_string(inclusion)); }
 }
 
 void parse_label(parser* p, shared_data*, label& ld, std::vector<VW::string_view>& words)
@@ -281,20 +263,17 @@ void parse_label(parser* p, shared_data*, label& ld, std::vector<VW::string_view
   auto type = words[1];
   if (type == SHARED_TYPE)
   {
-    if (words.size() > 2)
-      THROW("shared labels may not have a cost");
+    if (words.size() > 2) THROW("shared labels may not have a cost");
     ld.type = CCB::example_type::shared;
   }
   else if (type == ACTION_TYPE)
   {
-    if (words.size() > 2)
-      THROW("action labels may not have a cost");
+    if (words.size() > 2) THROW("action labels may not have a cost");
     ld.type = CCB::example_type::action;
   }
   else if (type == SLOT_TYPE)
   {
-    if (words.size() > 4)
-      THROW("ccb slot label can only have a type cost and exclude list");
+    if (words.size() > 4) THROW("ccb slot label can only have a type cost and exclude list");
     ld.type = CCB::example_type::slot;
 
     // Skip the first two words "ccb <type>"
@@ -303,10 +282,7 @@ void parse_label(parser* p, shared_data*, label& ld, std::vector<VW::string_view
       auto is_outcome = words[i].find(':');
       if (is_outcome != VW::string_view::npos)
       {
-        if (ld.outcome != nullptr)
-        {
-          THROW("There may be only 1 outcome associated with a slot.")
-        }
+        if (ld.outcome != nullptr) { THROW("There may be only 1 outcome associated with a slot.") }
 
         ld.outcome = parse_outcome(words[i]);
       }
@@ -339,7 +315,7 @@ void parse_label(parser* p, shared_data*, label& ld, std::vector<VW::string_view
 }
 
 // clang-format off
-label_parser cb_label = {
+label_parser ccb_label_parser = {
   // default_label
   [](polylabel* v) { default_label(v->conditional_contextual_bandit); },
   // parse_label

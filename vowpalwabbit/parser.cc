@@ -911,26 +911,6 @@ namespace VW
 void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
 
-// a copy of dealloc_example except that this does not call the example destructor
-// Work to remove this is currently in progress
-void cleanup_example(void(*delete_label)(polylabel*), example& ec, void(*delete_prediction)(void*))
-{
-  if (delete_label)
-    delete_label(&ec.l);
-
-  if (delete_prediction)
-    delete_prediction(&ec.pred);
-
-  ec.tag.delete_v();
-
-  if (ec.passthrough)
-  {
-    delete ec.passthrough;
-  }
-
-  ec.indices.delete_v();
-}
-
 void free_parser(vw& all)
 {
   // It is possible to exit early when the queue is not yet empty.

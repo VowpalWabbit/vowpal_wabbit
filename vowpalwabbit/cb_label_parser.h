@@ -74,7 +74,7 @@ template <typename LabelT = CB::label, typename LabelElmT = cb_class>
 void cache_label(LabelT& ld, io_buf& cache)
 {
   char* c;
-  cache.buf_write(c, sizeof(size_t) + sizeof(LabelElmT) * ld->costs.size());
+  cache.buf_write(c, sizeof(size_t) + sizeof(LabelElmT) * ld.costs.size());
   bufcache_label<LabelT, LabelElmT>(ld, c);
 }
 
@@ -130,7 +130,7 @@ void copy_label_additional_fields(LabelT& dst, LabelT& src)
 template <typename LabelT = CB::label>
 void copy_label(LabelT& dst, LabelT& src)
 {
-  copy_array(ldD.costs, ldS.costs);
-  copy_label_additional_fields(ldD, ldS);
+  copy_array(dst.costs, src.costs);
+  copy_label_additional_fields(dst, src);
 }
 }  // namespace CB

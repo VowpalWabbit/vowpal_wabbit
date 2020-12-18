@@ -31,23 +31,23 @@ void parse_no_label(const std::vector<VW::string_view>& words)
 // clang-format off
 label_parser no_label_parser = {
   // default_label
-  [](polylabel* v) {},
+  [](polylabel*) {},
   // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words) {
+  [](parser*, shared_data*, polylabel*, std::vector<VW::string_view>& words) {
     parse_no_label(words);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) {},
+  [](polylabel*, io_buf&) {},
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return 1; },
+  [](shared_data*, polylabel*, io_buf&) -> size_t { return 1; },
   // delete_label
   [](polylabel*) {},
    // get_weight
-  [](polylabel* v) { return 1.; },
+  [](polylabel*) { return 1.f; },
   // copy_label
   nullptr,
   // test_label
-  [](polylabel* v) { return false; },
+  [](polylabel*) { return false; },
 };
 // clang-format on
 

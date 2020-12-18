@@ -32,13 +32,20 @@ struct label
 {
   example_type type;
   // Outcome may be unset.
-  conditional_contextual_bandit_outcome* outcome = nullptr;
+  conditional_contextual_bandit_outcome* outcome;
   v_array<uint32_t> explicit_included_actions;
   float weight;
 
-  label() : type(example_type::unset), outcome(nullptr), explicit_included_actions({nullptr, nullptr, nullptr, 0}), weight(1.f) {}
-  label(example_type type, conditional_contextual_bandit_outcome* outcome, v_array<uint32_t>& explicit_included_actions, float weight) : type(type), outcome(outcome), explicit_included_actions(explicit_included_actions), weight(weight) {}
+  // label() : type(example_type::unset), outcome(nullptr), explicit_included_actions({nullptr, nullptr, nullptr, 0}), weight(1.f) {}
+  // label(example_type type, conditional_contextual_bandit_outcome* outcome, v_array<uint32_t>& explicit_included_actions, float weight) : type(type), outcome(outcome), explicit_included_actions(explicit_included_actions), weight(weight) {}
 };
+
+void default_label(CCB::label& ld);
+void delete_label(CCB::label& ld);
+void parse_label(parser* p, shared_data*, CCB::label& ld, std::vector<VW::string_view>& words);
+void cache_label(CCB::label& ld, io_buf& cache);
+size_t read_cached_label(shared_data*, CCB::label& ld, io_buf& cache);
+void copy_label(CCB::label& ldDst, CCB::label& ldSrc);
 
 extern label_parser ccb_label_parser;
 }  // namespace CCB

@@ -63,7 +63,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
   return total;
 }
 
-float weight(label& ld) { return 1.; }
+float weight(label&) { return 1.; }
 
 char* bufcache_label(label& ld, char* c)
 {

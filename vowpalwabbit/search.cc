@@ -336,7 +336,6 @@ public:
       {
         void (*delete_label)(polylabel*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
         for (example& ec : learn_ec_copy) VW::dealloc_example(delete_label, ec);
-        learn_ec_copy.delete_v();
       }
       learn_condition_on_names.delete_v();
       learn_condition_on.delete_v();
@@ -2974,8 +2973,8 @@ void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
     std::cerr << "warning: task should not set label parser except in initialize function!" << endl;
-  this->priv->all->p->lp = lp;
-  this->priv->all->p->lp.test_label = (bool (*)(polylabel*))is_test;
+  this->priv->all->example_parser->lbl_parser = lp;
+  this->priv->all->example_parser->lbl_parser.test_label = (bool (*)(polylabel*))is_test;
   this->priv->label_is_test = is_test;
 }
 

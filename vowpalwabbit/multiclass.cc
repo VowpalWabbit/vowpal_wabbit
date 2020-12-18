@@ -17,6 +17,32 @@ void default_label(label_t& ld)
   ld.label = (uint32_t)-1;
   ld.weight = 1.;
 }
+
+void cache_label(const label_t& ld, io_buf& cache)
+{
+  char* c;
+  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight));
+  memcpy(c, &ld.label, sizeof(ld.label));
+  c += sizeof(ld.label);
+  memcpy(c, &ld.weight, sizeof(ld.weight));
+  c += sizeof(ld.weight);
+}
+
+size_t read_cached_label(shared_data*, label_t& ld, io_buf& cache)
+{
+  char* c;
+  size_t total = sizeof(ld.label) + sizeof(ld.weight);
+  if (cache.buf_read(c, total) < total) return 0;
+  memcpy(&ld.label, c, sizeof(ld.label));
+  c += sizeof(ld.label);
+  memcpy(&ld.weight, c, sizeof(ld.weight));
+  c += sizeof(ld.weight);
+  return total;
+}
+float weight(label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
+bool test_label(const label_t& ld) { return ld.label == (uint32_t)-1; }
+
+
 void parse_label(parser*, shared_data* sd, label_t& ld, std::vector<VW::string_view>& words)
 {
   switch (words.size())
@@ -52,28 +78,6 @@ void parse_label(parser*, shared_data* sd, label_t& ld, std::vector<VW::string_v
     THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}"
         << (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
 }
-void cache_label(const label_t& ld, io_buf& cache)
-{
-  char* c;
-  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight));
-  memcpy(c, &ld.label, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(c, &ld.weight, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-}
-size_t read_cached_label(shared_data*, label_t& ld, io_buf& cache)
-{
-  char* c;
-  size_t total = sizeof(ld.label) + sizeof(ld.weight);
-  if (cache.buf_read(c, total) < total) return 0;
-  memcpy(&ld.label, c, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(&ld.weight, c, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  return total;
-}
-float weight(label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
-bool test_label(const label_t& ld) { return ld.label == (uint32_t)-1; }
 
 // clang-format off
 label_parser mc_label = {

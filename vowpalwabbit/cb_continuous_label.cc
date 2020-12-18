@@ -103,7 +103,7 @@ label_parser the_label_parser = {
   [](polylabel* v) { CB::delete_label<continuous_label>(v->cb_cont); },
   // get_weight
   // CB::weight just returns 1.f? This seems like it could be a bug...
-  [](polylabel* v) { return 1.f; },
+  [](polylabel*) { return 1.f; },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {

@@ -10,7 +10,7 @@
 #include "parser.h"
 #include "global_data.h"
 
-void parse_label(label_parser& lp, parser* p, shared_data* sd, VW::string_view label, MULTICLASS::label_t& l)
+void parse_label(label_parser& lp, parser* p, shared_data* sd, VW::string_view label, polylabel& l)
 {
   tokenize(' ', label, p->words);
   lp.default_label(&l);
@@ -24,28 +24,28 @@ BOOST_AUTO_TEST_CASE(multiclass_label_parser)
   auto sd = &calloc_or_throw<shared_data>();
 
   {
-    MULTICLASS::label_t label;
-    BOOST_REQUIRE_THROW(parse_label(lp, &p, sd, "1,2,3", label), VW::vw_exception);
+    auto plabel = scoped_calloc_or_throw<polylabel>();
+    BOOST_REQUIRE_THROW(parse_label(lp, &p, sd, "1,2,3", *plabel), VW::vw_exception);
   }
   {
-    MULTICLASS::label_t label;
-    BOOST_REQUIRE_THROW(parse_label(lp, &p, sd, "1a", label), VW::vw_exception);
+    auto plabel = scoped_calloc_or_throw<polylabel>();
+    BOOST_REQUIRE_THROW(parse_label(lp, &p, sd, "1a", *plabel), VW::vw_exception);
   }
   {
-    MULTICLASS::label_t label;
-    BOOST_REQUIRE_THROW(parse_label(lp, &p, sd, "1 2 3", label), VW::vw_exception);
+    auto plabel = scoped_calloc_or_throw<polylabel>();
+    BOOST_REQUIRE_THROW(parse_label(lp, &p, sd, "1 2 3", *plabel), VW::vw_exception);
   }
   {
-    MULTICLASS::label_t label;
-    parse_label(lp, &p, sd, "2", label);
-    BOOST_ASSERT(label.label == 2);
-    BOOST_ASSERT(label.weight == 1.0);
+    auto plabel = scoped_calloc_or_throw<polylabel>();
+    parse_label(lp, &p, sd, "2", *plabel);
+    BOOST_ASSERT(plabel->multi.label == 2);
+    BOOST_ASSERT(plabel->multi.weight == 1.0);
   }
   {
-    MULTICLASS::label_t label;
-    parse_label(lp, &p, sd, "2 2", label);
-    BOOST_ASSERT(label.label == 2);
-    BOOST_ASSERT(label.weight == 2.0);
+    auto plabel = scoped_calloc_or_throw<polylabel>();
+    parse_label(lp, &p, sd, "2 2", *plabel);
+    BOOST_ASSERT(plabel->multi.label == 2);
+    BOOST_ASSERT(plabel->multi.weight == 2.0);
   }
 
   free(sd);
