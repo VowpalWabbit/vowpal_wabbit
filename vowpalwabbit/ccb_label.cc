@@ -268,7 +268,7 @@ void parse_explicit_inclusions(CCB::label* ld, std::vector<VW::string_view>& spl
   for (const auto& inclusion : split_inclusions) { ld->explicit_included_actions.push_back(int_of_string(inclusion)); }
 }
 
-void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string_view>& words)
+void parse_label(parser* p, shared_data* /*sd*/, void* v, std::vector<VW::string_view>& words, ::reduction_features&)
 {
   auto* ld = static_cast<CCB::label*>(v);
   ld->weight = 1.0;

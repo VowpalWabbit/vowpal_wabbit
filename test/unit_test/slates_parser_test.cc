@@ -1,5 +1,5 @@
 #ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
+#  define BOOST_TEST_DYN_LINK
 #endif
 
 #include <boost/test/unit_test.hpp>
@@ -15,7 +15,8 @@ void parse_label(label_parser& lp, parser* p, VW::string_view label, VW::slates:
 {
   tokenize(' ', label, p->words);
   lp.default_label(&l);
-  lp.parse_label(p, nullptr, &l, p->words);
+  reduction_features red_fts;
+  lp.parse_label(p, nullptr, &l, p->words, red_fts);
 }
 
 BOOST_AUTO_TEST_CASE(slates_parse_label)
@@ -62,7 +63,8 @@ BOOST_AUTO_TEST_CASE(slates_parse_label)
     parse_label(lp, &p, "slates slot 0:0.2", *label);
     BOOST_CHECK_EQUAL(label->type, VW::slates::example_type::slot);
     BOOST_CHECK_EQUAL(label->labeled, true);
-    check_collections_with_float_tolerance(label->probabilities, std::vector<ACTION_SCORE::action_score>{{0,0.2f}}, FLOAT_TOL);
+    check_collections_with_float_tolerance(
+        label->probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.2f}}, FLOAT_TOL);
     lp.delete_label(label.get());
   }
 
@@ -138,7 +140,8 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
   BOOST_CHECK_EQUAL(uncached_label->labeled, true);
   BOOST_CHECK_CLOSE(uncached_label->cost, 0.5, FLOAT_TOL);
   lp.delete_label(label.get());
-  lp.delete_label(uncached_label.get());}
+  lp.delete_label(uncached_label.get());
+}
 
 BOOST_AUTO_TEST_CASE(slates_cache_action_label)
 {
@@ -165,8 +168,8 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
   BOOST_CHECK_EQUAL(uncached_label->labeled, false);
   BOOST_CHECK_EQUAL(uncached_label->slot_id, 5);
   lp.delete_label(label.get());
-  lp.delete_label(uncached_label.get());}
-
+  lp.delete_label(uncached_label.get());
+}
 
 BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
 {
@@ -194,8 +197,8 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
   check_collections_with_float_tolerance(uncached_label->probabilities,
       std::vector<ACTION_SCORE::action_score>{{0, 0.5}, {1, 0.25}, {2, 0.25}}, FLOAT_TOL);
   lp.delete_label(label.get());
-  lp.delete_label(uncached_label.get());}
-
+  lp.delete_label(uncached_label.get());
+}
 
 BOOST_AUTO_TEST_CASE(slates_copy_label)
 {
@@ -215,4 +218,5 @@ BOOST_AUTO_TEST_CASE(slates_copy_label)
   check_collections_with_float_tolerance(
       copied_to->probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.5}, {1, 0.25}, {2, 0.25}}, FLOAT_TOL);
   lp.delete_label(label.get());
-  lp.delete_label(copied_to.get());}
+  lp.delete_label(copied_to.get());
+}
