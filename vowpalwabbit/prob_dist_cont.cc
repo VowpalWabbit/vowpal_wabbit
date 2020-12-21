@@ -48,5 +48,16 @@ void delete_probability_density_function(void* v)
   pdf->delete_v();
 }
 
+bool is_valid_pdf(probability_density_function& pdf)
+{
+  float mass = 0.f;
+  for (const auto& segment : pdf) { mass += (segment.right - segment.left) * segment.pdf_value; }
+  if (mass < 0.9999 || mass > 1.0001)
+  {
+    return false;
+  }
+  return true;
+}
+
 }  // namespace continuous_actions
 }  // namespace VW

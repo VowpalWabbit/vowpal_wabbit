@@ -174,7 +174,7 @@ public:
   {
     // check valid pdf else remove
     auto& red_fts = ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>();
-    red_fts.check_valid_pdf_or_clear();
+    if (!VW::continuous_actions::is_valid_pdf(red_fts.pdf)) { red_fts.pdf.clear(); }
     return return_state;
   }
 

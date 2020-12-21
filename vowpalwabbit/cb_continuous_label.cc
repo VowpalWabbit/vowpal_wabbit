@@ -42,7 +42,8 @@ void copy_label_additional_fields<VW::cb_continuous::continuous_label>(
 }
 }  // namespace CB
 
-void parse_pdf(std::vector<VW::string_view>& words, size_t words_index, parser* p, reduction_features& red_features)
+void parse_pdf(
+    const std::vector<VW::string_view>& words, size_t words_index, parser* p, reduction_features& red_features)
 {
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)
@@ -56,11 +57,11 @@ void parse_pdf(std::vector<VW::string_view>& words, size_t words_index, parser* 
     seg.pdf_value = float_of_string(p->parse_name[2]);
     cats_reduction_features.pdf.push_back(seg);
   }
-  cats_reduction_features.check_valid_pdf_or_clear();
+  if (!VW::continuous_actions::is_valid_pdf(cats_reduction_features.pdf)) { cats_reduction_features.pdf.clear(); }
 }
 
 void parse_chosen_action(
-    std::vector<VW::string_view>& words, size_t words_index, parser* p, reduction_features& red_features)
+    const std::vector<VW::string_view>& words, size_t words_index, parser* p, reduction_features& red_features)
 {
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)
