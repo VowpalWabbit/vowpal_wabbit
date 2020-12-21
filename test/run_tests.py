@@ -9,6 +9,8 @@ import os.path
 import subprocess
 import sys
 import traceback
+import fileinput
+import copy
 
 import json
 from concurrent.futures import ThreadPoolExecutor
@@ -305,6 +307,7 @@ def run_command_line_test(id,
                     "diff": []
                 }
                 continue
+            print("FILES OUTPUT {} REF {}".format(output_file, ref_file))
             are_different, diff, reason = are_outputs_different(output_content, output_file,
                                                                 ref_content, ref_file, overwrite, epsilon, fuzzy_compare=fuzzy_compare)
 
@@ -363,9 +366,14 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
     Path(test_working_dir.joinpath("models")).mkdir(
         parents=True, exist_ok=True)
 
+    print("LINE 369")
+    print(os.listdir(test_working_dir))
+    print("LINE 369")
     for file in input_files:
+        print(file)
         file_to_copy = None
         search_paths = [Path(test_ref_dir).joinpath(file)]
+        print(search_paths)
         if dependencies is not None:
             search_paths.extend([Path(test_base_dir).joinpath(
                 "test_{}".format((x)), file) for x in dependencies])
@@ -379,11 +387,17 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
                 "{} couldn't be found for test {}".format((file), (test_id)))
 
         test_dest_file = Path(test_working_dir).joinpath(file)
+        if file_to_copy == test_dest_file:
+            continue
         Path(test_dest_file.parent).mkdir(parents=True, exist_ok=True)
         # We always want to replace this file in case it is the output of another test
         if test_dest_file.exists():
             test_dest_file.unlink()
+        print("FILE TO COPY {} DEST FILE {}".format(str(file_to_copy), str(test_dest_file)))
         shutil.copyfile(str(file_to_copy), str(test_dest_file))
+    print("LINE 395")
+    print(os.listdir(test_working_dir))
+    print("LINE 395")
     return test_working_dir
 
 
@@ -419,6 +433,23 @@ def find_spanning_tree_binary(test_base_ref_dir, user_supplied_bin_path):
         search_paths=spanning_tree_search_path,
         is_correct_bin_func=is_spanning_tree_binary,
         debug_file_name="spanning_tree")
+
+
+def find_to_flatbuf_binary(test_base_ref_dir, user_supplied_bin_path):
+    to_flatbuff_search_path = [
+        Path(test_base_ref_dir).joinpath("../build/utl/flatbuffer")
+    ]
+
+    def is_to_flatbuff_binary(file_path):
+        file_name = os.path.basename(file_path)
+        return file_name == "to_flatbuff"
+
+    return find_or_use_user_supplied_path(
+        test_base_ref_dir=test_base_ref_dir,
+        user_supplied_bin_path=user_supplied_bin_path,
+        search_paths=to_flatbuff_search_path,
+        is_correct_bin_func=is_to_flatbuff_binary,
+        debug_file_name="to_flatbuff")
 
 
 def find_or_use_user_supplied_path(test_base_ref_dir, user_supplied_bin_path, search_paths, is_correct_bin_func, debug_file_name):
@@ -476,6 +507,115 @@ def calculate_test_to_run_explicitly(explicit_tests, tests):
 
     return list(tests_to_run_explicitly)
 
+def transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter):
+    def delete(command, tags_delete, only_keyword=False):
+        for tag in tags_delete:
+            if only_keyword:
+                command = re.sub(tag, '', command)
+            else:
+                command = re.sub('{} [:a-zA-Z0-9_.-/]*'.format(tag), '', command)
+        return command
+
+    working_dir = Path.home().joinpath(".vw_runtests_working_dir")
+    test_base_working_dir = str(working_dir)
+    print(test_base_working_dir)
+    if not Path(test_base_working_dir).exists():
+        Path(test_base_working_dir).mkdir(parents=True, exist_ok=True)
+
+
+    for test in tests:
+        print(test)
+        if test['id'] > max_iter:
+            print("STOPPING AT TEST {}", test['id'])
+            break
+        test_id = str(test['id'])
+        test_dir = working_dir.joinpath('test_' + test_id )
+        if not Path(str(test_dir)).exists():
+            Path(str(test_dir)).mkdir(parents=True, exist_ok=True)
+        # print(test)
+        if 'vw_command' not in test:
+            print("NO VW COMMAND")
+            continue
+        if 'flatbuffer' in test['vw_command']:
+            print("HAS FLATBUFFER")
+            continue
+        # {'id': 1, 'desc': '',
+        #  'vw_command': '-k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001_1.model -c
+        #  --passes 8 --invariant --ngram 3 --skips 1 --holdout_off', 'diff_files': 
+        # {'stderr': '/home/olgavrou/.vw_fb_runtests_working_dir/0001.stderr'}, 'input_files': ['train-sets/0001.dat']}
+        if 'input_files' not in test:
+            print("NO INPUT FILES")
+            continue
+        stash_input_files = copy.copy(test['input_files'])
+        input_files = test['input_files']
+        fb_input_files_full_path = []
+        fb_input_files = []
+        for input_file in input_files:
+            # print(input_file)
+            if 'train-set' in input_file:
+                file_basename = os.path.basename(input_file).split('.')[0]
+                fb_file = ''.join([file_basename, '.fb'])
+                fb_input_files.append(fb_file)
+                fb_file_full_path = working_dir.joinpath('test_' + test_id).joinpath(fb_file)
+                fb_input_files_full_path.append(fb_file_full_path)
+        if 'stderr' in test['diff_files']:
+            stderr_was = test['diff_files']['stderr']
+            stderr_test_file = working_dir.joinpath('test_' + test_id).joinpath(os.path.basename(working_dir.joinpath(test['diff_files']['stderr'])))
+            shutil.copyfile(test['diff_files']['stderr'], str(stderr_test_file))
+            test['diff_files']['stderr'] = str(stderr_test_file)
+            temp = str(stderr_test_file) + '.bak'
+            with open(stderr_test_file, 'r') as f:
+                with open(temp, 'w') as tmp_f:
+                    for line in f:
+                        for i, input_file in enumerate(input_files):
+                            if 'train-set' in input_file:
+                                line = line.replace(str(input_file), str(fb_input_files_full_path[i]))
+                        tmp_f.write(line)
+            
+            # swap temp with file
+            shutil.move(temp, stderr_test_file)
+
+            # replace the input file
+            for i, input_file in enumerate(input_files):
+                if 'train-set' in input_file:
+                    test['input_files'][i] = str(fb_input_files_full_path[i])
+
+            tags = ['--audit', '-c ','--bfgs', '--onethread']
+            tags_delete = ['--passes', '--ngram', '--skips', '-q', '-b', '-i', '--feature_mask', '--search_span_bilou', '--dictionary_path', '--dictionary', '--search_kbest', '--search_max_branch']
+
+            stash_command = test['vw_command']
+
+            test['vw_command'] = delete(test['vw_command'], tags_delete)
+            test['vw_command'] = delete(test['vw_command'], tags, only_keyword=True)
+            
+            cmd = "{} {} {} {}".format((to_flatbuff), (test['vw_command']), ('--fb_out'), (fb_file_full_path))
+            print("COMMAND {}".format(cmd))
+            result = subprocess.run(
+                cmd,
+                shell=True,
+                check=True)
+            if result.returncode != 0:
+                raise RuntimeError("Generating flatbuffer file failed with {} {} {}".format(result.returncode, result.stderr, result.stdout))
+        
+            # restore original command
+            test['vw_command'] = stash_command
+
+            for i, input_file in enumerate(stash_input_files):
+                if 'train-set' in input_file:
+                    test['vw_command'] = test['vw_command'].replace(str(input_file), str(fb_input_files_full_path[i]))
+            test['vw_command'] = test['vw_command'] + ' --flatbuffer'
+            # print("COMMAND {}".format(test['vw_command']))
+
+            for key, value in test['diff_files'].items():
+                print(key,value)
+                from_file = value
+                to_file = str(test_dir.joinpath(key))
+                # if not Path(to_file).exists():
+                #     Path(to_file).mkdir(parents=True, exist_ok=True)
+                # shutil.copyfile(from_file, to_file)
+    print("RETURNING {}", working_dir)
+    return working_dir, tests
+
 
 def main():
 
@@ -511,6 +651,8 @@ def main():
                         "otherwise a test spec will be autogenerated from the RunTests test definitions")
     parser.add_argument('--no_color', action='store_true',
                         help="Don't print color ANSI escape codes")
+    parser.add_argument('--for_flatbuffers', action='store_true')
+    parser.add_argument('--to_flatbuff_path', help="Specify to_flatbuff binary to use. Otherwise, binary will be searched for in build directory")
     args = parser.parse_args()
 
     test_base_working_dir = str(args.working_dir)
@@ -569,8 +711,15 @@ def main():
             print(
                 "Note: due to test dependencies, more than just tests {} must be run".format((args.test)))
 
+    max_iter = 6
+    if args.for_flatbuffers:
+        to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
+        ref_dir, tests = transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter)
+
     executor = ThreadPoolExecutor(max_workers=args.jobs)
     for test in tests:
+        if test['id'] > max_iter:
+            break
         test_number = test["id"]
         if tests_to_run_explicitly is not None and test_number not in tests_to_run_explicitly:
             continue
