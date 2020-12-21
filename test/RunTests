@@ -2060,4 +2060,8 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/help.stderr
     train-sets/ref/help.stdout
 
+# Test 261: do not crash after ignoring duplicated interactions
+{VW} --cb_explore_adf --epsilon 0.2 --dsjson --cb_type ips --cubic ::: -d train-sets/cb_as_ccb.json -i models/cb_model_with_interaction.bin
+    train-sets/ref/empty.stdout
+
 # Do not delete this line or the empty line above it
