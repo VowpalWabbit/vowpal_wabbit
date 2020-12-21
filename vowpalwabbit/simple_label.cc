@@ -79,7 +79,7 @@ bool test_label(void* v)
 
 void delete_simple_label(void*) {}
 
-void parse_simple_label(parser*, shared_data* sd, void* v, std::vector<VW::string_view>& words)
+void parse_simple_label(parser*, shared_data* sd, void* v, std::vector<VW::string_view>& words, reduction_features&)
 {
   label_data* ld = (label_data*)v;
 
@@ -108,7 +108,7 @@ void parse_simple_label(parser*, shared_data* sd, void* v, std::vector<VW::strin
 }
 
 label_parser simple_label_parser = {default_simple_label, parse_simple_label, cache_simple_label,
-    read_cached_simple_label, delete_simple_label, get_weight, nullptr, test_label, sizeof(label_data)};
+    read_cached_simple_label, delete_simple_label, get_weight, nullptr, test_label};
 
 void print_update(vw& all, example& ec)
 {
