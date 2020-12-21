@@ -1494,15 +1494,6 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
     if (opt.string_key.length() > 1 && opt.string_key[0] == '-' && opt.string_key[1] >= '0' && opt.string_key[1] <= '9')
     { treat_as_value = true; }
 
-    // If the interaction settings are doubled, the copy in the model file is ignored.
-    if (interactions_settings_doubled &&
-        (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
-    {
-      // skip this option.
-      skipping = true;
-      continue;
-    }
-
     // File options should always use long form.
 
     // If the key is empty this must be a value, otherwise set the key.
@@ -1510,6 +1501,15 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
     {
       // If the new token is a new option and there were no values previously it was a bool option. Add it as a switch.
       if (count == 0 && first_seen) { options.insert(saved_key, ""); }
+
+      // If the interaction settings are doubled, the copy in the model file is ignored.
+      if (interactions_settings_doubled &&
+          (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
+      {
+        // skip this option.
+        skipping = true;
+        continue;
+      }
 
       saved_key = opt.string_key;
       count = 0;
