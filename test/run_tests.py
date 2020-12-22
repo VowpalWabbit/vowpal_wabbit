@@ -307,7 +307,6 @@ def run_command_line_test(id,
                     "diff": []
                 }
                 continue
-            print("FILES OUTPUT {} REF {}".format(output_file, ref_file))
             are_different, diff, reason = are_outputs_different(output_content, output_file,
                                                                 ref_content, ref_file, overwrite, epsilon, fuzzy_compare=fuzzy_compare)
 
@@ -366,14 +365,9 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
     Path(test_working_dir.joinpath("models")).mkdir(
         parents=True, exist_ok=True)
 
-    print("LINE 369")
-    print(os.listdir(test_working_dir))
-    print("LINE 369")
     for file in input_files:
-        print(file)
         file_to_copy = None
         search_paths = [Path(test_ref_dir).joinpath(file)]
-        print(search_paths)
         if dependencies is not None:
             search_paths.extend([Path(test_base_dir).joinpath(
                 "test_{}".format((x)), file) for x in dependencies])
@@ -393,11 +387,7 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
         # We always want to replace this file in case it is the output of another test
         if test_dest_file.exists():
             test_dest_file.unlink()
-        print("FILE TO COPY {} DEST FILE {}".format(str(file_to_copy), str(test_dest_file)))
         shutil.copyfile(str(file_to_copy), str(test_dest_file))
-    print("LINE 395")
-    print(os.listdir(test_working_dir))
-    print("LINE 395")
     return test_working_dir
 
 
@@ -513,18 +503,18 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter):
             if only_keyword:
                 command = re.sub(tag, '', command)
             else:
-                command = re.sub('{} [:a-zA-Z0-9_.-/]*'.format(tag), '', command)
+                s = re.sub('{} [:a-zA-Z0-9_.\-/]*'.format(tag), '', command)
+                # print("PATTERN {}".format(s))
+                command = s
         return command
 
     working_dir = Path.home().joinpath(".vw_runtests_working_dir")
     test_base_working_dir = str(working_dir)
-    print(test_base_working_dir)
     if not Path(test_base_working_dir).exists():
         Path(test_base_working_dir).mkdir(parents=True, exist_ok=True)
 
 
     for test in tests:
-        print(test)
         if test['id'] > max_iter:
             print("STOPPING AT TEST {}", test['id'])
             break
@@ -532,17 +522,28 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter):
         test_dir = working_dir.joinpath('test_' + test_id )
         if not Path(str(test_dir)).exists():
             Path(str(test_dir)).mkdir(parents=True, exist_ok=True)
-        # print(test)
+
         if 'vw_command' not in test:
             print("NO VW COMMAND")
             continue
         if 'flatbuffer' in test['vw_command']:
-            print("HAS FLATBUFFER")
+            print("HAS FLATBUFFER {}".format(test['vw_command']))
             continue
-        # {'id': 1, 'desc': '',
-        #  'vw_command': '-k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001_1.model -c
-        #  --passes 8 --invariant --ngram 3 --skips 1 --holdout_off', 'diff_files': 
-        # {'stderr': '/home/olgavrou/.vw_fb_runtests_working_dir/0001.stderr'}, 'input_files': ['train-sets/0001.dat']}
+        if 'cats' in test['vw_command']:
+            print("HAS CATS {}".format(test['vw_command']))
+            continue
+        if 'invert_hash' in test['vw_command']:
+            print("HAS INVERT HASH {}".format(test['vw_command']))
+            continue
+        if 'audit' in test['vw_command']:
+            print("HAS AUDIT {}".format(test['vw_command']))
+            continue
+        if 'malformed' in test['vw_command']:
+            print("HAS MALFORMED {}".format(test['vw_command']))
+            continue
+        if 'dsjson' in test['vw_command']:
+            print("HAS DSJSON {}".format(test['vw_command']))
+            continue
         if 'input_files' not in test:
             print("NO INPUT FILES")
             continue
@@ -580,8 +581,8 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter):
                 if 'train-set' in input_file:
                     test['input_files'][i] = str(fb_input_files_full_path[i])
 
-            tags = ['--audit', '-c ','--bfgs', '--onethread']
-            tags_delete = ['--passes', '--ngram', '--skips', '-q', '-b', '-i', '--feature_mask', '--search_span_bilou', '--dictionary_path', '--dictionary', '--search_kbest', '--search_max_branch']
+            tags = ['--audit', '-c ','--bfgs', '--onethread', '-t ']
+            tags_delete = ['--passes', '--ngram', '--skips', '-q', '-b', '-i', '-p', '--feature_mask', '--search_span_bilou', '--dictionary_path', '--dictionary', '--search_kbest', '--search_max_branch']
 
             stash_command = test['vw_command']
 
@@ -589,7 +590,7 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter):
             test['vw_command'] = delete(test['vw_command'], tags, only_keyword=True)
             
             cmd = "{} {} {} {}".format((to_flatbuff), (test['vw_command']), ('--fb_out'), (fb_file_full_path))
-            print("COMMAND {}".format(cmd))
+            # print("COMMAND {}".format(cmd))
             result = subprocess.run(
                 cmd,
                 shell=True,
@@ -600,20 +601,15 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter):
             # restore original command
             test['vw_command'] = stash_command
 
+            # remove json/dsjson since we are adding --flatbuffer
+            delete_tags = ['--json', '--dsjson', '--chain_hash']
+            test['vw_command'] = delete(test['vw_command'], delete_tags, only_keyword=True)
+
             for i, input_file in enumerate(stash_input_files):
                 if 'train-set' in input_file:
                     test['vw_command'] = test['vw_command'].replace(str(input_file), str(fb_input_files_full_path[i]))
             test['vw_command'] = test['vw_command'] + ' --flatbuffer'
-            # print("COMMAND {}".format(test['vw_command']))
 
-            for key, value in test['diff_files'].items():
-                print(key,value)
-                from_file = value
-                to_file = str(test_dir.joinpath(key))
-                # if not Path(to_file).exists():
-                #     Path(to_file).mkdir(parents=True, exist_ok=True)
-                # shutil.copyfile(from_file, to_file)
-    print("RETURNING {}", working_dir)
     return working_dir, tests
 
 
@@ -711,7 +707,7 @@ def main():
             print(
                 "Note: due to test dependencies, more than just tests {} must be run".format((args.test)))
 
-    max_iter = 6
+    max_iter = 500
     if args.for_flatbuffers:
         to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
         ref_dir, tests = transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter)
