@@ -499,15 +499,13 @@ def calculate_test_to_run_explicitly(explicit_tests, tests):
 
     return list(tests_to_run_explicitly)
 
-def transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter):
-    def delete(command, tags_delete, only_keyword=False):
+def transform_tests_for_flatbuffers(tests, to_flatbuff, color_enum):
+    def remove_arguments(command, tags_delete, flags=False):
         for tag in tags_delete:
-            if only_keyword:
+            if flags:
                 command = re.sub(tag, '', command)
             else:
-                s = re.sub('{} [:a-zA-Z0-9_.\-/]*'.format(tag), '', command)
-                # print("PATTERN {}".format(s))
-                command = s
+                command = re.sub('{} [:a-zA-Z0-9_.\-/]*'.format(tag), '', command)
         return command
 
     working_dir = Path.home().joinpath(".vw_runtests_working_dir")
@@ -517,52 +515,51 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter):
 
 
     for test in tests:
-        if test['id'] > max_iter:
-            print("STOPPING AT TEST {}", test['id'])
-            break
         test_id = str(test['id'])
         test_dir = working_dir.joinpath('test_' + test_id )
         if not Path(str(test_dir)).exists():
             Path(str(test_dir)).mkdir(parents=True, exist_ok=True)
 
         if 'vw_command' not in test:
-            print("NO VW COMMAND")
+            print("{}Skipping test {} transformation to flatbuffers, no vw command available{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'flatbuffer' in test['vw_command']:
-            print("HAS FLATBUFFER {}".format(test['vw_command']))
+            print("{}Skipping test {} transformation to flatbuffers, flatbuffer test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'cats' in test['vw_command']:
-            print("HAS CATS {}".format(test['vw_command']))
+            print("{}Skipping test {} transformation to flatbuffers, currently no cats label in flatbuffers{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'invert_hash' in test['vw_command']:
-            print("HAS INVERT HASH {}".format(test['vw_command']))
+            print("{}Skipping test {} transformation to flatbuffers, invert_hash not supported on transformed files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'audit' in test['vw_command']:
-            print("HAS AUDIT {}".format(test['vw_command']))
+            print("{}Skipping test {} transformation to flatbuffers, audit not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'malformed' in test['vw_command']:
-            print("HAS MALFORMED {}".format(test['vw_command']))
+            print("{}Skipping test {} transformation to flatbuffers, malformed input{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'dsjson' in test['vw_command']:
-            print("HAS DSJSON {}".format(test['vw_command']))
+            print("{}Skipping test {} transformation to flatbuffers, contains dsjson{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'input_files' not in test:
-            print("NO INPUT FILES")
+            print("{}Skipping test {} transformation to flatbuffers, no input files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         stash_input_files = copy.copy(test['input_files'])
+
         input_files = test['input_files']
         fb_input_files_full_path = []
         fb_input_files = []
+
         for input_file in input_files:
-            # print(input_file)
             if 'train-set' in input_file:
                 file_basename = os.path.basename(input_file).split('.')[0]
                 fb_file = ''.join([file_basename, '.fb'])
                 fb_input_files.append(fb_file)
                 fb_file_full_path = working_dir.joinpath('test_' + test_id).joinpath(fb_file)
                 fb_input_files_full_path.append(fb_file_full_path)
+
+        # edit stderr to output the generated flatbuffer file(s) instead
         if 'stderr' in test['diff_files']:
-            stderr_was = test['diff_files']['stderr']
             stderr_test_file = working_dir.joinpath('test_' + test_id).joinpath(os.path.basename(working_dir.joinpath(test['diff_files']['stderr'])))
             shutil.copyfile(test['diff_files']['stderr'], str(stderr_test_file))
             test['diff_files']['stderr'] = str(stderr_test_file)
@@ -578,44 +575,44 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter):
             # swap temp with file
             shutil.move(temp, stderr_test_file)
 
-            # replace the input file
+            # replace the input_file to point to the generated flatbuffer file
             for i, input_file in enumerate(input_files):
                 if 'train-set' in input_file:
                     test['input_files'][i] = str(fb_input_files_full_path[i])
 
-            tags = ['--audit', '-c ','--bfgs', '--onethread', '-t ']
-            tags_delete = ['--passes', '--ngram', '--skips', '-q', '-b', '-i', '-p', '--feature_mask', '--search_span_bilou', '--dictionary_path', '--dictionary', '--search_kbest', '--search_max_branch']
+            # arguments and flats not supported or needed in flatbuffer transformation
+            flags = ['--audit', '-c ','--bfgs', '--onethread', '-t ']
+            arguments = ['--passes', '--ngram', '--skips', '-q', '-b', '-i', '-p', '--feature_mask', '--search_span_bilou',
+                '--dictionary_path', '--dictionary', '--search_kbest', '--search_max_branch']
 
             stash_command = test['vw_command']
 
-            test['vw_command'] = delete(test['vw_command'], tags_delete)
-            test['vw_command'] = delete(test['vw_command'], tags, only_keyword=True)
+            test['vw_command'] = remove_arguments(test['vw_command'], arguments)
+            test['vw_command'] = remove_arguments(test['vw_command'], flags, flags=True)
             
             cmd = "{} {} {} {}".format((to_flatbuff), (test['vw_command']), ('--fb_out'), (fb_file_full_path))
-            # print("COMMAND {}".format(cmd))
-            if 'depends_on' not in test:
+
+            if 'depends_on' not in test: # assuming dependent tests use same input files, so already transformed
                 result = subprocess.run(
                     cmd,
                     shell=True,
                     check=True)
                 if result.returncode != 0:
                     raise RuntimeError("Generating flatbuffer file failed with {} {} {}".format(result.returncode, result.stderr, result.stdout))
-            else:
-                print("Depends on")
 
             # restore original command
             test['vw_command'] = stash_command
 
             # remove json/dsjson since we are adding --flatbuffer
-            delete_tags = ['--json', '--dsjson', '--chain_hash']
-            test['vw_command'] = delete(test['vw_command'], delete_tags, only_keyword=True)
+            json_args = ['--json', '--dsjson', '--chain_hash']
+            test['vw_command'] = remove_arguments(test['vw_command'], json_args, flags=True)
 
             for i, input_file in enumerate(stash_input_files):
                 if 'train-set' in input_file:
                     test['vw_command'] = test['vw_command'].replace(str(input_file), str(fb_input_files_full_path[i]))
             test['vw_command'] = test['vw_command'] + ' --flatbuffer'
 
-    return working_dir, tests
+    return tests
 
 
 def main():
@@ -712,15 +709,12 @@ def main():
             print(
                 "Note: due to test dependencies, more than just tests {} must be run".format((args.test)))
 
-    max_iter = 500
     if args.for_flatbuffers:
         to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
-        ref_dir, tests = transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter)
+        tests = transform_tests_for_flatbuffers(tests, to_flatbuff, color_enum)
 
     executor = ThreadPoolExecutor(max_workers=args.jobs)
     for test in tests:
-        if test['id'] > max_iter:
-            break
         test_number = test["id"]
         if tests_to_run_explicitly is not None and test_number not in tests_to_run_explicitly:
             continue
