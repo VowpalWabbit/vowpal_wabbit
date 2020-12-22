@@ -1447,21 +1447,12 @@ bool check_interaction_settings_collision(options_i& options, std::string file_o
   return file_options_has_interaction;
 }
 
-options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
+void options_from_strings(const std::vector<std::string>& strings, VW::config::options_i& options)
 {
-  std::string file_options;
-  save_load_header(all, model, true, false, file_options, options);
-
-  interactions_settings_doubled = check_interaction_settings_collision(options, file_options);
-
-  // Convert file_options into  vector.
-  std::istringstream ss{file_options};
-  std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
-
   po::options_description desc("");
 
   // Get list of options in file options std::string
-  po::parsed_options pos = po::command_line_parser(container).options(desc).allow_unregistered().run();
+  po::parsed_options pos = po::command_line_parser(strings).options(desc).allow_unregistered().run();
 
   bool skipping = false;
   std::string saved_key = "";
@@ -1538,6 +1529,20 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
   }
 
   if (count == 0 && saved_key != "") { options.insert(saved_key, ""); }
+}
+
+options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
+{
+  std::string file_options;
+  save_load_header(all, model, true, false, file_options, options);
+
+  interactions_settings_doubled = check_interaction_settings_collision(options, file_options);
+
+  // Convert file_options into  vector.
+  std::istringstream ss{file_options};
+  std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
+
+  options_from_strings(container, options);
 
   return options;
 }
