@@ -365,12 +365,14 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
     Path(test_working_dir.joinpath("models")).mkdir(
         parents=True, exist_ok=True)
 
-    for file in input_files:
+    for f in input_files:
         file_to_copy = None
-        search_paths = [Path(test_ref_dir).joinpath(file)]
+        search_paths = [Path(test_ref_dir).joinpath(f)]
         if dependencies is not None:
             search_paths.extend([Path(test_base_dir).joinpath(
-                "test_{}".format((x)), file) for x in dependencies])
+                "test_{}".format((x)), f) for x in dependencies])
+            search_paths.extend([Path(test_base_dir).joinpath(
+                "test_{}".format((x)), os.path.basename(f)) for x in dependencies]) # for input_files with a full path
         for search_path in search_paths:
             if search_path.exists() and not search_path.is_dir():
                 file_to_copy = search_path
@@ -378,9 +380,9 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
 
         if file_to_copy is None:
             raise ValueError(
-                "{} couldn't be found for test {}".format((file), (test_id)))
+                "{} couldn't be found for test {}".format((f), (test_id)))
 
-        test_dest_file = Path(test_working_dir).joinpath(file)
+        test_dest_file = Path(test_working_dir).joinpath(f)
         if file_to_copy == test_dest_file:
             continue
         Path(test_dest_file.parent).mkdir(parents=True, exist_ok=True)
@@ -591,13 +593,16 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, max_iter):
             
             cmd = "{} {} {} {}".format((to_flatbuff), (test['vw_command']), ('--fb_out'), (fb_file_full_path))
             # print("COMMAND {}".format(cmd))
-            result = subprocess.run(
-                cmd,
-                shell=True,
-                check=True)
-            if result.returncode != 0:
-                raise RuntimeError("Generating flatbuffer file failed with {} {} {}".format(result.returncode, result.stderr, result.stdout))
-        
+            if 'depends_on' not in test:
+                result = subprocess.run(
+                    cmd,
+                    shell=True,
+                    check=True)
+                if result.returncode != 0:
+                    raise RuntimeError("Generating flatbuffer file failed with {} {} {}".format(result.returncode, result.stderr, result.stdout))
+            else:
+                print("Depends on")
+
             # restore original command
             test['vw_command'] = stash_command
 
