@@ -9,8 +9,6 @@ import os.path
 import subprocess
 import sys
 import traceback
-import fileinput
-import copy
 
 import json
 from concurrent.futures import ThreadPoolExecutor
@@ -18,7 +16,7 @@ from enum import Enum
 import socket
 
 import runtests_parser
-
+import runtests_flatbuffer_transformer as fb_transformer
 
 class Color():
     LIGHT_CYAN = '\033[96m'
@@ -502,67 +500,12 @@ def calculate_test_to_run_explicitly(explicit_tests, tests):
     return list(tests_to_run_explicitly)
 
 def transform_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
-    def remove_arguments(command, tags_delete, flags=False):
-        for tag in tags_delete:
-            if flags:
-                command = re.sub(tag, '', command)
-            else:
-                command = re.sub('{} [:a-zA-Z0-9_.\-/]*'.format(tag), '', command)
-        return command
-    
-    def change_input_file(input_file):
-        return 'train-set' in input_file or 'test-set' in input_file
-    
-    def replace_filename_in_stderr(working_dir, test_id, stderr_file, input_files):
-        stderr_test_file = working_dir.joinpath('test_' + test_id).joinpath(os.path.basename(working_dir.joinpath(stderr_file)))
-        shutil.copyfile(stderr_file, str(stderr_test_file))        
-        temp = str(stderr_test_file) + '.bak'
-        with open(stderr_test_file, 'r') as f:
-            with open(temp, 'w') as tmp_f:
-                for line in f:
-                    for i, input_file in enumerate(input_files):
-                        if change_input_file(input_file):
-                            line = line.replace(str(input_file), str(fb_input_files_full_path[i]))
-                    tmp_f.write(line)
-        
-        # swap temp with file
-        shutil.move(temp, stderr_test_file)
-        return str(stderr_test_file)
-    
-    def should_transform(test, files_to_be_transformed):
-        if 'depends_on' in test: # assuming dependent tests use same input files, so might already be transformed
-            # check if the file exists in the dependant directories
-            for f in files_to_be_transformed:
-                search_paths = []
-                dependencies = test['depends_on']
-                search_paths.extend([Path(test_base_working_dir).joinpath(
-                    "test_{}".format(x), os.path.basename(f)) for x in dependencies]) # for input_files with a full path
-
-                for search_path in search_paths:
-                    if search_path.exists() and not search_path.is_dir():
-                        return False
-        return True
-        
-    def replace_test_input_files(test, input_files):
-        files_to_be_transformed = []
-        # replace the input_file to point to the generated flatbuffer file
-        for i, input_file in enumerate(input_files):
-            if change_input_file(input_file):
-                test['input_files'][i] = str(fb_input_files_full_path[i])
-                files_to_be_transformed.append(str(fb_input_files_full_path[i]))
-        return files_to_be_transformed
-
     test_base_working_dir = str(working_dir)
     if not Path(test_base_working_dir).exists():
         Path(test_base_working_dir).mkdir(parents=True, exist_ok=True)
 
-
     for test in tests:
-        test_id = str(test['id'])
-        test_dir = working_dir.joinpath('test_' + test_id )
-        if not Path(str(test_dir)).exists():
-            Path(str(test_dir)).mkdir(parents=True, exist_ok=True)
-
+        test_id = test['id']
         if 'vw_command' not in test:
             print("{}Skipping test {} for flatbuffers, no vw command available{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
@@ -591,66 +534,12 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum)
             print("{}Skipping test {} for flatbuffers, currently dictionaries are not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
 
-        stashed_input_files = copy.copy(test['input_files'])
-        stashed_command = test['vw_command']
-
-        input_files = test['input_files']
-        fb_input_files_full_path = []
-        fb_input_files = []
-
-        for i, input_file in enumerate(input_files):
-            if change_input_file(input_file):
-                file_basename = os.path.basename(input_file)
-                fb_file = ''.join([file_basename, '.fb'])
-                fb_input_files.append(fb_file)
-                fb_file_full_path = working_dir.joinpath('test_' + test_id).joinpath(fb_file)
-                fb_input_files_full_path.append(fb_file_full_path)
-
-        # edit stderr to output the generated flatbuffer file(s) instead
-        if 'stderr' in test['diff_files']:
-            new_file = replace_filename_in_stderr(working_dir, test_id, test['diff_files']['stderr'], input_files)
-            test['diff_files']['stderr'] = new_file
-
-        files_to_be_transformed = replace_test_input_files(test, input_files)
-
-        # arguments and flats not supported or needed in flatbuffer transformation
-        flags_to_remove = ['--audit', '-c ','--bfgs', '--onethread', '-t ', '--search_span_bilou']
-        arguments_to_remove = ['--passes', '--ngram', '--skips', '-q', '-p', '--feature_mask', '--search_kbest', '--search_max_branch']
-
-        # if model already exists it contains needed arguments so use it in transformation
-        use_model = False
-        for input_file in stashed_input_files:
-            if 'model-set' in input_file:
-                use_model = True
-        
-        if not use_model:
-            arguments_to_remove.append('-i') # loose the model input
-            
-        test['vw_command'] = remove_arguments(test['vw_command'], arguments_to_remove)
-        test['vw_command'] = remove_arguments(test['vw_command'], flags_to_remove, flags=True)
-
-        if should_transform(test, files_to_be_transformed): # transformation might already be done by depended_on test
-            for f in files_to_be_transformed:
-                cmd = "{} {} {} {}".format((to_flatbuff), (test['vw_command']), ('--fb_out'), (f))
-                print("{}COMMAND {} {}{}".format(color_enum.LIGHT_PURPLE, test['id'], cmd, color_enum.ENDC))
-                result = subprocess.run(
-                    cmd,
-                    shell=True,
-                    check=True)
-                if result.returncode != 0:
-                    raise RuntimeError("Generating flatbuffer file failed with {} {} {}".format(result.returncode, result.stderr, result.stdout))
-
-        # restore original command
-        test['vw_command'] = stashed_command
-
-        # remove json/dsjson since we are adding --flatbuffer
-        json_args = ['--json', '--dsjson', '--chain_hash']
-        test['vw_command'] = remove_arguments(test['vw_command'], json_args, flags=True)
-
-        for i, input_file in enumerate(stashed_input_files):
-            if change_input_file(input_file):
-                test['vw_command'] = test['vw_command'].replace(str(input_file), str(fb_input_files_full_path[i]))
-        test['vw_command'] = test['vw_command'] + ' --flatbuffer'
+        fb_test_transorm = fb_transformer.FlatbufferTest(test, working_dir)
+        fb_test_transorm.get_flatbuffer_file_names()
+        fb_test_transorm.replace_filename_in_stderr()
+        fb_test_transorm.replace_test_input_files()
+        fb_test_transorm.to_flatbuffer(to_flatbuff, color_enum)
+        fb_test_transorm.replace_vw_command()
 
     return tests
 
