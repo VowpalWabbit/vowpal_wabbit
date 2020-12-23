@@ -541,6 +541,9 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, color_enum):
         if 'dsjson' in test['vw_command']:
             print("{}Skipping test {} transformation to flatbuffers, contains dsjson{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
+        if '.gz' in test['vw_command']:
+            print("{}Skipping test {} transformation to flatbuffers, compressed files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
         if 'input_files' not in test:
             print("{}Skipping test {} transformation to flatbuffers, no input files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
@@ -575,10 +578,12 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, color_enum):
             # swap temp with file
             shutil.move(temp, stderr_test_file)
 
+            transformed_file_names = []
             # replace the input_file to point to the generated flatbuffer file
             for i, input_file in enumerate(input_files):
                 if 'train-set' in input_file:
                     test['input_files'][i] = str(fb_input_files_full_path[i])
+                    transformed_file_names.append(str(fb_input_files_full_path[i]))
 
             # arguments and flats not supported or needed in flatbuffer transformation
             flags = ['--audit', '-c ','--bfgs', '--onethread', '-t ']
@@ -592,13 +597,28 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, color_enum):
             
             cmd = "{} {} {} {}".format((to_flatbuff), (test['vw_command']), ('--fb_out'), (fb_file_full_path))
 
-            if 'depends_on' not in test: # assuming dependent tests use same input files, so already transformed
+            should_generate = True
+            if 'depends_on' in test: # assuming dependent tests use same input files, so might already be transformed
+                # check if the file exists in the dependant directories
+                for f in transformed_file_names:
+                    search_paths = []
+                    dependencies = test['depends_on']
+                    search_paths.extend([Path(test_base_working_dir).joinpath(
+                        "test_{}".format(x), os.path.basename(f)) for x in dependencies]) # for input_files with a full path
+
+                    for search_path in search_paths:
+                        if search_path.exists() and not search_path.is_dir():
+                            should_generate = False
+            
+            if should_generate:
+                print("COMMAND {} {}".format(test['id'], cmd))
                 result = subprocess.run(
                     cmd,
                     shell=True,
                     check=True)
                 if result.returncode != 0:
                     raise RuntimeError("Generating flatbuffer file failed with {} {} {}".format(result.returncode, result.stderr, result.stdout))
+
 
             # restore original command
             test['vw_command'] = stash_command
