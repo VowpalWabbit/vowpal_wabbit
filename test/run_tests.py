@@ -475,11 +475,22 @@ def do_dirty_check(test_base_ref_dir):
         print("Failed to run 'git clean --dry-run -d -x -e __pycache__'")
     stdout = try_decode(result.stdout)
     if len(stdout) != 0:
-        print("Error: Test dir is not clean, this can result in false negatives. To ignore this and continue anyway pass --ignore_dirty")
+        print("Error: Test dir is not clean, this can result in false negatives. To ignore this and continue anyway pass --ignore_dirty or pass --clean_dirty to clean")
         print("'git clean --dry-run -d -x -e __pycache__' output:\n---")
         print(stdout)
         sys.exit(1)
 
+def clean_dirty(test_base_ref_dir):
+    result = subprocess.run(
+        "git clean -f -d -x -e __pycache__".split(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=test_base_ref_dir,
+        timeout=10)
+    return_code = result.returncode
+    if return_code != 0:
+        print("Failed to run 'git clean -f -d -x -e __pycache__'")
+    stdout = try_decode(result.stdout)
 
 def calculate_test_to_run_explicitly(explicit_tests, tests):
     def get_deps(test_number, tests):
@@ -563,6 +574,8 @@ def main():
                         help="Allow for some tolerance when comparing floats")
     parser.add_argument("--ignore_dirty", action='store_true',
                         help="The test ref dir is checked for dirty files which may cause false negatives. Pass this flag to skip this check.")
+    parser.add_argument("--clean_dirty", action='store_true',
+                        help="The test ref dir is checked for dirty files which may cause false negatives. Pass this flag to remove those files.")
     parser.add_argument("--working_dir", default=working_dir,
                         help="Directory to save test outputs to")
     parser.add_argument("--ref_dir", default=test_ref_dir,
@@ -605,6 +618,9 @@ def main():
     if not Path(test_base_ref_dir):
         print("--ref_dir='{}' doesn't exist".format((test_base_ref_dir)))
         sys.exit(1)
+
+    if args.clean_dirty:
+        clean_dirty(test_base_ref_dir)
 
     if not args.ignore_dirty:
         do_dirty_check(test_base_ref_dir)
