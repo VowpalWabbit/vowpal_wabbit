@@ -1436,7 +1436,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/cb_eval1.preds
 
 # Test 124: cb_eval save/load #2
-{VW} -d train-sets/cb_eval2 -i mwt.model -p cb_eval2.preds
+{VW} -d train-sets/cb_eval2 -i mwt.model -p cb_eval2.preds --multiworld_test f
     train-sets/ref/cb_eval2.stderr
     pred-sets/ref/cb_eval2.preds
 
@@ -1492,7 +1492,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/cb_adf_crash1.stderr
 
 # Test 136: cb explore adf predict
-{VW} -d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t
+{VW} -d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t --cb_explore_adf
     train-sets/ref/cb_adf_crash2.stderr
 
 # Test 137: Fix for regression introduced by badeedb.
