@@ -9,8 +9,6 @@ cd $REPO_DIR
 cd test
 python3 run_tests.py -f -j $(nproc)
 
-python3 run_tests.py -f --for_flatbuffers -j $(nproc)
-
 cd ../build
 make test_with_output
 
