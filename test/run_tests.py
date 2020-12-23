@@ -510,10 +510,16 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum)
             print("{}Skipping test {} for flatbuffers, no vw command available{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'flatbuffer' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, flatbuffer test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            print("{}Skipping test {} for flatbuffers, already a flatbuffer test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
-        if 'cats' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, currently continuous action label not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+        if 'malformed' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, malformed input{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+        if 'input_files' not in test:
+            print("{}Skipping test {} for flatbuffers, no input files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+        if 'dictionary' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, currently dictionaries are not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'invert_hash' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, invert_hash not supported on transformed files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
@@ -521,17 +527,11 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum)
         if 'audit' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, audit not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
-        if 'malformed' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, malformed input{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+        if 'cats' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, currently continuous action label not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'dsjson' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, contains dsjson{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            continue
-        if 'input_files' not in test:
-            print("{}Skipping test {} for flatbuffers, no input files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            continue
-        if 'dictionary' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, currently dictionaries are not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
 
         fb_test_transorm = fb_transformer.FlatbufferTest(test, working_dir)
@@ -581,6 +581,9 @@ def main():
     parser.add_argument('--for_flatbuffers', action='store_true', help='Transform all of the test inputs into flatbuffer format and run tests')
     parser.add_argument('--to_flatbuff_path', help="Specify to_flatbuff binary to use. Otherwise, binary will be searched for in build directory")
     args = parser.parse_args()
+
+    if args.for_flatbuffers:
+        working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")
 
     test_base_working_dir = str(args.working_dir)
     test_base_ref_dir = str(args.ref_dir)
