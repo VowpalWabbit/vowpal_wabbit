@@ -14,7 +14,6 @@
 #include "parser.h"
 #include "parse_primitives.h"
 #include "vw.h"
-#include "interactions.h"
 
 #include "sender.h"
 #include "nn.h"
@@ -101,6 +100,7 @@
 #include "sample_pdf.h"
 #include "named_labels.h"
 #include "kskip_ngram_transformer.h"
+#include "numeric_casts.h"
 
 using std::cerr;
 using std::cout;
@@ -596,7 +596,8 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
 void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>& dictionary_nses)
 {
   std::string hash_function("strings");
-  uint32_t new_bits;
+  uint64_t new_bits;
+  uint64_t hash_seed_arg;
   std::vector<std::string> spelling_ns;
   std::vector<std::string> quadratics;
   std::vector<std::string> cubics;
@@ -619,7 +620,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   option_group_definition feature_options("Feature options");
   feature_options
       .add(make_option("hash", hash_function).keep().help("how to hash the features. Available options: strings, all"))
-      .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("seed for hash function"))
+      .add(make_option("hash_seed", hash_seed_arg).keep().default_value(0).help("seed for hash function"))
       .add(make_option("ignore", ignores).keep().help("ignore namespaces beginning with character <arg>"))
       .add(make_option("ignore_linear", ignore_linears)
                .keep()
@@ -670,6 +671,8 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
   // feature manipulation
   all.example_parser->hasher = getHasher(hash_function);
+
+  all.hash_seed = VW::cast_to_smaller_type<uint32_t>(hash_seed_arg);
 
   if (options.was_supplied("spelling"))
   {
@@ -724,7 +727,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
                                         << " by argument and model.  That does not work.");
 
     all.default_bits = false;
-    all.num_bits = new_bits;
+    all.num_bits = VW::cast_to_smaller_type<uint32_t>(new_bits);
 
     VW::validate_num_bits(all);
   }
@@ -1013,11 +1016,14 @@ void parse_example_tweaks(options_i& options, vw& all)
   size_t early_terminate_passes;
   bool test_only = false;
 
+  uint64_t holdout_period_arg;
+  uint64_t holdout_after_arg;
+
   option_group_definition example_options("Example options");
   example_options.add(make_option("testonly", test_only).short_name("t").help("Ignore label information and just test"))
       .add(make_option("holdout_off", all.holdout_set_off).help("no holdout data in multiple passes"))
-      .add(make_option("holdout_period", all.holdout_period).default_value(10).help("holdout period for test only"))
-      .add(make_option("holdout_after", all.holdout_after)
+      .add(make_option("holdout_period", holdout_period_arg).default_value(10).help("holdout period for test only"))
+      .add(make_option("holdout_after", holdout_after_arg)
                .help("holdout after n training examples, default off (disables holdout_period)"))
       .add(
           make_option("early_terminate", early_terminate_passes)
@@ -1047,6 +1053,10 @@ void parse_example_tweaks(options_i& options, vw& all)
                .help("use names for labels (multiclass, etc.) rather than integers, argument specified all possible "
                      "labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\""));
   options.add_and_parse(example_options);
+
+  all.holdout_period = VW::cast_to_smaller_type<uint32_t>(holdout_period_arg);
+  if (all.options->was_supplied("holdout_after"))
+  { all.holdout_after = VW::cast_to_smaller_type<uint32_t>(holdout_after_arg); }
 
   if (test_only || all.eta == 0.)
   {
@@ -1351,28 +1361,31 @@ vw& parse_args(
     time(&all.init_time);
 
     bool strict_parse = false;
-    int ring_size_tmp;
+    int64_t ring_size_tmp;
     option_group_definition vw_args("VW options");
     vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
     all.options->add_and_parse(vw_args);
 
     if (ring_size_tmp <= 0) { THROW("ring_size should be positive"); }
-    size_t ring_size = static_cast<size_t>(ring_size_tmp);
+    size_t ring_size = VW::cast_signed_to_unsigned<size_t>(ring_size_tmp);
 
     all.example_parser = new parser{ring_size, strict_parse};
     all.example_parser->_shared_data = all.sd;
 
+    float initial_t;
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
         .add(make_option("power_t", all.power_t).help("t power value"))
         .add(make_option("decay_learning_rate", all.eta_decay_rate)
                  .help("Set Decay factor for learning_rate between passes"))
-        .add(make_option("initial_t", all.sd->t).help("initial t value"))
+        .add(make_option("initial_t", initial_t).help("initial t value"))
         .add(make_option("feature_mask", all.feature_mask)
                  .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
                        "given, also used for initial weights."));
     all.options->add_and_parse(update_args);
+
+    if (all.options->was_supplied("initial_t")) { all.sd->t = static_cast<double>(initial_t); }
 
     option_group_definition weight_args("Weight options");
     weight_args
@@ -1387,11 +1400,11 @@ vw& parse_args(
     all.options->add_and_parse(weight_args);
 
     std::string span_server_arg;
-    int span_server_port_arg;
+    int64_t span_server_port_arg;
     // bool threads_arg;
-    size_t unique_id_arg;
-    size_t total_arg;
-    size_t node_arg;
+    uint64_t unique_id_arg;
+    uint64_t total_arg;
+    uint64_t node_arg;
     option_group_definition parallelization_args("Parallelization options");
     parallelization_args
         .add(make_option("span_server", span_server_arg).help("Location of server for setting up spanning tree"))
@@ -1415,8 +1428,9 @@ vw& parse_args(
     if (all.options->was_supplied("span_server"))
     {
       all.all_reduce_type = AllReduceType::Socket;
-      all.all_reduce = new AllReduceSockets(
-          span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.logger.quiet);
+      all.all_reduce = new AllReduceSockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
+          VW::cast_to_smaller_type<size_t>(unique_id_arg), VW::cast_to_smaller_type<size_t>(total_arg),
+          VW::cast_to_smaller_type<size_t>(node_arg), all.logger.quiet);
     }
 
     parse_diagnostics(*all.options.get(), all);
