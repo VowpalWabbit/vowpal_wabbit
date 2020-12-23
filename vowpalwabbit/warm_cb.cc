@@ -12,6 +12,7 @@
 #include "explore.h"
 #include "vw_exception.h"
 #include "scope_exit.h"
+#include "numeric_casts.h"
 
 #include <vector>
 #include <memory>
@@ -543,12 +544,18 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
 
 base_learner* warm_cb_setup(options_i& options, vw& all)
 {
-  uint32_t num_actions = 0;
+  uint64_t num_actions = 0;
   auto data = scoped_calloc_or_throw<warm_cb>();
   bool use_cs;
 
-  option_group_definition new_options("Make Multiclass into Warm-starting Contextual Bandit");
+  uint64_t warm_start_arg;
+  uint64_t inter_period_arg;
+  uint64_t cor_type_ws_arg;
+  uint64_t choices_lambda_arg;
+  uint64_t lambda_scheme_arg;
+  uint64_t overwrite_label_arg;
 
+  option_group_definition new_options("Make Multiclass into Warm-starting Contextual Bandit");
   new_options
       .add(make_option("warm_cb", num_actions)
                .keep()
@@ -558,39 +565,46 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
                .help("consume cost-sensitive classification examples instead of multiclass"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"))
-      .add(make_option("warm_start", data->ws_period)
+      .add(make_option("warm_start", warm_start_arg)
                .default_value(0U)
                .help("number of training examples for warm start phase"))
       .add(make_option("epsilon", data->epsilon).keep().allow_override().help("epsilon-greedy exploration"))
-      .add(make_option("interaction", data->inter_period)
+      .add(make_option("interaction", inter_period_arg)
                .default_value(UINT32_MAX)
                .help("number of examples for the interactive contextual bandit learning phase"))
       .add(make_option("warm_start_update", data->upd_ws).help("indicator of warm start updates"))
       .add(make_option("interaction_update", data->upd_inter).help("indicator of interaction updates"))
-      .add(make_option("corrupt_type_warm_start", data->cor_type_ws)
+      .add(make_option("corrupt_type_warm_start", cor_type_ws_arg)
                .default_value(UAR)
                .help("type of label corruption in the warm start phase (1: uniformly at random, 2: circular, 3: "
                      "replacing with overwriting label)"))
       .add(make_option("corrupt_prob_warm_start", data->cor_prob_ws)
                .default_value(0.f)
                .help("probability of label corruption in the warm start phase"))
-      .add(make_option("choices_lambda", data->choices_lambda)
+      .add(make_option("choices_lambda", choices_lambda_arg)
                .default_value(1U)
                .help("the number of candidate lambdas to aggregate (lambda is the importance weight parameter between "
                      "the two sources)"))
-      .add(make_option("lambda_scheme", data->lambda_scheme)
+      .add(make_option("lambda_scheme", lambda_scheme_arg)
                .default_value(ABS_CENTRAL)
                .help("The scheme for generating candidate lambda set (1: center lambda=0.5, 2: center lambda=0.5, min "
                      "lambda=0, max lambda=1, 3: center lambda=epsilon/(1+epsilon), 4: center "
                      "lambda=epsilon/(1+epsilon), min lambda=0, max lambda=1); the rest of candidate lambda values are "
                      "generated using a doubling scheme"))
-      .add(make_option("overwrite_label", data->overwrite_label)
+      .add(make_option("overwrite_label", overwrite_label_arg)
                .default_value(1U)
                .help("the label used by type 3 corruptions (overwriting)"))
       .add(make_option("sim_bandit", data->sim_bandit)
                .help("simulate contextual bandit updates on warm start examples"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  data->ws_period = VW::cast_to_smaller_type<uint32_t>(warm_start_arg);
+  data->inter_period = VW::cast_to_smaller_type<uint32_t>(inter_period_arg);
+  data->cor_type_ws = VW::cast_to_smaller_type<uint32_t>(cor_type_ws_arg);
+  data->choices_lambda = VW::cast_to_smaller_type<uint32_t>(choices_lambda_arg);
+  data->lambda_scheme = VW::cast_to_smaller_type<uint32_t>(lambda_scheme_arg);
+  data->overwrite_label = VW::cast_to_smaller_type<uint32_t>(overwrite_label_arg);
 
   if (use_cs && (options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start")))
   { THROW("label corruption on cost-sensitive examples not currently supported"); }
@@ -601,7 +615,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   data->_random_state = all.get_random_state();
   data->use_cs = use_cs;
 
-  init_adf_data(*data.get(), num_actions);
+  init_adf_data(*data.get(), VW::cast_to_smaller_type<uint32_t>(num_actions));
 
   options.insert("cb_min_cost", std::to_string(data->loss0));
   options.insert("cb_max_cost", std::to_string(data->loss1));
