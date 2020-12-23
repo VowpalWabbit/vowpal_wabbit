@@ -7,6 +7,7 @@
 #include "explore.h"
 #include "guard.h"
 #include "vw.h"
+#include "numeric_casts.h"
 
 using namespace LEARNER;
 using namespace VW;
@@ -241,16 +242,18 @@ base_learner* setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<pmf_to_pdf::reduction>();
 
+  uint64_t num_actions_arg;
+  uint64_t bandwidth_arg;
   option_group_definition new_options("PMF to PDF");
   new_options
-      .add(make_option("pmf_to_pdf", data->num_actions)
+      .add(make_option("pmf_to_pdf", num_actions_arg)
                .default_value(0)
                .necessary()
                .keep()
                .help("Convert discrete PDF into continuous PDF."))
       .add(make_option("min_value", data->min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->max_value).keep().help("Maximum continuous value"))
-      .add(make_option("bandwidth", data->bandwidth)
+      .add(make_option("bandwidth", bandwidth_arg)
                .default_value(1)
                .keep()
                .help("Bandwidth (radius) of randomization around discrete actions in number of actions."))
@@ -259,6 +262,9 @@ base_learner* setup(options_i& options, vw& all)
                .help("Use user provided first action or user provided pdf or uniform random"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+
+  data->bandwidth = VW::cast_to_smaller_type<uint32_t>(bandwidth_arg);
+  data->num_actions = VW::cast_to_smaller_type<uint32_t>(num_actions_arg);
 
   if (data->num_actions == 0) return nullptr;
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))

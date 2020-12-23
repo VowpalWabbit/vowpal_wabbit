@@ -158,7 +158,9 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 LEARNER::base_learner* setup(config::options_i& options, vw& all)
 {
   option_group_definition new_options("Continuous action tree with smoothing");
-  int num_actions = 0, pdf_num_actions = 0, cats_tree_actions = 0;
+  int64_t num_actions = 0;
+  int64_t pdf_num_actions = 0;
+  int64_t cats_tree_actions = 0;
   new_options
       .add(make_option("cats_pdf", num_actions).keep().necessary().help("Continuous action tree with smoothing (pdf)"))
       .add(make_option("pmf_to_pdf", pdf_num_actions).keep().help("Convert pmf to pdf"))

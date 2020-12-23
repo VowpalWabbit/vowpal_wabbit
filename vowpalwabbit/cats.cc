@@ -147,8 +147,8 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
 {
   option_group_definition new_options("Continuous action tree with smoothing");
 
-  int num_actions = 0;
-  int pdf_num_actions = 0;
+  int64_t num_actions = 0;
+  int64_t pdf_num_actions = 0;
 
   new_options.add(make_option("cats", num_actions).keep().necessary().help("Continuous action tree with smoothing"))
       .add(make_option("cats_pdf", pdf_num_actions).keep().help("Continuous action tree with smoothing (pdf)"));
