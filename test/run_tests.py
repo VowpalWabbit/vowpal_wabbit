@@ -501,7 +501,7 @@ def calculate_test_to_run_explicitly(explicit_tests, tests):
 
     return list(tests_to_run_explicitly)
 
-def transform_tests_for_flatbuffers(tests, to_flatbuff, color_enum):
+def transform_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
     def remove_arguments(command, tags_delete, flags=False):
         for tag in tags_delete:
             if flags:
@@ -513,7 +513,6 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, color_enum):
     def change_input_file(input_file):
         return 'train-set' in input_file or 'test-set' in input_file
 
-    working_dir = Path.home().joinpath(".vw_runtests_working_dir")
     test_base_working_dir = str(working_dir)
     if not Path(test_base_working_dir).exists():
         Path(test_base_working_dir).mkdir(parents=True, exist_ok=True)
@@ -526,28 +525,31 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, color_enum):
             Path(str(test_dir)).mkdir(parents=True, exist_ok=True)
 
         if 'vw_command' not in test:
-            print("{}Skipping test {} transformation to flatbuffers, no vw command available{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            print("{}Skipping test {} for flatbuffers, no vw command available{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'flatbuffer' in test['vw_command']:
-            print("{}Skipping test {} transformation to flatbuffers, flatbuffer test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            print("{}Skipping test {} for flatbuffers, flatbuffer test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'cats' in test['vw_command']:
-            print("{}Skipping test {} transformation to flatbuffers, currently no cats label in flatbuffers{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            print("{}Skipping test {} for flatbuffers, currently continuous action label not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'invert_hash' in test['vw_command']:
-            print("{}Skipping test {} transformation to flatbuffers, invert_hash not supported on transformed files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            print("{}Skipping test {} for flatbuffers, invert_hash not supported on transformed files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'audit' in test['vw_command']:
-            print("{}Skipping test {} transformation to flatbuffers, audit not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            print("{}Skipping test {} for flatbuffers, audit not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'malformed' in test['vw_command']:
-            print("{}Skipping test {} transformation to flatbuffers, malformed input{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            print("{}Skipping test {} for flatbuffers, malformed input{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'dsjson' in test['vw_command']:
-            print("{}Skipping test {} transformation to flatbuffers, contains dsjson{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            print("{}Skipping test {} for flatbuffers, contains dsjson{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'input_files' not in test:
-            print("{}Skipping test {} transformation to flatbuffers, no input files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            print("{}Skipping test {} for flatbuffers, no input files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+        if 'dictionary' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, currently dictionaries are not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
 
         stashed_input_files = copy.copy(test['input_files'])
@@ -591,8 +593,7 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, color_enum):
 
         # arguments and flats not supported or needed in flatbuffer transformation
         flags_to_remove = ['--audit', '-c ','--bfgs', '--onethread', '-t ', '--search_span_bilou']
-        arguments_to_remove = ['--passes', '--ngram', '--skips', '-q', '-p', '--feature_mask',
-            '--dictionary_path', '--dictionary', '--search_kbest', '--search_max_branch']
+        arguments_to_remove = ['--passes', '--ngram', '--skips', '-q', '-p', '--feature_mask', '--search_kbest', '--search_max_branch']
 
         # if model already exists it contains needed arguments so use it in transformation
         use_model = False
@@ -741,7 +742,7 @@ def main():
 
     if args.for_flatbuffers:
         to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
-        tests = transform_tests_for_flatbuffers(tests, to_flatbuff, color_enum)
+        tests = transform_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum)
 
     executor = ThreadPoolExecutor(max_workers=args.jobs)
     for test in tests:
