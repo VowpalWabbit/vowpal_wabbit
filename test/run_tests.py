@@ -595,8 +595,8 @@ def main():
     parser.add_argument('--to_flatbuff_path', help="Specify to_flatbuff binary to use. Otherwise, binary will be searched for in build directory")
     args = parser.parse_args()
 
-    if args.for_flatbuffers:
-        working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")
+    if args.for_flatbuffers and args.working_dir == working_dir: # user did not supply dir
+        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")        
 
     test_base_working_dir = str(args.working_dir)
     test_base_ref_dir = str(args.ref_dir)
@@ -659,7 +659,7 @@ def main():
 
     if args.for_flatbuffers:
         to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
-        tests = transform_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum)
+        tests = transform_tests_for_flatbuffers(tests, to_flatbuff, args.working_dir, color_enum)
 
     executor = ThreadPoolExecutor(max_workers=args.jobs)
     for test in tests:

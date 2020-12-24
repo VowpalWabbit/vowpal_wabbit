@@ -47,9 +47,9 @@ class FlatbufferTest:
     def replace_filename_in_stderr(self):
         if 'stderr' in self.test['diff_files']:
             stderr_file = self.test['diff_files']['stderr']
-            stderr_test_file = self.working_dir.joinpath('test_' + self.test_id).joinpath(os.path.basename(self.working_dir.joinpath(stderr_file)))
-            shutil.copyfile(stderr_file, str(stderr_test_file))        
-            temp = str(stderr_test_file) + '.bak'
+            stderr_test_file = str(self.working_dir.joinpath('test_' + self.test_id).joinpath(os.path.basename(str(self.working_dir.joinpath(stderr_file)))))
+            shutil.copyfile(stderr_file, stderr_test_file)
+            temp = stderr_test_file + '.bak'
             with open(stderr_test_file, 'r') as f:
                 with open(temp, 'w') as tmp_f:
                     for line in f:
@@ -105,7 +105,7 @@ class FlatbufferTest:
         if self.should_transform(): # transformation might already be done by depended_on test
             for f in self.files_to_be_transformed:
                 cmd = "{} {} {} {}".format(to_flatbuff, to_flatbuff_command, '--fb_out', f)
-                print("{}COMMAND {} {}{}".format(color_enum.LIGHT_PURPLE, self.test_id, cmd, color_enum.ENDC))
+                print("{}TRANSFORM COMMAND {} {}{}".format(color_enum.LIGHT_PURPLE, self.test_id, cmd, color_enum.ENDC))
                 result = subprocess.run(
                     cmd,
                     shell=True,
@@ -119,7 +119,7 @@ class FlatbufferTest:
         self.test['vw_command'] = self.stashed_vw_command
 
         # remove json/dsjson since we are adding --flatbuffer
-        json_args = ['--json', '--dsjson', '--chain_hash']
+        json_args = ['--json', '--dsjson']
         self.test['vw_command'] = self.remove_arguments(self.test['vw_command'], json_args, flags=True)
 
         # replace data files with flatbuffer ones in vw_command
