@@ -17,7 +17,6 @@ class FlatbufferTest:
         self.test_id = str(self.test['id'])
         self.files_to_be_transformed = []
         self.input_files = self.test['input_files']
-        self.fb_input_files_full_path = []
         self.fb_input_files = []
 
         test_dir = self.working_dir.joinpath('test_' + self.test_id)
@@ -40,14 +39,13 @@ class FlatbufferTest:
             if self.change_input_file(input_file):
                 file_basename = os.path.basename(input_file)
                 fb_file = ''.join([file_basename, '.fb'])
-                self.fb_input_files.append(fb_file)
                 fb_file_full_path = self.working_dir.joinpath('test_' + self.test_id).joinpath(fb_file)
-                self.fb_input_files_full_path.append(fb_file_full_path)
+                self.fb_input_files.append(fb_file_full_path)
 
     def _replace_line(self, line):
         for index, input_file in enumerate(self.input_files):
             if self.change_input_file(input_file):
-                line = line.replace(str(input_file), str(self.fb_input_files_full_path[index]))
+                line = line.replace(str(input_file), str(self.fb_input_files[index]))
         return line
 
     def replace_filename_in_stderr(self):
@@ -67,8 +65,8 @@ class FlatbufferTest:
         # replace the input_file to point to the generated flatbuffer file
         for i, input_file in enumerate(self.input_files):
             if self.change_input_file(input_file):
-                self.test['input_files'][i] = str(self.fb_input_files_full_path[i])
-                self.files_to_be_transformed.append(str(self.fb_input_files_full_path[i]))
+                self.test['input_files'][i] = str(self.fb_input_files[i])
+                self.files_to_be_transformed.append(str(self.fb_input_files[i]))
     
     def should_transform(self):
         if 'depends_on' in self.test: # assuming dependent tests use same input files, so might already be transformed
@@ -126,6 +124,6 @@ class FlatbufferTest:
         # replace data files with flatbuffer ones in vw_command
         for i, input_file in enumerate(self.stashed_input_files):
             if self.change_input_file(input_file):
-                self.test['vw_command'] = self.test['vw_command'].replace(str(input_file), str(self.fb_input_files_full_path[i]))
+                self.test['vw_command'] = self.test['vw_command'].replace(str(input_file), str(self.fb_input_files[i]))
         # add --flatbuffer argument
         self.test['vw_command'] = self.test['vw_command'] + ' --flatbuffer'
