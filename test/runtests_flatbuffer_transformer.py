@@ -56,6 +56,8 @@ class FlatbufferTest:
                         for i, input_file in enumerate(self.input_files):
                             if self.change_input_file(input_file):
                                 line = line.replace(str(input_file), str(self.fb_input_files_full_path[i]))
+                        if '--dsjson' in self.stashed_vw_command and "WARNING: Old string feature value behavior is deprecated in JSON/DSJSON" in line:
+                            continue
                         tmp_f.write(line)
             
             # swap temp with file
@@ -113,13 +115,14 @@ class FlatbufferTest:
                 if result.returncode != 0:
                     raise RuntimeError("Generating flatbuffer file failed with {} {} {}".format(result.returncode, result.stderr, result.stdout))
 
-        
     def replace_vw_command(self):
         # restore original command in case it changed
         self.test['vw_command'] = self.stashed_vw_command
 
         # remove json/dsjson since we are adding --flatbuffer
         json_args = ['--json', '--dsjson']
+        if '--dsjson' in self.test['vw_command']:
+            json_args.append('--chain_hash')
         self.test['vw_command'] = self.remove_arguments(self.test['vw_command'], json_args, flags=True)
 
         # replace data files with flatbuffer ones in vw_command
