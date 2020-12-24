@@ -17,7 +17,7 @@ class FlatbufferTest:
         self.test_id = str(self.test['id'])
         self.files_to_be_transformed = []
         self.input_files = self.test['input_files']
-        self.fb_input_files = []
+        self.fb_input_files = {}
 
         test_dir = self.working_dir.joinpath('test_' + self.test_id)
         if not Path(str(test_dir)).exists():
@@ -40,7 +40,7 @@ class FlatbufferTest:
                 file_basename = os.path.basename(input_file)
                 fb_file = ''.join([file_basename, '.fb'])
                 fb_file_full_path = self.working_dir.joinpath('test_' + self.test_id).joinpath(fb_file)
-                self.fb_input_files.append(fb_file_full_path)
+                self.fb_input_files[i] = fb_file_full_path
 
     def _replace_line(self, line):
         for index, input_file in enumerate(self.input_files):
@@ -69,17 +69,19 @@ class FlatbufferTest:
                 self.files_to_be_transformed.append(str(self.fb_input_files[i]))
     
     def should_transform(self):
-        if 'depends_on' in self.test: # assuming dependent tests use same input files, so might already be transformed
-            # check if the file exists in the dependant directories
-            for f in self.files_to_be_transformed:
-                search_paths = []
-                dependencies = self.test['depends_on']
-                search_paths.extend([self.working_dir.joinpath(
-                    "test_{}".format(x), os.path.basename(f)) for x in dependencies]) # for input_files with a full path
+        if 'depends_on' not in self.test: # assuming dependent tests use same input files, so might already be transformed
+            return True
+        # check if the file exists in the dependant directories
+        for f in self.files_to_be_transformed:
+            search_paths = []
+            dependencies = self.test['depends_on']
+            search_paths.extend([self.working_dir.joinpath(
+                "test_{}".format(x), os.path.basename(f)) for x in dependencies]) # for input_files with a full path
 
-                for search_path in search_paths:
-                    if search_path.exists() and not search_path.is_dir():
-                        return False
+        for search_path in search_paths:
+            if search_path.exists() and not search_path.is_dir():
+                return False
+
         return True
     
     def to_flatbuffer(self, to_flatbuff, color_enum):
