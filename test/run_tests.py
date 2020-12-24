@@ -538,9 +538,6 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum)
         if 'audit' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, audit not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
-        if 'cats' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, currently continuous action label not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            continue
 
         fb_test_transorm = fb_transformer.FlatbufferTest(test, working_dir)
         fb_test_transorm.get_flatbuffer_file_names()
