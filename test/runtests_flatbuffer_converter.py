@@ -16,7 +16,6 @@ class FlatbufferTest:
         self.stashed_vw_command = copy.copy(self.test['vw_command'])
         self.test_id = str(self.test['id'])
         self.files_to_be_converted = []
-        self.input_files = self.test['input_files']
 
         test_dir = self.working_dir.joinpath('test_' + self.test_id)
         if not Path(str(test_dir)).exists():
@@ -34,14 +33,14 @@ class FlatbufferTest:
         return 'train-set' in input_file or 'test-set' in input_file
 
     def get_flatbuffer_file_names(self):
-        for i, input_file in enumerate(self.input_files):
+        for i, input_file in enumerate(self.test['input_files']):
             if self.change_input_file(input_file):
                 file_basename = os.path.basename(input_file)
                 fb_file = ''.join([file_basename, '.fb'])
                 fb_file_full_path = self.working_dir.joinpath('test_' + self.test_id).joinpath(fb_file)
                 self.files_to_be_converted.append((i, str(input_file), str(fb_file_full_path)))
 
-    def _replace_line(self, line):
+    def replace_line(self, line):
         for index, from_file, to_file in self.files_to_be_converted:
             line = line.replace(from_file, to_file)
         return line
@@ -51,7 +50,7 @@ class FlatbufferTest:
             stderr_file = self.test['diff_files']['stderr']
             stderr_test_file = str(self.working_dir.joinpath('test_' + self.test_id).joinpath(os.path.basename(str(self.working_dir.joinpath(stderr_file)))))
             with open(stderr_file, 'r') as f, open(stderr_test_file, 'w') as tmp_f:
-                contents = [self._replace_line(line) for line in f]
+                contents = [self.replace_line(line) for line in f]
                 for line in contents:
                     if '--dsjson' in self.stashed_vw_command and "WARNING: Old string feature value behavior is deprecated in JSON/DSJSON" in line:
                         continue
@@ -64,8 +63,8 @@ class FlatbufferTest:
         for i, from_file, to_file in self.files_to_be_converted:
             self.test['input_files'][i] = to_file
     
-    def should_transform(self):
-        if 'depends_on' not in self.test: # assuming dependent tests use same input files, so might already be transformed
+    def should_convert(self):
+        if 'depends_on' not in self.test: # assuming dependent tests use same input files, so might already be converted
             return True
         # check if the file exists in the dependant directories
         for i, from_file, to_file in self.files_to_be_converted:
@@ -80,12 +79,12 @@ class FlatbufferTest:
 
         return True
     
-    def to_flatbuffer(self, to_flatbuff, color_enum):
-        # arguments and flats not supported or needed in flatbuffer transformation
+    def convert(self, to_flatbuff, color_enum):
+        # arguments and flats not supported or needed in flatbuffer conversion
         flags_to_remove = ['--audit', '-c ','--bfgs', '--onethread', '-t ', '--search_span_bilou']
         arguments_to_remove = ['--passes', '--ngram', '--skips', '-q', '-p', '--feature_mask', '--search_kbest', '--search_max_branch']
 
-        # if model already exists it contains needed arguments so use it in transformation
+        # if model already exists it contains needed arguments so use it in conversion
         use_model = False
         for input_file in self.stashed_input_files:
             if 'model-set' in input_file:
@@ -98,10 +97,10 @@ class FlatbufferTest:
         to_flatbuff_command = self.remove_arguments(to_flatbuff_command, arguments_to_remove)
         to_flatbuff_command = self.remove_arguments(to_flatbuff_command, flags_to_remove, flags=True)
 
-        if self.should_transform(): # transformation might already be done by depended_on test
+        if self.should_convert(): # conversion might already be done by depended_on test
             for i, from_file, to_file in self.files_to_be_converted:
                 cmd = "{} {} {} {}".format(to_flatbuff, to_flatbuff_command, '--fb_out', to_file)
-                print("{}TRANSFORM COMMAND {} {}{}".format(color_enum.LIGHT_PURPLE, self.test_id, cmd, color_enum.ENDC))
+                print("{}CONVERT COMMAND {} {}{}".format(color_enum.LIGHT_PURPLE, self.test_id, cmd, color_enum.ENDC))
                 result = subprocess.run(
                     cmd,
                     shell=True,
@@ -124,3 +123,11 @@ class FlatbufferTest:
             self.test['vw_command'] = self.test['vw_command'].replace(from_file, to_file)
         # add --flatbuffer argument
         self.test['vw_command'] = self.test['vw_command'] + ' --flatbuffer'
+    
+
+    def to_flatbuffer(self, to_flatbuff, color_enum):
+        self.get_flatbuffer_file_names()
+        self.replace_filename_in_stderr()
+        self.replace_test_input_files()
+        self.convert(to_flatbuff, color_enum)
+        self.replace_vw_command()

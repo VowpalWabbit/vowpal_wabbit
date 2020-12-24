@@ -16,7 +16,7 @@ from enum import Enum
 import socket
 
 import runtests_parser
-import runtests_flatbuffer_transformer as fb_transformer
+import runtests_flatbuffer_converter as fb_converter
 
 class Color():
     LIGHT_CYAN = '\033[96m'
@@ -510,7 +510,7 @@ def calculate_test_to_run_explicitly(explicit_tests, tests):
 
     return list(tests_to_run_explicitly)
 
-def transform_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
+def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
     test_base_working_dir = str(working_dir)
     if not Path(test_base_working_dir).exists():
         Path(test_base_working_dir).mkdir(parents=True, exist_ok=True)
@@ -533,18 +533,20 @@ def transform_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum)
             print("{}Skipping test {} for flatbuffers, currently dictionaries are not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'invert_hash' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, invert_hash not supported on transformed files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            print("{}Skipping test {} for flatbuffers, invert_hash not supported on converted files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
         if 'audit' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, audit not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
+        if 'dsjson' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, dsjson coming soon{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+        if 'cats' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, continuous actions coming soon{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
 
-        fb_test_transorm = fb_transformer.FlatbufferTest(test, working_dir)
-        fb_test_transorm.get_flatbuffer_file_names()
-        fb_test_transorm.replace_filename_in_stderr()
-        fb_test_transorm.replace_test_input_files()
-        fb_test_transorm.to_flatbuffer(to_flatbuff, color_enum)
-        fb_test_transorm.replace_vw_command()
+        fb_test_converter = fb_converter.FlatbufferTest(test, working_dir)
+        fb_test_converter.to_flatbuffer(to_flatbuff, color_enum)
 
     return tests
 
@@ -653,7 +655,7 @@ def main():
 
     if args.for_flatbuffers:
         to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
-        tests = transform_tests_for_flatbuffers(tests, to_flatbuff, args.working_dir, color_enum)
+        tests = convert_tests_for_flatbuffers(tests, to_flatbuff, args.working_dir, color_enum)
 
     executor = ThreadPoolExecutor(max_workers=args.jobs)
     for test in tests:
