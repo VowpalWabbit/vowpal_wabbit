@@ -129,17 +129,22 @@ void parser::parse_multi_label(polylabel* l, const MultiLabel* label)
 void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
 {
   l->slates.weight = label->weight();
-  if (label->example_type() == 1)
+  if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_shared)
   {
     l->slates.labeled = label->labeled();
     l->slates.cost = label->cost();
+    l->slates.type = VW::slates::shared;
   }
-  else if (label->example_type() == 2)
+  else if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_action)
+  {
     l->slates.slot_id = label->slot();
-  else if (label->example_type() == 3)
+    l->slates.type = VW::slates::action;
+  }
+  else if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_slot)
   {
     l->slates.labeled = label->labeled();
     l->slates.probabilities = v_init<ACTION_SCORE::action_score>();
+    l->slates.type = VW::slates::slot;
 
     for (auto const& as : *(label->probabilities())) l->slates.probabilities.push_back({as->action(), as->score()});
   }
