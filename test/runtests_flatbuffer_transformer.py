@@ -44,24 +44,22 @@ class FlatbufferTest:
                 fb_file_full_path = self.working_dir.joinpath('test_' + self.test_id).joinpath(fb_file)
                 self.fb_input_files_full_path.append(fb_file_full_path)
 
+    def _replace_line(self, line):
+        for index, input_file in enumerate(self.input_files):
+            if self.change_input_file(input_file):
+                line = line.replace(str(input_file), str(self.fb_input_files_full_path[index]))
+        return line
+
     def replace_filename_in_stderr(self):
         if 'stderr' in self.test['diff_files']:
             stderr_file = self.test['diff_files']['stderr']
             stderr_test_file = str(self.working_dir.joinpath('test_' + self.test_id).joinpath(os.path.basename(str(self.working_dir.joinpath(stderr_file)))))
-            shutil.copyfile(stderr_file, stderr_test_file)
-            temp = stderr_test_file + '.bak'
-            with open(stderr_test_file, 'r') as f:
-                with open(temp, 'w') as tmp_f:
-                    for line in f:
-                        for i, input_file in enumerate(self.input_files):
-                            if self.change_input_file(input_file):
-                                line = line.replace(str(input_file), str(self.fb_input_files_full_path[i]))
-                        if '--dsjson' in self.stashed_vw_command and "WARNING: Old string feature value behavior is deprecated in JSON/DSJSON" in line:
-                            continue
-                        tmp_f.write(line)
-            
-            # swap temp with file
-            shutil.move(temp, stderr_test_file)
+            with open(stderr_file, 'r') as f, open(stderr_test_file, 'w') as tmp_f:
+                contents = [self._replace_line(line) for line in f]
+                for line in contents:
+                    if '--dsjson' in self.stashed_vw_command and "WARNING: Old string feature value behavior is deprecated in JSON/DSJSON" in line:
+                        continue
+                    tmp_f.write(line)
 
             self.test['diff_files']['stderr'] = str(stderr_test_file)
     
