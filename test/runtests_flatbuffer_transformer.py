@@ -15,9 +15,8 @@ class FlatbufferTest:
         self.stashed_input_files = copy.copy(self.test['input_files'])
         self.stashed_vw_command = copy.copy(self.test['vw_command'])
         self.test_id = str(self.test['id'])
-        self.files_to_be_transformed = []
+        self.files_to_be_converted = []
         self.input_files = self.test['input_files']
-        self.fb_input_files = {}
 
         test_dir = self.working_dir.joinpath('test_' + self.test_id)
         if not Path(str(test_dir)).exists():
@@ -40,12 +39,11 @@ class FlatbufferTest:
                 file_basename = os.path.basename(input_file)
                 fb_file = ''.join([file_basename, '.fb'])
                 fb_file_full_path = self.working_dir.joinpath('test_' + self.test_id).joinpath(fb_file)
-                self.fb_input_files[i] = fb_file_full_path
+                self.files_to_be_converted.append((i, str(input_file), str(fb_file_full_path)))
 
     def _replace_line(self, line):
-        for index, input_file in enumerate(self.input_files):
-            if self.change_input_file(input_file):
-                line = line.replace(str(input_file), str(self.fb_input_files[index]))
+        for index, from_file, to_file in self.files_to_be_converted:
+            line = line.replace(from_file, to_file)
         return line
 
     def replace_filename_in_stderr(self):
@@ -63,20 +61,18 @@ class FlatbufferTest:
     
     def replace_test_input_files(self):
         # replace the input_file to point to the generated flatbuffer file
-        for i, input_file in enumerate(self.input_files):
-            if self.change_input_file(input_file):
-                self.test['input_files'][i] = str(self.fb_input_files[i])
-                self.files_to_be_transformed.append(str(self.fb_input_files[i]))
+        for i, from_file, to_file in self.files_to_be_converted:
+            self.test['input_files'][i] = to_file
     
     def should_transform(self):
         if 'depends_on' not in self.test: # assuming dependent tests use same input files, so might already be transformed
             return True
         # check if the file exists in the dependant directories
-        for f in self.files_to_be_transformed:
+        for i, from_file, to_file in self.files_to_be_converted:
             search_paths = []
             dependencies = self.test['depends_on']
             search_paths.extend([self.working_dir.joinpath(
-                "test_{}".format(x), os.path.basename(f)) for x in dependencies]) # for input_files with a full path
+                "test_{}".format(x), os.path.basename(to_file)) for x in dependencies]) # for input_files with a full path
 
         for search_path in search_paths:
             if search_path.exists() and not search_path.is_dir():
@@ -103,8 +99,8 @@ class FlatbufferTest:
         to_flatbuff_command = self.remove_arguments(to_flatbuff_command, flags_to_remove, flags=True)
 
         if self.should_transform(): # transformation might already be done by depended_on test
-            for f in self.files_to_be_transformed:
-                cmd = "{} {} {} {}".format(to_flatbuff, to_flatbuff_command, '--fb_out', f)
+            for i, from_file, to_file in self.files_to_be_converted:
+                cmd = "{} {} {} {}".format(to_flatbuff, to_flatbuff_command, '--fb_out', to_file)
                 print("{}TRANSFORM COMMAND {} {}{}".format(color_enum.LIGHT_PURPLE, self.test_id, cmd, color_enum.ENDC))
                 result = subprocess.run(
                     cmd,
@@ -124,8 +120,7 @@ class FlatbufferTest:
         self.test['vw_command'] = self.remove_arguments(self.test['vw_command'], json_args, flags=True)
 
         # replace data files with flatbuffer ones in vw_command
-        for i, input_file in enumerate(self.stashed_input_files):
-            if self.change_input_file(input_file):
-                self.test['vw_command'] = self.test['vw_command'].replace(str(input_file), str(self.fb_input_files[i]))
+        for i, from_file, to_file in self.files_to_be_converted:
+            self.test['vw_command'] = self.test['vw_command'].replace(from_file, to_file)
         # add --flatbuffer argument
         self.test['vw_command'] = self.test['vw_command'] + ' --flatbuffer'
