@@ -53,6 +53,7 @@ const size_t pPROB = 6;
 const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 const size_t pACTION_PDF_VALUE = 9;
+const size_t pPDF = 10;
 
 void dont_delete_me(void* arg) {}
 
@@ -186,6 +187,8 @@ size_t my_get_prediction_type(vw_ptr all)
       return pDECISION_SCORES;
     case prediction_type_t::action_pdf_value:
       return pACTION_PDF_VALUE;
+    case prediction_type_t::pdf:
+      return pPDF;
     default:
       THROW("unsupported prediction type used");
   }
@@ -559,6 +562,13 @@ py::list ex_get_decision_scores(example_ptr ec)
 py::tuple ex_get_action_pdf_value(example_ptr ec)
 {
   return py::make_tuple(ec->pred.pdf_value.action, ec->pred.pdf_value.pdf_value);
+}
+
+py::list ex_get_pdf(example_ptr ec)
+{
+  py::list values;
+  for (auto const& segment : ec->pred.pdf) { values.append(py::make_tuple(segment.left, segment.right, segment.pdf_value)); }
+  return values;
 }
 
 py::list ex_get_multilabel_predictions(example_ptr ec)
@@ -949,7 +959,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pPROB", pPROB, "Probability prediction type")
       .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
       .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
-      .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type");
+      .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
+      .def_readonly("pPDF", pPDF, "PDF prediction type");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1019,6 +1030,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_action_scores", &ex_get_action_scores, "Get action scores from example prediction")
       .def("get_decision_scores", &ex_get_decision_scores, "Get decision scores from example prediction")
       .def("get_action_pdf_value", &ex_get_action_pdf_value, "Get action and pdf value from example prediction")
+      .def("get_pdf", &ex_get_pdf, "Get pdf from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
