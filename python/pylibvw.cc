@@ -567,7 +567,8 @@ py::tuple ex_get_action_pdf_value(example_ptr ec)
 py::list ex_get_pdf(example_ptr ec)
 {
   py::list values;
-  for (auto const& segment : ec->pred.pdf) { values.append(py::make_tuple(segment.left, segment.right, segment.pdf_value)); }
+  for (auto const& segment : ec->pred.pdf)
+  { values.append(py::make_tuple(segment.left, segment.right, segment.pdf_value)); }
   return values;
 }
 
