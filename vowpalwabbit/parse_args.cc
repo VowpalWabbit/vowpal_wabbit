@@ -1446,7 +1446,7 @@ bool check_interaction_settings_collision(options_i& options, std::string file_o
   return file_options_has_interaction;
 }
 
-void options_from_header_strings(const std::vector<std::string>& strings, bool interactions_settings_doubled, VW::config::options_i& options)
+void merge_options_from_header_strings(const std::vector<std::string>& strings, bool interactions_settings_doubled, VW::config::options_i& options)
 {
   po::options_description desc("");
 
@@ -1541,7 +1541,7 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model,
   std::istringstream ss{file_options};
   std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
-  options_from_header_strings(container, interactions_settings_doubled, options);
+  merge_options_from_header_strings(container, interactions_settings_doubled, options);
 
   return options;
 }
