@@ -1446,7 +1446,7 @@ bool check_interaction_settings_collision(options_i& options, std::string file_o
   return file_options_has_interaction;
 }
 
-void merge_options_from_header_strings(const std::vector<std::string>& strings, bool interactions_settings_doubled, VW::config::options_i& options)
+void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions, VW::config::options_i& options)
 {
   po::options_description desc("");
 
@@ -1485,7 +1485,7 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
     { treat_as_value = true; }
 
     // If the interaction settings are doubled, the copy in the model file is ignored.
-    if (interactions_settings_doubled &&
+    if (skip_interactions &&
         (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
     {
       // skip this option.
