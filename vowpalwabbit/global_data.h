@@ -312,21 +312,21 @@ struct vw_logger
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
-struct buffer_restore
+struct buffer_replace
 {
   std::ios& m_target;
   std::streambuf* m_backup = nullptr;
   std::ofstream m_filestr;
   std::string m_filename;
 
-  buffer_restore(std::ios& target, std::string filename) : m_target(target), m_filename(filename)
+  buffer_replace(std::ios& target, std::string filename) : m_target(target), m_filename(filename)
   {
     m_filestr.open(m_filename, std::ofstream::out | std::ofstream::app);
     m_backup = target.rdbuf();
     target.rdbuf(m_filestr.rdbuf());
   }
 
-  ~buffer_restore()
+  ~buffer_replace()
   {
     m_target.rdbuf(m_backup);
     m_filestr.close();
@@ -534,8 +534,8 @@ public:
 
   label_type_t label_type;
 
-  std::unique_ptr<buffer_restore> cerr_buffer;
-  std::unique_ptr<buffer_restore> cout_buffer;
+  std::unique_ptr<buffer_replace> cerr_buffer;
+  std::unique_ptr<buffer_replace> cout_buffer;
 
   vw();
   ~vw();
