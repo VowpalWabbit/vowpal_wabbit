@@ -1484,15 +1484,6 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
     if (opt.string_key.length() > 1 && opt.string_key[0] == '-' && opt.string_key[1] >= '0' && opt.string_key[1] <= '9')
     { treat_as_value = true; }
 
-    // If the interaction settings are doubled, the copy in the model file is ignored.
-    if (skip_interactions &&
-        (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
-    {
-      // skip this option.
-      skipping = true;
-      continue;
-    }
-
     // File options should always use long form.
 
     // If the key is empty this must be a value, otherwise set the key.
@@ -1501,9 +1492,19 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
       // If the new token is a new option and there were no values previously it was a bool option. Add it as a switch.
       if (count == 0 && first_seen) { options.insert(saved_key, ""); }
 
-      saved_key = opt.string_key;
       count = 0;
       first_seen = true;
+
+      // If the interaction settings are doubled, the copy in the model file is ignored.
+      if (skip_interactions &&
+          (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
+      {
+        // skip this option.
+        skipping = true;
+        first_seen = false;
+        continue;
+      }
+      saved_key = opt.string_key;
 
       if (opt.value.size() > 0)
       {
