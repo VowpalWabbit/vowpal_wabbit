@@ -29,7 +29,7 @@ vw& parse_args(VW::config::options_i& options, trace_message_t trace_listener = 
 void parse_modules(VW::config::options_i& options, vw& all);
 void parse_sources(VW::config::options_i& options, vw& all, io_buf& model, bool skipModelLoad = false);
 
-void options_from_header_strings(const std::vector<std::string>& strings, VW::config::options_i& options);
+void options_from_header_strings(const std::vector<std::string>& strings, bool interactions_settings_doubled, VW::config::options_i& options);
 
 VW::LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all);
 

@@ -481,7 +481,6 @@ input_options parse_source(vw& all, options_i& options)
   return parsed_options;
 }
 
-bool interactions_settings_doubled = false;  // local setting setted in parse_modules()
 namespace VW
 {
 const char* are_features_compatible(vw& vw1, vw& vw2)
@@ -593,7 +592,7 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
   return res;
 }
 
-void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>& dictionary_nses)
+void parse_feature_tweaks(options_i& options, vw& all, bool interactions_settings_doubled, std::vector<std::string>& dictionary_nses)
 {
   std::string hash_function("strings");
   uint32_t new_bits;
@@ -1447,7 +1446,7 @@ bool check_interaction_settings_collision(options_i& options, std::string file_o
   return file_options_has_interaction;
 }
 
-void options_from_header_strings(const std::vector<std::string>& strings, VW::config::options_i& options)
+void options_from_header_strings(const std::vector<std::string>& strings, bool interactions_settings_doubled, VW::config::options_i& options)
 {
   po::options_description desc("");
 
@@ -1531,7 +1530,7 @@ void options_from_header_strings(const std::vector<std::string>& strings, VW::co
   if (count == 0 && saved_key != "") { options.insert(saved_key, ""); }
 }
 
-options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
+options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model, bool& interactions_settings_doubled)
 {
   std::string file_options;
   save_load_header(all, model, true, false, file_options, options);
@@ -1542,19 +1541,19 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
   std::istringstream ss{file_options};
   std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
-  options_from_header_strings(container, options);
+  options_from_header_strings(container, interactions_settings_doubled, options);
 
   return options;
 }
 
-void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictionary_nses)
+void parse_modules(options_i& options, vw& all, bool interactions_settings_doubled, std::vector<std::string>& dictionary_nses)
 {
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
 
-  parse_feature_tweaks(options, all, dictionary_nses);  // feature tweaks
+  parse_feature_tweaks(options, all, interactions_settings_doubled, dictionary_nses);  // feature tweaks
 
   parse_example_tweaks(options, all);  // example manipulation
 
@@ -1706,10 +1705,11 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
     }
 
     // Loads header of model files and loads the command line options into the options object.
-    load_header_merge_options(*all.options.get(), all, *model);
+    bool interactions_settings_doubled;
+    load_header_merge_options(*all.options.get(), all, *model, interactions_settings_doubled);
 
     std::vector<std::string> dictionary_nses;
-    parse_modules(*all.options.get(), all, dictionary_nses);
+    parse_modules(*all.options.get(), all, interactions_settings_doubled, dictionary_nses);
     parse_sources(*all.options.get(), all, *model, skipModelLoad);
 
     // we must delay so parse_mask is fully defined.
