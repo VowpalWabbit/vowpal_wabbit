@@ -127,7 +127,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   sch.set_task_data<task_data>(D);
   sch.set_options(0);  // Search::AUTO_HAMMING_LOSS
-  sch.set_label_parser(COST_SENSITIVE::cs_label, example_is_test);
+  sch.set_label_parser(COST_SENSITIVE::cs_label, label_type_t::cs, example_is_test);
 }
 
 void finish(Search::search& sch)
