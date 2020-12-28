@@ -108,11 +108,11 @@ if(NOT WIN32)
   #   OUTPUT_NAME ${CMAKE_CURRENT_SOURCE_DIR}/src/main/c++/jni_spark_vw_generated.h)
   # add_dependencies(javaheaders javacompile)
 
-  SET(mvn_args -B verify)
+  SET(mvn_extra_args "")
   if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
       set(JAVA_INSTALL_PATH /usr/lib)
       # the integration tests don't currently pass on mac
-      LIST(APPEND mvn_args "-DskipTests")
+      SET(mvn_extra_args "-DskipTests")
   else()
       set(JAVA_INSTALL_PATH /Library/Java/Extensions)
   endif()
@@ -121,7 +121,7 @@ if(NOT WIN32)
       COMMAND cp $<TARGET_FILE:vw_jni> target/bin/natives/linux_64
       COMMAND echo $<TARGET_FILE:vw-bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw-bin.txt
       # -B is batch mode and avoids the massive download progress print out
-      COMMAND mvn ${mvn_args}
+      COMMAND mvn -B verify ${mvn_extra_args}
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       COMMENT "Copying shared libary dependencies to output directory")
 
