@@ -29,7 +29,7 @@ def test_getting_started_example():
     test_df['index'] = range(1, len(test_df) + 1)
     test_df = test_df.set_index("index")
 
-    vw = pyvw.vw("--cb 4")
+    vw = pyvw.vw("--cb 4", enable_logging=True)
 
     for i in train_df.index:
         action = train_df.loc[i, "action"]
@@ -53,3 +53,4 @@ def test_getting_started_example():
         assert choice == 3, "predicted action should be 3"
 
     vw.finish()
+    print(vw.get_log())

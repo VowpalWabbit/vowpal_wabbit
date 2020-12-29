@@ -189,7 +189,7 @@ class vw(pylibvw.vw):
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
 
-    def __init__(self, arg_str=None, **kw):
+    def __init__(self, arg_str=None, enable_logging=False, **kw):
         """Initialize the vw object.
 
         Parameters
@@ -238,6 +238,17 @@ class vw(pylibvw.vw):
         l = [format_input(k, v) for k, v in kw.items()]
         if arg_str is not None:
             l = [arg_str] + l
+        
+        self.vw_log_dir = False
+
+        if enable_logging:
+            import tempfile, os
+
+            temp_dir = tempfile.mkdtemp(prefix='vw_instance_')
+            self.vw_log_dir = temp_dir
+
+            l.append("--cerr_file " + os.path.join(temp_dir, "cerr.txt"))
+            l.append("--cout_file " + os.path.join(temp_dir, "cout.txt"))
 
         pylibvw.vw.__init__(self, " ".join(l))
 
@@ -499,6 +510,17 @@ class vw(pylibvw.vw):
         if not self.finished:
             pylibvw.vw.finish(self)
             self.finished = True
+
+    def get_log(self):
+        if not self.finished:
+            return "vw instance has not finished, call finish()"
+
+        if self.vw_log_dir:
+            import os
+            with open(os.path.join(self.vw_log_dir, "cerr.txt"), 'r') as file:
+                return file.read()
+        else:
+            return "enable_logging set to false"
 
     def example(self, stringOrDict=None, labelType=pylibvw.vw.lDefault):
         """Create an example initStringOrDict can specify example as VW
