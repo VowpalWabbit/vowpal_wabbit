@@ -257,6 +257,12 @@ class vw(pylibvw.vw):
 
         self.finished = False
 
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.finish()
+
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
         """Returns a collection of examples for a multiline example learner or
         a single example for a single example learner.
