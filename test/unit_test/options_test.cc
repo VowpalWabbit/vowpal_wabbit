@@ -31,7 +31,6 @@ BOOST_AUTO_TEST_CASE(make_option_and_customize) {
   BOOST_CHECK_EQUAL(loc, 5);
 }
 
-
 BOOST_AUTO_TEST_CASE(make_option_no_loc_and_customize)
 {
   auto opt = make_option<int>("opt").default_value(4).help("Help text").keep().short_name("t");
