@@ -42,37 +42,6 @@ vw* setup(options_i& options)
   }
   all->vw_is_main = true;
 
-  auto skip_driver = options.get_typed_option<bool>("dry_run").value();
-
-  // output list of enabled reductions
-  if (!all->logger.quiet && !options.was_supplied("audit_regressor") && !all->enabled_reductions.empty())
-  {
-    const char* const delim = ", ";
-    std::ostringstream imploded;
-    std::copy(all->enabled_reductions.begin(), all->enabled_reductions.end() - 1,
-        std::ostream_iterator<std::string>(imploded, delim));
-
-    all->trace_message << "Enabled reductions: " << imploded.str() << all->enabled_reductions.back() << std::endl;
-  }
-
-  if (!skip_driver && !all->logger.quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
-  {
-    all->trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
-                       << " " << std::setw(shared_data::col_since_last) << std::left << "since"
-                       << " " << std::right << std::setw(shared_data::col_example_counter) << "example"
-                       << " " << std::setw(shared_data::col_example_weight) << "example"
-                       << " " << std::setw(shared_data::col_current_label) << "current"
-                       << " " << std::setw(shared_data::col_current_predict) << "current"
-                       << " " << std::setw(shared_data::col_current_features) << "current" << std::endl;
-    all->trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "loss"
-                       << " " << std::setw(shared_data::col_since_last) << std::left << "last"
-                       << " " << std::right << std::setw(shared_data::col_example_counter) << "counter"
-                       << " " << std::setw(shared_data::col_example_weight) << "weight"
-                       << " " << std::setw(shared_data::col_current_label) << "label"
-                       << " " << std::setw(shared_data::col_current_predict) << "predict"
-                       << " " << std::setw(shared_data::col_current_features) << "features" << std::endl;
-  }
-
   return all;
 }
 
