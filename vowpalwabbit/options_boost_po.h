@@ -240,7 +240,6 @@ po::typed_value<std::vector<T>>* options_boost_po::add_notifier(
     if (!opt->m_allow_override) { check_disagreeing_option_values(result, opt->m_name, final_arguments); }
 
     // Set the value for the listening location.
-    opt->m_location = result;
     opt->value(result);
   });
 }
@@ -251,7 +250,6 @@ po::typed_value<std::vector<T>>* options_boost_po::add_notifier(
 {
   return po_value->notifier([opt](std::vector<T> final_arguments) {
     // Set the value for the listening location.
-    opt->m_location = final_arguments;
     opt->value(final_arguments);
   });
 }

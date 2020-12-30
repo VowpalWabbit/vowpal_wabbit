@@ -38,7 +38,10 @@ struct base_option
 template <typename T>
 struct typed_option : base_option
 {
-  typed_option(const std::string& name, T& location) : base_option(name, typeid(T).hash_code()), m_location{location} {}
+  typed_option(const std::string& name, T& location) : base_option(name, typeid(T).hash_code()), m_location{&location}
+  {
+  }
+  typed_option(const std::string& name) : base_option(name, typeid(T).hash_code()) {}
 
   static size_t type_hash() { return typeid(T).hash_code(); }
 
@@ -88,23 +91,34 @@ struct typed_option : base_option
   typed_option& value(T value)
   {
     m_value = std::make_shared<T>(value);
+    if (m_location != nullptr) { *m_location = value; }
+    value_set_callback(value);
     return *this;
   }
 
   T value() const { return m_value ? *m_value : T(); }
 
-  T& m_location;
+protected:
+  // Allows inheriting classes to handle set values. Noop by default.
+  virtual void value_set_callback(T /*value*/) {}
 
 private:
   // Would prefer to use std::optional (C++17) here but we are targeting C++11
   std::shared_ptr<T> m_value{nullptr};
   std::shared_ptr<T> m_default_value{nullptr};
+  T* m_location = nullptr;
 };
 
 template <typename T>
-typed_option<T> make_option(std::string name, T& location)
+typed_option<T> make_option(const std::string& name, T& location)
 {
   return typed_option<T>(name, location);
+}
+
+template <typename T>
+typed_option<T> make_option(const std::string& name)
+{
+  return typed_option<T>(name);
 }
 
 struct option_group_definition;
