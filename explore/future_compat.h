@@ -17,7 +17,7 @@
 #else
 #define VW_STD17_CONSTEXPR
 #define VW_ATTR(name)
-#    define VW_FALLTHROUGH // fall through
+#    define VW_FALLTHROUGH  // fall through
 #endif
 
 #ifdef HAS_STD14
