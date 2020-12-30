@@ -69,8 +69,9 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
     m_options[opt_ptr->m_name] = opt_ptr;
   }
 
-  // Add the help for the given options.
-  new_options.print(m_help_stringstream);
+  if (!group.m_hidden)
+    // Add the help for the given options.
+    new_options.print(m_help_stringstream);
 
   try
   {
