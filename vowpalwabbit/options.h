@@ -100,7 +100,7 @@ struct typed_option : base_option
 
 protected:
   // Allows inheriting classes to handle set values. Noop by default.
-  virtual void value_set_callback(T /*value*/) {}
+  virtual void value_set_callback(const T& /*value*/) {}
 
 private:
   // Would prefer to use std::optional (C++17) here but we are targeting C++11
