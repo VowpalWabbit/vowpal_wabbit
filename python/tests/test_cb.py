@@ -31,7 +31,7 @@ def helper_get_data():
     return train_df, test_df
 
 def test_getting_started_example():
-    train_data, test_df = helper_get_data()
+    train_df, test_df = helper_get_data()
 
     vw = pyvw.vw("--cb 4")
 
