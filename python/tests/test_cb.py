@@ -1,9 +1,14 @@
 import pandas as pd
 import sklearn as sk
 import numpy as np
+from os import path
 from vowpalwabbit import pyvw
 
 import pytest
+
+def helper_get_test_dir():
+    curr_path = path.dirname(path.realpath(__file__))
+    return path.join(path.dirname(path.dirname(curr_path)), "test")
 
 def test_getting_started_example():
     train_data = [{'action': 1, 'cost': 2, 'probability': 0.4, 'feature1': 'a', 'feature2': 'c', 'feature3': ''},
@@ -53,4 +58,9 @@ def test_getting_started_example():
         assert choice == 3, "predicted action should be 3"
 
     vw.finish()
-    print(vw.get_log())
+
+    output = vw.get_log()
+
+    with open(path.join(helper_get_test_dir(), "test-sets/ref/python_test_cb.stderr"), 'r') as file:
+        actual = file.read()
+        assert actual == output, "file mismatch" + output
