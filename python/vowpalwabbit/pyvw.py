@@ -4,7 +4,8 @@
 from __future__ import division
 import pylibvw
 import warnings
-import os, shutil
+from os import path
+from shutil import rmtree
 
 
 class SearchTask:
@@ -243,13 +244,13 @@ class vw(pylibvw.vw):
         self.vw_log_dir = False
 
         if enable_logging:
-            import tempfile, os
+            import tempfile
 
             temp_dir = tempfile.mkdtemp(prefix='vw_instance_')
             self.vw_log_dir = temp_dir
 
-            l.append("--cerr_file " + os.path.join(temp_dir, "cerr.txt"))
-            l.append("--cout_file " + os.path.join(temp_dir, "cout.txt"))
+            l.append("--cerr_file " + path.join(temp_dir, "cerr.txt"))
+            l.append("--cout_file " + path.join(temp_dir, "cout.txt"))
 
         pylibvw.vw.__init__(self, " ".join(l))
 
@@ -517,8 +518,7 @@ class vw(pylibvw.vw):
     # useful for debugging
     def get_log(self):
         if self.vw_log_dir:
-            import os
-            with open(os.path.join(self.vw_log_dir, "cerr.txt"), 'r') as file:
+            with open(path.join(self.vw_log_dir, "cerr.txt"), 'r') as file:
                 return file.read()
         else:
             raise Exception("enable_logging set to false")
@@ -557,8 +557,8 @@ class vw(pylibvw.vw):
     def __del__(self):
         self.finish()
         if self.vw_log_dir:
-            if os.path.exists(self.vw_log_dir) and os.path.isdir(self.vw_log_dir):
-                shutil.rmtree(self.vw_log_dir)
+            if path.exists(self.vw_log_dir) and path.isdir(self.vw_log_dir):
+                rmtree(self.vw_log_dir)
 
     def init_search_task(self, search_task, task_data=None):
         sch = self.get_search_ptr()

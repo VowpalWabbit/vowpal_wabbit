@@ -539,7 +539,7 @@ class VW(BaseEstimator):
         # add vw attributes
         params.update(self._get_vw_params())
 
-        self.vw_ = pyvw.vw(**params)
+        self.vw_ = pyvw.vw(enable_logging=False, **params)
 
         if X is not None:
             if self.convert_to_vw:
