@@ -4,6 +4,7 @@
 from __future__ import division
 import pylibvw
 import warnings
+import os, shutil
 
 
 class SearchTask:
@@ -556,7 +557,6 @@ class vw(pylibvw.vw):
     def __del__(self):
         self.finish()
         if self.vw_log_dir:
-            import os, shutil
             if os.path.exists(self.vw_log_dir) and os.path.isdir(self.vw_log_dir):
                 shutil.rmtree(self.vw_log_dir)
 

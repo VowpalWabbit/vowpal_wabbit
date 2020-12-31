@@ -1953,6 +1953,9 @@ void finish(vw& all, bool delete_all)
     finalize_regressor_exception_thrown = true;
   }
 
+  all.cerr_buffer.reset();
+  all.cout_buffer.reset();
+
   if (delete_all) delete &all;
 
   if (finalize_regressor_exception_thrown) throw finalize_regressor_exception;
