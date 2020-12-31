@@ -16,5 +16,5 @@ rm -rf build
 source activate test-python36
 python setup.py check -mrs
 python setup.py install --user
-py.test ./python/tests/
+py.test -rsx ./python/tests/
 source deactivate
