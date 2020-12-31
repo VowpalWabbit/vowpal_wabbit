@@ -5,7 +5,7 @@ from vowpalwabbit import pyvw
 
 import pytest
 
-def test_getting_started_example():
+def helper_get_data():
     train_data = [{'action': 1, 'cost': 2, 'probability': 0.4, 'feature1': 'a', 'feature2': 'c', 'feature3': ''},
                 {'action': 3, 'cost': 0, 'probability': 0.2, 'feature1': 'b', 'feature2': 'd', 'feature3': ''},
                 {'action': 4, 'cost': 1, 'probability': 0.5, 'feature1': 'a', 'feature2': 'b', 'feature3': ''},
@@ -17,7 +17,6 @@ def test_getting_started_example():
     train_df['index'] = range(1, len(train_df) + 1)
     train_df = train_df.set_index("index")
 
-
     test_data = [{'feature1': 'b', 'feature2': 'c', 'feature3': ''},
                 {'feature1': 'a', 'feature2': '', 'feature3': 'b'},
                 {'feature1': 'b', 'feature2': 'b', 'feature3': ''},
@@ -28,6 +27,11 @@ def test_getting_started_example():
     # Add index to data frame
     test_df['index'] = range(1, len(test_df) + 1)
     test_df = test_df.set_index("index")
+
+    return train_df, test_df
+
+def test_getting_started_example():
+    train_data, test_df = helper_get_data()
 
     vw = pyvw.vw("--cb 4")
 
@@ -55,31 +59,13 @@ def test_getting_started_example():
     vw.finish()
 
 def test_getting_started_example_with():
-    train_data = [{'action': 1, 'cost': 2, 'probability': 0.4, 'feature1': 'a', 'feature2': 'c', 'feature3': ''},
-                {'action': 3, 'cost': 0, 'probability': 0.2, 'feature1': 'b', 'feature2': 'd', 'feature3': ''},
-                {'action': 4, 'cost': 1, 'probability': 0.5, 'feature1': 'a', 'feature2': 'b', 'feature3': ''},
-                {'action': 2, 'cost': 1, 'probability': 0.3, 'feature1': 'a', 'feature2': 'b', 'feature3': 'c'},
-                {'action': 3, 'cost': 1, 'probability': 0.7, 'feature1': 'a', 'feature2': 'd', 'feature3': ''}]
+    train_df, test_df = helper_get_data()
 
-    train_df = pd.DataFrame(train_data)
-
-    train_df['index'] = range(1, len(train_df) + 1)
-    train_df = train_df.set_index("index")
-
-
-    test_data = [{'feature1': 'b', 'feature2': 'c', 'feature3': ''},
-                {'feature1': 'a', 'feature2': '', 'feature3': 'b'},
-                {'feature1': 'b', 'feature2': 'b', 'feature3': ''},
-                {'feature1': 'a', 'feature2': '', 'feature3': 'b'}]
-
-    test_df = pd.DataFrame(test_data)
-
-    # Add index to data frame
-    test_df['index'] = range(1, len(test_df) + 1)
-    test_df = test_df.set_index("index")
-
-    # calls into vw.finish() automatically
-    with pyvw.vw("--cb 4") as vw:
+    # with syntax calls into vw.finish() automatically.
+    # you actually want to use 'with pyvw.vw("--cb 4") as vw:'
+    # but we need to assert on vw.finished for test purposes
+    vw = pyvw.vw("--cb 4")
+    with vw as vw:
         for i in train_df.index:
             action = train_df.loc[i, "action"]
             cost = train_df.loc[i, "cost"]
@@ -100,5 +86,5 @@ def test_getting_started_example_with():
             choice = vw.predict("| "+str(feature1)+" "+str(feature2)+" "+str(feature3))
             assert isinstance(choice, int), "choice should be int"
             assert choice == 3, "predicted action should be 3"
-
-test_getting_started_example_with()
+    
+    assert vw.finished == True, "with syntax should finish() vw instance"
