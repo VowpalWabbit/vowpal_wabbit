@@ -189,7 +189,7 @@ class vw(pylibvw.vw):
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
 
-    def __init__(self, arg_str=None, enable_logging=False, **kw):
+    def __init__(self, arg_str=None, enable_logging=True, **kw):
         """Initialize the vw object.
 
         Parameters
@@ -511,16 +511,16 @@ class vw(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.finished = True
 
+    # returns the latest vw log
+    # call after vw.finish() for complete log
+    # useful for debugging
     def get_log(self):
-        if not self.finished:
-            return "vw instance has not finished, call finish()"
-
         if self.vw_log_dir:
             import os
             with open(os.path.join(self.vw_log_dir, "cerr.txt"), 'r') as file:
                 return file.read()
         else:
-            return "enable_logging set to false"
+            raise Exception("enable_logging set to false")
 
     def example(self, stringOrDict=None, labelType=pylibvw.vw.lDefault):
         """Create an example initStringOrDict can specify example as VW
@@ -555,6 +555,10 @@ class vw(pylibvw.vw):
 
     def __del__(self):
         self.finish()
+        if self.vw_log_dir:
+            import os, shutil
+            if os.path.exists(self.vw_log_dir) and os.path.isdir(self.vw_log_dir):
+                shutil.rmtree(self.vw_log_dir)
 
     def init_search_task(self, search_task, task_data=None):
         sch = self.get_search_ptr()
