@@ -371,7 +371,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 {
   CS::wclass default_wclass = {0., 0, 0., 0.};
 
-  example* ldf_examples = VW::alloc_examples(sizeof(CS::label), num_actions);
+  example* ldf_examples = VW::alloc_examples(num_actions);
   for (size_t a = 0; a < num_actions; a++)
   {
     CS::label& lab = ldf_examples[a].l.cs;

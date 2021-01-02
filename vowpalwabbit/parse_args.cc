@@ -223,7 +223,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   // mimicing old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
   map->max_load_factor(0.25);
-  example* ec = VW::alloc_examples(all.example_parser->lbl_parser.label_size, 1);
+  example* ec = VW::alloc_examples(1);
 
   size_t def = (size_t)' ';
 
@@ -1353,6 +1353,20 @@ vw& parse_args(
   {
     time(&all.init_time);
 
+    std::string cerr_filename, cout_filename;
+
+    // hidden option_group_definition to not give guarantees of usage, internal use only
+    option_group_definition redirect_args("Internal: redirect cerr/cout to filename");
+    redirect_args.hide().add(make_option("cerr_file", cerr_filename).help("filename to redirect cerr to"));
+    redirect_args.add(make_option("cout_file", cout_filename).help("filename to redirect cout to"));
+    all.options->add_and_parse(redirect_args);
+
+    if (all.options->was_supplied("cerr_file"))
+      all.cerr_buffer = VW::make_unique<buffer_replace>(std::cerr, cerr_filename);
+
+    if (all.options->was_supplied("cout_file"))
+      all.cout_buffer = VW::make_unique<buffer_replace>(std::cout, cout_filename);
+
     bool strict_parse = false;
     int ring_size_tmp;
     option_group_definition vw_args("VW options");
@@ -1677,6 +1691,38 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
+void print_progressive_validation_header(vw& all)
+{
+  // output list of enabled reductions
+  if (!all.logger.quiet && !all.options->was_supplied("audit_regressor") && !all.enabled_reductions.empty())
+  {
+    const char* const delim = ", ";
+    std::ostringstream imploded;
+    std::copy(all.enabled_reductions.begin(), all.enabled_reductions.end() - 1,
+        std::ostream_iterator<std::string>(imploded, delim));
+
+    all.trace_message << "Enabled reductions: " << imploded.str() << all.enabled_reductions.back() << std::endl;
+  }
+
+  if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
+  {
+    all.trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
+                      << " " << std::setw(shared_data::col_since_last) << std::left << "since"
+                      << " " << std::right << std::setw(shared_data::col_example_counter) << "example"
+                      << " " << std::setw(shared_data::col_example_weight) << "example"
+                      << " " << std::setw(shared_data::col_current_label) << "current"
+                      << " " << std::setw(shared_data::col_current_predict) << "current"
+                      << " " << std::setw(shared_data::col_current_features) << "current" << std::endl;
+    all.trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "loss"
+                      << " " << std::setw(shared_data::col_since_last) << std::left << "last"
+                      << " " << std::right << std::setw(shared_data::col_example_counter) << "counter"
+                      << " " << std::setw(shared_data::col_example_weight) << "weight"
+                      << " " << std::setw(shared_data::col_current_label) << "label"
+                      << " " << std::setw(shared_data::col_current_predict) << "predict"
+                      << " " << std::setw(shared_data::col_current_features) << "features" << std::endl;
+  }
+}
+
 vw* initialize(
     config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
@@ -1722,7 +1768,11 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
       exit(0);
     }
 
-    if (!all.options->get_typed_option<bool>("dry_run").value()) { all.l->init_driver(); }
+    if (!all.options->get_typed_option<bool>("dry_run").value())
+    {
+      print_progressive_validation_header(all);
+      all.l->init_driver();
+    }
 
     return &all;
   }
