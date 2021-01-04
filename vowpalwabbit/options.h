@@ -38,9 +38,6 @@ struct base_option
 template <typename T>
 struct typed_option : base_option
 {
-  typed_option(const std::string& name, T& location) : base_option(name, typeid(T).hash_code()), m_location{&location}
-  {
-  }
   typed_option(const std::string& name) : base_option(name, typeid(T).hash_code()) {}
 
   static size_t type_hash() { return typeid(T).hash_code(); }
@@ -91,7 +88,6 @@ struct typed_option : base_option
   typed_option& value(T value)
   {
     m_value = std::make_shared<T>(value);
-    if (m_location != nullptr) { *m_location = value; }
     value_set_callback(value);
     return *this;
   }
@@ -106,13 +102,30 @@ private:
   // Would prefer to use std::optional (C++17) here but we are targeting C++11
   std::shared_ptr<T> m_value{nullptr};
   std::shared_ptr<T> m_default_value{nullptr};
+};
+
+// The contract of typed_option_with_location is that the first set of the option value is written to the given location, otherwise it is a noop.
+template <typename T>
+struct typed_option_with_location : typed_option<T>
+{
+  typed_option_with_location(const std::string& name, T& location) : typed_option<T>(name), m_location{&location} {}
+  virtual void value_set_callback(const T& value) override
+  {
+    if (m_location != nullptr)
+    {
+      *m_location = value;
+      m_location = nullptr;
+    }
+  }
+
+private:
   T* m_location = nullptr;
 };
 
 template <typename T>
-typed_option<T> make_option(const std::string& name, T& location)
+typed_option_with_location<T> make_option(const std::string& name, T& location)
 {
-  return typed_option<T>(name, location);
+  return typed_option_with_location<T>(name, location);
 }
 
 template <typename T>
@@ -202,16 +215,22 @@ struct option_group_definition
   option_group_definition(const std::string& name) : m_name(name) { m_hidden = false; }
 
   template <typename T>
-  option_group_definition& add(T&& op)
-  {
-    m_options.push_back(std::make_shared<typename std::decay<T>::type>(op));
-    return *this;
-  }
-
-  template <typename T>
   option_group_definition& add(typed_option<T>& op)
   {
-    m_options.push_back(std::make_shared<typename std::decay<typed_option<T>>::type>(op));
+    // The function used to just copy into a shared_ptr of the caller type.
+    // This worked when there were no subclasses of typed_option<T>, but now
+    // that there are this copy constructor into a shared pointer does not scale
+    // as the concrete type must be known at this point. This should probably
+    // change to accepting a shared/unique ptr input, however, this changes
+    // syntax (. to ->) for all caller.
+    typed_option<T>* op_ptr = &op;
+    typed_option_with_location<T>* loc_op_ptr = dynamic_cast<typed_option_with_location<T>*>(op_ptr);
+    if (loc_op_ptr != nullptr){
+      m_options.push_back(std::make_shared<typed_option_with_location<T>>(*loc_op_ptr));
+    }
+    else {
+      m_options.push_back(std::make_shared<typed_option<T>>(*op_ptr));
+    }
     if (op.m_necessary) { m_necessary_flags.insert(op.m_name); }
 
     return *this;
