@@ -86,6 +86,7 @@
 #include "cb_sample.h"
 #include "warm_cb.h"
 #include "shared_feature_merger.h"
+#include "cbzo.h"
 // #include "cntk.h"
 
 #include "cats.h"
@@ -481,7 +482,6 @@ input_options parse_source(vw& all, options_i& options)
   return parsed_options;
 }
 
-bool interactions_settings_doubled = false;  // local setting setted in parse_modules()
 namespace VW
 {
 const char* are_features_compatible(vw& vw1, vw& vw2)
@@ -593,7 +593,8 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
   return res;
 }
 
-void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>& dictionary_nses)
+void parse_feature_tweaks(
+    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
   std::string hash_function("strings");
   uint32_t new_bits;
@@ -735,7 +736,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   if ( ( (!all.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
        ||
-       interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
+       interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
     all.trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
                          "OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line."
@@ -1275,6 +1276,8 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(lrqfa_setup);
   reductions.push_back(stagewise_poly_setup);
   reductions.push_back(scorer_setup);
+  reductions.push_back(VW::cbzo::setup);
+
   // Reductions
   reductions.push_back(bs_setup);
   reductions.push_back(VW::binary::binary_setup);
@@ -1349,20 +1352,6 @@ vw& parse_args(
   try
   {
     time(&all.init_time);
-
-    std::string cerr_filename, cout_filename;
-
-    // hidden option_group_definition to not give guarantees of usage, internal use only
-    option_group_definition redirect_args("Internal: redirect cerr/cout to filename");
-    redirect_args.hide().add(make_option("cerr_file", cerr_filename).help("filename to redirect cerr to"));
-    redirect_args.add(make_option("cout_file", cout_filename).help("filename to redirect cout to"));
-    all.options->add_and_parse(redirect_args);
-
-    if (all.options->was_supplied("cerr_file"))
-      all.cerr_buffer = VW::make_unique<buffer_replace>(std::cerr, cerr_filename);
-
-    if (all.options->was_supplied("cout_file"))
-      all.cout_buffer = VW::make_unique<buffer_replace>(std::cout, cout_filename);
 
     bool strict_parse = false;
     int ring_size_tmp;
@@ -1461,21 +1450,13 @@ bool check_interaction_settings_collision(options_i& options, std::string file_o
   return file_options_has_interaction;
 }
 
-options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
+void merge_options_from_header_strings(
+    const std::vector<std::string>& strings, bool skip_interactions, VW::config::options_i& options)
 {
-  std::string file_options;
-  save_load_header(all, model, true, false, file_options, options);
-
-  interactions_settings_doubled = check_interaction_settings_collision(options, file_options);
-
-  // Convert file_options into  vector.
-  std::istringstream ss{file_options};
-  std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
-
   po::options_description desc("");
 
   // Get list of options in file options std::string
-  po::parsed_options pos = po::command_line_parser(container).options(desc).allow_unregistered().run();
+  po::parsed_options pos = po::command_line_parser(strings).options(desc).allow_unregistered().run();
 
   bool skipping = false;
   std::string saved_key = "";
@@ -1508,15 +1489,6 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
     if (opt.string_key.length() > 1 && opt.string_key[0] == '-' && opt.string_key[1] >= '0' && opt.string_key[1] <= '9')
     { treat_as_value = true; }
 
-    // If the interaction settings are doubled, the copy in the model file is ignored.
-    if (interactions_settings_doubled &&
-        (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
-    {
-      // skip this option.
-      skipping = true;
-      continue;
-    }
-
     // File options should always use long form.
 
     // If the key is empty this must be a value, otherwise set the key.
@@ -1525,9 +1497,19 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
       // If the new token is a new option and there were no values previously it was a bool option. Add it as a switch.
       if (count == 0 && first_seen) { options.insert(saved_key, ""); }
 
-      saved_key = opt.string_key;
       count = 0;
       first_seen = true;
+
+      // If the interaction settings are doubled, the copy in the model file is ignored.
+      if (skip_interactions &&
+          (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
+      {
+        // skip this option.
+        skipping = true;
+        first_seen = false;
+        continue;
+      }
+      saved_key = opt.string_key;
 
       if (opt.value.size() > 0)
       {
@@ -1552,18 +1534,33 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
   }
 
   if (count == 0 && saved_key != "") { options.insert(saved_key, ""); }
+}
+
+options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model, bool& interactions_settings_duplicated)
+{
+  std::string file_options;
+  save_load_header(all, model, true, false, file_options, options);
+
+  interactions_settings_duplicated = check_interaction_settings_collision(options, file_options);
+
+  // Convert file_options into  vector.
+  std::istringstream ss{file_options};
+  std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
+
+  merge_options_from_header_strings(container, interactions_settings_duplicated, options);
 
   return options;
 }
 
-void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictionary_nses)
+void parse_modules(
+    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
 
-  parse_feature_tweaks(options, all, dictionary_nses);  // feature tweaks
+  parse_feature_tweaks(options, all, interactions_settings_duplicated, dictionary_nses);  // feature tweaks
 
   parse_example_tweaks(options, all);  // example manipulation
 
@@ -1688,6 +1685,38 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
+void print_progressive_validation_header(vw& all)
+{
+  // output list of enabled reductions
+  if (!all.logger.quiet && !all.options->was_supplied("audit_regressor") && !all.enabled_reductions.empty())
+  {
+    const char* const delim = ", ";
+    std::ostringstream imploded;
+    std::copy(all.enabled_reductions.begin(), all.enabled_reductions.end() - 1,
+        std::ostream_iterator<std::string>(imploded, delim));
+
+    all.trace_message << "Enabled reductions: " << imploded.str() << all.enabled_reductions.back() << std::endl;
+  }
+
+  if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
+  {
+    all.trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
+                      << " " << std::setw(shared_data::col_since_last) << std::left << "since"
+                      << " " << std::right << std::setw(shared_data::col_example_counter) << "example"
+                      << " " << std::setw(shared_data::col_example_weight) << "example"
+                      << " " << std::setw(shared_data::col_current_label) << "current"
+                      << " " << std::setw(shared_data::col_current_predict) << "current"
+                      << " " << std::setw(shared_data::col_current_features) << "current" << std::endl;
+    all.trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "loss"
+                      << " " << std::setw(shared_data::col_since_last) << std::left << "last"
+                      << " " << std::right << std::setw(shared_data::col_example_counter) << "counter"
+                      << " " << std::setw(shared_data::col_example_weight) << "weight"
+                      << " " << std::setw(shared_data::col_current_label) << "label"
+                      << " " << std::setw(shared_data::col_current_predict) << "predict"
+                      << " " << std::setw(shared_data::col_current_features) << "features" << std::endl;
+  }
+}
+
 vw* initialize(
     config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
@@ -1715,10 +1744,11 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
     }
 
     // Loads header of model files and loads the command line options into the options object.
-    load_header_merge_options(*all.options.get(), all, *model);
+    bool interactions_settings_duplicated;
+    load_header_merge_options(*all.options.get(), all, *model, interactions_settings_duplicated);
 
     std::vector<std::string> dictionary_nses;
-    parse_modules(*all.options.get(), all, dictionary_nses);
+    parse_modules(*all.options.get(), all, interactions_settings_duplicated, dictionary_nses);
     parse_sources(*all.options.get(), all, *model, skipModelLoad);
 
     // we must delay so parse_mask is fully defined.
@@ -1733,7 +1763,11 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
       exit(0);
     }
 
-    if (!all.options->get_typed_option<bool>("dry_run").value()) { all.l->init_driver(); }
+    if (!all.options->get_typed_option<bool>("dry_run").value())
+    {
+      print_progressive_validation_header(all);
+      all.l->init_driver();
+    }
 
     return &all;
   }
