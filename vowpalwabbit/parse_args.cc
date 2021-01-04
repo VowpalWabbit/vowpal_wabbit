@@ -1353,20 +1353,6 @@ vw& parse_args(
   {
     time(&all.init_time);
 
-    std::string cerr_filename, cout_filename;
-
-    // hidden option_group_definition to not give guarantees of usage, internal use only
-    option_group_definition redirect_args("Internal: redirect cerr/cout to filename");
-    redirect_args.hide().add(make_option("cerr_file", cerr_filename).help("filename to redirect cerr to"));
-    redirect_args.add(make_option("cout_file", cout_filename).help("filename to redirect cout to"));
-    all.options->add_and_parse(redirect_args);
-
-    if (all.options->was_supplied("cerr_file"))
-      all.cerr_buffer = VW::make_unique<buffer_replace>(std::cerr, cerr_filename);
-
-    if (all.options->was_supplied("cout_file"))
-      all.cout_buffer = VW::make_unique<buffer_replace>(std::cout, cout_filename);
-
     bool strict_parse = false;
     int ring_size_tmp;
     option_group_definition vw_args("VW options");
