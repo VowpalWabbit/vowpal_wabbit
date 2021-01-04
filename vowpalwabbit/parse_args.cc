@@ -592,7 +592,7 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
   return res;
 }
 
-void parse_feature_tweaks(options_i& options, vw& all, bool interactions_settings_doubled, std::vector<std::string>& dictionary_nses)
+void parse_feature_tweaks(options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
   std::string hash_function("strings");
   uint32_t new_bits;
@@ -734,7 +734,7 @@ void parse_feature_tweaks(options_i& options, vw& all, bool interactions_setting
   if ( ( (!all.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
        ||
-       interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
+       interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
     all.trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
                          "OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line."
@@ -1531,30 +1531,30 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
   if (count == 0 && saved_key != "") { options.insert(saved_key, ""); }
 }
 
-options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model, bool& interactions_settings_doubled)
+options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model, bool& interactions_settings_duplicated)
 {
   std::string file_options;
   save_load_header(all, model, true, false, file_options, options);
 
-  interactions_settings_doubled = check_interaction_settings_collision(options, file_options);
+  interactions_settings_duplicated = check_interaction_settings_collision(options, file_options);
 
   // Convert file_options into  vector.
   std::istringstream ss{file_options};
   std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
-  merge_options_from_header_strings(container, interactions_settings_doubled, options);
+  merge_options_from_header_strings(container, interactions_settings_duplicated, options);
 
   return options;
 }
 
-void parse_modules(options_i& options, vw& all, bool interactions_settings_doubled, std::vector<std::string>& dictionary_nses)
+void parse_modules(options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
 
-  parse_feature_tweaks(options, all, interactions_settings_doubled, dictionary_nses);  // feature tweaks
+  parse_feature_tweaks(options, all, interactions_settings_duplicated, dictionary_nses);  // feature tweaks
 
   parse_example_tweaks(options, all);  // example manipulation
 
@@ -1706,11 +1706,11 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
     }
 
     // Loads header of model files and loads the command line options into the options object.
-    bool interactions_settings_doubled;
-    load_header_merge_options(*all.options.get(), all, *model, interactions_settings_doubled);
+    bool interactions_settings_duplicated;
+    load_header_merge_options(*all.options.get(), all, *model, interactions_settings_duplicated);
 
     std::vector<std::string> dictionary_nses;
-    parse_modules(*all.options.get(), all, interactions_settings_doubled, dictionary_nses);
+    parse_modules(*all.options.get(), all, interactions_settings_duplicated, dictionary_nses);
     parse_sources(*all.options.get(), all, *model, skipModelLoad);
 
     // we must delay so parse_mask is fully defined.
