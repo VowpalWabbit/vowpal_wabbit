@@ -104,7 +104,8 @@ private:
   std::shared_ptr<T> m_default_value{nullptr};
 };
 
-// The contract of typed_option_with_location is that the first set of the option value is written to the given location, otherwise it is a noop.
+// The contract of typed_option_with_location is that the first set of the option value is written to the given
+// location, otherwise it is a noop.
 template <typename T>
 struct typed_option_with_location : typed_option<T>
 {
@@ -215,6 +216,12 @@ struct option_group_definition
   option_group_definition(const std::string& name) : m_name(name) { m_hidden = false; }
 
   template <typename T>
+  option_group_definition& add(typed_option<T>&& op)
+  {
+    return add(op);
+  }
+
+  template <typename T>
   option_group_definition& add(typed_option<T>& op)
   {
     // The function used to just copy into a shared_ptr of the caller type.
@@ -225,10 +232,9 @@ struct option_group_definition
     // syntax (. to ->) for all caller.
     typed_option<T>* op_ptr = &op;
     typed_option_with_location<T>* loc_op_ptr = dynamic_cast<typed_option_with_location<T>*>(op_ptr);
-    if (loc_op_ptr != nullptr){
-      m_options.push_back(std::make_shared<typed_option_with_location<T>>(*loc_op_ptr));
-    }
-    else {
+    if (loc_op_ptr != nullptr) { m_options.push_back(std::make_shared<typed_option_with_location<T>>(*loc_op_ptr)); }
+    else
+    {
       m_options.push_back(std::make_shared<typed_option<T>>(*op_ptr));
     }
     if (op.m_necessary) { m_necessary_flags.insert(op.m_name); }
