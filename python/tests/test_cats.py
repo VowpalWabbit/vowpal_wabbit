@@ -30,10 +30,21 @@ def test_cats_pdf():
     assert vw.get_prediction_type() == vw.pPDF, "prediction_type should be pdf"
 
     pdf_segments = vw.predict("| f1 f2 f3 f4")
+    mass = 0
     for segment in pdf_segments:
         assert len(segment) == 3
+
+        # returned action range should lie within supplied limits
         assert segment[0] >= min_value
         assert segment[0] <= max_value
         assert segment[1] >= min_value
         assert segment[1] <= max_value
+
+        # pdf value must be non-negative
+        assert segment[2] >= 0
+
+        mass += (segment[1] - segment[0]) * segment[2]
+
+    assert mass >= 0.9999 and mass <= 1.0001
+
     vw.finish()
