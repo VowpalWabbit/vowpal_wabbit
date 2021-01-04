@@ -17,13 +17,8 @@ jobs:
         - { version: 3.6, include_dir_name: python3.6m/}
         - { version: 3.7, include_dir_name: python3.7m/}
         - { version: 3.8, include_dir_name: python3.8/}
-        - { version: 3.9, include_dir_name: python3.9/}
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.config.version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.config.version }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
@@ -48,7 +43,6 @@ jobs:
         - { version: 3.6, include_dir_name: python3.6m/}
         - { version: 3.7, include_dir_name: python3.7m/}
         - { version: 3.8, include_dir_name: python3.8/}
-        - { version: 3.9, include_dir_name: python3.9/}
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.config.version }}
