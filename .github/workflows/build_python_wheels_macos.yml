@@ -20,6 +20,10 @@ jobs:
         - { version: 3.9, include_dir_name: python3.9/}
     steps:
       - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.config.version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.config.version }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
