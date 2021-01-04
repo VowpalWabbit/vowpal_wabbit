@@ -592,7 +592,8 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
   return res;
 }
 
-void parse_feature_tweaks(options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
+void parse_feature_tweaks(
+    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
   std::string hash_function("strings");
   uint32_t new_bits;
@@ -1460,7 +1461,8 @@ bool check_interaction_settings_collision(options_i& options, std::string file_o
   return file_options_has_interaction;
 }
 
-void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions, VW::config::options_i& options)
+void merge_options_from_header_strings(
+    const std::vector<std::string>& strings, bool skip_interactions, VW::config::options_i& options)
 {
   po::options_description desc("");
 
@@ -1561,7 +1563,8 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model,
   return options;
 }
 
-void parse_modules(options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
+void parse_modules(
+    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));

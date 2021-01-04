@@ -1,5 +1,5 @@
 #ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
+#  define BOOST_TEST_DYN_LINK
 #endif
 
 #include <boost/test/unit_test.hpp>
@@ -251,7 +251,8 @@ BOOST_AUTO_TEST_CASE(merge_from_header_strings_int_bool_opt_noskip)
 
 BOOST_AUTO_TEST_CASE(merge_from_header_strings_bool_int_interaction_bool_int_opt_skip)
 {
-  const std::vector<std::string> strings{"--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
+  const std::vector<std::string> strings{
+      "--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
   auto opts = VW::make_unique<VW::config::options_boost_po>(std::vector<std::string>());
 
   merge_options_from_header_strings(strings, true, *opts);
@@ -285,7 +286,8 @@ BOOST_AUTO_TEST_CASE(merge_from_header_strings_bool_int_interaction_bool_int_opt
 
 BOOST_AUTO_TEST_CASE(merge_from_header_strings_bool_int_interaction_bool_int_opt_noskip)
 {
-  const std::vector<std::string> strings{"--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
+  const std::vector<std::string> strings{
+      "--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
   auto opts = VW::make_unique<VW::config::options_boost_po>(std::vector<std::string>());
 
   merge_options_from_header_strings(strings, false, *opts);
@@ -319,7 +321,8 @@ BOOST_AUTO_TEST_CASE(merge_from_header_strings_bool_int_interaction_bool_int_opt
 
 BOOST_AUTO_TEST_CASE(merge_from_header_strings_bool_int_interaction_int_bool_opt_skip)
 {
-  const std::vector<std::string> strings{"--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
+  const std::vector<std::string> strings{
+      "--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
   auto opts = VW::make_unique<VW::config::options_boost_po>(std::vector<std::string>());
 
   merge_options_from_header_strings(strings, true, *opts);
@@ -353,7 +356,8 @@ BOOST_AUTO_TEST_CASE(merge_from_header_strings_bool_int_interaction_int_bool_opt
 
 BOOST_AUTO_TEST_CASE(merge_from_header_strings_bool_int_interaction_int_bool_opt_noskip)
 {
-  const std::vector<std::string> strings{"--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
+  const std::vector<std::string> strings{
+      "--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
   auto opts = VW::make_unique<VW::config::options_boost_po>(std::vector<std::string>());
 
   merge_options_from_header_strings(strings, false, *opts);
@@ -387,7 +391,8 @@ BOOST_AUTO_TEST_CASE(merge_from_header_strings_bool_int_interaction_int_bool_opt
 
 BOOST_AUTO_TEST_CASE(merge_from_header_strings_int_bool_interaction_bool_int_opt_skip)
 {
-  const std::vector<std::string> strings{"--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
+  const std::vector<std::string> strings{
+      "--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
   auto opts = VW::make_unique<VW::config::options_boost_po>(std::vector<std::string>());
 
   merge_options_from_header_strings(strings, true, *opts);
@@ -421,7 +426,8 @@ BOOST_AUTO_TEST_CASE(merge_from_header_strings_int_bool_interaction_bool_int_opt
 
 BOOST_AUTO_TEST_CASE(merge_from_header_strings_int_bool_interaction_bool_int_opt_noskip)
 {
-  const std::vector<std::string> strings{"--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
+  const std::vector<std::string> strings{
+      "--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
   auto opts = VW::make_unique<VW::config::options_boost_po>(std::vector<std::string>());
 
   merge_options_from_header_strings(strings, false, *opts);
@@ -455,7 +461,8 @@ BOOST_AUTO_TEST_CASE(merge_from_header_strings_int_bool_interaction_bool_int_opt
 
 BOOST_AUTO_TEST_CASE(merge_from_header_strings_int_bool_interaction_int_bool_opt_skip)
 {
-  const std::vector<std::string> strings{"--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
+  const std::vector<std::string> strings{
+      "--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
   auto opts = VW::make_unique<VW::config::options_boost_po>(std::vector<std::string>());
 
   merge_options_from_header_strings(strings, true, *opts);
@@ -489,7 +496,8 @@ BOOST_AUTO_TEST_CASE(merge_from_header_strings_int_bool_interaction_int_bool_opt
 
 BOOST_AUTO_TEST_CASE(merge_from_header_strings_int_bool_interaction_int_bool_opt_noskip)
 {
-  const std::vector<std::string> strings{"--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
+  const std::vector<std::string> strings{
+      "--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
   auto opts = VW::make_unique<VW::config::options_boost_po>(std::vector<std::string>());
 
   merge_options_from_header_strings(strings, false, *opts);
@@ -520,4 +528,3 @@ BOOST_AUTO_TEST_CASE(merge_from_header_strings_int_bool_interaction_int_bool_opt
   BOOST_CHECK_EQUAL(true, opts->was_supplied("bool_opt2"));
   BOOST_CHECK_EQUAL(true, bool_opt2);
 }
-
