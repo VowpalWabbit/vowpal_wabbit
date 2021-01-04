@@ -154,6 +154,7 @@ def get_prediction(ec, prediction_type):
         - 7: pMULTICLASSPROBS
         - 8: pDECISION_SCORES
         - 9: pACTION_PDF_VALUE
+        - 10: pPDF
 
     Examples
     --------
@@ -182,6 +183,7 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars,
         pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores,
         pylibvw.vw.pACTION_PDF_VALUE: ec.get_action_pdf_value,
+        pylibvw.vw.pPDF: ec.get_pdf,
     }
     return switch_prediction_type[prediction_type]()
 
@@ -249,9 +251,8 @@ class vw(pylibvw.vw):
             temp_dir = tempfile.mkdtemp(prefix='vw_instance_')
             self.vw_log_dir = temp_dir
 
-            l.append("--cerr_file " + path.join(temp_dir, "cerr.txt"))
-            l.append("--cout_file " + path.join(temp_dir, "cout.txt"))
-
+            # l.append("--cerr_file " + path.join(temp_dir, "cerr.txt"))
+            # l.append("--cout_file " + path.join(temp_dir, "cout.txt"))
         pylibvw.vw.__init__(self, " ".join(l))
 
         self.parser_ran = False
@@ -269,6 +270,12 @@ class vw(pylibvw.vw):
                 self.parser_ran = True
 
         self.finished = False
+
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.finish()
 
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
         """Returns a collection of examples for a multiline example learner or
@@ -518,8 +525,9 @@ class vw(pylibvw.vw):
     # useful for debugging
     def get_log(self):
         if self.vw_log_dir:
-            with open(path.join(self.vw_log_dir, "cerr.txt"), 'r') as file:
-                return file.read()
+            print("hola")
+            # with open(path.join(self.vw_log_dir, "cerr.txt"), 'r') as file:
+            #     return file.read()
         else:
             raise Exception("enable_logging set to false")
 
