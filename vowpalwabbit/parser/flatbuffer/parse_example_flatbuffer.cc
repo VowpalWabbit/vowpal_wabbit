@@ -244,6 +244,12 @@ void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg)
       parse_slates_label(&(ae->l), slates_label);
       break;
     }
+    case Label_ContinuousLabel:
+    {
+      auto continuous_label = static_cast<const ContinuousLabel*>(eg->label());
+      parse_continuous_action_label(&(ae->l), continuous_label);
+      break;
+    }
     case Label_NONE:
       break;
     default:
