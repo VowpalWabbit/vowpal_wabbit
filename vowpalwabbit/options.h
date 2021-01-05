@@ -71,7 +71,7 @@ struct option_builder
 
   option_builder& allow_override(bool allow_override = true)
   {
-    if (is_scalar_option_type<typename T::value_type>::value)
+    if (!is_scalar_option_type<typename T::value_type>::value)
     { THROW("allow_override can only apply to scalar option types.") }
     m_option_obj.m_allow_override = allow_override;
     return *this;
