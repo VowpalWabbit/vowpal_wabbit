@@ -155,7 +155,8 @@ void reduction::learn(example& ec)
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
 
   ec.l.cb.costs.clear();
-  ec.l.cb.costs.push_back({cost, local_min_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
+  ec.l.cb.costs.push_back(
+      {cost, local_min_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
   ec.l.cb.costs.push_back(
       {cost, local_max_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
 
