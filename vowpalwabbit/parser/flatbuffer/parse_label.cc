@@ -50,15 +50,18 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
     l->conditional_contextual_bandit.type = CCB::example_type::action;
   else if (label->example_type() == 3)
   {
-    l->conditional_contextual_bandit.type = CCB::example_type::slot;
+    l->conditional_contextual_bandit.type = CCB::example_type::unset;
 
     if (label->explicit_included_actions() != nullptr)
     {
+      l->conditional_contextual_bandit.type = CCB::example_type::slot;
       for (const auto& exp_included_action : *(label->explicit_included_actions()))
       { l->conditional_contextual_bandit.explicit_included_actions.push_back(exp_included_action); }
     }
-    else if (label->outcome() != nullptr)
+
+    if (label->outcome() != nullptr)
     {
+      l->conditional_contextual_bandit.type = CCB::example_type::slot;
       auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
       ccb_outcome.cost = label->outcome()->cost();
       ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
@@ -68,8 +71,6 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
 
       l->conditional_contextual_bandit.outcome = &ccb_outcome;
     }
-    else
-      l->conditional_contextual_bandit.type = CCB::example_type::unset;
   }
 }
 

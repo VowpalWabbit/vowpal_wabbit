@@ -154,7 +154,13 @@ void to_flat::create_ccb_label(example* v, ExampleBuilder& ex_builder)
       }
       auto cost = v->l.conditional_contextual_bandit.outcome->cost;
       auto outcome = VW::parsers::flatbuffer::CreateCCB_outcomeDirect(_builder, cost, &action_scores);
-      ex_builder.label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, outcome, nullptr).Union();
+      if (&(v->l.conditional_contextual_bandit.explicit_included_actions) != nullptr)
+      {
+        for (auto const& action : v->l.conditional_contextual_bandit.explicit_included_actions)
+        { explicit_included_actions.push_back(action); }
+      }
+      ex_builder.label =
+          VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, outcome, &explicit_included_actions).Union();
       ex_builder.label_type = VW::parsers::flatbuffer::Label_CCBLabel;
     }
     else if (&(v->l.conditional_contextual_bandit.explicit_included_actions) != nullptr)
