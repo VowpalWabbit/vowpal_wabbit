@@ -166,6 +166,7 @@ template <typename T>
 option_builder<typed_option<T>> make_option(const std::string& name)
 {
   return option_builder<typed_option<T>>(name);
+}
 
 struct option_group_definition;
 
@@ -248,16 +249,16 @@ struct option_group_definition
   option_group_definition(const std::string& name) : m_name(name) {}
 
   template <typename T>
-  option_group_definition& add(T&& op)
+  option_group_definition& add(option_builder<T>&& op)
   {
-    auto built_option = T::finalize(std::move(op));
+    auto built_option = option_builder<T>::finalize(std::move(op));
     m_options.push_back(built_option);
     if (built_option->m_necessary) { m_necessary_flags.insert(built_option->m_name); }
     return *this;
   }
 
   template <typename T>
-  option_group_definition& add(T& op)
+  option_group_definition& add(option_builder<T>& op)
   {
     return add(std::move(op));
   }
