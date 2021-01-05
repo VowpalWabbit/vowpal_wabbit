@@ -110,9 +110,7 @@ struct typed_option : base_option
 
   static size_t type_hash() { return typeid(T).hash_code(); }
 
-  void set_default_value(const value_type& value) {
-    m_default_value = std::make_shared<value_type>(value);
-  }
+  void set_default_value(const value_type& value) { m_default_value = std::make_shared<value_type>(value); }
 
   bool default_value_supplied() const { return m_default_value.get() != nullptr; }
 
