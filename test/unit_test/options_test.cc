@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(typed_argument_equality) {
   base_option* b2 = static_cast<base_option*>(arg2.get());
   base_option* b3 = static_cast<base_option*>(param_3.get());
 
-  BOOST_CHECK(arg1 == arg2);
+  BOOST_CHECK(*arg1 == *arg2);
   BOOST_CHECK(*b1 == *b2);
   BOOST_CHECK(*b1 != *b3);
 }
