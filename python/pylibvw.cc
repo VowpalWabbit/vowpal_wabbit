@@ -57,10 +57,45 @@ const size_t pPDF = 10;
 
 void dont_delete_me(void* arg) {}
 
-vw_ptr my_initialize(std::string args)
+class python_log_wrapper
+{
+  public:
+  py::object py_log;
+  python_log_wrapper(py::object py_log) : py_log(py_log) {}
+
+  static void trace_listener_py(void*wrapper, const std::string& message)
+  {
+    try{
+      auto inst = static_cast<python_log_wrapper*>(wrapper);
+      inst->py_log.attr("log")(message);
+    }
+    catch (...)
+    {
+      // TODO: Properly translate and return Python exception. #2169
+      PyErr_Print();
+      PyErr_Clear();
+      THROW("oh no");
+    }
+  }
+};
+
+vw_ptr my_initialize(py::object py_log, std::string args)
 {
   if (args.find_first_of("--no_stdin") == std::string::npos) args += " --no_stdin";
-  vw* foo = VW::initialize(args);
+
+  trace_message_t trace_listener = nullptr;
+  void* trace_context = nullptr;
+
+  if (!py_log.is_none())
+  {
+    // leaking memory for now
+    auto py_log_wrapper = new python_log_wrapper(py_log);
+    trace_listener = (python_log_wrapper::trace_listener_py);
+    trace_context = py_log_wrapper;
+  }
+
+  vw* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
+  // return boost::shared_ptr<vw>(foo, [](vw *all){VW::finish(*all);});
   return boost::shared_ptr<vw>(foo);
 }
 

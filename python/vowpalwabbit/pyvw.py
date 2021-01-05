@@ -4,8 +4,6 @@
 from __future__ import division
 import pylibvw
 import warnings
-from os import path
-from shutil import rmtree
 
 
 class SearchTask:
@@ -188,12 +186,17 @@ def get_prediction(ec, prediction_type):
     return switch_prediction_type[prediction_type]()
 
 
+class log_forward:
+    messages = []
+    def log(self, msg):
+        self.messages.append(msg)
+    
 class vw(pylibvw.vw):
     """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
 
-    def __init__(self, arg_str=None, enable_logging=True, **kw):
+    def __init__(self, arg_str=None, enable_logging=False, **kw):
         """Initialize the vw object.
 
         Parameters
@@ -243,17 +246,13 @@ class vw(pylibvw.vw):
         if arg_str is not None:
             l = [arg_str] + l
         
-        self.vw_log_dir = False
+        self.log_fwd = None
 
         if enable_logging:
-            import tempfile
+            self.log_fwd = log_forward()
 
-            temp_dir = tempfile.mkdtemp(prefix='vw_instance_')
-            self.vw_log_dir = temp_dir
-
-            # l.append("--cerr_file " + path.join(temp_dir, "cerr.txt"))
-            # l.append("--cout_file " + path.join(temp_dir, "cout.txt"))
-        pylibvw.vw.__init__(self, " ".join(l))
+        super().__init__(self.log_fwd, " ".join(l))
+        # pylibvw.vw.__init__(self, " ".join(l))
 
         self.parser_ran = False
 
@@ -524,10 +523,8 @@ class vw(pylibvw.vw):
     # call after vw.finish() for complete log
     # useful for debugging
     def get_log(self):
-        if self.vw_log_dir:
-            print("hola")
-            # with open(path.join(self.vw_log_dir, "cerr.txt"), 'r') as file:
-            #     return file.read()
+        if self.log_fwd:
+            return self.log_fwd.messages
         else:
             raise Exception("enable_logging set to false")
 
@@ -564,9 +561,6 @@ class vw(pylibvw.vw):
 
     def __del__(self):
         self.finish()
-        if self.vw_log_dir:
-            if path.exists(self.vw_log_dir) and path.isdir(self.vw_log_dir):
-                rmtree(self.vw_log_dir)
 
     def init_search_task(self, search_task, task_data=None):
         sch = self.get_search_ptr()

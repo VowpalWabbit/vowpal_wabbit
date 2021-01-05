@@ -38,7 +38,8 @@ def helper_get_data():
 def test_getting_started_example():
     train_df, test_df = helper_get_data()
 
-    vw = pyvw.vw("--cb 4")
+    # vw = pyvw.vw("--cb 4")
+    vw = pyvw.vw("--cb 4", enable_logging=True)
 
     for i in train_df.index:
         action = train_df.loc[i, "action"]
@@ -66,8 +67,9 @@ def test_getting_started_example():
     output = vw.get_log()
 
     with open(path.join(helper_get_test_dir(), "test-sets/ref/python_test_cb.stderr"), 'r') as file:
-        actual = file.read()
-        assert actual == output, "file mismatch" + output
+        actual = file.readlines()
+        for j, i in zip(actual, output):
+            assert i == j, "line mismatch should be: " + i + " output: " + j
 
 def test_getting_started_example_with():
     train_df, test_df = helper_get_data()
