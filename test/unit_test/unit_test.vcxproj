@@ -43,6 +43,7 @@
     <ClCompile Include="main.cc" />
     <ClCompile Include="numeric_cast_tests.cc" />
     <ClCompile Include="random_test.cc" />
+    <ClCompile Include="parse_args_test.cc" />    
     <ClCompile Include="power_test.cc" />
     <ClCompile Include="prediction_test.cc" />
     <ClCompile Include="scope_exit_test.cc" />
