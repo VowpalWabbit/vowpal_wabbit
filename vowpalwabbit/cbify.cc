@@ -442,9 +442,9 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
     auto& ec = *ec_seq[i];
     data.cs_costs[i] = ec.l.cs.costs;
     data.cb_costs[i].clear();
-    data.cb_as[i].clear();
     ec.l.cb.costs = data.cb_costs[i];
-    ec.pred.a_s = data.cb_as[i];
+    v_move(ec.pred.a_s, data.cb_as[i]);
+    ec.pred.a_s.clear();
   }
 
   base.predict(ec_seq);
@@ -476,7 +476,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
     auto& ec = *ec_seq[i];
-    data.cb_as[i] = ec.pred.a_s;  // store action_score vector for later reuse.
+    v_move(data.cb_as[i], ec.pred.a_s);  // store action_score vector for later reuse.
     if (i == cl.action - 1)
       data.cb_label = ec.l.cb;
     else
