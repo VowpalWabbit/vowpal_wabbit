@@ -20,6 +20,8 @@ namespace VW
 {
 namespace config
 {
+struct base_option;
+
 // option_builder decouples the specific type of the option and the interface
 // for building it. It handles generating a shared_ptr at the end of the
 // base_option type which the options framework takes as input.
@@ -37,9 +39,9 @@ struct option_builder
   {
   }
 
-  option_builder& default_value(T::template value_type value)
+  option_builder& default_value(typename T::value_type value)
   {
-    m_option_obj.m_default_value = std::make_shared<T::template value_type>(value);
+    m_option_obj.m_default_value = std::make_shared<typename T::value_type>(value);
     return *this;
   }
 
@@ -69,8 +71,8 @@ struct option_builder
 
   option_builder& allow_override(bool allow_override = true)
   {
-    static_assert(
-        is_scalar_option_type<T::template value_type>::value, "allow_override can only apply to scalar option types.");
+    if (is_scalar_option_type<typename T::value_type>::value)
+    { THROW("allow_override can only apply to scalar option types.") }
     m_option_obj.m_allow_override = allow_override;
     return *this;
   }
