@@ -20,6 +20,72 @@ namespace VW
 {
 namespace config
 {
+struct base_option;
+
+// option_builder decouples the specific type of the option and the interface
+// for building it. It handles generating a shared_ptr at the end of the
+// base_option type which the options framework takes as input.
+// Therefore, T must satisfy:
+// - Inherit from base_option
+// - Statically expose a type value_type
+// - Have a function set_default_value which accepts a single parameter const value_type&
+// - For nearly all purposes T should be typed_option<value_type> or a subclass
+//   of this.
+template <typename T>
+struct option_builder
+{
+  template <typename... Args>
+  option_builder(Args&&... args) : m_option_obj(std::forward<Args>(args)...)
+  {
+  }
+
+  option_builder& default_value(const typename T::value_type& value)
+  {
+    m_option_obj.set_default_value(value);
+    return *this;
+  }
+
+  option_builder& short_name(const std::string& short_name)
+  {
+    m_option_obj.m_short_name = short_name;
+    return *this;
+  }
+
+  option_builder& help(const std::string& help)
+  {
+    m_option_obj.m_help = help;
+    return *this;
+  }
+
+  option_builder& keep(bool keep = true)
+  {
+    m_option_obj.m_keep = keep;
+    return *this;
+  }
+
+  option_builder& necessary(bool necessary = true)
+  {
+    m_option_obj.m_necessary = necessary;
+    return *this;
+  }
+
+  option_builder& allow_override(bool allow_override = true)
+  {
+    if (!is_scalar_option_type<typename T::value_type>::value)
+    { THROW("allow_override can only apply to scalar option types.") }
+    m_option_obj.m_allow_override = allow_override;
+    return *this;
+  }
+
+  static std::shared_ptr<base_option> finalize(option_builder&& option)
+  {
+    return std::make_shared<T>(std::move(option.m_option_obj));
+  }
+
+private:
+  T m_option_obj;
+};
+
 struct base_option
 {
   base_option(std::string name, size_t type_hash) : m_name(std::move(name)), m_type_hash(type_hash) {}
@@ -38,50 +104,17 @@ struct base_option
 template <typename T>
 struct typed_option : base_option
 {
+  using value_type = T;
+
   typed_option(const std::string& name) : base_option(name, typeid(T).hash_code()) {}
 
   static size_t type_hash() { return typeid(T).hash_code(); }
 
-  typed_option& default_value(T value)
-  {
-    m_default_value = std::make_shared<T>(value);
-    return *this;
-  }
+  void set_default_value(const value_type& value) { m_default_value = std::make_shared<value_type>(value); }
 
   bool default_value_supplied() const { return m_default_value.get() != nullptr; }
 
   T default_value() const { return m_default_value ? *m_default_value : T(); }
-
-  typed_option& short_name(const std::string& short_name)
-  {
-    m_short_name = short_name;
-    return *this;
-  }
-
-  typed_option& help(const std::string& help)
-  {
-    m_help = help;
-    return *this;
-  }
-
-  typed_option& keep(bool keep = true)
-  {
-    m_keep = keep;
-    return *this;
-  }
-
-  typed_option& necessary(bool necessary = true)
-  {
-    m_necessary = necessary;
-    return *this;
-  }
-
-  typed_option& allow_override(bool allow_override = true)
-  {
-    static_assert(is_scalar_option_type<T>::value, "allow_override can only apply to scalar option types.");
-    m_allow_override = allow_override;
-    return *this;
-  }
 
   bool value_supplied() const { return m_value.get() != nullptr; }
 
@@ -124,16 +157,15 @@ private:
 };
 
 template <typename T>
-typed_option_with_location<T> make_option(const std::string& name, T& location)
+option_builder<typed_option_with_location<T>> make_option(const std::string& name, T& location)
 {
   return typed_option_with_location<T>(name, location);
 }
 
 template <typename T>
-typed_option<T> make_option(const std::string& name)
+option_builder<typed_option<T>> make_option(const std::string& name)
 {
-  return typed_option<T>(name);
-}
+  return option_builder<typed_option<T>>(name);
 
 struct option_group_definition;
 
@@ -213,33 +245,21 @@ struct options_i
 struct option_group_definition
 {
   // add second parameter for const string short name
-  option_group_definition(const std::string& name) : m_name(name) { m_hidden = false; }
+  option_group_definition(const std::string& name) : m_name(name) {}
 
   template <typename T>
-  option_group_definition& add(typed_option<T>&& op)
+  option_group_definition& add(T&& op)
   {
-    return add(op);
+    auto built_option = T::finalize(std::move(op));
+    m_options.push_back(built_option);
+    if (built_option->m_necessary) { m_necessary_flags.insert(built_option->m_name); }
+    return *this;
   }
 
   template <typename T>
-  option_group_definition& add(typed_option<T>& op)
+  option_group_definition& add(T& op)
   {
-    // The function used to just copy into a shared_ptr of the caller type.
-    // This worked when there were no subclasses of typed_option<T>, but now
-    // that there are this copy constructor into a shared pointer does not scale
-    // as the concrete type must be known at this point. This should probably
-    // change to accepting a shared/unique ptr input, however, this changes
-    // syntax (. to ->) for all caller.
-    typed_option<T>* op_ptr = &op;
-    typed_option_with_location<T>* loc_op_ptr = dynamic_cast<typed_option_with_location<T>*>(op_ptr);
-    if (loc_op_ptr != nullptr) { m_options.push_back(std::make_shared<typed_option_with_location<T>>(*loc_op_ptr)); }
-    else
-    {
-      m_options.push_back(std::make_shared<typed_option<T>>(*op_ptr));
-    }
-    if (op.m_necessary) { m_necessary_flags.insert(op.m_name); }
-
-    return *this;
+    return add(std::move(op));
   }
 
   // will check if ALL of 'necessary' options were suplied
@@ -261,16 +281,9 @@ struct option_group_definition
     return *this;
   }
 
-  option_group_definition& hide()
-  {
-    m_hidden = true;
-    return *this;
-  }
-
   std::string m_name;
   std::unordered_set<std::string> m_necessary_flags;
   std::vector<std::shared_ptr<base_option>> m_options;
-  bool m_hidden;
 };
 
 struct options_name_extractor : options_i
