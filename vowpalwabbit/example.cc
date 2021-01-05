@@ -138,6 +138,7 @@ void example::delete_unions(void (*delete_label)(void*), void (*delete_predictio
   if (delete_label) { delete_label(&l); }
 
   // if (delete_prediction) { delete_prediction(&pred); }
+  std::ignore = delete_prediction;
 }
 
 float collision_cleanup(features& fs)
