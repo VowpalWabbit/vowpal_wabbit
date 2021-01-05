@@ -59,13 +59,14 @@ void dont_delete_me(void* arg) {}
 
 class python_log_wrapper
 {
-  public:
+public:
   py::object py_log;
   python_log_wrapper(py::object py_log) : py_log(py_log) {}
 
-  static void trace_listener_py(void*wrapper, const std::string& message)
+  static void trace_listener_py(void* wrapper, const std::string& message)
   {
-    try{
+    try
+    {
       auto inst = static_cast<python_log_wrapper*>(wrapper);
       inst->py_log.attr("log")(message);
     }
@@ -74,7 +75,7 @@ class python_log_wrapper
       // TODO: Properly translate and return Python exception. #2169
       PyErr_Print();
       PyErr_Clear();
-      THROW("oh no");
+      std::cerr << "error using python logging. ignoring." << std::endl;
     }
   }
 };
