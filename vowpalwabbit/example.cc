@@ -30,9 +30,7 @@ example::~example()
   tag.delete_v();
   pred.scalars.delete_v();
   pred.a_s.delete_v();
-  for(auto &decision : pred.decision_scores) {
-    decision.delete_v();
-  }
+  for (auto& decision : pred.decision_scores) { decision.delete_v(); }
   pred.decision_scores.delete_v();
   pred.multilabels.label_v.delete_v();
   pred.pdf.delete_v();
