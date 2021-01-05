@@ -27,11 +27,7 @@ std::shared_ptr<typed_option<T>> to_opt_ptr(option_builder<typed_option<T>>& bui
 
 BOOST_AUTO_TEST_CASE(make_option_and_customize) {
   int loc = 0;
-  auto opt = to_opt_ptr(make_option("opt", loc)
-    .default_value(4)
-    .help("Help text")
-    .keep()
-    .short_name("t"));
+  auto opt = to_opt_ptr(make_option("opt", loc).default_value(4).help("Help text").keep().short_name("t"));
 
   BOOST_CHECK_EQUAL(opt->m_name, "opt");
   BOOST_CHECK_EQUAL(opt->default_value_supplied(), true);
@@ -47,21 +43,12 @@ BOOST_AUTO_TEST_CASE(typed_argument_equality) {
   int int_loc;
   int int_loc_other;
   float float_loc;
-  auto arg1 = to_opt_ptr(make_option("int_opt", int_loc)
-    .default_value(4)
-    .help("Help text")
-    .keep()
-    .short_name("t"));
+  auto arg1 = to_opt_ptr(make_option("int_opt", int_loc).default_value(4).help("Help text").keep().short_name("t"));
 
-  auto arg2 = to_opt_ptr(make_option("int_opt", int_loc_other)
-    .default_value(4)
-    .help("Help text")
-    .keep()
-    .short_name("t"));
+  auto arg2 =
+      to_opt_ptr(make_option("int_opt", int_loc_other).default_value(4).help("Help text").keep().short_name("t"));
 
-  auto param_3 = to_opt_ptr(make_option("float_opt", float_loc)
-    .default_value(3.2f)
-    .short_name("f"));
+  auto param_3 = to_opt_ptr(make_option("float_opt", float_loc).default_value(3.2f).short_name("f"));
 
   base_option* b1 = static_cast<base_option*>(arg1.get());
   base_option* b2 = static_cast<base_option*>(arg2.get());
