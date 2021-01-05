@@ -87,7 +87,17 @@ table Slates_Label {
   probabilities:[action_score];
 }
 
-union Label {SimpleLabel, CBLabel, CCBLabel, MultiClass, MultiLabel, CB_EVAL_Label, CS_Label, no_label, Slates_Label}
+table Continuous_Label_Elm {
+  action:float;
+  cost:float;
+  pdf_value:float;
+}
+
+table ContinuousLabel {
+  costs:[Continuous_Label_Elm];
+}
+
+union Label {SimpleLabel, CBLabel, CCBLabel, MultiClass, MultiLabel, CB_EVAL_Label, CS_Label, no_label, Slates_Label, ContinuousLabel}
 
 table Example {
   namespaces:[Namespace];
