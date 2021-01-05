@@ -173,14 +173,8 @@ public:
   BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
   {
     // check valid pdf else remove
-    auto& pdf = ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().pdf;
-    float mass = 0.f;
-    for (const auto& segment : pdf) { mass += (segment.right - segment.left) * segment.pdf_value; }
-    if (mass < 0.9999 || mass > 1.0001)
-    {
-      // not using pdf provided as it does not sum to 1
-      pdf.clear();
-    }
+    auto& red_fts = ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>();
+    if (!VW::continuous_actions::is_valid_pdf(red_fts.pdf)) { red_fts.pdf.clear(); }
     return return_state;
   }
 

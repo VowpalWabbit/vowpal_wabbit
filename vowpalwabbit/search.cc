@@ -2969,12 +2969,13 @@ void search::set_options(uint32_t opts)
         << endl;
 }
 
-void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
+void search::set_label_parser(label_parser& lp, label_type_t type, bool (*is_test)(polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
     std::cerr << "warning: task should not set label parser except in initialize function!" << endl;
   this->priv->all->example_parser->lbl_parser = lp;
   this->priv->all->example_parser->lbl_parser.test_label = (bool (*)(polylabel*))is_test;
+  this->priv->all->label_type = type;
   this->priv->label_is_test = is_test;
 }
 

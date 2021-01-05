@@ -42,10 +42,10 @@ struct cb_explore
 
   learner<cb_explore, example>* cs;
 
-  size_t tau;
+  uint64_t tau;
   float epsilon;
-  size_t bag_size;
-  size_t cover_size;
+  uint64_t bag_size;
+  uint64_t cover_size;
   float psi;
   bool nounif;
   bool epsilon_decay;
