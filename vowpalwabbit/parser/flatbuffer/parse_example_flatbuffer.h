@@ -53,6 +53,7 @@ private:
   void parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label);
   void parse_multi_label(polylabel* l, const MultiLabel* label);
   void parse_slates_label(polylabel* l, const Slates_Label* label);
+  void parse_continuous_action_label(polylabel* l, const ContinuousLabel* label);
 };
 }  // namespace flatbuffer
 }  // namespace parsers
