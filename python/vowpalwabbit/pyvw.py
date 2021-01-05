@@ -251,7 +251,7 @@ class vw(pylibvw.vw):
         if enable_logging:
             self.log_fwd = log_forward()
 
-        super().__init__(self.log_fwd, " ".join(l))
+        super(vw, self).__init__(self.log_fwd, " ".join(l))
         # pylibvw.vw.__init__(self, " ".join(l))
 
         self.parser_ran = False
