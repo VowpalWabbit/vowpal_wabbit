@@ -27,8 +27,8 @@ struct base_option;
 // base_option type which the options framework takes as input.
 // Therefore, T must satisfy:
 // - Inherit from base_option
-// - Have a shared_ptr field called m_default_value
 // - Statically expose a type value_type
+// - Have a function set_default_value which accepts a single parameter const value_type&
 // - For nearly all purposes T should be typed_option<value_type> or a subclass
 //   of this.
 template <typename T>
@@ -39,9 +39,9 @@ struct option_builder
   {
   }
 
-  option_builder& default_value(typename T::value_type value)
+  option_builder& default_value(const typename T::value_type& value)
   {
-    m_option_obj.m_default_value = std::make_shared<typename T::value_type>(value);
+    m_option_obj.set_default_value(value);
     return *this;
   }
 
@@ -104,14 +104,15 @@ struct base_option
 template <typename T>
 struct typed_option : base_option
 {
-  template <typename W>
-  friend struct option_builder;
-
   using value_type = T;
 
   typed_option(const std::string& name, T& location) : base_option(name, typeid(T).hash_code()), m_location{location} {}
 
   static size_t type_hash() { return typeid(T).hash_code(); }
+
+  void set_default_value(const value_type& value) {
+    m_default_value = std::make_shared<value_type>(value);
+  }
 
   bool default_value_supplied() const { return m_default_value.get() != nullptr; }
 
