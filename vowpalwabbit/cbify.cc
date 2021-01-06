@@ -313,6 +313,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
     }
   }
 
+  ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   ec.l.simple = regression_label;  // restore the regression label
   ec.pred.scalar = cb_cont_lbl.action;
 }
