@@ -179,4 +179,7 @@ BOOST_AUTO_TEST_CASE(ccb_copy_label)
   BOOST_CHECK_EQUAL(copied_to->outcome->probabilities[2].action, 3);
   BOOST_CHECK_CLOSE(copied_to->outcome->probabilities[2].score, .25f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(copied_to->type, CCB::example_type::slot);
+
+  CCB::delete_label(*label);
+  CCB::delete_label(*copied_to);
 }

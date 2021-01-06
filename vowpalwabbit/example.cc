@@ -17,10 +17,34 @@ example::example()
 }
 VW_WARNING_STATE_POP
 
+
+  no_label::no_label empty;
+  label_data simple;
+  MULTICLASS::label_t multi;
+  COST_SENSITIVE::label cs;
+  CB::label cb;
+  VW::cb_continuous::continuous_label cb_cont;
+  CCB::label conditional_contextual_bandit;
+  VW::slates::label slates;
+  CB_EVAL::label cb_eval;
+  MULTILABEL::labels multilabels;
+
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
 {
+  // TODO migrate deletion logic into each struct.
+  no_label::no_label_parser.delete_label(&l);
+  simple_label_parser.delete_label(&l);
+  MULTICLASS::mc_label.delete_label(&l);
+  COST_SENSITIVE::cs_label.delete_label(&l);
+  CB::cb_label.delete_label(&l);
+  VW::cb_continuous::the_label_parser.delete_label(&l);
+  CCB::ccb_label_parser.delete_label(&l);
+  VW::slates::slates_label_parser.delete_label(&l);
+  CB_EVAL::cb_eval.delete_label(&l);
+  MULTILABEL::multilabel.delete_label(&l);
+
   tag.delete_v();
   if (passthrough)
   {
