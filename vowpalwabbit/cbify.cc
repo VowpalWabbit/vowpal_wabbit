@@ -238,6 +238,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
 
   v_move(data.a_s, ec.pred.a_s);
   data.a_s.clear();
+  ec.l.cb.costs = v_init<CB::cb_class>();
 
   ec.l.simple = regression_label;
   ec.pred.scalar = converted_action;
@@ -365,6 +366,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
     ec.l.multi = ld;
 
   ec.pred.multiclass = cl.action;
+  ec.l.cb.costs = v_init<CB::cb_class>();
 }
 
 template <bool is_learn, bool use_cs>
@@ -480,6 +482,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
       ec.pred.multiclass = cl.action;
     else
       ec.pred.multiclass = 0;
+    ec.l.cb.costs = v_init<CB::cb_class>();
   }
 }
 

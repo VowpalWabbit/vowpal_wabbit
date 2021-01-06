@@ -236,6 +236,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     }
   }
 
+  ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
   ec.pred.a_s = probs;
 }
 
