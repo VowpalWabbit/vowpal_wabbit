@@ -114,7 +114,11 @@ struct typed_option : base_option
 
   bool default_value_supplied() const { return m_default_value.get() != nullptr; }
 
-  T default_value() const { return m_default_value ? *m_default_value : T(); }
+  T default_value() const
+  {
+    if (m_default_value) { return *m_default_value; }
+    THROW("typed_option does not contain default value. use default_value_supplied to check if default value exists.")
+  }
 
   bool value_supplied() const { return m_value.get() != nullptr; }
 
@@ -127,7 +131,11 @@ struct typed_option : base_option
     return *this;
   }
 
-  T value() const { return m_value ? *m_value : T(); }
+  T value() const
+  {
+    if (m_value) { return *m_value; }
+    THROW("typed_option does not contain value. use value_supplied to check if value exists.")
+  }
 
 protected:
   // Allows inheriting classes to handle set values. Noop by default.
