@@ -155,6 +155,14 @@ void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
   }
 }
 
+void parser::parse_continuous_action_label(polylabel* l, const VW::parsers::flatbuffer::ContinuousLabel* label)
+{
+  for (auto const& continuous_element : *(label->costs()))
+  {
+    l->cb_cont.costs.push_back(
+        {continuous_element->action(), continuous_element->cost(), continuous_element->pdf_value()});
+  }
+}
 }  // namespace flatbuffer
 }  // namespace parsers
 }  // namespace VW
