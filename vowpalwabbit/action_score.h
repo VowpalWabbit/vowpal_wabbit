@@ -18,16 +18,17 @@ struct action_score
 
 typedef v_array<action_score> action_scores;
 
-class score_iterator : public virtual std::iterator<std::random_access_iterator_tag,  // iterator_category
-                           float,                                                     // value_type
-                           long,                                                      // difference_type
-                           float*,                                                    // pointer
-                           float                                                      // reference
-                           >
+class score_iterator
 {
   action_score* _p;
 
 public:
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = float;
+  using difference_type = long;
+  using pointer = float*;
+  using reference = float;
+
   score_iterator(action_score* p) : _p(p) {}
 
   score_iterator& operator++()

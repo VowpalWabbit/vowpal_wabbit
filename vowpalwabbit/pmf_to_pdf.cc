@@ -149,14 +149,16 @@ void reduction::learn(example& ec)
     if (!cond2) action_segment_index++;
   }
 
-  const uint32_t min_value = (std::max)((int)bandwidth, action_segment_index - (int)bandwidth + 1);
-  const uint32_t max_value = (std::min)(num_actions - 1 - bandwidth, action_segment_index + bandwidth);
+  const uint32_t local_min_value = (std::max)((int)bandwidth, action_segment_index - (int)bandwidth + 1);
+  const uint32_t local_max_value = (std::min)(num_actions - 1 - bandwidth, action_segment_index + bandwidth);
 
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
 
   ec.l.cb.costs.clear();
-  ec.l.cb.costs.push_back({cost, min_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
-  ec.l.cb.costs.push_back({cost, max_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
+  ec.l.cb.costs.push_back(
+      {cost, local_min_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
+  ec.l.cb.costs.push_back(
+      {cost, local_max_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
 
   auto swap_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
 
