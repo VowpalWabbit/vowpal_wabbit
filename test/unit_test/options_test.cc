@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(make_option_and_customize) {
   BOOST_CHECK_EQUAL(opt->m_keep, true);
   BOOST_CHECK_EQUAL(opt->m_short_name, "t");
   BOOST_CHECK_EQUAL(opt->m_type_hash, typeid(decltype(loc)).hash_code());
-  opt->value(5);
+  opt->value(5, true);
   BOOST_CHECK_EQUAL(loc, 5);
 }
 

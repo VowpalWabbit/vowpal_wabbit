@@ -118,10 +118,11 @@ struct typed_option : base_option
 
   bool value_supplied() const { return m_value.get() != nullptr; }
 
-  typed_option& value(T value)
+  // Typed option children sometimes use stack local variables that are only valid for the initial set from add and parse, so we need to signal when that is the case.
+  typed_option& value(T value, bool called_from_add_and_parse = false)
   {
     m_value = std::make_shared<T>(value);
-    value_set_callback(value);
+    value_set_callback(value, called_from_add_and_parse);
     return *this;
   }
 
@@ -129,7 +130,7 @@ struct typed_option : base_option
 
 protected:
   // Allows inheriting classes to handle set values. Noop by default.
-  virtual void value_set_callback(const T& /*value*/) {}
+  virtual void value_set_callback(const T& /*value*/, bool /*called_from_add_and_parse*/) {}
 
 private:
   // Would prefer to use std::optional (C++17) here but we are targeting C++11
@@ -143,12 +144,12 @@ template <typename T>
 struct typed_option_with_location : typed_option<T>
 {
   typed_option_with_location(const std::string& name, T& location) : typed_option<T>(name), m_location{&location} {}
-  virtual void value_set_callback(const T& value) override
+  virtual void value_set_callback(const T& value, bool called_from_add_and_parse) override
   {
-    if (m_location != nullptr)
+    // This should only be done when called from add_and_parse because the location is often a stack local variable that is only valid for the inital call.
+    if (m_location != nullptr && called_from_add_and_parse)
     {
       *m_location = value;
-      m_location = nullptr;
     }
   }
 
