@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_pdf_and_chosen_action)
     reduction_features red_features;
     parse_label(lp, &p,
         "ca 185.121:0.657567:6.20426e-05 pdf 185:8109.67:2.10314e-06 8109.67:23959:6.20426e-05 chosen_action 8110.121",
-        *label, red_features);
+        *plabel, red_features);
 
     // check label
     BOOST_CHECK_CLOSE(plabel->cb_cont.costs[0].pdf_value, 6.20426e-05, FLOAT_TOL);
