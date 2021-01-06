@@ -106,7 +106,7 @@ struct typed_option : base_option
 {
   using value_type = T;
 
-  typed_option(const std::string& name, T& location) : base_option(name, typeid(T).hash_code()), m_location{location} {}
+  typed_option(const std::string& name) : base_option(name, typeid(T).hash_code()) {}
 
   static size_t type_hash() { return typeid(T).hash_code(); }
 
@@ -118,15 +118,20 @@ struct typed_option : base_option
 
   bool value_supplied() const { return m_value.get() != nullptr; }
 
-  typed_option& value(T value)
+  // Typed option children sometimes use stack local variables that are only valid for the initial set from add and
+  // parse, so we need to signal when that is the case.
+  typed_option& value(T value, bool called_from_add_and_parse = false)
   {
     m_value = std::make_shared<T>(value);
+    value_set_callback(value, called_from_add_and_parse);
     return *this;
   }
 
   T value() const { return m_value ? *m_value : T(); }
 
-  T& m_location;
+protected:
+  // Allows inheriting classes to handle set values. Noop by default.
+  virtual void value_set_callback(const T& /*value*/, bool /*called_from_add_and_parse*/) {}
 
 private:
   // Would prefer to use std::optional (C++17) here but we are targeting C++11
@@ -134,10 +139,33 @@ private:
   std::shared_ptr<T> m_default_value{nullptr};
 };
 
+// The contract of typed_option_with_location is that the first set of the option value is written to the given
+// location, otherwise it is a noop.
 template <typename T>
-option_builder<typed_option<T>> make_option(std::string name, T& location)
+struct typed_option_with_location : typed_option<T>
 {
-  return option_builder<typed_option<T>>(name, location);
+  typed_option_with_location(const std::string& name, T& location) : typed_option<T>(name), m_location{&location} {}
+  virtual void value_set_callback(const T& value, bool called_from_add_and_parse) override
+  {
+    // This should only be done when called from add_and_parse because the location is often a stack local variable that
+    // is only valid for the inital call.
+    if (m_location != nullptr && called_from_add_and_parse) { *m_location = value; }
+  }
+
+private:
+  T* m_location = nullptr;
+};
+
+template <typename T>
+option_builder<typed_option_with_location<T>> make_option(const std::string& name, T& location)
+{
+  return typed_option_with_location<T>(name, location);
+}
+
+template <typename T>
+option_builder<typed_option<T>> make_option(const std::string& name)
+{
+  return option_builder<typed_option<T>>(name);
 }
 
 struct option_group_definition;
@@ -221,16 +249,16 @@ struct option_group_definition
   option_group_definition(const std::string& name) : m_name(name) {}
 
   template <typename T>
-  option_group_definition& add(T&& op)
+  option_group_definition& add(option_builder<T>&& op)
   {
-    auto built_option = T::finalize(std::move(op));
+    auto built_option = option_builder<T>::finalize(std::move(op));
     m_options.push_back(built_option);
     if (built_option->m_necessary) { m_necessary_flags.insert(built_option->m_name); }
     return *this;
   }
 
   template <typename T>
-  option_group_definition& add(T& op)
+  option_group_definition& add(option_builder<T>& op)
   {
     return add(std::move(op));
   }
