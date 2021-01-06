@@ -61,7 +61,10 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
     ec.l.cs = data.cb_cs_ld;
 
     // Guard example state restore against throws
-    auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cb = ld; });
+    auto restore_guard = VW::scope_exit([&ld, &ec] {
+      ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+      ec.l.cb = ld;
+    });
 
     if (is_learn)
       base.learn(ec);

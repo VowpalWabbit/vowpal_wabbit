@@ -276,6 +276,7 @@ void call_cs_ldf(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<C
     // and restore offsets
     for (size_t i = 0; i < examples.size(); ++i)
     {
+      examples[i]->l.cs.costs = v_init<COST_SENSITIVE::wclass>();
       examples[i]->l.cb = cb_labels[i];
       examples[i]->ft_offset = saved_offset;
     }

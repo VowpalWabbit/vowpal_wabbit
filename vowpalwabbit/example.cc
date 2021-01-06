@@ -17,18 +17,6 @@ example::example()
 }
 VW_WARNING_STATE_POP
 
-
-  no_label::no_label empty;
-  label_data simple;
-  MULTICLASS::label_t multi;
-  COST_SENSITIVE::label cs;
-  CB::label cb;
-  VW::cb_continuous::continuous_label cb_cont;
-  CCB::label conditional_contextual_bandit;
-  VW::slates::label slates;
-  CB_EVAL::label cb_eval;
-  MULTILABEL::labels multilabels;
-
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
