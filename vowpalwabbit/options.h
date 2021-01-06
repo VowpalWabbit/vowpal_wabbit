@@ -118,7 +118,8 @@ struct typed_option : base_option
 
   bool value_supplied() const { return m_value.get() != nullptr; }
 
-  // Typed option children sometimes use stack local variables that are only valid for the initial set from add and parse, so we need to signal when that is the case.
+  // Typed option children sometimes use stack local variables that are only valid for the initial set from add and
+  // parse, so we need to signal when that is the case.
   typed_option& value(T value, bool called_from_add_and_parse = false)
   {
     m_value = std::make_shared<T>(value);
@@ -146,11 +147,9 @@ struct typed_option_with_location : typed_option<T>
   typed_option_with_location(const std::string& name, T& location) : typed_option<T>(name), m_location{&location} {}
   virtual void value_set_callback(const T& value, bool called_from_add_and_parse) override
   {
-    // This should only be done when called from add_and_parse because the location is often a stack local variable that is only valid for the inital call.
-    if (m_location != nullptr && called_from_add_and_parse)
-    {
-      *m_location = value;
-    }
+    // This should only be done when called from add_and_parse because the location is often a stack local variable that
+    // is only valid for the inital call.
+    if (m_location != nullptr && called_from_add_and_parse) { *m_location = value; }
   }
 
 private:
