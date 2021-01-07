@@ -46,6 +46,13 @@ struct cbify_reg
   float max_cost = std::numeric_limits<float>::lowest();
 };
 
+template <typename T>
+void v_move(v_array<T>& dst, v_array<T>& src)
+{
+  dst = src;
+  src = v_init<T>();
+}
+
 struct cbify
 {
   CB::label cb_label;

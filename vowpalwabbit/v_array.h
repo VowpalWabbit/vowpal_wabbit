@@ -184,13 +184,6 @@ inline v_array<T> v_init()
   return {nullptr, nullptr, nullptr, 0};
 }
 
-template <typename T>
-void v_move(v_array<T>& dst, v_array<T>& src)
-{
-  dst = src;
-  src = v_init<T>();
-}
-
 template <class T>
 void copy_array(v_array<T>& dst, const v_array<T>& src)
 {
