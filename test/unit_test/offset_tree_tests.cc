@@ -66,7 +66,7 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
 BOOST_AUTO_TEST_CASE(offset_tree_learn_basic)
 {
   // Setup a test harness base reduction
-  const auto test_harness = VW::offset_tree::get_test_harness_reduction({{.9, .1}, {.9, .1}});
+  const auto test_harness = VW::offset_tree::get_test_harness_reduction({{.9f, .1f}, {.9f, .1f}});
 
   VW::offset_tree::offset_tree tree(3);
   tree.init();
