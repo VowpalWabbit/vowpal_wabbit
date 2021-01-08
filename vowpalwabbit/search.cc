@@ -2059,7 +2059,7 @@ void verify_active_csoaa(
   {
     if (!known[i].second)
     {
-      float err = pow(known[i].first.partial_prediction - wc.x, 2);
+      float err = static_cast<float>(std::pow(known[i].first.partial_prediction - wc.x, 2));
       if (err > threshold)
       {
         std::cerr << "verify_active_csoaa failed: truth " << wc.class_index << ":" << wc.x << ", known[" << i

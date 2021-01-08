@@ -438,7 +438,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
       if (should_augment_with_slot_info)
       {
-        if (data.all->audit) { inject_slot_id<true>(data, data.shared, slot_id); }
+        if (data.all->audit || data.all->hash_inv) { inject_slot_id<true>(data, data.shared, slot_id); }
         else
         {
           inject_slot_id<false>(data, data.shared, slot_id);
@@ -467,7 +467,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
       if (should_augment_with_slot_info)
       {
-        if (data.all->audit) { remove_slot_id<true>(data.shared); }
+        if (data.all->audit || data.all->hash_inv) { remove_slot_id<true>(data.shared); }
         else
         {
           remove_slot_id<false>(data.shared);
@@ -638,7 +638,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->all = &all;
   data->model_file_version = all.model_file_ver;
 
-  data->id_namespace_str.push_back((char)ccb_id_namespace);
   data->id_namespace_str.append("_id");
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
