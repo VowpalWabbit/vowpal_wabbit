@@ -28,7 +28,7 @@
 #include <vector>
 #include <iostream>
 
-typedef union
+struct polylabel
 {
   no_label::no_label empty;
   label_data simple;
@@ -40,7 +40,7 @@ typedef union
   VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
-} polylabel;
+};
 
 inline void delete_scalars(void* v)
 {
@@ -76,7 +76,7 @@ struct example : public example_predict  // core example datatype.
   /// Example contains unions for label and prediction. These do not get cleaned
   /// up by the constructor because the type is not known at that time. To
   /// ensure correct cleanup delete_unions must be explicitly called.
-  void delete_unions(void (*delete_label)(void*), void (*delete_prediction)(void*));
+  void delete_unions(void (*delete_label)(polylabel*), void (*delete_prediction)(void*));
 
   // input fields
   polylabel l;

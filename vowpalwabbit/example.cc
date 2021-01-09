@@ -134,9 +134,19 @@ example& example::operator=(example&& other) noexcept
   return *this;
 }
 
-void example::delete_unions(void (*delete_label)(void*), void (*delete_prediction)(void*))
+void example::delete_unions(void (*)(polylabel*), void (*delete_prediction)(void*))
 {
-  if (delete_label) { delete_label(&l); }
+  // TODO migrate deletion logic into each struct.
+  no_label::no_label_parser.delete_label(&l);
+  simple_label_parser.delete_label(&l);
+  MULTICLASS::mc_label.delete_label(&l);
+  COST_SENSITIVE::cs_label.delete_label(&l);
+  CB::cb_label.delete_label(&l);
+  VW::cb_continuous::the_label_parser.delete_label(&l);
+  CCB::ccb_label_parser.delete_label(&l);
+  VW::slates::slates_label_parser.delete_label(&l);
+  CB_EVAL::cb_eval.delete_label(&l);
+  MULTILABEL::multilabel.delete_label(&l);
 
   // if (delete_prediction) { delete_prediction(&pred); }
   std::ignore = delete_prediction;
@@ -171,7 +181,7 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, void (*copy_label)(void*, void*))
+void copy_example_label(example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
 {
   if (copy_label)
     copy_label(&dst->l, &src->l);  // TODO: we really need to delete_label on dst :(
@@ -216,13 +226,14 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->interactions = src->interactions;
 }
 
-void copy_example_data(bool audit, example* dst, example* src, void (*copy_label)(void*, void*))
+void copy_example_data(bool audit, example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
 {
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, copy_label);
 }
 
-void copy_example_data(bool audit, example* dst, example* src, size_t /*label_size*/, void (*copy_label)(void*, void*))
+void copy_example_data(
+    bool audit, example* dst, example* src, size_t /*label_size*/, void (*copy_label)(polylabel*, polylabel*))
 {
   copy_example_data(audit, dst, src, copy_label);
 }
@@ -434,7 +445,7 @@ example* alloc_examples(size_t, size_t count)
 
 example* alloc_examples(size_t count) { return alloc_examples(0, count); }
 
-void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
+void dealloc_example(void (*delete_label)(polylabel*), example& ec, void (*delete_prediction)(void*))
 {
   ec.delete_unions(delete_label, delete_prediction);
   ec.~example();
