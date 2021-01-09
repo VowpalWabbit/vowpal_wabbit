@@ -31,6 +31,7 @@ void return_v_array(v_array<T>& array, VW::v_array_pool<T>& pool)
 {
   array.clear();
   pool.return_object(array);
+  array = v_init<T>();
 }
 
 struct ccb

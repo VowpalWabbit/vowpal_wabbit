@@ -7,6 +7,7 @@
 #include "explore.h"
 #include "guard.h"
 #include "vw.h"
+#include "cb_label_parser.h"
 
 using namespace LEARNER;
 using namespace VW;
@@ -230,7 +231,7 @@ void output_example(vw& all, reduction&, example& ec, CB::label& ld)
 
   for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
 
-  print_update(all, CB::cb_label.test_label(&ld), ec, sso);
+  print_update(all, CB::is_test_label(ld), ec, sso);
 }
 
 void finish_example(vw& all, reduction& c, example& ec)
