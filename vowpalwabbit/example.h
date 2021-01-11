@@ -48,7 +48,7 @@ inline void delete_scalars(void* v)
   preds->delete_v();
 }
 
-typedef union
+struct polyprediction
 {
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
@@ -59,7 +59,7 @@ typedef union
   float prob;                                                // for --probabilities --csoaa_ldf=mc
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
-} polyprediction;
+};
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
