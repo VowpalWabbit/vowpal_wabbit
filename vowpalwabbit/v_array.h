@@ -114,6 +114,7 @@ public:
     if (this == &other) return *this;
 
     delete_v_array();
+    // TODO this should use the other version when T is trivially copyable and this otherwise.
     copy_array_no_memcpy(*this, other);
     return *this;
   }
