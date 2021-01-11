@@ -5,12 +5,15 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
+#include "version.h"
 #include "vw_versions.h"
+
+using namespace VW;
 
 BOOST_AUTO_TEST_CASE(verify_vw_versions)
 {
-  // less than boost check
-  BOOST_CHECK_LT(2, 4);
+  version_struct temp;
+  temp.from_string(VERSION_FILE_WITH_RANK_IN_HEADER);
 
-  BOOST_CHECK_LT(VERSION_FILE_WITH_RANK_IN_HEADER, VERSION_FILE_WITH_INTERACTIONS);
+  BOOST_CHECK_EQUAL(true, temp < VERSION_FILE_WITH_INTERACTIONS);
 }
