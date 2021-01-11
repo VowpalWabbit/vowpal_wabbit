@@ -52,7 +52,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
     base.predict(data.adf_data.ecs);
   }
 
-  if (data.explore_mode) { ec.pred.a_s = data.adf_data.ecs[0]->pred.a_s; }
+  if (data.explore_mode) { v_move(ec.pred.a_s, data.adf_data.ecs[0]->pred.a_s); }
   else
   {
     // cb_adf => first action is a greedy action TODO: is this a contract?
@@ -73,6 +73,7 @@ void output_example(vw& all, bool explore_mode, example& ec, CB::label& ld)
 void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
 {
   output_example(all, c.explore_mode, ec, ec.l.cb);
+  if (c.explore_mode) v_move(c.adf_data.ecs[0]->pred.a_s, ec.pred.a_s);
   VW::finish_example(all, ec);
 }
 

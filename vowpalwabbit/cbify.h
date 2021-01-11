@@ -6,6 +6,13 @@
 #include "reductions_fwd.h"
 #include "example.h"
 
+template <typename T>
+void v_move(v_array<T>& dst, v_array<T>& src)
+{
+  dst = src;
+  src = v_init<T>();
+}
+
 struct cbify_adf_data
 {
   multi_ex ecs;
