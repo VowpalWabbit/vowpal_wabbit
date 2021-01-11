@@ -15,5 +15,5 @@ BOOST_AUTO_TEST_CASE(verify_vw_versions)
   version_struct temp;
   temp.from_string(VERSION_FILE_WITH_RANK_IN_HEADER);
 
-  BOOST_CHECK_EQUAL(true, temp < VERSION_FILE_WITH_INTERACTIONS);
+  BOOST_CHECK(temp < VERSION_FILE_WITH_INTERACTIONS);
 }
