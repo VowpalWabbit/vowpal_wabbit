@@ -72,10 +72,10 @@ public:
   inline const_iterator cbegin() const { return _begin; }
   inline const_iterator cend() const { return _end; }
 
-  v_array() : _begin(nullptr), _end(nullptr), end_array(nullptr), erase_count(0) {}
+  v_array() noexcept : _begin(nullptr), _end(nullptr), end_array(nullptr), erase_count(0) {}
   ~v_array() { delete_v_array(); }
 
-  v_array(v_array<T>&& other)
+  v_array(v_array<T>&& other) noexcept
   {
     erase_count = 0;
     _begin = nullptr;
@@ -88,7 +88,7 @@ public:
     std::swap(erase_count, other.erase_count);
   }
 
-  v_array<T>& operator=(v_array<T>&& other)
+  v_array<T>& operator=(v_array<T>&& other) noexcept
   {
     delete_v_array();
     std::swap(_begin, other._begin);
