@@ -12,6 +12,7 @@
 #include "explore.h"
 #include "prob_dist_cont.h"
 #include "debug_log.h"
+#include "cb_label_parser.h"
 
 using namespace VW::LEARNER;
 using namespace exploration;
@@ -40,6 +41,13 @@ struct cbify_reg
   float max_cost = std::numeric_limits<float>::lowest();
 };
 
+template <typename T>
+void v_move(v_array<T>& dst, v_array<T>& src)
+{
+  dst = src;
+  src = v_init<T>();
+}
+
 struct cbify
 {
   CB::label cb_label;
@@ -61,7 +69,7 @@ struct cbify
 
   ~cbify()
   {
-    CB::cb_label.delete_label(&cb_label);
+    CB::delete_label(cb_label);
     a_s.delete_v();
     regression_data.cb_cont_label.costs.delete_v();
 
@@ -122,9 +130,9 @@ void cbify_adf_data::init_adf_data(const size_t num_actions, std::vector<std::ve
   ecs.resize(num_actions);
   for (size_t a = 0; a < num_actions; ++a)
   {
-    ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
+    ecs[a] = VW::alloc_examples(1);
     auto& lab = ecs[a]->l.cb;
-    CB::cb_label.default_label(&lab);
+    CB::default_label(lab);
     ecs[a]->interactions = &interactions;
   }
 }
@@ -149,7 +157,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     auto& eca = *ecs[a];
     // clear label
     auto& lab = eca.l.cb;
-    CB::cb_label.default_label(&lab);
+    CB::default_label(lab);
 
     // copy data
     VW::copy_example_data(false, &eca, &ec);
@@ -198,7 +206,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   label_data regression_label = ec.l.simple;
   data.cb_label.costs.clear();
   ec.l.cb = data.cb_label;
-  ec.pred.a_s = data.a_s;
+  v_move(ec.pred.a_s, data.a_s);
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
@@ -246,8 +254,9 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
     }
   }
 
-  data.a_s = ec.pred.a_s;
+  v_move(data.a_s, ec.pred.a_s);
   data.a_s.clear();
+  ec.l.cb.costs = v_init<CB::cb_class>();
 
   ec.l.simple = regression_label;
   ec.pred.scalar = converted_action;
@@ -322,6 +331,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
     }
   }
 
+  ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   ec.l.simple = regression_label;  // restore the regression label
   ec.pred.scalar = cb_cont_lbl.action;
 }
@@ -339,7 +349,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
 
   data.cb_label.costs.clear();
   ec.l.cb = data.cb_label;
-  ec.pred.a_s = data.a_s;
+  v_move(ec.pred.a_s, data.a_s);
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
@@ -366,7 +376,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
 
   if (is_learn) base.learn(ec);
 
-  data.a_s = ec.pred.a_s;
+  v_move(data.a_s, ec.pred.a_s);
   data.a_s.clear();
 
   if (use_cs)
@@ -375,6 +385,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
     ec.l.multi = ld;
 
   ec.pred.multiclass = cl.action;
+  ec.l.cb.costs = v_init<CB::cb_class>();
 }
 
 template <bool is_learn, bool use_cs>
@@ -431,9 +442,9 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
     auto& ec = *ec_seq[i];
     data.cs_costs[i] = ec.l.cs.costs;
     data.cb_costs[i].clear();
-    data.cb_as[i].clear();
     ec.l.cb.costs = data.cb_costs[i];
-    ec.pred.a_s = data.cb_as[i];
+    v_move(ec.pred.a_s, data.cb_as[i]);
+    ec.pred.a_s.clear();
   }
 
   base.predict(ec_seq);
@@ -465,7 +476,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
     auto& ec = *ec_seq[i];
-    data.cb_as[i] = ec.pred.a_s;  // store action_score vector for later reuse.
+    v_move(data.cb_as[i], ec.pred.a_s);  // store action_score vector for later reuse.
     if (i == cl.action - 1)
       data.cb_label = ec.l.cb;
     else
@@ -475,6 +486,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
       ec.pred.multiclass = cl.action;
     else
       ec.pred.multiclass = 0;
+    ec.l.cb.costs = v_init<CB::cb_class>();
   }
 }
 

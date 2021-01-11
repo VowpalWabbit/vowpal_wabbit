@@ -74,7 +74,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
       make_option("old_style_labels", data->old_style_labels).keep().help("Use old hack of label information"));
   options.add_and_parse(new_options);
 
-  data->ex = VW::alloc_examples(sizeof(polylabel), 1);
+  data->ex = VW::alloc_examples(1);
   data->ex->indices.push_back(val_namespace);
   for (size_t i = 1; i < 14; i++) data->ex->indices.push_back((unsigned char)i + 'A');
   data->ex->indices.push_back(constant_namespace);
@@ -101,7 +101,8 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   else
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
 
-  sch.set_label_parser(COST_SENSITIVE::cs_label, [](polylabel &l) -> bool { return l.cs.costs.size() == 0; });
+  sch.set_label_parser(
+      COST_SENSITIVE::cs_label, label_type_t::cs, [](polylabel &l) -> bool { return l.cs.costs.size() == 0; });
 }
 
 void finish(Search::search &sch)

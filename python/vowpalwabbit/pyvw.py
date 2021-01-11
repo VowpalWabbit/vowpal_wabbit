@@ -152,6 +152,7 @@ def get_prediction(ec, prediction_type):
         - 7: pMULTICLASSPROBS
         - 8: pDECISION_SCORES
         - 9: pACTION_PDF_VALUE
+        - 10: pPDF
 
     Examples
     --------
@@ -180,6 +181,7 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars,
         pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores,
         pylibvw.vw.pACTION_PDF_VALUE: ec.get_action_pdf_value,
+        pylibvw.vw.pPDF: ec.get_pdf,
     }
     return switch_prediction_type[prediction_type]()
 
@@ -256,6 +258,12 @@ class vw(pylibvw.vw):
                 self.parser_ran = True
 
         self.finished = False
+
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.finish()
 
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
         """Returns a collection of examples for a multiline example learner or

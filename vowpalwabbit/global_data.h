@@ -283,7 +283,8 @@ enum class label_type_t
   mc,
   ccb,  // conditional contextual-bandit
   slates,
-  nolabel
+  nolabel,
+  continuous
 };
 
 struct rand_state
