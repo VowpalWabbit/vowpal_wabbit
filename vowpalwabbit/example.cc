@@ -13,10 +13,10 @@ polyprediction::polyprediction()
     , a_s(v_init<ACTION_SCORE::action_score>())
     , decision_scores(v_init<ACTION_SCORE::action_scores>())
     , multiclass(0)
-    , multilabels({.label_v = v_init<uint32_t>()})
+    , multilabels()
     , prob(0)
     , pdf(v_init<VW::continuous_actions::pdf_segment>())
-    , pdf_value({.action = 0, .pdf_value = 0})
+    , pdf_value({0, 0})
 {
 }
 

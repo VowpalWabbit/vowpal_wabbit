@@ -11,7 +11,7 @@ namespace MULTILABEL
 {
 struct labels
 {
-  v_array<uint32_t> label_v;
+  v_array<uint32_t> label_v = v_init<uint32_t>();
 };
 
 void output_example(vw& all, example& ec);
