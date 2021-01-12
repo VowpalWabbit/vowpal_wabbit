@@ -7,19 +7,23 @@
 #include "example.h"
 #include "gd.h"
 
+polyprediction::polyprediction() :
+  scalar(0),
+  scalars(v_init<float>()),
+  a_s(v_init<ACTION_SCORE::action_score>()),
+  decision_scores(v_init<ACTION_SCORE::action_scores>()),
+  multiclass(0),
+  multilabels({ .label_v = v_init<uint32_t>() }),
+  prob(0),
+  pdf(v_init<VW::continuous_actions::pdf_segment>()),
+  pdf_value({ .action = 0, .pdf_value = 0})
+{}
+
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::example()
 {
   memset(&l, 0, sizeof(polylabel));
-  // init predictions. TODO convert this to a constructor
-  memset(&pred, 0, sizeof(polyprediction));
-  pred.scalars = v_init<feature_value>();
-  pred.a_s = v_init<ACTION_SCORE::action_score>();
-  pred.decision_scores = v_init<v_array<ACTION_SCORE::action_score>>();
-  pred.multilabels.label_v = v_init<uint32_t>();
-  pred.pdf = v_init<VW::continuous_actions::pdf_segment>();
-
   tag = v_init<char>();
 }
 VW_WARNING_STATE_POP
@@ -29,6 +33,8 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
 {
   tag.delete_v();
+
+  //TODO move this to the destructor once we're done cleaning up usage of polyprediction
   pred.scalars.delete_v();
   pred.a_s.delete_v();
   for (auto& decision : pred.decision_scores) { decision.delete_v(); }
@@ -49,7 +55,7 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::example(example&& other) noexcept
     : example_predict(std::move(other))
     , l(other.l)
-    , pred(other.pred)
+    , pred(std::move(other.pred))
     , weight(other.weight)
     , tag(std::move(other.tag))
     , example_counter(other.example_counter)
@@ -89,7 +95,7 @@ example& example::operator=(example&& other) noexcept
 {
   example_predict::operator=(std::move(other));
   l = other.l;
-  pred = other.pred;
+  pred = std::move(other.pred);
   weight = other.weight;
   tag = std::move(other.tag);
   example_counter = other.example_counter;
@@ -438,10 +444,6 @@ void return_multiple_example(vw& all, v_array<example*>& examples)
   for (auto ec : examples) { clean_example(all, *ec, true); }
   examples.clear();
 }
-
-restore_prediction::restore_prediction(example& ec) : _prediction(ec.pred), _ec(ec) {}
-
-restore_prediction::~restore_prediction() { _ec.pred = _prediction; }
 
 }  // namespace VW
 

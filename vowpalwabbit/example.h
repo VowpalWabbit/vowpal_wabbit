@@ -50,6 +50,15 @@ inline void delete_scalars(void* v)
 
 struct polyprediction
 {
+  polyprediction();
+
+  //disable those two since v_array is not cleanly copy-able
+  polyprediction(polyprediction&&) = default;
+  polyprediction& operator=(polyprediction&&) = default;
+
+  polyprediction(const polyprediction&) = delete;
+  polyprediction& operator=(const polyprediction&) = delete;
+  // ~polyprediction();
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
@@ -152,16 +161,6 @@ typedef std::vector<example*> multi_ex;
 namespace VW
 {
 void return_multiple_example(vw& all, v_array<example*>& examples);
-
-struct restore_prediction
-{
-  restore_prediction(example& ec);
-  ~restore_prediction();
-
-private:
-  const polyprediction _prediction;
-  example& _ec;
-};
 
 }  // namespace VW
 
