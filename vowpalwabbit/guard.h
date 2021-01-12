@@ -167,8 +167,8 @@ inline details::swap_guard_impl_rvalue<T> swap_guard(T& original_location, T&& v
   return details::swap_guard_impl_rvalue<T>(&original_location, std::forward<T>(value_to_swap));
 }
 
-/// This guard will replace the location with a default constructed object on creation and upon deletion swap the original value back.
-/// This guard is equivalent to `swap_guard<T>(xxx, T())`
+/// This guard will replace the location with a default constructed object on creation and upon deletion swap the
+/// original value back. This guard is equivalent to `swap_guard<T>(xxx, T())`
 ///
 /// #### Example:
 /// \code

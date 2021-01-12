@@ -7,17 +7,18 @@
 #include "example.h"
 #include "gd.h"
 
-polyprediction::polyprediction() :
-  scalar(0),
-  scalars(v_init<float>()),
-  a_s(v_init<ACTION_SCORE::action_score>()),
-  decision_scores(v_init<ACTION_SCORE::action_scores>()),
-  multiclass(0),
-  multilabels({ .label_v = v_init<uint32_t>() }),
-  prob(0),
-  pdf(v_init<VW::continuous_actions::pdf_segment>()),
-  pdf_value({ .action = 0, .pdf_value = 0})
-{}
+polyprediction::polyprediction()
+    : scalar(0)
+    , scalars(v_init<float>())
+    , a_s(v_init<ACTION_SCORE::action_score>())
+    , decision_scores(v_init<ACTION_SCORE::action_scores>())
+    , multiclass(0)
+    , multilabels({.label_v = v_init<uint32_t>()})
+    , prob(0)
+    , pdf(v_init<VW::continuous_actions::pdf_segment>())
+    , pdf_value({.action = 0, .pdf_value = 0})
+{
+}
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
@@ -34,7 +35,7 @@ example::~example()
 {
   tag.delete_v();
 
-  //TODO move this to the destructor once we're done cleaning up usage of polyprediction
+  // TODO move this to the destructor once we're done cleaning up usage of polyprediction
   pred.scalars.delete_v();
   pred.a_s.delete_v();
   for (auto& decision : pred.decision_scores) { decision.delete_v(); }

@@ -52,7 +52,7 @@ struct polyprediction
 {
   polyprediction();
 
-  //disable those two since v_array is not cleanly copy-able
+  // disable those two since v_array is not cleanly copy-able
   polyprediction(polyprediction&&) = default;
   polyprediction& operator=(polyprediction&&) = default;
 
