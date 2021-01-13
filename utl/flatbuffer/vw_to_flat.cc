@@ -97,6 +97,19 @@ void to_flat::create_simple_label(example* v, ExampleBuilder& ex_builder)
   ex_builder.label_type = VW::parsers::flatbuffer::Label_SimpleLabel;
 }
 
+void to_flat::create_continuous_action_label(example* v, ExampleBuilder& ex_builder)
+{
+  std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Continuous_Label_Elm>> costs;
+  for (const auto& continuous_element : v->l.cb_cont.costs)
+  {
+    costs.push_back(VW::parsers::flatbuffer::CreateContinuous_Label_Elm(
+        _builder, continuous_element.action, continuous_element.cost, continuous_element.pdf_value));
+  }
+  ex_builder.label =
+      VW::parsers::flatbuffer::CreateContinuousLabelDirect(_builder, costs.empty() ? nullptr : &costs).Union();
+  ex_builder.label_type = VW::parsers::flatbuffer::Label_ContinuousLabel;
+}
+
 void to_flat::create_cb_label(example* v, ExampleBuilder& ex_builder)
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::CB_class>> costs;
@@ -316,6 +329,9 @@ void to_flat::convert_txt_to_flat(vw& all)
         break;
       case label_type_t::simple:
         to_flat::create_simple_label(ae, ex_builder);
+        break;
+      case label_type_t::continuous:
+        to_flat::create_continuous_action_label(ae, ex_builder);
         break;
       default:
         THROW("label_type has not been set or is unknown");
