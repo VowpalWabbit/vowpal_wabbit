@@ -28,10 +28,13 @@
 
 namespace py = boost::python;
 
+class py_log_wrapper;
+
 typedef boost::shared_ptr<vw> vw_ptr;
 typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
+typedef boost::shared_ptr<py_log_wrapper> py_log_wrapper_ptr;
 
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
@@ -57,17 +60,17 @@ const size_t pPDF = 10;
 
 void dont_delete_me(void* arg) {}
 
-class python_log_wrapper
+class py_log_wrapper
 {
 public:
   py::object py_log;
-  python_log_wrapper(py::object py_log) : py_log(py_log) {}
+  py_log_wrapper(py::object py_log) : py_log(py_log) {}
 
   static void trace_listener_py(void* wrapper, const std::string& message)
   {
     try
     {
-      auto inst = static_cast<python_log_wrapper*>(wrapper);
+      auto inst = static_cast<py_log_wrapper*>(wrapper);
       inst->py_log.attr("log")(message);
     }
     catch (...)
@@ -80,19 +83,17 @@ public:
   }
 };
 
-vw_ptr my_initialize(py::object py_log, std::string args)
+vw_ptr my_initialize(std::string args, py_log_wrapper_ptr py_log = nullptr)
 {
   if (args.find_first_of("--no_stdin") == std::string::npos) args += " --no_stdin";
 
   trace_message_t trace_listener = nullptr;
   void* trace_context = nullptr;
 
-  if (!py_log.is_none())
+  if (py_log)
   {
-    // leaking memory for now
-    auto py_log_wrapper = new python_log_wrapper(py_log);
-    trace_listener = (python_log_wrapper::trace_listener_py);
-    trace_context = py_log_wrapper;
+    trace_listener = (py_log_wrapper::trace_listener_py);
+    trace_context = py_log.get();
   }
 
   vw* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
@@ -1124,6 +1125,9 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("set_learner_id", &my_set_learner_id, "select the learner with which to make this prediction")
       .def("set_tag", &my_set_tag, "change the tag of this prediction")
       .def("predict", &Search::predictor::predict, "make a prediction");
+
+  py::class_<py_log_wrapper, py_log_wrapper_ptr>(
+      "vw_log", "do not use, see pyvw.vw.init(enable_logging..)", py::init<py::object>());
 
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")

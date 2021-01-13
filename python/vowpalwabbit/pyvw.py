@@ -246,13 +246,16 @@ class vw(pylibvw.vw):
         if arg_str is not None:
             l = [arg_str] + l
         
-        self.log_fwd = None
+        self.log_wrapper = None
 
         if enable_logging:
             self.log_fwd = log_forward()
+            self.log_wrapper = pylibvw.vw_log(self.log_fwd)
 
-        super(vw, self).__init__(self.log_fwd, " ".join(l))
-        # pylibvw.vw.__init__(self, " ".join(l))
+        if self.log_wrapper:
+            super(vw, self).__init__(" ".join(l), self.log_wrapper)
+        else:
+            super(vw, self).__init__(" ".join(l))
 
         self.parser_ran = False
 
