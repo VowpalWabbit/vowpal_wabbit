@@ -65,21 +65,20 @@ class VWOption:
         self._value = val
 
     def is_flag(self):
-        if type(self._default_value) == bool:
-            return True
+        return type(self._default_value) == bool or (self.value_supplied and type(self.value) == bool)
 
     def __str__(self):
-        if self.is_flag() and self.value:
-            return "--{}".format(self.name)
-        else:
-            # missing list case
-            if self.value_supplied:
+        if self.value_supplied:
+            if self.is_flag():
+                return "--{}".format(self.name)
+            else:
+                # missing list case
                 if isinstance(self.value, list):
                     return "**NOT_IMPL**"
                 else:
                     return "--{} {}".format(self.name, self.value)
-            else:
-                return ''
+        else:
+            return ''
 
 class SearchTask:
     """Search task class"""

@@ -79,9 +79,24 @@ public:
   template <typename T>
   py::object* value_to_pyobject(VW::config::typed_option<T>& opt)
   {
-    return new py::object(
-        m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary, opt.m_allow_override,
-            opt.value(), m_opt.was_supplied(opt.m_name), opt.default_value(), opt.default_value_supplied()));
+    if (m_opt.was_supplied(opt.m_name))
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, opt.default_value(), true));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, py::object(), false));
+    }
+    else
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, py::object(), false, opt.default_value(), true));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, py::object(), false, py::object(), false));
+    }
   }
 
   template <typename T>
@@ -89,10 +104,13 @@ public:
   {
     py::list values;
 
-    auto vec = opt.value();
-    if (vec.size() > 0)
+    if (m_opt.was_supplied(opt.m_name))
     {
-      for (auto const& opt : vec) { values.append(py::object(opt)); }
+      auto vec = opt.value();
+      if (vec.size() > 0)
+      {
+        for (auto const& opt : vec) { values.append(py::object(opt)); }
+      }
     }
 
     return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
