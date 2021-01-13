@@ -163,6 +163,7 @@ public:
   }
 };
 
+// specialization needed to compile, this should never be reached since we always use VW::config::supported_options_types
 template <>
 py::object OptionManager::base_option_to_pyobject<VW::config::typelist<>>(VW::config::base_option& options)
 {
