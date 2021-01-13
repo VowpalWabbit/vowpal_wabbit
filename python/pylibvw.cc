@@ -101,10 +101,7 @@ vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
   return boost::shared_ptr<vw>(foo);
 }
 
-vw_ptr my_initialize(std::string args)
-{
-  return my_initialize_with_log(args, nullptr);
-}
+vw_ptr my_initialize(std::string args) { return my_initialize_with_log(args, nullptr); }
 
 void my_run_parser(vw_ptr all)
 {

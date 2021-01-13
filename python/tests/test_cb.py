@@ -38,7 +38,6 @@ def helper_get_data():
 def test_getting_started_example():
     train_df, test_df = helper_get_data()
 
-    # vw = pyvw.vw("--cb 4")
     vw = pyvw.vw("--cb 4", enable_logging=True)
 
     for i in train_df.index:
