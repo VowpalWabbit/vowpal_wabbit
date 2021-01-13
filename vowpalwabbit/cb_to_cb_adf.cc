@@ -33,13 +33,11 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
     uint32_t chosen_action = ec.l.cb.costs[0].action - 1;
     if (chosen_action < data.adf_data.num_actions)
     {
-      // TODO: do i need a guard here?
       CB::label ld = data.adf_data.ecs[chosen_action]->l.cb;
       data.adf_data.ecs[chosen_action]->l.cb = ec.l.cb;
-      base.learn(data.adf_data.ecs);
-      data.adf_data.ecs[chosen_action]->l.cb = ld;
+      auto restore_guard = VW::scope_exit([&data, &ld, chosen_action] { data.adf_data.ecs[chosen_action]->l.cb = ld; });
 
-      CB::default_label(data.adf_data.ecs[chosen_action]->l.cb);
+      base.learn(data.adf_data.ecs);
     }
     else
     {
