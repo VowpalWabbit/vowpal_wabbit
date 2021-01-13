@@ -83,7 +83,7 @@ public:
   }
 };
 
-vw_ptr my_initialize(std::string args, py_log_wrapper_ptr py_log = nullptr)
+vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
 {
   if (args.find_first_of("--no_stdin") == std::string::npos) args += " --no_stdin";
 
@@ -99,6 +99,11 @@ vw_ptr my_initialize(std::string args, py_log_wrapper_ptr py_log = nullptr)
   vw* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
   // return boost::shared_ptr<vw>(foo, [](vw *all){VW::finish(*all);});
   return boost::shared_ptr<vw>(foo);
+}
+
+vw_ptr my_initialize(std::string args)
+{
+  return my_initialize_with_log(args, nullptr);
 }
 
 void my_run_parser(vw_ptr all)
@@ -939,6 +944,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::class_<vw, vw_ptr, boost::noncopyable>(
       "vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
       .def("__init__", py::make_constructor(my_initialize))
+      .def("__init__", py::make_constructor(my_initialize_with_log))
       //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
       .def("run_parser", &my_run_parser, "parse external data file")
       .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
