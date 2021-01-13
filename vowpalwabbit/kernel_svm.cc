@@ -398,7 +398,7 @@ float poly_kernel(const flat_example* fec1, const flat_example* fec2, int power)
   float dotprod = linear_kernel(fec1, fec2);
   // std::cerr<<"Bandwidth = "<<bandwidth<< endl;
   // std::cout<<pow(1 + dotprod, power)<< endl;
-  return pow(1 + dotprod, power);
+  return static_cast<float>(std::pow(1 + dotprod, power));
 }
 
 float rbf_kernel(const flat_example* fec1, const flat_example* fec2, float bandwidth)

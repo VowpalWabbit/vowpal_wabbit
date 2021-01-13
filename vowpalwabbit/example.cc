@@ -12,7 +12,14 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::example()
 {
   memset(&l, 0, sizeof(polylabel));
+  // init predictions. TODO convert this to a constructor
   memset(&pred, 0, sizeof(polyprediction));
+  pred.scalars = v_init<feature_value>();
+  pred.a_s = v_init<ACTION_SCORE::action_score>();
+  pred.decision_scores = v_init<v_array<ACTION_SCORE::action_score>>();
+  pred.multilabels.label_v = v_init<uint32_t>();
+  pred.pdf = v_init<VW::continuous_actions::pdf_segment>();
+
   tag = v_init<char>();
 }
 VW_WARNING_STATE_POP
@@ -22,6 +29,13 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
 {
   tag.delete_v();
+  pred.scalars.delete_v();
+  pred.a_s.delete_v();
+  for (auto& decision : pred.decision_scores) { decision.delete_v(); }
+  pred.decision_scores.delete_v();
+  pred.multilabels.label_v.delete_v();
+  pred.pdf.delete_v();
+
   if (passthrough)
   {
     delete passthrough;
@@ -120,11 +134,22 @@ example& example::operator=(example&& other) noexcept
   return *this;
 }
 
-void example::delete_unions(void (*delete_label)(void*), void (*delete_prediction)(void*))
+void example::delete_unions(void (*)(polylabel*), void (*delete_prediction)(void*))
 {
-  if (delete_label) { delete_label(&l); }
+  // TODO migrate deletion logic into each struct.
+  no_label::no_label_parser.delete_label(&l);
+  simple_label_parser.delete_label(&l);
+  MULTICLASS::mc_label.delete_label(&l);
+  COST_SENSITIVE::cs_label.delete_label(&l);
+  CB::cb_label.delete_label(&l);
+  VW::cb_continuous::the_label_parser.delete_label(&l);
+  CCB::ccb_label_parser.delete_label(&l);
+  VW::slates::slates_label_parser.delete_label(&l);
+  CB_EVAL::cb_eval.delete_label(&l);
+  MULTILABEL::multilabel.delete_label(&l);
 
-  if (delete_prediction) { delete_prediction(&pred); }
+  // if (delete_prediction) { delete_prediction(&pred); }
+  std::ignore = delete_prediction;
 }
 
 float collision_cleanup(features& fs)
@@ -156,7 +181,7 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, size_t, void (*copy_label)(void*, void*))
+void copy_example_label(example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
 {
   if (copy_label)
     copy_label(&dst->l, &src->l);  // TODO: we really need to delete_label on dst :(
@@ -201,10 +226,16 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->interactions = src->interactions;
 }
 
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
+void copy_example_data(bool audit, example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
 {
   copy_example_data(audit, dst, src);
-  copy_example_label(dst, src, label_size, copy_label);
+  copy_example_label(dst, src, copy_label);
+}
+
+void copy_example_data(
+    bool audit, example* dst, example* src, size_t /*label_size*/, void (*copy_label)(polylabel*, polylabel*))
+{
+  copy_example_data(audit, dst, src, copy_label);
 }
 
 void move_feature_namespace(example* dst, example* src, namespace_index c)
@@ -401,20 +432,20 @@ std::string prob_dist_pred_to_string(const example& ec)
 
 namespace VW
 {
-example* alloc_examples(size_t, size_t count = 1)
+example* alloc_examples(size_t, size_t count)
 {
   example* ec = calloc_or_throw<example>(count);
   if (ec == nullptr) return nullptr;
   for (size_t i = 0; i < count; i++)
   {
     ec[i].ft_offset = 0;
-    //  std::cerr << "  alloc_example.indices.begin()=" << ec->indices.begin() << " end=" << ec->indices.end() << " //
-    //  ld = " << ec->ld << "\t|| me = " << ec << std::endl;
   }
   return ec;
 }
 
-void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
+example* alloc_examples(size_t count) { return alloc_examples(0, count); }
+
+void dealloc_example(void (*delete_label)(polylabel*), example& ec, void (*delete_prediction)(void*))
 {
   ec.delete_unions(delete_label, delete_prediction);
   ec.~example();

@@ -14,6 +14,7 @@
 #include "best_constant.h"
 #include "vw_exception.h"
 #include "options_boost_po.h"
+#include "cb_algs.h"
 
 void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder& builder,
     flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot>& root)
@@ -96,6 +97,19 @@ void to_flat::create_simple_label(example* v, ExampleBuilder& ex_builder)
   ex_builder.label_type = VW::parsers::flatbuffer::Label_SimpleLabel;
 }
 
+void to_flat::create_continuous_action_label(example* v, ExampleBuilder& ex_builder)
+{
+  std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Continuous_Label_Elm>> costs;
+  for (const auto& continuous_element : v->l.cb_cont.costs)
+  {
+    costs.push_back(VW::parsers::flatbuffer::CreateContinuous_Label_Elm(
+        _builder, continuous_element.action, continuous_element.cost, continuous_element.pdf_value));
+  }
+  ex_builder.label =
+      VW::parsers::flatbuffer::CreateContinuousLabelDirect(_builder, costs.empty() ? nullptr : &costs).Union();
+  ex_builder.label_type = VW::parsers::flatbuffer::Label_ContinuousLabel;
+}
+
 void to_flat::create_cb_label(example* v, ExampleBuilder& ex_builder)
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::CB_class>> costs;
@@ -140,7 +154,13 @@ void to_flat::create_ccb_label(example* v, ExampleBuilder& ex_builder)
       }
       auto cost = v->l.conditional_contextual_bandit.outcome->cost;
       auto outcome = VW::parsers::flatbuffer::CreateCCB_outcomeDirect(_builder, cost, &action_scores);
-      ex_builder.label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, outcome, nullptr).Union();
+      if (&(v->l.conditional_contextual_bandit.explicit_included_actions) != nullptr)
+      {
+        for (auto const& action : v->l.conditional_contextual_bandit.explicit_included_actions)
+        { explicit_included_actions.push_back(action); }
+      }
+      ex_builder.label =
+          VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, outcome, &explicit_included_actions).Union();
       ex_builder.label_type = VW::parsers::flatbuffer::Label_CCBLabel;
     }
     else if (&(v->l.conditional_contextual_bandit.explicit_included_actions) != nullptr)
@@ -217,22 +237,22 @@ void to_flat::create_slates_label(example* v, ExampleBuilder& ex_builder)
   auto e_type = v->l.slates.type;
   ex_builder.label_type = VW::parsers::flatbuffer::Label_Slates_Label;
 
-  if (e_type == 1)
-  {  // shared type
+  if (e_type == VW::slates::shared)
+  {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_shared;
     ex_builder.label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(
         _builder, type, weight, v->l.slates.labeled, v->l.slates.cost, 0U, nullptr)
                            .Union();
   }
-  else if (e_type == 2)
-  {  // action type
+  else if (e_type == VW::slates::action)
+  {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_action;
     ex_builder.label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(
         _builder, type, weight, false, 0.0, v->l.slates.slot_id, nullptr)
                            .Union();
   }
-  else if (e_type == 3)
-  {  // slot type
+  else if (e_type == VW::slates::slot)
+  {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_slot;
     for (auto const& as : v->l.slates.probabilities)
     { action_scores.push_back(VW::parsers::flatbuffer::Createaction_score(_builder, as.action, as.score)); }
@@ -310,8 +330,11 @@ void to_flat::convert_txt_to_flat(vw& all)
       case label_type_t::simple:
         to_flat::create_simple_label(ae, ex_builder);
         break;
+      case label_type_t::continuous:
+        to_flat::create_continuous_action_label(ae, ex_builder);
+        break;
       default:
-        THROW("Unknown label type");
+        THROW("label_type has not been set or is unknown");
         break;
     }
 
@@ -339,10 +362,14 @@ void to_flat::convert_txt_to_flat(vw& all)
 
     if (all.l->is_multiline)
     {
-      if (!example_is_newline(*ae))
+      if (!example_is_newline(*ae) ||
+          (all.label_type == label_type_t::cb && !CB_ALGS::example_is_newline_not_header(*ae)) ||
+          ((all.label_type == label_type_t::ccb &&
+               ae->l.conditional_contextual_bandit.type == CCB::example_type::slot) ||
+              (all.label_type == label_type_t::slates && ae->l.slates.type == VW::slates::slot)))
       {
         ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
-        ex_builder.tag = _builder.CreateString(tag);
+        ex_builder.tag = tag;
         multi_ex_builder.examples.push_back(ex_builder);
         ex_builder.clear();
         _multi_ex_index++;
@@ -354,7 +381,7 @@ void to_flat::convert_txt_to_flat(vw& all)
     else
     {
       ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
-      ex_builder.tag = _builder.CreateString(tag);
+      ex_builder.tag = tag;
       _examples++;
     }
 
@@ -367,6 +394,11 @@ void to_flat::convert_txt_to_flat(vw& all)
   {
     // left over examples that did not fit in collection
     write_collection_to_file(all.l->is_multiline, outfile);
+  }
+  else if (all.l->is_multiline && _multi_ex_index > 0)
+  {
+    // left over multi examples at end of file
+    write_to_file(collection, all.l->is_multiline, multi_ex_builder, ex_builder, outfile);
   }
 
   all.trace_message << "Converted " << _examples << " examples" << std::endl;
