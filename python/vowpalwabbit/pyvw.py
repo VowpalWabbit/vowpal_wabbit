@@ -266,10 +266,13 @@ def get_all_vw_options():
     return config
 
 class log_forward:
-    messages = []
+    def __init__(self):
+        self.messages = []
+
     def log(self, msg):
         self.messages.append(msg)
-    
+
+
 class vw(pylibvw.vw):
     """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
     object; you're probably best off using this directly and ignoring

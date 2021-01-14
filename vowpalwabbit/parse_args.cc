@@ -1690,7 +1690,7 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-void print_progressive_validation_header(vw& all)
+void print_enabled_reductions(vw& all)
 {
   // output list of enabled reductions
   if (!all.logger.quiet && !all.options->was_supplied("audit_regressor") && !all.enabled_reductions.empty())
@@ -1701,24 +1701,6 @@ void print_progressive_validation_header(vw& all)
         std::ostream_iterator<std::string>(imploded, delim));
 
     all.trace_message << "Enabled reductions: " << imploded.str() << all.enabled_reductions.back() << std::endl;
-  }
-
-  if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
-  {
-    all.trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
-                      << " " << std::setw(shared_data::col_since_last) << std::left << "since"
-                      << " " << std::right << std::setw(shared_data::col_example_counter) << "example"
-                      << " " << std::setw(shared_data::col_example_weight) << "example"
-                      << " " << std::setw(shared_data::col_current_label) << "current"
-                      << " " << std::setw(shared_data::col_current_predict) << "current"
-                      << " " << std::setw(shared_data::col_current_features) << "current" << std::endl;
-    all.trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "loss"
-                      << " " << std::setw(shared_data::col_since_last) << std::left << "last"
-                      << " " << std::right << std::setw(shared_data::col_example_counter) << "counter"
-                      << " " << std::setw(shared_data::col_example_weight) << "weight"
-                      << " " << std::setw(shared_data::col_current_label) << "label"
-                      << " " << std::setw(shared_data::col_current_predict) << "predict"
-                      << " " << std::setw(shared_data::col_current_features) << "features" << std::endl;
   }
 }
 
@@ -1770,7 +1752,9 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
 
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {
-      print_progressive_validation_header(all);
+      print_enabled_reductions(all);
+      if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
+      { all.sd->print_update_header(all.trace_message); }
       all.l->init_driver();
     }
 
