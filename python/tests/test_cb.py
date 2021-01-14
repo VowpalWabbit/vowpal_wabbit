@@ -65,7 +65,7 @@ def helper_getting_started_example(which_cb):
         feature3 = test_df.loc[j, "feature3"]
         choice = vw.predict("| "+str(feature1)+" "+str(feature2)+" "+str(feature3))
         assert isinstance(choice, int), "choice should be int"
-        assert choice == 3, "predicted action should be 3 instead of " + choice
+        assert choice == 3, "predicted action should be 3 instead of " + str(choice)
 
     vw.finish()
 
