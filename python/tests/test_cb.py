@@ -72,10 +72,15 @@ def helper_getting_started_example(which_cb):
 
     output = vw.get_log()
 
-    with open(path.join(helper_get_test_dir(), "test-sets/ref/python_test_cb.stderr"), 'r') as file:
+    if which_cb.find("legacy") != -1:
+        test_file = "test-sets/ref/python_test_cb_legacy.stderr"
+    else:
+        test_file = "test-sets/ref/python_test_cb.stderr"
+    
+    with open(path.join(helper_get_test_dir(), test_file), 'r') as file:
         actual = file.readlines()
         for j, i in zip(actual, output):
-            assert i == j, "line mismatch should be: " + i + " output: " + j
+            assert i == j, "line mismatch should be: " + j + " output: " + i
 
 def test_getting_started_example_with():
     train_df, test_df = helper_get_data()

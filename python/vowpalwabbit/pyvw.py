@@ -187,7 +187,9 @@ def get_prediction(ec, prediction_type):
 
 
 class log_forward:
-    messages = []
+    def __init__(self):
+        self.messages = []
+
     def log(self, msg):
         self.messages.append(msg)
     
