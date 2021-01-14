@@ -64,6 +64,7 @@ void dont_delete_me(void* arg) {}
 class OptionManager
 {
   std::map<std::string, std::vector<VW::config::option_group_definition>> m_option_group_dic;
+  // see pyvw.py class VWOption
   py::object m_py_opt_class;
   VW::config::options_i& m_opt;
   std::vector<std::string>& m_enabled_reductions;
@@ -77,6 +78,28 @@ public:
       , m_py_opt_class(py_class)
   {
     default_group_name = static_cast<VW::config::options_boost_po*>(&options)->m_default_tint;
+  }
+
+  py::object* value_to_pyobject(VW::config::typed_option<bool>& opt)
+  {
+    if (m_opt.was_supplied(opt.m_name))
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, opt.default_value(), true));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, false, true));
+    }
+    else
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, false, false, false, true));
+    }
   }
 
   template <typename T>
@@ -95,7 +118,7 @@ public:
     {
       if (opt.default_value_supplied())
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, py::object(), false, opt.default_value(), true));
+            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
             opt.m_allow_override, py::object(), false, py::object(), false));
