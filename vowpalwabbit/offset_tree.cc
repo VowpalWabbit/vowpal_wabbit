@@ -260,7 +260,7 @@ base_learner* setup(VW::config::options_i& options, vw& all)
   // Ensure that cb_explore will be the base reduction
   if (!options.was_supplied("cb_explore")) { options.insert("cb_explore", "2"); }
 
-  // default to usual implementation
+  // default to legacy cb implementation
   options.insert("cb_force_legacy", "");
 
   auto otree = scoped_calloc_or_throw<offset_tree>(num_actions);

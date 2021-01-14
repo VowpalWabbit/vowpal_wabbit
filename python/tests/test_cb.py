@@ -1,7 +1,6 @@
 import pandas as pd
 import sklearn as sk
 import numpy as np
-# import os
 from os import path
 from vowpalwabbit import pyvw
 
@@ -112,6 +111,3 @@ def test_getting_started_example_with():
             assert choice == 3, "predicted action should be 3"
     
     assert vw.finished == True, "with syntax should finish() vw instance"
-
-# print(os.getpid())
-# helper_getting_started_example("--cb")
