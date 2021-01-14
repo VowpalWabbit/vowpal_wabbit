@@ -159,6 +159,25 @@ struct shared_data
       dump_interval = (float)weighted_examples() * progress_arg;
   }
 
+  // progressive validation header
+  void print_update_header(vw_ostream& trace_message)
+  {
+    trace_message << std::left << std::setw(col_avg_loss) << std::left << "average"
+                  << " " << std::setw(col_since_last) << std::left << "since"
+                  << " " << std::right << std::setw(col_example_counter) << "example"
+                  << " " << std::setw(col_example_weight) << "example"
+                  << " " << std::setw(col_current_label) << "current"
+                  << " " << std::setw(col_current_predict) << "current"
+                  << " " << std::setw(col_current_features) << "current" << std::endl;
+    trace_message << std::left << std::setw(col_avg_loss) << std::left << "loss"
+                  << " " << std::setw(col_since_last) << std::left << "last"
+                  << " " << std::right << std::setw(col_example_counter) << "counter"
+                  << " " << std::setw(col_example_weight) << "weight"
+                  << " " << std::setw(col_current_label) << "label"
+                  << " " << std::setw(col_current_predict) << "predict"
+                  << " " << std::setw(col_current_features) << "features" << std::endl;
+  }
+
   void print_update(bool holdout_set_off, size_t current_pass, float label, float prediction, size_t num_features,
       bool progress_add, float progress_arg)
   {

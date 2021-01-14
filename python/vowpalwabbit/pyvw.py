@@ -186,12 +186,17 @@ def get_prediction(ec, prediction_type):
     return switch_prediction_type[prediction_type]()
 
 
+class log_forward:
+    messages = []
+    def log(self, msg):
+        self.messages.append(msg)
+    
 class vw(pylibvw.vw):
     """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
 
-    def __init__(self, arg_str=None, **kw):
+    def __init__(self, arg_str=None, enable_logging=False, **kw):
         """Initialize the vw object.
 
         Parameters
@@ -240,8 +245,17 @@ class vw(pylibvw.vw):
         l = [format_input(k, v) for k, v in kw.items()]
         if arg_str is not None:
             l = [arg_str] + l
+        
+        self.log_wrapper = None
 
-        pylibvw.vw.__init__(self, " ".join(l))
+        if enable_logging:
+            self.log_fwd = log_forward()
+            self.log_wrapper = pylibvw.vw_log(self.log_fwd)
+
+        if self.log_wrapper:
+            super(vw, self).__init__(" ".join(l), self.log_wrapper)
+        else:
+            super(vw, self).__init__(" ".join(l))
 
         self.parser_ran = False
 
@@ -507,6 +521,15 @@ class vw(pylibvw.vw):
         if not self.finished:
             pylibvw.vw.finish(self)
             self.finished = True
+
+    # returns the latest vw log
+    # call after vw.finish() for complete log
+    # useful for debugging
+    def get_log(self):
+        if self.log_fwd:
+            return self.log_fwd.messages
+        else:
+            raise Exception("enable_logging set to false")
 
     def example(self, stringOrDict=None, labelType=pylibvw.vw.lDefault):
         """Create an example initStringOrDict can specify example as VW
