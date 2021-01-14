@@ -18,7 +18,6 @@
 #include <array>
 #include <memory>
 #include <atomic>
-#include <fstream>
 #include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
@@ -284,7 +283,8 @@ enum class label_type_t
   mc,
   ccb,  // conditional contextual-bandit
   slates,
-  nolabel
+  nolabel,
+  continuous
 };
 
 struct rand_state
@@ -310,28 +310,6 @@ struct vw_logger
 
   vw_logger(const vw_logger& other) = delete;
   vw_logger& operator=(const vw_logger& other) = delete;
-};
-
-struct buffer_replace
-{
-  std::ios& m_target;
-  std::streambuf* m_backup = nullptr;
-  std::ofstream m_filestr;
-  std::string m_filename;
-
-  buffer_replace(std::ios& target, std::string filename) : m_target(target), m_filename(filename)
-  {
-    m_filestr.open(m_filename, std::ofstream::out | std::ofstream::app);
-    m_backup = target.rdbuf();
-    target.rdbuf(m_filestr.rdbuf());
-  }
-
-  ~buffer_replace()
-  {
-    m_target.rdbuf(m_backup);
-    m_filestr.close();
-    m_backup = nullptr;
-  };
 };
 
 namespace VW
@@ -533,9 +511,6 @@ public:
   std::map<uint64_t, std::string> index_name_map;
 
   label_type_t label_type;
-
-  std::unique_ptr<buffer_replace> cerr_buffer;
-  std::unique_ptr<buffer_replace> cout_buffer;
 
   vw();
   ~vw();

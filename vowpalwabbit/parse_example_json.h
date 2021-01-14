@@ -7,6 +7,8 @@
 #include "parse_primitives.h"
 #include "v_array.h"
 
+#include <cstring>
+
 // seems to help with skipping spaces
 //#define RAPIDJSON_SIMD
 //#define RAPIDJSON_SSE42
@@ -378,9 +380,9 @@ public:
   {
     if (ctx.all->label_type == label_type_t::ccb)
     {
-      auto ld = &ctx.ex->l.conditional_contextual_bandit;
+      auto& ld = ctx.ex->l.conditional_contextual_bandit;
 
-      for (auto id : inc) { ld->explicit_included_actions.push_back(id); }
+      for (auto id : inc) { ld.explicit_included_actions.push_back(id); }
       inc.clear();
 
       if ((actions.size() != 0) && (probs.size() != 0))
@@ -393,7 +395,7 @@ public:
         actions.clear();
         probs.clear();
 
-        ld->outcome = outcome;
+        ld.outcome = outcome;
         cb_label = {0., 0, 0., 0.};
       }
     }
@@ -413,8 +415,8 @@ public:
     }
     else if (found_cb)
     {
-      CB::label* ld = &ctx.ex->l.cb;
-      ld->costs.push_back(cb_label);
+      auto& ld = ctx.ex->l.cb;
+      ld.costs.push_back(cb_label);
 
       found_cb = false;
       cb_label = {0., 0, 0., 0.};
@@ -1724,8 +1726,9 @@ void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<
   // string, so we make a copy since this function cannot modify the input
   // string.
   std::vector<char> owned_str;
-  owned_str.resize(strlen(line) + 1);
-  std::strcpy(owned_str.data(), line);
+  size_t len = std::strlen(line) + 1;
+  owned_str.resize(len);
+  std::strncpy(owned_str.data(), line, len);
 
   bool good_example = parse_line_json<audit>(all, owned_str.data(), num_chars, examples);
   if (!good_example)

@@ -28,7 +28,7 @@
 #include <vector>
 #include <iostream>
 
-typedef union
+struct polylabel
 {
   no_label::no_label empty;
   label_data simple;
@@ -40,7 +40,7 @@ typedef union
   VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
-} polylabel;
+};
 
 inline void delete_scalars(void* v)
 {
@@ -48,7 +48,7 @@ inline void delete_scalars(void* v)
   preds->delete_v();
 }
 
-typedef union
+struct polyprediction
 {
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
@@ -59,7 +59,7 @@ typedef union
   float prob;                                                // for --probabilities --csoaa_ldf=mc
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
-} polyprediction;
+};
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
@@ -76,7 +76,7 @@ struct example : public example_predict  // core example datatype.
   /// Example contains unions for label and prediction. These do not get cleaned
   /// up by the constructor because the type is not known at that time. To
   /// ensure correct cleanup delete_unions must be explicitly called.
-  void delete_unions(void (*delete_label)(void*), void (*delete_prediction)(void*));
+  void delete_unions(void (*delete_label)(polylabel*), void (*delete_prediction)(void*));
 
   // input fields
   polylabel l;

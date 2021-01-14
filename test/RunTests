@@ -2060,12 +2060,52 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/help.stderr
     train-sets/ref/help.stdout
 
-# Test 261: test cerr/cout redirect
-{VW} --cb_explore_adf --synthcover --epsilon 0.01 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_synthcover.predict --cerr_file cbe_adf_synthcover_cerr.txt --cout_file cbe_adf_synthcover_cout.txt
-    train-sets/ref/empty.stderr
-    train-sets/ref/empty.stdout
-    train-sets/ref/cbe_adf_synthcover_cerr.txt
-    train-sets/ref/cbe_adf_synthcover_cout.txt
-    pred-sets/ref/cbe_adf_synthcover.predict
+# Test 261: cbzo: learn and save constant template model
+# Note: Changing hyperparameters (-l, --radius etc.) or any options affecting the learning algorithm will require
+# preparing the dataset again
+{VW} -d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 -f models/cbzo_constant.model
+    train-sets/ref/cbzo_constant.stderr
+    train-sets/ref/cbzo_constant.stdout
+
+# Test 262: cbzo: verify predictions of Test 261 model.
+# Also ends up testing if important cmd-line options (--cbzo, --policy) are saved with the model.
+{VW} -d train-sets/cbzo_constant.dat --holdout_off -t --radius 0.1 -i models/cbzo_constant.model -p cbzo_constant.preds
+    pred-sets/ref/cbzo_constant.preds
+
+# Test 263: cbzo: verify predictions without the intervention of model saving
+{VW} -d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 -p cbzo_constant_online.preds
+    pred-sets/ref/cbzo_constant_online.preds
+
+# Test 264: cbzo: verify --readable_model file contents
+{VW} -d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 --readable_model cbzo_constant_readable_model.txt
+    train-sets/ref/cbzo_constant_readable_model.txt
+
+# Test 265: cbzo: verify --invert_hash file contents
+{VW} -d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 --invert_hash cbzo_constant_invert_hash.txt
+    train-sets/ref/cbzo_constant_invert_hash.txt
+
+# Test 266: cbzo: learn and save linear template model
+# Note: Changing hyperparameters (-l, --l1, --radius etc.) or any options affecting the learning algorithm will require
+# preparing the dataset again
+{VW} -d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization -f models/cbzo_linear.model
+    train-sets/ref/cbzo_linear.stderr
+    train-sets/ref/cbzo_linear.stdout
+
+# Test 267: cbzo: verify predictions of Test 266 model.
+# Also ends up testing if important cmd-line options (--cbzo, --policy) are saved with the model.
+{VW} -d train-sets/cbzo_linear.dat --holdout_off -t --radius 0.1 -i models/cbzo_linear.model -p cbzo_linear.preds
+    pred-sets/ref/cbzo_linear.preds
+
+# Test 268: cbzo: verify predictions without the intervention of model saving
+{VW} -d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization -p cbzo_linear_online.preds
+    pred-sets/ref/cbzo_linear_online.preds
+
+# Test 269: cbzo: verify --readable_model file contents
+{VW} -d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --readable_model cbzo_linear_readable_model.txt
+    train-sets/ref/cbzo_linear_readable_model.txt
+
+# Test 270: cbzo: verify --invert_hash file contents
+{VW} -d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --invert_hash cbzo_linear_invert_hash.txt
+    train-sets/ref/cbzo_linear_invert_hash.txt
 
 # Do not delete this line or the empty line above it

@@ -66,7 +66,7 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
 BOOST_AUTO_TEST_CASE(offset_tree_learn_basic)
 {
   // Setup a test harness base reduction
-  const auto test_harness = VW::offset_tree::get_test_harness_reduction({{.9, .1}, {.9, .1}});
+  const auto test_harness = VW::offset_tree::get_test_harness_reduction({{.9f, .1f}, {.9f, .1f}});
 
   VW::offset_tree::offset_tree tree(3);
   tree.init();
@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(offset_tree_learn_basic)
   tree.learn(*as_singleline(test_harness), ec);
 
   destroy_free<VW::offset_tree::test_learner_t>(test_harness);
-  CB::delete_label(&ec.l.cb);
+  CB::delete_label(ec.l.cb);
   ACTION_SCORE::delete_action_scores(&ec.pred.a_s);
 }
 
@@ -170,7 +170,7 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   auto& ret_val = tree.predict(*as_singleline(test_base), ec);
   BOOST_CHECK_EQUAL_COLLECTIONS(ret_val.begin(), ret_val.end(), expected_scores.begin(), expected_scores.end());
   destroy_free<test_learner_t>(test_base);
-  CB::delete_label(&ec.l.cb);
+  CB::delete_label(ec.l.cb);
   ACTION_SCORE::delete_action_scores(&ec.pred.a_s);
 }
 

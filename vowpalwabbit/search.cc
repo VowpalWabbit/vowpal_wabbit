@@ -334,8 +334,8 @@ public:
       // destroy copied examples if we needed them
       if (!examples_dont_change)
       {
-        void (*delete_label)(void*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-        for (example& ec : learn_ec_copy) { ec.delete_unions(delete_label, nullptr); }
+        void (*delete_label)(polylabel*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
+        for (example& ec : learn_ec_copy) VW::dealloc_example(delete_label, ec);
       }
       learn_condition_on_names.delete_v();
       learn_condition_on.delete_v();
@@ -1285,7 +1285,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
   bool need_partial_predictions = need_memo_foreach_action(priv) ||
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != (action)-1);
 
-  CS::cs_label.default_label(&priv.ldf_test_label);
+  CS::default_label(priv.ldf_test_label);
   CS::wclass wc = {0., 1, 0., 0.};
   priv.ldf_test_label.costs.push_back(wc);
 
@@ -1674,7 +1674,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         priv.learn_ec_ref = ecs;
       else
       {
-        void (*label_copy_fn)(void*, void*) = priv.is_ldf ? CS::cs_label.copy_label : nullptr;
+        void (*label_copy_fn)(polylabel*, polylabel*) = priv.is_ldf ? CS::cs_label.copy_label : nullptr;
 
         priv.learn_ec_copy.resize(ec_cnt);
         for (size_t i = 0; i < ec_cnt; i++)
@@ -2059,7 +2059,7 @@ void verify_active_csoaa(
   {
     if (!known[i].second)
     {
-      float err = pow(known[i].first.partial_prediction - wc.x, 2);
+      float err = static_cast<float>(std::pow(known[i].first.partial_prediction - wc.x, 2));
       if (err > threshold)
       {
         std::cerr << "verify_active_csoaa failed: truth " << wc.class_index << ":" << wc.x << ", known[" << i
@@ -2272,9 +2272,9 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
       for (size_t n = 0; n < priv.learn_ec_copy.size(); n++)
       {
         if (sch.priv->is_ldf)
-          CS::cs_label.delete_label(&priv.learn_ec_copy[n].l.cs);
+          CS::cs_label.delete_label(&priv.learn_ec_copy[n].l);
         else
-          MC::mc_label.delete_label(&priv.learn_ec_copy[n].l.multi);
+          MC::mc_label.delete_label(&priv.learn_ec_copy[n].l);
       }
     if (priv.cb_learner)
       priv.learn_losses.cb.costs.clear();
@@ -2406,7 +2406,7 @@ void end_examples(search& sch)
   }
 }
 
-bool mc_label_is_test(polylabel& lab) { return MC::mc_label.test_label(&lab.multi); }
+bool mc_label_is_test(polylabel& lab) { return MC::test_label(lab.multi); }
 
 void search_initialize(vw* all, search& sch)
 {
@@ -2447,7 +2447,7 @@ void search_initialize(vw* all, search& sch)
   priv.active_uncertainty.clear();
   priv.active_known.clear();
 
-  CS::cs_label.default_label(&priv.empty_cs_label);
+  CS::default_label(priv.empty_cs_label);
 
   new (&priv.rawOutputString) std::string();
   priv.rawOutputStringStream = new std::stringstream(priv.rawOutputString);
@@ -2974,7 +2974,7 @@ void search::set_label_parser(label_parser& lp, label_type_t type, bool (*is_tes
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
     std::cerr << "warning: task should not set label parser except in initialize function!" << endl;
   this->priv->all->example_parser->lbl_parser = lp;
-  this->priv->all->example_parser->lbl_parser.test_label = (bool (*)(void*))is_test;
+  this->priv->all->example_parser->lbl_parser.test_label = (bool (*)(polylabel*))is_test;
   this->priv->all->label_type = type;
   this->priv->label_is_test = is_test;
 }

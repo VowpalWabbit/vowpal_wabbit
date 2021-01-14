@@ -28,10 +28,13 @@
 
 namespace py = boost::python;
 
+class py_log_wrapper;
+
 typedef boost::shared_ptr<vw> vw_ptr;
 typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
+typedef boost::shared_ptr<py_log_wrapper> py_log_wrapper_ptr;
 
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
@@ -53,15 +56,52 @@ const size_t pPROB = 6;
 const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 const size_t pACTION_PDF_VALUE = 9;
+const size_t pPDF = 10;
 
 void dont_delete_me(void* arg) {}
 
-vw_ptr my_initialize(std::string args)
+class py_log_wrapper
+{
+public:
+  py::object py_log;
+  py_log_wrapper(py::object py_log) : py_log(py_log) {}
+
+  static void trace_listener_py(void* wrapper, const std::string& message)
+  {
+    try
+    {
+      auto inst = static_cast<py_log_wrapper*>(wrapper);
+      inst->py_log.attr("log")(message);
+    }
+    catch (...)
+    {
+      // TODO: Properly translate and return Python exception. #2169
+      PyErr_Print();
+      PyErr_Clear();
+      std::cerr << "error using python logging. ignoring." << std::endl;
+    }
+  }
+};
+
+vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
 {
   if (args.find_first_of("--no_stdin") == std::string::npos) args += " --no_stdin";
-  vw* foo = VW::initialize(args);
+
+  trace_message_t trace_listener = nullptr;
+  void* trace_context = nullptr;
+
+  if (py_log)
+  {
+    trace_listener = (py_log_wrapper::trace_listener_py);
+    trace_context = py_log.get();
+  }
+
+  vw* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
+  // return boost::shared_ptr<vw>(foo, [](vw *all){VW::finish(*all);});
   return boost::shared_ptr<vw>(foo);
 }
+
+vw_ptr my_initialize(std::string args) { return my_initialize_with_log(args, nullptr); }
 
 void my_run_parser(vw_ptr all)
 {
@@ -186,6 +226,8 @@ size_t my_get_prediction_type(vw_ptr all)
       return pDECISION_SCORES;
     case prediction_type_t::action_pdf_value:
       return pACTION_PDF_VALUE;
+    case prediction_type_t::pdf:
+      return pPDF;
     default:
       THROW("unsupported prediction type used");
   }
@@ -561,6 +603,14 @@ py::tuple ex_get_action_pdf_value(example_ptr ec)
   return py::make_tuple(ec->pred.pdf_value.action, ec->pred.pdf_value.pdf_value);
 }
 
+py::list ex_get_pdf(example_ptr ec)
+{
+  py::list values;
+  for (auto const& segment : ec->pred.pdf)
+  { values.append(py::make_tuple(segment.left, segment.right, segment.pdf_value)); }
+  return values;
+}
+
 py::list ex_get_multilabel_predictions(example_ptr ec)
 {
   py::list values;
@@ -891,6 +941,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::class_<vw, vw_ptr, boost::noncopyable>(
       "vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
       .def("__init__", py::make_constructor(my_initialize))
+      .def("__init__", py::make_constructor(my_initialize_with_log))
       //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
       .def("run_parser", &my_run_parser, "parse external data file")
       .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
@@ -949,7 +1000,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pPROB", pPROB, "Probability prediction type")
       .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
       .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
-      .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type");
+      .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
+      .def_readonly("pPDF", pPDF, "PDF prediction type");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1019,6 +1071,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_action_scores", &ex_get_action_scores, "Get action scores from example prediction")
       .def("get_decision_scores", &ex_get_decision_scores, "Get decision scores from example prediction")
       .def("get_action_pdf_value", &ex_get_action_pdf_value, "Get action and pdf value from example prediction")
+      .def("get_pdf", &ex_get_pdf, "Get pdf from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
@@ -1075,6 +1128,9 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("set_learner_id", &my_set_learner_id, "select the learner with which to make this prediction")
       .def("set_tag", &my_set_tag, "change the tag of this prediction")
       .def("predict", &Search::predictor::predict, "make a prediction");
+
+  py::class_<py_log_wrapper, py_log_wrapper_ptr>(
+      "vw_log", "do not use, see pyvw.vw.init(enable_logging..)", py::init<py::object>());
 
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
