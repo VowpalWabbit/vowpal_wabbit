@@ -20,6 +20,34 @@ polyprediction::polyprediction()
 {
 }
 
+polyprediction::polyprediction(polyprediction&& other) noexcept
+    : scalar(0)
+    , scalars(v_extract(other.scalars))
+    , a_s(v_extract(other.a_s))
+    , decision_scores(v_extract(other.decision_scores))
+    , multiclass(0)
+    , multilabels(v_extract(other.multilabels.label_v))
+    , prob(0)
+    , pdf(v_extract(other.pdf))
+    , pdf_value({0, 0})
+{
+}
+
+polyprediction& polyprediction::operator=(polyprediction&& other) noexcept
+{
+  scalar = other.scalar;
+  v_move(scalars, other.scalars);
+  v_move(a_s, other.a_s);
+  v_move(decision_scores, other.decision_scores);
+  multiclass = other.multiclass;
+  multilabels = std::move(other.multilabels);
+  prob = other.prob;
+  v_move(pdf, other.pdf);
+  pdf_value = other.pdf_value;
+
+  return *this;
+}
+
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::example()
@@ -55,7 +83,7 @@ VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::example(example&& other) noexcept
     : example_predict(std::move(other))
-    , l(other.l)
+    , l(std::move(other.l))
     , pred(std::move(other.pred))
     , weight(other.weight)
     , tag(std::move(other.tag))

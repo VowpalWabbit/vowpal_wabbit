@@ -53,12 +53,11 @@ struct polyprediction
   polyprediction();
 
   // disable those two since v_array is not cleanly copy-able
-  polyprediction(polyprediction&&) = default;
-  polyprediction& operator=(polyprediction&&) = default;
+  polyprediction(polyprediction&&) noexcept;
+  polyprediction& operator=(polyprediction&&) noexcept;
 
   polyprediction(const polyprediction&) = delete;
   polyprediction& operator=(const polyprediction&) = delete;
-  // ~polyprediction();
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.

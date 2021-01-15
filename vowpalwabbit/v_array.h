@@ -277,3 +277,18 @@ inline std::string v_string2string(const v_string& v_s)
   for (unsigned char* i = v_s._begin; i != v_s._end; ++i) res.push_back(*i);
   return res;
 }
+
+template <typename T>
+v_array<T> v_extract(v_array<T>& v)
+{
+  auto copy = v;
+  v = v_init<T>();
+  return copy;
+}
+
+template <typename T>
+void v_move(v_array<T>& dst, v_array<T>& from)
+{
+  dst = from;
+  from = v_init<T>();
+}

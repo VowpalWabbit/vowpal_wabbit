@@ -8,6 +8,7 @@ add_executable(vw-unit-test.out
   continuous_actions_parser_test.cc
   dsjson_parser_test.cc
   error_test.cc
+  example_test.cc
   example_header_test.cc
   explore_test.cc
   guard_test.cc
