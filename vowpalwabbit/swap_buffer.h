@@ -15,6 +15,11 @@
 
 #include <iostream>
 
+#ifndef NDEBUG
+#include <unordered_set>
+#include "vw_exception.h"
+#endif
+
 namespace VW {
 namespace buffer {
 
@@ -31,6 +36,9 @@ class bucket_buffer
   std::deque<uint8_t*> _bucket_begin;
 
   unsigned int _lock_count = 0;
+#ifndef NDEBUG    // debug only checks
+  std::unordered_set<uint8_t*> _lock_set;
+#endif
  private:
   size_t buffer_capacity() { return _buffer_end - _buffer_begin; }
   void resize(size_t sz)
@@ -113,6 +121,14 @@ class bucket_buffer
     auto begin = _bucket_begin.front();
     _bucket_begin.pop_front();
     ++_lock_count;
+#ifndef NDEBUG
+    // this is safe because we don't allow the insertion of 0 length buckets
+    auto iter_pair = _lock_set.insert(begin);
+    if(!iter_pair.second) {
+      // Somehow taking the same pointer more than once. This should never happen
+      THROW("Attemping to take a bucket twice");
+    }
+#endif
     
     buffer = begin;
     len = _bucket_begin.front() - begin;
@@ -122,6 +138,15 @@ class bucket_buffer
     // TODO: error handling?
     assert(_lock_count > 0);
     --_lock_count;
+#ifndef NDEBUG
+    auto iter = _lock_set.find(buffer);
+    if(iter != _lock_set.end()) {
+      _lock_set.erase(iter);
+    }
+    else {
+      THROW("Attemping to release a bucket that was not taken");
+    }
+#endif
   }
   bool finished() { return size() == 0 && lock_count() == 0; }
   void reset()
@@ -132,7 +157,14 @@ class bucket_buffer
   }
   size_t size() { return _bucket_begin.size() - 1; }
   size_t capacity() { return _num_buckets; }
-  size_t lock_count() { return _lock_count; }
+  size_t lock_count() {
+    // in debug mode, lock count is defined by the size of _lock_set. Otherwise use the counter.
+#ifndef NDEBUG
+    return _lock_set.size();
+#else
+    return _lock_count;
+#endif
+  }
   bool ready() { return size() == capacity(); }
 };
 
