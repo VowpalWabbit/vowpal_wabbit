@@ -183,7 +183,7 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
               {  // f3 x k*(f2 x k*f1)
                 if (audit)
                 {
-                  audit_func(dat, i < second.space_names.size() ? second.space_names[i].get() : &EMPTY_AUDIT_STRINGS);
+                  audit_func(dat, j < second.space_names.size() ? second.space_names[j].get() : &EMPTY_AUDIT_STRINGS);
                 }
                 feature_index halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
                 feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);

@@ -174,7 +174,7 @@ void cb_explore_adf_regcb::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
 
   const float max_range = _max_cb_cost - _min_cb_cost;
   // threshold on empirical loss difference
-  const float delta = _c0 * log((float)(num_actions * _counter)) * pow(max_range, 2);
+  const float delta = _c0 * std::log((float)(num_actions * _counter)) * static_cast<float>(std::pow(max_range, 2));
 
   if (!is_learn)
   {

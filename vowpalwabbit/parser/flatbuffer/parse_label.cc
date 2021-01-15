@@ -50,15 +50,18 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
     l->conditional_contextual_bandit.type = CCB::example_type::action;
   else if (label->example_type() == 3)
   {
-    l->conditional_contextual_bandit.type = CCB::example_type::slot;
+    l->conditional_contextual_bandit.type = CCB::example_type::unset;
 
     if (label->explicit_included_actions() != nullptr)
     {
+      l->conditional_contextual_bandit.type = CCB::example_type::slot;
       for (const auto& exp_included_action : *(label->explicit_included_actions()))
       { l->conditional_contextual_bandit.explicit_included_actions.push_back(exp_included_action); }
     }
-    else if (label->outcome() != nullptr)
+
+    if (label->outcome() != nullptr)
     {
+      l->conditional_contextual_bandit.type = CCB::example_type::slot;
       auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
       ccb_outcome.cost = label->outcome()->cost();
       ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
@@ -68,8 +71,6 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
 
       l->conditional_contextual_bandit.outcome = &ccb_outcome;
     }
-    else
-      l->conditional_contextual_bandit.type = CCB::example_type::unset;
   }
 }
 
@@ -129,17 +130,22 @@ void parser::parse_multi_label(polylabel* l, const MultiLabel* label)
 void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
 {
   l->slates.weight = label->weight();
-  if (label->example_type() == 1)
+  if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_shared)
   {
     l->slates.labeled = label->labeled();
     l->slates.cost = label->cost();
+    l->slates.type = VW::slates::shared;
   }
-  else if (label->example_type() == 2)
+  else if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_action)
+  {
     l->slates.slot_id = label->slot();
-  else if (label->example_type() == 3)
+    l->slates.type = VW::slates::action;
+  }
+  else if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_slot)
   {
     l->slates.labeled = label->labeled();
     l->slates.probabilities = v_init<ACTION_SCORE::action_score>();
+    l->slates.type = VW::slates::slot;
 
     for (auto const& as : *(label->probabilities())) l->slates.probabilities.push_back({as->action(), as->score()});
   }
@@ -149,9 +155,13 @@ void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
   }
 }
 
-void parser::parse_no_label()
+void parser::parse_continuous_action_label(polylabel* l, const VW::parsers::flatbuffer::ContinuousLabel* label)
 {
-  // No Label
+  for (auto const& continuous_element : *(label->costs()))
+  {
+    l->cb_cont.costs.push_back(
+        {continuous_element->action(), continuous_element->cost(), continuous_element->pdf_value()});
+  }
 }
 }  // namespace flatbuffer
 }  // namespace parsers
