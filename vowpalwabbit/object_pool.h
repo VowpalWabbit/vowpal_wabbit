@@ -126,9 +126,9 @@ struct moved_object_pool
 {
   moved_object_pool() = default;
 
-  void return_object(T&& obj) { m_pool.push(std::move(obj)); }
+  void reclaim_object(T&& obj) { m_pool.push(std::move(obj)); }
 
-  void get_object(T& dest)
+  void acquire_object(T& dest)
   {
     if (m_pool.empty())
     {
