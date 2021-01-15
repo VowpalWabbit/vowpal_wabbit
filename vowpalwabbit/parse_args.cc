@@ -1204,9 +1204,14 @@ void load_input_model(vw& all, io_buf& io_temp)
 
 VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
-  auto setup_func = all.reduction_stack.top();
+  reduction_setup_fn setup_func = std::get<1>(all.reduction_stack.top());
+  std::string setup_func_name = std::get<0>(all.reduction_stack.top());
   all.reduction_stack.pop();
-  auto base = std::get<1>(setup_func)(options, all);
+
+  // 'hacky' way of keeping track of the option group created by the setup_func about to be created
+  options.tint(setup_func_name);
+  auto base = setup_func(options, all);
+  options.reset_tint();
 
   // returning nullptr means that setup_func (any reduction) was not 'enabled' but
   // only added their respective command args and did not add itself into the
@@ -1214,7 +1219,7 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
   if (base == nullptr) { return setup_base(options, all); }
   else
   {
-    all.enabled_reductions.push_back(std::get<0>(setup_func));
+    all.enabled_reductions.push_back(setup_func_name);
     return base;
   }
 }

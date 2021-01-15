@@ -11,6 +11,7 @@
 #include "search_hooktask.h"
 #include "parse_example.h"
 #include "gd.h"
+#include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
 #include "future_compat.h"
 #include "slates_label.h"
@@ -59,6 +60,160 @@ const size_t pACTION_PDF_VALUE = 9;
 const size_t pPDF = 10;
 
 void dont_delete_me(void* arg) {}
+
+class OptionManager
+{
+  std::map<std::string, std::vector<VW::config::option_group_definition>> m_option_group_dic;
+  // see pyvw.py class VWOption
+  py::object m_py_opt_class;
+  VW::config::options_i& m_opt;
+  std::vector<std::string>& m_enabled_reductions;
+  std::string default_group_name;
+
+public:
+  OptionManager(VW::config::options_i& options, std::vector<std::string>& enabled_reductions, py::object py_class)
+      : m_opt(options)
+      , m_enabled_reductions(enabled_reductions)
+      , m_option_group_dic(options.get_collection_of_options())
+      , m_py_opt_class(py_class)
+  {
+    default_group_name = static_cast<VW::config::options_boost_po*>(&options)->m_default_tint;
+  }
+
+  py::object* value_to_pyobject(VW::config::typed_option<bool>& opt)
+  {
+    if (m_opt.was_supplied(opt.m_name))
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, opt.default_value(), true));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, false, true));
+    }
+    else
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, false, false, false, true));
+    }
+  }
+
+  template <typename T>
+  py::object* value_to_pyobject(VW::config::typed_option<T>& opt)
+  {
+    if (m_opt.was_supplied(opt.m_name))
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, opt.default_value(), true));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, py::object(), false));
+    }
+    else
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, py::object(), false, py::object(), false));
+    }
+  }
+
+  template <typename T>
+  py::object* value_to_pyobject(VW::config::typed_option<std::vector<T>>& opt)
+  {
+    py::list values;
+
+    if (m_opt.was_supplied(opt.m_name))
+    {
+      auto vec = opt.value();
+      if (vec.size() > 0)
+      {
+        for (auto const& opt : vec) { values.append(py::object(opt)); }
+      }
+    }
+
+    return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+        opt.m_allow_override, values, m_opt.was_supplied(opt.m_name), py::list(), opt.default_value_supplied()));
+  }
+
+  template <typename T>
+  py::object* transform_if_t(VW::config::base_option& base_option)
+  {
+    if (base_option.m_type_hash == typeid(T).hash_code())
+    {
+      auto typed = dynamic_cast<VW::config::typed_option<T>&>(base_option);
+      return value_to_pyobject(typed);
+    }
+
+    return nullptr;
+  }
+
+  template <typename TTypes>
+  py::object base_option_to_pyobject(VW::config::base_option& options)
+  {
+    py::object* temp = transform_if_t<typename TTypes::head>(options);
+    if (temp != nullptr)
+    {
+      auto repack = py::object(*temp);
+      delete temp;
+      return repack;
+    }
+
+    return base_option_to_pyobject<typename TTypes::tail>(options);
+  }
+
+  py::object get_vw_option_pyobjects(bool enabled_only)
+  {
+    py::dict dres;
+    auto it = m_option_group_dic.begin();
+
+    while (it != m_option_group_dic.end())
+    {
+      auto reduction_enabled =
+          std::find(m_enabled_reductions.begin(), m_enabled_reductions.end(), it->first) != m_enabled_reductions.end();
+
+      if (((it->first).compare(default_group_name) != 0) && enabled_only && !reduction_enabled)
+      {
+        it++;
+        continue;
+      }
+
+      py::list option_groups;
+
+      for (auto options_group : it->second)
+      {
+        py::list options;
+        for (auto opt : options_group.m_options)
+        {
+          auto temp = base_option_to_pyobject<VW::config::supported_options_types>(*opt.get());
+          options.append(temp);
+        }
+
+        option_groups.append(py::make_tuple(options_group.m_name, options));
+      }
+
+      dres[it->first] = option_groups;
+
+      it++;
+    }
+    return dres;
+  }
+};
+
+// specialization needed to compile, this should never be reached since we always use
+// VW::config::supported_options_types
+template <>
+py::object OptionManager::base_option_to_pyobject<VW::config::typelist<>>(VW::config::base_option& options)
+{
+  return py::object();
+}
 
 class py_log_wrapper
 {
@@ -120,6 +275,12 @@ void my_save(vw_ptr all, std::string name) { VW::save_predictor(*all, name); }
 search_ptr get_search_ptr(vw_ptr all)
 {
   return boost::shared_ptr<Search::search>((Search::search*)(all->searchstr), dont_delete_me);
+}
+
+py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
+{
+  auto opt_manager = OptionManager(*all->options, all->enabled_reductions, py_class);
+  return opt_manager.get_vw_option_pyobjects(enabled_only);
 }
 
 void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*all, *ec); }
@@ -969,6 +1130,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
       .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
+      .def("get_options", &get_options, "get available vw options")
       .def("audit_example", &my_audit_example, "print example audit information")
       .def("get_id", &get_model_id, "return the model id")
       .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")

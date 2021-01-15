@@ -172,6 +172,9 @@ BOOST_AUTO_TEST_CASE(name_extraction_should_throw)
   BOOST_REQUIRE_THROW(name_extractor.insert("opt2", "blah"), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.replace("opt2", "blah"), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.get_positional_tokens(), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.tint("nonsense"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.reset_tint(), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.get_collection_of_options(), VW::vw_exception);
 }
 
 BOOST_AUTO_TEST_CASE(name_extraction_recycle)
