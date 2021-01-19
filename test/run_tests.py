@@ -481,15 +481,17 @@ def do_dirty_check(test_base_ref_dir):
         sys.exit(1)
 
 def clean_dirty(test_base_ref_dir):
+    git_command = "git clean -f -d -x -e __pycache__"
     result = subprocess.run(
-        "git clean -f -d -x -e __pycache__".split(),
+        git_command.split(),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=test_base_ref_dir,
         timeout=10)
-    return_code = result.returncode
-    if return_code != 0:
-        print("Failed to run 'git clean -f -d -x -e __pycache__'")
+
+    if result.returncode != 0:
+        print("Failed to run {}".format(git_command))
+
     stdout = try_decode(result.stdout)
 
 def calculate_test_to_run_explicitly(explicit_tests, tests):
