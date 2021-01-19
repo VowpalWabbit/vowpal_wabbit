@@ -2109,7 +2109,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbzo_linear_invert_hash.txt
 
 # Test 271: vw --help with filtering
-{VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_dr.predict --cb_type dr --help
+{VW} --cb_adf --help
     train-sets/ref/help_cbadf.stderr
     train-sets/ref/help_cbadf.stdout
 

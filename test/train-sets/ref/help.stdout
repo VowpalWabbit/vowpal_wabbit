@@ -205,7 +205,7 @@ Baseline options:
                         baseline predictions
   --check_enabled       only use baseline when the example contains enabled 
                         flag
-LBFGS and Conjugate Gradient options:
+Conjugate Gradient options:
   --conjugate_gradient  use conjugate gradient based optimization
 LBFGS and Conjugate Gradient options:
   --bfgs                       use conjugate gradient based optimization
@@ -225,10 +225,6 @@ Bootstrap:
 Continuous action tree with smoothing:
   --cats arg            Continuous action tree with smoothing
   --cats_pdf arg        Continuous action tree with smoothing (pdf)
-Continuous action tree with smoothing:
-  --cats_pdf arg        Continuous action tree with smoothing (pdf)
-  --pmf_to_pdf arg      Convert pmf to pdf
-  --cats_tree arg       Continuous action tree
 CATS Tree Options:
   --cats_tree arg        CATS Tree with <k> labels
   --bandwidth arg (=0, ) bandwidth for continuous actions in terms of #actions
@@ -269,86 +265,6 @@ Contextual Bandit Exploration with Action Dependent Features:
   --bag arg             bagging-based exploration
   --greedify            always update first policy once in bagging
   --first_only          Only explore the first action in a tie-breaking event
-Contextual Bandit Exploration with Action Dependent Features:
-  --cb_explore_adf        Online explore-exploit for a contextual bandit 
-                          problem with multiline action dependent features
-  --cover arg             Online cover based exploration
-  --psi arg (=1, )        disagreement parameter for cover
-  --nounif                do not explore uniformly on zero-probability actions 
-                          in cover
-  --first_only            Only explore the first action in a tie-breaking event
-  --cb_type arg           contextual bandit method to use in {ips,dr,mtr}. 
-                          Default: mtr
-  --epsilon arg (=0.05, ) epsilon-greedy exploration
-Contextual Bandit Exploration with Action Dependent Features:
-  --cb_explore_adf      Online explore-exploit for a contextual bandit problem 
-                        with multiline action dependent features
-  --first arg           tau-first exploration
-  --epsilon arg         epsilon-greedy exploration
-Contextual Bandit Exploration with Action Dependent Features:
-  --cb_explore_adf      Online explore-exploit for a contextual bandit problem 
-                        with multiline action dependent features
-  --epsilon arg         epsilon-greedy exploration
-  --first_only          Only explore the first action in a tie-breaking event
-Contextual Bandit Exploration with Action Dependent Features:
-  --cb_explore_adf          Online explore-exploit for a contextual bandit 
-                            problem with multiline action dependent features
-  --regcb                   RegCB-elim exploration
-  --regcbopt                RegCB optimistic exploration
-  --mellowness arg (=0.1, ) RegCB mellowness parameter c_0. Default 0.1
-  --cb_min_cost arg (=0, )  lower bound on cost
-  --cb_max_cost arg (=1, )  upper bound on cost
-  --first_only              Only explore the first action in a tie-breaking 
-                            event
-  --cb_type arg             contextual bandit method to use in {ips,dr,mtr}. 
-                            Default: mtr
-Contextual Bandit Exploration with Action Dependent Features:
-  --cb_explore_adf             Online explore-exploit for a contextual bandit 
-                               problem with multiline action dependent features
-  --epsilon arg                minimum exploration probability
-  --rnd arg                    rnd based exploration
-  --rnd_alpha arg (=0.1, )     ci width for rnd (bigger => more exploration on 
-                               repeating features)
-  --rnd_invlambda arg (=0.1, ) covariance regularization strength rnd (bigger 
-                               => more exploration on new features)
-Contextual Bandit Exploration with Action Dependent Features:
-  --cb_explore_adf      Online explore-exploit for a contextual bandit problem 
-                        with multiline action dependent features
-  --epsilon arg         epsilon-greedy exploration
-  --softmax             softmax exploration
-  --lambda arg (=1, )   parameter for softmax
-Contextual Bandit Exploration with Action Dependent Features:
-  --cb_explore_adf              Online explore-exploit for a contextual bandit 
-                                problem with multiline action dependent 
-                                features
-  --squarecb                    SquareCB exploration
-  --gamma_scale arg (=10, )     Sets SquareCB greediness parameter to 
-                                gamma=[gamma_scale]*[num examples]^1/2
-  --gamma_exponent arg (=0.5, ) Exponent on [num examples] in SquareCB 
-                                greediness parameter gamma.
-  --elim                        Only perform SquareCB exploration over 
-                                plausible actions (computed via RegCB strategy)
-  --mellowness arg (=0.001, )   Mellowness parameter c_0 for computing 
-                                plausible action set. Only used with --elim
-  --cb_min_cost arg (=0, )      Lower bound on cost. Only used with --elim
-  --cb_max_cost arg (=1, )      Upper bound on cost. Only used with --elim
-  --cb_type arg                 contextual bandit method to use in 
-                                {ips,dr,mtr}. Default: mtr
-Contextual Bandit Exploration with Action Dependent Features:
-  --cb_explore_adf              Online explore-exploit for a contextual bandit 
-                                problem with multiline action dependent 
-                                features
-  --epsilon arg                 epsilon-greedy exploration
-  --synthcover                  use synthetic cover exploration
-  --synthcoverpsi arg (=0.1, )  exploration reward bonus
-  --synthcoversize arg (=100, ) number of policies in cover
-Continuous actions:
-  --cb_explore_pdf        Sample a pdf and pick a continuous valued action
-  --epsilon arg (=0.05, ) epsilon-greedy exploration
-  --min_value arg (=0, )  min value for continuous range
-  --max_value arg (=1, )  max value for continuous range
-  --first_only            Use user provided first action or user provided pdf 
-                          or uniform random
 CB Sample:
   --cb_sample           Sample from CB pdf and swap top action.
 Make Multiclass into Contextual Bandit:
@@ -416,9 +332,6 @@ Cost Sensitive One Against All with Label Dependent Features:
                         wap_ldf, eg if stored in file
   --csoaa_rank          Return actions sorted by score order
   --probabilities       predict probabilites of all classes
-Cost Sensitive One Against All with Label Dependent Features:
-  --wap_ldf arg         Use weighted all-pairs multiclass learning with label 
-                        dependent features.  Specify singleline or multiline.
 Error Correcting Tournament Options:
   --ect arg                Error correcting tournament with <k> labels
   --error arg (=0, )       errors allowed by ECT
@@ -443,8 +356,6 @@ Gradient Descent options:
   --sparse_l2 arg (=0, ) use per feature normalized updates
   --l1_state arg (=0, )  use per feature normalized updates
   --l2_state arg (=1, )  use per feature normalized updates
-Continuous actions:
-  --get_pmf             Convert a single multiclass prediction to a pmf
 Interact via elementwise multiplication:
   --interact arg        Put weights on feature products from namespaces <n1> 
                         and <n2>
@@ -477,7 +388,7 @@ Low Rank Quadratics:
 Low Rank Quadratics FA:
   --lrqfa arg           use low rank quadratic features with field aware 
                         weights
-VW options:
+Marginal options:
   --marginal arg                   substitute marginal label estimates for ids
   --initial_denominator arg (=1, ) initial denominator
   --initial_numerator arg (=0.5, ) initial numerator
@@ -559,19 +470,19 @@ Recall Tree:
   --max_depth arg         maximum depth of the tree, default log_2 (#classes)
   --node_only             only use node features, not full path features
   --randomized_routing    randomized routing
-Experience Replay:
+Experience Replay / replay_b:
   --replay_b arg              use experience replay at a specified level 
                               [b=classification/regression, m=multiclass, 
                               c=cost sensitive] with specified buffer size
   --replay_b_count arg (=1, ) how many times (in expectation) should each 
                               example be played (default: 1 = permuting)
-Experience Replay:
+Experience Replay / replay_c:
   --replay_c arg              use experience replay at a specified level 
                               [b=classification/regression, m=multiclass, 
                               c=cost sensitive] with specified buffer size
   --replay_c_count arg (=1, ) how many times (in expectation) should each 
                               example be played (default: 1 = permuting)
-Experience Replay:
+Experience Replay / replay_m:
   --replay_m arg              use experience replay at a specified level 
                               [b=classification/regression, m=multiclass, 
                               c=cost sensitive] with specified buffer size
