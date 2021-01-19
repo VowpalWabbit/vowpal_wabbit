@@ -541,7 +541,17 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
             print("{}Skipping test {} for flatbuffers, audit not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
 
-        fb_test_converter = fb_converter.FlatbufferTest(test, working_dir)
+        depends_on_test = (
+            tests[int(test["depends_on"][0]) - 1] if "depends_on" in test else None
+        )
+        depends_on_cmd = (
+            depends_on_test["stashed_vw_command"]
+            if (depends_on_test is not None)
+            and ("stashed_vw_command" in depends_on_test)
+            else None
+        )
+
+        fb_test_converter = fb_converter.FlatbufferTest(test, working_dir, depends_on=depends_on_cmd)
         fb_test_converter.to_flatbuffer(to_flatbuff, color_enum)
 
     return tests
