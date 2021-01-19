@@ -2057,7 +2057,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbzo_constant.stderr
     train-sets/ref/cbzo_constant.stdout
 
-# Test 262: cbzo: verify predictions of Test 262 model.
+# Test 262: cbzo: verify predictions of Test 261 model.
 # Also ends up testing if important cmd-line options (--cbzo, --policy) are saved with the model.
 {VW} -d train-sets/cbzo_constant.dat --holdout_off -t --radius 0.1 -i models/cbzo_constant.model -p cbzo_constant.preds
     pred-sets/ref/cbzo_constant.preds
@@ -2081,7 +2081,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbzo_linear.stderr
     train-sets/ref/cbzo_linear.stdout
 
-# Test 267: cbzo: verify predictions of Test 267 model.
+# Test 267: cbzo: verify predictions of Test 266 model.
 # Also ends up testing if important cmd-line options (--cbzo, --policy) are saved with the model.
 {VW} -d train-sets/cbzo_linear.dat --holdout_off -t --radius 0.1 -i models/cbzo_linear.model -p cbzo_linear.preds
     pred-sets/ref/cbzo_linear.preds
