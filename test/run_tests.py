@@ -551,7 +551,7 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
             else None
         )
 
-        fb_test_converter = fb_converter.FlatbufferTest(test, working_dir, depends_on=depends_on_cmd)
+        fb_test_converter = fb_converter.FlatbufferTest(test, working_dir, depends_on_cmd=depends_on_cmd)
         fb_test_converter.to_flatbuffer(to_flatbuff, color_enum)
 
     return tests
