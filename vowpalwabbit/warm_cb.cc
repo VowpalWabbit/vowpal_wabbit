@@ -12,6 +12,7 @@
 #include "explore.h"
 #include "vw_exception.h"
 #include "scope_exit.h"
+#include "cb_label_parser.h"
 
 #include <vector>
 #include <memory>
@@ -86,10 +87,10 @@ struct warm_cb
 
   ~warm_cb()
   {
-    CB::cb_label.delete_label(&cb_label);
+    CB::delete_label(cb_label);
     a_s.delete_v();
 
-    for (size_t a = 0; a < num_actions; ++a) { COST_SENSITIVE::cs_label.delete_label(&csls[a]); }
+    for (size_t a = 0; a < num_actions; ++a) { COST_SENSITIVE::delete_label(csls[a]); }
     free(csls);
     free(cbls);
 
@@ -174,7 +175,7 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     auto& eca = *data.ecs[a];
     // clear label
     auto& lab = eca.l.cb;
-    CB::cb_label.default_label(&lab);
+    CB::default_label(lab);
 
     // copy data
     VW::copy_example_data(false, &eca, &ec);
@@ -518,14 +519,14 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   {
     data.ecs[a] = VW::alloc_examples(1);
     auto& lab = data.ecs[a]->l.cb;
-    CB::cb_label.default_label(&lab);
+    CB::default_label(lab);
   }
 
   // The rest of the initialization is for warm start CB
   data.csls = calloc_or_throw<COST_SENSITIVE::label>(num_actions);
   for (uint32_t a = 0; a < num_actions; ++a)
   {
-    COST_SENSITIVE::cs_label.default_label(&data.csls[a]);
+    COST_SENSITIVE::default_label(data.csls[a]);
     data.csls[a].costs.push_back({0, a + 1, 0, 0});
   }
   data.cbls = calloc_or_throw<CB::label>(num_actions);

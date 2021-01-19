@@ -61,7 +61,7 @@ void parser::process_collection_item(vw* all, v_array<example*>& examples)
     parse_multi_example(all, examples[0], _multi_example_object);
     // read from active collection
     _example_index++;
-    if (_example_index == _data->example_obj_as_ExampleCollection()->multi_examples()->Length())
+    if (_example_index == _data->example_obj_as_ExampleCollection()->multi_examples()->size())
     {
       _example_index = 0;
       _active_collection = false;
@@ -72,7 +72,7 @@ void parser::process_collection_item(vw* all, v_array<example*>& examples)
     const auto ex = _data->example_obj_as_ExampleCollection()->examples()->Get(_example_index);
     parse_example(all, examples[0], ex);
     _example_index++;
-    if (_example_index == _data->example_obj_as_ExampleCollection()->examples()->Length())
+    if (_example_index == _data->example_obj_as_ExampleCollection()->examples()->size())
     {
       _example_index = 0;
       _active_collection = false;
@@ -147,7 +147,7 @@ void parser::parse_example(vw* all, example* ae, const Example* eg)
 void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
 {
   all->example_parser->lbl_parser.default_label(&ae->l);
-  if (_multi_ex_index >= eg->examples()->Length())
+  if (_multi_ex_index >= eg->examples()->size())
   {
     // done with multi example, send a newline example and reset
     _multi_ex_index = 0;
@@ -166,7 +166,7 @@ void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
     temp_index = (uint8_t)ns->name()->c_str()[0];
-    _c_hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->Length(), all->hash_seed);
+    _c_hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
   }
   else
   {
@@ -183,7 +183,7 @@ void parser::parse_features(vw* all, features& fs, const Feature* feature)
 {
   if (flatbuffers::IsFieldPresent(feature, Feature::VT_NAME))
   {
-    uint64_t word_hash = all->example_parser->hasher(feature->name()->c_str(), feature->name()->Length(), _c_hash);
+    uint64_t word_hash = all->example_parser->hasher(feature->name()->c_str(), feature->name()->size(), _c_hash);
     fs.push_back(feature->value(), word_hash);
   }
   else
@@ -242,6 +242,12 @@ void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg)
     {
       auto slates_label = static_cast<const Slates_Label*>(eg->label());
       parse_slates_label(&(ae->l), slates_label);
+      break;
+    }
+    case Label_ContinuousLabel:
+    {
+      auto continuous_label = static_cast<const ContinuousLabel*>(eg->label());
+      parse_continuous_action_label(&(ae->l), continuous_label);
       break;
     }
     case Label_NONE:
