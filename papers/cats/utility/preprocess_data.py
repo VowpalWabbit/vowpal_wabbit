@@ -14,6 +14,7 @@ class PreProcessCSVData:
     print('csv_file_name = ', csv_file_name)
     file_name_root = self.get_file_root(csv_file_name)
     dat_file_name = file_name_root +'.dat'
+    headers = None
     print('dat_file_name = ', dat_file_name)
     with open(dat_file_name, mode='w') as dat_file:
       dat_writer = csv.writer(dat_file, delimiter=' ', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -21,9 +22,15 @@ class PreProcessCSVData:
         readCSV = csv.reader(csvfile, delimiter=',')
         minv = sys.float_info.max
         maxv = sys.float_info.min
-        next(readCSV)  # Skip header
         row_num = 0
         for row in readCSV:
+          if headers is None:
+            headers = [r for r in row]
+            headers = headers[:-1] # don't need the label header
+            first = headers[0]
+            headers = headers[1:]
+            headers.append(first)
+            continue  # Skip header
           row.insert(1,'|') # add feature seperator as a column for vw
           if ('zurich' in csv_file_name):
             del row[7] # if this is the zurich dataset, remove 7th column
@@ -34,6 +41,10 @@ class PreProcessCSVData:
           if (row[0] == '|'):
             print(row_num)
             break
+          
+          for i,r in enumerate(row[2:]):
+            if i < len(headers):
+              row[i + 2] = headers[i] + "=" + r
           dat_writer.writerow(row)
           minv = min(minv, float(row[0]))
           maxv = max(maxv, float(row[0]))

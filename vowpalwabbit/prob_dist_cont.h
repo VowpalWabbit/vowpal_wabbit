@@ -14,6 +14,7 @@ struct probability_density_function_value
 {
   float action;     // continuous action
   float pdf_value;  // pdf value
+  float centre;     // centre chosen
 };
 
 struct pdf_segment
@@ -23,7 +24,13 @@ struct pdf_segment
   float pdf_value;  // height
 };
 
-using probability_density_function = v_array<pdf_segment>;
+struct cont_pred
+{
+  float centre;
+  v_array<pdf_segment> pdf;
+};
+
+using probability_density_function = cont_pred;
 
 std::string to_string(const probability_density_function_value& pdf_value, bool print_newline = false);
 std::string to_string(const probability_density_function& pdf, bool print_newline = false, int precision = -1);

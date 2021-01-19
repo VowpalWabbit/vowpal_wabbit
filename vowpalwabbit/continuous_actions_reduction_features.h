@@ -18,19 +18,19 @@ struct reduction_features
   probability_density_function pdf;
   float chosen_action;
   bool is_chosen_action_set() const { return !std::isnan(chosen_action); }
-  bool is_pdf_set() const { return pdf.size() > 0; }
+  bool is_pdf_set() const { return pdf.pdf.size() > 0; }
 
   reduction_features()
   {
-    pdf = v_init<pdf_segment>();
+    pdf.pdf = v_init<pdf_segment>();
     chosen_action = std::numeric_limits<float>::quiet_NaN();
   }
 
-  ~reduction_features() { pdf.delete_v(); }
+  ~reduction_features() { pdf.pdf.delete_v(); }
 
   void clear()
   {
-    pdf.clear();
+    pdf.pdf.clear();
     chosen_action = std::numeric_limits<float>::quiet_NaN();
   }
 };

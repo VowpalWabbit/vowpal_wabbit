@@ -176,7 +176,7 @@ public:
   {
     // check valid pdf else remove
     auto& red_fts = ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>();
-    if (!VW::continuous_actions::is_valid_pdf(red_fts.pdf)) { red_fts.pdf.clear(); }
+    if (!VW::continuous_actions::is_valid_pdf(red_fts.pdf)) { red_fts.pdf.pdf.clear(); }
     return return_state;
   }
 
@@ -208,7 +208,7 @@ public:
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().pdf.push_back(segment);
+    ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().pdf.pdf.push_back(segment);
     segment = {0., 0., 0.};
     return obj_return_state;
   }

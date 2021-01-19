@@ -52,21 +52,21 @@ int cb_explore_pdf::predict(example& ec, experimental::api_status*)
   if (first_only && !reduction_features.is_pdf_set() && !reduction_features.is_chosen_action_set())
   {
     // uniform random
-    ec.pred.pdf.push_back({min_value, max_value, static_cast<float>(1. / (max_value - min_value))});
+    ec.pred.pdf.pdf.push_back({min_value, max_value, static_cast<float>(1. / (max_value - min_value))});
     return error_code::success;
   }
   else if (first_only && reduction_features.is_pdf_set())
   {
     // pdf provided
-    copy_array(ec.pred.pdf, reduction_features.pdf);
+    copy_array(ec.pred.pdf.pdf, reduction_features.pdf.pdf);
     return error_code::success;
   }
 
   _base->predict(ec);
 
   continuous_actions::probability_density_function& _pred_pdf = ec.pred.pdf;
-  for (uint32_t i = 0; i < _pred_pdf.size(); i++)
-  { _pred_pdf[i].pdf_value = _pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value); }
+  for (uint32_t i = 0; i < _pred_pdf.pdf.size(); i++)
+  { _pred_pdf.pdf[i].pdf_value = _pred_pdf.pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value); }
   return error_code::success;
 }
 

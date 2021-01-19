@@ -33,10 +33,10 @@ std::string to_string(const probability_density_function& pdf, bool newline, int
   std::stringstream ss;
   if (precision >= 0) ss << std::setprecision(precision);
 
-  for (size_t i = 0; i < pdf.size(); i++)
+  for (size_t i = 0; i < pdf.pdf.size(); i++)
   {
     if (i > 0) ss << ',';
-    ss << pdf[i].left << '-' << pdf[i].right << ':' << pdf[i].pdf_value;
+    ss << pdf.pdf[i].left << '-' << pdf.pdf[i].right << ':' << pdf.pdf[i].pdf_value;
   }
 
   if (newline) ss << endl;
@@ -53,7 +53,7 @@ void delete_probability_density_function(void* v)
 bool is_valid_pdf(probability_density_function& pdf)
 {
   float mass = 0.f;
-  for (const auto& segment : pdf) { mass += (segment.right - segment.left) * segment.pdf_value; }
+  for (const auto& segment : pdf.pdf) { mass += (segment.right - segment.left) * segment.pdf_value; }
   if (mass < 0.9999 || mass > 1.0001) { return false; }
   return true;
 }

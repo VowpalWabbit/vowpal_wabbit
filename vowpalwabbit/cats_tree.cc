@@ -192,9 +192,11 @@ void cats_tree::init_node_costs(v_array<cb_class>& ac)
   _cost_star = ac[0].cost / ac[0].probability;
 
   uint32_t node_id = ac[0].action + _binary_tree.internal_node_count() - 1;
+  node_id = (node_id >= _binary_tree.nodes.size()) ? node_id = _binary_tree.nodes.size() - 1 : node_id;
   _a = {node_id, _cost_star};
 
   node_id = ac[ac.size() - 1].action + _binary_tree.internal_node_count() - 1;
+  node_id = (node_id >= _binary_tree.nodes.size()) ? node_id = _binary_tree.nodes.size() - 1 : node_id;
   _b = {node_id, _cost_star};
 }
 
@@ -357,6 +359,10 @@ base_learner* setup(options_i& options, vw& all)
     { all.trace_message << "warning: cats_tree only supports glf1; resetting to glf1." << std::endl; }
     options.replace("link", "glf1");
   }
+
+  std::cout << "--------------------------------------" << std::endl;
+  std::cout << "Tree bandwidth provided: " << bandwidth << std::endl;
+  std::cout << "--------------------------------------" << std::endl;
 
   auto tree = scoped_calloc_or_throw<cats_tree>();
   tree->init(num_actions, bandwidth);
