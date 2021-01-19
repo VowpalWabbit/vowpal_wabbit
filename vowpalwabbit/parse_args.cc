@@ -1203,9 +1203,14 @@ void load_input_model(vw& all, io_buf& io_temp)
 
 VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
-  auto setup_func = all.reduction_stack.top();
+  reduction_setup_fn setup_func = std::get<1>(all.reduction_stack.top());
+  std::string setup_func_name = std::get<0>(all.reduction_stack.top());
   all.reduction_stack.pop();
-  auto base = std::get<1>(setup_func)(options, all);
+
+  // 'hacky' way of keeping track of the option group created by the setup_func about to be created
+  options.tint(setup_func_name);
+  auto base = setup_func(options, all);
+  options.reset_tint();
 
   // returning nullptr means that setup_func (any reduction) was not 'enabled' but
   // only added their respective command args and did not add itself into the
@@ -1213,7 +1218,7 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
   if (base == nullptr) { return setup_base(options, all); }
   else
   {
-    all.enabled_reductions.push_back(std::get<0>(setup_func));
+    all.enabled_reductions.push_back(setup_func_name);
     return base;
   }
 }
@@ -1685,7 +1690,7 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-void print_progressive_validation_header(vw& all)
+void print_enabled_reductions(vw& all)
 {
   // output list of enabled reductions
   if (!all.logger.quiet && !all.options->was_supplied("audit_regressor") && !all.enabled_reductions.empty())
@@ -1696,24 +1701,6 @@ void print_progressive_validation_header(vw& all)
         std::ostream_iterator<std::string>(imploded, delim));
 
     all.trace_message << "Enabled reductions: " << imploded.str() << all.enabled_reductions.back() << std::endl;
-  }
-
-  if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
-  {
-    all.trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "average"
-                      << " " << std::setw(shared_data::col_since_last) << std::left << "since"
-                      << " " << std::right << std::setw(shared_data::col_example_counter) << "example"
-                      << " " << std::setw(shared_data::col_example_weight) << "example"
-                      << " " << std::setw(shared_data::col_current_label) << "current"
-                      << " " << std::setw(shared_data::col_current_predict) << "current"
-                      << " " << std::setw(shared_data::col_current_features) << "current" << std::endl;
-    all.trace_message << std::left << std::setw(shared_data::col_avg_loss) << std::left << "loss"
-                      << " " << std::setw(shared_data::col_since_last) << std::left << "last"
-                      << " " << std::right << std::setw(shared_data::col_example_counter) << "counter"
-                      << " " << std::setw(shared_data::col_example_weight) << "weight"
-                      << " " << std::setw(shared_data::col_current_label) << "label"
-                      << " " << std::setw(shared_data::col_current_predict) << "predict"
-                      << " " << std::setw(shared_data::col_current_features) << "features" << std::endl;
   }
 }
 
@@ -1759,13 +1746,15 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
     // upon direct query for help -- spit it out to stdout;
     if (all.options->get_typed_option<bool>("help").value())
     {
-      cout << all.options->help();
+      cout << all.options->help(all.enabled_reductions);
       exit(0);
     }
 
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {
-      print_progressive_validation_header(all);
+      print_enabled_reductions(all);
+      if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
+      { all.sd->print_update_header(all.trace_message); }
       all.l->init_driver();
     }
 

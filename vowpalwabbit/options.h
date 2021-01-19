@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <map>
 #include <typeinfo>
 #include <memory>
 #include <unordered_set>
@@ -181,14 +182,17 @@ struct option_group_definition;
 struct options_i
 {
   virtual void add_and_parse(const option_group_definition& group) = 0;
+  virtual void tint(const std::string& reduction_name) = 0;
+  virtual void reset_tint() = 0;
   virtual bool add_parse_and_check_necessary(const option_group_definition& group) = 0;
   virtual bool was_supplied(const std::string& key) const = 0;
-  virtual std::string help() const = 0;
+  virtual std::string help(const std::vector<std::string>& enabled_reductions) const = 0;
 
   virtual std::vector<std::shared_ptr<base_option>> get_all_options() = 0;
   virtual std::vector<std::shared_ptr<const base_option>> get_all_options() const = 0;
   virtual std::shared_ptr<base_option> get_option(const std::string& key) = 0;
   virtual std::shared_ptr<const base_option> get_option(const std::string& key) const = 0;
+  virtual std::map<std::string, std::vector<option_group_definition>> get_collection_of_options() const = 0;
 
   virtual void insert(const std::string& key, const std::string& value) = 0;
   virtual void replace(const std::string& key, const std::string& value) = 0;
@@ -326,7 +330,14 @@ struct options_name_extractor : options_i
 
   bool was_supplied(const std::string&) const override { return false; };
 
-  std::string help() const override { THROW("options_name_extractor does not implement this method"); };
+  void tint(const std::string&) override { THROW("options_name_extractor does not implement this method"); };
+
+  void reset_tint() override { THROW("options_name_extractor does not implement this method"); };
+
+  std::string help(const std::vector<std::string>&) const override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
 
   void check_unregistered() override { THROW("options_name_extractor does not implement this method"); };
 
@@ -346,6 +357,11 @@ struct options_name_extractor : options_i
   };
 
   std::shared_ptr<const base_option> get_option(const std::string&) const override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
+
+  std::map<std::string, std::vector<option_group_definition>> get_collection_of_options() const override
   {
     THROW("options_name_extractor does not implement this method");
   };

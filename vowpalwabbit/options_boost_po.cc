@@ -55,6 +55,8 @@ void options_boost_po::add_to_description(
 
 void options_boost_po::add_and_parse(const option_group_definition& group)
 {
+  m_option_group_dic[m_current_reduction_tint].push_back(group);
+
   po::options_description new_options(group.m_name);
 
   for (auto opt_ptr : group.m_options)
@@ -70,7 +72,7 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
   }
 
   // Add the help for the given options.
-  new_options.print(m_help_stringstream);
+  new_options.print(m_help_stringstream[m_current_reduction_tint]);
 
   try
   {
@@ -151,7 +153,33 @@ bool options_boost_po::was_supplied(const std::string& key) const
       std::end(m_command_line);
 }
 
-std::string options_boost_po::help() const { return m_help_stringstream.str(); }
+std::string options_boost_po::help(const std::vector<std::string>& enabled_reductions = {}) const
+{
+  std::stringstream help;
+
+  // add general help
+  help << m_help_stringstream.find(m_default_tint)->second.rdbuf();
+
+  // check if user only supplied --help or -h
+  if (m_supplied_options.size() <= 2)
+  {
+    for (const auto& curr : m_help_stringstream)
+    {
+      if (curr.first.compare(m_default_tint) != 0) help << curr.second.rdbuf();
+    }
+  }
+  else
+  {
+    // add help message of only enabled reductions
+    for (auto reduction : enabled_reductions)
+    {
+      auto it = m_help_stringstream.find(reduction);
+      if (it != m_help_stringstream.end()) { help << it->second.rdbuf(); }
+    }
+  }
+
+  return help.str();
+}
 
 std::vector<std::shared_ptr<base_option>> options_boost_po::get_all_options()
 {
