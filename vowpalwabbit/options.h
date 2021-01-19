@@ -186,7 +186,7 @@ struct options_i
   virtual void reset_tint() = 0;
   virtual bool add_parse_and_check_necessary(const option_group_definition& group) = 0;
   virtual bool was_supplied(const std::string& key) const = 0;
-  virtual std::string help() const = 0;
+  virtual std::string help(const std::vector<std::string>& enabled_reductions) const = 0;
 
   virtual std::vector<std::shared_ptr<base_option>> get_all_options() = 0;
   virtual std::vector<std::shared_ptr<const base_option>> get_all_options() const = 0;
@@ -258,7 +258,7 @@ struct options_i
 struct option_group_definition
 {
   // add second parameter for const string short name
-  option_group_definition(const std::string& name) : m_name(name) { m_importance = 0; }
+  option_group_definition(const std::string& name) : m_name(name) {}
 
   template <typename T>
   option_group_definition& add(option_builder<T>&& op)
@@ -294,18 +294,9 @@ struct option_group_definition
     return *this;
   }
 
-  // the smaller the number the more importance
-  // used only to order the --help page
-  option_group_definition& importance(int imp)
-  {
-    m_importance = imp;
-    return *this;
-  }
-
   std::string m_name;
   std::unordered_set<std::string> m_necessary_flags;
   std::vector<std::shared_ptr<base_option>> m_options;
-  int m_importance;
 };
 
 struct options_name_extractor : options_i
@@ -343,7 +334,10 @@ struct options_name_extractor : options_i
 
   void reset_tint() override { THROW("options_name_extractor does not implement this method"); };
 
-  std::string help() const override { THROW("options_name_extractor does not implement this method"); };
+  std::string help(const std::vector<std::string>&) const override
+  {
+    THROW("options_name_extractor does not implement this method");
+  };
 
   void check_unregistered() override { THROW("options_name_extractor does not implement this method"); };
 

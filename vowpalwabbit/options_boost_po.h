@@ -52,7 +52,7 @@ struct options_boost_po : public options_i
   void add_and_parse(const option_group_definition& group) override;
   bool add_parse_and_check_necessary(const option_group_definition& group) override;
   bool was_supplied(const std::string& key) const override;
-  std::string help() const override;
+  std::string help(const std::vector<std::string>& enabled_reductions) const override;
   void check_unregistered() override;
   std::vector<std::shared_ptr<base_option>> get_all_options() override;
   std::vector<std::shared_ptr<const base_option>> get_all_options() const override;
@@ -166,7 +166,7 @@ private:
 
   std::vector<std::string> m_command_line;
 
-  std::map<int, std::stringstream> m_help_stringstream;
+  std::map<std::string, std::stringstream> m_help_stringstream;
 
   // All options that were supplied on the command line.
   std::set<std::string> m_supplied_options;
