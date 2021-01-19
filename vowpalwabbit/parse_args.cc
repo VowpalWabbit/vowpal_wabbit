@@ -1748,7 +1748,7 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
     // upon direct query for help -- spit it out to stdout;
     if (all.options->get_typed_option<bool>("help").value())
     {
-      cout << all.options->help();
+      cout << all.options->help(all.enabled_reductions);
       exit(0);
     }
 
