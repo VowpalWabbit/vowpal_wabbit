@@ -747,13 +747,11 @@ base_learner* cbify_setup(options_i& options, vw& all)
     {
       l = &init_cost_sensitive_learner(
           data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.example_parser, 1);
-      all.label_type = label_type_t::cs;
     }
     else
     {
       l = &init_multiclass_learner(
           data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.example_parser, 1);
-      all.label_type = label_type_t::mc;
     }
   }
   else
@@ -780,13 +778,11 @@ base_learner* cbify_setup(options_i& options, vw& all)
     {
       l = &init_cost_sensitive_learner(
           data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.example_parser, 1);
-      all.label_type = label_type_t::cs;
     }
     else
     {
       l = &init_multiclass_learner(
           data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.example_parser, 1);
-      all.label_type = label_type_t::mc;
     }
   }
   all.delete_prediction = nullptr;
@@ -831,6 +827,7 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   l.set_finish_example(finish_multiline_example);
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
+  all.label_type = label_type_t::cs;
   all.delete_prediction = nullptr;
 
   return make_base(l);
