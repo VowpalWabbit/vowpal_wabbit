@@ -538,12 +538,6 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
         if 'audit' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, audit not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
-        if 'dsjson' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, dsjson coming soon{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            continue
-        if 'cats' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, continuous actions coming soon{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            continue
 
         fb_test_converter = fb_converter.FlatbufferTest(test, working_dir)
         fb_test_converter.to_flatbuffer(to_flatbuff, color_enum)
