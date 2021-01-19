@@ -63,6 +63,7 @@ private:
   flatbuffers::FlatBufferBuilder _builder;
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> _example_collection;
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::MultiExample>> _multi_example_collection;
+  std::map<uint8_t, flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> _share_examples;
   size_t _collection_count = 0;
   uint32_t _multi_ex_index = 0;
   int _examples = 0;
