@@ -9,14 +9,21 @@ from pathlib import Path
 import re
 
 class FlatbufferTest:
-    def __init__(self, test, working_dir, depends_on_cmd=None):
+    def __init__(self, test, working_dir, depends_on_test=None):
         self.test = test
         self.working_dir = working_dir
         self.stashed_input_files = copy.copy(self.test['input_files'])
         self.stashed_vw_command = copy.copy(self.test['vw_command'])
         self.test_id = str(self.test['id'])
         self.files_to_be_converted = []
-        self.depends_on_cmd = depends_on_cmd
+        self.depends_on_cmd = (
+            copy.copy(depends_on_test["stashed_vw_command"])
+            if (depends_on_test is not None)
+            and ("stashed_vw_command" in depends_on_test)
+            else None
+        )
+
+        # self.depends_on_cmd = depends_on_cmd
 
         test_dir = self.working_dir.joinpath('test_' + self.test_id)
         if not Path(str(test_dir)).exists():
