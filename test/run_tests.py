@@ -481,7 +481,7 @@ def do_dirty_check(test_base_ref_dir):
         sys.exit(1)
 
 def clean_dirty(test_base_ref_dir):
-    git_command = "git clean -f -d -x -e __pycache__"
+    git_command = "git clean --force -d -x --exclude __pycache__"
     result = subprocess.run(
         git_command.split(),
         stdout=subprocess.PIPE,
