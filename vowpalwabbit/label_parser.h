@@ -16,6 +16,19 @@
 struct parser;
 struct shared_data;
 struct polylabel;
+enum class label_type_t
+{
+  simple,
+  cb,       // contextual-bandit
+  cb_eval,  // contextual-bandit evaluation
+  cs,       // cost-sensitive
+  multilabel,
+  multiclass,
+  ccb,      // conditional contextual-bandit
+  slates,
+  nolabel,
+  continuous // continuous actions
+};
 
 struct label_parser
 {
@@ -31,4 +44,5 @@ struct label_parser
                                 // label_size is sufficient, so you need only specify this function if your label
                                 // constains, for instance, pointers (otherwise you'll get double-free errors)
   bool (*test_label)(polylabel*);
+  label_type_t label_type;
 };

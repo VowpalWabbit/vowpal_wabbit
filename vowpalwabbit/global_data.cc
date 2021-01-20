@@ -251,8 +251,6 @@ vw::vw() : options(nullptr, nullptr)
   sd->max_label = 0;
   sd->min_label = 0;
 
-  label_type = label_type_t::simple;
-
   l = nullptr;
   scorer = nullptr;
   cost_sensitive = nullptr;

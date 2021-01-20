@@ -356,7 +356,7 @@ base_learner* cs_active_setup(options_i& options, vw& all)
   if (!options.was_supplied("adax")) all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
 
   all.example_parser->lbl_parser = cs_label;  // assigning the label parser
-  all.label_type = label_type_t::cs;
+
   all.set_minmax(all.sd, data->cost_max);
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);

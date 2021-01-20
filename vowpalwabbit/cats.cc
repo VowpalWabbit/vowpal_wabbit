@@ -171,7 +171,6 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
       predict_or_learn<false>, 1, prediction_type_t::action_pdf_value);
 
   l.set_finish_example(finish_example);
-  all.label_type = label_type_t::continuous;
 
   return make_base(l);
 }
