@@ -222,9 +222,10 @@ Boosting:
 Bootstrap:
   --bootstrap arg       k-way bootstrap by online importance resampling
   --bs_type arg         prediction type {mean,vote}
-Continuous action tree with smoothing:
-  --cats arg            Continuous action tree with smoothing
-  --cats_pdf arg        Continuous action tree with smoothing (pdf)
+Continuous actions tree with smoothing:
+  --cats arg            number of tree labels <k> for cats
+Continuous action tree with smoothing with full pdf:
+  --cats_pdf arg        number of tree labels <k> for cats_pdf
 CATS Tree Options:
   --cats_tree arg        CATS Tree with <k> labels
   --bandwidth arg (=0, ) bandwidth for continuous actions in terms of #actions
@@ -525,8 +526,8 @@ Probabilistic Label Tree :
                            greater than <thr> threshold
   --top_k arg (=0, )       predict top-<k> labels instead of labels above 
                            threshold
-PMF to PDF:
-  --pmf_to_pdf arg (=0, ) Convert discrete PDF into continuous PDF.
+Convert discrete PDF into continuous PDF:
+  --pmf_to_pdf arg (=0, ) number of tree labels <k> for pmf_to_pdf
   --min_value arg         Minimum continuous value
   --max_value arg         Maximum continuous value
   --bandwidth arg (=1, )  Bandwidth (radius) of randomization around discrete 
