@@ -258,13 +258,86 @@ Contextual Bandit Exploration:
   --nounif                do not explore uniformly on zero-probability actions 
                           in cover
   --psi arg (=1, )        disagreement parameter for cover
-Contextual Bandit Exploration with Action Dependent Features:
+Contextual Bandit Exploration with ADF (bagging):
   --cb_explore_adf      Online explore-exploit for a contextual bandit problem 
                         with multiline action dependent features
   --epsilon arg         epsilon-greedy exploration
   --bag arg             bagging-based exploration
   --greedify            always update first policy once in bagging
   --first_only          Only explore the first action in a tie-breaking event
+Contextual Bandit Exploration with ADF (online cover):
+  --cb_explore_adf        Online explore-exploit for a contextual bandit 
+                          problem with multiline action dependent features
+  --cover arg             Online cover based exploration
+  --psi arg (=1, )        disagreement parameter for cover
+  --nounif                do not explore uniformly on zero-probability actions 
+                          in cover
+  --first_only            Only explore the first action in a tie-breaking event
+  --cb_type arg           contextual bandit method to use in {ips,dr,mtr}. 
+                          Default: mtr
+  --epsilon arg (=0.05, ) epsilon-greedy exploration
+Contextual Bandit Exploration with ADF (tau-first):
+  --cb_explore_adf      Online explore-exploit for a contextual bandit problem 
+                        with multiline action dependent features
+  --first arg           tau-first exploration
+  --epsilon arg         epsilon-greedy exploration
+Contextual Bandit Exploration with ADF (greedy):
+  --cb_explore_adf      Online explore-exploit for a contextual bandit problem 
+                        with multiline action dependent features
+  --epsilon arg         epsilon-greedy exploration
+  --first_only          Only explore the first action in a tie-breaking event
+Contextual Bandit Exploration with ADF (RegCB):
+  --cb_explore_adf          Online explore-exploit for a contextual bandit 
+                            problem with multiline action dependent features
+  --regcb                   RegCB-elim exploration
+  --regcbopt                RegCB optimistic exploration
+  --mellowness arg (=0.1, ) RegCB mellowness parameter c_0. Default 0.1
+  --cb_min_cost arg (=0, )  lower bound on cost
+  --cb_max_cost arg (=1, )  upper bound on cost
+  --first_only              Only explore the first action in a tie-breaking 
+                            event
+  --cb_type arg             contextual bandit method to use in {ips,dr,mtr}. 
+                            Default: mtr
+Contextual Bandit Exploration with ADF (rnd):
+  --cb_explore_adf             Online explore-exploit for a contextual bandit 
+                               problem with multiline action dependent features
+  --epsilon arg                minimum exploration probability
+  --rnd arg                    rnd based exploration
+  --rnd_alpha arg (=0.1, )     ci width for rnd (bigger => more exploration on 
+                               repeating features)
+  --rnd_invlambda arg (=0.1, ) covariance regularization strength rnd (bigger 
+                               => more exploration on new features)
+Contextual Bandit Exploration with ADF (softmax):
+  --cb_explore_adf      Online explore-exploit for a contextual bandit problem 
+                        with multiline action dependent features
+  --epsilon arg         epsilon-greedy exploration
+  --softmax             softmax exploration
+  --lambda arg (=1, )   parameter for softmax
+Contextual Bandit Exploration with ADF (SquareCB):
+  --cb_explore_adf              Online explore-exploit for a contextual bandit 
+                                problem with multiline action dependent 
+                                features
+  --squarecb                    SquareCB exploration
+  --gamma_scale arg (=10, )     Sets SquareCB greediness parameter to 
+                                gamma=[gamma_scale]*[num examples]^1/2
+  --gamma_exponent arg (=0.5, ) Exponent on [num examples] in SquareCB 
+                                greediness parameter gamma.
+  --elim                        Only perform SquareCB exploration over 
+                                plausible actions (computed via RegCB strategy)
+  --mellowness arg (=0.001, )   Mellowness parameter c_0 for computing 
+                                plausible action set. Only used with --elim
+  --cb_min_cost arg (=0, )      Lower bound on cost. Only used with --elim
+  --cb_max_cost arg (=1, )      Upper bound on cost. Only used with --elim
+  --cb_type arg                 contextual bandit method to use in 
+                                {ips,dr,mtr}. Default: mtr
+Contextual Bandit Exploration with ADF (synthetic cover):
+  --cb_explore_adf              Online explore-exploit for a contextual bandit 
+                                problem with multiline action dependent 
+                                features
+  --epsilon arg                 epsilon-greedy exploration
+  --synthcover                  use synthetic cover exploration
+  --synthcoverpsi arg (=0.1, )  exploration reward bonus
+  --synthcoversize arg (=100, ) number of policies in cover
 CB Sample:
   --cb_sample           Sample from CB pdf and swap top action.
 Make Multiclass into Contextual Bandit:
@@ -295,7 +368,7 @@ Continuous Action Contextual Bandit using Zeroth-Order Optimization:
                            using Zeroth-Order Optimization
   --policy arg (=linear, ) Policy/Model to Learn
   --radius arg (=0.1, )    Exploration Radius
-EXPERIMENTAL: Conditional Contextual Bandit Exploration with Action Dependent Features:
+EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF:
   --ccb_explore_adf     EXPERIMENTAL: Do Conditional Contextual Bandit learning
                         with multiline action dependent features.
   --all_slots_loss      Report average loss from all slots
@@ -332,6 +405,9 @@ Cost Sensitive One Against All with Label Dependent Features:
                         wap_ldf, eg if stored in file
   --csoaa_rank          Return actions sorted by score order
   --probabilities       predict probabilites of all classes
+Cost Sensitive weighted all-pairs with Label Dependent Features:
+  --wap_ldf arg         Use weighted all-pairs multiclass learning with label 
+                        dependent features.  Specify singleline or multiline.
 Error Correcting Tournament Options:
   --ect arg                Error correcting tournament with <k> labels
   --error arg (=0, )       errors allowed by ECT
