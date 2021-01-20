@@ -492,7 +492,6 @@ def clean_dirty(test_base_ref_dir):
     if result.returncode != 0:
         print("Failed to run {}".format(git_command))
 
-    stdout = try_decode(result.stdout)
 
 def calculate_test_to_run_explicitly(explicit_tests, tests):
     def get_deps(test_number, tests):
