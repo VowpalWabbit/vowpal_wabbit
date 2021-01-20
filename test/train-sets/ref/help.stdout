@@ -339,6 +339,13 @@ Contextual Bandit Exploration with ADF (synthetic cover):
   --synthcover                  use synthetic cover exploration
   --synthcoverpsi arg (=0.1, )  exploration reward bonus
   --synthcoversize arg (=100, ) number of policies in cover
+Continuous actions - cb_explore_pdf:
+  --cb_explore_pdf        Sample a pdf and pick a continuous valued action
+  --epsilon arg (=0.05, ) epsilon-greedy exploration
+  --min_value arg (=0, )  min value for continuous range
+  --max_value arg (=1, )  max value for continuous range
+  --first_only            Use user provided first action or user provided pdf 
+                          or uniform random
 CB Sample:
   --cb_sample           Sample from CB pdf and swap top action.
 Make Multiclass into Contextual Bandit:
@@ -433,6 +440,8 @@ Gradient Descent options:
   --sparse_l2 arg (=0, ) use per feature normalized updates
   --l1_state arg (=0, )  use per feature normalized updates
   --l2_state arg (=1, )  use per feature normalized updates
+Continuous actions - convert to pmf:
+  --get_pmf             Convert a single multiclass prediction to a pmf
 Interact via elementwise multiplication:
   --interact arg        Put weights on feature products from namespaces <n1> 
                         and <n2>
@@ -565,7 +574,7 @@ Experience Replay / replay_m:
                               c=cost sensitive] with specified buffer size
   --replay_m_count arg (=1, ) how many times (in expectation) should each 
                               example be played (default: 1 = permuting)
-Continuous actions:
+Continuous actions - sample pdf:
   --sample_pdf          Sample a pdf and pick a continuous valued action
 scorer options:
   --link arg (=identity, ) Specify the link function: identity, logistic, glf1 
