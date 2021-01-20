@@ -168,6 +168,8 @@ private:
 
   std::map<std::string, std::stringstream> m_help_stringstream;
 
+  std::set<std::string> m_added_help_group_names;
+
   // All options that were supplied on the command line.
   std::set<std::string> m_supplied_options;
 

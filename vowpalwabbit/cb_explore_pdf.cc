@@ -91,7 +91,7 @@ void predict_or_learn(cb_explore_pdf& reduction, single_learner&, example& ec)
 // Setup reduction in stack
 LEARNER::base_learner* cb_explore_pdf_setup(config::options_i& options, vw& all)
 {
-  option_group_definition new_options("Continuous actions");
+  option_group_definition new_options("Continuous actions - cb_explore_pdf");
   bool invoked = false;
   float epsilon;
   float min;

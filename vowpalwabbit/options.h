@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 #include <map>
+#include <set>
 #include <typeinfo>
 #include <memory>
 #include <unordered_set>
@@ -302,6 +303,7 @@ struct option_group_definition
 struct options_name_extractor : options_i
 {
   std::string generated_name;
+  std::set<std::string> m_added_help_group_names;
 
   void add_and_parse(const option_group_definition&) override
   {
@@ -311,6 +313,12 @@ struct options_name_extractor : options_i
   bool add_parse_and_check_necessary(const option_group_definition& group) override
   {
     if (group.m_necessary_flags.empty()) { THROW("reductions must specify at least one .necessary() option"); }
+
+    if (m_added_help_group_names.count(group.m_name) == 0) { m_added_help_group_names.insert(group.m_name); }
+    else
+    {
+      THROW("repeated option_group_definition name: " + group.m_name);
+    }
 
     generated_name.clear();
 
