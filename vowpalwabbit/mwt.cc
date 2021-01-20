@@ -92,28 +92,27 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   }
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_CPP_17_LANG_EXT
-  if
-    VW_STD17_CONSTEXPR(exclude || learn)
-    {
-      c.indices.clear();
-      uint32_t stride_shift = c.all->weights.stride_shift();
-      uint64_t weight_mask = c.all->weights.mask();
-      for (unsigned char ns : ec.indices)
-        if (c.namespaces[ns])
+  if VW_STD17_CONSTEXPR (exclude || learn)
+  {
+    c.indices.clear();
+    uint32_t stride_shift = c.all->weights.stride_shift();
+    uint64_t weight_mask = c.all->weights.mask();
+    for (unsigned char ns : ec.indices)
+      if (c.namespaces[ns])
+      {
+        c.indices.push_back(ns);
+        if (learn)
         {
-          c.indices.push_back(ns);
-          if (learn)
+          c.feature_space[ns].clear();
+          for (features::iterator& f : ec.feature_space[ns])
           {
-            c.feature_space[ns].clear();
-            for (features::iterator& f : ec.feature_space[ns])
-            {
-              uint64_t new_index = ((f.index() & weight_mask) >> stride_shift) * c.num_classes + (uint64_t)f.value();
-              c.feature_space[ns].push_back(1, new_index << stride_shift);
-            }
+            uint64_t new_index = ((f.index() & weight_mask) >> stride_shift) * c.num_classes + (uint64_t)f.value();
+            c.feature_space[ns].push_back(1, new_index << stride_shift);
           }
-          std::swap(c.feature_space[ns], ec.feature_space[ns]);
         }
-    }
+        std::swap(c.feature_space[ns], ec.feature_space[ns]);
+      }
+  }
   VW_WARNING_STATE_POP
 
   // modify the predictions to use a vector with a score for each evaluated feature.
@@ -129,13 +128,12 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
 
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_CPP_17_LANG_EXT
-  if
-    VW_STD17_CONSTEXPR(exclude || learn)
-  while (!c.indices.empty())
-  {
-    unsigned char ns = c.indices.pop();
-    std::swap(c.feature_space[ns], ec.feature_space[ns]);
-  }
+  if VW_STD17_CONSTEXPR (exclude || learn)
+    while (!c.indices.empty())
+    {
+      unsigned char ns = c.indices.pop();
+      std::swap(c.feature_space[ns], ec.feature_space[ns]);
+    }
   VW_WARNING_STATE_POP
 
   // modify the predictions to use a vector with a score for each evaluated feature.
