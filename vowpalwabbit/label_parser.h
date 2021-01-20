@@ -24,10 +24,10 @@ enum class label_type_t
   cs,       // cost-sensitive
   multilabel,
   multiclass,
-  ccb,      // conditional contextual-bandit
+  ccb,  // conditional contextual-bandit
   slates,
   nolabel,
-  continuous // continuous actions
+  continuous  // continuous actions
 };
 
 struct label_parser
