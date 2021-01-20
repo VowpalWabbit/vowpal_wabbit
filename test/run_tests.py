@@ -16,11 +16,12 @@ from enum import Enum
 import socket
 
 import runtests_parser
-
+import runtests_flatbuffer_converter as fb_converter
 
 class Color():
     LIGHT_CYAN = '\033[96m'
     LIGHT_GREEN = '\033[92m'
+    LIGHT_PURPLE = '\033[95m'
     LIGHT_RED = '\033[91m'
     ENDC = '\033[0m'
 
@@ -28,6 +29,7 @@ class Color():
 class NoColor():
     LIGHT_CYAN = ''
     LIGHT_GREEN = ''
+    LIGHT_PURPLE = ''
     LIGHT_RED = ''
     ENDC = ''
 
@@ -209,7 +211,7 @@ def print_colored_diff(diff, color_enum):
             print(line)
 
 
-def run_command_line_test(id,
+def run_command_line_test(test_id,
                           command_line,
                           comparison_files,
                           overwrite,
@@ -225,7 +227,7 @@ def run_command_line_test(id,
         for dep in dependencies:
             success = completed_tests.wait_for_completion_get_success(dep)
             if not success:
-                return (id, {
+                return (test_id, {
                     "result": Result.SKIPPED,
                     "checks": {}
                 })
@@ -237,7 +239,7 @@ def run_command_line_test(id,
             cmd = command_line
         else:
             working_dir = str(create_test_dir(
-                id, input_files, base_working_dir, ref_dir, dependencies=dependencies))
+                test_id, input_files, base_working_dir, ref_dir, dependencies=dependencies))
             cmd = "{}".format((command_line)).split()
 
         try:
@@ -259,7 +261,7 @@ def run_command_line_test(id,
                 "stderr": stderr
             }
 
-            return (id, {
+            return (test_id, {
                 "result": Result.FAIL,
                 "checks": checks
             })
@@ -319,13 +321,13 @@ def run_command_line_test(id,
                 "diff": diff
             }
     except:
-        completed_tests.report_completion(id, False)
+        completed_tests.report_completion(test_id, False)
         raise
 
     success = all(check["success"] == True for name, check in checks.items())
-    completed_tests.report_completion(id, success)
+    completed_tests.report_completion(test_id, success)
 
-    return (id, {
+    return (test_id, {
         "result": Result.SUCCESS if success else Result.FAIL,
         "checks": checks
     })
@@ -363,12 +365,14 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
     Path(test_working_dir.joinpath("models")).mkdir(
         parents=True, exist_ok=True)
 
-    for file in input_files:
+    for f in input_files:
         file_to_copy = None
-        search_paths = [Path(test_ref_dir).joinpath(file)]
+        search_paths = [Path(test_ref_dir).joinpath(f)]
         if dependencies is not None:
             search_paths.extend([Path(test_base_dir).joinpath(
-                "test_{}".format((x)), file) for x in dependencies])
+                "test_{}".format((x)), f) for x in dependencies])
+            search_paths.extend([Path(test_base_dir).joinpath(
+                "test_{}".format((x)), os.path.basename(f)) for x in dependencies]) # for input_files with a full path
         for search_path in search_paths:
             if search_path.exists() and not search_path.is_dir():
                 file_to_copy = search_path
@@ -376,9 +380,11 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
 
         if file_to_copy is None:
             raise ValueError(
-                "{} couldn't be found for test {}".format((file), (test_id)))
+                "{} couldn't be found for test {}".format((f), (test_id)))
 
-        test_dest_file = Path(test_working_dir).joinpath(file)
+        test_dest_file = Path(test_working_dir).joinpath(f)
+        if file_to_copy == test_dest_file:
+            continue
         Path(test_dest_file.parent).mkdir(parents=True, exist_ok=True)
         # We always want to replace this file in case it is the output of another test
         if test_dest_file.exists():
@@ -421,6 +427,23 @@ def find_spanning_tree_binary(test_base_ref_dir, user_supplied_bin_path):
         debug_file_name="spanning_tree")
 
 
+def find_to_flatbuf_binary(test_base_ref_dir, user_supplied_bin_path):
+    to_flatbuff_search_path = [
+        Path(test_base_ref_dir).joinpath("../build/utl/flatbuffer")
+    ]
+
+    def is_to_flatbuff_binary(file_path):
+        file_name = os.path.basename(file_path)
+        return file_name == "to_flatbuff"
+
+    return find_or_use_user_supplied_path(
+        test_base_ref_dir=test_base_ref_dir,
+        user_supplied_bin_path=user_supplied_bin_path,
+        search_paths=to_flatbuff_search_path,
+        is_correct_bin_func=is_to_flatbuff_binary,
+        debug_file_name="to_flatbuff")
+
+
 def find_or_use_user_supplied_path(test_base_ref_dir, user_supplied_bin_path, search_paths, is_correct_bin_func, debug_file_name):
     if user_supplied_bin_path is None:
         return find_in_path(search_paths, is_correct_bin_func, debug_file_name)
@@ -452,10 +475,22 @@ def do_dirty_check(test_base_ref_dir):
         print("Failed to run 'git clean --dry-run -d -x -e __pycache__'")
     stdout = try_decode(result.stdout)
     if len(stdout) != 0:
-        print("Error: Test dir is not clean, this can result in false negatives. To ignore this and continue anyway pass --ignore_dirty")
+        print("Error: Test dir is not clean, this can result in false negatives. To ignore this and continue anyway pass --ignore_dirty or pass --clean_dirty to clean")
         print("'git clean --dry-run -d -x -e __pycache__' output:\n---")
         print(stdout)
         sys.exit(1)
+
+def clean_dirty(test_base_ref_dir):
+    git_command = "git clean --force -d -x --exclude __pycache__"
+    result = subprocess.run(
+        git_command.split(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=test_base_ref_dir,
+        timeout=10)
+
+    if result.returncode != 0:
+        print("Failed to run {}".format(git_command))
 
 
 def calculate_test_to_run_explicitly(explicit_tests, tests):
@@ -475,6 +510,47 @@ def calculate_test_to_run_explicitly(explicit_tests, tests):
             tests_to_run_explicitly, get_deps(test_number, tests))
 
     return list(tests_to_run_explicitly)
+
+def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
+    test_base_working_dir = str(working_dir)
+    if not Path(test_base_working_dir).exists():
+        Path(test_base_working_dir).mkdir(parents=True, exist_ok=True)
+
+    for test in tests:
+        test_id = test['id']
+        if 'vw_command' not in test:
+            print("{}Skipping test {} for flatbuffers, no vw command available{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+        if 'flatbuffer' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, already a flatbuffer test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+        if 'malformed' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, malformed input{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+        if 'input_files' not in test:
+            print("{}Skipping test {} for flatbuffers, no input files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+        if 'dictionary' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, currently dictionaries are not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+        if 'invert_hash' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, invert_hash not supported on converted files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+        if 'audit' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, audit not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+        if 'help' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, --help test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+
+        depends_on_test = (
+            tests[int(test["depends_on"][0]) - 1] if "depends_on" in test else None
+        )
+
+        fb_test_converter = fb_converter.FlatbufferTest(test, working_dir, depends_on_test=depends_on_test)
+        fb_test_converter.to_flatbuffer(to_flatbuff, color_enum)
+
+    return tests
 
 
 def main():
@@ -496,6 +572,8 @@ def main():
                         help="Allow for some tolerance when comparing floats")
     parser.add_argument("--ignore_dirty", action='store_true',
                         help="The test ref dir is checked for dirty files which may cause false negatives. Pass this flag to skip this check.")
+    parser.add_argument("--clean_dirty", action='store_true',
+                        help="The test ref dir is checked for dirty files which may cause false negatives. Pass this flag to remove those files.")
     parser.add_argument("--working_dir", default=working_dir,
                         help="Directory to save test outputs to")
     parser.add_argument("--ref_dir", default=test_ref_dir,
@@ -511,7 +589,12 @@ def main():
                         "otherwise a test spec will be autogenerated from the RunTests test definitions")
     parser.add_argument('--no_color', action='store_true',
                         help="Don't print color ANSI escape codes")
+    parser.add_argument('--for_flatbuffers', action='store_true', help='Transform all of the test inputs into flatbuffer format and run tests')
+    parser.add_argument('--to_flatbuff_path', help="Specify to_flatbuff binary to use. Otherwise, binary will be searched for in build directory")
     args = parser.parse_args()
+
+    if args.for_flatbuffers and args.working_dir == working_dir: # user did not supply dir
+        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")        
 
     test_base_working_dir = str(args.working_dir)
     test_base_ref_dir = str(args.ref_dir)
@@ -533,6 +616,9 @@ def main():
     if not Path(test_base_ref_dir):
         print("--ref_dir='{}' doesn't exist".format((test_base_ref_dir)))
         sys.exit(1)
+
+    if args.clean_dirty:
+        clean_dirty(test_base_ref_dir)
 
     if not args.ignore_dirty:
         do_dirty_check(test_base_ref_dir)
@@ -558,6 +644,10 @@ def main():
         print("Tests read from test spec file: {}".format((args.test_spec)))
 
     print()
+
+    if args.for_flatbuffers:
+        to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
+        tests = convert_tests_for_flatbuffers(tests, to_flatbuff, args.working_dir, color_enum)
 
     tasks = []
     completed_tests = Completion()
