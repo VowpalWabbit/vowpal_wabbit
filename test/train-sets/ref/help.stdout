@@ -360,7 +360,6 @@ Contextual Bandit Options:
   --cbify arg           Translate cbify to cbexploreadf. Disable with 
                         cb_force_legacy.
   --cb_type arg         contextual bandit method to use in {}
-  --eval                Evaluate a policy rather than optimizing.
   --cb_force_legacy     Default to old cb implementation
 Make Multiclass into Contextual Bandit:
   --cbify arg                  Convert multiclass on <k> classes into a 

@@ -1984,7 +1984,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
          train-sets/ref/cs_fb.stderr
 
 # Test 244: Flatbuffer CB_eval test
-{VW} --cb_force_legacy -d train-sets/rcv1_cb_eval.fb --cb 2 --eval \
+{VW} -d train-sets/rcv1_cb_eval.fb --cb 2 --eval \
      --flatbuffer
          train-sets/ref/rcv1_cb_eval_fb.stderr
 
@@ -2121,7 +2121,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/w_out_slot_ns.interactions
 
 # Test 275: cb evaluation (see test 74)
-{VW} --cb_force_legacy -d train-sets/rcv1_cb_eval --cb 2 --eval
+{VW} -d train-sets/rcv1_cb_eval --cb 2 --eval
     train-sets/ref/rcv1_cb_eval.stderr
 
 # Test 276: 8.8.0 old model, test cb compat
