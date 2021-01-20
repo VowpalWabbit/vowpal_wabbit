@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(name_extraction_should_throw)
   BOOST_REQUIRE_THROW(name_extractor.add_parse_and_check_necessary(ag), VW::vw_exception);
 
   // should throw since these methods will never be implemented by options_name_extractor
-  BOOST_REQUIRE_THROW(name_extractor.help(), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.help({}), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.check_unregistered(), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.get_all_options(), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.get_option("opt2"), VW::vw_exception);

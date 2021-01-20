@@ -540,6 +540,9 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
         if 'audit' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, audit not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
+        if 'help' in test['vw_command']:
+            print("{}Skipping test {} for flatbuffers, --help test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
 
         depends_on_test = (
             tests[int(test["depends_on"][0]) - 1] if "depends_on" in test else None

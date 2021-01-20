@@ -2098,4 +2098,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} -d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --invert_hash cbzo_linear_invert_hash.txt
     train-sets/ref/cbzo_linear_invert_hash.txt
 
+# Test 269: vw --help with filtering
+{VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_dr.predict --cb_type dr --help
+    train-sets/ref/help_cbadf.stderr
+    train-sets/ref/help_cbadf.stdout
+
 # Do not delete this line or the empty line above it
