@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(name_extraction_recycle)
   BOOST_CHECK_EQUAL(name_extractor.generated_name, "im_necessary_opt2");
   BOOST_CHECK_EQUAL(result, false);
 
-  option_group_definition ag2("g1");
+  option_group_definition ag2("g2");
   ag2(make_option("im_necessary_v2", loc).keep().necessary());
   ag2(make_option("opt2", loc).necessary());
   ag2.add(make_option("opt3", loc2));
