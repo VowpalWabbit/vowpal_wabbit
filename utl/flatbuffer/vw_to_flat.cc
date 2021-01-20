@@ -363,7 +363,7 @@ void to_flat::convert_txt_to_flat(vw& all)
       for (features::iterator& f : ae->feature_space[ns]) { ss << f.index() << f.value(); }
 
       std::string s = ss.str();
-      auto refid = uniform_hash(s.c_str(), s.size(), 0);
+      uint64_t refid = uniform_hash(s.c_str(), s.size(), 0);
       flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> namespace_offset;
       auto find_ns_offset = _share_examples.find(refid);
 

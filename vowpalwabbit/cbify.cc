@@ -820,6 +820,7 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   l.set_finish_example(finish_multiline_example);
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
+  all.label_type = label_type_t::cs;
   all.delete_prediction = nullptr;
 
   return make_base(l);
