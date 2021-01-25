@@ -48,20 +48,20 @@ void reduction::transform_prediction(example& ec)
       else if (r == n || centre - b < centre + b)
       {
         auto val = std::max(centre - b, min_value);
-        if (pdf_lim.back() != val) { pdf_lim.push_back(val); }
+        if (!pdf_lim.empty() && pdf_lim.back() != val) { pdf_lim.push_back(val); }
         l++;
       }
       else if (centre - b == centre + b)
       {
         auto val = std::max(centre - b, min_value);
-        if (pdf_lim.back() != val) { pdf_lim.push_back(val); }
+        if (!pdf_lim.empty() && pdf_lim.back() != val) { pdf_lim.push_back(val); }
         l++;
         r++;
       }
     }
     else
     {
-      // action - b < 0 so lower limit is min_value (already added to pdf_lim)
+      // action - b < min_value so lower limit is min_value (already added to pdf_lim)
       auto val = std::min(centre + b, max_value);
       pdf_lim.push_back(val);
       l++;
