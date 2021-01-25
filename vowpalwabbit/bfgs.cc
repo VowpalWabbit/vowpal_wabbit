@@ -1056,7 +1056,7 @@ base_learner* bfgs_setup(options_i& options, vw& all)
   auto b = scoped_calloc_or_throw<bfgs>();
   bool conjugate_gradient = false;
   bool bfgs_option = false;
-  option_group_definition bfgs_outer_options("LBFGS and Conjugate Gradient options");
+  option_group_definition bfgs_outer_options("Conjugate Gradient options");
   bfgs_outer_options.add(make_option("conjugate_gradient", conjugate_gradient)
                              .keep()
                              .necessary()

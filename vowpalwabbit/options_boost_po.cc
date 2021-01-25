@@ -71,8 +71,14 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
     m_options[opt_ptr->m_name] = opt_ptr;
   }
 
-  // Add the help for the given options.
-  new_options.print(m_help_stringstream[m_current_reduction_tint]);
+  // setup functions can call multiply times into add_and_parse,
+  // we have to guard to avoid adding help multiple times
+  if (m_added_help_group_names.count(group.m_name) == 0)
+  {
+    // Add the help for the given options.
+    new_options.print(m_help_stringstream[m_current_reduction_tint]);
+    m_added_help_group_names.insert(group.m_name);
+  }
 
   try
   {

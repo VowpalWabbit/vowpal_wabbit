@@ -354,6 +354,7 @@ base_learner* setup(options_i& options, vw& all)
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
   all.delete_prediction = delete_probability_density_function;
+  all.label_type = label_type_t::continuous;
   data->all = &all;
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");
