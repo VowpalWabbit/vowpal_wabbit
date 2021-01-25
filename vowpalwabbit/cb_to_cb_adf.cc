@@ -122,18 +122,23 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   if (force_legacy) compat_old_cb = true;
 
-  // not implemented in "new_cb" yet
-  if (compat_old_cb)
-  {
-    options.insert("cb_force_legacy", "");
-    return nullptr;
-  }
-
   bool override_cb = options.was_supplied("cb");
   bool override_cb_explore = options.was_supplied("cb_explore");
   bool override_cbify = options.was_supplied("cbify");
 
-  if (!override_cb && !override_cb_explore && !override_cbify) return nullptr;
+  if (!override_cb && !override_cb_explore && !override_cbify)
+  {
+    // do nothing
+    return nullptr;
+  }
+  else
+  {
+    if (compat_old_cb)
+    {
+      options.insert("cb_force_legacy", "");
+      return nullptr;
+    }
+  }
 
   // if cb_explore_adf is being specified this is a noop
   if (override_cbify && options.was_supplied("cb_explore_adf")) return nullptr;
