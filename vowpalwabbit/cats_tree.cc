@@ -360,10 +360,6 @@ base_learner* setup(options_i& options, vw& all)
     options.replace("link", "glf1");
   }
 
-  std::cout << "--------------------------------------" << std::endl;
-  std::cout << "Tree bandwidth provided: " << bandwidth << std::endl;
-  std::cout << "--------------------------------------" << std::endl;
-
   auto tree = scoped_calloc_or_throw<cats_tree>();
   tree->init(num_actions, bandwidth);
   tree->set_trace_message(&all.trace_message, all.logger.quiet);

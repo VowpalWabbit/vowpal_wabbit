@@ -268,9 +268,8 @@ base_learner* setup(options_i& options, vw& all)
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
   { THROW("error: min and max values must be supplied with cb_continuous"); }
   if (data->bandwidth <= -1) { THROW("error: Bandwidth must be positive"); }
-  // Translate user provided bandwidth which is in terms of continuous action range
+  // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)
   // to the internal tree bandwidth which is in terms of #actions
-  std::cout << data->max_value << " " << data->min_value << " " << data->num_actions << std::endl;
   float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
   float half_leaf_width = leaf_width / 2.f;
 
@@ -287,11 +286,6 @@ base_learner* setup(options_i& options, vw& all)
   }
 
   options.replace("tree_bandwidth", std::to_string(tree_bandwidth));
-
-  std::cout << "--------------------------------------" << std::endl;
-  std::cout << "bandwidth provided: " << data->bandwidth << ", tree bandwidth: " << tree_bandwidth << std::endl;
-  std::cout << leaf_width << "/" << half_leaf_width << std::endl;
-  std::cout << "--------------------------------------" << std::endl;
 
   auto p_base = as_singleline(setup_base(options, all));
   data->_p_base = p_base;
