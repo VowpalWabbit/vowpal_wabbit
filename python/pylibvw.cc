@@ -561,13 +561,13 @@ py::list ex_get_decision_scores(example_ptr ec)
 
 py::tuple ex_get_action_pdf_value(example_ptr ec)
 {
-  return py::make_tuple(ec->pred.pdf_value.action, ec->pred.pdf_value.pdf_value, ec->pred.pdf_value.centre);
+  return py::make_tuple(ec->pred.pdf_value.action, ec->pred.pdf_value.pdf_value);
 }
 
 py::list ex_get_pdf(example_ptr ec)
 {
   py::list values;
-  for (auto const& segment : ec->pred.pdf.pdf)
+  for (auto const& segment : ec->pred.pdf)
   { values.append(py::make_tuple(segment.left, segment.right, segment.pdf_value)); }
   return values;
 }

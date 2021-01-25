@@ -39,7 +39,6 @@ struct sample_pdf
 private:
   uint64_t* _p_random_state;
   v_array<continuous_actions::pdf_segment> _pred_pdf;
-  // continuous_actions::probability_density_function _pred_pdf;
   single_learner* _base = nullptr;
 };
 
@@ -48,10 +47,9 @@ int sample_pdf::learn(example& ec, experimental::api_status*)
   // one of the base reductions will call predict so we need a valid
   // predict buffer
   _pred_pdf.clear();
-  // _pred_pdf.pdf.clear();
-  // _pred_pdf.centre = 0.0f;
+
   {  // scope to predict & restore prediction
-    auto restore = VW::swap_guard(ec.pred.pdf.pdf, _pred_pdf);
+    auto restore = VW::swap_guard(ec.pred.pdf, _pred_pdf);
     _base->learn(ec);
   }
   return error_code::success;
@@ -60,17 +58,14 @@ int sample_pdf::learn(example& ec, experimental::api_status*)
 int sample_pdf::predict(example& ec, experimental::api_status*)
 {
   _pred_pdf.clear();
-  // _pred_pdf.pdf.clear();
-  // _pred_pdf.centre = 0.0f;
 
   {  // scope to predict & restore prediction
-    auto restore = VW::swap_guard(ec.pred.pdf.pdf, _pred_pdf);
+    auto restore = VW::swap_guard(ec.pred.pdf, _pred_pdf);
     _base->predict(ec);
   }
 
   const int ret_code = exploration::sample_pdf(_p_random_state, std::begin(_pred_pdf), std::end(_pred_pdf),
       ec.pred.pdf_value.action, ec.pred.pdf_value.pdf_value);
-  ec.pred.pdf_value.centre = 2.0;
 
   if (ret_code != S_EXPLORATION_OK) return error_code::sample_pdf_failed;
 
@@ -82,8 +77,6 @@ void sample_pdf::init(single_learner* p_base, uint64_t* p_random_seed)
   _base = p_base;
   _p_random_state = p_random_seed;
   _pred_pdf = v_init<continuous_actions::pdf_segment>();
-  // _pred_pdf.pdf = v_init<continuous_actions::pdf_segment>();
-  // _pred_pdf.centre = 0.0f;
 }
 
 sample_pdf::~sample_pdf() { _pred_pdf.delete_v(); }

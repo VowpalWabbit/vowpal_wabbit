@@ -55,9 +55,9 @@ void parse_pdf(
     seg.left = float_of_string(p->parse_name[0]);
     seg.right = float_of_string(p->parse_name[1]);
     seg.pdf_value = float_of_string(p->parse_name[2]);
-    cats_reduction_features.pdf.pdf.push_back(seg);
+    cats_reduction_features.pdf.push_back(seg);
   }
-  if (!VW::continuous_actions::is_valid_pdf(cats_reduction_features.pdf)) { cats_reduction_features.pdf.pdf.clear(); }
+  if (!VW::continuous_actions::is_valid_pdf(cats_reduction_features.pdf)) { cats_reduction_features.pdf.clear(); }
 }
 
 void parse_chosen_action(

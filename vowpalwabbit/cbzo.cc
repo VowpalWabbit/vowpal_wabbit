@@ -191,18 +191,18 @@ void approx_pmf_to_pdf(float a, float b, probability_density_function& pdf)
 {
   float left = close_lesser_value(a), right = close_greater_value(a);
   float pdf_val = static_cast<float>(0.5 / (right - left));
-  pdf.pdf.push_back({left, right, pdf_val});
+  pdf.push_back({left, right, pdf_val});
 
   left = close_lesser_value(b);
   right = close_greater_value(b);
   pdf_val = static_cast<float>(0.5 / (right - left));
-  pdf.pdf.push_back({left, right, pdf_val});
+  pdf.push_back({left, right, pdf_val});
 }
 
 template <uint8_t policy, bool audit_or_hash_inv>
 void predict(cbzo& data, base_learner&, example& ec)
 {
-  ec.pred.pdf.pdf.clear();
+  ec.pred.pdf.clear();
 
   float action_centroid = inference<policy>(*data.all, ec);
   set_minmax(data.all->sd, action_centroid, data.min_prediction_supplied, data.max_prediction_supplied);

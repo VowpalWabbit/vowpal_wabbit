@@ -19,54 +19,65 @@ namespace pmf_to_pdf
 void reduction::transform_prediction(example& ec)
 {
   const float continuous_range = max_value - min_value;
-  const float unit_range = continuous_range / num_actions ;
+  const float unit_range = continuous_range / num_actions;
+  auto centre = min_value + temp_pred_a_s[0].action * unit_range + unit_range / 2.0f;
 
   size_t n = temp_pred_a_s.size();
   assert(n != 0);
 
-  auto b = !bandwidth ? 1 : bandwidth;
+  struct as
+  {
+    float action;
+    float score;
+  };
+
+  std::vector<as> pred_a_s;
+  pred_a_s.push_back({centre, temp_pred_a_s[0].score});
+  for (size_t i = 1; i < temp_pred_a_s.size(); i++)
+  { pred_a_s.push_back({(float)temp_pred_a_s[i].action, temp_pred_a_s[i].score}); }
+
+  auto b = !bandwidth ? 1 : bandwidth;  // TODO make better
+
   pdf_lim.clear();
-  if (temp_pred_a_s[0].action - b != 0) pdf_lim.push_back(0);
+  if (pred_a_s[0].action - b != min_value) pdf_lim.push_back(min_value);
 
   uint32_t l = 0;
   uint32_t r = 0;
   while (l < n || r < n)
   {
-    if (temp_pred_a_s[0].action >= b)
+    if (pred_a_s[0].action >= b)
     {
-      if (l == n || temp_pred_a_s[r].action + b < temp_pred_a_s[l].action - b)
+      if (l == n || pred_a_s[r].action + b < pred_a_s[l].action - b)
       {
-        auto val = std::min(temp_pred_a_s[r++].action + b, num_actions);
+        auto val = std::min(pred_a_s[r++].action + b, max_value);
         pdf_lim.push_back(val);
       }
-      else if (r == n || temp_pred_a_s[l].action - b < temp_pred_a_s[r].action + b)
+      else if (r == n || pred_a_s[l].action - b < pred_a_s[r].action + b)
       {
-        pdf_lim.push_back(temp_pred_a_s[l++].action - b);
+        auto val = std::max(pred_a_s[l++].action - b, min_value);
+        if (pdf_lim.back() != val) { pdf_lim.push_back(val); }
       }
-      else if (temp_pred_a_s[l].action - b == temp_pred_a_s[r].action + b)
+      else if (pred_a_s[l].action - b == pred_a_s[r].action + b)
       {
-        pdf_lim.push_back(temp_pred_a_s[l].action - b);
+        auto val = std::max(pred_a_s[l].action - b, min_value);
+        if (pdf_lim.back() != val) { pdf_lim.push_back(val); }
         l++;
         r++;
       }
     }
     else
     {
-      // action - b < 0 so lower limit is zero (already added to pdf_lim)
-      auto val = std::min(temp_pred_a_s[r++].action + b, num_actions);
+      // action - b < 0 so lower limit is min_value (already added to pdf_lim)
+      auto val = std::min(pred_a_s[r++].action + b, max_value);
       pdf_lim.push_back(val);
       l++;
       r++;
     }
   }
 
-  if (pdf_lim.back() != num_actions) pdf_lim.push_back(num_actions);
+  if (pdf_lim.back() != max_value) pdf_lim.push_back(max_value);
 
-  auto& p_dist = ec.pred.pdf.pdf;
-  ec.pred.pdf.centre = min_value + temp_pred_a_s[0].action * unit_range + unit_range / 2.0f;
-
-  // std::cout << "action : " << temp_pred_a_s[0].action << " centre: " << ec.pred.pdf.centre
-  //           << " unit_range: " << unit_range << " ur/2: " << unit_range / 2.0f << std::endl;
+  auto& p_dist = ec.pred.pdf;
   p_dist.clear();
 
   size_t m = pdf_lim.size();
@@ -75,29 +86,17 @@ void reduction::transform_prediction(example& ec)
   {
     float p = 0;
     if (l < n &&
-        ((temp_pred_a_s[l].action < b && pdf_lim[i] == 0) || pdf_lim[i] == temp_pred_a_s[l].action - b))
+        (((pred_a_s[l].action - min_value) < b && pdf_lim[i] == min_value) || pdf_lim[i] == pred_a_s[l].action - b))
     {
-      // default: 'action - b' to 'action + b'
-      uint32_t actual_b = 2 * b;
+      // default: 2 * b : 'action - b' to 'action + b'
+      float actual_b = std::min(max_value, pred_a_s[l].action + b) - std::max(min_value, pred_a_s[l].action - b);
 
-      if (temp_pred_a_s[l].action < b && pdf_lim[i] == 0)
-      {
-        // 'action - b' gets cut off by lower limit which is zero
-        // need to adjust b used in generating the pdf
-        actual_b -= (b - temp_pred_a_s[l].action);
-      }
-      if (temp_pred_a_s[l].action + b > num_actions )
-      {
-        // 'action + b' gets cut off by upper limit which is 'num_actions'
-        // need to adjust b used in generating the pdf
-        actual_b -= (b - (num_actions - temp_pred_a_s[l].action));
-      }
-      actual_b = !bandwidth ? 1 : actual_b;
+      actual_b = !b ? 1 : actual_b;  // avoid zero division
 
-      p += temp_pred_a_s[l++].score / (actual_b * unit_range);
+      p += pred_a_s[l++].score / actual_b;
     }
-    const float left = min_value + pdf_lim[i] * unit_range;
-    const float right = min_value + pdf_lim[i + 1] * unit_range;
+    const float left = pdf_lim[i];
+    const float right = pdf_lim[i + 1];
 
     p_dist.push_back({left, right, p});
   }
@@ -143,7 +142,7 @@ void reduction::learn(example& ec)
   const float action_cont = ec.l.cb_cont.costs[0].action;
 
   const float continuous_range = max_value - min_value;
-  const float unit_range = continuous_range / num_actions ;
+  const float unit_range = continuous_range / num_actions;
 
   const float ac = (action_cont - min_value) / unit_range;
   int action_segment_index = static_cast<int>(floor(ac));
@@ -214,8 +213,7 @@ void output_example(vw& all, reduction&, example& ec, CB::label& ld)
 
   if (get_observed_cost(ec.l.cb) != nullptr)
     for (auto& cbc : ec.l.cb.costs)
-      for (uint32_t i = 0; i < ec.pred.pdf.pdf.size(); i++)
-        loss += (cbc.cost / cbc.probability) * ec.pred.pdf.pdf[i].pdf_value;
+      for (uint32_t i = 0; i < ec.pred.pdf.size(); i++) loss += (cbc.cost / cbc.probability) * ec.pred.pdf[i].pdf_value;
 
   all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
@@ -224,13 +222,13 @@ void output_example(vw& all, reduction&, example& ec, CB::label& ld)
   std::stringstream ss, sso;
   float maxprob = 0.;
   uint32_t maxid = 0;
-  for (uint32_t i = 0; i < ec.pred.pdf.pdf.size(); i++)
+  for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
   {
-    sprintf_s(temp_str, buffsz, "%f ", ec.pred.pdf.pdf[i].pdf_value);
+    sprintf_s(temp_str, buffsz, "%f ", ec.pred.pdf[i].pdf_value);
     ss << temp_str;
-    if (ec.pred.pdf.pdf[i].pdf_value > maxprob)
+    if (ec.pred.pdf[i].pdf_value > maxprob)
     {
-      maxprob = ec.pred.pdf.pdf[i].pdf_value;
+      maxprob = ec.pred.pdf[i].pdf_value;
       maxid = i + 1;
     }
   }
@@ -252,7 +250,6 @@ void finish_example(vw& all, reduction& c, example& ec)
 base_learner* setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<pmf_to_pdf::reduction>();
-  float user_bandwidth = 0.0f;
 
   option_group_definition new_options("PMF to PDF");
   new_options
@@ -263,7 +260,7 @@ base_learner* setup(options_i& options, vw& all)
                .help("Convert discrete PDF into continuous PDF."))
       .add(make_option("min_value", data->min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->max_value).keep().help("Maximum continuous value"))
-      .add(make_option("bandwidth", user_bandwidth)
+      .add(make_option("bandwidth", data->bandwidth)
                .default_value(1)
                .keep()
                .help("Bandwidth (radius) of randomization around discrete actions in number of actions."))
@@ -273,31 +270,32 @@ base_learner* setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  // data->bandwidth = static_cast<uint32_t>(user_bandwidth);
-
   if (data->num_actions == 0) return nullptr;
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
   { THROW("error: min and max values must be supplied with cb_continuous"); }
-  if (user_bandwidth <= -1) { THROW("error: Bandwidth must be positive"); }
-  // Process bandwidth
+  if (data->bandwidth <= -1) { THROW("error: Bandwidth must be positive"); }
+  // Translate user provided bandwidth which is in terms of continuous action range
+  // to the internal tree bandwidth which is in terms of #actions
   std::cout << data->max_value << " " << data->min_value << " " << data->num_actions << std::endl;
   float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
   float half_leaf_width = leaf_width / 2.f;
 
-  if (user_bandwidth <= half_leaf_width) { data->bandwidth = 0; }
-  else if (std::fmod((user_bandwidth), leaf_width) == 0)
+  uint32_t tree_bandwidth = 0;
+
+  if (data->bandwidth <= half_leaf_width) { tree_bandwidth = 0; }
+  else if (std::fmod((data->bandwidth), leaf_width) == 0)
   {
-    data->bandwidth = ((user_bandwidth) / leaf_width);
+    tree_bandwidth = ((data->bandwidth) / leaf_width);
   }
   else
   {
-    data->bandwidth = ((user_bandwidth) / leaf_width) + 1;
+    tree_bandwidth = ((data->bandwidth) / leaf_width) + 1;
   }
 
-  options.replace("bandwidth", std::to_string(data->bandwidth));
+  options.replace("tree_bandwidth", std::to_string(tree_bandwidth));
 
   std::cout << "--------------------------------------" << std::endl;
-  std::cout << "bandwidth provided: " << user_bandwidth << ", internal bandwidth: " << data->bandwidth << std::endl;
+  std::cout << "bandwidth provided: " << data->bandwidth << ", tree bandwidth: " << tree_bandwidth << std::endl;
   std::cout << leaf_width << "/" << half_leaf_width << std::endl;
   std::cout << "--------------------------------------" << std::endl;
 

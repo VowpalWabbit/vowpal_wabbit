@@ -395,10 +395,10 @@ std::string prob_dist_pred_to_string(const example& ec)
 {
   std::stringstream strstream;
   strstream << "ec.pred.prob_dist[";
-  for (uint32_t i = 0; i < ec.pred.pdf.pdf.size(); i++)
+  for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
   {
-    strstream << "(" << i << " = " << ec.pred.pdf.pdf[i].left << "-" << ec.pred.pdf.pdf[i].right << ", "
-              << ec.pred.pdf.pdf[i].pdf_value << ")";
+    strstream << "(" << i << " = " << ec.pred.pdf[i].left << "-" << ec.pred.pdf[i].right << ", "
+              << ec.pred.pdf[i].pdf_value << ")";
   }
   strstream << "]";
   return strstream.str();
