@@ -28,7 +28,7 @@ void reduction::transform_prediction(example& ec)
   auto score = temp_pred_a_s[0].score;
   auto centre = min_value + temp_pred_a_s[0].action * unit_range + unit_range / 2.0f;
 
-  auto b = !bandwidth ? 1 : bandwidth;  // TODO make better
+  auto b = !bandwidth ? unit_range / 2.0f : bandwidth;
 
   pdf_lim.clear();
   if (centre - b != min_value) pdf_lim.push_back(min_value);
@@ -48,13 +48,13 @@ void reduction::transform_prediction(example& ec)
       else if (r == n || centre - b < centre + b)
       {
         auto val = std::max(centre - b, min_value);
-        if (!pdf_lim.empty() && pdf_lim.back() != val) { pdf_lim.push_back(val); }
+        if ((!pdf_lim.empty() && pdf_lim.back() != val) || pdf_lim.empty()) { pdf_lim.push_back(val); }
         l++;
       }
       else if (centre - b == centre + b)
       {
         auto val = std::max(centre - b, min_value);
-        if (!pdf_lim.empty() && pdf_lim.back() != val) { pdf_lim.push_back(val); }
+        if ((!pdf_lim.empty() && pdf_lim.back() != val) || pdf_lim.empty()) { pdf_lim.push_back(val); }
         l++;
         r++;
       }
