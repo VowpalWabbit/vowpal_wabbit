@@ -1894,7 +1894,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbify_ldf_squarecb_elim.stderr
 
 # Test 225: cbify regression dataset.  Use it with cats.
-{VW} --cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1
+{VW} --cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1
     train-sets/ref/cbify-reg-cats.stderr
 
 # Test 226: cats train

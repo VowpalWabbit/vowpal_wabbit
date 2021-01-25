@@ -20,46 +20,39 @@ void reduction::transform_prediction(example& ec)
 {
   const float continuous_range = max_value - min_value;
   const float unit_range = continuous_range / num_actions;
-  auto centre = min_value + temp_pred_a_s[0].action * unit_range + unit_range / 2.0f;
 
   size_t n = temp_pred_a_s.size();
   assert(n != 0);
 
-  struct as
-  {
-    float action;
-    float score;
-  };
-
-  std::vector<as> pred_a_s;
-  pred_a_s.push_back({centre, temp_pred_a_s[0].score});
-  for (size_t i = 1; i < temp_pred_a_s.size(); i++)
-  { pred_a_s.push_back({(float)temp_pred_a_s[i].action, temp_pred_a_s[i].score}); }
+  auto score = temp_pred_a_s[0].score;
+  auto centre = min_value + temp_pred_a_s[0].action * unit_range + unit_range / 2.0f;
 
   auto b = !bandwidth ? 1 : bandwidth;  // TODO make better
 
   pdf_lim.clear();
-  if (pred_a_s[0].action - b != min_value) pdf_lim.push_back(min_value);
+  if (centre - b != min_value) pdf_lim.push_back(min_value);
 
   uint32_t l = 0;
   uint32_t r = 0;
   while (l < n || r < n)
   {
-    if (pred_a_s[0].action >= b)
+    if (centre >= b)
     {
-      if (l == n || pred_a_s[r].action + b < pred_a_s[l].action - b)
+      if (l == n || centre + b < centre - b)
       {
-        auto val = std::min(pred_a_s[r++].action + b, max_value);
+        auto val = std::min(centre + b, max_value);
         pdf_lim.push_back(val);
+        r++;
       }
-      else if (r == n || pred_a_s[l].action - b < pred_a_s[r].action + b)
+      else if (r == n || centre - b < centre + b)
       {
-        auto val = std::max(pred_a_s[l++].action - b, min_value);
+        auto val = std::max(centre - b, min_value);
         if (pdf_lim.back() != val) { pdf_lim.push_back(val); }
+        l++;
       }
-      else if (pred_a_s[l].action - b == pred_a_s[r].action + b)
+      else if (centre - b == centre + b)
       {
-        auto val = std::max(pred_a_s[l].action - b, min_value);
+        auto val = std::max(centre - b, min_value);
         if (pdf_lim.back() != val) { pdf_lim.push_back(val); }
         l++;
         r++;
@@ -68,7 +61,7 @@ void reduction::transform_prediction(example& ec)
     else
     {
       // action - b < 0 so lower limit is min_value (already added to pdf_lim)
-      auto val = std::min(pred_a_s[r++].action + b, max_value);
+      auto val = std::min(centre + b, max_value);
       pdf_lim.push_back(val);
       l++;
       r++;
@@ -85,15 +78,15 @@ void reduction::transform_prediction(example& ec)
   for (uint32_t i = 0; i < m - 1; i++)
   {
     float p = 0;
-    if (l < n &&
-        (((pred_a_s[l].action - min_value) < b && pdf_lim[i] == min_value) || pdf_lim[i] == pred_a_s[l].action - b))
+    if (l < n && (((centre - min_value) < b && pdf_lim[i] == min_value) || pdf_lim[i] == centre - b))
     {
       // default: 2 * b : 'action - b' to 'action + b'
-      float actual_b = std::min(max_value, pred_a_s[l].action + b) - std::max(min_value, pred_a_s[l].action - b);
+      float actual_b = std::min(max_value, centre + b) - std::max(min_value, centre - b);
 
       actual_b = !b ? 1 : actual_b;  // avoid zero division
 
-      p += pred_a_s[l++].score / actual_b;
+      p += score / actual_b;
+      l++;
     }
     const float left = pdf_lim[i];
     const float right = pdf_lim[i + 1];
