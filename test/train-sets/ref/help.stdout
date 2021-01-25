@@ -227,10 +227,11 @@ Continuous actions tree with smoothing:
 Continuous action tree with smoothing with full pdf:
   --cats_pdf arg        number of tree labels <k> for cats_pdf
 CATS Tree Options:
-  --cats_tree arg        CATS Tree with <k> labels
-  --bandwidth arg (=0, ) bandwidth for continuous actions in terms of #actions
-  --link arg             Specify the link function: identity, logistic, glf1 or
-                         poisson
+  --cats_tree arg             CATS Tree with <k> labels
+  --tree_bandwidth arg (=0, ) tree bandwidth for continuous actions in terms of
+                              #actions
+  --link arg                  Specify the link function: identity, logistic, 
+                              glf1 or poisson
 Contextual Bandit Options:
   --cb arg              Use contextual bandit learning with <k> costs
   --cb_type arg         contextual bandit method to use in {ips,dm,dr}
