@@ -47,7 +47,6 @@ int sample_pdf::learn(example& ec, experimental::api_status*)
   // one of the base reductions will call predict so we need a valid
   // predict buffer
   _pred_pdf.clear();
-
   {  // scope to predict & restore prediction
     auto restore = VW::swap_guard(ec.pred.pdf, _pred_pdf);
     _base->learn(ec);
