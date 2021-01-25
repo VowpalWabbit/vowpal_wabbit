@@ -34,7 +34,6 @@ class PreProcessCSVData:
           if (row[0] == '|'):
             print(row_num)
             break
-
           dat_writer.writerow(row)
           minv = min(minv, float(row[0]))
           maxv = max(maxv, float(row[0]))
