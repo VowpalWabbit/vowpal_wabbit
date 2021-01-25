@@ -39,6 +39,7 @@ add_executable(vw-unit-test.out
   chain_hashing.cc
   offset_tree_tests.cc
   random_test.cc
+  vw_versions_test.cc
   pmf_to_pdf_test.cc
   weights_test.cc
 )

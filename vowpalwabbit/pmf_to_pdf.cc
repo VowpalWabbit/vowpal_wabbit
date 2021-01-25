@@ -7,6 +7,7 @@
 #include "explore.h"
 #include "guard.h"
 #include "vw.h"
+#include "cb_label_parser.h"
 
 using namespace LEARNER;
 using namespace VW;
@@ -231,7 +232,7 @@ void output_example(vw& all, reduction&, example& ec, CB::label& ld)
 
   for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
 
-  print_update(all, CB::cb_label.test_label(&ld), ec, sso);
+  print_update(all, CB::is_test_label(ld), ec, sso);
 }
 
 void finish_example(vw& all, reduction& c, example& ec)
@@ -244,13 +245,13 @@ base_learner* setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<pmf_to_pdf::reduction>();
 
-  option_group_definition new_options("PMF to PDF");
+  option_group_definition new_options("Convert discrete PDF into continuous PDF");
   new_options
       .add(make_option("pmf_to_pdf", data->num_actions)
                .default_value(0)
                .necessary()
                .keep()
-               .help("Convert discrete PDF into continuous PDF."))
+               .help("number of tree labels <k> for pmf_to_pdf"))
       .add(make_option("min_value", data->min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->max_value).keep().help("Maximum continuous value"))
       .add(make_option("bandwidth", data->bandwidth)

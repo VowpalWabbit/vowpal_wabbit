@@ -31,7 +31,7 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
   for (auto& example : examples) { _stashed_labels.push_back(std::move(example->l.slates)); }
 
   const size_t num_slots = std::count_if(examples.begin(), examples.end(),
-      [](const example* example) { return example->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
+      [](const example* example) { return example->l.slates.type == VW::slates::example_type::slot; });
 
   float global_cost = 0.f;
   bool global_cost_found = false;
@@ -42,7 +42,7 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
   {
     CCB::label ccb_label;
     memset(&ccb_label, 0, sizeof(ccb_label));
-    CCB::ccb_label_parser.default_label(&ccb_label);
+    CCB::default_label(ccb_label);
     const auto& slates_label = _stashed_labels[i];
     if (slates_label.type == slates::example_type::shared)
     {
@@ -100,7 +100,7 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
 
   for (size_t i = 0; i < examples.size(); i++)
   {
-    CCB::ccb_label_parser.delete_label(&examples[i]->l.conditional_contextual_bandit);
+    CCB::delete_label(examples[i]->l.conditional_contextual_bandit);
     examples[i]->l.slates = std::move(_stashed_labels[i]);
   }
   _stashed_labels.clear();

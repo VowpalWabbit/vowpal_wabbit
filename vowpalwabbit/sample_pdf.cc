@@ -101,7 +101,7 @@ void predict_or_learn(sample_pdf& reduction, single_learner&, example& ec)
 
 LEARNER::base_learner* sample_pdf_setup(options_i& options, vw& all)
 {
-  option_group_definition new_options("Continuous actions");
+  option_group_definition new_options("Continuous actions - sample pdf");
   bool invoked = false;
   new_options.add(
       make_option("sample_pdf", invoked).keep().necessary().help("Sample a pdf and pick a continuous valued action"));
