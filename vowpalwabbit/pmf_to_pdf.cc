@@ -282,11 +282,11 @@ base_learner* setup(options_i& options, vw& all)
   if (data->bandwidth <= half_leaf_width) { data->tree_bandwidth = 0; }
   else if (std::fmod((data->bandwidth), leaf_width) == 0)
   {
-    data->tree_bandwidth = ((data->bandwidth) / leaf_width);
+    data->tree_bandwidth = static_cast<uint32_t>((data->bandwidth) / leaf_width);
   }
   else
   {
-    data->tree_bandwidth = ((data->bandwidth) / leaf_width) + 1;
+    data->tree_bandwidth = static_cast<uint32_t>((data->bandwidth) / leaf_width) + 1;
   }
 
   options.replace("tree_bandwidth", std::to_string(data->tree_bandwidth));
