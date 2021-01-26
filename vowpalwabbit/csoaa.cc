@@ -56,6 +56,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 {
   // std::cerr << "------------- passthrough" << std::endl;
   COST_SENSITIVE::label ld = ec.l.cs;
+  ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
 
   // Guard example state restore against throws
   auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cs = ld; });
@@ -113,6 +114,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
       add_passthrough_feature(ec, constant * 3, 1.);
   }
 
+  ec.l.cs = ld;
   ec.pred.multiclass = prediction;
 }
 
@@ -798,7 +800,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
   csldf_outer_options.add(
       make_option("probabilities", ld->is_probabilities).keep().help("predict probabilites of all classes"));
 
-  option_group_definition csldf_inner_options("Cost Sensitive One Against All with Label Dependent Features");
+  option_group_definition csldf_inner_options("Cost Sensitive weighted all-pairs with Label Dependent Features");
   csldf_inner_options.add(make_option("wap_ldf", wap_ldf)
                               .keep()
                               .necessary()

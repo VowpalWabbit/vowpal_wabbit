@@ -12,6 +12,7 @@
 #include "scope_exit.h"
 #include "vw_versions.h"
 #include "version.h"
+#include "cb_label_parser.h"
 
 #include <memory>
 
@@ -56,9 +57,9 @@ struct cb_explore
   {
     preds.delete_v();
     cover_probs.delete_v();
-    COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
-    COST_SENSITIVE::cs_label.delete_label(&cs_label);
-    COST_SENSITIVE::cs_label.delete_label(&second_cs_label);
+    COST_SENSITIVE::delete_label(cbcs.pred_scores);
+    COST_SENSITIVE::delete_label(cs_label);
+    COST_SENSITIVE::delete_label(second_cs_label);
   }
 };
 
@@ -235,6 +236,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     }
   }
 
+  ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
   ec.pred.a_s = probs;
 }
 
@@ -283,7 +285,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;
-  print_update_cb_explore(all, CB::cb_label.test_label(&ld), ec, sso);
+  print_update_cb_explore(all, CB::is_test_label(ld), ec, sso);
 }
 
 void finish_example(vw& all, cb_explore& c, example& ec)

@@ -7,6 +7,7 @@
 #include "explore.h"
 #include "guard.h"
 #include "vw.h"
+#include "cb_label_parser.h"
 
 using namespace LEARNER;
 using namespace VW;
@@ -149,14 +150,16 @@ void reduction::learn(example& ec)
     if (!cond2) action_segment_index++;
   }
 
-  const uint32_t min_value = (std::max)((int)bandwidth, action_segment_index - (int)bandwidth + 1);
-  const uint32_t max_value = (std::min)(num_actions - 1 - bandwidth, action_segment_index + bandwidth);
+  const uint32_t local_min_value = (std::max)((int)bandwidth, action_segment_index - (int)bandwidth + 1);
+  const uint32_t local_max_value = (std::min)(num_actions - 1 - bandwidth, action_segment_index + bandwidth);
 
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
 
   ec.l.cb.costs.clear();
-  ec.l.cb.costs.push_back({cost, min_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
-  ec.l.cb.costs.push_back({cost, max_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
+  ec.l.cb.costs.push_back(
+      {cost, local_min_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
+  ec.l.cb.costs.push_back(
+      {cost, local_max_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
 
   auto swap_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
 
@@ -228,7 +231,7 @@ void output_example(vw& all, reduction&, example& ec, CB::label& ld)
 
   for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
 
-  print_update(all, CB::cb_label.test_label(&ld), ec, sso);
+  print_update(all, CB::is_test_label(ld), ec, sso);
 }
 
 void finish_example(vw& all, reduction& c, example& ec)
@@ -241,13 +244,13 @@ base_learner* setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<pmf_to_pdf::reduction>();
 
-  option_group_definition new_options("PMF to PDF");
+  option_group_definition new_options("Convert discrete PDF into continuous PDF");
   new_options
       .add(make_option("pmf_to_pdf", data->num_actions)
                .default_value(0)
                .necessary()
                .keep()
-               .help("Convert discrete PDF into continuous PDF."))
+               .help("number of tree labels <k> for pmf_to_pdf"))
       .add(make_option("min_value", data->min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->max_value).keep().help("Maximum continuous value"))
       .add(make_option("bandwidth", data->bandwidth)

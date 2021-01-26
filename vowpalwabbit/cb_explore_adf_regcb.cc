@@ -174,7 +174,7 @@ void cb_explore_adf_regcb::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
 
   const float max_range = _max_cb_cost - _min_cb_cost;
   // threshold on empirical loss difference
-  const float delta = _c0 * log((float)(num_actions * _counter)) * pow(max_range, 2);
+  const float delta = _c0 * std::log((float)(num_actions * _counter)) * static_cast<float>(std::pow(max_range, 2));
 
   if (!is_learn)
   {
@@ -231,7 +231,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   bool first_only = false;
   float min_cb_cost = 0.;
   float max_cb_cost = 0.;
-  config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
+  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (RegCB)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()

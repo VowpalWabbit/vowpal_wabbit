@@ -42,6 +42,14 @@ struct label
   ACTION_SCORE::action_scores probabilities;
 };
 
+void default_label(VW::slates::label& v);
+void parse_label(
+    parser* p, shared_data* /*sd*/, VW::slates::label& ld, std::vector<VW::string_view>& words, reduction_features&);
+void delete_label(VW::slates::label& ld);
+void cache_label(VW::slates::label& ld, io_buf& cache);
+size_t read_cached_label(shared_data* /*sd*/, VW::slates::label& ld, io_buf& cache);
+void copy_label(VW::slates::label& dst, VW::slates::label& src);
+
 extern label_parser slates_label_parser;
 }  // namespace slates
 }  // namespace VW

@@ -375,7 +375,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
   for (size_t a = 0; a < num_actions; a++)
   {
     CS::label& lab = ldf_examples[a].l.cs;
-    CS::cs_label.default_label(&lab);
+    CS::default_label(lab);
     lab.costs.push_back(default_wclass);
     ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
   }

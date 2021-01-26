@@ -16,7 +16,7 @@ class Test:
     @staticmethod
     def check_add_unique_id(idnum):
         if idnum in Test.unique_id:
-            raise Exception("test id is repeated. fatal id: " + idnum)
+            raise Exception("test id is repeated. fatal id: " + str(idnum))
         else:
             Test.unique_id.add(idnum)
 
