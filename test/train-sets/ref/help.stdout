@@ -541,7 +541,7 @@ Convert discrete PDF into continuous PDF:
   --min_value arg         Minimum continuous value
   --max_value arg         Maximum continuous value
   --bandwidth arg (=1, )  Bandwidth (radius) of randomization around discrete 
-                          actions in number of actions.
+                          actions in terms of continuous range.
   --first_only            Use user provided first action or user provided pdf 
                           or uniform random
 Print psuedolearner:

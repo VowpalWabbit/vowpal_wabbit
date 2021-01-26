@@ -26,9 +26,11 @@ void reduction::transform_prediction(example& ec)
   assert(n != 0);
 
   auto score = temp_pred_a_s[0].score;
+  // map discrete action (predicted tree leaf) to the continuous value of the centre of the leaf
   auto centre = min_value + temp_pred_a_s[0].action * unit_range + unit_range / 2.0f;
 
-  auto b = !bandwidth ? unit_range / 2.0f : bandwidth;
+  auto b = !bandwidth ? unit_range / 2.0f : bandwidth;  // if zero bandwidth -> stay inside leaf by smoothing around
+                                                        // unit_range / 2 (leaf range is unit_range)
 
   pdf_lim.clear();
   if (centre - b != min_value) pdf_lim.push_back(min_value);
@@ -61,7 +63,8 @@ void reduction::transform_prediction(example& ec)
     }
     else
     {
-      // action - b < min_value so lower limit is min_value (already added to pdf_lim)
+      // centre < b so lower limit should be min_value (already added to pdf_lim)
+      // so need to add centre + b
       auto val = std::min(centre + b, max_value);
       pdf_lim.push_back(val);
       l++;
@@ -81,7 +84,7 @@ void reduction::transform_prediction(example& ec)
     float p = 0;
     if (l < n && (((centre - min_value) < b && pdf_lim[i] == min_value) || pdf_lim[i] == centre - b))
     {
-      // default: 2 * b : 'action - b' to 'action + b'
+      // default: 2 * b : 'centre - b' to 'centre + b'
       float actual_b = std::min(max_value, centre + b) - std::max(min_value, centre - b);
       p += score / actual_b;
       l++;
@@ -146,6 +149,7 @@ void reduction::learn(example& ec)
     if (!cond2) action_segment_index++;
   }
 
+  // going to pass label into tree, so need to used discretized version of bandwidth i.e. tree_bandwidth
   uint32_t b = tree_bandwidth;
   const uint32_t local_min_value = std::max((int)b, action_segment_index - (int)b + 1);
   const uint32_t local_max_value = std::min(num_actions - 1 - b, action_segment_index + b);
@@ -154,7 +158,7 @@ void reduction::learn(example& ec)
 
   ec.l.cb.costs.clear();
 
-  auto actual_bandwidth = !tree_bandwidth ? 1 : 2 * b;
+  auto actual_bandwidth = !tree_bandwidth ? 1 : 2 * b;  // avoid zero division
 
   ec.l.cb.costs.push_back(
       {cost, local_min_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions, 0.0f});
@@ -256,7 +260,7 @@ base_learner* setup(options_i& options, vw& all)
       .add(make_option("bandwidth", data->bandwidth)
                .default_value(1)
                .keep()
-               .help("Bandwidth (radius) of randomization around discrete actions in number of actions."))
+               .help("Bandwidth (radius) of randomization around discrete actions in terms of continuous range."))
       .add(make_option("first_only", data->first_only)
                .keep()
                .help("Use user provided first action or user provided pdf or uniform random"));
