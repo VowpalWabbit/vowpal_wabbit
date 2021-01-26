@@ -29,8 +29,8 @@ void reduction::transform_prediction(example& ec)
   // map discrete action (predicted tree leaf) to the continuous value of the centre of the leaf
   auto centre = min_value + temp_pred_a_s[0].action * unit_range + unit_range / 2.0f;
 
-  auto b = !bandwidth ? unit_range / 2.0f : bandwidth;  // if zero bandwidth -> stay inside leaf by smoothing around
-                                                        // unit_range / 2 (leaf range is unit_range)
+  // if zero bandwidth -> stay inside leaf by smoothing around unit_range / 2 (leaf range is unit_range)
+  auto b = !bandwidth ? unit_range / 2.0f : bandwidth;
 
   pdf_lim.clear();
   if (centre - b != min_value) pdf_lim.push_back(min_value);
