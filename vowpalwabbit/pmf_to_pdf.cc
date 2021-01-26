@@ -82,6 +82,9 @@ void reduction::transform_prediction(example& ec)
   for (uint32_t i = 0; i < m - 1; i++)
   {
     float p = 0;
+    // there are 2 ways of knowing that we are entering the pdf limits of the chosen action and thus need to assign a
+    // probability: (1) if centre - b < min_value -> pdf_lim would be 'min_value' or
+    // (2) pdf_lim is 'centre - b'
     if (l < n && (((centre - min_value) < b && pdf_lim[i] == min_value) || pdf_lim[i] == centre - b))
     {
       // default: 2 * b : 'centre - b' to 'centre + b'

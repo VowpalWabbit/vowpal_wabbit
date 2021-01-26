@@ -38,7 +38,7 @@ struct sample_pdf
 
 private:
   uint64_t* _p_random_state;
-  v_array<continuous_actions::pdf_segment> _pred_pdf;
+  continuous_actions::probability_density_function _pred_pdf;
   single_learner* _base = nullptr;
 };
 
