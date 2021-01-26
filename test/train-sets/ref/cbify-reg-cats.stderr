@@ -13,17 +13,17 @@ Enabled reductions: ftrl, scorer, binary, cats_tree, get_pmf, pmf_to_pdf, cb_exp
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.155212 0.155212            1            1.0 3879.0000 188.5713       10
-0.285249 0.415286            2            2.0 16123.0000 6249.9360       10
-0.234027 0.182805            4            4.0 4213.0000 11412.3047       10
-0.195508 0.156989            8            8.0 7932.0000 10868.2373       10
-0.185957 0.176406           16           16.0 8574.0000 6209.9224       10
-0.200480 0.215004           32           32.0 15481.0000 10122.5020       10
+0.161879 0.168545            2            2.0 16123.0000 12115.5234       10
+0.202606 0.243333            4            4.0 4213.0000 11412.3047       10
+0.219778 0.236950            8            8.0 7932.0000 16733.8242       10
+0.198089 0.176401           16           16.0 8574.0000 6209.9224       10
+0.198836 0.199583           32           32.0 15481.0000 10122.5020       10
 
 finished run
 number of examples = 50
 weighted example sum = 50.000000
-weighted label sum = 479157.089859
-average loss = 0.218994
-best constant = 9583.141602
+weighted label sum = 531947.377945
+average loss = 0.216557
+best constant = 10638.947266
 total feature number = 500
-Learn() count per node: id=0, #l=47; id=1, #l=0; id=2, #l=0; 
+Learn() count per node: id=0, #l=13; id=1, #l=0; id=2, #l=0; 

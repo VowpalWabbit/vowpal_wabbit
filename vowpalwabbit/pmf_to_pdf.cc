@@ -83,9 +83,6 @@ void reduction::transform_prediction(example& ec)
     {
       // default: 2 * b : 'action - b' to 'action + b'
       float actual_b = std::min(max_value, centre + b) - std::max(min_value, centre - b);
-
-      actual_b = !b ? 1 : actual_b;  // avoid zero division
-
       p += score / actual_b;
       l++;
     }
@@ -149,14 +146,16 @@ void reduction::learn(example& ec)
     if (!cond2) action_segment_index++;
   }
 
-  auto b = !bandwidth ? 1 : bandwidth;
-  const uint32_t local_min_value = (std::max)((int)b, action_segment_index - (int)b + 1);
-  const uint32_t local_max_value = (std::min)(num_actions - b, action_segment_index + b);
+  uint32_t b = tree_bandwidth;
+  const uint32_t local_min_value = std::max((int)b, action_segment_index - (int)b + 1);
+  const uint32_t local_max_value = std::min(num_actions - 1 - b, action_segment_index + b);
 
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
 
   ec.l.cb.costs.clear();
-  auto actual_bandwidth = !bandwidth ? 1 : 2 * bandwidth;
+
+  auto actual_bandwidth = !tree_bandwidth ? 1 : 2 * b;
+
   ec.l.cb.costs.push_back(
       {cost, local_min_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions, 0.0f});
   ec.l.cb.costs.push_back(
@@ -273,19 +272,17 @@ base_learner* setup(options_i& options, vw& all)
   float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
   float half_leaf_width = leaf_width / 2.f;
 
-  uint32_t tree_bandwidth = 0;
-
-  if (data->bandwidth <= half_leaf_width) { tree_bandwidth = 0; }
+  if (data->bandwidth <= half_leaf_width) { data->tree_bandwidth = 0; }
   else if (std::fmod((data->bandwidth), leaf_width) == 0)
   {
-    tree_bandwidth = ((data->bandwidth) / leaf_width);
+    data->tree_bandwidth = ((data->bandwidth) / leaf_width);
   }
   else
   {
-    tree_bandwidth = ((data->bandwidth) / leaf_width) + 1;
+    data->tree_bandwidth = ((data->bandwidth) / leaf_width) + 1;
   }
 
-  options.replace("tree_bandwidth", std::to_string(tree_bandwidth));
+  options.replace("tree_bandwidth", std::to_string(data->tree_bandwidth));
 
   auto p_base = as_singleline(setup_base(options, all));
   data->_p_base = p_base;
