@@ -193,12 +193,12 @@ void cats_tree::init_node_costs(v_array<cb_class>& ac)
 
   uint32_t node_id = ac[0].action + _binary_tree.internal_node_count() - 1;
   // stay inside the node boundaries
-  if (node_id >= _binary_tree.nodes.size()) { node_id = _binary_tree.nodes.size() - 1; }
+  if (node_id >= _binary_tree.nodes.size()) { node_id = static_cast<uint32_t>(_binary_tree.nodes.size()) - 1; }
   _a = {node_id, _cost_star};
 
   node_id = ac[ac.size() - 1].action + _binary_tree.internal_node_count() - 1;
   // stay inside the node boundaries
-  if (node_id >= _binary_tree.nodes.size()) { node_id = _binary_tree.nodes.size() - 1; }
+  if (node_id >= _binary_tree.nodes.size()) { node_id = static_cast<uint32_t>(_binary_tree.nodes.size()) - 1; }
   _b = {node_id, _cost_star};
 }
 
