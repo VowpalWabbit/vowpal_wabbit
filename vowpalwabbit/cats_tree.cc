@@ -198,7 +198,7 @@ void cats_tree::init_node_costs(v_array<cb_class>& ac)
 
   node_id = ac[ac.size() - 1].action + _binary_tree.internal_node_count() - 1;
   // stay inside the node boundaries
-  if (node_id >= _binary_tree.nodes.size()) { _binary_tree.nodes.size() - 1; }
+  if (node_id >= _binary_tree.nodes.size()) { node_id = _binary_tree.nodes.size() - 1; }
   _b = {node_id, _cost_star};
 }
 
