@@ -142,7 +142,6 @@ void attach_label_to_example(
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
   auto& pred = data.shared->pred.a_s;
-  decision_scores.push_back(pred);
 
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
   for (auto& action_score : pred) { action_score.action = data.origin_index[action_score.action]; }
@@ -150,6 +149,9 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   // Exclude the chosen action from next slots.
   auto original_index_of_chosen_action = pred[0].action;
   data.exclude_list[original_index_of_chosen_action] = true;
+
+  decision_scores.push_back(pred);
+  data.shared->pred.a_s = v_init<ACTION_SCORE::action_score>();
 }
 
 void clear_pred_and_label(ccb& data)
@@ -599,8 +601,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
-  option_group_definition new_options(
-      "EXPERIMENTAL: Conditional Contextual Bandit Exploration with Action Dependent Features");
+  option_group_definition new_options("EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF");
   new_options
       .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
                .keep()
@@ -625,7 +626,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 
   auto* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CCB::ccb_label_parser;
-  all.label_type = label_type_t::ccb;
 
   // Stash the base learners stride_shift so we can properly add a feature later.
   data->base_learner_stride_shift = all.weights.stride_shift();

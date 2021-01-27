@@ -12,7 +12,14 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::example()
 {
   memset(&l, 0, sizeof(polylabel));
+  // init predictions. TODO convert this to a constructor
   memset(&pred, 0, sizeof(polyprediction));
+  pred.scalars = v_init<feature_value>();
+  pred.a_s = v_init<ACTION_SCORE::action_score>();
+  pred.decision_scores = v_init<v_array<ACTION_SCORE::action_score>>();
+  pred.multilabels.label_v = v_init<uint32_t>();
+  pred.pdf = v_init<VW::continuous_actions::pdf_segment>();
+
   tag = v_init<char>();
 }
 VW_WARNING_STATE_POP
@@ -22,6 +29,13 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
 {
   tag.delete_v();
+  pred.scalars.delete_v();
+  pred.a_s.delete_v();
+  for (auto& decision : pred.decision_scores) { decision.delete_v(); }
+  pred.decision_scores.delete_v();
+  pred.multilabels.label_v.delete_v();
+  pred.pdf.delete_v();
+
   if (passthrough)
   {
     delete passthrough;
@@ -134,7 +148,8 @@ void example::delete_unions(void (*)(polylabel*), void (*delete_prediction)(void
   CB_EVAL::cb_eval.delete_label(&l);
   MULTILABEL::multilabel.delete_label(&l);
 
-  if (delete_prediction) { delete_prediction(&pred); }
+  // if (delete_prediction) { delete_prediction(&pred); }
+  std::ignore = delete_prediction;
 }
 
 float collision_cleanup(features& fs)

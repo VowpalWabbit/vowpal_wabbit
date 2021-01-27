@@ -14,6 +14,7 @@
 #include "best_constant.h"
 #include "vw_exception.h"
 #include "options_boost_po.h"
+#include "hash.h"
 #include "cb_algs.h"
 
 void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder& builder,
@@ -66,10 +67,12 @@ void to_flat::write_to_file(bool collection, bool is_multiline, MultiExampleBuil
     {
       write_collection_to_file(is_multiline, outfile);
       _collection_count = 0;
+      _share_examples.clear();  // can't share between collections
     }
   }
   else
   {
+    _share_examples.clear();  // not in collection mode, there is not sharing
     if (is_multiline)
     {
       auto multi_ex = multi_ex_builder.to_flat_example(_builder);
@@ -301,7 +304,7 @@ void to_flat::convert_txt_to_flat(vw& all)
     // Create Label for current example
     flatbuffers::Offset<void> label;
     VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
-    switch (all.label_type)
+    switch (all.example_parser->lbl_parser.label_type)
     {
       case label_type_t::nolabel:
         to_flat::create_no_label(ae, ex_builder);
@@ -312,10 +315,10 @@ void to_flat::convert_txt_to_flat(vw& all)
       case label_type_t::ccb:
         to_flat::create_ccb_label(ae, ex_builder);
         break;
-      case label_type_t::multi:
+      case label_type_t::multilabel:
         to_flat::create_multi_label(ae, ex_builder);
         break;
-      case label_type_t::mc:
+      case label_type_t::multiclass:
         to_flat::create_mc_label(all.sd->ldict, ae, ex_builder);
         break;
       case label_type_t::cs:
@@ -354,19 +357,42 @@ void to_flat::convert_txt_to_flat(vw& all)
 
       std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
 
-      for (features::iterator& f : ae->feature_space[ns])
-      { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index())); }
-      namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, ns, &fts));
+      std::stringstream ss;
+      ss << ns;
+
+      for (features::iterator& f : ae->feature_space[ns]) { ss << f.index() << f.value(); }
+
+      std::string s = ss.str();
+      uint64_t refid = uniform_hash(s.c_str(), s.size(), 0);
+      flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> namespace_offset;
+      auto find_ns_offset = _share_examples.find(refid);
+
+      if (find_ns_offset == _share_examples.end())
+      {
+        // new namespace
+        for (features::iterator& f : ae->feature_space[ns])
+        { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index())); }
+        namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, ns, &fts);
+        _share_examples[refid] = namespace_offset;
+      }
+      else
+      {
+        // offset already exists
+        namespace_offset = find_ns_offset->second;
+      }
+      namespaces.push_back(namespace_offset);
     }
     std::string tag(ae->tag.begin(), ae->tag.size());
 
     if (all.l->is_multiline)
     {
       if (!example_is_newline(*ae) ||
-          (all.label_type == label_type_t::cb && !CB_ALGS::example_is_newline_not_header(*ae)) ||
-          ((all.label_type == label_type_t::ccb &&
+          (all.example_parser->lbl_parser.label_type == label_type_t::cb &&
+              !CB_ALGS::example_is_newline_not_header(*ae)) ||
+          ((all.example_parser->lbl_parser.label_type == label_type_t::ccb &&
                ae->l.conditional_contextual_bandit.type == CCB::example_type::slot) ||
-              (all.label_type == label_type_t::slates && ae->l.slates.type == VW::slates::slot)))
+              (all.example_parser->lbl_parser.label_type == label_type_t::slates &&
+                  ae->l.slates.type == VW::slates::slot)))
       {
         ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
         ex_builder.tag = tag;
