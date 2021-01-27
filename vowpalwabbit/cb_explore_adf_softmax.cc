@@ -60,7 +60,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   bool softmax = false;
   float epsilon = 0.;
   float lambda = 0.;
-  config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
+  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (softmax)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
