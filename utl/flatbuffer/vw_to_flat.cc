@@ -304,7 +304,7 @@ void to_flat::convert_txt_to_flat(vw& all)
     // Create Label for current example
     flatbuffers::Offset<void> label;
     VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
-    switch (all.label_type)
+    switch (all.example_parser->lbl_parser.label_type)
     {
       case label_type_t::nolabel:
         to_flat::create_no_label(ae, ex_builder);
@@ -315,10 +315,10 @@ void to_flat::convert_txt_to_flat(vw& all)
       case label_type_t::ccb:
         to_flat::create_ccb_label(ae, ex_builder);
         break;
-      case label_type_t::multi:
+      case label_type_t::multilabel:
         to_flat::create_multi_label(ae, ex_builder);
         break;
-      case label_type_t::mc:
+      case label_type_t::multiclass:
         to_flat::create_mc_label(all.sd->ldict, ae, ex_builder);
         break;
       case label_type_t::cs:
@@ -387,10 +387,12 @@ void to_flat::convert_txt_to_flat(vw& all)
     if (all.l->is_multiline)
     {
       if (!example_is_newline(*ae) ||
-          (all.label_type == label_type_t::cb && !CB_ALGS::example_is_newline_not_header(*ae)) ||
-          ((all.label_type == label_type_t::ccb &&
+          (all.example_parser->lbl_parser.label_type == label_type_t::cb &&
+              !CB_ALGS::example_is_newline_not_header(*ae)) ||
+          ((all.example_parser->lbl_parser.label_type == label_type_t::ccb &&
                ae->l.conditional_contextual_bandit.type == CCB::example_type::slot) ||
-              (all.label_type == label_type_t::slates && ae->l.slates.type == VW::slates::slot)))
+              (all.example_parser->lbl_parser.label_type == label_type_t::slates &&
+                  ae->l.slates.type == VW::slates::slot)))
       {
         ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
         ex_builder.tag = tag;

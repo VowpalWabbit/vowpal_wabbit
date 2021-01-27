@@ -292,20 +292,6 @@ enum AllReduceType
 
 class AllReduce;
 
-enum class label_type_t
-{
-  simple,
-  cb,       // contextual-bandit
-  cb_eval,  // contextual-bandit evaluation
-  cs,       // cost-sensitive
-  multi,
-  mc,
-  ccb,  // conditional contextual-bandit
-  slates,
-  nolabel,
-  continuous
-};
-
 struct rand_state
 {
 private:
@@ -528,8 +514,6 @@ public:
   float progress_arg;  // next update progress dump multiplier
 
   std::map<uint64_t, std::string> index_name_map;
-
-  label_type_t label_type;
 
   vw();
   ~vw();

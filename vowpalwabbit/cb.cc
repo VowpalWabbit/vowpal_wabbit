@@ -87,6 +87,7 @@ label_parser cb_label = {
   },
   // test_label
   [](polylabel* v) { return CB::is_test_label(v->cb); },
+  label_type_t::cb
 };
 // clang-format on
 
@@ -213,6 +214,7 @@ label_parser cb_eval = {
   },
   // test_label
   [](polylabel* v) { return CB_EVAL::test_label(v->cb_eval); },
+  label_type_t::cb_eval
 };
 // clang-format on
 
