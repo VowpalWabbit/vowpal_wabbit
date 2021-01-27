@@ -184,7 +184,6 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
 
   l.set_finish_example(finish_example);
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
-  all.label_type = label_type_t::continuous;
 
   return make_base(l);
 }

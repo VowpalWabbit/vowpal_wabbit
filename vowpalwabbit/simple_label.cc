@@ -114,6 +114,7 @@ label_parser simple_label_parser = {
   nullptr,
   // test_label
   [](polylabel* v) { return test_label(v->simple); },
+  label_type_t::simple
 };
 // clang-format on
 

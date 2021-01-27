@@ -69,7 +69,6 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
       predict_or_learn<true>, predict_or_learn<false>, data->k, prediction_type_t::multilabels);
   l.set_finish_example(finish_example);
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
-  all.label_type = label_type_t::multi;
   all.delete_prediction = MULTILABEL::delete_prediction;
 
   return make_base(l);
