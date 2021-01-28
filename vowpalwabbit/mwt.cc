@@ -245,7 +245,6 @@ base_learner* mwt_setup(options_i& options, vw& all)
 
   all.delete_prediction = delete_scalars;
   all.example_parser->lbl_parser = CB::cb_label;
-  all.label_type = label_type_t::cb;
 
   if (c->num_classes > 0)
   {

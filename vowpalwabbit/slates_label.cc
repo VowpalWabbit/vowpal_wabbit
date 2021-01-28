@@ -209,7 +209,8 @@ label_parser slates_label_parser = {
     }
   },
   // test_label
-  [](polylabel* v) { return test_label(v->slates); }
+  [](polylabel* v) { return test_label(v->slates); },
+  label_type_t::slates
 };
 // clang-format on
 
