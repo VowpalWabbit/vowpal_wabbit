@@ -121,7 +121,7 @@ void reduction_output::report_progress(vw& all, const cats& data, const example&
 {
   float loss = 0.0f;
 
-  const auto& cb_cont_costs = ec.l.cb_cont.costs;  // logged action, observed cost, probability
+  const auto& cb_cont_costs = ec.l.cb_cont.costs;  // contains label action, cost, probability
   auto predicted_action = ec.pred.pdf_value.action;
 
   if (!cb_cont_costs.empty())
@@ -131,9 +131,10 @@ void reduction_output::report_progress(vw& all, const cats& data, const example&
 
     const float ac = (predicted_action - data.min_value) / unit_range;
     int discretized_action = static_cast<int>(floor(ac));
+    // centre of predicted action
     const float centre = data.min_value + discretized_action * unit_range + unit_range / 2.0f;
 
-    // is centre close to logged action?
+    // is centre close to action from label
     auto logged_action = cb_cont_costs[0].action;
     if ((logged_action - data.bandwidth <= centre) && (centre <= logged_action + data.bandwidth))
     {
