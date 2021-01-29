@@ -27,10 +27,10 @@ using namespace VW;
 using namespace VW::config;
 
 template <typename T>
-void return_v_array(v_array<T>& array, VW::v_array_pool<T>& pool)
+void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
 {
   array.clear();
-  pool.return_object(array);
+  pool.reclaim_object(std::move(array));
   array = v_init<T>();
 }
 
@@ -113,18 +113,23 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
 // create empty/default cb labels
 void create_cb_labels(ccb& data)
 {
-  data.shared->l.cb.costs = data.cb_label_pool.get_object();
+  data.cb_label_pool.acquire_object(data.shared->l.cb.costs);
   data.shared->l.cb.costs.push_back(data.default_cb_label);
-  for (example* action : data.actions) { action->l.cb.costs = data.cb_label_pool.get_object(); }
+  for (example* action : data.actions) { data.cb_label_pool.acquire_object(action->l.cb.costs); }
   data.shared->l.cb.weight = 1.0;
 }
 
 // the polylabel (union) must be manually cleaned up
 void delete_cb_labels(ccb& data)
 {
-  return_v_array(data.shared->l.cb.costs, data.cb_label_pool);
+  return_v_array(std::move(data.shared->l.cb.costs), data.cb_label_pool);
+  data.shared->l.cb.costs = v_array<CB::cb_class>();
 
-  for (example* action : data.actions) { return_v_array(action->l.cb.costs, data.cb_label_pool); }
+  for (example* action : data.actions)
+  {
+    return_v_array(std::move(action->l.cb.costs), data.cb_label_pool);
+    action->l.cb.costs = v_array<CB::cb_class>();
+  }
 }
 
 void attach_label_to_example(
@@ -150,7 +155,7 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   auto original_index_of_chosen_action = pred[0].action;
   data.exclude_list[original_index_of_chosen_action] = true;
 
-  decision_scores.push_back(pred);
+  decision_scores.push_back(std::move(pred));
   data.shared->pred.a_s = v_init<ACTION_SCORE::action_score>();
 }
 
@@ -350,7 +355,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
   }
 
   // Must provide a prediction that cb can write into, this will be saved into the decision scores object later.
-  data.shared->pred.a_s = data.action_score_pool.get_object();
+  data.action_score_pool.acquire_object(data.shared->pred.a_s);
 
   // Tag can be used for specifying the sampling seed per slot. For it to be used it must be inserted into the shared
   // example.
@@ -456,7 +461,8 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       else
       {
         // the cb example contains no action => cannot decide
-        decision_scores.push_back(data.action_score_pool.get_object());
+        decision_scores.push_back(v_array<ACTION_SCORE::action_score>());
+        data.action_score_pool.acquire_object(*decision_scores.end());
       }
 
       if (should_augment_with_slot_info)
@@ -575,7 +581,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
-  for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_v_array(a_s, data.action_score_pool); }
+  for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_v_array(std::move(a_s), data.action_score_pool); }
   ec_seq[0]->pred.decision_scores.clear();
 
   VW::finish_example(all, ec_seq);
