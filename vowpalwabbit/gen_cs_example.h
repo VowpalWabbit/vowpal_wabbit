@@ -23,7 +23,7 @@ struct cb_to_cs
   float last_pred_reg;
   float last_correct_cost;
 
-  CB::cb_class* known_cost;
+  CB::cb_class known_cost;
 };
 
 struct cb_to_cs_adf
@@ -41,8 +41,6 @@ struct cb_to_cs_adf
   CB::cb_class known_cost;
   VW::LEARNER::single_learner* scorer;
 };
-
-CB::cb_class* get_observed_cost(CB::label& ld);
 
 float safe_probability(float prob);
 
@@ -76,13 +74,13 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
 
       c.pred_scores.costs.push_back(wc);
 
-      if (c.known_cost != nullptr && c.known_cost->action == i)
+      if (c.known_cost.action == i)
       {
         c.nb_ex_regressors++;
         c.avg_loss_regressors += (1.0f / c.nb_ex_regressors) *
-            ((c.known_cost->cost - wc.x) * (c.known_cost->cost - wc.x) - c.avg_loss_regressors);
+            ((c.known_cost.cost - wc.x) * (c.known_cost.cost - wc.x) - c.avg_loss_regressors);
         c.last_pred_reg = wc.x;
-        c.last_correct_cost = c.known_cost->cost;
+        c.last_correct_cost = c.known_cost.cost;
       }
 
       cs_ld.costs.push_back(wc);
@@ -103,13 +101,13 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
       }
       c.pred_scores.costs.push_back(wc);
 
-      if (c.known_cost != nullptr && c.known_cost->action == cl.action)
+      if (c.known_cost.action == cl.action)
       {
         c.nb_ex_regressors++;
         c.avg_loss_regressors += (1.0f / c.nb_ex_regressors) *
-            ((c.known_cost->cost - wc.x) * (c.known_cost->cost - wc.x) - c.avg_loss_regressors);
+            ((c.known_cost.cost - wc.x) * (c.known_cost.cost - wc.x) - c.avg_loss_regressors);
         c.last_pred_reg = wc.x;
-        c.last_correct_cost = c.known_cost->cost;
+        c.last_correct_cost = c.known_cost.cost;
       }
 
       cs_ld.costs.push_back(wc);
@@ -129,14 +127,14 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
 
   c.pred_scores.costs.push_back(wc);
   // add correction if we observed cost for this action and regressor is wrong
-  if (c.known_cost != nullptr && c.known_cost->action == action)
+  if (c.known_cost.action == action)
   {
     c.nb_ex_regressors++;
     c.avg_loss_regressors += (1.0f / c.nb_ex_regressors) *
-        ((c.known_cost->cost - wc.x) * (c.known_cost->cost - wc.x) - c.avg_loss_regressors);
+        ((c.known_cost.cost - wc.x) * (c.known_cost.cost - wc.x) - c.avg_loss_regressors);
     c.last_pred_reg = wc.x;
-    c.last_correct_cost = c.known_cost->cost;
-    wc.x += (c.known_cost->cost - wc.x) / std::max(c.known_cost->probability, clip_p);
+    c.last_correct_cost = c.known_cost.cost;
+    wc.x += (c.known_cost.cost - wc.x) / std::max(c.known_cost.probability, clip_p);
   }
 
   cs_ld.costs.push_back(wc);
@@ -211,11 +209,11 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
       // get cost prediction for this label
       // num_actions should be 1 effectively.
       // my get_cost_pred function will use 1 for 'index-1+base'
-      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2);
+      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, *(examples[i]), 0, 2);
       c.known_cost.action = known_index;
     }
     else
-      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, nullptr, *(examples[i]), 0, 2);
+      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, CB::cb_class{}, *(examples[i]), 0, 2);
 
     c.pred_scores.costs.push_back(wc);  // done
 

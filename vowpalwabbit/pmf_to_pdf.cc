@@ -187,28 +187,15 @@ void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_st
   }
 }
 
-inline bool observed_cost(CB::cb_class* cl)
-{
-  // cost observed for this action if it has non zero probability and cost != FLT_MAX
-  return (cl != nullptr && cl->cost != FLT_MAX && cl->probability > .0);
-}
-
-CB::cb_class* get_observed_cost(CB::label& ld)
-{
-  for (auto& cl : ld.costs)
-    if (observed_cost(&cl)) return &cl;
-  return nullptr;
-}
-
 void output_example(vw& all, reduction&, example& ec, CB::label& ld)
 {
   float loss = 0.;
-
-  if (get_observed_cost(ec.l.cb) != nullptr)
-    for (auto& cbc : ec.l.cb.costs)
+  auto cost = get_observed_cost_or_default(ec.l.cb);
+  if (cost.has_observed_cost())
+    for (const auto& cbc : ec.l.cb.costs)
       for (uint32_t i = 0; i < ec.pred.pdf.size(); i++) loss += (cbc.cost / cbc.probability) * ec.pred.pdf[i].pdf_value;
 
-  all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, cost.has_observed_cost(), loss, 1.f, ec.num_features);
 
   constexpr size_t buffsz = 20;
   char temp_str[buffsz];
