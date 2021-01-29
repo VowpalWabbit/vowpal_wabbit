@@ -36,6 +36,11 @@ namespace cats
 // BEGIN cats reduction and reduction methods
 struct cats
 {
+  uint32_t num_actions;
+  float bandwidth;
+  float min_value;
+  float max_value;
+
   cats(single_learner* p_base);
 
   int learn(example& ec, experimental::api_status* status);
@@ -112,13 +117,33 @@ void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::wr
   for (auto& f : predict_file_descriptors) f->write(str.c_str(), str.size());
 }
 
-// "average loss" "since last" "example counter" "example weight"
-// "current label" "current predict" "current features"
-void reduction_output::report_progress(vw& all, const cats&, const example& ec)
+void reduction_output::report_progress(vw& all, const cats& data, const example& ec)
 {
-  const auto& cb_cont_costs = ec.l.cb_cont.costs;
-  all.sd->update(ec.test_only, does_example_have_label(ec), cb_cont_costs.empty() ? 0.f : cb_cont_costs[0].cost,
-      ec.weight, ec.num_features);
+  float loss = 0.0f;
+
+  const auto& cb_cont_costs = ec.l.cb_cont.costs;  // logged action, observed cost, probability
+  auto predicted_action = ec.pred.pdf_value.action;
+
+  if (!cb_cont_costs.empty())
+  {
+    const float continuous_range = data.max_value - data.min_value;
+    const float unit_range = continuous_range / data.num_actions;
+
+    const float ac = (predicted_action - data.min_value) / unit_range;
+    int discretized_action = static_cast<int>(floor(ac));
+    const float centre = data.min_value + discretized_action * unit_range + unit_range / 2.0f;
+
+    // is centre close to logged action?
+    auto logged_action = cb_cont_costs[0].action;
+    if ((logged_action - data.bandwidth <= centre) && (centre <= logged_action + data.bandwidth))
+    {
+      float actual_b = std::min(data.max_value, logged_action + data.bandwidth) -
+          std::max(data.min_value, logged_action - data.bandwidth);
+      loss += cb_cont_costs[0].cost / float(cb_cont_costs[0].pdf_value * actual_b);
+    }
+  }
+
+  all.sd->update(ec.test_only, does_example_have_label(ec), loss, ec.weight, ec.num_features);
   all.sd->weighted_labels += ec.weight;
   print_update_cb_cont(all, ec);
 }
@@ -146,8 +171,17 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 LEARNER::base_learner* setup(options_i& options, vw& all)
 {
   option_group_definition new_options("Continuous actions tree with smoothing");
-  int num_actions = 0;
-  new_options.add(make_option("cats", num_actions).keep().necessary().help("number of tree labels <k> for cats"));
+  uint32_t num_actions = 0;
+  float bandwidth = 0;
+  float min_value = 0;
+  float max_value = 0;
+  new_options.add(make_option("cats", num_actions).keep().necessary().help("number of tree labels <k> for cats"))
+      .add(make_option("min_value", min_value).keep().help("Minimum continuous value"))
+      .add(make_option("max_value", max_value).keep().help("Maximum continuous value"))
+      .add(make_option("bandwidth", bandwidth)
+               .default_value(1)
+               .keep()
+               .help("Bandwidth (radius) of randomization around discrete actions in terms of continuous range."));
 
   // If cats reduction was not invoked, don't add anything
   // to the reduction stack;
@@ -161,6 +195,10 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
 
   LEARNER::base_learner* p_base = setup_base(options, all);
   auto p_reduction = scoped_calloc_or_throw<cats>(as_singleline(p_base));
+  p_reduction->num_actions = num_actions;
+  p_reduction->bandwidth = bandwidth;
+  p_reduction->max_value = max_value;
+  p_reduction->min_value = min_value;
 
   LEARNER::learner<cats, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, 1, prediction_type_t::action_pdf_value);
