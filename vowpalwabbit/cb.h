@@ -18,10 +18,10 @@ namespace CB
 // By default a cb class does not contain an observed cost.
 struct cb_class
 {
-  float cost = FLT_MAX;                                    // the cost of this class
-  uint32_t action = 0;  // the index of this class
+  float cost = FLT_MAX;      // the cost of this class
+  uint32_t action = 0;       // the index of this class
   float probability = -1.f;  // new for bandit setting, specifies the probability the data collection policy chose this
-                            // class for importance weighting
+                             // class for importance weighting
   float partial_prediction = 0.f;  // essentially a return value
 
   bool operator==(cb_class j) const { return action == j.action; }
