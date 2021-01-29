@@ -88,7 +88,7 @@ inline void cb_explore_adf_base<ExploreType>::predict(
     cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   example* label_example = CB_ADF::test_adf_sequence(examples);
-  data._known_cost = CB::get_observed_cost_or_default(examples);
+  data._known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
 
   if (label_example != nullptr)
   {
@@ -113,7 +113,7 @@ inline void cb_explore_adf_base<ExploreType>::learn(
   example* label_example = CB_ADF::test_adf_sequence(examples);
   if (label_example != nullptr)
   {
-    data._known_cost = CB::get_observed_cost_or_default(examples);
+    data._known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
   }

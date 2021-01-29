@@ -17,25 +17,10 @@ using namespace VW::LEARNER;
 
 namespace CB
 {
-
-cb_class get_observed_cost_or_default(const label& ld)
+cb_class get_observed_cost_or_default_cb(const label& ld)
 {
   for (const auto& cl : ld.costs)
     if (cl.has_observed_cost()) return cl;
-
-  // Default value for cb_class does not have an observed cost.
-  return CB::cb_class{};
-}
-
-cb_class get_observed_cost_or_default(const multi_ex& examples)
-{
-  for (const auto* example_ptr : examples)
-  {
-    for (const auto& cb_costs : example_ptr->l.cb.costs)
-    {
-      if (cb_costs.has_observed_cost()) return cb_costs;
-    }
-  }
 
   // Default value for cb_class does not have an observed cost.
   return CB::cb_class{};

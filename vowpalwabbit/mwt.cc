@@ -62,7 +62,7 @@ void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a
 template <bool learn, bool exclude, bool is_learn>
 void predict_or_learn(mwt& c, single_learner& base, example& ec)
 {
-  c.observation = get_observed_cost_or_default(ec.l.cb);
+  c.observation = get_observed_cost_or_default_cb(ec.l.cb);
 
   if (c.observation.has_observed_cost())
   {

@@ -133,7 +133,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
   if (label_example != nullptr)  // restore label
     label_example->l.cb = data.action_label;
 
-  data.known_cost = CB::get_observed_cost_or_default(ec_seq);
+  data.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);
   if (label_example != nullptr && is_learn)
   {
     ACTION_SCORE::action_scores& a_s = ec_seq[0]->pred.a_s;

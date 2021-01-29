@@ -25,6 +25,34 @@ using namespace exploration;
 
 namespace CB_ADF
 {
+
+cb_class get_observed_cost_or_default_cb_adf(const multi_ex& examples)
+{
+  bool found = false;
+  size_t found_index = 0;
+  size_t i = 0;
+  CB::cb_class known_cost;
+
+  for (const auto* example_ptr : examples)
+  {
+    for (const auto& cost : example_ptr->l.cb.costs)
+    {
+      if (cost.has_observed_cost()) { found = true;
+        found_index = i;
+        known_cost = cost;
+      }
+    }
+    i++;
+  }
+
+  if (found == false) { known_cost.probability = -1;
+    return known_cost;
+
+  }
+
+  known_cost.action = found_index;
+  return known_cost;
+}
 struct cb_adf
 {
 private:
@@ -257,7 +285,7 @@ template <bool is_learn>
 void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
-  _gen_cs.known_cost = get_observed_cost_or_default(ec_seq);  // need to set for test case
+  _gen_cs.known_cost = get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
   bool learn = is_learn && test_adf_sequence(ec_seq) != nullptr;
   if (learn)
   {
