@@ -130,8 +130,8 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
   if (c.known_cost.action == action)
   {
     c.nb_ex_regressors++;
-    c.avg_loss_regressors += (1.0f / c.nb_ex_regressors) *
-        ((c.known_cost.cost - wc.x) * (c.known_cost.cost - wc.x) - c.avg_loss_regressors);
+    c.avg_loss_regressors +=
+        (1.0f / c.nb_ex_regressors) * ((c.known_cost.cost - wc.x) * (c.known_cost.cost - wc.x) - c.avg_loss_regressors);
     c.last_pred_reg = wc.x;
     c.last_correct_cost = c.known_cost.cost;
     wc.x += (c.known_cost.cost - wc.x) / std::max(c.known_cost.probability, clip_p);

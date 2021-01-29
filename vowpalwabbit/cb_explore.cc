@@ -264,11 +264,12 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   cb_to_cs& c = data.cbcs;
 
   auto cost = CB::get_observed_cost_or_default_cb(ld);
-  if (cost.has_observed_cost()) {
+  if (cost.has_observed_cost())
+  {
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
       loss += get_cost_estimate(cost, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
   }
- 
+
   all.sd->update(ec.test_only, cost.has_observed_cost(), loss, 1.f, ec.num_features);
 
   std::stringstream ss;

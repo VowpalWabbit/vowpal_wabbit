@@ -25,7 +25,6 @@ using namespace exploration;
 
 namespace CB_ADF
 {
-
 cb_class get_observed_cost_or_default_cb_adf(const multi_ex& examples)
 {
   bool found = false;
@@ -37,7 +36,9 @@ cb_class get_observed_cost_or_default_cb_adf(const multi_ex& examples)
   {
     for (const auto& cost : example_ptr->l.cb.costs)
     {
-      if (cost.has_observed_cost()) { found = true;
+      if (cost.has_observed_cost())
+      {
+        found = true;
         found_index = i;
         known_cost = cost;
       }
@@ -45,9 +46,10 @@ cb_class get_observed_cost_or_default_cb_adf(const multi_ex& examples)
     i++;
   }
 
-  if (found == false) { known_cost.probability = -1;
+  if (found == false)
+  {
+    known_cost.probability = -1;
     return known_cost;
-
   }
 
   known_cost.action = found_index;
