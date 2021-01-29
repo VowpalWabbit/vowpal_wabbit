@@ -19,8 +19,8 @@ namespace CB
 struct cb_class
 {
   float cost = FLT_MAX;                                    // the cost of this class
-  uint32_t action = std::numeric_limits<uint32_t>::max();  // the index of this class
-  float probability = 0.f;  // new for bandit setting, specifies the probability the data collection policy chose this
+  uint32_t action = 0;  // the index of this class
+  float probability = -1.f;  // new for bandit setting, specifies the probability the data collection policy chose this
                             // class for importance weighting
   float partial_prediction = 0.f;  // essentially a return value
 
