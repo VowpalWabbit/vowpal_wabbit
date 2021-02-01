@@ -157,9 +157,9 @@ void reduction::learn(example& ec)
 
   ec.l.cb.costs.clear();
   ec.l.cb.costs.push_back(
-      {cost, local_min_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
+      CB::cb_class(cost, local_min_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions));
   ec.l.cb.costs.push_back(
-      {cost, local_max_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions, 0.0f});
+      CB::cb_class(cost, local_max_value + 1, pdf_value * 2 * bandwidth * continuous_range / num_actions));
 
   auto swap_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
 

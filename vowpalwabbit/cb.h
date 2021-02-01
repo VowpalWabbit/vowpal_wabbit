@@ -24,6 +24,12 @@ struct cb_class
                              // class for importance weighting
   float partial_prediction = 0.f;  // essentially a return value
 
+  cb_class() = default;
+  cb_class(float cost, uint32_t action, float probability)
+      : cost(cost), action(action), probability(probability), partial_prediction(0.f)
+  {
+  }
+
   bool operator==(cb_class j) const { return action == j.action; }
 
   constexpr bool has_observed_cost() const { return (cost != FLT_MAX && probability > .0); }
