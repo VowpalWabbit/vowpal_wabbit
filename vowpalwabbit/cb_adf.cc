@@ -28,8 +28,8 @@ namespace CB_ADF
 cb_class get_observed_cost_or_default_cb_adf(const multi_ex& examples)
 {
   bool found = false;
-  size_t found_index = 0;
-  size_t i = 0;
+  uint32_t found_index = 0;
+  uint32_t i = 0;
   CB::cb_class known_cost;
 
   for (const auto* example_ptr : examples)
