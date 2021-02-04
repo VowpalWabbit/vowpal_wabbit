@@ -661,7 +661,9 @@ void setup_example(vw& all, example* ae)
   // If this example has a test only label then it is true regardless.
   ae->test_only |= all.example_parser->lbl_parser.test_label(&ae->l);
 
-  if (all.example_parser->emptylines_separate_examples && example_is_newline(*ae))
+  if (all.example_parser->emptylines_separate_examples &&
+      (example_is_newline(*ae) &&
+          (all.example_parser->lbl_parser.label_type != label_type_t::ccb || CCB::ec_is_example_unset(*ae))))
     all.example_parser->in_pass_counter++;
 
   ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l);

@@ -19,6 +19,7 @@ void calculate_and_insert_interactions(example* shared, const std::vector<exampl
 
 VW::LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
 bool ec_is_example_header(example const& ec);
+bool ec_is_example_unset(example const& ec);
 std::string generate_ccb_label_printout(const std::vector<example*>& slots);
 
 }  // namespace CCB
