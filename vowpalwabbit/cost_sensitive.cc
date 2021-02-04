@@ -185,7 +185,8 @@ label_parser cs_label = {
     }
   },
   // test_label
-  [](polylabel* v) { return test_label(v->cs); }
+  [](polylabel* v) { return test_label(v->cs); },
+  label_type_t::cs
 };
 // clang-format on
 

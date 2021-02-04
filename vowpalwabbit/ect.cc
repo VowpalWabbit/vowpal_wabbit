@@ -346,7 +346,6 @@ base_learner* ect_setup(options_i& options, vw& all)
 
   learner<ect, example>& l =
       init_multiclass_learner(data, as_singleline(base), learn, predict, all.example_parser, wpp);
-  all.label_type = label_type_t::mc;
 
   return make_base(l);
 }

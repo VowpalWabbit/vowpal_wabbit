@@ -134,7 +134,6 @@ base_learner* csoaa_setup(options_i& options, vw& all)
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
       predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass);
   all.example_parser->lbl_parser = cs_label;
-  all.label_type = label_type_t::cs;
 
   l.set_finish_example(finish_example);
   all.cost_sensitive = make_base(l);
@@ -800,7 +799,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
   csldf_outer_options.add(
       make_option("probabilities", ld->is_probabilities).keep().help("predict probabilites of all classes"));
 
-  option_group_definition csldf_inner_options("Cost Sensitive One Against All with Label Dependent Features");
+  option_group_definition csldf_inner_options("Cost Sensitive weighted all-pairs with Label Dependent Features");
   csldf_inner_options.add(make_option("wap_ldf", wap_ldf)
                               .keep()
                               .necessary()
@@ -828,7 +827,6 @@ base_learner* csldf_setup(options_i& options, vw& all)
   if (ld->rank) all.delete_prediction = delete_action_scores;
 
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
-  all.label_type = label_type_t::cs;
 
   ld->treat_as_classifier = false;
   if (ldf_arg == "multiline" || ldf_arg == "m")

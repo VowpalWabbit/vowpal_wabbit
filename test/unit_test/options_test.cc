@@ -165,13 +165,16 @@ BOOST_AUTO_TEST_CASE(name_extraction_should_throw)
   BOOST_REQUIRE_THROW(name_extractor.add_parse_and_check_necessary(ag), VW::vw_exception);
 
   // should throw since these methods will never be implemented by options_name_extractor
-  BOOST_REQUIRE_THROW(name_extractor.help(), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.help({}), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.check_unregistered(), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.get_all_options(), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.get_option("opt2"), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.insert("opt2", "blah"), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.replace("opt2", "blah"), VW::vw_exception);
   BOOST_REQUIRE_THROW(name_extractor.get_positional_tokens(), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.tint("nonsense"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.reset_tint(), VW::vw_exception);
+  BOOST_REQUIRE_THROW(name_extractor.get_collection_of_options(), VW::vw_exception);
 }
 
 BOOST_AUTO_TEST_CASE(name_extraction_recycle)
@@ -191,7 +194,7 @@ BOOST_AUTO_TEST_CASE(name_extraction_recycle)
   BOOST_CHECK_EQUAL(name_extractor.generated_name, "im_necessary_opt2");
   BOOST_CHECK_EQUAL(result, false);
 
-  option_group_definition ag2("g1");
+  option_group_definition ag2("g2");
   ag2(make_option("im_necessary_v2", loc).keep().necessary());
   ag2(make_option("opt2", loc).necessary());
   ag2.add(make_option("opt3", loc2));
