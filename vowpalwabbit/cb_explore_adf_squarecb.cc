@@ -294,7 +294,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   float min_cb_cost = 0.;
   float max_cb_cost = 0.;
 
-  config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
+  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (SquareCB)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
@@ -344,7 +344,6 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
-  all.label_type = label_type_t::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
   auto data = scoped_calloc_or_throw<explore_type>(gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost);

@@ -207,28 +207,47 @@ def test_keys_with_list_of_values():
     del model
 
 
-def test_parse():
+def helper_parse(examples):
     model = vw(quiet=True, cb_adf=True)
-    ex = model.parse("| a:1 b:0.5\n0:0.1:0.75 | a:0.5 b:1 c:2")
+    ex = model.parse(examples)
     assert len(ex) == 2
+    model.learn(ex)
+    model.finish_example(ex)
+    model.finish()
 
-    ex = model.parse(
+
+def test_parse():
+    helper_parse("| a:1 b:0.5\n0:0.1:0.75 | a:0.5 b:1 c:2")
+
+    helper_parse(
         """| a:1 b:0.5
     0:0.1:0.75 | a:0.5 b:1 c:2"""
     )
-    assert len(ex) == 2
 
-    ex = model.parse(
+    helper_parse(
         """
     | a:1 b:0.5
     0:0.1:0.75 | a:0.5 b:1 c:2
     """
     )
-    assert len(ex) == 2
 
+    helper_parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
+
+
+def test_parse_2():
+    model = vw(quiet=True, cb_adf=True)
+    ex = model.parse("| a:1 b:0.5\n0:0.1:0.75 | a:0.5 b:1 c:2")
+    assert len(ex) == 2
+    model.learn(ex)
+    model.finish_example(ex)
+    model.finish()
+
+    model = vw(quiet=True, cb_adf=True)
     ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
     assert len(ex) == 2
-    del model
+    model.learn(ex)
+    model.finish_example(ex)
+    model.finish()
 
 
 def test_learn_predict_multiline():

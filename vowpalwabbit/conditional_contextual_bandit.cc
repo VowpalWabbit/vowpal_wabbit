@@ -607,8 +607,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
-  option_group_definition new_options(
-      "EXPERIMENTAL: Conditional Contextual Bandit Exploration with Action Dependent Features");
+  option_group_definition new_options("EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF");
   new_options
       .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
                .keep()
@@ -633,7 +632,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 
   auto* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CCB::ccb_label_parser;
-  all.label_type = label_type_t::ccb;
 
   // Stash the base learners stride_shift so we can properly add a feature later.
   data->base_learner_stride_shift = all.weights.stride_shift();

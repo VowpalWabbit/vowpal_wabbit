@@ -502,7 +502,6 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
 
   learner<log_multi, example>& l = init_multiclass_learner(
       data, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, data->max_predictors);
-  all.label_type = label_type_t::mc;
   l.set_save_load(save_load_tree);
 
   return make_base(l);
