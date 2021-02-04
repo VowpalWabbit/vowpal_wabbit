@@ -73,7 +73,7 @@ class FlatbufferTest:
 
     def convert(self, to_flatbuff, color_enum):
         # arguments and flats not supported or needed in flatbuffer conversion
-        flags_to_remove = ['--audit', '-c ','--bfgs', '--onethread', '-t ', '--search_span_bilou']
+        flags_to_remove = ['-c ','--bfgs', '--onethread', '-t ', '--search_span_bilou']
         arguments_to_remove = ['--passes', '--ngram', '--skips', '-q', '-p', '--feature_mask', '--search_kbest', '--search_max_branch']
 
         # if model already exists it contains needed arguments so use it in conversion
@@ -95,6 +95,8 @@ class FlatbufferTest:
             to_flatbuff_command = re.sub('{} [:a-zA-Z0-9_.\-/]*'.format('-d'), '-d {} '.format(from_file), to_flatbuff_command)
 
             cmd = "{} {} {} {}".format(to_flatbuff, to_flatbuff_command, '--fb_out', to_file)
+            if self.depends_on_cmd is not None and 'audit' in self.test['vw_command']:
+                cmd += ' --audit'
             print("{}CONVERT COMMAND {} {}{}".format(color_enum.LIGHT_PURPLE, self.test_id, cmd, color_enum.ENDC))
             result = subprocess.run(
                 cmd,

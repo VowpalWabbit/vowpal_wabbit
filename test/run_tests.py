@@ -533,12 +533,6 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
         if 'dictionary' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, currently dictionaries are not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
-        if 'invert_hash' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, invert_hash not supported on converted files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            continue
-        if 'audit' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, audit not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            continue
         if 'help' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, --help test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
