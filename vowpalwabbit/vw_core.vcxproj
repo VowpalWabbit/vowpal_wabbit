@@ -58,7 +58,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;VWDLL_EXPORTS;$(BUILD_FLATBUFFERS);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;VWDLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -73,7 +73,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;VWDLL_EXPORTS;$(BUILD_FLATBUFFERS);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;VWDLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -393,7 +393,12 @@
     <ClCompile Include="vw_exception.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClCompile Include="warm_cb.cc" />
-    <ClCompile Include="get_pmf.cc" />
+  </ItemGroup>
+  <ItemGroup>	
+    <ClCompile Include="get_pmf.cc">	
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>	
+    </ClCompile>	
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="vw_types.natvis" />

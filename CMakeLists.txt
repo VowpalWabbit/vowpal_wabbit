@@ -87,7 +87,6 @@ option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
-option(BUILD_FLATBUFFER_UTILS "Build the flatbuffer data converter utility in utl/flatbuffer" ON)
 option(BUILD_FLATBUFFERS "Build flatbuffers" ON)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
@@ -253,7 +252,7 @@ add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
 
-if (BUILD_FLATBUFFER_UTILS AND BUILD_FLATBUFFERS)
+if (BUILD_FLATBUFFERS)
   add_subdirectory(utl/flatbuffer)
 endif()
 
