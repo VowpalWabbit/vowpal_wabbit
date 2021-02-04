@@ -370,9 +370,24 @@ void to_flat::convert_txt_to_flat(vw& all)
       if (find_ns_offset == _share_examples.end())
       {
         // new namespace
-        for (features::iterator& f : ae->feature_space[ns])
-        { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index())); }
-        namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, ns, &fts);
+        if (all.audit || all.hash_inv)
+        {
+          auto& ns_fts = ae->feature_space[ns];
+          std::string ns_name;
+          for (auto& f : ns_fts.values_indices_audit())
+          {
+            ns_name = f.audit()->get()->first;
+            fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(
+                _builder, f.audit()->get()->second.c_str(), f.value(), f.index()));
+          }
+          namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), ns, &fts);
+        }
+        else
+        {
+          for (features::iterator& f : ae->feature_space[ns])
+          { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index())); }
+          namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, ns, &fts);
+        }
         _share_examples[refid] = namespace_offset;
       }
       else
