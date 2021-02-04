@@ -682,7 +682,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
 
     if (all.raw_prediction != nullptr)
     {
-      v_array<char> empty = {nullptr, nullptr, nullptr, 0};
+      v_array<char> empty;
       all.print_text_by_ref(all.raw_prediction.get(), "", empty);
     }
 
