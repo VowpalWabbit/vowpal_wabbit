@@ -11,6 +11,7 @@
 #include "search_hooktask.h"
 #include "parse_example.h"
 #include "gd.h"
+#include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
 #include "future_compat.h"
 #include "slates_label.h"
@@ -28,10 +29,13 @@
 
 namespace py = boost::python;
 
+class py_log_wrapper;
+
 typedef boost::shared_ptr<vw> vw_ptr;
 typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
+typedef boost::shared_ptr<py_log_wrapper> py_log_wrapper_ptr;
 
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
@@ -53,15 +57,206 @@ const size_t pPROB = 6;
 const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 const size_t pACTION_PDF_VALUE = 9;
+const size_t pPDF = 10;
 
 void dont_delete_me(void* arg) {}
 
-vw_ptr my_initialize(std::string args)
+class OptionManager
+{
+  std::map<std::string, std::vector<VW::config::option_group_definition>> m_option_group_dic;
+  // see pyvw.py class VWOption
+  py::object m_py_opt_class;
+  VW::config::options_i& m_opt;
+  std::vector<std::string>& m_enabled_reductions;
+  std::string default_group_name;
+
+public:
+  OptionManager(VW::config::options_i& options, std::vector<std::string>& enabled_reductions, py::object py_class)
+      : m_opt(options)
+      , m_enabled_reductions(enabled_reductions)
+      , m_option_group_dic(options.get_collection_of_options())
+      , m_py_opt_class(py_class)
+  {
+    default_group_name = static_cast<VW::config::options_boost_po*>(&options)->m_default_tint;
+  }
+
+  py::object* value_to_pyobject(VW::config::typed_option<bool>& opt)
+  {
+    if (m_opt.was_supplied(opt.m_name))
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, opt.default_value(), true));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, false, true));
+    }
+    else
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, false, false, false, true));
+    }
+  }
+
+  template <typename T>
+  py::object* value_to_pyobject(VW::config::typed_option<T>& opt)
+  {
+    if (m_opt.was_supplied(opt.m_name))
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, opt.default_value(), true));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, py::object(), false));
+    }
+    else
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, py::object(), false, py::object(), false));
+    }
+  }
+
+  template <typename T>
+  py::object* value_to_pyobject(VW::config::typed_option<std::vector<T>>& opt)
+  {
+    py::list values;
+
+    if (m_opt.was_supplied(opt.m_name))
+    {
+      auto vec = opt.value();
+      if (vec.size() > 0)
+      {
+        for (auto const& opt : vec) { values.append(py::object(opt)); }
+      }
+    }
+
+    return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+        opt.m_allow_override, values, m_opt.was_supplied(opt.m_name), py::list(), opt.default_value_supplied()));
+  }
+
+  template <typename T>
+  py::object* transform_if_t(VW::config::base_option& base_option)
+  {
+    if (base_option.m_type_hash == typeid(T).hash_code())
+    {
+      auto typed = dynamic_cast<VW::config::typed_option<T>&>(base_option);
+      return value_to_pyobject(typed);
+    }
+
+    return nullptr;
+  }
+
+  template <typename TTypes>
+  py::object base_option_to_pyobject(VW::config::base_option& options)
+  {
+    py::object* temp = transform_if_t<typename TTypes::head>(options);
+    if (temp != nullptr)
+    {
+      auto repack = py::object(*temp);
+      delete temp;
+      return repack;
+    }
+
+    return base_option_to_pyobject<typename TTypes::tail>(options);
+  }
+
+  py::object get_vw_option_pyobjects(bool enabled_only)
+  {
+    py::dict dres;
+    auto it = m_option_group_dic.begin();
+
+    while (it != m_option_group_dic.end())
+    {
+      auto reduction_enabled =
+          std::find(m_enabled_reductions.begin(), m_enabled_reductions.end(), it->first) != m_enabled_reductions.end();
+
+      if (((it->first).compare(default_group_name) != 0) && enabled_only && !reduction_enabled)
+      {
+        it++;
+        continue;
+      }
+
+      py::list option_groups;
+
+      for (auto options_group : it->second)
+      {
+        py::list options;
+        for (auto opt : options_group.m_options)
+        {
+          auto temp = base_option_to_pyobject<VW::config::supported_options_types>(*opt.get());
+          options.append(temp);
+        }
+
+        option_groups.append(py::make_tuple(options_group.m_name, options));
+      }
+
+      dres[it->first] = option_groups;
+
+      it++;
+    }
+    return dres;
+  }
+};
+
+// specialization needed to compile, this should never be reached since we always use
+// VW::config::supported_options_types
+template <>
+py::object OptionManager::base_option_to_pyobject<VW::config::typelist<>>(VW::config::base_option& options)
+{
+  return py::object();
+}
+
+class py_log_wrapper
+{
+public:
+  py::object py_log;
+  py_log_wrapper(py::object py_log) : py_log(py_log) {}
+
+  static void trace_listener_py(void* wrapper, const std::string& message)
+  {
+    try
+    {
+      auto inst = static_cast<py_log_wrapper*>(wrapper);
+      inst->py_log.attr("log")(message);
+    }
+    catch (...)
+    {
+      // TODO: Properly translate and return Python exception. #2169
+      PyErr_Print();
+      PyErr_Clear();
+      std::cerr << "error using python logging. ignoring." << std::endl;
+    }
+  }
+};
+
+vw_ptr my_initialize_with_log(std::string args, py_log_wrapper_ptr py_log)
 {
   if (args.find_first_of("--no_stdin") == std::string::npos) args += " --no_stdin";
-  vw* foo = VW::initialize(args);
+
+  trace_message_t trace_listener = nullptr;
+  void* trace_context = nullptr;
+
+  if (py_log)
+  {
+    trace_listener = (py_log_wrapper::trace_listener_py);
+    trace_context = py_log.get();
+  }
+
+  vw* foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
+  // return boost::shared_ptr<vw>(foo, [](vw *all){VW::finish(*all);});
   return boost::shared_ptr<vw>(foo);
 }
+
+vw_ptr my_initialize(std::string args) { return my_initialize_with_log(args, nullptr); }
 
 void my_run_parser(vw_ptr all)
 {
@@ -80,6 +275,12 @@ void my_save(vw_ptr all, std::string name) { VW::save_predictor(*all, name); }
 search_ptr get_search_ptr(vw_ptr all)
 {
   return boost::shared_ptr<Search::search>((Search::search*)(all->searchstr), dont_delete_me);
+}
+
+py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
+{
+  auto opt_manager = OptionManager(*all->options, all->enabled_reductions, py_class);
+  return opt_manager.get_vw_option_pyobjects(enabled_only);
 }
 
 void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*all, *ec); }
@@ -186,6 +387,8 @@ size_t my_get_prediction_type(vw_ptr all)
       return pDECISION_SCORES;
     case prediction_type_t::action_pdf_value:
       return pACTION_PDF_VALUE;
+    case prediction_type_t::pdf:
+      return pPDF;
     default:
       THROW("unsupported prediction type used");
   }
@@ -203,7 +406,7 @@ void my_delete_example(void* voidec)
 example* my_empty_example0(vw_ptr vw, size_t labelType)
 {
   label_parser* lp = get_label_parser(&*vw, labelType);
-  example* ec = VW::alloc_examples(lp->label_size, 1);
+  example* ec = VW::alloc_examples(1);
   lp->default_label(&ec->l);
   ec->interactions = &vw->interactions;
   if (labelType == lCOST_SENSITIVE)
@@ -561,6 +764,14 @@ py::tuple ex_get_action_pdf_value(example_ptr ec)
   return py::make_tuple(ec->pred.pdf_value.action, ec->pred.pdf_value.pdf_value);
 }
 
+py::list ex_get_pdf(example_ptr ec)
+{
+  py::list values;
+  for (auto const& segment : ec->pred.pdf)
+  { values.append(py::make_tuple(segment.left, segment.right, segment.pdf_value)); }
+  return values;
+}
+
 py::list ex_get_multilabel_predictions(example_ptr ec)
 {
   py::list values;
@@ -891,6 +1102,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::class_<vw, vw_ptr, boost::noncopyable>(
       "vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
       .def("__init__", py::make_constructor(my_initialize))
+      .def("__init__", py::make_constructor(my_initialize_with_log))
       //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
       .def("run_parser", &my_run_parser, "parse external data file")
       .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
@@ -918,6 +1130,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
       .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
+      .def("get_options", &get_options, "get available vw options")
       .def("audit_example", &my_audit_example, "print example audit information")
       .def("get_id", &get_model_id, "return the model id")
       .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
@@ -949,7 +1162,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pPROB", pPROB, "Probability prediction type")
       .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
       .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
-      .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type");
+      .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
+      .def_readonly("pPDF", pPDF, "PDF prediction type");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1019,6 +1233,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_action_scores", &ex_get_action_scores, "Get action scores from example prediction")
       .def("get_decision_scores", &ex_get_decision_scores, "Get decision scores from example prediction")
       .def("get_action_pdf_value", &ex_get_action_pdf_value, "Get action and pdf value from example prediction")
+      .def("get_pdf", &ex_get_pdf, "Get pdf from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
@@ -1075,6 +1290,9 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("set_learner_id", &my_set_learner_id, "select the learner with which to make this prediction")
       .def("set_tag", &my_set_tag, "change the tag of this prediction")
       .def("predict", &Search::predictor::predict, "make a prediction");
+
+  py::class_<py_log_wrapper, py_log_wrapper_ptr>(
+      "vw_log", "do not use, see pyvw.vw.init(enable_logging..)", py::init<py::object>());
 
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")

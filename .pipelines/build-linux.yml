@@ -21,6 +21,8 @@ steps:
   displayName: Build C++
 - bash: ./.scripts/linux/test.sh
   displayName: Test C++
+- bash: ./.scripts/linux/test-flatbuffers.sh
+  displayName: RunTest flatbuffers C++
 - bash: ./.scripts/linux/java.sh
   displayName: Build + test Java
 - bash: ./.scripts/linux/python27.sh

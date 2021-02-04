@@ -42,7 +42,7 @@ private:
   void parse_example(vw* all, example* ae, const Example* eg);
   void parse_multi_example(vw* all, example* ae, const MultiExample* eg);
   void parse_namespaces(vw* all, example* ae, const Namespace* ns);
-  void parse_features(vw* all, features& fs, const Feature* feature);
+  void parse_features(vw* all, features& fs, const Feature* feature, const flatbuffers::String* ns);
   void parse_flat_label(shared_data* sd, example* ae, const Example* eg);
 
   void parse_simple_label(shared_data* sd, polylabel* l, const SimpleLabel* label);
@@ -53,6 +53,7 @@ private:
   void parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label);
   void parse_multi_label(polylabel* l, const MultiLabel* label);
   void parse_slates_label(polylabel* l, const Slates_Label* label);
+  void parse_continuous_action_label(polylabel* l, const ContinuousLabel* label);
 };
 }  // namespace flatbuffer
 }  // namespace parsers

@@ -220,8 +220,8 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   float t_prev = t - 1.f;   // ec.weight; // last round
 
   float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / std::sqrt(t);  // threshold on cost range
-  float delta = cs_a.c0 * log((float)(cs_a.num_classes * std::max(t_prev, 1.f))) *
-      pow(cs_a.cost_max - cs_a.cost_min, 2);  // threshold on empirical loss difference
+  float delta = cs_a.c0 * std::log((float)(cs_a.num_classes * std::max(t_prev, 1.f))) *
+      static_cast<float>(std::pow(cs_a.cost_max - cs_a.cost_min, 2));  // threshold on empirical loss difference
 
   if (ld.costs.size() > 0)
   {
@@ -356,7 +356,7 @@ base_learner* cs_active_setup(options_i& options, vw& all)
   if (!options.was_supplied("adax")) all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
 
   all.example_parser->lbl_parser = cs_label;  // assigning the label parser
-  all.label_type = label_type_t::cs;
+
   all.set_minmax(all.sd, data->cost_max);
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);

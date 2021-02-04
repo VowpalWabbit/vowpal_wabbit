@@ -11,26 +11,11 @@
 #include "accumulate.h"
 #include "best_constant.h"
 #include "vw_string_view.h"
+#include "example.h"
 
 namespace no_label
 {
-char* bufread_no_label(shared_data*, label_data*, char* c) { return c; }
-
-size_t read_cached_no_label(shared_data*, void*, io_buf&) { return 1; }
-
-float get_weight(void*) { return 1.; }
-
-char* bufcache_no_label(label_data*, char* c) { return c; }
-
-void cache_no_label(void*, io_buf&) {}
-
-void default_no_label(void*) {}
-
-bool test_label(void*) { return false; }
-
-void delete_no_label(void*) {}
-
-void parse_no_label(parser*, shared_data*, void*, std::vector<VW::string_view>& words)
+void parse_no_label(const std::vector<VW::string_view>& words)
 {
   switch (words.size())
   {
@@ -43,8 +28,29 @@ void parse_no_label(parser*, shared_data*, void*, std::vector<VW::string_view>& 
   }
 }
 
-label_parser no_label_parser = {default_no_label, parse_no_label, cache_no_label, read_cached_no_label, delete_no_label,
-    get_weight, nullptr, test_label, sizeof(nullptr)};
+// clang-format off
+label_parser no_label_parser = {
+  // default_label
+  [](polylabel*) {},
+  // parse_label
+  [](parser*, shared_data*, polylabel*, std::vector<VW::string_view>& words, reduction_features&) {
+    parse_no_label(words);
+  },
+  // cache_label
+  [](polylabel*, io_buf&) {},
+  // read_cached_label
+  [](shared_data*, polylabel*, io_buf&) -> size_t { return 1; },
+  // delete_label
+  [](polylabel*) {},
+   // get_weight
+  [](polylabel*) { return 1.f; },
+  // copy_label
+  nullptr,
+  // test_label
+  [](polylabel*) { return false; },
+  label_type_t::nolabel
+};
+// clang-format on
 
 void print_no_label_update(vw& all, example& ec)
 {
