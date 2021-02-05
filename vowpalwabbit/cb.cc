@@ -17,7 +17,7 @@ using namespace VW::LEARNER;
 
 namespace CB
 {
-std::pair<bool,cb_class> get_observed_cost_cb(const label& ld)
+std::pair<bool, cb_class> get_observed_cost_cb(const label& ld)
 {
   for (const auto& cl : ld.costs)
     if (cl.has_observed_cost()) return std::make_pair(true, cl);

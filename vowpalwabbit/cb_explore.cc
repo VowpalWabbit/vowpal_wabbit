@@ -212,11 +212,10 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     float norm = min_prob * num_actions;
     ec.l.cb = data.cb_label;
     auto optional_cost = get_observed_cost_cb(data.cb_label);
-    if (optional_cost.first) {
-       data.cbcs.known_cost = optional_cost.second;
-    }
-    else {
-       data.cbcs.known_cost = CB::cb_class{};
+    if (optional_cost.first) { data.cbcs.known_cost = optional_cost.second; }
+    else
+    {
+      data.cbcs.known_cost = CB::cb_class{};
     }
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0;
