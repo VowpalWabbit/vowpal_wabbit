@@ -56,7 +56,9 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include "parse_dispatch_loop.h"
 #include "parse_args.h"
 #include "io/io_adapter.h"
-#include "parser/flatbuffer/parse_example_flatbuffer.h"
+#ifdef BUILD_FLATBUFFERS
+#  include "parser/flatbuffer/parse_example_flatbuffer.h"
+#endif
 
 // OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
 #if !defined(SOL_TCP) && defined(IPPROTO_TCP)
@@ -562,11 +564,13 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         }
         set_json_reader(all, input_options.dsjson);
       }
+#ifdef BUILD_FLATBUFFERS
       else if (input_options.flatbuffer)
       {
         all.flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>();
         all.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
       }
+#endif
       else
       {
         set_string_reader(all);
@@ -657,7 +661,9 @@ void setup_example(vw& all, example* ae)
   // If this example has a test only label then it is true regardless.
   ae->test_only |= all.example_parser->lbl_parser.test_label(&ae->l);
 
-  if (all.example_parser->emptylines_separate_examples && example_is_newline(*ae))
+  if (all.example_parser->emptylines_separate_examples &&
+      (example_is_newline(*ae) &&
+          (all.example_parser->lbl_parser.label_type != label_type_t::ccb || CCB::ec_is_example_unset(*ae))))
     all.example_parser->in_pass_counter++;
 
   ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l);
