@@ -45,6 +45,7 @@ struct cats
 
   int learn(example& ec, experimental::api_status* status);
   int predict(example& ec, experimental::api_status* status);
+  float get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, float predicted_action) const;
 
 private:
   single_learner* _base = nullptr;
@@ -66,6 +67,32 @@ int cats::learn(example& ec, experimental::api_status* status = nullptr)
   VW_DBG(ec) << "cats::learn(), " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
   _base->learn(ec);
   return error_code::success;
+}
+
+float cats::get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, float predicted_action) const
+{
+  float loss = 0.f;
+  if (!cb_cont_costs.costs.empty())
+  {
+    const float continuous_range = max_value - min_value;
+    const float unit_range = continuous_range / num_actions;
+
+    const float ac = (predicted_action - min_value) / unit_range;
+    int discretized_action = static_cast<int>(floor(ac));
+    // centre of predicted action
+    const float centre = min_value + discretized_action * unit_range + unit_range / 2.0f;
+
+    // is centre close to action from label
+    auto logged_action = cb_cont_costs.costs[0].action;
+    if ((logged_action - bandwidth <= centre) && (centre <= logged_action + bandwidth))
+    {
+      float actual_b = std::min(max_value, logged_action + bandwidth) - std::max(min_value, logged_action - bandwidth);
+
+      loss = cb_cont_costs.costs[0].cost / float(cb_cont_costs.costs[0].pdf_value * actual_b);
+    }
+  }
+
+  return loss;
 }
 
 cats::cats(single_learner* p_base) : _base(p_base) {}
@@ -119,30 +146,7 @@ void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::wr
 
 void reduction_output::report_progress(vw& all, const cats& data, const example& ec)
 {
-  float loss = 0.0f;
-
-  const auto& cb_cont_costs = ec.l.cb_cont.costs;  // contains label action, cost, probability
-  auto predicted_action = ec.pred.pdf_value.action;
-
-  if (!cb_cont_costs.empty())
-  {
-    const float continuous_range = data.max_value - data.min_value;
-    const float unit_range = continuous_range / data.num_actions;
-
-    const float ac = (predicted_action - data.min_value) / unit_range;
-    int discretized_action = static_cast<int>(floor(ac));
-    // centre of predicted action
-    const float centre = data.min_value + discretized_action * unit_range + unit_range / 2.0f;
-
-    // is centre close to action from label
-    auto logged_action = cb_cont_costs[0].action;
-    if ((logged_action - data.bandwidth <= centre) && (centre <= logged_action + data.bandwidth))
-    {
-      float actual_b = std::min(data.max_value, logged_action + data.bandwidth) -
-          std::max(data.min_value, logged_action - data.bandwidth);
-      loss += cb_cont_costs[0].cost / float(cb_cont_costs[0].pdf_value * actual_b);
-    }
-  }
+  auto loss = data.get_loss(ec.l.cb_cont, ec.pred.pdf_value.action);
 
   all.sd->update(ec.test_only, does_example_have_label(ec), loss, ec.weight, ec.num_features);
   all.sd->weighted_labels += ec.weight;
