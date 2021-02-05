@@ -273,7 +273,14 @@ base_learner* setup(options_i& options, vw& all)
   if (data->num_actions == 0) return nullptr;
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
   { THROW("error: min and max values must be supplied with cb_continuous"); }
-  if (data->bandwidth <= -1) { THROW("error: Bandwidth must be positive"); }
+  if (!(data->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
+
+  if (data->bandwidth >= (data->max_value - data->min_value))
+  {
+    all.trace_message << "WARNING: Bandwidth is larger than continuous action range, this will result in a uniform pdf"
+                      << std::endl;
+  }
+
   // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)
   // to the internal tree bandwidth which is in terms of #actions
   float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
