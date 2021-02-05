@@ -431,7 +431,7 @@
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />
   </Target>
   <Target Name="Check Vcpkg" AfterTargets="PrepareForBuild">
-    <Error Condition="'$(VcpkgAutoLink)'==''" Text="Vcpkg version is too old, doesn't contain VcpkgAutoLink flag, please upgrade to avoid linking problems" />
+    <Error Condition="'$(VcpkgAutoLink)'=='' and Exists('$(VcpkgIntegration)')" Text="Vcpkg version is too old, doesn't contain VcpkgAutoLink flag, please upgrade to avoid linking problems" />
   </Target>
   <Target Name="AfterClean">
     <RemoveDir Directories="$(SolutionDir)parser\flatbuffer\generated" />
