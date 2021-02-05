@@ -45,9 +45,6 @@
     <ClCompile Include="explore_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="flatbuffer_parser_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="guard_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -79,9 +76,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="options_boost_po_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="options_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="stable_unique_tests.cc">
@@ -131,8 +125,8 @@
     <ClInclude Include="test_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cats_tree_tests.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="cats_tree_tests.h">	
+      <Filter>Header Files</Filter>	
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
