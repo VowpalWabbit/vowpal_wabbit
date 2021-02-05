@@ -55,8 +55,7 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
   {
     c.known_cost = CB::cb_class{};
   }
-  if (optional_cost.first &&
-      (optional_cost.second.action < 1 || optional_cost.second.action > c.num_actions))
+  if (optional_cost.first && (optional_cost.second.action < 1 || optional_cost.second.action > c.num_actions))
     std::cerr << "invalid action: " << optional_cost.second.action << std::endl;
 
   // generate a cost-sensitive example to update classifiers
