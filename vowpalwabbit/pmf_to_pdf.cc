@@ -261,9 +261,11 @@ base_learner* setup(options_i& options, vw& all)
       .add(make_option("min_value", data->min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->max_value).keep().help("Maximum continuous value"))
       .add(make_option("bandwidth", data->bandwidth)
-               .default_value(1)
                .keep()
-               .help("Bandwidth (radius) of randomization around discrete actions in terms of continuous range."))
+               .help("Bandwidth (radius) of randomization around discrete actions in terms of continuous range. By "
+                     "default will be set to half of the continuous action unit-range resulting in smoothing that "
+                     "stays inside the action space unit-range:\nunit_range = (max_value - min_value) / "
+                     "num_actions\ndefault bandwidth = unit_range / 2.0"))
       .add(make_option("first_only", data->first_only)
                .keep()
                .help("Use user provided first action or user provided pdf or uniform random"));
@@ -273,6 +275,17 @@ base_learner* setup(options_i& options, vw& all)
   if (data->num_actions == 0) return nullptr;
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
   { THROW("error: min and max values must be supplied with cb_continuous"); }
+
+  float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
+  float half_leaf_width = leaf_width / 2.f;
+
+  if (!options.was_supplied("bandwidth"))
+  {
+    data->bandwidth = half_leaf_width;
+    all.trace_message << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
+                      << data->bandwidth << std::endl;
+  }
+
   if (!(data->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
 
   if (data->bandwidth >= (data->max_value - data->min_value))
@@ -283,9 +296,6 @@ base_learner* setup(options_i& options, vw& all)
 
   // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)
   // to the internal tree bandwidth which is in terms of #actions
-  float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
-  float half_leaf_width = leaf_width / 2.f;
-
   if (data->bandwidth <= half_leaf_width) { data->tree_bandwidth = 0; }
   else if (std::fmod((data->bandwidth), leaf_width) == 0)
   {

@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
 {
   example ec;
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
-  uint32_t k = 4;    // num_actions
+  uint32_t k = 4;   // num_actions
   float h = 300.f;  // // h (bandwidth) property of continuous range (max_val - min_val)
   float min_val = 1000;
   float max_val = 1400;
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
 
   uint32_t k = 16;  // num_actions
-  float h = 10.f;  // h (bandwidth) property of continuous range (max_val - min_val)
+  float h = 10.f;   // h (bandwidth) property of continuous range (max_val - min_val)
   float min_val = 1000;
   float max_val = 1400;
 
