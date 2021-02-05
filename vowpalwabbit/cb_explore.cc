@@ -211,7 +211,13 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     data.cs_label.costs.clear();
     float norm = min_prob * num_actions;
     ec.l.cb = data.cb_label;
-    data.cbcs.known_cost = get_observed_cost_or_default_cb(data.cb_label);
+    auto optional_cost = get_observed_cost_cb(data.cb_label);
+    if (optional_cost.first) {
+       data.cbcs.known_cost = optional_cost.second;
+    }
+    else {
+       data.cbcs.known_cost = CB::cb_class{};
+    }
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0;
 
@@ -263,14 +269,14 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
   cb_to_cs& c = data.cbcs;
 
-  auto cost = CB::get_observed_cost_or_default_cb(ld);
-  if (cost.has_observed_cost())
+  auto optional_cost = CB::get_observed_cost_cb(ld);
+  if (optional_cost.first == true)
   {
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-      loss += get_cost_estimate(cost, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
+      loss += get_cost_estimate(optional_cost.second, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
   }
 
-  all.sd->update(ec.test_only, cost.has_observed_cost(), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, optional_cost.first, loss, 1.f, ec.num_features);
 
   std::stringstream ss;
   float maxprob = 0.;

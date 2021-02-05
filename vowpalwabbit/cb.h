@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <utility>
 
 #include "reductions_fwd.h"
 #include "label_parser.h"
@@ -44,7 +45,7 @@ struct label
 extern label_parser cb_label;                  // for learning
 bool ec_is_example_header(example const& ec);  // example headers look like "shared"
 
-cb_class get_observed_cost_or_default_cb(const label& ld);
+std::pair<bool, cb_class> get_observed_cost_cb(const label& ld);
 
 void print_update(vw& all, bool is_test, example& ec, std::vector<example*>* ec_seq, bool action_scores);
 }  // namespace CB

@@ -17,13 +17,13 @@ using namespace VW::LEARNER;
 
 namespace CB
 {
-cb_class get_observed_cost_or_default_cb(const label& ld)
+std::pair<bool,cb_class> get_observed_cost_cb(const label& ld)
 {
   for (const auto& cl : ld.costs)
-    if (cl.has_observed_cost()) return cl;
+    if (cl.has_observed_cost()) return std::make_pair(true, cl);
 
   // Default value for cb_class does not have an observed cost.
-  return CB::cb_class{};
+  return std::make_pair(false, CB::cb_class{});
 }
 
 void parse_label(parser* p, shared_data*, CB::label& ld, std::vector<VW::string_view>& words, reduction_features&)

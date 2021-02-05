@@ -25,7 +25,7 @@ struct mwt
 {
   bool namespaces[256];        // the set of namespaces to evaluate.
   v_array<policy_data> evals;  // accrued losses of features.
-  CB::cb_class observation;
+  std::pair<bool, CB::cb_class> optional_observation;
   v_array<uint64_t> policies;
   double total;
   uint32_t num_classes;
@@ -62,9 +62,9 @@ void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a
 template <bool learn, bool exclude, bool is_learn>
 void predict_or_learn(mwt& c, single_learner& base, example& ec)
 {
-  c.observation = get_observed_cost_or_default_cb(ec.l.cb);
+  c.optional_observation = get_observed_cost_cb(ec.l.cb);
 
-  if (c.observation.has_observed_cost())
+  if (c.optional_observation.first)
   {
     c.total++;
     // For each nonzero feature in observed namespaces, check it's value.
@@ -72,10 +72,11 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
       if (c.namespaces[ns]) GD::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c);
     for (uint64_t policy : c.policies)
     {
-      c.evals[policy].cost += get_cost_estimate(c.observation, c.evals[policy].action);
+      c.evals[policy].cost += get_cost_estimate(c.optional_observation.second, c.evals[policy].action);
       c.evals[policy].action = 0;
     }
   }
+
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_CPP_17_LANG_EXT
   if VW_STD17_CONSTEXPR (exclude || learn)
@@ -157,8 +158,9 @@ void finish_example(vw& all, mwt& c, example& ec)
 {
   float loss = 0.;
   if (c.learn)
-    if (c.observation.has_observed_cost()) loss = get_cost_estimate(c.observation, (uint32_t)ec.pred.scalars[0]);
-  all.sd->update(ec.test_only, c.observation.has_observed_cost(), loss, 1.f, ec.num_features);
+    if (c.optional_observation.first)
+      loss = get_cost_estimate(c.optional_observation.second, (uint32_t)ec.pred.scalars[0]);
+  all.sd->update(ec.test_only, c.optional_observation.first, loss, 1.f, ec.num_features);
 
   for (auto& sink : all.final_prediction_sink) print_scalars(sink.get(), ec.pred.scalars, ec.tag);
 
@@ -166,7 +168,7 @@ void finish_example(vw& all, mwt& c, example& ec)
   {
     v_array<float> temp = ec.pred.scalars;
     ec.pred.multiclass = (uint32_t)temp[0];
-    CB::print_update(all, c.observation.has_observed_cost(), ec, nullptr, false);
+    CB::print_update(all, c.optional_observation.first, ec, nullptr, false);
     ec.pred.scalars = temp;
   }
   VW::finish_example(all, ec);

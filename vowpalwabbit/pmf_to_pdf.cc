@@ -190,12 +190,12 @@ void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_st
 void output_example(vw& all, reduction&, example& ec, CB::label& ld)
 {
   float loss = 0.;
-  auto cost = get_observed_cost_or_default_cb(ec.l.cb);
-  if (cost.has_observed_cost())
+  auto optional_cost = get_observed_cost_cb(ec.l.cb);
+  if (optional_cost.first)
     for (const auto& cbc : ec.l.cb.costs)
       for (uint32_t i = 0; i < ec.pred.pdf.size(); i++) loss += (cbc.cost / cbc.probability) * ec.pred.pdf[i].pdf_value;
 
-  all.sd->update(ec.test_only, cost.has_observed_cost(), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, optional_cost.first, loss, 1.f, ec.num_features);
 
   constexpr size_t buffsz = 20;
   char temp_str[buffsz];
