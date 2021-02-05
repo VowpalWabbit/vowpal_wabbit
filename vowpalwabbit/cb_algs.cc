@@ -49,10 +49,15 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 {
   CB::label ld = ec.l.cb;
   cb_to_cs& c = data.cbcs;
-  auto optional_known_cost = get_observed_cost_cb(ld);
-  if (optional_known_cost.first == true &&
-      (optional_known_cost.second.action < 1 || optional_known_cost.second.action > c.num_actions))
-    std::cerr << "invalid action: " << optional_known_cost.second.action << std::endl;
+  auto optional_cost = get_observed_cost_cb(ld);
+  if (optional_cost.first) { c.known_cost = optional_cost.second; }
+  else
+  {
+    c.known_cost = CB::cb_class{};
+  }
+  if (optional_cost.first &&
+      (optional_cost.second.action < 1 || optional_cost.second.action > c.num_actions))
+    std::cerr << "invalid action: " << optional_cost.second.action << std::endl;
 
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ld, data.cb_cs_ld);
