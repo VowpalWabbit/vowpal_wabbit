@@ -737,7 +737,6 @@ void add_constant_feature(vw& vw, example* ec)
 {
   ec->indices.push_back(constant_namespace);
   ec->feature_space[constant_namespace].push_back(1, constant);
-  ec->active_namespaces.emplace(constant_namespace);
   ec->total_sum_feat_sq++;
   ec->num_features++;
   if (vw.audit || vw.hash_inv)
