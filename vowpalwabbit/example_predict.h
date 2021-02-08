@@ -12,7 +12,14 @@ typedef unsigned char namespace_index;
 #include "v_array.h"
 
 #include <vector>
+#include <unordered_set>
 #include <array>
+
+struct interactions_struct
+{
+  std::unordered_set<namespace_index> active_namespaces;
+  std::vector<std::vector<namespace_index>> interactions;
+};
 
 struct example_predict
 {
@@ -44,11 +51,14 @@ struct example_predict
 
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
-  uint64_t ft_offset;                                  // An offset for all feature values.
+  std::unordered_set<namespace_index> active_namespaces;
+  uint64_t ft_offset;  // An offset for all feature values.
+
+  void set_feature_space(const namespace_index& index, feature_value fv, feature_index fi);
 
   // Interactions are specified by this vector of vectors of unsigned characters, where each vector is an interaction
   // and each char is a namespace.
-  std::vector<std::vector<namespace_index>>* interactions;
+  interactions_struct* interactions;
   reduction_features _reduction_features;
 
   uint32_t _current_reduction_depth;  // Used for debugging reductions.  Keeps track of current reduction level

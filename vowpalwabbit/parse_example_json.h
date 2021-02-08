@@ -922,7 +922,8 @@ public:
       else if (length == 8 && !strncmp(str, "_slot_id", 8))
       {
         if (ctx.all->example_parser->lbl_parser.label_type != label_type_t::slates)
-        { THROW("Can only use _slot_id with slates examples"); } ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
+        { THROW("Can only use _slot_id with slates examples"); }
+        ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
       }
@@ -1475,6 +1476,7 @@ public:
     n.feature_group = ns[0];
     n.namespace_hash = VW::hash_space_cstr(*all, ns);
     n.ftrs = ex->feature_space.data() + ns[0];
+    ex->active_namespaces.emplace(ns[0]); // TODO put in pop?
     n.feature_count = 0;
 
     n.name = ns;

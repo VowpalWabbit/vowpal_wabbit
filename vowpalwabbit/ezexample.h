@@ -180,7 +180,8 @@ public:
     if (to_ns == 0) return 0;
     if (ensure_ns_exists(to_ns)) return 0;
 
-    ec->feature_space[(int)to_ns].push_back(v, fint << vw_ref->weights.stride_shift());
+    ec->set_feature_space((int)to_ns, v, fint << vw_ref->weights.stride_shift());
+    // ec->feature_space[(int)to_ns].push_back(v, fint << vw_ref->weights.stride_shift());
     ec->total_sum_feat_sq += v * v;
     ec->num_features++;
     example_changed_since_prediction = true;
@@ -194,7 +195,11 @@ public:
   {
     if (ensure_ns_exists(to_ns)) return;
     features& fs = other.feature_space[(int)other_ns];
-    for (size_t i = 0; i < fs.size(); i++) ec->feature_space[(int)to_ns].push_back(fs.values[i], fs.indicies[i]);
+    for (size_t i = 0; i < fs.size(); i++) 
+    {
+      ec->set_feature_space((int)to_ns, fs.values[i], fs.indicies[i]);
+      // ec->feature_space[(int)to_ns].push_back(fs.values[i], fs.indicies[i]);
+      }
     ec->total_sum_feat_sq += fs.sum_feat_sq;
     ec->num_features += fs.size();
     example_changed_since_prediction = true;
@@ -228,7 +233,7 @@ public:
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (auto const& interaction : vw_ref->interactions)
+    for (auto const& interaction : vw_ref->interactions.interactions)
     {
       if (interaction.size() != 2) continue;
       quadratic_features_num +=

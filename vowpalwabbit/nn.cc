@@ -111,7 +111,8 @@ void finish_setup(nn& n, vw& all)
   // TODO: not correct if --noconstant
   n.hiddenbias.interactions = &all.interactions;
   n.hiddenbias.indices.push_back(constant_namespace);
-  n.hiddenbias.feature_space[constant_namespace].push_back(1, (uint64_t)constant);
+  // n.hiddenbias.feature_space[constant_namespace].push_back(1, (uint64_t)constant);
+  n.hiddenbias.set_feature_space(constant_namespace, 1, (uint64_t)constant);
   if (all.audit || all.hash_inv)
     n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "HiddenBias")));
@@ -123,6 +124,7 @@ void finish_setup(nn& n, vw& all)
   n.outputweight.indices.push_back(nn_output_namespace);
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
   n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indicies[0]);
+  n.outputweight.set_feature_space(nn_output_namespace, outfs.values[0], outfs.indicies[0]);
   if (all.audit || all.hash_inv)
     n.outputweight.feature_space[nn_output_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "OutputWeight")));

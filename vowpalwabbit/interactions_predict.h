@@ -13,6 +13,8 @@ const static std::pair<std::string, std::string> EMPTY_AUDIT_STRINGS = std::make
 
 namespace INTERACTIONS
 {
+std::vector<std::vector<namespace_index>> expand_interactions(
+    const std::vector<std::vector<namespace_index>>& vec, const size_t required_length, const std::string& err_msg);
 /*
  * By default include interactions of feature with itself.
  * This approach produces slightly more interactions but it's safier
@@ -95,8 +97,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 // it must be in header file to avoid compilation problems
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*),
     class W>  // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(std::vector<std::vector<namespace_index>>& interactions, bool permutations,
-    example_predict& ec, R& dat,
+inline void generate_interactions(interactions_struct& interactions, bool permutations, example_predict& ec, R& dat,
     W& weights)  // default value removed to eliminate ambiguity in old complers
 {
   features* features_data = ec.feature_space.data();
@@ -115,7 +116,38 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
   empty_ns_data.self_interaction = false;
 
   // loop throw the set of possible interactions
-  for (auto& ns : interactions)
+  if (interactions.interactions.size() > 1000)
+  {
+    interactions.interactions.clear();  // TODO properly
+  }
+
+  auto set_interactions = ec.active_namespaces;
+  std::vector<std::vector<namespace_index>> active_interactions;
+  for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
+  {
+    for (auto jt = it; jt != set_interactions.end(); ++jt)
+    {
+      if (interactions.active_namespaces.find(*it) == interactions.active_namespaces.end())
+      {
+        std::vector<namespace_index> temp = {*it, *jt};
+        active_interactions.push_back(temp);  // check not in current interactions
+        interactions.active_namespaces.emplace(*it);
+        interactions.active_namespaces.emplace(*jt);
+      }
+      else if (interactions.active_namespaces.find(*jt) == interactions.active_namespaces.end())
+      {
+        std::vector<namespace_index> temp = {*it, *jt};
+        active_interactions.push_back(temp);  // check not in current interactions
+        interactions.active_namespaces.emplace(*jt);
+      }
+    }
+  }
+
+  auto temp = expand_interactions(active_interactions, 2, "error, quadratic features must involve two sets.");
+
+  interactions.interactions.insert(interactions.interactions.end(), temp.begin(), temp.end());
+
+  for (auto& ns : interactions.interactions)
   {  // current list of namespaces to interact.
 
 #ifndef GEN_INTER_LOOP

@@ -517,7 +517,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
   if (vw1.permutations != vw2.permutations) return "permutations";
 
-  if (vw1.interactions.size() != vw2.interactions.size()) return "interactions size";
+  if (vw1.interactions.interactions.size() != vw2.interactions.interactions.size()) return "interactions size";
 
   if (vw1.ignore_some != vw2.ignore_some) return "ignore_some";
 
@@ -541,7 +541,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
-  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
+  for (auto i = std::begin(vw1.interactions.interactions), j = std::begin(vw2.interactions.interactions); i != std::end(vw1.interactions.interactions);
        ++i, ++j)
     if (*i != *j) return "interaction mismatch";
 
@@ -733,7 +733,7 @@ void parse_feature_tweaks(
   // prepare namespace interactions
   std::vector<std::vector<namespace_index>> expanded_interactions;
 
-  if ( ( (!all.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
+  if ( ( (!all.interactions.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
        ||
        interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
@@ -743,7 +743,7 @@ void parse_feature_tweaks(
                       << endl;
 
     // in case arrays were already filled in with values from old model file - reset them
-    if (!all.interactions.empty()) all.interactions.clear();
+    if (!all.interactions.interactions.empty()) all.interactions.interactions.clear();
   }
 
   if (options.was_supplied("quadratic"))
@@ -753,6 +753,7 @@ void parse_feature_tweaks(
     for (auto& i : quadratics)
     {
       i = spoof_hex_encoded_namespaces(i);
+      std::cout << i << std::endl;
       if (!all.logger.quiet) all.trace_message << i << " ";
     }
 
@@ -824,13 +825,13 @@ void parse_feature_tweaks(
                         << sorted_cnt << '.' << endl;
     }
 
-    if (all.interactions.size() > 0)
+    if (all.interactions.interactions.size() > 0)
     {
       // should be empty, but just in case...
-      all.interactions.clear();
+      all.interactions.interactions.clear();
     }
 
-    all.interactions = expanded_interactions;
+    all.interactions.interactions = expanded_interactions;
   }
 
   for (size_t i = 0; i < 256; i++)

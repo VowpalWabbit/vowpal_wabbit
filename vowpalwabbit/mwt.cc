@@ -107,6 +107,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
           for (features::iterator& f : ec.feature_space[ns])
           {
             uint64_t new_index = ((f.index() & weight_mask) >> stride_shift) * c.num_classes + (uint64_t)f.value();
+            // c.set_feature_space(ns, 1, new_index << stride_shift);
             c.feature_space[ns].push_back(1, new_index << stride_shift);
           }
         }

@@ -42,8 +42,8 @@ struct ccb
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
   std::vector<bool> exclude_list, include_list;
-  std::vector<std::vector<namespace_index>> generated_interactions;
-  std::vector<std::vector<namespace_index>>* original_interactions;
+  interactions_struct generated_interactions;
+  interactions_struct* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label;
 
@@ -206,7 +206,8 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
     index = data.slot_id_hashes[id];
   }
 
-  shared->feature_space[ccb_id_namespace].push_back(1., index);
+  shared->set_feature_space(ccb_id_namespace, 1., index);
+  // shared->feature_space[ccb_id_namespace].push_back(1., index);
   shared->indices.push_back(ccb_id_namespace);
 
   if (audit)
@@ -426,10 +427,10 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       if (should_augment_with_slot_info)
       {
         // Namespace crossing for slot features.
-        data.generated_interactions.clear();
-        std::copy(data.original_interactions->begin(), data.original_interactions->end(),
-            std::back_inserter(data.generated_interactions));
-        calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
+        data.generated_interactions.interactions.clear();
+        std::copy(data.original_interactions->interactions.begin(), data.original_interactions->interactions.end(),
+            std::back_inserter(data.generated_interactions.interactions));
+        calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions.interactions);
         data.shared->interactions = &data.generated_interactions;
         for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
       }

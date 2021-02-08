@@ -531,7 +531,8 @@ float ex_sum_feat_sq(example_ptr ec, unsigned char ns) { return ec->feature_spac
 
 void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
 {  // warning: assumes namespace exists!
-  ec->feature_space[ns].push_back(v, fid);
+  ec->set_feature_space(ns, v, fid);
+  // ec->feature_space[ns].push_back(v, fid);
   ec->num_features++;
   ec->total_sum_feat_sq += v * v;
 }

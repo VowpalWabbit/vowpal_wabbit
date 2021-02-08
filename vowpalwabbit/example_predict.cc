@@ -46,6 +46,12 @@ example_predict::example_predict(example_predict&& other) noexcept
   other.interactions = nullptr;
 }
 
+void example_predict::set_feature_space(const namespace_index& index, feature_value fv, feature_index fi)
+{
+  feature_space[index].push_back(fv, fi);
+  active_namespaces.emplace(index);
+}
+
 example_predict& example_predict::operator=(example_predict&& other) noexcept
 {
   indices = std::move(other.indices);
