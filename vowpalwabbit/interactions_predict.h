@@ -116,36 +116,34 @@ inline void generate_interactions(interactions_struct& interactions, bool permut
   empty_ns_data.self_interaction = false;
 
   // loop throw the set of possible interactions
-  if (interactions.interactions.size() > 1000)
+  if (interactions.wild_card_expansion)
   {
-    interactions.interactions.clear();  // TODO properly
-  }
-
-  auto set_interactions = ec.active_namespaces;
-  std::vector<std::vector<namespace_index>> active_interactions;
-  for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
-  {
-    for (auto jt = it; jt != set_interactions.end(); ++jt)
+    auto set_interactions = ec.active_namespaces;
+    std::vector<std::vector<namespace_index>> active_interactions;
+    for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
     {
-      if (interactions.active_namespaces.find(*it) == interactions.active_namespaces.end())
+      for (auto jt = it; jt != set_interactions.end(); ++jt)
       {
-        std::vector<namespace_index> temp = {*it, *jt};
-        active_interactions.push_back(temp);  // check not in current interactions
-        interactions.active_namespaces.emplace(*it);
-        interactions.active_namespaces.emplace(*jt);
-      }
-      else if (interactions.active_namespaces.find(*jt) == interactions.active_namespaces.end())
-      {
-        std::vector<namespace_index> temp = {*it, *jt};
-        active_interactions.push_back(temp);  // check not in current interactions
-        interactions.active_namespaces.emplace(*jt);
+        if (interactions.active_namespaces.find(*it) == interactions.active_namespaces.end())
+        {
+          active_interactions.push_back({*it, *jt});
+          interactions.active_namespaces.emplace(*it);
+          interactions.active_namespaces.emplace(*jt);
+          active_interactions.push_back({*it, *it});
+        }
+        else if (interactions.active_namespaces.find(*jt) == interactions.active_namespaces.end())
+        {
+          active_interactions.push_back({*it, *jt});
+          interactions.active_namespaces.emplace(*jt);
+          active_interactions.push_back({*jt, *jt});
+        }
       }
     }
+
+    auto temp = expand_interactions(active_interactions, 2, "error, quadratic features must involve two sets.");
+
+    interactions.interactions.insert(interactions.interactions.end(), temp.begin(), temp.end());
   }
-
-  auto temp = expand_interactions(active_interactions, 2, "error, quadratic features must involve two sets.");
-
-  interactions.interactions.insert(interactions.interactions.end(), temp.begin(), temp.end());
 
   for (auto& ns : interactions.interactions)
   {  // current list of namespaces to interact.

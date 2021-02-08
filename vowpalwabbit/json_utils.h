@@ -14,9 +14,11 @@ template <bool audit>
 struct Namespace
 {
   char feature_group;
+  namespace_index ns;
   feature_index namespace_hash;
   features* ftrs;
   size_t feature_count;
+  std::unordered_set<namespace_index>* active_namespaces;
   const char* name;
 
   void AddFeature(feature_value v, feature_index i, const char* feature_name)
@@ -26,6 +28,7 @@ struct Namespace
 
     ftrs->push_back(v, i);
     feature_count++;
+    active_namespaces->emplace(ns);
 
     if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, feature_name)));
   }
@@ -34,6 +37,7 @@ struct Namespace
   {
     ftrs->push_back(1., VW::hash_feature_cstr(*all, const_cast<char*>(str), namespace_hash));
     feature_count++;
+    active_namespaces->emplace(ns);
 
     if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, str)));
   }
@@ -42,6 +46,7 @@ struct Namespace
   {
     ftrs->push_back(1., VW::chain_hash(*all, key, value, namespace_hash));
     feature_count++;
+    active_namespaces->emplace(ns);
 
     std::stringstream ss;
     ss << key << "^" << value;
@@ -54,6 +59,8 @@ void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespa
 {
   Namespace<audit> n;
   n.feature_group = ns[0];
+  n.ns = ns[0];
+  n.active_namespaces = &ex->active_namespaces;
   n.namespace_hash = VW::hash_space_cstr(all, ns);
   n.ftrs = ex->feature_space.data() + ns[0];
   n.feature_count = 0;

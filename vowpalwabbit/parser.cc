@@ -736,8 +736,7 @@ example* read_example(vw& all, std::string example_line) { return read_example(a
 void add_constant_feature(vw& vw, example* ec)
 {
   ec->indices.push_back(constant_namespace);
-  ec->set_feature_space(constant_namespace, 1, constant);
-  // ec->feature_space[constant_namespace].push_back(1, constant);
+  ec->feature_space[constant_namespace].push_back(1, constant);
   ec->active_namespaces.emplace(constant_namespace);
   ec->total_sum_feat_sq++;
   ec->num_features++;

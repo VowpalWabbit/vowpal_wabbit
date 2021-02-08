@@ -541,8 +541,8 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
-  for (auto i = std::begin(vw1.interactions.interactions), j = std::begin(vw2.interactions.interactions); i != std::end(vw1.interactions.interactions);
-       ++i, ++j)
+  for (auto i = std::begin(vw1.interactions.interactions), j = std::begin(vw2.interactions.interactions);
+       i != std::end(vw1.interactions.interactions); ++i, ++j)
     if (*i != *j) return "interaction mismatch";
 
   return nullptr;
@@ -760,9 +760,12 @@ void parse_feature_tweaks(
     std::vector<std::vector<namespace_index>> new_quadratics;
     for (const auto& i : quadratics) { new_quadratics.emplace_back(i.begin(), i.end()); }
 
-    expanded_interactions =
-        INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
-
+    if (new_quadratics[0][0] == ':' && new_quadratics[0][1] == ':') { all.interactions.wild_card_expansion = true; }
+    else
+    {
+      expanded_interactions =
+          INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
+    }
     if (!all.logger.quiet) all.trace_message << endl;
   }
 

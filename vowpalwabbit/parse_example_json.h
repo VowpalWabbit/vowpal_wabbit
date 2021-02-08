@@ -1474,9 +1474,10 @@ public:
   {
     Namespace<audit> n;
     n.feature_group = ns[0];
+    n.ns = ns[0];
+    n.active_namespaces = &ex->active_namespaces;
     n.namespace_hash = VW::hash_space_cstr(*all, ns);
     n.ftrs = ex->feature_space.data() + ns[0];
-    ex->active_namespaces.emplace(ns[0]); // TODO put in pop?
     n.feature_count = 0;
 
     n.name = ns;

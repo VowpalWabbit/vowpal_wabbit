@@ -19,6 +19,7 @@ struct interactions_struct
 {
   std::unordered_set<namespace_index> active_namespaces;
   std::vector<std::vector<namespace_index>> interactions;
+  bool wild_card_expansion = false;
 };
 
 struct example_predict

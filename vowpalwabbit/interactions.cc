@@ -258,7 +258,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
     generate_interactions<eval_gen_data, uint64_t, ft_cnt>(all, ec, dat);
 #endif
 
-    for (auto& inter : ec.interactions->interactions)
+    for (const auto& inter : ec.interactions->interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
