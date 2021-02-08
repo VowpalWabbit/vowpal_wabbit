@@ -32,7 +32,8 @@ namespace_copy_guard::~namespace_copy_guard()
 
 void namespace_copy_guard::feature_push_back(feature_value v, feature_index idx)
 {
-  _ex.feature_space[_ns].push_back(v, idx);
+  // _ex.feature_space[_ns].push_back(v, idx);
+  _ex.set_feature_space_and_active_namespace(_ns, v, idx);
 }
 
 feature_offset_guard::feature_offset_guard(example_predict& ex, uint64_t ft_offset)

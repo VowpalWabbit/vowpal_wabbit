@@ -15,9 +15,9 @@ typedef unsigned char namespace_index;
 #include <unordered_set>
 #include <array>
 
-struct interactions_struct
+struct namsepace_interactions
 {
-  std::unordered_set<namespace_index> active_namespaces;
+  std::unordered_set<namespace_index> active_namespaces_of_example;
   std::vector<std::vector<namespace_index>> interactions;
   bool wild_card_expansion = false;
 };
@@ -52,14 +52,14 @@ struct example_predict
 
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
-  std::unordered_set<namespace_index> active_namespaces;
+  std::unordered_set<namespace_index> active_namespaces_of_example;
   uint64_t ft_offset;  // An offset for all feature values.
 
-  void set_feature_space(const namespace_index& index, feature_value fv, feature_index fi);
+  void set_feature_space_and_active_namespace(const namespace_index& index, feature_value fv, feature_index fi);
 
-  // Interactions are specified by this vector of vectors of unsigned characters, where each vector is an interaction
-  // and each char is a namespace.
-  interactions_struct* interactions;
+  // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
+  // vector is an interaction and each char is a namespace.
+  namsepace_interactions* interactions;
   reduction_features _reduction_features;
 
   uint32_t _current_reduction_depth;  // Used for debugging reductions.  Keeps track of current reduction level

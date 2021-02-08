@@ -248,8 +248,10 @@ void add_edge_features_group_fn(task_data& D, float fv, uint64_t fx)
   for (size_t k = 0; k < D.numN; k++)
   {
     if (D.neighbor_predictions[k] == 0.) continue;
-    node->feature_space[neighbor_namespace].push_back(
-        fv * D.neighbor_predictions[k], (uint64_t)((fx2 + 348919043 * k) * D.multiplier) & (uint64_t)D.mask);
+    node->set_feature_space_and_active_namespace(neighbor_namespace, fv * D.neighbor_predictions[k],
+        (uint64_t)((fx2 + 348919043 * k) * D.multiplier) & (uint64_t)D.mask);
+    // node->feature_space[neighbor_namespace].push_back(
+    //     fv * D.neighbor_predictions[k], (uint64_t)((fx2 + 348919043 * k) * D.multiplier) & (uint64_t)D.mask);
   }
 }
 

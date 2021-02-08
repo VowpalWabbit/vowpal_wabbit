@@ -42,8 +42,8 @@ struct ccb
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
   std::vector<bool> exclude_list, include_list;
-  interactions_struct generated_interactions;
-  interactions_struct* original_interactions;
+  namsepace_interactions generated_interactions;
+  namsepace_interactions* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label;
 
@@ -206,7 +206,7 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
     index = data.slot_id_hashes[id];
   }
 
-  shared->set_feature_space(ccb_id_namespace, 1., index);
+  shared->set_feature_space_and_active_namespace(ccb_id_namespace, 1., index);
   // shared->feature_space[ccb_id_namespace].push_back(1., index);
   shared->indices.push_back(ccb_id_namespace);
 

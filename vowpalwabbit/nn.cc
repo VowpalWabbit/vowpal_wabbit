@@ -65,8 +65,7 @@ static inline float fastpow2(float p)
   float clipp = (p < -126) ? -126.0f : p;
   int w = (int)clipp;
   float z = clipp - w + offset;
-  union
-  {
+  union {
     uint32_t i;
     float f;
   } v = {cast_uint32_t((1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z))};
@@ -111,8 +110,8 @@ void finish_setup(nn& n, vw& all)
   // TODO: not correct if --noconstant
   n.hiddenbias.interactions = &all.interactions;
   n.hiddenbias.indices.push_back(constant_namespace);
-  n.hiddenbias.feature_space[constant_namespace].push_back(1, (uint64_t)constant);
-  // n.hiddenbias.set_feature_space(constant_namespace, 1, (uint64_t)constant);
+  // n.hiddenbias.feature_space[constant_namespace].push_back(1, (uint64_t)constant);
+  n.hiddenbias.set_feature_space_and_active_namespace(constant_namespace, 1, (uint64_t)constant);
   if (all.audit || all.hash_inv)
     n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "HiddenBias")));
@@ -124,7 +123,7 @@ void finish_setup(nn& n, vw& all)
   n.outputweight.indices.push_back(nn_output_namespace);
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
   n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indicies[0]);
-  n.outputweight.set_feature_space(nn_output_namespace, outfs.values[0], outfs.indicies[0]);
+  n.outputweight.set_feature_space_and_active_namespace(nn_output_namespace, outfs.values[0], outfs.indicies[0]);
   if (all.audit || all.hash_inv)
     n.outputweight.feature_space[nn_output_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "OutputWeight")));

@@ -180,7 +180,7 @@ public:
     if (to_ns == 0) return 0;
     if (ensure_ns_exists(to_ns)) return 0;
 
-    ec->set_feature_space((int)to_ns, v, fint << vw_ref->weights.stride_shift());
+    ec->set_feature_space_and_active_namespace((int)to_ns, v, fint << vw_ref->weights.stride_shift());
     // ec->feature_space[(int)to_ns].push_back(v, fint << vw_ref->weights.stride_shift());
     ec->total_sum_feat_sq += v * v;
     ec->num_features++;
@@ -197,7 +197,7 @@ public:
     features& fs = other.feature_space[(int)other_ns];
     for (size_t i = 0; i < fs.size(); i++) 
     {
-      ec->set_feature_space((int)to_ns, fs.values[i], fs.indicies[i]);
+      ec->set_feature_space_and_active_namespace((int)to_ns, fs.values[i], fs.indicies[i]);
       // ec->feature_space[(int)to_ns].push_back(fs.values[i], fs.indicies[i]);
       }
     ec->total_sum_feat_sq += fs.sum_feat_sq;

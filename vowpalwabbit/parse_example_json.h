@@ -1475,7 +1475,7 @@ public:
     Namespace<audit> n;
     n.feature_group = ns[0];
     n.ns = ns[0];
-    n.active_namespaces = &ex->active_namespaces;
+    n.active_namespaces_of_example = &ex->active_namespaces_of_example;
     n.namespace_hash = VW::hash_space_cstr(*all, ns);
     n.ftrs = ex->feature_space.data() + ns[0];
     n.feature_count = 0;
