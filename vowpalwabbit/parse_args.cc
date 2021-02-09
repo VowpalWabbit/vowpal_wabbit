@@ -198,7 +198,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
 
   if (!all.logger.quiet)
     *(all.trace_message) << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
-                       << std::dec << endl;
+                         << std::dec << endl;
 
   // see if we've already read this dictionary
   for (size_t id = 0; id < all.loaded_dictionaries.size(); id++)
@@ -283,8 +283,8 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   free(ec);
 
   if (!all.logger.quiet)
-    *(all.trace_message) << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s")
-                       << endl;
+    *(all.trace_message) << "dictionary " << s << " contains " << map->size() << " item"
+                         << (map->size() == 1 ? "" : "s") << endl;
 
   all.namespace_dictionaries[(size_t)ns].push_back(map);
   dictionary_info info = {s.to_string(), fd_hash, map};
@@ -382,7 +382,7 @@ void parse_diagnostics(options_i& options, vw& all)
       if (all.progress_arg < 1)
       {
         *(all.trace_message) << "warning: additive --progress <int>"
-                           << " can't be < 1: forcing to 1" << endl;
+                             << " can't be < 1: forcing to 1" << endl;
         all.progress_arg = 1;
       }
       all.sd->dump_interval = all.progress_arg;
@@ -394,14 +394,14 @@ void parse_diagnostics(options_i& options, vw& all)
 
       if (all.progress_arg <= 1.0)
       {
-        *(all.trace_message) << "warning: multiplicative --progress <float>: " << progress_arg << " is <= 1.0: adding 1.0"
-                           << endl;
+        *(all.trace_message) << "warning: multiplicative --progress <float>: " << progress_arg
+                             << " is <= 1.0: adding 1.0" << endl;
         all.progress_arg += 1.0;
       }
       else if (all.progress_arg > 9.0)
       {
         *(all.trace_message) << "warning: multiplicative --progress <float>"
-                           << " is > 9.0: you probably meant to use an integer" << endl;
+                             << " is > 9.0: you probably meant to use an integer" << endl;
       }
       all.sd->dump_interval = 1.0;
     }
@@ -454,8 +454,8 @@ input_options parse_source(vw& all, options_i& options)
   else if (positional_tokens.size() > 1)
   {
     *(all.trace_message) << "Warning: Multiple data files passed as positional parameters, only the first one will be "
-                          "read and the rest will be ignored."
-                       << endl;
+                            "read and the rest will be ignored."
+                         << endl;
   }
 
   if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
@@ -814,15 +814,15 @@ void parse_feature_tweaks(
     if (removed_cnt > 0 && !all.logger.quiet)
     {
       *(all.trace_message) << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.'
-                         << endl
-                         << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+                           << endl
+                           << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
     }
 
     if (sorted_cnt > 0 && !all.logger.quiet)
     {
       *(all.trace_message) << "WARNING: some interactions contain duplicate characters and their characters order has "
-                            "been changed. Interactions affected: "
-                         << sorted_cnt << '.' << endl;
+                              "been changed. Interactions affected: "
+                           << sorted_cnt << '.' << endl;
     }
 
     if (all.interactions.size() > 0)
@@ -1755,7 +1755,9 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
     {
       print_enabled_reductions(all);
       if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
-      { all.sd->print_update_header(*(all.trace_message)); }
+      {
+        all.sd->print_update_header(*(all.trace_message));
+      }
       all.l->init_driver();
     }
 
@@ -1905,12 +1907,12 @@ void finish(vw& all, bool delete_all)
     {
       if (all.holdout_set_off)
         *(all.trace_message) << endl
-                           << "average multiclass log loss = "
-                           << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
+                             << "average multiclass log loss = "
+                             << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
       else
         *(all.trace_message) << endl
-                           << "average multiclass log loss = "
-                           << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
+                             << "average multiclass log loss = "
+                             << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
     }
 
     float best_constant;
@@ -1918,7 +1920,8 @@ void finish(vw& all, bool delete_all)
     if (get_best_constant(all, best_constant, best_constant_loss))
     {
       *(all.trace_message) << endl << "best constant = " << best_constant;
-      if (best_constant_loss != FLT_MIN) *(all.trace_message) << endl << "best constant's loss = " << best_constant_loss;
+      if (best_constant_loss != FLT_MIN)
+        *(all.trace_message) << endl << "best constant's loss = " << best_constant_loss;
     }
 
     *(all.trace_message) << endl << "total feature number = " << all.sd->total_features;

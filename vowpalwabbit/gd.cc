@@ -1188,8 +1188,8 @@ base_learner* setup(options_i& options, vw& all)
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001)
     *(all.trace_message) << "Warning: the learning rate for the last pass is multiplied by: "
-                       << pow((double)all.eta_decay_rate, (double)all.numpasses)
-                       << " adjust --decay_learning_rate larger to avoid this." << std::endl;
+                         << pow((double)all.eta_decay_rate, (double)all.numpasses)
+                         << " adjust --decay_learning_rate larger to avoid this." << std::endl;
 
   if (all.reg_mode % 2)
     if (all.audit || all.hash_inv)

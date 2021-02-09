@@ -117,7 +117,7 @@ struct svm_params
     {
       *(all->trace_message) << "Num support = " << model->num_support << endl;
       *(all->trace_message) << "Number of kernel evaluations = " << num_kernel_evals << " "
-                          << "Number of cache queries = " << num_cache_evals << endl;
+                            << "Number of cache queries = " << num_cache_evals << endl;
       *(all->trace_message) << "Total loss = " << loss_sum << endl;
     }
     if (model) { free_svm_model(model); }
