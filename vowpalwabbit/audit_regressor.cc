@@ -153,7 +153,7 @@ void end_examples(audit_regressor_data& d)
 
 inline void print_ex(vw& all, size_t ex_processed, size_t vals_found, size_t progress)
 {
-  *all.trace_message << std::left << std::setw(shared_data::col_example_counter) << ex_processed << " " << std::right
+  *(all.trace_message) << std::left << std::setw(shared_data::col_example_counter) << ex_processed << " " << std::right
                      << std::setw(9) << vals_found << " " << std::right << std::setw(12) << progress << '%'
                      << std::endl;
 }

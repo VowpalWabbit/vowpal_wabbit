@@ -353,7 +353,7 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   if (options.was_supplied("csoaa")) THROW("error: you can't use --cs_active and --csoaa at the same time");
 
-  if (!options.was_supplied("adax")) *all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
+  if (!options.was_supplied("adax")) *(all.trace_message) << "WARNING: --cs_active should be used with --adax" << endl;
 
   all.example_parser->lbl_parser = cs_label;  // assigning the label parser
 

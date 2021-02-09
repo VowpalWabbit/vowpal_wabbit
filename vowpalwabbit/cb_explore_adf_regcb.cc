@@ -254,7 +254,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
   if (type_string != mtr)
   {
-    *all.trace_message << "warning: bad cb_type, RegCB only supports mtr; resetting to mtr." << std::endl;
+    *(all.trace_message) << "warning: bad cb_type, RegCB only supports mtr; resetting to mtr." << std::endl;
     options.replace("cb_type", mtr);
   }
 

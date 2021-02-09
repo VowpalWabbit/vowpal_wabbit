@@ -115,19 +115,19 @@ struct svm_params
     free(pool);
     if (all)
     {
-      *all->trace_message << "Num support = " << model->num_support << endl;
-      *all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
+      *(all->trace_message) << "Num support = " << model->num_support << endl;
+      *(all->trace_message) << "Number of kernel evaluations = " << num_kernel_evals << " "
                           << "Number of cache queries = " << num_cache_evals << endl;
-      *all->trace_message << "Total loss = " << loss_sum << endl;
+      *(all->trace_message) << "Total loss = " << loss_sum << endl;
     }
     if (model) { free_svm_model(model); }
-    if (all) { *all->trace_message << "Done freeing model" << endl; }
+    if (all) { *(all->trace_message) << "Done freeing model" << endl; }
 
     free(kernel_params);
     if (all)
     {
-      *all->trace_message << "Done freeing kernel params" << endl;
-      *all->trace_message << "Done with finish " << endl;
+      *(all->trace_message) << "Done freeing kernel params" << endl;
+      *(all->trace_message) << "Done with finish " << endl;
     }
   }
 };

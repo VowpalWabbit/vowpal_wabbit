@@ -41,9 +41,9 @@ void finish(explore_eval& data)
 {
   if (!data.all->logger.quiet)
   {
-    *data.all->trace_message << "update count = " << data.update_count << std::endl;
-    if (data.violations > 0) *data.all->trace_message << "violation count = " << data.violations << std::endl;
-    if (!data.fixed_multiplier) *data.all->trace_message << "final multiplier = " << data.multiplier << std::endl;
+    *(data.all->trace_message) << "update count = " << data.update_count << std::endl;
+    if (data.violations > 0) *(data.all->trace_message) << "violation count = " << data.violations << std::endl;
+    if (!data.fixed_multiplier) *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl;
   }
 }
 

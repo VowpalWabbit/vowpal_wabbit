@@ -354,7 +354,7 @@ base_learner* setup(options_i& options, vw& all)
   {
     // if link was supplied then force glf1
     if (link != "glf1")
-    { *all.trace_message << "warning: cats_tree only supports glf1; resetting to glf1." << std::endl; }
+    { *(all.trace_message) << "warning: cats_tree only supports glf1; resetting to glf1." << std::endl; }
     options.replace("link", "glf1");
   }
 

@@ -214,7 +214,7 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     if (data->num_subsample >= data->k)
     {
       data->num_subsample = 0;
-      *all.trace_message << "oaa is turning off subsampling because your parameter >= K" << std::endl;
+      *(all.trace_message) << "oaa is turning off subsampling because your parameter >= K" << std::endl;
     }
     else
     {
@@ -240,7 +240,7 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     {
       auto loss_function_type = all.loss->getType();
       if (loss_function_type != "logistic")
-        *all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
+        *(all.trace_message) << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
       // the three boolean template parameters are: is_learn, print_all and scores
       l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, true>,
           predict_or_learn<false, false, true, true>, all.example_parser, data->k, prediction_type_t::scalars);
