@@ -153,7 +153,7 @@ void end_examples(audit_regressor_data& d)
 
 inline void print_ex(vw& all, size_t ex_processed, size_t vals_found, size_t progress)
 {
-  all.trace_message << std::left << std::setw(shared_data::col_example_counter) << ex_processed << " " << std::right
+  *all.trace_message << std::left << std::setw(shared_data::col_example_counter) << ex_processed << " " << std::right
                     << std::setw(9) << vals_found << " " << std::right << std::setw(12) << progress << '%' << std::endl;
 }
 
@@ -181,7 +181,7 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
 void finish(audit_regressor_data& dat)
 {
   if (dat.values_audited < dat.loaded_regressor_values)
-    dat.all->trace_message << "Note: for some reason audit couldn't find all regressor values in dataset ("
+    *dat.all->trace_message << "Note: for some reason audit couldn't find all regressor values in dataset ("
                            << dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << std::endl;
 }
 
@@ -225,11 +225,11 @@ void init_driver(audit_regressor_data& dat)
 
   if (!dat.all->logger.quiet)
   {
-    dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
-    dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "example"
+    *dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
+    *dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "example"
                            << " " << std::setw(shared_data::col_example_weight) << "values"
                            << " " << std::setw(shared_data::col_current_label) << "total" << std::endl;
-    dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "counter"
+    *dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "counter"
                            << " " << std::setw(shared_data::col_example_weight) << "audited"
                            << " " << std::setw(shared_data::col_current_label) << "progress" << std::endl;
   }

@@ -348,13 +348,13 @@ base_learner* plt_setup(options_i& options, vw& all)
 
   if (!all.logger.quiet)
   {
-    all.trace_message << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
+    *all.trace_message << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
     if (!all.training)
     {
-      if (tree->top_k > 0) { all.trace_message << "top_k = " << tree->top_k << std::endl; }
+      if (tree->top_k > 0) { *all.trace_message << "top_k = " << tree->top_k << std::endl; }
       else
       {
-        all.trace_message << "threshold = " << tree->threshold << std::endl;
+        *all.trace_message << "threshold = " << tree->threshold << std::endl;
       }
     }
   }

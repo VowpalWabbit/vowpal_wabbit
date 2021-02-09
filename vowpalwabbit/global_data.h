@@ -160,7 +160,7 @@ struct shared_data
   }
 
   // progressive validation header
-  void print_update_header(vw_ostream& trace_message)
+  void print_update_header(std::ostream& trace_message)
   {
     trace_message << std::left << std::setw(col_avg_loss) << std::left << "average"
                   << " " << std::setw(col_since_last) << std::left << "since"

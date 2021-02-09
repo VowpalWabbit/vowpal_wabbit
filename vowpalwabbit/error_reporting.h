@@ -15,7 +15,7 @@ public:
 class custom_output_stream_buf : public std::stringbuf
 {
 public:
-  func_ptr_stream_buf(void* trace_context, trace_message_t trace_listener)
+  custom_output_stream_buf(void* trace_context, trace_message_t trace_listener)
       : _trace_context(trace_context), _trace_listener(trace_listener)
   {
   }
@@ -42,7 +42,7 @@ private:
 class owning_ostream : public std::ostream
 {
 public:
-  vw_ostream(std::unique_ptr<std::streambuf>&& output) : std::ostream(output.get()), _output_buffer(std::move(output))
+  owning_ostream(std::unique_ptr<std::streambuf>&& output) : std::ostream(output.get()), _output_buffer(std::move(output))
   {
   }
 

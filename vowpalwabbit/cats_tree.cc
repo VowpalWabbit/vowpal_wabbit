@@ -354,13 +354,13 @@ base_learner* setup(options_i& options, vw& all)
   {
     // if link was supplied then force glf1
     if (link != "glf1")
-    { all.trace_message << "warning: cats_tree only supports glf1; resetting to glf1." << std::endl; }
+    { *all.trace_message << "warning: cats_tree only supports glf1; resetting to glf1." << std::endl; }
     options.replace("link", "glf1");
   }
 
   auto tree = scoped_calloc_or_throw<cats_tree>();
   tree->init(num_actions, bandwidth);
-  tree->set_trace_message(&all.trace_message, all.logger.quiet);
+  tree->set_trace_message(all.trace_message.get(), all.logger.quiet);
 
   base_learner* base = setup_base(options, all);
 

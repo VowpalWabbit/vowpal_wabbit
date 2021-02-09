@@ -879,13 +879,13 @@ void end_pass(bfgs& b)
       // reaching the max number of passes regardless of convergence
       if (b.final_pass == b.current_pass)
       {
-        b.all->trace_message << "Maximum number of passes reached. ";
+        *b.all->trace_message << "Maximum number of passes reached. ";
         if (!b.output_regularizer)
-          b.all->trace_message << "If you want to optimize further, increase the number of passes\n";
+          *b.all->trace_message << "If you want to optimize further, increase the number of passes\n";
         if (b.output_regularizer)
         {
-          b.all->trace_message << "\nRegular model file has been created. ";
-          b.all->trace_message << "Output feature regularizer file is created only when the convergence is reached. "
+          *b.all->trace_message << "\nRegular model file has been created. ";
+          *b.all->trace_message << "Output feature regularizer file is created only when the convergence is reached. "
                                   "Try increasing the number of passes for convergence\n";
           b.output_regularizer = false;
         }
@@ -905,7 +905,7 @@ void end_pass(bfgs& b)
         if (b.early_stop_thres == b.no_win_counter)
         {
           set_done(*all);
-          b.all->trace_message << "Early termination reached w.r.t. holdout set error";
+          *b.all->trace_message << "Early termination reached w.r.t. holdout set error";
         }
       }
       if (b.final_pass == b.current_pass)
@@ -1094,13 +1094,13 @@ base_learner* bfgs_setup(options_i& options, vw& all)
   if (!all.logger.quiet)
   {
     if (b->m > 0)
-      b->all->trace_message << "enabling BFGS based optimization ";
+      *b->all->trace_message << "enabling BFGS based optimization ";
     else
-      b->all->trace_message << "enabling conjugate gradient optimization via BFGS ";
+      *b->all->trace_message << "enabling conjugate gradient optimization via BFGS ";
     if (all.hessian_on)
-      b->all->trace_message << "with curvature calculation" << std::endl;
+      *b->all->trace_message << "with curvature calculation" << std::endl;
     else
-      b->all->trace_message << "**without** curvature calculation" << std::endl;
+      *b->all->trace_message << "**without** curvature calculation" << std::endl;
   }
 
   if (all.numpasses < 2 && all.training) THROW("you must make at least 2 passes to use BFGS");
