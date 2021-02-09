@@ -1755,9 +1755,7 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
     {
       print_enabled_reductions(all);
       if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
-      {
-        all.sd->print_update_header(*all.trace_message);
-      }
+      { all.sd->print_update_header(*all.trace_message); }
       all.l->init_driver();
     }
 
