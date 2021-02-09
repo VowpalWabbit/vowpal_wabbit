@@ -1350,8 +1350,8 @@ vw& parse_args(
 
   if (trace_listener)
   {
-    all.trace_message.trace_listener = trace_listener;
-    all.trace_message.trace_context = trace_context;
+    all.trace_message =
+        VW::make_unique<owned_ostream>(VW::make_unique<custom_output_stream_buf>(trace_context, trace_listener))
   }
 
   try

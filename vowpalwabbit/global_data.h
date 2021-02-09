@@ -389,7 +389,7 @@ public:
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
   // error reporting
-  vw_ostream trace_message;
+  std::unique_ptr<std::ostream> trace_message;
 
   std::unique_ptr<VW::config::options_i, options_deleter_type> options;
 
