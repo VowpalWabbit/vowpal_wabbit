@@ -11,11 +11,11 @@
 BOOST_AUTO_TEST_CASE(test_custom_ostream)
 {
   auto output_func = [](void* context, const std::string& input) {
-    BOOST_CHECK_EQUAL(context, nullptr);
+    BOOST_CHECK(context == nullptr);
     BOOST_CHECK_EQUAL(input, "This is the test input, 123\n");
   };
 
   owning_ostream stream{VW::make_unique<custom_output_stream_buf>(nullptr, output_func)};
 
-  stream << "This is the test input, " << 123 << std :: endl;
+  stream << "This is the test input, " << 123 << std ::endl;
 }
