@@ -886,7 +886,7 @@ void end_pass(bfgs& b)
         {
           *b.all->trace_message << "\nRegular model file has been created. ";
           *b.all->trace_message << "Output feature regularizer file is created only when the convergence is reached. "
-                                  "Try increasing the number of passes for convergence\n";
+                                   "Try increasing the number of passes for convergence\n";
           b.output_regularizer = false;
         }
       }

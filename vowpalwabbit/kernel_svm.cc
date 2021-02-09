@@ -117,7 +117,7 @@ struct svm_params
     {
       *all->trace_message << "Num support = " << model->num_support << endl;
       *all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
-                         << "Number of cache queries = " << num_cache_evals << endl;
+                          << "Number of cache queries = " << num_cache_evals << endl;
       *all->trace_message << "Total loss = " << loss_sum << endl;
     }
     if (model) { free_svm_model(model); }
@@ -810,9 +810,9 @@ void learn(svm_params& params, single_learner&, example& ec)
     {
       *params.all->trace_message << "Number of support vectors = " << params.model->num_support << endl;
       *params.all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
-                                << "Number of cache queries = " << num_cache_evals << " loss sum = " << params.loss_sum
-                                << " " << params.model->alpha[params.model->num_support - 1] << " "
-                                << params.model->alpha[params.model->num_support - 2] << endl;
+                                 << "Number of cache queries = " << num_cache_evals << " loss sum = " << params.loss_sum
+                                 << " " << params.model->alpha[params.model->num_support - 1] << " "
+                                 << params.model->alpha[params.model->num_support - 2] << endl;
     }
     params.pool[params.pool_pos] = sec;
     params.pool_pos++;

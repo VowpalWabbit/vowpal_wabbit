@@ -503,10 +503,10 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
 
   if (!all.logger.quiet)
     *all.trace_message << "recall_tree:"
-                      << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
-                      << " max_depth = " << tree->max_depth << " routing = "
-                      << (all.training ? (tree->randomized_routing ? "randomized" : "deterministic") : "n/a testonly")
-                      << std::endl;
+                       << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
+                       << " max_depth = " << tree->max_depth << " routing = "
+                       << (all.training ? (tree->randomized_routing ? "randomized" : "deterministic") : "n/a testonly")
+                       << std::endl;
 
   learner<recall_tree, example>& l = init_multiclass_learner(
       tree, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, tree->max_routers + tree->k);

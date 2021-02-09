@@ -261,7 +261,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   else if (type_string.compare("mtr") == 0)
   {
     *all.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr"
-                      << std::endl;
+                       << std::endl;
     cb_type_enum = CB_TYPE_MTR;
   }
   else
