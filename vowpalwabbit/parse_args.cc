@@ -753,7 +753,6 @@ void parse_feature_tweaks(
     for (auto& i : quadratics)
     {
       i = spoof_hex_encoded_namespaces(i);
-      std::cout << i << std::endl;
       if (!all.logger.quiet) all.trace_message << i << " ";
     }
 

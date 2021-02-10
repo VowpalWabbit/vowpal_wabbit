@@ -18,7 +18,7 @@ struct Namespace
   feature_index namespace_hash;
   features* ftrs;
   size_t feature_count;
-  std::set<namespace_index>* active_namespaces_of_example = nullptr;
+  std::set<namespace_index>* all_example_namespaces = nullptr;
   const char* name;
 
   void AddFeature(feature_value v, feature_index i, const char* feature_name)
@@ -28,7 +28,7 @@ struct Namespace
 
     ftrs->push_back(v, i);
     feature_count++;
-    if (active_namespaces_of_example) { active_namespaces_of_example->insert(ns); }
+    if (all_example_namespaces) { all_example_namespaces->insert(ns); }
 
     if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, feature_name)));
   }
@@ -37,7 +37,7 @@ struct Namespace
   {
     ftrs->push_back(1., VW::hash_feature_cstr(*all, const_cast<char*>(str), namespace_hash));
     feature_count++;
-    if (active_namespaces_of_example) { active_namespaces_of_example->insert(ns); }
+    if (all_example_namespaces) { all_example_namespaces->insert(ns); }
 
     if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, str)));
   }
@@ -46,7 +46,7 @@ struct Namespace
   {
     ftrs->push_back(1., VW::chain_hash(*all, key, value, namespace_hash));
     feature_count++;
-    if (active_namespaces_of_example) { active_namespaces_of_example->insert(ns); }
+    if (all_example_namespaces) { all_example_namespaces->insert(ns); }
 
     std::stringstream ss;
     ss << key << "^" << value;
@@ -60,7 +60,7 @@ void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespa
   Namespace<audit> n;
   n.feature_group = ns[0];
   n.ns = ns[0];
-  n.active_namespaces_of_example = ex->interactions == nullptr ? nullptr : &ex->interactions->all_example_namespaces;
+  n.all_example_namespaces = ex->interactions == nullptr ? nullptr : &ex->interactions->all_example_namespaces;
   n.namespace_hash = VW::hash_space_cstr(all, ns);
   n.ftrs = ex->feature_space.data() + ns[0];
   n.feature_count = 0;

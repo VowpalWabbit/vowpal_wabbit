@@ -254,7 +254,6 @@ void calculate_and_insert_interactions(
   generated_interactions.all_example_namespaces.emplace(ccb_slot_namespace);
   generated_interactions.extra_interactions.emplace(ccb_id_namespace);
 
-  // TODO pass ccb_slot_namespace and ccb_id_namespace to active_namespaces_of_example to be included
   // TODO look at flatbuffers
   // TODO leave in duplicates
   // TODO better encapsulation in example
@@ -263,7 +262,7 @@ void calculate_and_insert_interactions(
   {
     for (const auto& action_index : action->indices)
     {
-      generated_interactions.all_example_namespaces.emplace(action_index);
+      if (action_index != constant_namespace) { generated_interactions.all_example_namespaces.emplace(action_index); }
       if (INTERACTIONS::is_printable_namespace(action_index) &&
           !found_namespaces[action_index - INTERACTIONS::printable_start])
       {
@@ -275,7 +274,7 @@ void calculate_and_insert_interactions(
 
   for (const auto& shared_index : shared->indices)
   {
-    generated_interactions.all_example_namespaces.emplace(shared_index);
+    if (shared_index != constant_namespace) { generated_interactions.all_example_namespaces.emplace(shared_index); }
     if (INTERACTIONS::is_printable_namespace(shared_index) &&
         !found_namespaces[shared_index - INTERACTIONS::printable_start])
     {

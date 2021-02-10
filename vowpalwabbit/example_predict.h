@@ -18,8 +18,8 @@ typedef unsigned char namespace_index;
 
 struct namsepace_interactions
 {
-  std::set<std::vector<namespace_index>> active_interactions;
-  std::set<namespace_index> all_example_namespaces;
+  std::set<std::vector<namespace_index>> active_interactions; // TODO maybe remove
+  std::set<namespace_index> all_example_namespaces; // TODO maybe ordered vector
   std::vector<std::vector<namespace_index>> interactions;
   bool wild_card_expansion = false;
   std::unordered_set<namespace_index> extra_interactions;
@@ -55,7 +55,6 @@ struct example_predict
 
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
-  // std::unordered_set<namespace_index> active_namespaces_of_example;
   uint64_t ft_offset;  // An offset for all feature values.
 
   void set_feature_space_and_active_namespace(const namespace_index& index, feature_value fv, feature_index fi);
