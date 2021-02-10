@@ -191,6 +191,7 @@ void output_example(vw& all, reduction&, example& ec, CB::label& ld)
 {
   float loss = 0.;
   auto optional_cost = get_observed_cost_cb(ec.l.cb);
+  // cost observed, not default
   if (optional_cost.first)
     for (const auto& cbc : ec.l.cb.costs)
       for (uint32_t i = 0; i < ec.pred.pdf.size(); i++) loss += (cbc.cost / cbc.probability) * ec.pred.pdf[i].pdf_value;

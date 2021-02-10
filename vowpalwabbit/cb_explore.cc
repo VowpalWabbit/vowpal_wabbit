@@ -212,6 +212,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     float norm = min_prob * num_actions;
     ec.l.cb = data.cb_label;
     auto optional_cost = get_observed_cost_cb(data.cb_label);
+    // cost observed, not default
     if (optional_cost.first) { data.cbcs.known_cost = optional_cost.second; }
     else
     {
@@ -269,6 +270,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   cb_to_cs& c = data.cbcs;
 
   auto optional_cost = CB::get_observed_cost_cb(ld);
+  // cost observed, not default
   if (optional_cost.first == true)
   {
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
