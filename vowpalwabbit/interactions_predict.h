@@ -118,31 +118,52 @@ inline void generate_interactions(namsepace_interactions& interactions, bool per
   // loop throw the set of possible interactions
   if (interactions.wild_card_expansion)
   {
-    auto set_interactions = ec.active_namespaces_of_example;
+    auto set_interactions = ec.interactions->all_example_namespaces;
     std::vector<std::vector<namespace_index>> active_interactions;
     for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
     {
       for (auto jt = it; jt != set_interactions.end(); ++jt)
       {
-        if (interactions.active_namespaces_of_example.find(*it) == interactions.active_namespaces_of_example.end())
+        if (interactions.active_interactions.find({*it, *jt}) == interactions.active_interactions.end())
         {
           active_interactions.push_back({*it, *jt});
-          interactions.active_namespaces_of_example.emplace(*it);
-          interactions.active_namespaces_of_example.emplace(*jt);
+          interactions.active_interactions.insert({*it, *jt});
+        }
+        if (interactions.active_interactions.find({*it, *it}) == interactions.active_interactions.end())
+        {
           active_interactions.push_back({*it, *it});
+          interactions.active_interactions.insert({*it, *it});
         }
-        else if (interactions.active_namespaces_of_example.find(*jt) == interactions.active_namespaces_of_example.end())
+        if (interactions.active_interactions.find({*jt, *jt}) == interactions.active_interactions.end())
         {
-          active_interactions.push_back({*it, *jt});
-          interactions.active_namespaces_of_example.emplace(*jt);
           active_interactions.push_back({*jt, *jt});
+          interactions.active_interactions.insert({*jt, *jt});
         }
+        // TODO add if duplicates enabled if (interactions.active_interactions.find({*jt, *it}) == interactions.active_interactions.end())
+        // {
+        //   active_interactions.push_back({*jt, *it});
+        //   interactions.active_interactions.insert({*jt, *it});
+        // }
       }
     }
 
-    auto temp = expand_interactions(active_interactions, 2, "error, quadratic features must involve two sets.");
+    // interactions.active_interactions.insert(set_interactions.begin(), set_interactions.end());
 
-    interactions.interactions.insert(interactions.interactions.end(), temp.begin(), temp.end());
+    auto new_interactions =
+        expand_interactions(active_interactions, 2, "error, quadratic features must involve two sets.");
+
+    auto new_interactions_size = new_interactions.size();
+    for (auto extra : interactions.extra_interactions)
+    {
+      for (size_t i = 0; i < new_interactions_size; i++)
+      {
+        auto interaction_copy = new_interactions[i];
+        interaction_copy.push_back(extra);
+        new_interactions.push_back(interaction_copy);
+      }
+    }
+
+    interactions.interactions.insert(interactions.interactions.end(), new_interactions.begin(), new_interactions.end());
   }
 
   for (auto& ns : interactions.interactions)

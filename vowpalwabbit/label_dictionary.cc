@@ -40,7 +40,12 @@ void add_example_namespace(example& ec, namespace_index ns, features& fs)
   features& add_fs = ec.feature_space[(size_t)ns];
   for (size_t i = 0; i < fs.size(); ++i)
   {
-    add_fs.push_back(fs.values[i], fs.indicies[i]);
+    if (ns == ccb_id_namespace) { add_fs.push_back(fs.values[i], fs.indicies[i]); }
+    else
+    {
+      ec.set_feature_space_and_active_namespace(ns, fs.values[i], fs.indicies[i]);
+    }
+
     if (audit) add_fs.space_names.push_back(fs.space_names[i]);
   }
   ec.total_sum_feat_sq += fs.sum_feat_sq;

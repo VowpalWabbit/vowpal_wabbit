@@ -53,7 +53,10 @@ void example_predict::set_feature_space_and_active_namespace(
   // keep active namespaces if we are doing wildcard expansion for interactions
   // skip if constant feature
   if (constant != fi && interactions != nullptr && interactions->wild_card_expansion)
-  { active_namespaces_of_example.emplace(index); }
+  {
+    // active_namespaces_of_example.emplace(index);
+    interactions->all_example_namespaces.emplace(index);
+  }
 }
 
 example_predict& example_predict::operator=(example_predict&& other) noexcept
