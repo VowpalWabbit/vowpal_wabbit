@@ -82,7 +82,8 @@ void finish_setup(nn& n, vw& all)
   // TODO: output_layer audit
 
   n.output_layer.interactions = &all.interactions;
-  n.output_layer.indices.push_back(nn_output_namespace);
+  // n.output_layer.indices.push_back(nn_output_namespace);
+  n.output_layer.set_namespace(nn_output_namespace);
   uint64_t nn_index = nn_constant << all.weights.stride_shift();
 
   features& fs = n.output_layer.feature_space[nn_output_namespace];
@@ -110,8 +111,7 @@ void finish_setup(nn& n, vw& all)
   // TODO: not correct if --noconstant
   n.hiddenbias.interactions = &all.interactions;
   n.hiddenbias.indices.push_back(constant_namespace);
-  // n.hiddenbias.feature_space[constant_namespace].push_back(1, (uint64_t)constant);
-  n.hiddenbias.set_feature_space_and_active_namespace(constant_namespace, 1, (uint64_t)constant);
+  n.hiddenbias.feature_space[constant_namespace].push_back(1, (uint64_t)constant);
   if (all.audit || all.hash_inv)
     n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "HiddenBias")));
@@ -120,10 +120,10 @@ void finish_setup(nn& n, vw& all)
   n.hiddenbias.weight = 1;
 
   n.outputweight.interactions = &all.interactions;
-  n.outputweight.indices.push_back(nn_output_namespace);
+  // n.outputweight.indices.push_back(nn_output_namespace);
+  n.outputweight.set_namespace(nn_output_namespace);
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
   n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indicies[0]);
-  n.outputweight.set_feature_space_and_active_namespace(nn_output_namespace, outfs.values[0], outfs.indicies[0]);
   if (all.audit || all.hash_inv)
     n.outputweight.feature_space[nn_output_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "OutputWeight")));
@@ -267,7 +267,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       // TODO: this is not correct if there is something in the
       // nn_output_namespace but at least it will not leak memory
       // in that case
-      ec.indices.push_back(nn_output_namespace);
+      ec.set_namespace(nn_output_namespace);
+      // ec.indices.push_back(nn_output_namespace);
 
       /*
        * Features shuffling:

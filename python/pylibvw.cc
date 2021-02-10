@@ -531,8 +531,7 @@ float ex_sum_feat_sq(example_ptr ec, unsigned char ns) { return ec->feature_spac
 
 void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
 {  // warning: assumes namespace exists!
-  ec->set_feature_space_and_active_namespace(ns, v, fid);
-  // ec->feature_space[ns].push_back(v, fid);
+  ec->feature_space[ns].push_back(v, fid);
   ec->num_features++;
   ec->total_sum_feat_sq += v * v;
 }
@@ -592,8 +591,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       }
       if (got)
       {
-        ec->set_feature_space_and_active_namespace(ns, f.x, f.weight_index);
-        // ec->feature_space[ns].push_back(f.x, f.weight_index);
+        ec->feature_space[ns].push_back(f.x, f.weight_index);
         count++;
         sum_sq += f.x * f.x;
       }
@@ -603,7 +601,10 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
   ec->total_sum_feat_sq += sum_sq;
 }
 
-void ex_push_namespace(example_ptr ec, unsigned char ns) { ec->indices.push_back(ns); }
+void ex_push_namespace(example_ptr ec, unsigned char ns)
+{
+  ec->set_namespace(ns);  // ec->indices.push_back(ns);
+}
 
 void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
 {

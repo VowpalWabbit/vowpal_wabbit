@@ -1474,8 +1474,9 @@ public:
   {
     Namespace<audit> n;
     n.feature_group = ns[0];
-    n.ns = ns[0];
-    n.all_example_namespaces = ex->interactions == nullptr ? nullptr : &ex->interactions->all_example_namespaces;
+    // ex->set_namespace(ns[0]);
+    // n.ns = ns[0];
+    // n.all_example_namespaces = ex->interactions == nullptr ? nullptr : &ex->interactions->all_example_namespaces;
     n.namespace_hash = VW::hash_space_cstr(*all, ns);
     n.ftrs = ex->feature_space.data() + ns[0];
     n.feature_count = 0;
@@ -1494,7 +1495,10 @@ public:
       auto feature_group = ns.feature_group;
       // Do not insert feature_group if it already exists.
       if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
-      { ex->indices.push_back(feature_group); }
+      {
+        ex->set_namespace(feature_group);
+        // ex->indices.push_back(feature_group);
+      }
     }
 
     auto return_state = return_path.back();

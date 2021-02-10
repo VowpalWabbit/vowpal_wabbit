@@ -134,7 +134,8 @@ public:
   {
     if (vw_ref->ignore_some && vw_ref->ignore[(int)c]) return true;
     if (ns_exists[(int)c]) return false;
-    ec->indices.push_back((size_t)c);
+    // ec->indices.push_back((size_t)c);
+    ec->set_namespace((size_t)c);
     ns_exists[(int)c] = true;
     return false;
   }
@@ -180,8 +181,7 @@ public:
     if (to_ns == 0) return 0;
     if (ensure_ns_exists(to_ns)) return 0;
 
-    ec->set_feature_space_and_active_namespace((int)to_ns, v, fint << vw_ref->weights.stride_shift());
-    // ec->feature_space[(int)to_ns].push_back(v, fint << vw_ref->weights.stride_shift());
+    ec->feature_space[(int)to_ns].push_back(v, fint << vw_ref->weights.stride_shift());
     ec->total_sum_feat_sq += v * v;
     ec->num_features++;
     example_changed_since_prediction = true;
@@ -195,11 +195,7 @@ public:
   {
     if (ensure_ns_exists(to_ns)) return;
     features& fs = other.feature_space[(int)other_ns];
-    for (size_t i = 0; i < fs.size(); i++) 
-    {
-      ec->set_feature_space_and_active_namespace((int)to_ns, fs.values[i], fs.indicies[i]);
-      // ec->feature_space[(int)to_ns].push_back(fs.values[i], fs.indicies[i]);
-      }
+    for (size_t i = 0; i < fs.size(); i++) { ec->feature_space[(int)to_ns].push_back(fs.values[i], fs.indicies[i]); }
     ec->total_sum_feat_sq += fs.sum_feat_sq;
     ec->num_features += fs.size();
     example_changed_since_prediction = true;

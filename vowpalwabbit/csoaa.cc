@@ -208,8 +208,7 @@ void compute_wap_values(std::vector<COST_SENSITIVE::wclass*> costs)
 // This is faster and allows fast undo in unsubtract_example().
 void subtract_feature(example& ec, float feature_value_x, uint64_t weight_index)
 {
-  ec.set_feature_space_and_active_namespace(wap_ldf_namespace, -feature_value_x, weight_index);
-  // ec.feature_space[wap_ldf_namespace].push_back(-feature_value_x, weight_index);
+  ec.feature_space[wap_ldf_namespace].push_back(-feature_value_x, weight_index);
 }
 
 // Iterate over all features of ecsub including quadratic and cubic features and subtract them from ec.
@@ -218,7 +217,8 @@ void subtract_example(vw& all, example* ec, example* ecsub)
   features& wap_fs = ec->feature_space[wap_ldf_namespace];
   wap_fs.sum_feat_sq = 0;
   GD::foreach_feature<example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
-  ec->indices.push_back(wap_ldf_namespace);
+  // ec->indices.push_back(wap_ldf_namespace);
+  ec->set_namespace(wap_ldf_namespace);
   ec->num_features += wap_fs.size();
   ec->total_sum_feat_sq += wap_fs.sum_feat_sq;
 }

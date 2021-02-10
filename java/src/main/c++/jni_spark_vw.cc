@@ -33,10 +33,7 @@ CriticalArrayGuard::CriticalArrayGuard(JNIEnv* env, jarray arr) : _env(env), _ar
 
 CriticalArrayGuard::~CriticalArrayGuard()
 {
-  if (_arr0)
-  {
-    _env->ReleasePrimitiveArrayCritical(_arr, _arr0, JNI_ABORT);
-  }
+  if (_arr0) { _env->ReleasePrimitiveArrayCritical(_arr, _arr0, JNI_ABORT); }
 }
 
 void* CriticalArrayGuard::data() { return _arr0; }
@@ -210,10 +207,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   VW::config::options_serializer_boost_po serializer;
   for (auto const& option : all->options->get_all_options())
   {
-    if (all->options->was_supplied(option->m_name))
-    {
-      serializer.add(*option);
-    }
+    if (all->options->was_supplied(option->m_name)) { serializer.add(*option); }
   }
 
   // move it to Java
@@ -387,7 +381,8 @@ void addNamespaceIfNotExists(vw* all, example* ex, char ns)
 {
   if (std::find(ex->indices.begin(), ex->indices.end(), ns) == ex->indices.end())
   {
-    ex->indices.push_back(ns);
+    // indices.push_back(ns);
+    ex->set_namespace(ns);
   }
 }
 
@@ -645,8 +640,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
         ostr << "NULL:0,";
       else
       {
-        if ((ns >= 'a' && ns <= 'z') || (ns >= 'A' && ns <= 'Z'))
-          ostr << "'" << (char)ns << "':";
+        if ((ns >= 'a' && ns <= 'z') || (ns >= 'A' && ns <= 'Z')) ostr << "'" << (char)ns << "':";
 
         ostr << (int)ns << ",";
       }

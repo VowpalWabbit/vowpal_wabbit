@@ -248,10 +248,8 @@ void add_edge_features_group_fn(task_data& D, float fv, uint64_t fx)
   for (size_t k = 0; k < D.numN; k++)
   {
     if (D.neighbor_predictions[k] == 0.) continue;
-    node->set_feature_space_and_active_namespace(neighbor_namespace, fv * D.neighbor_predictions[k],
-        (uint64_t)((fx2 + 348919043 * k) * D.multiplier) & (uint64_t)D.mask);
-    // node->feature_space[neighbor_namespace].push_back(
-    //     fv * D.neighbor_predictions[k], (uint64_t)((fx2 + 348919043 * k) * D.multiplier) & (uint64_t)D.mask);
+    node->feature_space[neighbor_namespace].push_back(
+        fv * D.neighbor_predictions[k], (uint64_t)((fx2 + 348919043 * k) * D.multiplier) & (uint64_t)D.mask);
   }
 }
 
@@ -330,6 +328,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
       GD::foreach_feature<task_data, uint64_t, add_edge_features_group_fn>(sch.get_vw_pointer_unsafe(), edge, D);
   }
   ec[n]->indices.push_back(neighbor_namespace);
+  ec[n]->set_namespace(neighbor_namespace);
   ec[n]->total_sum_feat_sq += ec[n]->feature_space[neighbor_namespace].sum_feat_sq;
   ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 

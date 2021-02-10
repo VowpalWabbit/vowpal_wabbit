@@ -241,7 +241,11 @@ void copy_example_data(
 void move_feature_namespace(example* dst, example* src, namespace_index c)
 {
   if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end()) return;  // index not present in src
-  if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end()) dst->indices.push_back(c);
+  if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end())
+  {
+    dst->set_namespace(c);
+    // dst->indices.push_back(c);
+  }
 
   auto& fdst = dst->feature_space[c];
   auto& fsrc = src->feature_space[c];
@@ -436,10 +440,7 @@ example* alloc_examples(size_t, size_t count)
 {
   example* ec = calloc_or_throw<example>(count);
   if (ec == nullptr) return nullptr;
-  for (size_t i = 0; i < count; i++)
-  {
-    ec[i].ft_offset = 0;
-  }
+  for (size_t i = 0; i < count; i++) { ec[i].ft_offset = 0; }
   return ec;
 }
 

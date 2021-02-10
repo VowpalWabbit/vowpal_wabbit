@@ -212,7 +212,7 @@ public:
       if (((*_affix_features)[_index] > 0) && (!feature_name.empty()))
       {
         features& affix_fs = _ae->feature_space[affix_namespace];
-        if (affix_fs.size() == 0) _ae->indices.push_back(affix_namespace);
+        if (affix_fs.size() == 0) _ae->set_namespace(affix_namespace); //_ae->indices.push_back(affix_namespace);
         uint64_t affix = (*_affix_features)[_index];
 
         while (affix > 0)
@@ -248,7 +248,7 @@ public:
       if ((*_spelling_features)[_index])
       {
         features& spell_fs = _ae->feature_space[spelling_namespace];
-        if (spell_fs.size() == 0) _ae->indices.push_back(spelling_namespace);
+        if (spell_fs.size() == 0) _ae->set_namespace(spelling_namespace); // _ae->indices.push_back(spelling_namespace);
         // v_array<char> spelling;
         _spelling.clear();
         for (char c : feature_name)
@@ -296,7 +296,7 @@ public:
           {
             const auto& feats = feats_it->second;
             features& dict_fs = _ae->feature_space[dictionary_namespace];
-            if (dict_fs.size() == 0) _ae->indices.push_back(dictionary_namespace);
+            if (dict_fs.size() == 0) _ae->set_namespace(dictionary_namespace); //_ae->indices.push_back(dictionary_namespace);
             push_many(dict_fs.values, feats->values.begin(), feats->values.size());
             push_many(dict_fs.indicies, feats->indicies.begin(), feats->indicies.size());
             dict_fs.sum_feat_sq += feats->sum_feat_sq;
@@ -415,7 +415,7 @@ public:
       parserWarning(
           "malformed example! '|',String,space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
     }
-    if (_new_index && _ae->feature_space[_index].size() > 0) _ae->indices.push_back(_index);
+    if (_new_index && _ae->feature_space[_index].size() > 0) _ae->set_namespace(_index); // _ae->indices.push_back(_index);
   }
 
   inline void listNameSpace()

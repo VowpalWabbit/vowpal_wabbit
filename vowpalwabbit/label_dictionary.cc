@@ -34,17 +34,25 @@ void add_example_namespace(example& ec, namespace_index ns, features& fs)
       break;
     }
 
-  if (!has_ns) ec.indices.push_back((size_t)ns);
+  if (!has_ns)
+  {
+    if (ns == ccb_id_namespace) { ec.set_namespace((size_t)ns, true); }
+    else
+    {
+      ec.set_namespace((size_t)ns);
+    }
+    // ec.indices.push_back((size_t)ns);
+  }
 
   bool audit = fs.space_names.size() > 0;
   features& add_fs = ec.feature_space[(size_t)ns];
   for (size_t i = 0; i < fs.size(); ++i)
   {
-    if (ns == ccb_id_namespace) { add_fs.push_back(fs.values[i], fs.indicies[i]); }
-    else
-    {
-      ec.set_feature_space_and_active_namespace(ns, fs.values[i], fs.indicies[i]);
-    }
+    // if (ns == ccb_id_namespace) { add_fs.push_back(fs.values[i], fs.indicies[i]); }
+    // else
+    // {
+    add_fs.push_back(fs.values[i], fs.indicies[i]);
+    // }
 
     if (audit) add_fs.space_names.push_back(fs.space_names[i]);
   }

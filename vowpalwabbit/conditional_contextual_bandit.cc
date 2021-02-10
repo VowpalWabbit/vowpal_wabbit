@@ -206,9 +206,9 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
     index = data.slot_id_hashes[id];
   }
 
-  // shared->set_feature_space_and_active_namespace(ccb_id_namespace, 1., index);
   shared->feature_space[ccb_id_namespace].push_back(1., index);
-  shared->indices.push_back(ccb_id_namespace);
+  // shared->indices.push_back(ccb_id_namespace);
+  shared->set_namespace(ccb_id_namespace, true);
 
   if (audit)
   {
@@ -256,13 +256,12 @@ void calculate_and_insert_interactions(
 
   // TODO look at flatbuffers
   // TODO leave in duplicates
-  // TODO better encapsulation in example
 
   for (const auto& action : actions)
   {
     for (const auto& action_index : action->indices)
     {
-      if (action_index != constant_namespace) { generated_interactions.all_example_namespaces.emplace(action_index); }
+      // if (action_index != constant_namespace) { generated_interactions.all_example_namespaces.emplace(action_index); }
       if (INTERACTIONS::is_printable_namespace(action_index) &&
           !found_namespaces[action_index - INTERACTIONS::printable_start])
       {
@@ -274,7 +273,7 @@ void calculate_and_insert_interactions(
 
   for (const auto& shared_index : shared->indices)
   {
-    if (shared_index != constant_namespace) { generated_interactions.all_example_namespaces.emplace(shared_index); }
+    // if (shared_index != constant_namespace) { generated_interactions.all_example_namespaces.emplace(shared_index); }
     if (INTERACTIONS::is_printable_namespace(shared_index) &&
         !found_namespaces[shared_index - INTERACTIONS::printable_start])
     {
@@ -419,6 +418,9 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         data.generated_interactions.wild_card_expansion = data.original_interactions->wild_card_expansion;
         data.generated_interactions.active_interactions = data.original_interactions->active_interactions;
         data.generated_interactions.all_example_namespaces = data.original_interactions->all_example_namespaces;
+        data.generated_interactions.extra_interactions = data.original_interactions->extra_interactions;
+        data.generated_interactions.leave_duplicate_interactions = data.original_interactions->leave_duplicate_interactions;
+        
         calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
         data.shared->interactions = &data.generated_interactions;
         for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }

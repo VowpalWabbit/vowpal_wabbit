@@ -64,7 +64,8 @@ void predict(mf& data, single_learner& base, example& ec)
 
   // erase indices
   ec.indices.clear();
-  ec.indices.push_back(0);
+  // ec.indices.push_back(0);
+  ec.set_namespace(0);
 
   // add interaction terms to prediction
   for (auto& i : data.pairs)
@@ -119,7 +120,8 @@ void learn(mf& data, single_learner& base, example& ec)
 
   // erase indices
   ec.indices.clear();
-  ec.indices.push_back(0);
+  // ec.indices.push_back(0);
+  ec.set_namespace(0);
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces

@@ -46,14 +46,13 @@ example_predict::example_predict(example_predict&& other) noexcept
   other.interactions = nullptr;
 }
 
-void example_predict::set_feature_space_and_active_namespace(
-    const namespace_index& ns, feature_value fv, feature_index fi)
+void example_predict::set_namespace(const namespace_index& ns, bool constant_feature)
 {
-  feature_space[ns].push_back(fv, fi);
+  indices.push_back(ns);
   // keep active namespaces if we are doing wildcard expansion for interactions
   // skip if constant feature
-  if (constant != fi && interactions != nullptr && interactions->wild_card_expansion)
-  { interactions->all_example_namespaces.emplace(ns); }
+  if (!constant_feature && interactions->wild_card_expansion)
+  { interactions->all_example_namespaces.insert(ns); }
 }
 
 example_predict& example_predict::operator=(example_predict&& other) noexcept

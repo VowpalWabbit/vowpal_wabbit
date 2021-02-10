@@ -31,13 +31,11 @@ void example_predict_builder::push_feature_string(char* feature_name, feature_va
 {
   feature_index feature_hash =
       _feature_index_bit_mask & hashstring(feature_name, strlen(feature_name), _namespace_hash);
-  // _ex->feature_space[_namespace_idx].push_back(value, feature_hash);
-  _ex->set_feature_space_and_active_namespace(_namespace_idx, value, feature_hash);
+  _ex->feature_space[_namespace_idx].push_back(value, feature_hash);
 }
 
 void example_predict_builder::push_feature(feature_index feature_idx, feature_value value)
 {
-  // _ex->feature_space[_namespace_idx].push_back(value, _namespace_hash + feature_idx);
-  _ex->set_feature_space_and_active_namespace(_namespace_idx, value, _namespace_hash + feature_idx);
+  _ex->feature_space[_namespace_idx].push_back(value, _namespace_hash + feature_idx);
 }
 };  // namespace vw_slim

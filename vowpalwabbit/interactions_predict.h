@@ -139,11 +139,12 @@ inline void generate_interactions(namsepace_interactions& interactions, bool per
           active_interactions.push_back({*jt, *jt});
           interactions.active_interactions.insert({*jt, *jt});
         }
-        // TODO add if duplicates enabled if (interactions.active_interactions.find({*jt, *it}) == interactions.active_interactions.end())
-        // {
-        //   active_interactions.push_back({*jt, *it});
-        //   interactions.active_interactions.insert({*jt, *it});
-        // }
+        if (interactions.active_interactions.find({*jt, *it}) == interactions.active_interactions.end() &&
+            interactions.leave_duplicate_interactions)
+        {
+          active_interactions.push_back({*jt, *it});
+          interactions.active_interactions.insert({*jt, *it});
+        }
       }
     }
 
