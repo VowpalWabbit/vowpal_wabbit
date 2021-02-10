@@ -21,8 +21,8 @@ BOOST_AUTO_TEST_CASE(test_custom_ostream)
     return 0;
   };
 
-  VW::io::owning_ostream stream{VW::make_unique<VW::io::writer_stream_buf>(
-      VW::io::create_custom_writer(nullptr, output_func))};
+  VW::io::owning_ostream stream{
+      VW::make_unique<VW::io::writer_stream_buf>(VW::io::create_custom_writer(nullptr, output_func))};
 
   stream << "This is the test input, " << 123 << std ::endl;
 }

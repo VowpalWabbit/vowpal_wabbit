@@ -328,11 +328,15 @@ class parser;
 }  // namespace parsers
 }  // namespace VW
 
-struct trace_message_wrapper {
+struct trace_message_wrapper
+{
   void* _inner_context;
   trace_message_t _trace_message;
 
-  trace_message_wrapper(void* context, trace_message_t trace_message) : _inner_context(context), _trace_message(trace_message) {}
+  trace_message_wrapper(void* context, trace_message_t trace_message)
+      : _inner_context(context), _trace_message(trace_message)
+  {
+  }
   ~trace_message_wrapper() = default;
 };
 
