@@ -328,6 +328,14 @@ class parser;
 }  // namespace parsers
 }  // namespace VW
 
+struct trace_message_wrapper {
+  void* _inner_context;
+  trace_message_t _trace_message;
+
+  trace_message_wrapper(void* context, trace_message_t trace_message) : _inner_context(context), _trace_message(trace_message) {}
+  ~trace_message_wrapper() = default;
+};
+
 struct vw
 {
 private:
@@ -389,6 +397,7 @@ public:
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
   // error reporting
+  std::shared_ptr<trace_message_wrapper> trace_message_wrapper_context;
   std::unique_ptr<std::ostream> trace_message;
 
   std::unique_ptr<VW::config::options_i, options_deleter_type> options;
