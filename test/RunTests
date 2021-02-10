@@ -2109,4 +2109,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 # Test 269: vw --help with filtering
 {VW} --cb_adf --help
 
+# Test 270: vw test used in brew script
+{VW} -d train-sets/houses -l 10 -c --passes 25 --holdout_off --audit -f  --nn 5
+    train-sets/ref/houses.stderr
+    train-sets/ref/houses.stdout
+
 # Do not delete this line or the empty line above it
