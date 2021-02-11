@@ -2109,4 +2109,20 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 # Test 269: vw --help with filtering
 {VW} --cb_adf --help
 
+# Test 270: creating model using --save_resume to be tested with -q :: and --invert_hash
+{VW} -d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -f models/270.model --save_resume --invert_hash 270.inv
+        train-sets/ref/270.stderr
+        train-sets/ref/270.inv
+
+# Test 271: checking invert_hash for ccb with --save_resume model and -q ::
+{VW} train-sets/ccb_test_interactions.dat -i models/270.model --save_resume --invert_hash 271.inv
+    train-sets/ref/271.stderr
+    train-sets/ref/271.inv
+
+# Test 272: Slates sanity check with interactions and invert hash
+{VW} --slates -d train-sets/slates_simple_w_interactions.txt -p slates_simple_w_interactions.predict -q :: --invert_hash 272.inv
+    train-sets/ref/slates_simple_w_interactions.stderr
+    pred-sets/ref/slates_simple_w_interactions.predict
+    pred-sets/ref/272.inv
+
 # Do not delete this line or the empty line above it
