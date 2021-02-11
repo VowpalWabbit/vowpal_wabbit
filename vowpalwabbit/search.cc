@@ -668,7 +668,6 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
     size_t sz = fs.size();
     if ((sz > 0) && (fs.sum_feat_sq > 0.))
     {
-      // me.indices.push_back(neighbor_namespace);
       me.set_namespace(neighbor_namespace);
       me.total_sum_feat_sq += fs.sum_feat_sq;
       me.num_features += sz;
@@ -851,7 +850,6 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
   features& con_fs = ec.feature_space[conditioning_namespace];
   if ((con_fs.size() > 0) && (con_fs.sum_feat_sq > 0.))
   {
-    // ec.indices.push_back(conditioning_namespace);
     ec.set_namespace(conditioning_namespace);
     ec.total_sum_feat_sq += con_fs.sum_feat_sq;
     ec.num_features += con_fs.size();

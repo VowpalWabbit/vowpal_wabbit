@@ -57,7 +57,6 @@ void VW::autolink::prepare_example(VW::LEARNER::single_learner& base, example& e
 
   // Add features of label.
   ec.set_namespace(autolink_namespace);
-  // ec.indices.push_back(autolink_namespace);
   features& fs = ec.feature_space[autolink_namespace];
   for (size_t i = 0; i < _poly_degree; i++)
   {

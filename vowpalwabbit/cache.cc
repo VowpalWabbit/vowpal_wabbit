@@ -87,7 +87,6 @@ int read_cached_features(vw* all, v_array<example*>& examples)
 
     index = *(unsigned char*)c;
     c += sizeof(index);
-    // ae->indices.push_back((size_t)index);
     ae->set_namespace((size_t)index);
     features& ours = ae->feature_space[index];
     size_t storage = *(size_t*)c;

@@ -207,8 +207,7 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
   }
 
   shared->feature_space[ccb_id_namespace].push_back(1., index);
-  // shared->indices.push_back(ccb_id_namespace);
-  shared->set_namespace(ccb_id_namespace, true);
+  shared->set_namespace(ccb_id_namespace, false /*don't use namespace in interactions*/);
 
   if (audit)
   {
@@ -253,8 +252,6 @@ void calculate_and_insert_interactions(
 
   generated_interactions.all_example_namespaces.emplace(ccb_slot_namespace);
   generated_interactions.extra_interactions.emplace(ccb_id_namespace);
-
-  // TODO look at flatbuffers
 
   for (const auto& action : actions)
   {

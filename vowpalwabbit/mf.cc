@@ -64,7 +64,6 @@ void predict(mf& data, single_learner& base, example& ec)
 
   // erase indices
   ec.indices.clear();
-  // ec.indices.push_back(0);
   ec.set_namespace(0);
 
   // add interaction terms to prediction
@@ -120,7 +119,6 @@ void learn(mf& data, single_learner& base, example& ec)
 
   // erase indices
   ec.indices.clear();
-  // ec.indices.push_back(0);
   ec.set_namespace(0);
 
   // update interaction terms

@@ -72,7 +72,6 @@ void pop_ns(example* ex, std::vector<Namespace<audit>>& namespaces)
     if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
     {
       ex->set_namespace(feature_group);
-      // ex->indices.push_back(feature_group);
     }
   }
   namespaces.pop_back();

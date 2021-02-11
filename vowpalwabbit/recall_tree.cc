@@ -218,7 +218,6 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
   uint64_t mask = all->weights.mask();
   size_t ss = all->weights.stride_shift();
 
-  // ec.indices.push_back(node_id_namespace);
   ec.set_namespace(node_id_namespace);
   features& fs = ec.feature_space[node_id_namespace];
 

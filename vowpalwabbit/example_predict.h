@@ -58,7 +58,7 @@ struct example_predict
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
   uint64_t ft_offset;                                  // An offset for all feature values.
 
-  void set_namespace(const namespace_index& index, bool constant_feature = false);
+  void set_namespace(const namespace_index& index, bool interact = true);
 
   // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
   // vector is an interaction and each char is a namespace.

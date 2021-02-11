@@ -601,10 +601,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
   ec->total_sum_feat_sq += sum_sq;
 }
 
-void ex_push_namespace(example_ptr ec, unsigned char ns)
-{
-  ec->set_namespace(ns);  // ec->indices.push_back(ns);
-}
+void ex_push_namespace(example_ptr ec, unsigned char ns) { ec->set_namespace(ns); }
 
 void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
 {

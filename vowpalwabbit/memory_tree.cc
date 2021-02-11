@@ -1108,11 +1108,7 @@ void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, 
   if (read)
   {
     ec->indices.delete_v();
-    for (uint32_t i = 0; i < namespace_size; i++)
-    {
-      ec->set_namespace('\0');
-      // ec->indices.push_back('\0');
-    }
+    for (uint32_t i = 0; i < namespace_size; i++) { ec->set_namespace('\0'); }
   }
   for (uint32_t i = 0; i < namespace_size; i++) writeit(ec->indices[i], "namespace_index");
 

@@ -738,8 +738,7 @@ example* read_example(vw& all, std::string example_line) { return read_example(a
 
 void add_constant_feature(vw& vw, example* ec)
 {
-  ec->set_namespace(constant_namespace, true);
-  // ec->indices.push_back(constant_namespace);
+  ec->set_namespace(constant_namespace, false /*don't use namespace in interactions*/);
   ec->feature_space[constant_namespace].push_back(1, constant);
   ec->total_sum_feat_sq++;
   ec->num_features++;
@@ -767,7 +766,6 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
   {
     unsigned char index = features[i].name;
     ret->set_namespace(index);
-    // ret->indices.push_back(index);
     for (size_t j = 0; j < features[i].len; j++)
     { ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index); }
   }

@@ -75,9 +75,9 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   options.add_and_parse(new_options);
 
   data->ex = VW::alloc_examples(1);
-  data->ex->indices.push_back(val_namespace);
-  for (size_t i = 1; i < 14; i++) data->ex->indices.push_back((unsigned char)i + 'A');
-  data->ex->indices.push_back(constant_namespace);
+  data->ex->set_namespace(val_namespace);
+  for (size_t i = 1; i < 14; i++) data->ex->set_namespace((unsigned char)i + 'A');
+  data->ex->set_namespace(constant_namespace, false /*don't use namespace in interactions*/);
   data->ex->interactions = &sch.get_vw_pointer_unsafe().interactions;
 
   if (data->one_learner)
