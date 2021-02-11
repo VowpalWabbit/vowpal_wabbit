@@ -92,7 +92,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
   }
 }
 
-inline void expand_wildcard_interactions(namsepace_interactions& interactions, example_predict& ec)
+inline void expand_quadratics_wildcard_interactions(namsepace_interactions& interactions)
 {
   auto set_interactions = interactions.all_example_namespaces;
   std::vector<std::vector<namespace_index>> active_interactions;
@@ -172,8 +172,7 @@ inline void generate_interactions(namsepace_interactions& interactions, bool per
   empty_ns_data.loop_end = 0;
   empty_ns_data.self_interaction = false;
 
-  // loop throw the set of possible interactions
-  if (interactions.wild_card_expansion) { expand_wildcard_interactions(interactions, ec); }
+  if (interactions.quadraditcs_wildcard_expansion) { expand_quadratics_wildcard_interactions(interactions); }
 
   for (auto& ns : interactions.interactions)
   {  // current list of namespaces to interact.

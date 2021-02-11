@@ -21,7 +21,7 @@ struct namsepace_interactions
   std::set<std::vector<namespace_index>> active_interactions;  // TODO maybe remove
   std::set<namespace_index> all_example_namespaces;            // TODO maybe ordered vector
   std::vector<std::vector<namespace_index>> interactions;
-  bool wild_card_expansion = false;
+  bool quadraditcs_wildcard_expansion = false;
   bool leave_duplicate_interactions = false;
   std::unordered_set<namespace_index> extra_interactions;  // e.g. ccb_id_namespace from conditional_contextual_bandits
 };

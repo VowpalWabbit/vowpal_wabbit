@@ -76,7 +76,6 @@ void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a
 template <bool learn, bool exclude, bool is_learn>
 void predict_or_learn(mwt& c, single_learner& base, example& ec)
 {
-  // TODO is this OK?
   c.observation = get_observed_cost(ec.l.cb);
 
   if (c.observation != nullptr)

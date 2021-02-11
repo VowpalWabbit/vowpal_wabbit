@@ -60,7 +60,6 @@ inline void generate_interactions(vw& all, example_predict& ec, R& dat)
 template <class R, class S, void (*T)(R&, float, S)>
 inline void generate_interactions(vw& all, example_predict& ec, R& dat)
 {
-  std::cout << "HERE" << std::endl;
   if (all.weights.sparse)
     generate_interactions<R, S, T, sparse_parameters>(
         all.interactions, all.permutations, ec, dat, all.weights.sparse_weights);

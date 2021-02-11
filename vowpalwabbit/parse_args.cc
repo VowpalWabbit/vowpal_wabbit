@@ -761,7 +761,12 @@ void parse_feature_tweaks(
 
     if (options.was_supplied("leave_duplicate_interactions")) { all.interactions.leave_duplicate_interactions = true; }
 
-    if (new_quadratics[0][0] == ':' && new_quadratics[0][1] == ':') { all.interactions.wild_card_expansion = true; }
+    if (new_quadratics[0][0] == ':' && new_quadratics[0][1] == ':')
+    {
+      all.interactions.quadraditcs_wildcard_expansion = true;
+      all.trace_message << "WARNING: any duplicate namespace interactions will be removed" << endl
+                        << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+    }
     else
     {
       expanded_interactions =

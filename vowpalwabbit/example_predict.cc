@@ -51,7 +51,7 @@ void example_predict::set_namespace(const namespace_index& ns, bool interact)
   indices.push_back(ns);
   // keep active namespaces if we are doing wildcard expansion for interactions
   // skip if interact is false, for example if constant_feature
-  if (interact && (interactions != nullptr) && interactions->wild_card_expansion)
+  if (interact && (interactions != nullptr) && interactions->quadraditcs_wildcard_expansion)
   { interactions->all_example_namespaces.insert(ns); }
 }
 
