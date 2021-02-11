@@ -701,7 +701,49 @@ void setup_example(vw& all, example* ae)
   }
 
   // // Set the interactions for this example to the global set.
-  // ae->interactions = &all.interactions;
+  // maybe insert example's interactions to all interactions and then set ae->interactions to all.interactions
+  // all.interactions.all_example_namespaces.insert(ae->example_namespaces.begin(), ae->example_namespaces.end());
+  // loop throw the set of possible interactions
+
+  if (all.interactions.wild_card_expansion)
+  {
+    auto set_interactions = ae->interactions->all_example_namespaces;
+    std::vector<std::vector<namespace_index>> active_interactions;
+    for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
+    {
+      for (auto jt = it; jt != set_interactions.end(); ++jt)
+      {
+        if (all.interactions.active_interactions.find({*it, *jt}) == all.interactions.active_interactions.end())
+        {
+          active_interactions.push_back({*it, *jt});
+          all.interactions.active_interactions.insert({*it, *jt});
+        }
+        if (all.interactions.active_interactions.find({*it, *it}) == all.interactions.active_interactions.end())
+        {
+          active_interactions.push_back({*it, *it});
+          all.interactions.active_interactions.insert({*it, *it});
+        }
+        if (all.interactions.active_interactions.find({*jt, *jt}) == all.interactions.active_interactions.end())
+        {
+          active_interactions.push_back({*jt, *jt});
+          all.interactions.active_interactions.insert({*jt, *jt});
+        }
+        if (all.interactions.active_interactions.find({*jt, *it}) == all.interactions.active_interactions.end() &&
+            all.interactions.leave_duplicate_interactions)
+        {
+          active_interactions.push_back({*jt, *it});
+          all.interactions.active_interactions.insert({*jt, *it});
+        }
+      }
+    }
+
+    auto new_interactions =
+        INTERACTIONS::expand_interactions(active_interactions, 2, "error, quadratic features must involve two sets.");
+
+    all.interactions.interactions.insert(
+        all.interactions.interactions.end(), new_interactions.begin(), new_interactions.end());
+  }
+  ae->interactions = &all.interactions;
 
   size_t new_features_cnt;
   float new_features_sum_feat_sq;

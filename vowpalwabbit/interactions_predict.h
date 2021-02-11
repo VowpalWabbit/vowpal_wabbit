@@ -148,23 +148,31 @@ inline void generate_interactions(namsepace_interactions& interactions, bool per
       }
     }
 
-    // interactions.active_interactions.insert(set_interactions.begin(), set_interactions.end());
+    // TODO replace 2 with var and set in parse_args.cc
+    size_t interaction_size = 2;
 
-    auto new_interactions =
-        expand_interactions(active_interactions, 2, "error, quadratic features must involve two sets.");
+    auto new_interactions = INTERACTIONS::expand_interactions(
+        active_interactions, interaction_size, "error, feature length is not correct, can not expand interactions.");
+    interactions.interactions.insert(interactions.interactions.end(), new_interactions.begin(), new_interactions.end());
 
-    auto new_interactions_size = new_interactions.size();
+    auto interactions_size = interactions.interactions.size();
     for (auto extra : interactions.extra_interactions)
     {
-      for (size_t i = 0; i < new_interactions_size; i++)
+      for (size_t i = 0; i < interactions_size; i++)
       {
-        auto interaction_copy = new_interactions[i];
+        if ((interactions.interactions[i].size() != interaction_size) || (interactions.interactions[i].back() == extra))
+        { continue; }
+        auto interaction_copy = interactions.interactions[i];
         interaction_copy.push_back(extra);
-        new_interactions.push_back(interaction_copy);
+        if (interactions.active_interactions.find(interaction_copy) == interactions.active_interactions.end())
+        {
+          interactions.active_interactions.insert(interaction_copy);
+          interactions.interactions.push_back(interaction_copy);
+        }
       }
     }
-
-    interactions.interactions.insert(interactions.interactions.end(), new_interactions.begin(), new_interactions.end());
+    // interactions.interactions.insert(interactions.interactions.end(), new_interactions.begin(),
+    // new_interactions.end());
   }
 
   for (auto& ns : interactions.interactions)
