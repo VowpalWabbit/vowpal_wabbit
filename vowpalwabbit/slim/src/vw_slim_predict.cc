@@ -17,7 +17,7 @@ namespace_copy_guard::namespace_copy_guard(example_predict& ex, unsigned char ns
 {
   if (std::end(_ex.indices) == std::find(std::begin(_ex.indices), std::end(_ex.indices), ns))
   {
-    _ex.indices.push_back(_ns);
+    _ex.set_namespace(_ns);
     _remove_ns = true;
   }
   else

@@ -255,13 +255,11 @@ void calculate_and_insert_interactions(
   generated_interactions.extra_interactions.emplace(ccb_id_namespace);
 
   // TODO look at flatbuffers
-  // TODO leave in duplicates
 
   for (const auto& action : actions)
   {
     for (const auto& action_index : action->indices)
     {
-      // if (action_index != constant_namespace) { generated_interactions.all_example_namespaces.emplace(action_index); }
       if (INTERACTIONS::is_printable_namespace(action_index) &&
           !found_namespaces[action_index - INTERACTIONS::printable_start])
       {
@@ -273,7 +271,6 @@ void calculate_and_insert_interactions(
 
   for (const auto& shared_index : shared->indices)
   {
-    // if (shared_index != constant_namespace) { generated_interactions.all_example_namespaces.emplace(shared_index); }
     if (INTERACTIONS::is_printable_namespace(shared_index) &&
         !found_namespaces[shared_index - INTERACTIONS::printable_start])
     {
@@ -419,8 +416,9 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         data.generated_interactions.active_interactions = data.original_interactions->active_interactions;
         data.generated_interactions.all_example_namespaces = data.original_interactions->all_example_namespaces;
         data.generated_interactions.extra_interactions = data.original_interactions->extra_interactions;
-        data.generated_interactions.leave_duplicate_interactions = data.original_interactions->leave_duplicate_interactions;
-        
+        data.generated_interactions.leave_duplicate_interactions =
+            data.original_interactions->leave_duplicate_interactions;
+
         calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
         data.shared->interactions = &data.generated_interactions;
         for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
