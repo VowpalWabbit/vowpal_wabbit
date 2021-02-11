@@ -51,7 +51,7 @@ void example_predict::set_namespace(const namespace_index& ns, bool constant_fea
   indices.push_back(ns);
   // keep active namespaces if we are doing wildcard expansion for interactions
   // skip if constant feature
-  if (!constant_feature && interactions->wild_card_expansion)
+  if (!constant_feature && (interactions != nullptr) && interactions->wild_card_expansion)
   { interactions->all_example_namespaces.insert(ns); }
 }
 

@@ -56,7 +56,6 @@ struct example_predict
 
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
-  // std::set<namespace_index> example_namespaces;
   uint64_t ft_offset;                                  // An offset for all feature values.
 
   void set_namespace(const namespace_index& index, bool constant_feature = false);

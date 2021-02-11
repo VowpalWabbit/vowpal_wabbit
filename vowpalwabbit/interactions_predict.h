@@ -92,6 +92,63 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
   }
 }
 
+inline void expand_wildcard_interactions(namsepace_interactions& interactions, example_predict& ec)
+{
+  auto set_interactions = ec.interactions->all_example_namespaces;
+  std::vector<std::vector<namespace_index>> active_interactions;
+  for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
+  {
+    for (auto jt = it; jt != set_interactions.end(); ++jt)
+    {
+      if (interactions.active_interactions.find({*it, *jt}) == interactions.active_interactions.end())
+      {
+        active_interactions.push_back({*it, *jt});
+        interactions.active_interactions.insert({*it, *jt});
+      }
+      if (interactions.active_interactions.find({*it, *it}) == interactions.active_interactions.end())
+      {
+        active_interactions.push_back({*it, *it});
+        interactions.active_interactions.insert({*it, *it});
+      }
+      if (interactions.active_interactions.find({*jt, *jt}) == interactions.active_interactions.end())
+      {
+        active_interactions.push_back({*jt, *jt});
+        interactions.active_interactions.insert({*jt, *jt});
+      }
+      if (interactions.active_interactions.find({*jt, *it}) == interactions.active_interactions.end() &&
+          interactions.leave_duplicate_interactions)
+      {
+        active_interactions.push_back({*jt, *it});
+        interactions.active_interactions.insert({*jt, *it});
+      }
+    }
+  }
+
+  // TODO replace 2 with var and set in parse_args.cc
+  size_t interaction_size = 2;
+
+  auto new_interactions = INTERACTIONS::expand_interactions(
+      active_interactions, interaction_size, "error, feature length is not correct, can not expand interactions.");
+  interactions.interactions.insert(interactions.interactions.end(), new_interactions.begin(), new_interactions.end());
+
+  auto interactions_size = interactions.interactions.size();
+  for (auto extra : interactions.extra_interactions)
+  {
+    for (size_t i = 0; i < interactions_size; i++)
+    {
+      if ((interactions.interactions[i].size() != interaction_size) || (interactions.interactions[i].back() == extra))
+      { continue; }
+      auto interaction_copy = interactions.interactions[i];
+      interaction_copy.push_back(extra);
+      if (interactions.active_interactions.find(interaction_copy) == interactions.active_interactions.end())
+      {
+        interactions.active_interactions.insert(interaction_copy);
+        interactions.interactions.push_back(interaction_copy);
+      }
+    }
+  }
+}
+
 // this templated function generates new features for given example and set of interactions
 // and passes each of them to given function T()
 // it must be in header file to avoid compilation problems
@@ -116,64 +173,7 @@ inline void generate_interactions(namsepace_interactions& interactions, bool per
   empty_ns_data.self_interaction = false;
 
   // loop throw the set of possible interactions
-  if (interactions.wild_card_expansion)
-  {
-    auto set_interactions = ec.interactions->all_example_namespaces;
-    std::vector<std::vector<namespace_index>> active_interactions;
-    for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
-    {
-      for (auto jt = it; jt != set_interactions.end(); ++jt)
-      {
-        if (interactions.active_interactions.find({*it, *jt}) == interactions.active_interactions.end())
-        {
-          active_interactions.push_back({*it, *jt});
-          interactions.active_interactions.insert({*it, *jt});
-        }
-        if (interactions.active_interactions.find({*it, *it}) == interactions.active_interactions.end())
-        {
-          active_interactions.push_back({*it, *it});
-          interactions.active_interactions.insert({*it, *it});
-        }
-        if (interactions.active_interactions.find({*jt, *jt}) == interactions.active_interactions.end())
-        {
-          active_interactions.push_back({*jt, *jt});
-          interactions.active_interactions.insert({*jt, *jt});
-        }
-        if (interactions.active_interactions.find({*jt, *it}) == interactions.active_interactions.end() &&
-            interactions.leave_duplicate_interactions)
-        {
-          active_interactions.push_back({*jt, *it});
-          interactions.active_interactions.insert({*jt, *it});
-        }
-      }
-    }
-
-    // TODO replace 2 with var and set in parse_args.cc
-    size_t interaction_size = 2;
-
-    auto new_interactions = INTERACTIONS::expand_interactions(
-        active_interactions, interaction_size, "error, feature length is not correct, can not expand interactions.");
-    interactions.interactions.insert(interactions.interactions.end(), new_interactions.begin(), new_interactions.end());
-
-    auto interactions_size = interactions.interactions.size();
-    for (auto extra : interactions.extra_interactions)
-    {
-      for (size_t i = 0; i < interactions_size; i++)
-      {
-        if ((interactions.interactions[i].size() != interaction_size) || (interactions.interactions[i].back() == extra))
-        { continue; }
-        auto interaction_copy = interactions.interactions[i];
-        interaction_copy.push_back(extra);
-        if (interactions.active_interactions.find(interaction_copy) == interactions.active_interactions.end())
-        {
-          interactions.active_interactions.insert(interaction_copy);
-          interactions.interactions.push_back(interaction_copy);
-        }
-      }
-    }
-    // interactions.interactions.insert(interactions.interactions.end(), new_interactions.begin(),
-    // new_interactions.end());
-  }
+  if (interactions.wild_card_expansion) { expand_wildcard_interactions(interactions, ec); }
 
   for (auto& ns : interactions.interactions)
   {  // current list of namespaces to interact.
