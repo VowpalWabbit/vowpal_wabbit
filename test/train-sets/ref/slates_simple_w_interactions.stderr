@@ -1,5 +1,5 @@
 creating quadratic features for pairs: :: 
-WARNING: any duplicate namespace interactions will be removed
+WARNING: duplicate namespace interactions were found. Removed: 4278.
 You can use --leave_duplicate_interactions to disable this behaviour.
 predictions = slates_simple_w_interactions.predict
 Num weight bits = 18
