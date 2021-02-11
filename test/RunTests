@@ -1955,4 +1955,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} --explore_eval --epsilon 1 -d train-sets/explore_eval.dat
     train-sets/ref/explore_eval_uniform_distributed_policy.stderr
 
+# Test 270: vw test used in brew script
+{VW} -d train-sets/houses --audit --nn 1
+    train-sets/ref/houses.stderr
+    train-sets/ref/houses.stdout
+
 # Do not delete this line or the empty line above it
