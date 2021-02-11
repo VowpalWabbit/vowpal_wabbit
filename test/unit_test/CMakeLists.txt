@@ -21,6 +21,7 @@ add_executable(vw-unit-test.out
   offset_tree_tests.cc
   options_boost_po_test.cc
   options_test.cc
+  ostream_test.cc
   parse_args_test.cc
   parser_test.cc
   power_test.cc
