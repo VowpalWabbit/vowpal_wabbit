@@ -94,7 +94,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 
 inline void expand_wildcard_interactions(namsepace_interactions& interactions, example_predict& ec)
 {
-  auto set_interactions = ec.interactions->all_example_namespaces;
+  auto set_interactions = interactions.all_example_namespaces;
   std::vector<std::vector<namespace_index>> active_interactions;
   for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
   {

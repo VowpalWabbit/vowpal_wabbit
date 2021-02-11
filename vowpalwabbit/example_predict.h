@@ -23,7 +23,7 @@ struct namsepace_interactions
   std::vector<std::vector<namespace_index>> interactions;
   bool wild_card_expansion = false;
   bool leave_duplicate_interactions = false;
-  std::unordered_set<namespace_index> extra_interactions;
+  std::unordered_set<namespace_index> extra_interactions;  // e.g. ccb_id_namespace from conditional_contextual_bandits
 };
 
 struct example_predict
@@ -54,6 +54,7 @@ struct example_predict
   /// If indices is modified this iterator is invalidated.
   iterator end();
 
+  // Pushing to indices should be done via set_namespace and never by pushing directly to the indices array
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
   uint64_t ft_offset;                                  // An offset for all feature values.

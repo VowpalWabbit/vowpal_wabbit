@@ -42,7 +42,6 @@ struct ccb
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
   std::vector<bool> exclude_list, include_list;
-  namsepace_interactions generated_interactions;
   namsepace_interactions* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label;
@@ -406,19 +405,9 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       if (should_augment_with_slot_info)
       {
         // Namespace crossing for slot features.
-        data.generated_interactions.interactions.clear();
-        std::copy(data.original_interactions->interactions.begin(), data.original_interactions->interactions.end(),
-            std::back_inserter(data.generated_interactions.interactions));
-        data.generated_interactions.wild_card_expansion = data.original_interactions->wild_card_expansion;
-        data.generated_interactions.active_interactions = data.original_interactions->active_interactions;
-        data.generated_interactions.all_example_namespaces = data.original_interactions->all_example_namespaces;
-        data.generated_interactions.extra_interactions = data.original_interactions->extra_interactions;
-        data.generated_interactions.leave_duplicate_interactions =
-            data.original_interactions->leave_duplicate_interactions;
-
-        calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
-        data.shared->interactions = &data.generated_interactions;
-        for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
+        calculate_and_insert_interactions(data.shared, data.actions, *data.original_interactions);
+        data.shared->interactions = data.original_interactions;
+        for (auto* ex : data.actions) { ex->interactions = data.original_interactions; }
       }
 
       data.include_list.clear();
