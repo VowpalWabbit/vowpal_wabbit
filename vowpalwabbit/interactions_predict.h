@@ -132,6 +132,30 @@ inline void expand_quadratics_wildcard_interactions(namsepace_interactions& inte
   interactions.interactions.insert(interactions.interactions.end(), new_interactions.begin(), new_interactions.end());
 }
 
+inline void expand_extra_interactions(namsepace_interactions& interactions, bool new_interactions_added)
+{
+  for (auto extra : interactions.extra_interactions)
+  {
+    auto interactions_size = interactions.interactions.size();
+    // if before != after we have new interactions added
+    if (interactions.extra_consumed.find(extra) == interactions.extra_consumed.end() || new_interactions_added)
+    {
+      for (size_t i = 0; i < interactions_size; i++)
+      {
+        if (interactions.interactions[i].back() == extra) { continue; }
+        auto interaction_copy = interactions.interactions[i];
+        interaction_copy.push_back(extra);
+        if (interactions.active_interactions.find(interaction_copy) == interactions.active_interactions.end())
+        {
+          interactions.active_interactions.insert(interaction_copy);
+          interactions.interactions.push_back(interaction_copy);
+        }
+        interactions.extra_consumed.insert(extra);
+      }
+    }
+  }
+}
+
 // this templated function generates new features for given example and set of interactions
 // and passes each of them to given function T()
 // it must be in header file to avoid compilation problems
@@ -158,27 +182,7 @@ inline void generate_interactions(namsepace_interactions& interactions, bool per
   size_t before = interactions.interactions.size();
   if (interactions.quadraditcs_wildcard_expansion) { expand_quadratics_wildcard_interactions(interactions); }
   size_t after = interactions.interactions.size();
-
-  for (auto extra : interactions.extra_interactions)
-  {
-    auto interactions_size = interactions.interactions.size();
-    // if before != after we have new interactions added
-    if (interactions.extra_consumed.find(extra) == interactions.extra_consumed.end() || before != after)
-    {
-      for (size_t i = 0; i < interactions_size; i++)
-      {
-        if (interactions.interactions[i].back() == extra) { continue; }
-        auto interaction_copy = interactions.interactions[i];
-        interaction_copy.push_back(extra);
-        if (interactions.active_interactions.find(interaction_copy) == interactions.active_interactions.end())
-        {
-          interactions.active_interactions.insert(interaction_copy);
-          interactions.interactions.push_back(interaction_copy);
-        }
-        interactions.extra_consumed.insert(extra);
-      }
-    }
-  }
+  expand_extra_interactions(interactions, before != after);
 
   for (auto& ns : interactions.interactions)
   {  // current list of namespaces to interact.

@@ -37,22 +37,43 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
       {ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace}};
 
   CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
-  INTERACTIONS::expand_quadratics_wildcard_interactions(interactions);
+  INTERACTIONS::expand_extra_interactions(interactions, true /*new interactions added*/);
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.interactions.begin(), interactions.interactions.end());
+
   check_vector_of_vectors_exact(interactions.interactions, compare_set);
 
-  interactions.interactions.clear();
-  interactions.all_example_namespaces.clear();
+  for (auto* slot : slots)
+  {
+    CCB::remove_slot_features(shared_ex, slot);
+    VW::finish_example(vw, *slot);
+  }
+  VW::finish_example(vw, actions);
+  VW::finish_example(vw, *shared_ex);
+  VW::finish(vw);
+}
+
+BOOST_AUTO_TEST_CASE(ccb_generate_more_interactions)
+{
+  auto& vw = *VW::initialize("--ccb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
+  auto shared_ex = VW::read_example(vw, std::string("ccb shared |User f"));
+  multi_ex actions;
+  actions.push_back(VW::read_example(vw, std::string("ccb action |Action f")));
+  actions.push_back(VW::read_example(vw, std::string("ccb action |Other f |Action f")));
+
+  std::vector<example*> slots;
+  slots.push_back(VW::read_example(vw, std::string("ccb slot 0 |SlotNamespace f1 f2")));
+  for (auto* slot : slots) { CCB::inject_slot_features(shared_ex, slot); }
+
+  namsepace_interactions interactions;
   interactions.interactions = {{'U', 'A'}, {'U', 'O'}, {'U', 'O', 'A'}};
-//   interactions.all_example_namespaces = {'U', 'A', 'O'};
-  compare_set = {{'U', 'A'}, {'U', 'O'}, {'U', 'O', 'A'}, {'U', 'A', ccb_id_namespace}, {'U', 'O', ccb_id_namespace},
-      {'U', 'O', 'A', ccb_id_namespace}, {'U', ccb_id_namespace}, {'A', ccb_id_namespace}, {'O', ccb_id_namespace},
-      {'S', ccb_id_namespace}, {ccb_slot_namespace, ccb_slot_namespace},
-      {ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace}, {'U', ccb_slot_namespace},
-      {'U', ccb_slot_namespace, ccb_id_namespace}};
+  interactions.all_example_namespaces = {'U', 'A', 'O'};
+  std::vector<std::vector<namespace_index>> compare_set = {{'U', 'A'}, {'U', 'O'}, {'U', 'O', 'A'},
+      {'U', 'A', ccb_id_namespace}, {'U', 'O', ccb_id_namespace}, {'U', 'O', 'A', ccb_id_namespace},
+      {'U', ccb_id_namespace}, {'A', ccb_id_namespace}, {'O', ccb_id_namespace}, {'S', ccb_id_namespace},
+      {ccb_slot_namespace, ccb_slot_namespace}, {ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace}};
   CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
-//   INTERACTIONS::expand_quadratics_wildcard_interactions(interactions);
+  INTERACTIONS::expand_extra_interactions(interactions, true /*new interactions added*/);
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.interactions.begin(), interactions.interactions.end());
 
@@ -90,12 +111,36 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions_w_default_slot_namespaces)
   std::sort(interactions.interactions.begin(), interactions.interactions.end());
   check_vector_of_vectors_exact(interactions.interactions, compare_set);
 
+  for (auto* slot : slots)
+  {
+    CCB::remove_slot_features(shared_ex, slot);
+    VW::finish_example(vw, *slot);
+  }
+  VW::finish_example(vw, actions);
+  VW::finish_example(vw, *shared_ex);
+  VW::finish(vw);
+}
+
+BOOST_AUTO_TEST_CASE(ccb_generate_more_interactions_w_default_slot_namespaces)
+{
+  auto& vw = *VW::initialize("--ccb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
+  auto shared_ex = VW::read_example(vw, std::string("ccb shared |User f"));
+  multi_ex actions;
+  actions.push_back(VW::read_example(vw, std::string("ccb action |Action f")));
+  actions.push_back(VW::read_example(vw, std::string("ccb action |Other f |Action f")));
+
+  std::vector<example*> slots;
+  slots.push_back(VW::read_example(vw, std::string("ccb slot 0 | f1 f2")));
+  for (auto* slot : slots) { CCB::inject_slot_features(shared_ex, slot); }
+
+  namsepace_interactions interactions;
   interactions.interactions = {{'U', 'A'}, {'U', 'O'}, {'U', 'O', 'A'}};
-  compare_set = {{'U', 'A'}, {'U', 'O'}, {'U', 'O', 'A'}, {'U', 'A', ccb_id_namespace}, {'U', 'O', ccb_id_namespace},
-      {'U', 'O', 'A', ccb_id_namespace}, {'U', ccb_id_namespace}, {'A', ccb_id_namespace}, {'O', ccb_id_namespace},
-      {ccb_slot_namespace, ccb_slot_namespace}, {ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace},
-      {'U', ccb_slot_namespace}, {'U', ccb_slot_namespace, ccb_id_namespace}};
+  std::vector<std::vector<namespace_index>> compare_set = {{'U', 'A'}, {'U', 'O'}, {'U', 'O', 'A'},
+      {'U', 'A', ccb_id_namespace}, {'U', 'O', ccb_id_namespace}, {'U', 'O', 'A', ccb_id_namespace},
+      {'U', ccb_id_namespace}, {'A', ccb_id_namespace}, {'O', ccb_id_namespace},
+      {ccb_slot_namespace, ccb_slot_namespace}, {ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace}};
   CCB::calculate_and_insert_interactions(shared_ex, actions, interactions);
+  INTERACTIONS::expand_extra_interactions(interactions, true /*new interactions added*/);
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(interactions.interactions.begin(), interactions.interactions.end());
 
