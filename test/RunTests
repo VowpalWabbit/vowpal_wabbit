@@ -2109,9 +2109,4 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 # Test 269: vw --help with filtering
 {VW} --cb_adf --help
 
-# Test 270: ccb simple interactions, no quadratics
-{VW} -d train-sets/ccb_test_interactions.dat --ccb_explore_adf --invert_hash ccb_simple_interactions.inv
-    train-sets/ref/ccb_simple_interactions.stderr
-    pred-sets/ref/ccb_simple_interactions.inv
-
 # Do not delete this line or the empty line above it
