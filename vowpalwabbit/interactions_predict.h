@@ -130,23 +130,6 @@ inline void expand_quadratics_wildcard_interactions(namsepace_interactions& inte
   auto new_interactions = INTERACTIONS::expand_interactions(
       active_interactions, interaction_size, "error, feature length is not correct, can not expand interactions.");
   interactions.interactions.insert(interactions.interactions.end(), new_interactions.begin(), new_interactions.end());
-
-  auto interactions_size = interactions.interactions.size();
-  for (auto extra : interactions.extra_interactions)
-  {
-    for (size_t i = 0; i < interactions_size; i++)
-    {
-      if ((interactions.interactions[i].size() != interaction_size) || (interactions.interactions[i].back() == extra))
-      { continue; }
-      auto interaction_copy = interactions.interactions[i];
-      interaction_copy.push_back(extra);
-      if (interactions.active_interactions.find(interaction_copy) == interactions.active_interactions.end())
-      {
-        interactions.active_interactions.insert(interaction_copy);
-        interactions.interactions.push_back(interaction_copy);
-      }
-    }
-  }
 }
 
 // this templated function generates new features for given example and set of interactions
@@ -172,7 +155,30 @@ inline void generate_interactions(namsepace_interactions& interactions, bool per
   empty_ns_data.loop_end = 0;
   empty_ns_data.self_interaction = false;
 
+  size_t before = interactions.interactions.size();
   if (interactions.quadraditcs_wildcard_expansion) { expand_quadratics_wildcard_interactions(interactions); }
+  size_t after = interactions.interactions.size();
+
+  for (auto extra : interactions.extra_interactions)
+  {
+    auto interactions_size = interactions.interactions.size();
+    // if before != after we have new interactions added
+    if (interactions.extra_consumed.find(extra) == interactions.extra_consumed.end() || before != after)
+    {
+      for (size_t i = 0; i < interactions_size; i++)
+      {
+        if (interactions.interactions[i].back() == extra) { continue; }
+        auto interaction_copy = interactions.interactions[i];
+        interaction_copy.push_back(extra);
+        if (interactions.active_interactions.find(interaction_copy) == interactions.active_interactions.end())
+        {
+          interactions.active_interactions.insert(interaction_copy);
+          interactions.interactions.push_back(interaction_copy);
+        }
+        interactions.extra_consumed.insert(extra);
+      }
+    }
+  }
 
   for (auto& ns : interactions.interactions)
   {  // current list of namespaces to interact.
