@@ -309,9 +309,9 @@ void save_load_header(
             file_options += " " + temp.str();
           }
           else
-            all.trace_message << "WARNING: this model file contains 'rank: " << rank
-                              << "' value but it will be ignored as another value specified via the command line."
-                              << std::endl;
+            *(all.trace_message) << "WARNING: this model file contains 'rank: " << rank
+                                 << "' value but it will be ignored as another value specified via the command line."
+                                 << std::endl;
         }
       }
 
@@ -517,11 +517,11 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
 
     if (!all.logger.quiet)
     {
-      // all.trace_message << "initial_regressor = " << regs[0] << std::endl;
+      // *(all.trace_message) << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
       {
-        all.trace_message << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors"
-                          << std::endl;
+        *(all.trace_message) << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors"
+                             << std::endl;
       }
     }
   }

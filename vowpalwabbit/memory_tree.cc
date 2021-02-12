@@ -1242,13 +1242,13 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   init_tree(*tree);
 
   if (!all.logger.quiet)
-    all.trace_message << "memory_tree:"
-                      << " "
-                      << "max_nodes = " << tree->max_nodes << " "
-                      << "max_leaf_examples = " << tree->max_leaf_examples << " "
-                      << "alpha = " << tree->alpha << " "
-                      << "oas = " << tree->oas << " "
-                      << "online =" << tree->online << " " << std::endl;
+    *(all.trace_message) << "memory_tree:"
+                         << " "
+                         << "max_nodes = " << tree->max_nodes << " "
+                         << "max_leaf_examples = " << tree->max_leaf_examples << " "
+                         << "alpha = " << tree->alpha << " "
+                         << "oas = " << tree->oas << " "
+                         << "online =" << tree->online << " " << std::endl;
 
   size_t num_learners = 0;
 

@@ -51,9 +51,6 @@ struct nn
     free(dropped_out);
     free(hidden_units_pred);
     free(hiddenbias_pred);
-    VW::dealloc_example(nullptr, output_layer);
-    VW::dealloc_example(nullptr, hiddenbias);
-    VW::dealloc_example(nullptr, outputweight);
   }
 };
 

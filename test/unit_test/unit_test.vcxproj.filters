@@ -72,6 +72,9 @@
     <ClCompile Include="offset_tree_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ostream_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="power_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -125,8 +128,8 @@
     <ClInclude Include="test_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cats_tree_tests.h">	
-      <Filter>Header Files</Filter>	
+    <ClInclude Include="cats_tree_tests.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

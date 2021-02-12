@@ -243,7 +243,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   io_buf* output = all.example_parser->output;
   if (output->num_files() != 0)
   {
-    all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
+    *(all.trace_message) << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
   }
 
@@ -254,7 +254,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   }
   catch (const std::exception&)
   {
-    all.trace_message << "can't create cache file !" << all.example_parser->currentname << endl;
+    *(all.trace_message) << "can't create cache file !" << all.example_parser->currentname << endl;
     return;
   }
 
@@ -268,7 +268,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
 
   all.example_parser->finalname = newname;
   all.example_parser->write_cache = true;
-  if (!quiet) all.trace_message << "creating cache_file = " << newname << endl;
+  if (!quiet) *(all.trace_message) << "creating cache_file = " << newname << endl;
 }
 
 void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
@@ -295,14 +295,14 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       if (c < all.num_bits)
       {
         if (!quiet)
-          all.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!"
-                            << endl;
+          *(all.trace_message) << "WARNING: cache file is ignored as it's made with less bit precision than required!"
+                               << endl;
         all.example_parser->input->close_file();
         make_write_cache(all, file, quiet);
       }
       else
       {
-        if (!quiet) all.trace_message << "using cache_file = " << file.c_str() << endl;
+        if (!quiet) *(all.trace_message) << "using cache_file = " << file.c_str() << endl;
         set_cache_reader(all);
         if (c == all.num_bits)
           all.example_parser->sorted_cache = true;
@@ -316,7 +316,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
   all.parse_mask = ((uint64_t)1 << all.num_bits) - 1;
   if (cache_files.size() == 0)
   {
-    if (!quiet) all.trace_message << "using no cache" << endl;
+    if (!quiet) *(all.trace_message) << "using no cache" << endl;
   }
 }
 
@@ -345,18 +345,18 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       std::stringstream msg;
       msg << "socket: " << VW::strerror_to_string(errno);
-      all.trace_message << msg.str() << endl;
+      *(all.trace_message) << msg.str() << endl;
       THROW(msg.str().c_str());
     }
 
     int on = 1;
     if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-      all.trace_message << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
+      *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
     if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
-      all.trace_message << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
+      *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
 
     sockaddr_in address;
     address.sin_family = AF_INET;
@@ -376,7 +376,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       socklen_t address_size = sizeof(address);
       if (getsockname(all.example_parser->bound_sock, (sockaddr*)&address, &address_size) < 0)
-      { all.trace_message << "getsockname: " << VW::strerror_to_string(errno) << endl; }
+      { *(all.trace_message) << "getsockname: " << VW::strerror_to_string(errno) << endl; }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
       if (!port_file.is_open()) THROW("error writing port file: " << input_options.port_file);
@@ -487,7 +487,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 #endif
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    if (!all.logger.quiet) all.trace_message << "calling accept" << endl;
+    if (!all.logger.quiet) *(all.trace_message) << "calling accept" << endl;
     auto f_a = (int)accept(all.example_parser->bound_sock, (sockaddr*)&client_address, &size);
     if (f_a < 0) THROWERRNO("accept");
 
@@ -500,7 +500,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     all.final_prediction_sink.push_back(socket->get_writer());
 
     all.example_parser->input->add_file(socket->get_reader());
-    if (!all.logger.quiet) all.trace_message << "reading data from port " << port << endl;
+    if (!all.logger.quiet) *(all.trace_message) << "reading data from port " << port << endl;
 
     if (all.active) { set_string_reader(all); }
     else
@@ -515,12 +515,12 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   {
     if (all.example_parser->input->num_files() != 0)
     {
-      if (!quiet) all.trace_message << "ignoring text input in favor of cache input" << endl;
+      if (!quiet) *(all.trace_message) << "ignoring text input in favor of cache input" << endl;
     }
     else
     {
       std::string temp = all.data_filename;
-      if (!quiet) all.trace_message << "Reading datafile = " << temp << endl;
+      if (!quiet) *(all.trace_message) << "Reading datafile = " << temp << endl;
 
       auto should_use_compressed = input_options.compressed || ends_with(all.data_filename, ".gz");
 
@@ -546,7 +546,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       catch (std::exception const&)
       {
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
-        if (!temp.empty()) { all.trace_message << "can't open '" << temp << "', sailing on!" << endl; }
+        if (!temp.empty()) { *(all.trace_message) << "can't open '" << temp << "', sailing on!" << endl; }
         else
         {
           throw;
@@ -557,7 +557,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       {
         if (!input_options.chain_hash_json)
         {
-          all.trace_message
+          *(all.trace_message)
               << "WARNING: Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a "
                  "future version. Use `--chain_hash` to use new behavior and silence this warning."
               << endl;
@@ -584,7 +584,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   if (passes > 1 && !all.example_parser->resettable)
     THROW("need a cache file for multiple passes : try using --cache_file");
 
-  if (!quiet && !all.daemon) all.trace_message << "num sources = " << all.example_parser->input->num_files() << endl;
+  if (!quiet && !all.daemon) *(all.trace_message) << "num sources = " << all.example_parser->input->num_files() << endl;
 }
 
 void lock_done(parser& p)
