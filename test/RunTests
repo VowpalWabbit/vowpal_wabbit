@@ -2116,11 +2116,11 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 
 # Test 271: creating model using --save_resume to be tested with -q :: and --invert_hash
 {VW} -d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -f models/270.model --save_resume --invert_hash ccb_quad.inv
-        train-sets/ref/ccb_quad.stderr
-        pred-sets/ref/ccb_quad.inv
+    train-sets/ref/ccb_quad.stderr
+    pred-sets/ref/ccb_quad.inv
 
 # Test 272: checking invert_hash for ccb with --save_resume model and -q ::
-{VW} train-sets/ccb_test_interactions.dat -i models/270.model --save_resume --invert_hash ccb_quad_save_resume.inv
+{VW} -d train-sets/ccb_test_interactions.dat -i models/270.model --save_resume --invert_hash ccb_quad_save_resume.inv
     train-sets/ref/ccb_quad_save_resume.stderr
     pred-sets/ref/ccb_quad_save_resume.inv
 
