@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(ccb_generate_more_interactions)
 
   namsepace_interactions interactions;
   interactions.interactions = {{'U', 'A'}, {'U', 'O'}, {'U', 'O', 'A'}};
-  interactions.all_example_namespaces = {'U', 'A', 'O'};
+  interactions.all_seen_namespaces = {'U', 'A', 'O'};
   std::vector<std::vector<namespace_index>> compare_set = {{'U', 'A'}, {'U', 'O'}, {'U', 'O', 'A'},
       {'U', 'A', ccb_id_namespace}, {'U', 'O', ccb_id_namespace}, {'U', 'O', 'A', ccb_id_namespace},
       {'U', ccb_id_namespace}, {'A', ccb_id_namespace}, {'O', ccb_id_namespace}, {'S', ccb_id_namespace},

@@ -18,12 +18,11 @@ typedef unsigned char namespace_index;
 
 struct namsepace_interactions
 {
-  std::set<std::vector<namespace_index>> active_interactions;  // TODO maybe remove and use interactions
-  std::set<namespace_index> all_example_namespaces;            // TODO maybe ordered vector
+  std::set<std::vector<namespace_index>> active_interactions;
+  std::set<namespace_index> all_seen_namespaces;
   std::vector<std::vector<namespace_index>> interactions;
-  // std::unordered_set<namespace_index> used_namespaces;
-  std::unordered_set<namespace_index> extra_interactions;  // e.g. ccb_id_namespace from conditional_contextual_bandits
-  std::unordered_set<namespace_index> extra_consumed;
+  std::unordered_set<namespace_index> extra_namespaces;  // e.g. ccb_id_namespace from conditional_contextual_bandits
+  std::unordered_set<namespace_index> active_extra_namespaces;
   bool quadraditcs_wildcard_expansion = false;
   bool leave_duplicate_interactions = false;
   void clear();

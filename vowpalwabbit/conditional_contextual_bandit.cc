@@ -250,7 +250,7 @@ void calculate_and_insert_interactions(
 {
   std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 
-  generated_interactions.all_example_namespaces.emplace(ccb_slot_namespace);
+  generated_interactions.all_seen_namespaces.emplace(ccb_slot_namespace);
   if (generated_interactions.active_interactions.find({ccb_slot_namespace, ccb_slot_namespace}) ==
       generated_interactions.active_interactions.end())
   {
@@ -263,7 +263,7 @@ void calculate_and_insert_interactions(
     generated_interactions.active_interactions.insert({ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace});
     generated_interactions.interactions.push_back({ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace});
   }
-  generated_interactions.extra_interactions.emplace(ccb_id_namespace);
+  generated_interactions.extra_namespaces.emplace(ccb_id_namespace);
 
   for (const auto& action : actions)
   {

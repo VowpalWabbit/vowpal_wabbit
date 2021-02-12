@@ -94,7 +94,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 
 inline void expand_quadratics_wildcard_interactions(namsepace_interactions& interactions)
 {
-  auto set_interactions = interactions.all_example_namespaces;
+  auto set_interactions = interactions.all_seen_namespaces;
   std::vector<std::vector<namespace_index>> active_interactions;
   for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
   {
@@ -124,21 +124,18 @@ inline void expand_quadratics_wildcard_interactions(namsepace_interactions& inte
     }
   }
 
-  // TODO replace 2 with var and set in parse_args.cc
-  size_t interaction_size = 2;
-
   auto new_interactions = INTERACTIONS::expand_interactions(
-      active_interactions, interaction_size, "error, feature length is not correct, can not expand interactions.");
+      active_interactions, 2, "error, feature length is not correct, can not expand interactions.");
   interactions.interactions.insert(interactions.interactions.end(), new_interactions.begin(), new_interactions.end());
 }
 
 inline void expand_extra_interactions(namsepace_interactions& interactions, bool new_interactions_added)
 {
-  for (auto extra : interactions.extra_interactions)
+  for (auto extra : interactions.extra_namespaces)
   {
     auto interactions_size = interactions.interactions.size();
-    // if before != after we have new interactions added
-    if (interactions.extra_consumed.find(extra) == interactions.extra_consumed.end() || new_interactions_added)
+    if (interactions.active_extra_namespaces.find(extra) == interactions.active_extra_namespaces.end() ||
+        new_interactions_added)
     {
       for (size_t i = 0; i < interactions_size; i++)
       {
@@ -150,7 +147,7 @@ inline void expand_extra_interactions(namsepace_interactions& interactions, bool
           interactions.active_interactions.insert(interaction_copy);
           interactions.interactions.push_back(interaction_copy);
         }
-        interactions.extra_consumed.insert(extra);
+        interactions.active_extra_namespaces.insert(extra);
       }
     }
   }
@@ -182,6 +179,7 @@ inline void generate_interactions(namsepace_interactions& interactions, bool per
   size_t before = interactions.interactions.size();
   if (interactions.quadraditcs_wildcard_expansion) { expand_quadratics_wildcard_interactions(interactions); }
   size_t after = interactions.interactions.size();
+  // if before != after we have new interactions added
   expand_extra_interactions(interactions, before != after);
 
   for (auto& ns : interactions.interactions)
