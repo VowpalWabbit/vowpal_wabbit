@@ -243,7 +243,7 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
   if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end()) return;  // index not present in src
   if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end())
   {
-    dst->set_namespace(c);
+    dst->indices.push_back(c);
   }
 
   auto& fdst = dst->feature_space[c];

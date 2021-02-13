@@ -400,7 +400,7 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.num_features = 0;
   poly.synth_ec.total_sum_feat_sq = 0;
 
-  if (poly.synth_ec.indices.size() == 0) poly.synth_ec.set_namespace(tree_atomics);
+  if (poly.synth_ec.indices.size() == 0) poly.synth_ec.indices.push_back(tree_atomics);
 }
 
 void synthetic_decycle(stagewise_poly &poly)

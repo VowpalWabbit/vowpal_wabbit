@@ -46,15 +46,6 @@ example_predict::example_predict(example_predict&& other) noexcept
   other.interactions = nullptr;
 }
 
-void example_predict::set_namespace(const namespace_index& ns, bool interact)
-{
-  indices.push_back(ns);
-  // keep active namespaces if we are doing wildcard expansion for interactions
-  // skip if interact is false, for example if constant_feature
-  if (interact && (interactions != nullptr) && interactions->quadraditcs_wildcard_expansion)
-  { interactions->all_seen_namespaces.insert(ns); }
-}
-
 example_predict& example_predict::operator=(example_predict&& other) noexcept
 {
   indices = std::move(other.indices);
@@ -96,19 +87,15 @@ void namsepace_interactions::clear()
   active_interactions.clear();
   all_seen_namespaces.clear();
   interactions.clear();
-  extra_namespaces.clear();
-  active_extra_namespaces.clear();
   quadraditcs_wildcard_expansion = false;
   leave_duplicate_interactions = false;
 }
 
-void namsepace_interactions::append(namsepace_interactions& src)
+void namsepace_interactions::append(const namsepace_interactions& src)
 {
   active_interactions.insert(src.active_interactions.begin(), src.active_interactions.end());
   all_seen_namespaces.insert(src.all_seen_namespaces.begin(), src.all_seen_namespaces.end());
   std::copy(src.interactions.begin(), src.interactions.end(), std::back_inserter(interactions));
-  extra_namespaces.insert(src.extra_namespaces.begin(), src.extra_namespaces.end());
-  active_extra_namespaces.insert(src.active_extra_namespaces.begin(), src.active_extra_namespaces.end());
   quadraditcs_wildcard_expansion = src.quadraditcs_wildcard_expansion;
   leave_duplicate_interactions = src.leave_duplicate_interactions;
 }

@@ -172,7 +172,7 @@ void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
   {
     temp_index = ns->hash();
   }
-  ae->set_namespace(temp_index);
+  ae->indices.push_back(temp_index);
 
   auto& fs = ae->feature_space[temp_index];
 

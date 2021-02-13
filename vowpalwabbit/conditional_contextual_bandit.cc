@@ -207,7 +207,7 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
   }
 
   shared->feature_space[ccb_id_namespace].push_back(1., index);
-  shared->set_namespace(ccb_id_namespace, false /*don't use namespace in interactions*/);
+  shared->indices.push_back(ccb_id_namespace);
 
   if (audit)
   {
@@ -249,21 +249,26 @@ void calculate_and_insert_interactions(
     example* shared, const std::vector<example*>& actions, namsepace_interactions& generated_interactions)
 {
   std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
+  auto original_size = generated_interactions.interactions.size();
 
-  generated_interactions.all_seen_namespaces.emplace(ccb_slot_namespace);
-  if (generated_interactions.active_interactions.find({ccb_slot_namespace, ccb_slot_namespace}) ==
-      generated_interactions.active_interactions.end())
+  generated_interactions.interactions.push_back({ccb_slot_namespace, ccb_slot_namespace});
+
+  unsigned char prev_found = 0;
+  for (size_t i = 0; i < original_size; i++)
   {
-    generated_interactions.active_interactions.insert({ccb_slot_namespace, ccb_slot_namespace});
-    generated_interactions.interactions.push_back({ccb_slot_namespace, ccb_slot_namespace});
+    if (generated_interactions.interactions[i].size() > 0 && prev_found != generated_interactions.interactions[i][0])
+    {
+      prev_found = generated_interactions.interactions[i][0];
+      generated_interactions.interactions.push_back({generated_interactions.interactions[i][0], ccb_slot_namespace});
+    }
   }
-  if (generated_interactions.active_interactions.find({ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace}) ==
-      generated_interactions.active_interactions.end())
+  original_size = generated_interactions.interactions.size();
+  for (size_t i = 0; i < original_size; i++)
   {
-    generated_interactions.active_interactions.insert({ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace});
-    generated_interactions.interactions.push_back({ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace});
+    auto interaction_copy = generated_interactions.interactions[i];
+    interaction_copy.push_back(static_cast<namespace_index>(ccb_id_namespace));
+    generated_interactions.interactions.push_back(interaction_copy);
   }
-  generated_interactions.extra_namespaces.emplace(ccb_id_namespace);
 
   for (const auto& action : actions)
   {
@@ -277,7 +282,6 @@ void calculate_and_insert_interactions(
       }
     }
   }
-
   for (const auto& shared_index : shared->indices)
   {
     if (INTERACTIONS::is_printable_namespace(shared_index) &&
@@ -287,7 +291,7 @@ void calculate_and_insert_interactions(
       generated_interactions.interactions.push_back({shared_index, ccb_id_namespace});
     }
   }
-}
+}  // namespace CCB
 
 // build a cb example from the ccb example
 template <bool is_learn>

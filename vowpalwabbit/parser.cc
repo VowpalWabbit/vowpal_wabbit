@@ -702,7 +702,14 @@ void setup_example(vw& all, example* ae)
   }
 
   if (all.interactions.quadraditcs_wildcard_expansion)
-  { INTERACTIONS::expand_quadratics_wildcard_interactions(all.interactions); }
+  {
+    for (auto& ns : ae->indices)
+    {
+      if (ns != constant_namespace && ns != ccb_id_namespace && ns != ccb_slot_namespace)
+      { all.interactions.all_seen_namespaces.insert(ns); }
+    }
+    INTERACTIONS::expand_quadratics_wildcard_interactions(all.interactions);
+  }
 
   size_t new_features_cnt;
   float new_features_sum_feat_sq;
@@ -737,7 +744,7 @@ example* read_example(vw& all, std::string example_line) { return read_example(a
 
 void add_constant_feature(vw& vw, example* ec)
 {
-  ec->set_namespace(constant_namespace, false /*don't use namespace in interactions*/);
+  ec->indices.push_back(constant_namespace);
   ec->feature_space[constant_namespace].push_back(1, constant);
   ec->total_sum_feat_sq++;
   ec->num_features++;
@@ -764,7 +771,7 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
   for (size_t i = 0; i < len; i++)
   {
     unsigned char index = features[i].name;
-    ret->set_namespace(index);
+    ret->indices.push_back(index);
     for (size_t j = 0; j < features[i].len; j++)
     { ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index); }
   }

@@ -379,7 +379,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNI
 
 void addNamespaceIfNotExists(vw* all, example* ex, char ns)
 {
-  if (std::find(ex->indices.begin(), ex->indices.end(), ns) == ex->indices.end()) { ex->set_namespace(ns); }
+  if (std::find(ex->indices.begin(), ex->indices.end(), ns) == ex->indices.end()) { ex->indices.push_back(ns); }
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToNamespaceDense(

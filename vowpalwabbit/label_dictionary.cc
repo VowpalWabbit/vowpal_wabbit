@@ -34,14 +34,7 @@ void add_example_namespace(example& ec, namespace_index ns, features& fs)
       break;
     }
 
-  if (!has_ns)
-  {
-    if (ns == ccb_id_namespace) { ec.set_namespace((size_t)ns, false /*don't use namespace in interactions*/); }
-    else
-    {
-      ec.set_namespace((size_t)ns);
-    }
-  }
+  if (!has_ns) { ec.indices.push_back((size_t)ns); }
 
   bool audit = fs.space_names.size() > 0;
   features& add_fs = ec.feature_space[(size_t)ns];

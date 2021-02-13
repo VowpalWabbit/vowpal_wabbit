@@ -21,12 +21,11 @@ struct namsepace_interactions
   std::set<std::vector<namespace_index>> active_interactions;
   std::set<namespace_index> all_seen_namespaces;
   std::vector<std::vector<namespace_index>> interactions;
-  std::unordered_set<namespace_index> extra_namespaces;  // e.g. ccb_id_namespace from conditional_contextual_bandits
-  std::unordered_set<namespace_index> active_extra_namespaces;
   bool quadraditcs_wildcard_expansion = false;
   bool leave_duplicate_interactions = false;
+  size_t size = 0;
   void clear();
-  void append(namsepace_interactions& src);
+  void append(const namsepace_interactions& src);
 };
 
 struct example_predict
@@ -57,12 +56,9 @@ struct example_predict
   /// If indices is modified this iterator is invalidated.
   iterator end();
 
-  // Pushing to indices should be done via set_namespace and never by pushing directly to the indices array
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
   uint64_t ft_offset;                                  // An offset for all feature values.
-
-  void set_namespace(const namespace_index& index, bool interact = true);
 
   // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
   // vector is an interaction and each char is a namespace.

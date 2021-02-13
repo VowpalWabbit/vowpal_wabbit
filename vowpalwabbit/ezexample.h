@@ -134,7 +134,7 @@ public:
   {
     if (vw_ref->ignore_some && vw_ref->ignore[(int)c]) return true;
     if (ns_exists[(int)c]) return false;
-    ec->set_namespace((size_t)c);
+    ec->indices.push_back((size_t)c);
     ns_exists[(int)c] = true;
     return false;
   }
