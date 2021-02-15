@@ -130,9 +130,10 @@ inline void expand_quadratics_wildcard_interactions(namsepace_interactions& inte
     }
   }
 
-  auto new_interactions = INTERACTIONS::expand_interactions(
-      active_interactions, 2, "error, feature length is not correct, can not expand interactions.");
-  interactions.interactions.insert(interactions.interactions.end(), new_interactions.begin(), new_interactions.end());
+  interactions.interactions.insert(
+      interactions.interactions.end(), active_interactions.begin(), active_interactions.end());
+  std::sort(interactions.interactions.begin(), interactions.interactions.end(),
+      [](std::vector<namespace_index>& i, std::vector<namespace_index>& j) { return i[0] < j[0]; });
 }
 
 // this templated function generates new features for given example and set of interactions
@@ -140,8 +141,7 @@ inline void expand_quadratics_wildcard_interactions(namsepace_interactions& inte
 // it must be in header file to avoid compilation problems
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*),
     class W>  // nullptr func can't be used as template param in old compilers
-inline void
-generate_interactions(namsepace_interactions& interactions, bool permutations, example_predict& ec, R& dat,
+inline void generate_interactions(namsepace_interactions& interactions, bool permutations, example_predict& ec, R& dat,
     W& weights)  // default value removed to eliminate ambiguity in old complers
 {
   features* features_data = ec.feature_space.data();

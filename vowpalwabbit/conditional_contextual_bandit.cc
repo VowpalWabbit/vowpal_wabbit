@@ -264,6 +264,7 @@ void calculate_and_insert_interactions(
       generated_interactions.interactions.push_back({generated_interactions.interactions[i][0], ccb_slot_namespace});
     }
   }
+
   original_size = generated_interactions.interactions.size();
 
   for (size_t i = 0; i < original_size; i++)
