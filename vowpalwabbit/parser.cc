@@ -749,9 +749,7 @@ void add_constant_feature(vw& vw, example* ec)
   ec->total_sum_feat_sq++;
   ec->num_features++;
   if (vw.audit || vw.hash_inv)
-  {
     ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
-  }
 }
 
 void add_label(example* ec, float label, float weight, float base)
@@ -773,7 +771,7 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
     unsigned char index = features[i].name;
     ret->indices.push_back(index);
     for (size_t j = 0; j < features[i].len; j++)
-    { ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index); }
+      ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index);
   }
 
   setup_example(all, ret);

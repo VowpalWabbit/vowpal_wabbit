@@ -194,7 +194,7 @@ public:
   {
     if (ensure_ns_exists(to_ns)) return;
     features& fs = other.feature_space[(int)other_ns];
-    for (size_t i = 0; i < fs.size(); i++) { ec->feature_space[(int)to_ns].push_back(fs.values[i], fs.indicies[i]); }
+    for (size_t i = 0; i < fs.size(); i++) ec->feature_space[(int)to_ns].push_back(fs.values[i], fs.indicies[i]);
     ec->total_sum_feat_sq += fs.sum_feat_sq;
     ec->num_features += fs.size();
     example_changed_since_prediction = true;

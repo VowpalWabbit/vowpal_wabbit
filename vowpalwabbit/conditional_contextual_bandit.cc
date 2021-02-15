@@ -249,8 +249,10 @@ void calculate_and_insert_interactions(
     example* shared, const std::vector<example*>& actions, namsepace_interactions& generated_interactions)
 {
   std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
+
   auto original_size = generated_interactions.interactions.size();
 
+  // add ccb_slot_namespace to original printable interactions
   generated_interactions.interactions.push_back({ccb_slot_namespace, ccb_slot_namespace});
 
   unsigned char prev_found = 0;
@@ -263,6 +265,7 @@ void calculate_and_insert_interactions(
     }
   }
   original_size = generated_interactions.interactions.size();
+
   for (size_t i = 0; i < original_size; i++)
   {
     auto interaction_copy = generated_interactions.interactions[i];
@@ -282,6 +285,7 @@ void calculate_and_insert_interactions(
       }
     }
   }
+
   for (const auto& shared_index : shared->indices)
   {
     if (INTERACTIONS::is_printable_namespace(shared_index) &&
@@ -291,7 +295,7 @@ void calculate_and_insert_interactions(
       generated_interactions.interactions.push_back({shared_index, ccb_id_namespace});
     }
   }
-}  // namespace CCB
+}
 
 // build a cb example from the ccb example
 template <bool is_learn>
