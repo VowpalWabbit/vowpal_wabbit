@@ -706,8 +706,7 @@ void setup_example(vw& all, example* ae)
     for (auto& ns : ae->indices)
     {
       if (ns != constant_namespace && ns != ccb_id_namespace && ns != ccb_slot_namespace)
-      { all.interactions.all_seen_namespaces.insert(ns); }
-    }
+      { all.interactions.all_seen_namespaces.insert(ns); } }
     INTERACTIONS::expand_quadratics_wildcard_interactions(all.interactions);
   }
 
