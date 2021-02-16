@@ -703,6 +703,7 @@ void setup_example(vw& all, example* ae)
 
   if (all.interactions.quadraditcs_wildcard_expansion)
   {
+    // lock while adding interactions since reductions might also be adding their own interactions
     std::unique_lock<std::mutex> lock(all.interactions.mut);
     for (auto& ns : ae->indices)
     {

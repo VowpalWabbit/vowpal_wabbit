@@ -429,6 +429,8 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         // Namespace crossing for slot features.
         data.generated_interactions.clear();
         {
+          // lock while copying interactions since the parsing thread might be adding more interactions
+          // this should only cause contention when using -q ::
           std::unique_lock<std::mutex> lock(data.original_interactions->mut);
           data.generated_interactions.append(*data.original_interactions);
         }
