@@ -133,7 +133,18 @@ inline void expand_quadratics_wildcard_interactions(namsepace_interactions& inte
   interactions.interactions.insert(
       interactions.interactions.end(), active_interactions.begin(), active_interactions.end());
   std::sort(interactions.interactions.begin(), interactions.interactions.end(),
-      [](std::vector<namespace_index>& a, std::vector<namespace_index>& b) { return a[0] < b[0]; });
+      [](std::vector<namespace_index>& a, std::vector<namespace_index>& b) {
+        for (size_t i = 0; i < std::min(a.size(), b.size()); i++)
+        {
+          if (a[i] < b[i])
+            return true;
+          else if (a[i] == b[i])
+            continue;
+          else
+            return false;
+        }
+        return a.size() < b.size();
+      });
 }
 
 // this templated function generates new features for given example and set of interactions
