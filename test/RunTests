@@ -2130,4 +2130,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/slates_simple_w_interactions.predict
     pred-sets/ref/slates_w_interactions.inv
 
+# Test 274: test -q :: with many interactions
+{VW} -d train-sets/ccb_lots_of_interactions.dat --ccb_explore_adf -q :: --invert_hash ccb_lots_of_interactions.inv
+    train-sets/ref/ccb_lots_of_interactions.stderr
+    pred-sets/ref/ccb_lots_of_interactions.inv
+
 # Do not delete this line or the empty line above it
