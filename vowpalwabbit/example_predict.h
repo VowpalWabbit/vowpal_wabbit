@@ -15,6 +15,7 @@ typedef unsigned char namespace_index;
 #include <set>
 #include <unordered_set>
 #include <array>
+#include <mutex>
 
 struct namsepace_interactions
 {
@@ -26,6 +27,7 @@ struct namsepace_interactions
   size_t size = 0;
   void clear();
   void append(const namsepace_interactions& src);
+  mutable std::mutex mut;
 };
 
 struct example_predict

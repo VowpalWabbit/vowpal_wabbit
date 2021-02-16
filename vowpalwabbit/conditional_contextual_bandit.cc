@@ -428,7 +428,10 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       {
         // Namespace crossing for slot features.
         data.generated_interactions.clear();
-        data.generated_interactions.append(*data.original_interactions);
+        {
+          std::unique_lock<std::mutex> lock(data.original_interactions->mut);
+          data.generated_interactions.append(*data.original_interactions);
+        }
         calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
         data.shared->interactions = &data.generated_interactions;
         for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
