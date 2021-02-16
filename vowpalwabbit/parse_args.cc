@@ -1363,6 +1363,8 @@ vw& parse_args(
 
   if (trace_listener)
   {
+    // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
+    // need to adapt between them here.
     all.trace_message_wrapper_context = std::make_shared<trace_message_wrapper>(trace_context, trace_listener);
     all.trace_message = VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(
         VW::io::create_custom_writer(all.trace_message_wrapper_context.get(), trace_message_wrapper_adapter)));
