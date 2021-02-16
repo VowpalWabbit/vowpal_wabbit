@@ -15,7 +15,17 @@ typedef unsigned char namespace_index;
 #include <set>
 #include <unordered_set>
 #include <array>
-#include <mutex>
+// Mutex cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
+// project.
+#ifdef _M_CEE
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <mutex>
+#  define _M_CEE 001
+#  pragma managed(pop)
+#else
+#  include <mutex>
+#endif
 
 struct namsepace_interactions
 {
