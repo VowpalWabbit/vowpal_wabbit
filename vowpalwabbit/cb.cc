@@ -17,7 +17,6 @@ using namespace VW::LEARNER;
 
 namespace CB
 {
-
 // This return value should be treated like an optional. If first is false then the second value should not be read.
 std::pair<bool, cb_class> get_observed_cost_cb(const label& ld)
 {
