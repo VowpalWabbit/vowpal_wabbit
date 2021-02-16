@@ -13,8 +13,6 @@ const static std::pair<std::string, std::string> EMPTY_AUDIT_STRINGS = std::make
 
 namespace INTERACTIONS
 {
-std::vector<std::vector<namespace_index>> expand_interactions(
-    const std::vector<std::vector<namespace_index>>& vec, const size_t required_length, const std::string& err_msg);
 /*
  * By default include interactions of feature with itself.
  * This approach produces slightly more interactions but it's safier
@@ -90,61 +88,6 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
     for (; begin != end; ++begin)
       call_T<R, T>(dat, weights, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
   }
-}
-
-inline void expand_quadratics_wildcard_interactions(namsepace_interactions& interactions)
-{
-  if (interactions.size == interactions.all_seen_namespaces.size())
-  {
-    // nothing new here
-    return;
-  }
-  interactions.size = interactions.all_seen_namespaces.size();
-  auto set_interactions = interactions.all_seen_namespaces;
-  std::vector<std::vector<namespace_index>> active_interactions;
-  for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
-  {
-    for (auto jt = it; jt != set_interactions.end(); ++jt)
-    {
-      if (interactions.active_interactions.find({*it, *jt}) == interactions.active_interactions.end())
-      {
-        active_interactions.push_back({*it, *jt});
-        interactions.active_interactions.insert({*it, *jt});
-      }
-      if (interactions.active_interactions.find({*it, *it}) == interactions.active_interactions.end())
-      {
-        active_interactions.push_back({*it, *it});
-        interactions.active_interactions.insert({*it, *it});
-      }
-      if (interactions.active_interactions.find({*jt, *jt}) == interactions.active_interactions.end())
-      {
-        active_interactions.push_back({*jt, *jt});
-        interactions.active_interactions.insert({*jt, *jt});
-      }
-      if (interactions.active_interactions.find({*jt, *it}) == interactions.active_interactions.end() &&
-          interactions.leave_duplicate_interactions)
-      {
-        active_interactions.push_back({*jt, *it});
-        interactions.active_interactions.insert({*jt, *it});
-      }
-    }
-  }
-
-  interactions.interactions.insert(
-      interactions.interactions.end(), active_interactions.begin(), active_interactions.end());
-  std::sort(interactions.interactions.begin(), interactions.interactions.end(),
-      [](std::vector<namespace_index>& a, std::vector<namespace_index>& b) {
-        for (size_t i = 0; i < std::min(a.size(), b.size()); i++)
-        {
-          if (a[i] < b[i])
-            return true;
-          else if (a[i] == b[i])
-            continue;
-          else
-            return false;
-        }
-        return a.size() < b.size();
-      });
 }
 
 // this templated function generates new features for given example and set of interactions
