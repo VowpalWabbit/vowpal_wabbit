@@ -260,13 +260,13 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
     cb_type_enum = CB_TYPE_IPS;
   else if (type_string.compare("mtr") == 0)
   {
-    all.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr"
-                      << std::endl;
+    *(all.trace_message) << "warning: currently, mtr is only used for the first policy in cover, other policies use dr"
+                         << std::endl;
     cb_type_enum = CB_TYPE_MTR;
   }
   else
   {
-    all.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to mtr." << std::endl;
+    *(all.trace_message) << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to mtr." << std::endl;
     options.replace("cb_type", "mtr");
     cb_type_enum = CB_TYPE_MTR;
   }

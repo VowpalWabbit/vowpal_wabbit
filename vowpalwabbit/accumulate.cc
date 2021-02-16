@@ -113,7 +113,8 @@ void accumulate_weighted_avg(vw& all, parameters& weights)
 {
   if (!weights.adaptive)
   {
-    all.trace_message << "Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
+    *(all.trace_message)
+        << "Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
 
