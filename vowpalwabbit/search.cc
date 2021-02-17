@@ -904,7 +904,7 @@ inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float va
 {
   if (isCB)
   {
-    CB::cb_class cost = {value, index, 0., 0.};
+    CB::cb_class cost{value, index, 0.};
     ld.cb.costs.push_back(cost);
   }
   else

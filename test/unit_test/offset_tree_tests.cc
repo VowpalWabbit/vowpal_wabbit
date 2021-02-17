@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(offset_tree_learn_basic)
   example ec;
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({-1.0, 1, 0.5, 0.0});
+  ec.l.cb.costs.push_back(CB::cb_class{-1.0f, 1, 0.5f});
 
   tree.learn(*as_singleline(test_harness), ec);
 
