@@ -625,8 +625,6 @@ example& get_unused_example(vw* all)
   parser* p = all->example_parser;
   auto ex = p->example_pool.get_object();
   p->begin_parsed_examples++;
-  // Set the interactions for this example to the global set.
-  ex->interactions = &all->interactions;
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_DEPRECATED_USAGE
   ex->in_use = true;
@@ -711,6 +709,9 @@ void setup_example(vw& all, example* ae)
     }
     INTERACTIONS::expand_quadratics_wildcard_interactions(all.interactions);
   }
+
+  // Set the interactions for this example to the global set.
+  ae->interactions = &all.interactions;
 
   size_t new_features_cnt;
   float new_features_sum_feat_sq;
@@ -842,7 +843,6 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
-  ec.interactions = nullptr;
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_DEPRECATED_USAGE
   ec.in_use = false;
