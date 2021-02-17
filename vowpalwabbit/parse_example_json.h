@@ -236,7 +236,7 @@ public:
   {
     found = found_cb = found_cb_continuous = false;
 
-    cb_label = {0., 0, 0., 0.};
+    cb_label = CB::cb_class{};
     cont_label_element = {0., 0., 0.};
   }
 
@@ -396,7 +396,7 @@ public:
         probs.clear();
 
         ld.outcome = outcome;
-        cb_label = {0., 0, 0., 0.};
+        cb_label = CB::cb_class{};
       }
     }
     else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates)
@@ -410,7 +410,7 @@ public:
         for (size_t i = 0; i < this->actions.size(); i++) { ld.probabilities.push_back({actions[i], probs[i]}); }
         actions.clear();
         probs.clear();
-        cb_label = {0., 0, 0., 0.};
+        cb_label = CB::cb_class{};
       }
     }
     else if (found_cb)
@@ -419,7 +419,7 @@ public:
       ld.costs.push_back(cb_label);
 
       found_cb = false;
-      cb_label = {0., 0, 0., 0.};
+      cb_label = CB::cb_class{};
     }
     else if (found_cb_continuous)
     {
