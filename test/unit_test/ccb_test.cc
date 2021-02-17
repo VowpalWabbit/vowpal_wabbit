@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions)
   slots.push_back(VW::read_example(vw, std::string("ccb slot 0 |SlotNamespace f1 f2")));
   for (auto* slot : slots) { CCB::inject_slot_features(shared_ex, slot); }
 
-  namsepace_interactions interactions;
+  namespace_interactions interactions;
   std::vector<std::vector<namespace_index>> compare_set = {{'U', ccb_id_namespace}, {'A', ccb_id_namespace},
       {'O', ccb_id_namespace}, {'S', ccb_id_namespace}, {ccb_slot_namespace, ccb_slot_namespace},
       {ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace}};
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(ccb_generate_interactions_w_default_slot_namespaces)
   slots.push_back(VW::read_example(vw, std::string("ccb slot 0 | f1 f2")));
   for (auto* slot : slots) { CCB::inject_slot_features(shared_ex, slot); }
 
-  namsepace_interactions interactions;
+  namespace_interactions interactions;
   std::vector<std::vector<namespace_index>> compare_set = {{'U', ccb_id_namespace}, {'A', ccb_id_namespace},
       {'O', ccb_id_namespace}, {ccb_slot_namespace, ccb_slot_namespace},
       {ccb_slot_namespace, ccb_slot_namespace, ccb_id_namespace}};

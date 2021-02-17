@@ -40,7 +40,7 @@ inline void dummy_func(R&, const audit_strings*)
 
 template <class R, class S, void (*T)(R&, float, S), class W>  // nullptr func can't be used as template param in old
                                                                // compilers
-inline void generate_interactions(namsepace_interactions& interactions, bool permutations, example_predict& ec, R& dat,
+inline void generate_interactions(namespace_interactions& interactions, bool permutations, example_predict& ec, R& dat,
     W& weights)  // default value removed to eliminate
                  // ambiguity in old complers
 {
@@ -51,7 +51,7 @@ inline void generate_interactions(namsepace_interactions& interactions, bool per
 // where S is EITHER float& feature_weight OR uint64_t feature_index
 template <class R, class S, void (*T)(R&, float, S), class W>
 inline void foreach_feature(W& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
-    namsepace_interactions& interactions, bool permutations, example_predict& ec, R& dat)
+    namespace_interactions& interactions, bool permutations, example_predict& ec, R& dat)
 {
   uint64_t offset = ec.ft_offset;
   if (ignore_some_linear)
@@ -73,7 +73,7 @@ inline void vec_add(float& p, const float fx, const float& fw) { p += fw * fx; }
 
 template <class W>
 inline float inline_predict(W& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
-    namsepace_interactions& interactions, bool permutations, example_predict& ec, float initial = 0.f)
+    namespace_interactions& interactions, bool permutations, example_predict& ec, float initial = 0.f)
 {
   foreach_feature<float, const float&, vec_add, W>(
       weights, ignore_some_linear, ignore_linear, interactions, permutations, ec, initial);

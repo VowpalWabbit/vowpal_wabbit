@@ -27,7 +27,7 @@ typedef unsigned char namespace_index;
 #  include <mutex>
 #endif
 
-struct namsepace_interactions
+struct namespace_interactions
 {
   std::set<std::vector<namespace_index>> active_interactions;
   std::set<namespace_index> all_seen_namespaces;
@@ -36,7 +36,7 @@ struct namsepace_interactions
   bool leave_duplicate_interactions = false;
   size_t size = 0;
   void clear();
-  void append(const namsepace_interactions& src);
+  void append(const namespace_interactions& src);
   mutable std::mutex mut;
 };
 
@@ -74,7 +74,7 @@ struct example_predict
 
   // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
   // vector is an interaction and each char is a namespace.
-  namsepace_interactions* interactions;
+  namespace_interactions* interactions;
   reduction_features _reduction_features;
 
   uint32_t _current_reduction_depth;  // Used for debugging reductions.  Keeps track of current reduction level

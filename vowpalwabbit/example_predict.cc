@@ -82,7 +82,7 @@ void safe_example_predict::clear()
   indices.clear();
 }
 
-void namsepace_interactions::clear()
+void namespace_interactions::clear()
 {
   active_interactions.clear();
   all_seen_namespaces.clear();
@@ -91,7 +91,7 @@ void namsepace_interactions::clear()
   leave_duplicate_interactions = false;
 }
 
-void namsepace_interactions::append(const namsepace_interactions& src)
+void namespace_interactions::append(const namespace_interactions& src)
 {
   active_interactions.insert(src.active_interactions.begin(), src.active_interactions.end());
   all_seen_namespaces.insert(src.all_seen_namespaces.begin(), src.all_seen_namespaces.end());

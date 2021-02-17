@@ -42,8 +42,8 @@ struct ccb
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
   std::vector<bool> exclude_list, include_list;
-  namsepace_interactions generated_interactions;
-  namsepace_interactions* original_interactions;
+  namespace_interactions generated_interactions;
+  namespace_interactions* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label;
 
@@ -246,7 +246,7 @@ void remove_slot_features(example* shared, example* slot)
 
 // Generates quadratics between each namespace and the slot id as well as appends slot id to every existing interaction.
 void calculate_and_insert_interactions(
-    example* shared, const std::vector<example*>& actions, namsepace_interactions& generated_interactions)
+    example* shared, const std::vector<example*>& actions, namespace_interactions& generated_interactions)
 {
   std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 

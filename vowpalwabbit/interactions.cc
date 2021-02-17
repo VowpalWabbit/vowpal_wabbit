@@ -80,7 +80,7 @@ std::vector<std::vector<namespace_index>> expand_interactions(
   return res;
 }
 
-void expand_quadratics_wildcard_interactions(namsepace_interactions& interactions)
+void expand_quadratics_wildcard_interactions(namespace_interactions& interactions)
 {
   if (interactions.size == interactions.all_seen_namespaces.size())
   {
@@ -92,6 +92,12 @@ void expand_quadratics_wildcard_interactions(namsepace_interactions& interaction
   std::vector<std::vector<namespace_index>> active_interactions;
   for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
   {
+    if (interactions.active_interactions.find({*it, *it}) == interactions.active_interactions.end())
+    {
+      active_interactions.push_back({*it, *it});
+      interactions.active_interactions.insert({*it, *it});
+    }
+
     for (auto jt = it; jt != set_interactions.end(); ++jt)
     {
       if (interactions.active_interactions.find({*it, *jt}) == interactions.active_interactions.end())
@@ -99,18 +105,13 @@ void expand_quadratics_wildcard_interactions(namsepace_interactions& interaction
         active_interactions.push_back({*it, *jt});
         interactions.active_interactions.insert({*it, *jt});
       }
-      if (interactions.active_interactions.find({*it, *it}) == interactions.active_interactions.end())
-      {
-        active_interactions.push_back({*it, *it});
-        interactions.active_interactions.insert({*it, *it});
-      }
       if (interactions.active_interactions.find({*jt, *jt}) == interactions.active_interactions.end())
       {
         active_interactions.push_back({*jt, *jt});
         interactions.active_interactions.insert({*jt, *jt});
       }
-      if (interactions.active_interactions.find({*jt, *it}) == interactions.active_interactions.end() &&
-          interactions.leave_duplicate_interactions)
+      if (interactions.leave_duplicate_interactions &&
+          interactions.active_interactions.find({*jt, *it}) == interactions.active_interactions.end())
       {
         active_interactions.push_back({*jt, *it});
         interactions.active_interactions.insert({*jt, *it});

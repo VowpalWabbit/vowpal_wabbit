@@ -34,7 +34,7 @@ inline constexpr bool is_printable_namespace(const unsigned char ns)
 std::vector<std::vector<namespace_index>> expand_interactions(
     const std::vector<std::vector<namespace_index>>& vec, const size_t required_length, const std::string& err_msg);
 
-void expand_quadratics_wildcard_interactions(namsepace_interactions& interactions);
+void expand_quadratics_wildcard_interactions(namespace_interactions& interactions);
 
 // remove duplicate interactions and sort namespaces in them (if required)
 void sort_and_filter_duplicate_interactions(

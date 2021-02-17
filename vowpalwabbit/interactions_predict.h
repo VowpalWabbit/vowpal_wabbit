@@ -96,7 +96,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*),
     class W>  // nullptr func can't be used as template param in old compilers
 inline void
-generate_interactions(namsepace_interactions& interactions, bool permutations, example_predict& ec, R& dat,
+generate_interactions(namespace_interactions& interactions, bool permutations, example_predict& ec, R& dat,
     W& weights)  // default value removed to eliminate ambiguity in old complers
 {
   features* features_data = ec.feature_space.data();
