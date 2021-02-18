@@ -743,16 +743,14 @@ base_learner* cbify_setup(options_i& options, vw& all)
     multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
     {
-      l = &init_cost_sensitive_learner(
-        data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.example_parser, 1, 
-        all.get_setupfn_name(cbify_setup) + "-adf-cs");
+      l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>,
+          all.example_parser, 1, all.get_setupfn_name(cbify_setup) + "-adf-cs");
       all.example_parser->lbl_parser.label_type = label_type_t::cs;
     }
     else
     {
-      l = &init_multiclass_learner(
-        data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.example_parser, 1, 
-        all.get_setupfn_name(cbify_setup) + "-adf");
+      l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>,
+          all.example_parser, 1, all.get_setupfn_name(cbify_setup) + "-adf");
       all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
     }
   }
@@ -778,16 +776,14 @@ base_learner* cbify_setup(options_i& options, vw& all)
     }
     else if (use_cs)
     {
-      l = &init_cost_sensitive_learner(
-        data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.example_parser, 1, 
-        all.get_setupfn_name(cbify_setup) + "-cs", prediction_type_t::multiclass);
+      l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>,
+          all.example_parser, 1, all.get_setupfn_name(cbify_setup) + "-cs", prediction_type_t::multiclass);
       all.example_parser->lbl_parser.label_type = label_type_t::cs;
     }
     else
     {
-      l = &init_multiclass_learner(
-        data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.example_parser, 1, 
-        all.get_setupfn_name(cbify_setup), prediction_type_t::multiclass);
+      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>,
+          all.example_parser, 1, all.get_setupfn_name(cbify_setup), prediction_type_t::multiclass);
       all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
     }
   }
