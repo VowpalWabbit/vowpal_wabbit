@@ -41,9 +41,9 @@ void finish(explore_eval& data)
 {
   if (!data.all->logger.quiet)
   {
-    data.all->trace_message << "update count = " << data.update_count << std::endl;
-    if (data.violations > 0) data.all->trace_message << "violation count = " << data.violations << std::endl;
-    if (!data.fixed_multiplier) data.all->trace_message << "final multiplier = " << data.multiplier << std::endl;
+    *(data.all->trace_message) << "update count = " << data.update_count << std::endl;
+    if (data.violations > 0) *(data.all->trace_message) << "violation count = " << data.violations << std::endl;
+    if (!data.fixed_multiplier) *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl;
   }
 }
 
@@ -68,7 +68,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
   {
     for (uint32_t i = 0; i < preds.size(); i++)
     {
-      float l = get_cost_estimate(&c.known_cost, preds[i].action);
+      float l = get_cost_estimate(c.known_cost, preds[i].action);
       loss += l * preds[i].score;
     }
   }
@@ -133,7 +133,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
   if (label_example != nullptr)  // restore label
     label_example->l.cb = data.action_label;
 
-  data.known_cost = CB_ADF::get_observed_cost(ec_seq);
+  data.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);
   if (label_example != nullptr && is_learn)
   {
     ACTION_SCORE::action_scores& a_s = ec_seq[0]->pred.a_s;
@@ -207,7 +207,6 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
 
   multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
-  all.label_type = label_type_t::cb;
 
   learner<explore_eval, multi_ex>& l = init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1,
       prediction_type_t::action_probs, all.get_setupfn_name(explore_eval_setup));

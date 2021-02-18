@@ -12,6 +12,7 @@
 #include "scope_exit.h"
 #include "vw_versions.h"
 #include "version.h"
+#include "cb_label_parser.h"
 
 #include <memory>
 
@@ -39,10 +40,10 @@ struct cb_explore
 
   learner<cb_explore, example>* cs;
 
-  size_t tau;
+  uint64_t tau;
   float epsilon;
-  size_t bag_size;
-  size_t cover_size;
+  uint64_t bag_size;
+  uint64_t cover_size;
   float psi;
   bool nounif;
   bool epsilon_decay;
@@ -54,9 +55,9 @@ struct cb_explore
   {
     preds.delete_v();
     cover_probs.delete_v();
-    COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
-    COST_SENSITIVE::cs_label.delete_label(&cs_label);
-    COST_SENSITIVE::cs_label.delete_label(&second_cs_label);
+    COST_SENSITIVE::delete_label(cbcs.pred_scores);
+    COST_SENSITIVE::delete_label(cs_label);
+    COST_SENSITIVE::delete_label(second_cs_label);
   }
 };
 
@@ -208,7 +209,13 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     data.cs_label.costs.clear();
     float norm = min_prob * num_actions;
     ec.l.cb = data.cb_label;
-    data.cbcs.known_cost = get_observed_cost(data.cb_label);
+    auto optional_cost = get_observed_cost_cb(data.cb_label);
+    // cost observed, not default
+    if (optional_cost.first) { data.cbcs.known_cost = optional_cost.second; }
+    else
+    {
+      data.cbcs.known_cost = CB::cb_class{};
+    }
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0;
 
@@ -233,6 +240,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     }
   }
 
+  ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
   ec.pred.a_s = probs;
 }
 
@@ -259,11 +267,15 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
   cb_to_cs& c = data.cbcs;
 
-  if ((c.known_cost = get_observed_cost(ld)) != nullptr)
+  auto optional_cost = CB::get_observed_cost_cb(ld);
+  // cost observed, not default
+  if (optional_cost.first == true)
+  {
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-      loss += get_cost_estimate(c.known_cost, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
+      loss += get_cost_estimate(optional_cost.second, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
+  }
 
-  all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, optional_cost.first, loss, 1.f, ec.num_features);
 
   std::stringstream ss;
   float maxprob = 0.;
@@ -281,7 +293,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;
-  print_update_cb_explore(all, CB::cb_label.test_label(&ld), ec, sso);
+  print_update_cb_explore(all, CB::is_test_label(ld), ec, sso);
 }
 
 void finish_example(vw& all, cb_explore& c, example& ec)

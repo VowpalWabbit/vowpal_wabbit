@@ -2,6 +2,8 @@ import sys
 import argparse
 import subprocess
 
+SPANNING_TREE_PORT = 26545
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument("--vw", help="Path to VW binary to use", type=str, required=True)
@@ -12,14 +14,14 @@ if __name__ == '__main__':
   parser.add_argument("--prediction_file", help="", type=str, default=None)
   args = parser.parse_args()
 
-  spanning_tree_args = [args.spanning_tree, "--nondaemon"]
+  spanning_tree_args = [args.spanning_tree, "--nondaemon", "-p", str(SPANNING_TREE_PORT)]
   print("Starting spanning_tree with args: " + " ".join(spanning_tree_args[1:]))
   spanning_tree_proc = subprocess.Popen(spanning_tree_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
   split_vw_args = args.vw_args.split()
   vw_procs = []
   for index, data_file in enumerate(args.data_files):
-    cmd_args = [args.vw, "--span_server", "localhost", "--total", str(len(args.data_files)), "--node", str(index), "--unique_id", "1234", "-d", data_file]
+    cmd_args = [args.vw, "--span_server", "localhost", "--total", str(len(args.data_files)), "--node", str(index), "--unique_id", "1234", "-d", data_file, "--span_server_port", str(SPANNING_TREE_PORT)]
     cmd_args.extend(split_vw_args)
     if(index == len(args.data_files) - 1):
       cmd_args.extend(["-f", "final.model"])

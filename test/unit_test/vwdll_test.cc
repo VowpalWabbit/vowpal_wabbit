@@ -74,13 +74,9 @@ BOOST_AUTO_TEST_CASE(vw_dll_parsed_and_constructed_example_parity)
   VW_Finish(handle2);
 }
 
+#ifndef __APPLE__
 BOOST_AUTO_TEST_CASE(vw_dll_parse_escaped)
 {
-  if (is_invoked_with("valgrind"))
-  {
-    std::cout << "skipping vw_dll_parse_escaped test when running in valgrind" << std::endl;
-    return;
-  }
   // This call doesn't escape and so sees --nonexistent_option as a standalone invalid argument.
   BOOST_CHECK_THROW(VW_InitializeA("-d test\\ --nonexistent_option --quiet"), VW::vw_unrecognised_option_exception);
 
@@ -89,3 +85,4 @@ BOOST_AUTO_TEST_CASE(vw_dll_parse_escaped)
   BOOST_CHECK(handle1 != nullptr);
   VW_Finish(handle1);
 }
+#endif

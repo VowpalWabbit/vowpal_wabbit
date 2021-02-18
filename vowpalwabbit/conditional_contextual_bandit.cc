@@ -31,6 +31,7 @@ void return_v_array(v_array<T>& array, VW::v_array_pool<T>& pool)
 {
   array.clear();
   pool.return_object(array);
+  array = v_init<T>();
 }
 
 struct ccb
@@ -39,7 +40,7 @@ struct ccb
   example* shared;
   std::vector<example*> actions, slots;
   std::vector<uint32_t> origin_index;
-  CB::cb_class cb_label, default_cb_label;
+  CB::cb_class cb_label;
   std::vector<bool> exclude_list, include_list;
   std::vector<std::vector<namespace_index>> generated_interactions;
   std::vector<std::vector<namespace_index>>* original_interactions;
@@ -109,36 +110,11 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
   return true;
 }
 
-template <bool is_learn>
-bool sanity_checks(ccb& data)
-{
-  if (data.slots.size() > data.actions.size())
-  {
-    std::cerr << "ccb_adf_explore: badly formatted example - number of actions " << data.actions.size()
-              << " must be greater than the number of slots " << data.slots.size();
-    return false;
-  }
-
-  if (is_learn)
-  {
-    for (auto* slot : data.slots)
-    {
-      if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
-          slot->l.conditional_contextual_bandit.outcome->probabilities.empty())
-      {
-        std::cerr << "ccb_adf_explore: badly formatted example - missing label probability";
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
 // create empty/default cb labels
 void create_cb_labels(ccb& data)
 {
   data.shared->l.cb.costs = data.cb_label_pool.get_object();
-  data.shared->l.cb.costs.push_back(data.default_cb_label);
+  data.shared->l.cb.costs.push_back(CB::cb_class{});
   for (example* action : data.actions) { action->l.cb.costs = data.cb_label_pool.get_object(); }
   data.shared->l.cb.weight = 1.0;
 }
@@ -166,7 +142,6 @@ void attach_label_to_example(
 void save_action_scores(ccb& data, decision_scores_t& decision_scores)
 {
   auto& pred = data.shared->pred.a_s;
-  decision_scores.push_back(pred);
 
   // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
   for (auto& action_score : pred) { action_score.action = data.origin_index[action_score.action]; }
@@ -174,6 +149,9 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   // Exclude the chosen action from next slots.
   auto original_index_of_chosen_action = pred[0].action;
   data.exclude_list[original_index_of_chosen_action] = true;
+
+  decision_scores.push_back(pred);
+  data.shared->pred.a_s = v_init<ACTION_SCORE::action_score>();
 }
 
 void clear_pred_and_label(ccb& data)
@@ -272,7 +250,22 @@ void calculate_and_insert_interactions(example* shared, const std::vector<exampl
 {
   std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 
-  const auto original_size = generated_interactions.size();
+  auto original_size = generated_interactions.size();
+
+  // add ccb_slot_namespace to original printable interactions
+  generated_interactions.push_back({ccb_slot_namespace, ccb_slot_namespace});
+
+  unsigned char prev_found = 0;
+  for (size_t i = 0; i < original_size; i++)
+  {
+    if (generated_interactions[i].size() > 0 && prev_found != generated_interactions[i][0])
+    {
+      prev_found = generated_interactions[i][0];
+      generated_interactions.push_back({generated_interactions[i][0], ccb_slot_namespace});
+    }
+  }
+  original_size = generated_interactions.size();
+
   for (size_t i = 0; i < original_size; i++)
   {
     auto interaction_copy = generated_interactions[i];
@@ -373,9 +366,23 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // split shared, actions and slots
   if (!split_multi_example_and_stash_labels(examples, data)) { return; }
 
-#ifndef NDEBUG
-  if (!sanity_checks<is_learn>(data)) { return; }
-#endif
+  if (data.slots.size() > data.actions.size())
+  {
+    std::stringstream msg;
+    msg << "ccb_adf_explore: badly formatted example - number of actions " << data.actions.size()
+        << " must be greater than the number of slots " << data.slots.size();
+    THROW(msg.str())
+  }
+
+  if (is_learn)
+  {
+    for (auto* slot : data.slots)
+    {
+      if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
+          slot->l.conditional_contextual_bandit.outcome->probabilities.empty())
+      { THROW("ccb_adf_explore: badly formatted example - missing label probability"); }
+    }
+  }
 
   data.has_seen_multi_slot_example = data.has_seen_multi_slot_example || data.slots.size() > 1;
 
@@ -432,7 +439,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
       if (should_augment_with_slot_info)
       {
-        if (data.all->audit) { inject_slot_id<true>(data, data.shared, slot_id); }
+        if (data.all->audit || data.all->hash_inv) { inject_slot_id<true>(data, data.shared, slot_id); }
         else
         {
           inject_slot_id<false>(data, data.shared, slot_id);
@@ -461,7 +468,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
       if (should_augment_with_slot_info)
       {
-        if (data.all->audit) { remove_slot_id<true>(data.shared); }
+        if (data.all->audit || data.all->hash_inv) { remove_slot_id<true>(data.shared); }
         else
         {
           remove_slot_id<false>(data.shared);
@@ -478,7 +485,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   }
   catch (std::exception& e)
   {
-    data.all->trace_message << "CCB got exception from base reductions: " << e.what() << std::endl;
+    *(data.all->trace_message) << "CCB got exception from base reductions: " << e.what() << std::endl;
     throw;
   }
 }
@@ -594,8 +601,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
-  option_group_definition new_options(
-      "EXPERIMENTAL: Conditional Contextual Bandit Exploration with Action Dependent Features");
+  option_group_definition new_options("EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF");
   new_options
       .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
                .keep()
@@ -620,19 +626,16 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 
   auto* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CCB::ccb_label_parser;
-  all.label_type = label_type_t::ccb;
 
   // Stash the base learners stride_shift so we can properly add a feature later.
   data->base_learner_stride_shift = all.weights.stride_shift();
 
   // Extract from lower level reductions
-  data->default_cb_label = {FLT_MAX, 0, -1.f, 0.f};
   data->shared = nullptr;
   data->original_interactions = &all.interactions;
   data->all = &all;
   data->model_file_version = all.model_file_ver;
 
-  data->id_namespace_str.push_back((char)ccb_id_namespace);
   data->id_namespace_str.append("_id");
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
@@ -647,4 +650,5 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 }
 
 bool ec_is_example_header(example const& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }
+bool ec_is_example_unset(example const& ec) { return ec.l.conditional_contextual_bandit.type == example_type::unset; }
 }  // namespace CCB

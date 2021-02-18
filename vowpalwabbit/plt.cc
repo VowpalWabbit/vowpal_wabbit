@@ -348,13 +348,13 @@ base_learner* plt_setup(options_i& options, vw& all)
 
   if (!all.logger.quiet)
   {
-    all.trace_message << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
+    *(all.trace_message) << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
     if (!all.training)
     {
-      if (tree->top_k > 0) { all.trace_message << "top_k = " << tree->top_k << std::endl; }
+      if (tree->top_k > 0) { *(all.trace_message) << "top_k = " << tree->top_k << std::endl; }
       else
       {
-        all.trace_message << "threshold = " << tree->threshold << std::endl;
+        *(all.trace_message) << "threshold = " << tree->threshold << std::endl;
       }
     }
   }
@@ -374,8 +374,7 @@ base_learner* plt_setup(options_i& options, vw& all)
         prediction_type_t::multilabels, all.get_setupfn_name(plt_setup));
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
-  all.label_type = label_type_t::multi;
-  all.delete_prediction = MULTILABEL::multilabel.delete_label;
+  all.delete_prediction = MULTILABEL::delete_prediction;
 
   // force logistic loss for base classifiers
   all.loss = getLossFunction(all, "logistic");

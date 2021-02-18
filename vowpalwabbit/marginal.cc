@@ -345,7 +345,7 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
   free_ptr<MARGINAL::data> d = scoped_calloc_or_throw<MARGINAL::data>();
   std::string marginal;
 
-  option_group_definition marginal_options("VW options");
+  option_group_definition marginal_options("Marginal options");
   marginal_options.add(
       make_option("marginal", marginal).keep().necessary().help("substitute marginal label estimates for ids"));
   marginal_options.add(

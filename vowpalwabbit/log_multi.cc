@@ -500,8 +500,9 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
-  learner<log_multi, example>& l = init_multiclass_learner(data, as_singleline(setup_base(options, all)), learn,
-      predict, all.example_parser, data->max_predictors, all.get_setupfn_name(log_multi_setup));
+  learner<log_multi, example>& l = init_multiclass_learner(
+      data, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, data->max_predictors, 
+      all.get_setupfn_name(log_multi_setup));
   all.label_type = label_type_t::mc;
   l.set_save_load(save_load_tree);
 
