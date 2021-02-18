@@ -1222,7 +1222,8 @@ base_learner* setup(options_i& options, vw& all)
   all.weights.stride_shift((uint32_t)ceil_log_2(stride - 1));
 
   gd* bare = g.get();
-  learner<gd, example>& ret = init_learner(g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()));
+  learner<gd, example>& ret = init_learner(
+      g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()), all.get_setupfn_name(setup));
   ret.set_sensitivity(bare->sensitivity);
   ret.set_multipredict(bare->multipredict);
   ret.set_update(bare->update);

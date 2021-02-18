@@ -25,8 +25,6 @@ using namespace VW::config;
 using std::endl;
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
-VW_DEBUG_ENABLE(false)
-
 namespace CB_EXPLORE
 {
 struct cb_explore
@@ -385,17 +383,17 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     data->preds.resize(data->cover_size);
     data->model_file_version = all.model_file_ver;
     l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1,
-        prediction_type_t::action_probs);
+        prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-cover");
   }
   else if (options.was_supplied("bag"))
     l = &init_learner(data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data->bag_size,
-        prediction_type_t::action_probs);
+        prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-bag");
   else if (options.was_supplied("first"))
-    l = &init_learner(
-        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type_t::action_probs);
+    l = &init_learner(data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1,
+        prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-first");
   else  // greedy
-    l = &init_learner(
-        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type_t::action_probs);
+    l = &init_learner(data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1,
+        prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-greedy");
 
   l->set_finish_example(finish_example);
   l->set_save_load(save_load);

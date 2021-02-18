@@ -1208,9 +1208,10 @@ void load_input_model(vw& all, io_buf& io_temp)
 
 VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
-  reduction_setup_fn setup_func = std::get<1>(all.reduction_stack.top());
-  std::string setup_func_name = std::get<0>(all.reduction_stack.top());
-  all.reduction_stack.pop();
+  auto func_map = all.reduction_stack.back();
+  reduction_setup_fn setup_func = std::get<1>(func_map);
+  std::string setup_func_name = std::get<0>(func_map);
+  all.reduction_stack.pop_back();
 
   // 'hacky' way of keeping track of the option group created by the setup_func about to be created
   options.tint(setup_func_name);
@@ -1241,17 +1242,20 @@ void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
 
   for (auto setup_fn : reductions)
   {
-    if (allowlist.count(setup_fn)) { all.reduction_stack.push(std::make_tuple(allowlist[setup_fn], setup_fn)); }
+    if (allowlist.count(setup_fn)) { all.reduction_stack.push_back(std::make_tuple(allowlist[setup_fn], setup_fn)); }
     else
     {
       auto base = setup_fn(name_extractor, dummy_all);
 
       if (base == nullptr)
-        all.reduction_stack.push(std::make_tuple(name_extractor.generated_name, setup_fn));
+        all.reduction_stack.push_back(std::make_tuple(name_extractor.generated_name, setup_fn));
       else
         THROW("fatal: under register_reduction() all setup functions must return nullptr");
     }
   }
+
+  // populate setup_fn -> name map to be used to lookup names in setup_base
+  all.build_setupfn_name_dict();
 }
 
 void parse_reductions(options_i& options, vw& all)

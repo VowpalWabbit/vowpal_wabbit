@@ -209,8 +209,8 @@ base_learner* lrq_setup(options_i& options, vw& all)
   if (!all.logger.quiet) *(all.trace_message) << std::endl;
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);
-  learner<LRQstate, example>& l = init_learner(
-      lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, 1 + maxk);
+  learner<LRQstate, example>& l = init_learner(lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>,
+      predict_or_learn<false>, 1 + maxk, all.get_setupfn_name(lrq_setup));
   l.set_end_pass(reset_seed);
 
   // TODO: leaks memory ?

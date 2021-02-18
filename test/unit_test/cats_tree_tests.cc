@@ -75,8 +75,8 @@ learner<T, example>* get_test_harness_reduction(const predictions_t& base_reduct
       init_learner(test_harness,  // Data structure passed by vw_framework into test_harness predict/learn calls
           T::learn,               // test_harness learn
           T::predict,             // test_harness predict
-          1                       // Number of regressors in test_harness (not used)
-      );                          // Create a learner using the base reduction.
+          1,                      // Number of regressors in test_harness (not used)
+          "test_learner");        // Create a learner using the base reduction.
   return &test_learner;
 }
 }  // namespace cats_tree
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
 
   example ec;
   ec.ft_offset = 0;
-  ec._current_reduction_depth = 0;
+  ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
 
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
 
   example ec;
   ec.ft_offset = 0;
-  ec._current_reduction_depth = 0;
+  ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
 
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
 {
   example ec;
   ec.ft_offset = 0;
-  ec._current_reduction_depth = 0;
+  ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 4, 0.5f});
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
 {
   example ec;
   ec.ft_offset = 0;
-  ec._current_reduction_depth = 0;
+  ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
@@ -225,7 +225,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
 {
   example ec;
   ec.ft_offset = 0;
-  ec._current_reduction_depth = 0;
+  ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
@@ -261,7 +261,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
 {
   example ec;
   ec.ft_offset = 0;
-  ec._current_reduction_depth = 0;
+  ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 6, 0.5f});
@@ -293,7 +293,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
 {
   example ec;
   ec.ft_offset = 0;
-  ec._current_reduction_depth = 0;
+  ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 7, 0.5f});
@@ -326,7 +326,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
 {
   example ec;
   ec.ft_offset = 0;
-  ec._current_reduction_depth = 0;
+  ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 6, 0.5f});
@@ -359,7 +359,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
 {
   example ec;
   ec.ft_offset = 0;
-  ec._current_reduction_depth = 0;
+  ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 11, 0.5f});
@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
 {
   example ec;
   ec.ft_offset = 0;
-  ec._current_reduction_depth = 0;
+  ec._debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 5, 0.5f});
