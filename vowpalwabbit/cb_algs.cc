@@ -49,9 +49,17 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 {
   CB::label ld = ec.l.cb;
   cb_to_cs& c = data.cbcs;
-  c.known_cost = get_observed_cost(ld);
-  if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
-    std::cerr << "invalid action: " << c.known_cost->action << std::endl;
+  auto optional_cost = get_observed_cost_cb(ld);
+  // cost observed, not default
+  if (optional_cost.first) { c.known_cost = optional_cost.second; }
+  else
+  {
+    c.known_cost = CB::cb_class{};
+  }
+
+  // cost observed, not default
+  if (optional_cost.first && (c.known_cost.action < 1 || c.known_cost.action > c.num_actions))
+    std::cerr << "invalid action: " << c.known_cost.action << std::endl;
 
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ld, data.cb_cs_ld);
@@ -83,7 +91,13 @@ void learn_eval(cb& data, single_learner&, example& ec)
   CB_EVAL::label ld = ec.l.cb_eval;
 
   cb_to_cs& c = data.cbcs;
-  c.known_cost = get_observed_cost(ld.event);
+  auto optional_cost = get_observed_cost_cb(ld.event);
+  // cost observed, not default
+  if (optional_cost.first) { c.known_cost = optional_cost.second; }
+  else
+  {
+    c.known_cost = CB::cb_class{};
+  }
   gen_cs_example<true>(c, ec, ld.event, data.cb_cs_ld);
 
   for (size_t i = 0; i < ld.event.costs.size(); i++)

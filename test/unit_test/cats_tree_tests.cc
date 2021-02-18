@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
   ec.ft_offset = 0;
   ec._current_reduction_depth = 0;
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({3.5f, 2, 0.5f, 0.0f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
 
   tree.learn(base, ec);
 
@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
   ec.ft_offset = 0;
   ec._current_reduction_depth = 0;
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({3.5f, 2, 0.5f, 0.0f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
 
   tree.learn(base, ec);
 
@@ -162,8 +162,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
   ec.ft_offset = 0;
   ec._current_reduction_depth = 0;
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({3.5f, 3, 0.5f, 0.0f});
-  ec.l.cb.costs.push_back({3.5f, 4, 0.5f, 0.0f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 4, 0.5f});
 
   predictions_t preds_to_return = {1.f, -1.f};
 
@@ -194,8 +194,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
   ec.ft_offset = 0;
   ec._current_reduction_depth = 0;
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({3.5f, 2, 0.5f, 0.0f});
-  ec.l.cb.costs.push_back({3.5f, 3, 0.5f, 0.0f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
 
   predictions_t preds_to_return = {1.f, 1.f, -1.f, 1.f};
 
@@ -227,8 +227,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
   ec.ft_offset = 0;
   ec._current_reduction_depth = 0;
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({3.5f, 2, 0.5f, 0.0f});
-  ec.l.cb.costs.push_back({3.5f, 3, 0.5f, 0.0f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
 
   predictions_t preds_to_return = {1.f, -1.f, 1.f};
 
@@ -263,8 +263,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
   ec.ft_offset = 0;
   ec._current_reduction_depth = 0;
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({3.5f, 3, 0.5f, 0.0f});
-  ec.l.cb.costs.push_back({3.5f, 6, 0.5f, 0.0f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 6, 0.5f});
 
   predictions_t preds_to_return = {-1.f, -1.f, -1.f};
 
@@ -295,8 +295,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
   ec.ft_offset = 0;
   ec._current_reduction_depth = 0;
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({3.5f, 3, 0.5f, 0.0f});
-  ec.l.cb.costs.push_back({3.5f, 7, 0.5f, 0.0f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 7, 0.5f});
 
   predictions_t preds_to_return = {1.f, 1.f, 1.f, -1.f};
 
@@ -328,8 +328,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
   ec.ft_offset = 0;
   ec._current_reduction_depth = 0;
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({3.5f, 3, 0.5f, 0.0f});
-  ec.l.cb.costs.push_back({3.5f, 6, 0.5f, 0.0f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 6, 0.5f});
 
   predictions_t preds_to_return = {};
 
@@ -361,8 +361,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
   ec.ft_offset = 0;
   ec._current_reduction_depth = 0;
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({3.5f, 3, 0.5f, 0.0f});
-  ec.l.cb.costs.push_back({3.5f, 11, 0.5f, 0.0f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 11, 0.5f});
 
   predictions_t preds_to_return = {1, 1, -1};
 
@@ -394,8 +394,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
   ec.ft_offset = 0;
   ec._current_reduction_depth = 0;
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({3.5f, 2, 0.5f, 0.0f});
-  ec.l.cb.costs.push_back({3.5f, 5, 0.5f, 0.0f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
+  ec.l.cb.costs.push_back(CB::cb_class{3.5f, 5, 0.5f});
 
   predictions_t preds_to_return = {-1.f, 1.f, -1.f};
 
