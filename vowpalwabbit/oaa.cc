@@ -264,14 +264,14 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
         predict_or_learn<false, true, false, false>, all.example_parser, data->k,
         all.get_setupfn_name(oaa_setup) + "-raw", prediction_type_t::multiclass);
-    all.example_parser->lbl_parser.label_type = label_type_t::mc;
+    all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   }
   else
   {
     l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, false, false>,
         predict_or_learn<false, false, false, false>, all.example_parser, data->k, all.get_setupfn_name(oaa_setup),
         prediction_type_t::multiclass);
-    all.example_parser->lbl_parser.label_type = label_type_t::mc;
+    all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   }
 
   if (data_ptr->num_subsample > 0)
