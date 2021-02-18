@@ -1208,9 +1208,10 @@ void load_input_model(vw& all, io_buf& io_temp)
 
 VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
-  reduction_setup_fn setup_func = std::get<1>(all.reduction_stack.top());
-  std::string setup_func_name = std::get<0>(all.reduction_stack.top());
-  all.reduction_stack.pop();
+  auto func_map = all.reduction_stack.back();
+  reduction_setup_fn setup_func = std::get<1>(func_map);
+  std::string setup_func_name = std::get<0>(func_map);
+  all.reduction_stack.pop_back();
 
   // 'hacky' way of keeping track of the option group created by the setup_func about to be created
   options.tint(setup_func_name);
