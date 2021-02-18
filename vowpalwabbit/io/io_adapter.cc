@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "io_adapter.h"
 
 #ifdef _WIN32
@@ -105,6 +109,17 @@ private:
   gzFile _gz_stdout;
 };
 
+struct custom_func_writer : public writer
+{
+  custom_func_writer(void* context, write_func_t write_func);
+  ~custom_func_writer() = default;
+  ssize_t write(const char* buffer, size_t num_bytes) override;
+
+private:
+  void* _context;
+  write_func_t _write_func;
+};
+
 struct vector_writer : public writer
 {
   vector_writer(std::shared_ptr<std::vector<char>>& buffer);
@@ -161,6 +176,11 @@ std::unique_ptr<reader> open_stdin() { return std::unique_ptr<reader>(new stdio_
 std::unique_ptr<writer> open_stdout() { return std::unique_ptr<writer>(new stdio_adapter); }
 
 std::unique_ptr<socket> wrap_socket_descriptor(int fd) { return std::unique_ptr<socket>(new socket(fd)); }
+
+std::unique_ptr<writer> create_custom_writer(void* context, write_func_t write_func)
+{
+  return std::unique_ptr<writer>(new custom_func_writer(context, write_func));
+}
 
 std::unique_ptr<writer> create_vector_writer(std::shared_ptr<std::vector<char>>& buffer)
 {
@@ -386,6 +406,20 @@ ssize_t vector_writer::write(const char* buffer, size_t num_bytes)
   _buffer->reserve(_buffer->size() + num_bytes);
   _buffer->insert(std::end(*_buffer), buffer, buffer + num_bytes);
   return num_bytes;
+}
+
+//
+// custom_func_writer
+//
+
+custom_func_writer::custom_func_writer(void* context, write_func_t write_func)
+    : _context(context), _write_func(write_func)
+{
+}
+
+ssize_t custom_func_writer::write(const char* buffer, size_t num_bytes)
+{
+  return _write_func(_context, buffer, num_bytes);
 }
 
 //

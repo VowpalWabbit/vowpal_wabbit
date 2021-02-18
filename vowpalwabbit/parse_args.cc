@@ -103,6 +103,10 @@
 #include "named_labels.h"
 #include "kskip_ngram_transformer.h"
 
+#include "io/io_adapter.h"
+#include "io/custom_streambuf.h"
+#include "io/owning_stream.h"
+
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -1343,6 +1347,14 @@ void parse_reductions(options_i& options, vw& all)
   all.l = setup_base(options, all);
 }
 
+ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t num_bytes)
+{
+  auto* wrapper_context = reinterpret_cast<trace_message_wrapper*>(context);
+  std::string str(buffer, num_bytes);
+  wrapper_context->_trace_message(wrapper_context->_inner_context, str);
+  return static_cast<ssize_t>(num_bytes);
+}
+
 vw& parse_args(
     std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener, void* trace_context)
 {
@@ -1351,8 +1363,11 @@ vw& parse_args(
 
   if (trace_listener)
   {
-    all.trace_message =
-        VW::make_unique<owning_ostream>(VW::make_unique<custom_output_stream_buf>(trace_context, trace_listener));
+    // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
+    // need to adapt between them here.
+    all.trace_message_wrapper_context = std::make_shared<trace_message_wrapper>(trace_context, trace_listener);
+    all.trace_message = VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(
+        VW::io::create_custom_writer(all.trace_message_wrapper_context.get(), trace_message_wrapper_adapter)));
   }
 
   try
