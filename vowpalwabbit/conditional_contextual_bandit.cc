@@ -40,7 +40,7 @@ struct ccb
   example* shared;
   std::vector<example*> actions, slots;
   std::vector<uint32_t> origin_index;
-  CB::cb_class cb_label, default_cb_label;
+  CB::cb_class cb_label;
   std::vector<bool> exclude_list, include_list;
   std::vector<std::vector<namespace_index>> generated_interactions;
   std::vector<std::vector<namespace_index>>* original_interactions;
@@ -114,7 +114,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
 void create_cb_labels(ccb& data)
 {
   data.shared->l.cb.costs = data.cb_label_pool.get_object();
-  data.shared->l.cb.costs.push_back(data.default_cb_label);
+  data.shared->l.cb.costs.push_back(CB::cb_class{});
   for (example* action : data.actions) { action->l.cb.costs = data.cb_label_pool.get_object(); }
   data.shared->l.cb.weight = 1.0;
 }
@@ -631,7 +631,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->base_learner_stride_shift = all.weights.stride_shift();
 
   // Extract from lower level reductions
-  data->default_cb_label = {FLT_MAX, 0, -1.f, 0.f};
   data->shared = nullptr;
   data->original_interactions = &all.interactions;
   data->all = &all;
@@ -640,8 +639,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_str.append("_id");
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
-  learner<ccb, multi_ex>& l =
-      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_probs);
+  learner<ccb, multi_ex>& l = init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
+      prediction_type_t::decision_probs, all.get_setupfn_name(ccb_explore_adf_setup));
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
