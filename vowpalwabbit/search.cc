@@ -2555,11 +2555,17 @@ void parse_neighbor_features(VW::string_view nf_strview, search& sch)
 
   std::vector<VW::string_view> cmd;
   size_t end_idx = 0;
-  while (!nf_strview.empty())
+  bool reached_end = false;
+  while (!reached_end)
   {
     end_idx = nf_strview.find(',');
     VW::string_view strview = nf_strview.substr(0, end_idx);
-    if (end_idx != VW::string_view::npos) nf_strview.remove_prefix(end_idx + 1);
+    // If we haven't reached the end yet, slice off the piece we're currently parsing
+    if (end_idx != VW::string_view::npos) { nf_strview.remove_prefix(end_idx + 1); }
+    else
+    {
+      reached_end = true;
+    }
 
     cmd.clear();
     tokenize(':', strview, cmd, true);
