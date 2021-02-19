@@ -21,6 +21,13 @@ add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
 target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
 add_library(VowpalWabbit::io ALIAS vw_io)
 
+if(BUILD_FLATBUFFERS)
+  add_subdirectory(parser/flatbuffer)
+  add_library(FlatbuffersTarget INTERFACE)
+  target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
+  add_dependencies(FlatbuffersTarget fbschemas)
+endif()
+
 set(vw_all_headers
   accumulate.h
   action_score.h
@@ -54,6 +61,7 @@ set(vw_all_headers
   cb_explore_adf_greedy.h
   cb_explore_adf_regcb.h
   cb_explore_adf_squarecb.h
+  cb_explore_adf_synthcover.h
   cb_explore_adf_rnd.h
   cb_explore_adf_softmax.h
   cb_explore_pdf.h
@@ -63,12 +71,14 @@ set(vw_all_headers
   cbify.h
   ccb_label.h
   ccb_reduction_features.h
+  continuous_actions_reduction_features.h
   classweight.h
   compat.h
   conditional_contextual_bandit.h
   confidence.h
   config.h.in
   constant.h
+  cbzo.h
   correctedMath.h
   cost_sensitive.h
   crossplat_compat.h
@@ -87,6 +97,7 @@ set(vw_all_headers
   explore_eval.h
   expreplay.h
   ezexample.h
+  fast_pow10.h
   feature_group.h
   ftrl.h
   gd_mf.h
@@ -101,6 +112,7 @@ set(vw_all_headers
   interactions_predict.h
   interactions.h
   io_buf.h
+  json_utils.h
   kernel_svm.h
   label_dictionary.h
   label_parser.h
@@ -118,6 +130,7 @@ set(vw_all_headers
   multilabel_oaa.h
   multilabel.h
   mwt.h
+  numeric_casts.h
   named_labels.h
   network.h
   kskip_ngram_transformer.h
@@ -149,6 +162,7 @@ set(vw_all_headers
   rand48.h
   recall_tree.h
   reductions.h
+  reductions_fwd.h
   sample_pdf.h
   scope_exit.h
   scorer.h
@@ -186,6 +200,10 @@ set(vw_all_headers
   warm_cb.h
 )
 
+if(BUILD_FLATBUFFERS)
+  set(vw_all_headers ${vw_all_headers} parser/flatbuffer/parse_example_flatbuffer.h)
+endif()
+
 set(vw_all_sources
   accumulate.cc
   action_score.cc
@@ -214,6 +232,7 @@ set(vw_all_sources
   cb_explore_adf_greedy.cc
   cb_explore_adf_regcb.cc
   cb_explore_adf_squarecb.cc
+  cb_explore_adf_synthcover.cc
   cb_explore_adf_rnd.cc
   cb_explore_adf_softmax.cc
   cb_explore_pdf.cc
@@ -225,6 +244,7 @@ set(vw_all_sources
   classweight.cc
   conditional_contextual_bandit.cc
   confidence.cc
+  cbzo.cc
   cost_sensitive.cc
   cs_active.cc
   csoaa.cc
@@ -277,7 +297,6 @@ set(vw_all_sources
   parser.cc
   pmf_to_pdf.cc
   plt.cc
-  reduction_features.cc
   print.cc
   prob_dist_cont.cc
   rand48.cc
@@ -308,6 +327,12 @@ set(vw_all_sources
   warm_cb.cc
 )
 
+if(BUILD_FLATBUFFERS)
+  set(vw_all_sources ${vw_all_sources}
+    parser/flatbuffer/parse_example_flatbuffer.cc
+    parser/flatbuffer/parse_label.cc)
+endif()
+
 add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
@@ -319,6 +344,14 @@ target_link_libraries(vw
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
     $<BUILD_INTERFACE:RapidJSON>)
+
+if(BUILD_FLATBUFFERS)
+  target_link_libraries(vw
+      PRIVATE
+      $<BUILD_INTERFACE:FlatbuffersTarget>)
+  target_compile_definitions(vw PUBLIC BUILD_FLATBUFFERS)
+endif()
+
 
 add_library(VowpalWabbit::vw ALIAS vw)
 
@@ -452,4 +485,7 @@ if(VW_INSTALL)
   install(
     FILES ${vw_all_headers} ${CMAKE_CURRENT_BINARY_DIR}/config.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit)
+  install(
+    FILES io/io_adapter.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/io
+  )
 endif()

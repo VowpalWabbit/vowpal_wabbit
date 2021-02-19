@@ -333,7 +333,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
 
   try
   {
-    example* ex = VW::alloc_examples(0, 1);
+    example* ex = VW::alloc_examples(1);
     ex->interactions = &all->interactions;
 
     if (isEmpty)
@@ -480,7 +480,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
 
   try
   {
-    label_data* ld = (label_data*)&ex->l;
+    label_data* ld = &ex->l.simple;
     ld->label = label;
     ld->serialized_weight = weight;
 
@@ -612,12 +612,12 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
 
     if (!memcmp(&lp, &simple_label_parser, sizeof(lp)))
     {
-      label_data* ld = (label_data*)&ex->l;
+      label_data* ld = &ex->l.simple;
       ostr << "simple " << ld->label << ":" << ld->serialized_weight << ":" << ld->serialized_initial;
     }
     else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
     {
-      CB::label* ld = (CB::label*)&ex->l;
+      CB::label* ld = &ex->l.cb;
       ostr << "CB " << ld->costs.size();
 
       if (ld->costs.size() > 0)

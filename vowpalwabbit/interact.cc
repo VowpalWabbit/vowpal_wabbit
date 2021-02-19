@@ -25,13 +25,13 @@ bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, inte
 
   if (f_src1.values[0] != 1)
   {
-    all.trace_message << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
+    *(all.trace_message) << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
     return false;
   }
 
   if (f_src2.values[0] != 1)
   {
-    all.trace_message << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
+    *(all.trace_message) << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
     return false;
   }
 
@@ -173,7 +173,7 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   VW::LEARNER::learner<interact, example>* l;
   l = &VW::LEARNER::init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-      predict_or_learn<false, true>, 1, "interact");
+      predict_or_learn<false, true>, 1, all.get_setupfn_name(interact_setup));
 
   return make_base(*l);
 }

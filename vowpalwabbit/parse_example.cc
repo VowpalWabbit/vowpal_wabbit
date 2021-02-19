@@ -483,8 +483,8 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
   }
 
   if (!all->example_parser->words.empty())
-    all->example_parser->lbl_parser.parse_label(
-        all->example_parser, all->example_parser->_shared_data, &ae->l, all->example_parser->words);
+    all->example_parser->lbl_parser.parse_label(all->example_parser, all->example_parser->_shared_data, &ae->l,
+        all->example_parser->words, ae->_reduction_features);
 
   if (bar_idx != VW::string_view::npos)
   {
@@ -505,7 +505,7 @@ void read_line(vw& all, example* ex, VW::string_view line)
 
 void read_line(vw& all, example* ex, char* line) { return read_line(all, ex, VW::string_view(line)); }
 
-void read_lines(vw* all, char* line, size_t /*len*/, v_array<example*>& examples)
+void read_lines(vw* all, const char* line, size_t /*len*/, v_array<example*>& examples)
 {
   std::vector<VW::string_view> lines;
   tokenize('\n', line, lines);

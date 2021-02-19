@@ -58,6 +58,8 @@ typedef float weight;
 typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
 typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::config::options_i&, vw&);
 
+using options_deleter_type = void (*)(VW::config::options_i*);
+
 struct dictionary_info
 {
   std::string name;
@@ -155,6 +157,25 @@ struct shared_data
       dump_interval = (float)weighted_examples() + progress_arg;
     else
       dump_interval = (float)weighted_examples() * progress_arg;
+  }
+
+  // progressive validation header
+  void print_update_header(std::ostream& trace_message)
+  {
+    trace_message << std::left << std::setw(col_avg_loss) << std::left << "average"
+                  << " " << std::setw(col_since_last) << std::left << "since"
+                  << " " << std::right << std::setw(col_example_counter) << "example"
+                  << " " << std::setw(col_example_weight) << "example"
+                  << " " << std::setw(col_current_label) << "current"
+                  << " " << std::setw(col_current_predict) << "current"
+                  << " " << std::setw(col_current_features) << "current" << std::endl;
+    trace_message << std::left << std::setw(col_avg_loss) << std::left << "loss"
+                  << " " << std::setw(col_since_last) << std::left << "last"
+                  << " " << std::right << std::setw(col_example_counter) << "counter"
+                  << " " << std::setw(col_example_weight) << "weight"
+                  << " " << std::setw(col_current_label) << "label"
+                  << " " << std::setw(col_current_predict) << "predict"
+                  << " " << std::setw(col_current_features) << "features" << std::endl;
   }
 
   void print_update(bool holdout_set_off, size_t current_pass, float label, float prediction, size_t num_features,
@@ -271,18 +292,6 @@ enum AllReduceType
 
 class AllReduce;
 
-enum class label_type_t
-{
-  simple,
-  cb,       // contextual-bandit
-  cb_eval,  // contextual-bandit evaluation
-  cs,       // cost-sensitive
-  multi,
-  mc,
-  ccb,  // conditional contextual-bandit
-  slates
-};
-
 struct rand_state
 {
 private:
@@ -306,6 +315,29 @@ struct vw_logger
 
   vw_logger(const vw_logger& other) = delete;
   vw_logger& operator=(const vw_logger& other) = delete;
+};
+
+namespace VW
+{
+namespace parsers
+{
+namespace flatbuffer
+{
+class parser;
+}
+}  // namespace parsers
+}  // namespace VW
+
+struct trace_message_wrapper
+{
+  void* _inner_context;
+  trace_message_t _trace_message;
+
+  trace_message_wrapper(void* context, trace_message_t trace_message)
+      : _inner_context(context), _trace_message(trace_message)
+  {
+  }
+  ~trace_message_wrapper() = default;
 };
 
 struct vw
@@ -345,7 +377,10 @@ public:
 
   uint32_t hash_seed;
 
-  std::string data_filename;  // was vm["data"]
+#ifdef BUILD_FLATBUFFERS
+  std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
+#endif
+  std::string data_filename;
 
   bool daemon;
   size_t num_children;
@@ -366,11 +401,10 @@ public:
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
   // error reporting
-  vw_ostream trace_message;
+  std::shared_ptr<trace_message_wrapper> trace_message_wrapper_context;
+  std::unique_ptr<std::ostream> trace_message;
 
-  // Flag used when VW internally manages lifetime of options object.
-  bool should_delete_options = false;
-  VW::config::options_i* options;
+  std::unique_ptr<VW::config::options_i, options_deleter_type> options;
 
   void* /*Search::search*/ searchstr;
 
@@ -452,7 +486,7 @@ public:
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
+  std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
   std::vector<std::string> enabled_reductions;
 
   // Prediction output
@@ -496,8 +530,6 @@ public:
 
   std::map<uint64_t, std::string> index_name_map;
 
-  label_type_t label_type;
-
   vw();
   ~vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }
@@ -509,6 +541,12 @@ public:
   // That pointer would be invalidated if it were to be moved.
   vw(const vw&&) = delete;
   vw& operator=(const vw&&) = delete;
+
+  std::string get_setupfn_name(reduction_setup_fn setup);
+  void build_setupfn_name_dict();
+
+private:
+  std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")

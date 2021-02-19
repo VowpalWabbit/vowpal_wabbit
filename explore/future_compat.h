@@ -13,9 +13,11 @@
 #ifdef HAS_STD17
 #define VW_STD17_CONSTEXPR constexpr
 #define VW_ATTR(name) [[ name ]]
+#    define VW_FALLTHROUGH VW_ATTR(fallthrough);
 #else
 #define VW_STD17_CONSTEXPR
 #define VW_ATTR(name)
+#    define VW_FALLTHROUGH  // fall through
 #endif
 
 #ifdef HAS_STD14
@@ -54,11 +56,13 @@
 // Add new ignored warnings here:
 #if defined(_MSC_VER)
     #define VW_WARNING_DISABLE_DEPRECATED_USAGE    VW_WARNING_DISABLE(4996)
-    #define VW_WARNING_DISABLE_CLASS_MEMACCESS
-    #define VW_WARNING_DISABLE_CAST_FUNC_TYPE
+#  define VW_WARNING_DISABLE_BADLY_FORMED_XML VW_WARNING_DISABLE(4635)
 #  define VW_WARNING_DISABLE_CPP_17_LANG_EXT VW_WARNING_DISABLE(4984)
+#  define VW_WARNING_DISABLE_CLASS_MEMACCESS
+#  define VW_WARNING_DISABLE_CAST_FUNC_TYPE
 #elif defined(__GNUC__) || defined(__clang__)
 #  define VW_WARNING_DISABLE_DEPRECATED_USAGE VW_WARNING_DISABLE("-Wdeprecated-declarations")
+#  define VW_WARNING_DISABLE_BADLY_FORMED_XML
 #  define VW_WARNING_DISABLE_CPP_17_LANG_EXT
 
     // This warning was added in GCC 8
@@ -72,5 +76,6 @@
 #else
     #define VW_WARNING_DISABLE_DEPRECATED_USAGE
     #define VW_WARNING_DISABLE_CLASS_MEMACCESS
+#  define VW_WARNING_DISABLE_BADLY_FORMED_XML
 #  define VW_WARNING_DISABLE_CPP_17_LANG_EXT
 #endif

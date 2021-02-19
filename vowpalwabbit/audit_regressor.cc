@@ -153,8 +153,9 @@ void end_examples(audit_regressor_data& d)
 
 inline void print_ex(vw& all, size_t ex_processed, size_t vals_found, size_t progress)
 {
-  all.trace_message << std::left << std::setw(shared_data::col_example_counter) << ex_processed << " " << std::right
-                    << std::setw(9) << vals_found << " " << std::right << std::setw(12) << progress << '%' << std::endl;
+  *(all.trace_message) << std::left << std::setw(shared_data::col_example_counter) << ex_processed << " " << std::right
+                       << std::setw(9) << vals_found << " " << std::right << std::setw(12) << progress << '%'
+                       << std::endl;
 }
 
 void finish_example(vw& all, audit_regressor_data& dd, example& ec)
@@ -181,8 +182,8 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
 void finish(audit_regressor_data& dat)
 {
   if (dat.values_audited < dat.loaded_regressor_values)
-    dat.all->trace_message << "Note: for some reason audit couldn't find all regressor values in dataset ("
-                           << dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << std::endl;
+    *dat.all->trace_message << "Note: for some reason audit couldn't find all regressor values in dataset ("
+                            << dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << std::endl;
 }
 
 template <class T>
@@ -225,13 +226,13 @@ void init_driver(audit_regressor_data& dat)
 
   if (!dat.all->logger.quiet)
   {
-    dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
-    dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "example"
-                           << " " << std::setw(shared_data::col_example_weight) << "values"
-                           << " " << std::setw(shared_data::col_current_label) << "total" << std::endl;
-    dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "counter"
-                           << " " << std::setw(shared_data::col_example_weight) << "audited"
-                           << " " << std::setw(shared_data::col_current_label) << "progress" << std::endl;
+    *dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
+    *dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "example"
+                            << " " << std::setw(shared_data::col_example_weight) << "values"
+                            << " " << std::setw(shared_data::col_current_label) << "total" << std::endl;
+    *dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "counter"
+                            << " " << std::setw(shared_data::col_example_weight) << "audited"
+                            << " " << std::setw(shared_data::col_current_label) << "progress" << std::endl;
   }
 }
 
@@ -260,8 +261,9 @@ VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   dat->out_file = new io_buf();
   dat->out_file->add_file(VW::io::open_file_writer(out_file));
 
-  VW::LEARNER::learner<audit_regressor_data, example>& ret = VW::LEARNER::init_learner(
-      dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1, "audit",
+  VW::LEARNER::learner<audit_regressor_data, example>& ret = 
+      VW::LEARNER::init_learner(dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1, 
+      all.get_setupfn_name(audit_regressor_setup),
       true /*audit.learn does not predict or learn.  nothing to be gained by calling predict() before learn()*/
   );
   ret.set_end_examples(end_examples);

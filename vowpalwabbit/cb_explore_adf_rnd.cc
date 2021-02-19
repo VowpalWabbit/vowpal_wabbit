@@ -256,7 +256,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   float alpha = 0.;
   float invlambda = 0.;
   uint32_t numrnd = 1;
-  config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
+  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (rnd)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
@@ -292,7 +292,6 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
-  all.label_type = label_type_t::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;
   auto data = scoped_calloc_or_throw<explore_type>(
@@ -301,7 +300,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(data, base, explore_type::learn,
-      explore_type::predict, problem_multiplier, prediction_type_t::action_probs, "cb_explore_adf_rnd");
+      explore_type::predict, problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-rnd");
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

@@ -9,6 +9,7 @@
 #include "cb_algs.h"
 #include "vw_exception.h"
 #include "gen_cs_example.h"
+#include "cb_label_parser.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -25,7 +26,7 @@ struct cb
   ~cb()
   {
     cb_cs_ld.costs.delete_v();
-    COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
+    COST_SENSITIVE::delete_label(cbcs.pred_scores);
   }
 };
 
@@ -48,9 +49,17 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 {
   CB::label ld = ec.l.cb;
   cb_to_cs& c = data.cbcs;
-  c.known_cost = get_observed_cost(ld);
-  if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
-    std::cerr << "invalid action: " << c.known_cost->action << std::endl;
+  auto optional_cost = get_observed_cost_cb(ld);
+  // cost observed, not default
+  if (optional_cost.first) { c.known_cost = optional_cost.second; }
+  else
+  {
+    c.known_cost = CB::cb_class{};
+  }
+
+  // cost observed, not default
+  if (optional_cost.first && (c.known_cost.action < 1 || c.known_cost.action > c.num_actions))
+    std::cerr << "invalid action: " << c.known_cost.action << std::endl;
 
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ld, data.cb_cs_ld);
@@ -60,7 +69,10 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
     ec.l.cs = data.cb_cs_ld;
 
     // Guard example state restore against throws
-    auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cb = ld; });
+    auto restore_guard = VW::scope_exit([&ld, &ec] {
+      ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+      ec.l.cb = ld;
+    });
 
     if (is_learn)
       base.learn(ec);
@@ -79,7 +91,13 @@ void learn_eval(cb& data, single_learner&, example& ec)
   CB_EVAL::label ld = ec.l.cb_eval;
 
   cb_to_cs& c = data.cbcs;
-  c.known_cost = get_observed_cost(ld.event);
+  auto optional_cost = get_observed_cost_cb(ld.event);
+  // cost observed, not default
+  if (optional_cost.first) { c.known_cost = optional_cost.second; }
+  else
+  {
+    c.known_cost = CB::cb_class{};
+  }
   gen_cs_example<true>(c, ec, ld.event, data.cb_cs_ld);
 
   for (size_t i = 0; i < ld.event.costs.size(); i++)
@@ -93,9 +111,9 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if (!CB::cb_label.test_label(&ld)) loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
+  if (!CB::is_test_label(ld)) loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
-  all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.num_features);
 
   for (auto& sink : all.final_prediction_sink) all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
 
@@ -111,7 +129,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
+  print_update(all, CB::is_test_label(ld), ec, nullptr, false);
 }
 
 void finish_example(vw& all, cb& c, example& ec)
@@ -181,28 +199,23 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   }
 
   auto base = as_singleline(setup_base(options, all));
-  if (eval)
-  {
-    all.example_parser->lbl_parser = CB_EVAL::cb_eval;
-    all.label_type = label_type_t::cb_eval;
-  }
+  if (eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
   else
   {
     all.example_parser->lbl_parser = CB::cb_label;
-    all.label_type = label_type_t::cb;
   }
 
   learner<cb, example>* l;
   if (eval)
   {
     l = &init_learner(
-        data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass, "cb-eval", true);
+        data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass, all.get_setupfn_name(cb_algs_setup) + "-eval", true);
     l->set_finish_example(eval_finish_example);
   }
   else
   {
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier,
-        prediction_type_t::multiclass, "cb");
+        prediction_type_t::multiclass, all.get_setupfn_name(cb_algs_setup));
     l->set_finish_example(finish_example);
   }
   c.scorer = all.scorer;

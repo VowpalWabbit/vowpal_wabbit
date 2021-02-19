@@ -87,7 +87,7 @@ void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
 // Setup reduction in stack
 LEARNER::base_learner* get_pmf_setup(config::options_i& options, vw& all)
 {
-  option_group_definition new_options("Continuous actions");
+  option_group_definition new_options("Continuous actions - convert to pmf");
   bool invoked = false;
   float epsilon = 0.0f;
   new_options.add(
@@ -102,7 +102,7 @@ LEARNER::base_learner* get_pmf_setup(config::options_i& options, vw& all)
   p_reduction->init(as_singleline(p_base), epsilon);
 
   LEARNER::learner<get_pmf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::pdf, "get_pmf");
+      predict_or_learn<false>, 1, prediction_type_t::pdf, all.get_setupfn_name(get_pmf_setup));
 
   return make_base(l);
 }

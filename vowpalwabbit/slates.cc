@@ -31,7 +31,7 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
   for (auto& example : examples) { _stashed_labels.push_back(std::move(example->l.slates)); }
 
   const size_t num_slots = std::count_if(examples.begin(), examples.end(),
-      [](const example* example) { return example->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
+      [](const example* example) { return example->l.slates.type == VW::slates::example_type::slot; });
 
   float global_cost = 0.f;
   bool global_cost_found = false;
@@ -42,7 +42,7 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
   {
     CCB::label ccb_label;
     memset(&ccb_label, 0, sizeof(ccb_label));
-    CCB::ccb_label_parser.default_label(&ccb_label);
+    CCB::default_label(ccb_label);
     const auto& slates_label = _stashed_labels[i];
     if (slates_label.type == slates::example_type::shared)
     {
@@ -100,7 +100,7 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
 
   for (size_t i = 0; i < examples.size(); i++)
   {
-    CCB::ccb_label_parser.delete_label(&examples[i]->l.conditional_contextual_bandit);
+    CCB::delete_label(examples[i]->l.conditional_contextual_bandit);
     examples[i]->l.slates = std::move(_stashed_labels[i]);
   }
   _stashed_labels.clear();
@@ -250,10 +250,9 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
 
   auto* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = slates_label_parser;
-  all.label_type = label_type_t::slates;
   all.delete_prediction = VW::delete_decision_scores;
   auto& l = VW::LEARNER::init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
-      prediction_type_t::decision_probs, "slates", base->learn_returns_prediction);
+      prediction_type_t::decision_probs, all.get_setupfn_name(slates_setup), base->learn_returns_prediction);
   l.set_finish_example(finish_multiline_example);
   return VW::LEARNER::make_base(l);
 }

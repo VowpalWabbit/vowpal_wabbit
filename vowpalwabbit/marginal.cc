@@ -345,7 +345,7 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
   free_ptr<MARGINAL::data> d = scoped_calloc_or_throw<MARGINAL::data>();
   std::string marginal;
 
-  option_group_definition marginal_options("VW options");
+  option_group_definition marginal_options("Marginal options");
   marginal_options.add(
       make_option("marginal", marginal).keep().necessary().help("substitute marginal label estimates for ids"));
   marginal_options.add(
@@ -368,7 +368,7 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
     if (marginal.find((char)u) != std::string::npos) d->id_features[u] = true;
 
   VW::LEARNER::learner<MARGINAL::data, example>& ret = init_learner(
-      d, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, "marginal", true);
+      d, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(marginal_setup), true);
   ret.set_save_load(save_load);
 
   return make_base(ret);

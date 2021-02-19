@@ -79,8 +79,8 @@ void check_pdf_sums_to_one(VW::continuous_actions::probability_density_function&
   BOOST_CHECK_CLOSE(1.0f, sum, .0001f);
 }
 
-void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_function& pdf, uint32_t min_value,
-    uint32_t max_value, uint32_t bandwidth, uint32_t num_actions, uint32_t action)
+void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_function& pdf, float min_value,
+    float max_value, uint32_t bandwidth, uint32_t num_actions, uint32_t action)
 {
   // check that left <= right for all pdf
   float prev_pdf_limit = 0;
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   ec.l.cb_cont.costs.clear();
   ec.l.cb_cont.costs.push_back({1010.17f, .5f, .05f});  // action, cost, prob
 
-  VW::cb_continuous::continuous_label_elm exp_val{1010.17, 0.5, 0.05};
+  VW::cb_continuous::continuous_label_elm exp_val{1010.17f, 0.5f, 0.05f};
 
   BOOST_CHECK_EQUAL(1010.17f, ec.l.cb_cont.costs[0].action);
   BOOST_CHECK_EQUAL(0.5f, ec.l.cb_cont.costs[0].cost);
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   learn(*data, *as_singleline(test_harness), ec);
 
   delete_probability_density_function(&ec.pred.pdf);
-  CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
+  CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
   test_harness->finish();
   destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
 }
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
     test_harness->finish();
     destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
     delete_probability_density_function(&ec.pred.pdf);
-    CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
+    CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
   }
 }
 
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
     test_harness->finish();
     destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
     delete_probability_density_function(&ec.pred.pdf);
-    CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
+    CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
   }
 }
 

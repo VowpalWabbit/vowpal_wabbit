@@ -5,6 +5,80 @@ from __future__ import division
 import pylibvw
 import warnings
 
+# baked in con py boost https://wiki.python.org/moin/boost.python/FAQ#The_constructors_of_some_classes_I_am_trying_to_wrap_are_private_because_instances_must_be_created_by_using_a_factory._Is_it_possible_to_wrap_such_classes.3F
+class VWOption:
+    def __init__(self, name, help_str, short_name, keep, necessary, allow_override, value, value_supplied, default_value, default_value_supplied):
+        self._name = name
+        self._help_str = help_str
+        self._short_name = short_name
+        self._keep = keep
+        self._necessary = necessary
+        self._allow_override = allow_override
+        self._value = value
+        self._value_supplied = value_supplied
+        self._default_value = default_value
+        self._default_value_supplied = default_value_supplied
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def help_str(self):
+        return self._help_str
+
+    @property
+    def short_name(self):
+        return self._short_name
+
+    @property
+    def keep(self):
+        return self._keep
+
+    @property
+    def necessary(self):
+        return self._necessary
+
+    @property
+    def allow_override(self):
+        return self._allow_override
+
+    @property
+    def value_supplied(self):
+        return self._value_supplied
+
+    @property
+    def default_value(self):
+        return self._default_value
+
+    @property
+    def default_value_supplied(self):
+        return self._default_value_supplied
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, val):
+        self._value_supplied = True
+        self._value = val
+
+    def is_flag(self):
+        return type(self._default_value) == bool or (self.value_supplied and type(self.value) == bool)
+
+    def __str__(self):
+        if self.value_supplied:
+            if self.is_flag():
+                return "--{}".format(self.name)
+            else:
+                # missing list case
+                if isinstance(self.value, list):
+                    return "**NOT_IMPL**"
+                else:
+                    return "--{} {}".format(self.name, self.value)
+        else:
+            return ''
 
 class SearchTask:
     """Search task class"""
@@ -98,6 +172,8 @@ class SearchTask:
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            - 7 : lSLATES
+            - 8 : lCONTINUOUS
             The integer is used to map the corresponding labelType using the
             above available options
 
@@ -149,6 +225,8 @@ def get_prediction(ec, prediction_type):
         - 6: pPROB
         - 7: pMULTICLASSPROBS
         - 8: pDECISION_SCORES
+        - 9: pACTION_PDF_VALUE
+        - 10: pPDF
 
     Examples
     --------
@@ -176,8 +254,23 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pPROB: ec.get_prob,
         pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars,
         pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores,
+        pylibvw.vw.pACTION_PDF_VALUE: ec.get_action_pdf_value,
+        pylibvw.vw.pPDF: ec.get_pdf,
     }
     return switch_prediction_type[prediction_type]()
+
+def get_all_vw_options():
+    temp = vw("--dry_run")
+    config = temp.get_config(filtered_enabled_reductions_only=False)
+    temp.finish()
+    return config
+
+class log_forward:
+    def __init__(self):
+        self.messages = []
+
+    def log(self, msg):
+        self.messages.append(msg)
 
 
 class vw(pylibvw.vw):
@@ -185,7 +278,7 @@ class vw(pylibvw.vw):
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
 
-    def __init__(self, arg_str=None, **kw):
+    def __init__(self, arg_str=None, enable_logging=False, **kw):
         """Initialize the vw object.
 
         Parameters
@@ -200,11 +293,11 @@ class vw(pylibvw.vw):
         Examples
         --------
 
-        >>> from vowpalwabbit import vw
+        >>> from vowpalwabbit import pyvw
         >>> vw1 = pyvw.vw('--audit')
         >>> vw2 = pyvw.vw(audit=True, b=24, k=True, c=True, l2=0.001)
         >>> vw3 = pyvw.vw("--audit", b=26)
-        >>> vw4 = pyvw.vw("-q", ["ab", "ac"])
+        >>> vw4 = pyvw.vw(q=["ab", "ac"])
 
         Returns
         -------
@@ -234,15 +327,42 @@ class vw(pylibvw.vw):
         l = [format_input(k, v) for k, v in kw.items()]
         if arg_str is not None:
             l = [arg_str] + l
+        
+        self.log_wrapper = None
 
-        pylibvw.vw.__init__(self, " ".join(l))
+        if enable_logging:
+            self.log_fwd = log_forward()
+            self.log_wrapper = pylibvw.vw_log(self.log_fwd)
+
+        if self.log_wrapper:
+            super(vw, self).__init__(" ".join(l), self.log_wrapper)
+        else:
+            super(vw, self).__init__(" ".join(l))
+
+        self.parser_ran = False
 
         # check to see if native parser needs to run
         ext_file_args = ["d", "data", "passes"]
         if any(x in kw for x in ext_file_args):
             pylibvw.vw.run_parser(self)
+            self.parser_ran = True
+        elif arg_str:
+            # space after -d to avoid matching with other substrings
+            ext_file_cmd_str = ["-d ", "--data", "--passes"]
+            if [cmd for cmd in ext_file_cmd_str if(cmd in arg_str)]:
+                pylibvw.vw.run_parser(self)
+                self.parser_ran = True
 
         self.finished = False
+    
+    def get_config(self, filtered_enabled_reductions_only=True):
+        return self.get_options(VWOption, filtered_enabled_reductions_only)
+
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.finish()
 
     def parse(self, str_ex, labelType=pylibvw.vw.lDefault):
         """Returns a collection of examples for a multiline example learner or
@@ -263,6 +383,8 @@ class vw(pylibvw.vw):
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            - 7 : lSLATES
+            - 8 : lCONTINUOUS
             The integer is used to map the corresponding labelType using the
             above available options
 
@@ -272,10 +394,12 @@ class vw(pylibvw.vw):
         >>> from vowpalwabbit import pyvw
         >>> model = pyvw.vw(quiet=True)
         >>> ex = model.parse("0:0.1:0.75 | a:0.5 b:1 c:2")
-        >>> len(ex)
-        1
-        >>> model = vw(quiet=True, cb_adf=True)
+        >>> type(ex)
+        <class 'vowpalwabbit.pyvw.example'>
+        >>> model = pyvw.vw(quiet=True, cb_adf=True)
         >>> ex = model.parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
+        >>> type(ex)
+        <class 'list'>
         >>> len(ex) # Shows the multiline example is parsed
         2
 
@@ -483,6 +607,15 @@ class vw(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.finished = True
 
+    # returns the latest vw log
+    # call after vw.finish() for complete log
+    # useful for debugging
+    def get_log(self):
+        if self.log_fwd:
+            return self.log_fwd.messages
+        else:
+            raise Exception("enable_logging set to false")
+
     def example(self, stringOrDict=None, labelType=pylibvw.vw.lDefault):
         """Create an example initStringOrDict can specify example as VW
         formatted string, or a dictionary labelType can specify the desire
@@ -501,6 +634,8 @@ class vw(pylibvw.vw):
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            - 7 : lSLATES
+            - 8 : lCONTINUOUS
             The integer is used to map the corresponding labelType using the
             above available options
 
@@ -1029,6 +1164,8 @@ class example(pylibvw.example):
             - 4 : lCONTEXTUAL_BANDIT
             - 5 : lMAX
             - 6 : lCONDITIONAL_CONTEXTUAL_BANDIT
+            - 7 : lSLATES
+            - 8 : lCONTINUOUS
             The integer is used to map the corresponding labelType using the
             above available options
 

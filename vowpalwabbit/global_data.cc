@@ -16,6 +16,9 @@
 #include "future_compat.h"
 #include "vw_allreduce.h"
 #include "named_labels.h"
+#ifdef BUILD_FLATBUFFERS
+#  include "parser/flatbuffer/parse_example_flatbuffer.h"
+#endif
 
 struct global_prediction
 {
@@ -83,6 +86,18 @@ int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag)
 }
 
 int print_tag(std::stringstream& ss, v_array<char> tag) { return print_tag_by_ref(ss, tag); }
+
+std::string vw::get_setupfn_name(reduction_setup_fn setup_fn)
+{
+  const auto loc = _setup_name_map.find(setup_fn);
+  if (loc != _setup_name_map.end()) return loc->second;
+  return "NA";
+}
+
+void vw::build_setupfn_name_dict()
+{
+  for (auto&& setup_tuple : reduction_stack) { _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple); }
+}
 
 void print_result(VW::io::writer* f, float res, float unused, v_array<char> tag)
 {
@@ -230,31 +245,10 @@ void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NA
   }
 }
 
-void trace_listener_cerr(void*, const std::string& message)
-{
-  std::cerr << message;
-  std::cerr.flush();
-}
-
-int vw_ostream::vw_streambuf::sync()
-{
-  int ret = std::stringbuf::sync();
-  if (ret) return ret;
-
-  parent.trace_listener(parent.trace_context, str());
-  str("");
-  return 0;  // success
-}
-
-vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr)
-{
-  trace_listener = trace_listener_cerr;
-}
-
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 
-vw::vw()
+vw::vw() : options(nullptr, nullptr)
 {
   sd = &calloc_or_throw<shared_data>();
   sd->dump_interval = 1.;  // next update progress dump
@@ -264,7 +258,8 @@ vw::vw()
   sd->max_label = 0;
   sd->min_label = 0;
 
-  label_type = label_type_t::simple;
+  // Default is stderr.
+  trace_message = VW::make_unique<std::ostream>(std::cerr.rdbuf());
 
   l = nullptr;
   scorer = nullptr;
@@ -275,7 +270,6 @@ vw::vw()
   reg_mode = 0;
   current_pass = 0;
 
-  data_filename = "";
   delete_prediction = nullptr;
 
   bfgs = false;
@@ -378,9 +372,6 @@ vw::~vw()
     l->finish();
     free(l);
   }
-
-  // Check if options object lifetime is managed internally.
-  if (should_delete_options) delete options;
 
   // TODO: migrate all finalization into parser destructor
   if (example_parser != nullptr)

@@ -53,7 +53,8 @@ struct example_predict
   std::vector<std::vector<namespace_index>>* interactions;
   reduction_features _reduction_features;
 
-  uint32_t _current_reduction_depth;  // Used for debugging reductions.  Keeps track of current reduction level
+  // Used for debugging reductions.  Keeps track of current reduction level.
+  uint32_t _debug_current_reduction_depth;
 };
 
 // make sure we have an exception safe version of example_predict

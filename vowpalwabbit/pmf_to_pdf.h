@@ -24,6 +24,7 @@ struct reduction
   uint32_t bandwidth;  // radius
   float min_value;
   float max_value;
+  bool first_only;
   LEARNER::single_learner* _p_base;
 
 private:

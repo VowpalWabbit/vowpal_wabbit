@@ -212,8 +212,8 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   float t_prev = t - 1.f;   // ec.weight; // last round
 
   float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / std::sqrt(t);  // threshold on cost range
-  float delta = cs_a.c0 * log((float)(cs_a.num_classes * std::max(t_prev, 1.f))) *
-      pow(cs_a.cost_max - cs_a.cost_min, 2);  // threshold on empirical loss difference
+  float delta = cs_a.c0 * std::log((float)(cs_a.num_classes * std::max(t_prev, 1.f))) *
+      static_cast<float>(std::pow(cs_a.cost_max - cs_a.cost_min, 2));  // threshold on empirical loss difference
 
   if (ld.costs.size() > 0)
   {
@@ -335,7 +335,7 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   if (options.was_supplied("csoaa")) THROW("error: you can't use --cs_active and --csoaa at the same time");
 
-  if (!options.was_supplied("adax")) all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
+  if (!options.was_supplied("adax")) *(all.trace_message) << "WARNING: --cs_active should be used with --adax" << endl;
 
   // Label parser set to cost sensitive label parser
   all.example_parser->lbl_parser = cs_label;
@@ -345,9 +345,9 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels, "cs_active-sim", true)
+            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels, all.get_setupfn_name(cs_active_setup) + "-sim", true)
       : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
-            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels, "cs_active", true);
+            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels, all.get_setupfn_name(cs_active_setup), true);
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);

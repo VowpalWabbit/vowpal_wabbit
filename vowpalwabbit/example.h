@@ -17,6 +17,7 @@
 #include "action_score.h"
 #include "example_predict.h"
 #include "conditional_contextual_bandit.h"
+#include "continuous_actions_reduction_features.h"
 #include "ccb_label.h"
 #include "slates_label.h"
 #include "decision_scores.h"
@@ -27,7 +28,7 @@
 #include <vector>
 #include <iostream>
 
-typedef union
+struct polylabel
 {
   no_label::no_label empty;
   label_data simple;
@@ -39,7 +40,7 @@ typedef union
   VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
-} polylabel;
+};
 
 inline void delete_scalars(void* v)
 {
@@ -47,7 +48,7 @@ inline void delete_scalars(void* v)
   preds->delete_v();
 }
 
-typedef union
+struct polyprediction
 {
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
@@ -58,7 +59,7 @@ typedef union
   float prob;                                                // for --probabilities --csoaa_ldf=mc
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
-} polyprediction;
+};
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
@@ -75,7 +76,7 @@ struct example : public example_predict  // core example datatype.
   /// Example contains unions for label and prediction. These do not get cleaned
   /// up by the constructor because the type is not known at that time. To
   /// ensure correct cleanup delete_unions must be explicitly called.
-  void delete_unions(void (*delete_label)(void*), void (*delete_prediction)(void*));
+  void delete_unions(void (*delete_label)(polylabel*), void (*delete_prediction)(void*));
 
   // input fields
   polylabel l;
@@ -181,4 +182,7 @@ std::string scalar_pred_to_string(const example& ec);
 std::string a_s_pred_to_string(const example& ec);
 std::string prob_dist_pred_to_string(const example& ec);
 std::string multiclass_pred_to_string(const example& ec);
-std::string depth_indent_string(const multi_ex& ec);
+std::string debug_depth_indent_string(const multi_ex& ec);
+std::string debug_depth_indent_string(const example& ec);
+std::string debug_depth_indent_string(int32_t stack_depth);
+std::string cb_label_to_string(const example& ec);

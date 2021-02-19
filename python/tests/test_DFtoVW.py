@@ -152,6 +152,17 @@ def test_absent_col_error():
     assert expected == str(value_error.value)
 
 
+def test_non_default_index():
+    df = pd.DataFrame({"y":[0], "x":[1]}, index=[1])
+    conv = DFtoVW(
+            df=df,
+            label=SimpleLabel("y"),
+            features=Feature("x")
+    )
+    first_line = conv.convert_df()[0]
+    assert first_line == "0 | x:1"
+
+
 def test_non_numerical_simplelabel_error():
     df = pd.DataFrame({"y": ["a"], "x": ["featX"]})
     with pytest.raises(TypeError) as type_error:
@@ -202,3 +213,5 @@ def test_multilabel_non_positive_label_error():
         )
     expected = "In argument 'label' of 'MultiLabel', column 'y' must be >= 1."
     assert expected == str(value_error.value)
+
+    

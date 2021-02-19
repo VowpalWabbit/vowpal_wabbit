@@ -24,13 +24,15 @@ var skipList = new[] { 13, 32, 39, 40, 41, 59, 60, 61, 66, 68, 90,
 	143, 144, 146, 158, 189, 202, 237, // native json parsing
 	149, 152, 156, 193, 194, 217, // bash script
 	188, // possibly float delta
-	195, //--onethread is a shell option, not available via library
+	195, 258, 269, //--onethread is a shell option, not available via library
 	203, // Cluster mode test
 	204, // Testing option usage
     216, // DSJSON not supported
     220, // deamon mode shell script test not supported
     227, // "single continuous action, pdf value" prediction type for cats not yet supported
-    229  // "continous action with probability density function" prediction type for cats_pdf not yet supported
+    229,  // "continous action with probability density function" prediction type for cats_pdf not yet supported
+    239, 240, 241, 242, 243, 244, 245, 246, // flatbuffer input tests, to be enabled in due course
+    256 // DSJSON not supported
 	};
 
 var outputModels = new Dictionary<string, TestCase>();

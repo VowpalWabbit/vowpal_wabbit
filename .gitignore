@@ -139,12 +139,13 @@ reinforcement_learning/unit_test/rlclient-test.out
 cs/azure_service/azure_service.ccproj.user
 
 build
-vowpalwabbit/*.model
-vowpalwabbit/*.predict
-test/*.stderr
-test/*.preds
-test/*.model
-test/*.stdout
-test/*.stderr
-test/*.lenient-diff
-test/outputs
+dist/
+*.model
+python/examples/*.model
+doc/html
+
+vowpalwabbit/parser/flatbuffer/generated/example_generated.h
+
+#Test stderr/predict files
+test/flatbuffer/*.predict
+test/flatbuffer/*.stderr

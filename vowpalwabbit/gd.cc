@@ -1013,7 +1013,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     if (resume)
     {
       if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
-        all.trace_message
+        *(all.trace_message)
             << std::endl
             << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than "
             << VERSION_SAVE_RESUME_FIX << std::endl
@@ -1196,9 +1196,9 @@ base_learner* setup(options_i& options, vw& all)
   if (g->adax && !all.weights.adaptive) THROW("Cannot use adax without adaptive");
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001)
-    all.trace_message << "Warning: the learning rate for the last pass is multiplied by: "
-                      << pow((double)all.eta_decay_rate, (double)all.numpasses)
-                      << " adjust --decay_learning_rate larger to avoid this." << std::endl;
+    *(all.trace_message) << "Warning: the learning rate for the last pass is multiplied by: "
+                         << pow((double)all.eta_decay_rate, (double)all.numpasses)
+                         << " adjust --decay_learning_rate larger to avoid this." << std::endl;
 
   if (all.reg_mode % 2)
     if (all.audit || all.hash_inv)
@@ -1232,7 +1232,7 @@ base_learner* setup(options_i& options, vw& all)
 
   gd* bare = g.get();
   learner<gd, example>& ret =
-      init_learner(g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()), "gd", true);
+      init_learner(g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()), all.get_setupfn_name(setup), true);
   ret.set_sensitivity(bare->sensitivity);
   ret.set_multipredict(bare->multipredict);
   ret.set_update(bare->update);

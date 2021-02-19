@@ -4,6 +4,8 @@
 
 #include "example_predict.h"
 
+#include <sstream>
+
 example_predict::iterator::iterator(features* feature_space, namespace_index* index)
     : _feature_space(feature_space), _index(index)
 {
@@ -99,7 +101,7 @@ std::string features_to_string(const example_predict& ec)
   return strstream.str();
 }
 
-std::string depth_indent_string(const int32_t depth)
+std::string debug_depth_indent_string(const int32_t depth)
 {
   constexpr const char* indent_str = "- ";
   constexpr const char* space_str = "  ";
@@ -111,5 +113,3 @@ std::string depth_indent_string(const int32_t depth)
   str_stream << indent_str;
   return str_stream.str();
 }
-
-std::string depth_indent_string(const example_predict& ec) { return depth_indent_string(ec.stack_depth); }
