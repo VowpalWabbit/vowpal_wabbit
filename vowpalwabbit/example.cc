@@ -346,8 +346,6 @@ void free_flatten_example(flat_example* fec)
   }
 }
 
-std::string depth_indent_string(const multi_ex& ec) { return depth_indent_string(*ec[0]); }
-
 std::string cb_label_to_string(const example& ec)
 {
   std::stringstream strstream;
