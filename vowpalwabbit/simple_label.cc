@@ -17,11 +17,11 @@ char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 {
   memcpy(&ld.label, c, sizeof(ld.label));
 
-  c += sizeof(ld->label);
-  memcpy(&ld->serialized_weight, c, sizeof(ld->serialized_weight));
-  c += sizeof(ld->serialized_weight);
-  memcpy(&ld->serialized_initial, c, sizeof(ld->serialized_initial));
-  c += sizeof(ld->serialized_initial);
+  c += sizeof(ld.label);
+  memcpy(&ld.serialized_weight, c, sizeof(ld.serialized_weight));
+  c += sizeof(ld.serialized_weight);
+  memcpy(&ld.serialized_initial, c, sizeof(ld.serialized_initial));
+  c += sizeof(ld.serialized_initial);
 
   count_label(sd, ld.label);
   return c;
@@ -30,7 +30,7 @@ char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 size_t read_cached_simple_label(shared_data* sd, label_data& ld, io_buf& cache)
 {
   char* c;
-  size_t total = sizeof(ld->label) + sizeof(ld->serialized_weight) + sizeof(ld->serialized_initial);
+  size_t total = sizeof(ld.label) + sizeof(ld.serialized_weight) + sizeof(ld.serialized_initial);
   if (cache.buf_read(c, total) < total) return 0;
   bufread_simple_label(sd, ld, c);
 
@@ -43,7 +43,7 @@ char* bufcache_simple_label(label_data& ld, char* c)
 {
   memcpy(c, &ld.label, sizeof(ld.label));
   c += sizeof(ld.label);
-  memcpy(c, ld.serialized_weight, ld.serialized_weight);
+  memcpy(c, &ld.serialized_weight, sizeof(ld.serialized_weight));
   c += sizeof(ld.serialized_weight);
   memcpy(c, &ld.serialized_initial, sizeof(ld.serialized_initial));
   c += sizeof(ld.serialized_initial);

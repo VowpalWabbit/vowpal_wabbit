@@ -25,7 +25,6 @@ float get_cost_pred(
   CB::label ld = ec.l.cb;
 
   label_data simple_temp;
-  simple_temp.initial = 0.;
   if (index == known_cost.action)
     simple_temp.label = known_cost.cost;
   else

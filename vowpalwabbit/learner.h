@@ -254,7 +254,6 @@ public:
     increment_offset(ec, increment, i);
     debug_log_message(ec, "learn");
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
-    log_exit(ec);
     decrement_offset(ec, increment, i);
   }
 
@@ -274,7 +273,6 @@ public:
     increment_offset(ec, increment, i);
     debug_log_message(ec, "predict");
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
-    log_exit(ec);
     decrement_offset(ec, increment, i);
   }
 
@@ -297,7 +295,6 @@ public:
         // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         increment_offset(ec, increment, 1);
       }
-      log_exit(ec);
       decrement_offset(ec, increment, lo + count);
     }
     else
@@ -305,7 +302,6 @@ public:
       increment_offset(ec, increment, lo);
       debug_log_message(ec, "multipredict");
       learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, (void*)&ec, count, increment, pred, finalize_predictions);
-      log_exit(ec);
       decrement_offset(ec, increment, lo);
     }
   }
@@ -342,7 +338,6 @@ public:
     increment_offset(ec, increment, i);
     debug_log_message(ec, "update");
     learn_fd.update_f(learn_fd.data, *learn_fd.base, (void*)&ec);
-    log_exit(ec);
     decrement_offset(ec, increment, i);
   }
   template <class L>
@@ -368,7 +363,6 @@ public:
     increment_offset(ec, increment, i);
     debug_log_message(ec, "sensitivity");
     const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, ec);
-    log_exit(ec);
     decrement_offset(ec, increment, i);
     return ret;
   }
@@ -453,7 +447,6 @@ public:
   {
     debug_log_message(ec, "finish_example");
     finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
-    log_exit(ec);
   }
   // called after learn example for each example.  Explicitly not recursive.
   void set_finish_example(void (*f)(vw& all, T&, E&))

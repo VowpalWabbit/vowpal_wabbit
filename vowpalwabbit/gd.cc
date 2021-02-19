@@ -1238,7 +1238,6 @@ base_learner* setup(options_i& options, vw& all)
   ret.set_update(bare->update);
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);
-  ret.name = "gd";
   return make_base(ret);
 }
 

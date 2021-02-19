@@ -904,27 +904,16 @@ base_learner* csldf_setup(options_i& options, vw& all)
 
   std::string name = all.get_setupfn_name(csldf_setup);
   if (ld->rank)
-  {
-    pred_type = prediction_type_t::action_scores;
-    name += "-ldf_rank";
-  }
+    pl = &init_learner(
+        ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type_t::action_scores, name + "-ldf_rank");
   else if (ld->is_probabilities)
-  {
-    pred_type = prediction_type_t::prob;
-    name += "-ldf_prob";
-  }
+    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::prob, name + "-ldf_prob");
   else
-  {
-    pred_type = prediction_type_t::multiclass;
-    name += "-ldf";
-  }
+    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::multiclass, name + "-ldf");
 
-  ld->read_example_this_loop = 0;
-  learner<ldf, multi_ex>& l = init_learner(ld, as_singleline(setup_base(*all.options, all)), do_actual_learning<true>,
-      do_actual_learning<false>, 1, pred_type, name);
-  l.set_finish_example(finish_multiline_example);
-  l.set_end_pass(end_pass);
-  all.cost_sensitive = make_base(l);
+  pl->set_finish_example(finish_multiline_example);
+  pl->set_end_pass(end_pass);
+  all.cost_sensitive = make_base(*pl);
   return all.cost_sensitive;
 }
 }  // namespace CSOAA

@@ -1364,7 +1364,6 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);
   l.set_end_pass(end_pass);
-  l.name = "lda";
 
   return make_base(l);
 }

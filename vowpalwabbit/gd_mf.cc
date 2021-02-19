@@ -366,7 +366,6 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
       init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()), all.get_setupfn_name(gd_mf_setup), true);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
-  l.name = "gd_mf";
 
   return make_base(l);
 }

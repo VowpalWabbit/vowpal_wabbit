@@ -323,7 +323,7 @@ void cb_adf::learn(multi_learner& base, multi_ex& ec_seq)
 void cb_adf::predict(multi_learner& base, multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
-  _gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
+  _gen_cs.known_cost = get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
   gen_cs_test_example(ec_seq, _cs_labels);         // create test labels.
   cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 }
