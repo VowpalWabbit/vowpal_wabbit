@@ -106,6 +106,7 @@
 #include "io/io_adapter.h"
 #include "io/custom_streambuf.h"
 #include "io/owning_stream.h"
+#include "io/logger.h"
 
 using std::cerr;
 using std::cout;
@@ -365,10 +366,12 @@ void parse_diagnostics(options_i& options, vw& all)
 
   options.add_and_parse(diagnostic_group);
 
+  if(all.logger.quiet) VW::io::logger::log_set_level(VW::io::logger::log_level::off);
+
   // pass all.logger.quiet around
   if (all.all_reduce) all.all_reduce->quiet = all.logger.quiet;
 
-  // Upon direct query for version -- spit it out to stdout
+  // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
   {
     std::cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
@@ -581,7 +584,7 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
       }
       else
       {
-        std::cerr << "Possibly malformed hex representation of a namespace: '\\x" << substr << "'\n";
+	VW::io::logger::log_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
         res.push_back(arg[pos++]);
       }
     }

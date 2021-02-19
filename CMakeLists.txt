@@ -250,6 +250,7 @@ endif()
 add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)
+add_subdirectory(ext_libs)
 add_subdirectory(vowpalwabbit)
 
 if (BUILD_FLATBUFFERS)

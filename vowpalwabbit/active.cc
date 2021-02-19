@@ -11,6 +11,8 @@
 #include "active.h"
 #include "vw_exception.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
 
@@ -101,7 +103,10 @@ void active_print_result(VW::io::writer* f, float res, float weight, v_array<cha
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
-  if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
+  if (t != len) {
+    // TODO: the logger should be passed in(?)
+    VW::io::logger::log_error("write error: {}", VW::strerror_to_string(errno));
+  }
 }
 
 void output_and_account_example(vw& all, active& a, example& ec)

@@ -17,8 +17,11 @@ else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
 
-add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
-target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
+add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc io/logger.h io/logger.cc)
+target_include_directories(vw_io PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_link_libraries(vw_io PUBLIC spdlog::spdlog_header_only PRIVATE ZLIB::ZLIB)
 add_library(VowpalWabbit::io ALIAS vw_io)
 
 if(BUILD_FLATBUFFERS)
@@ -475,7 +478,7 @@ endif()
 
 if(VW_INSTALL)
   install(
-    TARGETS vw vw-bin allreduce vw_io
+    TARGETS vw vw-bin allreduce vw_io spdlog_header_only
     EXPORT VowpalWabbitConfig
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
