@@ -46,10 +46,10 @@ public:
   ~cb_explore_adf_bag();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict(VW::LEARNER::multi_learner &base, multi_ex &examples);
+  void learn(VW::LEARNER::multi_learner &base, multi_ex &examples);
 
-  const PredictionT& get_cached_prediction() { return _action_probs; };
+  const PredictionT &get_cached_prediction() { return _action_probs; };
 
 private:
   uint32_t get_bag_learner_update_count(uint32_t learner_index);
@@ -71,7 +71,7 @@ uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index
     return BS::weight_gen(_random_state);
 }
 
-void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner &base, multi_ex &examples)
 {
   // Randomize over predictions from a base set of predictors
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
@@ -113,24 +113,26 @@ void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, multi_ex& exa
   std::copy(std::begin(_action_probs), std::end(_action_probs), std::begin(preds));
 }
 
-void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner &base, multi_ex &examples)
 {
   for (uint32_t i = 0; i < _bag_size; i++)
   {
-    // learn_count determines how many times learner (i) will learn from this example.
+    // learn_count determines how many times learner (i) will learn from this
+    // example.
     uint32_t learn_count = get_bag_learner_update_count(i);
 
     VW_DBG(examples) << "cb_explore_adf_bag::learn, bag_learner_idx = " << i << ", learn_count = " << learn_count
                      << std::endl;
 
     for (uint32_t j = 0; j < learn_count; j++)
-      VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
+      VW::LEARNER::multiline_learn_or_predict<true>(base, examples,
+                                                    examples[0]->ft_offset, i);
   }
 }
 
 cb_explore_adf_bag::~cb_explore_adf_bag() { _action_probs.delete_v(); }
 
-void finish_bag_example(vw& all, cb_explore_adf_base<cb_explore_adf_bag>& data, multi_ex& ec_seq)
+void finish_bag_example(vw &all, cb_explore_adf_base<cb_explore_adf_bag> &data, multi_ex &ec_seq)
 {
   assert(ec_seq.size() > 0);
 
@@ -139,7 +141,8 @@ void finish_bag_example(vw& all, cb_explore_adf_base<cb_explore_adf_bag>& data, 
   // Guard inner example state restore against throws
   auto restore_guard = VW::scope_exit([&saved_prediction, &ec_seq] { ec_seq[0]->pred = saved_prediction; });
 
-  cb_explore_adf_base<cb_explore_adf_bag>::finish_multiline_example(all, data, ec_seq);
+  cb_explore_adf_base<cb_explore_adf_bag>::finish_multiline_example(all, data,
+                                                                    ec_seq);
 }
 
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
@@ -164,11 +167,16 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
+  if (!options.was_supplied("cb_adf")) {
+    options.insert("cb_adf", "");
+  }
 
-  // Signal cb_adf MTR to not predict when training.  The framework already handles calling
+  // Signal cb_adf MTR to not predict when training.  The framework already
+  // handles calling
   // predict before training is called.
-  if (!options.was_supplied("no_predict")) { options.insert("no_predict", ""); }
+  if (!options.was_supplied("no_predict")) {
+    options.insert("no_predict", "");
+  }
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 

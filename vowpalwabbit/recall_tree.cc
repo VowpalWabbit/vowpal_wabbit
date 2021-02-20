@@ -351,8 +351,10 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
 
   ec.l.simple = {route_label, VW::UNUSED_1, VW::UNUSED_0};
   // Bug?
-  // Notes: looks like imp_weight was not used since ec.l.simple.weight is not used in gd.
-  // Only ec.weight is used in gd.  ec.imp_weight is now set to 0 instead of ec.l.simple.weight.
+  // Notes: looks like imp_weight was not used since ec.l.simple.weight is not
+  // used in gd.
+  // Only ec.weight is used in gd.  ec.imp_weight is now set to 0 instead of
+  // ec.l.simple.weight.
   // This causes different results during RunTests
   // ec.weight = imp_weight;
 
@@ -510,10 +512,11 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
 
   if (!all.logger.quiet)
     *(all.trace_message) << "recall_tree:"
-                      << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
-                      << " max_depth = " << tree->max_depth << " routing = "
-                      << (all.training ? (tree->randomized_routing ? "randomized" : "deterministic") : "n/a testonly")
-                      << std::endl;
+                         << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
+                         << " max_depth = " << tree->max_depth << " routing = "
+                         << (all.training ? (tree->randomized_routing ? "randomized" : "deterministic")
+                                          : "n/a testonly")
+                         << std::endl;
 
   learner<recall_tree, example>& l = init_multiclass_learner(tree, as_singleline(setup_base(options, all)), learn,
       predict, all.example_parser, tree->max_routers + tree->k, all.get_setupfn_name(recall_tree_setup));

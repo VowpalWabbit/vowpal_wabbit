@@ -283,9 +283,7 @@ public:
     {
       ctx.ex->l.simple.serialized_initial = std::numeric_limits<float>::quiet_NaN();
       found = true;
-    }
-    else if (!_stricmp(ctx.key, "Weight"))
-    {
+    } else if (!_stricmp(ctx.key, "Weight")) {
       ctx.ex->l.simple.serialized_weight = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
@@ -325,9 +323,7 @@ public:
     {
       ctx.ex->l.simple.label = v;
       found = true;
-    }
-    else if (!_stricmp(ctx.key, "Initial"))
-    {
+    } else if (!_stricmp(ctx.key, "Initial")) {
       ctx.ex->initial = v;
       found = true;
     }

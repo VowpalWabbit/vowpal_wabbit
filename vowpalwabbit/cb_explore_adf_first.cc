@@ -102,8 +102,9 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
-  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(data, base, explore_type::learn,
-      explore_type::predict, problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-first");
+  VW::LEARNER::learner<explore_type, multi_ex>& l =
+      VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
+          prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-first");
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

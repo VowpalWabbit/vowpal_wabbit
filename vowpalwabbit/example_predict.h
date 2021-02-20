@@ -11,9 +11,9 @@ typedef unsigned char namespace_index;
 #include "feature_group.h"
 #include "v_array.h"
 
-#include <vector>
 #include <array>
 #include <sstream>
+#include <vector>
 
 struct example_predict
 {

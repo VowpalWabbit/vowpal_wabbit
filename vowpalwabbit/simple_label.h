@@ -10,10 +10,12 @@ struct vw;
 struct label_data
 {
   float label;
-  // only used for serialization and parsing.  example.weight is used for computation
+  // only used for serialization and parsing.  example.weight is used for
+  // computation
   // DeSerialized/Parsed values are copied into example in VW::setup_example()
   float serialized_weight;
-  // Only used for serialization and parsing.  example.initial is used for computation
+  // Only used for serialization and parsing.  example.initial is used for
+  // computation
   // DeSerialized/Parsed values are copied into example in VW::setup_example()
   float serialized_initial;
 };

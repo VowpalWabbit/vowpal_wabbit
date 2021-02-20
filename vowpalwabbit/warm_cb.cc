@@ -630,14 +630,12 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   if (use_cs)
   {
     l = &init_cost_sensitive_learner(data, base, predict_and_learn_adf<true>, predict_and_learn_adf<true>,
-        all.example_parser, data->choices_lambda, all.get_setupfn_name(warm_cb_setup) + "-cs", 
+        all.example_parser, data->choices_lambda, all.get_setupfn_name(warm_cb_setup) + "-cs",
         prediction_type_t::multiclass, true);
     all.example_parser->lbl_parser.label_type = label_type_t::cs;
-  }
-  else
-  {
+  } else {
     l = &init_multiclass_learner(data, base, predict_and_learn_adf<false>, predict_and_learn_adf<false>,
-        all.example_parser, data->choices_lambda, all.get_setupfn_name(warm_cb_setup) + "-multi", 
+        all.example_parser, data->choices_lambda, all.get_setupfn_name(warm_cb_setup) + "-multi",
         prediction_type_t::multiclass, true);
     all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   }

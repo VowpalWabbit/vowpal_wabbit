@@ -6,15 +6,15 @@
 #include <cerrno>
 #include <algorithm>
 
-#include "reductions.h"
-#include "label_dictionary.h"
-#include "vw.h"
-#include "cb_algs.h"
-#include "vw_exception.h"
-#include "gen_cs_example.h"
-#include "vw_versions.h"
-#include "explore.h"
 #include "cb_adf.h"
+#include "cb_algs.h"
+#include "explore.h"
+#include "gen_cs_example.h"
+#include "label_dictionary.h"
+#include "reductions.h"
+#include "vw.h"
+#include "vw_exception.h"
+#include "vw_versions.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_adf
@@ -136,7 +136,8 @@ void cb_adf::learn_IPS(multi_learner& base, multi_ex& examples)
 void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
 {
   gen_cs_test_example(examples, _cs_labels);  // create test labels.
-  cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
+  cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels,
+                                 _prepped_cs_labels, false, _offset);
 
   // Can probably do this more efficiently than 6 loops over the examples...
   //[1: initialize temporary storage;
@@ -211,7 +212,8 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
   }
 
   // Do actual training
-  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
+  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels,
+                                _prepped_cs_labels, false, _offset);
 
   // Restore example weights and numFeatures
   for (size_t i = 0; i < _prob_s.size(); i++)
@@ -225,7 +227,8 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
 void cb_adf::learn_DR(multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels, _clip_p);
-  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
+  cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels,
+                                _prepped_cs_labels, true, _offset);
 }
 
 void cb_adf::learn_DM(multi_learner& base, multi_ex& examples)
@@ -235,8 +238,7 @@ void cb_adf::learn_DM(multi_learner& base, multi_ex& examples)
 }
 
 template <bool PREDICT>
-void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
-{
+void cb_adf::learn_MTR(multi_learner &base, multi_ex &examples) {
   if (PREDICT)  // first get the prediction to return
   {
     gen_cs_example_ips(examples, _cs_labels);
@@ -254,13 +256,14 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p * ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
 
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
-  // TODO!!! cb_labels are not getting properly restored (empty costs are dropped)
+  // TODO!!! cb_labels are not getting properly restored (empty costs are
+  // dropped)
   cs_ldf_learn_or_predict<true>(base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
   examples[_gen_cs.mtr_example]->num_features = nf;
   examples[_gen_cs.mtr_example]->weight = old_weight;
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
 
-  if (PREDICT)  // Return the saved prediction
+  if (PREDICT) // Return the saved prediction
     std::swap(examples[0]->pred.a_s, _a_s);
 }
 
@@ -288,12 +291,10 @@ example* test_adf_sequence(multi_ex& ec_seq)
   return ret;
 }
 
-void cb_adf::learn(multi_learner& base, multi_ex& ec_seq)
-{
+void cb_adf::learn(multi_learner &base, multi_ex &ec_seq) {
   _offset = ec_seq[0]->ft_offset;
   _gen_cs.known_cost = get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
-  if (test_adf_sequence(ec_seq) != nullptr)
-  {
+  if (test_adf_sequence(ec_seq) != nullptr) {
     switch (_gen_cs.cb_type)
     {
       case CB_TYPE_IPS:
@@ -325,7 +326,8 @@ void cb_adf::predict(multi_learner& base, multi_ex& ec_seq)
   _offset = ec_seq[0]->ft_offset;
   _gen_cs.known_cost = get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
   gen_cs_test_example(ec_seq, _cs_labels);         // create test labels.
-  cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
+  cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels,
+                                 _prepped_cs_labels, false, _offset);
 }
 
 void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink)
@@ -452,9 +454,13 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
       model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), "", read, msg, text);
 }
 
-void learn(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.learn(base, ec_seq); }
+void learn(cb_adf &c, multi_learner &base, multi_ex &ec_seq) {
+  c.learn(base, ec_seq);
+}
 
-void predict(cb_adf& c, multi_learner& base, multi_ex& ec_seq) { c.predict(base, ec_seq); }
+void predict(cb_adf &c, multi_learner &base, multi_ex &ec_seq) {
+  c.predict(base, ec_seq);
+}
 
 }  // namespace CB_ADF
 using namespace CB_ADF;
@@ -541,7 +547,8 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   all.example_parser->lbl_parser = CB::cb_label;
 
   cb_adf* bare = ld.get();
-  learner<cb_adf, multi_ex>& l = init_learner(ld, base, learn, predict, problem_multiplier, 
+  learner<cb_adf, multi_ex> &l = init_learner(
+      ld, base, learn, predict, problem_multiplier,
       prediction_type_t::action_scores, all.get_setupfn_name(cb_adf_setup));
   l.set_finish_example(CB_ADF::finish_multiline_example);
 

@@ -407,7 +407,7 @@ VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   else if (data->alg == "adaptive")
   {
     l = &init_learner<boosting, example>(data, as_singleline(setup_base(options, all)), predict_or_learn_adaptive<true>,
-          predict_or_learn_adaptive<false>, data->N, all.get_setupfn_name(boosting_setup) + "-adaptive");
+        predict_or_learn_adaptive<false>, data->N, all.get_setupfn_name(boosting_setup) + "-adaptive");
     l->set_save_load(save_load_sampling);
   }
   else

@@ -106,7 +106,8 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
   // the pre-allocated scores array since ec.pred will be
   // used for other predictions.
   v_array<float> scores_array;
-  if (scores) scores_array = ec.pred.scalars;
+  if (scores)
+    scores_array = ec.pred.scalars;
 
   // oaa.pred - Predictions will get stored in this array
   // oaa.k    - Number of learners to call predict() on
@@ -115,30 +116,30 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
   // Find the class with the largest score (index +1)
   uint32_t prediction = 1;
   for (uint32_t i = 2; i <= o.k; i++)
-    if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar) prediction = i;
+    if (o.pred[i - 1].scalar > o.pred[prediction - 1].scalar)
+      prediction = i;
 
   if (ec.passthrough)
     for (uint32_t i = 1; i <= o.k; i++) add_passthrough_feature(ec, i, o.pred[i - 1].scalar);
 
   // Print predictions to a file
-  if (print_all)
-  {
+  if (print_all) {
     std::stringstream outputStringStream;
     outputStringStream << "1:" << o.pred[0].scalar;
-    for (uint32_t i = 2; i <= o.k; i++) outputStringStream << ' ' << i << ':' << o.pred[i - 1].scalar;
+    for (uint32_t i = 2; i <= o.k; i++)
+      outputStringStream << ' ' << i << ':' << o.pred[i - 1].scalar;
     o.all->print_text_by_ref(o.all->raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  // The predictions are an array of scores (as opposed to a single index of a class)
-  if (scores)
-  {
+  // The predictions are an array of scores (as opposed to a single index of a
+  // class)
+  if (scores) {
     scores_array.clear();
     for (uint32_t i = 0; i < o.k; i++) scores_array.push_back(o.pred[i].scalar);
     ec.pred.scalars = scores_array;
 
     // The scores should be converted to probabilities
-    if (probabilities)
-    {
+    if (probabilities) {
       float sum_prob = 0;
       for (uint32_t i = 0; i < o.k; i++)
       {
@@ -146,7 +147,8 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
         sum_prob += ec.pred.scalars[i];
       }
       const float inv_sum_prob = 1.f / sum_prob;
-      for (uint32_t i = 0; i < o.k; i++) ec.pred.scalars[i] *= inv_sum_prob;
+      for (uint32_t i = 0; i < o.k; i++)
+        ec.pred.scalars[i] *= inv_sum_prob;
     }
   }
   else
@@ -278,8 +280,11 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     }
     else
     {
-      l = &VW::LEARNER::init_multiclass_learner(data, base, learn<false, true, false>, predict<false, true, false>,
-          all.example_parser, data->k, all.get_setupfn_name(oaa_setup) + "-scores", prediction_type_t::scalars);
+      l = &VW::LEARNER::init_multiclass_learner(
+          data, base, learn<false, true, false>, predict<false, true, false>,
+          all.example_parser, data->k,
+          all.get_setupfn_name(oaa_setup) + "-scores",
+          prediction_type_t::scalars);
       all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
       l->set_finish_example(finish_example_scores<false>);
     }

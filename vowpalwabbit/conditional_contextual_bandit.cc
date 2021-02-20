@@ -3,20 +3,20 @@
 // license as described in the file LICENSE.
 
 #include "conditional_contextual_bandit.h"
-#include "reductions.h"
-#include "example.h"
-#include "global_data.h"
-#include "vw.h"
-#include "interactions.h"
-#include "label_dictionary.h"
 #include "cb_adf.h"
 #include "cb_algs.h"
 #include "constant.h"
-#include "v_array_pool.h"
-#include "decision_scores.h"
-#include "vw_versions.h"
-#include "version.h"
 #include "debug_log.h"
+#include "decision_scores.h"
+#include "example.h"
+#include "global_data.h"
+#include "interactions.h"
+#include "label_dictionary.h"
+#include "reductions.h"
+#include "v_array_pool.h"
+#include "version.h"
+#include "vw.h"
+#include "vw_versions.h"
 
 #include <numeric>
 #include <algorithm>
@@ -365,7 +365,8 @@ std::string ccb_decision_to_string(const ccb& data)
 {
   std::ostringstream outstrm;
   auto& pred = data.shared->pred.a_s;
-  // correct indices: we want index relative to the original ccb multi-example, with no actions filtered
+  // correct indices: we want index relative to the original ccb multi-example,
+  // with no actions filtered
   outstrm << "a_s [";
   for (const auto& action_score : pred) outstrm << action_score.action << ":" << action_score.score << ", ";
   outstrm << "] ";
@@ -469,21 +470,30 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       // the cb example contains at least 1 action
       if (has_action(data.cb_ex))
       {
-        // Notes:  Prediction is needed for output purposes. i.e.  save_action_scores needs it.
-        // This is will be used to a) display prediction, b) output to a predict file c) progressive loss calcs
+        // Notes:  Prediction is needed for output purposes. i.e.
+        // save_action_scores needs it.
+        // This is will be used to a) display prediction, b) output to a predict
+        // file c) progressive loss calcs
         //
-        // Strictly speaking, predict is not needed to learn.  The only reason for doing this here
-        // instead of letting the framework call predict before learn is to avoid extra work in example manipulation.
+        // Strictly speaking, predict is not needed to learn.  The only reason
+        // for doing this here
+        // instead of letting the framework call predict before learn is to
+        // avoid extra work in example manipulation.
         //
-        // The right thing to do here is to detect library mode and not have to call predict if prediction is
+        // The right thing to do here is to detect library mode and not have to
+        // call predict if prediction is
         // not needed for learn.  This will be part of a future PR
         if (!is_learn) multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
 
-        if (is_learn) { multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset); }
+        if (is_learn) {
+          multiline_learn_or_predict<true>(base, data.cb_ex,
+                                           examples[0]->ft_offset);
+        }
 
         save_action_scores(data, decision_scores);
         VW_DBG(examples) << "ccb "
-                         << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
+                         << "slot:" << slot_id << " "
+                         << ccb_decision_to_string(data) << std::endl;
         clear_pred_and_label(data);
       }
       else
@@ -660,7 +670,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   auto* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CCB::ccb_label_parser;
 
-  // Stash the base learners stride_shift so we can properly add a feature later.
+  // Stash the base learners stride_shift so we can properly add a feature
+  // later.
   data->base_learner_stride_shift = all.weights.stride_shift();
 
   // Extract from lower level reductions
@@ -672,8 +683,10 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_str.append("_id");
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
-  learner<ccb, multi_ex>& l = init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
-      prediction_type_t::decision_probs, all.get_setupfn_name(ccb_explore_adf_setup), true);
+  learner<ccb, multi_ex> &l =
+      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>,
+                   1, prediction_type_t::decision_probs,
+                   all.get_setupfn_name(ccb_explore_adf_setup), true);
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 

@@ -87,24 +87,24 @@ VW::LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
       multipredict<id>;
 
   if (link == "identity")
-    l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>, all.get_setupfn_name(scorer_setup) + "-identity",
-        base->learn_returns_prediction);
+    l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>,
+        all.get_setupfn_name(scorer_setup) + "-identity", base->learn_returns_prediction);
   else if (link == "logistic")
   {
-    l = &init_learner(s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>, all.get_setupfn_name(scorer_setup) + "-logistic",
-        base->learn_returns_prediction);
+    l = &init_learner(s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>,
+        all.get_setupfn_name(scorer_setup) + "-logistic", base->learn_returns_prediction);
     multipredict_f = multipredict<logistic>;
-  }
-  else if (link == "glf1")
-  {
-    l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>, all.get_setupfn_name(scorer_setup) + "-glf1",
-        base->learn_returns_prediction);
+  } else if (link == "glf1") {
+    l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>,
+        all.get_setupfn_name(scorer_setup) + "-glf1", base->learn_returns_prediction);
     multipredict_f = multipredict<glf1>;
   }
   else if (link == "poisson")
   {
-    l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>, all.get_setupfn_name(scorer_setup) + "-poisson",
-        base->learn_returns_prediction);
+    l = &init_learner(s, base, predict_or_learn<true, expf>,
+                      predict_or_learn<false, expf>,
+                      all.get_setupfn_name(scorer_setup) + "-poisson",
+                      base->learn_returns_prediction);
     multipredict_f = multipredict<expf>;
   }
   else
