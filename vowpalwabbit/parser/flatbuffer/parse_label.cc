@@ -23,7 +23,7 @@ namespace flatbuffer
 void parser::parse_simple_label(shared_data* sd, polylabel* l, const SimpleLabel* label)
 {
   l->simple.label = label->label();
-  l->simple.weight = label->weight();
+  l->simple.serialized_weight = label->weight();
   count_label(sd, label->label());
 }
 
