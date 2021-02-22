@@ -89,7 +89,7 @@ struct cbify
   }
 };
 
-float loss(cbify& data, uint32_t label, uint32_t final_prediction)
+float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
 {
   if (label != final_prediction)
     return data.loss1;
@@ -97,10 +97,10 @@ float loss(cbify& data, uint32_t label, uint32_t final_prediction)
     return data.loss0;
 }
 
-float loss_cs(cbify& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
+float loss_cs(const cbify& data, const v_array<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
 {
   float cost = 0.;
-  for (auto wc : costs)
+  for (const auto& wc : costs)
   {
     if (wc.class_index == final_prediction)
     {
@@ -111,10 +111,10 @@ float loss_cs(cbify& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t fina
   return data.loss0 + (data.loss1 - data.loss0) * cost;
 }
 
-float loss_csldf(cbify& data, std::vector<v_array<COST_SENSITIVE::wclass>>& cs_costs, uint32_t final_prediction)
+float loss_csldf(const cbify& data, const std::vector<v_array<COST_SENSITIVE::wclass>>& cs_costs, uint32_t final_prediction)
 {
   float cost = 0.;
-  for (auto costs : cs_costs)
+  for (const auto& costs : cs_costs)
   {
     if (costs[0].class_index == final_prediction)
     {
@@ -330,49 +330,39 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   MULTICLASS::label_t ld;
   COST_SENSITIVE::label csl;
   if (use_cs)
-    csl = ec.l.cs;
+    csl = std::move(ec.l.cs);
   else
-    ld = ec.l.multi;
+    ld = std::move(ec.l.multi);
 
-  data.cb_label.costs.clear();
-  ec.l.cb = data.cb_label;
-  v_move(ec.pred.a_s, data.a_s);
+  ec.l.cb.costs.clear();
+  ec.pred.a_s.clear();
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
-  // data.probs = ec.pred.scalars;
 
   uint32_t chosen_action;
   if (sample_after_normalizing(
           data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
-  CB::cb_class cl;
-  cl.action = chosen_action + 1;
-  cl.probability = ec.pred.a_s[chosen_action].score;
-
-  if (!cl.action) THROW("No action with non-zero probability found!");
-  if (use_cs)
-    cl.cost = loss_cs(data, csl.costs, cl.action);
-  else
-    cl.cost = loss(data, ld.label, cl.action);
-
   // Create a new cb label
-  data.cb_label.costs.push_back(cl);
-  ec.l.cb = data.cb_label;
+  const auto action = chosen_action + 1;
+  const auto cost = use_cs ? loss_cs(data, csl.costs, action) : loss(data, ld.label, action);
+  ec.l.cb.costs.push_back(CB::cb_class{
+      cost,
+      action,                           // action
+      ec.pred.a_s[chosen_action].score  // probability
+  });
 
-  if (is_learn) base.learn(ec);
-
-  v_move(data.a_s, ec.pred.a_s);
-  data.a_s.clear();
+  if (is_learn) { base.learn(ec); }
 
   if (use_cs)
-    ec.l.cs = csl;
+    ec.l.cs = std::move(csl);
   else
-    ec.l.multi = ld;
+    ec.l.multi = std::move(ld);
 
-  ec.pred.multiclass = cl.action;
-  ec.l.cb.costs = v_init<CB::cb_class>();
+  ec.pred.multiclass = action;
+  ec.l.cb.costs.clear();
 }
 
 template <bool is_learn, bool use_cs>
