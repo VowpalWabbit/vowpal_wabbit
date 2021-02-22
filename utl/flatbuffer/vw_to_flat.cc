@@ -96,7 +96,7 @@ void to_flat::write_to_file(bool collection, bool is_multiline, MultiExampleBuil
 void to_flat::create_simple_label(example* v, ExampleBuilder& ex_builder)
 {
   ex_builder.label =
-      VW::parsers::flatbuffer::CreateSimpleLabel(_builder, v->l.simple.label, v->l.simple.weight).Union();
+      VW::parsers::flatbuffer::CreateSimpleLabel(_builder, v->l.simple.label, v->l.simple.serialized_weight).Union();
   ex_builder.label_type = VW::parsers::flatbuffer::Label_SimpleLabel;
 }
 
