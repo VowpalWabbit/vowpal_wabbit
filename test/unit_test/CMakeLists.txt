@@ -10,7 +10,6 @@ add_executable(vw-unit-test.out
   error_test.cc
   example_header_test.cc
   explore_test.cc
-  flatbuffer_parser_test.cc
   guard_test.cc
   initialize_test.cc
   io_adapter_test.cc
@@ -22,10 +21,10 @@ add_executable(vw-unit-test.out
   offset_tree_tests.cc
   options_boost_po_test.cc
   options_test.cc
+  ostream_test.cc
   parse_args_test.cc
   parser_test.cc
   power_test.cc
-  pmf_to_pdf_test.cc
   prediction_test.cc
   random_test.cc
   scope_exit_test.cc
@@ -43,6 +42,10 @@ add_executable(vw-unit-test.out
   pmf_to_pdf_test.cc
   weights_test.cc
 )
+
+if(BUILD_FLATBUFFERS)
+  target_sources(vw-unit-test.out PRIVATE flatbuffer_parser_test.cc)
+endif()
 
 # Add the include directories from vw target for testing
 target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw,INCLUDE_DIRECTORIES>)

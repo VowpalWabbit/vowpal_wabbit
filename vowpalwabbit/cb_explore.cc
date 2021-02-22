@@ -25,8 +25,6 @@ using namespace VW::config;
 using std::endl;
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
-VW_DEBUG_ENABLE(false)
-
 namespace CB_EXPLORE
 {
 struct cb_explore
@@ -211,7 +209,13 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     data.cs_label.costs.clear();
     float norm = min_prob * num_actions;
     ec.l.cb = data.cb_label;
-    data.cbcs.known_cost = get_observed_cost(data.cb_label);
+    auto optional_cost = get_observed_cost_cb(data.cb_label);
+    // cost observed, not default
+    if (optional_cost.first) { data.cbcs.known_cost = optional_cost.second; }
+    else
+    {
+      data.cbcs.known_cost = CB::cb_class{};
+    }
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0;
 
@@ -263,11 +267,15 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
   cb_to_cs& c = data.cbcs;
 
-  if ((c.known_cost = get_observed_cost(ld)) != nullptr)
+  auto optional_cost = CB::get_observed_cost_cb(ld);
+  // cost observed, not default
+  if (optional_cost.first == true)
+  {
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-      loss += get_cost_estimate(c.known_cost, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
+      loss += get_cost_estimate(optional_cost.second, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
+  }
 
-  all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, optional_cost.first, loss, 1.f, ec.num_features);
 
   std::stringstream ss;
   float maxprob = 0.;
@@ -375,17 +383,17 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     data->preds.resize(data->cover_size);
     data->model_file_version = all.model_file_ver;
     l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1,
-        prediction_type_t::action_probs);
+        prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-cover");
   }
   else if (options.was_supplied("bag"))
     l = &init_learner(data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data->bag_size,
-        prediction_type_t::action_probs);
+        prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-bag");
   else if (options.was_supplied("first"))
-    l = &init_learner(
-        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type_t::action_probs);
+    l = &init_learner(data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1,
+        prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-first");
   else  // greedy
-    l = &init_learner(
-        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type_t::action_probs);
+    l = &init_learner(data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1,
+        prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-greedy");
 
   l->set_finish_example(finish_example);
   l->set_save_load(save_load);

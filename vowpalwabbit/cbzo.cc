@@ -348,8 +348,8 @@ base_learner* setup(options_i& options, vw& all)
     if (options.was_supplied("noconstant")) THROW("constant policy can't be learnt when --noconstant is used")
 
     if (!feature_mask_off)
-      all.trace_message << "warning: feature_mask used with constant policy (where there is only one weight to learn)."
-                        << std::endl;
+      *(all.trace_message)
+          << "warning: feature_mask used with constant policy (where there is only one weight to learn)." << std::endl;
   }
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
@@ -358,8 +358,8 @@ base_learner* setup(options_i& options, vw& all)
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
-  learner<cbzo, example>& l =
-      init_learner(data, get_learn(all, policy, feature_mask_off), get_predict(all, policy), 0, prediction_type_t::pdf);
+  learner<cbzo, example>& l = init_learner(data, get_learn(all, policy, feature_mask_off), get_predict(all, policy), 0,
+      prediction_type_t::pdf, all.get_setupfn_name(setup));
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

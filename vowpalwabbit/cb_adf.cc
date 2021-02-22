@@ -25,6 +25,36 @@ using namespace exploration;
 
 namespace CB_ADF
 {
+cb_class get_observed_cost_or_default_cb_adf(const multi_ex& examples)
+{
+  bool found = false;
+  uint32_t found_index = 0;
+  uint32_t i = 0;
+  CB::cb_class known_cost;
+
+  for (const auto* example_ptr : examples)
+  {
+    for (const auto& cost : example_ptr->l.cb.costs)
+    {
+      if (cost.has_observed_cost())
+      {
+        found = true;
+        found_index = i;
+        known_cost = cost;
+      }
+    }
+    i++;
+  }
+
+  if (found == false)
+  {
+    known_cost.probability = -1;
+    return known_cost;
+  }
+
+  known_cost.action = found_index;
+  return known_cost;
+}
 struct cb_adf
 {
 private:
@@ -93,37 +123,6 @@ private:
   template <bool predict>
   void learn_MTR(multi_learner& base, multi_ex& examples);
 };
-
-CB::cb_class get_observed_cost(multi_ex& examples)
-{
-  CB::label* ld = nullptr;
-  int index = -1;
-  CB::cb_class known_cost;
-
-  size_t i = 0;
-  for (example*& ec : examples)
-  {
-    if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
-    {
-      ld = &ec->l.cb;
-      index = (int)i;
-    }
-    ++i;
-  }
-
-  // handle -1 case.
-  if (index == -1)
-  {
-    known_cost.probability = -1;
-    return known_cost;
-    // std::cerr << "None of the examples has known cost. Exiting." << std::endl;
-    // throw exception();
-  }
-
-  known_cost = ld->costs[0];
-  known_cost.action = index;
-  return known_cost;
-}
 
 void cb_adf::learn_IPS(multi_learner& base, multi_ex& examples)
 {
@@ -288,7 +287,7 @@ template <bool is_learn>
 void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
-  _gen_cs.known_cost = get_observed_cost(ec_seq);  // need to set for test case
+  _gen_cs.known_cost = get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
   bool learn = is_learn && test_adf_sequence(ec_seq) != nullptr;
   if (learn)
   {
@@ -357,7 +356,7 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
 
   bool labeled_example = true;
   if (_gen_cs.known_cost.probability > 0)
-    loss = get_cost_estimate(&(_gen_cs.known_cost), _gen_cs.pred_scores, action);
+    loss = get_cost_estimate(_gen_cs.known_cost, _gen_cs.pred_scores, action);
   else
     labeled_example = false;
 
@@ -519,13 +518,13 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
     cb_type = CB_TYPE_SM;
   else
   {
-    all.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr." << std::endl;
+    *(all.trace_message) << "warning: cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr." << std::endl;
     cb_type = CB_TYPE_MTR;
   }
 
   if (clip_p > 0.f && cb_type == CB_TYPE_SM)
-    all.trace_message << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped."
-                      << std::endl;
+    *(all.trace_message) << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped."
+                         << std::endl;
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
@@ -546,8 +545,8 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   all.example_parser->lbl_parser = CB::cb_label;
 
   cb_adf* bare = ld.get();
-  learner<cb_adf, multi_ex>& l =
-      init_learner(ld, base, learn, predict, problem_multiplier, prediction_type_t::action_scores);
+  learner<cb_adf, multi_ex>& l = init_learner(ld, base, learn, predict, problem_multiplier,
+      prediction_type_t::action_scores, all.get_setupfn_name(cb_adf_setup));
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   bare->set_scorer(all.scorer);
