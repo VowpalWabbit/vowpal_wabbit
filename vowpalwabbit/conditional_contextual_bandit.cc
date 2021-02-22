@@ -3,20 +3,20 @@
 // license as described in the file LICENSE.
 
 #include "conditional_contextual_bandit.h"
+#include "reductions.h"
+#include "example.h"
+#include "global_data.h"
+#include "vw.h"
+#include "interactions.h"
+#include "label_dictionary.h"
 #include "cb_adf.h"
 #include "cb_algs.h"
 #include "constant.h"
-#include "debug_log.h"
-#include "decision_scores.h"
-#include "example.h"
-#include "global_data.h"
-#include "interactions.h"
-#include "label_dictionary.h"
-#include "reductions.h"
 #include "v_array_pool.h"
-#include "version.h"
-#include "vw.h"
+#include "decision_scores.h"
 #include "vw_versions.h"
+#include "version.h"
+#include "debug_log.h"
 
 #include <numeric>
 #include <algorithm>

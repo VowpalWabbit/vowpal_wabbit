@@ -2,19 +2,15 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <cfloat>
-#include <cerrno>
-#include <algorithm>
-
-#include "cb_adf.h"
-#include "cb_algs.h"
-#include "explore.h"
-#include "gen_cs_example.h"
-#include "label_dictionary.h"
 #include "reductions.h"
+#include "label_dictionary.h"
 #include "vw.h"
+#include "cb_algs.h"
 #include "vw_exception.h"
+#include "gen_cs_example.h"
 #include "vw_versions.h"
+#include "explore.h"
+#include "cb_adf.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_adf
