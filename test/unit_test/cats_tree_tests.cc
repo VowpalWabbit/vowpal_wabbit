@@ -91,7 +91,8 @@ bool operator!=(const label_data& lhs, const label_data& rhs)
       lhs.serialized_initial == rhs.serialized_initial);
 }
 
-std::ostream &operator<<(std::ostream &o, label_data const &lbl) {
+std::ostream& operator<<(std::ostream& o, label_data const& lbl)
+{
   o << "{l=" << lbl.label << ", w=" << lbl.serialized_weight << ", i=" << lbl.serialized_initial << "}";
   return o;
 }

@@ -171,10 +171,8 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
     min_pred =
         std::max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
-    VW_DBG(ec) << "  find_cost_rangeB: i=" << i
-               << " pp=" << ec.partial_prediction << " sens=" << sens
-               << " eta=" << eta << " [" << min_pred << ", " << max_pred
-               << "] = " << (max_pred - min_pred) << endl;
+    VW_DBG(ec) << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
+               << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << endl;
   }
 }
 
@@ -203,8 +201,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     cerr << endl << endl;
   }
 
-  if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes)
-    return;
+  if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes) return;
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
@@ -251,21 +248,15 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     {
       bool query_label = ((query && cs_a.is_baseline) || (!cs_a.use_domination && lqd.is_range_large) ||
           (query && lqd.is_range_overlapped && lqd.is_range_large));
-      inner_loop<is_learn, is_simulation>(
-          cs_a, base, ec, lqd.cl->class_index, lqd.cl->x, prediction, score,
+      inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl->class_index, lqd.cl->x, prediction, score,
           lqd.cl->partial_prediction, query_label, lqd.query_needed);
-      if (lqd.query_needed)
-        ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
+      if (lqd.query_needed) ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
 
-      VW_DBG(ec) << "label=" << lqd.cl->class_index << " x=" << lqd.cl->x
-                 << " prediction=" << prediction << " score=" << score
-                 << " pp=" << lqd.cl->partial_prediction
-                 << " ql=" << query_label << " qn=" << lqd.query_needed
-                 << " ro=" << lqd.is_range_overlapped
-                 << " rl=" << lqd.is_range_large << " [" << lqd.min_pred << ", "
-                 << lqd.max_pred << "] vs delta=" << delta
-                 << " n_overlapped=" << n_overlapped
-                 << " is_baseline=" << cs_a.is_baseline << endl;
+      VW_DBG(ec) << "label=" << lqd.cl->class_index << " x=" << lqd.cl->x << " prediction=" << prediction
+                 << " score=" << score << " pp=" << lqd.cl->partial_prediction << " ql=" << query_label
+                 << " qn=" << lqd.query_needed << " ro=" << lqd.is_range_overlapped << " rl=" << lqd.is_range_large
+                 << " [" << lqd.min_pred << ", " << lqd.max_pred << "] vs delta=" << delta
+                 << " n_overlapped=" << n_overlapped << " is_baseline=" << cs_a.is_baseline << endl;
     }
 
     // Need to pop metadata
@@ -352,18 +343,13 @@ base_learner* cs_active_setup(options_i& options, vw& all)
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);
 
-  learner<cs_active, example> &l =
-      simulation
-          ? init_learner(data, as_singleline(setup_base(options, all)),
-                         predict_or_learn<true, true>,
-                         predict_or_learn<false, true>, data->num_classes,
-                         prediction_type_t::multilabels,
-                         all.get_setupfn_name(cs_active_setup) + "-sim", true)
-          : init_learner(data, as_singleline(setup_base(options, all)),
-                         predict_or_learn<true, false>,
-                         predict_or_learn<false, false>, data->num_classes,
-                         prediction_type_t::multilabels,
-                         all.get_setupfn_name(cs_active_setup), true);
+  learner<cs_active, example>& l = simulation
+      ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
+            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels,
+            all.get_setupfn_name(cs_active_setup) + "-sim", true)
+      : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
+            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels,
+            all.get_setupfn_name(cs_active_setup), true);
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);

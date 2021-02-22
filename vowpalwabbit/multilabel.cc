@@ -136,8 +136,7 @@ void print_update(vw& all, bool is_test, example& ec)
       for (unsigned int i : ec.l.multilabels.label_v) label_string << " " << i;
 
     std::stringstream pred_string;
-    for (unsigned int i : ec.pred.multilabels.label_v)
-      pred_string << " " << i;
+    for (unsigned int i : ec.pred.multilabels.label_v) pred_string << " " << i;
 
     all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
         all.progress_add, all.progress_arg);
@@ -149,7 +148,8 @@ void output_example(vw& all, example& ec)
   auto& ld = ec.l.multilabels;
 
   float loss = 0.;
-  if (!test_label(ld)) {
+  if (!test_label(ld))
+  {
     // need to compute exact loss
     const labels preds = ec.pred.multilabels;
     const labels given = ec.l.multilabels;

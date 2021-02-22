@@ -143,7 +143,9 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
     return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, true>,
         learn_or_predict<false, true>, 1 /* weights */, prediction_type_t::action_probs,
         all.get_setupfn_name(cb_dro_setup) + "-cb_explore_adf"));
-  } else {
+  }
+  else
+  {
     return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, false>,
         learn_or_predict<false, false>, 1 /* weights */, prediction_type_t::action_probs,
         all.get_setupfn_name(cb_dro_setup)));
