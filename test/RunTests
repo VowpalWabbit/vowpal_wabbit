@@ -2130,4 +2130,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/slates_simple_w_interactions.predict
     pred-sets/ref/slates_w_interactions.inv
 
+# Test 274: Test search_neighbor_features argument
+{VW} -k -c -d train-sets/sequence_data --passes 2 --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off --search_neighbor_features -3:w,-2:w,-1:w,1:w,2:w,3:w,-3:e,-2:e,-1:e,1:e,2:e,3:e,-3:s,-2:s,-1:s,1:s,2:s,3:s
+train-sets/ref/slates_simple_w_interactions.stderr
+    train-sets/ref/search_neighbor_features.train.stderr
+
 # Do not delete this line or the empty line above it
