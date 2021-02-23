@@ -768,7 +768,8 @@ void parse_feature_tweaks(
     {
       all.interactions.quadratics_wildcard_expansion = true;
       if (options.was_supplied("leave_duplicate_interactions"))
-      { all.interactions.leave_duplicate_interactions = true; } else
+      { all.interactions.leave_duplicate_interactions = true; }
+      else
       {
         *(all.trace_message) << endl
                              << "WARNING: any duplicate namespace interactions will be removed" << endl

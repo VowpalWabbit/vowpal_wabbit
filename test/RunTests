@@ -2140,4 +2140,14 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/search_neighbor_features.train.stderr
 
+# Test 276: test -q :: with explicit interactions
+{VW} -d train-sets/ccb_lots_of_interactions.dat -f model.model --ccb_explore_adf -q :: -q AB --interactions AAA --interactions ::: --invert_hash ccb_implicit_and_explicit_interactions.inv
+    train-sets/ref/ccb_implicit_and_explicit_interactions.stderr
+    pred-sets/ref/ccb_implicit_and_explicit_interactions.inv
+
+# Test 277: test -q :: with explicit interactions and ignore
+{VW} -d train-sets/ccb_lots_of_interactions.dat -f model2.model --ignore C --ccb_explore_adf -q :: -q AB --interactions AAA --interactions ::: --invert_hash ccb_implicit_explicit_ignore_interactions.inv
+    train-sets/ref/ccb_implicit_explicit_ignore_interactions.stderr
+    pred-sets/ref/ccb_implicit_explicit_ignore_interactions.inv
+
 # Do not delete this line or the empty line above it

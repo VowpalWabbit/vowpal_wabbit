@@ -70,6 +70,7 @@ void pop_ns(example* ex, std::vector<Namespace<audit>>& namespaces)
     auto feature_group = ns.feature_group;
     // Do not insert feature_group if it already exists.
     if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
-    { ex->indices.push_back(feature_group); } }
+    { ex->indices.push_back(feature_group); }
+  }
   namespaces.pop_back();
 }
