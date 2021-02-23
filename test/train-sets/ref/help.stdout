@@ -223,11 +223,16 @@ Bootstrap:
   --bootstrap arg       k-way bootstrap by online importance resampling
   --bs_type arg         prediction type {mean,vote}
 Continuous actions tree with smoothing:
-  --cats arg             number of tree labels <k> for cats
-  --min_value arg        Minimum continuous value
-  --max_value arg        Maximum continuous value
-  --bandwidth arg (=1, ) Bandwidth (radius) of randomization around discrete 
-                         actions in terms of continuous range.
+  --cats arg            number of tree labels <k> for cats
+  --min_value arg       Minimum continuous value
+  --max_value arg       Maximum continuous value
+  --bandwidth arg       Bandwidth (radius) of randomization around discrete 
+                        actions in terms of continuous range. By default will 
+                        be set to half of the continuous action unit-range 
+                        resulting in smoothing that stays inside the action 
+                        space unit-range:
+                        unit_range = (max_value - min_value) / num_actions
+                        default bandwidth = unit_range / 2.0
 Continuous action tree with smoothing with full pdf:
   --cats_pdf arg        number of tree labels <k> for cats_pdf
 CATS Tree Options:

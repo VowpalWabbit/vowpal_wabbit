@@ -17,7 +17,6 @@ using VW::config::option_group_definition;
 using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
-
 // Forward declarations
 namespace VW
 {
@@ -182,9 +181,11 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
       .add(make_option("min_value", min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", max_value).keep().help("Maximum continuous value"))
       .add(make_option("bandwidth", bandwidth)
-               .default_value(1)
                .keep()
-               .help("Bandwidth (radius) of randomization around discrete actions in terms of continuous range."));
+               .help("Bandwidth (radius) of randomization around discrete actions in terms of continuous range. By "
+                     "default will be set to half of the continuous action unit-range resulting in smoothing that "
+                     "stays inside the action space unit-range:\nunit_range = (max_value - min_value) / "
+                     "num_actions\ndefault bandwidth = unit_range / 2.0"));
 
   // If cats reduction was not invoked, don't add anything
   // to the reduction stack;
@@ -195,6 +196,15 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
   // cats stack = [cats -> sample_pdf -> cats_pdf ... rest specified by cats_pdf]
   if (!options.was_supplied("sample_pdf")) options.insert("sample_pdf", "");
   options.insert("cats_pdf", std::to_string(num_actions));
+
+  if (!options.was_supplied("bandwidth"))
+  {
+    float leaf_width = (max_value - min_value) / (num_actions);  // aka unit range
+    float half_leaf_width = leaf_width / 2.f;
+    bandwidth = half_leaf_width;
+    *(all.trace_message) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
+                         << bandwidth << std::endl;
+  }
 
   LEARNER::base_learner* p_base = setup_base(options, all);
   auto p_reduction = scoped_calloc_or_throw<cats>(as_singleline(p_base));
