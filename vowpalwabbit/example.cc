@@ -214,7 +214,6 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
 
 void copy_example_data(bool audit, example* dst, example* src)
 {
-  // std::cerr << "copy_example_data dst = " << dst << std::endl;
   copy_example_metadata(audit, dst, src);
 
   // copy feature data

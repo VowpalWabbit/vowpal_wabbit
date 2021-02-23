@@ -22,10 +22,12 @@
 #include "vw.h"
 #include "rand48.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
-using std::cerr;
 using std::endl;
 
 inline float sign(float w)
@@ -310,14 +312,25 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
       bin_text_write_fixed(model_file, (char*)&(o.v[i]), sizeof(o.v[i]), os2, text);
     }
 
-  if (read) { cerr << "Loading alpha and v: " << endl; }
+  if (read)
+  {
+    logger::log_info("Loading alpha and v: ");
+  }
   else
   {
-    cerr << "Saving alpha and v, current weighted_examples = "
-         << o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples << endl;
+    logger::log_info("Saving alpha and v, current weighted_examples = {}",
+		      o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples);
   }
-  for (int i = 0; i < o.N; i++) { cerr << o.alpha[i] << " " << o.v[i] << endl; }
-  cerr << endl;
+
+  {
+    // set logger to only output the message, no header info
+    logger::pattern_guard("%v");
+    for (int i = 0; i < o.N; i++)
+    {
+      logger::log_info("{0} {1}", o.alpha[i], o.v[i]);
+    }
+    logger::log_info("");
+  }
 }
 
 void return_example(vw& all, boosting& /* a */, example& ec)
@@ -352,12 +365,23 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
   if (!o.all->logger.quiet)
   {
     if (read)
-      cerr << "Loading alpha: " << endl;
+    {
+      logger::log_info("Loading alpha: ");
+    }
     else
-      cerr << "Saving alpha, current weighted_examples = " << o.all->sd->weighted_examples() << endl;
-    for (int i = 0; i < o.N; i++) cerr << o.alpha[i] << " " << endl;
+    {
+      logger::log_info("Saving alpha, current weighted_examples = {)",
+		       o.all->sd->weighted_examples());
+    }
 
-    cerr << endl;
+    {
+      logger::pattern_guard("%v");
+      for (int i = 0; i < o.N; i++)
+      {
+	logger::log_info("{}", o.alpha[i]);
+      }
+      logger::log_info("");
+    }
   }
 }
 
@@ -384,8 +408,8 @@ VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   // "adaptive" implements AdaBoost.OL (Algorithm 2 in BLK'15,
   // 	    using sampling rather than importance weighting)
 
-  if (!all.logger.quiet) cerr << "Number of weak learners = " << data->N << endl;
-  if (!all.logger.quiet) cerr << "Gamma = " << data->gamma << endl;
+  logger::log_info("Number of weak learners = {}", data->N);
+  logger::log_info("Gamma = {}", data->gamma);
 
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;

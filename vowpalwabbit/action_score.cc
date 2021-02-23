@@ -10,6 +10,8 @@
 
 #include "io/logger.h"
 
+namespace logger = VW::io::logger;
+
 namespace ACTION_SCORE
 {
 void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>& tag)
@@ -28,7 +30,7 @@ void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, con
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
-  if (t != len) VW::io::logger::log_error("write error: {}", VW::strerror_to_string(errno));
+  if (t != len) logger::log_error("write error: {}", VW::strerror_to_string(errno));
 }
 
 void delete_action_scores(void* v)

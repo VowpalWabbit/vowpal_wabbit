@@ -14,6 +14,10 @@
 #include "csoaa.h"
 #include "scope_exit.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
@@ -54,7 +58,6 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
 template <bool is_learn>
 void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 {
-  // std::cerr << "------------- passthrough" << std::endl;
   COST_SENSITIVE::label ld = ec.l.cs;
   ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
 
@@ -226,16 +229,15 @@ void unsubtract_example(example* ec)
 {
   if (ec->indices.empty())
   {
-    std::cerr << "internal error (bug): trying to unsubtract_example, but there are no namespaces!" << std::endl;
+    logger::log_error("internal error (bug): trying to unsubtract_example, but there are no namespaces!");
     return;
   }
 
   if (ec->indices.last() != wap_ldf_namespace)
   {
-    std::cerr
-        << "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
-           "after and not removed!"
-        << std::endl;
+    logger::log_error(
+      "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
+      "after and not removed!");
     return;
   }
 
@@ -541,7 +543,7 @@ void global_print_newline(vw& all)
   {
     ssize_t t;
     t = sink->write(temp, 1);
-    if (t != 1) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != 1) logger::log_error("write error: ", VW::strerror_to_string(errno));
   }
 }
 

@@ -10,6 +10,8 @@
 #include "vw.h"
 #include "vw_exception.h"
 #include "csoaa.h"
+
+#include "io/logger.h"
 //#define B_SEARCH_MAX_ITER 50
 #define B_SEARCH_MAX_ITER 20
 
@@ -17,7 +19,11 @@ using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
 
-using std::cerr;
+// TODO: cs_active should have its own logger instance (since it uses its own debug flag)
+// TODO: the original log lines here are written very strangely, with endl at the beginning of the lines
+//       its hard to determine if the output will actually be exactly the same.
+namespace logger = VW::io::logger;
+
 using std::endl;
 
 struct lq_data
@@ -96,7 +102,6 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
     float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
 {
   base.predict(ec, i - 1);
-  // cerr << "base.predict ==> partial_prediction=" << ec.partial_prediction << endl;
   if (is_learn)
   {
     vw& all = *cs_a.all;
@@ -122,8 +127,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
       {
         ec.l.simple.label = cost;
         if ((cost < cs_a.cost_min) || (cost > cs_a.cost_max))
-          cerr << "warning: cost " << cost << " outside of cost range [" << cs_a.cost_min << ", " << cs_a.cost_max
-               << "]!" << endl;
+	  logger::log_warn("cost {0} outside of cost range[{1}, {2}]!", cost, cs_a.cost_min, cs_a.cost_max);
       }
       else
         ec.l.simple.label = FLT_MAX;
@@ -159,8 +163,8 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
     max_pred = cs_a.cost_max;
     is_range_large = true;
     if (cs_a.print_debug_stuff)
-      cerr << "  find_cost_rangeA: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
-           << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << endl;
+      logger::log_info(" find_cost_rangeA: i={0} pp={1} sens={2} eta={3} [{4}, {5}] = {6}",
+		       i, ec.partial_prediction, sens, eta, min_pred, max_pred, (max_pred - min_pred));
   }
   else
   {
@@ -171,18 +175,16 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
         std::max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
     if (cs_a.print_debug_stuff)
-      cerr << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta
-           << " [" << min_pred << ", " << max_pred << "] = " << (max_pred - min_pred) << endl;
+      logger::log_info(" find_cost_rangeB: i={0} pp={1} sens={2} eta={3} [{4}, {5}] = {6}",
+		       i, ec.partial_prediction, sens, eta, min_pred, max_pred, (max_pred - min_pred));
   }
 }
 
 template <bool is_learn, bool is_simulation>
 void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 {
-  // cerr << "------------- passthrough" << endl;
   COST_SENSITIVE::label ld = ec.l.cs;
 
-  // cerr << "is_learn=" << is_learn << " ld.costs.size()=" << ld.costs.size() << endl;
   if (cs_a.all->sd->queries >= cs_a.min_labels * cs_a.num_classes)
   {
     // save regressor
@@ -190,23 +192,21 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     filename << cs_a.all->final_regressor_name << "." << ec.example_counter << "." << cs_a.all->sd->queries << "."
              << cs_a.num_any_queries;
     VW::save_predictor(*(cs_a.all), filename.str());
-    cerr << endl << "Number of examples with at least one query = " << cs_a.num_any_queries;
+    logger::log_info("Number of examples with at least one query = {}", cs_a.num_any_queries);
     // Double label query budget
     cs_a.min_labels *= 2;
-    for (size_t i = 0; i < cs_a.examples_by_queries.size(); i++)
-    { cerr << endl << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i]; }
 
-    cerr << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
-    cerr << endl << "average distance to range = " << cs_a.distance_to_range / ((float)cs_a.labels_outside_range);
-    cerr << endl << "average range = " << cs_a.range / ((float)cs_a.labels_outside_range);
+    {
+      logger::pattern_guard("%v");
+      for (size_t i = 0; i < cs_a.examples_by_queries.size(); i++)
+      {
+	logger::log_info("examples with {0} labels queried = {1}", i, cs_a.examples_by_queries[i]);
+      }
 
-    /*
-    for (size_t i=0; i<cs_a.all->sd->distance_to_range.size(); i++)
-    {  cerr << endl << "label " << i << ", average distance to range = " <<
-    cs_a.all->sd->distance_to_range[i]/((float)(cs_a.t-1));
-    }*/
-
-    cerr << endl << endl;
+      logger::log_info("labels outside of cost range = {}", cs_a.labels_outside_range);
+      logger::log_info("average distance to range = {}", cs_a.distance_to_range / ((float)cs_a.labels_outside_range));
+      logger::log_info("average range = {}\n", cs_a.range / ((float)cs_a.labels_outside_range));
+    }
   }
 
   if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes) return;
@@ -268,11 +268,11 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
           lqd.cl->partial_prediction, query_label, lqd.query_needed);
       if (lqd.query_needed) ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
       if (cs_a.print_debug_stuff)
-        cerr << "label=" << lqd.cl->class_index << " x=" << lqd.cl->x << " prediction=" << prediction
-             << " score=" << score << " pp=" << lqd.cl->partial_prediction << " ql=" << query_label
-             << " qn=" << lqd.query_needed << " ro=" << lqd.is_range_overlapped << " rl=" << lqd.is_range_large << " ["
-             << lqd.min_pred << ", " << lqd.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped
-             << " is_baseline=" << cs_a.is_baseline << endl;
+	logger::log_info("label={0} x={1} prediction={2} score={3} pp={4} ql={5} qn={6} ro={7} rl={8} "
+			 "[{9}, {10}] vs delta={11} n_overlapped={12} is_baseline={13}",
+			 lqd.cl->class_index/*0*/, lqd.cl->x/*1*/, prediction/*2*/, score/*3*/, lqd.cl->partial_prediction/*4*/,
+			 query_label/*5*/, lqd.query_needed/*6*/, lqd.is_range_overlapped/*7*/, lqd.is_range_large/*8*/,
+			 lqd.min_pred/*9*/, lqd.max_pred/*10*/, delta/*11*/, n_overlapped/*12*/, cs_a.is_baseline/*13*/);
     }
 
     // Need to pop metadata

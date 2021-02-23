@@ -13,7 +13,11 @@
 #include "cb_label_parser.h"
 #include "vw_string_view.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
+
+namespace logger = VW::io::logger;
 
 namespace CB
 {
@@ -54,19 +58,21 @@ void parse_label(parser* p, shared_data*, CB::label& ld, std::vector<VW::string_
 
     if (f.probability > 1.0)
     {
-      std::cerr << "invalid probability > 1 specified for an action, resetting to 1." << std::endl;
+      logger::log_warn("invalid probability > 1 specified for an action, resetting to 1.");
       f.probability = 1.0;
     }
     if (f.probability < 0.0)
     {
-      std::cerr << "invalid probability < 0 specified for an action, resetting to 0." << std::endl;
+      logger::log_warn("invalid probability < 0 specified for an action, resetting to 0.");
       f.probability = .0;
     }
     if (p->parse_name[0] == "shared")
     {
       if (p->parse_name.size() == 1) { f.probability = -1.f; }
       else
-        std::cerr << "shared feature vectors should not have costs" << std::endl;
+      {
+        logger::log_warn("shared feature vectors should not have costs");
+      }
     }
 
     ld.costs.push_back(f);

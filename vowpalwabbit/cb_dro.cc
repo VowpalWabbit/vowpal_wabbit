@@ -2,12 +2,15 @@
 #include "cb_dro.h"
 #include "distributionally_robust.h"
 #include "explore.h"
-
 #include "rand48.h"
+
+#include "io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 namespace VW
 {
@@ -126,13 +129,13 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
 
   if (wmax <= 1) { THROW("cb_dro_wmax must exceed 1"); }
 
-  if (!all.logger.quiet)
-  {
-    std::cerr << "Using DRO for CB learning" << std::endl;
-    std::cerr << "cb_dro_alpha = " << alpha << std::endl;
-    std::cerr << "cb_dro_tau = " << tau << std::endl;
-    std::cerr << "cb_dro_wmax = " << wmax << std::endl;
-  }
+  logger::log_info(
+    "Using DRO for CB learning\n"
+    "cb_dro_alpha = {0}\n"
+    "cb_dro_tau = {1}\n"
+    "cb_dro_wmax = {2}",
+    alpha, tau, wmax
+  );
 
   auto data = scoped_calloc_or_throw<cb_dro_data>(alpha, tau, wmax);
 

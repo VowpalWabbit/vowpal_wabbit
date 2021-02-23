@@ -10,7 +10,11 @@
 #include "io_buf.h"
 #include "global_data.h"
 
+#include "io/logger.h"
+
 #include <iostream>
+
+namespace logger = VW::io::logger;
 
 template <typename LabelPrintFunc>
 void print_update(vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores,
@@ -66,7 +70,7 @@ void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decis
     const auto str = ss.str();
     ssize_t len = str.size();
     ssize_t t = f->write(str.c_str(), (unsigned int)len);
-    if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
+    if (t != len) { logger::log_error("write error: ", VW::strerror_to_string(errno)); }
   }
 }
 

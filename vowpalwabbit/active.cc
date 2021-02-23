@@ -16,6 +16,8 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+namespace logger = VW::io::logger;
+
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
   float b, sb, rs, sl;
@@ -105,7 +107,7 @@ void active_print_result(VW::io::writer* f, float res, float weight, v_array<cha
   ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
   if (t != len) {
     // TODO: the logger should be passed in(?)
-    VW::io::logger::log_error("write error: {}", VW::strerror_to_string(errno));
+    logger::log_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 

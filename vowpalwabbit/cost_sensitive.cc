@@ -10,6 +10,10 @@
 #include "vw_string_view.h"
 #include "example.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 namespace COST_SENSITIVE
 {
 void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v)
@@ -27,7 +31,7 @@ void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v
       if (std::isnan(v)) THROW("error NaN value for: " << name[0]);
       break;
     default:
-      std::cerr << "example with a wierd name.  What is '" << s << "'?\n";
+      logger::log_error("example with a wierd name. What is '{}'?", s);
   }
 }
 
@@ -39,7 +43,7 @@ char* bufread_label(label& ld, char* c, io_buf& cache)
   size_t total = sizeof(wclass) * num;
   if (cache.buf_read(c, (int)total) < total)
   {
-    std::cout << "error in demarshal of cost data" << std::endl;
+    logger::log_error("error in demarshal of cost data");
     return c;
   }
   for (size_t i = 0; i < num; i++)
@@ -119,7 +123,7 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
       if (eq_shared)
       {
         if (p->parse_name.size() != 1)
-          std::cerr << "shared feature vectors should not have costs on: " << words[0] << std::endl;
+	  logger::log_error("shared feature vectors should not have costs on: {}", words[0]);
         else
         {
           wclass f = {-FLT_MAX, 0, 0., 0.};
@@ -129,7 +133,7 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
       if (eq_label)
       {
         if (p->parse_name.size() != 2)
-          std::cerr << "label feature vectors should have exactly one cost on: " << words[0] << std::endl;
+	  logger::log_error("label feature vectors should have exactly one cost on: {}", words[0]);
         else
         {
           wclass f = {float_of_string(p->parse_name[1]), 0, 0., 0.};
@@ -253,8 +257,7 @@ void output_example(vw& all, example& ec)
       if (cl.x < min) min = cl.x;
     }
     if (chosen_loss == FLT_MAX)
-      std::cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?"
-                << std::endl;
+      logger::log_warn("csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?");
 
     loss = (chosen_loss - min) * ec.weight;
     // TODO(alberto): add option somewhere to allow using absolute loss instead?

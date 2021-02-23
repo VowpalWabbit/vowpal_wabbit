@@ -108,10 +108,11 @@
 #include "io/owning_stream.h"
 #include "io/logger.h"
 
-using std::cerr;
 using std::cout;
 using std::endl;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 //
 // Does std::string end with a certain substring?
@@ -366,7 +367,7 @@ void parse_diagnostics(options_i& options, vw& all)
 
   options.add_and_parse(diagnostic_group);
 
-  if(all.logger.quiet) VW::io::logger::log_set_level(VW::io::logger::log_level::off);
+  if(all.logger.quiet) logger::log_set_level(logger::log_level::off);
 
   // pass all.logger.quiet around
   if (all.all_reduce) all.all_reduce->quiet = all.logger.quiet;
@@ -584,7 +585,7 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
       }
       else
       {
-	VW::io::logger::log_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
+	logger::log_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
         res.push_back(arg[pos++]);
       }
     }

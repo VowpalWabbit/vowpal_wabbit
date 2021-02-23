@@ -15,6 +15,8 @@
 #include "vw_versions.h"
 #include "explore.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace CB;
 using namespace ACTION_SCORE;
@@ -22,6 +24,8 @@ using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace VW::config;
 using namespace exploration;
+
+namespace logger = VW::io::logger;
 
 namespace CB_ADF
 {
@@ -339,7 +343,7 @@ void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& fi
   for (auto& sink : final_prediction_sink)
   {
     ssize_t t = sink->write(temp, 1);
-    if (t != 1) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != 1) logger::log_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 

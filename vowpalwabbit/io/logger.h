@@ -5,8 +5,11 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <utility>
 #include <spdlog/spdlog.h>
+// needed for custom types (like string_view)
+#include <spdlog/fmt/ostr.h>
 
 namespace VW
 {
@@ -73,6 +76,20 @@ namespace logger
     spdlog::default_logger_raw()->critical(fmt, std::forward<Args>(args)...);
   }
 
+
+  // Ensure modifications to the header info are localized
+  class pattern_guard {
+  public:
+    pattern_guard(const std::string& pattern)
+    {
+      spdlog::set_pattern(pattern);
+    }
+    ~pattern_guard()
+    {
+      // %+ is the flag for default logger format
+      spdlog::set_pattern("%+");
+    }
+  };
   void log_set_level(log_level lvl);
 }
 }

@@ -13,8 +13,12 @@
 
 #include "reductions.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 struct direction
 {
@@ -76,7 +80,7 @@ size_t final_depth(size_t eliminations)
   eliminations--;
   for (size_t i = 0; i < 32; i++)
     if (eliminations >> i == 0) return i;
-  std::cerr << "too many eliminations" << std::endl;
+  logger::log_error("too many eliminations");
   return 31;
 }
 
@@ -89,6 +93,7 @@ bool not_empty(v_array<v_array<uint32_t>> const& tournaments)
 
 void print_level(v_array<v_array<uint32_t>> const& level)
 {
+  // TODO: spdlog can't output partial lines. A custom formatter could probably handle this one
   for (auto const& t : level)
   {
     for (auto i : t) std::cout << " " << i;
@@ -268,7 +273,8 @@ void ect_train(ect& e, single_learner& base, example& ec)
     }
   } while (id != 0);
 
-  if (e.tournaments_won.empty()) std::cout << "badness!" << std::endl;
+  //TODO: error? warn? info? what level is this supposed to be?
+  if (e.tournaments_won.empty()) logger::log_error("badness!");
 
   // tournaments_won is a bit vector determining which tournaments the label won.
   for (size_t i = 0; i < e.tree_height; i++)
@@ -308,7 +314,11 @@ void predict(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
-    std::cout << "label " << mc.label << " is not in {1," << e.k << "} This won't work right." << std::endl;
+  {
+    // In order to print curly braces, they need to be embedded within curly braces to escape them.
+    // The funny looking part will just print {1, e.k}
+    logger::log_warn("label {0} is not in {{1, {1}}} This won't work right.", mc.label, e.k);
+  }
   ec.pred.multiclass = ect_predict(e, base, ec);
   ec.l.multi = mc;
 }

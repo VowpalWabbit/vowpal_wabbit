@@ -22,11 +22,15 @@
 #include "reductions.h"
 #include "vw.h"
 
+#include "io/logger.h"
+
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
 #define VERSION_PASS_UINT64 "8.3.3"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 // todo:
 // 4. Factor various state out of vw&
@@ -315,13 +319,12 @@ void print_audit_features(vw& all, example& ec)
   print_features(all, ec);
 }
 
-float finalize_prediction(shared_data* sd, vw_logger& logger, float ret)
+float finalize_prediction(shared_data* sd, vw_logger&, float ret)
 {
   if (std::isnan(ret))
   {
     ret = 0.;
-    if (!logger.quiet)
-    { std::cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << std::endl; }
+    logger::log_error("NAN prediction in example {0}, forcing {1}", sd->example_number + 1, ret);
     return ret;
   }
   if (ret > sd->max_label) return (float)sd->max_label;
@@ -349,6 +352,7 @@ inline float trunc_predict(vw& all, example& ec, double gravity)
 
 inline void vec_add_print(float& p, const float fx, float& fw)
 {
+  // TODO: partial line logging. This function isn't actually called from anywhere though?
   p += fw * fx;
   std::cerr << " + " << fw << "*" << fx;
 }
@@ -507,7 +511,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       if (x2 > x2_max)
       {
         norm_x2 = 1;
-        std::cerr << "your features have too much magnitude" << std::endl;
+	logger::log_error("your features have too much magnitude");
       }
       nd.norm_x += norm_x2;
     }
@@ -622,7 +626,7 @@ float compute_update(gd& g, example& ec)
 
   if (std::isnan(update))
   {
-    std::cerr << "update is NAN, replacing with 0" << std::endl;
+    logger::log_error("update is NAN, replacing with 0");
     update = 0.;
   }
 

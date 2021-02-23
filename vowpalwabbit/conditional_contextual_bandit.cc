@@ -17,6 +17,8 @@
 #include "vw_versions.h"
 #include "version.h"
 
+#include "io/logger.h"
+
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
@@ -25,6 +27,8 @@
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 template <typename T>
 void return_v_array(v_array<T>& array, VW::v_array_pool<T>& pool)
@@ -98,7 +102,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
         data.slots.push_back(ex);
         break;
       default:
-        std::cout << "ccb_adf_explore: badly formatted example - invalid example type";
+	logger::log_error("ccb_adf_explore: badly formatted example - invalid example type");
         return false;
     }
 
@@ -553,7 +557,9 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
   }
 
   if (num_labelled > 0 && num_labelled < slots.size())
-  { std::cerr << "Warning: Unlabeled example in train set, was this intentional?\n"; }
+  {
+    logger::log_warn("Unlabeled example in train set, was this intentional?");
+  }
 
   bool holdout_example = num_labelled > 0;
   for (const auto& example : ec_seq) { holdout_example &= example->test_only; }
