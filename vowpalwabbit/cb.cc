@@ -17,6 +17,16 @@ using namespace VW::LEARNER;
 
 namespace CB
 {
+// This return value should be treated like an optional. If first is false then the second value should not be read.
+std::pair<bool, cb_class> get_observed_cost_cb(const label& ld)
+{
+  for (const auto& cl : ld.costs)
+    if (cl.has_observed_cost()) return std::make_pair(true, cl);
+
+  // Default value for cb_class does not have an observed cost.
+  return std::make_pair(false, CB::cb_class{});
+}
+
 void parse_label(parser* p, shared_data*, CB::label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   ld.weight = 1.0;

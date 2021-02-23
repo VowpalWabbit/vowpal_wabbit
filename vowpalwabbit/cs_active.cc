@@ -353,7 +353,7 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   if (options.was_supplied("csoaa")) THROW("error: you can't use --cs_active and --csoaa at the same time");
 
-  if (!options.was_supplied("adax")) all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
+  if (!options.was_supplied("adax")) *(all.trace_message) << "WARNING: --cs_active should be used with --adax" << endl;
 
   all.example_parser->lbl_parser = cs_label;  // assigning the label parser
 
@@ -363,9 +363,11 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels)
+            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels,
+            all.get_setupfn_name(cs_active_setup) + "-sim")
       : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
-            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels);
+            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels,
+            all.get_setupfn_name(cs_active_setup));
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);

@@ -904,7 +904,7 @@ inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float va
 {
   if (isCB)
   {
-    CB::cb_class cost = {value, index, 0., 0.};
+    CB::cb_class cost{value, index, 0.};
     ld.cb.costs.push_back(cost);
   }
   else
@@ -2555,11 +2555,17 @@ void parse_neighbor_features(VW::string_view nf_strview, search& sch)
 
   std::vector<VW::string_view> cmd;
   size_t end_idx = 0;
-  while (!nf_strview.empty())
+  bool reached_end = false;
+  while (!reached_end)
   {
     end_idx = nf_strview.find(',');
     VW::string_view strview = nf_strview.substr(0, end_idx);
-    if (end_idx != VW::string_view::npos) nf_strview.remove_prefix(end_idx + 1);
+    // If we haven't reached the end yet, slice off the piece we're currently parsing
+    if (end_idx != VW::string_view::npos) { nf_strview.remove_prefix(end_idx + 1); }
+    else
+    {
+      reached_end = true;
+    }
 
     cmd.clear();
     tokenize(':', strview, cmd, true);
@@ -2839,7 +2845,8 @@ base_learner* setup(options_i& options, vw& all)
   cdbg << "num_learners = " << priv.num_learners << endl;
 
   learner<search, multi_ex>& l = init_learner(sch, make_base(*base), do_actual_learning<true>,
-      do_actual_learning<false>, priv.total_number_of_policies * priv.num_learners);
+      do_actual_learning<false>, priv.total_number_of_policies * priv.num_learners, all.get_setupfn_name(setup));
+
   l.set_finish_example(finish_multiline_example);
   l.set_end_examples(end_examples);
   l.set_finish(search_finish);

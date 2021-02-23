@@ -160,7 +160,7 @@ struct shared_data
   }
 
   // progressive validation header
-  void print_update_header(vw_ostream& trace_message)
+  void print_update_header(std::ostream& trace_message)
   {
     trace_message << std::left << std::setw(col_avg_loss) << std::left << "average"
                   << " " << std::setw(col_since_last) << std::left << "since"
@@ -328,6 +328,18 @@ class parser;
 }  // namespace parsers
 }  // namespace VW
 
+struct trace_message_wrapper
+{
+  void* _inner_context;
+  trace_message_t _trace_message;
+
+  trace_message_wrapper(void* context, trace_message_t trace_message)
+      : _inner_context(context), _trace_message(trace_message)
+  {
+  }
+  ~trace_message_wrapper() = default;
+};
+
 struct vw
 {
 private:
@@ -389,7 +401,8 @@ public:
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
   // error reporting
-  vw_ostream trace_message;
+  std::shared_ptr<trace_message_wrapper> trace_message_wrapper_context;
+  std::unique_ptr<std::ostream> trace_message;
 
   std::unique_ptr<VW::config::options_i, options_deleter_type> options;
 
@@ -473,7 +486,7 @@ public:
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
+  std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
   std::vector<std::string> enabled_reductions;
 
   // Prediction output
@@ -528,6 +541,12 @@ public:
   // That pointer would be invalidated if it were to be moved.
   vw(const vw&&) = delete;
   vw& operator=(const vw&&) = delete;
+
+  std::string get_setupfn_name(reduction_setup_fn setup);
+  void build_setupfn_name_dict();
+
+private:
+  std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")

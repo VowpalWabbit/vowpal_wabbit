@@ -20,8 +20,6 @@ using namespace VW::LEARNER;
 using CB::cb_class;
 using std::vector;
 
-VW_DEBUG_ENABLE(false)
-
 namespace VW
 {
 namespace cats_tree
@@ -192,9 +190,13 @@ void cats_tree::init_node_costs(v_array<cb_class>& ac)
   _cost_star = ac[0].cost / ac[0].probability;
 
   uint32_t node_id = ac[0].action + _binary_tree.internal_node_count() - 1;
+  // stay inside the node boundaries
+  if (node_id >= _binary_tree.nodes.size()) { node_id = static_cast<uint32_t>(_binary_tree.nodes.size()) - 1; }
   _a = {node_id, _cost_star};
 
   node_id = ac[ac.size() - 1].action + _binary_tree.internal_node_count() - 1;
+  // stay inside the node boundaries
+  if (node_id >= _binary_tree.nodes.size()) { node_id = static_cast<uint32_t>(_binary_tree.nodes.size()) - 1; }
   _b = {node_id, _cost_star};
 }
 
@@ -340,10 +342,10 @@ base_learner* setup(options_i& options, vw& all)
   uint32_t bandwidth;    // = 2^h#
   std::string link;
   new_options.add(make_option("cats_tree", num_actions).keep().necessary().help("CATS Tree with <k> labels"))
-      .add(make_option("bandwidth", bandwidth)
+      .add(make_option("tree_bandwidth", bandwidth)
                .default_value(0)
                .keep()
-               .help("bandwidth for continuous actions in terms of #actions"))
+               .help("tree bandwidth for continuous actions in terms of #actions"))
       .add(make_option("link", link).keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
@@ -354,18 +356,18 @@ base_learner* setup(options_i& options, vw& all)
   {
     // if link was supplied then force glf1
     if (link != "glf1")
-    { all.trace_message << "warning: cats_tree only supports glf1; resetting to glf1." << std::endl; }
+    { *(all.trace_message) << "warning: cats_tree only supports glf1; resetting to glf1." << std::endl; }
     options.replace("link", "glf1");
   }
 
   auto tree = scoped_calloc_or_throw<cats_tree>();
   tree->init(num_actions, bandwidth);
-  tree->set_trace_message(&all.trace_message, all.logger.quiet);
+  tree->set_trace_message(all.trace_message.get(), all.logger.quiet);
 
   base_learner* base = setup_base(options, all);
 
-  learner<cats_tree, example>& l =
-      init_learner(tree, as_singleline(base), learn, predict, tree->learner_count(), prediction_type_t::multiclass);
+  learner<cats_tree, example>& l = init_learner(tree, as_singleline(base), learn, predict, tree->learner_count(),
+      prediction_type_t::multiclass, all.get_setupfn_name(setup));
 
   return make_base(l);
 }

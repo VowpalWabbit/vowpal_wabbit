@@ -17,8 +17,6 @@ using VW::config::option_group_definition;
 using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
-// Enable/Disable indented debug statements
-VW_DEBUG_ENABLE(false)
 
 // Forward declarations
 namespace VW
@@ -206,7 +204,7 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
   p_reduction->min_value = min_value;
 
   LEARNER::learner<cats, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value);
+      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, all.get_setupfn_name(setup));
 
   l.set_finish_example(finish_example);
 
