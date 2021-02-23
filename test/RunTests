@@ -1902,11 +1902,11 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbify_ldf_squarecb_elim.stderr
 
 # Test 225: cbify regression dataset.  Use it with cats.
-{VW} --cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1
+{VW} --cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1
     train-sets/ref/cbify-reg-cats.stderr
 
 # Test 226: cats train
-{VW} --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model
+{VW} --cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model
     train-sets/ref/cats-train.stderr
 
 # Test 227: cats predict
@@ -1915,7 +1915,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/cats.predict
 
 # Test 228: cats-pdf train
-{VW} --cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model
+{VW} --cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model
     train-sets/ref/cats-pdf-train.stderr
 
 # Test 229: cats-pdf predict
@@ -1924,7 +1924,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/cats-pdf.predict
 
 # Test 230: cbify-reg
-{VW} --cbify 2048 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 4  -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+{VW} --cbify 2048 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 10000 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
     train-sets/ref/cbify_reg.stderr
 
 # Test 231: cbify-reg cb_discrete
