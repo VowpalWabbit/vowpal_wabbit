@@ -270,16 +270,16 @@ base_learner* setup(options_i& options, vw& all)
   if (!options.was_supplied("bandwidth"))
   {
     data->bandwidth = half_leaf_width;
-    all.trace_message << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
-                      << data->bandwidth << std::endl;
+    *(all.trace_message) << "Bandwidth was not supplied, setting default to half the continuous action unit range: "
+                         << data->bandwidth << std::endl;
   }
 
   if (!(data->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
 
   if (data->bandwidth >= (data->max_value - data->min_value))
   {
-    all.trace_message << "WARNING: Bandwidth is larger than continuous action range, this will result in a uniform pdf"
-                      << std::endl;
+    *(all.trace_message)
+        << "WARNING: Bandwidth is larger than continuous action range, this will result in a uniform pdf" << std::endl;
   }
 
   // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)
