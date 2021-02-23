@@ -32,9 +32,9 @@ struct namespace_interactions
   std::set<std::vector<namespace_index>> active_interactions;
   std::set<namespace_index> all_seen_namespaces;
   std::vector<std::vector<namespace_index>> interactions;
-  bool quadraditcs_wildcard_expansion = false;
+  bool quadratics_wildcard_expansion = false;
   bool leave_duplicate_interactions = false;
-  size_t size = 0;
+  size_t all_seen_namespaces_size = 0;
   void clear();
   void append(const namespace_interactions& src);
   mutable std::mutex mut;

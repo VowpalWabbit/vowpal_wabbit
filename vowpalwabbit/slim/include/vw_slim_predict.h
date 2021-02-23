@@ -301,7 +301,7 @@ public:
         _interactions.interactions[0][0] == ':' && _interactions.interactions[0][1] == ':')
     {
       _interactions.interactions.clear();
-      _interactions.quadraditcs_wildcard_expansion = true;
+      _interactions.quadratics_wildcard_expansion = true;
     }
     else
     {

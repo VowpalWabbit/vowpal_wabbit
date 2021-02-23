@@ -766,7 +766,7 @@ void parse_feature_tweaks(
 
     if (new_quadratics[0][0] == ':' && new_quadratics[0][1] == ':')
     {
-      all.interactions.quadraditcs_wildcard_expansion = true;
+      all.interactions.quadratics_wildcard_expansion = true;
       if (options.was_supplied("leave_duplicate_interactions"))
       { all.interactions.leave_duplicate_interactions = true; } else
       {

@@ -89,8 +89,9 @@ void namespace_interactions::clear()
   active_interactions.clear();
   all_seen_namespaces.clear();
   interactions.clear();
-  quadraditcs_wildcard_expansion = false;
+  quadratics_wildcard_expansion = false;
   leave_duplicate_interactions = false;
+  all_seen_namespaces_size = 0;
 }
 
 void namespace_interactions::append(const namespace_interactions& src)
@@ -98,8 +99,9 @@ void namespace_interactions::append(const namespace_interactions& src)
   active_interactions.insert(src.active_interactions.begin(), src.active_interactions.end());
   all_seen_namespaces.insert(src.all_seen_namespaces.begin(), src.all_seen_namespaces.end());
   std::copy(src.interactions.begin(), src.interactions.end(), std::back_inserter(interactions));
-  quadraditcs_wildcard_expansion = src.quadraditcs_wildcard_expansion;
+  quadratics_wildcard_expansion = src.quadratics_wildcard_expansion;
   leave_duplicate_interactions = src.leave_duplicate_interactions;
+  all_seen_namespaces_size = src.all_seen_namespaces_size;
 }
 
 std::string features_to_string(const example_predict& ec)

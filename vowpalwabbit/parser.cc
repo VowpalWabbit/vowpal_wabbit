@@ -700,7 +700,7 @@ void setup_example(vw& all, example* ae)
     ae->total_sum_feat_sq += fs.sum_feat_sq;
   }
 
-  if (all.interactions.quadraditcs_wildcard_expansion)
+  if (all.interactions.quadratics_wildcard_expansion)
   {
     // lock while adding interactions since reductions might also be adding their own interactions
     std::unique_lock<std::mutex> lock(all.interactions.mut);

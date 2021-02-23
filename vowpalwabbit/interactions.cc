@@ -82,19 +82,19 @@ std::vector<std::vector<namespace_index>> expand_interactions(
 
 void expand_quadratics_wildcard_interactions(namespace_interactions& interactions)
 {
-  if (interactions.size == interactions.all_seen_namespaces.size())
+  if (interactions.all_seen_namespaces_size == interactions.all_seen_namespaces.size())
   {
     // nothing new here
     return;
   }
-  interactions.size = interactions.all_seen_namespaces.size();
-  auto set_interactions = interactions.all_seen_namespaces;
-  std::vector<std::vector<namespace_index>> active_interactions;
+
+  interactions.all_seen_namespaces_size = interactions.all_seen_namespaces.size();
+  auto& set_interactions = interactions.all_seen_namespaces;
   for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
   {
     if (interactions.active_interactions.find({*it, *it}) == interactions.active_interactions.end())
     {
-      active_interactions.push_back({*it, *it});
+      interactions.interactions.push_back({*it, *it});
       interactions.active_interactions.insert({*it, *it});
     }
 
@@ -102,27 +102,25 @@ void expand_quadratics_wildcard_interactions(namespace_interactions& interaction
     {
       if (interactions.active_interactions.find({*it, *jt}) == interactions.active_interactions.end())
       {
-        active_interactions.push_back({*it, *jt});
+        interactions.interactions.push_back({*it, *jt});
         interactions.active_interactions.insert({*it, *jt});
       }
       if (interactions.active_interactions.find({*jt, *jt}) == interactions.active_interactions.end())
       {
-        active_interactions.push_back({*jt, *jt});
+        interactions.interactions.push_back({*jt, *jt});
         interactions.active_interactions.insert({*jt, *jt});
       }
       if (interactions.leave_duplicate_interactions &&
           interactions.active_interactions.find({*jt, *it}) == interactions.active_interactions.end())
       {
-        active_interactions.push_back({*jt, *it});
+        interactions.interactions.push_back({*jt, *it});
         interactions.active_interactions.insert({*jt, *it});
       }
     }
   }
 
-  interactions.interactions.insert(
-      interactions.interactions.end(), active_interactions.begin(), active_interactions.end());
   std::sort(interactions.interactions.begin(), interactions.interactions.end(),
-      [](std::vector<namespace_index>& a, std::vector<namespace_index>& b) {
+      [](const std::vector<namespace_index>& a, const std::vector<namespace_index>& b) {
         for (size_t i = 0; i < std::min(a.size(), b.size()); i++)
         {
           if (a[i] < b[i])
