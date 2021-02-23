@@ -299,7 +299,7 @@ def run_command_line_test(test_id,
 
             ref_file_ref_dir = os.path.join(ref_dir, ref_file)
             if os.path.isfile(ref_file_ref_dir):
-                ref_content = open(ref_file_ref_dir, 'r').read()
+                ref_content = open(ref_file_ref_dir, 'r', encoding='utf-8').read()
             else:
                 checks[output_file] = {
                     "success": False,
