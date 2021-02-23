@@ -288,7 +288,7 @@ def run_command_line_test(test_id,
                 output_file_working_dir = os.path.join(
                     working_dir, output_file)
                 if os.path.isfile(output_file_working_dir):
-                    output_content = open(output_file_working_dir, 'r').read()
+                    output_content = open(output_file_working_dir, 'r', encoding='utf-8').read()
                 else:
                     checks[output_file] = {
                         "success": False,
