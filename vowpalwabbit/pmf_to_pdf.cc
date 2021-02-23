@@ -164,9 +164,9 @@ void reduction::learn(example& ec)
   auto actual_bandwidth = !tree_bandwidth ? 1 : 2 * b;  // avoid zero division
 
   ec.l.cb.costs.push_back(
-      {cost, local_min_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions, 0.0f});
+      CB::cb_class(cost, local_min_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
   ec.l.cb.costs.push_back(
-      {cost, local_max_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions, 0.0f});
+      CB::cb_class(cost, local_max_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
 
   auto swap_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
 
@@ -194,28 +194,16 @@ void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_st
   }
 }
 
-inline bool observed_cost(CB::cb_class* cl)
-{
-  // cost observed for this action if it has non zero probability and cost != FLT_MAX
-  return (cl != nullptr && cl->cost != FLT_MAX && cl->probability > .0);
-}
-
-CB::cb_class* get_observed_cost(CB::label& ld)
-{
-  for (auto& cl : ld.costs)
-    if (observed_cost(&cl)) return &cl;
-  return nullptr;
-}
-
 void output_example(vw& all, reduction&, example& ec, CB::label& ld)
 {
   float loss = 0.;
-
-  if (get_observed_cost(ec.l.cb) != nullptr)
-    for (auto& cbc : ec.l.cb.costs)
+  auto optional_cost = get_observed_cost_cb(ec.l.cb);
+  // cost observed, not default
+  if (optional_cost.first)
+    for (const auto& cbc : ec.l.cb.costs)
       for (uint32_t i = 0; i < ec.pred.pdf.size(); i++) loss += (cbc.cost / cbc.probability) * ec.pred.pdf[i].pdf_value;
 
-  all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, optional_cost.first, loss, 1.f, ec.num_features);
 
   constexpr size_t buffsz = 20;
   char temp_str[buffsz];
@@ -311,7 +299,8 @@ base_learner* setup(options_i& options, vw& all)
   auto p_base = as_singleline(setup_base(options, all));
   data->_p_base = p_base;
 
-  learner<pmf_to_pdf::reduction, example>& l = init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf);
+  learner<pmf_to_pdf::reduction, example>& l =
+      init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf, all.get_setupfn_name(setup));
 
   all.delete_prediction = continuous_actions::delete_probability_density_function;
 

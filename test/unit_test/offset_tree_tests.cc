@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(offset_tree_learn_basic)
   example ec;
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({-1.0, 1, 0.5, 0.0});
+  ec.l.cb.costs.push_back(CB::cb_class{-1.0f, 1, 0.5f});
 
   tree.learn(*as_singleline(test_harness), ec);
 
@@ -154,8 +154,8 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
       init_learner(test_harness,          // Data structure passed by vw_framework into test_harness predict/learn calls
           reduction_test_harness::learn,  // test_harness learn
           reduction_test_harness::predict,  // test_harness predict
-          1                                 // Number of regressors in test_harness (not used)
-      );                                    // Create a learner using the base reduction.
+          1,                                // Number of regressors in test_harness (not used)
+          "test_learner");                  // Create a learner using the base reduction.
   return &test_learner;
 }
 
