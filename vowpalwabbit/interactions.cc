@@ -121,10 +121,7 @@ void expand_quadratics_wildcard_interactions(namespace_interactions& interaction
 
   std::sort(interactions.interactions.begin(), interactions.interactions.end(),
       [](const std::vector<namespace_index>& a, const std::vector<namespace_index>& b) {
-        if (a.size() != b.size())
-        {
-          return a.size() > b.size();
-        }
+        if (a.size() != b.size()) { return a.size() > b.size(); }
         for (size_t i = 0; i < a.size(); i++)
         {
           if (a[i] < b[i])
