@@ -1,4 +1,5 @@
 final_regressor = models/cover_e_dec.model
+predictions = cover_e_dec_train.pred
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
