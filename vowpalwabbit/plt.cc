@@ -113,8 +113,8 @@ void learn(plt& p, single_learner& base, example& ec)
         }
       }
     }
-    if (ec.l.multilabels.label_v.last() >= p.k)
-      std::cout << "label " << ec.l.multilabels.label_v.last() << " is not in {0," << p.k - 1
+    if (multilabels.label_v.last() >= p.k)
+      std::cout << "label " << multilabels.label_v.last() << " is not in {0," << p.k - 1
                 << "} This won't work right." << std::endl;
 
     for (auto& n : p.positive_nodes)
