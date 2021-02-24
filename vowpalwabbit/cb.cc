@@ -58,12 +58,12 @@ void parse_label(parser* p, shared_data*, CB::label& ld, std::vector<VW::string_
 
     if (f.probability > 1.0)
     {
-      logger::log_warn("invalid probability > 1 specified for an action, resetting to 1.");
+      logger::errlog_warn("invalid probability > 1 specified for an action, resetting to 1.");
       f.probability = 1.0;
     }
     if (f.probability < 0.0)
     {
-      logger::log_warn("invalid probability < 0 specified for an action, resetting to 0.");
+      logger::errlog_warn("invalid probability < 0 specified for an action, resetting to 0.");
       f.probability = .0;
     }
     if (p->parse_name[0] == "shared")
@@ -71,7 +71,7 @@ void parse_label(parser* p, shared_data*, CB::label& ld, std::vector<VW::string_
       if (p->parse_name.size() == 1) { f.probability = -1.f; }
       else
       {
-        logger::log_warn("shared feature vectors should not have costs");
+        logger::errlog_warn("shared feature vectors should not have costs");
       }
     }
 

@@ -209,12 +209,12 @@ ACTION_SCORE::action_score convert_to_score(
 
   if (probability > 1.0)
   {
-    logger::log_warn("invalid probability > 1 specified for an action, resetting to 1.");
+    logger::errlog_warn("invalid probability > 1 specified for an action, resetting to 1.");
     probability = 1.0;
   }
   if (probability < 0.0)
   {
-    logger::log_warn("invalid probability < 0 specified for an action, resetting to 0.");
+    logger::errlog_warn("invalid probability < 0 specified for an action, resetting to 0.");
     probability = .0;
   }
 

@@ -314,11 +314,11 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 
   if (read)
   {
-    logger::log_info("Loading alpha and v: ");
+    logger::errlog_info("Loading alpha and v: ");
   }
   else
   {
-    logger::log_info("Saving alpha and v, current weighted_examples = {}",
+    logger::errlog_info("Saving alpha and v, current weighted_examples = {}",
 		      o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples);
   }
 
@@ -327,9 +327,9 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     logger::pattern_guard("%v");
     for (int i = 0; i < o.N; i++)
     {
-      logger::log_info("{0} {1}", o.alpha[i], o.v[i]);
+      logger::errlog_info("{0} {1}", o.alpha[i], o.v[i]);
     }
-    logger::log_info("");
+    logger::errlog_info("");
   }
 }
 
@@ -366,11 +366,11 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
   {
     if (read)
     {
-      logger::log_info("Loading alpha: ");
+      logger::errlog_info("Loading alpha: ");
     }
     else
     {
-      logger::log_info("Saving alpha, current weighted_examples = {)",
+      logger::errlog_info("Saving alpha, current weighted_examples = {)",
 		       o.all->sd->weighted_examples());
     }
 
@@ -378,9 +378,9 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
       logger::pattern_guard("%v");
       for (int i = 0; i < o.N; i++)
       {
-	logger::log_info("{}", o.alpha[i]);
+	logger::errlog_info("{}", o.alpha[i]);
       }
-      logger::log_info("");
+      logger::errlog_info("");
     }
   }
 }
@@ -408,8 +408,8 @@ VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   // "adaptive" implements AdaBoost.OL (Algorithm 2 in BLK'15,
   // 	    using sampling rather than importance weighting)
 
-  logger::log_info("Number of weak learners = {}", data->N);
-  logger::log_info("Gamma = {}", data->gamma);
+  logger::errlog_info("Number of weak learners = {}", data->N);
+  logger::errlog_info("Gamma = {}", data->gamma);
 
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;

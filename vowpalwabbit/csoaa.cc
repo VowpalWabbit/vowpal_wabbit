@@ -229,13 +229,13 @@ void unsubtract_example(example* ec)
 {
   if (ec->indices.empty())
   {
-    logger::log_error("internal error (bug): trying to unsubtract_example, but there are no namespaces!");
+    logger::errlog_error("internal error (bug): trying to unsubtract_example, but there are no namespaces!");
     return;
   }
 
   if (ec->indices.last() != wap_ldf_namespace)
   {
-    logger::log_error(
+    logger::errlog_error(
       "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
       "after and not removed!");
     return;
@@ -543,7 +543,7 @@ void global_print_newline(vw& all)
   {
     ssize_t t;
     t = sink->write(temp, 1);
-    if (t != 1) logger::log_error("write error: ", VW::strerror_to_string(errno));
+    if (t != 1) logger::errlog_error("write error: ", VW::strerror_to_string(errno));
   }
 }
 

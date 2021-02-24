@@ -31,7 +31,7 @@ void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v
       if (std::isnan(v)) THROW("error NaN value for: " << name[0]);
       break;
     default:
-      logger::log_error("example with a wierd name. What is '{}'?", s);
+      logger::errlog_error("example with a wierd name. What is '{}'?", s);
   }
 }
 
@@ -123,7 +123,7 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
       if (eq_shared)
       {
         if (p->parse_name.size() != 1)
-	  logger::log_error("shared feature vectors should not have costs on: {}", words[0]);
+	  logger::errlog_error("shared feature vectors should not have costs on: {}", words[0]);
         else
         {
           wclass f = {-FLT_MAX, 0, 0., 0.};
@@ -133,7 +133,7 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
       if (eq_label)
       {
         if (p->parse_name.size() != 2)
-	  logger::log_error("label feature vectors should have exactly one cost on: {}", words[0]);
+	  logger::errlog_error("label feature vectors should have exactly one cost on: {}", words[0]);
         else
         {
           wclass f = {float_of_string(p->parse_name[1]), 0, 0., 0.};
@@ -257,7 +257,7 @@ void output_example(vw& all, example& ec)
       if (cl.x < min) min = cl.x;
     }
     if (chosen_loss == FLT_MAX)
-      logger::log_warn("csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?");
+      logger::errlog_warn("csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?");
 
     loss = (chosen_loss - min) * ec.weight;
     // TODO(alberto): add option somewhere to allow using absolute loss instead?

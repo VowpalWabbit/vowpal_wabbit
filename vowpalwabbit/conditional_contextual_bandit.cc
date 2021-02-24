@@ -558,7 +558,7 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
 
   if (num_labelled > 0 && num_labelled < slots.size())
   {
-    logger::log_warn("Unlabeled example in train set, was this intentional?");
+    logger::errlog_warn("Unlabeled example in train set, was this intentional?");
   }
 
   bool holdout_example = num_labelled > 0;

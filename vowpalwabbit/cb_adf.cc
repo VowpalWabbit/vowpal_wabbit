@@ -343,7 +343,7 @@ void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& fi
   for (auto& sink : final_prediction_sink)
   {
     ssize_t t = sink->write(temp, 1);
-    if (t != 1) logger::log_error("write error: {}", VW::strerror_to_string(errno));
+    if (t != 1) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 

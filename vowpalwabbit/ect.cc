@@ -80,7 +80,7 @@ size_t final_depth(size_t eliminations)
   eliminations--;
   for (size_t i = 0; i < 32; i++)
     if (eliminations >> i == 0) return i;
-  logger::log_error("too many eliminations");
+  logger::errlog_error("too many eliminations");
   return 31;
 }
 

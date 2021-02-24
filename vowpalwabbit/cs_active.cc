@@ -127,7 +127,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
       {
         ec.l.simple.label = cost;
         if ((cost < cs_a.cost_min) || (cost > cs_a.cost_max))
-	  logger::log_warn("cost {0} outside of cost range[{1}, {2}]!", cost, cs_a.cost_min, cs_a.cost_max);
+	  logger::errlog_warn("cost {0} outside of cost range[{1}, {2}]!", cost, cs_a.cost_min, cs_a.cost_max);
       }
       else
         ec.l.simple.label = FLT_MAX;
@@ -163,7 +163,7 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
     max_pred = cs_a.cost_max;
     is_range_large = true;
     if (cs_a.print_debug_stuff)
-      logger::log_info(" find_cost_rangeA: i={0} pp={1} sens={2} eta={3} [{4}, {5}] = {6}",
+      logger::errlog_info(" find_cost_rangeA: i={0} pp={1} sens={2} eta={3} [{4}, {5}] = {6}",
 		       i, ec.partial_prediction, sens, eta, min_pred, max_pred, (max_pred - min_pred));
   }
   else
@@ -175,7 +175,7 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, 
         std::max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
     if (cs_a.print_debug_stuff)
-      logger::log_info(" find_cost_rangeB: i={0} pp={1} sens={2} eta={3} [{4}, {5}] = {6}",
+      logger::errlog_info(" find_cost_rangeB: i={0} pp={1} sens={2} eta={3} [{4}, {5}] = {6}",
 		       i, ec.partial_prediction, sens, eta, min_pred, max_pred, (max_pred - min_pred));
   }
 }
@@ -192,7 +192,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     filename << cs_a.all->final_regressor_name << "." << ec.example_counter << "." << cs_a.all->sd->queries << "."
              << cs_a.num_any_queries;
     VW::save_predictor(*(cs_a.all), filename.str());
-    logger::log_info("Number of examples with at least one query = {}", cs_a.num_any_queries);
+    logger::errlog_info("Number of examples with at least one query = {}", cs_a.num_any_queries);
     // Double label query budget
     cs_a.min_labels *= 2;
 
@@ -200,12 +200,12 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
       logger::pattern_guard("%v");
       for (size_t i = 0; i < cs_a.examples_by_queries.size(); i++)
       {
-	logger::log_info("examples with {0} labels queried = {1}", i, cs_a.examples_by_queries[i]);
+	logger::errlog_info("examples with {0} labels queried = {1}", i, cs_a.examples_by_queries[i]);
       }
 
-      logger::log_info("labels outside of cost range = {}", cs_a.labels_outside_range);
-      logger::log_info("average distance to range = {}", cs_a.distance_to_range / ((float)cs_a.labels_outside_range));
-      logger::log_info("average range = {}\n", cs_a.range / ((float)cs_a.labels_outside_range));
+      logger::errlog_info("labels outside of cost range = {}", cs_a.labels_outside_range);
+      logger::errlog_info("average distance to range = {}", cs_a.distance_to_range / ((float)cs_a.labels_outside_range));
+      logger::errlog_info("average range = {}\n", cs_a.range / ((float)cs_a.labels_outside_range));
     }
   }
 
@@ -268,7 +268,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
           lqd.cl->partial_prediction, query_label, lqd.query_needed);
       if (lqd.query_needed) ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
       if (cs_a.print_debug_stuff)
-	logger::log_info("label={0} x={1} prediction={2} score={3} pp={4} ql={5} qn={6} ro={7} rl={8} "
+	logger::errlog_info("label={0} x={1} prediction={2} score={3} pp={4} ql={5} qn={6} ro={7} rl={8} "
 			 "[{9}, {10}] vs delta={11} n_overlapped={12} is_baseline={13}",
 			 lqd.cl->class_index/*0*/, lqd.cl->x/*1*/, prediction/*2*/, score/*3*/, lqd.cl->partial_prediction/*4*/,
 			 query_label/*5*/, lqd.query_needed/*6*/, lqd.is_range_overlapped/*7*/, lqd.is_range_large/*8*/,

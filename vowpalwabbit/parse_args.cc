@@ -585,7 +585,7 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
       }
       else
       {
-	logger::log_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
+	logger::errlog_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
         res.push_back(arg[pos++]);
       }
     }
