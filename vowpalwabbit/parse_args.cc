@@ -1735,6 +1735,8 @@ vw* initialize(
 vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skipModelLoad,
     trace_message_t trace_listener, void* trace_context)
 {
+  // Set up logger as early as possible
+  logger::initialize_logger();
   vw& all = parse_args(std::move(options), trace_listener, trace_context);
 
   try

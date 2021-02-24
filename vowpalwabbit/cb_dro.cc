@@ -129,13 +129,13 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
 
   if (wmax <= 1) { THROW("cb_dro_wmax must exceed 1"); }
 
-  logger::log_info(
-    "Using DRO for CB learning\n"
-    "cb_dro_alpha = {0}\n"
-    "cb_dro_tau = {1}\n"
-    "cb_dro_wmax = {2}",
-    alpha, tau, wmax
-  );
+  if (!all.logger.quiet)
+  {
+    *(all.trace_message) << "Using DRO for CB learning" << std::endl;
+    *(all.trace_message) << "cb_dro_alpha = " << alpha << std::endl;
+    *(all.trace_message) << "cb_dro_tau = " << tau << std::endl;
+    *(all.trace_message) << "cb_dro_wmax = " << wmax << std::endl;
+  }
 
   auto data = scoped_calloc_or_throw<cb_dro_data>(alpha, tau, wmax);
 

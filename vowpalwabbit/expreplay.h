@@ -8,8 +8,6 @@
 #include "parse_args.h"
 #include "rand48.h"
 
-#include "io/logger.h"
-
 #include <memory>
 
 namespace ExpReplay
@@ -115,7 +113,9 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
   VW_WARNING_STATE_POP
   er->filled = calloc_or_throw<bool>(er->N);
 
-  VW::io::logger::log_info("experience replay level={0}, buffer={1}, replay count={2}", er_level, er->N, er->replay_count);
+  if (!all.logger.quiet)
+    *(all.trace_message) << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count
+              << std::endl;
 
   er->base = VW::LEARNER::as_singleline(setup_base(options, all));
   VW::LEARNER::learner<expreplay<lp>, example>* l =

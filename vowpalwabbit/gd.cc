@@ -324,7 +324,7 @@ float finalize_prediction(shared_data* sd, vw_logger&, float ret)
   if (std::isnan(ret))
   {
     ret = 0.;
-    logger::log_error("NAN prediction in example {0}, forcing {1}", sd->example_number + 1, ret);
+    logger::errlog_warn("NAN prediction in example {0}, forcing {1}", sd->example_number + 1, ret);
     return ret;
   }
   if (ret > sd->max_label) return (float)sd->max_label;
@@ -511,7 +511,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       if (x2 > x2_max)
       {
         norm_x2 = 1;
-	logger::log_error("your features have too much magnitude");
+	logger::errlog_error("your features have too much magnitude");
       }
       nd.norm_x += norm_x2;
     }
@@ -626,7 +626,7 @@ float compute_update(gd& g, example& ec)
 
   if (std::isnan(update))
   {
-    logger::log_error("update is NAN, replacing with 0");
+    logger::errlog_warn("update is NAN, replacing with 0");
     update = 0.;
   }
 

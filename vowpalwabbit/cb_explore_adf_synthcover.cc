@@ -197,13 +197,12 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   if (epsilon < 0) { THROW("epsilon must be non-negative"); }
   if (psi <= 0) { THROW("synthcoverpsi must be positive"); }
 
-  logger::log_info("Using synthcover for CB exploration");
+  if (!all.logger.quiet)
   {
-    // set logger to only output the message, no header info
-    logger::pattern_guard("%v");
-    logger::log_info("synthcoversize = ", synthcoversize);
-    if (epsilon > 0) logger::log_info("epsilon = {}", epsilon);
-    logger::log_info("synthcoverpsi = {}", psi);
+    *(all.trace_message) << "Using synthcover for CB exploration" << std::endl;
+    *(all.trace_message) << "synthcoversize = " << synthcoversize << std::endl;
+    if (epsilon > 0) *(all.trace_message) << "epsilon = " << epsilon << std::endl;
+    *(all.trace_message) << "synthcoverpsi = " << psi << std::endl;
   }
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;

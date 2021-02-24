@@ -16,7 +16,7 @@ namespace VW
 namespace io
 {
   /*
-  // TODO: should this be an object to be passed around or stand-alone 
+  // TODO: this be an object thats passed around, not stand-alone functions 
 struct logger {
 private:
   std::shared_ptr<spdlog::logger> _internal_logger;
@@ -69,7 +69,6 @@ namespace logger
     spdlog::default_logger_raw()->error(fmt, std::forward<Args>(args)...);
   }
 
-
   template<typename FormatString, typename... Args>
     void log_critical(const FormatString &fmt, Args&&...args)
   {
@@ -77,20 +76,46 @@ namespace logger
   }
 
 
+  // FIXME: the get() call returns a shared_ptr. Keep a copy here to avoid unnecessary shared_ptr copies
+  // This can go away once we move to an object-based logger
+  extern std::shared_ptr<spdlog::logger> _stderr_logger;
+  
+  // These should go away once we move to an object-based logger
+  // do we need the rest of the levels?
+  template<typename FormatString, typename... Args>
+    void errlog_info(const FormatString &fmt, Args&&...args)
+  {
+    _stderr_logger->info(fmt, std::forward<Args>(args)...);
+  }
+
+  template<typename FormatString, typename... Args>
+    void errlog_warn(const FormatString &fmt, Args&&...args)
+  {
+    _stderr_logger->warn(fmt, std::forward<Args>(args)...);
+  }
+  
+  template<typename FormatString, typename... Args>
+    void errlog_error(const FormatString &fmt, Args&&...args)
+  {
+    _stderr_logger->error(fmt, std::forward<Args>(args)...);
+  }
+
+  template<typename FormatString, typename... Args>
+    void errlog_critical(const FormatString &fmt, Args&&...args)
+  {
+    _stderr_logger->critical(fmt, std::forward<Args>(args)...);
+  }
+
+
   // Ensure modifications to the header info are localized
   class pattern_guard {
   public:
-    pattern_guard(const std::string& pattern)
-    {
-      spdlog::set_pattern(pattern);
-    }
-    ~pattern_guard()
-    {
-      // %+ is the flag for default logger format
-      spdlog::set_pattern("%+");
-    }
+    pattern_guard(const std::string& pattern);
+    ~pattern_guard();
   };
   void log_set_level(log_level lvl);
+
+  void initialize_logger();
 }
 }
 }

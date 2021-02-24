@@ -387,12 +387,14 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   b->data.l1_lambda = b->all->l1_lambda;
   b->data.l2_lambda = b->all->l2_lambda;
 
-  logger::log_info("Enabling FTRL based optimization\n"
-    "Algorithm used: {0}\n"
-    "ftrl_alpha = {1}\n"
-    "ftrl_beta = {2}",
-    algorithm_name, b->ftrl_alpha, b->ftrl_beta);
-
+  if (!all.logger.quiet)
+  {
+    *(all.trace_message) << "Enabling FTRL based optimization" << std::endl;
+    *(all.trace_message) << "Algorithm used: " << algorithm_name << std::endl;
+    *(all.trace_message) << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
+    *(all.trace_message) << "ftrl_beta = " << b->ftrl_beta << std::endl;
+  }
+  
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
