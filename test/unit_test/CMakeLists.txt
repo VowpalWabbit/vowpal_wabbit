@@ -1,4 +1,5 @@
 add_executable(vw-unit-test.out
+  cats_test.cc
   cats_tree_tests.cc
   cats_user_provided_pdf.cc
   cb_explore_adf_test.cc

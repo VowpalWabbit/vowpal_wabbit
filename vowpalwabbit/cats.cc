@@ -5,7 +5,6 @@
 #include "cats.h"
 #include "parse_args.h"
 #include "err_constants.h"
-#include "api_status.h"
 #include "debug_log.h"
 
 // Aliases
@@ -31,23 +30,6 @@ namespace cats
 {
 ////////////////////////////////////////////////////
 // BEGIN cats reduction and reduction methods
-struct cats
-{
-  uint32_t num_actions;
-  float bandwidth;
-  float min_value;
-  float max_value;
-
-  cats(single_learner* p_base);
-
-  int learn(example& ec, experimental::api_status* status);
-  int predict(example& ec, experimental::api_status* status);
-  float get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, float predicted_action) const;
-
-private:
-  single_learner* _base = nullptr;
-};
-
 // Pass through
 int cats::predict(example& ec, experimental::api_status*)
 {
