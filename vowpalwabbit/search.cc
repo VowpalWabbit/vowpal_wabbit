@@ -3276,8 +3276,14 @@ predictor& predictor::add_allowed(action a, float cost)
 
 predictor& predictor::add_allowed(action* a, float* costs, size_t action_count)
 {
-  for (size_t i = 0; i < action_count; i++) { allowed_actions_cost.push_back(*(a + i)); }
-  for (size_t i = 0; i < action_count; i++) { allowed_actions.push_back(*(costs + i)); }
+  if (costs != nullptr)
+  {
+    for (size_t i = 0; i < action_count; i++) { allowed_actions_cost.push_back(*(costs + i)); }
+  }
+  if (a != nullptr)
+  {
+    for (size_t i = 0; i < action_count; i++) { allowed_actions.push_back(*(a + i)); }
+  }
   return *this;
 }
 predictor& predictor::add_allowed(v_array<std::pair<action, float>>& a)
