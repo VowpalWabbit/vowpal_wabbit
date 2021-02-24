@@ -19,9 +19,10 @@ struct reduction
   void learn(example& ec);
 
   ~reduction();
-  std::vector<uint32_t> pdf_lim;
+  std::vector<float> pdf_lim;
   uint32_t num_actions;
-  uint32_t bandwidth;  // radius
+  uint32_t tree_bandwidth;
+  float bandwidth;  // radius
   float min_value;
   float max_value;
   bool first_only;
