@@ -36,6 +36,7 @@ struct cb_explore
 
   CB::label cb_label;
   COST_SENSITIVE::label cs_label;
+  COST_SENSITIVE::label second_cs_label;
 
   learner<cb_explore, example>* cs;
 
@@ -56,6 +57,7 @@ struct cb_explore
     cover_probs.delete_v();
     COST_SENSITIVE::delete_label(cbcs.pred_scores);
     COST_SENSITIVE::delete_label(cs_label);
+    COST_SENSITIVE::delete_label(second_cs_label);
   }
 };
 
@@ -217,11 +219,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0;
 
-    ec.l.cs.costs.clear();
-    for (uint32_t j = 0; j < num_actions; j++)
-    {
-      ec.l.cs.costs.push_back(COST_SENSITIVE::wclass{});
-    }
+    ec.l.cs = std::move(data.second_cs_label);
     // 2. Update functions
     for (size_t i = 0; i < cover_size; i++)
     {
@@ -229,7 +227,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
       for (uint32_t j = 0; j < num_actions; j++)
       {
         float pseudo_cost =
-            ec.l.cs.costs[j].x - data.psi * min_prob / (std::max(probabilities[j], min_prob) / norm) + 1;
+            data.cs_label.costs[j].x - data.psi * min_prob / (std::max(probabilities[j], min_prob) / norm) + 1;
         ec.l.cs.costs[j].class_index = j + 1;
         ec.l.cs.costs[j].x = pseudo_cost;
       }
@@ -240,9 +238,10 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
         norm += additive_probability;
       probabilities[predictions[i] - 1] += additive_probability;
     }
+    data.second_cs_label = std::move(ec.l.cs);
   }
 
-  ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+  ec.l.cs = COST_SENSITIVE::label{};
   ec.pred.a_s = probs;
 }
 
@@ -377,6 +376,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
       data->epsilon_decay = true;
     }
     data->cs = (learner<cb_explore, example>*)(as_singleline(all.cost_sensitive));
+    for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(COST_SENSITIVE::wclass{}); }
     data->cover_probs = v_init<float>();
     data->cover_probs.resize(num_actions);
     data->preds = v_init<uint32_t>();
