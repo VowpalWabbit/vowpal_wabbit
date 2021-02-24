@@ -162,7 +162,7 @@ void predict(plt& p, single_learner& base, example& ec)
 
   // split labels into true and skip (those > max. label num)
   p.true_labels.clear();
-  for (auto label : ec.l.multilabels.label_v)
+  for (auto label : multilabels.label_v)
   {
     if (label < p.k)
       p.true_labels.insert(label);
