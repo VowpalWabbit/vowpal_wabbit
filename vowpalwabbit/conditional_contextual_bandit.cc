@@ -132,7 +132,7 @@ void delete_cb_labels(ccb& data)
 }
 
 void attach_label_to_example(
-    uint32_t action_index_one_based, example* example, conditional_contextual_bandit_outcome* outcome, ccb& data)
+    uint32_t action_index_one_based, example* example, const conditional_contextual_bandit_outcome* outcome, ccb& data)
 {
   // save the cb label
   // Action is unused in cb
@@ -303,9 +303,9 @@ void calculate_and_insert_interactions(example* shared, const std::vector<exampl
 
 // build a cb example from the ccb example
 template <bool is_learn>
-void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
+void build_cb_example(multi_ex& cb_ex, example* slot, const CCB::label& ccb_label, ccb& data)
 {
-  bool slot_has_label = slot->l.conditional_contextual_bandit.outcome != nullptr;
+  bool slot_has_label = ccb_label.outcome != nullptr;
 
   // Merge the slot features with the shared example and set it in the cb multi-example
   // TODO is it imporant for total_sum_feat_sq and num_features to be correct at this point?
@@ -314,7 +314,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
 
   // Retrieve the list of actions explicitly available for the slot (if the list is empty, then all actions are
   // possible)
-  auto& explicit_includes = slot->l.conditional_contextual_bandit.explicit_included_actions;
+  const auto& explicit_includes = ccb_label.explicit_included_actions;
   if (!explicit_includes.empty())
   {
     // First time seeing this, initialize the vector with falses so we can start setting each included action.
@@ -344,11 +344,11 @@ void build_cb_example(multi_ex& cb_ex, example* slot, ccb& data)
     // Remember the index of the chosen action
     if (is_learn)
     {
-      if (slot_has_label && i == slot->l.conditional_contextual_bandit.outcome->probabilities[0].action)
+      if (slot_has_label && i == ccb_label.outcome->probabilities[0].action)
       {
         // This is used to remove the label later.
         data.action_with_label = (uint32_t)i;
-        attach_label_to_example(index, data.actions[i], slot->l.conditional_contextual_bandit.outcome, data);
+        attach_label_to_example(index, data.actions[i], ccb_label.outcome, data);
       }
     }
   }
@@ -437,8 +437,10 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
       }
 
+      // shared, action, action, slot
       data.include_list.clear();
-      build_cb_example<is_learn>(data.cb_ex, slot, data);
+      build_cb_example<is_learn>(
+          data.cb_ex, slot, data.stored_labels[1 /* shared */ + data.actions.size() + slot_id], data);
 
       if (should_augment_with_slot_info)
       {
