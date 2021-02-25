@@ -260,22 +260,23 @@ void call_cs_ldf(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<C
   size_t index = 0;
   for (auto ec : examples)
   {
-    cb_labels.push_back(ec->l.cb);
+    cb_labels.emplace_back(std::move(ec->l.cb));
     prepped_cs_labels[index].costs.clear();
     prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
-    ec->l.cs = prepped_cs_labels[index++];
+    ec->l.cs = std::move(prepped_cs_labels[index++]);
     ec->ft_offset = offset;
   }
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit([&cb_labels, saved_offset, &examples] {
+  auto restore_guard = VW::scope_exit([&cb_labels, &prepped_cs_labels, saved_offset, &examples] {
     // 3rd: restore cb_label for each example
     // (**ec).l.cb = array.element.
     // and restore offsets
     for (size_t i = 0; i < examples.size(); ++i)
     {
+      prepped_cs_labels[i] = std::move(examples[i]->l.cs);
       examples[i]->l.cs.costs = v_init<COST_SENSITIVE::wclass>();
-      examples[i]->l.cb = cb_labels[i];
+      examples[i]->l.cb = std::move(cb_labels[i]);
       examples[i]->ft_offset = saved_offset;
     }
   });

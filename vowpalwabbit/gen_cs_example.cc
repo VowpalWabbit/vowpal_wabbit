@@ -33,7 +33,7 @@ void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels, fl
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
   {
-    CB::label ld = examples[i]->l.cb;
+    const CB::label& ld = examples[i]->l.cb;
 
     COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)

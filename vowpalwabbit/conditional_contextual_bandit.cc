@@ -419,7 +419,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     // Reset exclusion list for this example.
     data.exclude_list.assign(data.actions.size(), false);
 
-    auto decision_scores = examples[0]->pred.decision_scores;
+    auto& decision_scores = examples[0]->pred.decision_scores;
 
     // for each slot, re-build the cb example and call cb_explore_adf
     size_t slot_id = 0;
