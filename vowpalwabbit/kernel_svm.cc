@@ -115,19 +115,19 @@ struct svm_params
     free(pool);
     if (all)
     {
-      all->trace_message << "Num support = " << model->num_support << endl;
-      all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
-                         << "Number of cache queries = " << num_cache_evals << endl;
-      all->trace_message << "Total loss = " << loss_sum << endl;
+      *(all->trace_message) << "Num support = " << model->num_support << endl;
+      *(all->trace_message) << "Number of kernel evaluations = " << num_kernel_evals << " "
+                            << "Number of cache queries = " << num_cache_evals << endl;
+      *(all->trace_message) << "Total loss = " << loss_sum << endl;
     }
     if (model) { free_svm_model(model); }
-    if (all) { all->trace_message << "Done freeing model" << endl; }
+    if (all) { *(all->trace_message) << "Done freeing model" << endl; }
 
     free(kernel_params);
     if (all)
     {
-      all->trace_message << "Done freeing kernel params" << endl;
-      all->trace_message << "Done with finish " << endl;
+      *(all->trace_message) << "Done freeing kernel params" << endl;
+      *(all->trace_message) << "Done with finish " << endl;
     }
   }
 };
@@ -191,7 +191,7 @@ static int make_hot_sv(svm_params& params, size_t svi)
   svm_model* model = params.model;
   size_t n = model->num_support;
   if (svi >= model->num_support)
-    params.all->trace_message << "Internal error at " << __FILE__ << ":" << __LINE__ << endl;
+    *params.all->trace_message << "Internal error at " << __FILE__ << ":" << __LINE__ << endl;
   // rotate params fields
   svm_example* svi_e = model->support_vec[svi];
   int alloc = svi_e->compute_kernels(params);
@@ -354,7 +354,7 @@ void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
 {
   if (text)
   {
-    params.all->trace_message << "Not supporting readable model for kernel svm currently" << endl;
+    *params.all->trace_message << "Not supporting readable model for kernel svm currently" << endl;
     return;
   }
 
@@ -398,7 +398,7 @@ float poly_kernel(const flat_example* fec1, const flat_example* fec2, int power)
   float dotprod = linear_kernel(fec1, fec2);
   // std::cerr<<"Bandwidth = "<<bandwidth<< endl;
   // std::cout<<pow(1 + dotprod, power)<< endl;
-  return pow(1 + dotprod, power);
+  return static_cast<float>(std::pow(1 + dotprod, power));
 }
 
 float rbf_kernel(const flat_example* fec1, const flat_example* fec2, float bandwidth)
@@ -487,7 +487,7 @@ int remove(svm_params& params, size_t svi)
 {
   svm_model* model = params.model;
   if (svi >= model->num_support)
-    params.all->trace_message << "Internal error at " << __FILE__ << ":" << __LINE__ << endl;
+    *params.all->trace_message << "Internal error at " << __FILE__ << ":" << __LINE__ << endl;
   // shift params fields
   svm_example* svi_e = model->support_vec[svi];
   for (size_t i = svi; i < model->num_support - 1; ++i)
@@ -760,7 +760,7 @@ void train(svm_params& params)
             if (subopt[max_pos] > 0)
             {
               if (!overshoot && max_pos == (size_t)model_pos && max_pos > 0 && j == 0)
-                params.all->trace_message << "Shouldn't reprocess right after process!!!" << endl;
+                *params.all->trace_message << "Shouldn't reprocess right after process!!!" << endl;
               // std::cout<<max_pos<<" "<<subopt[max_pos]<< endl;
               // std::cout<<params.model->support_vec[0]->example_counter<< endl;
               if (max_pos * model->num_support <= params.maxcache) make_hot_sv(params, max_pos);
@@ -808,11 +808,11 @@ void learn(svm_params& params, single_learner&, example& ec)
     if (params.all->training && ec.example_counter % 100 == 0) trim_cache(params);
     if (params.all->training && ec.example_counter % 1000 == 0 && ec.example_counter >= 2)
     {
-      params.all->trace_message << "Number of support vectors = " << params.model->num_support << endl;
-      params.all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
-                                << "Number of cache queries = " << num_cache_evals << " loss sum = " << params.loss_sum
-                                << " " << params.model->alpha[params.model->num_support - 1] << " "
-                                << params.model->alpha[params.model->num_support - 2] << endl;
+      *params.all->trace_message << "Number of support vectors = " << params.model->num_support << endl;
+      *params.all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
+                                 << "Number of cache queries = " << num_cache_evals << " loss sum = " << params.loss_sum
+                                 << " " << params.model->alpha[params.model->num_support - 1] << " "
+                                 << params.model->alpha[params.model->num_support - 2] << endl;
     }
     params.pool[params.pool_pos] = sec;
     params.pool_pos++;
@@ -877,20 +877,20 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 
   params->lambda = all.l2_lambda;
   if (params->lambda == 0.) params->lambda = 1.;
-  params->all->trace_message << "Lambda = " << params->lambda << endl;
-  params->all->trace_message << "Kernel = " << kernel_type << endl;
+  *params->all->trace_message << "Lambda = " << params->lambda << endl;
+  *params->all->trace_message << "Kernel = " << kernel_type << endl;
 
   if (kernel_type.compare("rbf") == 0)
   {
     params->kernel_type = SVM_KER_RBF;
-    params->all->trace_message << "bandwidth = " << bandwidth << endl;
+    *params->all->trace_message << "bandwidth = " << bandwidth << endl;
     params->kernel_params = &calloc_or_throw<double>();
     *((float*)params->kernel_params) = bandwidth;
   }
   else if (kernel_type.compare("poly") == 0)
   {
     params->kernel_type = SVM_KER_POLY;
-    params->all->trace_message << "degree = " << degree << endl;
+    *params->all->trace_message << "degree = " << degree << endl;
     params->kernel_params = &calloc_or_throw<int>();
     *((int*)params->kernel_params) = degree;
   }
@@ -899,7 +899,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 
   params->all->weights.stride_shift(0);
 
-  learner<svm_params, example>& l = init_learner(params, learn, predict, 1);
+  learner<svm_params, example>& l = init_learner(params, learn, predict, 1, all.get_setupfn_name(kernel_svm_setup));
   l.set_save_load(save_load);
   return make_base(l);
 }

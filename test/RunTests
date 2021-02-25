@@ -15,7 +15,7 @@ use File::Basename;
 
 use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
             $opt_E $opt_o $opt_w $opt_y $opt_t
-            $opt_v $opt_V $opt_O);
+            $opt_v $opt_V $opt_F $opt_O);
 
 my $Epsilon = 1e-4;
 
@@ -88,6 +88,7 @@ sub usage(@) {
         -y      On error, copy bad files to (eg stderr.test21) for later comparison
         -v<L>   Verbosity <L> (small integer) is verbosity level
         -V      apply valgrind to vw commands
+        -F      exclude flatbuffer tests
         -t<T>   Apply timeout <T> (default $TimeOutSec) secs to individual tests
                 (will only work where GNU coreutils 'timeout' is present)
         -O<O>   Add <O> option(s) to all vw commands
@@ -162,7 +163,7 @@ sub which_vw() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdDefyE:ov:Vt:O:') || usage();
+    getopts('wcdDefyE:ov:VFt:O:') || usage();
     $opt_v = 0 unless (defined $opt_v and $opt_v);
     if (defined $opt_O) {
         $opt_O = " $opt_O";
@@ -327,6 +328,13 @@ sub next_test() {
     if ($cmd =~ /{VW}/) {
          $cmd = trim_spaces($cmd);
          $cmd =~ s/{VW}/$VW$opt_O/g;
+    }
+
+    if ($cmd =~ /--flatbuffer/) {
+         if ($opt_F)
+         {
+             next;
+         }
     }
 
     unless (defined $cmd) {
@@ -1894,11 +1902,11 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbify_ldf_squarecb_elim.stderr
 
 # Test 225: cbify regression dataset.  Use it with cats.
-{VW} --cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1
+{VW} --cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1
     train-sets/ref/cbify-reg-cats.stderr
 
 # Test 226: cats train
-{VW} --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model
+{VW} --cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model
     train-sets/ref/cats-train.stderr
 
 # Test 227: cats predict
@@ -1907,7 +1915,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/cats.predict
 
 # Test 228: cats-pdf train
-{VW} --cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model
+{VW} --cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model
     train-sets/ref/cats-pdf-train.stderr
 
 # Test 229: cats-pdf predict
@@ -1916,7 +1924,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/cats-pdf.predict
 
 # Test 230: cbify-reg
-{VW} --cbify 2048 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 4  -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+{VW} --cbify 2048 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 10000 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
     train-sets/ref/cbify_reg.stderr
 
 # Test 231: cbify-reg cb_discrete
@@ -1995,64 +2003,137 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
      --flatbuffer
          train-sets/ref/ccb_fb.stderr
 
-# Test 247: Named Labels FB Test (Based on 88)
-{VW} -d train-sets/test_named.fb --named_labels det,noun,verb \
-     --oaa 3 -k --flatbuffer -c --passes 10 --holdout_off -f models/test_named_fb.model
-         train-sets/ref/named_label_fb.stderr
-
-# Test 248: Named Labels FB at prediction (Based on 89)
-{VW} -i models/test_named_fb.model -t -d train-sets/test_named -p test_named.predict
-    train-sets/ref/named_label_test_fb.stderr
-    pred-sets/ref/test_named.predict
-
-# Test 249: cb_explore with cover epsilon decaying
-{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
+# Test 247: cb_explore with cover epsilon decaying
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model -p cover_e_dec_train.pred
     train-sets/ref/cbe_cover_e_dec.stderr
+    train-sets/ref/cover_e_dec_train.pred
 
-# Test 250: cb_explore with cover epsilon decaying predict
+# Test 248: cb_explore with cover epsilon decaying predict
 {VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict
     train-sets/ref/cbe_cover_e_dec_predict.stderr
     pred-sets/ref/cbe_cover_e_dec.predict
 
-# Test 251: cb_explore with cover epsilon fixed
+# Test 249: cb_explore with cover epsilon fixed
 {VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_fixed.model --epsilon 0.5
     train-sets/ref/cbe_cover_e_fixed.stderr
 
-# Test 252: cb_explore with cover epsilon fixed predict
+# Test 250: cb_explore with cover epsilon fixed predict
 {VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_fixed.model --epsilon 0.5 -t -p cbe_cover_e_fixed.predict
     train-sets/ref/cbe_cover_e_fixed_predict.stderr
     pred-sets/ref/cbe_cover_e_fixed.predict
 
-# Test 253: cb_explore_adf with cover exploration epsilon decaying
+# Test 251: cb_explore_adf with cover exploration epsilon decaying
 {VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -f models/cover_adf_e_dec.model
     train-sets/ref/cbe_adf_cover_e_dec.stderr
 
-# Test 254: cb_explore_adf with cover exploration epsilon decaying predict only
+# Test 252: cb_explore_adf with cover exploration epsilon decaying predict only
 {VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -p cbe_adf_cover_e_dec.predict -i models/cover_adf_e_dec.model -t
     train-sets/ref/cbe_adf_cover_e_dec_predict.stderr
     pred-sets/ref/cbe_adf_cover_e_dec.predict
 
-# Test 255: cb_explore_adf with cover epsilon fixed
+# Test 253: cb_explore_adf with cover epsilon fixed
 {VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf -f models/cover_adf_e_fixed.model --epsilon 0.5
     train-sets/ref/cbe_adf_cover_e_fixed.stderr
 
-# Test 256: cb_explore_adf with cover epsilon fixed predict
+# Test 254: cb_explore_adf with cover epsilon fixed predict
 {VW} --cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf -i models/cover_adf_e_fixed.model --epsilon 0.5 -t -p cbe_adf_cover_e_fixed.predict
     train-sets/ref/cbe_adf_cover_e_fixed_predict.stderr
     pred-sets/ref/cbe_adf_cover_e_fixed.predict
 
-# Test 257: cb_explore_adf with synthcover exploration
+# Test 255: cb_explore_adf with synthcover exploration
 {VW} --cb_explore_adf --synthcover --epsilon 0.01 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_synthcover.predict
     train-sets/ref/cbe_adf_synthcover.stderr
     pred-sets/ref/cbe_adf_synthcover.predict
 
-# Test 258: cb data consumed by ccb_explore_adf reduction
+# Test 256: cb data consumed by ccb_explore_adf reduction
 {VW} --ccb_explore_adf --dsjson --epsilon 0.2 -d train-sets/cb_as_ccb.json
     train-sets/ref/cb_as_ccb.stderr
 
-# Test 259: CCB interactions with slot with default namespace
+# Test 257: CCB interactions with slot with default namespace
 {VW} -d train-sets/ccb_test_interactions.dat --ccb_explore_adf --invert_hash w_out_slot_ns.interactions -q ::
     train-sets/ref/ccb_test_interactions.stderr
     train-sets/ref/w_out_slot_ns.interactions
+
+# Test 258: vw --help
+{VW} --help
+    train-sets/ref/help.stderr
+    train-sets/ref/help.stdout
+
+# Test 259: cbzo: learn and save constant template model
+# Note: Changing hyperparameters (-l, --radius etc.) or any options affecting the learning algorithm will require
+# preparing the dataset again
+{VW} -d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 -f models/cbzo_constant.model
+    train-sets/ref/cbzo_constant.stderr
+    train-sets/ref/cbzo_constant.stdout
+
+# Test 260: cbzo: verify predictions of Test 261 model.
+# Also ends up testing if important cmd-line options (--cbzo, --policy) are saved with the model.
+{VW} -d train-sets/cbzo_constant.dat --holdout_off -t --radius 0.1 -i models/cbzo_constant.model -p cbzo_constant.preds
+    pred-sets/ref/cbzo_constant.preds
+
+# Test 261: cbzo: verify predictions without the intervention of model saving
+{VW} -d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 -p cbzo_constant_online.preds
+    pred-sets/ref/cbzo_constant_online.preds
+
+# Test 262: cbzo: verify --readable_model file contents
+{VW} -d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 --readable_model cbzo_constant_readable_model.txt
+    train-sets/ref/cbzo_constant_readable_model.txt
+
+# Test 263: cbzo: verify --invert_hash file contents
+{VW} -d train-sets/cbzo_constant.dat --holdout_off --cbzo --policy constant -l 0.001 --radius 0.1 --invert_hash cbzo_constant_invert_hash.txt
+    train-sets/ref/cbzo_constant_invert_hash.txt
+
+# Test 264: cbzo: learn and save linear template model
+# Note: Changing hyperparameters (-l, --l1, --radius etc.) or any options affecting the learning algorithm will require
+# preparing the dataset again
+{VW} -d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization -f models/cbzo_linear.model
+    train-sets/ref/cbzo_linear.stderr
+    train-sets/ref/cbzo_linear.stdout
+
+# Test 265: cbzo: verify predictions of Test 266 model.
+# Also ends up testing if important cmd-line options (--cbzo, --policy) are saved with the model.
+{VW} -d train-sets/cbzo_linear.dat --holdout_off -t --radius 0.1 -i models/cbzo_linear.model -p cbzo_linear.preds
+    pred-sets/ref/cbzo_linear.preds
+
+# Test 266: cbzo: verify predictions without the intervention of model saving
+{VW} -d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization -p cbzo_linear_online.preds
+    pred-sets/ref/cbzo_linear_online.preds
+
+# Test 267: cbzo: verify --readable_model file contents
+{VW} -d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --readable_model cbzo_linear_readable_model.txt
+    train-sets/ref/cbzo_linear_readable_model.txt
+
+# Test 268: cbzo: verify --invert_hash file contents
+{VW} -d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --invert_hash cbzo_linear_invert_hash.txt
+    train-sets/ref/cbzo_linear_invert_hash.txt
+
+# Test 269: vw --help with filtering
+{VW} --cb_adf --help
+
+# Test 270: vw test used in brew script
+{VW} -d train-sets/houses --audit --nn 1
+    train-sets/ref/houses.stderr
+    train-sets/ref/houses.stdout
+
+# Test 271: creating model using --save_resume to be tested with -q :: and --invert_hash
+{VW} -d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -f models/270.model --save_resume --invert_hash ccb_quad.inv
+    train-sets/ref/ccb_quad.stderr
+    pred-sets/ref/ccb_quad.inv
+
+# Test 272: checking invert_hash for ccb with --save_resume model and -q ::
+{VW} -d train-sets/ccb_test_interactions.dat -i models/270.model --save_resume --invert_hash ccb_quad_save_resume.inv
+    train-sets/ref/ccb_quad_save_resume.stderr
+    pred-sets/ref/ccb_quad_save_resume.inv
+
+# Test 273: Slates sanity check with interactions and invert hash
+{VW} --slates -d train-sets/slates_simple_w_interactions.txt -p slates_simple_w_interactions.predict -q :: --invert_hash slates_w_interactions.inv
+    train-sets/ref/slates_simple_w_interactions.stderr
+    pred-sets/ref/slates_simple_w_interactions.predict
+    pred-sets/ref/slates_w_interactions.inv
+
+# Test 274: Test search_neighbor_features argument
+{VW} -k -c -d train-sets/sequence_data --passes 2 --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off --search_neighbor_features -3:w,-2:w,-1:w,1:w,2:w,3:w,-3:e,-2:e,-1:e,1:e,2:e,3:e,-3:s,-2:s,-1:s,1:s,2:s,3:s
+train-sets/ref/slates_simple_w_interactions.stderr
+    train-sets/ref/search_neighbor_features.train.stderr
 
 # Do not delete this line or the empty line above it

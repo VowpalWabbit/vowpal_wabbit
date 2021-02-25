@@ -81,17 +81,18 @@ VW::LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
 
   for (auto& s : classweight_array) cweights->load_string(s);
 
-  if (!all.logger.quiet) all.trace_message << "parsed " << cweights->weights.size() << " class weights" << std::endl;
+  if (!all.logger.quiet) *(all.trace_message) << "parsed " << cweights->weights.size() << " class weights" << std::endl;
 
   VW::LEARNER::single_learner* base = as_singleline(setup_base(options, all));
 
   VW::LEARNER::learner<classweights, example>* ret;
   if (base->pred_type == prediction_type_t::scalar)
-    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type_t::scalar>,
-        predict_or_learn<false, prediction_type_t::scalar>);
+    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, prediction_type_t::scalar>,
+        &predict_or_learn<false, prediction_type_t::scalar>, all.get_setupfn_name(classweight_setup) + "-scalar");
   else if (base->pred_type == prediction_type_t::multiclass)
     ret = &VW::LEARNER::init_learner<classweights>(cweights, base,
-        predict_or_learn<true, prediction_type_t::multiclass>, predict_or_learn<false, prediction_type_t::multiclass>);
+        &predict_or_learn<true, prediction_type_t::multiclass>, &predict_or_learn<false, prediction_type_t::multiclass>,
+        all.get_setupfn_name(classweight_setup) + "-multi");
   else
     THROW("--classweight not implemented for this type of prediction");
   return make_base(*ret);

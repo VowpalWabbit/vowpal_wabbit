@@ -53,19 +53,41 @@ bool parser::parse(vw* all, uint8_t* buffer_pointer)
 
 void parser::process_collection_item(vw* all, v_array<example*>& examples)
 {
-  // new example object to process from collection
-  const auto ex = _data->example_obj_as_ExampleCollection()->examples()->Get(_example_index);
-  parse_example(all, examples[0], ex);
-  _example_index++;
-  if (_example_index == _data->example_obj_as_ExampleCollection()->examples()->Length())
+  // new example/multi example object to process from collection
+  if (_data->example_obj_as_ExampleCollection()->is_multiline())
   {
-    _example_index = 0;
-    _active_collection = false;
+    _active_multi_ex = true;
+    _multi_example_object = _data->example_obj_as_ExampleCollection()->multi_examples()->Get(_example_index);
+    parse_multi_example(all, examples[0], _multi_example_object);
+    // read from active collection
+    _example_index++;
+    if (_example_index == _data->example_obj_as_ExampleCollection()->multi_examples()->size())
+    {
+      _example_index = 0;
+      _active_collection = false;
+    }
+  }
+  else
+  {
+    const auto ex = _data->example_obj_as_ExampleCollection()->examples()->Get(_example_index);
+    parse_example(all, examples[0], ex);
+    _example_index++;
+    if (_example_index == _data->example_obj_as_ExampleCollection()->examples()->size())
+    {
+      _example_index = 0;
+      _active_collection = false;
+    }
   }
 }
 
 bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffer_pointer)
 {
+  if (_active_multi_ex)
+  {
+    parse_multi_example(all, examples[0], _multi_example_object);
+    return true;
+  }
+
   if (_active_collection)
   {
     process_collection_item(all, examples);
@@ -82,6 +104,14 @@ bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffe
       {
         const auto example = _data->example_obj_as_Example();
         parse_example(all, examples[0], example);
+        return true;
+      }
+      break;
+      case VW::parsers::flatbuffer::ExampleType_MultiExample:
+      {
+        _multi_example_object = _data->example_obj_as_MultiExample();
+        _active_multi_ex = true;
+        parse_multi_example(all, examples[0], _multi_example_object);
         return true;
       }
       break;
@@ -114,13 +144,29 @@ void parser::parse_example(vw* all, example* ae, const Example* eg)
   for (const auto& ns : *(eg->namespaces())) { parse_namespaces(all, ae, ns); }
 }
 
+void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
+{
+  all->example_parser->lbl_parser.default_label(&ae->l);
+  if (_multi_ex_index >= eg->examples()->size())
+  {
+    // done with multi example, send a newline example and reset
+    _multi_ex_index = 0;
+    _active_multi_ex = false;
+    _multi_example_object = nullptr;
+    return;
+  }
+
+  parse_example(all, ae, eg->examples()->Get(_multi_ex_index));
+  _multi_ex_index++;
+}
+
 void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
 {
   namespace_index temp_index;
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
     temp_index = (uint8_t)ns->name()->c_str()[0];
-    _c_hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->Length(), all->hash_seed);
+    _c_hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
   }
   else
   {
@@ -130,15 +176,18 @@ void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
 
   auto& fs = ae->feature_space[temp_index];
 
-  for (const auto& feature : *(ns->features())) { parse_features(all, fs, feature); }
+  for (const auto& feature : *(ns->features()))
+  { parse_features(all, fs, feature, (all->audit || all->hash_inv) ? ns->name() : nullptr); }
 }
 
-void parser::parse_features(vw* all, features& fs, const Feature* feature)
+void parser::parse_features(vw* all, features& fs, const Feature* feature, const flatbuffers::String* ns)
 {
   if (flatbuffers::IsFieldPresent(feature, Feature::VT_NAME))
   {
-    uint64_t word_hash = all->example_parser->hasher(feature->name()->c_str(), feature->name()->Length(), _c_hash);
+    uint64_t word_hash = all->example_parser->hasher(feature->name()->c_str(), feature->name()->size(), _c_hash);
     fs.push_back(feature->value(), word_hash);
+    if ((all->audit || all->hash_inv) && ns != nullptr)
+    { fs.space_names.push_back(std::make_shared<audit_strings>(ns->c_str(), feature->name()->c_str())); }
   }
   else
   {
@@ -148,9 +197,7 @@ void parser::parse_features(vw* all, features& fs, const Feature* feature)
 
 void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg)
 {
-  Label label_type = eg->label_type();
-
-  switch (label_type)
+  switch (eg->label_type())
   {
     case Label_SimpleLabel:
     {
@@ -200,9 +247,13 @@ void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg)
       parse_slates_label(&(ae->l), slates_label);
       break;
     }
-    case Label_no_label:
-      // auto label = static_cast<const no_label*>(eg->label());
-      parse_no_label();
+    case Label_ContinuousLabel:
+    {
+      auto continuous_label = static_cast<const ContinuousLabel*>(eg->label());
+      parse_continuous_action_label(&(ae->l), continuous_label);
+      break;
+    }
+    case Label_NONE:
       break;
     default:
       THROW("Label type in Flatbuffer not understood");

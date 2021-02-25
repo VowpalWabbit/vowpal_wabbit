@@ -31,21 +31,10 @@ struct reduction_test_harness
     ec.pred.a_s.clear();
     for (uint32_t i = 0; i < _predictions.size(); i++)
     { ec.pred.a_s.push_back(ACTION_SCORE::action_score{_predictions[i].first, _predictions[i].second}); }
-
-    // cout << "\nec.pred.a_s (PMF): " << endl;
-    // for (uint32_t i = 0; i < _predictions.size(); i++)
-    // { cout << "(" << ec.pred.a_s[i].action << " : " << ec.pred.a_s[i].score << "), " << endl; }
   }
 
   void test_learn(single_learner& base, example& ec)
-  {
-    // cout << "ec.l.cb.costs after:" << endl;
-    // for (uint32_t i = 0; i < ec.l.cb.costs.size(); i++)
-    // {
-    //   cout << "(" << ec.l.cb.costs[i].action << " , " << ec.l.cb.costs[i].cost << " , " <<
-    //   ec.l.cb.costs[i].probability
-    //        << " , " << ec.l.cb.costs[i].partial_prediction << "), " << endl;
-    // }
+  { /*noop*/
   }
 
   static void predict(reduction_test_harness& test_reduction, single_learner& base, example& ec)
@@ -121,7 +110,7 @@ void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_func
 BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 {
   uint32_t k = 4;
-  uint32_t h = 1;
+  float h = 10.f;  // h (bandwidth) property of continuous range (max_val - min_val)
   float min_val = 1000;
   float max_val = 1100;
 
@@ -151,7 +140,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   ec.l.cb_cont.costs.clear();
   ec.l.cb_cont.costs.push_back({1010.17f, .5f, .05f});  // action, cost, prob
 
-  VW::cb_continuous::continuous_label_elm exp_val{1010.17, 0.5, 0.05};
+  VW::cb_continuous::continuous_label_elm exp_val{1010.17f, 0.5f, 0.05f};
 
   BOOST_CHECK_EQUAL(1010.17f, ec.l.cb_cont.costs[0].action);
   BOOST_CHECK_EQUAL(0.5f, ec.l.cb_cont.costs[0].cost);
@@ -160,7 +149,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   learn(*data, *as_singleline(test_harness), ec);
 
   delete_probability_density_function(&ec.pred.pdf);
-  CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
+  CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
   test_harness->finish();
   destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
 }
@@ -169,8 +158,8 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
 {
   example ec;
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
-  uint32_t k = 4;  // num_actions
-  uint32_t h = 2;  // bandwidth
+  uint32_t k = 4;   // num_actions
+  float h = 300.f;  // // h (bandwidth) property of continuous range (max_val - min_val)
   float min_val = 1000;
   float max_val = 1400;
 
@@ -198,7 +187,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
     test_harness->finish();
     destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
     delete_probability_density_function(&ec.pred.pdf);
-    CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
+    CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
   }
 }
 
@@ -208,7 +197,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
   auto data = scoped_calloc_or_throw<VW::pmf_to_pdf::reduction>();
 
   uint32_t k = 16;  // num_actions
-  uint32_t h = 3;   // bandwidth
+  float h = 10.f;   // h (bandwidth) property of continuous range (max_val - min_val)
   float min_val = 1000;
   float max_val = 1400;
 
@@ -236,7 +225,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
     test_harness->finish();
     destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
     delete_probability_density_function(&ec.pred.pdf);
-    CB::delete_label<VW::cb_continuous::continuous_label>(&ec.l.cb_cont);
+    CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
   }
 }
 
@@ -253,8 +242,8 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
       init_learner(test_harness,          // Data structure passed by vw_framework into test_harness predict/learn calls
           reduction_test_harness::learn,  // test_harness learn
           reduction_test_harness::predict,  // test_harness predict
-          1                                 // Number of regressors in test_harness (not used)
-      );                                    // Create a learner using the base reduction.
+          1,                                // Number of regressors in test_harness (not used)
+          "test_learner");                  // Create a learner using the base reduction.
   return &test_learner;
 }
 }  // namespace pmf_to_pdf

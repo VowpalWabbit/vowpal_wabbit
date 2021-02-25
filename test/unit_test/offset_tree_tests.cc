@@ -66,19 +66,19 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
 BOOST_AUTO_TEST_CASE(offset_tree_learn_basic)
 {
   // Setup a test harness base reduction
-  const auto test_harness = VW::offset_tree::get_test_harness_reduction({{.9, .1}, {.9, .1}});
+  const auto test_harness = VW::offset_tree::get_test_harness_reduction({{.9f, .1f}, {.9f, .1f}});
 
   VW::offset_tree::offset_tree tree(3);
   tree.init();
   example ec;
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
   ec.l.cb = CB::label();
-  ec.l.cb.costs.push_back({-1.0, 1, 0.5, 0.0});
+  ec.l.cb.costs.push_back(CB::cb_class{-1.0f, 1, 0.5f});
 
   tree.learn(*as_singleline(test_harness), ec);
 
   destroy_free<VW::offset_tree::test_learner_t>(test_harness);
-  CB::delete_label(&ec.l.cb);
+  CB::delete_label(ec.l.cb);
   ACTION_SCORE::delete_action_scores(&ec.pred.a_s);
 }
 
@@ -154,8 +154,8 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
       init_learner(test_harness,          // Data structure passed by vw_framework into test_harness predict/learn calls
           reduction_test_harness::learn,  // test_harness learn
           reduction_test_harness::predict,  // test_harness predict
-          1                                 // Number of regressors in test_harness (not used)
-      );                                    // Create a learner using the base reduction.
+          1,                                // Number of regressors in test_harness (not used)
+          "test_learner");                  // Create a learner using the base reduction.
   return &test_learner;
 }
 
@@ -170,7 +170,7 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   auto& ret_val = tree.predict(*as_singleline(test_base), ec);
   BOOST_CHECK_EQUAL_COLLECTIONS(ret_val.begin(), ret_val.end(), expected_scores.begin(), expected_scores.end());
   destroy_free<test_learner_t>(test_base);
-  CB::delete_label(&ec.l.cb);
+  CB::delete_label(ec.l.cb);
   ACTION_SCORE::delete_action_scores(&ec.pred.a_s);
 }
 

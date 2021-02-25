@@ -61,7 +61,7 @@ void save(example& ec, vw& all)
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
     final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
 
-  if (!all.logger.quiet) all.trace_message << "saving regressor to " << final_regressor_name << std::endl;
+  if (!all.logger.quiet) *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl;
   save_predictor(all, final_regressor_name, 0);
 
   VW::finish_example(all, ec);
@@ -72,7 +72,7 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
 {
   // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
   bool is_header = false;
-  if (all.label_type == label_type_t::ccb) { is_header = CCB::ec_is_example_header(ec); }
+  if (all.example_parser->lbl_parser.label_type == label_type_t::ccb) { is_header = CCB::ec_is_example_header(ec); }
   else
   {
     is_header = CB::ec_is_example_header(ec);

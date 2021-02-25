@@ -123,7 +123,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   size_t bag_size = 0;
   bool greedify = false;
   bool first_only = false;
-  config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
+  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (bagging)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
@@ -144,13 +144,12 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   size_t problem_multiplier = bag_size;
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
-  all.label_type = label_type_t::cb;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
   auto data = scoped_calloc_or_throw<explore_type>(epsilon, bag_size, greedify, first_only, all.get_random_state());
 
-  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
+  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(data, base, explore_type::learn,
+      explore_type::predict, problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-bag");
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

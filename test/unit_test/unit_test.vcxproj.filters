@@ -45,9 +45,6 @@
     <ClCompile Include="explore_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="flatbuffer_parser_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="guard_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -75,13 +72,13 @@
     <ClCompile Include="offset_tree_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ostream_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="power_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="options_boost_po_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="options_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="stable_unique_tests.cc">

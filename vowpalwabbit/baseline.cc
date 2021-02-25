@@ -206,7 +206,7 @@ base_learner* baseline_setup(options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   // initialize baseline example
-  data->ec = VW::alloc_examples(simple_label_parser.label_size, 1);
+  data->ec = VW::alloc_examples(1);
   data->ec->interactions = &all.interactions;
 
   data->all = &all;
@@ -216,7 +216,8 @@ base_learner* baseline_setup(options_i& options, vw& all)
 
   auto base = as_singleline(setup_base(options, all));
 
-  learner<baseline, example>& l = init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
+  learner<baseline, example>& l =
+      init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(baseline_setup));
 
   l.set_sensitivity(sensitivity);
 

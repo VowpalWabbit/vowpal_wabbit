@@ -27,6 +27,7 @@
     <ClCompile Include="continuous_actions_parser_test.cc" />
     <ClCompile Include="object_pool_test.cc" />
     <ClCompile Include="offset_tree_tests.cc" />
+    <ClCompile Include="ostream_test.cc" />
     <ClCompile Include="options_boost_po_test.cc" />
     <ClCompile Include="options_test.cc" />
     <ClCompile Include="pmf_to_pdf_test.cc" />
@@ -35,7 +36,7 @@
     <ClCompile Include="error_test.cc" />
     <ClCompile Include="example_header_test.cc" />
     <ClCompile Include="explore_test.cc" />
-    <ClCompile Include="flatbuffer_parser_test.cc" />
+    <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="flatbuffer_parser_test.cc" />
     <ClCompile Include="guard_test.cc" />
     <ClCompile Include="initialize_test.cc" />
     <ClCompile Include="io_adapter_test.cc" />
@@ -43,6 +44,8 @@
     <ClCompile Include="main.cc" />
     <ClCompile Include="numeric_cast_tests.cc" />
     <ClCompile Include="random_test.cc" />
+    <ClCompile Include="parse_args_test.cc" />
+    <ClCompile Include="vw_versions_test.cc" />
     <ClCompile Include="power_test.cc" />
     <ClCompile Include="prediction_test.cc" />
     <ClCompile Include="scope_exit_test.cc" />
@@ -170,7 +173,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>

@@ -17,8 +17,6 @@ using VW::config::option_group_definition;
 using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
-// Enable/Disable indented debug statements
-VW_DEBUG_ENABLE(false)
 
 // Forward declarations
 namespace VW
@@ -145,13 +143,9 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 // Setup reduction in stack
 LEARNER::base_learner* setup(options_i& options, vw& all)
 {
-  option_group_definition new_options("Continuous action tree with smoothing");
-
+  option_group_definition new_options("Continuous actions tree with smoothing");
   int num_actions = 0;
-  int pdf_num_actions = 0;
-
-  new_options.add(make_option("cats", num_actions).keep().necessary().help("Continuous action tree with smoothing"))
-      .add(make_option("cats_pdf", pdf_num_actions).keep().help("Continuous action tree with smoothing (pdf)"));
+  new_options.add(make_option("cats", num_actions).keep().necessary().help("number of tree labels <k> for cats"));
 
   // If cats reduction was not invoked, don't add anything
   // to the reduction stack;
@@ -161,14 +155,13 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
 
   // cats stack = [cats -> sample_pdf -> cats_pdf ... rest specified by cats_pdf]
   if (!options.was_supplied("sample_pdf")) options.insert("sample_pdf", "");
-
-  if (!options.insert_arguments("cats_pdf", num_actions)) THROW(error_code::options_disagree_s);
+  options.insert("cats_pdf", std::to_string(num_actions));
 
   LEARNER::base_learner* p_base = setup_base(options, all);
   auto p_reduction = scoped_calloc_or_throw<cats>(as_singleline(p_base));
 
   LEARNER::learner<cats, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value);
+      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, all.get_setupfn_name(setup));
 
   l.set_finish_example(finish_example);
 
