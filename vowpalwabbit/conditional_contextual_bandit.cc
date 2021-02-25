@@ -437,6 +437,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
       // shared, action, action, slot
       data.include_list.clear();
+      assert(1 /* shared */ + data.actions.size() + slot_id < data.stored_labels.size());
       build_cb_example<is_learn>(
           data.cb_ex, slot, data.stored_labels[1 /* shared */ + data.actions.size() + slot_id], data);
 
@@ -460,7 +461,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       {
         // the cb example contains no action => cannot decide
         decision_scores.push_back(v_array<ACTION_SCORE::action_score>());
-        data.action_score_pool.acquire_object(*decision_scores.end());
+        data.action_score_pool.acquire_object(*(decision_scores.end()-1));
       }
 
       if (should_augment_with_slot_info)

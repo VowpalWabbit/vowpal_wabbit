@@ -90,7 +90,6 @@ public:
 
   v_array<T>& operator=(v_array<T>&& other) noexcept
   {
-    delete_v_array();
     std::swap(_begin, other._begin);
     std::swap(_end, other._end);
     std::swap(end_array, other.end_array);
