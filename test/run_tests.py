@@ -249,7 +249,7 @@ def run_command_line_test(test_id,
                 stderr=subprocess.PIPE,
                 cwd=working_dir,
                 shell=is_shell,
-                timeout=80)
+                timeout=100)
         except subprocess.TimeoutExpired as e:
             stdout = try_decode(e.stdout)
             stderr = try_decode(e.stderr)
