@@ -42,8 +42,8 @@ struct ccb
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label;
   std::vector<bool> exclude_list, include_list;
-  std::vector<std::vector<namespace_index>> generated_interactions;
-  std::vector<std::vector<namespace_index>>* original_interactions;
+  namespace_interactions generated_interactions;
+  namespace_interactions* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label;
 
@@ -249,32 +249,33 @@ void remove_slot_features(example* shared, example* slot)
 }
 
 // Generates quadratics between each namespace and the slot id as well as appends slot id to every existing interaction.
-void calculate_and_insert_interactions(example* shared, const std::vector<example*>& actions,
-    std::vector<std::vector<namespace_index>>& generated_interactions)
+void calculate_and_insert_interactions(
+    example* shared, const std::vector<example*>& actions, namespace_interactions& generated_interactions)
 {
   std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 
-  auto original_size = generated_interactions.size();
+  auto original_size = generated_interactions.interactions.size();
 
   // add ccb_slot_namespace to original printable interactions
-  generated_interactions.push_back({ccb_slot_namespace, ccb_slot_namespace});
+  generated_interactions.interactions.push_back({ccb_slot_namespace, ccb_slot_namespace});
 
   unsigned char prev_found = 0;
   for (size_t i = 0; i < original_size; i++)
   {
-    if (generated_interactions[i].size() > 0 && prev_found != generated_interactions[i][0])
+    if (generated_interactions.interactions[i].size() > 0 && prev_found != generated_interactions.interactions[i][0])
     {
-      prev_found = generated_interactions[i][0];
-      generated_interactions.push_back({generated_interactions[i][0], ccb_slot_namespace});
+      prev_found = generated_interactions.interactions[i][0];
+      generated_interactions.interactions.push_back({generated_interactions.interactions[i][0], ccb_slot_namespace});
     }
   }
-  original_size = generated_interactions.size();
+
+  original_size = generated_interactions.interactions.size();
 
   for (size_t i = 0; i < original_size; i++)
   {
-    auto interaction_copy = generated_interactions[i];
+    auto interaction_copy = generated_interactions.interactions[i];
     interaction_copy.push_back(static_cast<namespace_index>(ccb_id_namespace));
-    generated_interactions.push_back(interaction_copy);
+    generated_interactions.interactions.push_back(interaction_copy);
   }
 
   for (const auto& action : actions)
@@ -285,7 +286,7 @@ void calculate_and_insert_interactions(example* shared, const std::vector<exampl
           !found_namespaces[action_index - INTERACTIONS::printable_start])
       {
         found_namespaces[action_index - INTERACTIONS::printable_start] = true;
-        generated_interactions.push_back({action_index, ccb_id_namespace});
+        generated_interactions.interactions.push_back({action_index, ccb_id_namespace});
       }
     }
   }
@@ -296,7 +297,7 @@ void calculate_and_insert_interactions(example* shared, const std::vector<exampl
         !found_namespaces[shared_index - INTERACTIONS::printable_start])
     {
       found_namespaces[shared_index - INTERACTIONS::printable_start] = true;
-      generated_interactions.push_back({shared_index, ccb_id_namespace});
+      generated_interactions.interactions.push_back({shared_index, ccb_id_namespace});
     }
   }
 }
@@ -428,8 +429,12 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       {
         // Namespace crossing for slot features.
         data.generated_interactions.clear();
-        std::copy(data.original_interactions->begin(), data.original_interactions->end(),
-            std::back_inserter(data.generated_interactions));
+        {
+          // lock while copying interactions since the parsing thread might be adding more interactions
+          // this should only cause contention when using -q ::
+          std::unique_lock<std::mutex> lock(data.original_interactions->mut);
+          data.generated_interactions.append(*data.original_interactions);
+        }
         calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
         data.shared->interactions = &data.generated_interactions;
         for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
