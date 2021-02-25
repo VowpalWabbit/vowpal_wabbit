@@ -466,7 +466,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       {
         // the cb example contains no action => cannot decide
         decision_scores.push_back(v_array<ACTION_SCORE::action_score>());
-        data.action_score_pool.acquire_object(*(decision_scores.end()-1));
+        data.action_score_pool.acquire_object(*(decision_scores.end() - 1));
       }
 
       if (should_augment_with_slot_info)
