@@ -762,11 +762,17 @@ void parse_feature_tweaks(
     }
 
     std::vector<std::vector<namespace_index>> new_quadratics;
-    for (const auto& i : quadratics) { new_quadratics.emplace_back(i.begin(), i.end()); }
-
-    if (new_quadratics[0][0] == ':' && new_quadratics[0][1] == ':')
+    for (const auto& i : quadratics)
     {
-      all.interactions.quadratics_wildcard_expansion = true;
+      if (i[0] == ':' && i[1] == ':') { all.interactions.quadratics_wildcard_expansion = true; }
+      else
+      {
+        new_quadratics.emplace_back(i.begin(), i.end());
+      }
+    }
+
+    if (all.interactions.quadratics_wildcard_expansion)
+    {
       if (options.was_supplied("leave_duplicate_interactions"))
       { all.interactions.leave_duplicate_interactions = true; }
       else
@@ -776,11 +782,12 @@ void parse_feature_tweaks(
                              << "You can use --leave_duplicate_interactions to disable this behaviour.";
       }
     }
-    else
-    {
-      expanded_interactions =
-          INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
-    }
+
+    std::sort(new_quadratics.begin(), new_quadratics.end(), INTERACTIONS::sort_interactions_comparator);
+
+    expanded_interactions =
+        INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
+
     if (!all.logger.quiet) *(all.trace_message) << endl;
   }
 
@@ -795,6 +802,8 @@ void parse_feature_tweaks(
 
     std::vector<std::vector<namespace_index>> new_cubics;
     for (const auto& i : cubics) { new_cubics.emplace_back(i.begin(), i.end()); }
+
+    std::sort(new_cubics.begin(), new_cubics.end(), INTERACTIONS::sort_interactions_comparator);
 
     std::vector<std::vector<namespace_index>> exp_cubic =
         INTERACTIONS::expand_interactions(new_cubics, 3, "error, cubic features must involve three sets.");
@@ -815,6 +824,8 @@ void parse_feature_tweaks(
 
     std::vector<std::vector<namespace_index>> new_interactions;
     for (const auto& i : interactions) { new_interactions.emplace_back(i.begin(), i.end()); }
+
+    std::sort(new_interactions.begin(), new_interactions.end(), INTERACTIONS::sort_interactions_comparator);
 
     std::vector<std::vector<namespace_index>> exp_inter = INTERACTIONS::expand_interactions(new_interactions, 0, "");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));

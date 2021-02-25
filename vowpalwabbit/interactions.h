@@ -36,6 +36,8 @@ std::vector<std::vector<namespace_index>> expand_interactions(
 
 void expand_quadratics_wildcard_interactions(namespace_interactions& interactions);
 
+bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b);
+
 // remove duplicate interactions and sort namespaces in them (if required)
 void sort_and_filter_duplicate_interactions(
     std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt);
