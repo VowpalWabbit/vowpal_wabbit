@@ -111,7 +111,8 @@ float loss_cs(const cbify& data, const v_array<COST_SENSITIVE::wclass>& costs, u
   return data.loss0 + (data.loss1 - data.loss0) * cost;
 }
 
-float loss_csldf(const cbify& data, const std::vector<v_array<COST_SENSITIVE::wclass>>& cs_costs, uint32_t final_prediction)
+float loss_csldf(
+    const cbify& data, const std::vector<v_array<COST_SENSITIVE::wclass>>& cs_costs, uint32_t final_prediction)
 {
   float cost = 0.;
   for (const auto& costs : cs_costs)
