@@ -2004,8 +2004,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
          train-sets/ref/ccb_fb.stderr
 
 # Test 247: cb_explore with cover epsilon decaying
-{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model -p cover_e_dec_train.pred
     train-sets/ref/cbe_cover_e_dec.stderr
+    train-sets/ref/cover_e_dec_train.pred
 
 # Test 248: cb_explore with cover epsilon decaying predict
 {VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict
