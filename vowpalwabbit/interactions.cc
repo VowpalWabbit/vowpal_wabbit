@@ -119,7 +119,7 @@ void expand_quadratics_wildcard_interactions(namespace_interactions& interaction
     }
   }
 
-  std::stable_sort(interactions.interactions.begin(), interactions.interactions.end(), sort_interactions_comparator);
+  std::sort(interactions.interactions.begin(), interactions.interactions.end(), sort_interactions_comparator);
 }
 
 bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b)
@@ -134,7 +134,7 @@ bool sort_interactions_comparator(const std::vector<namespace_index>& a, const s
     else
       return false;
   }
-  return true;
+  return false;
 }
 
 /*
