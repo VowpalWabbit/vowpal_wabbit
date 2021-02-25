@@ -21,15 +21,15 @@ polyprediction::polyprediction()
 }
 
 polyprediction::polyprediction(polyprediction&& other) noexcept
-    : scalar(0)
+    : scalar(other.scalar)
     , scalars(v_extract(other.scalars))
     , a_s(v_extract(other.a_s))
     , decision_scores(v_extract(other.decision_scores))
-    , multiclass(0)
+    , multiclass(other.multiclass)
     , multilabels(v_extract(other.multilabels.label_v))
-    , prob(0)
+    , prob(other.prob)
     , pdf(v_extract(other.pdf))
-    , pdf_value({0, 0})
+    , pdf_value(other.pdf_value)
 {
 }
 
