@@ -1,5 +1,5 @@
 creating quadratic features for pairs: :: 
-WARNING: duplicate namespace interactions were found. Removed: 4278.
+WARNING: any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
 final_regressor = models/270.model
 Num weight bits = 18
