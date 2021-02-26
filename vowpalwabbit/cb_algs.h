@@ -5,6 +5,7 @@
 #pragma once
 
 #include "baseline.h"
+#include "guard.h"
 
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
 VW::LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
@@ -21,6 +22,7 @@ template <bool is_learn>
 float get_cost_pred(
     VW::LEARNER::single_learner* scorer, const CB::cb_class& known_cost, example& ec, uint32_t index, uint32_t base)
 {
+  auto saved_pred = VW::stash_guard(ec.pred);
   CB::label ld = ec.l.cb;
 
   label_data simple_temp;
@@ -33,8 +35,8 @@ float get_cost_pred(
   const bool baseline_enabled_old = BASELINE::baseline_enabled(&ec);
   BASELINE::set_baseline_enabled(&ec);
   ec.l.simple = simple_temp;
-  polyprediction p = ec.pred;
   bool learn = is_learn && index == known_cost.action;
+
   if (learn)
   {
     float old_weight = ec.weight;
@@ -47,7 +49,6 @@ float get_cost_pred(
 
   if (!baseline_enabled_old) BASELINE::reset_baseline_disabled(&ec);
   float pred = ec.pred.scalar;
-  ec.pred = p;
 
   ec.l.cb = ld;
 

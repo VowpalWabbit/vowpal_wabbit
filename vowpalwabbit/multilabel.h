@@ -11,7 +11,11 @@ namespace MULTILABEL
 {
 struct labels
 {
-  v_array<uint32_t> label_v;
+  // XXX this is temporary to deal with move semantics and v_array
+  explicit labels(v_array<uint32_t> labels) : label_v(labels) {}
+  labels() : label_v(v_init<uint32_t>()) {}
+
+  v_array<uint32_t> label_v = v_init<uint32_t>();
 };
 
 void output_example(vw& all, example& ec);

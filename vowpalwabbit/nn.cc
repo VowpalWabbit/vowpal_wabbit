@@ -391,7 +391,8 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
     else
       predict_or_learn_multi<false, false>(n, base, ec);
     if (finalize_predictions)
-      pred[c] = ec.pred;
+      pred[c] = std::move(ec.pred);  // TODO: this breaks for complex labels because = doesn't do deep copy! (XXX we
+                                     // "fix" this by moving)
     else
       pred[c].scalar = ec.partial_prediction;
     ec.ft_offset += (uint64_t)step;
