@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
   // global model params
   std::vector<unsigned char> first_pair;
-  for (auto const& i : model->interactions)
+  for (auto const& i : model->interactions.interactions)
   {
     if(i.size() == 2)
     {
