@@ -105,7 +105,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
   //    const uint64_t stride_shift = all.stride_shift; // it seems we don't need stride shift in FTRL-like hash
 
   // statedata for generic non-recursive iteration
-  v_array<feature_gen_data> state_data = v_init<feature_gen_data>();
+  v_array<feature_gen_data> state_data;
 
   feature_gen_data empty_ns_data;  // micro-optimization. don't want to call its constructor each time in loop.
   empty_ns_data.loop_idx = 0;
@@ -355,7 +355,5 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
       }    // while do_it
     }
   }  // foreach interaction in all.interactions
-
-  state_data.delete_v();
 }
 }  // namespace INTERACTIONS
