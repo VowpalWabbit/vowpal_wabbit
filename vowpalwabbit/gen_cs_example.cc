@@ -9,6 +9,10 @@
 #include "vw_exception.h"
 #include "gen_cs_example.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 namespace GEN_CS
 {
 using namespace VW::LEARNER;
@@ -20,7 +24,7 @@ float safe_probability(float prob)
 {
   if (prob <= 0.)
   {
-    std::cout << "Probability " << prob << " is not possible, replacing with 1e-3.  Fix your dataset. " << std::endl;
+    logger::log_warn("Probability {} is not possible, replacing with 1e-3.  Fix your dataset. ", prob);
     return 1e-3f;
   }
   else

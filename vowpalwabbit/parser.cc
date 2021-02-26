@@ -98,7 +98,6 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
   VW::version_struct v_tmp(t.data());
   if (v_tmp != VW::version)
   {
-    //      cout << "cache has possibly incompatible version, rebuilding" << endl;
     return 0;
   }
 

@@ -4,6 +4,10 @@
 #pragma once
 #include "global_data.h"
 
+// TODO: Search is using some macro-enabled logging logic for cdbg
+//       (going to clog [which in turn goes to err, with some differences])
+//       We may want to create/use some macro-based loggers (which will wrap the spdlog ones)
+//       to mimic this behavior.
 #define cdbg std::clog
 #undef cdbg
 #define cdbg \

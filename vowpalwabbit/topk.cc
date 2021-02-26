@@ -11,7 +11,11 @@
 #include "parse_args.h"
 #include "vw.h"
 
+#include "io/logger.h"
+
+
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 namespace VW
 {
@@ -88,7 +92,7 @@ void print_result(
     ss << '\n';
     ssize_t len = ss.str().size();
     auto t = file_descriptor->write(ss.str().c_str(), len);
-    if (t != len) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 

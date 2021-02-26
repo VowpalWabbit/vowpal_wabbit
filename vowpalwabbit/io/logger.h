@@ -78,32 +78,35 @@ namespace logger
 
   // FIXME: the get() call returns a shared_ptr. Keep a copy here to avoid unnecessary shared_ptr copies
   // This can go away once we move to an object-based logger
-  extern std::shared_ptr<spdlog::logger> _stderr_logger;
+  namespace detail
+  {
+    extern std::shared_ptr<spdlog::logger> _stderr_logger;
+  }
   
   // These should go away once we move to an object-based logger
   // do we need the rest of the levels?
   template<typename FormatString, typename... Args>
     void errlog_info(const FormatString &fmt, Args&&...args)
   {
-    _stderr_logger->info(fmt, std::forward<Args>(args)...);
+    detail::_stderr_logger->info(fmt, std::forward<Args>(args)...);
   }
 
   template<typename FormatString, typename... Args>
     void errlog_warn(const FormatString &fmt, Args&&...args)
   {
-    _stderr_logger->warn(fmt, std::forward<Args>(args)...);
+    detail::_stderr_logger->warn(fmt, std::forward<Args>(args)...);
   }
   
   template<typename FormatString, typename... Args>
     void errlog_error(const FormatString &fmt, Args&&...args)
   {
-    _stderr_logger->error(fmt, std::forward<Args>(args)...);
+    detail::_stderr_logger->error(fmt, std::forward<Args>(args)...);
   }
 
   template<typename FormatString, typename... Args>
     void errlog_critical(const FormatString &fmt, Args&&...args)
   {
-    _stderr_logger->critical(fmt, std::forward<Args>(args)...);
+    detail::_stderr_logger->critical(fmt, std::forward<Args>(args)...);
   }
 
 

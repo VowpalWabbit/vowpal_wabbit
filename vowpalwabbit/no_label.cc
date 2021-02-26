@@ -17,6 +17,7 @@ namespace no_label
 {
 void parse_no_label(const std::vector<VW::string_view>& words)
 {
+  // TODO: vector<string_view> does not work with boost::string_views
   switch (words.size())
   {
     case 0:

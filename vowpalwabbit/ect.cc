@@ -93,7 +93,8 @@ bool not_empty(v_array<v_array<uint32_t>> const& tournaments)
 
 void print_level(v_array<v_array<uint32_t>> const& level)
 {
-  // TODO: spdlog can't output partial lines. A custom formatter could probably handle this one
+  // TODO: spdlog can't output partial lines. We might be able to come up with a clever pattern to deal with this
+  //       log_info("{0:>{1}}", "|", 5/*t.size()*/) for example will print '     |'
   for (auto const& t : level)
   {
     for (auto i : t) std::cout << " " << i;

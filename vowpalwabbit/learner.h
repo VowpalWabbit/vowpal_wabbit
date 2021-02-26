@@ -116,6 +116,7 @@ inline void noop_sl(void*, io_buf&, bool, bool) {}
 inline void noop(void*) {}
 inline float noop_sensitivity(void*, base_learner&, example&)
 {
+  // TODO: where should this print to? Just delete this?
   std::cout << std::endl;
   return 0.;
 }

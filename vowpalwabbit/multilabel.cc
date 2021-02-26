@@ -7,6 +7,14 @@
 #include "vw.h"
 #include "example.h"
 
+#include "io/logger.h"
+// needed for printing ranges of objects (eg: all elements of a vector)
+// TODO: we need to break this dependency by adding functionality to the logger
+//       For now, I don't want to risk polluting it with tons of features.
+#include <spdlog/fmt/bundled/ranges.h>
+
+namespace logger = VW::io::logger;
+
 namespace MULTILABEL
 {
 char* bufread_label(labels& ld, char* c, io_buf& cache)
@@ -17,7 +25,7 @@ char* bufread_label(labels& ld, char* c, io_buf& cache)
   size_t total = sizeof(uint32_t) * num;
   if (cache.buf_read(c, (int)total) < total)
   {
-    std::cout << "error in demarshal of cost data" << std::endl;
+    logger::log_error("error in demarshal of cost data");
     return c;
   }
   for (size_t i = 0; i < num; i++)
@@ -89,9 +97,12 @@ void parse_label(
       }
       break;
     default:
+      // TODO: spdlog will print string_views, but can't join vector<boost::string_view>
+      // One possible fix is to switch to using fmt::string_view instead of boost
       std::cerr << "example with an odd label, what is ";
       for (const auto& word : words) std::cerr << word << " ";
       std::cerr << std::endl;
+      //logger::errlog_error("example with an odd label, what is {}", fmt::join(words, " "));
   }
 }
 

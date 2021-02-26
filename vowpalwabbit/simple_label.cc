@@ -16,8 +16,6 @@
 char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 {
   memcpy(&ld.label, c, sizeof(ld.label));
-  //  std::cout << ld.label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label <<
-  //  std::endl;
   c += sizeof(ld.label);
   memcpy(&ld.weight, c, sizeof(ld.weight));
   c += sizeof(ld.weight);
@@ -87,6 +85,7 @@ void parse_simple_label(
       ld.initial = float_of_string(words[2]);
       break;
     default:
+      // TODO: libfmt can't handle a vector of boost::string_view
       std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
       for (const auto& word : words) std::cout << word;
       std::cout << std::endl;

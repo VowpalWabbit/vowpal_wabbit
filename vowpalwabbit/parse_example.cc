@@ -11,6 +11,10 @@
 #include "constant.h"
 #include "vw_string_view.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
   line = nullptr;
@@ -78,10 +82,12 @@ public:
     std::stringstream ss;
     ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples.load() << ": \"" << tmp_view
        << "\"" << std::endl;
-    if (_p->strict_parse) { THROW_EX(VW::strict_parse_exception, ss.str()); }
+    // avoid constructing the string multiple times
+    auto msg = ss.str();
+    if (_p->strict_parse) { THROW_EX(VW::strict_parse_exception, msg); }
     else
     {
-      std::cerr << ss.str();
+      logger::errlog_warn(msg);
     }
   }
 

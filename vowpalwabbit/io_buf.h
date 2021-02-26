@@ -15,6 +15,10 @@
 #include "vw_exception.h"
 #include "io/io_adapter.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 /* The i/o buffer can be conceptualized as an array below:
 **  _______________________________________________________________________________________
 ** |__________|__________|__________|__________|__________|__________|__________|__________|   **
@@ -159,7 +163,9 @@ public:
     if (!output_files.empty())
     {
       if (write_file(output_files[0].get(), space.begin(), unflushed_bytes_count()) != (int)(unflushed_bytes_count()))
-      { std::cerr << "error, failed to write example\n"; }
+      {
+	logger::errlog_error("error, failed to write example");
+      }
       head = space.begin();
       output_files[0]->flush();
     }

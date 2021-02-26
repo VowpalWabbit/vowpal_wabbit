@@ -13,8 +13,10 @@ namespace logger
 {
 // FIXME: the get() call returns a shared_ptr. Keep a copy here to avoid unnecessary shared_ptr copies
 // This can go away once we move to an object-based logger
-std::shared_ptr<spdlog::logger> _stderr_logger = spdlog::stderr_logger_st("stderr");
-const constexpr char* default_pattern = "[%l] %v";
+namespace detail{
+  std::shared_ptr<spdlog::logger> _stderr_logger = spdlog::stderr_logger_st("stderr");
+  const constexpr char* default_pattern = "[%l] %v";
+}
   
 void log_set_level(log_level lvl)
 {
@@ -53,12 +55,12 @@ pattern_guard::pattern_guard(const std::string& pattern)
 
 pattern_guard::~pattern_guard()
 {
-  spdlog::set_pattern(default_pattern);
+  spdlog::set_pattern(detail::default_pattern);
 }
   
 void initialize_logger()
 {
-  spdlog::set_pattern(default_pattern);
+  spdlog::set_pattern(detail::default_pattern);
 }
   
 }

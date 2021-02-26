@@ -171,15 +171,12 @@ float sensitivity(baseline& data, base_learner& base, example& ec)
   VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
   data.ec->l.simple.label = ec.l.simple.label;
   data.ec->pred.scalar = ec.pred.scalar;
-  // std::cout << "before base" << std::endl;
   const float baseline_sens = base.sensitivity(*data.ec);
-  // std::cout << "base sens: " << baseline_sens << std::endl;
 
   // sensitivity of residual
   as_singleline(&base)->predict(*data.ec);
   ec.l.simple.initial = data.ec->pred.scalar;
   const float sens = base.sensitivity(ec);
-  // std::cout << " residual sens: " << sens << std::endl;
   return baseline_sens + sens;
 }
 

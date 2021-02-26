@@ -13,8 +13,11 @@
 #include "reductions.h"
 #include "vw.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 namespace plt_ns
 {
@@ -114,8 +117,8 @@ void learn(plt& p, single_learner& base, example& ec)
       }
     }
     if (ec.l.multilabels.label_v.last() >= p.k)
-      std::cout << "label " << ec.l.multilabels.label_v.last() << " is not in {0," << p.k - 1
-                << "} This won't work right." << std::endl;
+      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.",
+			ec.l.multilabels.label_v.last(), p.k - 1);
 
     for (auto& n : p.positive_nodes)
     {
@@ -167,7 +170,7 @@ void predict(plt& p, single_learner& base, example& ec)
     if (label < p.k)
       p.true_labels.insert(label);
     else
-      std::cout << "label " << label << " is not in {0," << p.k - 1 << "} Model can't predict it." << std::endl;
+      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
   }
 
   p.node_queue.clear();  // clear node queue
@@ -286,16 +289,18 @@ void finish(plt& p)
       for (size_t i = 0; i < p.top_k; ++i)
       {
         correct += p.tp_at[i];
-        std::cerr << "p@" << i + 1 << " = " << correct / (p.ec_count * (i + 1)) << std::endl;
-        std::cerr << "r@" << i + 1 << " = " << correct / p.true_count << std::endl;
+	// TODO: is this the correct logger?
+        *(p.all->trace_message) << "p@" << i + 1 << " = " << correct / (p.ec_count * (i + 1)) << std::endl;
+        *(p.all->trace_message) << "r@" << i + 1 << " = " << correct / p.true_count << std::endl;
       }
     }
 
     else if (p.threshold > 0)
     {
-      std::cerr << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
-      std::cerr << "precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
-      std::cerr << "recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
+      // TODO: is this the correct logger?
+      *(p.all->trace_message) << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
+      *(p.all->trace_message) << "precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
+      *(p.all->trace_message) << "recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
     }
   }
 }

@@ -4,7 +4,10 @@
 #include "search_entityrelationtask.h"
 #include "vw.h"
 
+#include "io/logger.h"
+
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 #define R_NONE 10      // label for NONE relation
 #define LABEL_SKIP 11  // label for SKIP
@@ -398,7 +401,7 @@ void run(Search::search& sch, multi_ex& ec)
       entity_first_decoding(sch, ec, predictions, true);  // LDF = true
       break;
     default:
-      std::cerr << "search order " << my_task_data->search_order << "is undefined." << std::endl;
+      logger::errlog_error("search order {} is undefined", my_task_data->search_order);
   }
 
   for (size_t i = 0; i < ec.size(); i++)

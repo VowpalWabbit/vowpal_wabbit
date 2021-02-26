@@ -10,7 +10,10 @@
 #include "vw_exception.h"
 #include "vw.h"
 
+#include "io/logger.h"
+
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 struct oaa
 {
@@ -32,7 +35,8 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t ld = ec.l.multi;
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
-    std::cout << "label " << ld.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
+      logger::log_error("label {0} is not in {{1,{1}}} This won't work right.",
+			ld.label, o.k);
 
   ec.l.simple = {1., 0.f, 0.f};  // truth
   base.learn(ec, ld.label - 1);
@@ -70,7 +74,8 @@ void predict_or_learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc_label_data = ec.l.multi;
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
-    std::cout << "label " << mc_label_data.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
+      logger::log_error("label {0} is not in {{1,{1}}} This won't work right.",
+			mc_label_data.label, o.k);
 
   std::stringstream outputStringStream;
   uint32_t prediction = 1;

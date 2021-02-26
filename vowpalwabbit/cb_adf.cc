@@ -323,11 +323,6 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
       default:
         THROW("Unknown cb_type specified for contextual bandit learning: " << _gen_cs.cb_type);
     }
-
-    /*      for (size_t i = 0; i < temp_scores.size(); i++)
-    if (temp_scores[i] != data.ec_seq[0]->pred.a_s[i].score)
-     std::cout << "problem! " << temp_scores[i] << " != " << data.ec_seq[0]->pred.a_s[i].score << " for " <<
-    data.ec_seq[0]->pred.a_s[i].action << std::endl; temp_scores.delete_v();*/
   }
   else
   {

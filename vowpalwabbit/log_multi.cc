@@ -12,6 +12,9 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+// TODO: This file makes extensive use of cout and partial line logging.
+//       Will require some investigation on how to proceed
+
 class node_pred
 {
 public:
@@ -150,6 +153,8 @@ inline void update_min_count(log_multi& b, uint32_t node)
 
 void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
 {
+  // TODO: its likely possible to replicate this output with the logger, but will
+  //       require some research
   for (uint32_t i = 0; i < depth; i++) std::cout << "\t";
   std::cout << node.min_count << " " << node.left << " " << node.right;
   std::cout << " label = " << node.max_count_label << " labels = ";

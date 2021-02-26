@@ -267,6 +267,7 @@ void print_lda_features(vw& all, example& ec)
   uint32_t stride_shift = weights.stride_shift();
   size_t count = 0;
   for (features& fs : ec) count += fs.size();
+  // TODO: is this supposed to go to trace_message logger? This is cout, not cerr though
   for (features& fs : ec)
   {
     for (features::iterator_all& f : fs.values_indices_audit())
