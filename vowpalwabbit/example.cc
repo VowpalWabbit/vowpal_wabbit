@@ -22,13 +22,13 @@ polyprediction::polyprediction()
 
 polyprediction::polyprediction(polyprediction&& other) noexcept
     : scalar(other.scalar)
-    , scalars(v_extract(other.scalars))
-    , a_s(v_extract(other.a_s))
-    , decision_scores(v_extract(other.decision_scores))
+    , scalars(std::move(other.scalars))
+    , a_s(std::move(other.a_s))
+    , decision_scores(std::move(other.decision_scores))
     , multiclass(other.multiclass)
-    , multilabels(v_extract(other.multilabels.label_v))
+    , multilabels(std::move(other.multilabels))
     , prob(other.prob)
-    , pdf(v_extract(other.pdf))
+    , pdf(std::move(other.pdf))
     , pdf_value(other.pdf_value)
 {
 }
@@ -36,13 +36,13 @@ polyprediction::polyprediction(polyprediction&& other) noexcept
 polyprediction& polyprediction::operator=(polyprediction&& other) noexcept
 {
   scalar = other.scalar;
-  v_move(scalars, other.scalars);
-  v_move(a_s, other.a_s);
-  v_move(decision_scores, other.decision_scores);
+  scalars = std::move(other.scalars);
+  a_s = std::move(other.a_s);
+  decision_scores = std::move(other.decision_scores);
   multiclass = other.multiclass;
   multilabels = std::move(other.multilabels);
   prob = other.prob;
-  v_move(pdf, other.pdf);
+  pdf = std::move(other.pdf);
   pdf_value = other.pdf_value;
 
   return *this;
