@@ -13,8 +13,7 @@
 #include <cstring>
 #include <cassert>
 #include <cstdint>
-#  include "future_compat.h"
-
+#include "future_compat.h"
 
 #ifdef _WIN32
 #  define __INLINE
