@@ -228,7 +228,7 @@ void unsubtract_example(example* ec)
     return;
   }
 
-  if (ec->indices.last() != wap_ldf_namespace)
+  if (ec->indices.back() != wap_ldf_namespace)
   {
     std::cerr
         << "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "

@@ -115,7 +115,8 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
           return ACTION_SCORE::score_comp(&a, &b) > 0;
         });
     // NB: what STL calls pop_back(), v_array calls pop().  facepalm.
-    auto minpred = preds.pop();
+    auto minpred = preds.back();
+    preds.pop_back();
 
     auto secondminpred = preds[0];
     for (; secondminpred.score >= minpred.score && i < _synthcoversize; i++)
