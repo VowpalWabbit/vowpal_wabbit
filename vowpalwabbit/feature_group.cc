@@ -17,58 +17,6 @@ struct feature_slice  // a helper struct for functions using the set {v,i,space_
   audit_strings space_name;
 };
 
-features::features()
-{
-  values = v_init<feature_value>();
-  indicies = v_init<feature_index>();
-  sum_feat_sq = 0.f;
-}
-
-features::~features()
-{
-  values.delete_v();
-  indicies.delete_v();
-}
-
-// custom move operators required since we need to leave the old value in
-// a null state to prevent freeing of shallow copied v_arrays
-features::features(features&& other) noexcept
-    : values(std::move(other.values))
-    , indicies(std::move(other.indicies))
-    , space_names(std::move(other.space_names))
-    , sum_feat_sq(other.sum_feat_sq)
-{
-  // We need to null out all the v_arrays to prevent double freeing during moves
-  auto& v = other.values;
-  v._begin = nullptr;
-  v._end = nullptr;
-  v.end_array = nullptr;
-  auto& i = other.indicies;
-  i._begin = nullptr;
-  i._end = nullptr;
-  i.end_array = nullptr;
-  other.sum_feat_sq = 0;
-}
-
-features& features::operator=(features&& other) noexcept
-{
-  values = std::move(other.values);
-  indicies = std::move(other.indicies);
-  space_names = std::move(other.space_names);
-  sum_feat_sq = other.sum_feat_sq;
-  // We need to null out all the v_arrays to prevent double freeing during moves
-  auto& v = other.values;
-  v._begin = nullptr;
-  v._end = nullptr;
-  v.end_array = nullptr;
-  auto& i = other.indicies;
-  i._begin = nullptr;
-  i._end = nullptr;
-  i.end_array = nullptr;
-  other.sum_feat_sq = 0;
-  return *this;
-}
-
 void features::free_space_names(size_t i) { space_names.erase(space_names.begin() + i, space_names.end()); }
 
 void features::clear()
