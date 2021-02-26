@@ -5,6 +5,7 @@
 #pragma once
 
 #include "baseline.h"
+#include "guard.h"
 
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
 VW::LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
@@ -32,6 +33,7 @@ float get_cost_pred(
   BASELINE::set_baseline_enabled(&ec);
   ec.l.simple = simple_temp;
   bool learn = is_learn && index == known_cost.action;
+
   if (learn)
   {
     float old_weight = ec.weight;
