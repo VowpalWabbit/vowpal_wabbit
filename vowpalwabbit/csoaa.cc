@@ -544,7 +544,7 @@ void global_print_newline(vw& all)
 void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf& data)
 {
   label& ld = ec.l.cs;
-  v_array<COST_SENSITIVE::wclass> costs = ld.costs;
+  const auto& costs = ld.costs;
 
   if (example_is_newline(ec)) return;
   if (ec_is_label_definition(ec)) return;

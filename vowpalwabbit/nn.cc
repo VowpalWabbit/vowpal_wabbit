@@ -293,14 +293,13 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     else
     {
       n.output_layer.ft_offset = ec.ft_offset;
-      n.output_layer.l = ec.l;
+      n.output_layer.l.simple = ec.l.simple;
       n.output_layer.weight = ec.weight;
       n.output_layer.partial_prediction = 0;
       if (is_learn)
         base.learn(n.output_layer, n.k);
       else
         base.predict(n.output_layer, n.k);
-      ec.l = n.output_layer.l;
     }
 
     n.prediction = GD::finalize_prediction(n.all->sd, n.all->logger, n.output_layer.partial_prediction);
