@@ -3023,9 +3023,6 @@ predictor::predictor(search& sch, ptag my_tag)
     , ec_cnt(0)
     , ec_alloced(false)
     , weight(1.)
-    , oracle_is_pointer(false)
-    , allowed_is_pointer(false)
-    , allowed_cost_is_pointer(false)
     , learner_id(0)
     , sch(sch)
 {
@@ -3052,13 +3049,9 @@ void predictor::free_ec()
 
 predictor::~predictor()
 {
-  if (!oracle_is_pointer) oracle_actions.delete_v();
-  if (!allowed_is_pointer) allowed_actions.delete_v();
-  if (!allowed_cost_is_pointer) allowed_actions_cost.delete_v();
   free_ec();
-  condition_on_tags.delete_v();
-  condition_on_names.delete_v();
 }
+
 predictor& predictor::reset()
 {
   this->erase_oracles();
@@ -3187,30 +3180,44 @@ predictor& predictor::add_to(v_array<T>& A, bool& A_is_ptr, T* a, size_t count, 
 
 predictor& predictor::erase_oracles()
 {
-  if (oracle_is_pointer)
-    oracle_actions.end() = oracle_actions.begin();
-  else
-    oracle_actions.clear();
+  oracle_actions.clear();
   return *this;
 }
-predictor& predictor::add_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, false); }
-predictor& predictor::add_oracle(action* a, size_t action_count)
+
+predictor& predictor::add_oracle(action a)
 {
-  return add_to(oracle_actions, oracle_is_pointer, a, action_count, false);
-}
-predictor& predictor::add_oracle(v_array<action>& a)
-{
-  return add_to(oracle_actions, oracle_is_pointer, a.begin(), a.size(), false);
+  oracle_actions.push_back(a);
+  return *this;
 }
 
-predictor& predictor::set_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, true); }
+predictor& predictor::add_oracle(action* a, size_t action_count)
+{
+  for (size_t i = 0; i < action_count; i++) { oracle_actions.push_back(*(a + i)); }
+  return *this;
+}
+
+predictor& predictor::add_oracle(v_array<action>& a)
+{
+  for (const auto& item : a) { oracle_actions.push_back(item); }
+  return *this;
+}
+
+predictor& predictor::set_oracle(action a)
+{
+  oracle_actions.clear();
+  return add_oracle(a);
+}
+
 predictor& predictor::set_oracle(action* a, size_t action_count)
 {
-  return add_to(oracle_actions, oracle_is_pointer, a, action_count, true);
+  oracle_actions.clear();
+  return add_oracle(a, action_count);
 }
+
 predictor& predictor::set_oracle(v_array<action>& a)
 {
-  return add_to(oracle_actions, oracle_is_pointer, a.begin(), a.size(), true);
+  oracle_actions.clear();
+  return add_oracle(a);
 }
 
 predictor& predictor::set_weight(float w)
@@ -3221,77 +3228,97 @@ predictor& predictor::set_weight(float w)
 
 predictor& predictor::erase_alloweds()
 {
-  if (allowed_is_pointer)
-    allowed_actions.end() = allowed_actions.begin();
-  else
-    allowed_actions.clear();
-  if (allowed_cost_is_pointer)
-    allowed_actions_cost.end() = allowed_actions_cost.begin();
-  else
-    allowed_actions_cost.clear();
+  allowed_actions.clear();
+  allowed_actions_cost.clear();
   return *this;
 }
-predictor& predictor::add_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, false); }
+
+predictor& predictor::add_allowed(action a)
+{
+  allowed_actions.push_back(a);
+  return *this;
+}
 predictor& predictor::add_allowed(action* a, size_t action_count)
 {
-  return add_to(allowed_actions, allowed_is_pointer, a, action_count, false);
+  for (size_t i = 0; i < action_count; i++) { allowed_actions.push_back(*(a + i)); }
+  return *this;
 }
 predictor& predictor::add_allowed(v_array<action>& a)
 {
-  return add_to(allowed_actions, allowed_is_pointer, a.begin(), a.size(), false);
+  for (const auto& item : a) { allowed_actions.push_back(item); }
+  return *this;
 }
 
-predictor& predictor::set_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, true); }
+predictor& predictor::set_allowed(action a)
+{
+  allowed_actions.clear();
+  return add_allowed(a);
+}
+
 predictor& predictor::set_allowed(action* a, size_t action_count)
 {
-  return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);
+  allowed_actions.clear();
+  return add_allowed(a, action_count);
 }
+
 predictor& predictor::set_allowed(v_array<action>& a)
 {
-  return add_to(allowed_actions, allowed_is_pointer, a.begin(), a.size(), true);
+  allowed_actions.clear();
+  return add_allowed(a);
 }
 
 predictor& predictor::add_allowed(action a, float cost)
 {
-  add_to(allowed_actions_cost, allowed_cost_is_pointer, cost, false);
-  return add_to(allowed_actions, allowed_is_pointer, a, false);
+  allowed_actions_cost.push_back(cost);
+  allowed_actions.push_back(a);
+  return *this;
 }
 
 predictor& predictor::add_allowed(action* a, float* costs, size_t action_count)
 {
-  add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, false);
-  return add_to(allowed_actions, allowed_is_pointer, a, action_count, false);
+  if (costs != nullptr)
+  {
+    for (size_t i = 0; i < action_count; i++) { allowed_actions_cost.push_back(*(costs + i)); }
+  }
+  if (a != nullptr)
+  {
+    for (size_t i = 0; i < action_count; i++) { allowed_actions.push_back(*(a + i)); }
+  }
+  return *this;
 }
 predictor& predictor::add_allowed(v_array<std::pair<action, float>>& a)
 {
-  for (size_t i = 0; i < a.size(); i++)
+  for (const auto& item : a)
   {
-    add_to(allowed_actions, allowed_is_pointer, a[i].first, false);
-    add_to(allowed_actions_cost, allowed_cost_is_pointer, a[i].second, false);
+    allowed_actions.push_back(item.first);
+    allowed_actions_cost.push_back(item.second);
   }
   return *this;
 }
 predictor& predictor::add_allowed(std::vector<std::pair<action, float>>& a)
 {
-  for (size_t i = 0; i < a.size(); i++)
+  for (const auto& item : a)
   {
-    add_to(allowed_actions, allowed_is_pointer, a[i].first, false);
-    add_to(allowed_actions_cost, allowed_cost_is_pointer, a[i].second, false);
+    allowed_actions.push_back(item.first);
+    allowed_actions_cost.push_back(item.second);
   }
   return *this;
 }
 
 predictor& predictor::set_allowed(action a, float cost)
 {
-  add_to(allowed_actions_cost, allowed_cost_is_pointer, cost, true);
-  return add_to(allowed_actions, allowed_is_pointer, a, true);
+  allowed_actions_cost.clear();
+  allowed_actions.clear();
+  return add_allowed(a, cost);
 }
 
 predictor& predictor::set_allowed(action* a, float* costs, size_t action_count)
 {
-  add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, true);
-  return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);
+  allowed_actions_cost.clear();
+  allowed_actions.clear();
+  return add_allowed(a, costs, action_count);
 }
+
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 predictor& predictor::set_allowed(v_array<std::pair<action, float>>& a)
