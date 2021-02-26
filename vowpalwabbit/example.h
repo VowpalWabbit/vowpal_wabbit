@@ -142,7 +142,7 @@ void free_flatten_example(flat_example* fec);
 inline int example_is_newline(example const& ec)
 {  // if only index is constant namespace or no index
   if (!ec.tag.empty()) return false;
-  return ((ec.indices.empty()) || ((ec.indices.size() == 1) && (ec.indices.last() == constant_namespace)));
+  return ((ec.indices.empty()) || ((ec.indices.size() == 1) && (ec.indices.back() == constant_namespace)));
 }
 
 inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
