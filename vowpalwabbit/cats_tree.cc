@@ -220,7 +220,6 @@ float cats_tree::return_cost(const tree_node& w)
 
 void cats_tree::learn(LEARNER::single_learner& base, example& ec)
 {
-  polylabel saved_label = std::move(ec.l);
   const float saved_weight = ec.weight;
   auto saved_pred = stash_guard(ec.pred);
 
@@ -303,7 +302,6 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
     _b = {nodes[_b.node_id].parent_id, b_parent_cost};
   }
 
-  ec.l = saved_label;
   ec.weight = saved_weight;
 }
 

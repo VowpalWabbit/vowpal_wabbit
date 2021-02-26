@@ -219,7 +219,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0;
 
-    ec.l.cs = data.second_cs_label;
+    ec.l.cs = std::move(data.second_cs_label);
     // 2. Update functions
     for (size_t i = 0; i < cover_size; i++)
     {
@@ -228,8 +228,8 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
       {
         float pseudo_cost =
             data.cs_label.costs[j].x - data.psi * min_prob / (std::max(probabilities[j], min_prob) / norm) + 1;
-        data.second_cs_label.costs[j].class_index = j + 1;
-        data.second_cs_label.costs[j].x = pseudo_cost;
+        ec.l.cs.costs[j].class_index = j + 1;
+        ec.l.cs.costs[j].x = pseudo_cost;
       }
       if (i != 0) data.cs->learn(ec, i + 1);
       if (probabilities[predictions[i] - 1] < min_prob)
@@ -238,9 +238,10 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
         norm += additive_probability;
       probabilities[predictions[i] - 1] += additive_probability;
     }
+    data.second_cs_label = std::move(ec.l.cs);
   }
 
-  ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+  ec.l.cs = COST_SENSITIVE::label{};
   ec.pred.a_s = probs;
 }
 
@@ -375,8 +376,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
       data->epsilon_decay = true;
     }
     data->cs = (learner<cb_explore, example>*)(as_singleline(all.cost_sensitive));
-    data->second_cs_label.costs.resize(num_actions);
-    data->second_cs_label.costs.end() = data->second_cs_label.costs.begin() + num_actions;
+    for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(COST_SENSITIVE::wclass{}); }
     data->cover_probs = v_init<float>();
     data->cover_probs.resize(num_actions);
     data->preds = v_init<uint32_t>();

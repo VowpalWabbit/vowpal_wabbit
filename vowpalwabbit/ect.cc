@@ -82,8 +82,8 @@ size_t final_depth(size_t eliminations)
 
 bool not_empty(v_array<v_array<uint32_t>> const& tournaments)
 {
-  auto const first_non_empty_tournament = std::find_if(
-      tournaments.cbegin(), tournaments.cend(), [](v_array<uint32_t>& tournament) { return !tournament.empty(); });
+  auto const first_non_empty_tournament = std::find_if(tournaments.cbegin(), tournaments.cend(),
+      [](const v_array<uint32_t>& tournament) { return !tournament.empty(); });
   return first_non_empty_tournament != tournaments.cend();
 }
 

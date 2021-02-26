@@ -32,7 +32,7 @@ struct label
 {
   example_type type;
   // Outcome may be unset.
-  conditional_contextual_bandit_outcome* outcome;
+  conditional_contextual_bandit_outcome* outcome = nullptr;
   v_array<uint32_t> explicit_included_actions;
   float weight;
 };

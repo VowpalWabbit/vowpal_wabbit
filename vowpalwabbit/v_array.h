@@ -31,6 +31,21 @@ const size_t erase_point = ~((1u << 10u) - 1u);
 template <class T>
 struct v_array
 {
+private:
+  void delete_v_array()
+  {
+    if (_begin != nullptr)
+    {
+      for (iterator item = _begin; item != _end; ++item) { item->~T(); }
+      free(_begin);
+    }
+    _begin = nullptr;
+    _end = nullptr;
+    end_array = nullptr;
+    erase_count = 0;
+  }
+
+public:
   // private:
   T* _begin;
   T* _end;
@@ -39,24 +54,70 @@ public:
   T* end_array;
   size_t erase_count;
 
-  using iterator = T*;
+  using value_type = T;
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using pointer = value_type*;
+  using const_pointer = const value_type*;
+  using iterator = value_type*;
+  using const_iterator = const value_type*;
 
   // enable C++ 11 for loops
-  inline T*& begin() { return _begin; }
-  inline T*& end() { return _end; }
+  inline iterator& begin() { return _begin; }
+  inline iterator& end() { return _end; }
 
-  inline const T* begin() const { return _begin; }
-  inline const T* end() const { return _end; }
+  inline const_iterator begin() const { return _begin; }
+  inline const_iterator end() const { return _end; }
 
-  inline T* cbegin() const { return _begin; }
-  inline T* cend() const { return _end; }
+  inline const_iterator cbegin() const { return _begin; }
+  inline const_iterator cend() const { return _end; }
 
-  // v_array cannot have a user-defined constructor, because it participates in various unions.
-  // union members cannot have user-defined constructors.
-  // v_array() : _begin(nullptr), _end(nullptr), end_array(nullptr), erase_count(0) {}
-  // ~v_array() {
-  //  delete_v();
-  // }
+  v_array() noexcept : _begin(nullptr), _end(nullptr), end_array(nullptr), erase_count(0) {}
+  ~v_array() { delete_v_array(); }
+
+  v_array(v_array<T>&& other) noexcept
+  {
+    erase_count = 0;
+    _begin = nullptr;
+    _end = nullptr;
+    end_array = nullptr;
+
+    std::swap(_begin, other._begin);
+    std::swap(_end, other._end);
+    std::swap(end_array, other.end_array);
+    std::swap(erase_count, other.erase_count);
+  }
+
+  v_array<T>& operator=(v_array<T>&& other) noexcept
+  {
+    std::swap(_begin, other._begin);
+    std::swap(_end, other._end);
+    std::swap(end_array, other.end_array);
+    std::swap(erase_count, other.erase_count);
+    return *this;
+  }
+
+  v_array(const v_array<T>& other)
+  {
+    _begin = nullptr;
+    _end = nullptr;
+    end_array = nullptr;
+    erase_count = 0;
+
+    // TODO this should use the other version when T is trivially copyable and this otherwise.
+    copy_array_no_memcpy(*this, other);
+  }
+
+  v_array<T>& operator=(const v_array<T>& other)
+  {
+    if (this == &other) return *this;
+
+    delete_v_array();
+    // TODO this should use the other version when T is trivially copyable and this otherwise.
+    copy_array_no_memcpy(*this, other);
+    return *this;
+  }
+
   T last() const { return *(_end - 1); }
   T pop() { return *(--_end); }
   bool empty() const { return _begin == _end; }
@@ -181,7 +242,7 @@ public:
 template <class T>
 inline v_array<T> v_init()
 {
-  return {nullptr, nullptr, nullptr, 0};
+  return v_array<T>();
 }
 
 template <class T>
