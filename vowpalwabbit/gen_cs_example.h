@@ -47,9 +47,8 @@ float safe_probability(float prob);
 void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p = 0.f);
 
 template <bool is_learn>
-void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
+void gen_cs_example_dm(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
 {  // this implements the direct estimation method, where costs are directly specified by the learned regressor.
-  CB::label ld = ec.l.cb;
 
   float min = FLT_MAX;
   uint32_t argmin = 1;
@@ -169,7 +168,7 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
       gen_cs_example_ips(c, ld, cs_ld);
       break;
     case CB_TYPE_DM:
-      gen_cs_example_dm<is_learn>(c, ec, cs_ld);
+      gen_cs_example_dm<is_learn>(c, ec, ld, cs_ld);
       break;
     case CB_TYPE_DR:
       gen_cs_example_dr<is_learn>(c, ec, ld, cs_ld);
