@@ -47,7 +47,7 @@ bool know_all_cost_example(CB::label& ld)
 template <bool is_learn>
 void predict_or_learn(cb& data, single_learner& base, example& ec)
 {
-  CB::label ld = ec.l.cb;
+  CB::label ld = std::move(ec.l.cb);
   cb_to_cs& c = data.cbcs;
   auto optional_cost = get_observed_cost_cb(ld);
   // cost observed, not default
@@ -66,12 +66,13 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 
   if (c.cb_type != CB_TYPE_DM)
   {
-    ec.l.cs = data.cb_cs_ld;
+    ec.l.cs = std::move(data.cb_cs_ld);
 
     // Guard example state restore against throws
-    auto restore_guard = VW::scope_exit([&ld, &ec] {
-      ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
-      ec.l.cb = ld;
+    auto restore_guard = VW::scope_exit([&ld, &ec, &data] {
+      data.cb_cs_ld = std::move(ec.l.cs);
+      data.cb_cs_ld.costs.clear();
+      ec.l.cb = std::move(ld);
     });
 
     if (is_learn)
@@ -79,8 +80,7 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
     else
       base.predict(ec);
 
-    for (size_t i = 0; i < ld.costs.size(); i++)
-      ld.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
+    for (size_t i = 0; i < ld.costs.size(); i++) ld.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction;
   }
 }
 
