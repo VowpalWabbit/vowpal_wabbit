@@ -206,7 +206,7 @@ struct features
   v_array<feature_index> indicies;             // Optional for sparse data.
   std::vector<audit_strings_ptr> space_names;  // Optional for audit mode.
 
-  float sum_feat_sq = 0.f;
+  float sum_feat_sq;
 
   /// defines a "range" usable by C++ 11 for loops
   class features_value_index_audit_range
@@ -227,13 +227,15 @@ struct features
     }
   };
 
-  features() = default;
-  ~features() = default;
+  features();
+  ~features();
   features(const features&) = delete;
   features& operator=(const features&) = delete;
 
-  features(features&& other) noexcept = default;
-  features& operator=(features&& other) noexcept = default;
+  // custom move operators required since we need to leave the old value in
+  // a null state to prevent freeing of shallow copied v_arrays
+  features(features&& other) noexcept;
+  features& operator=(features&& other) noexcept;
 
   inline size_t size() const { return values.size(); }
 
