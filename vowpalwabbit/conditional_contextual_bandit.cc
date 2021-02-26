@@ -154,7 +154,7 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   auto original_index_of_chosen_action = pred[0].action;
   data.exclude_list[original_index_of_chosen_action] = true;
 
-  decision_scores.push_back(std::move(pred));
+  decision_scores.emplace_back(std::move(pred));
   data.shared->pred.a_s = v_init<ACTION_SCORE::action_score>();
 }
 
@@ -490,8 +490,6 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       slot_id++;
       data.cb_ex.clear();
     }
-    // Save the predictions
-    examples[0]->pred.decision_scores = decision_scores;
   }
   catch (std::exception& e)
   {
@@ -546,7 +544,7 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
 
   // Is it hold out?
   size_t num_labelled = 0;
-  auto preds = ec_seq[0]->pred.decision_scores;
+  const auto& preds = ec_seq[0]->pred.decision_scores;
   for (size_t i = 0; i < slots.size(); i++)
   {
     auto* outcome = slots[i]->l.conditional_contextual_bandit.outcome;

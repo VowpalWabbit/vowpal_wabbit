@@ -131,7 +131,7 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
   cs_labels.costs.clear();
   for (size_t i = 0; i < ec_seq.size(); i++)
   {
-    CB::label ld = ec_seq[i]->l.cb;
+    CB::label& ld = ec_seq[i]->l.cb;
 
     COST_SENSITIVE::wclass wc = {0, 0, 0, 0};
 

@@ -366,7 +366,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
   for (const auto& ec : ec_seq)
   {
     // save original variables
-    label save_cs_label = ec->l.cs;
+    label save_cs_label = std::move(ec->l.cs);
     const auto& costs = save_cs_label.costs;
 
     // build example for the base learner
@@ -403,8 +403,8 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
       ec->weight = old_weight;
 
       // restore original cost-sensitive label, sum of importance weights and partial_prediction
-      ec->l.cs = save_cs_label;
       ec->partial_prediction = costs[0].partial_prediction;
+      ec->l.cs = std::move(save_cs_label);
     });
 
     base.learn(*ec);
@@ -450,7 +450,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
       data.stored_preds[0].clear();
       for (size_t k = 0; k < K; k++)
       {
-        ec_seq[k]->pred.a_s = data.stored_preds[k];
+        ec_seq[k]->pred.a_s = std::move(data.stored_preds[k]);
         ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
       }
     }
@@ -493,7 +493,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
     for (uint32_t k = 0; k < K; k++)
     {
       example* ec = ec_seq[k];
-      data.stored_preds.push_back(ec->pred.a_s);
+      data.stored_preds.emplace_back(std::move(ec->pred.a_s));
       make_single_prediction(data, base, *ec);
       action_score s;
       s.score = ec->partial_prediction;

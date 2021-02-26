@@ -25,7 +25,7 @@ void print_update(vw& all, const std::vector<example*>& slots, const VW::decisio
     std::stringstream pred_ss;
     std::string delim;
     size_t counter = 0;
-    for (auto slot : decision_scores)
+    for (const auto& slot : decision_scores)
     {
       counter++;
       pred_ss << delim << slot[0].action;
