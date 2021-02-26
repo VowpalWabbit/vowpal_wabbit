@@ -521,7 +521,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
   if (vw1.permutations != vw2.permutations) return "permutations";
 
-  if (vw1.interactions.size() != vw2.interactions.size()) return "interactions size";
+  if (vw1.interactions.interactions.size() != vw2.interactions.interactions.size()) return "interactions size";
 
   if (vw1.ignore_some != vw2.ignore_some) return "ignore_some";
 
@@ -545,8 +545,8 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
-  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
-       ++i, ++j)
+  for (auto i = std::begin(vw1.interactions.interactions), j = std::begin(vw2.interactions.interactions);
+       i != std::end(vw1.interactions.interactions); ++i, ++j)
     if (*i != *j) return "interaction mismatch";
 
   return nullptr;
@@ -737,7 +737,7 @@ void parse_feature_tweaks(
   // prepare namespace interactions
   std::vector<std::vector<namespace_index>> expanded_interactions;
 
-  if ( ( (!all.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
+  if ( ( (!all.interactions.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
        ||
        interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
@@ -748,7 +748,7 @@ void parse_feature_tweaks(
         << endl;
 
     // in case arrays were already filled in with values from old model file - reset them
-    if (!all.interactions.empty()) all.interactions.clear();
+    if (!all.interactions.interactions.empty()) all.interactions.interactions.clear();
   }
 
   if (options.was_supplied("quadratic"))
@@ -762,7 +762,28 @@ void parse_feature_tweaks(
     }
 
     std::vector<std::vector<namespace_index>> new_quadratics;
-    for (const auto& i : quadratics) { new_quadratics.emplace_back(i.begin(), i.end()); }
+    for (const auto& i : quadratics)
+    {
+      if (i[0] == ':' && i[1] == ':') { all.interactions.quadratics_wildcard_expansion = true; }
+      else
+      {
+        new_quadratics.emplace_back(i.begin(), i.end());
+      }
+    }
+
+    if (all.interactions.quadratics_wildcard_expansion)
+    {
+      if (options.was_supplied("leave_duplicate_interactions"))
+      { all.interactions.leave_duplicate_interactions = true; }
+      else
+      {
+        *(all.trace_message) << endl
+                             << "WARNING: any duplicate namespace interactions will be removed" << endl
+                             << "You can use --leave_duplicate_interactions to disable this behaviour.";
+      }
+    }
+
+    std::sort(new_quadratics.begin(), new_quadratics.end(), INTERACTIONS::sort_interactions_comparator);
 
     expanded_interactions =
         INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
@@ -781,6 +802,8 @@ void parse_feature_tweaks(
 
     std::vector<std::vector<namespace_index>> new_cubics;
     for (const auto& i : cubics) { new_cubics.emplace_back(i.begin(), i.end()); }
+
+    std::sort(new_cubics.begin(), new_cubics.end(), INTERACTIONS::sort_interactions_comparator);
 
     std::vector<std::vector<namespace_index>> exp_cubic =
         INTERACTIONS::expand_interactions(new_cubics, 3, "error, cubic features must involve three sets.");
@@ -801,6 +824,8 @@ void parse_feature_tweaks(
 
     std::vector<std::vector<namespace_index>> new_interactions;
     for (const auto& i : interactions) { new_interactions.emplace_back(i.begin(), i.end()); }
+
+    std::sort(new_interactions.begin(), new_interactions.end(), INTERACTIONS::sort_interactions_comparator);
 
     std::vector<std::vector<namespace_index>> exp_inter = INTERACTIONS::expand_interactions(new_interactions, 0, "");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
@@ -829,13 +854,13 @@ void parse_feature_tweaks(
                            << sorted_cnt << '.' << endl;
     }
 
-    if (all.interactions.size() > 0)
+    if (all.interactions.interactions.size() > 0)
     {
       // should be empty, but just in case...
-      all.interactions.clear();
+      all.interactions.interactions.clear();
     }
 
-    all.interactions = expanded_interactions;
+    all.interactions.interactions = expanded_interactions;
   }
 
   for (size_t i = 0; i < 256; i++)

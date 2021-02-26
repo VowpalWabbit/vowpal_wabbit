@@ -12,7 +12,33 @@ typedef unsigned char namespace_index;
 #include "v_array.h"
 
 #include <vector>
+#include <set>
+#include <unordered_set>
 #include <array>
+// Mutex cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
+// project.
+#ifdef _M_CEE
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <mutex>
+#  define _M_CEE 001
+#  pragma managed(pop)
+#else
+#  include <mutex>
+#endif
+
+struct namespace_interactions
+{
+  std::set<std::vector<namespace_index>> active_interactions;
+  std::set<namespace_index> all_seen_namespaces;
+  std::vector<std::vector<namespace_index>> interactions;
+  bool quadratics_wildcard_expansion = false;
+  bool leave_duplicate_interactions = false;
+  size_t all_seen_namespaces_size = 0;
+  void clear();
+  void append(const namespace_interactions& src);
+  mutable std::mutex mut;
+};
 
 struct example_predict
 {
@@ -46,9 +72,9 @@ struct example_predict
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
   uint64_t ft_offset;                                  // An offset for all feature values.
 
-  // Interactions are specified by this vector of vectors of unsigned characters, where each vector is an interaction
-  // and each char is a namespace.
-  std::vector<std::vector<namespace_index>>* interactions;
+  // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
+  // vector is an interaction and each char is a namespace.
+  namespace_interactions* interactions;
   reduction_features _reduction_features;
 
   // Used for debugging reductions.  Keeps track of current reduction level.
