@@ -288,7 +288,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       ec.total_sum_feat_sq -= tmp_sum_feat_sq;
       ec.feature_space[nn_output_namespace].sum_feat_sq = 0;
       std::swap(ec.feature_space[nn_output_namespace], save_nn_output_namespace);
-      ec.indices.pop();
+      ec.indices.pop_back();
     }
     else
     {

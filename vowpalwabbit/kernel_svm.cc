@@ -498,9 +498,9 @@ int remove(svm_params& params, size_t svi)
   }
   svi_e->~svm_example();
   free(svi_e);
-  model->support_vec.pop();
-  model->alpha.pop();
-  model->delta.pop();
+  model->support_vec.pop_back();
+  model->alpha.pop_back();
+  model->delta.pop_back();
   model->num_support--;
   // shift cache
   int alloc = 0;
@@ -511,7 +511,7 @@ int remove(svm_params& params, size_t svi)
     if (svi < rowsize)
     {
       for (size_t i = svi; i < rowsize - 1; i++) e->krow[i] = e->krow[i + 1];
-      e->krow.pop();
+      e->krow.pop_back();
       alloc -= 1;
     }
   }

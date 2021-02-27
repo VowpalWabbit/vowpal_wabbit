@@ -56,9 +56,9 @@ BOOST_AUTO_TEST_CASE(new_sample_pdf)
   float pdf_value = 0.f;
 
   exploration::sample_pdf(&seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
-  BOOST_CHECK(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.last().right && pdf_value > 0.f);
+  BOOST_CHECK(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.back().right && pdf_value > 0.f);
   exploration::sample_pdf(&seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
-  BOOST_CHECK(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.last().right && pdf_value > 0.f);
+  BOOST_CHECK(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.back().right && pdf_value > 0.f);
 
   delete_probability_density_function(&the_pdf);
 }

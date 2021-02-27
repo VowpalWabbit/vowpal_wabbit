@@ -600,7 +600,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
   features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
-  cdbg << "adding: " << fs.indicies.last() << ':' << fs.values.last() << endl;
+  cdbg << "adding: " << fs.indicies.back() << ':' << fs.values.back() << endl;
   if (priv.all->audit)
   {
     std::stringstream temp;
@@ -611,7 +611,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
 
 void del_features_in_top_namespace(search_private& /* priv */, example& ec, size_t ns)
 {
-  if ((ec.indices.size() == 0) || (ec.indices.last() != ns))
+  if ((ec.indices.size() == 0) || (ec.indices.back() != ns))
   {
     return;
     // if (ec.indices.size() == 0)
@@ -860,7 +860,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
 void del_example_conditioning(search_private& priv, example& ec)
 {
-  if ((ec.indices.size() > 0) && (ec.indices.last() == conditioning_namespace))
+  if ((ec.indices.size() > 0) && (ec.indices.back() == conditioning_namespace))
     del_features_in_top_namespace(priv, ec, conditioning_namespace);
 }
 
@@ -3394,7 +3394,7 @@ action predictor::predict()
       ? sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id, weight)
       : sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, numAlA, alAcosts, learner_id, weight);
 
-  if (condition_on_names.size() > 0) condition_on_names.pop();  // un-null-terminate
+  if (condition_on_names.size() > 0) condition_on_names.pop_back();  // un-null-terminate
   return p;
 }
 }  // namespace Search

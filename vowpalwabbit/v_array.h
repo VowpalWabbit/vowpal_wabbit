@@ -13,6 +13,7 @@
 #include <cstring>
 #include <cassert>
 #include <cstdint>
+#include "future_compat.h"
 
 #ifdef _WIN32
 #  define __INLINE
@@ -118,8 +119,27 @@ public:
     return *this;
   }
 
+  inline T& back() { return *(_end - 1); }
+  inline const T& back() const { return *(_end - 1); }
+
+  inline void pop_back()
+  {
+    // Check if the v_array is empty.
+    assert(_begin != _end);
+    (--_end)->~T();
+  }
+
+  VW_DEPRECATED("v_array::pop() is deprecated. Use pop_back()")
+  T pop()
+  {
+    T ret = back();
+    pop_back();
+    return ret;
+  }
+
+  VW_DEPRECATED("v_array::last() is deprecated. Use back()")
   T last() const { return *(_end - 1); }
-  T pop() { return *(--_end); }
+
   bool empty() const { return _begin == _end; }
   void decr() { _end--; }
   void incr()
