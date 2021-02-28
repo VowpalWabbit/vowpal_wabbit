@@ -128,8 +128,8 @@ bool features::sort(uint64_t parse_mask)
 
 void features::deep_copy_from(const features& src)
 {
-  copy_array(values, src.values);
-  copy_array(indicies, src.indicies);
+  values = src.values;
+  indicies = src.indicies;
   space_names = src.space_names;
   sum_feat_sq = src.sum_feat_sq;
 }
