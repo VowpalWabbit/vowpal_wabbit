@@ -51,11 +51,10 @@ public:
   T* _begin;
   T* _end;
 
-
+public:
   T* end_array;
   size_t erase_count;
 
-public:
   using value_type = T;
   using reference = value_type&;
   using const_reference = const value_type&;
