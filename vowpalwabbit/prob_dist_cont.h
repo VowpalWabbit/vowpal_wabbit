@@ -12,15 +12,15 @@ namespace continuous_actions
 {
 struct probability_density_function_value
 {
-  float action;     // continuous action
-  float pdf_value;  // pdf value
+  float action = 0.f;     // continuous action
+  float pdf_value = 0.f;  // pdf value
 };
 
 struct pdf_segment
 {
-  float left;       // starting point
-  float right;      // ending point
-  float pdf_value;  // height
+  float left = 0.f;       // starting point
+  float right = 0.f;      // ending point
+  float pdf_value = 0.f;  // height
 };
 
 using probability_density_function = v_array<pdf_segment>;

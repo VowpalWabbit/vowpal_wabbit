@@ -56,12 +56,12 @@ struct example_predict
     bool operator!=(const iterator& rhs);
   };
 
-  example_predict();
-  ~example_predict();
+  example_predict() = default;
+  ~example_predict()= default;
   example_predict(const example_predict&) = delete;
   example_predict& operator=(const example_predict&) = delete;
-  example_predict(example_predict&& other) noexcept;
-  example_predict& operator=(example_predict&& other) noexcept;
+  example_predict(example_predict&& other) = default;
+  example_predict& operator=(example_predict&& other) = default;
 
   /// If indices is modified this iterator is invalidated.
   iterator begin();
@@ -70,15 +70,15 @@ struct example_predict
 
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
-  uint64_t ft_offset;                                  // An offset for all feature values.
+  uint64_t ft_offset = 0;                                  // An offset for all feature values.
 
   // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
   // vector is an interaction and each char is a namespace.
-  namespace_interactions* interactions;
+  namespace_interactions* interactions = nullptr;
   reduction_features _reduction_features;
 
   // Used for debugging reductions.  Keeps track of current reduction level.
-  uint32_t _debug_current_reduction_depth;
+  uint32_t _debug_current_reduction_depth = 0;
 };
 
 // make sure we have an exception safe version of example_predict

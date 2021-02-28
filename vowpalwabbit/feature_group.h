@@ -34,8 +34,8 @@ struct feature
 
   feature(const feature&) = default;
   feature& operator=(const feature&) = default;
-  feature(feature&&) noexcept = default;
-  feature& operator=(feature&&) noexcept = default;
+  feature(feature&&) = default;
+  feature& operator=(feature&&) = default;
 };
 
 static_assert(std::is_trivial<feature>::value, "To be used in v_array feature must be trivial");
@@ -234,8 +234,8 @@ struct features
 
   // custom move operators required since we need to leave the old value in
   // a null state to prevent freeing of shallow copied v_arrays
-  features(features&& other) noexcept = default;
-  features& operator=(features&& other) noexcept = default;
+  features(features&& other) = default;
+  features& operator=(features&& other) = default;
 
   inline size_t size() const { return values.size(); }
 
