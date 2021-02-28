@@ -14,6 +14,9 @@ struct probability_density_function_value
 {
   float action = 0.f;     // continuous action
   float pdf_value = 0.f;  // pdf value
+
+  probability_density_function_value() = default;
+  probability_density_function_value(float action, float pdf_value) : action(action), pdf_value(pdf_value) {}
 };
 
 struct pdf_segment
@@ -21,6 +24,9 @@ struct pdf_segment
   float left = 0.f;       // starting point
   float right = 0.f;      // ending point
   float pdf_value = 0.f;  // height
+
+  pdf_segment() = default;
+  pdf_segment(float left, float right, float pdf_value) : left(left), right(right), pdf_value(pdf_value) {}
 };
 
 using probability_density_function = v_array<pdf_segment>;
