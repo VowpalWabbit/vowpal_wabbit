@@ -111,9 +111,11 @@ struct example : public example_predict  // core example datatype.
   bool end_pass = false;  // special example indicating end of pass.
   bool sorted = false;    // Are the features sorted or not?
 
-  VW_DEPRECATED(
-      "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. "
-      "Standalone examples are by definition always in use.")
+  // Deprecating a field can make deprecated warnings hard to track down through implicit usage in the constructor.
+  // This is deprecated, but we won't mark it so we don't have those issues.
+  // VW_DEPRECATED(
+  //     "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. "
+  //     "Standalone examples are by definition always in use.")
   bool in_use = true;
 };
 VW_WARNING_STATE_POP
