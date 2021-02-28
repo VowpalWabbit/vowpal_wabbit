@@ -57,7 +57,7 @@ struct example_predict
   };
 
   example_predict() = default;
-  ~example_predict()= default;
+  ~example_predict() = default;
   example_predict(const example_predict&) = delete;
   example_predict& operator=(const example_predict&) = delete;
   example_predict(example_predict&& other) = default;
@@ -70,7 +70,7 @@ struct example_predict
 
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
-  uint64_t ft_offset = 0;                                  // An offset for all feature values.
+  uint64_t ft_offset = 0;                              // An offset for all feature values.
 
   // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
   // vector is an interaction and each char is a namespace.
