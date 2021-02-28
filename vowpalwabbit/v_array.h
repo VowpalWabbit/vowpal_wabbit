@@ -51,10 +51,11 @@ public:
   T* _begin;
   T* _end;
 
-public:
+
   T* end_array;
   size_t erase_count;
 
+public:
   using value_type = T;
   using reference = value_type&;
   using const_reference = const value_type&;
@@ -144,14 +145,16 @@ public:
   void decr() { _end--; }
   void incr()
   {
-    if (_end == end_array) resize(2 * (end_array - _begin) + 3);
+    if (_end == end_array) resize(2 * capacity() + 3);
     _end++;
   }
   T& operator[](size_t i) const { return _begin[i]; }
   inline size_t size() const { return _end - _begin; }
+  inline size_t capacity() const { return end_array - _begin; }
+
   void resize(size_t length)
   {
-    if ((size_t)(end_array - _begin) != length)
+    if (capacity() != length)
     {
       size_t old_len = _end - _begin;
       T* temp = (T*)realloc(_begin, sizeof(T) * length);
@@ -186,7 +189,7 @@ public:
   }
   void push_back(const T& new_ele)
   {
-    if (_end == end_array) resize(2 * (end_array - _begin) + 3);
+    if (_end == end_array) resize(2 * capacity() + 3);
     new (_end++) T(new_ele);
   }
 
@@ -195,7 +198,7 @@ public:
   template <class... Args>
   void emplace_back(Args&&... args)
   {
-    if (_end == end_array) resize(2 * (end_array - _begin) + 3);
+    if (_end == end_array) resize(2 * capacity() + 3);
     new (_end++) T(std::forward<Args>(args)...);
   }
 
@@ -232,7 +235,7 @@ public:
 
     if (!contain_sorted(new_ele, index))
     {
-      if (_end == end_array) resize(2 * (end_array - _begin) + 3);
+      if (_end == end_array) resize(2 * capacity() + 3);
 
       to_move = size - index;
 
