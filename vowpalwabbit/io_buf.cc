@@ -98,7 +98,7 @@ void io_buf::buf_write(char*& pointer, size_t n)
       flush();
     else  // Array is short, so increase size.
     {
-      space.resize(2 * (space.end_array - space.begin()));
+      space.resize(2 * space.capacity());
       space.end() = space.begin();
       head = space.begin();
     }
