@@ -1044,7 +1044,7 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 template <class T>
 void ensure_size(v_array<T>& A, size_t sz)
 {
-  if ((size_t)(A.end_array - A.begin()) < sz) A.resize(sz * 2 + 1);
+  if (A.capacity() < sz) A.resize(sz * 2 + 1);
   A.end() = A.begin() + sz;
 }
 
