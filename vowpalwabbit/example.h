@@ -50,21 +50,22 @@ inline void delete_scalars(void* v)
 
 struct polyprediction
 {
-  polyprediction();
+  polyprediction() = default;
+  ~polyprediction() = default;
 
-  // disable those two since v_array is not cleanly copy-able
-  polyprediction(polyprediction&&) noexcept;
-  polyprediction& operator=(polyprediction&&) noexcept;
+  polyprediction(polyprediction&&) = default;
+  polyprediction& operator=(polyprediction&&) = default;
 
   polyprediction(const polyprediction&) = delete;
   polyprediction& operator=(const polyprediction&) = delete;
-  float scalar;
+
+  float scalar = 0.f;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
   VW::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
-  float prob;                                                // for --probabilities --csoaa_ldf=mc
+  float prob = 0.f;                                          // for --probabilities --csoaa_ldf=mc
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
 };
@@ -78,8 +79,8 @@ struct example : public example_predict  // core example datatype.
 
   example(const example&) = delete;
   example& operator=(const example&) = delete;
-  example(example&& other) noexcept;
-  example& operator=(example&& other) noexcept;
+  example(example&& other) = default;
+  example& operator=(example&& other) = default;
 
   /// Example contains unions for label and prediction. These do not get cleaned
   /// up by the constructor because the type is not known at that time. To
@@ -110,9 +111,11 @@ struct example : public example_predict  // core example datatype.
   bool end_pass = false;  // special example indicating end of pass.
   bool sorted = false;    // Are the features sorted or not?
 
-  VW_DEPRECATED(
-      "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. "
-      "Standalone examples are by definition always in use.")
+  // Deprecating a field can make deprecated warnings hard to track down through implicit usage in the constructor.
+  // This is deprecated, but we won't mark it so we don't have those issues.
+  // VW_DEPRECATED(
+  //     "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to
+  //     them. " "Standalone examples are by definition always in use.")
   bool in_use = true;
 };
 VW_WARNING_STATE_POP

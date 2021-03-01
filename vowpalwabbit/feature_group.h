@@ -34,8 +34,8 @@ struct feature
 
   feature(const feature&) = default;
   feature& operator=(const feature&) = default;
-  feature(feature&&) noexcept = default;
-  feature& operator=(feature&&) noexcept = default;
+  feature(feature&&) = default;
+  feature& operator=(feature&&) = default;
 };
 
 static_assert(std::is_trivial<feature>::value, "To be used in v_array feature must be trivial");
@@ -206,7 +206,7 @@ struct features
   v_array<feature_index> indicies;             // Optional for sparse data.
   std::vector<audit_strings_ptr> space_names;  // Optional for audit mode.
 
-  float sum_feat_sq;
+  float sum_feat_sq = 0.f;
 
   /// defines a "range" usable by C++ 11 for loops
   class features_value_index_audit_range
@@ -227,15 +227,15 @@ struct features
     }
   };
 
-  features();
-  ~features();
+  features() = default;
+  ~features() = default;
   features(const features&) = delete;
   features& operator=(const features&) = delete;
 
   // custom move operators required since we need to leave the old value in
   // a null state to prevent freeing of shallow copied v_arrays
-  features(features&& other) noexcept;
-  features& operator=(features&& other) noexcept;
+  features(features&& other) = default;
+  features& operator=(features&& other) = default;
 
   inline size_t size() const { return values.size(); }
 
