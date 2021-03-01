@@ -268,6 +268,7 @@ void train_node(
       (float)b.nodes[current].preds[class_index].Ehk / b.nodes[current].preds[class_index].nk;
 }
 
+// TODO: currently unused. Is this useful to keep around?
 void verify_min_dfs(log_multi& b, const node& node)
 {
   if (node.internal)

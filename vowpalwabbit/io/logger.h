@@ -48,7 +48,16 @@ public:
 
 namespace logger
 {
-  enum class log_level { trace, debug, info, warn, error, critical, off };
+  enum class log_level
+  {
+    trace = spdlog::level::trace,
+    debug = spdlog::level::debug,
+    info = spdlog::level::info,
+    warn = spdlog::level::warn,
+    error = spdlog::level::err,
+    critical = spdlog::level::critical,
+    off = spdlog::level::off
+  };
 
   // do we need the rest of the levels?
   template<typename FormatString, typename... Args>

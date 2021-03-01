@@ -10,6 +10,7 @@
 #include <fstream>
 #include <ctime>
 #include <numeric>
+#include <fmt/core.h>
 
 #include "reductions.h"
 
@@ -93,14 +94,14 @@ bool not_empty(v_array<v_array<uint32_t>> const& tournaments)
 
 void print_level(v_array<v_array<uint32_t>> const& level)
 {
-  // TODO: spdlog can't output partial lines. We might be able to come up with a clever pattern to deal with this
-  //       log_info("{0:>{1}}", "|", 5/*t.size()*/) for example will print '     |'
+  fmt::memory_buffer buffer;
   for (auto const& t : level)
   {
-    for (auto i : t) std::cout << " " << i;
-    std::cout << " | ";
+    for (auto i : t) fmt::format_to(buffer, " {}", i);
+    fmt::format_to(buffer, " | ");
   }
-  std::cout << std::endl;
+  logger::pattern_guard("%v");
+  logger::log_info("{}", fmt::to_string(buffer));
 }
 
 size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)

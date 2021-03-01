@@ -24,9 +24,7 @@
 
 #include "io/logger.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
-// TODO: we need to break this dependency by adding functionality to the logger
-//       For now, I don't want to risk polluting it with tons of features.
-#include <spdlog/fmt/bundled/ranges.h>
+#include <fmt/ranges.h>
 
 using namespace VW::LEARNER;
 using namespace VW::config;

@@ -9,9 +9,7 @@
 
 #include "io/logger.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
-// TODO: we need to break this dependency by adding functionality to the logger
-//       For now, I don't want to risk polluting it with tons of features.
-#include <spdlog/fmt/bundled/ranges.h>
+#include <fmt/ranges.h>
 
 namespace logger = VW::io::logger;
 
@@ -98,7 +96,7 @@ void parse_label(
       break;
     default:
       // TODO: spdlog will print string_views, but can't join vector<boost::string_view>
-      // One possible fix is to switch to using fmt::string_view instead of boost
+      //       we can either create a formatter for boost::string_view, or use a memory_buffer
       std::cerr << "example with an odd label, what is ";
       for (const auto& word : words) std::cerr << word << " ";
       std::cerr << std::endl;

@@ -7,7 +7,7 @@ add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc io/logger.h io/logger.
 target_include_directories(vw_io PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-target_link_libraries(vw_io PUBLIC spdlog::spdlog_header_only PRIVATE ZLIB::ZLIB)
+target_link_libraries(vw_io PUBLIC spdlog::spdlog_header_only fmt::fmt-header-only PRIVATE ZLIB::ZLIB)
 add_library(VowpalWabbit::io ALIAS vw_io)
 
 add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
@@ -481,7 +481,7 @@ endif()
 
 if(VW_INSTALL)
   install(
-    TARGETS vw vw-bin allreduce vw_io spdlog_header_only
+    TARGETS vw vw-bin allreduce vw_io spdlog_header_only fmt-header-only
     EXPORT VowpalWabbitConfig
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
