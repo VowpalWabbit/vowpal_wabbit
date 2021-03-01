@@ -434,7 +434,7 @@ public:
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  std::vector<std::vector<namespace_index>> interactions;
+  namespace_interactions interactions;
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
@@ -487,7 +487,7 @@ public:
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
+  std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
   std::vector<std::string> enabled_reductions;
 
   // Prediction output
@@ -542,6 +542,12 @@ public:
   // That pointer would be invalidated if it were to be moved.
   vw(const vw&&) = delete;
   vw& operator=(const vw&&) = delete;
+
+  std::string get_setupfn_name(reduction_setup_fn setup);
+  void build_setupfn_name_dict();
+
+private:
+  std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")

@@ -494,9 +494,9 @@ int remove(svm_params& params, size_t svi)
   }
   svi_e->~svm_example();
   free(svi_e);
-  model->support_vec.pop();
-  model->alpha.pop();
-  model->delta.pop();
+  model->support_vec.pop_back();
+  model->alpha.pop_back();
+  model->delta.pop_back();
   model->num_support--;
   // shift cache
   int alloc = 0;
@@ -507,7 +507,7 @@ int remove(svm_params& params, size_t svi)
     if (svi < rowsize)
     {
       for (size_t i = svi; i < rowsize - 1; i++) e->krow[i] = e->krow[i + 1];
-      e->krow.pop();
+      e->krow.pop_back();
       alloc -= 1;
     }
   }
@@ -874,7 +874,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 
   params->all->weights.stride_shift(0);
 
-  learner<svm_params, example>& l = init_learner(params, learn, predict, 1);
+  learner<svm_params, example>& l = init_learner(params, learn, predict, 1, all.get_setupfn_name(kernel_svm_setup));
   l.set_save_load(save_load);
   return make_base(l);
 }

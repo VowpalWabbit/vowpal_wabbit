@@ -329,7 +329,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
   ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 
   vw& all = sch.get_vw_pointer_unsafe();
-  for (auto& i : all.interactions)
+  for (auto& i : all.interactions.interactions)
   {
     if (i.size() != 2) continue;
     int i0 = (int)i[0];
@@ -344,7 +344,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
 
 void del_edge_features(task_data& /*D*/, uint32_t n, multi_ex& ec)
 {
-  ec[n]->indices.pop();
+  ec[n]->indices.pop_back();
   features& fs = ec[n]->feature_space[neighbor_namespace];
   ec[n]->total_sum_feat_sq -= fs.sum_feat_sq;
   ec[n]->num_features -= fs.size();

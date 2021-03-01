@@ -87,6 +87,18 @@ int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag)
 
 int print_tag(std::stringstream& ss, v_array<char> tag) { return print_tag_by_ref(ss, tag); }
 
+std::string vw::get_setupfn_name(reduction_setup_fn setup_fn)
+{
+  const auto loc = _setup_name_map.find(setup_fn);
+  if (loc != _setup_name_map.end()) return loc->second;
+  return "NA";
+}
+
+void vw::build_setupfn_name_dict()
+{
+  for (auto&& setup_tuple : reduction_stack) { _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple); }
+}
+
 void print_result(VW::io::writer* f, float res, float unused, v_array<char> tag)
 {
   print_result_by_ref(f, res, unused, tag);

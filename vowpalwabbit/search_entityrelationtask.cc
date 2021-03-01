@@ -152,7 +152,7 @@ size_t predict_entity(
                      .set_allowed(my_task_data->y_allowed_entity)
                      .set_learner_id(1)
                      .predict();
-    my_task_data->y_allowed_entity.pop();
+    my_task_data->y_allowed_entity.pop_back();
   }
   else
   {
@@ -234,7 +234,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
                      .add_condition(id1, 'a')
                      .add_condition(id2, 'b')
                      .predict();
-    constrained_relation_labels.pop();
+    constrained_relation_labels.pop_back();
   }
   else
   {

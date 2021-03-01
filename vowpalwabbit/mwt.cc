@@ -123,7 +123,8 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   if VW_STD17_CONSTEXPR (exclude || learn)
     while (!c.indices.empty())
     {
-      unsigned char ns = c.indices.pop();
+      unsigned char ns = c.indices.back();
+      c.indices.pop_back();
       std::swap(c.feature_space[ns], ec.feature_space[ns]);
     }
   VW_WARNING_STATE_POP
@@ -255,13 +256,15 @@ base_learner* mwt_setup(options_i& options, vw& all)
   if (c->learn)
     if (exclude_eval)
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, true, true>,
-          predict_or_learn<true, true, false>, 1, prediction_type_t::scalars);
+          predict_or_learn<true, true, false>, 1, prediction_type_t::scalars,
+          all.get_setupfn_name(mwt_setup) + "-no_eval");
     else
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, false, true>,
-          predict_or_learn<true, false, false>, 1, prediction_type_t::scalars);
+          predict_or_learn<true, false, false>, 1, prediction_type_t::scalars,
+          all.get_setupfn_name(mwt_setup) + "-eval");
   else
     l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<false, false, true>,
-        predict_or_learn<false, false, false>, 1, prediction_type_t::scalars);
+        predict_or_learn<false, false, false>, 1, prediction_type_t::scalars, all.get_setupfn_name(mwt_setup));
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);

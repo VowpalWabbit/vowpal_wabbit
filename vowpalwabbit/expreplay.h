@@ -119,7 +119,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
 
   er->base = VW::LEARNER::as_singleline(setup_base(options, all));
   VW::LEARNER::learner<expreplay<lp>, example>* l =
-      &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>);
+      &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>, replay_string);
   l->set_end_pass(end_pass<lp>);
 
   return make_base(*l);

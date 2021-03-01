@@ -293,8 +293,8 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<explore_type>(cover_size, psi, nounif, epsilon, epsilon_decay, first_only,
       as_multiline(all.cost_sensitive), all.scorer, cb_type_enum, all.model_file_ver);
 
-  VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
+  VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(data, base, explore_type::learn, explore_type::predict,
+      problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-cover");
 
   l.set_finish_example(explore_type::finish_multiline_example);
   l.set_save_load(explore_type::save_load);

@@ -101,7 +101,6 @@ int cmpfunc(const void* a, const void* b) { return *(char*)a - *(char*)b; }
 void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool oas = false)
 {
   // copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
-  VW::dealloc_example(nullptr, ec, nullptr);  // clear ec
   copy_example_data(&ec, &ec1, oas);
 
   ec.total_sum_feat_sq = 0.0;  // sort namespaces.  pass indices array into sort...template (leave this to the end)
@@ -1261,8 +1260,10 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   if (tree->oas == false)
   {
     num_learners = tree->max_nodes + 1;
-    learner<memory_tree, example>& l = init_multiclass_learner(
-        tree, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, num_learners);
+    learner<memory_tree, example>& l = init_multiclass_learner(tree, as_singleline(setup_base(options, all)), learn,
+        predict, all.example_parser, num_learners, all.get_setupfn_name(memory_tree_setup));
+    all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
+    // srand(time(0));
     l.set_save_load(save_load_memory_tree);
     l.set_end_pass(end_pass);
 
@@ -1271,8 +1272,8 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   else
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
-    learner<memory_tree, example>& l = init_learner(
-        tree, as_singleline(setup_base(options, all)), learn, predict, num_learners, prediction_type_t::multilabels);
+    learner<memory_tree, example>& l = init_learner(tree, as_singleline(setup_base(options, all)), learn, predict,
+        num_learners, prediction_type_t::multilabels, all.get_setupfn_name(memory_tree_setup));
 
     l.set_end_pass(end_pass);
     l.set_save_load(save_load_memory_tree);

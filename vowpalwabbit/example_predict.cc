@@ -4,6 +4,8 @@
 
 #include "example_predict.h"
 
+#include <sstream>
+
 example_predict::iterator::iterator(features* feature_space, namespace_index* index)
     : _feature_space(feature_space), _index(index)
 {
@@ -21,46 +23,6 @@ namespace_index example_predict::iterator::index() { return *_index; }
 
 bool example_predict::iterator::operator==(const iterator& rhs) { return _index == rhs._index; }
 bool example_predict::iterator::operator!=(const iterator& rhs) { return _index != rhs._index; }
-
-example_predict::example_predict()
-{
-  indices = v_init<namespace_index>();
-  ft_offset = 0;
-  interactions = nullptr;
-}
-
-example_predict::~example_predict() { indices.delete_v(); }
-
-example_predict::example_predict(example_predict&& other) noexcept
-    : indices(std::move(other.indices))
-    , feature_space(std::move(other.feature_space))
-    , ft_offset(other.ft_offset)
-    , interactions(other.interactions)
-{
-  // We need to null out all the v_arrays to prevent double freeing during moves
-  auto& v = other.indices;
-  v._begin = nullptr;
-  v._end = nullptr;
-  v.end_array = nullptr;
-  other.ft_offset = 0;
-  other.interactions = nullptr;
-}
-
-example_predict& example_predict::operator=(example_predict&& other) noexcept
-{
-  indices = std::move(other.indices);
-  feature_space = std::move(other.feature_space);
-  interactions = other.interactions;
-  // We need to null out all the v_arrays to prevent double freeing during moves
-
-  auto& v = other.indices;
-  v._begin = nullptr;
-  v._end = nullptr;
-  v.end_array = nullptr;
-  other.ft_offset = 0;
-  other.interactions = nullptr;
-  return *this;
-}
 
 example_predict::iterator example_predict::begin() { return {feature_space.data(), indices.begin()}; }
 example_predict::iterator example_predict::end() { return {feature_space.data(), indices.end()}; }
@@ -80,4 +42,54 @@ void safe_example_predict::clear()
 {
   for (auto ns : indices) feature_space[ns].clear();
   indices.clear();
+}
+
+void namespace_interactions::clear()
+{
+  active_interactions.clear();
+  all_seen_namespaces.clear();
+  interactions.clear();
+  quadratics_wildcard_expansion = false;
+  leave_duplicate_interactions = false;
+  all_seen_namespaces_size = 0;
+}
+
+void namespace_interactions::append(const namespace_interactions& src)
+{
+  active_interactions.insert(src.active_interactions.begin(), src.active_interactions.end());
+  all_seen_namespaces.insert(src.all_seen_namespaces.begin(), src.all_seen_namespaces.end());
+  std::copy(src.interactions.begin(), src.interactions.end(), std::back_inserter(interactions));
+  quadratics_wildcard_expansion = src.quadratics_wildcard_expansion;
+  leave_duplicate_interactions = src.leave_duplicate_interactions;
+  all_seen_namespaces_size = src.all_seen_namespaces_size;
+}
+
+std::string features_to_string(const example_predict& ec)
+{
+  std::stringstream strstream;
+  strstream << "[off=" << ec.ft_offset << "]";
+  for (auto& f : ec.feature_space)
+  {
+    auto ind_iter = f.indicies.cbegin();
+    auto val_iter = f.values.cbegin();
+    for (; ind_iter != f.indicies.cend(); ++ind_iter, ++val_iter)
+    {
+      strstream << "[h=" << *ind_iter << ","
+                << "v=" << *val_iter << "]";
+    }
+  }
+  return strstream.str();
+}
+
+std::string debug_depth_indent_string(const int32_t depth)
+{
+  constexpr const char* indent_str = "- ";
+  constexpr const char* space_str = "  ";
+
+  if (depth == 0) return indent_str;
+
+  std::stringstream str_stream;
+  for (int32_t i = 0; i < depth - 1; i++) { str_stream << space_str; }
+  str_stream << indent_str;
+  return str_stream.str();
 }

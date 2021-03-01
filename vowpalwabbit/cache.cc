@@ -181,7 +181,7 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
   *(size_t*)storage_size_loc = c - storage_size_loc - sizeof(size_t);
 }
 
-void cache_tag(io_buf& cache, v_array<char> tag)
+void cache_tag(io_buf& cache, const v_array<char>& tag)
 {
   char* c;
   cache.buf_write(c, sizeof(size_t) + tag.size());

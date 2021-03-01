@@ -50,13 +50,22 @@ inline void delete_scalars(void* v)
 
 struct polyprediction
 {
-  float scalar;
+  polyprediction() = default;
+  ~polyprediction() = default;
+
+  polyprediction(polyprediction&&) = default;
+  polyprediction& operator=(polyprediction&&) = default;
+
+  polyprediction(const polyprediction&) = delete;
+  polyprediction& operator=(const polyprediction&) = delete;
+
+  float scalar = 0.f;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
   VW::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
-  float prob;                                                // for --probabilities --csoaa_ldf=mc
+  float prob = 0.f;                                          // for --probabilities --csoaa_ldf=mc
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
 };
@@ -70,8 +79,8 @@ struct example : public example_predict  // core example datatype.
 
   example(const example&) = delete;
   example& operator=(const example&) = delete;
-  example(example&& other) noexcept;
-  example& operator=(example&& other) noexcept;
+  example(example&& other) = default;
+  example& operator=(example&& other) = default;
 
   /// Example contains unions for label and prediction. These do not get cleaned
   /// up by the constructor because the type is not known at that time. To
@@ -102,9 +111,11 @@ struct example : public example_predict  // core example datatype.
   bool end_pass = false;  // special example indicating end of pass.
   bool sorted = false;    // Are the features sorted or not?
 
-  VW_DEPRECATED(
-      "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to them. "
-      "Standalone examples are by definition always in use.")
+  // Deprecating a field can make deprecated warnings hard to track down through implicit usage in the constructor.
+  // This is deprecated, but we won't mark it so we don't have those issues.
+  // VW_DEPRECATED(
+  //     "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to
+  //     them. " "Standalone examples are by definition always in use.")
   bool in_use = true;
 };
 VW_WARNING_STATE_POP
@@ -134,7 +145,7 @@ void free_flatten_example(flat_example* fec);
 inline int example_is_newline(example const& ec)
 {  // if only index is constant namespace or no index
   if (!ec.tag.empty()) return false;
-  return ((ec.indices.empty()) || ((ec.indices.size() == 1) && (ec.indices.last() == constant_namespace)));
+  return ((ec.indices.empty()) || ((ec.indices.size() == 1) && (ec.indices.back() == constant_namespace)));
 }
 
 inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
@@ -153,23 +164,15 @@ namespace VW
 {
 void return_multiple_example(vw& all, v_array<example*>& examples);
 
-struct restore_prediction
-{
-  restore_prediction(example& ec);
-  ~restore_prediction();
-
-private:
-  const polyprediction _prediction;
-  example& _ec;
-};
-
 }  // namespace VW
-std::string features_to_string(const example& ec);
+
 std::string simple_label_to_string(const example& ec);
+std::string cb_label_to_string(const example& ec);
 std::string scalar_pred_to_string(const example& ec);
 std::string a_s_pred_to_string(const example& ec);
 std::string prob_dist_pred_to_string(const example& ec);
 std::string multiclass_pred_to_string(const example& ec);
-std::string depth_indent_string(const example& ec);
-std::string depth_indent_string(int32_t stack_depth);
+std::string debug_depth_indent_string(const multi_ex& ec);
+std::string debug_depth_indent_string(const example& ec);
+std::string debug_depth_indent_string(int32_t stack_depth);
 std::string cb_label_to_string(const example& ec);

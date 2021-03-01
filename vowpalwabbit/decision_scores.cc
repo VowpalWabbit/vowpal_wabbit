@@ -17,7 +17,7 @@
 namespace logger = VW::io::logger;
 
 template <typename LabelPrintFunc>
-void print_update(vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores,
+void print_update(vw& all, const std::vector<example*>& slots, const VW::decision_scores_t& decision_scores,
     size_t num_features, LabelPrintFunc label_print_func)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
@@ -29,7 +29,7 @@ void print_update(vw& all, std::vector<example*>& slots, const VW::decision_scor
     std::stringstream pred_ss;
     std::string delim;
     size_t counter = 0;
-    for (auto slot : decision_scores)
+    for (const auto& slot : decision_scores)
     {
       counter++;
       pred_ss << delim << slot[0].action;
@@ -57,10 +57,10 @@ void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decis
   if (f != nullptr)
   {
     std::stringstream ss;
-    for (auto slot : decision_scores)
+    for (const auto& slot : decision_scores)
     {
       std::string delimiter;
-      for (auto action_score : slot)
+      for (const auto& action_score : slot)
       {
         ss << delimiter << action_score.action << ':' << action_score.score;
         delimiter = ",";

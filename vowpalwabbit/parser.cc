@@ -650,6 +650,7 @@ void setup_example(vw& all, example* ae)
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
+  ae->_debug_current_reduction_depth = 0;
 
   ae->example_counter = (size_t)(all.example_parser->end_parsed_examples.load());
   if (!all.example_parser->emptylines_separate_examples) all.example_parser->in_pass_counter++;
@@ -696,6 +697,17 @@ void setup_example(vw& all, example* ae)
   {
     ae->num_features += fs.size();
     ae->total_sum_feat_sq += fs.sum_feat_sq;
+  }
+
+  if (all.interactions.quadratics_wildcard_expansion)
+  {
+    // lock while adding interactions since reductions might also be adding their own interactions
+    std::unique_lock<std::mutex> lock(all.interactions.mut);
+    for (auto& ns : ae->indices)
+    {
+      if (ns < constant_namespace) { all.interactions.all_seen_namespaces.insert(ns); }
+    }
+    INTERACTIONS::expand_quadratics_wildcard_interactions(all.interactions);
   }
 
   // Set the interactions for this example to the global set.

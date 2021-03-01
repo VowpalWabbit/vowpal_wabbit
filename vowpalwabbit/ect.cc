@@ -87,8 +87,8 @@ size_t final_depth(size_t eliminations)
 
 bool not_empty(v_array<v_array<uint32_t>> const& tournaments)
 {
-  auto const first_non_empty_tournament = std::find_if(
-      tournaments.cbegin(), tournaments.cend(), [](v_array<uint32_t>& tournament) { return !tournament.empty(); });
+  auto const first_non_empty_tournament = std::find_if(tournaments.cbegin(), tournaments.cend(),
+      [](const v_array<uint32_t>& tournament) { return !tournament.empty(); });
   return first_non_empty_tournament != tournaments.cend();
 }
 
@@ -176,7 +176,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
         else  // loser eliminated.
           e.directions[direction_index].loser = 0;
       }
-      if (tournaments[i].size() % 2 == 1) new_tournaments[i].push_back(tournaments[i].last());
+      if (tournaments[i].size() % 2 == 1) new_tournaments[i].push_back(tournaments[i].back());
     }
     e.all_levels.push_back(new_tournaments);
     level++;
@@ -356,8 +356,9 @@ base_learner* ect_setup(options_i& options, vw& all)
   base_learner* base = setup_base(options, all);
   if (link == "logistic") data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
 
-  learner<ect, example>& l =
-      init_multiclass_learner(data, as_singleline(base), learn, predict, all.example_parser, wpp);
+  learner<ect, example>& l = init_multiclass_learner(
+      data, as_singleline(base), learn, predict, all.example_parser, wpp, all.get_setupfn_name(ect_setup));
+  all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
 
   return make_base(l);
 }

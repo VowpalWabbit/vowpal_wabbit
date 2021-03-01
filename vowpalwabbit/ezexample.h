@@ -170,7 +170,7 @@ public:
 
       current_seed = past_seeds.back();
       past_seeds.pop_back();
-      ec->indices.pop();
+      ec->indices.pop_back();
       example_changed_since_prediction = true;
     }
   }
@@ -228,7 +228,7 @@ public:
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
 
-    for (auto const& interaction : vw_ref->interactions)
+    for (auto const& interaction : vw_ref->interactions.interactions)
     {
       if (interaction.size() != 2) continue;
       quadratic_features_num +=
