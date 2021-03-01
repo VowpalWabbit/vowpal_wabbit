@@ -174,7 +174,7 @@ public:
 
   // maintain the original (deprecated) interface for compatibility. To be removed in VW 10
   //   VW_DEPRECATED(
-  //       "v_array::resize() is deprecated. Use reserve() instead. \
+  //       "v_array::resize() is deprecated. Use reserve() instead.
   // For standard resize behavior, use actual_resize(). The function names will be re-aligned in VW 10")
   void resize(size_t length) { reserve_nocheck(length); }
 
