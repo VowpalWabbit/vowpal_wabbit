@@ -17,38 +17,6 @@ struct feature_slice  // a helper struct for functions using the set {v,i,space_
   audit_strings space_name;
 };
 
-// features::features()
-// {
-//   values = v_init<feature_value>();
-//   indicies = v_init<feature_index>();
-//   sum_feat_sq = 0.f;
-// }
-
-// features::~features()
-// {
-//   values.delete_v();
-//   indicies.delete_v();
-// }
-
-// features::features(features&& other) noexcept
-//     : values(std::move(other.values))
-//     , indicies(std::move(other.indicies))
-//     , space_names(std::move(other.space_names))
-//     , sum_feat_sq(other.sum_feat_sq)
-// {
-//   other.sum_feat_sq = 0;
-// }
-
-// features& features::operator=(features&& other) noexcept
-// {
-//   values = std::move(other.values);
-//   indicies = std::move(other.indicies);
-//   space_names = std::move(other.space_names);
-//   sum_feat_sq = other.sum_feat_sq;
-//   other.sum_feat_sq = 0;
-//   return *this;
-// }
-
 void features::free_space_names(size_t i) { space_names.erase(space_names.begin() + i, space_names.end()); }
 
 void features::clear()
