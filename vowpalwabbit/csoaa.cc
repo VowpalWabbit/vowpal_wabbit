@@ -194,7 +194,8 @@ bool ec_seq_is_label_definition(multi_ex& ec_seq)
   return is_lab;
 }
 
-bool ec_seq_has_label_definition(const multi_ex &ec_seq) {
+bool ec_seq_has_label_definition(const multi_ex& ec_seq)
+{
   return std::any_of(ec_seq.cbegin(), ec_seq.cend(), [](example* ec) { return ec_is_label_definition(*ec); });
 }
 
@@ -356,9 +357,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       const polyprediction saved_pred = ec1->pred;
 
       // Guard inner example state restore against throws
-      auto restore_guard_inner = VW::scope_exit([&data, old_offset, old_weight,
-                                                 &costs2, &ec2, &ec1,
-                                                 &saved_pred] {
+      auto restore_guard_inner = VW::scope_exit([&data, old_offset, old_weight, &costs2, &ec2, &ec1, &saved_pred] {
         ec1->ft_offset = old_offset;
         ec1->pred = saved_pred;
         ec1->weight = old_weight;
@@ -422,9 +421,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
     const polyprediction saved_pred = ec->pred;
 
     // Guard example state restore against throws
-    auto restore_guard = VW::scope_exit([&save_cs_label, &data, &costs,
-                                         old_offset, old_weight, &ec,
-                                         &saved_pred] {
+    auto restore_guard = VW::scope_exit([&save_cs_label, &data, &costs, old_offset, old_weight, &ec, &saved_pred] {
       ec->ft_offset = old_offset;
       LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
       ec->weight = old_weight;
@@ -492,9 +489,9 @@ void convert_to_probabilities(multi_ex ec_seq)
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
  */
-void predict_csoaa_ldf(ldf &data, single_learner &base, multi_ex &ec_seq_all) {
-  if (ec_seq_all.empty())
-    return; // nothing to do
+void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
+{
+  if (ec_seq_all.empty()) return;  // nothing to do
 
   data.ft_offset = ec_seq_all[0]->ft_offset;
   // handle label definitions
@@ -565,7 +562,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
 
   for (uint32_t k = 0; k < K; k++)
   {
-    example *ec = ec_seq[k];
+    example* ec = ec_seq[k];
     data.saved_preds.push_back(ec->pred.a_s);
     make_single_prediction(data, base, *ec);
     action_score s;
@@ -793,8 +790,7 @@ void inline process_label(ldf& data, example* ec)
  */
 multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
 {
-  if (ec_seq_all.empty())
-    return ec_seq_all; // nothing to do
+  if (ec_seq_all.empty()) return ec_seq_all;  // nothing to do
 
   example* ec = ec_seq_all[0];
 
@@ -823,9 +819,7 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
   // Ensure there are no more labels
   // (can be done in existing loops later but as a side effect learning
   //    will happen with bad example)
-  if (ec_seq_has_label_definition(ec_seq_all)) {
-    THROW("error: label definition encountered in data block");
-  }
+  if (ec_seq_has_label_definition(ec_seq_all)) { THROW("error: label definition encountered in data block"); }
 
   // all examples were labels return size
   return ret;
@@ -915,18 +909,16 @@ base_learner* csldf_setup(options_i& options, vw& all)
 
   ld->read_example_this_loop = 0;
   single_learner* pbase = as_singleline(setup_base(*all.options, all));
-  learner<ldf, multi_ex> *pl = nullptr;
+  learner<ldf, multi_ex>* pl = nullptr;
 
   std::string name = all.get_setupfn_name(csldf_setup);
   if (ld->rank)
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1,
-                       prediction_type_t::action_scores, name + "-ldf_rank");
+    pl = &init_learner(
+        ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type_t::action_scores, name + "-ldf_rank");
   else if (ld->is_probabilities)
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1,
-                       prediction_type_t::prob, name + "-ldf_prob");
+    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::prob, name + "-ldf_prob");
   else
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1,
-                       prediction_type_t::multiclass, name + "-ldf");
+    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::multiclass, name + "-ldf");
 
   pl->set_finish_example(finish_multiline_example);
   pl->set_end_pass(end_pass);

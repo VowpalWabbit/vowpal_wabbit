@@ -371,8 +371,7 @@ void predict(gd& g, base_learner&, example& ec)
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
-  VW_DBG(ec) << "gd: predict() " << scalar_pred_to_string(ec)
-             << features_to_string(ec) << std::endl;
+  VW_DBG(ec) << "gd: predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << std::endl;
 
   if (audit) print_audit_features(all, ec);
 }
@@ -390,8 +389,7 @@ void multipredict(
     gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *g.all;
-  for (size_t c = 0; c < count; c++)
-    pred[c].scalar = ec.initial;
+  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.initial;
   if (g.all->weights.sparse)
   {
     multipredict_info<sparse_parameters> mp = {
@@ -1233,9 +1231,8 @@ base_learner* setup(options_i& options, vw& all)
   all.weights.stride_shift((uint32_t)ceil_log_2(stride - 1));
 
   gd* bare = g.get();
-  learner<gd, example> &ret = init_learner(
-      g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()),
-      all.get_setupfn_name(setup), true);
+  learner<gd, example>& ret = init_learner(
+      g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()), all.get_setupfn_name(setup), true);
   ret.set_sensitivity(bare->sensitivity);
   ret.set_multipredict(bare->multipredict);
   ret.set_update(bare->update);

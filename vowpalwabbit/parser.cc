@@ -880,7 +880,7 @@ float get_label(example* ec) { return ec->l.simple.label; }
 
 float get_importance(example* ec) { return ec->weight; }
 
-float get_initial(example *ec) { return ec->initial; }
+float get_initial(example* ec) { return ec->initial; }
 
 float get_prediction(example* ec) { return ec->pred.scalar; }
 

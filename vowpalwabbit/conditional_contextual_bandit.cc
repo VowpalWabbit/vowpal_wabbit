@@ -485,15 +485,11 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         // not needed for learn.  This will be part of a future PR
         if (!is_learn) multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
 
-        if (is_learn) {
-          multiline_learn_or_predict<true>(base, data.cb_ex,
-                                           examples[0]->ft_offset);
-        }
+        if (is_learn) { multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset); }
 
         save_action_scores(data, decision_scores);
         VW_DBG(examples) << "ccb "
-                         << "slot:" << slot_id << " "
-                         << ccb_decision_to_string(data) << std::endl;
+                         << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
         clear_pred_and_label(data);
       }
       else
@@ -683,10 +679,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_str.append("_id");
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
-  learner<ccb, multi_ex> &l =
-      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>,
-                   1, prediction_type_t::decision_probs,
-                   all.get_setupfn_name(ccb_explore_adf_setup), true);
+  learner<ccb, multi_ex>& l = init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
+      prediction_type_t::decision_probs, all.get_setupfn_name(ccb_explore_adf_setup), true);
 
   all.delete_prediction = ACTION_SCORE::delete_action_scores;
 

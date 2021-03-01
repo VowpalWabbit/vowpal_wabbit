@@ -235,8 +235,7 @@ public:
 
     if (m_weight.HasValue) ex->weight = m_weight.Value;
 
-    if (m_initial.HasValue)
-      ex->initial = m_initial.Value;
+    if (m_initial.HasValue) ex->initial = m_initial.Value;
 
     count_label(vw->sd, ld->label);
   }

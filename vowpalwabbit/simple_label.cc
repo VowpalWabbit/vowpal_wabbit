@@ -37,7 +37,7 @@ size_t read_cached_simple_label(shared_data* sd, label_data& ld, io_buf& cache)
   return total;
 }
 
-float get_weight(label_data &ld) { return ld.serialized_weight; }
+float get_weight(label_data& ld) { return ld.serialized_weight; }
 
 char* bufcache_simple_label(label_data& ld, char* c)
 {
@@ -53,18 +53,18 @@ char* bufcache_simple_label(label_data& ld, char* c)
 void cache_simple_label(label_data& ld, io_buf& cache)
 {
   char* c;
-  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.serialized_weight) +
-                         sizeof(ld.serialized_initial));
+  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.serialized_weight) + sizeof(ld.serialized_initial));
   bufcache_simple_label(ld, c);
 }
 
-void default_simple_label(label_data &ld) {
+void default_simple_label(label_data& ld)
+{
   ld.label = FLT_MAX;
   ld.serialized_weight = 1.;
   ld.serialized_initial = 0.;
 }
 
-bool test_label(label_data &ld) { return ld.label == FLT_MAX; }
+bool test_label(label_data& ld) { return ld.label == FLT_MAX; }
 
 // Example: 0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924
 // label := 0, weight := 1, initial := 0.5

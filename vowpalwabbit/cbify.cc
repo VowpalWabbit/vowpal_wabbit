@@ -508,7 +508,8 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   base.learn(ec_seq);
 
   // reset cs costs
-  for (size_t i = 0; i < ec_seq.size(); ++i) {
+  for (size_t i = 0; i < ec_seq.size(); ++i)
+  {
     auto& ec = *ec_seq[i];
     v_move(data.cb_as[i], ec.pred.a_s);  // store action_score vector for later reuse.
     if (i == cl.action - 1)
@@ -774,8 +775,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   {
     multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
-      l = &init_cost_sensitive_learner(
-          data, base, learn_adf<true>, predict_adf<true>, all.example_parser, 1,
+      l = &init_cost_sensitive_learner(data, base, learn_adf<true>, predict_adf<true>, all.example_parser, 1,
           all.get_setupfn_name(cbify_setup) + "-adf-cs");
     else
       l = &init_multiclass_learner(data, base, learn_adf<false>, predict_adf<false>, all.example_parser, 1,
@@ -793,7 +793,9 @@ base_learner* cbify_setup(options_i& options, vw& all)
             predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar,
             all.get_setupfn_name(cbify_setup) + "-reg-discrete", true);
         l->set_finish_example(finish_example_cb_reg_discrete);
-      } else {
+      }
+      else
+      {
         l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
             prediction_type_t::scalar, all.get_setupfn_name(cbify_setup) + "-reg", true);
         l->set_finish_example(finish_example_cb_reg_continous);
@@ -807,11 +809,8 @@ base_learner* cbify_setup(options_i& options, vw& all)
     }
     else
     {
-      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>,
-                                   predict_or_learn<false, false>,
-                                   all.example_parser, 1,
-                                   all.get_setupfn_name(cbify_setup),
-                                   prediction_type_t::multiclass, true);
+      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>,
+          all.example_parser, 1, all.get_setupfn_name(cbify_setup), prediction_type_t::multiclass, true);
       all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
     }
   }
@@ -844,15 +843,15 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
   options.insert("cb_min_cost", std::to_string(data->loss0));
   options.insert("cb_max_cost", std::to_string(data->loss1));
 
-  if (options.was_supplied("baseline")) {
+  if (options.was_supplied("baseline"))
+  {
     std::stringstream ss;
     ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
     options.insert("lr_multiplier", ss.str());
   }
 
   multi_learner* base = as_multiline(setup_base(options, all));
-  learner<cbify, multi_ex> &l = init_learner(
-      data, base, do_actual_learning_ldf, do_actual_predict_ldf, 1,
+  learner<cbify, multi_ex>& l = init_learner(data, base, do_actual_learning_ldf, do_actual_predict_ldf, 1,
       prediction_type_t::multiclass, all.get_setupfn_name(cbifyldf_setup));
 
   l.set_finish_example(finish_multiline_example);
