@@ -29,6 +29,7 @@
     <PlatformToolset>v141</PlatformToolset>
     <VcpkgOSTarget Condition="'$(VcpkgPlatformToolset)'=='v141'">windows-v141</VcpkgOSTarget>
     <BuildFlatbuffers Condition="'$(BUILD_FLATBUFFERS)'=='BUILD_FLATBUFFERS'">ON</BuildFlatbuffers>
+    <BuildFlatbuffers Condition="'$(BUILD_FLATBUFFERS)'!='BUILD_FLATBUFFERS'">OFF</BuildFlatbuffers>
     <!-- This is the ruleset file for code analysis, you can change it in VS -->
     <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
@@ -107,15 +108,10 @@
     <Link>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PreBuildEvent Condition="'$(BuildFlatbuffers)'=='ON'" >
-      <Message>Generate FlatBuffer</Message>
-      <Command>
-        $(flatcPath) -o $(ProjectDir)\parser\flatbuffer\generated\ --cpp $(ProjectDir)\parser\flatbuffer\schema\example.fbs
-      </Command>
-    </PreBuildEvent>
     <PreBuildEvent>
-      <Message>Generate config.h</Message>
+      <Message>Generate config.h and flatbuffer if flatbuffers enabled</Message>
       <Command>
+        if $(BuildFlatbuffers) == ON ($(flatcPath) -o $(ProjectDir)\parser\flatbuffer\generated\ --cpp $(ProjectDir)\parser\flatbuffer\schema\example.fbs)
         win32\make_config_h.exe
       </Command>
     </PreBuildEvent>
