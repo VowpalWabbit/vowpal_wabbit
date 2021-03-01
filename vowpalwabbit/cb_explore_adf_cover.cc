@@ -165,7 +165,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     }
     else
       GEN_CS::cs_ldf_learn_or_predict<false>(
-          *(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2,
+          *(_cs_ldf_learner), examples, _cb_labels, _cs_labels,
           _prepped_cs_labels, false, examples[0]->ft_offset, i + 1);
 
     for (uint32_t j = 0; j < num_actions; j++) _scores[j] += preds[j].score;
