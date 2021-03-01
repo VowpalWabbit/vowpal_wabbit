@@ -13,6 +13,12 @@
 #include "vw_string_view.h"
 #include "example.h"
 
+#include "io/logger.h"
+// needed for printing ranges of objects (eg: all elements of a vector)
+#include <fmt/ranges.h>
+
+namespace logger = VW::io::logger;
+
 namespace no_label
 {
 void parse_no_label(const std::vector<VW::string_view>& words)
@@ -23,9 +29,8 @@ void parse_no_label(const std::vector<VW::string_view>& words)
     case 0:
       break;
     default:
-      std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-      for (const auto& word : words) std::cout << word;
-      std::cout << std::endl;
+      logger::log_error("Error: {0} is too many tokens for a simple label: {1}",
+			words.size(), fmt::join(words, " "));
   }
 }
 

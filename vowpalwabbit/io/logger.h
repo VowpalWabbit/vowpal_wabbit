@@ -9,7 +9,7 @@
 #include <utility>
 #include <spdlog/spdlog.h>
 // needed for custom types (like string_view)
-#include <spdlog/fmt/ostr.h>
+#include <fmt/ostream.h>
 
 namespace VW
 {

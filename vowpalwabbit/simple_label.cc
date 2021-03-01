@@ -13,6 +13,12 @@
 #include "vw_string_view.h"
 #include "example.h"
 
+#include "io/logger.h"
+// needed for printing ranges of objects (eg: all elements of a vector)
+#include <fmt/ranges.h>
+
+namespace logger = VW::io::logger;
+
 char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 {
   memcpy(&ld.label, c, sizeof(ld.label));
@@ -85,10 +91,8 @@ void parse_simple_label(
       ld.initial = float_of_string(words[2]);
       break;
     default:
-      // TODO: libfmt can't handle a vector of boost::string_view
-      std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-      for (const auto& word : words) std::cout << word;
-      std::cout << std::endl;
+      logger::log_error("Error: {0} is too many tokens for a simple label: {1}",
+			words.size(), fmt::join(words, " "));
   }
   count_label(sd, ld.label);
 }

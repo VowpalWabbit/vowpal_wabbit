@@ -95,12 +95,7 @@ void parse_label(
       }
       break;
     default:
-      // TODO: spdlog will print string_views, but can't join vector<boost::string_view>
-      //       we can either create a formatter for boost::string_view, or use a memory_buffer
-      std::cerr << "example with an odd label, what is ";
-      for (const auto& word : words) std::cerr << word << " ";
-      std::cerr << std::endl;
-      //logger::errlog_error("example with an odd label, what is {}", fmt::join(words, " "));
+      logger::errlog_error("example with an odd label, what is {}", fmt::join(words, " "));
   }
 }
 
