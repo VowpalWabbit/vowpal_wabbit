@@ -29,9 +29,58 @@
 
 const size_t erase_point = ~((1u << 10u) - 1u);
 
+template <typename T>
+class v_array;
+
+template <class T, typename std::enable_if<std::is_trivial<T>{}, bool>::type = true>
+void resize_varray(v_array<T>& arr, size_t length)
+{
+     if (arr.capacity() != length)
+    {
+      size_t old_len = arr._end - arr._begin;
+      T* temp = (T*)realloc(arr._begin, sizeof(T) * length);
+      if ((temp == nullptr) && ((sizeof(T) * length) > 0))
+      { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
+      else
+        arr._begin = temp;
+      if (old_len < length && arr._begin + old_len != nullptr) memset(arr._begin + old_len, 0, (length - old_len) * sizeof(T));
+      arr._end = arr._begin + old_len;
+      arr.end_array = arr._begin + length;
+    }
+}
+
+
+template <class T, typename std::enable_if<!std::is_trivial<T>{}, bool>::type = true>
+void resize_varray(v_array<T>& arr, size_t length)
+{
+     if (arr.capacity() != length)
+    {
+      size_t old_len = arr._end - arr._begin;
+      T* temp = (T*)realloc(arr._begin, sizeof(T) * length);
+      if ((temp == nullptr) && ((sizeof(T) * length) > 0))
+      { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
+      else
+        arr._begin = temp;
+      if (old_len < length && arr._begin + old_len != nullptr)
+      {
+        for (auto* it = (arr._begin + old_len); it < (arr._begin + length); it++)
+        {
+          new (it) T();
+        }
+      }      arr._end = arr._begin + old_len;
+      arr.end_array = arr._begin + length;
+    }
+}
+
 template <class T>
 struct v_array
 {
+  template<typename U, typename std::enable_if<!std::is_trivial<U>{}, bool>::type>
+  friend void resize_varray(v_array<U>& arr, size_t length);
+
+  template<typename U, typename std::enable_if<std::is_trivial<U>{}, bool>::type>
+  friend void resize_varray(v_array<U>& arr, size_t length);
+
 private:
   void delete_v_array()
   {
@@ -153,18 +202,7 @@ public:
 
   void resize(size_t length)
   {
-    if (capacity() != length)
-    {
-      size_t old_len = _end - _begin;
-      T* temp = (T*)realloc(_begin, sizeof(T) * length);
-      if ((temp == nullptr) && ((sizeof(T) * length) > 0))
-      { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
-      else
-        _begin = temp;
-      if (old_len < length && _begin + old_len != nullptr) memset(_begin + old_len, 0, (length - old_len) * sizeof(T));
-      _end = _begin + old_len;
-      end_array = _begin + length;
-    }
+   resize_varray<T>(*this, length);
   }
 
   void clear()

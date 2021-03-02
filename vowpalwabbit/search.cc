@@ -106,6 +106,7 @@ struct action_repr
 {
   action a;
   features* repr = nullptr;
+  action_repr() = default;
   action_repr(action _a, features* _repr) : a(_a)
   {
     if (_repr != nullptr)
@@ -119,10 +120,12 @@ struct action_repr
 
 struct action_cache
 {
-  float min_cost;
-  action k;
-  bool is_opt;
-  float cost;
+  float min_cost = 0.f;
+  action k = 0;
+  bool is_opt = false;
+  float cost = 0.f;
+  
+  action_cache() = default;
   action_cache(float _min_cost, action _k, bool _is_opt, float _cost)
       : min_cost(_min_cost), k(_k), is_opt(_is_opt), cost(_cost)
   {
@@ -2491,7 +2494,7 @@ void search_finish(search& sch)
   if (priv.metatask && priv.metatask->finish) priv.metatask->finish(sch);
 }
 
-v_array<CS::label> read_allowed_transitions(action A, const char* filename)
+std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
 {
   FILE* f;
   if (VW::file_open(&f, filename, "r") != 0)
@@ -2516,12 +2519,12 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
   }
   fclose(f);
 
-  v_array<CS::label> allowed = v_init<CS::label>();
+  std::vector<CS::label> allowed;
 
   // from
   for (size_t i = 0; i < A; i++)
   {
-    v_array<CS::wclass> costs = v_init<CS::wclass>();
+    v_array<CS::wclass> costs;
 
     // to
     for (size_t j = 0; j < A; j++)
