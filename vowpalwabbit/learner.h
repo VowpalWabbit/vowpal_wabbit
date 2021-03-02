@@ -295,7 +295,8 @@ public:
       {
         learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
         if (finalize_predictions)
-          pred[c] = ec.pred;  // TODO: this breaks for complex labels because = doesn't do deep copy!
+          pred[c] = std::move(ec.pred);  // TODO: this breaks for complex labels because = doesn't do deep copy! (XXX we
+                                         // "fix" this by moving)
         else
           pred[c].scalar = ec.partial_prediction;
         // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =

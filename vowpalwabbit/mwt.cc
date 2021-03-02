@@ -118,7 +118,8 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   if VW_STD17_CONSTEXPR (exclude || learn)
     while (!c.indices.empty())
     {
-      unsigned char ns = c.indices.pop();
+      unsigned char ns = c.indices.back();
+      c.indices.pop_back();
       std::swap(c.feature_space[ns], ec.feature_space[ns]);
     }
   VW_WARNING_STATE_POP

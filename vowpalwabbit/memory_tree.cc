@@ -96,7 +96,6 @@ int cmpfunc(const void* a, const void* b) { return *(char*)a - *(char*)b; }
 void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool oas = false)
 {
   // copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
-  VW::dealloc_example(nullptr, ec, nullptr);  // clear ec
   copy_example_data(&ec, &ec1, oas);
 
   ec.total_sum_feat_sq = 0.0;  // sort namespaces.  pass indices array into sort...template (leave this to the end)

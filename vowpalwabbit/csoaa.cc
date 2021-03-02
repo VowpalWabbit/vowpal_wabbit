@@ -59,11 +59,10 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
 template <bool is_learn>
 void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 {
-  COST_SENSITIVE::label ld = ec.l.cs;
-  ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+  COST_SENSITIVE::label ld = std::move(ec.l.cs);
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cs = ld; });
+  auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cs = std::move(ld); });
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
@@ -118,7 +117,6 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
       add_passthrough_feature(ec, constant * 3, 1.);
   }
 
-  ec.l.cs = ld;
   ec.pred.multiclass = prediction;
 }
 
@@ -237,7 +235,7 @@ void unsubtract_example(example* ec)
     return;
   }
 
-  if (ec->indices.last() != wap_ldf_namespace)
+  if (ec->indices.back() != wap_ldf_namespace)
   {
     std::cerr
         << "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
@@ -255,29 +253,22 @@ void unsubtract_example(example* ec)
 
 void make_single_prediction(ldf& data, single_learner& base, example& ec)
 {
-  COST_SENSITIVE::label ld = ec.l.cs;
   uint64_t old_offset = ec.ft_offset;
-  // WARNING: Access of label information when making prediction is problematic.
-  // What should be done here about ld.costs[0].class_index?
-  LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
-  // WARNING: Access of label information when making prediction is problematic.
-  // What should be done here about ec.l.simple?
-  const label_data simple_label{FLT_MAX, VW::UNUSED_1, VW::UNUSED_0};
-  ec.l.simple = simple_label;
-  ec.ft_offset = data.ft_offset;
-  auto restore_guard = VW::scope_exit([&data, &ld, old_offset, &ec] {
+
+  LabelDict::add_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
+
+  auto restore_guard = VW::scope_exit([&data, old_offset, &ec] {
     ec.ft_offset = old_offset;
     // WARNING: Access of label information when making prediction is
     // problematic.
-    // What should be done here about ld.costs[0].partial_prediction?
-    ld.costs[0].partial_prediction = ec.partial_prediction;
+    ec.l.cs.costs[0].partial_prediction = ec.partial_prediction;
     // WARNING: Access of label information when making prediction is
     // problematic.
-    // @What should be done here about ld.costs[0].class_index?
-    LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
-    ec.l.cs = ld;
+    LabelDict::del_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
   });
 
+  ec.l.simple = label_data{FLT_MAX};
+  ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
 }
 
@@ -354,12 +345,19 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
       ec1->ft_offset = data.ft_offset;
-      const polyprediction saved_pred = ec1->pred;
+
+      // Deleted copy constructor?  This can cause issues if predictions have to be restored
+      // and predictions of base learners are not known in advance
+      // polyprediction saved_pred = ec1->pred;
 
       // Guard inner example state restore against throws
       auto restore_guard_inner = VW::scope_exit([&data, old_offset, old_weight, &costs2, &ec2, &ec1, &saved_pred] {
         ec1->ft_offset = old_offset;
-        ec1->pred = saved_pred;
+
+        // Deleted assignment operator?  This can cause issues if predictions have to be restored
+        // and predictions of base learners are not known in advance
+        //ec1->pred = saved_pred;
+
         ec1->weight = old_weight;
         unsubtract_example(ec1);
 
@@ -389,7 +387,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
   for (const auto& ec : ec_seq)
   {
     // save original variables
-    label save_cs_label = ec->l.cs;
+    label save_cs_label = std::move(ec->l.cs);
     const auto& costs = save_cs_label.costs;
 
     // build example for the base learner
@@ -418,18 +416,24 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     uint64_t old_offset = ec->ft_offset;
     ec->ft_offset = data.ft_offset;
-    const polyprediction saved_pred = ec->pred;
+
+    // Deleted copy constructor?  This can cause issues if predictions have to be restored
+    // and predictions of base learners are not known in advance
+    // polyprediction saved_pred = ec1->pred;
 
     // Guard example state restore against throws
     auto restore_guard = VW::scope_exit([&save_cs_label, &data, &costs, old_offset, old_weight, &ec, &saved_pred] {
       ec->ft_offset = old_offset;
       LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
       ec->weight = old_weight;
-      ec->pred = saved_pred;
+
+      // Deleted assignment operator?  This can cause issues if predictions have to be restored
+      // and predictions of base learners are not known in advance
+      //ec1->pred = saved_pred;
 
       // restore original cost-sensitive label, sum of importance weights and partial_prediction
-      ec->l.cs = save_cs_label;
       ec->partial_prediction = costs[0].partial_prediction;
+      ec->l.cs = std::move(save_cs_label);
     });
 
     base.learn(*ec);
@@ -552,7 +556,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
     data.saved_preds[0].clear();
     for (size_t k = 0; k < K; k++)
     {
-      ec_seq[k]->pred.a_s = data.saved_preds[k];
+      ec_seq[k]->pred.a_s = std::move(data.saved_preds[k]);
       ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
     }
 
@@ -563,7 +567,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
   for (uint32_t k = 0; k < K; k++)
   {
     example* ec = ec_seq[k];
-    data.saved_preds.push_back(ec->pred.a_s);
+    data.saved_preds.emplace_back(std::move(ec->pred.a_s));
     make_single_prediction(data, base, *ec);
     action_score s;
     s.score = ec->partial_prediction;
@@ -587,7 +591,7 @@ void global_print_newline(vw& all)
 void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf& data)
 {
   label& ld = ec.l.cs;
-  v_array<COST_SENSITIVE::wclass> costs = ld.costs;
+  const auto& costs = ld.costs;
 
   if (example_is_newline(ec)) return;
   if (ec_is_label_definition(ec)) return;
@@ -720,7 +724,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
 
     if (all.raw_prediction != nullptr)
     {
-      v_array<char> empty = {nullptr, nullptr, nullptr, 0};
+      const v_array<char> empty;
       all.print_text_by_ref(all.raw_prediction.get(), "", empty);
     }
 

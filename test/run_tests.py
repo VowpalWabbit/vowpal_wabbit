@@ -186,7 +186,7 @@ def are_outputs_different(output_content, output_file_name, ref_content, ref_fil
                     for line in output_content.strip().splitlines()]
     ref_lines = [line.strip() for line in ref_content.strip().splitlines()]
     is_different, reason = are_lines_different(
-        output_lines, ref_lines, epsilon)
+        output_lines, ref_lines, epsilon, fuzzy_compare=fuzzy_compare)
     diff = diff if is_different else []
     return is_different, diff, reason
 
@@ -249,7 +249,7 @@ def run_command_line_test(test_id,
                 stderr=subprocess.PIPE,
                 cwd=working_dir,
                 shell=is_shell,
-                timeout=10)
+                timeout=100)
         except subprocess.TimeoutExpired as e:
             stdout = try_decode(e.stdout)
             stderr = try_decode(e.stderr)
@@ -288,7 +288,7 @@ def run_command_line_test(test_id,
                 output_file_working_dir = os.path.join(
                     working_dir, output_file)
                 if os.path.isfile(output_file_working_dir):
-                    output_content = open(output_file_working_dir, 'r').read()
+                    output_content = open(output_file_working_dir, 'r', encoding='utf-8').read()
                 else:
                     checks[output_file] = {
                         "success": False,
@@ -299,7 +299,7 @@ def run_command_line_test(test_id,
 
             ref_file_ref_dir = os.path.join(ref_dir, ref_file)
             if os.path.isfile(ref_file_ref_dir):
-                ref_content = open(ref_file_ref_dir, 'r').read()
+                ref_content = open(ref_file_ref_dir, 'r', encoding='utf-8').read()
             else:
                 checks[output_file] = {
                     "success": False,

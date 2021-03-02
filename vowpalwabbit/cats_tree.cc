@@ -13,6 +13,7 @@
 #include "debug_log.h"
 #include "explore_internal.h"
 #include "hash.h"
+#include "guard.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -193,9 +194,13 @@ void cats_tree::init_node_costs(v_array<cb_class>& ac)
   _cost_star = ac[0].cost / ac[0].probability;
 
   uint32_t node_id = ac[0].action + _binary_tree.internal_node_count() - 1;
+  // stay inside the node boundaries
+  if (node_id >= _binary_tree.nodes.size()) { node_id = static_cast<uint32_t>(_binary_tree.nodes.size()) - 1; }
   _a = {node_id, _cost_star};
 
   node_id = ac[ac.size() - 1].action + _binary_tree.internal_node_count() - 1;
+  // stay inside the node boundaries
+  if (node_id >= _binary_tree.nodes.size()) { node_id = static_cast<uint32_t>(_binary_tree.nodes.size()) - 1; }
   _b = {node_id, _cost_star};
 }
 
@@ -218,9 +223,8 @@ float cats_tree::return_cost(const tree_node& w)
 
 void cats_tree::learn(LEARNER::single_learner& base, example& ec)
 {
-  polylabel saved_label = std::move(ec.l);
   const float saved_weight = ec.weight;
-  const polyprediction saved_pred = ec.pred;
+  auto saved_pred = stash_guard(ec.pred);
 
   const vector<tree_node>& nodes = _binary_tree.nodes;
   v_array<cb_class>& ac = ec.l.cb.costs;
@@ -301,9 +305,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
     _b = {nodes[_b.node_id].parent_id, b_parent_cost};
   }
 
-  ec.l = saved_label;
   ec.weight = saved_weight;
-  ec.pred = saved_pred;
 }
 
 void cats_tree::set_trace_message(std::ostream* vw_ostream, bool quiet)
@@ -341,10 +343,10 @@ base_learner* setup(options_i& options, vw& all)
   uint32_t bandwidth;    // = 2^h#
   std::string link;
   new_options.add(make_option("cats_tree", num_actions).keep().necessary().help("CATS Tree with <k> labels"))
-      .add(make_option("bandwidth", bandwidth)
+      .add(make_option("tree_bandwidth", bandwidth)
                .default_value(0)
                .keep()
-               .help("bandwidth for continuous actions in terms of #actions"))
+               .help("tree bandwidth for continuous actions in terms of #actions"))
       .add(make_option("link", link).keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
