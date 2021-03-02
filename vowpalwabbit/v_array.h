@@ -7,9 +7,11 @@
 #  define NOMINMAX
 #endif
 
+#include <ostream>
 #include <utility>
 #include <cstdlib>
 #include <cassert>
+#include <string>
 #include "future_compat.h"
 
 #ifndef VW_NOEXCEPT
@@ -307,4 +309,51 @@ bool v_array_contains(v_array<T>& A, T x)
   for (T* e = A._begin; e != A._end; ++e)
     if (*e == x) return true;
   return false;
+}
+
+template <class T>
+std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
+{
+  os << '[';
+  for (T* i = v._begin; i != v._end; ++i) os << ' ' << *i;
+  os << " ]";
+  return os;
+}
+
+template <class T, class U>
+std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
+{
+  os << '[';
+  for (std::pair<T, U>* i = v._begin; i != v._end; ++i) os << ' ' << i->first << ':' << i->second;
+  os << " ]";
+  return os;
+}
+
+template <class T>
+VW_DEPRECATED("pop is deprecated and will be removed in a future version.")
+v_array<T> pop(v_array<v_array<T> >& stack)
+{
+  if (stack._end != stack._begin)
+    return *(--stack._end);
+  else
+    return v_array<T>();
+}
+
+VW_DEPRECATED("v_string is deprecated and will be removed in a future version.")
+typedef v_array<unsigned char> v_string;
+
+VW_DEPRECATED("string2v_string is deprecated and will be removed in a future version.")
+inline v_string string2v_string(const std::string& s)
+{
+  v_string res = v_init<unsigned char>();
+  if (!s.empty()) push_many(res, (unsigned char*)s.data(), s.size());
+  return res;
+}
+
+VW_DEPRECATED("v_string2string is deprecated and will be removed in a future version.")
+inline std::string v_string2string(const v_string& v_s)
+{
+  std::string res;
+  for (unsigned char* i = v_s._begin; i != v_s._end; ++i) res.push_back(*i);
+  return res;
 }

@@ -27,21 +27,3 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec)
   return os;
 }
 }  // namespace std
-
-template <class T>
-std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
-{
-  os << '[';
-  for (T* i = v._begin; i != v._end; ++i) os << ' ' << *i;
-  os << " ]";
-  return os;
-}
-
-template <class T, class U>
-std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
-{
-  os << '[';
-  for (std::pair<T, U>* i = v._begin; i != v._end; ++i) os << ' ' << i->first << ':' << i->second;
-  os << " ]";
-  return os;
-}

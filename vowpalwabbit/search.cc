@@ -21,7 +21,6 @@
 #include "active.h"
 #include "label_dictionary.h"
 #include "vw_exception.h"
-#include "debug_print.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
