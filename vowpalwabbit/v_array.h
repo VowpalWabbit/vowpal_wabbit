@@ -329,6 +329,9 @@ std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
   return os;
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+
 template <class T>
 VW_DEPRECATED("pop is deprecated and will be removed in a future version.")
 v_array<T> pop(v_array<v_array<T> >& stack)
@@ -357,3 +360,5 @@ inline std::string v_string2string(const v_string& v_s)
   for (unsigned char* i = v_s._begin; i != v_s._end; ++i) res.push_back(*i);
   return res;
 }
+
+VW_WARNING_STATE_POP
