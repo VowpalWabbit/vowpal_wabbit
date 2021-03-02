@@ -202,8 +202,6 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
     std::cerr << "synthcoverpsi = " << psi << std::endl;
   }
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   size_t problem_multiplier = 1;
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;

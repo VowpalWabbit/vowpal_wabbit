@@ -79,7 +79,6 @@ BOOST_AUTO_TEST_CASE(offset_tree_learn_basic)
 
   destroy_free<VW::offset_tree::test_learner_t>(test_harness);
   CB::delete_label(ec.l.cb);
-  ACTION_SCORE::delete_action_scores(&ec.pred.a_s);
 }
 
 BOOST_AUTO_TEST_CASE(offset_tree_predict)
