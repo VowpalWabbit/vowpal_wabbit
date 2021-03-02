@@ -3032,12 +3032,13 @@ void predictor::free_ec()
   if (ec_alloced)
   {
     if (is_ldf)
-      for (size_t i = 0; i < ec_cnt; i++) { VW::dealloc_example(CS::cs_label.delete_label, ec[i]); }
+    {
+      VW::dealloc_examples(ec, ec_cnt);
+    }
     else
     {
-      VW::dealloc_example(nullptr, *ec);
+      VW::dealloc_examples(ec, 1);
     }
-    free(ec);
   }
 }
 
@@ -3089,7 +3090,7 @@ void predictor::set_input_length(size_t input_length)
       THROW("realloc failed in search.cc");
   }
   else
-    ec = calloc_or_throw<example>(input_length);
+    ec = VW::alloc_examples(input_length);
   ec_cnt = input_length;
   ec_alloced = true;
 }

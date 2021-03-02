@@ -96,19 +96,13 @@ struct warm_cb
 
     for (size_t a = 0; a < num_actions; ++a)
     {
-      ecs[a]->pred.a_s.delete_v();
-      VW::dealloc_example(CB::cb_label.delete_label, *ecs[a]);
-      free_it(ecs[a]);
+      VW::dealloc_examples(ecs[a], 1);
     }
 
     a_s_adf.delete_v();
-    for (size_t i = 0; i < ws_vali.size(); ++i)
+    for (auto* ex : ws_vali)
     {
-      if (use_cs)
-        VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *ws_vali[i]);
-      else
-        VW::dealloc_example(MULTICLASS::mc_label.delete_label, *ws_vali[i]);
-      free(ws_vali[i]);
+      VW::dealloc_examples(ex, 1);
     }
   }
 };

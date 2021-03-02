@@ -51,12 +51,6 @@ void copy_example_data(example* dst, example* src, bool oas = false)  // copy ex
   VW::copy_example_data(false, dst, src);
 }
 
-inline void free_example(example* ec)
-{
-  VW::dealloc_example(nullptr, *ec);
-  free(ec);
-}
-
 ////Implement kronecker_product between two examples:
 // kronecker_prod at feature level:
 
@@ -232,9 +226,14 @@ struct memory_tree
   ~memory_tree()
   {
     // nodes.delete_v();
-    for (auto ex : examples) free_example(ex);
-    examples.delete_v();
-    if (kprod_ec) free_example(kprod_ec);
+    for (auto* ex : examples)
+    {
+      VW::dealloc_examples(ex, 1);
+    }
+    if (kprod_ec)
+    {
+      VW::dealloc_examples(kprod_ec, 1);
+    }
   }
 };
 
@@ -296,7 +295,7 @@ void init_tree(memory_tree& b)
   b.nodes[0].internal = -1;  // mark the root as leaf
   b.nodes[0].base_router = (b.routers_used++);
 
-  b.kprod_ec = &calloc_or_throw<example>();  // allocate space for kronecker product example
+  b.kprod_ec = VW::alloc_examples(1);  // allocate space for kronecker product example
 
   b.total_num_queries = 0;
   b.max_routers = b.max_nodes;
@@ -1027,7 +1026,7 @@ void learn(memory_tree& b, single_learner& base, example& ec)
 
     if (b.current_pass < 1)
     {  // in the first pass, we need to store the memory:
-      example* new_ec = &calloc_or_throw<example>();
+      example* new_ec = VW::alloc_examples(1);
       copy_example_data(new_ec, &ec, b.oas);
       b.examples.push_back(new_ec);
       if (b.online == true)
@@ -1188,7 +1187,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
       b.examples.clear();
       for (uint32_t i = 0; i < n_examples; i++)
       {
-        example* new_ec = &calloc_or_throw<example>();
+        example* new_ec = VW::alloc_examples(1);
         b.examples.push_back(new_ec);
       }
     }
