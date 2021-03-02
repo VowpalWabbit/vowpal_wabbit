@@ -181,10 +181,10 @@ void cs_prep_labels(multi_ex& examples, v_array<CB::label>& cb_labels, COST_SENS
   size_t index = 0;
   for (auto ec : examples)
   {
-    cb_labels.push_back(ec->l.cb);
+    cb_labels.emplace_back(std::move(ec->l.cb));
     prepped_cs_labels[index].costs.clear();
     prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
-    ec->l.cs = prepped_cs_labels[index++];
+    ec->l.cs = std::move(prepped_cs_labels[index++]);
     ec->ft_offset = offset;
   }
 }

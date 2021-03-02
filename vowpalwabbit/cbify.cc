@@ -66,7 +66,6 @@ struct cbify
   std::vector<v_array<COST_SENSITIVE::wclass>> cs_costs;
   std::vector<v_array<CB::cb_class>> cb_costs;
   std::vector<ACTION_SCORE::action_scores> cb_as;
-  std::vector<polyprediction> saved_predictions;
 
   ~cbify()
   {
@@ -481,11 +480,9 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   data.cb_label.costs.push_back(cl);
   data.cb_costs[cl.action - 1] = ec_seq[cl.action - 1]->l.cb.costs;
   ec_seq[cl.action - 1]->l.cb = data.cb_label;
-  data.saved_predictions.resize(ec_seq.size());
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
     auto& ec = *ec_seq[i];
-    data.saved_predictions[i] = ec.pred;
     ec.pred.a_s = data.cb_as[i];
   }
 

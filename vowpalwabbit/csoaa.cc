@@ -346,15 +346,15 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       subtract_example(*data.all, ec1, ec2);
       ec1->ft_offset = data.ft_offset;
 
-      // Deleted copy constructor?  This can cause issues if predictions have to be restored
+      // Warning: Deleted copy constructor?  This can cause issues if predictions have to be restored
       // and predictions of base learners are not known in advance
       // polyprediction saved_pred = ec1->pred;
 
       // Guard inner example state restore against throws
-      auto restore_guard_inner = VW::scope_exit([&data, old_offset, old_weight, &costs2, &ec2, &ec1, &saved_pred] {
+      auto restore_guard_inner = VW::scope_exit([&data, old_offset, old_weight, &costs2, &ec2, &ec1] {
         ec1->ft_offset = old_offset;
 
-        // Deleted assignment operator?  This can cause issues if predictions have to be restored
+        // Warning: Deleted assignment operator?  This can cause issues if predictions have to be restored
         // and predictions of base learners are not known in advance
         //ec1->pred = saved_pred;
 
@@ -417,17 +417,17 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
     uint64_t old_offset = ec->ft_offset;
     ec->ft_offset = data.ft_offset;
 
-    // Deleted copy constructor?  This can cause issues if predictions have to be restored
+    // Warning: Deleted copy constructor?  This can cause issues if predictions have to be restored
     // and predictions of base learners are not known in advance
     // polyprediction saved_pred = ec1->pred;
 
     // Guard example state restore against throws
-    auto restore_guard = VW::scope_exit([&save_cs_label, &data, &costs, old_offset, old_weight, &ec, &saved_pred] {
+    auto restore_guard = VW::scope_exit([&save_cs_label, &data, &costs, old_offset, old_weight, &ec] {
       ec->ft_offset = old_offset;
       LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
       ec->weight = old_weight;
 
-      // Deleted assignment operator?  This can cause issues if predictions have to be restored
+      // Warning: Deleted assignment operator?  This can cause issues if predictions have to be restored
       // and predictions of base learners are not known in advance
       //ec1->pred = saved_pred;
 

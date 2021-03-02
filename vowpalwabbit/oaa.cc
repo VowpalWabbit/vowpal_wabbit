@@ -69,7 +69,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   // Save prediction.  Why?  Although learn should
   // not touch prediction... sometimes it does.
-  const auto saved_prediction = ec.pred;
+//  const auto saved_prediction = ec.pred;
 
   // Save label
   MULTICLASS::label_t mc_label_data = ec.l.multi;
@@ -93,7 +93,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   // Restore label
   ec.l.multi = mc_label_data;
   // Restore prediction
-  ec.pred = saved_prediction;
+//  ec.pred = saved_prediction;
 }
 
 template <bool print_all, bool scores, bool probabilities>

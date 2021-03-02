@@ -25,6 +25,7 @@
     <ClCompile Include="ccb_test.cc" />
     <ClCompile Include="ccb_parser_test.cc" />
     <ClCompile Include="continuous_actions_parser_test.cc" />
+    <ClCompile Include="flatbuffer_parser_test.cc" />
     <ClCompile Include="object_pool_test.cc" />
     <ClCompile Include="offset_tree_tests.cc" />
     <ClCompile Include="ostream_test.cc" />
