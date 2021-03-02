@@ -9,6 +9,7 @@
 
 #include <utility>
 #include <cstdlib>
+#include <cassert>
 #include "future_compat.h"
 
 #ifndef VW_NOEXCEPT
