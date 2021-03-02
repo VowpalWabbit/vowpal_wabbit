@@ -277,6 +277,10 @@ class vw(pylibvw.vw):
     """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
+    log_wrapper = None
+    parser_ran = False
+    init = False
+    finished = False
 
     def __init__(self, arg_str=None, enable_logging=False, **kw):
         """Initialize the vw object.
@@ -328,8 +332,6 @@ class vw(pylibvw.vw):
         if arg_str is not None:
             l = [arg_str] + l
         
-        self.log_wrapper = None
-
         if enable_logging:
             self.log_fwd = log_forward()
             self.log_wrapper = pylibvw.vw_log(self.log_fwd)
@@ -338,8 +340,7 @@ class vw(pylibvw.vw):
             super(vw, self).__init__(" ".join(l), self.log_wrapper)
         else:
             super(vw, self).__init__(" ".join(l))
-
-        self.parser_ran = False
+        self.init = True
 
         # check to see if native parser needs to run
         ext_file_args = ["d", "data", "passes"]
@@ -352,8 +353,6 @@ class vw(pylibvw.vw):
             if [cmd for cmd in ext_file_cmd_str if(cmd in arg_str)]:
                 pylibvw.vw.run_parser(self)
                 self.parser_ran = True
-
-        self.finished = False
     
     def get_config(self, filtered_enabled_reductions_only=True):
         return self.get_options(VWOption, filtered_enabled_reductions_only)
@@ -603,8 +602,9 @@ class vw(pylibvw.vw):
 
     def finish(self):
         """stop VW by calling finish (and, eg, write weights to disk)"""
-        if not self.finished:
+        if not self.finished and self.init:
             pylibvw.vw.finish(self)
+            self.init = False
             self.finished = True
 
     # returns the latest vw log
