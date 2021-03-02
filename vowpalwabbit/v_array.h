@@ -50,12 +50,11 @@ private:
 
   void reserve_nocheck(size_t length)
   {
-    if(capacity() == length || length == 0) { return; }
+    if (capacity() == length || length == 0) { return; }
     const size_t old_len = size();
 
     T* temp = reinterpret_cast<T*>(std::realloc(_begin, sizeof(T) * length));
-    if (temp == nullptr)
-    { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
+    if (temp == nullptr) { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
     else
     {
       _begin = temp;
