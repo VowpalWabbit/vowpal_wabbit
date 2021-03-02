@@ -294,7 +294,7 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         if (!brw)
         {
 	  // I'm assuming this is an error condition?
-	  logger::errlog_error("{0} {1}", fec->tag_len, fec->tag);
+          logger::errlog_error("{0} {1}", fec->tag_len, fec->tag);
           return 2;
         }
       }

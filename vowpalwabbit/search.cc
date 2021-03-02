@@ -2053,9 +2053,9 @@ void verify_active_csoaa(
       float err = static_cast<float>(std::pow(known[i].first.partial_prediction - wc.x, 2));
       if (err > threshold)
       {
-	logger::errlog_error("verify_active_csoaa failed: truth {0}:{1}, known[{2}]={3}, error={4} vs threshold {5}",
-			     wc.class_index /*0*/, wc.x/*1*/, i/*2*/, known[i].first.partial_prediction/*3*/,
-			     err/*4*/, threshold/*5*/);
+        logger::errlog_error("verify_active_csoaa failed: truth {0}:{1}, known[{2}]={3}, error={4} vs threshold {5}",
+                             wc.class_index /*0*/, wc.x/*1*/, i/*2*/, known[i].first.partial_prediction/*3*/,
+                             err/*4*/, threshold/*5*/);
       }
     }
     i++;
@@ -2738,7 +2738,7 @@ base_learner* setup(options_i& options, vw& all)
     if (priv.current_policy >
         0)  // we loaded a file but total number of policies didn't match what is needed for training
       logger::errlog_warn("warning: you're attempting to train more classifiers than was allocated initially. "
-			  "Likely to cause bad performance.");
+                          "Likely to cause bad performance.");
   }
 
   // current policy currently points to a new policy we would train

@@ -164,7 +164,7 @@ public:
     {
       if (write_file(output_files[0].get(), space.begin(), unflushed_bytes_count()) != (int)(unflushed_bytes_count()))
       {
-	logger::errlog_error("error, failed to write example");
+        logger::errlog_error("error, failed to write example");
       }
       head = space.begin();
       output_files[0]->flush();

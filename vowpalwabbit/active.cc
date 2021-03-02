@@ -106,7 +106,6 @@ void active_print_result(VW::io::writer* f, float res, float weight, v_array<cha
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
   if (t != len) {
-    // TODO: the logger should be passed in(?)
     logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
   }
 }

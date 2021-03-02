@@ -46,7 +46,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
     if (multilabel_index < multilabels.label_v.size())
     {
       logger::log_error("label {0} is not in {{0,{1}}} This won't work right.",
-			multilabels.label_v[multilabel_index], o.k - 1);
+                        multilabels.label_v[multilabel_index], o.k - 1);
     }
   }
   ec.pred.multilabels = preds;

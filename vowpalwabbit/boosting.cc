@@ -17,6 +17,7 @@
 #include <sstream>
 #include <vector>
 #include <memory>
+#include <fmt/core.h>
 
 #include "reductions.h"
 #include "vw.h"
@@ -312,25 +313,23 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
       bin_text_write_fixed(model_file, (char*)&(o.v[i]), sizeof(o.v[i]), os2, text);
     }
 
+  // avoid making syscalls multiple times
+  fmt::memory_buffer buffer;
   if (read)
   {
-    logger::errlog_info("Loading alpha and v: ");
+    fmt::format_to(buffer, "Loading alpha and v: \n");
   }
   else
   {
-    logger::errlog_info("Saving alpha and v, current weighted_examples = {}",
+    fmt::format_to(buffer, "Saving alpha and v, current weighted_examples = {}\n",
 		      o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples);
   }
 
+  for (int i = 0; i < o.N; i++)
   {
-    // set logger to only output the message, no header info
-    logger::pattern_guard("%v");
-    for (int i = 0; i < o.N; i++)
-    {
-      logger::errlog_info("{0} {1}", o.alpha[i], o.v[i]);
-    }
-    logger::errlog_info("");
+    fmt::format_to(buffer, "{0} {1}\n", o.alpha[i], o.v[i]);
   }
+  logger::errlog_info("{}", fmt::to_string(buffer));
 }
 
 void return_example(vw& all, boosting& /* a */, example& ec)
@@ -364,24 +363,23 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 
   if (!o.all->logger.quiet)
   {
+    // avoid making syscalls multiple times
+    fmt::memory_buffer buffer;
     if (read)
     {
-      logger::errlog_info("Loading alpha: ");
+      fmt::format_to(buffer, "Loading alpha: \n");
     }
     else
     {
-      logger::errlog_info("Saving alpha, current weighted_examples = {)",
+      fmt::format_to(buffer, "Saving alpha, current weighted_examples = {)\n",
 		       o.all->sd->weighted_examples());
     }
 
+    for (int i = 0; i < o.N; i++)
     {
-      logger::pattern_guard("%v");
-      for (int i = 0; i < o.N; i++)
-      {
-	logger::errlog_info("{}", o.alpha[i]);
-      }
-      logger::errlog_info("");
+      fmt::format_to(buffer, "{} \n", o.alpha[i]);
     }
+    logger::errlog_info("{}", fmt::to_string(buffer));
   }
 }
 

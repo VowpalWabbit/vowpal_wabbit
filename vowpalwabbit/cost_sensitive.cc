@@ -123,7 +123,7 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
       if (eq_shared)
       {
         if (p->parse_name.size() != 1)
-	  logger::errlog_error("shared feature vectors should not have costs on: {}", words[0]);
+          logger::errlog_error("shared feature vectors should not have costs on: {}", words[0]);
         else
         {
           wclass f = {-FLT_MAX, 0, 0., 0.};
@@ -133,7 +133,7 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
       if (eq_label)
       {
         if (p->parse_name.size() != 2)
-	  logger::errlog_error("label feature vectors should have exactly one cost on: {}", words[0]);
+          logger::errlog_error("label feature vectors should have exactly one cost on: {}", words[0]);
         else
         {
           wclass f = {float_of_string(p->parse_name[1]), 0, 0., 0.};

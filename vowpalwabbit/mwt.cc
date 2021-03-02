@@ -10,7 +10,6 @@
 
 #include "io/logger.h"
 
-
 using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;

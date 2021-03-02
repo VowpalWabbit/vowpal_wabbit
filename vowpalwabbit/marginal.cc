@@ -79,15 +79,15 @@ void make_marginal(data& sm, example& ec)
         uint64_t first_index = j.index() & mask;
         if (++j == sm.temp[n].end())
         {
-	  logger::log_warn("warning: id feature namespace has {} features. Should be a multiple of 2",
-			   sm.temp[n].size());
+          logger::log_warn("warning: id feature namespace has {} features. Should be a multiple of 2",
+                           sm.temp[n].size());
           break;
         }
         float second_value = j.value();
         uint64_t second_index = j.index() & mask;
         if (first_value != 1. || second_value != 1.)
         {
-	  logger::log_warn("warning: bad id features, must have value 1.");
+          logger::log_warn("warning: bad id features, must have value 1.");
           continue;
         }
         uint64_t key = second_index + ec.ft_offset;

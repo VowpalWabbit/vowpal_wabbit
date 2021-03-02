@@ -118,7 +118,7 @@ void learn(plt& p, single_learner& base, example& ec)
     }
     if (multilabels.label_v.back() >= p.k)
       logger::log_error("label {0} is not in {{0,{1}}} This won't work right.",
-			multilabels.label_v.back(), p.k - 1);
+                        multilabels.label_v.back(), p.k - 1);
 
     for (auto& n : p.positive_nodes)
     {
@@ -289,7 +289,7 @@ void finish(plt& p)
       for (size_t i = 0; i < p.top_k; ++i)
       {
         correct += p.tp_at[i];
-	// TODO: is this the correct logger?
+        // TODO: is this the correct logger?
         *(p.all->trace_message) << "p@" << i + 1 << " = " << correct / (p.ec_count * (i + 1)) << std::endl;
         *(p.all->trace_message) << "r@" << i + 1 << " = " << correct / p.true_count << std::endl;
       }
