@@ -320,10 +320,7 @@ example* alloc_examples(size_t, size_t count)
 
 example* alloc_examples(size_t count) { return alloc_examples(0, count); }
 
-void dealloc_example(void (*)(polylabel*), example& ec, void (*)(void*))
-{
-  ec.~example();
-}
+void dealloc_example(void (*)(polylabel*), example& ec, void (*)(void*)) { ec.~example(); }
 
 void dealloc_examples(example* example_ptr, size_t count)
 {
