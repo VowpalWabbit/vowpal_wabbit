@@ -95,10 +95,7 @@ void finish(Search::search& sch)
   task_data* my_task_data = sch.get_task_data<task_data>();
   my_task_data->y_allowed_entity.delete_v();
   my_task_data->y_allowed_relation.delete_v();
-  if (my_task_data->search_order == 3)
-  {
-    VW::dealloc_examples(my_task_data->ldf_entity, NUM_LDF_ENTITY_EXAMPLES);
-  }
+  if (my_task_data->search_order == 3) { VW::dealloc_examples(my_task_data->ldf_entity, NUM_LDF_ENTITY_EXAMPLES); }
   delete my_task_data;
 }  // if we had task data, we'd want to free it here
 

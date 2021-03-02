@@ -314,10 +314,7 @@ example* alloc_examples(size_t, size_t count)
 {
   example* ec = calloc_or_throw<example>(count);
   if (ec == nullptr) return nullptr;
-  for (size_t i = 0; i < count; i++)
-  {
-    new (ec + i) example;
-  }
+  for (size_t i = 0; i < count; i++) { new (ec + i) example; }
   return ec;
 }
 
@@ -330,10 +327,7 @@ void dealloc_example(void (*delete_label)(polylabel*), example& ec, void (*delet
 
 void dealloc_examples(example* example_ptr, size_t count)
 {
-  for (size_t i = 0; i < count; i++)
-  {
-    (example_ptr + i)->~example();
-  }
+  for (size_t i = 0; i < count; i++) { (example_ptr + i)->~example(); }
   free(example_ptr);
 }
 

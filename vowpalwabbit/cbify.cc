@@ -71,10 +71,7 @@ struct cbify
 
     if (use_adf)
     {
-      for (auto* ex : adf_data.ecs)
-      {
-        VW::dealloc_examples(ex, 1);
-      }
+      for (auto* ex : adf_data.ecs) { VW::dealloc_examples(ex, 1); }
     }
   }
 };

@@ -226,14 +226,8 @@ struct memory_tree
   ~memory_tree()
   {
     // nodes.delete_v();
-    for (auto* ex : examples)
-    {
-      VW::dealloc_examples(ex, 1);
-    }
-    if (kprod_ec)
-    {
-      VW::dealloc_examples(kprod_ec, 1);
-    }
+    for (auto* ex : examples) { VW::dealloc_examples(ex, 1); }
+    if (kprod_ec) { VW::dealloc_examples(kprod_ec, 1); }
   }
 };
 

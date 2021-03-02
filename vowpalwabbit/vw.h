@@ -107,7 +107,9 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
 VW_DEPRECATED("label size is no longer used, please use the other overload")
 example* alloc_examples(size_t, size_t count);
 example* alloc_examples(size_t count);
-VW_DEPRECATED("This interface is deprecated and unsafe. Deletion function pointers are no longer needed. Please use dealloc_examples")
+VW_DEPRECATED(
+    "This interface is deprecated and unsafe. Deletion function pointers are no longer needed. Please use "
+    "dealloc_examples")
 void dealloc_example(void (*delete_label)(polylabel*), example& ec, void (*delete_prediction)(void*) = nullptr);
 
 void dealloc_examples(example* example_ptr, size_t count);

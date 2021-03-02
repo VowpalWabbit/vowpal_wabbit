@@ -3031,10 +3031,7 @@ void predictor::free_ec()
 {
   if (ec_alloced)
   {
-    if (is_ldf)
-    {
-      VW::dealloc_examples(ec, ec_cnt);
-    }
+    if (is_ldf) { VW::dealloc_examples(ec, ec_cnt); }
     else
     {
       VW::dealloc_examples(ec, 1);

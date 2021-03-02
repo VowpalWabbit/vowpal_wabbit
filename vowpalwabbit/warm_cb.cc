@@ -94,16 +94,10 @@ struct warm_cb
     free(csls);
     free(cbls);
 
-    for (size_t a = 0; a < num_actions; ++a)
-    {
-      VW::dealloc_examples(ecs[a], 1);
-    }
+    for (size_t a = 0; a < num_actions; ++a) { VW::dealloc_examples(ecs[a], 1); }
 
     a_s_adf.delete_v();
-    for (auto* ex : ws_vali)
-    {
-      VW::dealloc_examples(ex, 1);
-    }
+    for (auto* ex : ws_vali) { VW::dealloc_examples(ex, 1); }
   }
 };
 
