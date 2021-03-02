@@ -22,6 +22,7 @@ struct input_options
   bool compressed;
   bool chain_hash_json;
   bool flatbuffer = false;
+  bool external_parser = false;
 };
 
 // trace listener + context need to be passed at initialization to capture all messages.

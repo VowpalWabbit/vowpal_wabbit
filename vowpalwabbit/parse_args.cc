@@ -447,7 +447,9 @@ input_options parse_source(vw& all, options_i& options)
                      "A^B^C. Note: this will become the default in a future version, so enabling this option will "
                      "migrate you to the new behavior and silence the warning."))
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
-               .help("data file will be interpreted as a flatbuffer file"));
+               .help("data file will be interpreted as a flatbuffer file"))
+      .add(make_option("external_parser", parsed_options.external_parser)
+               .help("data file will be interpreted using a parser that was provided at compile time"));
 
   options.add_and_parse(input_options);
 
