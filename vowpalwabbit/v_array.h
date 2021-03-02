@@ -32,6 +32,8 @@ const size_t erase_point = ~((1u << 10u) - 1u);
 template <class T>
 struct v_array
 {
+  static_assert(sizeof(T) > 0, "The sizeof v_array's element type T cannot be 0.");
+
 private:
   void delete_v_array()
   {
@@ -48,11 +50,11 @@ private:
 
   void reserve_nocheck(size_t length)
   {
-    if (capacity() == length) { return; }
+    if(capacity() == length || length == 0) { return; }
     const size_t old_len = size();
 
     T* temp = reinterpret_cast<T*>(std::realloc(_begin, sizeof(T) * length));
-    if ((temp == nullptr) && ((sizeof(T) * length) > 0))
+    if (temp == nullptr)
     { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
     else
     {
@@ -185,7 +187,7 @@ public:
     auto old_size = size();
     // if new length is smaller than current size destroy the excess elements
     for (auto idx = length; idx < old_size; ++idx) { _begin[idx].~T(); }
-    if (capacity() < length) { reserve_nocheck(length); }
+    reserve(length);
     _end = _begin + length;
     // default construct any newly added elements
     // TODO: handle non-default constructable objects
