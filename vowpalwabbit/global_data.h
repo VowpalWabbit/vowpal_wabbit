@@ -458,7 +458,7 @@ public:
 
   VW_DEPRECATED("delete_prediction has been deprecated")
   void (*delete_prediction)(void*);
-  
+
   vw_logger logger;
   bool audit;     // should I print lots of debugging information?
   bool training;  // Should I train if lable data is available?
