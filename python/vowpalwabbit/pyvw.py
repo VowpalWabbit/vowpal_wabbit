@@ -281,6 +281,7 @@ class vw(pylibvw.vw):
     parser_ran = False
     init = False
     finished = False
+    log_fwd = None
 
     def __init__(self, arg_str=None, enable_logging=False, **kw):
         """Initialize the vw object.
