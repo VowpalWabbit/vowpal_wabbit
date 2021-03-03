@@ -69,6 +69,7 @@ private:
 
     _end = _begin + std::min(old_len, length);
     end_array = _begin + length;
+    memset(_end, 0, (end_array - _end) * sizeof(T));
   }
 
 public:
