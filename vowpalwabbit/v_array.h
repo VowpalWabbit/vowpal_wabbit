@@ -29,9 +29,6 @@
 
 const size_t erase_point = ~((1u << 10u) - 1u);
 
-template <typename T>
-class v_array;
-
 template <class T>
 struct v_array
 {
