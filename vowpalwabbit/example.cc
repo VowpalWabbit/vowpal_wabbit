@@ -9,8 +9,27 @@
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
+example::example()
+{
+  memset(&l, 0, sizeof(polylabel));
+  tag = v_init<char>();
+}
+VW_WARNING_STATE_POP
+
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
 {
+  tag.delete_v();
+
+  // TODO move this to the destructor once we're done cleaning up usage of polyprediction
+  pred.scalars.delete_v();
+  pred.a_s.delete_v();
+  for (auto& decision : pred.decision_scores) { decision.delete_v(); }
+  pred.decision_scores.delete_v();
+  pred.multilabels.label_v.delete_v();
+  pred.pdf.delete_v();
+
   if (passthrough)
   {
     delete passthrough;

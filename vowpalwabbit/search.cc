@@ -106,7 +106,6 @@ struct action_repr
 {
   action a;
   features* repr = nullptr;
-  action_repr() = default;
   action_repr(action _a, features* _repr) : a(_a)
   {
     if (_repr != nullptr)
@@ -120,12 +119,10 @@ struct action_repr
 
 struct action_cache
 {
-  float min_cost = 0.f;
-  action k = 0;
-  bool is_opt = false;
-  float cost = 0.f;
-  
-  action_cache() = default;
+  float min_cost;
+  action k;
+  bool is_opt;
+  float cost;
   action_cache(float _min_cost, action _k, bool _is_opt, float _cost)
       : min_cost(_min_cost), k(_k), is_opt(_is_opt), cost(_cost)
   {
