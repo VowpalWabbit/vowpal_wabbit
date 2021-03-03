@@ -302,8 +302,6 @@ base_learner* setup(options_i& options, vw& all)
   learner<pmf_to_pdf::reduction, example>& l =
       init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf, all.get_setupfn_name(setup));
 
-  all.delete_prediction = continuous_actions::delete_probability_density_function;
-
   return make_base(l);
 }
 
