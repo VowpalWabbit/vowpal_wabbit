@@ -32,6 +32,8 @@ const size_t erase_point = ~((1u << 10u) - 1u);
 template <class T>
 struct v_array
 {
+  static_assert(sizeof(T) > 0, "The sizeof v_array's element type T cannot be 0.");
+
 private:
   void delete_v_array()
   {
@@ -43,7 +45,24 @@ private:
     _begin = nullptr;
     _end = nullptr;
     end_array = nullptr;
-    erase_count = 0;
+    _erase_count = 0;
+  }
+
+  void reserve_nocheck(size_t length)
+  {
+    if (capacity() == length || length == 0) { return; }
+    const size_t old_len = size();
+
+    T* temp = reinterpret_cast<T*>(std::realloc(_begin, sizeof(T) * length));
+    if (temp == nullptr) { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
+    else
+    {
+      _begin = temp;
+    }
+
+    _end = _begin + std::min(old_len, length);
+    end_array = _begin + length;
+    memset(_end, 0, (end_array - _end) * sizeof(T));
   }
 
 public:
@@ -53,8 +72,11 @@ public:
 
 public:
   T* end_array;
-  size_t erase_count;
 
+private:
+  size_t _erase_count;
+
+public:
   using value_type = T;
   using reference = value_type&;
   using const_reference = const value_type&;
@@ -73,12 +95,12 @@ public:
   inline const_iterator cbegin() const { return _begin; }
   inline const_iterator cend() const { return _end; }
 
-  v_array() noexcept : _begin(nullptr), _end(nullptr), end_array(nullptr), erase_count(0) {}
+  v_array() noexcept : _begin(nullptr), _end(nullptr), end_array(nullptr), _erase_count(0) {}
   ~v_array() { delete_v_array(); }
 
   v_array(v_array<T>&& other) noexcept
   {
-    erase_count = 0;
+    _erase_count = 0;
     _begin = nullptr;
     _end = nullptr;
     end_array = nullptr;
@@ -86,7 +108,7 @@ public:
     std::swap(_begin, other._begin);
     std::swap(_end, other._end);
     std::swap(end_array, other.end_array);
-    std::swap(erase_count, other.erase_count);
+    std::swap(_erase_count, other._erase_count);
   }
 
   v_array<T>& operator=(v_array<T>&& other) noexcept
@@ -94,7 +116,7 @@ public:
     std::swap(_begin, other._begin);
     std::swap(_end, other._end);
     std::swap(end_array, other.end_array);
-    std::swap(erase_count, other.erase_count);
+    std::swap(_erase_count, other._erase_count);
     return *this;
   }
 
@@ -103,7 +125,7 @@ public:
     _begin = nullptr;
     _end = nullptr;
     end_array = nullptr;
-    erase_count = 0;
+    _erase_count = 0;
 
     // TODO this should use the other version when T is trivially copyable and this otherwise.
     copy_array_no_memcpy(*this, other);
@@ -151,41 +173,69 @@ public:
   inline size_t size() const { return _end - _begin; }
   inline size_t capacity() const { return end_array - _begin; }
 
-  void resize(size_t length)
+  // maintain the original (deprecated) interface for compatibility. To be removed in VW 10
+  //   VW_DEPRECATED(
+  //       "v_array::resize() is deprecated. Use reserve() instead.
+  // For standard resize behavior, use actual_resize(). The function names will be re-aligned in VW 10")
+  void resize(size_t length) { reserve_nocheck(length); }
+
+  // change the number of elements in the vector
+  // to be renamed to resize() in VW 10
+  void actual_resize(size_t length)
   {
-    if (capacity() != length)
+    auto old_size = size();
+    // if new length is smaller than current size destroy the excess elements
+    for (auto idx = length; idx < old_size; ++idx) { _begin[idx].~T(); }
+    reserve(length);
+    _end = _begin + length;
+    // default construct any newly added elements
+    // TODO: handle non-default constructable objects
+    // requires second interface
+    for (auto idx = old_size; idx < length; ++idx) { new (&_begin[idx]) T(); }
+  }
+
+  void shrink_to_fit()
+  {
+    if (size() < capacity())
     {
-      size_t old_len = _end - _begin;
-      T* temp = (T*)realloc(_begin, sizeof(T) * length);
-      if ((temp == nullptr) && ((sizeof(T) * length) > 0))
-      { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
+      if (empty())
+      {
+        // realloc on size 0 doesn't have a specified behavior
+        // just shrink to 1 for now (alternatively, call delete_v())
+        reserve_nocheck(1);
+      }
       else
-        _begin = temp;
-      if (old_len < length && _begin + old_len != nullptr) memset(_begin + old_len, 0, (length - old_len) * sizeof(T));
-      _end = _begin + old_len;
-      end_array = _begin + length;
+      {
+        reserve_nocheck(size());
+      }
     }
+  }
+
+  // reserve enough space for the specified number of elements
+  inline void reserve(size_t length)
+  {
+    if (capacity() < length) reserve_nocheck(length);
+  }
+
+  // Don't modify the buffer size, just clear the elements
+  inline void clear_noshrink()
+  {
+    for (T* item = _begin; item != _end; ++item) item->~T();
+    _end = _begin;
   }
 
   void clear()
   {
-    if (++erase_count & erase_point)
+    if (++_erase_count & erase_point)
     {
-      resize(_end - _begin);
-      erase_count = 0;
+      shrink_to_fit();
+      _erase_count = 0;
     }
-    for (T* item = _begin; item != _end; ++item) item->~T();
-    _end = _begin;
+    clear_noshrink();
   }
-  void delete_v()
-  {
-    if (_begin != nullptr)
-    {
-      for (T* item = _begin; item != _end; ++item) item->~T();
-      free(_begin);
-    }
-    _begin = _end = end_array = nullptr;
-  }
+
+  void delete_v() { delete_v_array(); }
+
   void push_back(const T& new_ele)
   {
     if (_end == end_array) resize(2 * capacity() + 3);
