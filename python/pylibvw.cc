@@ -399,8 +399,7 @@ void my_delete_example(void* voidec)
   example* ec = (example*)voidec;
   size_t labelType = ec->example_counter;
   label_parser* lp = get_label_parser(NULL, labelType);
-  VW::dealloc_example(lp ? lp->delete_label : NULL, *ec);
-  free(ec);
+  VW::dealloc_examples(ec, 1);
 }
 
 example* my_empty_example0(vw_ptr vw, size_t labelType)
