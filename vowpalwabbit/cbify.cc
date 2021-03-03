@@ -187,7 +187,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   label_data regression_label = ec.l.simple;
   data.cb_label.costs.clear();
   ec.l.cb = data.cb_label;
-  v_move(ec.pred.a_s, data.a_s);
+  ec.pred.a_s = std::move(data.a_s);
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
@@ -235,7 +235,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
     }
   }
 
-  v_move(data.a_s, ec.pred.a_s);
+  data.a_s = std::move(ec.pred.a_s);
   data.a_s.clear();
   ec.l.cb.costs = v_init<CB::cb_class>();
 
@@ -429,7 +429,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
     data.cs_costs[i] = ec.l.cs.costs;
     data.cb_costs[i].clear();
     ec.l.cb.costs = data.cb_costs[i];
-    v_move(ec.pred.a_s, data.cb_as[i]);
+    ec.pred.a_s = std::move(data.cb_as[i]);
     ec.pred.a_s.clear();
   }
 
@@ -462,7 +462,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
     auto& ec = *ec_seq[i];
-    v_move(data.cb_as[i], ec.pred.a_s);  // store action_score vector for later reuse.
+    data.cb_as[i] = std::move(ec.pred.a_s);  // store action_score vector for later reuse.
     if (i == cl.action - 1)
       data.cb_label = ec.l.cb;
     else
@@ -771,7 +771,6 @@ base_learner* cbify_setup(options_i& options, vw& all)
       all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
     }
   }
-  all.delete_prediction = nullptr;
 
   return make_base(*l);
 }
@@ -813,7 +812,6 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   l.set_finish_example(finish_multiline_example);
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
-  all.delete_prediction = nullptr;
 
   return make_base(l);
 }

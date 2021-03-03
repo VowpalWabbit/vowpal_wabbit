@@ -331,12 +331,6 @@ public:
       clear_memo_foreach_action(*this);
       memo_foreach_action.delete_v();
 
-      // destroy copied examples if we needed them
-      if (!examples_dont_change)
-      {
-        void (*delete_label)(polylabel*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-        for (example& ec : learn_ec_copy) VW::dealloc_example(delete_label, ec);
-      }
       learn_condition_on_names.delete_v();
       learn_condition_on.delete_v();
 
@@ -1044,7 +1038,7 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 template <class T>
 void ensure_size(v_array<T>& A, size_t sz)
 {
-  if ((size_t)(A.end_array - A.begin()) < sz) A.resize(sz * 2 + 1);
+  if (A.capacity() < sz) A.resize(sz * 2 + 1);
   A.end() = A.begin() + sz;
 }
 

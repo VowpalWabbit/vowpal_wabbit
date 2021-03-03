@@ -9,6 +9,7 @@
 #include <sstream>
 #include <vector>
 #include <memory>
+#include <cassert>
 
 #include "v_array.h"
 #include "hash.h"
@@ -120,7 +121,7 @@ public:
     if (space.end_array - space.end() == 0)
     {  // reallocate to twice as much space
       size_t head_loc = unflushed_bytes_count();
-      space.resize(2 * (space.end_array - space.begin()));
+      space.resize(2 * space.capacity());
       head = space.begin() + head_loc;
     }
     // read more bytes from file up to the remaining allocated space
