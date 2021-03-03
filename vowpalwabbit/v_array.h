@@ -219,7 +219,7 @@ public:
 
   void clear()
   {
-    if (++_erase_count & erase_point)
+    if (++_erase_count & ERASE_POINT)
     {
       shrink_to_fit();
       _erase_count = 0;
