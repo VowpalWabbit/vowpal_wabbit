@@ -244,7 +244,8 @@ void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs
 
 template <bool is_learn>
 void call_cs_ldf(VW::LEARNER::multi_learner& base, multi_ex& examples, std::vector<CB::label>& cb_labels,
-    COST_SENSITIVE::label& cs_labels, std::vector<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset, size_t id = 0)
+    COST_SENSITIVE::label& cs_labels, std::vector<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset,
+    size_t id = 0)
 {
   cb_labels.clear();
   if (prepped_cs_labels.size() < cs_labels.costs.size() + 1)

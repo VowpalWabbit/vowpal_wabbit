@@ -20,7 +20,6 @@
 
 #include "memory.h"
 
-
 // If you get an error message saying that x uses undefined struct 'v_array<...,void>' that means the type
 // is not trivially copyable and cannot be used with v_array.
 template <typename T, typename Enable = void>

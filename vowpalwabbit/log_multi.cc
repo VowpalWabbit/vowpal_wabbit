@@ -80,7 +80,6 @@ struct log_multi
   ~log_multi()
   {
     // save_node_stats(b);
-
   }
 };
 
