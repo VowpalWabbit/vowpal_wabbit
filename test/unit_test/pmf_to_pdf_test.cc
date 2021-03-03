@@ -148,7 +148,6 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   learn(*data, *as_singleline(test_harness), ec);
 
-  delete_probability_density_function(&ec.pred.pdf);
   CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
   test_harness->finish();
   destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
@@ -186,7 +185,6 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
 
     test_harness->finish();
     destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
-    delete_probability_density_function(&ec.pred.pdf);
     CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
   }
 }
@@ -224,7 +222,6 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
 
     test_harness->finish();
     destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
-    delete_probability_density_function(&ec.pred.pdf);
     CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
   }
 }
