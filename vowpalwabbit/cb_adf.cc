@@ -526,8 +526,6 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
     *(all.trace_message) << "warning: clipping probability not yet implemented for cb_type sm; p will not be clipped."
                          << std::endl;
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   // Push necessary flags.
   if ((!options.was_supplied("csoaa_ldf") && !options.was_supplied("wap_ldf")) || rank_all ||
       !options.was_supplied("csoaa_rank"))
