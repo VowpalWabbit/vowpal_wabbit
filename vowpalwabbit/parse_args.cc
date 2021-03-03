@@ -773,7 +773,7 @@ void parse_feature_tweaks(
     {
       if (options.was_supplied("leave_duplicate_interactions"))
       { all.interactions.leave_duplicate_interactions = true; }
-      else
+      else if (!all.logger.quiet)
       {
         *(all.trace_message) << endl
                              << "WARNING: any duplicate namespace interactions will be removed" << endl
