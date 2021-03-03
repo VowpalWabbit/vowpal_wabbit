@@ -1,5 +1,5 @@
 #ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
+#  define BOOST_TEST_DYN_LINK
 #endif
 
 #include <boost/test/unit_test.hpp>
@@ -19,7 +19,6 @@ BOOST_AUTO_TEST_CASE(v_array_size_is_const)
   const auto& const_list = list;
   BOOST_CHECK_EQUAL(std::size_t(2), const_list.size());
 }
-
 
 BOOST_AUTO_TEST_CASE(v_array_empty_is_const)
 {
