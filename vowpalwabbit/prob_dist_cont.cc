@@ -44,12 +44,6 @@ std::string to_string(const probability_density_function& pdf, bool newline, int
   return ss.str();
 }
 
-void delete_probability_density_function(void* v)
-{
-  v_array<pdf_segment>* pdf = (v_array<pdf_segment>*)v;
-  pdf->delete_v();
-}
-
 bool is_valid_pdf(probability_density_function& pdf)
 {
   float mass = 0.f;

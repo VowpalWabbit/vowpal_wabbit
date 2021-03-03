@@ -250,8 +250,6 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   // Set cb_type
   size_t cb_type_enum;
   if (type_string.compare("dr") == 0)
