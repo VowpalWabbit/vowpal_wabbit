@@ -117,8 +117,6 @@ LEARNER::base_learner* sample_pdf_setup(options_i& options, vw& all)
   LEARNER::learner<sample_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, all.get_setupfn_name(sample_pdf_setup));
 
-  all.delete_prediction = nullptr;
-
   return make_base(l);
 }
 }  // namespace continuous_action

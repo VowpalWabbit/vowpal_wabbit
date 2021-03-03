@@ -258,8 +258,6 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
     options.replace("cb_type", mtr);
   }
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   // Set explore_type
   size_t problem_multiplier = 1;
 

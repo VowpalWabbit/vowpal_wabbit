@@ -174,8 +174,6 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   // predict before training is called.
   if (!options.was_supplied("no_predict")) { options.insert("no_predict", ""); }
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   size_t problem_multiplier = bag_size;
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;

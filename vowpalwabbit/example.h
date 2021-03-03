@@ -42,12 +42,6 @@ struct polylabel
   MULTILABEL::labels multilabels;
 };
 
-inline void delete_scalars(void* v)
-{
-  v_array<float>* preds = (v_array<float>*)v;
-  preds->delete_v();
-}
-
 struct polyprediction
 {
   polyprediction() = default;

@@ -874,7 +874,6 @@ base_learner* csldf_setup(options_i& options, vw& all)
     ld->is_wap = true;
   }
   if (options.was_supplied("ldf_override")) ldf_arg = ldf_override;
-  if (ld->rank) all.delete_prediction = delete_action_scores;
 
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
 
