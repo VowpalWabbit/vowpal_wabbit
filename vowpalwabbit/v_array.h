@@ -7,19 +7,12 @@
 #  define NOMINMAX
 #endif
 
-#include <iostream>
-#include <algorithm>
+#include <ostream>
+#include <utility>
 #include <cstdlib>
-#include <cstring>
 #include <cassert>
-#include <cstdint>
+#include <string>
 #include "future_compat.h"
-
-#ifdef _WIN32
-#  define __INLINE
-#else
-#  define __INLINE inline
-#endif
 
 #ifndef VW_NOEXCEPT
 #  include "vw_exception.h"
@@ -27,14 +20,14 @@
 
 #include "memory.h"
 
-const size_t erase_point = ~((1u << 10u) - 1u);
-
 template <class T>
 struct v_array
 {
   static_assert(sizeof(T) > 0, "The sizeof v_array's element type T cannot be 0.");
 
 private:
+  static constexpr size_t ERASE_POINT = ~((1u << 10u) - 1u);
+
   void delete_v_array()
   {
     if (_begin != nullptr)
@@ -226,7 +219,7 @@ public:
 
   void clear()
   {
-    if (++_erase_count & erase_point)
+    if (++_erase_count & ERASE_POINT)
     {
       shrink_to_fit();
       _erase_count = 0;
@@ -361,15 +354,6 @@ void calloc_reserve(v_array<T>& v, size_t length)
 }
 
 template <class T>
-v_array<T> pop(v_array<v_array<T> >& stack)
-{
-  if (stack._end != stack._begin)
-    return *(--stack._end);
-  else
-    return v_array<T>();
-}
-
-template <class T>
 bool v_array_contains(v_array<T>& A, T x)
 {
   for (T* e = A._begin; e != A._end; ++e)
@@ -395,8 +379,23 @@ std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
   return os;
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+
+template <class T>
+VW_DEPRECATED("pop is deprecated and will be removed in a future version.")
+v_array<T> pop(v_array<v_array<T> >& stack)
+{
+  if (stack._end != stack._begin)
+    return *(--stack._end);
+  else
+    return v_array<T>();
+}
+
+VW_DEPRECATED("v_string is deprecated and will be removed in a future version.")
 typedef v_array<unsigned char> v_string;
 
+VW_DEPRECATED("string2v_string is deprecated and will be removed in a future version.")
 inline v_string string2v_string(const std::string& s)
 {
   v_string res = v_init<unsigned char>();
@@ -404,6 +403,7 @@ inline v_string string2v_string(const std::string& s)
   return res;
 }
 
+VW_DEPRECATED("v_string2string is deprecated and will be removed in a future version.")
 inline std::string v_string2string(const v_string& v_s)
 {
   std::string res;
@@ -411,17 +411,4 @@ inline std::string v_string2string(const v_string& v_s)
   return res;
 }
 
-template <typename T>
-v_array<T> v_extract(v_array<T>& v)
-{
-  auto copy = v;
-  v = v_init<T>();
-  return copy;
-}
-
-template <typename T>
-void v_move(v_array<T>& dst, v_array<T>& from)
-{
-  dst = from;
-  from = v_init<T>();
-}
+VW_WARNING_STATE_POP

@@ -7,6 +7,8 @@
 #include <vector>
 #include <utility>
 
+#include "v_array.h"
+
 namespace std
 {
 template <class T, class U>
