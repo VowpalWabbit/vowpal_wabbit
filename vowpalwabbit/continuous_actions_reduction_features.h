@@ -8,6 +8,7 @@
 #include "prob_dist_cont.h"
 
 #include <cmath>
+#include <limits>
 
 namespace VW
 {

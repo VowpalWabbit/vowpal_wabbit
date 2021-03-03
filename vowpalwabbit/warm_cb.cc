@@ -631,7 +631,6 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   }
 
   l->set_finish(finish);
-  all.delete_prediction = nullptr;
 
   return make_base(*l);
 }

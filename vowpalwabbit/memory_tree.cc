@@ -1267,7 +1267,6 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
     l.set_save_load(save_load_memory_tree);
 
     all.example_parser->lbl_parser = MULTILABEL::multilabel;
-    all.delete_prediction = MULTILABEL::delete_prediction;
 
     return make_base(l);
   }
