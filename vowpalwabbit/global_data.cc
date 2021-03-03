@@ -218,7 +218,7 @@ void vw::finish_example(multi_ex& ec)
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet)
+void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool /*quiet*/)
 {
   for (size_t i = 0; i < limits.size(); i++)
   {
