@@ -81,7 +81,7 @@ bool not_empty(std::vector<v_array<uint32_t>> const& tournaments)
   return first_non_empty_tournament != tournaments.cend();
 }
 
-void print_level(v_array<v_array<uint32_t>> const& level)
+void print_level(std::vector<v_array<uint32_t>> const& level)
 {
   for (auto const& t : level)
   {
