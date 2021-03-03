@@ -314,19 +314,18 @@ example* alloc_examples(size_t, size_t count)
 {
   example* ec = calloc_or_throw<example>(count);
   if (ec == nullptr) return nullptr;
-  for (size_t i = 0; i < count; i++)
-  {
-    ec[i].ft_offset = 0;
-  }
+  for (size_t i = 0; i < count; i++) { new (ec + i) example; }
   return ec;
 }
 
 example* alloc_examples(size_t count) { return alloc_examples(0, count); }
 
-void dealloc_example(void (*delete_label)(polylabel*), example& ec, void (*delete_prediction)(void*))
+void dealloc_example(void (*)(polylabel*), example& ec, void (*)(void*)) { ec.~example(); }
+
+void dealloc_examples(example* example_ptr, size_t count)
 {
-  ec.delete_unions(delete_label, delete_prediction);
-  ec.~example();
+  for (size_t i = 0; i < count; i++) { (example_ptr + i)->~example(); }
+  free(example_ptr);
 }
 
 void finish_example(vw&, example&);

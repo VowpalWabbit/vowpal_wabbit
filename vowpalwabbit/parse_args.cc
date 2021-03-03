@@ -248,8 +248,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
         if (new_buffer == nullptr)
         {
           free(buffer);
-          VW::dealloc_example(all.example_parser->lbl_parser.delete_label, *ec);
-          free(ec);
+          VW::dealloc_examples(ec, 1);
           THROW("error: memory allocation failed in reading dictionary");
         }
         else
@@ -283,8 +282,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     for (size_t i = 0; i < 256; i++) { ec->feature_space[i].clear(); }
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
-  VW::dealloc_example(all.example_parser->lbl_parser.delete_label, *ec);
-  free(ec);
+  VW::dealloc_examples(ec, 1);
 
   if (!all.logger.quiet)
     *(all.trace_message) << "dictionary " << s << " contains " << map->size() << " item"
