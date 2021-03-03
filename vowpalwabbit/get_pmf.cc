@@ -7,6 +7,7 @@
 #include "api_status.h"
 #include "debug_log.h"
 #include "parse_args.h"
+#include "guard.h"
 
 // Aliases
 using std::endl;
@@ -46,7 +47,7 @@ int get_pmf::predict(example& ec, experimental::api_status*)
   uint32_t base_prediction;
 
   {  // predict & restore prediction
-    restore_prediction restore(ec);
+    auto restore = VW::stash_guard(ec.pred);
     _base->predict(ec);
     base_prediction = ec.pred.multiclass - 1;
   }

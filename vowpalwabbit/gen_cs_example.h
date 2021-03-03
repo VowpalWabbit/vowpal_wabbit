@@ -47,9 +47,8 @@ float safe_probability(float prob);
 void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p = 0.f);
 
 template <bool is_learn>
-void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
+void gen_cs_example_dm(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
 {  // this implements the direct estimation method, where costs are directly specified by the learned regressor.
-  CB::label ld = ec.l.cb;
 
   float min = FLT_MAX;
   uint32_t argmin = 1;
@@ -169,7 +168,7 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
       gen_cs_example_ips(c, ld, cs_ld);
       break;
     case CB_TYPE_DM:
-      gen_cs_example_dm<is_learn>(c, ec, cs_ld);
+      gen_cs_example_dm<is_learn>(c, ec, ld, cs_ld);
       break;
     case CB_TYPE_DR:
       gen_cs_example_dr<is_learn>(c, ec, ld, cs_ld);
@@ -260,22 +259,23 @@ void call_cs_ldf(VW::LEARNER::multi_learner& base, multi_ex& examples, v_array<C
   size_t index = 0;
   for (auto ec : examples)
   {
-    cb_labels.push_back(ec->l.cb);
+    cb_labels.emplace_back(std::move(ec->l.cb));
     prepped_cs_labels[index].costs.clear();
     prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
-    ec->l.cs = prepped_cs_labels[index++];
+    ec->l.cs = std::move(prepped_cs_labels[index++]);
     ec->ft_offset = offset;
   }
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit([&cb_labels, saved_offset, &examples] {
+  auto restore_guard = VW::scope_exit([&cb_labels, &prepped_cs_labels, saved_offset, &examples] {
     // 3rd: restore cb_label for each example
     // (**ec).l.cb = array.element.
     // and restore offsets
     for (size_t i = 0; i < examples.size(); ++i)
     {
+      prepped_cs_labels[i] = std::move(examples[i]->l.cs);
       examples[i]->l.cs.costs = v_init<COST_SENSITIVE::wclass>();
-      examples[i]->l.cb = cb_labels[i];
+      examples[i]->l.cb = std::move(cb_labels[i]);
       examples[i]->ft_offset = saved_offset;
     }
   });

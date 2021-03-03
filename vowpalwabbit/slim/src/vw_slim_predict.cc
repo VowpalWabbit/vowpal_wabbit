@@ -26,7 +26,7 @@ namespace_copy_guard::namespace_copy_guard(example_predict& ex, unsigned char ns
 
 namespace_copy_guard::~namespace_copy_guard()
 {
-  _ex.indices.pop();
+  _ex.indices.pop_back();
   if (_remove_ns) _ex.feature_space[_ns].clear();
 }
 

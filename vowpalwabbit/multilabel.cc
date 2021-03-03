@@ -68,8 +68,6 @@ bool test_label(MULTILABEL::labels& ld) { return ld.label_v.size() == 0; }
 
 void delete_label(MULTILABEL::labels& ld) { ld.label_v.delete_v(); }
 
-void delete_prediction(void* v) { delete_label(*reinterpret_cast<MULTILABEL::labels*>(v)); }
-
 void copy_label(MULTILABEL::labels& dst, MULTILABEL::labels& src) { copy_array(dst.label_v, src.label_v); }
 
 void parse_label(

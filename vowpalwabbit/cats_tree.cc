@@ -13,6 +13,7 @@
 #include "debug_log.h"
 #include "explore_internal.h"
 #include "hash.h"
+#include "guard.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -219,9 +220,8 @@ float cats_tree::return_cost(const tree_node& w)
 
 void cats_tree::learn(LEARNER::single_learner& base, example& ec)
 {
-  polylabel saved_label = std::move(ec.l);
   const float saved_weight = ec.weight;
-  const polyprediction saved_pred = ec.pred;
+  auto saved_pred = stash_guard(ec.pred);
 
   const vector<tree_node>& nodes = _binary_tree.nodes;
   v_array<cb_class>& ac = ec.l.cb.costs;
@@ -302,9 +302,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
     _b = {nodes[_b.node_id].parent_id, b_parent_cost};
   }
 
-  ec.l = saved_label;
   ec.weight = saved_weight;
-  ec.pred = saved_pred;
 }
 
 void cats_tree::set_trace_message(std::ostream* vw_ostream, bool quiet)

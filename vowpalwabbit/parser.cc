@@ -700,6 +700,17 @@ void setup_example(vw& all, example* ae)
     ae->total_sum_feat_sq += fs.sum_feat_sq;
   }
 
+  if (all.interactions.quadratics_wildcard_expansion)
+  {
+    // lock while adding interactions since reductions might also be adding their own interactions
+    std::unique_lock<std::mutex> lock(all.interactions.mut);
+    for (auto& ns : ae->indices)
+    {
+      if (ns < constant_namespace) { all.interactions.all_seen_namespaces.insert(ns); }
+    }
+    INTERACTIONS::expand_quadratics_wildcard_interactions(all.interactions);
+  }
+
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
 
@@ -938,7 +949,7 @@ void free_parser(vw& all)
   while (!all.example_parser->example_pool.empty())
   {
     example* temp = all.example_parser->example_pool.get_object();
-    temp->delete_unions(all.example_parser->lbl_parser.delete_label, all.delete_prediction);
+    temp->delete_unions(all.example_parser->lbl_parser.delete_label, nullptr);
     drain_pool.push_back(temp);
   }
   for (auto* example_ptr : drain_pool) { all.example_parser->example_pool.return_object(example_ptr); }

@@ -7,18 +7,12 @@
 #  define NOMINMAX
 #endif
 
-#include <iostream>
-#include <algorithm>
+#include <ostream>
+#include <utility>
 #include <cstdlib>
-#include <cstring>
 #include <cassert>
-#include <cstdint>
-
-#ifdef _WIN32
-#  define __INLINE
-#else
-#  define __INLINE inline
-#endif
+#include <string>
+#include "future_compat.h"
 
 #ifndef VW_NOEXCEPT
 #  include "vw_exception.h"
@@ -26,86 +20,218 @@
 
 #include "memory.h"
 
-const size_t erase_point = ~((1u << 10u) - 1u);
-
 template <class T>
 struct v_array
 {
+  static_assert(sizeof(T) > 0, "The sizeof v_array's element type T cannot be 0.");
+
+private:
+  static constexpr size_t ERASE_POINT = ~((1u << 10u) - 1u);
+
+  void delete_v_array()
+  {
+    if (_begin != nullptr)
+    {
+      for (iterator item = _begin; item != _end; ++item) { item->~T(); }
+      free(_begin);
+    }
+    _begin = nullptr;
+    _end = nullptr;
+    end_array = nullptr;
+    _erase_count = 0;
+  }
+
+  void reserve_nocheck(size_t length)
+  {
+    if (capacity() == length || length == 0) { return; }
+    const size_t old_len = size();
+
+    T* temp = reinterpret_cast<T*>(std::realloc(_begin, sizeof(T) * length));
+    if (temp == nullptr) { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
+    else
+    {
+      _begin = temp;
+    }
+
+    _end = _begin + std::min(old_len, length);
+    end_array = _begin + length;
+    memset(_end, 0, (end_array - _end) * sizeof(T));
+  }
+
+public:
   // private:
   T* _begin;
   T* _end;
 
 public:
   T* end_array;
-  size_t erase_count;
 
-  using iterator = T*;
+private:
+  size_t _erase_count;
+
+public:
+  using value_type = T;
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using pointer = value_type*;
+  using const_pointer = const value_type*;
+  using iterator = value_type*;
+  using const_iterator = const value_type*;
 
   // enable C++ 11 for loops
-  inline T*& begin() { return _begin; }
-  inline T*& end() { return _end; }
+  inline iterator& begin() { return _begin; }
+  inline iterator& end() { return _end; }
 
-  inline const T* begin() const { return _begin; }
-  inline const T* end() const { return _end; }
+  inline const_iterator begin() const { return _begin; }
+  inline const_iterator end() const { return _end; }
 
-  inline T* cbegin() const { return _begin; }
-  inline T* cend() const { return _end; }
+  inline const_iterator cbegin() const { return _begin; }
+  inline const_iterator cend() const { return _end; }
 
-  // v_array cannot have a user-defined constructor, because it participates in various unions.
-  // union members cannot have user-defined constructors.
-  // v_array() : _begin(nullptr), _end(nullptr), end_array(nullptr), erase_count(0) {}
-  // ~v_array() {
-  //  delete_v();
-  // }
+  v_array() noexcept : _begin(nullptr), _end(nullptr), end_array(nullptr), _erase_count(0) {}
+  ~v_array() { delete_v_array(); }
+
+  v_array(v_array<T>&& other) noexcept
+  {
+    _erase_count = 0;
+    _begin = nullptr;
+    _end = nullptr;
+    end_array = nullptr;
+
+    std::swap(_begin, other._begin);
+    std::swap(_end, other._end);
+    std::swap(end_array, other.end_array);
+    std::swap(_erase_count, other._erase_count);
+  }
+
+  v_array<T>& operator=(v_array<T>&& other) noexcept
+  {
+    std::swap(_begin, other._begin);
+    std::swap(_end, other._end);
+    std::swap(end_array, other.end_array);
+    std::swap(_erase_count, other._erase_count);
+    return *this;
+  }
+
+  v_array(const v_array<T>& other)
+  {
+    _begin = nullptr;
+    _end = nullptr;
+    end_array = nullptr;
+    _erase_count = 0;
+
+    // TODO this should use the other version when T is trivially copyable and this otherwise.
+    copy_array_no_memcpy(*this, other);
+  }
+
+  v_array<T>& operator=(const v_array<T>& other)
+  {
+    if (this == &other) return *this;
+
+    delete_v_array();
+    // TODO this should use the other version when T is trivially copyable and this otherwise.
+    copy_array_no_memcpy(*this, other);
+    return *this;
+  }
+
+  inline T& back() { return *(_end - 1); }
+  inline const T& back() const { return *(_end - 1); }
+
+  inline void pop_back()
+  {
+    // Check if the v_array is empty.
+    assert(_begin != _end);
+    (--_end)->~T();
+  }
+
+  VW_DEPRECATED("v_array::pop() is deprecated. Use pop_back()")
+  T pop()
+  {
+    T ret = back();
+    pop_back();
+    return ret;
+  }
+
+  VW_DEPRECATED("v_array::last() is deprecated. Use back()")
   T last() const { return *(_end - 1); }
-  T pop() { return *(--_end); }
+
   bool empty() const { return _begin == _end; }
   void decr() { _end--; }
   void incr()
   {
-    if (_end == end_array) resize(2 * (end_array - _begin) + 3);
+    if (_end == end_array) resize(2 * capacity() + 3);
     _end++;
   }
   T& operator[](size_t i) const { return _begin[i]; }
   inline size_t size() const { return _end - _begin; }
-  void resize(size_t length)
+  inline size_t capacity() const { return end_array - _begin; }
+
+  // maintain the original (deprecated) interface for compatibility. To be removed in VW 10
+  //   VW_DEPRECATED(
+  //       "v_array::resize() is deprecated. Use reserve() instead.
+  // For standard resize behavior, use actual_resize(). The function names will be re-aligned in VW 10")
+  void resize(size_t length) { reserve_nocheck(length); }
+
+  // change the number of elements in the vector
+  // to be renamed to resize() in VW 10
+  void actual_resize(size_t length)
   {
-    if ((size_t)(end_array - _begin) != length)
+    auto old_size = size();
+    // if new length is smaller than current size destroy the excess elements
+    for (auto idx = length; idx < old_size; ++idx) { _begin[idx].~T(); }
+    reserve(length);
+    _end = _begin + length;
+    // default construct any newly added elements
+    // TODO: handle non-default constructable objects
+    // requires second interface
+    for (auto idx = old_size; idx < length; ++idx) { new (&_begin[idx]) T(); }
+  }
+
+  void shrink_to_fit()
+  {
+    if (size() < capacity())
     {
-      size_t old_len = _end - _begin;
-      T* temp = (T*)realloc(_begin, sizeof(T) * length);
-      if ((temp == nullptr) && ((sizeof(T) * length) > 0))
-      { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
+      if (empty())
+      {
+        // realloc on size 0 doesn't have a specified behavior
+        // just shrink to 1 for now (alternatively, call delete_v())
+        reserve_nocheck(1);
+      }
       else
-        _begin = temp;
-      if (old_len < length && _begin + old_len != nullptr) memset(_begin + old_len, 0, (length - old_len) * sizeof(T));
-      _end = _begin + old_len;
-      end_array = _begin + length;
+      {
+        reserve_nocheck(size());
+      }
     }
+  }
+
+  // reserve enough space for the specified number of elements
+  inline void reserve(size_t length)
+  {
+    if (capacity() < length) reserve_nocheck(length);
+  }
+
+  // Don't modify the buffer size, just clear the elements
+  inline void clear_noshrink()
+  {
+    for (T* item = _begin; item != _end; ++item) item->~T();
+    _end = _begin;
   }
 
   void clear()
   {
-    if (++erase_count & erase_point)
+    if (++_erase_count & ERASE_POINT)
     {
-      resize(_end - _begin);
-      erase_count = 0;
+      shrink_to_fit();
+      _erase_count = 0;
     }
-    for (T* item = _begin; item != _end; ++item) item->~T();
-    _end = _begin;
+    clear_noshrink();
   }
-  void delete_v()
-  {
-    if (_begin != nullptr)
-    {
-      for (T* item = _begin; item != _end; ++item) item->~T();
-      free(_begin);
-    }
-    _begin = _end = end_array = nullptr;
-  }
+
+  void delete_v() { delete_v_array(); }
+
   void push_back(const T& new_ele)
   {
-    if (_end == end_array) resize(2 * (end_array - _begin) + 3);
+    if (_end == end_array) resize(2 * capacity() + 3);
     new (_end++) T(new_ele);
   }
 
@@ -114,7 +240,7 @@ public:
   template <class... Args>
   void emplace_back(Args&&... args)
   {
-    if (_end == end_array) resize(2 * (end_array - _begin) + 3);
+    if (_end == end_array) resize(2 * capacity() + 3);
     new (_end++) T(std::forward<Args>(args)...);
   }
 
@@ -151,7 +277,7 @@ public:
 
     if (!contain_sorted(new_ele, index))
     {
-      if (_end == end_array) resize(2 * (end_array - _begin) + 3);
+      if (_end == end_array) resize(2 * capacity() + 3);
 
       to_move = size - index;
 
@@ -181,7 +307,7 @@ public:
 template <class T>
 inline v_array<T> v_init()
 {
-  return {nullptr, nullptr, nullptr, 0};
+  return v_array<T>();
 }
 
 template <class T>
@@ -228,15 +354,6 @@ void calloc_reserve(v_array<T>& v, size_t length)
 }
 
 template <class T>
-v_array<T> pop(v_array<v_array<T> >& stack)
-{
-  if (stack._end != stack._begin)
-    return *(--stack._end);
-  else
-    return v_array<T>();
-}
-
-template <class T>
 bool v_array_contains(v_array<T>& A, T x)
 {
   for (T* e = A._begin; e != A._end; ++e)
@@ -262,8 +379,23 @@ std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
   return os;
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+
+template <class T>
+VW_DEPRECATED("pop is deprecated and will be removed in a future version.")
+v_array<T> pop(v_array<v_array<T> >& stack)
+{
+  if (stack._end != stack._begin)
+    return *(--stack._end);
+  else
+    return v_array<T>();
+}
+
+VW_DEPRECATED("v_string is deprecated and will be removed in a future version.")
 typedef v_array<unsigned char> v_string;
 
+VW_DEPRECATED("string2v_string is deprecated and will be removed in a future version.")
 inline v_string string2v_string(const std::string& s)
 {
   v_string res = v_init<unsigned char>();
@@ -271,9 +403,12 @@ inline v_string string2v_string(const std::string& s)
   return res;
 }
 
+VW_DEPRECATED("v_string2string is deprecated and will be removed in a future version.")
 inline std::string v_string2string(const v_string& v_s)
 {
   std::string res;
   for (unsigned char* i = v_s._begin; i != v_s._end; ++i) res.push_back(*i);
   return res;
 }
+
+VW_WARNING_STATE_POP

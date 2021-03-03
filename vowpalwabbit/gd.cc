@@ -592,7 +592,7 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
 float compute_update(gd& g, example& ec)
 {
   // invariant: not a test label, importance weight > 0
-  label_data& ld = ec.l.simple;
+  const label_data& ld = ec.l.simple;
   vw& all = *g.all;
 
   float update = 0.;

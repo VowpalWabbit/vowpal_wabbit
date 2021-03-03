@@ -433,7 +433,7 @@ public:
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  std::vector<std::vector<namespace_index>> interactions;
+  namespace_interactions interactions;
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
@@ -456,7 +456,9 @@ public:
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
+  VW_DEPRECATED("delete_prediction has been deprecated")
   void (*delete_prediction)(void*);
+
   vw_logger logger;
   bool audit;     // should I print lots of debugging information?
   bool training;  // Should I train if lable data is available?
