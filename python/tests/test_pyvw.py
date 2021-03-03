@@ -429,3 +429,9 @@ def test_dsjson():
     assert len(pred) == len(expected)
     for a,b in zip(pred, expected):
         assert isclose(a, b)
+
+def test_constructor_exception_is_safe():
+    try:
+        vw = pyvw.vw("--invalid_option")
+    except:
+        pass
