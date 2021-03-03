@@ -267,7 +267,7 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
     LabelDict::del_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
   });
 
-  ec.l.simple = label_data{FLT_MAX};
+  ec.l.simple = label_data{FLT_MAX,VW::UNUSED_1,VW::UNUSED_0};
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
 }
