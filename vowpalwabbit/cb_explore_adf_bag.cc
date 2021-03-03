@@ -134,14 +134,7 @@ cb_explore_adf_bag::~cb_explore_adf_bag() { _action_probs.delete_v(); }
 void finish_bag_example(vw &all, cb_explore_adf_base<cb_explore_adf_bag> &data, multi_ex &ec_seq)
 {
   assert(ec_seq.size() > 0);
-
-  // Warning: Deleted copy constructor?  This can cause issues if predictions have to be restored
-  // and predictions of base learners are not known in advance
-//  polyprediction saved_prediction = ec_seq[0]->pred;
   ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
-  // Guard inner example state restore against throws
-  //auto restore_guard = VW::scope_exit([&saved_prediction, &ec_seq] { ec_seq[0]->pred = saved_prediction; });
-
   cb_explore_adf_base<cb_explore_adf_bag>::finish_multiline_example(all, data, ec_seq);
 }
 
