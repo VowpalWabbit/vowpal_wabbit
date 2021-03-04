@@ -250,8 +250,8 @@ void cs_prep_labels(multi_ex& examples, std::vector<CB::label>& cb_labels, COST_
 
 template <bool is_learn>
 void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples, std::vector<CB::label>& cb_labels,
-    COST_SENSITIVE::label& cs_labels, std::vector<COST_SENSITIVE::label>& prepped_cs_labels, bool predict_first, uint64_t offset,
-    size_t id = 0)
+    COST_SENSITIVE::label& cs_labels, std::vector<COST_SENSITIVE::label>& prepped_cs_labels, bool predict_first,
+    uint64_t offset, size_t id = 0)
 {
   VW_DBG(*examples[0]) << "cs_ldf_learn: ex=" << examples[0]->example_counter << ", offset=" << offset << ", id=" << id
                        << std::endl;

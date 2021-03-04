@@ -172,10 +172,7 @@ void cs_prep_labels(multi_ex& examples, std::vector<CB::label>& cb_labels, COST_
     std::vector<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset)
 {
   cb_labels.clear();
-  if (prepped_cs_labels.size() < cs_labels.costs.size() + 1)
-  {
-    prepped_cs_labels.resize(cs_labels.costs.size() + 1);
-  }
+  if (prepped_cs_labels.size() < cs_labels.costs.size() + 1) { prepped_cs_labels.resize(cs_labels.costs.size() + 1); }
 
   size_t index = 0;
   for (auto ec : examples)
