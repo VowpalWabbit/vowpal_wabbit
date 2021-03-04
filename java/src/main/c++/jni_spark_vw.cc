@@ -359,8 +359,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish(JN
 
   try
   {
-    VW::dealloc_example(all->example_parser->lbl_parser.delete_label, *ex);
-    ::free_it(ex);
+    VW::dealloc_examples(ex, 1);
   }
   catch (...)
   {
