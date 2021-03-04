@@ -577,10 +577,10 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 #endif
 
 #ifdef BUILD_EXTERNAL_PARSER
-      else if (input_options.external_parser)
+      else if (!input_options.external_parser.empty())
       {
-        all.external_parser = VW::make_unique<VW::external_parser>(&all);
-        all.example_parser->reader = VW::parse_examples;
+        all.external_parser = VW::external::parser::get_external_parser(&all, input_options.external_parser);
+        all.example_parser->reader = VW::external::parse_examples;
       }
 #endif
       else

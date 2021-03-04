@@ -319,7 +319,10 @@ struct vw_logger
 
 namespace VW
 {
-class external_parser;
+namespace external
+{
+class parser;
+}
 }  // namespace VW
 
 namespace VW
@@ -387,7 +390,7 @@ public:
 #endif
 
 #ifdef BUILD_EXTERNAL_PARSER
-  std::unique_ptr<VW::external_parser> external_parser;
+  std::unique_ptr<VW::external::parser> external_parser;
 #endif
   std::string data_filename;
 
