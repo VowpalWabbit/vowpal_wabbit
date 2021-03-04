@@ -45,7 +45,7 @@ void add_grams(
 }
 
 void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NUM_NAMESPACES>& dest,
-    const std::string& descriptor, bool quiet)
+		  const std::string& descriptor, bool /*quiet*/)
 {
   for (const auto& gram : grams)
   {
