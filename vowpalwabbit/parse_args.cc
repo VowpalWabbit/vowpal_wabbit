@@ -359,7 +359,9 @@ void parse_diagnostics(options_i& options, vw& all)
       .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
       .add(make_option("dry_run", skip_driver)
                .help("Parse arguments and print corresponding metadata. Will not execute driver."))
-      .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
+      .add(make_option("help", help)
+               .short_name("h")
+               .help("More information on vowpal wabbit can be found here https://vowpalwabbit.org."));
 
   options.add_and_parse(diagnostic_group);
 
