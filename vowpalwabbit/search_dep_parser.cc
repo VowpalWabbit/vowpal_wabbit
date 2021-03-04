@@ -51,7 +51,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   vw &all = sch.get_vw_pointer_unsafe();
   task_data *data = new task_data();
   data->action_loss.resize(5);
-  data->ex = NULL;
+  data->ex = nullptr;
   sch.set_task_data<task_data>(data);
 
   option_group_definition new_options("Dependency Parser Options");
@@ -120,8 +120,7 @@ void finish(Search::search &sch)
   data->action_loss.delete_v();
   data->gold_actions.delete_v();
   data->gold_action_temp.delete_v();
-  VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data->ex);
-  free(data->ex);
+  VW::dealloc_examples(data->ex, 1);
   for (size_t i = 0; i < 6; i++) data->children[i].delete_v();
   delete data;
 }

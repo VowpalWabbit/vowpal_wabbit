@@ -157,12 +157,11 @@ struct ldf
   action_scores a_s;
   uint64_t ft_offset;
 
-  v_array<action_scores> stored_preds;
+  std::vector<action_scores> stored_preds;
 
   ~ldf()
   {
     a_s.delete_v();
-    stored_preds.delete_v();
   }
 };
 
