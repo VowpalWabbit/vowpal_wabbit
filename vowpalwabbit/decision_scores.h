@@ -24,7 +24,7 @@ namespace VW
 {
 // Each position in outer array is implicitly the decision corresponding to that index. Each inner array is the result
 // of CB for that call.
-using decision_scores_t = v_array<ACTION_SCORE::action_scores>;
+using decision_scores_t = std::vector<ACTION_SCORE::action_scores>;
 
 void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decision_scores);
 

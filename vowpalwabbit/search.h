@@ -299,14 +299,10 @@ public:
   // set/add allowed but with per-actions costs specified
   predictor& add_allowed(action a, float cost);
   predictor& add_allowed(action* a, float* costs, size_t action_count);
-  VW_DEPRECATED("Use the std::vector variant of add_allowed.")
-  predictor& add_allowed(v_array<std::pair<action, float> >& a);
   predictor& add_allowed(std::vector<std::pair<action, float> >& a);
 
   predictor& set_allowed(action a, float cost);
   predictor& set_allowed(action* a, float* costs, size_t action_count);
-  VW_DEPRECATED("Use the std::vector variant of set_allowed.")
-  predictor& set_allowed(v_array<std::pair<action, float> >& a);
   predictor& set_allowed(std::vector<std::pair<action, float> >& a);
 
   // add a tag to condition on with a name, or set the conditioning
