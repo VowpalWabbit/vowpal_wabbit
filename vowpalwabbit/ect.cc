@@ -35,7 +35,7 @@ struct ect
 
   v_array<direction> directions;  // The nodes of the tournament datastructure
 
-  v_array<v_array<v_array<uint32_t>>> all_levels;
+  std::vector<std::vector<v_array<uint32_t>>> all_levels;
 
   v_array<uint32_t> final_nodes;  // The final nodes of each tournament.
 
@@ -50,12 +50,6 @@ struct ect
 
   ~ect()
   {
-    for (auto& all_level : all_levels)
-    {
-      for (auto& t : all_level) t.delete_v();
-      all_level.delete_v();
-    }
-    all_levels.delete_v();
     final_nodes.delete_v();
     up_directions.delete_v();
     directions.delete_v();
@@ -80,14 +74,14 @@ size_t final_depth(size_t eliminations)
   return 31;
 }
 
-bool not_empty(v_array<v_array<uint32_t>> const& tournaments)
+bool not_empty(std::vector<v_array<uint32_t>> const& tournaments)
 {
   auto const first_non_empty_tournament = std::find_if(tournaments.cbegin(), tournaments.cend(),
       [](const v_array<uint32_t>& tournament) { return !tournament.empty(); });
   return first_non_empty_tournament != tournaments.cend();
 }
 
-void print_level(v_array<v_array<uint32_t>> const& level)
+void print_level(std::vector<v_array<uint32_t>> const& level)
 {
   for (auto const& t : level)
   {
@@ -101,7 +95,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 {
   if (max_label == 1) return 0;
 
-  v_array<v_array<uint32_t>> tournaments = v_init<v_array<uint32_t>>();
+  std::vector<v_array<uint32_t>> tournaments;
   v_array<uint32_t> t = v_init<uint32_t>();
 
   for (uint32_t i = 0; i < max_label; i++)
@@ -123,7 +117,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
   while (not_empty(e.all_levels[level]))
   {
-    v_array<v_array<uint32_t>> new_tournaments = v_init<v_array<uint32_t>>();
+    std::vector<v_array<uint32_t>> new_tournaments;
     tournaments = e.all_levels[level];
 
     for (size_t i = 0; i < tournaments.size(); i++)

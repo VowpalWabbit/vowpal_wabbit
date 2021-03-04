@@ -2491,7 +2491,7 @@ void search_finish(search& sch)
   if (priv.metatask && priv.metatask->finish) priv.metatask->finish(sch);
 }
 
-v_array<CS::label> read_allowed_transitions(action A, const char* filename)
+std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
 {
   FILE* f;
   if (VW::file_open(&f, filename, "r") != 0)
@@ -2516,12 +2516,12 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
   }
   fclose(f);
 
-  v_array<CS::label> allowed = v_init<CS::label>();
+  std::vector<CS::label> allowed;
 
   // from
   for (size_t i = 0; i < A; i++)
   {
-    v_array<CS::wclass> costs = v_init<CS::wclass>();
+    v_array<CS::wclass> costs;
 
     // to
     for (size_t j = 0; j < A; j++)
@@ -3278,15 +3278,7 @@ predictor& predictor::add_allowed(action* a, float* costs, size_t action_count)
   }
   return *this;
 }
-predictor& predictor::add_allowed(v_array<std::pair<action, float>>& a)
-{
-  for (const auto& item : a)
-  {
-    allowed_actions.push_back(item.first);
-    allowed_actions_cost.push_back(item.second);
-  }
-  return *this;
-}
+
 predictor& predictor::add_allowed(std::vector<std::pair<action, float>>& a)
 {
   for (const auto& item : a)
@@ -3311,14 +3303,6 @@ predictor& predictor::set_allowed(action* a, float* costs, size_t action_count)
   return add_allowed(a, costs, action_count);
 }
 
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-predictor& predictor::set_allowed(v_array<std::pair<action, float>>& a)
-{
-  erase_alloweds();
-  return add_allowed(a);
-}
-VW_WARNING_STATE_POP
 predictor& predictor::set_allowed(std::vector<std::pair<action, float>>& a)
 {
   erase_alloweds();

@@ -138,6 +138,9 @@
     <ClCompile Include="flatbuffer_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="v_array_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test_common.h">

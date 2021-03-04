@@ -164,12 +164,11 @@ struct ldf
   action_scores a_s;
   uint64_t ft_offset;
 
-  v_array<action_scores> saved_preds;
+  std::vector<action_scores> stored_preds;
 
   ~ldf()
   {
     a_s.delete_v();
-    saved_preds.delete_v();
   }
 };
 
@@ -529,15 +528,15 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
 
   /////////////////////// do prediction
   data.a_s.clear();
-  data.saved_preds.clear();
+  data.stored_preds.clear();
 
   auto restore_guard = VW::scope_exit([&data, &ec_seq, K] {
     qsort((void*)data.a_s.begin(), data.a_s.size(), sizeof(action_score), score_comp);
 
-    data.saved_preds[0].clear();
+    data.stored_preds[0].clear();
     for (size_t k = 0; k < K; k++)
     {
-      ec_seq[k]->pred.a_s = std::move(data.saved_preds[k]);
+      ec_seq[k]->pred.a_s = std::move(data.stored_preds[k]);
       ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
     }
 
@@ -548,7 +547,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
   for (uint32_t k = 0; k < K; k++)
   {
     example* ec = ec_seq[k];
-    data.saved_preds.emplace_back(std::move(ec->pred.a_s));
+    data.stored_preds.emplace_back(std::move(ec->pred.a_s));
     make_single_prediction(data, base, *ec);
     action_score s;
     s.score = ec->partial_prediction;
