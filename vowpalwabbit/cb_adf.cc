@@ -64,9 +64,9 @@ private:
   VW::version_struct* _model_file_ver;
 
   cb_to_cs_adf _gen_cs;
-  v_array<CB::label> _cb_labels;
+  std::vector<CB::label> _cb_labels;
   COST_SENSITIVE::label _cs_labels;
-  v_array<COST_SENSITIVE::label> _prepped_cs_labels;
+  std::vector<COST_SENSITIVE::label> _prepped_cs_labels;
 
   action_scores _a_s;              // temporary storage for mtr and sm
   action_scores _a_s_mtr_cs;       // temporary storage for mtr cost sensitive example
@@ -101,9 +101,6 @@ public:
 
   ~cb_adf()
   {
-    _cb_labels.delete_v();
-    for (auto& prepped_cs_label : _prepped_cs_labels) prepped_cs_label.costs.delete_v();
-    _prepped_cs_labels.delete_v();
     _cs_labels.costs.delete_v();
     _backup_weights.delete_v();
     _backup_nf.delete_v();

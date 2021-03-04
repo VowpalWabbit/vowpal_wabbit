@@ -20,8 +20,16 @@
 
 #include "memory.h"
 
+// If you get an error message saying that x uses undefined struct 'v_array<...,void>' that means the type
+// is not trivially copyable and cannot be used with v_array.
+template <typename T, typename Enable = void>
+struct v_array;
+
+// v_array makes use of realloc for efficiency. However, it is only safe to use trivially copyable types,
+// as std::realloc may do a memcpy if a new piece of memory must be allocated.
+
 template <class T>
-struct v_array
+struct v_array<T, typename std::enable_if<std::is_trivially_copyable<T>::value>::type>
 {
   static_assert(sizeof(T) > 0, "The sizeof v_array's element type T cannot be 0.");
 
