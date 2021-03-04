@@ -71,13 +71,7 @@ struct cbify
 
     if (use_adf)
     {
-      for (size_t a = 0; a < adf_data.num_actions; ++a)
-      {
-        adf_data.ecs[a]->pred.a_s.delete_v();
-        VW::dealloc_example(CB::cb_label.delete_label, *adf_data.ecs[a]);
-        free_it(adf_data.ecs[a]);
-      }
-      for (auto& as : cb_as) as.delete_v();
+      for (auto* ex : adf_data.ecs) { VW::dealloc_examples(ex, 1); }
     }
   }
 };
