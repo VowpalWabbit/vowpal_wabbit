@@ -58,9 +58,7 @@ class io_buf
   {
     _buffer_begin = reinterpret_cast<char*>(std::realloc(_buffer_begin, sizeof(char) * new_capacity));
     if (_buffer_begin == nullptr)
-    {
-      THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
-    }
+    { THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?"); }
     _buffer_capacity = new_capacity;
   }
 
@@ -164,9 +162,7 @@ public:
     {
       auto written_bytes = output_files[0]->write(_buffer_begin, unflushed_bytes_count());
       if (written_bytes != static_cast<ssize_t>(unflushed_bytes_count()))
-      {
-        std::cerr << "error, failed to write example\n";
-      }
+      { std::cerr << "error, failed to write example\n"; }
       _head = _buffer_begin;
       output_files[0]->flush();
     }
@@ -308,14 +304,16 @@ inline size_t bin_text_read_write_fixed_validated(
 }
 
 #define writeit(what, str)                                                                  \
-  do {                                                                                      \
+  do                                                                                        \
+  {                                                                                         \
     msg << str << " = " << what << " ";                                                     \
     bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), "", read, msg, text); \
   } while (0);
 
 #define writeitvar(what, str, mywhat)                                                           \
   auto mywhat = (what);                                                                         \
-  do {                                                                                          \
+  do                                                                                            \
+  {                                                                                             \
     msg << str << " = " << mywhat << " ";                                                       \
     bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), "", read, msg, text); \
   } while (0);
