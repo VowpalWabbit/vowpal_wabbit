@@ -20,56 +20,82 @@
 #endif
 
 /* The i/o buffer can be conceptualized as an array below:
-**  _______________________________________________________________________________________
-** |__________|__________|__________|__________|__________|__________|__________|__________|   **
-** space.begin           space.head             space.end                       space.endarray **
+**  _________________________________________________________________
+** |__________|__________|__________|__________|__________|__________|
+** _buffer._begin        head       _buffer._end                     _buffer._end_array
 **
-** space.begin     = the beginning of the loaded values in the buffer
-** space.head      = the end of the last-read point in the buffer
-** space.end       = the end of the loaded values from file
-** space.endarray  = the end of the allocated space for the array
+** _buffer._begin     = the beginning of the loaded values in the buffer
+** head               = the end of the last-read point in the buffer
+** _buffer._end       = the end of the loaded values from file
+** _buffer._end_array = the end of the allocated _buffer for the array
 **
 ** The values are ordered so that:
-** space.begin <= space.head <= space.end <= space.endarray
+** _buffer._begin <= head <= _buffer._end <= _buffer._end_array
 **
-** Initially space.begin == space.head since no values have been read.
+** Initially _buffer._begin == head since no values have been read.
 **
-** The interval [space.head, space.end] may be shifted down to space.begin
+** The interval [head, _buffer._end] may be shifted down to _buffer._begin
 ** if the requested number of bytes to be read is larger than the interval size.
 ** This is done to avoid reallocating arrays as much as possible.
 */
 
 class io_buf
 {
+  struct internal_buffer
+  {
+    char* _begin = nullptr;
+    char* _end = nullptr;
+    char* _end_array = nullptr;
+
+    ~internal_buffer()
+    {
+      free(_begin);
+    }
+
+    void realloc(size_t new_capacity)
+    {
+      // This specific internal buffer should only ever grow.
+      assert(new_capacity >= capacity());
+      const auto old_size = size();
+      _begin = reinterpret_cast<char*>(std::realloc(_begin, sizeof(char) * new_capacity));
+      if (_begin == nullptr)
+      {
+        THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
+      }
+      _end = _begin + old_size;
+      _end_array = _begin + new_capacity;
+      memset(_end, 0, sizeof(char) * (_end_array - _end));
+    }
+
+    void shift_to_front(char* new_begin)
+    {
+      const size_t space_left = _end - new_begin;
+      memmove(_begin, new_begin, space_left);
+      _end = _begin + space_left;
+    }
+
+    size_t capacity() const { return _end_array - _begin; }
+    size_t size() const { return _end - _begin; }
+  };
+
   // used to check-sum i/o files for corruption detection
   bool _verify_hash = false;
   uint32_t _hash = 0;
   static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
 
-  char* _buffer_begin = nullptr;
-  char* _head = nullptr;
-  size_t _buffer_populated_size = 0;
-  size_t _buffer_capacity = 0;
+  internal_buffer _buffer;
+  char* head = nullptr;
+
 
   std::vector<std::unique_ptr<VW::io::reader>> input_files;
   std::vector<std::unique_ptr<VW::io::writer>> output_files;
 
-  void realloc_buffer(size_t new_capacity)
-  {
-    _buffer_begin = reinterpret_cast<char*>(std::realloc(_buffer_begin, sizeof(char) * new_capacity));
-    if (_buffer_begin == nullptr)
-    { THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?"); }
-    _buffer_capacity = new_capacity;
-    memset(_buffer_begin + _buffer_populated_size, 0, sizeof(char) * (_buffer_capacity - _buffer_populated_size));
-  }
-
 public:
   io_buf()
   {
-    realloc_buffer(INITIAL_BUFF_SIZE);
-    _head = _buffer_begin;
+    _buffer.realloc(INITIAL_BUFF_SIZE);
+    head = _buffer._begin;
   }
-  ~io_buf() { free(_buffer_begin); }
 
   io_buf(io_buf& other) = delete;
   io_buf& operator=(io_buf& other) = delete;
@@ -110,8 +136,8 @@ public:
 
   void reset_buffer()
   {
-    _buffer_populated_size = 0;
-    _head = _buffer_begin;
+    _buffer._end = _buffer._begin;
+    head = _buffer._begin;
   }
 
   void reset_file(VW::io::reader* f)
@@ -120,7 +146,7 @@ public:
     reset_buffer();
   }
 
-  void set(char* p) { _head = p; }
+  void set(char* p) { head = p; }
 
   /// This function will return the number of input files AS WELL AS the number of output files. (because of legacy)
   size_t num_files() const { return input_files.size() + output_files.size(); }
@@ -134,18 +160,18 @@ public:
   ssize_t fill(VW::io::reader* f)
   {
     // if the loaded values have reached the allocated space
-    if (_buffer_populated_size == _buffer_capacity)
+    if (_buffer._end_array - _buffer._end == 0)
     {  // reallocate to twice as much space
       size_t head_loc = unflushed_bytes_count();
-      realloc_buffer(_buffer_capacity * 2);
-      _head = _buffer_begin + head_loc;
+      _buffer.realloc(_buffer.capacity() * 2);
+      head = _buffer._begin + head_loc;
     }
     // read more bytes from file up to the remaining allocated space
-    ssize_t num_read = f->read(_buffer_begin + _buffer_populated_size, _buffer_capacity - _buffer_populated_size);
+    ssize_t num_read = f->read(_buffer._end, _buffer._end_array - _buffer._end);
     if (num_read >= 0)
     {
       // if some bytes were actually loaded, update the end of loaded values
-      _buffer_populated_size += num_read;
+      _buffer._end += num_read;
       return num_read;
     }
 
@@ -155,16 +181,16 @@ public:
   // This has different meanings in write and read mode:
   //   - Write mode: Number of bytes that have not yet been flushed to the output device
   //   - Read mode: The offset of the position that has been read up to so far.
-  size_t unflushed_bytes_count() { return _head - _buffer_begin; }
+  size_t unflushed_bytes_count() { return head - _buffer._begin; }
 
   void flush()
   {
     if (!output_files.empty())
     {
-      auto written_bytes = output_files[0]->write(_buffer_begin, unflushed_bytes_count());
-      if (written_bytes != static_cast<ssize_t>(unflushed_bytes_count()))
+      auto bytes_written = output_files[0]->write(_buffer._begin, unflushed_bytes_count());
+      if (bytes_written != static_cast<ssize_t>(unflushed_bytes_count()))
       { std::cerr << "error, failed to write example\n"; }
-      _head = _buffer_begin;
+      head = _buffer._begin;
       output_files[0]->flush();
     }
   }
@@ -234,7 +260,7 @@ public:
   size_t readto(char*& pointer, char terminal);
   size_t copy_to(void* dst, size_t max_size);
   void replace_buffer(char* buf, size_t capacity);
-  char* buffer_start() { return _buffer_begin; }  // This should be replaced with slicing.
+  char* buffer_start() { return _buffer._begin; }  // This should be replaced with slicing.
 };
 
 inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_message)
