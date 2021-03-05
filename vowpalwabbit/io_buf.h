@@ -60,6 +60,7 @@ class io_buf
     if (_buffer_begin == nullptr)
     { THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?"); }
     _buffer_capacity = new_capacity;
+    memset(_buffer_begin + _buffer_populated_size, 0, sizeof(char) * (_buffer_capacity - _buffer_populated_size));
   }
 
 public:
