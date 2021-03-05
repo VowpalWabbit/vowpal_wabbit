@@ -239,21 +239,21 @@ base_learner* setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<pmf_to_pdf::reduction>();
 
-  option_group_definition new_options("Convert discrete PDF into continuous PDF");
+  option_group_definition new_options("Convert discrete PMF into continuous PDF");
   new_options
       .add(make_option("pmf_to_pdf", data->num_actions)
                .default_value(0)
                .necessary()
                .keep()
-               .help("number of tree labels <k> for pmf_to_pdf"))
+               .help("number of discrete actions <k> for pmf_to_pdf"))
       .add(make_option("min_value", data->min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", data->max_value).keep().help("Maximum continuous value"))
       .add(make_option("bandwidth", data->bandwidth)
                .keep()
                .help("Bandwidth (radius) of randomization around discrete actions in terms of continuous range. By "
                      "default will be set to half of the continuous action unit-range resulting in smoothing that "
-                     "stays inside the action space unit-range:\nunit_range = (max_value - min_value) / "
-                     "num_actions\ndefault bandwidth = unit_range / 2.0"))
+                     "stays inside the action space unit-range:\nunit_range = (max_value - "
+                     "min_value)/num-of-actions\ndefault bandwidth = unit_range / 2.0"))
       .add(make_option("first_only", data->first_only)
                .keep()
                .help("Use user provided first action or user provided pdf or uniform random"));

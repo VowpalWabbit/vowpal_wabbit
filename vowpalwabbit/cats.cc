@@ -63,7 +63,7 @@ float cats::get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, f
 
     // is centre close to action from label
     auto logged_action = cb_cont_costs.costs[0].action;
-    if ((logged_action - bandwidth <= centre) && (centre <= logged_action + bandwidth))
+    if ((logged_action - centre <= bandwidth) && (centre - logged_action <= bandwidth))
     {
       float actual_b = std::min(max_value, centre + bandwidth) - std::max(min_value, centre - bandwidth);
 
@@ -159,15 +159,15 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
   float bandwidth = 0;
   float min_value = 0;
   float max_value = 0;
-  new_options.add(make_option("cats", num_actions).keep().necessary().help("number of tree labels <k> for cats"))
+  new_options.add(make_option("cats", num_actions).keep().necessary().help("number of discrete actions <k> for cats"))
       .add(make_option("min_value", min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", max_value).keep().help("Maximum continuous value"))
       .add(make_option("bandwidth", bandwidth)
                .keep()
                .help("Bandwidth (radius) of randomization around discrete actions in terms of continuous range. By "
                      "default will be set to half of the continuous action unit-range resulting in smoothing that "
-                     "stays inside the action space unit-range:\nunit_range = (max_value - min_value) / "
-                     "num_actions\ndefault bandwidth = unit_range / 2.0"));
+                     "stays inside the action space unit-range:\nunit_range = (max_value - "
+                     "min_value)/num-of-actions\ndefault bandwidth = unit_range / 2.0"));
 
   // If cats reduction was not invoked, don't add anything
   // to the reduction stack;
