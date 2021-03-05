@@ -577,7 +577,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 #endif
 
 #ifdef BUILD_EXTERNAL_PARSER
-      else if (input_options.ext_opts->is_enabled())
+      else if (input_options.ext_opts && input_options.ext_opts->is_enabled())
       {
         all.external_parser = VW::external::parser::get_external_parser(&all, input_options);
         all.example_parser->reader = VW::external::parse_examples;
