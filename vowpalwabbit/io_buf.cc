@@ -97,7 +97,6 @@ void io_buf::buf_write(char*& pointer, size_t n)
       head = _buffer._begin;
     }
     buf_write(pointer, n);
-    ~
   }
 }
 
