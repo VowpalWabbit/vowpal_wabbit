@@ -317,13 +317,17 @@ struct vw_logger
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
+#ifdef BUILD_EXTERNAL_PARSER
+// forward declarations
 namespace VW
 {
 namespace external
 {
 class parser;
-}
+struct parser_options;
+}  // namespace external
 }  // namespace VW
+#endif
 
 namespace VW
 {

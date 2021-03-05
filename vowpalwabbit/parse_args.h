@@ -22,7 +22,10 @@ struct input_options
   bool compressed;
   bool chain_hash_json;
   bool flatbuffer = false;
-  std::string external_parser;
+#ifdef BUILD_EXTERNAL_PARSER
+  // pointer because it is an incomplete type
+  std::unique_ptr<VW::external::parser_options> ext_opts;
+#endif
 };
 
 // trace listener + context need to be passed at initialization to capture all messages.
