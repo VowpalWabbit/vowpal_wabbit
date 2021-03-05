@@ -13,8 +13,11 @@
 
 #include "v_array.h"
 #include "hash.h"
-#include "vw_exception.h"
 #include "io/io_adapter.h"
+
+#ifndef VW_NOEXCEPT
+#  include "vw_exception.h"
+#endif
 
 /* The i/o buffer can be conceptualized as an array below:
 **  _______________________________________________________________________________________
@@ -39,25 +42,46 @@
 class io_buf
 {
   // used to check-sum i/o files for corruption detection
-  bool _verify_hash;
-  uint32_t _hash;
+  bool _verify_hash = false;
+  uint32_t _hash = 0;
   static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
-  char* head;
 
-  v_array<char> space;  // space.begin = beginning of loaded values.  space.end = end of read or written values from/to
-                        // the buffer.
+  char* _buffer_begin = nullptr;
+  char* _head = nullptr;
+  size_t _buffer_populated_size = 0;
+  size_t _buffer_capacity = 0;
 
-public:
   std::vector<std::unique_ptr<VW::io::reader>> input_files;
   std::vector<std::unique_ptr<VW::io::writer>> output_files;
-  size_t current;  // file descriptor currently being used.
+
+  void realloc_buffer(size_t new_capacity)
+  {
+    _buffer_begin = reinterpret_cast<char*>(std::realloc(nullptr, sizeof(char) * new_capacity));
+    if (_buffer_begin == nullptr)
+    {
+      THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
+    }
+    _buffer_capacity = new_capacity;
+  }
+
+public:
+  io_buf()
+  {
+    realloc_buffer(INITIAL_BUFF_SIZE);
+    _head = _buffer_begin;
+  }
+  ~io_buf() { free(_buffer_begin); }
 
   io_buf(io_buf& other) = delete;
   io_buf& operator=(io_buf& other) = delete;
   io_buf(io_buf&& other) = delete;
   io_buf& operator=(io_buf&& other) = delete;
 
-  ~io_buf() { space.delete_v(); }
+  const std::vector<std::unique_ptr<VW::io::reader>>& get_input_files() const { return input_files; }
+  const std::vector<std::unique_ptr<VW::io::writer>>& get_output_files() const { return output_files; }
+
+  // file descriptor currently being used.
+  size_t current = 0;
 
   void verify_hash(bool verify)
   {
@@ -87,8 +111,8 @@ public:
 
   void reset_buffer()
   {
-    space.end() = space.begin();
-    head = space.begin();
+    _buffer_populated_size = 0;
+    _head = _buffer_begin;
   }
 
   void reset_file(VW::io::reader* f)
@@ -97,14 +121,7 @@ public:
     reset_buffer();
   }
 
-  io_buf() : _verify_hash{false}, _hash{0}, current{0}
-  {
-    space = v_init<char>();
-    space.resize(INITIAL_BUFF_SIZE);
-    head = space.begin();
-  }
-
-  void set(char* p) { head = p; }
+  void set(char* p) { _head = p; }
 
   /// This function will return the number of input files AS WELL AS the number of output files. (because of legacy)
   size_t num_files() const { return input_files.size() + output_files.size(); }
@@ -118,50 +135,39 @@ public:
   ssize_t fill(VW::io::reader* f)
   {
     // if the loaded values have reached the allocated space
-    if (space.end_array - space.end() == 0)
+    if (_buffer_populated_size == _buffer_capacity)
     {  // reallocate to twice as much space
       size_t head_loc = unflushed_bytes_count();
-      space.resize(2 * space.capacity());
-      head = space.begin() + head_loc;
+      realloc_buffer(_buffer_capacity * 2);
+      _head = _buffer_begin + head_loc;
     }
     // read more bytes from file up to the remaining allocated space
-    ssize_t num_read = read_file(f, space.end(), space.end_array - space.end());
+    ssize_t num_read = read_file(f, _buffer_begin + _buffer_populated_size, _buffer_capacity - _buffer_populated_size);
     if (num_read >= 0)
     {
       // if some bytes were actually loaded, update the end of loaded values
-      space.end() = space.end() + num_read;
+      _buffer_populated_size += num_read;
       return num_read;
     }
 
     return 0;
   }
 
-  // You can definitely call write directly on the writer object. This function hasn't been changed yet to reduce churn
-  // in the refactor.
-  static ssize_t write_file(VW::io::writer* f, void* buf, size_t nbytes)
-  {
-    return f->write(static_cast<const char*>(buf), nbytes);
-  }
-
-  // You can definitely call write directly on the writer object. This function hasn't been changed yet to reduce churn
-  // in the refactor.
-  static ssize_t write_file(VW::io::writer* f, const void* buf, size_t nbytes)
-  {
-    return f->write(static_cast<const char*>(buf), nbytes);
-  }
-
   // This has different meanings in write and read mode:
   //   - Write mode: Number of bytes that have not yet been flushed to the output device
   //   - Read mode: The offset of the position that has been read up to so far.
-  size_t unflushed_bytes_count() { return head - space.begin(); }
+  size_t unflushed_bytes_count() { return _head - _buffer_begin; }
 
   void flush()
   {
     if (!output_files.empty())
     {
-      if (write_file(output_files[0].get(), space.begin(), unflushed_bytes_count()) != (int)(unflushed_bytes_count()))
-      { std::cerr << "error, failed to write example\n"; }
-      head = space.begin();
+      auto written_bytes = output_files[0]->write(_buffer_begin, unflushed_bytes_count());
+      if (written_bytes != static_cast<ssize_t>(unflushed_bytes_count()))
+      {
+        std::cerr << "error, failed to write example\n";
+      }
+      _head = _buffer_begin;
       output_files[0]->flush();
     }
   }
@@ -231,7 +237,7 @@ public:
   size_t readto(char*& pointer, char terminal);
   size_t copy_to(void* dst, size_t max_size);
   void replace_buffer(char* buf, size_t capacity);
-  char* buffer_start() { return space.begin(); }  // This should be replaced with slicing.
+  char* buffer_start() { return _buffer_begin; }  // This should be replaced with slicing.
 };
 
 inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_message)
@@ -302,16 +308,14 @@ inline size_t bin_text_read_write_fixed_validated(
 }
 
 #define writeit(what, str)                                                                  \
-  do                                                                                        \
-  {                                                                                         \
+  do {                                                                                      \
     msg << str << " = " << what << " ";                                                     \
     bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), "", read, msg, text); \
   } while (0);
 
 #define writeitvar(what, str, mywhat)                                                           \
   auto mywhat = (what);                                                                         \
-  do                                                                                            \
-  {                                                                                             \
+  do {                                                                                          \
     msg << str << " = " << mywhat << " ";                                                       \
     bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), "", read, msg, text); \
   } while (0);

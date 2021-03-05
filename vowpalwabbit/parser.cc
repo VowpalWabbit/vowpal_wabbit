@@ -227,7 +227,7 @@ void reset_source(vw& all, size_t numbits)
     }
     else
     {
-      for (auto& file : input->input_files)
+      for (auto& file : input->get_input_files())
       {
         input->reset_file(file.get());
         if (cache_numbits(input, file.get()) < numbits) THROW("argh, a bug in caching of some sort!");
@@ -291,7 +291,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.example_parser->input, all.example_parser->input->input_files.back().get());
+      uint64_t c = cache_numbits(all.example_parser->input, all.example_parser->input->get_input_files().back().get());
       if (c < all.num_bits)
       {
         if (!quiet)
