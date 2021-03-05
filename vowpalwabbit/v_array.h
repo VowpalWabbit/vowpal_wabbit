@@ -235,6 +235,27 @@ public:
     clear_noshrink();
   }
 
+  inline iterator erase(iterator it)
+  {
+    assert(it >= begin());
+    const size_t idx = it - begin();
+    assert(idx < size());
+    memmove(&_begin[idx], &_begin[idx + 1], (size() - (idx + 1)) * sizeof(T));
+    --_end;
+    return begin() + idx;
+  }
+
+  inline iterator erase(iterator first, iterator last)
+  {
+    assert(first <= last);
+    assert(first >= begin());
+    const size_t first_index = first - begin();
+    const size_t num_to_erase = last - first;
+    memmove(&_begin[first_index], &_begin[first_index + num_to_erase], (size() - (first_index + num_to_erase)) * sizeof(T));
+    _end -= num_to_erase;
+    return begin() + first_index;
+  }
+
   void delete_v() { delete_v_array(); }
 
   void push_back(const T& new_ele)
