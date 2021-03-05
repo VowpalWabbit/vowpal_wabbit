@@ -58,7 +58,7 @@ class io_buf
       char* temp = reinterpret_cast<char*>(std::realloc(_begin, sizeof(char) * new_capacity));
       if (_begin == nullptr)
       {
-        std::free(_begin);
+        // _begin still needs to be freed but the destructor will do it.
         THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
       }
       else
