@@ -47,10 +47,7 @@ class io_buf
     char* _end = nullptr;
     char* _end_array = nullptr;
 
-    ~internal_buffer()
-    {
-      free(_begin);
-    }
+    ~internal_buffer() { free(_begin); }
 
     void realloc(size_t new_capacity)
     {
@@ -85,7 +82,6 @@ class io_buf
 
   internal_buffer _buffer;
   char* head = nullptr;
-
 
   std::vector<std::unique_ptr<VW::io::reader>> input_files;
   std::vector<std::unique_ptr<VW::io::writer>> output_files;
