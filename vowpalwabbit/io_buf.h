@@ -10,6 +10,7 @@
 #include <vector>
 #include <memory>
 #include <cassert>
+#include <cstdlib>
 
 #include "v_array.h"
 #include "hash.h"
@@ -47,16 +48,23 @@ class io_buf
     char* _end = nullptr;
     char* _end_array = nullptr;
 
-    ~internal_buffer() { free(_begin); }
+    ~internal_buffer() { std::free(_begin); }
 
     void realloc(size_t new_capacity)
     {
       // This specific internal buffer should only ever grow.
       assert(new_capacity >= capacity());
       const auto old_size = size();
-      _begin = reinterpret_cast<char*>(std::realloc(_begin, sizeof(char) * new_capacity));
+      char* temp = reinterpret_cast<char*>(std::realloc(_begin, sizeof(char) * new_capacity));
       if (_begin == nullptr)
-      { THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?"); }
+      {
+        std::free(_begin);
+        THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
+      }
+      else
+      {
+        _begin = temp;
+      }
       _end = _begin + old_size;
       _end_array = _begin + new_capacity;
       memset(_end, 0, sizeof(char) * (_end_array - _end));
@@ -183,7 +191,9 @@ public:
     {
       auto bytes_written = output_files[0]->write(_buffer._begin, unflushed_bytes_count());
       if (bytes_written != static_cast<ssize_t>(unflushed_bytes_count()))
-      { std::cerr << "error, failed to write example\n"; }
+      {
+        std::cerr << "error, failed to write example\n";
+      }
       head = _buffer._begin;
       output_files[0]->flush();
     }
@@ -325,16 +335,14 @@ inline size_t bin_text_read_write_fixed_validated(
 }
 
 #define writeit(what, str)                                                                  \
-  do                                                                                        \
-  {                                                                                         \
+  do {                                                                                      \
     msg << str << " = " << what << " ";                                                     \
     bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), "", read, msg, text); \
   } while (0);
 
 #define writeitvar(what, str, mywhat)                                                           \
   auto mywhat = (what);                                                                         \
-  do                                                                                            \
-  {                                                                                             \
+  do {                                                                                          \
     msg << str << " = " << mywhat << " ";                                                       \
     bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), "", read, msg, text); \
   } while (0);

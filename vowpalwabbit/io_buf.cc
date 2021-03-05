@@ -97,6 +97,7 @@ void io_buf::buf_write(char*& pointer, size_t n)
       head = _buffer._begin;
     }
     buf_write(pointer, n);
+    ~
   }
 }
 
@@ -109,7 +110,7 @@ size_t io_buf::copy_to(void* dst, size_t max_size)
 
 void io_buf::replace_buffer(char* buff, size_t capacity)
 {
-  if (_buffer._begin != nullptr) { free(_buffer._begin); }
+  if (_buffer._begin != nullptr) { std::free(_buffer._begin); }
 
   _buffer._begin = buff;
   _buffer._end = buff + capacity;
