@@ -123,8 +123,8 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_close_to
   // label/action is 33.0f and bandiwdth is 4.0f
   // so if: action - bandwidth <= centre <= action + bandwidth then we calculate the loss (29 <= 29.875 <= 37)
   // bandwidth_range = min(max_value, centre + bandwidth) - max(min_value, centre - bandwidth)
-  // bandiwdth_range = min(34, 33.875) - max(1, 25.875) <=> bandwidth_range = 33.875 - 25.875 <=> bandwidth_range = 8 (2 * bandwidth)
-  // loss = cost / (pdf_value * bandwidth_range) <=> loss = 1.0f / (0.125f * 8) <=> loss = 1
+  // bandiwdth_range = min(34, 33.875) - max(1, 25.875) <=> bandwidth_range = 33.875 - 25.875 <=> bandwidth_range = 8 (2
+  // * bandwidth) loss = cost / (pdf_value * bandwidth_range) <=> loss = 1.0f / (0.125f * 8) <=> loss = 1
   auto loss = data->get_loss(cont_label, predicted_action);
 
   BOOST_CHECK_CLOSE(loss, 1.0f, FLOAT_TOL);
@@ -159,8 +159,8 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_with_default_bandwidth)
   // label/action is 32.0f and bandiwdth is 2.0f
   // so if: action - bandwidth <= centre <= action + bandwidth then we calculate the loss (30 <= 30 <= 34)
   // bandwidth_range = min(max_value, centre + bandwidth) - max(min_value, centre - bandwidth)
-  // bandiwdth_range = min(32, 32) - max(0, 28) <=> bandwidth_range = 32 - 28 <=> bandwidth_range = 4 (i.e. 2 * bandwidth)
-  // loss = cost / (pdf_value * bandwidth_range) <=> loss = 1.0f / (0.25f * 4) <=> loss = 1
+  // bandiwdth_range = min(32, 32) - max(0, 28) <=> bandwidth_range = 32 - 28 <=> bandwidth_range = 4 (i.e. 2 *
+  // bandwidth) loss = cost / (pdf_value * bandwidth_range) <=> loss = 1.0f / (0.25f * 4) <=> loss = 1
   auto loss = data->get_loss(cont_label, predicted_action);
 
   BOOST_CHECK_EQUAL(loss, 1.0f);
