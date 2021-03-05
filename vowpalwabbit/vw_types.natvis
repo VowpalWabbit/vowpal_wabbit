@@ -17,6 +17,11 @@
       </ArrayItems>
     </Expand>
   </Type>
+  <Type Name="io_buf">
+    <Expand>
+      <Item Name="buffer">_buffer_begin,[_buffer_capacity]</Item>
+    </Expand>
+  </Type>
   <Type Name="VW::offset_tree_cont::tree_node">
     <DisplayString>id={id} P={parent_id} lr={left_id},{right_id} d={depth} l={is_leaf}</DisplayString>
   </Type>

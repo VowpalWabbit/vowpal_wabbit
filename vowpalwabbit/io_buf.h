@@ -56,7 +56,7 @@ class io_buf
 
   void realloc_buffer(size_t new_capacity)
   {
-    _buffer_begin = reinterpret_cast<char*>(std::realloc(nullptr, sizeof(char) * new_capacity));
+    _buffer_begin = reinterpret_cast<char*>(std::realloc(_buffer_begin, sizeof(char) * new_capacity));
     if (_buffer_begin == nullptr)
     {
       THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
@@ -142,7 +142,7 @@ public:
       _head = _buffer_begin + head_loc;
     }
     // read more bytes from file up to the remaining allocated space
-    ssize_t num_read = read_file(f, _buffer_begin + _buffer_populated_size, _buffer_capacity - _buffer_populated_size);
+    ssize_t num_read = f->read(_buffer_begin + _buffer_populated_size, _buffer_capacity - _buffer_populated_size);
     if (num_read >= 0)
     {
       // if some bytes were actually loaded, update the end of loaded values
