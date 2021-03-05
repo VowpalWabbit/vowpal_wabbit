@@ -56,9 +56,7 @@ class io_buf
       const auto old_size = size();
       _begin = reinterpret_cast<char*>(std::realloc(_begin, sizeof(char) * new_capacity));
       if (_begin == nullptr)
-      {
-        THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
-      }
+      { THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?"); }
       _end = _begin + old_size;
       _end_array = _begin + new_capacity;
       memset(_end, 0, sizeof(char) * (_end_array - _end));
