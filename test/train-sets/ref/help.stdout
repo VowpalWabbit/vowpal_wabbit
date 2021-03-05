@@ -37,7 +37,8 @@ Diagnostic options:
   --quiet               Don't output disgnostics and progress updates
   --dry_run             Parse arguments and print corresponding metadata. Will 
                         not execute driver.
-  -h [ --help ]         Look here: http://hunch.net/~vw/ and click on Tutorial.
+  -h [ --help ]         More information on vowpal wabbit can be found here 
+                        https://vowpalwabbit.org.
 Randomization options:
   --random_seed arg     seed random number generator
 Feature options:

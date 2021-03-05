@@ -44,7 +44,7 @@ struct plt
   // for prediction
   float threshold;
   uint32_t top_k;
-  v_array<polyprediction> node_preds;  // for storing results of base.multipredict
+  std::vector<polyprediction> node_preds;  // for storing results of base.multipredict
   std::vector<node> node_queue;        // container for queue used for both types of predictions
 
   // for measuring predictive performance
@@ -59,7 +59,6 @@ struct plt
   plt()
   {
     nodes_time = v_init<float>();
-    node_preds = v_init<polyprediction>();
     tp_at = v_init<uint32_t>();
     tp = 0;
     fp = 0;
@@ -71,7 +70,6 @@ struct plt
   ~plt()
   {
     nodes_time.delete_v();
-    node_preds.delete_v();
     tp_at.delete_v();
   }
 };
@@ -113,9 +111,9 @@ void learn(plt& p, single_learner& base, example& ec)
         }
       }
     }
-    if (ec.l.multilabels.label_v.last() >= p.k)
-      std::cout << "label " << ec.l.multilabels.label_v.last() << " is not in {0," << p.k - 1
-                << "} This won't work right." << std::endl;
+    if (multilabels.label_v.back() >= p.k)
+      std::cout << "label " << multilabels.label_v.back() << " is not in {0," << p.k - 1 << "} This won't work right."
+                << std::endl;
 
     for (auto& n : p.positive_nodes)
     {
@@ -162,7 +160,7 @@ void predict(plt& p, single_learner& base, example& ec)
 
   // split labels into true and skip (those > max. label num)
   p.true_labels.clear();
-  for (auto label : ec.l.multilabels.label_v)
+  for (auto label : multilabels.label_v)
   {
     if (label < p.k)
       p.true_labels.insert(label);
@@ -185,7 +183,7 @@ void predict(plt& p, single_learner& base, example& ec)
 
       uint32_t n_child = p.kary * node.n + 1;
       ec.l.simple = {FLT_MAX, 1.f, 0.f};
-      base.multipredict(ec, n_child, p.kary, p.node_preds.begin(), false);
+      base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
 
       for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
       {
@@ -233,7 +231,7 @@ void predict(plt& p, single_learner& base, example& ec)
       {
         uint32_t n_child = p.kary * node.n + 1;
         ec.l.simple = {FLT_MAX, 1.f, 0.f};
-        base.multipredict(ec, n_child, p.kary, p.node_preds.begin(), false);
+        base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
 
         for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
         {
@@ -374,7 +372,6 @@ base_learner* plt_setup(options_i& options, vw& all)
         prediction_type_t::multilabels, all.get_setupfn_name(plt_setup));
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
-  all.delete_prediction = MULTILABEL::delete_prediction;
 
   // force logistic loss for base classifiers
   all.loss = getLossFunction(all, "logistic");

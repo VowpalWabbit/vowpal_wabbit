@@ -118,7 +118,8 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   if VW_STD17_CONSTEXPR (exclude || learn)
     while (!c.indices.empty())
     {
-      unsigned char ns = c.indices.pop();
+      unsigned char ns = c.indices.back();
+      c.indices.pop_back();
       std::swap(c.feature_space[ns], ec.feature_space[ns]);
     }
   VW_WARNING_STATE_POP
@@ -231,7 +232,6 @@ base_learner* mwt_setup(options_i& options, vw& all)
   calloc_reserve(c->evals, all.length());
   c->evals.end() = c->evals.begin() + all.length();
 
-  all.delete_prediction = delete_scalars;
   all.example_parser->lbl_parser = CB::cb_label;
 
   if (c->num_classes > 0)

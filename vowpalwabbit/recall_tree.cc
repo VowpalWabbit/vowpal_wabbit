@@ -239,7 +239,7 @@ void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, example& ec
 {
   features& fs = ec.feature_space[node_id_namespace];
   fs.clear();
-  ec.indices.pop();
+  ec.indices.pop_back();
 }
 
 uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example& ec)

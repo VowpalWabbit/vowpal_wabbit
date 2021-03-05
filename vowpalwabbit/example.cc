@@ -12,14 +12,6 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::example()
 {
   memset(&l, 0, sizeof(polylabel));
-  // init predictions. TODO convert this to a constructor
-  memset(&pred, 0, sizeof(polyprediction));
-  pred.scalars = v_init<feature_value>();
-  pred.a_s = v_init<ACTION_SCORE::action_score>();
-  pred.decision_scores = v_init<v_array<ACTION_SCORE::action_score>>();
-  pred.multilabels.label_v = v_init<uint32_t>();
-  pred.pdf = v_init<VW::continuous_actions::pdf_segment>();
-
   tag = v_init<char>();
 }
 VW_WARNING_STATE_POP
@@ -29,10 +21,11 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
 {
   tag.delete_v();
+
+  // TODO move this to the destructor once we're done cleaning up usage of polyprediction
   pred.scalars.delete_v();
   pred.a_s.delete_v();
   for (auto& decision : pred.decision_scores) { decision.delete_v(); }
-  pred.decision_scores.delete_v();
   pred.multilabels.label_v.delete_v();
   pred.pdf.delete_v();
 
@@ -44,97 +37,7 @@ example::~example()
 }
 VW_WARNING_STATE_POP
 
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-example::example(example&& other) noexcept
-    : example_predict(std::move(other))
-    , l(other.l)
-    , pred(other.pred)
-    , weight(other.weight)
-    , tag(std::move(other.tag))
-    , example_counter(other.example_counter)
-    , num_features(other.num_features)
-    , partial_prediction(other.partial_prediction)
-    , updated_prediction(other.updated_prediction)
-    , loss(other.loss)
-    , total_sum_feat_sq(other.total_sum_feat_sq)
-    , confidence(other.confidence)
-    , passthrough(other.passthrough)
-    , test_only(other.test_only)
-    , end_pass(other.end_pass)
-    , sorted(other.sorted)
-    , in_use(other.in_use)
-{
-  other.weight = 1.f;
-  auto& other_tag = other.tag;
-  other_tag._begin = nullptr;
-  other_tag._end = nullptr;
-  other_tag.end_array = nullptr;
-  other.example_counter = 0;
-  other.num_features = 0;
-  other.partial_prediction = 0.f;
-  other.updated_prediction = 0.f;
-  other.loss = 0.f;
-  other.total_sum_feat_sq = 0.f;
-  other.confidence = 0.f;
-  other.passthrough = nullptr;
-  other.test_only = false;
-  other.end_pass = false;
-  other.sorted = false;
-  other.in_use = false;
-}
-VW_WARNING_STATE_POP
-
-example& example::operator=(example&& other) noexcept
-{
-  example_predict::operator=(std::move(other));
-  l = other.l;
-  pred = other.pred;
-  weight = other.weight;
-  tag = std::move(other.tag);
-  example_counter = other.example_counter;
-  num_features = other.num_features;
-  partial_prediction = other.partial_prediction;
-  updated_prediction = other.updated_prediction;
-  loss = other.loss;
-  total_sum_feat_sq = other.total_sum_feat_sq;
-  confidence = other.confidence;
-  passthrough = other.passthrough;
-  test_only = other.test_only;
-  end_pass = other.end_pass;
-  sorted = other.sorted;
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  in_use = other.in_use;
-  VW_WARNING_STATE_POP
-
-  other.weight = 1.f;
-
-  // We need to null out all the v_arrays to prevent double freeing during moves
-  auto& other_tag = other.tag;
-  other_tag._begin = nullptr;
-  other_tag._end = nullptr;
-  other_tag.end_array = nullptr;
-
-  other.example_counter = 0;
-  other.num_features = 0;
-  other.partial_prediction = 0.f;
-  other.updated_prediction = 0.f;
-  other.loss = 0.f;
-  other.total_sum_feat_sq = 0.f;
-  other.confidence = 0.f;
-  other.passthrough = nullptr;
-  other.test_only = false;
-  other.end_pass = false;
-  other.sorted = false;
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  other.in_use = false;
-  VW_WARNING_STATE_POP
-  return *this;
-}
-
-void example::delete_unions(void (*)(polylabel*), void (*delete_prediction)(void*))
+void example::delete_unions(void (*delete_union)(polylabel*), void (*delete_prediction)(void*))
 {
   // TODO migrate deletion logic into each struct.
   no_label::no_label_parser.delete_label(&l);
@@ -148,7 +51,7 @@ void example::delete_unions(void (*)(polylabel*), void (*delete_prediction)(void
   CB_EVAL::cb_eval.delete_label(&l);
   MULTILABEL::multilabel.delete_label(&l);
 
-  // if (delete_prediction) { delete_prediction(&pred); }
+  std::ignore = delete_union;
   std::ignore = delete_prediction;
 }
 
@@ -410,19 +313,18 @@ example* alloc_examples(size_t, size_t count)
 {
   example* ec = calloc_or_throw<example>(count);
   if (ec == nullptr) return nullptr;
-  for (size_t i = 0; i < count; i++)
-  {
-    ec[i].ft_offset = 0;
-  }
+  for (size_t i = 0; i < count; i++) { new (ec + i) example; }
   return ec;
 }
 
 example* alloc_examples(size_t count) { return alloc_examples(0, count); }
 
-void dealloc_example(void (*delete_label)(polylabel*), example& ec, void (*delete_prediction)(void*))
+void dealloc_example(void (*)(polylabel*), example& ec, void (*)(void*)) { ec.~example(); }
+
+void dealloc_examples(example* example_ptr, size_t count)
 {
-  ec.delete_unions(delete_label, delete_prediction);
-  ec.~example();
+  for (size_t i = 0; i < count; i++) { (example_ptr + i)->~example(); }
+  free(example_ptr);
 }
 
 void finish_example(vw&, example&);
@@ -438,10 +340,6 @@ void return_multiple_example(vw& all, v_array<example*>& examples)
   for (auto ec : examples) { clean_example(all, *ec, true); }
   examples.clear();
 }
-
-restore_prediction::restore_prediction(example& ec) : _prediction(ec.pred), _ec(ec) {}
-
-restore_prediction::~restore_prediction() { _ec.pred = _prediction; }
 
 }  // namespace VW
 

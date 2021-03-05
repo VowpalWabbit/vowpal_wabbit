@@ -46,8 +46,8 @@ private:
   std::vector<float> _scores;
   COST_SENSITIVE::label _cs_labels;
   COST_SENSITIVE::label _cs_labels_2;
-  v_array<COST_SENSITIVE::label> _prepped_cs_labels;
-  v_array<CB::label> _cb_labels;
+  std::vector<COST_SENSITIVE::label> _prepped_cs_labels;
+  std::vector<CB::label> _cb_labels;
 
 public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
@@ -198,9 +198,6 @@ void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
 
 cb_explore_adf_cover::~cb_explore_adf_cover()
 {
-  _cb_labels.delete_v();
-  for (size_t i = 0; i < _prepped_cs_labels.size(); i++) _prepped_cs_labels[i].costs.delete_v();
-  _prepped_cs_labels.delete_v();
   _cs_labels_2.costs.delete_v();
   _cs_labels.costs.delete_v();
   _action_probs.delete_v();
@@ -249,8 +246,6 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
-
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   // Set cb_type
   size_t cb_type_enum;

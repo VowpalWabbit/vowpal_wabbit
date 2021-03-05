@@ -33,7 +33,7 @@ public:
   }
   virtual ~SearchTask()
   { trigger.clear(); // the individual examples get cleaned up below
-    VW::dealloc_example(vw_obj.example_parser->lbl_parser.delete_label, *bogus_example);
+    VW::dealloc_examples(bogus_example, 1);
     free(bogus_example);
   }
 

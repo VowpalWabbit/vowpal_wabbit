@@ -248,8 +248,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
         if (new_buffer == nullptr)
         {
           free(buffer);
-          VW::dealloc_example(all.example_parser->lbl_parser.delete_label, *ec);
-          free(ec);
+          VW::dealloc_examples(ec, 1);
           THROW("error: memory allocation failed in reading dictionary");
         }
         else
@@ -283,8 +282,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     for (size_t i = 0; i < 256; i++) { ec->feature_space[i].clear(); }
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
-  VW::dealloc_example(all.example_parser->lbl_parser.delete_label, *ec);
-  free(ec);
+  VW::dealloc_examples(ec, 1);
 
   if (!all.logger.quiet)
     *(all.trace_message) << "dictionary " << s << " contains " << map->size() << " item"
@@ -361,7 +359,9 @@ void parse_diagnostics(options_i& options, vw& all)
       .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
       .add(make_option("dry_run", skip_driver)
                .help("Parse arguments and print corresponding metadata. Will not execute driver."))
-      .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
+      .add(make_option("help", help)
+               .short_name("h")
+               .help("More information on vowpal wabbit can be found here https://vowpalwabbit.org."));
 
   options.add_and_parse(diagnostic_group);
 
@@ -775,7 +775,7 @@ void parse_feature_tweaks(
     {
       if (options.was_supplied("leave_duplicate_interactions"))
       { all.interactions.leave_duplicate_interactions = true; }
-      else
+      else if (!all.logger.quiet)
       {
         *(all.trace_message) << endl
                              << "WARNING: any duplicate namespace interactions will be removed" << endl

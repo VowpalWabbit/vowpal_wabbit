@@ -35,8 +35,8 @@ struct kskip_ngram_transformer
 
   kskip_ngram_transformer(const kskip_ngram_transformer& other) = default;
   kskip_ngram_transformer& operator=(const kskip_ngram_transformer& other) = default;
-  kskip_ngram_transformer(kskip_ngram_transformer&& other) noexcept = default;
-  kskip_ngram_transformer& operator=(kskip_ngram_transformer&& other) noexcept = default;
+  kskip_ngram_transformer(kskip_ngram_transformer&& other) = default;
+  kskip_ngram_transformer& operator=(kskip_ngram_transformer&& other) = default;
 
 private:
   kskip_ngram_transformer(std::vector<std::string> grams, std::vector<std::string> skips);

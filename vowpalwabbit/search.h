@@ -299,14 +299,10 @@ public:
   // set/add allowed but with per-actions costs specified
   predictor& add_allowed(action a, float cost);
   predictor& add_allowed(action* a, float* costs, size_t action_count);
-  VW_DEPRECATED("Use the std::vector variant of add_allowed.")
-  predictor& add_allowed(v_array<std::pair<action, float> >& a);
   predictor& add_allowed(std::vector<std::pair<action, float> >& a);
 
   predictor& set_allowed(action a, float cost);
   predictor& set_allowed(action* a, float* costs, size_t action_count);
-  VW_DEPRECATED("Use the std::vector variant of set_allowed.")
-  predictor& set_allowed(v_array<std::pair<action, float> >& a);
   predictor& set_allowed(std::vector<std::pair<action, float> >& a);
 
   // add a tag to condition on with a name, or set the conditioning
@@ -335,13 +331,10 @@ private:
   bool ec_alloced;
   float weight;
   v_array<action> oracle_actions;
-  bool oracle_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
   v_array<ptag> condition_on_tags;
   v_array<char> condition_on_names;
   v_array<action> allowed_actions;
-  bool allowed_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
   v_array<float> allowed_actions_cost;
-  bool allowed_cost_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
   size_t learner_id;
   search& sch;
 

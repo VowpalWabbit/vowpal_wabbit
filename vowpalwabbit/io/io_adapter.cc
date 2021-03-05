@@ -46,6 +46,24 @@ enum class file_mode
   write
 };
 
+int get_stdin_fileno()
+{
+#ifdef _WIN32
+  return _fileno(stdin);
+#else
+  return fileno(stdin);
+#endif
+}
+
+int get_stdout_fileno()
+{
+#ifdef _WIN32
+  return _fileno(stdout);
+#else
+  return fileno(stdout);
+#endif
+}
+
 struct socket_adapter : public writer, public reader
 {
   socket_adapter(int fd, const std::shared_ptr<details::socket_closer>& closer)
@@ -60,18 +78,12 @@ private:
   std::shared_ptr<details::socket_closer> _closer;
 };
 
-struct stdio_adapter : public writer, public reader
-{
-  stdio_adapter() : reader(false /*is_resettable*/) {}
-  ssize_t read(char* buffer, size_t num_bytes) override;
-  ssize_t write(const char* buffer, size_t num_bytes) override;
-};
 struct file_adapter : public writer, public reader
 {
   // investigate whether not using the old flags affects perf. Old claim:
   // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
   file_adapter(const char* filename, file_mode mode);
-  file_adapter(int file_descriptor, file_mode mode);
+  file_adapter(int file_descriptor, file_mode mode, bool should_close);
   ~file_adapter();
   ssize_t read(char* buffer, size_t num_bytes) override;
   ssize_t write(const char* buffer, size_t num_bytes) override;
@@ -80,6 +92,23 @@ struct file_adapter : public writer, public reader
 private:
   int _file_descriptor;
   file_mode _mode;
+  bool _should_close;
+};
+
+struct stdio_adapter : public writer, public reader
+{
+  stdio_adapter()
+      : reader(false /*is_resettable*/)
+      , _stdin_file(get_stdin_fileno(), file_mode::read, false)
+      , _stdout_file(get_stdout_fileno(), file_mode::write, false)
+  {
+  }
+  ssize_t read(char* buffer, size_t num_bytes) override;
+  ssize_t write(const char* buffer, size_t num_bytes) override;
+
+private:
+  file_adapter _stdin_file;
+  file_adapter _stdout_file;
 };
 
 struct gzip_file_adapter : public writer, public reader
@@ -241,24 +270,16 @@ std::unique_ptr<writer> socket::get_writer()
 // stdio_adapter
 //
 
-ssize_t stdio_adapter::read(char* buffer, size_t num_bytes)
-{
-  std::cin.read(buffer, num_bytes);
-  return std::cin.gcount();
-}
+ssize_t stdio_adapter::read(char* buffer, size_t num_bytes) { return _stdin_file.read(buffer, num_bytes); }
 
-ssize_t stdio_adapter::write(const char* buffer, size_t num_bytes)
-{
-  std::cout.write(buffer, num_bytes);
-  // TODO is there a reliable way to do this?
-  return num_bytes;
-}
+ssize_t stdio_adapter::write(const char* buffer, size_t num_bytes) { return _stdout_file.write(buffer, num_bytes); }
 
 //
 // file_adapter
 //
 
-file_adapter::file_adapter(const char* filename, file_mode mode) : reader(true /*is_resettable*/), _mode(mode)
+file_adapter::file_adapter(const char* filename, file_mode mode)
+    : reader(true /*is_resettable*/), _mode(mode), _should_close(true)
 {
 #ifdef _WIN32
   if (_mode == file_mode::read)
@@ -282,8 +303,8 @@ file_adapter::file_adapter(const char* filename, file_mode mode) : reader(true /
   if (_file_descriptor == -1 && *filename != '\0') { THROWERRNO("can't open: " << filename); }
 }
 
-file_adapter::file_adapter(int file_descriptor, file_mode mode)
-    : reader(true /*is_resettable*/), _file_descriptor(file_descriptor), _mode(mode)
+file_adapter::file_adapter(int file_descriptor, file_mode mode, bool should_close)
+    : reader(true /*is_resettable*/), _file_descriptor(file_descriptor), _mode(mode), _should_close(should_close)
 {
 }
 
@@ -318,11 +339,14 @@ void file_adapter::reset()
 
 file_adapter::~file_adapter()
 {
+  if (_should_close)
+  {
 #ifdef _WIN32
-  ::_close(_file_descriptor);
+    ::_close(_file_descriptor);
 #else
-  ::close(_file_descriptor);
+    ::close(_file_descriptor);
 #endif
+  }
 }
 
 //

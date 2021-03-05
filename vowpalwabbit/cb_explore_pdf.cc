@@ -49,7 +49,8 @@ int cb_explore_pdf::predict(example& ec, experimental::api_status*)
   if (first_only && !reduction_features.is_pdf_set() && !reduction_features.is_chosen_action_set())
   {
     // uniform random
-    ec.pred.pdf.push_back({min_value, max_value, static_cast<float>(1. / (max_value - min_value))});
+    ec.pred.pdf.push_back(
+        VW::continuous_actions::pdf_segment{min_value, max_value, static_cast<float>(1. / (max_value - min_value))});
     return error_code::success;
   }
   else if (first_only && reduction_features.is_pdf_set())
