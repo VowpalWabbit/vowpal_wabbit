@@ -140,11 +140,7 @@ public:
     reset_buffer();
   }
 
-  void set(char* p)
-  {
-    assert(p >= _buffer._begin && p < _buffer._end_array);
-    head = p;
-  }
+  void set(char* p) { head = p; }
 
   /// This function will return the number of input files AS WELL AS the number of output files. (because of legacy)
   size_t num_files() const { return input_files.size() + output_files.size(); }
