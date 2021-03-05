@@ -168,8 +168,6 @@ Input options:
                         version, so enabling this option will migrate you to 
                         the new behavior and silence the warning.
   --flatbuffer          data file will be interpreted as a flatbuffer file
-  --external_parser arg data file will be interpreted using a parser that was 
-                        provided at compile time
 OjaNewton options:
   --OjaNewton                    Online Newton with Oja's Sketch
   --sketch_size arg (=10, )      size of sketch
