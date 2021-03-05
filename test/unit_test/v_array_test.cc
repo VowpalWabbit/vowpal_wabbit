@@ -119,7 +119,6 @@ BOOST_AUTO_TEST_CASE(v_array_back)
   BOOST_CHECK_EQUAL(2, list.back());
 }
 
-
 BOOST_AUTO_TEST_CASE(v_array_erase_single_element_single_element_array)
 {
   v_array<int> list;
@@ -149,7 +148,7 @@ BOOST_AUTO_TEST_CASE(v_array_erase_range)
   list.push_back(3);
   list.push_back(4);
   BOOST_CHECK_EQUAL(std::size_t(4), list.size());
-  auto it = list.erase(list.begin()+1, list.begin()+3);
+  auto it = list.erase(list.begin() + 1, list.begin() + 3);
   BOOST_CHECK_EQUAL(*it, 4);
   BOOST_CHECK_EQUAL(list[0], 1);
   BOOST_CHECK_EQUAL(list[1], 4);
@@ -162,7 +161,7 @@ BOOST_AUTO_TEST_CASE(v_array_erase_range_zero_width)
   list.push_back(1);
   list.push_back(2);
   BOOST_CHECK_EQUAL(std::size_t(2), list.size());
-  list.erase(list.begin()+1, list.begin()+1);
+  list.erase(list.begin() + 1, list.begin() + 1);
   BOOST_CHECK_EQUAL(std::size_t(2), list.size());
 }
 
@@ -172,7 +171,7 @@ BOOST_AUTO_TEST_CASE(v_array_erase_last_element)
   list.push_back(5);
   list.push_back(3);
   BOOST_CHECK_EQUAL(std::size_t(2), list.size());
-  auto it = list.erase(list.begin()+1);
+  auto it = list.erase(list.begin() + 1);
   BOOST_CHECK_EQUAL(std::size_t(1), list.size());
   BOOST_CHECK_EQUAL(list[0], 5);
   BOOST_CHECK_EQUAL(it, list.end());

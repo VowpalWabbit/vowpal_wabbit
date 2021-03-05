@@ -251,7 +251,8 @@ public:
     assert(first >= begin());
     const size_t first_index = first - begin();
     const size_t num_to_erase = last - first;
-    memmove(&_begin[first_index], &_begin[first_index + num_to_erase], (size() - (first_index + num_to_erase)) * sizeof(T));
+    memmove(
+        &_begin[first_index], &_begin[first_index + num_to_erase], (size() - (first_index + num_to_erase)) * sizeof(T));
     _end -= num_to_erase;
     return begin() + first_index;
   }
