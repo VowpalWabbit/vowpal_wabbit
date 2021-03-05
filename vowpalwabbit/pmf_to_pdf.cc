@@ -118,7 +118,7 @@ void reduction::predict(example& ec)
 
     // discretize chosen action
     const float ac = (chosen_action - min_value) / unit_range;
-    auto action = static_cast<uint32_t>(floor(ac));
+    auto action = std::min(num_actions - 1, static_cast<uint32_t>(floor(ac)));
 
     temp_pred_a_s.clear();
     temp_pred_a_s.push_back({action, 1.f});
@@ -142,7 +142,7 @@ void reduction::learn(example& ec)
   const float unit_range = continuous_range / num_actions;
 
   const float ac = (action_cont - min_value) / unit_range;
-  int action_segment_index = static_cast<int>(floor(ac));
+  int action_segment_index = std::min(static_cast<int>(num_actions - 1), static_cast<int>(floor(ac)));
   const bool cond1 = min_value + action_segment_index * unit_range <= action_cont;
   const bool cond2 = action_cont < min_value + (action_segment_index + 1) * unit_range;
 

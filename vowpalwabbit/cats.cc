@@ -57,7 +57,7 @@ float cats::get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, f
     const float unit_range = continuous_range / num_actions;
 
     const float ac = (predicted_action - min_value) / unit_range;
-    int discretized_action = static_cast<int>(floor(ac));
+    int discretized_action = std::min(static_cast<int>(num_actions - 1), static_cast<int>(floor(ac)));
     // centre of predicted action
     const float centre = min_value + discretized_action * unit_range + unit_range / 2.0f;
 
@@ -65,7 +65,7 @@ float cats::get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, f
     auto logged_action = cb_cont_costs.costs[0].action;
     if ((logged_action - bandwidth <= centre) && (centre <= logged_action + bandwidth))
     {
-      float actual_b = std::min(max_value, logged_action + bandwidth) - std::max(min_value, logged_action - bandwidth);
+      float actual_b = std::min(max_value, centre + bandwidth) - std::max(min_value, centre - bandwidth);
 
       loss = cb_cont_costs.costs[0].cost / float(cb_cont_costs.costs[0].pdf_value * actual_b);
     }
