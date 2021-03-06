@@ -56,7 +56,7 @@ class io_buf
       assert(new_capacity >= capacity());
       const auto old_size = size();
       char* temp = reinterpret_cast<char*>(std::realloc(_begin, sizeof(char) * new_capacity));
-      if (_begin == nullptr)
+      if (temp == nullptr)
       {
         // _begin still needs to be freed but the destructor will do it.
         THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
