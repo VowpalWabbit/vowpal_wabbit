@@ -334,7 +334,7 @@ inline size_t bin_text_read_write_fixed_validated(
 
 #define writeit(what, str)                                                                  \
   do                                                                                        \
-  {                                                                                         \
+  {                                                                                         \
     msg << str << " = " << what << " ";                                                     \
     bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), "", read, msg, text); \
   } while (0);
