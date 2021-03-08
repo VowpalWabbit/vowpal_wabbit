@@ -88,7 +88,7 @@ class VW_DEPRECATED("example_predict is now RAII based. That class can be used i
 {
 public:
   safe_example_predict();
-  ~safe_example_predict()= default;
+  ~safe_example_predict() = default;
 
   void clear();
 };
