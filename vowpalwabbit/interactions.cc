@@ -283,7 +283,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
   new_features_cnt = 0;
   new_features_value = 0.;
 
-  v_array<float> results = v_init<float>();
+  v_array<float> results;
 
   if (all.permutations)
   {
@@ -430,8 +430,6 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
                            << correct_features_value << std::endl;
 #endif
   }
-
-  results.delete_v();
 }
 
 }  // namespace INTERACTIONS

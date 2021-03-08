@@ -44,7 +44,6 @@ private:
 public:
   cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize, std::shared_ptr<rand_state> random_state,
       VW::version_struct model_file_version);
-  ~cb_explore_adf_synthcover();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
@@ -140,8 +139,6 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
 
   for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
 }
-
-cb_explore_adf_synthcover::~cb_explore_adf_synthcover() { _action_probs.delete_v(); }
 
 void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool text)
 {

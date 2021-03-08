@@ -31,7 +31,6 @@ struct sample_pdf
   int predict(example& ec, experimental::api_status* status);
 
   void init(single_learner* p_base, uint64_t* p_random_seed);
-  ~sample_pdf();
 
 private:
   uint64_t* _p_random_state;
@@ -72,10 +71,8 @@ void sample_pdf::init(single_learner* p_base, uint64_t* p_random_seed)
 {
   _base = p_base;
   _p_random_state = p_random_seed;
-  _pred_pdf = v_init<continuous_actions::pdf_segment>();
+  _pred_pdf.clear();
 }
-
-sample_pdf::~sample_pdf() { _pred_pdf.delete_v(); }
 
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
