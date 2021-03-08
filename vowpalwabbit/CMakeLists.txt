@@ -267,6 +267,7 @@ set(vw_all_sources
   gen_cs_example.cc
   get_pmf.cc
   global_data.cc
+  hashstring.cc
   interact.cc
   interactions.cc
   io_buf.cc

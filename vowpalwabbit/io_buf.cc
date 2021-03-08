@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include "io_buf.h"
+#include "io/logger.h"
 
 size_t io_buf::buf_read(char*& pointer, size_t n)
 {
@@ -120,4 +121,17 @@ void io_buf::replace_buffer(char* buff, size_t capacity)
   space.begin() = buff;
   space.end_array = space.end() = buff + capacity;
   head = buff;
+}
+
+void io_buf::flush()
+{
+  if (!output_files.empty())
+  {
+    if (write_file(output_files[0].get(), space.begin(), unflushed_bytes_count()) != (int)(unflushed_bytes_count()))
+    {
+      VW::io::logger::errlog_error("error, failed to write example");
+    }
+    head = space.begin();
+    output_files[0]->flush();
+  }
 }

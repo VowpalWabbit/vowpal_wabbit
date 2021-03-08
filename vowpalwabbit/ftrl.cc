@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include <string>
+#include <cfloat>
 #include "correctedMath.h"
 #include "gd.h"
 

@@ -8,6 +8,8 @@
 
 #include "io/logger.h"
 
+#include <cfloat>
+
 using namespace VW::LEARNER;
 using namespace VW::config;
 

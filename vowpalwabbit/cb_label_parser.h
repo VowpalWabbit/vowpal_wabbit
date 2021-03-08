@@ -6,6 +6,7 @@
 #include "cb.h"
 
 #include "io/logger.h"
+#include <cfloat>
 
 namespace CB
 {

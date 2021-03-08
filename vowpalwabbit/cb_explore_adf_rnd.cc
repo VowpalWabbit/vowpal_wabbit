@@ -14,6 +14,7 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+#include <cfloat>
 #include "scope_exit.h"
 
 // Random Network Distillation style exploration.  Basically predicts

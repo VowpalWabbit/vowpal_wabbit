@@ -8,6 +8,7 @@
 #include "api_status.h"
 #include "debug_log.h"
 
+#include <cfloat>
 // Aliases
 using std::endl;
 using VW::cb_continuous::continuous_label;

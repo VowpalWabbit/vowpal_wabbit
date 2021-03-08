@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <cmath>
+#include <cfloat>
 #include <errno.h>
 #include "reductions.h"
 #include "rand48.h"

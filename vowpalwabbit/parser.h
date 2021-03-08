@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "io_buf.h"
-#include "parse_primitives.h"
 #include "example.h"
 #include "future_compat.h"
 
@@ -26,6 +25,7 @@
 #include "vw_string_view.h"
 #include "queue.h"
 #include "object_pool.h"
+#include "hashstring.h"
 
 struct vw;
 struct input_options;

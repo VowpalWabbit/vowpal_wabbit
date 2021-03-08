@@ -6,6 +6,7 @@
   by John Langford.
 */
 
+#include <cfloat>
 #include <iostream>
 #include <fstream>
 #include <ctime>

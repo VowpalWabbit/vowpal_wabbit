@@ -9,6 +9,7 @@
 #include "rand48.h"
 #include "gen_cs_example.h"
 #include <memory>
+#include <cfloat>
 
 // Do evaluation of nonstationary policies.
 // input = contextual bandit label

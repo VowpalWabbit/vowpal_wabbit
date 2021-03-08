@@ -9,6 +9,7 @@
 #include "vw_exception.h"
 #include "vw_string_view.h"
 #include "example.h"
+#include "parse_primitives.h"
 
 namespace MULTICLASS
 {

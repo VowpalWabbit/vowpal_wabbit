@@ -16,6 +16,7 @@
 #include "example.h"
 #include "vw_math.h"
 #include "vw_string_view.h"
+#include "parse_primitives.h"
 
 #include "io/logger.h"
 

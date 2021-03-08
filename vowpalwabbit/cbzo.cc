@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <random>
+#include <cfloat>
 
 #include "gd.h"
 #include "io_buf.h"

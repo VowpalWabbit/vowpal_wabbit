@@ -2,8 +2,20 @@
 
 #include "hashstring.h"
 
-#include <fmt/format.h>
 #include <boost/version.hpp>
+
+
+#if defined(_M_CEE) || defined(_MANAGED)
+# pragma managed(push, off)
+# undef _M_CEE
+# undef _MANAGED
+# include <fmt/format.h>
+# define _M_CEE 001
+# define _MANAGED 1
+# pragma managed(pop)
+#else
+# include <fmt/format.h>
+#endif
 
 #if BOOST_VERSION < 106100
 #  include <boost/utility/string_ref.hpp>
@@ -29,6 +41,7 @@ struct hash<VW::string_view>
 };
 }  // namespace std
 
+#if !defined(_M_CEE) && !defined(_MANAGED)
 namespace fmt
 {
 // Enable VW::string_view in fmt calls (uses the fmt::string_view formatter underneath)
@@ -41,3 +54,4 @@ struct formatter<VW::string_view> : formatter<fmt::string_view>
   }
 };
 }
+#endif

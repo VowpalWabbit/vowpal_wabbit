@@ -15,10 +15,6 @@
 #include "vw_exception.h"
 #include "io/io_adapter.h"
 
-#include "io/logger.h"
-
-namespace logger = VW::io::logger;
-
 /* The i/o buffer can be conceptualized as an array below:
 **  _______________________________________________________________________________________
 ** |__________|__________|__________|__________|__________|__________|__________|__________|   **
@@ -158,19 +154,8 @@ public:
   //   - Read mode: The offset of the position that has been read up to so far.
   size_t unflushed_bytes_count() { return head - space.begin(); }
 
-  void flush()
-  {
-    if (!output_files.empty())
-    {
-      if (write_file(output_files[0].get(), space.begin(), unflushed_bytes_count()) != (int)(unflushed_bytes_count()))
-      {
-        logger::errlog_error("error, failed to write example");
-      }
-      head = space.begin();
-      output_files[0]->flush();
-    }
-  }
-
+  void flush();
+  
   bool close_file()
   {
     if (!input_files.empty())

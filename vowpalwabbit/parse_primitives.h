@@ -43,17 +43,6 @@ inline const char* safe_index(const char* start, char v, const char* max)
   return start;
 }
 
-// can't type as it forces C++/CLI part to include rapidjson, which leads to name clashes...
-struct example;
-namespace VW
-{
-typedef example& (*example_factory_t)(void*);
-}
-
-typedef uint64_t (*hash_func_t)(const char* s, size_t, uint64_t);
-
-hash_func_t getHasher(const std::string& s);
-
 // The following function is a home made strtof. The
 // differences are :
 //  - much faster (around 50% but depends on the  string to parse)

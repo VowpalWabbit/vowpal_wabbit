@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+
 #include <spdlog/spdlog.h>
 // needed for custom types (like string_view)
 #include <fmt/ostream.h>

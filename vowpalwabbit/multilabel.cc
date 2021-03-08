@@ -7,6 +7,7 @@
 #include "vw.h"
 #include "example.h"
 
+#include "parse_primitives.h"
 #include "io/logger.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>

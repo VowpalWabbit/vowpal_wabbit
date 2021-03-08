@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cctype>
 #include "parse_example.h"
+#include "parse_primitives.h"
 #include "hash.h"
 #include "unique_sort.h"
 #include "global_data.h"

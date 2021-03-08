@@ -3,12 +3,13 @@
 // license as described in the file LICENSE.
 
 #include <cfloat>
+#include <cmath>
 #include "gd.h"
 #include "vw.h"
 #include "vw_exception.h"
-#include <cmath>
 #include "vw_string_view.h"
 #include "example.h"
+#include "parse_primitives.h"
 
 #include "io/logger.h"
 

@@ -6,6 +6,7 @@
 
 #include "baseline.h"
 #include "guard.h"
+#include <cfloat>
 
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
 VW::LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
