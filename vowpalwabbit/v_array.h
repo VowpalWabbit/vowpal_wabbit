@@ -249,6 +249,8 @@ public:
   {
     assert(first <= last);
     assert(first >= begin());
+    assert(first < end());
+    assert(last < end());
     const size_t first_index = first - begin();
     const size_t num_to_erase = last - first;
     memmove(
