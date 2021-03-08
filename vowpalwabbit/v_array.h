@@ -368,20 +368,14 @@ template <class T>
 void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src)
 {
   dst.clear();
-  for (const auto& item : src)
-  {
-    dst.push_back(item);
-}
+  for (const auto& item : src) { dst.push_back(item); }
 }
 
 template <class T>
 void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(const T&))
 {
   dst.clear();
-  for (const auto& item : src)
-  {
-    dst.push_back(copy_item(*item));
-  }
+  for (const auto& item : src) { dst.push_back(copy_item(*item)); }
 }
 
 template <class T>
