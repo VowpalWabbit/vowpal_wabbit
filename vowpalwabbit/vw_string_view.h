@@ -4,16 +4,7 @@
 
 #include <boost/version.hpp>
 
-
-#if defined(_M_CEE) || defined(_MANAGED)
-# pragma managed(push, off)
-# undef _M_CEE
-# undef _MANAGED
-# include <fmt/format.h>
-# define _M_CEE 001
-# define _MANAGED 1
-# pragma managed(pop)
-#else
+#if !defined(_M_CEE) && !defined(_MANAGED)
 # include <fmt/format.h>
 #endif
 
