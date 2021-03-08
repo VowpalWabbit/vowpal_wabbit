@@ -3,15 +3,16 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "label_parser.h"
+#include <cmath>
 
 struct example;
 struct vw;
 
 struct label_data
 {
-  float label;
-  float weight;
-  float initial;
+  float label = 0.f;
+  float weight = 0.f;
+  float initial = 0.f;
 };
 
 void return_simple_example(vw& all, void*, example& ec);

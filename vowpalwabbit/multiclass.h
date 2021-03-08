@@ -11,8 +11,8 @@ namespace MULTICLASS
 {
 struct label_t
 {
-  uint32_t label;
-  float weight;
+  uint32_t label = 0;
+  float weight = 0.f;
 };
 
 extern label_parser mc_label;
