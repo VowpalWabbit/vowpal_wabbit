@@ -338,12 +338,6 @@ private:
   size_t learner_id;
   search& sch;
 
-  template <class T>
-  void make_new_pointer(v_array<T>& A, size_t new_size);
-  template <class T>
-  predictor& add_to(v_array<T>& A, bool& A_is_ptr, T a, bool clear_first);
-  template <class T>
-  predictor& add_to(v_array<T>& A, bool& A_is_ptr, T* a, size_t count, bool clear_first);
   void free_ec();
 
   // prevent the user from doing something stupid :) ... ugh needed to turn this off for python :(
