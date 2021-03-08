@@ -16,7 +16,6 @@ example::example()
 }
 VW_WARNING_STATE_POP
 
-
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
