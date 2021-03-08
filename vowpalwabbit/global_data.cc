@@ -20,6 +20,10 @@
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif
 
+#ifdef BUILD_EXTERNAL_PARSER
+#  include "parse_example_external.h"
+#endif
+
 struct global_prediction
 {
   float p;

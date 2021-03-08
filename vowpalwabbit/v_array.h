@@ -235,6 +235,44 @@ public:
     clear_noshrink();
   }
 
+  /// \brief Erase item at the given iterator
+  /// \param it Iterator to erase at. UB if it is nullptr or out of bounds of the v_array
+  /// \returns Iterator to item immediately following the erased element. May be equal to end()
+  /// \note Invalidates iterators
+  inline iterator erase(iterator it)
+  {
+    assert(it >= begin());
+    assert(it != nullptr);
+    assert(it < end());
+
+    const size_t idx = it - begin();
+    memmove(&_begin[idx], &_begin[idx + 1], (size() - (idx + 1)) * sizeof(T));
+    --_end;
+    return begin() + idx;
+  }
+
+  /// \brief Erase items from first to end. [first, end)
+  /// \param first Iterator to begin erasing at. UB if it is nullptr or out of bounds of the v_array
+  /// \param first Iterator to end erasing at. UB if it is nullptr or out of bounds of the v_array
+  /// \returns Iterator to item immediately following the erased elements. May be equal to end()
+  /// \note Invalidates iterators
+  inline iterator erase(iterator first, iterator last)
+  {
+    assert(first != nullptr);
+    assert(last != nullptr);
+    assert(first <= last);
+    assert(first >= begin());
+    assert(first < end());
+    assert(last < end());
+
+    const size_t first_index = first - begin();
+    const size_t num_to_erase = last - first;
+    memmove(
+        &_begin[first_index], &_begin[first_index + num_to_erase], (size() - (first_index + num_to_erase)) * sizeof(T));
+    _end -= num_to_erase;
+    return begin() + first_index;
+  }
+
   void delete_v() { delete_v_array(); }
 
   void push_back(const T& new_ele)
