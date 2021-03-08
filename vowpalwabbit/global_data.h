@@ -317,6 +317,18 @@ struct vw_logger
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
+#ifdef BUILD_EXTERNAL_PARSER
+// forward declarations
+namespace VW
+{
+namespace external
+{
+class parser;
+struct parser_options;
+}  // namespace external
+}  // namespace VW
+#endif
+
 namespace VW
 {
 namespace parsers
@@ -379,6 +391,10 @@ public:
 
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
+#endif
+
+#ifdef BUILD_EXTERNAL_PARSER
+  std::unique_ptr<VW::external::parser> external_parser;
 #endif
   std::string data_filename;
 

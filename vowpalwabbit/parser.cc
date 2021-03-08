@@ -63,6 +63,10 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif
 
+#ifdef BUILD_EXTERNAL_PARSER
+#  include "parse_example_external.h"
+#endif
+
 // OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
 #if !defined(SOL_TCP) && defined(IPPROTO_TCP)
 #  define SOL_TCP IPPROTO_TCP
@@ -571,6 +575,14 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       {
         all.flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>();
         all.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
+      }
+#endif
+
+#ifdef BUILD_EXTERNAL_PARSER
+      else if (input_options.ext_opts && input_options.ext_opts->is_enabled())
+      {
+        all.external_parser = VW::external::parser::get_external_parser(&all, input_options);
+        all.example_parser->reader = VW::external::parse_examples;
       }
 #endif
       else
