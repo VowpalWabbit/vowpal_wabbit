@@ -10,9 +10,9 @@ struct vw;
 
 struct label_data
 {
-  float label = 0.f;
-  float weight = 0.f;
-  float initial = 0.f;
+  float label;
+  float weight;
+  float initial;
 };
 
 void return_simple_example(vw& all, void*, example& ec);
