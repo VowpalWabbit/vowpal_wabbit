@@ -70,10 +70,10 @@ class io_buf
       memset(_end, 0, sizeof(char) * (_end_array - _end));
     }
 
-    void shift_to_front(char* new_begin)
+    void shift_to_front(char* head_ptr)
     {
-      const size_t space_left = _end - new_begin;
-      memmove(_begin, new_begin, space_left);
+      const size_t space_left = _end - head_ptr;
+      memmove(_begin, head_ptr, space_left);
       _end = _begin + space_left;
     }
 
