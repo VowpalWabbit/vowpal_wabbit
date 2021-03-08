@@ -15,7 +15,6 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
-using VW::continuous_actions::delete_probability_density_function;
 using VW::continuous_actions::probability_density_function;
 
 namespace VW
@@ -354,7 +353,6 @@ base_learner* setup(options_i& options, vw& all)
   }
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
-  all.delete_prediction = delete_probability_density_function;
   data->all = &all;
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");

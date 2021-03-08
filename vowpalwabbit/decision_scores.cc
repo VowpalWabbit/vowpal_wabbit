@@ -74,13 +74,6 @@ void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decis
   }
 }
 
-void delete_decision_scores(void* polypred)
-{
-  auto decision_scores = static_cast<polyprediction*>(polypred)->decision_scores;
-  for (auto& inner : decision_scores) { inner.delete_v(); }
-  decision_scores.delete_v();
-}
-
 void print_update_ccb(
     vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features)
 {

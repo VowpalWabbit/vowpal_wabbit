@@ -656,8 +656,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   learner<ccb, multi_ex>& l = init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
       prediction_type_t::decision_probs, all.get_setupfn_name(ccb_explore_adf_setup));
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   l.set_finish_example(finish_multiline_example);
   l.set_save_load(save_load);
   return make_base(l);

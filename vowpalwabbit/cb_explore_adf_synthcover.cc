@@ -118,7 +118,6 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
         preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
           return ACTION_SCORE::score_comp(&a, &b) > 0;
         });
-    // NB: what STL calls pop_back(), v_array calls pop().  facepalm.
     auto minpred = preds.back();
     preds.pop_back();
 
@@ -205,8 +204,6 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
     if (epsilon > 0) *(all.trace_message) << "epsilon = " << epsilon << std::endl;
     *(all.trace_message) << "synthcoverpsi = " << psi << std::endl;
   }
-
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   size_t problem_multiplier = 1;
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));

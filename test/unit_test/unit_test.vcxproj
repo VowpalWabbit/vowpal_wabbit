@@ -54,6 +54,7 @@
     <ClCompile Include="stable_unique_tests.cc" />
     <ClCompile Include="tag_utils_test.cc" />
     <ClCompile Include="test_common.cc" />
+    <ClCompile Include="v_array_test.cc" />
     <ClCompile Include="vwdll_test.cc" />
     <ClCompile Include="weights_test.cc" />
   </ItemGroup>
@@ -207,5 +208,4 @@
       <!-- This goes away if we switch to pulling in all of our boost dependencies via vcpkg -->
       <Command>xcopy /Y $(SolutionDir)packages\boost_unit_test_framework-vc141.1.70.0.0\lib\native\*.dll $(OutDir)</Command>
     </PostBuildEvent>
-  </ItemDefinitionGroup>
-</Project>
+  </ItemDefinitionGroup>

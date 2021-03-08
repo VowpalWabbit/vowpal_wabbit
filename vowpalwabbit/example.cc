@@ -26,7 +26,6 @@ example::~example()
   pred.scalars.delete_v();
   pred.a_s.delete_v();
   for (auto& decision : pred.decision_scores) { decision.delete_v(); }
-  pred.decision_scores.delete_v();
   pred.multilabels.label_v.delete_v();
   pred.pdf.delete_v();
 
@@ -38,7 +37,7 @@ example::~example()
 }
 VW_WARNING_STATE_POP
 
-void example::delete_unions(void (*)(polylabel*), void (*delete_prediction)(void*))
+void example::delete_unions(void (*delete_union)(polylabel*), void (*delete_prediction)(void*))
 {
   // TODO migrate deletion logic into each struct.
   no_label::no_label_parser.delete_label(&l);
@@ -52,7 +51,7 @@ void example::delete_unions(void (*)(polylabel*), void (*delete_prediction)(void
   CB_EVAL::cb_eval.delete_label(&l);
   MULTILABEL::multilabel.delete_label(&l);
 
-  // if (delete_prediction) { delete_prediction(&pred); }
+  std::ignore = delete_union;
   std::ignore = delete_prediction;
 }
 
@@ -313,19 +312,18 @@ example* alloc_examples(size_t, size_t count)
 {
   example* ec = calloc_or_throw<example>(count);
   if (ec == nullptr) return nullptr;
-  for (size_t i = 0; i < count; i++)
-  {
-    ec[i].ft_offset = 0;
-  }
+  for (size_t i = 0; i < count; i++) { new (ec + i) example; }
   return ec;
 }
 
 example* alloc_examples(size_t count) { return alloc_examples(0, count); }
 
-void dealloc_example(void (*delete_label)(polylabel*), example& ec, void (*delete_prediction)(void*))
+void dealloc_example(void (*)(polylabel*), example& ec, void (*)(void*)) { ec.~example(); }
+
+void dealloc_examples(example* example_ptr, size_t count)
 {
-  ec.delete_unions(delete_label, delete_prediction);
-  ec.~example();
+  for (size_t i = 0; i < count; i++) { (example_ptr + i)->~example(); }
+  free(example_ptr);
 }
 
 void finish_example(vw&, example&);

@@ -26,12 +26,7 @@ struct expreplay
 
   ~expreplay()
   {
-    for (size_t n = 0; n < N; n++)
-    {
-      lp.delete_label(&buf[n].l);
-      VW::dealloc_example(NULL, buf[n], NULL);  // TODO: need to free label
-    }
-    free(buf);
+    VW::dealloc_examples(buf, N);
     free(filled);
   }
 };

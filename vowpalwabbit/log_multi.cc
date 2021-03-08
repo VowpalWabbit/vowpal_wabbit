@@ -70,7 +70,7 @@ struct log_multi
 {
   uint32_t k;
 
-  v_array<node> nodes;
+  std::vector<node> nodes;
 
   size_t max_predictors;
   size_t predictors_used;
@@ -83,8 +83,6 @@ struct log_multi
   ~log_multi()
   {
     // save_node_stats(b);
-    for (auto& node : nodes) node.preds.delete_v();
-    nodes.delete_v();
   }
 };
 

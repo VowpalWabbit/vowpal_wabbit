@@ -1313,7 +1313,6 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   ld->finish_example_count = 0;
 
   all.lda = (uint32_t)ld->topics;
-  all.delete_prediction = delete_scalars;
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = false;
   ld->all = &all;

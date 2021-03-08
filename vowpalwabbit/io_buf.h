@@ -9,6 +9,7 @@
 #include <sstream>
 #include <vector>
 #include <memory>
+#include <cassert>
 
 #include "v_array.h"
 #include "hash.h"

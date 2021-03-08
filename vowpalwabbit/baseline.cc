@@ -70,8 +70,7 @@ struct baseline
 
   ~baseline()
   {
-    if (ec) VW::dealloc_example(simple_label_parser.delete_label, *ec);
-    free(ec);
+    if (ec) VW::dealloc_examples(ec, 1);
   }
 };
 

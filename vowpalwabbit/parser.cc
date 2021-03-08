@@ -951,7 +951,7 @@ void free_parser(vw& all)
   while (!all.example_parser->example_pool.empty())
   {
     example* temp = all.example_parser->example_pool.get_object();
-    temp->delete_unions(all.example_parser->lbl_parser.delete_label, all.delete_prediction);
+    temp->delete_unions(all.example_parser->lbl_parser.delete_label, nullptr);
     drain_pool.push_back(temp);
   }
   for (auto* example_ptr : drain_pool) { all.example_parser->example_pool.return_object(example_ptr); }
