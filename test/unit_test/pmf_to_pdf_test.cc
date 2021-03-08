@@ -69,7 +69,7 @@ void check_pdf_sums_to_one(VW::continuous_actions::probability_density_function&
 }
 
 void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_function& pdf, float min_value,
-    float max_value, uint32_t bandwidth, uint32_t num_actions, uint32_t action)
+    float max_value, float bandwidth, uint32_t num_actions, uint32_t action)
 {
   // check that left <= right for all pdf
   float prev_pdf_limit = 0;
