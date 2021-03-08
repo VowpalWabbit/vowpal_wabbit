@@ -107,6 +107,10 @@
 #include "io/custom_streambuf.h"
 #include "io/owning_stream.h"
 
+#ifdef BUILD_EXTERNAL_PARSER
+#  include "parse_example_binary.h"
+#endif
+
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -448,6 +452,9 @@ input_options parse_source(vw& all, options_i& options)
                      "migrate you to the new behavior and silence the warning."))
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
                .help("data file will be interpreted as a flatbuffer file"));
+#ifdef BUILD_EXTERNAL_PARSER
+  VW::external::parser::set_parse_args(input_options, parsed_options);
+#endif
 
   options.add_and_parse(input_options);
 
