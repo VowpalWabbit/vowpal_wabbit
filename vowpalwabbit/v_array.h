@@ -426,7 +426,7 @@ template <class T, class U>
 std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
 {
   os << '[';
-  for (auto* i = v.cbegin(); i != v.cend(); ++i) os << ' ' << i->first << ':' << i->second;
+  for (auto i = v.cbegin(); i != v.cend(); ++i) os << ' ' << i->first << ':' << i->second;
   os << " ]";
   return os;
 }
