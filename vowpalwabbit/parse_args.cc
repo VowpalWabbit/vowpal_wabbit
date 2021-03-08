@@ -107,6 +107,10 @@
 #include "io/custom_streambuf.h"
 #include "io/owning_stream.h"
 
+#ifdef BUILD_EXTERNAL_PARSER
+#  include "parse_example_binary.h"
+#endif
+
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -359,7 +363,9 @@ void parse_diagnostics(options_i& options, vw& all)
       .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
       .add(make_option("dry_run", skip_driver)
                .help("Parse arguments and print corresponding metadata. Will not execute driver."))
-      .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
+      .add(make_option("help", help)
+               .short_name("h")
+               .help("More information on vowpal wabbit can be found here https://vowpalwabbit.org."));
 
   options.add_and_parse(diagnostic_group);
 
@@ -446,6 +452,9 @@ input_options parse_source(vw& all, options_i& options)
                      "migrate you to the new behavior and silence the warning."))
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
                .help("data file will be interpreted as a flatbuffer file"));
+#ifdef BUILD_EXTERNAL_PARSER
+  VW::external::parser::set_parse_args(input_options, parsed_options);
+#endif
 
   options.add_and_parse(input_options);
 
