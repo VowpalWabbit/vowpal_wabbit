@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_standalone_example)
   uint8_t* buf = builder.GetBufferPointer();
   int size = builder.GetSize();
 
-  auto examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(all));
   all->flat_converter->parse_examples(all, examples, buf);
 
@@ -88,7 +88,6 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_standalone_example)
   BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
 
   VW::finish_example(*all, *examples[0]);
-  examples.delete_v();
   VW::finish(*all);
 }
 
@@ -104,7 +103,7 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
   uint8_t* buf = builder.GetBufferPointer();
   int size = builder.GetSize();
 
-  auto examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(all));
   all->flat_converter->parse_examples(all, examples, buf);
 
@@ -128,6 +127,5 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
   BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
 
   VW::finish_example(*all, *examples[0]);
-  examples.delete_v();
   VW::finish(*all);
 }

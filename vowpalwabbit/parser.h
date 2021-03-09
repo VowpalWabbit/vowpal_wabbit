@@ -43,18 +43,12 @@ struct parser
     this->input = new io_buf{};
     this->output = new io_buf{};
     this->lbl_parser = simple_label_parser;
-
-    // Free parser must still be used for the following fields.
-    this->ids = v_init<size_t>();
-    this->counts = v_init<size_t>();
   }
 
   ~parser()
   {
     delete input;
     delete output;
-    ids.delete_v();
-    counts.delete_v();
   }
 
   // delete copy constructor

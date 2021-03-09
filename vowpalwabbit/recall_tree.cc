@@ -55,11 +55,8 @@ struct node
       , n(0)
       , entropy(0)
       , passes(1)
-      , preds(v_init<node_pred>())
   {
   }
-
-  ~node() { preds.delete_v(); }
 };
 
 struct recall_tree

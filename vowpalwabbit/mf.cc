@@ -37,13 +37,6 @@ struct mf
   features temp_features;
 
   vw* all;  // for pairs? and finalize
-
-  ~mf()
-  {
-    // clean up local v_arrays
-    indices.delete_v();
-    sub_predictions.delete_v();
-  }
 };
 
 template <bool cache_sub_predictions>
