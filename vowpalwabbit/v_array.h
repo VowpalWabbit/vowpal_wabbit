@@ -67,9 +67,9 @@ private:
   }
 
   // This will move all elements after idx by width positions and reallocate the underlying buffer if needed.
-  // The size must be updated prior to calling this
   void make_space_at(size_t idx, size_t width)
   {
+    _end += width;
     if (size() + width > capacity()) { reserve(2 * capacity() + width); }
     memmove(&_begin[idx + width], &_begin[idx], (size() - (idx + width)) * sizeof(T));
   }
@@ -291,7 +291,6 @@ public:
     assert(it >= begin());
     assert(it <= end());
     const size_t idx = it - begin();
-    _end += 1;
     make_space_at(idx, 1);
     new (&_begin[idx]) T(elem);
     return _begin + idx;
@@ -307,7 +306,6 @@ public:
     assert(it >= begin());
     assert(it <= end());
     const size_t idx = it - begin();
-    _end += 1;
     make_space_at(idx, 1);
     new (&_begin[idx]) T(std::move(elem));
     return _begin + idx;
