@@ -42,6 +42,9 @@
 
 class io_buf
 {
+  // io_buf requires a grow only variant of v_array where it has access to the internals.
+  // It sets the begin, end and endarray members often and does not need the complexity 
+  // of a generic container type, hence why a thin object is defined here.
   struct internal_buffer
   {
     char* _begin = nullptr;
