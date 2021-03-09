@@ -72,6 +72,8 @@ public:
 
   ~TC_parser() {}
 
+  //TODO: Currently this function is called by both warning and error conditions. We only log
+  //      to warning here though.
   inline void parserWarning(const char* message, VW::string_view var_msg, const char* message2)
   {
     // VW::string_view will output the entire view into the output stream.
@@ -82,13 +84,16 @@ public:
     auto tmp_view = _line.substr(0, _line.find('\0'));
     std::stringstream ss;
     ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples.load() << ": \"" << tmp_view
-       << "\"" << std::endl;
-    // avoid constructing the string multiple times
-    auto msg = ss.str();
-    if (_p->strict_parse) { THROW_EX(VW::strict_parse_exception, msg); }
+       << "\"";
+
+    if (_p->strict_parse) {
+      // maintain newline behavior
+      ss << std::endl;
+      THROW_EX(VW::strict_parse_exception, ss.str());
+    }
     else
     {
-      logger::errlog_warn(msg);
+      logger::errlog_warn(ss.str());
     }
   }
 
