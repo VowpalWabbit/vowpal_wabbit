@@ -66,6 +66,14 @@ private:
     memset(_end, 0, (end_array - _end) * sizeof(T));
   }
 
+  // This will move all elements after idx by width positions and reallocate the underlying buffer if needed.
+  void make_space_at(size_t idx, size_t width)
+  {
+    _end += width;
+    if (size() + width > capacity()) { reserve(2 * capacity() + width); }
+    memmove(&_begin[idx + width], &_begin[idx], (size() - (idx + width)) * sizeof(T));
+  }
+
 public:
   // private:
   T* _begin;
@@ -253,7 +261,7 @@ public:
 
   /// \brief Erase items from first to end. [first, end)
   /// \param first Iterator to begin erasing at. UB if it is nullptr or out of bounds of the v_array
-  /// \param first Iterator to end erasing at. UB if it is nullptr or out of bounds of the v_array
+  /// \param last Iterator to end erasing at. UB if it is nullptr or out of bounds of the v_array
   /// \returns Iterator to item immediately following the erased elements. May be equal to end()
   /// \note Invalidates iterators
   inline iterator erase(iterator first, iterator last)
@@ -271,6 +279,36 @@ public:
         &_begin[first_index], &_begin[first_index + num_to_erase], (size() - (first_index + num_to_erase)) * sizeof(T));
     _end -= num_to_erase;
     return begin() + first_index;
+  }
+
+  /// \brief Insert item into v_array directly after position.
+  /// \param first Iterator to insert at. May be end(). UB if outside bounds.
+  /// \param elem Element to insert
+  /// \returns Iterator to inserted item.
+  /// \note Invalidates iterators
+  inline iterator insert(iterator it, const T& elem)
+  {
+    assert(it >= begin());
+    assert(it <= end());
+    const size_t idx = it - begin();
+    make_space_at(idx, 1);
+    new (&_begin[idx]) T(elem);
+    return _begin + idx;
+  }
+
+  /// \brief Insert item into v_array directly after position.
+  /// \param first Iterator to insert at. May be end(). UB if outside bounds.
+  /// \param elem Element to insert
+  /// \returns Iterator to inserted item.
+  /// \note Invalidates iterators
+  inline iterator insert(iterator it, T&& elem)
+  {
+    assert(it >= begin());
+    assert(it <= end());
+    const size_t idx = it - begin();
+    make_space_at(idx, 1);
+    new (&_begin[idx]) T(std::move(elem));
+    return _begin + idx;
   }
 
   void delete_v() { delete_v_array(); }
