@@ -99,18 +99,6 @@ public:
 
   const VW::version_struct* get_model_file_ver() const { return _model_file_ver; }
 
-  ~cb_adf()
-  {
-    _cs_labels.costs.delete_v();
-    _backup_weights.delete_v();
-    _backup_nf.delete_v();
-    _prob_s.delete_v();
-
-    _a_s.delete_v();
-    _a_s_mtr_cs.delete_v();
-    _gen_cs.pred_scores.costs.delete_v();
-  }
-
 private:
   void learn_IPS(multi_learner& base, multi_ex& examples);
   void learn_DR(multi_learner& base, multi_ex& examples);

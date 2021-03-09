@@ -158,11 +158,6 @@ struct ldf
   uint64_t ft_offset;
 
   std::vector<action_scores> stored_preds;
-
-  ~ldf()
-  {
-    a_s.delete_v();
-  }
 };
 
 bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or just "label:___"
