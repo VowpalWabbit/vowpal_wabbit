@@ -137,10 +137,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   if (is_learn) base.learn(ec);
 
   // re-insert namespace into the right position
-  if (n2_i < indices_original_size)
-  {
-    ec.indices.insert(ec.indices.begin() + n2_i, in.n2);
-  }
+  if (n2_i < indices_original_size) { ec.indices.insert(ec.indices.begin() + n2_i, in.n2); }
 
   f1.deep_copy_from(in.feat_store);
   ec.total_sum_feat_sq = in.total_sum_feat_sq;
