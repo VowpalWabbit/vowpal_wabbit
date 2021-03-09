@@ -13,7 +13,7 @@ loss     last          counter         weight    label  predict features
 [error] your features have too much magnitude
 [warning] update is NAN, replacing with 0
 1.000000 1.000000            1            1.0   1.0000   0.0000        2
-[warning] NAN prediction in example 2, forcing 0.000000
+[warning] NAN prediction in example 2, forcing 0
 [error] your features have too much magnitude
 [warning] update is NAN, replacing with 0
 1.000000 1.000000            2            2.0   1.0000   0.0000        2
