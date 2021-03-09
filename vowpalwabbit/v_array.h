@@ -70,10 +70,7 @@ private:
   // The size must be updated prior to calling this
   void make_space_at(size_t idx, size_t width)
   {
-    if (size() + width > capacity())
-    {
-      reserve(2 * capacity() + width);
-    }
+    if (size() + width > capacity()) { reserve(2 * capacity() + width); }
     memmove(&_begin[idx + width], &_begin[idx], (size() - (idx + width)) * sizeof(T));
   }
 

@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(v_array_insert_from_empty)
 {
   v_array<int> list;
   list.insert(list.begin(), 1);
-  
+
   BOOST_CHECK_EQUAL(std::size_t(1), list.size());
   BOOST_CHECK_EQUAL(1, list[0]);
 }
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(v_array_insert_multiple_insert)
   BOOST_CHECK_EQUAL(1, list[0]);
   BOOST_CHECK_EQUAL(2, list[1]);
 
-  list.insert(list.begin()+1, 33);
+  list.insert(list.begin() + 1, 33);
   BOOST_CHECK_EQUAL(std::size_t(3), list.size());
   BOOST_CHECK_EQUAL(1, list[0]);
   BOOST_CHECK_EQUAL(33, list[1]);
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE(v_array_insert_multiple_insert)
   BOOST_CHECK_EQUAL(33, list[2]);
   BOOST_CHECK_EQUAL(2, list[3]);
 
-  list.insert(list.begin()+2, 13);
+  list.insert(list.begin() + 2, 13);
   BOOST_CHECK_EQUAL(std::size_t(5), list.size());
   BOOST_CHECK_EQUAL(8, list[0]);
   BOOST_CHECK_EQUAL(1, list[1]);
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(v_array_insert_multiple_insert)
   BOOST_CHECK_EQUAL(33, list[3]);
   BOOST_CHECK_EQUAL(2, list[4]);
 
-  list.insert(list.begin()+1, 41);
+  list.insert(list.begin() + 1, 41);
   BOOST_CHECK_EQUAL(std::size_t(6), list.size());
   BOOST_CHECK_EQUAL(8, list[0]);
   BOOST_CHECK_EQUAL(41, list[1]);
@@ -251,15 +251,9 @@ BOOST_AUTO_TEST_CASE(v_array_insert_in_loop)
 {
   v_array<int> list;
   const auto num_values_to_insert = 1000;
-  for (auto i = 0; i < num_values_to_insert; i++)
-  {
-    list.insert(list.begin(), i);
-  }
+  for (auto i = 0; i < num_values_to_insert; i++) { list.insert(list.begin(), i); }
 
-   BOOST_CHECK_EQUAL(std::size_t(num_values_to_insert), list.size());
+  BOOST_CHECK_EQUAL(std::size_t(num_values_to_insert), list.size());
 
-  for (auto i = 0; i < num_values_to_insert; i++)
-  {
-    BOOST_CHECK_EQUAL(num_values_to_insert - i - 1, list[i]);
-  }
+  for (auto i = 0; i < num_values_to_insert; i++) { BOOST_CHECK_EQUAL(num_values_to_insert - i - 1, list[i]); }
 }
