@@ -174,8 +174,8 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::slot);
   BOOST_CHECK_EQUAL(uncached_label.labeled, true);
-  check_collections_with_float_tolerance(uncached_label.probabilities,
-      std::vector<ACTION_SCORE::action_score>{{0, 0.5}, {1, 0.25}, {2, 0.25}}, FLOAT_TOL);
+  check_collections_with_float_tolerance(
+      uncached_label.probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.5}, {1, 0.25}, {2, 0.25}}, FLOAT_TOL);
 }
 
 BOOST_AUTO_TEST_CASE(slates_copy_label)
