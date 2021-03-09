@@ -398,7 +398,7 @@ template <class T>
 void copy_array(v_array<T>& dst, const v_array<T>& src)
 {
   dst.clear();
-  push_many(dst, src._begin, src.size());
+  push_many(dst, src.cbegin(), src.size());
 }
 
 // use to copy arrays of types with non-trivial copy constructors, such as shared_ptr
@@ -406,14 +406,14 @@ template <class T>
 void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src)
 {
   dst.clear();
-  for (T* item = src._begin; item != src._end; ++item) dst.push_back(*item);
+  for (const auto& item : src) { dst.push_back(item); }
 }
 
 template <class T>
-void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(T&))
+void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(const T&))
 {
   dst.clear();
-  for (T* item = src._begin; item != src._end; ++item) dst.push_back(copy_item(*item));
+  for (const auto& item : src) { dst.push_back(copy_item(*item)); }
 }
 
 template <class T>
@@ -438,9 +438,9 @@ void calloc_reserve(v_array<T>& v, size_t length)
 }
 
 template <class T>
-bool v_array_contains(v_array<T>& A, T x)
+bool v_array_contains(const v_array<T>& A, T x)
 {
-  for (T* e = A._begin; e != A._end; ++e)
+  for (auto e = A.cbegin(); e != A.cend(); ++e)
     if (*e == x) return true;
   return false;
 }
@@ -449,7 +449,7 @@ template <class T>
 std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
 {
   os << '[';
-  for (T* i = v._begin; i != v._end; ++i) os << ' ' << *i;
+  for (auto i = v.cbegin(); i != v.cend(); ++i) os << ' ' << *i;
   os << " ]";
   return os;
 }
@@ -458,7 +458,7 @@ template <class T, class U>
 std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
 {
   os << '[';
-  for (std::pair<T, U>* i = v._begin; i != v._end; ++i) os << ' ' << i->first << ':' << i->second;
+  for (auto i = v.cbegin(); i != v.cend(); ++i) os << ' ' << i->first << ':' << i->second;
   os << " ]";
   return os;
 }
@@ -470,9 +470,11 @@ template <class T>
 VW_DEPRECATED("pop is deprecated and will be removed in a future version.")
 v_array<T> pop(v_array<v_array<T> >& stack)
 {
-  if (stack._end != stack._begin)
-    return *(--stack._end);
-  else
+  if (stack.size() > 0)
+  {
+    stack.pop_back();
+    return stack.back();
+  }
     return v_array<T>();
 }
 
@@ -491,7 +493,7 @@ VW_DEPRECATED("v_string2string is deprecated and will be removed in a future ver
 inline std::string v_string2string(const v_string& v_s)
 {
   std::string res;
-  for (unsigned char* i = v_s._begin; i != v_s._end; ++i) res.push_back(*i);
+  for (auto i = v_s.cbegin(); i != v_s.cend(); ++i) res.push_back(*i);
   return res;
 }
 
