@@ -61,10 +61,7 @@ class io_buf
         // _begin still needs to be freed but the destructor will do it.
         THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
       }
-      else
-      {
-        _begin = temp;
-      }
+      _begin = temp;
       _end = _begin + old_size;
       _end_array = _begin + new_capacity;
       memset(_end, 0, sizeof(char) * (_end_array - _end));
