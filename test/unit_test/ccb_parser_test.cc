@@ -31,7 +31,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_EQUAL(label->explicit_included_actions.size(), 0);
     BOOST_CHECK(label->outcome == nullptr);
     BOOST_CHECK_EQUAL(label->type, CCB::example_type::shared);
-    CCB::delete_label(*label);
   }
   {
     auto label = scoped_calloc_or_throw<CCB::label>();
@@ -39,7 +38,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_EQUAL(label->explicit_included_actions.size(), 0);
     BOOST_CHECK(label->outcome == nullptr);
     BOOST_CHECK_EQUAL(label->type, CCB::example_type::action);
-    CCB::delete_label(*label);
   }
   {
     auto label = scoped_calloc_or_throw<CCB::label>();
@@ -47,7 +45,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_EQUAL(label->explicit_included_actions.size(), 0);
     BOOST_CHECK(label->outcome == nullptr);
     BOOST_CHECK_EQUAL(label->type, CCB::example_type::slot);
-    CCB::delete_label(*label);
   }
   {
     auto label = scoped_calloc_or_throw<CCB::label>();
@@ -58,7 +55,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_EQUAL(label->explicit_included_actions[2], 4);
     BOOST_CHECK(label->outcome == nullptr);
     BOOST_CHECK_EQUAL(label->type, CCB::example_type::slot);
-    CCB::delete_label(*label);
   }
   {
     auto label = scoped_calloc_or_throw<CCB::label>();
@@ -70,7 +66,6 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_EQUAL(label->outcome->probabilities[0].action, 1);
     BOOST_CHECK_CLOSE(label->outcome->probabilities[0].score, .5f, FLOAT_TOL);
     BOOST_CHECK_EQUAL(label->type, CCB::example_type::slot);
-    CCB::delete_label(*label);
   }
   {
     auto label = scoped_calloc_or_throw<CCB::label>();
@@ -87,32 +82,26 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
     BOOST_CHECK_EQUAL(label->outcome->probabilities[2].action, 3);
     BOOST_CHECK_CLOSE(label->outcome->probabilities[2].score, .25f, FLOAT_TOL);
     BOOST_CHECK_EQUAL(label->type, CCB::example_type::slot);
-    CCB::delete_label(*label);
   }
   {
     auto label = scoped_calloc_or_throw<CCB::label>();
     BOOST_REQUIRE_THROW(parse_ccb_label(&p, "shared", *label.get()), VW::vw_exception);
-    CCB::delete_label(*label);
   }
   {
     auto label = scoped_calloc_or_throw<CCB::label>();
     BOOST_REQUIRE_THROW(parse_ccb_label(&p, "other shared", *label.get()), VW::vw_exception);
-    CCB::delete_label(*label);
   }
   {
     auto label = scoped_calloc_or_throw<CCB::label>();
     BOOST_REQUIRE_THROW(parse_ccb_label(&p, "other", *label.get()), VW::vw_exception);
-    CCB::delete_label(*label);
   }
   {
     auto label = scoped_calloc_or_throw<CCB::label>();
     BOOST_REQUIRE_THROW(parse_ccb_label(&p, "ccb unknown", *label.get()), VW::vw_exception);
-    CCB::delete_label(*label);
   }
   {
     auto label = scoped_calloc_or_throw<CCB::label>();
     BOOST_REQUIRE_THROW(parse_ccb_label(&p, "ccb slot 1:1.0:0.5,4:0.7", *label.get()), VW::vw_exception);
-    CCB::delete_label(*label);
   }
 }
 
@@ -150,8 +139,6 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   BOOST_CHECK_EQUAL(uncached_label->outcome->probabilities[2].action, 3);
   BOOST_CHECK_CLOSE(uncached_label->outcome->probabilities[2].score, .25f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(uncached_label->type, CCB::example_type::slot);
-  CCB::delete_label(*label);
-  CCB::delete_label(*uncached_label);
 }
 
 BOOST_AUTO_TEST_CASE(ccb_copy_label)
@@ -179,7 +166,4 @@ BOOST_AUTO_TEST_CASE(ccb_copy_label)
   BOOST_CHECK_EQUAL(copied_to->outcome->probabilities[2].action, 3);
   BOOST_CHECK_CLOSE(copied_to->outcome->probabilities[2].score, .25f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(copied_to->type, CCB::example_type::slot);
-
-  CCB::delete_label(*label);
-  CCB::delete_label(*copied_to);
 }
