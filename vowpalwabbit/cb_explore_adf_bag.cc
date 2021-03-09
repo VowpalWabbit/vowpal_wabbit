@@ -41,7 +41,6 @@ private:
 public:
   cb_explore_adf_bag(
       float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state);
-  ~cb_explore_adf_bag();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
@@ -112,8 +111,6 @@ void cb_explore_adf_bag::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
 
   for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
 }
-
-cb_explore_adf_bag::~cb_explore_adf_bag() { _action_probs.delete_v(); }
 
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {

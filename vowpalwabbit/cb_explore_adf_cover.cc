@@ -53,7 +53,6 @@ public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
       VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type,
       VW::version_struct model_file_version);
-  ~cb_explore_adf_cover();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
@@ -194,14 +193,6 @@ void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
     if (!read) { msg << "cb cover adf storing example counter:  = " << _counter << "\n"; }
     bin_text_read_write_fixed_validated(io, (char*)&_counter, sizeof(_counter), "", read, msg, text);
   }
-}
-
-cb_explore_adf_cover::~cb_explore_adf_cover()
-{
-  _cs_labels_2.costs.delete_v();
-  _cs_labels.costs.delete_v();
-  _action_probs.delete_v();
-  _gen_cs.pred_scores.costs.delete_v();
 }
 
 VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
