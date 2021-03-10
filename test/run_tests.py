@@ -505,6 +505,10 @@ def calculate_test_to_run_explicitly(explicit_tests, tests):
 
     tests_to_run_explicitly = set()
     for test_number in explicit_tests:
+        if test_number > len(tests):
+            print(f"Error: Test number {test_number} does not exist. There are {len(tests)} tests in total.")
+            sys.exit(1)
+
         tests_to_run_explicitly.add(test_number)
         tests_to_run_explicitly = set.union(
             tests_to_run_explicitly, get_deps(test_number, tests))
@@ -593,7 +597,7 @@ def main():
     args = parser.parse_args()
 
     if args.for_flatbuffers and args.working_dir == working_dir: # user did not supply dir
-        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")        
+        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")
 
     test_base_working_dir = str(args.working_dir)
     test_base_ref_dir = str(args.ref_dir)
