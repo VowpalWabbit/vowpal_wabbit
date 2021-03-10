@@ -585,11 +585,11 @@ struct DedupMultiState : BaseState<audit>
 {
   DedupMultiState() : BaseState<audit>("DedupMulti") {}
 
-  BaseState<audit>* StartArray(Context<audit>& ctx) override { return this; }
+  BaseState<audit>* StartArray(Context<audit>&) override { return this; }
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override { return &ctx.default_state; }
 
-  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override { return this; }
+  BaseState<audit>* EndObject(Context<audit>&, rapidjson::SizeType) override { return this; }
 
   BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
   {  // return to shared example
