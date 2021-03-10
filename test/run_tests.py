@@ -593,7 +593,7 @@ def main():
     args = parser.parse_args()
 
     if args.for_flatbuffers and args.working_dir == working_dir: # user did not supply dir
-        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")
+        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")      
 
     test_base_working_dir = str(args.working_dir)
     test_base_ref_dir = str(args.ref_dir)
