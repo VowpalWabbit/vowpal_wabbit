@@ -104,8 +104,9 @@ std::ostream& operator<<(std::ostream& os, const scored_action& x)
 
 struct action_repr
 {
-  action a;
+  action a = 0;
   features* repr = nullptr;
+  action_repr() = default;
   action_repr(action _a, features* _repr) : a(_a)
   {
     if (_repr != nullptr)
