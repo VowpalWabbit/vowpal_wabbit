@@ -177,11 +177,13 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   if (data->explore_mode)
   {
-    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::action_probs, "cb_to_cb_adf");
+    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::action_probs,
+        "cb_to_cb_adf");
   }
   else
   {
-    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass, "cb_to_cb_adf");
+    l = &init_learner(
+        data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass, "cb_to_cb_adf");
   }
 
   l->set_finish_example(finish_example);
