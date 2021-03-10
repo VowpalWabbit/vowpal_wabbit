@@ -25,8 +25,7 @@ struct conditional_contextual_bandit_outcome
   ACTION_SCORE::action_scores probabilities;
 };
 
-
-//TODO: Remove the elements that are in reduction_features
+// TODO: Remove the elements that are in reduction_features
 // ccb_label.cc will need a major revamp before that can happen
 struct label
 {
@@ -62,8 +61,12 @@ struct label
   label(const label& other)
   {
     type = other.type;
-    outcome = new conditional_contextual_bandit_outcome();
-    *outcome = *other.outcome;
+    outcome = nullptr;
+    if (other.outcome)
+    {
+      outcome = new conditional_contextual_bandit_outcome();
+      *outcome = *other.outcome;
+    }
     explicit_included_actions = other.explicit_included_actions;
     weight = other.weight;
   }
@@ -79,8 +82,12 @@ struct label
     }
 
     type = other.type;
-    outcome = new conditional_contextual_bandit_outcome();
-    *outcome = *other.outcome;
+    outcome = nullptr;
+    if (other.outcome)
+    {
+      outcome = new conditional_contextual_bandit_outcome();
+      *outcome = *other.outcome;
+    }
     explicit_included_actions = other.explicit_included_actions;
     weight = other.weight;
     return *this;
