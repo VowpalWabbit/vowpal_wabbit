@@ -60,7 +60,11 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 
 void output_example(vw& all, bool explore_mode, example& ec, CB::label& ld)
 {
-  if (explore_mode) { CB_EXPLORE::generic_output_example(all, ec, ld); }
+  if (explore_mode)
+  {
+    float loss = 0;
+    CB_EXPLORE::generic_output_example(all, loss, ec, ld);
+  }
   else
   {
     float loss = CB_ALGS::get_cost_estimate(ld, ec.pred.multiclass);
@@ -173,11 +177,11 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   if (data->explore_mode)
   {
-    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::action_probs);
+    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::action_probs, "cb_to_cb_adf");
   }
   else
   {
-    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass);
+    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass, "cb_to_cb_adf");
   }
 
   l->set_finish_example(finish_example);

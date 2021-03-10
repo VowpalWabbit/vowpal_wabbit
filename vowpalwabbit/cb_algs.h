@@ -67,7 +67,7 @@ inline float get_cost_estimate(const CB::cb_class& observation, const COST_SENSI
 inline float get_cost_estimate(CB::label& ld, uint32_t action)
 {
   for (auto& cl : ld.costs)
-    if (cl.action == action) return get_cost_estimate(&cl, action);
+    if (cl.action == action) return get_cost_estimate(cl, action);
   return 0.0f;
 }
 

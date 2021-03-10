@@ -254,7 +254,7 @@ void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstre
   }
 }
 
-float calc_loss(vw& all, cb_explore& data, example& ec, CB::label& ld)
+float calc_loss(cb_explore& data, example& ec, CB::label& ld)
 {
   float loss = 0.;
 
@@ -296,7 +296,7 @@ void generic_output_example(vw& all, float loss, example& ec, CB::label& ld)
 
 void finish_example(vw& all, cb_explore& data, example& ec)
 {
-  float loss = calc_loss(all, data, ec, ec.l.cb);
+  float loss = calc_loss(data, ec, ec.l.cb);
 
   CB_EXPLORE::generic_output_example(all, loss, ec, ec.l.cb);
   VW::finish_example(all, ec);

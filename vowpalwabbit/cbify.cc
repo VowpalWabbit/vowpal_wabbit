@@ -26,14 +26,6 @@ using VW::cb_continuous::continuous_label_elm;
 
 struct cbify;
 
-VW_DEBUG_ENABLE(false)
-
-struct cbify_adf_data
-{
-  multi_ex ecs;
-  size_t num_actions;
-};
-
 struct cbify_reg
 {
   float min_value;
@@ -117,7 +109,7 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
   if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
 }
 
-void cbify_adf_data::init_adf_data(const size_t num_actions, std::vector<std::vector<namespace_index>>& interactions)
+void cbify_adf_data::init_adf_data(const std::size_t num_actions, namespace_interactions& interactions)
 {
   this->num_actions = num_actions;
 
