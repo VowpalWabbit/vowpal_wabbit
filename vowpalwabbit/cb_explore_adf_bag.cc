@@ -41,7 +41,6 @@ private:
 public:
   cb_explore_adf_bag(
       float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state);
-  ~cb_explore_adf_bag();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
@@ -113,8 +112,6 @@ void cb_explore_adf_bag::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
   for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
 }
 
-cb_explore_adf_bag::~cb_explore_adf_bag() { _action_probs.delete_v(); }
-
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
@@ -139,8 +136,6 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   size_t problem_multiplier = bag_size;
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
@@ -148,8 +143,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
   auto data = scoped_calloc_or_throw<explore_type>(epsilon, bag_size, greedify, first_only, all.get_random_state());
 
-  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
+  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(data, base, explore_type::learn,
+      explore_type::predict, problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-bag");
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

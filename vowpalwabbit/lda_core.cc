@@ -89,18 +89,6 @@ struct lda
   inline float powf(float x, float p);
   inline void expdigammify(vw &all, float *gamma);
   inline void expdigammify_2(vw &all, float *gamma, float *norm);
-
-  ~lda()
-  {
-    Elogtheta.delete_v();
-    decay_levels.delete_v();
-    total_new.delete_v();
-    examples.delete_v();
-    total_lambda.delete_v();
-    doc_lengths.delete_v();
-    digammas.delete_v();
-    v.delete_v();
-  }
 };
 
 // #define VW_NO_INLINE_SIMD
@@ -892,7 +880,7 @@ void learn_batch(lda &l)
   eta = l.all->eta * l.powf((float)l.example_t, -l.all->power_t);
   minuseta = 1.0f - eta;
   eta *= l.lda_D / batch_size;
-  l.decay_levels.push_back(l.decay_levels.last() + log(minuseta));
+  l.decay_levels.push_back(l.decay_levels.back() + log(minuseta));
 
   l.digammas.clear();
   float additional = (float)(l.all->length()) * l.lda_rho;
@@ -1241,7 +1229,7 @@ void end_examples(lda &l, T &weights)
   for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
   {
     float decay_component =
-        l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
+        l.decay_levels.back() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
     float decay = fmin(1.f, correctedExp(decay_component));
 
     weight *wp = &(*iter);
@@ -1318,7 +1306,6 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   ld->finish_example_count = 0;
 
   all.lda = (uint32_t)ld->topics;
-  all.delete_prediction = delete_scalars;
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = false;
   ld->all = &all;
@@ -1358,7 +1345,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   VW::LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
-      prediction_type_t::scalars);
+      prediction_type_t::scalars, all.get_setupfn_name(lda_setup));
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

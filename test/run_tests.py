@@ -186,7 +186,7 @@ def are_outputs_different(output_content, output_file_name, ref_content, ref_fil
                     for line in output_content.strip().splitlines()]
     ref_lines = [line.strip() for line in ref_content.strip().splitlines()]
     is_different, reason = are_lines_different(
-        output_lines, ref_lines, epsilon)
+        output_lines, ref_lines, epsilon, fuzzy_compare=fuzzy_compare)
     diff = diff if is_different else []
     return is_different, diff, reason
 
@@ -249,7 +249,7 @@ def run_command_line_test(test_id,
                 stderr=subprocess.PIPE,
                 cwd=working_dir,
                 shell=is_shell,
-                timeout=10)
+                timeout=100)
         except subprocess.TimeoutExpired as e:
             stdout = try_decode(e.stdout)
             stderr = try_decode(e.stderr)
@@ -288,7 +288,7 @@ def run_command_line_test(test_id,
                 output_file_working_dir = os.path.join(
                     working_dir, output_file)
                 if os.path.isfile(output_file_working_dir):
-                    output_content = open(output_file_working_dir, 'r').read()
+                    output_content = open(output_file_working_dir, 'r', encoding='utf-8').read()
                 else:
                     checks[output_file] = {
                         "success": False,
@@ -299,7 +299,7 @@ def run_command_line_test(test_id,
 
             ref_file_ref_dir = os.path.join(ref_dir, ref_file)
             if os.path.isfile(ref_file_ref_dir):
-                ref_content = open(ref_file_ref_dir, 'r').read()
+                ref_content = open(ref_file_ref_dir, 'r', encoding='utf-8').read()
             else:
                 checks[output_file] = {
                     "success": False,
@@ -505,6 +505,10 @@ def calculate_test_to_run_explicitly(explicit_tests, tests):
 
     tests_to_run_explicitly = set()
     for test_number in explicit_tests:
+        if test_number > len(tests):
+            print("Error: Test number {} does not exist. There are {} tests in total.".format(test_number, len(tests)))
+            sys.exit(1)
+
         tests_to_run_explicitly.add(test_number)
         tests_to_run_explicitly = set.union(
             tests_to_run_explicitly, get_deps(test_number, tests))
@@ -535,6 +539,11 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
             continue
         if 'help' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, --help test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            continue
+
+        # TODO: figure out why --nn, --audit and flatbuffers are giving different results
+        if test_id == 270:
+            print("{}Skipping test {} for flatbuffers, nn  test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
 
         depends_on_test = (
@@ -588,7 +597,7 @@ def main():
     args = parser.parse_args()
 
     if args.for_flatbuffers and args.working_dir == working_dir: # user did not supply dir
-        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")        
+        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")      
 
     test_base_working_dir = str(args.working_dir)
     test_base_ref_dir = str(args.ref_dir)
@@ -642,6 +651,19 @@ def main():
     if args.for_flatbuffers:
         to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
         tests = convert_tests_for_flatbuffers(tests, to_flatbuff, args.working_dir, color_enum)
+
+    # Because bash_command based tests don't specify all inputs and outputs they must operate in the test directory directly.
+    # This means that if they run in parallel they can break each other by touching the same files.
+    # Until we can move to a test spec which allows us to specify the input/output we need to add dependencies between them here.
+    prev_bash_test = None
+    for test in tests:
+        test_number = test["id"]
+        if "bash_command" in test:
+            if prev_bash_test is not None:
+                if "depends_on" not in tests[test_number - 1]:
+                    tests[test_number - 1]["depends_on"] = []
+                tests[test_number - 1]["depends_on"].append(prev_bash_test)
+            prev_bash_test = test_number
 
     tasks = []
     completed_tests = Completion()

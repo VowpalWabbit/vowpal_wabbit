@@ -67,7 +67,7 @@ struct log_multi
 {
   uint32_t k;
 
-  v_array<node> nodes;
+  std::vector<node> nodes;
 
   size_t max_predictors;
   size_t predictors_used;
@@ -80,8 +80,6 @@ struct log_multi
   ~log_multi()
   {
     // save_node_stats(b);
-    for (auto& node : nodes) node.preds.delete_v();
-    nodes.delete_v();
   }
 };
 
@@ -500,8 +498,9 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
-  learner<log_multi, example>& l = init_multiclass_learner(
-      data, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, data->max_predictors);
+  learner<log_multi, example>& l = init_multiclass_learner(data, as_singleline(setup_base(options, all)), learn,
+      predict, all.example_parser, data->max_predictors, all.get_setupfn_name(log_multi_setup));
+  all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   l.set_save_load(save_load_tree);
 
   return make_base(l);

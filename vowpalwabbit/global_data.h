@@ -317,6 +317,18 @@ struct vw_logger
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
+#ifdef BUILD_EXTERNAL_PARSER
+// forward declarations
+namespace VW
+{
+namespace external
+{
+class parser;
+struct parser_options;
+}  // namespace external
+}  // namespace VW
+#endif
+
 namespace VW
 {
 namespace parsers
@@ -327,6 +339,18 @@ class parser;
 }
 }  // namespace parsers
 }  // namespace VW
+
+struct trace_message_wrapper
+{
+  void* _inner_context;
+  trace_message_t _trace_message;
+
+  trace_message_wrapper(void* context, trace_message_t trace_message)
+      : _inner_context(context), _trace_message(trace_message)
+  {
+  }
+  ~trace_message_wrapper() = default;
+};
 
 struct vw
 {
@@ -368,6 +392,10 @@ public:
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
+
+#ifdef BUILD_EXTERNAL_PARSER
+  std::unique_ptr<VW::external::parser> external_parser;
+#endif
   std::string data_filename;
 
   bool daemon;
@@ -389,6 +417,7 @@ public:
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
   // error reporting
+  std::shared_ptr<trace_message_wrapper> trace_message_wrapper_context;
   std::unique_ptr<std::ostream> trace_message;
 
   std::unique_ptr<VW::config::options_i, options_deleter_type> options;
@@ -420,7 +449,7 @@ public:
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  std::vector<std::vector<namespace_index>> interactions;
+  namespace_interactions interactions;
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
@@ -443,7 +472,9 @@ public:
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
+  VW_DEPRECATED("delete_prediction has been deprecated")
   void (*delete_prediction)(void*);
+
   vw_logger logger;
   bool audit;     // should I print lots of debugging information?
   bool training;  // Should I train if lable data is available?
@@ -473,7 +504,7 @@ public:
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
+  std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
   std::vector<std::string> enabled_reductions;
 
   // Prediction output
@@ -528,6 +559,12 @@ public:
   // That pointer would be invalidated if it were to be moved.
   vw(const vw&&) = delete;
   vw& operator=(const vw&&) = delete;
+
+  std::string get_setupfn_name(reduction_setup_fn setup);
+  void build_setupfn_name_dict();
+
+private:
+  std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")

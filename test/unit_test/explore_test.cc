@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(sample_continuous_action)
 
 BOOST_AUTO_TEST_CASE(new_sample_pdf)
 {
-  probability_density_function the_pdf = v_init<::pdf_segment>();
+  probability_density_function the_pdf;
   the_pdf.push_back({2.f, 3.5f, 0.1f / 1.5f});
   the_pdf.push_back({3.5f, 4.5f, 0.8f / 1.0f});
   the_pdf.push_back({4.5f, 6.2f, 0.1f / 1.7f});
@@ -56,11 +56,9 @@ BOOST_AUTO_TEST_CASE(new_sample_pdf)
   float pdf_value = 0.f;
 
   exploration::sample_pdf(&seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
-  BOOST_CHECK(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.last().right && pdf_value > 0.f);
+  BOOST_CHECK(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.back().right && pdf_value > 0.f);
   exploration::sample_pdf(&seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
-  BOOST_CHECK(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.last().right && pdf_value > 0.f);
-
-  delete_probability_density_function(&the_pdf);
+  BOOST_CHECK(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.back().right && pdf_value > 0.f);
 }
 
 struct bins_calc

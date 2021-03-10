@@ -9,54 +9,106 @@
 #include <sstream>
 #include <vector>
 #include <memory>
+#include <cassert>
+#include <cstdlib>
 
 #include "v_array.h"
 #include "hash.h"
-#include "vw_exception.h"
 #include "io/io_adapter.h"
 
+#ifndef VW_NOEXCEPT
+#  include "vw_exception.h"
+#endif
+
 /* The i/o buffer can be conceptualized as an array below:
-**  _______________________________________________________________________________________
-** |__________|__________|__________|__________|__________|__________|__________|__________|   **
-** space.begin           space.head             space.end                       space.endarray **
+**  _________________________________________________________________
+** |__________|__________|__________|__________|__________|__________|
+** _buffer._begin        head       _buffer._end                     _buffer._end_array
 **
-** space.begin     = the beginning of the loaded values in the buffer
-** space.head      = the end of the last-read point in the buffer
-** space.end       = the end of the loaded values from file
-** space.endarray  = the end of the allocated space for the array
+** _buffer._begin     = the beginning of the loaded values in the buffer
+** head               = the end of the last-read point in the buffer
+** _buffer._end       = the end of the loaded values from file
+** _buffer._end_array = the end of the allocated _buffer for the array
 **
 ** The values are ordered so that:
-** space.begin <= space.head <= space.end <= space.endarray
+** _buffer._begin <= head <= _buffer._end <= _buffer._end_array
 **
-** Initially space.begin == space.head since no values have been read.
+** Initially _buffer._begin == head since no values have been read.
 **
-** The interval [space.head, space.end] may be shifted down to space.begin
+** The interval [head, _buffer._end] may be shifted down to _buffer._begin
 ** if the requested number of bytes to be read is larger than the interval size.
 ** This is done to avoid reallocating arrays as much as possible.
 */
 
 class io_buf
 {
+  // io_buf requires a grow only variant of v_array where it has access to the internals.
+  // It sets the begin, end and endarray members often and does not need the complexity
+  // of a generic container type, hence why a thin object is defined here.
+  struct internal_buffer
+  {
+    char* _begin = nullptr;
+    char* _end = nullptr;
+    char* _end_array = nullptr;
+
+    ~internal_buffer() { std::free(_begin); }
+
+    void realloc(size_t new_capacity)
+    {
+      // This specific internal buffer should only ever grow.
+      assert(new_capacity >= capacity());
+      const auto old_size = size();
+      char* temp = reinterpret_cast<char*>(std::realloc(_begin, sizeof(char) * new_capacity));
+      if (temp == nullptr)
+      {
+        // _begin still needs to be freed but the destructor will do it.
+        THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
+      }
+      _begin = temp;
+      _end = _begin + old_size;
+      _end_array = _begin + new_capacity;
+      memset(_end, 0, sizeof(char) * (_end_array - _end));
+    }
+
+    void shift_to_front(char* head_ptr)
+    {
+      const size_t space_left = _end - head_ptr;
+      memmove(_begin, head_ptr, space_left);
+      _end = _begin + space_left;
+    }
+
+    size_t capacity() const { return _end_array - _begin; }
+    size_t size() const { return _end - _begin; }
+  };
+
   // used to check-sum i/o files for corruption detection
-  bool _verify_hash;
-  uint32_t _hash;
+  bool _verify_hash = false;
+  uint32_t _hash = 0;
   static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
-  char* head;
 
-  v_array<char> space;  // space.begin = beginning of loaded values.  space.end = end of read or written values from/to
-                        // the buffer.
+  internal_buffer _buffer;
+  char* head = nullptr;
 
-public:
   std::vector<std::unique_ptr<VW::io::reader>> input_files;
   std::vector<std::unique_ptr<VW::io::writer>> output_files;
-  size_t current;  // file descriptor currently being used.
+
+public:
+  io_buf()
+  {
+    _buffer.realloc(INITIAL_BUFF_SIZE);
+    head = _buffer._begin;
+  }
 
   io_buf(io_buf& other) = delete;
   io_buf& operator=(io_buf& other) = delete;
   io_buf(io_buf&& other) = delete;
   io_buf& operator=(io_buf&& other) = delete;
 
-  ~io_buf() { space.delete_v(); }
+  const std::vector<std::unique_ptr<VW::io::reader>>& get_input_files() const { return input_files; }
+  const std::vector<std::unique_ptr<VW::io::writer>>& get_output_files() const { return output_files; }
+
+  // file descriptor currently being used.
+  size_t current = 0;
 
   void verify_hash(bool verify)
   {
@@ -86,21 +138,14 @@ public:
 
   void reset_buffer()
   {
-    space.end() = space.begin();
-    head = space.begin();
+    _buffer._end = _buffer._begin;
+    head = _buffer._begin;
   }
 
   void reset_file(VW::io::reader* f)
   {
     f->reset();
     reset_buffer();
-  }
-
-  io_buf() : _verify_hash{false}, _hash{0}, current{0}
-  {
-    space = v_init<char>();
-    space.resize(INITIAL_BUFF_SIZE);
-    head = space.begin();
   }
 
   void set(char* p) { head = p; }
@@ -117,50 +162,37 @@ public:
   ssize_t fill(VW::io::reader* f)
   {
     // if the loaded values have reached the allocated space
-    if (space.end_array - space.end() == 0)
+    if (_buffer._end_array - _buffer._end == 0)
     {  // reallocate to twice as much space
       size_t head_loc = unflushed_bytes_count();
-      space.resize(2 * (space.end_array - space.begin()));
-      head = space.begin() + head_loc;
+      _buffer.realloc(_buffer.capacity() * 2);
+      head = _buffer._begin + head_loc;
     }
     // read more bytes from file up to the remaining allocated space
-    ssize_t num_read = read_file(f, space.end(), space.end_array - space.end());
+    ssize_t num_read = f->read(_buffer._end, _buffer._end_array - _buffer._end);
     if (num_read >= 0)
     {
       // if some bytes were actually loaded, update the end of loaded values
-      space.end() = space.end() + num_read;
+      _buffer._end += num_read;
       return num_read;
     }
 
     return 0;
   }
 
-  // You can definitely call write directly on the writer object. This function hasn't been changed yet to reduce churn
-  // in the refactor.
-  static ssize_t write_file(VW::io::writer* f, void* buf, size_t nbytes)
-  {
-    return f->write(static_cast<const char*>(buf), nbytes);
-  }
-
-  // You can definitely call write directly on the writer object. This function hasn't been changed yet to reduce churn
-  // in the refactor.
-  static ssize_t write_file(VW::io::writer* f, const void* buf, size_t nbytes)
-  {
-    return f->write(static_cast<const char*>(buf), nbytes);
-  }
-
   // This has different meanings in write and read mode:
   //   - Write mode: Number of bytes that have not yet been flushed to the output device
   //   - Read mode: The offset of the position that has been read up to so far.
-  size_t unflushed_bytes_count() { return head - space.begin(); }
+  size_t unflushed_bytes_count() { return head - _buffer._begin; }
 
   void flush()
   {
     if (!output_files.empty())
     {
-      if (write_file(output_files[0].get(), space.begin(), unflushed_bytes_count()) != (int)(unflushed_bytes_count()))
+      auto bytes_written = output_files[0]->write(_buffer._begin, unflushed_bytes_count());
+      if (bytes_written != static_cast<ssize_t>(unflushed_bytes_count()))
       { std::cerr << "error, failed to write example\n"; }
-      head = space.begin();
+      head = _buffer._begin;
       output_files[0]->flush();
     }
   }
@@ -230,7 +262,7 @@ public:
   size_t readto(char*& pointer, char terminal);
   size_t copy_to(void* dst, size_t max_size);
   void replace_buffer(char* buf, size_t capacity);
-  char* buffer_start() { return space.begin(); }  // This should be replaced with slicing.
+  char* buffer_start() { return _buffer._begin; }  // This should be replaced with slicing.
 };
 
 inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_message)

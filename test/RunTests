@@ -1904,11 +1904,11 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/cbify_ldf_squarecb_elim.stderr
 
 # Test 225: cbify regression dataset.  Use it with cats.
-{VW} --cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1
+{VW} --cbify 4 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/regression/cbify-reg.dat --passes 1 -b 18 --coin --loss_option 1
     train-sets/ref/cbify-reg-cats.stderr
 
 # Test 226: cats train
-{VW} --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model
+{VW} --cats 4 --min_value=185 --max_value=23959 --bandwidth 3000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats.model
     train-sets/ref/cats-train.stderr
 
 # Test 227: cats predict
@@ -1917,7 +1917,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/cats.predict
 
 # Test 228: cats-pdf train
-{VW} --cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 1 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model
+{VW} --cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin --loss_option 1 -f cats-pdf.model
     train-sets/ref/cats-pdf-train.stderr
 
 # Test 229: cats-pdf predict
@@ -1926,7 +1926,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     pred-sets/ref/cats-pdf.predict
 
 # Test 230: cbify-reg
-{VW} --cbify 2048 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 4  -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
+{VW} --cbify 2048 --cbify_reg --min_value=185 --max_value=23959 --bandwidth 10000 -d train-sets/regression/cbify-reg.dat --coin --loss_option 1
     train-sets/ref/cbify_reg.stderr
 
 # Test 231: cbify-reg cb_discrete
@@ -2006,8 +2006,9 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
          train-sets/ref/ccb_fb.stderr
 
 # Test 247: cb_explore with cover epsilon decaying
-{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model
+{VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -f models/cover_e_dec.model -p cover_e_dec_train.pred
     train-sets/ref/cbe_cover_e_dec.stderr
+    train-sets/ref/cover_e_dec_train.pred
 
 # Test 248: cb_explore with cover epsilon decaying predict
 {VW} --cb_explore 2 --cover 3 -d train-sets/cb_explore_cover.dat -i models/cover_e_dec.model -t -p cbe_cover_e_dec.predict
@@ -2184,5 +2185,49 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 # Test 287: cbzo: verify --invert_hash file contents
 {VW} -d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --invert_hash cbzo_linear_invert_hash.txt
     train-sets/ref/cbzo_linear_invert_hash.txt
+
+# Test 288: vw --help with filtering
+{VW} --cb_adf --help
+
+# Test 289: vw test used in brew script
+{VW} -d train-sets/houses --audit --nn 1
+    train-sets/ref/houses.stderr
+    train-sets/ref/houses.stdout
+
+# Test 290: creating model using --save_resume to be tested with -q :: and --invert_hash
+{VW} -d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -f models/270.model --save_resume --invert_hash ccb_quad.inv
+    train-sets/ref/ccb_quad.stderr
+    pred-sets/ref/ccb_quad.inv
+
+# Test 291: checking invert_hash for ccb with --save_resume model and -q ::
+{VW} -d train-sets/ccb_test_interactions.dat -i models/270.model --save_resume --invert_hash ccb_quad_save_resume.inv
+    train-sets/ref/ccb_quad_save_resume.stderr
+    pred-sets/ref/ccb_quad_save_resume.inv
+
+# Test 292: Slates sanity check with interactions and invert hash
+{VW} --slates -d train-sets/slates_simple_w_interactions.txt -p slates_simple_w_interactions.predict -q :: --invert_hash slates_w_interactions.inv
+    train-sets/ref/slates_simple_w_interactions.stderr
+    pred-sets/ref/slates_simple_w_interactions.predict
+    pred-sets/ref/slates_w_interactions.inv
+
+# Test 293: test -q :: with many interactions
+{VW} -d train-sets/ccb_lots_of_interactions.dat --ccb_explore_adf -q :: --invert_hash ccb_lots_of_interactions.inv
+    train-sets/ref/ccb_lots_of_interactions.stderr
+    pred-sets/ref/ccb_lots_of_interactions.inv
+
+# Test 294: Test search_neighbor_features argument
+{VW} -k -c -d train-sets/sequence_data --passes 2 --search_rollout ref --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off --search_neighbor_features -3:w,-2:w,-1:w,1:w,2:w,3:w,-3:e,-2:e,-1:e,1:e,2:e,3:e,-3:s,-2:s,-1:s,1:s,2:s,3:s
+train-sets/ref/slates_simple_w_interactions.stderr
+    train-sets/ref/search_neighbor_features.train.stderr
+
+# Test 295: test -q :: with explicit interactions
+{VW} -d train-sets/ccb_lots_of_interactions_mini.dat --ccb_explore_adf -q :: -q AB --interactions AAA --interactions ::: --invert_hash ccb_implicit_and_explicit_interactions.inv
+    train-sets/ref/ccb_implicit_and_explicit_interactions.stderr
+    pred-sets/ref/ccb_implicit_and_explicit_interactions.inv
+
+# Test 296: test -q :: with explicit interactions and ignore
+{VW} -d train-sets/ccb_lots_of_interactions_mini.dat --ignore C --ccb_explore_adf -q :: -q AB --interactions AAA --interactions ::: --invert_hash ccb_implicit_explicit_ignore_interactions.inv
+    train-sets/ref/ccb_implicit_explicit_ignore_interactions.stderr
+    pred-sets/ref/ccb_implicit_explicit_ignore_interactions.inv
 
 # Do not delete this line or the empty line above it

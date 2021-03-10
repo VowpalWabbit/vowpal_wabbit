@@ -21,11 +21,9 @@ namespace CB_ALGS
 struct cb
 {
   cb_to_cs cbcs;
-  COST_SENSITIVE::label cb_cs_ld;
 
   ~cb()
   {
-    cb_cs_ld.costs.delete_v();
     COST_SENSITIVE::delete_label(cbcs.pred_scores);
   }
 };
@@ -47,32 +45,31 @@ bool know_all_cost_example(CB::label& ld)
 template <bool is_learn>
 void predict_or_learn(cb& data, single_learner& base, example& ec)
 {
-  CB::label ld = ec.l.cb;
   cb_to_cs& c = data.cbcs;
-  c.known_cost = get_observed_cost(ld);
-  if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
-    std::cerr << "invalid action: " << c.known_cost->action << std::endl;
+  auto optional_cost = get_observed_cost_cb(ec.l.cb);
+  // cost observed, not default
+  if (optional_cost.first) { c.known_cost = optional_cost.second; }
+  else
+  {
+    c.known_cost = CB::cb_class{};
+  }
+
+  // cost observed, not default
+  if (optional_cost.first && (c.known_cost.action < 1 || c.known_cost.action > c.num_actions))
+    std::cerr << "invalid action: " << c.known_cost.action << std::endl;
 
   // generate a cost-sensitive example to update classifiers
-  gen_cs_example<is_learn>(c, ec, ld, data.cb_cs_ld);
+  gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs);
 
   if (c.cb_type != CB_TYPE_DM)
   {
-    ec.l.cs = data.cb_cs_ld;
-
-    // Guard example state restore against throws
-    auto restore_guard = VW::scope_exit([&ld, &ec] {
-      ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
-      ec.l.cb = ld;
-    });
-
     if (is_learn)
       base.learn(ec);
     else
       base.predict(ec);
 
-    for (size_t i = 0; i < ld.costs.size(); i++)
-      ld.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
+    for (size_t i = 0; i < ec.l.cb.costs.size(); i++)
+      ec.l.cb.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction;
   }
 }
 
@@ -80,14 +77,18 @@ void predict_eval(cb&, single_learner&, example&) { THROW("can not use a test la
 
 void learn_eval(cb& data, single_learner&, example& ec)
 {
-  CB_EVAL::label ld = ec.l.cb_eval;
-
   cb_to_cs& c = data.cbcs;
-  c.known_cost = get_observed_cost(ld.event);
-  gen_cs_example<true>(c, ec, ld.event, data.cb_cs_ld);
+  auto optional_cost = get_observed_cost_cb(ec.l.cb_eval.event);
+  // cost observed, not default
+  if (optional_cost.first) { c.known_cost = optional_cost.second; }
+  else
+  {
+    c.known_cost = CB::cb_class{};
+  }
+  gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs);
 
-  for (size_t i = 0; i < ld.event.costs.size(); i++)
-    ld.event.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
+  for (size_t i = 0; i < ec.l.cb_eval.event.costs.size(); i++)
+    ec.l.cb_eval.event.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction;
 
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
@@ -201,13 +202,14 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   learner<cb, example>* l;
   if (eval)
   {
-    l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass);
+    l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass,
+        all.get_setupfn_name(cb_algs_setup) + "-eval");
     l->set_finish_example(eval_finish_example);
   }
   else
   {
-    l = &init_learner(
-        data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier, prediction_type_t::multiclass);
+    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier,
+        prediction_type_t::multiclass, all.get_setupfn_name(cb_algs_setup));
     l->set_finish_example(finish_example);
   }
   c.scorer = all.scorer;

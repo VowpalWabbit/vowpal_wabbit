@@ -61,12 +61,6 @@ struct cs_active
   size_t labels_outside_range;
   float distance_to_range;
   float range;
-
-  ~cs_active()
-  {
-    examples_by_queries.delete_v();
-    query_data.delete_v();
-  }
 };
 
 float binarySearch(float fhat, float delta, float sens, float tol)
@@ -363,9 +357,11 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels)
+            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels,
+            all.get_setupfn_name(cs_active_setup) + "-sim")
       : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
-            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels);
+            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels,
+            all.get_setupfn_name(cs_active_setup));
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);

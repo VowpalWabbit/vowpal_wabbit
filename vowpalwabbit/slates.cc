@@ -41,7 +41,6 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
   for (size_t i = 0; i < examples.size(); i++)
   {
     CCB::label ccb_label;
-    memset(&ccb_label, 0, sizeof(ccb_label));
     CCB::default_label(ccb_label);
     const auto& slates_label = _stashed_labels[i];
     if (slates_label.type == slates::example_type::shared)
@@ -250,9 +249,8 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
 
   auto* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = slates_label_parser;
-  all.delete_prediction = VW::delete_decision_scores;
-  auto& l = VW::LEARNER::init_learner(
-      data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type_t::decision_probs);
+  auto& l = VW::LEARNER::init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
+      prediction_type_t::decision_probs, all.get_setupfn_name(slates_setup));
   l.set_finish_example(finish_multiline_example);
   return VW::LEARNER::make_base(l);
 }

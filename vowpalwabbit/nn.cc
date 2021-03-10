@@ -51,9 +51,6 @@ struct nn
     free(dropped_out);
     free(hidden_units_pred);
     free(hiddenbias_pred);
-    VW::dealloc_example(nullptr, output_layer);
-    VW::dealloc_example(nullptr, hiddenbias);
-    VW::dealloc_example(nullptr, outputweight);
   }
 };
 
@@ -291,19 +288,18 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       ec.total_sum_feat_sq -= tmp_sum_feat_sq;
       ec.feature_space[nn_output_namespace].sum_feat_sq = 0;
       std::swap(ec.feature_space[nn_output_namespace], save_nn_output_namespace);
-      ec.indices.pop();
+      ec.indices.pop_back();
     }
     else
     {
       n.output_layer.ft_offset = ec.ft_offset;
-      n.output_layer.l = ec.l;
+      n.output_layer.l.simple = ec.l.simple;
       n.output_layer.weight = ec.weight;
       n.output_layer.partial_prediction = 0;
       if (is_learn)
         base.learn(n.output_layer, n.k);
       else
         base.predict(n.output_layer, n.k);
-      ec.l = n.output_layer.l;
     }
 
     n.prediction = GD::finalize_prediction(n.all->sd, n.all->logger, n.output_layer.partial_prediction);
@@ -394,7 +390,8 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
     else
       predict_or_learn_multi<false, false>(n, base, ec);
     if (finalize_predictions)
-      pred[c] = ec.pred;
+      pred[c] = std::move(ec.pred);  // TODO: this breaks for complex labels because = doesn't do deep copy! (XXX we
+                                     // "fix" this by moving)
     else
       pred[c].scalar = ec.partial_prediction;
     ec.ft_offset += (uint64_t)step;
@@ -459,8 +456,8 @@ base_learner* nn_setup(options_i& options, vw& all)
   auto base = as_singleline(setup_base(options, all));
   n->increment = base->increment;  // Indexing of output layer is odd.
   nn& nv = *n.get();
-  learner<nn, example>& l =
-      init_learner(n, base, predict_or_learn_multi<true, true>, predict_or_learn_multi<false, true>, n->k + 1);
+  learner<nn, example>& l = init_learner(n, base, predict_or_learn_multi<true, true>,
+      predict_or_learn_multi<false, true>, n->k + 1, all.get_setupfn_name(nn_setup));
   if (nv.multitask) l.set_multipredict(multipredict);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);

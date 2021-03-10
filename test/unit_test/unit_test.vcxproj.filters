@@ -24,6 +24,9 @@
     <ClCompile Include="ccb_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="cats_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="cats_user_provided_pdf.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -121,6 +124,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vwdll_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="v_array_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

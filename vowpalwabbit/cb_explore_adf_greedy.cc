@@ -95,8 +95,6 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   size_t problem_multiplier = 1;
 
   if (!options.was_supplied("epsilon")) epsilon = 0.05f;
@@ -109,8 +107,9 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
-  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
+  VW::LEARNER::learner<explore_type, multi_ex>& l =
+      VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
+          prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-greedy");
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

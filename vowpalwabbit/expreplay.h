@@ -25,12 +25,7 @@ struct expreplay
 
   ~expreplay()
   {
-    for (size_t n = 0; n < N; n++)
-    {
-      lp.delete_label(&buf[n].l);
-      VW::dealloc_example(NULL, buf[n], NULL);  // TODO: need to free label
-    }
-    free(buf);
+    VW::dealloc_examples(buf, N);
     free(filled);
   }
 };
@@ -118,7 +113,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
 
   er->base = VW::LEARNER::as_singleline(setup_base(options, all));
   VW::LEARNER::learner<expreplay<lp>, example>* l =
-      &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>);
+      &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>, replay_string);
   l->set_end_pass(end_pass<lp>);
 
   return make_base(*l);

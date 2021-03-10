@@ -8,6 +8,7 @@
 #include "prob_dist_cont.h"
 
 #include <cmath>
+#include <limits>
 
 namespace VW
 {
@@ -22,11 +23,8 @@ struct reduction_features
 
   reduction_features()
   {
-    pdf = v_init<pdf_segment>();
     chosen_action = std::numeric_limits<float>::quiet_NaN();
   }
-
-  ~reduction_features() { pdf.delete_v(); }
 
   void clear()
   {

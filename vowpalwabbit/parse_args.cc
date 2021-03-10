@@ -104,6 +104,14 @@
 #include "named_labels.h"
 #include "kskip_ngram_transformer.h"
 
+#include "io/io_adapter.h"
+#include "io/custom_streambuf.h"
+#include "io/owning_stream.h"
+
+#ifdef BUILD_EXTERNAL_PARSER
+#  include "parse_example_binary.h"
+#endif
+
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -245,8 +253,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
         if (new_buffer == nullptr)
         {
           free(buffer);
-          VW::dealloc_example(all.example_parser->lbl_parser.delete_label, *ec);
-          free(ec);
+          VW::dealloc_examples(ec, 1);
           THROW("error: memory allocation failed in reading dictionary");
         }
         else
@@ -280,8 +287,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     for (size_t i = 0; i < 256; i++) { ec->feature_space[i].clear(); }
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
-  VW::dealloc_example(all.example_parser->lbl_parser.delete_label, *ec);
-  free(ec);
+  VW::dealloc_examples(ec, 1);
 
   if (!all.logger.quiet)
     *(all.trace_message) << "dictionary " << s << " contains " << map->size() << " item"
@@ -358,7 +364,9 @@ void parse_diagnostics(options_i& options, vw& all)
       .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
       .add(make_option("dry_run", skip_driver)
                .help("Parse arguments and print corresponding metadata. Will not execute driver."))
-      .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
+      .add(make_option("help", help)
+               .short_name("h")
+               .help("More information on vowpal wabbit can be found here https://vowpalwabbit.org."));
 
   options.add_and_parse(diagnostic_group);
 
@@ -445,6 +453,9 @@ input_options parse_source(vw& all, options_i& options)
                      "migrate you to the new behavior and silence the warning."))
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
                .help("data file will be interpreted as a flatbuffer file"));
+#ifdef BUILD_EXTERNAL_PARSER
+  VW::external::parser::set_parse_args(input_options, parsed_options);
+#endif
 
   options.add_and_parse(input_options);
 
@@ -518,7 +529,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
   if (vw1.permutations != vw2.permutations) return "permutations";
 
-  if (vw1.interactions.size() != vw2.interactions.size()) return "interactions size";
+  if (vw1.interactions.interactions.size() != vw2.interactions.interactions.size()) return "interactions size";
 
   if (vw1.ignore_some != vw2.ignore_some) return "ignore_some";
 
@@ -542,8 +553,8 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
-  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
-       ++i, ++j)
+  for (auto i = std::begin(vw1.interactions.interactions), j = std::begin(vw2.interactions.interactions);
+       i != std::end(vw1.interactions.interactions); ++i, ++j)
     if (*i != *j) return "interaction mismatch";
 
   return nullptr;
@@ -734,7 +745,7 @@ void parse_feature_tweaks(
   // prepare namespace interactions
   std::vector<std::vector<namespace_index>> expanded_interactions;
 
-  if ( ( (!all.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
+  if ( ( (!all.interactions.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
        ||
        interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
@@ -745,7 +756,7 @@ void parse_feature_tweaks(
         << endl;
 
     // in case arrays were already filled in with values from old model file - reset them
-    if (!all.interactions.empty()) all.interactions.clear();
+    if (!all.interactions.interactions.empty()) all.interactions.interactions.clear();
   }
 
   if (options.was_supplied("quadratic"))
@@ -759,7 +770,28 @@ void parse_feature_tweaks(
     }
 
     std::vector<std::vector<namespace_index>> new_quadratics;
-    for (const auto& i : quadratics) { new_quadratics.emplace_back(i.begin(), i.end()); }
+    for (const auto& i : quadratics)
+    {
+      if (i[0] == ':' && i[1] == ':') { all.interactions.quadratics_wildcard_expansion = true; }
+      else
+      {
+        new_quadratics.emplace_back(i.begin(), i.end());
+      }
+    }
+
+    if (all.interactions.quadratics_wildcard_expansion)
+    {
+      if (options.was_supplied("leave_duplicate_interactions"))
+      { all.interactions.leave_duplicate_interactions = true; }
+      else if (!all.logger.quiet)
+      {
+        *(all.trace_message) << endl
+                             << "WARNING: any duplicate namespace interactions will be removed" << endl
+                             << "You can use --leave_duplicate_interactions to disable this behaviour.";
+      }
+    }
+
+    std::sort(new_quadratics.begin(), new_quadratics.end(), INTERACTIONS::sort_interactions_comparator);
 
     expanded_interactions =
         INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
@@ -778,6 +810,8 @@ void parse_feature_tweaks(
 
     std::vector<std::vector<namespace_index>> new_cubics;
     for (const auto& i : cubics) { new_cubics.emplace_back(i.begin(), i.end()); }
+
+    std::sort(new_cubics.begin(), new_cubics.end(), INTERACTIONS::sort_interactions_comparator);
 
     std::vector<std::vector<namespace_index>> exp_cubic =
         INTERACTIONS::expand_interactions(new_cubics, 3, "error, cubic features must involve three sets.");
@@ -798,6 +832,8 @@ void parse_feature_tweaks(
 
     std::vector<std::vector<namespace_index>> new_interactions;
     for (const auto& i : interactions) { new_interactions.emplace_back(i.begin(), i.end()); }
+
+    std::sort(new_interactions.begin(), new_interactions.end(), INTERACTIONS::sort_interactions_comparator);
 
     std::vector<std::vector<namespace_index>> exp_inter = INTERACTIONS::expand_interactions(new_interactions, 0, "");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
@@ -826,13 +862,13 @@ void parse_feature_tweaks(
                            << sorted_cnt << '.' << endl;
     }
 
-    if (all.interactions.size() > 0)
+    if (all.interactions.interactions.size() > 0)
     {
       // should be empty, but just in case...
-      all.interactions.clear();
+      all.interactions.interactions.clear();
     }
 
-    all.interactions = expanded_interactions;
+    all.interactions.interactions = expanded_interactions;
   }
 
   for (size_t i = 0; i < 256; i++)
@@ -1205,9 +1241,10 @@ void load_input_model(vw& all, io_buf& io_temp)
 
 VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
-  reduction_setup_fn setup_func = std::get<1>(all.reduction_stack.top());
-  std::string setup_func_name = std::get<0>(all.reduction_stack.top());
-  all.reduction_stack.pop();
+  auto func_map = all.reduction_stack.back();
+  reduction_setup_fn setup_func = std::get<1>(func_map);
+  std::string setup_func_name = std::get<0>(func_map);
+  all.reduction_stack.pop_back();
 
   // 'hacky' way of keeping track of the option group created by the setup_func about to be created
   options.tint(setup_func_name);
@@ -1238,17 +1275,20 @@ void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
 
   for (auto setup_fn : reductions)
   {
-    if (allowlist.count(setup_fn)) { all.reduction_stack.push(std::make_tuple(allowlist[setup_fn], setup_fn)); }
+    if (allowlist.count(setup_fn)) { all.reduction_stack.push_back(std::make_tuple(allowlist[setup_fn], setup_fn)); }
     else
     {
       auto base = setup_fn(name_extractor, dummy_all);
 
       if (base == nullptr)
-        all.reduction_stack.push(std::make_tuple(name_extractor.generated_name, setup_fn));
+        all.reduction_stack.push_back(std::make_tuple(name_extractor.generated_name, setup_fn));
       else
         THROW("fatal: under register_reduction() all setup functions must return nullptr");
     }
   }
+
+  // populate setup_fn -> name map to be used to lookup names in setup_base
+  all.build_setupfn_name_dict();
 }
 
 void parse_reductions(options_i& options, vw& all)
@@ -1345,6 +1385,14 @@ void parse_reductions(options_i& options, vw& all)
   all.l = setup_base(options, all);
 }
 
+ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t num_bytes)
+{
+  auto* wrapper_context = reinterpret_cast<trace_message_wrapper*>(context);
+  std::string str(buffer, num_bytes);
+  wrapper_context->_trace_message(wrapper_context->_inner_context, str);
+  return static_cast<ssize_t>(num_bytes);
+}
+
 vw& parse_args(
     std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener, void* trace_context)
 {
@@ -1353,8 +1401,11 @@ vw& parse_args(
 
   if (trace_listener)
   {
-    all.trace_message =
-        VW::make_unique<owning_ostream>(VW::make_unique<custom_output_stream_buf>(trace_context, trace_listener));
+    // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
+    // need to adapt between them here.
+    all.trace_message_wrapper_context = std::make_shared<trace_message_wrapper>(trace_context, trace_listener);
+    all.trace_message = VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(
+        VW::io::create_custom_writer(all.trace_message_wrapper_context.get(), trace_message_wrapper_adapter)));
   }
 
   try

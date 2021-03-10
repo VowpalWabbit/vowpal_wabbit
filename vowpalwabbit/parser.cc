@@ -60,6 +60,10 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif
 
+#ifdef BUILD_EXTERNAL_PARSER
+#  include "parse_example_external.h"
+#endif
+
 // OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
 #if !defined(SOL_TCP) && defined(IPPROTO_TCP)
 #  define SOL_TCP IPPROTO_TCP
@@ -227,7 +231,7 @@ void reset_source(vw& all, size_t numbits)
     }
     else
     {
-      for (auto& file : input->input_files)
+      for (auto& file : input->get_input_files())
       {
         input->reset_file(file.get());
         if (cache_numbits(input, file.get()) < numbits) THROW("argh, a bug in caching of some sort!");
@@ -291,7 +295,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.example_parser->input, all.example_parser->input->input_files.back().get());
+      uint64_t c = cache_numbits(all.example_parser->input, all.example_parser->input->get_input_files().back().get());
       if (c < all.num_bits)
       {
         if (!quiet)
@@ -571,6 +575,14 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         all.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
       }
 #endif
+
+#ifdef BUILD_EXTERNAL_PARSER
+      else if (input_options.ext_opts && input_options.ext_opts->is_enabled())
+      {
+        all.external_parser = VW::external::parser::get_external_parser(&all, input_options);
+        all.example_parser->reader = VW::external::parse_examples;
+      }
+#endif
       else
       {
         set_string_reader(all);
@@ -651,6 +663,7 @@ void setup_example(vw& all, example* ae)
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
+  ae->_debug_current_reduction_depth = 0;
 
   ae->example_counter = (size_t)(all.example_parser->end_parsed_examples.load());
   if (!all.example_parser->emptylines_separate_examples) all.example_parser->in_pass_counter++;
@@ -697,6 +710,17 @@ void setup_example(vw& all, example* ae)
   {
     ae->num_features += fs.size();
     ae->total_sum_feat_sq += fs.sum_feat_sq;
+  }
+
+  if (all.interactions.quadratics_wildcard_expansion)
+  {
+    // lock while adding interactions since reductions might also be adding their own interactions
+    std::unique_lock<std::mutex> lock(all.interactions.mut);
+    for (auto& ns : ae->indices)
+    {
+      if (ns < constant_namespace) { all.interactions.all_seen_namespaces.insert(ns); }
+    }
+    INTERACTIONS::expand_quadratics_wildcard_interactions(all.interactions);
   }
 
   // Set the interactions for this example to the global set.
@@ -937,7 +961,7 @@ void free_parser(vw& all)
   while (!all.example_parser->example_pool.empty())
   {
     example* temp = all.example_parser->example_pool.get_object();
-    temp->delete_unions(all.example_parser->lbl_parser.delete_label, all.delete_prediction);
+    temp->delete_unions(all.example_parser->lbl_parser.delete_label, nullptr);
     drain_pool.push_back(temp);
   }
   for (auto* example_ptr : drain_pool) { all.example_parser->example_pool.return_object(example_ptr); }

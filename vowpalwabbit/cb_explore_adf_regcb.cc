@@ -258,8 +258,6 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
     options.replace("cb_type", mtr);
   }
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   // Set explore_type
   size_t problem_multiplier = 1;
 
@@ -268,8 +266,9 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
   auto data = scoped_calloc_or_throw<explore_type>(regcbopt, c0, first_only, min_cb_cost, max_cb_cost);
-  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
+  LEARNER::learner<explore_type, multi_ex>& l =
+      VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
+          prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-regcb");
 
   l.set_finish_example(explore_type::finish_multiline_example);
   return make_base(l);

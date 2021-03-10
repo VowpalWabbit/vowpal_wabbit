@@ -67,15 +67,13 @@ void free_svm_model(svm_model* model)
     // When the call to allocation is replaced by (a) 'new svm_example()' and deallocated using (b) 'operator delete
     // (model->support_vect[i])', the warning goes away. Disable SDL warning.
     //    #pragma warning(disable:6001)
-    free_it(model->support_vec[i]);
+    free(model->support_vec[i]);
     //  #pragma warning(default:6001)
 
-    model->support_vec[i] = 0;
+    model->support_vec[i] = nullptr;
   }
 
-  model->support_vec.delete_v();
-  model->alpha.delete_v();
-  model->delta.delete_v();
+  model->~svm_model();
   free(model);
 }
 
@@ -498,9 +496,9 @@ int remove(svm_params& params, size_t svi)
   }
   svi_e->~svm_example();
   free(svi_e);
-  model->support_vec.pop();
-  model->alpha.pop();
-  model->delta.pop();
+  model->support_vec.pop_back();
+  model->alpha.pop_back();
+  model->delta.pop_back();
   model->num_support--;
   // shift cache
   int alloc = 0;
@@ -511,7 +509,7 @@ int remove(svm_params& params, size_t svi)
     if (svi < rowsize)
     {
       for (size_t i = svi; i < rowsize - 1; i++) e->krow[i] = e->krow[i + 1];
-      e->krow.pop();
+      e->krow.pop_back();
       alloc -= 1;
     }
   }
@@ -857,6 +855,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
   all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   params->model = &calloc_or_throw<svm_model>();
+  new (params->model) svm_model();
   params->model->num_support = 0;
   params->maxcache = 1024 * 1024 * 1024;
   params->loss_sum = 0.;
@@ -899,7 +898,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 
   params->all->weights.stride_shift(0);
 
-  learner<svm_params, example>& l = init_learner(params, learn, predict, 1);
+  learner<svm_params, example>& l = init_learner(params, learn, predict, 1, all.get_setupfn_name(kernel_svm_setup));
   l.set_save_load(save_load);
   return make_base(l);
 }

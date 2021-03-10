@@ -331,12 +331,6 @@ public:
       clear_memo_foreach_action(*this);
       memo_foreach_action.delete_v();
 
-      // destroy copied examples if we needed them
-      if (!examples_dont_change)
-      {
-        void (*delete_label)(polylabel*) = is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-        for (example& ec : learn_ec_copy) VW::dealloc_example(delete_label, ec);
-      }
       learn_condition_on_names.delete_v();
       learn_condition_on.delete_v();
 
@@ -600,7 +594,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
   features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
-  cdbg << "adding: " << fs.indicies.last() << ':' << fs.values.last() << endl;
+  cdbg << "adding: " << fs.indicies.back() << ':' << fs.values.back() << endl;
   if (priv.all->audit)
   {
     std::stringstream temp;
@@ -611,7 +605,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
 
 void del_features_in_top_namespace(search_private& /* priv */, example& ec, size_t ns)
 {
-  if ((ec.indices.size() == 0) || (ec.indices.last() != ns))
+  if ((ec.indices.size() == 0) || (ec.indices.back() != ns))
   {
     return;
     // if (ec.indices.size() == 0)
@@ -860,7 +854,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
 void del_example_conditioning(search_private& priv, example& ec)
 {
-  if ((ec.indices.size() > 0) && (ec.indices.last() == conditioning_namespace))
+  if ((ec.indices.size() > 0) && (ec.indices.back() == conditioning_namespace))
     del_features_in_top_namespace(priv, ec, conditioning_namespace);
 }
 
@@ -904,7 +898,7 @@ inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float va
 {
   if (isCB)
   {
-    CB::cb_class cost = {value, index, 0., 0.};
+    CB::cb_class cost{value, index, 0.};
     ld.cb.costs.push_back(cost);
   }
   else
@@ -1044,7 +1038,7 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 template <class T>
 void ensure_size(v_array<T>& A, size_t sz)
 {
-  if ((size_t)(A.end_array - A.begin()) < sz) A.resize(sz * 2 + 1);
+  if (A.capacity() < sz) A.resize(sz * 2 + 1);
   A.end() = A.begin() + sz;
 }
 
@@ -2497,7 +2491,7 @@ void search_finish(search& sch)
   if (priv.metatask && priv.metatask->finish) priv.metatask->finish(sch);
 }
 
-v_array<CS::label> read_allowed_transitions(action A, const char* filename)
+std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
 {
   FILE* f;
   if (VW::file_open(&f, filename, "r") != 0)
@@ -2522,12 +2516,12 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
   }
   fclose(f);
 
-  v_array<CS::label> allowed = v_init<CS::label>();
+  std::vector<CS::label> allowed;
 
   // from
   for (size_t i = 0; i < A; i++)
   {
-    v_array<CS::wclass> costs = v_init<CS::wclass>();
+    v_array<CS::wclass> costs;
 
     // to
     for (size_t j = 0; j < A; j++)
@@ -2555,11 +2549,17 @@ void parse_neighbor_features(VW::string_view nf_strview, search& sch)
 
   std::vector<VW::string_view> cmd;
   size_t end_idx = 0;
-  while (!nf_strview.empty())
+  bool reached_end = false;
+  while (!reached_end)
   {
     end_idx = nf_strview.find(',');
     VW::string_view strview = nf_strview.substr(0, end_idx);
-    if (end_idx != VW::string_view::npos) nf_strview.remove_prefix(end_idx + 1);
+    // If we haven't reached the end yet, slice off the piece we're currently parsing
+    if (end_idx != VW::string_view::npos) { nf_strview.remove_prefix(end_idx + 1); }
+    else
+    {
+      reached_end = true;
+    }
 
     cmd.clear();
     tokenize(':', strview, cmd, true);
@@ -2839,7 +2839,8 @@ base_learner* setup(options_i& options, vw& all)
   cdbg << "num_learners = " << priv.num_learners << endl;
 
   learner<search, multi_ex>& l = init_learner(sch, make_base(*base), do_actual_learning<true>,
-      do_actual_learning<false>, priv.total_number_of_policies * priv.num_learners);
+      do_actual_learning<false>, priv.total_number_of_policies * priv.num_learners, all.get_setupfn_name(setup));
+
   l.set_finish_example(finish_multiline_example);
   l.set_end_examples(end_examples);
   l.set_finish(search_finish);
@@ -3016,9 +3017,6 @@ predictor::predictor(search& sch, ptag my_tag)
     , ec_cnt(0)
     , ec_alloced(false)
     , weight(1.)
-    , oracle_is_pointer(false)
-    , allowed_is_pointer(false)
-    , allowed_cost_is_pointer(false)
     , learner_id(0)
     , sch(sch)
 {
@@ -3033,25 +3031,19 @@ void predictor::free_ec()
 {
   if (ec_alloced)
   {
-    if (is_ldf)
-      for (size_t i = 0; i < ec_cnt; i++) { VW::dealloc_example(CS::cs_label.delete_label, ec[i]); }
+    if (is_ldf) { VW::dealloc_examples(ec, ec_cnt); }
     else
     {
-      VW::dealloc_example(nullptr, *ec);
+      VW::dealloc_examples(ec, 1);
     }
-    free(ec);
   }
 }
 
 predictor::~predictor()
 {
-  if (!oracle_is_pointer) oracle_actions.delete_v();
-  if (!allowed_is_pointer) allowed_actions.delete_v();
-  if (!allowed_cost_is_pointer) allowed_actions_cost.delete_v();
   free_ec();
-  condition_on_tags.delete_v();
-  condition_on_names.delete_v();
 }
+
 predictor& predictor::reset()
 {
   this->erase_oracles();
@@ -3095,7 +3087,7 @@ void predictor::set_input_length(size_t input_length)
       THROW("realloc failed in search.cc");
   }
   else
-    ec = calloc_or_throw<example>(input_length);
+    ec = VW::alloc_examples(input_length);
   ec_cnt = input_length;
   ec_alloced = true;
 }
@@ -3109,101 +3101,46 @@ void predictor::set_input_at(size_t posn, example& ex)
   VW::copy_example_data(false, ec + posn, &ex, CS::cs_label.copy_label);  // TODO: the false is "audit"
 }
 
-template <class T>
-void predictor::make_new_pointer(v_array<T>& A, size_t new_size)
-{
-  size_t old_size = A.size();
-  T* old_pointer = A.begin();
-  A.begin() = calloc_or_throw<T>(new_size);
-  A.end() = A.begin() + new_size;
-  A.end_array = A.end();
-  memcpy(A.begin(), old_pointer, old_size * sizeof(T));
-}
-
-template <class T>
-predictor& predictor::add_to(v_array<T>& A, bool& A_is_ptr, T a, bool clear_first)
-{
-  if (A_is_ptr)  // we need to make our own memory
-  {
-    if (clear_first) A.end() = A.begin();
-    size_t new_size = clear_first ? 1 : (A.size() + 1);
-    make_new_pointer<T>(A, new_size);
-    A_is_ptr = false;
-    A[new_size - 1] = a;
-  }
-  else  // we've already allocated our own memory
-  {
-    if (clear_first) A.clear();
-    A.push_back(a);
-  }
-  return *this;
-}
-
-template <class T>
-predictor& predictor::add_to(v_array<T>& A, bool& A_is_ptr, T* a, size_t count, bool clear_first)
-{
-  size_t old_size = A.size();
-  if (old_size > 0)
-  {
-    if (A_is_ptr)  // we need to make our own memory
-    {
-      if (clear_first)
-      {
-        A.end() = A.begin();
-        old_size = 0;
-      }
-      size_t new_size = old_size + count;
-      make_new_pointer<T>(A, new_size);
-      A_is_ptr = false;
-      if (a != nullptr) memcpy(A.begin() + old_size, a, count * sizeof(T));
-    }
-    else  // we already have our own memory
-    {
-      if (clear_first) A.clear();
-      if (a != nullptr) push_many<T>(A, a, count);
-    }
-  }
-  else  // old_size == 0, clear_first is irrelevant
-  {
-    if (!A_is_ptr) A.delete_v();  // avoid memory leak
-
-    A.begin() = a;
-    if (a != nullptr)  // a is not nullptr
-      A.end() = a + count;
-    else
-      A.end() = a;
-    A.end_array = A.end();
-    A_is_ptr = true;
-  }
-  return *this;
-}
-
 predictor& predictor::erase_oracles()
 {
-  if (oracle_is_pointer)
-    oracle_actions.end() = oracle_actions.begin();
-  else
-    oracle_actions.clear();
+  oracle_actions.clear();
   return *this;
 }
-predictor& predictor::add_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, false); }
-predictor& predictor::add_oracle(action* a, size_t action_count)
+
+predictor& predictor::add_oracle(action a)
 {
-  return add_to(oracle_actions, oracle_is_pointer, a, action_count, false);
-}
-predictor& predictor::add_oracle(v_array<action>& a)
-{
-  return add_to(oracle_actions, oracle_is_pointer, a.begin(), a.size(), false);
+  oracle_actions.push_back(a);
+  return *this;
 }
 
-predictor& predictor::set_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, true); }
+predictor& predictor::add_oracle(action* a, size_t action_count)
+{
+  for (size_t i = 0; i < action_count; i++) { oracle_actions.push_back(*(a + i)); }
+  return *this;
+}
+
+predictor& predictor::add_oracle(v_array<action>& a)
+{
+  for (const auto& item : a) { oracle_actions.push_back(item); }
+  return *this;
+}
+
+predictor& predictor::set_oracle(action a)
+{
+  oracle_actions.clear();
+  return add_oracle(a);
+}
+
 predictor& predictor::set_oracle(action* a, size_t action_count)
 {
-  return add_to(oracle_actions, oracle_is_pointer, a, action_count, true);
+  oracle_actions.clear();
+  return add_oracle(a, action_count);
 }
+
 predictor& predictor::set_oracle(v_array<action>& a)
 {
-  return add_to(oracle_actions, oracle_is_pointer, a.begin(), a.size(), true);
+  oracle_actions.clear();
+  return add_oracle(a);
 }
 
 predictor& predictor::set_weight(float w)
@@ -3214,85 +3151,89 @@ predictor& predictor::set_weight(float w)
 
 predictor& predictor::erase_alloweds()
 {
-  if (allowed_is_pointer)
-    allowed_actions.end() = allowed_actions.begin();
-  else
-    allowed_actions.clear();
-  if (allowed_cost_is_pointer)
-    allowed_actions_cost.end() = allowed_actions_cost.begin();
-  else
-    allowed_actions_cost.clear();
+  allowed_actions.clear();
+  allowed_actions_cost.clear();
   return *this;
 }
-predictor& predictor::add_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, false); }
+
+predictor& predictor::add_allowed(action a)
+{
+  allowed_actions.push_back(a);
+  return *this;
+}
 predictor& predictor::add_allowed(action* a, size_t action_count)
 {
-  return add_to(allowed_actions, allowed_is_pointer, a, action_count, false);
+  for (size_t i = 0; i < action_count; i++) { allowed_actions.push_back(*(a + i)); }
+  return *this;
 }
 predictor& predictor::add_allowed(v_array<action>& a)
 {
-  return add_to(allowed_actions, allowed_is_pointer, a.begin(), a.size(), false);
+  for (const auto& item : a) { allowed_actions.push_back(item); }
+  return *this;
 }
 
-predictor& predictor::set_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, true); }
+predictor& predictor::set_allowed(action a)
+{
+  allowed_actions.clear();
+  return add_allowed(a);
+}
+
 predictor& predictor::set_allowed(action* a, size_t action_count)
 {
-  return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);
+  allowed_actions.clear();
+  return add_allowed(a, action_count);
 }
+
 predictor& predictor::set_allowed(v_array<action>& a)
 {
-  return add_to(allowed_actions, allowed_is_pointer, a.begin(), a.size(), true);
+  allowed_actions.clear();
+  return add_allowed(a);
 }
 
 predictor& predictor::add_allowed(action a, float cost)
 {
-  add_to(allowed_actions_cost, allowed_cost_is_pointer, cost, false);
-  return add_to(allowed_actions, allowed_is_pointer, a, false);
+  allowed_actions_cost.push_back(cost);
+  allowed_actions.push_back(a);
+  return *this;
 }
 
 predictor& predictor::add_allowed(action* a, float* costs, size_t action_count)
 {
-  add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, false);
-  return add_to(allowed_actions, allowed_is_pointer, a, action_count, false);
-}
-predictor& predictor::add_allowed(v_array<std::pair<action, float>>& a)
-{
-  for (size_t i = 0; i < a.size(); i++)
+  if (costs != nullptr)
   {
-    add_to(allowed_actions, allowed_is_pointer, a[i].first, false);
-    add_to(allowed_actions_cost, allowed_cost_is_pointer, a[i].second, false);
+    for (size_t i = 0; i < action_count; i++) { allowed_actions_cost.push_back(*(costs + i)); }
+  }
+  if (a != nullptr)
+  {
+    for (size_t i = 0; i < action_count; i++) { allowed_actions.push_back(*(a + i)); }
   }
   return *this;
 }
+
 predictor& predictor::add_allowed(std::vector<std::pair<action, float>>& a)
 {
-  for (size_t i = 0; i < a.size(); i++)
+  for (const auto& item : a)
   {
-    add_to(allowed_actions, allowed_is_pointer, a[i].first, false);
-    add_to(allowed_actions_cost, allowed_cost_is_pointer, a[i].second, false);
+    allowed_actions.push_back(item.first);
+    allowed_actions_cost.push_back(item.second);
   }
   return *this;
 }
 
 predictor& predictor::set_allowed(action a, float cost)
 {
-  add_to(allowed_actions_cost, allowed_cost_is_pointer, cost, true);
-  return add_to(allowed_actions, allowed_is_pointer, a, true);
+  allowed_actions_cost.clear();
+  allowed_actions.clear();
+  return add_allowed(a, cost);
 }
 
 predictor& predictor::set_allowed(action* a, float* costs, size_t action_count)
 {
-  add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, true);
-  return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);
+  allowed_actions_cost.clear();
+  allowed_actions.clear();
+  return add_allowed(a, costs, action_count);
 }
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-predictor& predictor::set_allowed(v_array<std::pair<action, float>>& a)
-{
-  erase_alloweds();
-  return add_allowed(a);
-}
-VW_WARNING_STATE_POP
+
 predictor& predictor::set_allowed(std::vector<std::pair<action, float>>& a)
 {
   erase_alloweds();
@@ -3360,7 +3301,7 @@ action predictor::predict()
       ? sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id, weight)
       : sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, numAlA, alAcosts, learner_id, weight);
 
-  if (condition_on_names.size() > 0) condition_on_names.pop();  // un-null-terminate
+  if (condition_on_names.size() > 0) condition_on_names.pop_back();  // un-null-terminate
   return p;
 }
 }  // namespace Search

@@ -268,10 +268,8 @@ base_learner* setup(VW::config::options_i& options, vw& all)
 
   base_learner* base = setup_base(options, all);
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
-  learner<offset_tree, example>& l =
-      init_learner(otree, as_singleline(base), learn, predict, otree->learner_count(), prediction_type_t::action_probs);
+  learner<offset_tree, example>& l = init_learner(otree, as_singleline(base), learn, predict, otree->learner_count(),
+      prediction_type_t::action_probs, all.get_setupfn_name(setup));
 
   return make_base(l);
 }

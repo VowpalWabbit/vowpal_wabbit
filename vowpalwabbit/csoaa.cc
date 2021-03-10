@@ -55,11 +55,10 @@ template <bool is_learn>
 void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 {
   // std::cerr << "------------- passthrough" << std::endl;
-  COST_SENSITIVE::label ld = ec.l.cs;
-  ec.l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+  COST_SENSITIVE::label ld = std::move(ec.l.cs);
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cs = ld; });
+  auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cs = std::move(ld); });
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
@@ -114,7 +113,6 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
       add_passthrough_feature(ec, constant * 3, 1.);
   }
 
-  ec.l.cs = ld;
   ec.pred.multiclass = prediction;
 }
 
@@ -132,7 +130,7 @@ base_learner* csoaa_setup(options_i& options, vw& all)
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
 
   learner<csoaa, example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
-      predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass);
+      predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass, all.get_setupfn_name(csoaa_setup));
   all.example_parser->lbl_parser = cs_label;
 
   l.set_finish_example(finish_example);
@@ -159,13 +157,7 @@ struct ldf
   action_scores a_s;
   uint64_t ft_offset;
 
-  v_array<action_scores> stored_preds;
-
-  ~ldf()
-  {
-    a_s.delete_v();
-    stored_preds.delete_v();
-  }
+  std::vector<action_scores> stored_preds;
 };
 
 bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or just "label:___"
@@ -230,7 +222,7 @@ void unsubtract_example(example* ec)
     return;
   }
 
-  if (ec->indices.last() != wap_ldf_namespace)
+  if (ec->indices.back() != wap_ldf_namespace)
   {
     std::cerr
         << "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
@@ -248,19 +240,17 @@ void unsubtract_example(example* ec)
 
 void make_single_prediction(ldf& data, single_learner& base, example& ec)
 {
-  COST_SENSITIVE::label ld = ec.l.cs;
   label_data simple_lbl;
   simple_lbl.initial = 0.;
   simple_lbl.label = FLT_MAX;
   uint64_t old_offset = ec.ft_offset;
 
-  LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
+  LabelDict::add_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
 
-  auto restore_guard = VW::scope_exit([&data, &ld, old_offset, &ec] {
+  auto restore_guard = VW::scope_exit([&data, old_offset, &ec] {
     ec.ft_offset = old_offset;
-    ld.costs[0].partial_prediction = ec.partial_prediction;
-    LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
-    ec.l.cs = ld;
+    ec.l.cs.costs[0].partial_prediction = ec.partial_prediction;
+    LabelDict::del_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
   });
 
   ec.l.simple = simple_lbl;
@@ -368,7 +358,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
   for (const auto& ec : ec_seq)
   {
     // save original variables
-    label save_cs_label = ec->l.cs;
+    label save_cs_label = std::move(ec->l.cs);
     const auto& costs = save_cs_label.costs;
 
     // build example for the base learner
@@ -405,8 +395,8 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
       ec->weight = old_weight;
 
       // restore original cost-sensitive label, sum of importance weights and partial_prediction
-      ec->l.cs = save_cs_label;
       ec->partial_prediction = costs[0].partial_prediction;
+      ec->l.cs = std::move(save_cs_label);
     });
 
     base.learn(*ec);
@@ -452,7 +442,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
       data.stored_preds[0].clear();
       for (size_t k = 0; k < K; k++)
       {
-        ec_seq[k]->pred.a_s = data.stored_preds[k];
+        ec_seq[k]->pred.a_s = std::move(data.stored_preds[k]);
         ec_seq[0]->pred.a_s.push_back(data.a_s[k]);
       }
     }
@@ -495,7 +485,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
     for (uint32_t k = 0; k < K; k++)
     {
       example* ec = ec_seq[k];
-      data.stored_preds.push_back(ec->pred.a_s);
+      data.stored_preds.emplace_back(std::move(ec->pred.a_s));
       make_single_prediction(data, base, *ec);
       action_score s;
       s.score = ec->partial_prediction;
@@ -548,7 +538,7 @@ void global_print_newline(vw& all)
 void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf& data)
 {
   label& ld = ec.l.cs;
-  v_array<COST_SENSITIVE::wclass> costs = ld.costs;
+  const auto& costs = ld.costs;
 
   if (example_is_newline(ec)) return;
   if (ec_is_label_definition(ec)) return;
@@ -681,7 +671,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
 
     if (all.raw_prediction != nullptr)
     {
-      v_array<char> empty = {nullptr, nullptr, nullptr, 0};
+      v_array<char> empty;
       all.print_text_by_ref(all.raw_prediction.get(), "", empty);
     }
 
@@ -824,7 +814,6 @@ base_learner* csldf_setup(options_i& options, vw& all)
     ld->is_wap = true;
   }
   if (options.was_supplied("ldf_override")) ldf_arg = ldf_override;
-  if (ld->rank) all.delete_prediction = delete_action_scores;
 
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
 
@@ -858,16 +847,26 @@ base_learner* csldf_setup(options_i& options, vw& all)
   ld->label_features.reserve(256);
   prediction_type_t pred_type;
 
+  std::string name = all.get_setupfn_name(csldf_setup);
   if (ld->rank)
+  {
     pred_type = prediction_type_t::action_scores;
+    name += "-ldf_rank";
+  }
   else if (ld->is_probabilities)
+  {
     pred_type = prediction_type_t::prob;
+    name += "-ldf_prob";
+  }
   else
+  {
     pred_type = prediction_type_t::multiclass;
+    name += "-ldf";
+  }
 
   ld->read_example_this_loop = 0;
   learner<ldf, multi_ex>& l = init_learner(ld, as_singleline(setup_base(*all.options, all)), do_actual_learning<true>,
-      do_actual_learning<false>, 1, pred_type);
+      do_actual_learning<false>, 1, pred_type, name);
   l.set_finish_example(finish_multiline_example);
   l.set_end_pass(end_pass);
   all.cost_sensitive = make_base(l);
