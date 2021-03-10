@@ -48,9 +48,11 @@ inline void sort_action_probs(v_array<ACTION_SCORE::action_score>& probs, const 
 
 inline size_t fill_tied(const v_array<ACTION_SCORE::action_score>& preds)
 {
-  if (preds.size() == 0) {
+  if (preds.size() == 0)
+  {
     return 0;
   }
+  
   size_t ret = 1;
   for (size_t i = 1; i < preds.size(); ++i)
   {
