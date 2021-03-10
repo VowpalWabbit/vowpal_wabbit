@@ -51,15 +51,6 @@ struct cb_explore
   VW::version_struct model_file_version;
 
   size_t counter;
-
-  ~cb_explore()
-  {
-    preds.delete_v();
-    cover_probs.delete_v();
-    COST_SENSITIVE::delete_label(cbcs.pred_scores);
-    COST_SENSITIVE::delete_label(cs_label);
-    COST_SENSITIVE::delete_label(second_cs_label);
-  }
 };
 
 template <bool is_learn>

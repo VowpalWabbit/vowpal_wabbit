@@ -93,18 +93,6 @@ struct lda
   inline float powf(float x, float p);
   inline void expdigammify(vw &all, float *gamma);
   inline void expdigammify_2(vw &all, float *gamma, float *norm);
-
-  ~lda()
-  {
-    Elogtheta.delete_v();
-    decay_levels.delete_v();
-    total_new.delete_v();
-    examples.delete_v();
-    total_lambda.delete_v();
-    doc_lengths.delete_v();
-    digammas.delete_v();
-    v.delete_v();
-  }
 };
 
 // #define VW_NO_INLINE_SIMD

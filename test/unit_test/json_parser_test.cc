@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(parse_json_text_does_not_change_input)
 
   auto* ccb_vw = VW::initialize("--ccb_explore_adf --dsjson --quiet", nullptr, false, nullptr, nullptr);
 
-  v_array<example*> examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(ccb_vw));
   ccb_vw->example_parser->text_reader(ccb_vw, json_text.c_str(), strlen(json_text.c_str()), examples);
 
@@ -400,7 +400,6 @@ BOOST_AUTO_TEST_CASE(parse_json_text_does_not_change_input)
 
   multi_ex vec;
   for (const auto& ex : examples) { vec.push_back(ex); }
-  examples.delete_v();
   VW::finish_example(*ccb_vw, vec);
   VW::finish(*ccb_vw);
 }

@@ -27,7 +27,6 @@ struct gdmf
   uint32_t rank;
   size_t no_win_counter;
   uint64_t early_stop_thres;
-  ~gdmf() { scalars.delete_v(); }
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)

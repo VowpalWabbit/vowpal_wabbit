@@ -65,10 +65,6 @@ struct cbify
 
   ~cbify()
   {
-    CB::delete_label(cb_label);
-    a_s.delete_v();
-    regression_data.cb_cont_label.costs.delete_v();
-
     if (use_adf)
     {
       for (auto* ex : adf_data.ecs) { VW::dealloc_examples(ex, 1); }
@@ -116,8 +112,6 @@ float loss_csldf(
 void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
 {
   if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
-
-  data.cb_cont_label.costs.delete_v();  // todo: instead of above
 }
 
 void copy_example_to_adf(cbify& data, example& ec)

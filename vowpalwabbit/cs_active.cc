@@ -66,12 +66,6 @@ struct cs_active
   size_t labels_outside_range;
   float distance_to_range;
   float range;
-
-  ~cs_active()
-  {
-    examples_by_queries.delete_v();
-    query_data.delete_v();
-  }
 };
 
 float binarySearch(float fhat, float delta, float sens, float tol)

@@ -71,15 +71,13 @@ void free_svm_model(svm_model* model)
     // When the call to allocation is replaced by (a) 'new svm_example()' and deallocated using (b) 'operator delete
     // (model->support_vect[i])', the warning goes away. Disable SDL warning.
     //    #pragma warning(disable:6001)
-    free_it(model->support_vec[i]);
+    free(model->support_vec[i]);
     //  #pragma warning(default:6001)
 
-    model->support_vec[i] = 0;
+    model->support_vec[i] = nullptr;
   }
 
-  model->support_vec.delete_v();
-  model->alpha.delete_v();
-  model->delta.delete_v();
+  model->~svm_model();
   free(model);
 }
 
@@ -832,6 +830,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
   all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   params->model = &calloc_or_throw<svm_model>();
+  new (params->model) svm_model();
   params->model->num_support = 0;
   params->maxcache = 1024 * 1024 * 1024;
   params->loss_sum = 0.;

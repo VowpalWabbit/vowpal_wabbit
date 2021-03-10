@@ -38,13 +38,6 @@ struct mwt
   v_array<namespace_index> indices;  // excluded namespaces
   features feature_space[256];
   vw* all;
-
-  ~mwt()
-  {
-    evals.delete_v();
-    policies.delete_v();
-    indices.delete_v();
-  }
 };
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.

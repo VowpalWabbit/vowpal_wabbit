@@ -53,18 +53,9 @@ struct ect
   uint32_t last_pair;
 
   v_array<bool> tournaments_won;
-
-  ~ect()
-  {
-    final_nodes.delete_v();
-    up_directions.delete_v();
-    directions.delete_v();
-    down_directions.delete_v();
-    tournaments_won.delete_v();
-  }
 };
 
-bool exists(v_array<size_t> db)
+bool exists(const v_array<size_t>& db)
 {
   for (size_t i : db)
     if (i != 0) return true;

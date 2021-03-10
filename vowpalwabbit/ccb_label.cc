@@ -162,7 +162,6 @@ void default_label(label& ld)
   // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
   if (ld.outcome != nullptr)
   {
-    ld.outcome->probabilities.delete_v();
     delete ld.outcome;
     ld.outcome = nullptr;
   }
@@ -178,7 +177,6 @@ void delete_label(label& ld)
 {
   if (ld.outcome)
   {
-    ld.outcome->probabilities.delete_v();
     delete ld.outcome;
     ld.outcome = nullptr;
   }

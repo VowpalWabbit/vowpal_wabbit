@@ -61,19 +61,11 @@ struct plt
 
   plt()
   {
-    nodes_time = v_init<float>();
-    tp_at = v_init<uint32_t>();
     tp = 0;
     fp = 0;
     fn = 0;
     ec_count = 0;
     true_count = 0;
-  }
-
-  ~plt()
-  {
-    nodes_time.delete_v();
-    tp_at.delete_v();
   }
 };
 

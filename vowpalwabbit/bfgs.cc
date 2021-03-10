@@ -105,7 +105,6 @@ struct bfgs
 
   ~bfgs()
   {
-    predictions.delete_v();
     free(mem);
     free(rho);
     free(alpha);
