@@ -593,7 +593,7 @@ def main():
     args = parser.parse_args()
 
     if args.for_flatbuffers and args.working_dir == working_dir: # user did not supply dir
-        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")        
+        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")
 
     test_base_working_dir = str(args.working_dir)
     test_base_ref_dir = str(args.ref_dir)
@@ -647,6 +647,19 @@ def main():
     if args.for_flatbuffers:
         to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
         tests = convert_tests_for_flatbuffers(tests, to_flatbuff, args.working_dir, color_enum)
+
+    # Because bash_command based tests don't specify all inputs and outputs they must operate in the test directory directly.
+    # This means that if they run in parallel they can break each other by touching the same files.
+    # Until we can move to a test spec which allows us to specify the input/output we need to add dependencies between them here.
+    prev_bash_test = None
+    for test in tests:
+        test_number = test["id"]
+        if "bash_command" in test:
+            if prev_bash_test is not None:
+                if "depends_on" not in tests[test_number - 1]:
+                    tests[test_number - 1]["depends_on"] = []
+                tests[test_number - 1]["depends_on"].append(prev_bash_test)
+            prev_bash_test = test_number
 
     tasks = []
     completed_tests = Completion()
