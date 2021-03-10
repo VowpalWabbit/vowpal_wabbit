@@ -35,6 +35,15 @@ struct label
   conditional_contextual_bandit_outcome* outcome = nullptr;
   v_array<uint32_t> explicit_included_actions;
   float weight;
+
+  ~label()
+  {
+    if (outcome)
+    {
+      delete outcome;
+      outcome = nullptr;
+    }
+  }
 };
 
 void default_label(CCB::label& ld);
