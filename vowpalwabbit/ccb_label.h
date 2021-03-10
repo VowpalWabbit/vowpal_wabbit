@@ -30,11 +30,61 @@ struct conditional_contextual_bandit_outcome
 // ccb_label.cc will need a major revamp before that can happen
 struct label
 {
-  example_type type;
+  example_type type = CCB::example_type::unset;
   // Outcome may be unset.
   conditional_contextual_bandit_outcome* outcome = nullptr;
   v_array<uint32_t> explicit_included_actions;
-  float weight;
+  float weight = 0.f;
+
+  label() = default;
+
+  label(label&& other) noexcept
+  {
+    type = example_type::unset;
+    outcome = nullptr;
+    weight = 0.f;
+
+    std::swap(type, other.type);
+    std::swap(outcome, other.outcome);
+    std::swap(explicit_included_actions, other.explicit_included_actions);
+    std::swap(weight, other.weight);
+  }
+
+  label& operator=(label&& other) noexcept
+  {
+    std::swap(type, other.type);
+    std::swap(outcome, other.outcome);
+    std::swap(explicit_included_actions, other.explicit_included_actions);
+    std::swap(weight, other.weight);
+    return *this;
+  }
+
+  label(const label& other)
+  {
+    type = other.type;
+    outcome = new conditional_contextual_bandit_outcome();
+    *outcome = *other.outcome;
+    explicit_included_actions = other.explicit_included_actions;
+    weight = other.weight;
+  }
+
+  label& operator=(const label& other)
+  {
+    if (this == &other) return *this;
+
+    if (outcome)
+    {
+      delete outcome;
+      outcome = nullptr;
+    }
+
+    type = other.type;
+    outcome = new conditional_contextual_bandit_outcome();
+    *outcome = *other.outcome;
+    explicit_included_actions = other.explicit_included_actions;
+    weight = other.weight;
+    return *this;
+  }
 
   ~label()
   {
