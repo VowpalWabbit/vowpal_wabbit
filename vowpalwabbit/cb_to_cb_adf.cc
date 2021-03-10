@@ -69,15 +69,12 @@ float calc_loss(example& ec, CB::label& ld)
     if (optional_cost.first == true)
     {
       for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-      {
-        loss += CB_ALGS::get_cost_estimate(optional_cost.second, ec.pred.a_s[i].action + 1) * ec.pred.a_s[i].score;
-      }
+      { loss += CB_ALGS::get_cost_estimate(optional_cost.second, ec.pred.a_s[i].action + 1) * ec.pred.a_s[i].score; }
     }
   }
 
   return loss;
 }
-
 
 void output_example(vw& all, bool explore_mode, example& ec, CB::label& ld)
 {
