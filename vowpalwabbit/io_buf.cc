@@ -124,9 +124,9 @@ void io_buf::flush()
   {
     auto bytes_written = output_files[0]->write(_buffer._begin, unflushed_bytes_count());
     if (bytes_written != static_cast<ssize_t>(unflushed_bytes_count()))
-    { VW::io::logger::errlog_error("error, failed to write example"; }
-        head = _buffer._begin;
-      output_files[0]->flush();
-    }
+    { VW::io::logger::errlog_error("error, failed to write example"); }
+    head = _buffer._begin;
+    output_files[0]->flush();
   }
 }
+
