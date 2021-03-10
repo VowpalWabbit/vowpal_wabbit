@@ -356,6 +356,7 @@ target_link_libraries(vw
 if (BUILD_EXTERNAL_PARSER)
   target_compile_definitions(vw PUBLIC BUILD_EXTERNAL_PARSER)
   target_include_directories(vw PRIVATE ${EXTERNAL_PARSER_DIR})
+  target_link_libraries(vw PRIVATE ${EXTERNAL_PARSER_LIBS})
 endif()
 
 if(BUILD_FLATBUFFERS)
