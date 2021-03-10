@@ -58,11 +58,32 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
   }
 }
 
+float calc_loss(example& ec, CB::label& ld)
+{
+  float loss = 0.;
+
+  if (!CB::is_test_label(ld))
+  {
+    auto optional_cost = CB::get_observed_cost_cb(ld);
+    // cost observed, not default
+    if (optional_cost.first == true)
+    {
+      for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
+      {
+        loss += CB_ALGS::get_cost_estimate(optional_cost.second, ec.pred.a_s[i].action + 1) * ec.pred.a_s[i].score;
+      }
+    }
+  }
+
+  return loss;
+}
+
+
 void output_example(vw& all, bool explore_mode, example& ec, CB::label& ld)
 {
   if (explore_mode)
   {
-    float loss = 0;
+    float loss = calc_loss(ec, ld);
     CB_EXPLORE::generic_output_example(all, loss, ec, ld);
   }
   else

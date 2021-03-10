@@ -284,7 +284,7 @@ void generic_output_example(vw& all, float loss, example& ec, CB::label& ld)
     if (ec.pred.a_s[i].score > maxprob)
     {
       maxprob = ec.pred.a_s[i].score;
-      maxid = i + 1;
+      maxid = ec.pred.a_s[i].action + 1;
     }
   }
   for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
