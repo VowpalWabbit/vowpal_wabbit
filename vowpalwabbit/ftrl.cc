@@ -356,7 +356,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   if (ftrl_option)
   {
     algorithm_name = "Proximal-FTRL";
-    if (all.audit)
+    if (all.audit || all.hash_inv)
       learn_ptr = learn_proximal<true>;
     else
       learn_ptr = learn_proximal<false>;
