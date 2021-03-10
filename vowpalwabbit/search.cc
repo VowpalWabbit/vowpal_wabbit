@@ -1045,7 +1045,8 @@ void ensure_size(v_array<T>& A, size_t sz)
 template <class T>
 void push_at(v_array<T>& v, T item, size_t pos)
 {
-  v.insert(v.begin(), pos);
+  if (pos > v.size()) { v.actual_resize(pos); }
+  v.insert(v.begin() + pos, item);
 }
 
 action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* oracle_actions,
