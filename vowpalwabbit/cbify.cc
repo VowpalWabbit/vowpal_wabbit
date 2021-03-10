@@ -57,14 +57,6 @@ struct cbify
   std::vector<v_array<COST_SENSITIVE::wclass>> cs_costs;
   std::vector<v_array<CB::cb_class>> cb_costs;
   std::vector<ACTION_SCORE::action_scores> cb_as;
-
-  ~cbify()
-  {
-    if (use_adf)
-    {
-      for (auto* ex : adf_data.ecs) { VW::dealloc_examples(ex, 1); }
-    }
-  }
 };
 
 float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
@@ -125,12 +117,7 @@ void cbify_adf_data::init_adf_data(const std::size_t num_actions, namespace_inte
 
 cbify_adf_data::~cbify_adf_data()
 {
-  for (size_t a = 0; a < ecs.size(); ++a)
-  {
-    ecs[a]->pred.a_s.delete_v();
-    VW::dealloc_example(CB::cb_label.delete_label, *ecs[a]);
-    free_it(ecs[a]);
-  }
+  for (auto* ex : ecs) { VW::dealloc_examples(ex, 1); }
 }
 
 void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
