@@ -352,9 +352,9 @@ add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost vw_io
+    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost spdlog::spdlog_header_only fmt::fmt-header-only
   PRIVATE
-    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS}
+    Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
