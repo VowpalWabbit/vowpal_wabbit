@@ -185,23 +185,8 @@ public:
   //   - Read mode: The offset of the position that has been read up to so far.
   size_t unflushed_bytes_count() { return head - _buffer._begin; }
 
-<<<<<<< HEAD
   void flush();
   
-=======
-  void flush()
-  {
-    if (!output_files.empty())
-    {
-      auto bytes_written = output_files[0]->write(_buffer._begin, unflushed_bytes_count());
-      if (bytes_written != static_cast<ssize_t>(unflushed_bytes_count()))
-      { std::cerr << "error, failed to write example\n"; }
-      head = _buffer._begin;
-      output_files[0]->flush();
-    }
-  }
-
->>>>>>> master
   bool close_file()
   {
     if (!input_files.empty())
