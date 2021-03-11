@@ -542,7 +542,7 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
             continue
 
         # TODO: figure out why --nn, --audit and flatbuffers are giving different results
-        if test_id == 270:
+        if test_id == 289:
             print("{}Skipping test {} for flatbuffers, nn  test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
 
