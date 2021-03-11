@@ -505,6 +505,10 @@ def calculate_test_to_run_explicitly(explicit_tests, tests):
 
     tests_to_run_explicitly = set()
     for test_number in explicit_tests:
+        if test_number > len(tests):
+            print("Error: Test number {} does not exist. There are {} tests in total.".format(test_number, len(tests)))
+            sys.exit(1)
+
         tests_to_run_explicitly.add(test_number)
         tests_to_run_explicitly = set.union(
             tests_to_run_explicitly, get_deps(test_number, tests))
