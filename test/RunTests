@@ -2138,6 +2138,11 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
     train-sets/ref/help_cbadf.stderr
     train-sets/ref/help_cbadf.stdout
 
+# Test 277: vw --help
+{VW} --help
+    train-sets/ref/help.stderr
+    train-sets/ref/help.stdout
+
 # Test 278: cbzo: learn and save constant template model
 # Note: Changing hyperparameters (-l, --radius etc.) or any options affecting the learning algorithm will require
 # preparing the dataset again

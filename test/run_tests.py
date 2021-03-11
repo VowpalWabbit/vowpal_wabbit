@@ -546,6 +546,7 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
             print("{}Skipping test {} for flatbuffers, nn  test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
 
+        # test id is being used as an index here, not necessarily a contract?
         depends_on_test = (
             tests[int(test["depends_on"][0]) - 1] if "depends_on" in test else None
         )
@@ -678,6 +679,10 @@ def main():
     executor = ThreadPoolExecutor(max_workers=args.jobs)
     for test in tests:
         test_number = test["id"]
+
+        if test_number > 290:
+            print("hello"+str(test_number))
+
         if tests_to_run_explicitly is not None and test_number not in tests_to_run_explicitly:
             continue
 
