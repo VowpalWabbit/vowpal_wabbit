@@ -681,9 +681,6 @@ def main():
     for test in tests:
         test_number = test["id"]
 
-        if test_number > 290:
-            print("hello"+str(test_number))
-
         if tests_to_run_explicitly is not None and test_number not in tests_to_run_explicitly:
             continue
 
