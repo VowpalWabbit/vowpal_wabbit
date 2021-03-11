@@ -206,7 +206,5 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   l->set_finish_example(finish_example);
 
-  all.delete_prediction = nullptr;
-
   return make_base(*l);
 }
