@@ -594,7 +594,7 @@ def main():
                         help="Don't print color ANSI escape codes")
     parser.add_argument('--for_flatbuffers', action='store_true', help='Transform all of the test inputs into flatbuffer format and run tests')
     parser.add_argument('--to_flatbuff_path', help="Specify to_flatbuff binary to use. Otherwise, binary will be searched for in build directory")
-    parser.add_argument('--include_flatbuffers', action='store_true', help="Don't skip the explicit flatbuffer tests from normal run_tests run")
+    parser.add_argument('--include_flatbuffers', action='store_true', help="Don't skip the explicit flatbuffer tests from default run_tests run")
     args = parser.parse_args()
 
     if args.for_flatbuffers and args.working_dir == working_dir: # user did not supply dir

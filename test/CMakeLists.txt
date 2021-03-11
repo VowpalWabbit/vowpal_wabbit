@@ -3,7 +3,7 @@ add_subdirectory(tools)
 
 set(FB_FLAG "") # flatbuffers are off by default
 if(BUILD_FLATBUFFERS)
-  set(FB_FLAG "-F") # include flatbuffer in from RunTests
+  set(FB_FLAG "-F") # include flatbuffer tests in RunTests
 endif()
 
 # Don't offer target on Windows
