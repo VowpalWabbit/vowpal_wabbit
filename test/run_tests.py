@@ -703,7 +703,7 @@ def main():
             is_shell = True
         elif "vw_command" in test:
             command_line = "{} {}".format((vw_bin), (test['vw_command']))
-            if not args.include_flatbuffers:
+            if not args.include_flatbuffers and not args.for_flatbuffers:
                 if '--flatbuffer' in test['vw_command']:
                     print("{} is a flatbuffer test, can be run with --include_flatbuffers flag, Skipping...".format(test_number))
                     continue
