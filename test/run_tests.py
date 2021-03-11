@@ -594,6 +594,7 @@ def main():
                         help="Don't print color ANSI escape codes")
     parser.add_argument('--for_flatbuffers', action='store_true', help='Transform all of the test inputs into flatbuffer format and run tests')
     parser.add_argument('--to_flatbuff_path', help="Specify to_flatbuff binary to use. Otherwise, binary will be searched for in build directory")
+    parser.add_argument('--include_flatbuffers', action='store_true', help="Don't skip the explicit flatbuffer tests from default run_tests run")
     args = parser.parse_args()
 
     if args.for_flatbuffers and args.working_dir == working_dir: # user did not supply dir
@@ -700,6 +701,10 @@ def main():
             is_shell = True
         elif "vw_command" in test:
             command_line = "{} {}".format((vw_bin), (test['vw_command']))
+            if not args.include_flatbuffers:
+                if '--flatbuffer' in test['vw_command']:
+                    print("{} is a flatbuffer test, can be run with --include_flatbuffers flag, Skipping...".format(test_number))
+                    continue
         else:
             print("{} is an unknown type. Skipping...".format((test_number)))
             continue
