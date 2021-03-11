@@ -10,6 +10,6 @@ cd $REPO_DIR
 rm -rf build
 mkdir build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DGCOV=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DGCOV=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DBUILD_FLATBUFFERS=On
 NUM_PROCESSORS=$(cat nprocs.txt)
 make vw-bin spanning_tree vw-unit-test.out -j ${NUM_PROCESSORS}
