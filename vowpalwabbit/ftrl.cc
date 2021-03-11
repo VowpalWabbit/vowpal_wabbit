@@ -260,7 +260,7 @@ void learn_proximal(ftrl& a, single_learner& base, example& ec)
   update_after_prediction_proximal(a, ec);
 }
 
-template<bool audit>
+template <bool audit>
 void learn_pistol(ftrl& a, single_learner& base, example& ec)
 {
   // update state based on the example and predict
@@ -270,7 +270,7 @@ void learn_pistol(ftrl& a, single_learner& base, example& ec)
   update_after_prediction_pistol(a, ec);
 }
 
-template<bool audit>
+template <bool audit>
 void learn_coin_betting(ftrl& a, single_learner& base, example& ec)
 {
   // update state based on the example and predict
