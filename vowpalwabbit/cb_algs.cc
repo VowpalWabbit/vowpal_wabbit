@@ -103,7 +103,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   generic_output_example(all, loss, ec, ld);
 }
 
-void generic_output_example(vw& all, float loss, example& ec, CB::label& ld)
+void generic_output_example(vw& all, float loss, example& ec, const CB::label& ld)
 {
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.num_features);
 

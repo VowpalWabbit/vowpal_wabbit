@@ -254,7 +254,7 @@ void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstre
   }
 }
 
-float calc_loss(cb_explore& data, example& ec, CB::label& ld)
+float calc_loss(cb_explore& data, example& ec, const CB::label& ld)
 {
   float loss = 0.;
 

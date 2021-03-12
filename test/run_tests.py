@@ -546,7 +546,7 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
             print("{}Skipping test {} for flatbuffers, nn  test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
 
-        # test id is being used as an index here, not necessarily a contract?
+        # test id is being used as an index here, not necessarily a contract
         depends_on_test = (
             tests[int(test["depends_on"][0]) - 1] if "depends_on" in test else None
         )
