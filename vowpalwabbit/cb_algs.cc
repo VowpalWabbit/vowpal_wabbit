@@ -100,6 +100,11 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   cb_to_cs& c = data.cbcs;
   if (!CB::is_test_label(ld)) loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
+  generic_output_example(all, loss, ec, ld);
+}
+
+void generic_output_example(vw& all, float loss, example& ec, CB::label& ld)
+{
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.num_features);
 
   for (auto& sink : all.final_prediction_sink) all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
