@@ -14,6 +14,7 @@
 #include "hashstring.h"
 #include "vw_string_view.h"
 #include "fast_pow10.h"
+#include "future_compat.h"
 
 #include "io/logger.h"
 
@@ -48,7 +49,7 @@ inline const char* safe_index(const char* start, char v, const char* max)
 //  - much faster (around 50% but depends on the  string to parse)
 //  - less error control, but utilised inside a very strict parser
 //    in charge of error detection.
-inline float parseFloat(const char* p, size_t& end_idx, const char* endLine = nullptr)
+inline FORCE_INLINE float parseFloat(const char* p, size_t& end_idx, const char* endLine = nullptr)
 {
   const char* start = p;
   bool endLine_is_null = endLine == nullptr;
