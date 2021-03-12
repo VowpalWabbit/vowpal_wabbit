@@ -125,6 +125,12 @@ namespace logger
   public:
     pattern_guard(const std::string& pattern);
     ~pattern_guard();
+
+    // Don't allow copying or moving
+    pattern_guard(const pattern_guard&) = delete;
+    pattern_guard& operator=(const pattern_guard&) = delete;
+    pattern_guard(const pattern_guard&&) = delete;
+    pattern_guard& operator=(const pattern_guard&&) = delete;
   };
   void log_set_level(log_level lvl);
 
