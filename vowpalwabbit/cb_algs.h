@@ -64,7 +64,7 @@ inline float get_cost_estimate(const CB::cb_class& observation, const COST_SENSI
   return get_cost_estimate(observation, action);
 }
 
-inline float get_cost_estimate(CB::label& ld, uint32_t action)
+inline float get_cost_estimate(const CB::label& ld, uint32_t action)
 {
   for (auto& cl : ld.costs)
     if (cl.action == action) return get_cost_estimate(cl, action);
@@ -82,6 +82,6 @@ inline bool example_is_newline_not_header(example const& ec)
   return (example_is_newline(ec) && !CB::ec_is_example_header(ec));
 }
 
-void generic_output_example(vw& all, float loss, example& ec, CB::label& ld);
+void generic_output_example(vw& all, float loss, example& ec, const CB::label& ld);
 
 }  // namespace CB_ALGS
