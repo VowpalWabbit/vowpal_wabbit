@@ -223,7 +223,16 @@ def file_to_obj(filename):
         for line in f:
             RTParser.process_line(line)
     
-    return RTParser.get_results()
+    results = RTParser.get_results()
+
+    # check for missing ids
+    i = 1
+    for r in results:
+        if i != r.id:
+            raise Exception("test id being skipped: " + str(i))
+        i+=1
+
+    return results
 
 def main():
     possible_paths = ["./RunTests", "./test/RunTests"]
