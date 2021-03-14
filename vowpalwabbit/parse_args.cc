@@ -1804,9 +1804,10 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
       exit(0);
     }
 
+    print_enabled_reductions(all);
+
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {
-      print_enabled_reductions(all);
       if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
       { all.sd->print_update_header(*all.trace_message); }
       all.l->init_driver();
