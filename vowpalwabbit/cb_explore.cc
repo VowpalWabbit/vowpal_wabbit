@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "cb_explore.h"
 #include "reductions.h"
 #include "cb_algs.h"
 #include "rand48.h"
@@ -253,7 +254,7 @@ void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstre
   }
 }
 
-void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
+float calc_loss(cb_explore& data, example& ec, const CB::label& ld)
 {
   float loss = 0.;
 
@@ -267,7 +268,12 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
       loss += get_cost_estimate(optional_cost.second, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
   }
 
-  all.sd->update(ec.test_only, optional_cost.first, loss, 1.f, ec.num_features);
+  return loss;
+}
+
+void generic_output_example(vw& all, float loss, example& ec, CB::label& ld)
+{
+  all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.num_features);
 
   std::stringstream ss;
   float maxprob = 0.;
@@ -278,7 +284,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
     if (ec.pred.a_s[i].score > maxprob)
     {
       maxprob = ec.pred.a_s[i].score;
-      maxid = i + 1;
+      maxid = ec.pred.a_s[i].action + 1;
     }
   }
   for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
@@ -288,9 +294,11 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   print_update_cb_explore(all, CB::is_test_label(ld), ec, sso);
 }
 
-void finish_example(vw& all, cb_explore& c, example& ec)
+void finish_example(vw& all, cb_explore& data, example& ec)
 {
-  output_example(all, c, ec, ec.l.cb);
+  float loss = calc_loss(data, ec, ec.l.cb);
+
+  CB_EXPLORE::generic_output_example(all, loss, ec, ec.l.cb);
   VW::finish_example(all, ec);
 }
 
