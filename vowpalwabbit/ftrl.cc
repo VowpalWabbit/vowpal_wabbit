@@ -24,6 +24,7 @@ struct ftrl_update_data
   float l2_lambda;
   float predict;
   float normalized_squared_norm_x;
+  float average_squared_norm_x;
 };
 
 struct ftrl
@@ -36,7 +37,6 @@ struct ftrl
   size_t early_stop_thres;
   uint32_t ftrl_size;
   double total_weight;
-  double pred_norm;
 };
 
 struct uncertainty
@@ -77,7 +77,7 @@ float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
 template <bool audit>
 void predict(ftrl& b, single_learner&, example& ec)
 {
-  ec.partial_prediction = GD::inline_predict(*b.all, ec) / b.pred_norm;
+  ec.partial_prediction = GD::inline_predict(*b.all, ec)  ;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
   if (audit) GD::print_audit_features(*(b.all), ec);
 }
@@ -205,6 +205,8 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   w[W_ZT] += -gradient;
   w[W_G2] += fabs(gradient);
   w[W_WE] += (-gradient * w[W_XT]);
+
+  w[W_XT] /= d.average_squared_norm_x;
 }
 
 void coin_betting_predict(ftrl& b, single_learner&, example& ec)
@@ -216,9 +218,9 @@ void coin_betting_predict(ftrl& b, single_learner&, example& ec)
 
   b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
-  b.pred_norm = ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
+  b.data.average_squared_norm_x = ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
-  ec.partial_prediction = b.data.predict / b.pred_norm;
+  ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
@@ -351,7 +353,6 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   b->no_win_counter = 0;
   b->all->normalized_sum_norm_x = 0;
   b->total_weight = 0;
-  b->pred_norm = 1;
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
 
