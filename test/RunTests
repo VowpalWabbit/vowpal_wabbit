@@ -88,7 +88,7 @@ sub usage(@) {
         -y      On error, copy bad files to (eg stderr.test21) for later comparison
         -v<L>   Verbosity <L> (small integer) is verbosity level
         -V      apply valgrind to vw commands
-        -F      exclude flatbuffer tests
+        -F      include flatbuffer tests
         -t<T>   Apply timeout <T> (default $TimeOutSec) secs to individual tests
                 (will only work where GNU coreutils 'timeout' is present)
         -O<O>   Add <O> option(s) to all vw commands
@@ -331,8 +331,9 @@ sub next_test() {
     }
 
     if ($cmd =~ /--flatbuffer/) {
-         if ($opt_F)
+         if (!$opt_F)
          {
+             printf STDERR "Skipping test %s. Run with -F to include\n", $TestNo;
              next;
          }
     }
@@ -2109,6 +2110,8 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 
 # Test 269: vw --help with filtering
 {VW} --cb_adf --help
+    train-sets/ref/help_cbadf.stderr
+    train-sets/ref/help_cbadf.stdout
 
 # Test 270: vw test used in brew script
 {VW} -d train-sets/houses --audit --nn 1

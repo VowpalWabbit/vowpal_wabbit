@@ -33,7 +33,6 @@
 
 #include "v_array.h"
 #include "array_parameters.h"
-#include "parse_primitives.h"
 #include "loss_functions.h"
 #include "example.h"
 #include "config.h"
@@ -223,6 +222,7 @@ struct shared_data
     print_update(holdout_set_off, current_pass, label, pred_buf.str(), num_features, progress_add, progress_arg);
   }
 
+  // TODO: this print_update function should be using trace_message. Need to pipe that through
   void print_update(bool holdout_set_off, size_t current_pass, const std::string& label, const std::string& prediction,
       size_t num_features, bool progress_add, float progress_arg)
   {

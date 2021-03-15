@@ -27,14 +27,16 @@ int daemon(int /*a*/, int /*b*/) { exit(0); }
 
 // Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
 // use the actual isocpp version.
+// use VW_getpid instead of getpid to avoid name collisions with process.h
 #  if _MSC_VER >= 1920
-#    define getpid _getpid
+#    define VW_getpid _getpid
 #  else
-int getpid() { return (int)::GetCurrentProcessId(); }
+int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #  endif
 
 #else
 #  include <netdb.h>
+#  define VW_getpid getpid
 #endif
 
 #if defined(__FreeBSD__) || defined(__APPLE__)
@@ -45,6 +47,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include <cstdio>
 #include <cassert>
 
+#include "parse_primitives.h"
 #include "parse_example.h"
 #include "cache.h"
 #include "unique_sort.h"
@@ -102,7 +105,6 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
   VW::version_struct v_tmp(t.data());
   if (v_tmp != VW::version)
   {
-    //      cout << "cache has possibly incompatible version, rebuilding" << endl;
     return 0;
   }
 
@@ -409,7 +411,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       disable : 4996)  // In newer toolchains, we are properly calling _getpid(), via the #define above (line 33).
 #endif
 
-      pid_file << getpid() << endl;
+      pid_file << VW_getpid() << endl;
       pid_file.close();
 
 #ifdef _WIN32

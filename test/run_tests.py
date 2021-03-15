@@ -505,6 +505,10 @@ def calculate_test_to_run_explicitly(explicit_tests, tests):
 
     tests_to_run_explicitly = set()
     for test_number in explicit_tests:
+        if test_number > len(tests):
+            print("Error: Test number {} does not exist. There are {} tests in total.".format(test_number, len(tests)))
+            sys.exit(1)
+
         tests_to_run_explicitly.add(test_number)
         tests_to_run_explicitly = set.union(
             tests_to_run_explicitly, get_deps(test_number, tests))
@@ -542,6 +546,7 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
             print("{}Skipping test {} for flatbuffers, nn  test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
 
+        # test id is being used as an index here, not necessarily a contract
         depends_on_test = (
             tests[int(test["depends_on"][0]) - 1] if "depends_on" in test else None
         )
@@ -590,10 +595,11 @@ def main():
                         help="Don't print color ANSI escape codes")
     parser.add_argument('--for_flatbuffers', action='store_true', help='Transform all of the test inputs into flatbuffer format and run tests')
     parser.add_argument('--to_flatbuff_path', help="Specify to_flatbuff binary to use. Otherwise, binary will be searched for in build directory")
+    parser.add_argument('--include_flatbuffers', action='store_true', help="Don't skip the explicit flatbuffer tests from default run_tests run")
     args = parser.parse_args()
 
     if args.for_flatbuffers and args.working_dir == working_dir: # user did not supply dir
-        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")        
+        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")      
 
     test_base_working_dir = str(args.working_dir)
     test_base_ref_dir = str(args.ref_dir)
@@ -648,6 +654,19 @@ def main():
         to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
         tests = convert_tests_for_flatbuffers(tests, to_flatbuff, args.working_dir, color_enum)
 
+    # Because bash_command based tests don't specify all inputs and outputs they must operate in the test directory directly.
+    # This means that if they run in parallel they can break each other by touching the same files.
+    # Until we can move to a test spec which allows us to specify the input/output we need to add dependencies between them here.
+    prev_bash_test = None
+    for test in tests:
+        test_number = test["id"]
+        if "bash_command" in test:
+            if prev_bash_test is not None:
+                if "depends_on" not in tests[test_number - 1]:
+                    tests[test_number - 1]["depends_on"] = []
+                tests[test_number - 1]["depends_on"].append(prev_bash_test)
+            prev_bash_test = test_number
+
     tasks = []
     completed_tests = Completion()
     tests_to_run_explicitly = None
@@ -661,6 +680,7 @@ def main():
     executor = ThreadPoolExecutor(max_workers=args.jobs)
     for test in tests:
         test_number = test["id"]
+
         if tests_to_run_explicitly is not None and test_number not in tests_to_run_explicitly:
             continue
 
@@ -683,6 +703,10 @@ def main():
             is_shell = True
         elif "vw_command" in test:
             command_line = "{} {}".format((vw_bin), (test['vw_command']))
+            if not args.include_flatbuffers and not args.for_flatbuffers:
+                if '--flatbuffer' in test['vw_command']:
+                    print("{} is a flatbuffer test, can be run with --include_flatbuffers flag, Skipping...".format(test_number))
+                    continue
         else:
             print("{} is an unknown type. Skipping...".format((test_number)))
             continue

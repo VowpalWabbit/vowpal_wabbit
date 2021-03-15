@@ -10,6 +10,7 @@
 #include <vector>
 #include "conditional_contextual_bandit.h"
 #include "parser.h"
+#include "parse_primitives.h"
 #include <memory>
 
 void parse_ccb_label(parser* p, VW::string_view label, CCB::label& l)
