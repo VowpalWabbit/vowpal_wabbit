@@ -29,6 +29,8 @@ bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, inte
 
   if (f_src1.values[0] != 1)
   {
+    // Anchor feature must be a number instead of text so that the relative offsets functions correctly but I don't
+    // think we are able to test for this here.
     *(all.trace_message) << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
     return false;
   }
@@ -166,7 +168,7 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   data->n1 = (unsigned char)s[0];
   data->n2 = (unsigned char)s[1];
-  logger::errlog_info("Interacting namespaces {0} and {1}", data->n1, data->n2);
+  logger::errlog_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
   data->all = &all;
 
   VW::LEARNER::learner<interact, example>* l;
