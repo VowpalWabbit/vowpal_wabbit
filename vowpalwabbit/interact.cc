@@ -25,7 +25,8 @@ bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, inte
 
   if (f_src1.values[0] != 1)
   {
-    // Anchor feature must be a number instead of text so that the relative offsets functions correctly but I don't think we are able to test for this here.
+    // Anchor feature must be a number instead of text so that the relative offsets functions correctly but I don't
+    // think we are able to test for this here.
     *(all.trace_message) << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
     return false;
   }

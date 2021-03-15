@@ -10,18 +10,15 @@ num sources = 1
 Enabled reductions: gd, scorer, interact
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-1.000000 1.000000            1            1.0   1.0000   0.0000       53
-0.628447 0.256893            2            2.0   0.0000   0.5068      106
-0.337755 0.047063            4            4.0   0.0000   0.1461      137
-0.312362 0.286968            8            8.0   0.0000   0.2552      148
-0.303846 0.295330           16           16.0   1.0000   0.3478       26
-0.297891 0.291935           32           32.0   0.0000   0.4428       34
+1.000000 1.000000            1            1.0   1.0000   0.0000       12
+0.527698 0.055396            2            2.0   0.0000   0.2354       11
+0.303799 0.079900            4            4.0   0.0000   0.1578       12
 
 finished run
-number of examples = 50
-weighted example sum = 50.000000
-weighted label sum = 17.000000
-average loss = 0.282588
-best constant = 0.340000
-best constant's loss = 0.224400
-total feature number = 4429
+number of examples = 6
+weighted example sum = 6.000000
+weighted label sum = 2.000000
+average loss = 0.372375
+best constant = 0.333333
+best constant's loss = 0.222222
+total feature number = 69

@@ -2152,8 +2152,9 @@ train-sets/ref/slates_simple_w_interactions.stderr
     pred-sets/ref/ccb_implicit_explicit_ignore_interactions.inv
 
 # Test 278: Test interact reduction
-{VW} -d train-sets/interact.dat -p t288.predict --interact ab
+{VW} -d train-sets/interact.dat -p t288.predict --interact ab --readable_model t288.readable
     test-sets/ref/t288.stderr
     pred-sets/ref/t288.predict
+    pred-sets/ref/t288.readable
 
 # Do not delete this line or the empty line above it
