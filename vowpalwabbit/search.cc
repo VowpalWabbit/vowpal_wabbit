@@ -110,8 +110,9 @@ std::ostream& operator<<(std::ostream& os, const scored_action& x)
 
 struct action_repr
 {
-  action a;
+  action a = 0;
   features* repr = nullptr;
+  action_repr() = default;
   action_repr(action _a, features* _repr) : a(_a)
   {
     if (_repr != nullptr)
@@ -1038,32 +1039,14 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 template <class T>
 void ensure_size(v_array<T>& A, size_t sz)
 {
-  if (A.capacity() < sz) A.resize(sz * 2 + 1);
-  A.end() = A.begin() + sz;
+  A.actual_resize(sz);
 }
 
 template <class T>
 void push_at(v_array<T>& v, T item, size_t pos)
 {
-  if (v.size() > pos)
-    v[pos] = item;
-  else
-  {
-    if (v.end_array > v.begin() + pos)
-    {
-      // there's enough memory, just not enough filler
-      memset(v.end(), 0, sizeof(T) * (pos - v.size()));
-      v[pos] = item;
-      v.end() = v.begin() + pos + 1;
-    }
-    else
-    {
-      // there's not enough memory
-      v.resize(2 * pos + 3);
-      v[pos] = item;
-      v.end() = v.begin() + pos + 1;
-    }
-  }
+  if (pos > v.size()) { v.actual_resize(pos); }
+  v.insert(v.begin() + pos, item);
 }
 
 action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* oracle_actions,
