@@ -126,7 +126,8 @@ int main(int argc, char* argv[])
   }
   catch (VW::vw_exception& e)
   {
-    std::cerr << "vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
+    // TODO: If loggers are instantiated within struct vw, this line lives outside of that. Log as critical for now
+    std::cerr << "[critical] vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
     exit(1);
   }
   catch (std::exception& e)
@@ -135,7 +136,8 @@ int main(int argc, char* argv[])
     // error 'handling' everywhere.  To reduce stderr pollution
     // everything gets caught here & the error message is printed
     // sans the excess exception noise, and core dump.
-    std::cerr << "vw: " << e.what() << std::endl;
+    // TODO: If loggers are instantiated within struct vw, this line lives outside of that. Log as critical for now
+    std::cerr << "[critical] vw: " << e.what() << std::endl;
     // cin.ignore();
     exit(1);
   }

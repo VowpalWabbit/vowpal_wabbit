@@ -5,8 +5,13 @@
 #include <cfloat>
 #include "reductions.h"
 
+#include "io/logger.h"
+
+
 using namespace VW::config;
 using std::endl;
+
+namespace logger = VW::io::logger;
 
 namespace VW
 {
@@ -29,7 +34,7 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
   if (ec.l.simple.label != FLT_MAX)
   {
     if (fabs(ec.l.simple.label) != 1.f)
-      std::cout << "You are using label " << ec.l.simple.label << " not -1 or 1 as loss function expects!" << std::endl;
+      logger::log_error("You are using label {} not -1 or 1 as loss function expects!", ec.l.simple.label);
     else if (ec.l.simple.label == ec.pred.scalar)
       ec.loss = 0.;
     else

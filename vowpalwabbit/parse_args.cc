@@ -106,15 +106,17 @@
 #include "io/io_adapter.h"
 #include "io/custom_streambuf.h"
 #include "io/owning_stream.h"
+#include "io/logger.h"
 
 #ifdef BUILD_EXTERNAL_PARSER
 #  include "parse_example_binary.h"
 #endif
 
-using std::cerr;
 using std::cout;
 using std::endl;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 //
 // Does std::string end with a certain substring?
@@ -369,10 +371,12 @@ void parse_diagnostics(options_i& options, vw& all)
 
   options.add_and_parse(diagnostic_group);
 
+  if(all.logger.quiet) logger::log_set_level(logger::log_level::off);
+
   // pass all.logger.quiet around
   if (all.all_reduce) all.all_reduce->quiet = all.logger.quiet;
 
-  // Upon direct query for version -- spit it out to stdout
+  // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
   {
     std::cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
@@ -588,7 +592,7 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
       }
       else
       {
-        std::cerr << "Possibly malformed hex representation of a namespace: '\\x" << substr << "'\n";
+        logger::errlog_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
         res.push_back(arg[pos++]);
       }
     }
@@ -1767,6 +1771,8 @@ vw* initialize(
 vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skipModelLoad,
     trace_message_t trace_listener, void* trace_context)
 {
+  // Set up logger as early as possible
+  logger::initialize_logger();
   vw& all = parse_args(std::move(options), trace_listener, trace_context);
 
   try
@@ -1802,9 +1808,10 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
       exit(0);
     }
 
+    print_enabled_reductions(all);
+
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {
-      print_enabled_reductions(all);
       if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
       { all.sd->print_update_header(*all.trace_message); }
       all.l->init_driver();
