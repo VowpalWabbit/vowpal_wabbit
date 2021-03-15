@@ -168,7 +168,7 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   data->n1 = (unsigned char)s[0];
   data->n2 = (unsigned char)s[1];
-  logger::errlog_info("Interacting namespaces {0} and {1}", data->n1, data->n2);
+  logger::errlog_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
   data->all = &all;
 
   VW::LEARNER::learner<interact, example>* l;
