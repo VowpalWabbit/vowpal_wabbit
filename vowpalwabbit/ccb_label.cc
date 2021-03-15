@@ -15,16 +15,21 @@
 #include "constant.h"
 #include "example.h"
 #include "vw_math.h"
+#include "vw_string_view.h"
+#include "parse_primitives.h"
+
+#include "io/logger.h"
 
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
 #include <cmath>
-#include "vw_string_view.h"
 
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 namespace CCB
 {
@@ -203,12 +208,12 @@ ACTION_SCORE::action_score convert_to_score(
 
   if (probability > 1.0)
   {
-    std::cerr << "invalid probability > 1 specified for an outcome, resetting to 1.\n";
+    logger::errlog_warn("invalid probability > 1 specified for an action, resetting to 1.");
     probability = 1.0;
   }
   if (probability < 0.0)
   {
-    std::cerr << "invalid probability < 0 specified for an outcome, resetting to 0.\n";
+    logger::errlog_warn("invalid probability < 0 specified for an action, resetting to 0.");
     probability = .0;
   }
 

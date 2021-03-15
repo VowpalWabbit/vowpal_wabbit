@@ -79,3 +79,17 @@
 #  define VW_WARNING_DISABLE_BADLY_FORMED_XML
 #  define VW_WARNING_DISABLE_CPP_17_LANG_EXT
 #endif
+
+#if defined(_MSC_VER)
+#  define FORCE_INLINE __forceinline
+#elif defined(__GNUC__)
+#  define FORCE_INLINE __attribute__((__always_inline__))
+#elif defined(__CLANG__)
+#  if __has_attribute(__always_inline__)
+#    define FORCE_INLINE __attribute__((__always_inline__))
+#  else
+#    define FORCE_INLINE
+#  endif
+#else
+#  define FORCE_INLINE
+#endif

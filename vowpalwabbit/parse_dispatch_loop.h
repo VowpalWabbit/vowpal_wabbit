@@ -6,6 +6,8 @@
 
 #include <functional>
 
+#include "io/logger.h"
+
 using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
 
 inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
@@ -51,15 +53,14 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
   }
   catch (VW::vw_exception& e)
   {
-    std::cerr << "vw example #" << example_number << "(" << e.Filename() << ":" << e.LineNumber() << "): " << e.what()
-              << std::endl;
+    VW::io::logger::errlog_error("vw example #{0}({1}:{2}): {3}", example_number, e.Filename(), e.LineNumber(), e.what());
 
     // Stash the exception so it can be thrown on the main thread.
     all.example_parser->exc_ptr = std::current_exception();
   }
   catch (std::exception& e)
   {
-    std::cerr << "vw: example #" << example_number << e.what() << std::endl;
+    VW::io::logger::errlog_error("vw: example #{0}{1}", example_number, e.what());
 
     // Stash the exception so it can be thrown on the main thread.
     all.example_parser->exc_ptr = std::current_exception();
