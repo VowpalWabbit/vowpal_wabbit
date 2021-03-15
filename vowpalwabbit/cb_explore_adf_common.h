@@ -53,7 +53,7 @@ inline size_t fill_tied(const v_array<ACTION_SCORE::action_score>& preds)
   size_t ret = 1;
   for (size_t i = 1; i < preds.size(); ++i)
   {
-    if (VW::math::are_same(preds[i].score, preds[0].score)) { ++ret; }
+    if (VW::math::are_same_rel(preds[i].score, preds[0].score)) { ++ret; }
     else
     {
       return ret;
