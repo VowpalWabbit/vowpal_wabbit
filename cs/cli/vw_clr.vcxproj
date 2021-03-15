@@ -98,7 +98,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;FMT_HEADER_ONLY;SPDLOG_FMT_EXTERNAL;SPDLOG_NO_TLS;_DEBUG;$(BUILD_FLATBUFFERS);%(PreprocessorDefinitions);FMT_HEADER_ONLY;SPDLOG_FMT_EXTERNAL;FMT_HEADER_ONLY;SPDLOG_FMT_EXTERNAL;FMT_HEADER_ONLY;SPDLOG_FMT_EXTERNAL</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore;$(ProjectDir)\..\..\ext_libs\fmt\include;$(ProjectDir)\..\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\ext_libs\rapidjson\include;$(ProjectDir)\..\..\explore;$(ProjectDir)\..\..\ext_libs\fmt\include;$(ProjectDir)\..\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
       <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <EnablePREfast>false</EnablePREfast>
@@ -122,7 +122,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;FMT_HEADER_ONLY;SPDLOG_FMT_EXTERNAL;SPDLOG_NO_TLS;NDEBUG;_WINDOWS;$(BUILD_FLATBUFFERS);%(PreprocessorDefinitions);FMT_HEADER_ONLY;SPDLOG_FMT_EXTERNAL;FMT_HEADER_ONLY;SPDLOG_FMT_EXTERNAL;FMT_HEADER_ONLY;SPDLOG_FMT_EXTERNAL</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore;$(ProjectDir)\..\..\ext_libs\fmt\include;$(ProjectDir)\..\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\ext_libs\rapidjson\include;$(ProjectDir)\..\..\explore;$(ProjectDir)\..\..\ext_libs\fmt\include;$(ProjectDir)\..\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
       <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
