@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <string>
+#include <cfloat>
 #include "reductions.h"
 #include "rand48.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces

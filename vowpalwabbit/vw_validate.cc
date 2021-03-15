@@ -5,6 +5,10 @@
 #include "vw_validate.h"
 #include "vw_versions.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 namespace VW
 {
 void validate_version(vw& all)
@@ -12,7 +16,7 @@ void validate_version(vw& all)
   if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
     THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
   if (all.model_file_ver > PACKAGE_VERSION)
-    std::cerr << "Warning: model version is more recent than VW version.  This may not work." << std::endl;
+    logger::errlog_warn("Warning: model version is more recent than VW version.  This may not work.");
 }
 
 void validate_min_max_label(vw& all)

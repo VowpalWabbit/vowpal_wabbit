@@ -31,6 +31,7 @@ struct gdmf
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 {
+  // TODO: Where should audit stuff output to?
   vw& all = *d.all;
   parameters& weights = all.weights;
   uint64_t mask = weights.mask();
