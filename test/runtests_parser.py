@@ -234,12 +234,17 @@ def file_to_obj(filename):
 
     return results
 
-def main():
+def find_runtest_file():
+    rtfile = None
     possible_paths = ["./RunTests", "./test/RunTests"]
     for p in possible_paths:
         if path.exists(p):
             rtfile = p
+    
+    return rtfile
 
+def main():
+    rtfile = find_runtest_file()
     results = file_to_obj(rtfile)
 
     with open(path.join(path.dirname(rtfile), "runtests.AUTOGEN.json"), "w") as f:
