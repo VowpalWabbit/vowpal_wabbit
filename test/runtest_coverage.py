@@ -42,10 +42,14 @@ def print_non_supplied(config):
         for (group_name, options) in config_group:
             for option in options:
                 if not option.value_supplied:
+                    default_val_str = ""
+                    if option.default_value_supplied:
+                        default_val_str = " BUT has default value"
+
                     if len(config_group) <= 1:
-                        print(name + ": " + option.name)
+                        print(name + ": " + option.name + default_val_str)
                     else:
-                        print(name + ": " + group_name + ": " + option.name)
+                        print(name + ": " + group_name + ": " + option.name + default_val_str)
         
 
 def main():
