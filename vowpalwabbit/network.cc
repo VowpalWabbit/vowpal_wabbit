@@ -24,6 +24,10 @@
 #include <stdexcept>
 #include "vw_exception.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 int open_socket(const char* host)
 {
 #ifdef _WIN32
@@ -62,6 +66,6 @@ int open_socket(const char* host)
       write(sd, &id, sizeof(id)) < (int)sizeof(id)
 #endif
   )
-    std::cerr << "write failed!" << std::endl;
+    logger::errlog_error("write failed!");
   return sd;
 }

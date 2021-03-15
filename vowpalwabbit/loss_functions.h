@@ -4,7 +4,6 @@
 #pragma once
 #include <string>
 #include <memory>
-#include "parse_primitives.h"
 
 struct shared_data;
 struct vw;

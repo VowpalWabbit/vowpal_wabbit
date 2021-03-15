@@ -25,6 +25,8 @@
 #include "array_parameters.h"
 #include "vw_exception.h"
 
+#include "io/logger.h"
+
 #include <boost/version.hpp>
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/gamma.hpp>
@@ -34,6 +36,8 @@
 #endif
 
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 enum lda_math_mode
 {
@@ -519,17 +523,14 @@ float lda::digamma(float x)
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      // std::cerr << "lda::digamma FAST_APPROX ";
       return ldamath::digamma<float, USE_FAST_APPROX>(x);
     case USE_PRECISE:
-      // std::cerr << "lda::digamma PRECISE ";
       return ldamath::digamma<float, USE_PRECISE>(x);
     case USE_SIMD:
-      // std::cerr << "lda::digamma SIMD ";
       return ldamath::digamma<float, USE_SIMD>(x);
     default:
       // Should not happen.
-      std::cerr << "lda::digamma: Trampled or invalid math mode, aborting" << std::endl;
+      logger::errlog_critical("lda::digamma: Trampled or invalid math mode, aborting");
       abort();
       return 0.0f;
   }
@@ -540,16 +541,13 @@ float lda::lgamma(float x)
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      // std::cerr << "lda::lgamma FAST_APPROX ";
       return ldamath::lgamma<float, USE_FAST_APPROX>(x);
     case USE_PRECISE:
-      // std::cerr << "lda::lgamma PRECISE ";
       return ldamath::lgamma<float, USE_PRECISE>(x);
     case USE_SIMD:
-      // std::cerr << "lda::gamma SIMD ";
       return ldamath::lgamma<float, USE_SIMD>(x);
     default:
-      std::cerr << "lda::lgamma: Trampled or invalid math mode, aborting" << std::endl;
+      logger::errlog_critical("lda::lgamma: Trampled or invalid math mode, aborting");
       abort();
       return 0.0f;
   }
@@ -560,16 +558,13 @@ float lda::powf(float x, float p)
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      // std::cerr << "lda::powf FAST_APPROX ";
       return ldamath::powf<float, USE_FAST_APPROX>(x, p);
     case USE_PRECISE:
-      // std::cerr << "lda::powf PRECISE ";
       return ldamath::powf<float, USE_PRECISE>(x, p);
     case USE_SIMD:
-      // std::cerr << "lda::powf SIMD ";
       return ldamath::powf<float, USE_SIMD>(x, p);
     default:
-      std::cerr << "lda::powf: Trampled or invalid math mode, aborting" << std::endl;
+      logger::errlog_critical("lda::powf: Trampled or invalid math mode, aborting");
       abort();
       return 0.0f;
   }
@@ -589,7 +584,7 @@ void lda::expdigammify(vw &all_, float *gamma)
       ldamath::expdigammify<float, USE_SIMD>(all_, gamma, underflow_threshold, 0.0f);
       break;
     default:
-      std::cerr << "lda::expdigammify: Trampled or invalid math mode, aborting" << std::endl;
+      logger::errlog_critical("lda::expdigammify: Trampled or invalid math mode, aborting");
       abort();
   }
 }
@@ -608,7 +603,7 @@ void lda::expdigammify_2(vw &all_, float *gamma, float *norm)
       ldamath::expdigammify_2<float, USE_SIMD>(all_, gamma, norm, underflow_threshold);
       break;
     default:
-      std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
+      logger::errlog_critical("lda::expdigammify_2: Trampled or invalid math mode, aborting");
       abort();
   }
 }
@@ -1324,7 +1319,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   if (all.eta > 1.)
   {
-    std::cerr << "your learning rate is too high, setting it to 1" << std::endl;
+    logger::errlog_warn("your learning rate is too high, setting it to 1");
     all.eta = std::min(all.eta, 1.f);
   }
 

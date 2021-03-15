@@ -115,7 +115,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   D->K = num_actions;
   D->numN = (D->directed + 1) * (D->K + 1);
-  std::cerr << "K=" << D->K << ", numN=" << D->numN << std::endl;
+  *(sch.get_vw_pointer_unsafe().trace_message) << "K=" << D->K << ", numN=" << D->numN << std::endl;
   D->neighbor_predictions = calloc_or_throw<float>(D->numN);
 
   D->confusion_matrix = calloc_or_throw<uint32_t>((D->K + 1) * (D->K + 1));
@@ -313,9 +313,6 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
     }
 
     if (pred_total == 0.) continue;
-    // std::cerr << n << ':' << i << " -> ["; for (size_t k=0; k<D.numN; k++) std::cerr << ' ' <<
-    // D.neighbor_predictions[k]; std::cerr
-    // << " ]" << std::endl;
     for (size_t k = 0; k < D.numN; k++) D.neighbor_predictions[k] /= pred_total;
     example& edge = *ec[i];
 

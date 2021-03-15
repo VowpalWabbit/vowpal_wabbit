@@ -6,7 +6,11 @@
 #include "reductions.h"
 #include "v_array.h"
 
+#include "io/logger.h"
+
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 struct interact
 {
@@ -63,15 +67,13 @@ void multiply(features& f_dest, features& f_src2, interact& in)
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
     {
-      std::cout << "interact features are out of order: " << cur_id1 << " < " << prev_id1 << ". Skipping features."
-                << std::endl;
+      logger::log_error("interact features are out of order: {0} < {1}. Skipping features.", cur_id1, prev_id1);
       return;
     }
 
     if (cur_id2 < prev_id2)
     {
-      std::cout << "interact features are out of order: " << cur_id2 << " < " << prev_id2 << ". Skipping features."
-                << std::endl;
+      logger::log_error("interact features are out of order: {0} < {1}. Skipping features.", cur_id2, prev_id2);
       return;
     }
 
@@ -119,10 +121,6 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   ec.total_sum_feat_sq += f1.sum_feat_sq;
   ec.num_features += f1.size();
 
-  /*for(uint64_t i = 0;i < f1.size();i++)
-    std::cout<<f1[i].weight_index<<":"<<f1[i].x<<" ";
-    std::cout<< std::endl;*/
-
   // remove 2nd namespace
   int n2_i = -1;
   for (size_t i = 0; i < ec.indices.size(); i++)
@@ -162,7 +160,7 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   if (s.length() != 2)
   {
-    std::cerr << "Need two namespace arguments to interact: " << s << " won't do EXITING\n";
+    logger::errlog_error("Need two namespace arguments to interact: {} won't do EXITING", s);
     return nullptr;
   }
 
@@ -170,7 +168,7 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   data->n1 = (unsigned char)s[0];
   data->n2 = (unsigned char)s[1];
-  if (!all.logger.quiet) std::cerr << "Interacting namespaces " << data->n1 << " and " << data->n2 << std::endl;
+  logger::errlog_info("Interacting namespaces {0} and {1}", data->n1, data->n2);
   data->all = &all;
 
   VW::LEARNER::learner<interact, example>* l;

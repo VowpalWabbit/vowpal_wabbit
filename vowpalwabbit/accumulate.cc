@@ -13,6 +13,10 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include "global_data.h"
 #include "vw_allreduce.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 void add_float(float& c1, const float& c2) { c1 += c2; }
 
 void accumulate(vw& all, parameters& weights, size_t offset)
@@ -137,7 +141,7 @@ void accumulate_weighted_avg(vw& all, parameters& weights)
     do_weighting(all, length, local_weights, weights.dense_weights);
 
   if (weights.sparse)
-    std::cout << "sparse parameters not supported with parallel computation!" << std::endl;
+    logger::log_error("sparse parameters not supported with parallel computation!");
   else
     all_reduce<float, add_float>(
         all, weights.dense_weights.first(), ((size_t)length) * (1ull << weights.stride_shift()));

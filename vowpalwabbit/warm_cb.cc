@@ -14,6 +14,8 @@
 #include "scope_exit.h"
 #include "cb_label_parser.h"
 
+#include "io/logger.h"
+
 #include <vector>
 #include <memory>
 
@@ -21,6 +23,8 @@ using namespace VW::LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 #define WARM_START 1
 #define INTERACTION 2
@@ -142,10 +146,10 @@ void finish(warm_cb& data)
 
   if (!data.all->logger.quiet)
   {
-    std::cerr << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
-    std::cerr << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
-    std::cerr << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from " << data.lambdas[0]
-              << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
+    *(data.all->trace_message) << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
+    *(data.all->trace_message) << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
+    *(data.all->trace_message) << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from "
+                               << data.lambdas[0] << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
   }
 }
 
@@ -607,7 +611,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("epsilon"))
   {
-    std::cerr << "Warning: no epsilon (greedy parameter) specified; resetting to 0.05" << std::endl;
+    logger::errlog_warn("Warning: no epsilon (greedy parameter) specified; resetting to 0.05");
     data->epsilon = 0.05f;
   }
 
