@@ -15,6 +15,8 @@
 #include "vw_versions.h"
 #include "explore.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace CB;
 using namespace ACTION_SCORE;
@@ -22,6 +24,8 @@ using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace VW::config;
 using namespace exploration;
+
+namespace logger = VW::io::logger;
 
 namespace CB_ADF
 {
@@ -304,11 +308,6 @@ void cb_adf::do_actual_learning(multi_learner& base, multi_ex& ec_seq)
       default:
         THROW("Unknown cb_type specified for contextual bandit learning: " << _gen_cs.cb_type);
     }
-
-    /*      for (size_t i = 0; i < temp_scores.size(); i++)
-    if (temp_scores[i] != data.ec_seq[0]->pred.a_s[i].score)
-     std::cout << "problem! " << temp_scores[i] << " != " << data.ec_seq[0]->pred.a_s[i].score << " for " <<
-    data.ec_seq[0]->pred.a_s[i].action << std::endl; temp_scores.delete_v();*/
   }
   else
   {
@@ -324,7 +323,7 @@ void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& fi
   for (auto& sink : final_prediction_sink)
   {
     ssize_t t = sink->write(temp, 1);
-    if (t != 1) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != 1) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 

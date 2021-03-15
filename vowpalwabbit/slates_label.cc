@@ -9,7 +9,9 @@
 #include "vw_string_view.h"
 #include "constant.h"
 #include "vw_math.h"
+#include "parse_primitives.h"
 #include <numeric>
+
 namespace VW
 {
 namespace slates

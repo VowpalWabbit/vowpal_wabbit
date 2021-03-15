@@ -10,6 +10,7 @@
 #include <vector>
 #include "cb_continuous_label.h"
 #include "parser.h"
+#include "parse_primitives.h"
 #include <memory>
 
 void parse_label(label_parser& lp, parser* p, VW::string_view label, polylabel& l, reduction_features& red_fts)

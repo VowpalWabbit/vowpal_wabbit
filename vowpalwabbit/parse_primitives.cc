@@ -11,16 +11,6 @@
 #include "hash.h"
 #include "vw_exception.h"
 
-hash_func_t getHasher(const std::string& s)
-{
-  if (s == "strings")
-    return hashstring;
-  else if (s == "all")
-    return hashall;
-  else
-    THROW("Unknown hash function: " << s);
-}
-
 std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty)
 {
   std::vector<std::string> tokens;
