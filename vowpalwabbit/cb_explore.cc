@@ -14,6 +14,7 @@
 #include "vw_versions.h"
 #include "version.h"
 #include "cb_label_parser.h"
+#include <cfloat>
 
 #include <memory>
 

@@ -89,8 +89,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include;$(ProjectDir)\..\explore</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include;$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);FMT_HEADER_ONLY;SPDLOG_FMT_EXTERNAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -130,6 +130,7 @@
     <ClInclude Include="errors_data.h" />
     <ClInclude Include="err_constants.h" />
     <ClInclude Include="get_pmf.h" />
+    <ClInclude Include="io\logger.h" />
     <ClInclude Include="offset_tree.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="action_score.h" />
@@ -281,6 +282,8 @@
     <ClCompile Include="cats_pdf.cc" />
     <ClCompile Include="cb_continuous_label.cc" />
     <ClCompile Include="cb_explore_pdf.cc" />
+    <ClCompile Include="hashstring.cc" />
+    <ClCompile Include="io\logger.cc" />
     <ClCompile Include="offset_tree.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="action_score.cc" />
@@ -404,10 +407,10 @@
     <ClCompile Include="vw_validate.cc" />
     <ClCompile Include="warm_cb.cc" />
   </ItemGroup>
-  <ItemGroup>	
-    <ClCompile Include="get_pmf.cc">	
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>	
-    </ClCompile>	
+  <ItemGroup>
+    <ClCompile Include="get_pmf.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
