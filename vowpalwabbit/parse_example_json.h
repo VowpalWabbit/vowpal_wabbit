@@ -581,24 +581,6 @@ struct TagState : BaseState<audit>
 };
 
 template <bool audit>
-struct DedupMultiState : BaseState<audit>
-{
-  DedupMultiState() : BaseState<audit>("DedupMulti") {}
-
-  BaseState<audit>* StartArray(Context<audit>&) override { return this; }
-
-  BaseState<audit>* StartObject(Context<audit>& ctx) override { return &ctx.default_state; }
-
-  BaseState<audit>* EndObject(Context<audit>&, rapidjson::SizeType) override { return this; }
-
-  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
-  {  // return to shared example
-    ctx.ex = (*ctx.examples)[0];
-    return &ctx.default_state;
-  }
-};
-
-template <bool audit>
 struct MultiState : BaseState<audit>
 {
   MultiState() : BaseState<audit>("Multi") {}
@@ -907,11 +889,7 @@ public:
       if (ctx.key_length == 5 && !strcmp(ctx.key, "_text")) return &ctx.text_state;
 
       // TODO: _multi in _multi...
-      if (ctx.key_length == 6 && !strcmp(ctx.key, "_multi"))
-      {
-        if (ctx.dedup_examples && !ctx.dedup_examples->empty()) return &ctx.dedup_multi_state;
-        return &ctx.multi_state;
-      }
+      if (ctx.key_length == 6 && !strcmp(ctx.key, "_multi")) { return &ctx.multi_state; }
 
       if (ctx.key_length == 6 && !strcmp(ctx.key, "_slots")) return &ctx.slots_state;
 
@@ -951,7 +929,7 @@ public:
 
       else if (ctx.key_length == 5 && !_stricmp(ctx.key, "__aid"))
       {
-        ctx.uint_dedup_state.return_state = &ctx.dedup_multi_state;
+        ctx.uint_dedup_state.return_state = this;
         return &ctx.uint_dedup_state;
       }
 
@@ -1212,7 +1190,12 @@ public:
 
   BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
   {
-    ctx.examples->push_back((*ctx.dedup_examples)[i]);
+    auto* new_ex = ctx.examples->back();
+    auto* stored_ex = (*ctx.dedup_examples)[i];
+
+    new_ex->indices = stored_ex->indices;
+    for (auto& i : new_ex->indices) { new_ex->feature_space[i].deep_copy_from(stored_ex->feature_space[i]); }
+    new_ex->ft_offset = stored_ex->ft_offset;
     return return_state;
   }
 };
@@ -1482,7 +1465,6 @@ public:
   StringToStringState<audit> string_state;
   FloatToFloatState<audit> float_state;
   UIntToUIntState<audit> uint_state;
-  DedupMultiState<audit> dedup_multi_state;
   UIntDedupState<audit> uint_dedup_state;
   BoolToBoolState<audit> bool_state;
   SlotOutcomeList<audit> slot_outcome_list_state;

@@ -175,7 +175,18 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
       for (const Value& obj : multi)
       {
         auto dedup_id = obj["__aid"].GetUint64();
-        auto ex = (*dedup_examples)[dedup_id];
+        auto* stored_ex = (*dedup_examples)[dedup_id];
+
+        auto ex = &(*example_factory)(ex_factory_context);
+        all.example_parser->lbl_parser.default_label(&ex->l);
+        ex->l.slates.type = VW::slates::example_type::action;
+
+        ex->indices = stored_ex->indices;
+        for (auto& i : ex->indices)
+        { ex->feature_space[i].deep_copy_from(stored_ex->feature_space[i]); }
+        ex->ft_offset = stored_ex->ft_offset;
+        ex->l.slates.slot_id = stored_ex->l.slates.slot_id;
+
         examples.push_back(ex);
       }
     }

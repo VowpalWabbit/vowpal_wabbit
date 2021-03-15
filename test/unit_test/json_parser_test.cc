@@ -442,9 +442,9 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
   VW::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(),
       (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples);
 
-  BOOST_CHECK_EQUAL(examples.size(), 3);                       // shared example + 2 multi examples
-  BOOST_CHECK_EQUAL(examples[1], dedup_examples[dedup_id_1]);  // checking pointers
-  BOOST_CHECK_EQUAL(examples[2], dedup_examples[dedup_id_2]);  // checking pointers
+  BOOST_CHECK_EQUAL(examples.size(), 3);                    // shared example + 2 multi examples
+  BOOST_CHECK_NE(examples[1], dedup_examples[dedup_id_1]);  // checking pointers
+  BOOST_CHECK_NE(examples[2], dedup_examples[dedup_id_2]);  // checking pointers
 
   // check internals
 
@@ -463,6 +463,7 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0]->second, "a2^f2");
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
+  for (auto& dedup : dedup_examples) { VW::finish_example(*vw, *dedup.second); }
   VW::finish(*vw);
 }
 
@@ -528,9 +529,9 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
   VW::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(),
       (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples);
 
-  BOOST_CHECK_EQUAL(examples.size(), 6);                       // shared example + 2 multi examples
-  BOOST_CHECK_EQUAL(examples[1], dedup_examples[dedup_id_1]);  // checking pointers
-  BOOST_CHECK_EQUAL(examples[2], dedup_examples[dedup_id_2]);  // checking pointers
+  BOOST_CHECK_EQUAL(examples.size(), 6);                    // shared example + 2 multi examples + 3 slots
+  BOOST_CHECK_NE(examples[1], dedup_examples[dedup_id_1]);  // checking pointers
+  BOOST_CHECK_NE(examples[2], dedup_examples[dedup_id_2]);  // checking pointers
 
   // check internals
 
@@ -548,7 +549,39 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names.size(), 1);
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0]->second, "a2^f2");
 
+  // check ccb
+
+  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
+  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
+  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[5]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+
+  auto label1 = examples[3]->l.conditional_contextual_bandit;
+  BOOST_CHECK_EQUAL(label1.explicit_included_actions.size(), 2);
+  BOOST_CHECK_EQUAL(label1.explicit_included_actions[0], 1);
+  BOOST_CHECK_EQUAL(label1.explicit_included_actions[1], 2);
+  BOOST_CHECK_CLOSE(label1.outcome->cost, 2.f, .0001f);
+  BOOST_CHECK_EQUAL(label1.outcome->probabilities.size(), 1);
+  BOOST_CHECK_EQUAL(label1.outcome->probabilities[0].action, 1);
+  BOOST_CHECK_CLOSE(label1.outcome->probabilities[0].score, .25f, .0001f);
+
+  auto label2 = examples[4]->l.conditional_contextual_bandit;
+  BOOST_CHECK_EQUAL(label2.explicit_included_actions.size(), 0);
+  BOOST_CHECK(label2.outcome == nullptr);
+
+  auto label3 = examples[5]->l.conditional_contextual_bandit;
+  BOOST_CHECK_EQUAL(label3.explicit_included_actions.size(), 0);
+  BOOST_CHECK_CLOSE(label3.outcome->cost, 4.f, .0001f);
+  BOOST_CHECK_EQUAL(label3.outcome->probabilities.size(), 2);
+  BOOST_CHECK_EQUAL(label3.outcome->probabilities[0].action, 2);
+  BOOST_CHECK_CLOSE(label3.outcome->probabilities[0].score, .75f, .0001f);
+  BOOST_CHECK_EQUAL(label3.outcome->probabilities[1].action, 1);
+  BOOST_CHECK_CLOSE(label3.outcome->probabilities[1].score, .25f, .0001f);
+
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
+  for (auto& dedup : dedup_examples) { VW::finish_example(*vw, *dedup.second); }
   VW::finish(*vw);
 }
 
@@ -593,9 +626,9 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
   VW::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(),
       (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples);
 
-  BOOST_CHECK_EQUAL(examples.size(), 5);                       // shared example + 2 multi examples
-  BOOST_CHECK_EQUAL(examples[1], dedup_examples[dedup_id_1]);  // checking pointers
-  BOOST_CHECK_EQUAL(examples[2], dedup_examples[dedup_id_2]);  // checking pointers
+  BOOST_CHECK_EQUAL(examples.size(), 5);                    // shared example + 2 multi examples + 2 slots
+  BOOST_CHECK_NE(examples[1], dedup_examples[dedup_id_1]);  // checking pointers
+  BOOST_CHECK_NE(examples[2], dedup_examples[dedup_id_2]);  // checking pointers
 
   // check internals
 
@@ -624,5 +657,6 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
   BOOST_CHECK_EQUAL(examples[2]->l.slates.slot_id, 1);
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
+  for (auto& dedup : dedup_examples) { VW::finish_example(*vw, *dedup.second); }
   VW::finish(*vw);
 }
