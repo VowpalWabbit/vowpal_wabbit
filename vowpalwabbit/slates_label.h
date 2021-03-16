@@ -23,7 +23,7 @@ enum example_type : uint8_t
 struct label
 {
   // General data
-  example_type type;
+  example_type type ;
   float weight;
   // Because these labels provide both structural information as well as a
   // label, this field will only be true is there is a label attached (label in
@@ -40,6 +40,19 @@ struct label
   // For slot examples
   // Only valid if labeled
   ACTION_SCORE::action_scores probabilities;
+
+  label() {
+    reset_to_default();
+  }
+
+  void reset_to_default() {
+    type = example_type::unset;
+    weight = 1.f;
+    labeled = false;
+    cost = 0.f;
+    slot_id = 0;
+    probabilities.clear();
+  }
 };
 
 void default_label(VW::slates::label& v);

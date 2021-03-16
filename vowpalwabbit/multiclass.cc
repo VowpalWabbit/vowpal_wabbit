@@ -13,10 +13,19 @@
 
 namespace MULTICLASS
 {
+  label_t::label_t() { reset_to_default(); }
+
+  label_t::label_t(uint32_t label, float weight) : label(label), weight(weight) {}
+
+  void label_t::reset_to_default()
+  {
+    label = std::numeric_limits<uint32_t>::max();
+    weight = 1.f;
+  }
+
 void default_label(label_t& ld)
 {
-  ld.label = (uint32_t)-1;
-  ld.weight = 1.;
+  ld.reset_to_default();
 }
 
 void cache_label(const label_t& ld, io_buf& cache)

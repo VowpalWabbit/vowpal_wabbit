@@ -76,12 +76,7 @@ float weight(slates::label& ld) { return ld.weight; }
 
 void default_label(slates::label& ld)
 {
-  ld.type = example_type::unset;
-  ld.weight = 1.f;
-  ld.labeled = false;
-  ld.cost = 0.f;
-  ld.slot_id = 0;
-  ld.probabilities.clear();
+  ld.reset_to_default();
 }
 
 bool test_label(slates::label& ld) { return ld.labeled == false; }
