@@ -374,6 +374,11 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   clear_all(data);
   // split shared, actions and slots
   if (!split_multi_example_and_stash_labels(examples, data)) { return; }
+  auto restore_labels_guard = VW::scope_exit([&data, &examples] {
+    // Restore ccb labels to the example objects.
+    for (size_t i = 0; i < examples.size(); i++)
+    { examples[i]->l.conditional_contextual_bandit = std::move(data.stored_labels[i]); }
+  });
 
   if (data.slots.size() > data.actions.size())
   {
@@ -409,13 +414,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
-  auto restore_guard = VW::scope_exit([&data, &examples] {
-    delete_cb_labels(data);
-
-    // Restore ccb labels to the example objects.
-    for (size_t i = 0; i < examples.size(); i++)
-    { examples[i]->l.conditional_contextual_bandit = std::move(data.stored_labels[i]); }
-  });
+  auto delete_cb_labels_guard = VW::scope_exit([&data, &examples] { delete_cb_labels(data); });
 
   // this is temporary only so we can get some logging of what's going on
   try
