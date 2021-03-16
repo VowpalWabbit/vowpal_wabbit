@@ -20,9 +20,9 @@ namespace MWT
 {
 struct policy_data
 {
-  double cost;
-  uint32_t action;
-  bool seen;
+  double cost = 0.0;
+  uint32_t action = 0;
+  bool seen = false;
 };
 
 struct mwt
@@ -226,9 +226,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
   for (char i : s) c->namespaces[(unsigned char)i] = true;
   c->all = &all;
 
-  calloc_reserve(c->evals, all.length());
-  c->evals.end() = c->evals.begin() + all.length();
-
+  c->evals.actual_resize(all.length());
   all.example_parser->lbl_parser = CB::cb_label;
 
   if (c->num_classes > 0)
