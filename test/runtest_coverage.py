@@ -38,23 +38,34 @@ def merge_config(tracker, b):
 
 
 def print_non_supplied(config):
+    with_default = []
+    without_default = []
+
     for name, config_group in config.items():
         for (group_name, options) in config_group:
             for option in options:
                 if not option.value_supplied:
                     default_val_str = ""
                     if option.default_value_supplied:
-                        default_val_str = " BUT has default value"
+                        default_val_str = ", BUT has default value"
+                        agg = with_default
 
                     if len(config_group) <= 1:
-                        print(name + ": " + option.name + default_val_str)
+                        agg.append(name + ", " + option.name + default_val_str)
                     else:
-                        print(name + ": " + group_name + ": " + option.name + default_val_str)
+                        agg.append(name + ", " + group_name + ", " + option.name + default_val_str)
+                    
+                    agg = without_default
+    
+    for e in with_default:
+        print(e)
+    for e in without_default:
+        print(e)
         
 
 def main():
     allConfig = get_all_options() 
-    tests = get_latests_tests()
+    tests = get_latest_tests()
     for test in tests:
         # fails for unknown reasons (possibly bugs with pyvw)
         if test["id"] in [195, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 258, 269]:

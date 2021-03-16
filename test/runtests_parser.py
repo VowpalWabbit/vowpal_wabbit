@@ -236,7 +236,9 @@ def file_to_obj(filename):
 
 def find_runtest_file():
     rtfile = None
-    possible_paths = ["./RunTests", "./test/RunTests"]
+
+    possible_paths = [path.join(path.dirname(path.abspath(__file__)), "RunTests")]
+
     for p in possible_paths:
         if path.exists(p):
             rtfile = p
