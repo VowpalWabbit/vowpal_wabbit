@@ -496,7 +496,7 @@ endif()
 
 if(VW_INSTALL)
   install(
-    TARGETS vw vw-bin allreduce vw_io spdlog_header_only fmt-header-only
+    TARGETS vw vw-bin allreduce vw_io
     EXPORT VowpalWabbitConfig
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

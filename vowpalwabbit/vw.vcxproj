@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -102,7 +102,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>./win32;%(AdditionalIncludeDirectories);%(ProjectDir)..\rapidjson\include;%(ProjectDir)..\explore;$(WindowsSDK_IncludePath);$(UniversalCRT_IncludePath);$(ProjectDir)..\ext_libs\fmt\include;$(ProjectDir)..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./win32;%(AdditionalIncludeDirectories);%(ProjectDir)..\ext_libs\rapidjson\include;%(ProjectDir)..\explore;$(WindowsSDK_IncludePath);$(UniversalCRT_IncludePath);$(ProjectDir)..\ext_libs\fmt\include;$(ProjectDir)..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;FMT_HEADER_ONLY;SPDLOG_FMT_EXTERNAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS"  /D "_CRT_NONSTDC_NO_DEPRECATE" %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
