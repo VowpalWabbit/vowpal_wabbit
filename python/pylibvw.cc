@@ -301,11 +301,8 @@ std::string get_arguments(vw_ptr all)
 py::list get_enabled_reductions(vw_ptr all)
 {
   py::list enabled_reductions;
-  for (auto ex : all->enabled_reductions)
-  {
-    enabled_reductions.append(ex);
-  }
-    
+  for (auto ex : all->enabled_reductions) { enabled_reductions.append(ex); }
+
   return enabled_reductions;
 }
 
