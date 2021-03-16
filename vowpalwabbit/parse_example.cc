@@ -251,7 +251,7 @@ public:
             affix_v.push_back(is_prefix ? '+' : '-');
             affix_v.push_back('0' + (char)len);
             affix_v.push_back('=');
-            push_many(affix_v, affix_name.begin(), affix_name.size());
+            affix_v.insert(affix_v.end(), affix_name.begin(), affix_name.end());
             affix_v.push_back('\0');
             affix_fs.space_names.push_back(audit_strings_ptr(new audit_strings("affix", affix_v.begin())));
           }
@@ -292,7 +292,7 @@ public:
             spelling_v.push_back(_index);
             spelling_v.push_back('_');
           }
-          push_many(spelling_v, spelling_strview.begin(), spelling_strview.size());
+          spelling_v.insert(spelling_v.begin(), spelling_strview.begin(), spelling_strview.end());
           spelling_v.push_back('\0');
           spell_fs.space_names.push_back(audit_strings_ptr(new audit_strings("spelling", spelling_v.begin())));
         }
@@ -310,8 +310,8 @@ public:
             const auto& feats = feats_it->second;
             features& dict_fs = _ae->feature_space[dictionary_namespace];
             if (dict_fs.size() == 0) _ae->indices.push_back(dictionary_namespace);
-            push_many(dict_fs.values, feats->values.begin(), feats->values.size());
-            push_many(dict_fs.indicies, feats->indicies.begin(), feats->indicies.size());
+            dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
+            dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
             dict_fs.sum_feat_sq += feats->sum_feat_sq;
             if (audit)
               for (const auto& id : feats->indicies)
@@ -491,8 +491,8 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
     {
       VW::string_view tag = all->example_parser->words.back();
       all->example_parser->words.pop_back();
-      if (tag.front() == '\'') tag.remove_prefix(1);
-      push_many(ae->tag, tag.begin(), tag.size());
+      if (tag.front() == '\'') { tag.remove_prefix(1); }
+      ae->tag.insert(ae->tag.begin(), tag.begin(), tag.end());
     }
   }
 
