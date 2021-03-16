@@ -312,7 +312,7 @@ public:
     return _begin + idx;
   }
 
-  template<class InputIt>
+  template <class InputIt>
   void insert(iterator it, InputIt first, InputIt last)
   {
     assert(it >= begin());
@@ -487,7 +487,7 @@ v_array<T> pop(v_array<v_array<T> >& stack)
     stack.pop_back();
     return stack.back();
   }
-    return v_array<T>();
+  return v_array<T>();
 }
 
 VW_DEPRECATED("v_string is deprecated and will be removed in a future version.")
