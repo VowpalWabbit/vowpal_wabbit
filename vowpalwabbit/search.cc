@@ -1660,11 +1660,8 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
       // copy conditioning stuff and allowed actions
       if (priv.auto_condition_features)
       {
-        ensure_size(priv.learn_condition_on, condition_on_cnt);
+        priv.learn_condition_on.actual_resize(condition_on_cnt);
         ensure_size(priv.learn_condition_on_act, condition_on_cnt);
-
-        priv.learn_condition_on.end() =
-            priv.learn_condition_on.begin() + condition_on_cnt;  // allow .size() to be used in lieu of _cnt
 
         memcpy(priv.learn_condition_on.begin(), condition_on, condition_on_cnt * sizeof(ptag));
 

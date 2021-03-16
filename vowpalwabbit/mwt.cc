@@ -188,8 +188,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 
   if (read)
   {
-    c.policies.resize(policies_size);
-    c.policies.end() = c.policies.begin() + policies_size;
+    c.policies.actual_resize(policies_size);
   }
   else
   {
