@@ -292,7 +292,7 @@ public:
             spelling_v.push_back(_index);
             spelling_v.push_back('_');
           }
-          spelling_v.insert(spelling_v.begin(), spelling_strview.begin(), spelling_strview.end());
+          spelling_v.insert(spelling_v.end(), spelling_strview.begin(), spelling_strview.end());
           spelling_v.push_back('\0');
           spell_fs.space_names.push_back(audit_strings_ptr(new audit_strings("spelling", spelling_v.begin())));
         }
