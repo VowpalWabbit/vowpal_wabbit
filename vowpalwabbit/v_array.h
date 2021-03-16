@@ -407,7 +407,7 @@ template <class T>
 void copy_array(v_array<T>& dst, const v_array<T>& src)
 {
   dst.clear();
-  push_many(dst, src.cbegin(), src.size());
+  dst.insert(dst.end(), src.begin(), src.end());
 }
 
 // use to copy arrays of types with non-trivial copy constructors, such as shared_ptr
@@ -426,24 +426,19 @@ void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(const T&)
 }
 
 template <class T>
+VW_DEPRECATED("Use v_array::insert instead")
 void push_many(v_array<T>& v, const T* src, size_t num)
 {
-  if (v._end + num >= v.end_array)
-    v.resize(std::max(2 * (size_t)(v.end_array - v._begin) + 3, v._end - v._begin + num));
-#ifdef _WIN32
-  memcpy_s(v._end, (v.end_array - v._end) * sizeof(T), src, num * sizeof(T));
-#else
-  memcpy(v._end, src, num * sizeof(T));
-#endif
-  v._end += num;
+  v.insert(v.end(), src, src + num);
 }
 
 template <class T>
+VW_DEPRECATED("calloc_reserve is no longer supported. You should use appropriate constructors instead.")
 void calloc_reserve(v_array<T>& v, size_t length)
 {
-  v._begin = calloc_or_throw<T>(length);
-  v._end = v._begin;
-  v.end_array = v._begin + length;
+  v.clear();
+  v.reserve(length);
+  std::memset(v.begin(), 0, length * sizeof(T));
 }
 
 template <class T>
@@ -493,8 +488,8 @@ typedef v_array<unsigned char> v_string;
 VW_DEPRECATED("string2v_string is deprecated and will be removed in a future version.")
 inline v_string string2v_string(const std::string& s)
 {
-  v_string res = v_init<unsigned char>();
-  if (!s.empty()) push_many(res, (unsigned char*)s.data(), s.size());
+  v_string res;
+  if (!s.empty()) { res.insert(res.end(), s.begin(), s.end()); }
   return res;
 }
 
