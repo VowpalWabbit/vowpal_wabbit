@@ -320,7 +320,7 @@ public:
     const size_t idx = it - begin();
     const auto num_elements = std::distance(first, last);
     make_space_at(idx, num_elements);
-    std::copy(first, last, it);
+    std::copy(first, last, begin() + idx);
   }
 
   void delete_v() { delete_v_array(); }
