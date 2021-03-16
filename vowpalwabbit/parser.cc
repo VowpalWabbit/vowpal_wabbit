@@ -692,7 +692,8 @@ void setup_example(vw& all, example* ae)
         // Delete namespace
         ae->feature_space[*i].clear();
         i = ae->indices.erase(i);
-        // Offset the increment for this iteration so that is processes this index again which is actually the next item.
+        // Offset the increment for this iteration so that is processes this index again which is actually the next
+        // item.
         i--;
       }
     }
