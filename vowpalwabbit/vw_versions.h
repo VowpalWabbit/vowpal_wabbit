@@ -4,6 +4,7 @@
 
 #pragma once
 
+#define EMPTY_VERSION_FILE "0.0.0"  // empty version, default
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "7.6.0"
 #define VERSION_FILE_WITH_CUBIC "6.1.3"

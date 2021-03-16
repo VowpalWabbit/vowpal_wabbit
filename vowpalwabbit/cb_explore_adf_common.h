@@ -19,6 +19,7 @@
 #include "example.h"         // used in predict
 #include "gen_cs_example.h"  // required for GEN_CS::cb_to_cs_adf
 #include "reductions_fwd.h"
+#include "vw_math.h"
 
 namespace VW
 {
@@ -44,15 +45,20 @@ inline void sort_action_probs(v_array<ACTION_SCORE::action_score>& probs, const 
         return as1.action < as2.action;
       });
 }
-inline size_t fill_tied(v_array<ACTION_SCORE::action_score>& preds)
+
+inline size_t fill_tied(const v_array<ACTION_SCORE::action_score>& preds)
 {
-  if (preds.size() == 0) return 0;
+  if (preds.size() == 0) { return 0; }
+
   size_t ret = 1;
   for (size_t i = 1; i < preds.size(); ++i)
-    if (preds[i].score == preds[0].score)
-      ++ret;
+  {
+    if (VW::math::are_same_rel(preds[i].score, preds[0].score)) { ++ret; }
     else
+    {
       return ret;
+    }
+  }
   return ret;
 }
 

@@ -17,5 +17,11 @@ bool are_same(T lhs, T rhs, T tolerance = DEFAULT_TOLERANCE)
   return std::abs(lhs - rhs) < tolerance;
 }
 
+template <typename T>
+bool are_same_rel(T lhs, T rhs, T tolerance = DEFAULT_TOLERANCE)
+{
+  return std::abs(lhs - rhs) <= (tolerance * (std::abs(lhs) + std::abs(rhs)));
+}
+
 }  // namespace math
 }  // namespace VW

@@ -6,7 +6,10 @@
 #include "reductions.h"
 #include "correctedMath.h"
 
+#include "io/logger.h"
+
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 namespace MARGINAL
 {
@@ -76,15 +79,15 @@ void make_marginal(data& sm, example& ec)
         uint64_t first_index = j.index() & mask;
         if (++j == sm.temp[n].end())
         {
-          std::cout << "warning: id feature namespace has " << sm.temp[n].size()
-                    << " features. Should be a multiple of 2" << std::endl;
+          logger::log_warn("warning: id feature namespace has {} features. Should be a multiple of 2",
+                           sm.temp[n].size());
           break;
         }
         float second_value = j.value();
         uint64_t second_index = j.index() & mask;
         if (first_value != 1. || second_value != 1.)
         {
-          std::cout << "warning: bad id features, must have value 1." << std::endl;
+          logger::log_warn("warning: bad id features, must have value 1.");
           continue;
         }
         uint64_t key = second_index + ec.ft_offset;

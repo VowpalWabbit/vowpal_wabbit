@@ -22,10 +22,16 @@
 #include "label_dictionary.h"
 #include "vw_exception.h"
 
+#include "io/logger.h"
+// needed for printing ranges of objects (eg: all elements of a vector)
+#include <fmt/ranges.h>
+
 using namespace VW::LEARNER;
 using namespace VW::config;
 namespace CS = COST_SENSITIVE;
 namespace MC = MULTICLASS;
+
+namespace logger = VW::io::logger;
 
 using std::endl;
 
@@ -385,7 +391,7 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
     if (allow_current) return (int)priv.current_policy;
     if (priv.current_policy > 0) return (((int)priv.current_policy) - 1);
     if (allow_optimal) return -1;
-    std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << endl;
+    logger::errlog_error("internal error (bug): no valid policies to choose from!  defaulting to current");
     return (int)priv.current_policy;
   }
 
@@ -394,7 +400,7 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
 
   if (num_valid_policies == 0)
   {
-    std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << endl;
+    logger::errlog_error("internal error (bug): no valid policies to choose from!  defaulting to current");
     return (int)priv.current_policy;
   }
   else if (num_valid_policies == 1)
@@ -522,6 +528,9 @@ std::string number_to_natural(size_t big)
 
 void print_update(search_private& priv)
 {
+  // TODO: This function should be outputting to trace_message(?), but is mixing ostream and printf formats
+  //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
+  //       to ostream format
   vw& all = *priv.all;
   if (!priv.printed_output_header && !all.logger.quiet)
   {
@@ -647,7 +656,6 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
         if (ns != ' ') priv.dat_new_feature_audit_ss << (char)ns;
       }
 
-      // std::cerr << "n=" << n << " offset=" << offset << endl;
       if ((offset < 0) && (n < (uint64_t)(-offset)))  // add <s> feature
         add_new_feature(priv, 1., (uint64_t)925871901 << stride_shift);
       else if (n + offset >= ec_seq.size())  // add </s> feature
@@ -742,9 +750,7 @@ void cdbg_print_array(std::string str, v_array<T>& A)
 template <class T>
 void cerr_print_array(std::string str, v_array<T>& A)
 {
-  std::cerr << str << " = [";
-  for (size_t i = 0; i < A.size(); i++) std::cerr << " " << A[i];
-  std::cerr << " ]" << endl;
+  logger::errlog_info("{0} = [{1}]", str, fmt::join(A, " "));
 }
 
 size_t random(std::shared_ptr<rand_state>& rs, size_t max)
@@ -973,9 +979,6 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
     cs_costs_erase(isCB, lab);
     for (action k = 0; k < ec_cnt; k++)
       cs_cost_push_back(isCB, lab, k, array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f);
-    // std::cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index
-    // << ':'
-    // << lab.cs.costs[i].x; cdbg << " ]" << endl;
   }
   else if (priv.use_action_costs)
   {
@@ -1007,9 +1010,6 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
         for (action k = 0; k < priv.A; k++) cs_cost_push_back(isCB, lab, k + 1, 1.);
         set_to_one = true;
       }
-      // std::cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index
-      // <<
-      // ':' << lab.cs.costs[i].x; cdbg << " ]" << endl;
       if (oracle_actions_cnt <= 1)  // common case to speed up
       {
         if (!set_to_one)
@@ -1447,9 +1447,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     for (size_t i = 0; i < losses.cs.costs.size(); i++)
       losses.cs.costs[i].x = (losses.cs.costs[i].x - min_loss) * weight;
   }
-  // std::cerr << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) std::cerr << ' ' <<
-  // losses.cs.costs[i].class_index
-  // << ':' << losses.cs.costs[i].x; std::cerr << " ]" << endl;
 
   if (!priv.is_ldf)  // not LDF
   {
@@ -2039,9 +2036,9 @@ void verify_active_csoaa(
       float err = static_cast<float>(std::pow(known[i].first.partial_prediction - wc.x, 2));
       if (err > threshold)
       {
-        std::cerr << "verify_active_csoaa failed: truth " << wc.class_index << ":" << wc.x << ", known[" << i
-                  << "]=" << known[i].first.partial_prediction << ", error=" << err << " vs threshold " << threshold
-                  << endl;
+        logger::errlog_error("verify_active_csoaa failed: truth {0}:{1}, known[{2}]={3}, error={4} vs threshold {5}",
+                             wc.class_index /*0*/, wc.x/*1*/, i/*2*/, known[i].first.partial_prediction/*3*/,
+                             err/*4*/, threshold/*5*/);
       }
     }
     i++;
@@ -2129,7 +2126,6 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
   // do a pass over the data allowing oracle
   cdbg << "======================================== INIT TRAIN (" << priv.current_policy << ","
        << priv.read_example_last_pass << ") ========================================" << endl;
-  // std::cerr << "training" << endl;
 
   priv.cache_hash_map.clear();
   reset_search_structure(priv);
@@ -2201,9 +2197,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
       priv.learn_t = priv.timesteps[tid];
       cdbg << "-------------------------------------------------------------------------------------" << endl;
       cdbg << "learn_t = " << priv.learn_t << ", learn_a_idx = " << priv.learn_a_idx << endl;
-      // cdbg_print_array("priv.active_known[learn_t]", priv.active_known[priv.learn_t]);
       run_task(sch, ec_seq);
-      // cerr_print_array("in GENER, learn_allowed_actions", priv.learn_allowed_actions);
       float this_loss = priv.learn_loss;
       cs_cost_push_back(priv.cb_learner, priv.learn_losses,
           priv.is_ldf ? (uint32_t)(priv.learn_a_idx - 1) : (uint32_t)priv.learn_a_idx, this_loss);
@@ -2275,7 +2269,7 @@ void inline adjust_auto_condition(search_private& priv)
     // turn off auto-condition if it's irrelevant
     if ((priv.history_length == 0) || (priv.acset.feature_value == 0.f))
     {
-      std::cerr << "warning: turning off AUTO_CONDITION_FEATURES because settings make it useless" << endl;
+      logger::errlog_warn("warning: turning off AUTO_CONDITION_FEATURES because settings make it useless");
       priv.auto_condition_features = false;
     }
   }
@@ -2347,7 +2341,7 @@ void end_pass(search& sch)
     if (all->training) priv.current_policy++;
     if (priv.current_policy > priv.total_number_of_policies)
     {
-      std::cerr << "internal error (bug): too many policies; not advancing" << endl;
+      logger::errlog_error("internal error (bug): too many policies; not advancing");
       priv.current_policy = priv.total_number_of_policies;
     }
     // reset search_trained_nb_policies in options_from_file so it is saved to regressor file later
@@ -2436,7 +2430,7 @@ void ensure_param(float& v, float lo, float hi, float def, const char* str)
 {
   if ((v < lo) || (v > hi))
   {
-    std::cerr << str << endl;
+    logger::errlog_warn(str);
     v = def;
   }
 }
@@ -2468,7 +2462,7 @@ void search_finish(search& sch)
   search_private& priv = *sch.priv;
   cdbg << "search_finish" << endl;
 
-  if (priv.active_csoaa) std::cerr << "search calls to run = " << priv.num_calls_to_run << endl;
+  if (priv.active_csoaa) logger::errlog_info("search calls to run = {}", priv.num_calls_to_run);
 
   if (priv.task->finish) priv.task->finish(sch);
   if (priv.metatask && priv.metatask->finish) priv.metatask->finish(sch);
@@ -2487,12 +2481,11 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
   {
     if ((from < 0) || (from > (int)A))
     {
-      std::cerr << "warning: ignoring transition from " << from << " because it's out of the range [0," << A << "]"
-                << endl;
+      logger::errlog_warn("warning: ignoring transition from {0} because it's out of the range [0,{1}]", from, A);
     }
     if ((to < 0) || (to > (int)A))
     {
-      std::cerr << "warning: ignoring transition to " << to << " because it's out of the range [0," << A << "]" << endl;
+      logger::errlog_warn("warning: ignoring transition to {0} because it's out of the range [0,{1}]", to, A);
     }
     bg[from * (A + 1) + to] = true;
     count++;
@@ -2519,7 +2512,7 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
   }
   free(bg);
 
-  std::cerr << "read " << count << " allowed transitions from " << filename << endl;
+  logger::errlog_info("read {0} allowed transitions from {1}", count, filename);
 
   return allowed;
 }
@@ -2560,7 +2553,7 @@ void parse_neighbor_features(VW::string_view nf_strview, search& sch)
     }
     else
     {
-      std::cerr << "warning: ignoring malformed neighbor specification: '" << strview << "'" << endl;
+      logger::errlog_warn("warning: ignoring malformed neighbor specification: '{}'", strview);
     }
     int32_t enc = (posn << 24) | (ns & 0xFF);
     priv.neighbor_features.push_back(enc);
@@ -2727,9 +2720,8 @@ base_learner* setup(options_i& options, vw& all)
     priv.total_number_of_policies = tmp_number_of_policies;
     if (priv.current_policy >
         0)  // we loaded a file but total number of policies didn't match what is needed for training
-      std::cerr << "warning: you're attempting to train more classifiers than was allocated initially. Likely to cause "
-                   "bad performance."
-                << endl;
+      logger::errlog_warn("warning: you're attempting to train more classifiers than was allocated initially. "
+                          "Likely to cause bad performance.");
   }
 
   // current policy currently points to a new policy we would train
@@ -2748,6 +2740,7 @@ base_learner* setup(options_i& options, vw& all)
 
   if (task_string.compare("list") == 0)
   {
+    // command line action, output directly to cerr
     std::cerr << endl << "available search tasks:" << endl;
     for (search_task** mytask = all_tasks; *mytask != nullptr; mytask++)
       std::cerr << "  " << (*mytask)->task_name << endl;
@@ -2756,6 +2749,7 @@ base_learner* setup(options_i& options, vw& all)
   }
   if (metatask_string.compare("list") == 0)
   {
+    // command line action, output directly to cerr
     std::cerr << endl << "available search metatasks:" << endl;
     for (search_metatask** mytask = all_metatasks; *mytask != nullptr; mytask++)
       std::cerr << "  " << (*mytask)->metatask_name << endl;
@@ -2936,7 +2930,7 @@ std::stringstream& search::output()
 void search::set_options(uint32_t opts)
 {
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
-    std::cerr << "warning: task should not set options except in initialize function!" << endl;
+    logger::errlog_warn("warning: task should not set options except in initialize function!");
   if ((opts & AUTO_CONDITION_FEATURES) != 0) this->priv->auto_condition_features = true;
   if ((opts & AUTO_HAMMING_LOSS) != 0) this->priv->auto_hamming_loss = true;
   if ((opts & EXAMPLES_DONT_CHANGE) != 0) this->priv->examples_dont_change = true;
@@ -2948,15 +2942,15 @@ void search::set_options(uint32_t opts)
     THROW("using LDF and actions costs is not yet implemented; turn off action costs");  // TODO fix
 
   if (this->priv->use_action_costs && (this->priv->rollout_method != NO_ROLLOUT))
-    std::cerr
-        << "warning: task is designed to use rollout costs, but this only works when --search_rollout none is specified"
-        << endl;
+    logger::errlog_warn(
+      "warning: task is designed to use rollout costs, but this only works when --search_rollout none is specified"
+    );
 }
 
 void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
-    std::cerr << "warning: task should not set label parser except in initialize function!" << endl;
+    logger::errlog_warn("warning: task should not set label parser except in initialize function!");
   this->priv->all->example_parser->lbl_parser = lp;
   this->priv->all->example_parser->lbl_parser.test_label = (bool (*)(polylabel*))is_test;
   this->priv->label_is_test = is_test;

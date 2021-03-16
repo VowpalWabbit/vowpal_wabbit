@@ -73,8 +73,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(BoostIncludeDir);$(ZlibIncludeDir);.\win32;%(AdditionalIncludeDirectories);%(SolutionDir)..\rapidjson\include;%(SolutionDir)..\explore</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(BoostIncludeDir);$(ZlibIncludeDir);.\win32;%(AdditionalIncludeDirectories);%(SolutionDir)..\rapidjson\include;%(SolutionDir)..\explore;$(SolutionDir)..\ext_libs\fmt\include;$(SolutionDir)..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>ZLIB_WINAPI;FMT_HEADER_ONLY;SPDLOG_FMT_EXTERNAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS"  /D "_CRT_NONSTDC_NO_DEPRECATE" %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>

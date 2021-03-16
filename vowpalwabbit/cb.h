@@ -4,6 +4,7 @@
 #pragma once
 
 #include <vector>
+#include <cfloat>
 #include <cstdint>
 #include <utility>
 

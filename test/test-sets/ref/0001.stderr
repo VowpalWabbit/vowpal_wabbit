@@ -1,5 +1,5 @@
-Generating 3-grams for all namespaces.
-Generating 1-skips for all namespaces.
+[info] Generating 3-grams for all namespaces.
+[info] Generating 1-skips for all namespaces.
 only testing
 predictions = 0001.predict
 Num weight bits = 18

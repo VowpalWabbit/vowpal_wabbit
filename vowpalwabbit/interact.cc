@@ -6,7 +6,11 @@
 #include "reductions.h"
 #include "v_array.h"
 
+#include "io/logger.h"
+
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 struct interact
 {
@@ -25,6 +29,8 @@ bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, inte
 
   if (f_src1.values[0] != 1)
   {
+    // Anchor feature must be a number instead of text so that the relative offsets functions correctly but I don't
+    // think we are able to test for this here.
     *(all.trace_message) << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
     return false;
   }
@@ -61,15 +67,13 @@ void multiply(features& f_dest, features& f_src2, interact& in)
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
     {
-      std::cout << "interact features are out of order: " << cur_id1 << " < " << prev_id1 << ". Skipping features."
-                << std::endl;
+      logger::log_error("interact features are out of order: {0} < {1}. Skipping features.", cur_id1, prev_id1);
       return;
     }
 
     if (cur_id2 < prev_id2)
     {
-      std::cout << "interact features are out of order: " << cur_id2 << " < " << prev_id2 << ". Skipping features."
-                << std::endl;
+      logger::log_error("interact features are out of order: {0} < {1}. Skipping features.", cur_id2, prev_id2);
       return;
     }
 
@@ -117,19 +121,14 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   ec.total_sum_feat_sq += f1.sum_feat_sq;
   ec.num_features += f1.size();
 
-  /*for(uint64_t i = 0;i < f1.size();i++)
-    std::cout<<f1[i].weight_index<<":"<<f1[i].x<<" ";
-    std::cout<< std::endl;*/
-
   // remove 2nd namespace
-  int n2_i = -1;
-  for (size_t i = 0; i < ec.indices.size(); i++)
+  size_t n2_i = 0;
+  size_t indices_original_size = ec.indices.size();
+  for (; n2_i < indices_original_size; ++n2_i)
   {
-    if (ec.indices[i] == in.n2)
+    if (ec.indices[n2_i] == in.n2)
     {
-      n2_i = (int)i;
-      memmove(&ec.indices[n2_i], &ec.indices[n2_i + 1], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
-      ec.indices.decr();
+      ec.indices.erase(ec.indices.begin() + n2_i);
       break;
     }
   }
@@ -138,9 +137,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   if (is_learn) base.learn(ec);
 
   // re-insert namespace into the right position
-  ec.indices.incr();
-  memmove(&ec.indices[n2_i + 1], &ec.indices[n2_i], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
-  ec.indices[n2_i] = in.n2;
+  if (n2_i < indices_original_size) { ec.indices.insert(ec.indices.begin() + n2_i, in.n2); }
 
   f1.deep_copy_from(in.feat_store);
   ec.total_sum_feat_sq = in.total_sum_feat_sq;
@@ -160,7 +157,7 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   if (s.length() != 2)
   {
-    std::cerr << "Need two namespace arguments to interact: " << s << " won't do EXITING\n";
+    logger::errlog_error("Need two namespace arguments to interact: {} won't do EXITING", s);
     return nullptr;
   }
 
@@ -168,7 +165,7 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   data->n1 = (unsigned char)s[0];
   data->n2 = (unsigned char)s[1];
-  if (!all.logger.quiet) std::cerr << "Interacting namespaces " << data->n1 << " and " << data->n2 << std::endl;
+  logger::errlog_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
   data->all = &all;
 
   VW::LEARNER::learner<interact, example>* l;
