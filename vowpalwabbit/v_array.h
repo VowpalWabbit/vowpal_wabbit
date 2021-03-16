@@ -7,11 +7,12 @@
 #  define NOMINMAX
 #endif
 
-#include <ostream>
-#include <utility>
-#include <cstdlib>
+#include <algorithm>
 #include <cassert>
+#include <cstdlib>
+#include <ostream>
 #include <string>
+#include <utility>
 #include "future_compat.h"
 
 #ifndef VW_NOEXCEPT
@@ -309,6 +310,17 @@ public:
     make_space_at(idx, 1);
     new (&_begin[idx]) T(std::move(elem));
     return _begin + idx;
+  }
+
+  template<class InputIt>
+  void insert(iterator it, InputIt first, InputIt last)
+  {
+    assert(it >= begin());
+    assert(it <= end());
+    const size_t idx = it - begin();
+    const auto num_elements = std::distance(first, last);
+    make_space_at(idx, num_elements);
+    std::copy(first, last, it);
   }
 
   void delete_v() { delete_v_array(); }

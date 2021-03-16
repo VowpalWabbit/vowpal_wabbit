@@ -257,3 +257,22 @@ BOOST_AUTO_TEST_CASE(v_array_insert_in_loop)
 
   for (auto i = 0; i < num_values_to_insert; i++) { BOOST_CHECK_EQUAL(num_values_to_insert - i - 1, list[i]); }
 }
+
+BOOST_AUTO_TEST_CASE(v_array_insert_range)
+{
+  v_array<int> list;
+  std::vector<int> to_insert = {1,2};
+  list.insert(list.begin(), to_insert.begin(), to_insert.end());
+
+  BOOST_CHECK_EQUAL(std::size_t(2), list.size());
+  BOOST_CHECK_EQUAL(1, list[0]);
+  BOOST_CHECK_EQUAL(2, list[1]);
+
+  to_insert = {33, 44};
+  list.insert(list.begin(), to_insert.begin(), to_insert.end());
+  BOOST_CHECK_EQUAL(std::size_t(4), list.size());
+  BOOST_CHECK_EQUAL(1, list[0]);
+  BOOST_CHECK_EQUAL(33, list[1]);
+  BOOST_CHECK_EQUAL(44, list[2]);
+  BOOST_CHECK_EQUAL(2, list[3]);
+}
