@@ -186,10 +186,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
   size_t policies_size = c.policies.size();
   bin_text_read_write_fixed_validated(model_file, (char*)&policies_size, sizeof(policies_size), "", read, msg, text);
 
-  if (read)
-  {
-    c.policies.actual_resize(policies_size);
-  }
+  if (read) { c.policies.actual_resize(policies_size); }
   else
   {
     msg << "policies: ";

@@ -126,10 +126,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
       namespace_index right = i;
       features& rfs = ec.feature_space[right];
       rfs.values.actual_resize(lrq.orig_size[right]);
-      if (all.audit || all.hash_inv)
-      {
-        rfs.space_names.resize(lrq.orig_size[right]);
-      }
+      if (all.audit || all.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }
     }
   }
 }
