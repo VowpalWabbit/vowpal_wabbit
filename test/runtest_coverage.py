@@ -1,6 +1,6 @@
 from vowpalwabbit import pyvw
 
-def get_latests_tests():
+def get_latest_tests():
     import runtests_parser as rtp
     tests = rtp.file_to_obj(rtp.find_runtest_file())
     return [x.__dict__ for x in tests]
