@@ -492,7 +492,7 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
       VW::string_view tag = all->example_parser->words.back();
       all->example_parser->words.pop_back();
       if (tag.front() == '\'') { tag.remove_prefix(1); }
-      ae->tag.insert(ae->tag.begin(), tag.begin(), tag.end());
+      ae->tag.insert(ae->tag.end(), tag.begin(), tag.end());
     }
   }
 
