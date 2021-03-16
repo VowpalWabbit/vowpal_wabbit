@@ -36,8 +36,6 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label)
     const auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
     BOOST_CHECK_EQUAL(cats_reduction_features.is_chosen_action_set(), false);
     BOOST_CHECK_EQUAL(cats_reduction_features.is_pdf_set(), false);
-
-    lp.delete_label(plabel.get());
   }
 }
 
@@ -67,8 +65,6 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_pdf)
     BOOST_CHECK_CLOSE(cats_reduction_features.pdf[1].left, 8109.67, FLOAT_TOL);
     BOOST_CHECK_CLOSE(cats_reduction_features.pdf[1].right, 23959., FLOAT_TOL);
     BOOST_CHECK_CLOSE(cats_reduction_features.pdf[1].pdf_value, 6.20426e-05, FLOAT_TOL);
-
-    lp.delete_label(plabel.get());
   }
 }
 
@@ -92,8 +88,6 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_only_pdf_no_label)
     BOOST_CHECK_CLOSE(cats_reduction_features.pdf[1].left, 8109.67, FLOAT_TOL);
     BOOST_CHECK_CLOSE(cats_reduction_features.pdf[1].right, 23959., FLOAT_TOL);
     BOOST_CHECK_CLOSE(cats_reduction_features.pdf[1].pdf_value, 6.20426e-05, FLOAT_TOL);
-
-    lp.delete_label(plabel.get());
   }
 }
 
@@ -113,8 +107,6 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_malformed_pdf)
     BOOST_CHECK_EQUAL(cats_reduction_features.pdf.size(), 0);
     BOOST_CHECK_EQUAL(cats_reduction_features.is_chosen_action_set(), false);
     BOOST_CHECK_EQUAL(cats_reduction_features.is_pdf_set(), false);
-
-    lp.delete_label(plabel.get());
   }
 }
 
@@ -138,8 +130,6 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_chosen_action)
     BOOST_CHECK_EQUAL(cats_reduction_features.is_pdf_set(), false);
     BOOST_CHECK_EQUAL(cats_reduction_features.is_chosen_action_set(), true);
     BOOST_CHECK_CLOSE(cats_reduction_features.chosen_action, 8110.121, FLOAT_TOL);
-
-    lp.delete_label(plabel.get());
   }
 }
 
@@ -159,8 +149,6 @@ BOOST_AUTO_TEST_CASE(continuous_actions_chosen_action_only_no_label)
     BOOST_CHECK_EQUAL(cats_reduction_features.is_pdf_set(), false);
     BOOST_CHECK_EQUAL(cats_reduction_features.is_chosen_action_set(), true);
     BOOST_CHECK_CLOSE(cats_reduction_features.chosen_action, 8110.121, FLOAT_TOL);
-
-    lp.delete_label(plabel.get());
   }
 }
 
@@ -195,8 +183,6 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_pdf_and_chosen_action)
     BOOST_CHECK_CLOSE(cats_reduction_features.pdf[1].left, 8109.67, FLOAT_TOL);
     BOOST_CHECK_CLOSE(cats_reduction_features.pdf[1].right, 23959., FLOAT_TOL);
     BOOST_CHECK_CLOSE(cats_reduction_features.pdf[1].pdf_value, 6.20426e-05, FLOAT_TOL);
-
-    lp.delete_label(plabel.get());
   }
 }
 
@@ -214,8 +200,6 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label)
     const auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
     BOOST_CHECK_EQUAL(cats_reduction_features.is_pdf_set(), false);
     BOOST_CHECK_EQUAL(cats_reduction_features.is_chosen_action_set(), false);
-
-    lp.delete_label(plabel.get());
   }
 }
 
@@ -233,8 +217,6 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label_w_prefix)
     const auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
     BOOST_CHECK_EQUAL(cats_reduction_features.is_pdf_set(), false);
     BOOST_CHECK_EQUAL(cats_reduction_features.is_chosen_action_set(), false);
-
-    lp.delete_label(plabel.get());
   }
 }
 
@@ -247,6 +229,5 @@ BOOST_AUTO_TEST_CASE(continus_actions_check_label_for_prefix)
     auto plabel = scoped_calloc_or_throw<polylabel>();
     reduction_features red_features;
     BOOST_REQUIRE_THROW(parse_label(lp, &p, "185.121:0.657567:6.20426e-05", *plabel, red_features), VW::vw_exception);
-    lp.delete_label(plabel.get());
   }
 }
