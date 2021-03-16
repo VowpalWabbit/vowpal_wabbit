@@ -227,6 +227,7 @@ def run_command_line_test(test_id,
         for dep in dependencies:
             success = completed_tests.wait_for_completion_get_success(dep)
             if not success:
+                completed_tests.report_completion(test_id, False)
                 return (test_id, {
                     "result": Result.SKIPPED,
                     "checks": {}
