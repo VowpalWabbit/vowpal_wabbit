@@ -170,34 +170,27 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
   if (context.HasMember("_multi"))
   {
     const auto& multi = context["_multi"].GetArray();
-    if (dedup_examples && !dedup_examples->empty())
+
+    for (const Value& obj : multi)
     {
-      for (const Value& obj : multi)
+      auto ex = &(*example_factory)(ex_factory_context);
+      all.example_parser->lbl_parser.default_label(&ex->l);
+      ex->l.slates.type = VW::slates::example_type::action;
+      examples.push_back(ex);
+      if (dedup_examples && !dedup_examples->empty() && obj.HasMember("__aid"))
       {
         auto dedup_id = obj["__aid"].GetUint64();
+
+        if (dedup_examples->find(dedup_id) == dedup_examples->end()) { THROW("dedup id not found: " << dedup_id); }
+
         auto* stored_ex = (*dedup_examples)[dedup_id];
-
-        auto ex = &(*example_factory)(ex_factory_context);
-        all.example_parser->lbl_parser.default_label(&ex->l);
-        ex->l.slates.type = VW::slates::example_type::action;
-
         ex->indices = stored_ex->indices;
-        for (auto& i : ex->indices)
-        { ex->feature_space[i].deep_copy_from(stored_ex->feature_space[i]); }
+        for (auto& ns : ex->indices) { ex->feature_space[ns].deep_copy_from(stored_ex->feature_space[ns]); }
         ex->ft_offset = stored_ex->ft_offset;
         ex->l.slates.slot_id = stored_ex->l.slates.slot_id;
-
-        examples.push_back(ex);
       }
-    }
-    else
-    {
-      for (const Value& obj : multi)
+      else
       {
-        auto ex = &(*example_factory)(ex_factory_context);
-        all.example_parser->lbl_parser.default_label(&ex->l);
-        ex->l.slates.type = VW::slates::example_type::action;
-        examples.push_back(ex);
         auto slot_id = obj["_slot_id"].GetInt();
         ex->l.slates.slot_id = slot_id;
         handle_features_value(" ", obj, ex, namespaces, all);

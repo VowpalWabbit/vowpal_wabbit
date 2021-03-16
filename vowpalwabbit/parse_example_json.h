@@ -1191,10 +1191,13 @@ public:
   BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
   {
     auto* new_ex = ctx.examples->back();
+
+    if (ctx.dedup_examples->find(i) == ctx.dedup_examples->end()) { THROW("dedup id not found: " << i); }
+
     auto* stored_ex = (*ctx.dedup_examples)[i];
 
     new_ex->indices = stored_ex->indices;
-    for (auto& i : new_ex->indices) { new_ex->feature_space[i].deep_copy_from(stored_ex->feature_space[i]); }
+    for (auto& ns : new_ex->indices) { new_ex->feature_space[ns].deep_copy_from(stored_ex->feature_space[ns]); }
     new_ex->ft_offset = stored_ex->ft_offset;
     return return_state;
   }
