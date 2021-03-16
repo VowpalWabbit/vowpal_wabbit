@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "parse_primitives.h"
 #include "v_array.h"
 
 #include <cstring>
+#include <cfloat>
 
 // seems to help with skipping spaces
 //#define RAPIDJSON_SIMD
@@ -889,7 +889,7 @@ public:
       if (ctx.key_length == 5 && !strcmp(ctx.key, "_text")) return &ctx.text_state;
 
       // TODO: _multi in _multi...
-      if (ctx.key_length == 6 && !strcmp(ctx.key, "_multi")) return &ctx.multi_state;
+      if (ctx.key_length == 6 && !strcmp(ctx.key, "_multi")) { return &ctx.multi_state; }
 
       if (ctx.key_length == 6 && !strcmp(ctx.key, "_slots")) return &ctx.slots_state;
 
@@ -925,6 +925,12 @@ public:
         { THROW("Can only use _slot_id with slates examples"); } ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
+      }
+
+      else if (ctx.key_length == 5 && !_stricmp(ctx.key, "__aid"))
+      {
+        ctx.uint_dedup_state.return_state = this;
+        return &ctx.uint_dedup_state;
       }
 
       return Ignore(ctx, length);
@@ -1174,6 +1180,30 @@ public:
 };
 
 template <bool audit>
+class UIntDedupState : public BaseState<audit>
+{
+public:
+  UIntDedupState() : BaseState<audit>("UIntDedupState") {}
+
+  uint32_t* output_uint;
+  BaseState<audit>* return_state;
+
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
+  {
+    auto* new_ex = ctx.examples->back();
+
+    if (ctx.dedup_examples->find(i) == ctx.dedup_examples->end()) { THROW("dedup id not found: " << i); }
+
+    auto* stored_ex = (*ctx.dedup_examples)[i];
+
+    new_ex->indices = stored_ex->indices;
+    for (auto& ns : new_ex->indices) { new_ex->feature_space[ns].deep_copy_from(stored_ex->feature_space[ns]); }
+    new_ex->ft_offset = stored_ex->ft_offset;
+    return return_state;
+  }
+};
+
+template <bool audit>
 class UIntToUIntState : public BaseState<audit>
 {
 public:
@@ -1407,6 +1437,8 @@ public:
   std::vector<Namespace<audit>> namespace_path;
   std::vector<BaseState<audit>*> return_path;
 
+  std::unordered_map<uint64_t, example*>* dedup_examples = nullptr;
+
   v_array<example*>* examples;
   example* ex;
   rapidjson::InsituStringStream* stream;
@@ -1436,6 +1468,7 @@ public:
   StringToStringState<audit> string_state;
   FloatToFloatState<audit> float_state;
   UIntToUIntState<audit> uint_state;
+  UIntDedupState<audit> uint_dedup_state;
   BoolToBoolState<audit> bool_state;
   SlotOutcomeList<audit> slot_outcome_list_state;
 
@@ -1519,7 +1552,8 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
   Context<audit> ctx;
 
   void init(vw* all, v_array<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
-      VW::example_factory_t example_factory, void* example_factory_context)
+      VW::example_factory_t example_factory, void* example_factory_context,
+      std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
   {
     ctx.init(all);
     ctx.examples = examples;
@@ -1530,6 +1564,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
     ctx.stream_end = stream_end;
     ctx.example_factory = example_factory;
     ctx.example_factory_context = example_factory_context;
+    ctx.dedup_examples = dedup_examples;
   }
 
   // virtual dispatch to current state
@@ -1574,12 +1609,13 @@ struct json_parser
 namespace VW
 {
 template <bool audit>
-void read_line_json(
-    vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory, void* ex_factory_context)
+void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory,
+    void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
-    parse_slates_example_json<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context);
+    parse_slates_example_json<audit>(
+        all, examples, line, strlen(line), example_factory, ex_factory_context, dedup_examples);
     return;
   }
 
@@ -1589,7 +1625,7 @@ void read_line_json(
   json_parser<audit> parser;
 
   VWReaderHandler<audit>& handler = parser.handler;
-  handler.init(&all, &examples, &ss, line + strlen(line), example_factory, ex_factory_context);
+  handler.init(&all, &examples, &ss, line + strlen(line), example_factory, ex_factory_context, dedup_examples);
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);

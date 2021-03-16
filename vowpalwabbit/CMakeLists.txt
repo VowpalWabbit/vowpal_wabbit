@@ -3,12 +3,21 @@ configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc io/logger.h io/logger.cc)
+target_include_directories(vw_io PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_link_libraries(vw_io PUBLIC spdlog::spdlog_header_only fmt::fmt-header-only PRIVATE ZLIB::ZLIB)
+add_library(VowpalWabbit::io ALIAS vw_io)
+
 add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
 target_include_directories(allreduce PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 add_library(VowpalWabbit::allreduce ALIAS allreduce)
+
+target_link_libraries(allreduce PRIVATE vw_io)
 
 # Winsock32 should be available on Windows
 if(WIN32)
@@ -17,9 +26,6 @@ else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
 
-add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
-target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
-add_library(VowpalWabbit::io ALIAS vw_io)
 
 if(BUILD_FLATBUFFERS)
   add_subdirectory(parser/flatbuffer)
@@ -265,6 +271,7 @@ set(vw_all_sources
   gen_cs_example.cc
   get_pmf.cc
   global_data.cc
+  hashstring.cc
   interact.cc
   interactions.cc
   io_buf.cc
@@ -345,7 +352,7 @@ add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
+    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost spdlog::spdlog_header_only fmt::fmt-header-only
   PRIVATE
     Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is

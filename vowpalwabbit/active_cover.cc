@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <cerrno>
+#include <cfloat>
 #include <memory>
 #include "reductions.h"
 #include "rand48.h"

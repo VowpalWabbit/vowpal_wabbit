@@ -7,6 +7,13 @@
 #include "vw.h"
 #include "example.h"
 
+#include "parse_primitives.h"
+#include "io/logger.h"
+// needed for printing ranges of objects (eg: all elements of a vector)
+#include <fmt/ranges.h>
+
+namespace logger = VW::io::logger;
+
 namespace MULTILABEL
 {
 char* bufread_label(labels& ld, char* c, io_buf& cache)
@@ -17,7 +24,7 @@ char* bufread_label(labels& ld, char* c, io_buf& cache)
   size_t total = sizeof(uint32_t) * num;
   if (cache.buf_read(c, (int)total) < total)
   {
-    std::cout << "error in demarshal of cost data" << std::endl;
+    logger::log_error("error in demarshal of cost data");
     return c;
   }
   for (size_t i = 0; i < num; i++)
@@ -87,9 +94,7 @@ void parse_label(
       }
       break;
     default:
-      std::cerr << "example with an odd label, what is ";
-      for (const auto& word : words) std::cerr << word << " ";
-      std::cerr << std::endl;
+      logger::errlog_error("example with an odd label, what is {}", fmt::join(words, " "));
   }
 }
 
