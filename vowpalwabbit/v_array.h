@@ -7,11 +7,12 @@
 #  define NOMINMAX
 #endif
 
-#include <ostream>
-#include <utility>
-#include <cstdlib>
+#include <algorithm>
 #include <cassert>
+#include <cstdlib>
+#include <ostream>
 #include <string>
+#include <utility>
 #include "future_compat.h"
 
 #ifndef VW_NOEXCEPT
@@ -311,6 +312,17 @@ public:
     return _begin + idx;
   }
 
+  template <class InputIt>
+  void insert(iterator it, InputIt first, InputIt last)
+  {
+    assert(it >= begin());
+    assert(it <= end());
+    const size_t idx = it - begin();
+    const auto num_elements = std::distance(first, last);
+    make_space_at(idx, num_elements);
+    std::copy(first, last, begin() + idx);
+  }
+
   void delete_v() { delete_v_array(); }
 
   void push_back(const T& new_ele)
@@ -475,7 +487,7 @@ v_array<T> pop(v_array<v_array<T> >& stack)
     stack.pop_back();
     return stack.back();
   }
-    return v_array<T>();
+  return v_array<T>();
 }
 
 VW_DEPRECATED("v_string is deprecated and will be removed in a future version.")
