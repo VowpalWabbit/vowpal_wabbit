@@ -439,6 +439,7 @@ template <class T>
 VW_DEPRECATED("calloc_reserve is no longer supported. You should use appropriate constructors instead.")
 void calloc_reserve(v_array<T>& v, size_t length)
 {
+  v.clear();
   v.reserve(length);
   std::memset(v.begin(), 0, length * sizeof(T));
 }
