@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "parse_primitives.h"
 #include "v_array.h"
 
 #include <cstring>
+#include <cfloat>
 
 // seems to help with skipping spaces
 //#define RAPIDJSON_SIMD
