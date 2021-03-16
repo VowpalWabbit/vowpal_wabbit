@@ -157,7 +157,8 @@ BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
     {
       const size_t slot_example_indx = examples.size() - event_ids.size() + i;
       examples[slot_example_indx]->tag.insert(examples[slot_example_indx]->tag.end(), SEED_TAG.begin(), SEED_TAG.end());
-      examples[slot_example_indx]->tag.insert(examples[slot_example_indx]->tag.end(), event_ids[i].begin(), event_ids[i].end());
+      examples[slot_example_indx]->tag.insert(
+          examples[slot_example_indx]->tag.end(), event_ids[i].begin(), event_ids[i].end());
     }
 
     vw->predict(examples);

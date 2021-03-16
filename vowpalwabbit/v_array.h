@@ -432,7 +432,7 @@ template <class T>
 VW_DEPRECATED("Use v_array::insert instead")
 void push_many(v_array<T>& v, const T* src, size_t num)
 {
-  v.insert(v.end(), src, src+num);
+  v.insert(v.end(), src, src + num);
 }
 
 template <class T>
@@ -491,10 +491,7 @@ VW_DEPRECATED("string2v_string is deprecated and will be removed in a future ver
 inline v_string string2v_string(const std::string& s)
 {
   v_string res;
-  if (!s.empty())
-  {
-    res.insert(res.end(), s.begin(), s.end());
-  }
+  if (!s.empty()) { res.insert(res.end(), s.begin(), s.end()); }
   return res;
 }
 
