@@ -75,12 +75,9 @@ private:
     memmove(&_begin[idx + width], &_begin[idx], (size() - (idx + width)) * sizeof(T));
   }
 
-private:
   T* _begin;
   T* _end;
   T* end_array;
-
-private:
   size_t _erase_count;
 
 public:
