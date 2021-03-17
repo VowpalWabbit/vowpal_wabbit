@@ -227,6 +227,7 @@ def run_command_line_test(test_id,
         for dep in dependencies:
             success = completed_tests.wait_for_completion_get_success(dep)
             if not success:
+                completed_tests.report_completion(test_id, False)
                 return (test_id, {
                     "result": Result.SKIPPED,
                     "checks": {}
@@ -546,6 +547,7 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
             print("{}Skipping test {} for flatbuffers, nn  test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             continue
 
+        # test id is being used as an index here, not necessarily a contract
         depends_on_test = (
             tests[int(test["depends_on"][0]) - 1] if "depends_on" in test else None
         )
@@ -594,6 +596,7 @@ def main():
                         help="Don't print color ANSI escape codes")
     parser.add_argument('--for_flatbuffers', action='store_true', help='Transform all of the test inputs into flatbuffer format and run tests')
     parser.add_argument('--to_flatbuff_path', help="Specify to_flatbuff binary to use. Otherwise, binary will be searched for in build directory")
+    parser.add_argument('--include_flatbuffers', action='store_true', help="Don't skip the explicit flatbuffer tests from default run_tests run")
     args = parser.parse_args()
 
     if args.for_flatbuffers and args.working_dir == working_dir: # user did not supply dir
@@ -678,6 +681,7 @@ def main():
     executor = ThreadPoolExecutor(max_workers=args.jobs)
     for test in tests:
         test_number = test["id"]
+
         if tests_to_run_explicitly is not None and test_number not in tests_to_run_explicitly:
             continue
 
@@ -700,6 +704,10 @@ def main():
             is_shell = True
         elif "vw_command" in test:
             command_line = "{} {}".format((vw_bin), (test['vw_command']))
+            if not args.include_flatbuffers and not args.for_flatbuffers:
+                if '--flatbuffer' in test['vw_command']:
+                    print("{} is a flatbuffer test, can be run with --include_flatbuffers flag, Skipping...".format(test_number))
+                    continue
         else:
             print("{} is an unknown type. Skipping...".format((test_number)))
             continue

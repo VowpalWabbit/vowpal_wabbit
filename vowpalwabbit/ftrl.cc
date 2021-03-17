@@ -2,11 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include <string>
+#include <cfloat>
 #include "correctedMath.h"
 #include "gd.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 #define W_XT 0  // current parameter
 #define W_ZT 1  // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
@@ -393,12 +398,12 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   if (!all.logger.quiet)
   {
-    std::cerr << "Enabling FTRL based optimization" << std::endl;
-    std::cerr << "Algorithm used: " << algorithm_name << std::endl;
-    std::cerr << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
-    std::cerr << "ftrl_beta = " << b->ftrl_beta << std::endl;
+    *(all.trace_message) << "Enabling FTRL based optimization" << std::endl;
+    *(all.trace_message) << "Algorithm used: " << algorithm_name << std::endl;
+    *(all.trace_message) << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
+    *(all.trace_message) << "ftrl_beta = " << b->ftrl_beta << std::endl;
   }
-
+  
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;

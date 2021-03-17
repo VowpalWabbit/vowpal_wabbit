@@ -13,8 +13,13 @@
 #include "vw.h"
 #include "guard.h"
 
+#include "io/logger.h"
+
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 constexpr float hidden_min_activation = -3;
 constexpr float hidden_max_activation = 3;
@@ -426,20 +431,19 @@ base_learner* nn_setup(options_i& options, vw& all)
   n->_random_state = all.get_random_state();
 
   if (n->multitask && !all.logger.quiet)
-    std::cerr << "using multitask sharing for neural network " << (all.training ? "training" : "testing") << std::endl;
+    logger::errlog_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
 
   if (options.was_supplied("meanfield"))
   {
     n->dropout = false;
-    if (!all.logger.quiet)
-      std::cerr << "using mean field for neural network " << (all.training ? "training" : "testing") << std::endl;
+    logger::errlog_info("using mean field for neural network {}", (all.training ? "training" : "testing"));
   }
 
   if (n->dropout && !all.logger.quiet)
-    std::cerr << "using dropout for neural network " << (all.training ? "training" : "testing") << std::endl;
+    logger::errlog_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
 
   if (n->inpass && !all.logger.quiet)
-    std::cerr << "using input passthrough for neural network " << (all.training ? "training" : "testing") << std::endl;
+    logger::errlog_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
 
   n->finished_setup = false;
   n->squared_loss = getLossFunction(all, "squared", 0);

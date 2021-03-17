@@ -5,11 +5,17 @@
 #include <cmath>
 #include <cctype>
 #include "parse_example.h"
+#include "parse_primitives.h"
 #include "hash.h"
 #include "unique_sort.h"
 #include "global_data.h"
 #include "constant.h"
 #include "vw_string_view.h"
+#include "future_compat.h"
+
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
 
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
@@ -67,7 +73,9 @@ public:
 
   ~TC_parser() {}
 
-  inline void parserWarning(const char* message, VW::string_view var_msg, const char* message2)
+  //TODO: Currently this function is called by both warning and error conditions. We only log
+  //      to warning here though.
+  inline FORCE_INLINE void parserWarning(const char* message, VW::string_view var_msg, const char* message2)
   {
     // VW::string_view will output the entire view into the output stream.
     // That means if there is a null character somewhere in the range, it will terminate
@@ -77,15 +85,20 @@ public:
     auto tmp_view = _line.substr(0, _line.find('\0'));
     std::stringstream ss;
     ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples.load() << ": \"" << tmp_view
-       << "\"" << std::endl;
-    if (_p->strict_parse) { THROW_EX(VW::strict_parse_exception, ss.str()); }
+       << "\"";
+
+    if (_p->strict_parse) {
+      // maintain newline behavior
+      ss << std::endl;
+      THROW_EX(VW::strict_parse_exception, ss.str());
+    }
     else
     {
-      std::cerr << ss.str();
+      logger::errlog_warn(ss.str());
     }
   }
 
-  inline VW::string_view stringFeatureValue(VW::string_view sv)
+  inline FORCE_INLINE VW::string_view stringFeatureValue(VW::string_view sv)
   {
     size_t start_idx = sv.find_first_not_of(" \t\r\n");
     if (start_idx > 0 && start_idx != std::string::npos)
@@ -100,7 +113,7 @@ public:
     return sv.substr(0, end_idx);
   }
 
-  inline bool isFeatureValueFloat(float& float_feature_value)
+  inline FORCE_INLINE bool isFeatureValueFloat(float& float_feature_value)
   {
     if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
         _line[_read_idx] == '\r')
@@ -135,7 +148,7 @@ public:
     }
   }
 
-  inline VW::string_view read_name()
+  inline FORCE_INLINE VW::string_view read_name()
   {
     size_t name_start = _read_idx;
     while (!(_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == ':' ||
@@ -145,7 +158,7 @@ public:
     return _line.substr(name_start, _read_idx - name_start);
   }
 
-  inline void maybeFeature()
+  inline FORCE_INLINE void maybeFeature()
   {
     if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
         _line[_read_idx] == '\r')
@@ -315,7 +328,7 @@ public:
     }
   }
 
-  inline void nameSpaceInfoValue()
+  inline FORCE_INLINE void nameSpaceInfoValue()
   {
     if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
         _line[_read_idx] == '\r')
@@ -346,7 +359,7 @@ public:
     }
   }
 
-  inline void nameSpaceInfo()
+  inline FORCE_INLINE void nameSpaceInfo()
   {
     if (_read_idx >= _line.size() || _line[_read_idx] == '|' || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' ||
         _line[_read_idx] == ':' || _line[_read_idx] == '\r')
@@ -367,7 +380,7 @@ public:
     }
   }
 
-  inline void listFeatures()
+  inline FORCE_INLINE void listFeatures()
   {
     while ((_read_idx < _line.size()) && (_line[_read_idx] == ' ' || _line[_read_idx] == '\t'))
     {
@@ -382,7 +395,7 @@ public:
     }
   }
 
-  inline void nameSpace()
+  inline FORCE_INLINE void nameSpace()
   {
     _cur_channel_v = 1.0;
     _index = 0;
@@ -418,7 +431,7 @@ public:
     if (_new_index && _ae->feature_space[_index].size() > 0) _ae->indices.push_back(_index);
   }
 
-  inline void listNameSpace()
+  inline FORCE_INLINE void listNameSpace()
   {
     while ((_read_idx < _line.size()) && (_line[_read_idx] == '|'))  // ListNameSpace --> '|' NameSpace ListNameSpace
     {
