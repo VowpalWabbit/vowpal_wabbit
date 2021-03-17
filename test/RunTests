@@ -2151,4 +2151,18 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/ccb_implicit_explicit_ignore_interactions.stderr
     pred-sets/ref/ccb_implicit_explicit_ignore_interactions.inv
 
+# Test 278: FTRL readable model test
+# TODO: investigate slow convergence
+{VW} -k -c -d train-sets/regression_simple.txt --passes 100 --noconstant --ftrl --readable_model ftrl.readable 
+    train-sets/ref/ftrl.readable
+
+# Test 279: pistol readable model test
+{VW} -k -c -d train-sets/regression_simple.txt --passes 100 --noconstant --pistol --readable_model pistol.readable 
+    train-sets/ref/pistol.readable
+
+# Test 280: coin readable model test
+# TODO: should be fixed after #2834 issue is resolved
+{VW} -k -c -d train-sets/regression_simple.txt --passes 100 --noconstant --coin --readable_model coin.readable 
+    train-sets/ref/coin.readable
+
 # Do not delete this line or the empty line above it
