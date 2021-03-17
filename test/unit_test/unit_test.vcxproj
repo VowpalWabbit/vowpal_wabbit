@@ -174,7 +174,7 @@
   </ImportGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\explore;$(SolutionDir)..\ext_libs\fmt\include;$(SolutionDir)..\ext_libs\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)..\ext_libs\rapidjson\include;$(SolutionDir)..\explore;$(SolutionDir)..\ext_libs\fmt\include;$(SolutionDir)..\ext_libs\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -202,7 +202,7 @@
   </Target>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>FMT_HEADER_ONLY;SPDLOG_FMT_EXTERNAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
     </ClCompile>
     <PostBuildEvent>
