@@ -25,6 +25,11 @@ steps:
     key: 'vcpkg | archives'
     path: $(VCPKG_ARCHIVE_DIR)
   displayName: Cache vcpkg dependencies
+- script: CALL .scripts/restore.cmd
+  displayName: 'Restore dependencies'
+  env:
+    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
+  failOnStderr: true
 - task: Cache@2
   inputs:
     key: 'nuget | "$(Agent.OS)" | **/packages.lock.json'
@@ -33,11 +38,6 @@ steps:
        nuget
     path: $(NUGET_PACKAGES)
   displayName: Cache NuGet packages
-- script: CALL .scripts/restore.cmd
-  displayName: 'Restore dependencies'
-  env:
-    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
-  failOnStderr: true
 - script: CALL .scripts/build.cmd
   displayName: 'Build vw.sln'
   env:
