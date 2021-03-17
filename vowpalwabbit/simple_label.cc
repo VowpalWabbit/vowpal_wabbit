@@ -74,10 +74,7 @@ void cache_simple_label(label_data& ld, io_buf& cache)
   bufcache_simple_label(ld, c);
 }
 
-void default_simple_label(label_data& ld)
-{
-  ld.reset_to_default();
-}
+void default_simple_label(label_data& ld) { ld.reset_to_default(); }
 
 bool test_label(label_data& ld) { return ld.label == FLT_MAX; }
 
