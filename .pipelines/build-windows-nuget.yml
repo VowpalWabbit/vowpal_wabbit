@@ -44,6 +44,11 @@ steps:
   env:
     nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
   failOnStderr: true
+- task: Cache@2
+  inputs:
+    key: '$(Build.SourcesDirectory)\cs\**\*.csproj'
+    path: $(Build.SourcesDirectory)\vowpalwabbit\out
+  displayName: Cache out dir
 - script: CALL .scripts/test.cmd
   displayName: 'Run tests'
   env:
