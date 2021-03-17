@@ -8,6 +8,7 @@ pool:
 variables:
   SuppressTag: $[ eq(variables.officialbuild, 'true') ]
   VCPKG_ARCHIVE_DIR: $(LOCALAPPDATA)\vcpkg\archives
+  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
 
 steps:
 - task: VisualStudioTestPlatformInstaller@1
@@ -24,6 +25,13 @@ steps:
     key: 'vcpkg | archives'
     path: $(VCPKG_ARCHIVE_DIR)
   displayName: Cache vcpkg dependencies
+- task: Cache@2
+  inputs:
+    key: 'nuget | "$(Agent.OS)" | **\packages.lock.json,!**\bin\**'
+    restoreKeys: |
+       nuget | "$(Agent.OS)"
+    path: $(NUGET_PACKAGES)
+  displayName: Cache NuGet packages
 - script: CALL .scripts/restore.cmd
   displayName: 'Restore dependencies'
   env:
