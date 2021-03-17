@@ -15,6 +15,7 @@ table Namespace {
 table SimpleLabel {
   label:float;
   weight:float;
+  initial:float;
 }
 
 table CB_class {
