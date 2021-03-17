@@ -9,7 +9,7 @@ variables:
   SuppressTag: $[ eq(variables.officialbuild, 'true') ]
   VCPKG_ARCHIVE_DIR: $(LOCALAPPDATA)\vcpkg\archives
   NUGET_PACKAGES: $(Pipeline.Workspace)\.nuget\packages
-  VCPKG_BINARY_SOURCES: 'clear;files,$(LOCALAPPDATA)\vcpkg\archives,readwrite'
+  VCPKG_BINARY_SOURCES: 'clear;files,C:\Users\VssAdministrator\AppData\Local\vcpkg\archives,readwrite'
 
 steps:
 - task: VisualStudioTestPlatformInstaller@1
