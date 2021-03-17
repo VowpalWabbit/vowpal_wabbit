@@ -32,7 +32,7 @@ steps:
   failOnStderr: true
 - task: Cache@2
   inputs:
-    key: 'nuget | "$(Agent.OS)" | $(Build.SourcesDirectory)\vowpalwabbit\**\**\*.csproj'
+    key: 'nuget | "$(Agent.OS)" | $(Build.SourcesDirectory)\cs\**\*.csproj'
     restoreKeys: |
        nuget | "$(Agent.OS)"
        nuget
