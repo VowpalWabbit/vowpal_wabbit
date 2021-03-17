@@ -180,6 +180,7 @@ int svm_example::compute_kernels(svm_params& params)
 int svm_example::clear_kernels()
 {
   int rowsize = static_cast<int>(krow.size());
+  krow.clear();
   return -rowsize;
 }
 
