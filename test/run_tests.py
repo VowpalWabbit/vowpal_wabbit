@@ -525,26 +525,33 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
         test_id = test['id']
         if 'vw_command' not in test:
             print("{}Skipping test {} for flatbuffers, no vw command available{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
         if 'flatbuffer' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, already a flatbuffer test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
         if 'malformed' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, malformed input{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
         if 'input_files' not in test:
             print("{}Skipping test {} for flatbuffers, no input files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
         if 'dictionary' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, currently dictionaries are not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
         if 'help' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, --help test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
 
         # TODO: figure out why --nn, --audit and flatbuffers are giving different results
         if test_id == 270:
             print("{}Skipping test {} for flatbuffers, nn  test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
 
         # test id is being used as an index here, not necessarily a contract
@@ -710,6 +717,10 @@ def main():
                     continue
         else:
             print("{} is an unknown type. Skipping...".format((test_number)))
+            continue
+
+        if "skip" in test and test['skip'] is True:
+            print("{} is being skipped for this run...".format(test_number))
             continue
 
         tasks.append(executor.submit(run_command_line_test,
