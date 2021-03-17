@@ -189,7 +189,7 @@ void print_update(vw& all, bool is_test, example& ec, std::stringstream& pred_st
       const auto& cost = ec.l.cb.costs[0];
       label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
     }
-    all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
         all.progress_add, all.progress_arg);
   }
 }
