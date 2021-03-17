@@ -1523,6 +1523,8 @@ void merge_options_from_header_strings(
   std::string saved_key = "";
   unsigned int count = 0;
   bool first_seen = false;
+  const bool is_ccb_run = options.was_supplied("ccb_explore_adf");
+  bool is_ccb_model = false;
   for (auto opt : pos.options)
   {
     // If we previously encountered an option we want to skip, ignore tokens without --.
@@ -1556,7 +1558,13 @@ void merge_options_from_header_strings(
     if (!treat_as_value && opt.string_key != "")
     {
       // If the new token is a new option and there were no values previously it was a bool option. Add it as a switch.
-      if (count == 0 && first_seen) { options.insert(saved_key, ""); }
+      if (count == 0 && first_seen)
+      {
+        options.insert(saved_key, "");
+        if (saved_key == "ccb_explore_adf") {
+          is_ccb_model = true;
+        }
+      }
 
       count = 0;
       first_seen = true;
@@ -1593,7 +1601,9 @@ void merge_options_from_header_strings(
       }
     }
   }
-
+  if (is_ccb_run & !is_ccb_model) {
+    options.insert("ccb_model_without_has_seen_flag", "");
+  }
   if (count == 0 && saved_key != "") { options.insert(saved_key, ""); }
 }
 

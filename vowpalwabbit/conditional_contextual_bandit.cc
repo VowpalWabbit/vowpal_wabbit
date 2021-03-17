@@ -68,6 +68,7 @@ struct ccb
   // If the reduction has not yet seen a multi slot example, it will behave the same as if it were CB.
   // This means the interactions aren't added and the slot feature is not added.
   bool has_seen_multi_slot_example = false;
+  bool input_model_without_has_seen_multi_slot_flag = false;
 };
 
 namespace CCB
@@ -600,7 +601,7 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 
   // We want to enter this block if either we are writing, or reading a model file after the version in which this was
   // added.
-  if (!read || sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  if (!read || (sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG && !sm.input_model_without_has_seen_multi_slot_flag))
   {
     std::stringstream msg;
     if (!read) { msg << "CCB: has_seen_multi_slot_example = " << sm.has_seen_multi_slot_example << "\n"; }
@@ -621,7 +622,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
                .necessary()
                .help(
                    "EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."))
-      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"));
+      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"))
+      .add(make_option("ccb_model_without_has_seen_flag", data->input_model_without_has_seen_multi_slot_flag).help("Legacy ccb model format without HasSeenMultipleSlots flag"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   data->all_slots_loss_report = all_slots_loss_report;
