@@ -684,15 +684,20 @@ void setup_example(vw& all, example* ae)
   ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l);
 
   if (all.ignore_some)
+  {
     for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
+    {
       if (all.ignore[*i])
       {
-        // delete namespace
+        // Delete namespace
         ae->feature_space[*i].clear();
-        memmove(i, i + 1, (ae->indices.end() - (i + 1)) * sizeof(*i));
-        ae->indices.end()--;
+        i = ae->indices.erase(i);
+        // Offset the increment for this iteration so that is processes this index again which is actually the next
+        // item.
         i--;
       }
+    }
+  }
 
   if (all.skip_gram_transformer != nullptr) { all.skip_gram_transformer->generate_grams(ae); }
 

@@ -138,7 +138,7 @@ void parser::parse_example(vw* all, example* ae, const Example* eg)
   if (flatbuffers::IsFieldPresent(eg, Example::VT_TAG))
   {
     VW::string_view tag(eg->tag()->c_str());
-    push_many(ae->tag, tag.begin(), tag.size());
+    ae->tag.insert(ae->tag.end(), tag.begin(), tag.end());
   }
 
   for (const auto& ns : *(eg->namespaces())) { parse_namespaces(all, ae, ns); }
