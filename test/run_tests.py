@@ -222,7 +222,8 @@ def run_command_line_test(test_id,
                           ref_dir,
                           completed_tests,
                           dependencies=None,
-                          fuzzy_compare=False):
+                          fuzzy_compare=False,
+                          skip=False):
     if dependencies is not None:
         for dep in dependencies:
             success = completed_tests.wait_for_completion_get_success(dep)
@@ -232,6 +233,13 @@ def run_command_line_test(test_id,
                     "result": Result.SKIPPED,
                     "checks": {}
                 })
+    
+    if skip:
+        completed_tests.report_completion(test_id, False)
+        return (test_id, {
+            "result": Result.SKIPPED,
+            "checks": {}
+        })
 
     try:
         if is_shell:
@@ -719,10 +727,6 @@ def main():
             print("{} is an unknown type. Skipping...".format((test_number)))
             continue
 
-        if "skip" in test and test['skip'] is True:
-            print("{} is being skipped for this run...".format(test_number))
-            continue
-
         tasks.append(executor.submit(run_command_line_test,
                                      test_number,
                                      command_line,
@@ -735,7 +739,8 @@ def main():
                                      ref_dir=test_base_ref_dir,
                                      completed_tests=completed_tests,
                                      dependencies=dependencies,
-                                     fuzzy_compare=args.fuzzy_compare))
+                                     fuzzy_compare=args.fuzzy_compare,
+                                     skip=test['skip'] if "skip" in test else False))
 
     num_success = 0
     num_fail = 0
