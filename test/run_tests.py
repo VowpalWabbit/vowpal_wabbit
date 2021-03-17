@@ -224,6 +224,14 @@ def run_command_line_test(test_id,
                           dependencies=None,
                           fuzzy_compare=False,
                           skip=False):
+
+    if skip:
+        completed_tests.report_completion(test_id, False)
+        return (test_id, {
+            "result": Result.SKIPPED,
+            "checks": {}
+        })
+    
     if dependencies is not None:
         for dep in dependencies:
             success = completed_tests.wait_for_completion_get_success(dep)
@@ -233,13 +241,6 @@ def run_command_line_test(test_id,
                     "result": Result.SKIPPED,
                     "checks": {}
                 })
-    
-    if skip:
-        completed_tests.report_completion(test_id, False)
-        return (test_id, {
-            "result": Result.SKIPPED,
-            "checks": {}
-        })
 
     try:
         if is_shell:
