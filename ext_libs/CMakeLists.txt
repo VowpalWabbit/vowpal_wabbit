@@ -1,10 +1,13 @@
+# Use position independent code for all external libraries
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 if(VW_INSTALL)
   set(FMT_INSTALL ON CACHE BOOL "install fmt library" FORCE)
   set(SPDLOG_INSTALL ON CACHE BOOL "install spdlog library" FORCE)
 endif()
 
 add_subdirectory(fmt)
-set(SPDLOG_FMT_EXTERNAL_HO ON CACHE BOOL "Enable external FMTLIB in spdlog" FORCE)
+set(SPDLOG_FMT_EXTERNAL ON CACHE BOOL "Enable external FMTLIB in spdlog" FORCE)
 add_subdirectory(spdlog)
 
 # RapidJson has a bit of logic on which version to use based on the RAPIDJSON_SYS_DEP option
