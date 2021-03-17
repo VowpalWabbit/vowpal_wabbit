@@ -32,7 +32,7 @@ steps:
   failOnStderr: true
 - task: Cache@2
   inputs:
-    key: 'nuget | "$(Agent.OS)" | **/packages.lock.json'
+    key: 'nuget | "$(Agent.OS)" | vowpalwabbit/**/*.csproj'
     restoreKeys: |
        nuget | "$(Agent.OS)"
        nuget
