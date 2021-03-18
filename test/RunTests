@@ -2160,4 +2160,18 @@ train-sets/ref/slates_simple_w_interactions.stderr
     pred-sets/ref/t288.predict
     pred-sets/ref/t288.readable
 
+# Test 279: FTRL readable model test
+# TODO: investigate slow convergence
+{VW} -d train-sets/regression_simple.txt --noconstant --ftrl --invert_hash ftrl.readable 
+    train-sets/ref/ftrl.readable
+
+# Test 280: pistol readable model test
+{VW} -d train-sets/regression_simple.txt --noconstant --pistol --invert_hash pistol.readable 
+    train-sets/ref/pistol.readable
+
+# Test 281: coin readable model test
+# TODO: should be fixed after #2834 issue is resolved
+{VW} -d train-sets/regression_simple.txt --noconstant --coin --invert_hash coin.readable 
+    train-sets/ref/coin.readable
+
 # Do not delete this line or the empty line above it
