@@ -24,6 +24,7 @@ void parser::parse_simple_label(shared_data* sd, polylabel* l, const SimpleLabel
 {
   l->simple.label = label->label();
   l->simple.weight = label->weight();
+  l->simple.initial = label->initial();
   count_label(sd, label->label());
 }
 
