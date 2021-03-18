@@ -32,7 +32,7 @@ jobs:
           path: 'vcpkg'
           repository: 'microsoft/vcpkg'
           ref: ${{ env.VCPKG_REF }}
-      - name: Restore vcpkg and its artifacts.
+      - name: Restore vcpkg and build artifacts
         uses: actions/cache@v2
         with:
           path: |
@@ -43,26 +43,23 @@ jobs:
             !${{ env.VCPKG_ROOT }}/downloads
           key: |
             ${{ env.VCPKG_REF }}-vcpkg-cache-invalidate-0
-      - name: Show content of workspace after cache has been restored
-        run: find $RUNNER_WORKSPACE
-        shell: bash
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: Bootstrap VCPKG
+      - name: Bootstrap vcpkg
         run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
-      - name: Install VCPKG dependencies
+      - name: Install vcpkg dependencies
         run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install zlib boost-system boost-program-options boost-test boost-align boost-foreach boost-math flatbuffers
       - name: Generate project files
         run: |
-          cmake -S "${{ env.SOURCE_DIR }}" \
-            -B "${{ env.CMAKE_BUILD_DIR }}" \
-            -GNinja \
-            -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
-            -DWARNINGS=Off \
-            -DUSE_LATEST_STD=On \
+          cmake -S "${{ env.SOURCE_DIR }}"
+            -B "${{ env.CMAKE_BUILD_DIR }}"
+            -GNinja
+            -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
+            -DWARNINGS=Off
+            -DUSE_LATEST_STD=On
             -DBUILD_FLATBUFFERS=On
       - name: Build project
         run: |
-          cmake --build "${{ env.CMAKE_BUILD_DIR }}" \
+          cmake --build "${{ env.CMAKE_BUILD_DIR }}"
             --config ${{ matrix.build_config }}
       - name: Run unit tests
         run: |
