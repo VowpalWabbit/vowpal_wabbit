@@ -3,6 +3,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 if(POLICY CMP0076)
   cmake_policy(SET CMP0076 NEW)
 endif()
+
+# Do not add /W3 to MSVC flags by default. We set this to /W4.
+cmake_policy(SET CMP0092 NEW)
+
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
@@ -289,7 +293,7 @@ endif()
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
   find_package(Boost REQUIRED COMPONENTS program_options)
-  
+
   FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
     SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
   ENDFOREACH()
