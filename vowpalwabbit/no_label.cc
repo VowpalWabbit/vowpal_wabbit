@@ -12,6 +12,7 @@
 #include "best_constant.h"
 #include "vw_string_view.h"
 #include "example.h"
+#include "vw_string_view_fmt.h"
 
 #include "io/logger.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
