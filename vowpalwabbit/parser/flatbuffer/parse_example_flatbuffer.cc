@@ -150,6 +150,7 @@ void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
   if (_multi_ex_index >= eg->examples()->size())
   {
     // done with multi example, send a newline example and reset
+    ae->is_newline = true;
     _multi_ex_index = 0;
     _active_multi_ex = false;
     _multi_example_object = nullptr;

@@ -4,7 +4,6 @@
 
 #pragma once
 
-
 #include "v_array.h"
 #include "no_label.h"
 #include "simple_label.h"
@@ -104,6 +103,7 @@ struct example : public example_predict  // core example datatype.
   bool test_only = false;
   bool end_pass = false;  // special example indicating end of pass.
   bool sorted = false;    // Are the features sorted or not?
+  bool is_newline = false;
 
   // Deprecating a field can make deprecated warnings hard to track down through implicit usage in the constructor.
   // This is deprecated, but we won't mark it so we don't have those issues.
@@ -136,11 +136,7 @@ flat_example* flatten_example(vw& all, example* ec);
 flat_example* flatten_sort_example(vw& all, example* ec);
 void free_flatten_example(flat_example* fec);
 
-inline int example_is_newline(example const& ec)
-{  // if only index is constant namespace or no index
-  if (!ec.tag.empty()) return false;
-  return ((ec.indices.empty()) || ((ec.indices.size() == 1) && (ec.indices.back() == constant_namespace)));
-}
+inline int example_is_newline(example const& ec) { return ec.is_newline; }
 
 inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
 

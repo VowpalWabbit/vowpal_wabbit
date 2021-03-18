@@ -2174,4 +2174,29 @@ train-sets/ref/slates_simple_w_interactions.stderr
 {VW} -d train-sets/regression_simple.txt --noconstant --coin --invert_hash coin.readable 
     train-sets/ref/coin.readable
 
+# Test 282: cb file with no extra newline at the end
+{VW} --cb_explore_adf --epsilon 0.1 -d train-sets/cb_test_nonewline.ldf --noconstant -p cbe_adf_nonewline.predict
+    train-sets/ref/cbe_adf_nonewline.stderr
+    pred-sets/ref/cbe_adf_nonewline.predict
+
+# Test 283: ccb file with no extra newline at the end
+{VW} --ccb_explore_adf  -d train-sets/ccb_test_nonewline.dat -p ccb_test_nonewline.predict
+    train-sets/ref/ccb_test_nonewline.stderr
+    train-sets/ref/ccb_test_nonewline.predict
+
+# Test 284: slates file with no extra newline at the end
+{VW} --slates -d train-sets/slates_simple_nonewline.txt -p slates_simple_nonewline.predict
+    train-sets/ref/slates_simple_nonewline.stderr
+    pred-sets/ref/slates_simple_nonewline.predict
+
+# Test 285: multiline json dataset with zero feature values
+{VW} --cb_explore_adf --dsjson -d train-sets/cb_features_w_zero_vals.dsjson -p cb_zero_feature_vals_dsjson.predict
+    train-sets/ref/cb_zero_feature_vals_dsjson.stderr
+    pred-sets/ref/cb_zero_feature_vals_dsjson.predict
+
+# Test 286: multiline text dataset with zero feature values
+{VW} --cb_explore_adf -d train-sets/cb_features_w_zero_vals.dat -p cb_zero_feature_vals.predict
+    train-sets/ref/cb_zero_feature_vals.stderr
+    pred-sets/ref/cb_zero_feature_vals.predict
+
 # Do not delete this line or the empty line above it

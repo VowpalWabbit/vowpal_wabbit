@@ -38,7 +38,11 @@ int read_features_string(vw* all, v_array<example*>& examples)
   char* line;
   size_t num_chars;
   size_t num_chars_initial = read_features(all, line, num_chars);
-  if (num_chars_initial < 1) return (int)num_chars_initial;
+  if (num_chars_initial < 1)
+  {
+    examples[0]->is_newline = true;
+    return (int)num_chars_initial;
+  }
 
   VW::string_view example(line, num_chars);
   substring_to_example(all, examples[0], example);
@@ -462,11 +466,20 @@ public:
       this->_parse_mask = all.parse_mask;
       listNameSpace();
     }
+    else
+    {
+      ae->is_newline = true;
+    }
   }
 };
 
 void substring_to_example(vw* all, example* ae, VW::string_view example)
 {
+  if (example.empty())
+  {
+    ae->is_newline = true;
+  }
+
   all->example_parser->lbl_parser.default_label(&ae->l);
 
   size_t bar_idx = example.find('|');
