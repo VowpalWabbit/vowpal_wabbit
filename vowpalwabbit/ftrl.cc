@@ -82,7 +82,7 @@ float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
 template <bool audit>
 void predict(ftrl& b, single_learner&, example& ec)
 {
-  ec.partial_prediction = GD::inline_predict(*b.all, ec)  ;
+  ec.partial_prediction = GD::inline_predict(*b.all, ec);
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
   if (audit) GD::print_audit_features(*(b.all), ec);
 }
