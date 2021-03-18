@@ -265,20 +265,22 @@ void learn_proximal(ftrl& a, single_learner& base, example& ec)
   update_after_prediction_proximal(a, ec);
 }
 
+template <bool audit>
 void learn_pistol(ftrl& a, single_learner& base, example& ec)
 {
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
-
+  if (audit) GD::print_audit_features(*(a.all), ec);
   // update state based on the prediction
   update_after_prediction_pistol(a, ec);
 }
 
+template <bool audit>
 void learn_coin_betting(ftrl& a, single_learner& base, example& ec)
 {
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);
-
+  if (audit) GD::print_audit_features(*(a.all), ec);
   // update state based on the prediction
   coin_betting_update_after_prediction(a, ec);
 }
@@ -361,7 +363,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   if (ftrl_option)
   {
     algorithm_name = "Proximal-FTRL";
-    if (all.audit)
+    if (all.audit || all.hash_inv)
       learn_ptr = learn_proximal<true>;
     else
       learn_ptr = learn_proximal<false>;
@@ -371,14 +373,20 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   else if (pistol)
   {
     algorithm_name = "PiSTOL";
-    learn_ptr = learn_pistol;
+    if (all.audit || all.hash_inv)
+      learn_ptr = learn_pistol<true>;
+    else
+      learn_ptr = learn_pistol<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 4;
   }
   else if (coin)
   {
     algorithm_name = "Coin Betting";
-    learn_ptr = learn_coin_betting;
+    if (all.audit || all.hash_inv)
+      learn_ptr = learn_coin_betting<true>;
+    else
+      learn_ptr = learn_coin_betting<false>;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
   }
