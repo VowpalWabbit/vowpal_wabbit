@@ -28,7 +28,7 @@ ECHO Restoring "%vwRoot%\cs\cs_json\packages.config"
 ECHO.
 
 ECHO Restoring "%vwRoot%\cs\cs_parallel\packages.config"
-"%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\cs\cs_parallel\packages.config" 
+"%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\cs\cs_parallel\packages.config"
 ECHO.
 
 ECHO Restoring "%vwRoot%\cs\examples\simulator\packages.config"
