@@ -1,4 +1,4 @@
-name: Run Benchmarks
+name: Run benchmarks for refs
 on:
   workflow_dispatch:
     inputs:
