@@ -223,14 +223,30 @@ def file_to_obj(filename):
         for line in f:
             RTParser.process_line(line)
     
-    return RTParser.get_results()
+    results = RTParser.get_results()
 
-def main():
-    possible_paths = ["./RunTests", "./test/RunTests"]
+    # check for missing ids
+    i = 1
+    for r in results:
+        if i != r.id:
+            raise Exception("test id being skipped: " + str(i))
+        i+=1
+
+    return results
+
+def find_runtest_file():
+    rtfile = None
+
+    possible_paths = [path.join(path.dirname(path.abspath(__file__)), "RunTests")]
+
     for p in possible_paths:
         if path.exists(p):
             rtfile = p
+    
+    return rtfile
 
+def main():
+    rtfile = find_runtest_file()
     results = file_to_obj(rtfile)
 
     with open(path.join(path.dirname(rtfile), "runtests.AUTOGEN.json"), "w") as f:

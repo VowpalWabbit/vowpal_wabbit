@@ -9,6 +9,7 @@ using namespace VW::config;
 
 using std::cout;
 
+// TODO: This file should probably(?) use trace_message
 struct print
 {
   vw* all;

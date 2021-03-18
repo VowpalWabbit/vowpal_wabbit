@@ -55,8 +55,8 @@
     <ClCompile Include="stable_unique_tests.cc" />
     <ClCompile Include="tag_utils_test.cc" />
     <ClCompile Include="test_common.cc" />
-    <ClCompile Include="vwdll_test.cc" />
     <ClCompile Include="v_array_test.cc" />
+    <ClCompile Include="vwdll_test.cc" />
     <ClCompile Include="weights_test.cc" />
   </ItemGroup>
   <ItemGroup>
@@ -174,7 +174,7 @@
   </ImportGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)..\ext_libs\rapidjson\include;$(SolutionDir)..\explore;$(SolutionDir)..\ext_libs\fmt\include;$(SolutionDir)..\ext_libs\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -202,7 +202,7 @@
   </Target>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
     </ClCompile>
     <PostBuildEvent>

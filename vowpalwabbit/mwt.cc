@@ -8,17 +8,21 @@
 #include "io_buf.h"
 #include "cb.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 namespace MWT
 {
 struct policy_data
 {
-  double cost;
-  uint32_t action;
-  bool seen;
+  double cost = 0.0;
+  uint32_t action = 0;
+  bool seen = false;
 };
 
 struct mwt
@@ -38,7 +42,7 @@ struct mwt
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
 {
-  if (val < 0 || floor(val) != val) std::cout << "error " << val << " is not a valid action " << std::endl;
+  if (val < 0 || floor(val) != val) logger::log_error("error {} is not a valid action", val);
 
   uint32_t value = (uint32_t)val;
   uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
@@ -144,7 +148,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-    if (t != len) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 
@@ -222,9 +226,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
   for (char i : s) c->namespaces[(unsigned char)i] = true;
   c->all = &all;
 
-  calloc_reserve(c->evals, all.length());
-  c->evals.end() = c->evals.begin() + all.length();
-
+  c->evals.actual_resize(all.length());
   all.example_parser->lbl_parser = CB::cb_label;
 
   if (c->num_classes > 0)

@@ -156,8 +156,9 @@ BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
     for (int i = 0; i < event_ids.size(); i++)
     {
       const size_t slot_example_indx = examples.size() - event_ids.size() + i;
-      push_many(examples[slot_example_indx]->tag, SEED_TAG.c_str(), SEED_TAG.size());
-      push_many(examples[slot_example_indx]->tag, event_ids[i].c_str(), event_ids[i].size());
+      examples[slot_example_indx]->tag.insert(examples[slot_example_indx]->tag.end(), SEED_TAG.begin(), SEED_TAG.end());
+      examples[slot_example_indx]->tag.insert(
+          examples[slot_example_indx]->tag.end(), event_ids[i].begin(), event_ids[i].end());
     }
 
     vw->predict(examples);
@@ -188,8 +189,6 @@ BOOST_AUTO_TEST_CASE(ccb_invalid_example_checks)
 
   // Check that number of actions is greater than slots
   BOOST_REQUIRE_THROW(vw.predict(examples), VW::vw_exception);
-
-  // Examples are unlabeled, so should not work for learn.
   BOOST_REQUIRE_THROW(vw.learn(examples), VW::vw_exception);
 
   vw.finish_example(examples);

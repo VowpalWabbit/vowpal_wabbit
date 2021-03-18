@@ -27,14 +27,16 @@ int daemon(int /*a*/, int /*b*/) { exit(0); }
 
 // Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
 // use the actual isocpp version.
+// use VW_getpid instead of getpid to avoid name collisions with process.h
 #  if _MSC_VER >= 1920
-#    define getpid _getpid
+#    define VW_getpid _getpid
 #  else
-int getpid() { return (int)::GetCurrentProcessId(); }
+int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #  endif
 
 #else
 #  include <netdb.h>
+#  define VW_getpid getpid
 #endif
 
 #if defined(__FreeBSD__) || defined(__APPLE__)
@@ -45,6 +47,7 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include <cstdio>
 #include <cassert>
 
+#include "parse_primitives.h"
 #include "parse_example.h"
 #include "cache.h"
 #include "unique_sort.h"
@@ -102,7 +105,6 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
   VW::version_struct v_tmp(t.data());
   if (v_tmp != VW::version)
   {
-    //      cout << "cache has possibly incompatible version, rebuilding" << endl;
     return 0;
   }
 
@@ -231,7 +233,7 @@ void reset_source(vw& all, size_t numbits)
     }
     else
     {
-      for (auto& file : input->input_files)
+      for (auto& file : input->get_input_files())
       {
         input->reset_file(file.get());
         if (cache_numbits(input, file.get()) < numbits) THROW("argh, a bug in caching of some sort!");
@@ -295,7 +297,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.example_parser->input, all.example_parser->input->input_files.back().get());
+      uint64_t c = cache_numbits(all.example_parser->input, all.example_parser->input->get_input_files().back().get());
       if (c < all.num_bits)
       {
         if (!quiet)
@@ -409,7 +411,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       disable : 4996)  // In newer toolchains, we are properly calling _getpid(), via the #define above (line 33).
 #endif
 
-      pid_file << getpid() << endl;
+      pid_file << VW_getpid() << endl;
       pid_file.close();
 
 #ifdef _WIN32
@@ -682,15 +684,20 @@ void setup_example(vw& all, example* ae)
   ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l);
 
   if (all.ignore_some)
+  {
     for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
+    {
       if (all.ignore[*i])
       {
-        // delete namespace
+        // Delete namespace
         ae->feature_space[*i].clear();
-        memmove(i, i + 1, (ae->indices.end() - (i + 1)) * sizeof(*i));
-        ae->indices.end()--;
+        i = ae->indices.erase(i);
+        // Offset the increment for this iteration so that is processes this index again which is actually the next
+        // item.
         i--;
       }
+    }
+  }
 
   if (all.skip_gram_transformer != nullptr) { all.skip_gram_transformer->generate_grams(ae); }
 
