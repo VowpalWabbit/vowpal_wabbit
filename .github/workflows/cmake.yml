@@ -20,10 +20,6 @@ jobs:
           path: 'vcpkg'
           repository: 'microsoft/vcpkg'
           submodules: true
-      - run: cmake --version
-      - name: Get latest CMake and Ninja
-        uses: lukka/get-cmake@latest
-      - run: cmake --version
       - name: Restore vcpkg and its artifacts.
         uses: actions/cache@v2
         with:
@@ -43,7 +39,11 @@ jobs:
       - run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install zlib boost-system boost-program-options boost-test boost-align boost-foreach boost-math flatbuffers
       - name: Install dependencies and generate project files
         run: |
-          cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -GNinja -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
+          cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -GNinja -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" -DWARNINGS=Off -DUSE_LATEST_STD=On
       - name: Build
         run: |
           cmake --build "${{ env.CMAKE_BUILD_DIR }}"
+      - name: Test
+        run: |
+           ${{ env.CMAKE_BUILD_DIR }}/test/unit_test/vw-unit-test.out
+
