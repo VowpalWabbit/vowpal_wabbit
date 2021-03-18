@@ -574,8 +574,7 @@ struct TagState : BaseState<audit>
 
   BaseState<audit>* String(Context<audit>& ctx, const char* str, SizeType length, bool)
   {
-    push_many(ctx.ex->tag, str, length);
-
+    ctx.ex->tag.insert(ctx.ex->tag.end(), str, str + length);
     return ctx.previous_state;
   }
 };
