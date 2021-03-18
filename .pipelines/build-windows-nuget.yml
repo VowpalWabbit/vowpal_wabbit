@@ -28,7 +28,7 @@ steps:
   displayName: Cache vcpkg dependencies
 - task: Cache@2
   inputs:
-    key: 'nuget | "$(Agent.OS)" | $(Build.SourcesDirectory)\cs\**\*.csproj'
+    key: 'nuget | "$(Agent.OS)" | $(Build.SourcesDirectory)\cs\**\packages.config'
     restoreKeys: |
        nuget | "$(Agent.OS)"
        nuget
@@ -39,16 +39,16 @@ steps:
   env:
     nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
   failOnStderr: true
-- script: CALL .scripts/build.cmd
-  displayName: 'Build vw.sln'
-  env:
-    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
-  failOnStderr: true
 - task: Cache@2
   inputs:
     key: '$(Build.SourcesDirectory)\cs\**\*.csproj'
     path: $(Build.SourcesDirectory)\vowpalwabbit\out
   displayName: Cache out dir
+- script: CALL .scripts/build.cmd
+  displayName: 'Build vw.sln'
+  env:
+    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
+  failOnStderr: true
 - script: CALL .scripts/test.cmd
   displayName: 'Run tests'
   env:
