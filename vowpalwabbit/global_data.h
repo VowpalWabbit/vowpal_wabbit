@@ -152,10 +152,7 @@ struct shared_data
   {
     sum_loss_since_last_dump = 0.0;
     old_weighted_labeled_examples = weighted_labeled_examples;
-    if (progress_add)
-    {
-      dump_interval = static_cast<float>(weighted_examples()) + progress_arg;
-    }
+    if (progress_add) { dump_interval = static_cast<float>(weighted_examples()) + progress_arg; }
     else
     {
       dump_interval = static_cast<float>(weighted_examples()) * progress_arg;
@@ -181,8 +178,8 @@ struct shared_data
                   << " " << std::setw(col_current_features) << "features" << std::endl;
   }
 
-  void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, float label, float prediction, size_t num_features,
-      bool progress_add, float progress_arg)
+  void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, float label,
+      float prediction, size_t num_features, bool progress_add, float progress_arg)
   {
     std::ostringstream label_buf, pred_buf;
 
@@ -195,12 +192,12 @@ struct shared_data
     pred_buf << std::setw(col_current_predict) << std::setprecision(prec_current_predict) << std::fixed << std::right
              << std::setfill(' ') << prediction;
 
-    print_update(
-        output_stream, holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features, progress_add, progress_arg);
+    print_update(output_stream, holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
+        progress_add, progress_arg);
   }
 
-  void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, uint32_t label, uint32_t prediction, size_t num_features,
-      bool progress_add, float progress_arg)
+  void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, uint32_t label,
+      uint32_t prediction, size_t num_features, bool progress_add, float progress_arg)
   {
     std::ostringstream label_buf, pred_buf;
 
@@ -212,23 +209,24 @@ struct shared_data
 
     pred_buf << std::setw(col_current_predict) << std::right << std::setfill(' ') << prediction;
 
-    print_update(
-        output_stream, holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features, progress_add, progress_arg);
+    print_update(output_stream, holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
+        progress_add, progress_arg);
   }
 
-  void print_update(std::ostream& output_stream,  bool holdout_set_off, size_t current_pass, const std::string& label, uint32_t prediction,
-      size_t num_features, bool progress_add, float progress_arg)
+  void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, const std::string& label,
+      uint32_t prediction, size_t num_features, bool progress_add, float progress_arg)
   {
     std::ostringstream pred_buf;
 
     pred_buf << std::setw(col_current_predict) << std::right << std::setfill(' ') << prediction;
 
-    print_update(output_stream, holdout_set_off, current_pass, label, pred_buf.str(), num_features, progress_add, progress_arg);
+    print_update(
+        output_stream, holdout_set_off, current_pass, label, pred_buf.str(), num_features, progress_add, progress_arg);
   }
 
   // TODO: this print_update function should be using output_stream. Need to pipe that through
-  void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, const std::string& label, const std::string& prediction,
-      size_t num_features, bool progress_add, float progress_arg)
+  void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, const std::string& label,
+      const std::string& prediction, size_t num_features, bool progress_add, float progress_arg)
   {
     std::streamsize saved_w = output_stream.width();
     std::streamsize saved_prec = output_stream.precision();
@@ -241,7 +239,7 @@ struct shared_data
         output_stream << std::setw(col_avg_loss) << std::left << " unknown";
       else
         output_stream << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::fixed << std::right
-                  << (holdout_sum_loss / weighted_holdout_examples);
+                      << (holdout_sum_loss / weighted_holdout_examples);
 
       output_stream << " ";
 
@@ -249,7 +247,7 @@ struct shared_data
         output_stream << std::setw(col_since_last) << std::left << " unknown";
       else
         output_stream << std::setw(col_since_last) << std::setprecision(prec_since_last) << std::fixed << std::right
-                  << (holdout_sum_loss_since_last_dump / weighted_holdout_examples_since_last_dump);
+                      << (holdout_sum_loss_since_last_dump / weighted_holdout_examples_since_last_dump);
 
       weighted_holdout_examples_since_last_dump = 0;
       holdout_sum_loss_since_last_dump = 0.0;
@@ -270,10 +268,10 @@ struct shared_data
         output_stream << (sum_loss_since_last_dump / (weighted_labeled_examples - old_weighted_labeled_examples));
     }
     output_stream << " " << std::setw(col_example_counter) << std::right << example_number << " "
-              << std::setw(col_example_weight) << std::setprecision(prec_example_weight) << std::right
-              << weighted_examples() << " " << std::setw(col_current_label) << std::right << label << " "
-              << std::setw(col_current_predict) << std::right << prediction << " " << std::setw(col_current_features)
-              << std::right << num_features;
+                  << std::setw(col_example_weight) << std::setprecision(prec_example_weight) << std::right
+                  << weighted_examples() << " " << std::setw(col_current_label) << std::right << label << " "
+                  << std::setw(col_current_predict) << std::right << prediction << " "
+                  << std::setw(col_current_features) << std::right << num_features;
 
     if (holding_out) output_stream << " h";
 
