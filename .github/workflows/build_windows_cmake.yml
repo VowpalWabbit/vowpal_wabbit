@@ -50,17 +50,10 @@ jobs:
         run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install zlib boost-system boost-program-options boost-test boost-align boost-foreach boost-math flatbuffers
       - name: Generate project files
         run: |
-          cmake -S "${{ env.SOURCE_DIR }}"
-            -B "${{ env.CMAKE_BUILD_DIR }}"
-            -GNinja
-            -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
-            -DWARNINGS=Off
-            -DUSE_LATEST_STD=On
-            -DBUILD_FLATBUFFERS=On
+          cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -GNinja -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" -DWARNINGS=Off -DUSE_LATEST_STD=On -DBUILD_FLATBUFFERS=On
       - name: Build project
         run: |
-          cmake --build "${{ env.CMAKE_BUILD_DIR }}"
-            --config ${{ matrix.build_config }}
+          cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }}
       - name: Run unit tests
         run: |
            ${{ env.CMAKE_BUILD_DIR }}/test/unit_test/vw-unit-test.out
