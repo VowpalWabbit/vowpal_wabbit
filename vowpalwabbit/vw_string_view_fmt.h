@@ -9,7 +9,7 @@
 
 // This file should NOT be included in other header files.
 #pragma once
-# include <fmt/format.h>
+#include <fmt/format.h>
 
 namespace fmt
 {
