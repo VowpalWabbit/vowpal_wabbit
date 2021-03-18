@@ -77,7 +77,7 @@ public:
 
   ~TC_parser() {}
 
-  //TODO: Currently this function is called by both warning and error conditions. We only log
+  // TODO: Currently this function is called by both warning and error conditions. We only log
   //      to warning here though.
   inline FORCE_INLINE void parserWarning(const char* message, VW::string_view var_msg, const char* message2)
   {
@@ -91,7 +91,8 @@ public:
     ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples.load() << ": \"" << tmp_view
        << "\"";
 
-    if (_p->strict_parse) {
+    if (_p->strict_parse)
+    {
       // maintain newline behavior
       ss << std::endl;
       THROW_EX(VW::strict_parse_exception, ss.str());
@@ -475,10 +476,7 @@ public:
 
 void substring_to_example(vw* all, example* ae, VW::string_view example)
 {
-  if (example.empty())
-  {
-    ae->is_newline = true;
-  }
+  if (example.empty()) { ae->is_newline = true; }
 
   all->example_parser->lbl_parser.default_label(&ae->l);
 
