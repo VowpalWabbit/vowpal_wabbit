@@ -20,6 +20,10 @@ jobs:
           path: 'vcpkg'
           repository: 'microsoft/vcpkg'
           submodules: true
+      - run: cmake --version
+      - name: Get latest CMake and Ninja
+        uses: lukka/get-cmake@latest
+      - run: cmake --version
       - name: Restore vcpkg and its artifacts.
         uses: actions/cache@v2
         with:
