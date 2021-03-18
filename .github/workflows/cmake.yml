@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           path: 'vcpkg'
-          repository: 'microsoft/vcpkg/'
+          repository: 'microsoft/vcpkg'
           submodules: true
       - name: Restore vcpkg and its artifacts.
         uses: actions/cache@v2
