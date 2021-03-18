@@ -222,7 +222,16 @@ def run_command_line_test(test_id,
                           ref_dir,
                           completed_tests,
                           dependencies=None,
-                          fuzzy_compare=False):
+                          fuzzy_compare=False,
+                          skip=False):
+
+    if skip:
+        completed_tests.report_completion(test_id, False)
+        return (test_id, {
+            "result": Result.SKIPPED,
+            "checks": {}
+        })
+    
     if dependencies is not None:
         for dep in dependencies:
             success = completed_tests.wait_for_completion_get_success(dep)
@@ -525,21 +534,27 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
         test_id = test['id']
         if 'vw_command' not in test:
             print("{}Skipping test {} for flatbuffers, no vw command available{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
         if 'flatbuffer' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, already a flatbuffer test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
         if 'malformed' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, malformed input{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
         if 'input_files' not in test:
             print("{}Skipping test {} for flatbuffers, no input files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
         if 'dictionary' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, currently dictionaries are not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
         if 'help' in test['vw_command']:
             print("{}Skipping test {} for flatbuffers, --help test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
+            test['skip'] = True
             continue
 
         # test id is being used as an index here, not necessarily a contract
@@ -719,7 +734,8 @@ def main():
                                      ref_dir=test_base_ref_dir,
                                      completed_tests=completed_tests,
                                      dependencies=dependencies,
-                                     fuzzy_compare=args.fuzzy_compare))
+                                     fuzzy_compare=args.fuzzy_compare,
+                                     skip=test['skip'] if "skip" in test else False))
 
     num_success = 0
     num_fail = 0
