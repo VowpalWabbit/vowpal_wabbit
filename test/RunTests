@@ -1596,7 +1596,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/0097.audit_regr
 
 # Test 156: --cubic regression verification
-./cubic-test.sh ${VW}
+./cubic-test.sh {VW}
 
 # Test 157: save_resume without --preserve_performce_counters does not alter performance counters over multiple passes
 {VW} -d train-sets/0001.dat -f models/sr.model  --passes 2 -c -k  -P 50 --save_resume
