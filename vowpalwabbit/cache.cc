@@ -46,7 +46,7 @@ size_t read_cached_tag(io_buf& cache, example* ae)
   if (cache.buf_read(c, tag_size) < tag_size) return 0;
 
   ae->tag.clear();
-  push_many(ae->tag, c, tag_size);
+  ae->tag.insert(ae->tag.end(), c, c + tag_size);
   return tag_size + sizeof(tag_size);
 }
 

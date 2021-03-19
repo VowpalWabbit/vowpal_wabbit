@@ -20,6 +20,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install clang-format
+          clang-format --version
       - name: Check code formatting for codebase
         shell: bash
         run: ./utl/clang-format check
