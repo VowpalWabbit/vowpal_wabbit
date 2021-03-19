@@ -64,6 +64,30 @@ def print_non_supplied(config):
         print(e)
         
 
+# this function needs more depedencies (networkx, matplotlib, graphviz)
+def draw_graph(stacks):
+    import networkx as nx
+    import matplotlib.pyplot as plt
+    from networkx.drawing.nx_agraph import write_dot, graphviz_layout
+
+    G=nx.DiGraph()
+
+    for l in stacks:
+        reductions = l.split("->")
+        for i,k in zip(reductions, reductions[1:]):
+            G.add_edge(k.replace("cb_explore_adf_",""),i.replace("cb_explore_adf_",""))
+        if len(reductions) == 1:
+            G.add_node(reductions[0])
+
+    plt.figure(num=None, figsize=(24, 12), dpi=120, facecolor='w', edgecolor='k')
+
+    write_dot(G,'graphviz_format.dot')
+
+    pos =graphviz_layout(G, prog='dot', args='-Nfontsize=10 -Nwidth=".2" -Nheight=".2" -Nmargin=0 -Gfontsize=12')
+    nx.draw(G, pos, with_labels=True, arrows=True, node_size=1600)
+    plt.savefig('reduction_graph.png')
+
+
 def main():
     stacks = []
 
@@ -80,6 +104,8 @@ def main():
             allConfig = merge_config(allConfig, config)
     
     print_non_supplied(allConfig)
+
+    # draw_graph(stacks)
 
     # print reduction stack by count
     from collections import Counter
