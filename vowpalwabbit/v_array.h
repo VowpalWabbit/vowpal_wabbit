@@ -75,15 +75,9 @@ private:
     memmove(&_begin[idx + width], &_begin[idx], (size() - (idx + width)) * sizeof(T));
   }
 
-public:
-  // private:
   T* _begin;
   T* _end;
-
-public:
   T* end_array;
-
-private:
   size_t _erase_count;
 
 public:
@@ -96,8 +90,8 @@ public:
   using const_iterator = const value_type*;
 
   // enable C++ 11 for loops
-  inline iterator& begin() { return _begin; }
-  inline iterator& end() { return _end; }
+  inline iterator begin() { return _begin; }
+  inline iterator end() { return _end; }
 
   inline const_iterator begin() const { return _begin; }
   inline const_iterator end() const { return _end; }

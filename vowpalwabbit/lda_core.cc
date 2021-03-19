@@ -711,9 +711,8 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
   } while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
   ec->pred.scalars.clear();
-  ec->pred.scalars.resize(l.topics);
+  ec->pred.scalars.actual_resize(l.topics);
   memcpy(ec->pred.scalars.begin(), new_gamma.begin(), l.topics * sizeof(float));
-  ec->pred.scalars.end() = ec->pred.scalars.begin() + l.topics;
 
   score += theta_kl(l, Elogtheta, new_gamma.begin());
 
@@ -833,9 +832,8 @@ void learn_batch(lda &l)
     for (size_t d = 0; d < l.examples.size(); d++)
     {
       l.examples[d]->pred.scalars.clear();
-      l.examples[d]->pred.scalars.resize(l.topics);
+      l.examples[d]->pred.scalars.actual_resize(l.topics);
       memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
-      l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
       l.examples[d]->pred.scalars.clear();
 
