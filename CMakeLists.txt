@@ -106,9 +106,15 @@ if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAV
   message(FATAL_ERROR "Unsupported option enabled on Windows build")
 endif()
 
+# This was the previous default but is only valid on x86_64 systems.
+set(linux_x86_64_opt_flags "")
+if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+  set(linux_x86_64_opt_flags "-msse2 -mfpmath=sse")
+endif()
+
 # Add -ffast-math for speed, remove for testability.
 # no-stack-check is added to mitigate stack alignment issue on Catalina where there is a bug with aligning stack-check instructions, and stack-check became default option
-set(linux_release_config -O3 -fno-strict-aliasing -msse2 -mfpmath=sse -fno-stack-check)
+set(linux_release_config -O3 -fno-strict-aliasing ${linux_x86_64_opt_flags} -fno-stack-check)
 set(linux_debug_config -g -O0 -fno-stack-check)
 
 if((NOT PROFILE) AND (NOT GCOV))
@@ -289,7 +295,7 @@ endif()
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
   find_package(Boost REQUIRED COMPONENTS program_options)
-  
+
   FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
     SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
   ENDFOREACH()
