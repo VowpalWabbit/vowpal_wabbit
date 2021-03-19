@@ -104,6 +104,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Serializer\VowpalWabbitDefaultMarshallerExt.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>VowpalWabbitDefaultMarshallerExt.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="ActionDependentFeature.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="ObjectFactory.cs" />
@@ -123,12 +129,6 @@
     <Compile Include="Serializer\IVowpalWabbitMultiExampleSerializerCompiler.cs" />
     <Compile Include="Serializer\IVowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitConstants.cs" />
-    <Compile Include="Serializer\VowpalWabbitDefaultMarshaller.cs" />
-    <Compile Include="Serializer\VowpalWabbitDefaultMarshallerExt.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
-    </Compile>
     <Compile Include="Serializer\VowpalWabbitMarshalContext.cs" />
     <Compile Include="Serializer\VowpalWabbitMultiExampleSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitMultiExampleSerializerCompiler.cs" />
@@ -148,6 +148,12 @@
     <Compile Include="VowpalWabbitThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitMultiLine.cs" />
     <Compile Include="VowpalWabbitThreadedPredictionBase.cs" />
+    <Compile Include="Serializer\VowpalWabbitDefaultMarshaller.cs" />
+    <Compile Include="Serializer\VowpalWabbitDefaultMarshallerExt.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cli\vw_clr.vcxproj">
