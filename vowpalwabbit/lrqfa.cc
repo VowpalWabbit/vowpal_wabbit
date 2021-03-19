@@ -125,14 +125,8 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
     {
       namespace_index right = i;
       features& rfs = ec.feature_space[right];
-      rfs.values.end() = rfs.values.begin() + lrq.orig_size[right];
-
-      if (all.audit || all.hash_inv)
-      {
-        for (size_t j = lrq.orig_size[right]; j < rfs.space_names.size(); ++j) rfs.space_names[j].~audit_strings_ptr();
-
-        rfs.space_names.end() = rfs.space_names.begin() + lrq.orig_size[right];
-      }
+      rfs.values.actual_resize(lrq.orig_size[right]);
+      if (all.audit || all.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }
     }
   }
 }
