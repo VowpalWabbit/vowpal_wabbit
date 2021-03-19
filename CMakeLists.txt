@@ -109,7 +109,7 @@ endif()
 # This was the previous default but is only valid on x86_64 systems.
 set(linux_x86_64_opt_flags "")
 if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-  set(linux_x86_64_opt_flags "-msse2 -mfpmath=sse")
+  set(linux_x86_64_opt_flags -msse2 -mfpmath=sse)
 endif()
 
 # Add -ffast-math for speed, remove for testability.
