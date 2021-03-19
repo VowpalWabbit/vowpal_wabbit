@@ -1596,7 +1596,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/0097.audit_regr
 
 # Test 156: --cubic regression verification
-./cubic-test.sh ${VW}
+./cubic-test.sh {VW}
 
 # Test 157: save_resume without --preserve_performce_counters does not alter performance counters over multiple passes
 {VW} -d train-sets/0001.dat -f models/sr.model  --passes 2 -c -k  -P 50 --save_resume
@@ -2159,5 +2159,19 @@ train-sets/ref/slates_simple_w_interactions.stderr
     test-sets/ref/t288.stderr
     pred-sets/ref/t288.predict
     pred-sets/ref/t288.readable
+
+# Test 279: FTRL readable model test
+# TODO: investigate slow convergence
+{VW} -d train-sets/regression_simple.txt --noconstant --ftrl --invert_hash ftrl.readable 
+    train-sets/ref/ftrl.readable
+
+# Test 280: pistol readable model test
+{VW} -d train-sets/regression_simple.txt --noconstant --pistol --invert_hash pistol.readable 
+    train-sets/ref/pistol.readable
+
+# Test 281: coin readable model test
+# TODO: should be fixed after #2834 issue is resolved
+{VW} -d train-sets/regression_simple.txt --noconstant --coin --invert_hash coin.readable 
+    train-sets/ref/coin.readable
 
 # Do not delete this line or the empty line above it

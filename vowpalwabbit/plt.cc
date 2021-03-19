@@ -355,10 +355,10 @@ base_learner* plt_setup(options_i& options, vw& all)
   }
 
   // resize v_arrays
-  tree->nodes_time.resize(tree->t);
+  tree->nodes_time.actual_resize(tree->t);
   std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
   tree->node_preds.resize(tree->kary);
-  if (tree->top_k > 0) tree->tp_at.resize(tree->top_k);
+  if (tree->top_k > 0) tree->tp_at.actual_resize(tree->top_k);
 
   learner<plt, example>* l;
   if (tree->top_k > 0)
