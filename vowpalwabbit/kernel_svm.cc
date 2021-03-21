@@ -263,13 +263,13 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         features& fs = fec->fs;
         size_t len = fs.size();
         fs.values = v_init<feature_value>();
-        fs.values.actual_resize(len);
+        fs.values.resize_but_with_stl_behavior(len);
         brw = model_file.bin_read_fixed((char*)fs.values.begin(), len * sizeof(feature_value), "");
         if (!brw) return 3;
 
         len = fs.indicies.size();
         fs.indicies = v_init<feature_index>();
-        fs.indicies.actual_resize(len);
+        fs.indicies.resize_but_with_stl_behavior(len);
         brw = model_file.bin_read_fixed((char*)fs.indicies.begin(), len * sizeof(feature_index), "");
         if (!brw) return 3;
       }
