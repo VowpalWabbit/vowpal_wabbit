@@ -56,7 +56,8 @@ private:
     const size_t old_len = size();
 
     T* temp = reinterpret_cast<T*>(std::realloc(_begin, sizeof(T) * length));
-    if (temp == nullptr) { THROW_OR_RETURN("realloc of " << length << " failed in reserve_nocheck().  out of memory?"); }
+    if (temp == nullptr)
+    { THROW_OR_RETURN("realloc of " << length << " failed in reserve_nocheck().  out of memory?"); }
     else
     {
       _begin = temp;
@@ -367,10 +368,7 @@ public:
 
     if (!contain_sorted(new_ele, index))
     {
-      if (_end == end_array)
-      {
-        reserve_nocheck(2 * capacity() + 3);
-      }
+      if (_end == end_array) { reserve_nocheck(2 * capacity() + 3); }
 
       to_move = size - index;
 
