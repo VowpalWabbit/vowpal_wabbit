@@ -13,12 +13,24 @@
 #include "vw_string_view.h"
 #include "example.h"
 #include "parse_primitives.h"
+#include "vw_string_view_fmt.h"
 
 #include "io/logger.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 
 namespace logger = VW::io::logger;
+
+label_data::label_data() { reset_to_default(); }
+
+label_data::label_data(float label, float weight, float initial) : label(label), weight(weight), initial(initial) {}
+
+void label_data::reset_to_default()
+{
+  label = FLT_MAX;
+  weight = 1.f;
+  initial = 0.f;
+}
 
 char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 {
@@ -63,12 +75,7 @@ void cache_simple_label(label_data& ld, io_buf& cache)
   bufcache_simple_label(ld, c);
 }
 
-void default_simple_label(label_data& ld)
-{
-  ld.label = FLT_MAX;
-  ld.weight = 1.;
-  ld.initial = 0.;
-}
+void default_simple_label(label_data& ld) { ld.reset_to_default(); }
 
 bool test_label(label_data& ld) { return ld.label == FLT_MAX; }
 
@@ -127,8 +134,8 @@ void print_update(vw& all, example& ec)
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
       !all.logger.quiet && !all.bfgs)
   {
-    all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar, ec.num_features,
-        all.progress_add, all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
+        ec.num_features, all.progress_add, all.progress_arg);
   }
 }
 

@@ -1764,7 +1764,7 @@ void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<
   std::vector<char> owned_str;
   size_t len = std::strlen(line) + 1;
   owned_str.resize(len);
-  std::strncpy(owned_str.data(), line, len);
+  std::memcpy(owned_str.data(), line, len);
 
   bool good_example = parse_line_json<audit>(all, owned_str.data(), num_chars, examples);
   if (!good_example)
