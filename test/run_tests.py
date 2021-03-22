@@ -210,6 +210,8 @@ def print_colored_diff(diff, color_enum):
         else:
             print(line)
 
+def is_valgrind_available():
+   return shutil.which("valgrind") is not None
 
 def run_command_line_test(test_id,
                           command_line,
@@ -223,7 +225,8 @@ def run_command_line_test(test_id,
                           completed_tests,
                           dependencies=None,
                           fuzzy_compare=False,
-                          skip=False):
+                          skip=False,
+                          valgrind=False):
 
     if skip:
         completed_tests.report_completion(test_id, False)
@@ -231,7 +234,7 @@ def run_command_line_test(test_id,
             "result": Result.SKIPPED,
             "checks": {}
         })
-    
+
     if dependencies is not None:
         for dep in dependencies:
             success = completed_tests.wait_for_completion_get_success(dep)
@@ -246,10 +249,19 @@ def run_command_line_test(test_id,
         if is_shell:
             # Because we don't really know what shell scripts do, we need to run them in the tests dir.
             working_dir = ref_dir
-            cmd = command_line
         else:
             working_dir = str(create_test_dir(
                 test_id, input_files, base_working_dir, ref_dir, dependencies=dependencies))
+
+        if valgrind:
+            valgrind_log_file_name = "test-{}.valgrind-err".format(test_id)
+            valgrind_log_file_path = os.path.join(
+                    working_dir, valgrind_log_file_name)
+            command_line = "valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full --log-file='{}' {}".format(valgrind_log_file_name, command_line)
+
+        if is_shell:
+            cmd = command_line
+        else:
             cmd = "{}".format((command_line)).split()
 
         try:
@@ -281,12 +293,37 @@ def run_command_line_test(test_id,
         stderr = try_decode(result.stderr)
 
         checks = dict()
+        success = return_code == 0 or (return_code == 100 and is_shell and valgrind)
+        message = "Exited with {}".format((return_code))
+        if return_code == 100 and is_shell and valgrind:
+            message += " - valgrind failure ignored in shell test"
         checks["exit_code"] = {
-            "success": return_code == 0,
-            "message": "Exited with {}".format((return_code)),
+            "success": success,
+            "message": message,
             "stdout": stdout,
             "stderr": stderr
         }
+
+        if valgrind:
+            success = True
+            message = "OK"
+            diff = []
+            if return_code == 100:
+                if is_shell:
+                    message = "valgrind failure ignored for a shell based test"
+                else:
+                    success = False
+                    message = "valgrind failed with command: '{}'".format(command_line)
+                    diff = open(valgrind_log_file_path, 'r', encoding='utf-8').read().split("\n")
+            elif return_code != 0:
+                success = False
+                message = "non-valgrind failure error code",
+
+            checks["valgrind"] = {
+                "success": success,
+                "message": message,
+                "diff": diff
+            }
 
         for output_file, ref_file in comparison_files.items():
 
@@ -607,15 +644,20 @@ def main():
     parser.add_argument('--for_flatbuffers', action='store_true', help='Transform all of the test inputs into flatbuffer format and run tests')
     parser.add_argument('--to_flatbuff_path', help="Specify to_flatbuff binary to use. Otherwise, binary will be searched for in build directory")
     parser.add_argument('--include_flatbuffers', action='store_true', help="Don't skip the explicit flatbuffer tests from default run_tests run")
+    parser.add_argument('--valgrind', action='store_true', help="Run tests with Valgrind")
     args = parser.parse_args()
 
     if args.for_flatbuffers and args.working_dir == working_dir: # user did not supply dir
-        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")      
+        args.working_dir = Path.home().joinpath(".vw_fb_runtests_working_dir")
 
     test_base_working_dir = str(args.working_dir)
     test_base_ref_dir = str(args.ref_dir)
 
     color_enum = NoColor if args.no_color else Color
+
+    if args.valgrind and not is_valgrind_available():
+        print("Can't find valgrind")
+        sys.exit(1)
 
     # Flatten nested lists for arg.test argument.
     # Ideally we would have used action="extend", but that was added in 3.8
@@ -735,7 +777,8 @@ def main():
                                      completed_tests=completed_tests,
                                      dependencies=dependencies,
                                      fuzzy_compare=args.fuzzy_compare,
-                                     skip=test['skip'] if "skip" in test else False))
+                                     skip=test['skip'] if "skip" in test else False,
+                                     valgrind=args.valgrind))
 
     num_success = 0
     num_fail = 0
