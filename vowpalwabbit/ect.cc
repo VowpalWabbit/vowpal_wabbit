@@ -291,9 +291,10 @@ void ect_train(ect& e, single_learner& base, example& ec)
         else
           e.tournaments_won[j] = left;
       }
+
       if (e.tournaments_won.size() % 2 == 1)
-        e.tournaments_won[e.tournaments_won.size() / 2] = e.tournaments_won[e.tournaments_won.size() - 1];
-      e.tournaments_won.end() = e.tournaments_won.begin() + (1 + e.tournaments_won.size()) / 2;
+      { e.tournaments_won[e.tournaments_won.size() / 2] = e.tournaments_won[e.tournaments_won.size() - 1]; }
+      e.tournaments_won.resize_but_with_stl_behavior((1 + e.tournaments_won.size()) / 2);
     }
   }
 }
