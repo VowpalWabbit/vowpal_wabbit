@@ -9,15 +9,6 @@
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
-example::example()
-{
-  memset(&l, 0, sizeof(polylabel));
-  tag = v_init<char>();
-}
-VW_WARNING_STATE_POP
-
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
 {
   if (passthrough)
