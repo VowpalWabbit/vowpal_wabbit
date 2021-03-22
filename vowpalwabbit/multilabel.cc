@@ -6,8 +6,9 @@
 #include "gd.h"
 #include "vw.h"
 #include "example.h"
-
+#include "vw_string_view_fmt.h"
 #include "parse_primitives.h"
+
 #include "io/logger.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
@@ -140,8 +141,8 @@ void print_update(vw& all, bool is_test, example& ec)
     for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
       pred_string << " " << ec.pred.multilabels.label_v[i];
 
-    all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
-        all.progress_add, all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
+        pred_string.str(), ec.num_features, all.progress_add, all.progress_arg);
   }
 }
 

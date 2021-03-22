@@ -267,10 +267,14 @@ def get_all_vw_options():
 
 class log_forward:
     def __init__(self):
+        self.current_message = ""
         self.messages = []
 
     def log(self, msg):
-        self.messages.append(msg)
+        self.current_message += msg
+        if "\n" in self.current_message:
+            self.messages.append(self.current_message)
+            self.current_message = ""
 
 
 class vw(pylibvw.vw):
@@ -332,7 +336,7 @@ class vw(pylibvw.vw):
         l = [format_input(k, v) for k, v in kw.items()]
         if arg_str is not None:
             l = [arg_str] + l
-        
+
         if enable_logging:
             self.log_fwd = log_forward()
             self.log_wrapper = pylibvw.vw_log(self.log_fwd)
@@ -354,13 +358,13 @@ class vw(pylibvw.vw):
             if [cmd for cmd in ext_file_cmd_str if(cmd in arg_str)]:
                 pylibvw.vw.run_parser(self)
                 self.parser_ran = True
-    
+
     def get_config(self, filtered_enabled_reductions_only=True):
         return self.get_options(VWOption, filtered_enabled_reductions_only)
 
     def __enter__(self):
         return self
-    
+
     def __exit__(self, exc_type, exc_value, traceback):
         self.finish()
 

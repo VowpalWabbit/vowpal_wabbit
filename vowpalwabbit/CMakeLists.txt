@@ -7,7 +7,13 @@ add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc io/logger.h io/logger.
 target_include_directories(vw_io PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-target_link_libraries(vw_io PUBLIC spdlog::spdlog fmt::fmt PRIVATE ZLIB::ZLIB)
+target_link_libraries(vw_io PUBLIC ${spdlog_target} fmt::fmt PRIVATE ZLIB::ZLIB)
+
+if(SPDLOG_SYS_DEP)
+  # this doesn't get defined when using a system-installed spdlog
+  target_compile_definitions(vw_io PUBLIC SPDLOG_FMT_EXTERNAL)
+endif()
+
 add_library(VowpalWabbit::io ALIAS vw_io)
 
 add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
@@ -354,7 +360,7 @@ add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost spdlog::spdlog fmt::fmt
+    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost ${spdlog_target} fmt::fmt
   PRIVATE
     Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
