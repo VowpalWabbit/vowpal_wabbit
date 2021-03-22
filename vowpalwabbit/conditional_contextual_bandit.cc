@@ -68,6 +68,8 @@ struct ccb
   // If the reduction has not yet seen a multi slot example, it will behave the same as if it were CB.
   // This means the interactions aren't added and the slot feature is not added.
   bool has_seen_multi_slot_example = false;
+  // Introduction has_seen_multi_slot_example was breaking change in terms of model format.
+  // If we still want to use either legacy ccb model or model produced by vw in cd mode, we can use this backward compatibility flag (--ccb_model_without_has_seen_flag)
   bool input_model_without_has_seen_multi_slot_flag = false;
 };
 
