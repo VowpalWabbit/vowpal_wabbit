@@ -40,7 +40,7 @@ struct cb_class
 struct label
 {
   v_array<cb_class> costs;
-  float weight;
+  float weight = 1.f;
 };
 
 extern label_parser cb_label;                  // for learning
@@ -55,7 +55,7 @@ namespace CB_EVAL
 {
 struct label
 {
-  uint32_t action;
+  uint32_t action = 0;
   CB::label event;
 };
 

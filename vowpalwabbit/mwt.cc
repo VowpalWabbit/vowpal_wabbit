@@ -186,11 +186,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
   size_t policies_size = c.policies.size();
   bin_text_read_write_fixed_validated(model_file, (char*)&policies_size, sizeof(policies_size), "", read, msg, text);
 
-  if (read)
-  {
-    c.policies.resize(policies_size);
-    c.policies.end() = c.policies.begin() + policies_size;
-  }
+  if (read) { c.policies.resize_but_with_stl_behavior(policies_size); }
   else
   {
     msg << "policies: ";
@@ -226,7 +222,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
   for (char i : s) c->namespaces[(unsigned char)i] = true;
   c->all = &all;
 
-  c->evals.actual_resize(all.length());
+  c->evals.resize_but_with_stl_behavior(all.length());
   all.example_parser->lbl_parser = CB::cb_label;
 
   if (c->num_classes > 0)
