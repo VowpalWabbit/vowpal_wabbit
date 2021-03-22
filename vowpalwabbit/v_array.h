@@ -56,7 +56,8 @@ private:
     const size_t old_len = size();
 
     T* temp = reinterpret_cast<T*>(std::realloc(_begin, sizeof(T) * length));
-    if (temp == nullptr) { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
+    if (temp == nullptr)
+    { THROW_OR_RETURN("realloc of " << length << " failed in reserve_nocheck().  out of memory?"); }
     else
     {
       _begin = temp;
@@ -170,7 +171,7 @@ public:
   void decr() { _end--; }
   void incr()
   {
-    if (_end == _end_array) resize(2 * capacity() + 3);
+    if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
     _end++;
   }
   T& operator[](size_t i) const { return _begin[i]; }
@@ -180,12 +181,12 @@ public:
   // maintain the original (deprecated) interface for compatibility. To be removed in VW 10
   //   VW_DEPRECATED(
   //       "v_array::resize() is deprecated. Use reserve() instead.
-  // For standard resize behavior, use actual_resize(). The function names will be re-aligned in VW 10")
+  // For standard resize behavior, use resize_but_with_stl_behavior(). The function names will be re-aligned in VW 10")
   void resize(size_t length) { reserve_nocheck(length); }
 
   // change the number of elements in the vector
   // to be renamed to resize() in VW 10
-  void actual_resize(size_t length)
+  void resize_but_with_stl_behavior(size_t length)
   {
     auto old_size = size();
     // if new length is smaller than current size destroy the excess elements
@@ -321,7 +322,7 @@ public:
 
   void push_back(const T& new_ele)
   {
-    if (_end == _end_array) resize(2 * capacity() + 3);
+    if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
     new (_end++) T(new_ele);
   }
 
@@ -330,7 +331,7 @@ public:
   template <class... Args>
   void emplace_back(Args&&... args)
   {
-    if (_end == _end_array) resize(2 * capacity() + 3);
+    if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
     new (_end++) T(std::forward<Args>(args)...);
   }
 
@@ -367,13 +368,15 @@ public:
 
     if (!contain_sorted(new_ele, index))
     {
-      if (_end == _end_array) resize(2 * capacity() + 3);
+      if (_end == _end_array) { reserve_nocheck(2 * capacity() + 3); }
 
       to_move = size - index;
 
       if (to_move > 0)
+      {
         memmove(_begin + index + 1, _begin + index,
             to_move * sizeof(T));  // kopiuje to_move*.. bytow z _begin+index do _begin+index+1
+      }
 
       _begin[index] = new_ele;
 
