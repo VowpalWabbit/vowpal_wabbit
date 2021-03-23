@@ -1560,7 +1560,6 @@ void merge_options_from_header_strings(
       if (count == 0 && first_seen)
       {
         options.insert(saved_key, "");
-        is_ccb_input_model = is_ccb_input_model || (saved_key == "ccb_explore_adf");
       }
 
       count = 0;
@@ -1576,6 +1575,7 @@ void merge_options_from_header_strings(
         continue;
       }
       saved_key = opt.string_key;
+      is_ccb_input_model = is_ccb_input_model || (saved_key == "ccb_explore_adf");
 
       if (opt.value.size() > 0)
       {
