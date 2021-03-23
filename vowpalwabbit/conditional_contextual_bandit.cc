@@ -69,8 +69,8 @@ struct ccb
   // This means the interactions aren't added and the slot feature is not added.
   bool has_seen_multi_slot_example = false;
   // Introduction has_seen_multi_slot_example was breaking change in terms of model format.
-  // If we still want to use either legacy ccb model or model produced by vw in cd mode, we can use this backward compatibility flag (--ccb_model_without_has_seen_flag)
-  bool input_model_without_has_seen_multi_slot_flag = false;
+  // This flag is required for loading cb models (which do not have has_seen_multi_slot_example flag) into ccb reduction
+  bool is_ccb_input_model = false;
 };
 
 namespace CCB
@@ -603,7 +603,7 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 
   // We want to enter this block if either we are writing, or reading a model file after the version in which this was
   // added.
-  if (!read || (sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG && !sm.input_model_without_has_seen_multi_slot_flag))
+  if (!read || (sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG && sm.is_ccb_input_model))
   {
     std::stringstream msg;
     if (!read) { msg << "CCB: has_seen_multi_slot_example = " << sm.has_seen_multi_slot_example << "\n"; }
@@ -617,6 +617,9 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
+
+  data->is_ccb_input_model = all.is_ccb_input_model;
+
   option_group_definition new_options("EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF");
   new_options
       .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
@@ -624,8 +627,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
                .necessary()
                .help(
                    "EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."))
-      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"))
-      .add(make_option("ccb_model_without_has_seen_flag", data->input_model_without_has_seen_multi_slot_flag).help("Legacy ccb model format without HasSeenMultipleSlots flag"));
+      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   data->all_slots_loss_report = all_slots_loss_report;

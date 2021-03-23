@@ -1512,7 +1512,7 @@ bool check_interaction_settings_collision(options_i& options, std::string file_o
 }
 
 void merge_options_from_header_strings(
-    const std::vector<std::string>& strings, bool skip_interactions, VW::config::options_i& options)
+    const std::vector<std::string>& strings, bool skip_interactions, VW::config::options_i& options, bool& is_ccb_input_model)
 {
   po::options_description desc("");
 
@@ -1523,8 +1523,7 @@ void merge_options_from_header_strings(
   std::string saved_key = "";
   unsigned int count = 0;
   bool first_seen = false;
-  const bool is_ccb_run = options.was_supplied("ccb_explore_adf");
-  bool is_ccb_model = false;
+
   for (auto opt : pos.options)
   {
     // If we previously encountered an option we want to skip, ignore tokens without --.
@@ -1561,9 +1560,7 @@ void merge_options_from_header_strings(
       if (count == 0 && first_seen)
       {
         options.insert(saved_key, "");
-        if (saved_key == "ccb_explore_adf") {
-          is_ccb_model = true;
-        }
+        is_ccb_input_model = is_ccb_input_model || (saved_key == "ccb_explore_adf");
       }
 
       count = 0;
@@ -1601,9 +1598,7 @@ void merge_options_from_header_strings(
       }
     }
   }
-  if (is_ccb_run & !is_ccb_model) {
-    options.insert("ccb_model_without_has_seen_flag", "");
-  }
+
   if (count == 0 && saved_key != "") { options.insert(saved_key, ""); }
 }
 
@@ -1618,7 +1613,7 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model,
   std::istringstream ss{file_options};
   std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
-  merge_options_from_header_strings(container, interactions_settings_duplicated, options);
+  merge_options_from_header_strings(container, interactions_settings_duplicated, options, all.is_ccb_input_model);
 
   return options;
 }
