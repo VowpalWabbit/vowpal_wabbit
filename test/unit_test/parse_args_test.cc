@@ -549,8 +549,7 @@ BOOST_AUTO_TEST_CASE(merge_from_header_strings_int_bool_interaction_int_bool_opt
 
 BOOST_AUTO_TEST_CASE(merge_options_from_ccb_header)
 {
-  const std::vector<std::string> strings{
-      "--dsjson", "--epsilon", "0.2", "--ccb_explore_adf"};
+  const std::vector<std::string> strings{"--dsjson", "--epsilon", "0.2", "--ccb_explore_adf"};
   auto opts = VW::make_unique<VW::config::options_boost_po>(std::vector<std::string>());
 
   bool is_ccb_model = false;
@@ -561,8 +560,7 @@ BOOST_AUTO_TEST_CASE(merge_options_from_ccb_header)
 
 BOOST_AUTO_TEST_CASE(merge_option_from_cb_header)
 {
-  const std::vector<std::string> strings{
-      "--dsjson", "--epsilon", "0.2", "--cb_explore_adf"};
+  const std::vector<std::string> strings{"--dsjson", "--epsilon", "0.2", "--cb_explore_adf"};
   auto opts = VW::make_unique<VW::config::options_boost_po>(std::vector<std::string>());
 
   bool is_ccb_model = false;

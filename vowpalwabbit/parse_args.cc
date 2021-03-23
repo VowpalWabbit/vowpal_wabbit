@@ -1511,8 +1511,8 @@ bool check_interaction_settings_collision(options_i& options, std::string file_o
   return file_options_has_interaction;
 }
 
-void merge_options_from_header_strings(
-    const std::vector<std::string>& strings, bool skip_interactions, VW::config::options_i& options, bool& is_ccb_input_model)
+void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
+    VW::config::options_i& options, bool& is_ccb_input_model)
 {
   po::options_description desc("");
 
@@ -1557,10 +1557,7 @@ void merge_options_from_header_strings(
     if (!treat_as_value && opt.string_key != "")
     {
       // If the new token is a new option and there were no values previously it was a bool option. Add it as a switch.
-      if (count == 0 && first_seen)
-      {
-        options.insert(saved_key, "");
-      }
+      if (count == 0 && first_seen) { options.insert(saved_key, ""); }
 
       count = 0;
       first_seen = true;
