@@ -1649,10 +1649,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
       else
       {
         priv.learn_ec_copy.resize(ec_cnt);
-        for (size_t i = 0; i < ec_cnt; i++)
-        {
-          priv.learn_ec_copy[i] = std::move((*(ecs + i)).clone());
-        }
+        for (size_t i = 0; i < ec_cnt; i++) { priv.learn_ec_copy[i] = std::move((*(ecs + i)).clone()); }
         priv.learn_ec_ref = priv.learn_ec_copy.data();
       }
 

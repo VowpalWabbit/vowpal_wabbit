@@ -44,21 +44,18 @@ struct polylabel
 
 struct polyprediction
 {
-  protected:
+protected:
   polyprediction(const polyprediction&) = default;
   polyprediction& operator=(const polyprediction&) = default;
-  public:
 
+public:
   polyprediction() = default;
   ~polyprediction() = default;
 
   polyprediction(polyprediction&&) = default;
   polyprediction& operator=(polyprediction&&) = default;
 
-  polyprediction clone() const
-  {
-    return *this;
-  }
+  polyprediction clone() const { return *this; }
 
   float scalar = 0.f;
   v_array<float> scalars;           // a sequence of scalar predictions
@@ -78,6 +75,7 @@ struct example : public example_predict  // core example datatype.
 protected:
   example(const example&);
   example& operator=(const example&);
+
 public:
   example() = default;
   ~example();
