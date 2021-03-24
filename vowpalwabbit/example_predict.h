@@ -57,11 +57,30 @@ struct example_predict
   };
 
 protected:
-// interactions is a shallow copy as the example object should never own this - but rather have a reference to the object for use.
-  example_predict(const example_predict&) = default;
-  example_predict& operator=(const example_predict&) = default;
-public:
+  // interactions is a shallow copy as the example object should never own this - but rather have a reference to the
+  // object for use.
+  example_predict(const example_predict& other)
+  {
+    indices = other.indices;
+    for (namespace_index c : other.indices) { feature_space[c].deep_copy_from(other.feature_space[c]); }
+    ft_offset = other.ft_offset;
+    interactions = other.interactions;
+    _reduction_features = other._reduction_features;
+    _debug_current_reduction_depth = other._debug_current_reduction_depth;
+  }
+  example_predict& operator=(const example_predict& other)
+  {
+    if (this == &other) return *this;
+    indices = other.indices;
+    for (namespace_index c : other.indices) { feature_space[c].deep_copy_from(other.feature_space[c]); }
+    ft_offset = other.ft_offset;
+    interactions = other.interactions;
+    _reduction_features = other._reduction_features;
+    _debug_current_reduction_depth = other._debug_current_reduction_depth;
+    return *this;
+  }
 
+public:
   example_predict() = default;
   ~example_predict() = default;
   example_predict(example_predict&& other) = default;
