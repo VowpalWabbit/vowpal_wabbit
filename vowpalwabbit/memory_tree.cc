@@ -10,6 +10,7 @@
 #include <sstream>
 #include <ctime>
 #include <memory>
+#include <tuple>
 
 #include "reductions.h"
 #include "rand48.h"
@@ -79,6 +80,7 @@ int cmpfunc(const void* a, const void* b) { return *(char*)a - *(char*)b; }
 
 void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool oas = false)
 {
+  std::ignore = oas;
   ec = std::move(ec1.clone());
 
   ec.total_sum_feat_sq = 0.0;  // sort namespaces.  pass indices array into sort...template (leave this to the end)
