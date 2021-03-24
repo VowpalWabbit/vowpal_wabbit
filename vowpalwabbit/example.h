@@ -44,14 +44,21 @@ struct polylabel
 
 struct polyprediction
 {
+  protected:
+  polyprediction(const polyprediction&) = default;
+  polyprediction& operator=(const polyprediction&) = default;
+  public:
+
   polyprediction() = default;
   ~polyprediction() = default;
 
   polyprediction(polyprediction&&) = default;
   polyprediction& operator=(polyprediction&&) = default;
 
-  polyprediction(const polyprediction&) = delete;
-  polyprediction& operator=(const polyprediction&) = delete;
+  polyprediction clone() const
+  {
+    return *this;
+  }
 
   float scalar = 0.f;
   v_array<float> scalars;           // a sequence of scalar predictions
@@ -68,13 +75,17 @@ VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 struct example : public example_predict  // core example datatype.
 {
+protected:
+  example(const example&);
+  example& operator=(const example&);
+public:
   example() = default;
   ~example();
 
-  example(const example&) = delete;
-  example& operator=(const example&) = delete;
   example(example&& other) = default;
   example& operator=(example&& other) = default;
+
+  example clone() const;
 
   /// Example contains unions for label and prediction. These do not get cleaned
   /// up by the constructor because the type is not known at that time. To

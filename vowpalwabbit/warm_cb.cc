@@ -161,12 +161,9 @@ void copy_example_to_adf(warm_cb& data, example& ec)
   for (size_t a = 0; a < data.num_actions; ++a)
   {
     auto& eca = *data.ecs[a];
-    // clear label
-    auto& lab = eca.l.cb;
-    CB::default_label(lab);
 
-    // copy data
-    VW::copy_example_data(false, &eca, &ec);
+    eca = std::move(ec.clone());
+    CB::default_label(eca.l.cb);
 
     // offset indicies for given action
     for (features& fs : eca)
@@ -309,11 +306,7 @@ void add_to_vali(warm_cb& data, example& ec)
 {
   // TODO: set the first parameter properly
   example* ec_copy = VW::alloc_examples(1);
-
-  if (use_cs)
-    VW::copy_example_data(false, ec_copy, &ec, COST_SENSITIVE::cs_label.copy_label);
-  else
-    VW::copy_example_data(false, ec_copy, &ec, MULTICLASS::mc_label.copy_label);
+  *ec_copy = std::move(ec.clone());
 
   data.ws_vali.push_back(ec_copy);
 }

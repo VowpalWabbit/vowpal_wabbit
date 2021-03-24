@@ -1648,12 +1648,11 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         priv.learn_ec_ref = ecs;
       else
       {
-        void (*label_copy_fn)(polylabel*, polylabel*) = priv.is_ldf ? CS::cs_label.copy_label : nullptr;
-
         priv.learn_ec_copy.resize(ec_cnt);
         for (size_t i = 0; i < ec_cnt; i++)
-          VW::copy_example_data(priv.all->audit, &priv.learn_ec_copy[i], ecs + i, label_copy_fn);
-
+        {
+          priv.learn_ec_copy[i] = std::move((*(ecs + i)).clone());
+        }
         priv.learn_ec_ref = priv.learn_ec_copy.data();
       }
 
@@ -3072,7 +3071,7 @@ void predictor::set_input_at(size_t posn, example& ex)
   if (posn >= ec_cnt)
     THROW("call to set_input_at with too large a position: posn (" << posn << ") >= ec_cnt(" << ec_cnt << ")");
 
-  VW::copy_example_data(false, ec + posn, &ex, CS::cs_label.copy_label);  // TODO: the false is "audit"
+  *(ec + posn) = std::move(ex.clone());
 }
 
 predictor& predictor::erase_oracles()

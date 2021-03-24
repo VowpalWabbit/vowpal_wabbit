@@ -146,10 +146,20 @@ void empty_example(vw& all, example& ec);
 
 VW_DEPRECATED("label size is no longer used, please use the other overload")
 void copy_example_data(bool audit, example*, example*, size_t, void (*copy_label)(polylabel*, polylabel*));
+
+VW_DEPRECATED("Partial example copy functions have been deprecated. Use copy_example for a deep copy.")
 void copy_example_data(bool audit, example*, example*, void (*copy_label)(polylabel*, polylabel*));
+
+VW_DEPRECATED("Partial example copy functions have been deprecated. Use copy_example for a deep copy.")
 void copy_example_metadata(bool audit, example*, example*);
+
+VW_DEPRECATED("Partial example copy functions have been deprecated. Use copy_example for a deep copy.")
 void copy_example_data(bool audit, example*, example*);  // metadata + features, don't copy the label
+
 void move_feature_namespace(example* dst, example* src, namespace_index c);
+
+/// Deep copy including prediction, label and audit info.
+void copy_example(example*, const example*);
 
 // after export_example, must call releaseFeatureSpace to free native memory
 primitive_feature_space* export_example(vw& all, example* e, size_t& len);
