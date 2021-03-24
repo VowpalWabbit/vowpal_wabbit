@@ -128,6 +128,10 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
+
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+
 void copy_example_label(example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
 {
   if (copy_label)
@@ -183,6 +187,8 @@ void copy_example_data(
 {
   copy_example_data(audit, dst, src, copy_label);
 }
+
+VW_WARNING_STATE_POP
 
 void copy_example(example* dst, const example* src) { *dst = std::move(src->clone()); }
 
