@@ -101,7 +101,7 @@ bool test_label(label& ld)
 
 void delete_label(label& ld) { ld.costs.delete_v(); }
 
-void copy_label(label& dst, label& src) { copy_array(dst.costs, src.costs); }
+void copy_label(label& dst, label& src) { dst.costs = src.costs; }
 
 void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {

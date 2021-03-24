@@ -56,7 +56,7 @@ void predict(mf& data, single_learner& base, example& ec)
   prediction += ec.partial_prediction;
 
   // store namespace indices
-  copy_array(data.predict_indices, ec.indices);
+  data.predict_indices = ec.indices;
 
   // erase indices
   ec.indices.clear();
@@ -93,7 +93,7 @@ void predict(mf& data, single_learner& base, example& ec)
     }
   }
   // restore namespace indices and label
-  copy_array(ec.indices, data.predict_indices);
+  ec.indices = data.predict_indices;
 
   // finalize prediction
   ec.partial_prediction = prediction;
@@ -111,7 +111,7 @@ void learn(mf& data, single_learner& base, example& ec)
   ec.pred.scalar = ec.updated_prediction;
 
   // store namespace indices
-  copy_array(data.indices, ec.indices);
+  data.indices = ec.indices;
 
   // erase indices
   ec.indices.clear();
@@ -172,7 +172,7 @@ void learn(mf& data, single_learner& base, example& ec)
     }
   }
   // restore namespace indices
-  copy_array(ec.indices, data.indices);
+  ec.indices = data.indices;
 
   // restore original prediction
   ec.pred.scalar = predicted;
