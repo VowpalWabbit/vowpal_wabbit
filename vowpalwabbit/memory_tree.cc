@@ -50,8 +50,7 @@ void copy_example_data(example* dst, example* src, bool oas = false)  // copy ex
   }
   else
   {
-    dst->l.multilabels.label_v.delete_v();
-    copy_array(dst->l.multilabels.label_v, src->l.multilabels.label_v);
+    dst->l.multilabels.label_v = src->l.multilabels.label_v;
   }
   VW::copy_example_data(false, dst, src);
 }
