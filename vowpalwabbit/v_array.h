@@ -76,6 +76,21 @@ private:
     memmove(&_begin[idx + width], &_begin[idx], (size() - (idx + width)) * sizeof(T));
   }
 
+  void resize_no_initialize(size_t old_size, size_t length)
+  {
+    // if new length is smaller than current size destroy the excess elements
+    for (auto idx = length; idx < old_size; ++idx) { _begin[idx].~T(); }
+    reserve(length);
+    _end = _begin + length;
+  }
+
+  void copy_into_this(const v_array<T>& src)
+  {
+    clear();
+    resize_no_initialize(size(), src.size());
+    std::copy(src.begin(), src.end(), begin());
+  }
+
   T* _begin;
   T* _end;
   T* _end_array;
@@ -132,8 +147,7 @@ public:
     _end_array = nullptr;
     _erase_count = 0;
 
-    // TODO this should use the other version when T is trivially copyable and this otherwise.
-    copy_array_no_memcpy(*this, other);
+    copy_into_this(other);
   }
 
   v_array<T>& operator=(const v_array<T>& other)
@@ -141,8 +155,7 @@ public:
     if (this == &other) return *this;
 
     delete_v_array();
-    // TODO this should use the other version when T is trivially copyable and this otherwise.
-    copy_array_no_memcpy(*this, other);
+    copy_into_this(other);
     return *this;
   }
 
@@ -193,10 +206,7 @@ public:
   void resize_but_with_stl_behavior(size_t length)
   {
     auto old_size = size();
-    // if new length is smaller than current size destroy the excess elements
-    for (auto idx = length; idx < old_size; ++idx) { _begin[idx].~T(); }
-    reserve(length);
-    _end = _begin + length;
+    resize_no_initialize(old_size, length);
     // default construct any newly added elements
     // TODO: handle non-default constructable objects
     // requires second interface
@@ -408,14 +418,14 @@ inline v_array<T> v_init()
 }
 
 template <class T>
+VW_DEPRECATED("Use v_array's copy constructor or assignment directly instead")
 void copy_array(v_array<T>& dst, const v_array<T>& src)
 {
-  dst.clear();
-  dst.insert(dst.end(), src.begin(), src.end());
+  dst = src;
 }
 
-// use to copy arrays of types with non-trivial copy constructors, such as shared_ptr
 template <class T>
+VW_DEPRECATED("Use v_array's copy constructor or assignment directly instead")
 void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src)
 {
   dst.clear();
@@ -423,6 +433,7 @@ void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src)
 }
 
 template <class T>
+VW_DEPRECATED("Use v_array's copy constructor directly instead")
 void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(const T&))
 {
   dst.clear();

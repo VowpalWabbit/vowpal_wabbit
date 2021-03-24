@@ -76,7 +76,7 @@ void copy_example_label(example* dst, example* src, void (*copy_label)(polylabel
 
 void copy_example_metadata(bool /* audit */, example* dst, example* src)
 {
-  copy_array(dst->tag, src->tag);
+  dst->tag = src->tag;
   dst->example_counter = src->example_counter;
 
   dst->ft_offset = src->ft_offset;
@@ -102,9 +102,8 @@ void copy_example_data(bool audit, example* dst, example* src)
   copy_example_metadata(audit, dst, src);
 
   // copy feature data
-  copy_array(dst->indices, src->indices);
+  dst->indices = src->indices;
   for (namespace_index c : src->indices) dst->feature_space[c].deep_copy_from(src->feature_space[c]);
-  // copy_array(dst->atomics[i], src->atomics[i]);
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->interactions = src->interactions;

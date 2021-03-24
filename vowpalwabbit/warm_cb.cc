@@ -385,7 +385,7 @@ uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, example& ec)
     THROW("Failed to sample from pdf");
 
   auto& a_s = data.a_s_adf;
-  copy_array<action_score>(a_s, out_ec.pred.a_s);
+  a_s = out_ec.pred.a_s;
 
   return chosen_action;
 }
