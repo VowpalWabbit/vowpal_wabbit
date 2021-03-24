@@ -321,10 +321,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   // params.all->opts_n_args.trace_message<<"Read num support "<<model->num_support<< endl;
 
   flat_example* fec = nullptr;
-  if (read)
-  {
-    model->support_vec.reserve(model->num_support);
-  }
+  if (read) { model->support_vec.reserve(model->num_support); }
 
   for (uint32_t i = 0; i < model->num_support; i++)
   {
@@ -342,16 +339,10 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
     }
   }
 
-  if (read)
-  {
-    model->alpha.resize_but_with_stl_behavior(model->num_support);
-  }
+  if (read) { model->alpha.resize_but_with_stl_behavior(model->num_support); }
   bin_text_read_write_fixed(
       model_file, (char*)model->alpha.data(), (uint32_t)model->num_support * sizeof(float), "", read, msg, text);
-  if (read)
-  {
-    model->delta.resize_but_with_stl_behavior(model->num_support);
-  }
+  if (read) { model->delta.resize_but_with_stl_behavior(model->num_support); }
   bin_text_read_write_fixed(
       model_file, (char*)model->delta.data(), (uint32_t)model->num_support * sizeof(float), "", read, msg, text);
 }
