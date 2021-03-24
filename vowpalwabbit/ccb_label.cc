@@ -191,10 +191,10 @@ void copy_label(label& ldDst, label& ldSrc)
     ldDst.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
     ldDst.outcome->cost = ldSrc.outcome->cost;
-    copy_array(ldDst.outcome->probabilities, ldSrc.outcome->probabilities);
+    ldDst.outcome->probabilities = ldSrc.outcome->probabilities;
   }
 
-  copy_array(ldDst.explicit_included_actions, ldSrc.explicit_included_actions);
+  ldDst.explicit_included_actions = ldSrc.explicit_included_actions;
   ldDst.type = ldSrc.type;
   ldDst.weight = ldSrc.weight;
 }

@@ -87,7 +87,7 @@ void copy_label(slates::label& dst, slates::label& src)
   dst.labeled = src.labeled;
   dst.cost = src.cost;
   dst.slot_id = src.slot_id;
-  copy_array(dst.probabilities, src.probabilities);
+  dst.probabilities = src.probabilities;
 }
 
 // Slates labels come in three types, shared, action and slot with the following structure:
