@@ -108,8 +108,8 @@ void VowpalWabbitNamespaceBuilder::AddFeature(uint64_t weight_index, float x)
 }
 
 void VowpalWabbitNamespaceBuilder::PreAllocate(int size)
-{ m_features->values.resize(m_features->values.end() - m_features->values.begin() + size);
-  m_features->indicies.resize(m_features->indicies.end() - m_features->indicies.begin() + size);
+{ m_features->values.reserve(m_features->values.size() + size);
+  m_features->indicies.reserve(m_features->indicies.size() + size);
 }
 
 size_t VowpalWabbitNamespaceBuilder::FeatureCount::get()
