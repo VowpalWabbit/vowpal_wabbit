@@ -549,6 +549,9 @@ public:
 
   std::map<uint64_t, std::string> index_name_map;
 
+  // hack to support cb model loading into ccb reduction
+  bool is_ccb_input_model = false;
+
   vw();
   ~vw();
   std::shared_ptr<rand_state> get_random_state() { return _random_state_sp; }

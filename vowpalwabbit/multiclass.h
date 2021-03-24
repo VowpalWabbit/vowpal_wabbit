@@ -13,6 +13,10 @@ struct label_t
 {
   uint32_t label;
   float weight;
+
+  label_t();
+  label_t(uint32_t label, float weight);
+  void reset_to_default();
 };
 
 extern label_parser mc_label;
