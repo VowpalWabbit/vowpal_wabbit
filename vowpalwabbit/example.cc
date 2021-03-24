@@ -65,8 +65,10 @@ example::example(const example& other) : example_predict(other)
 
 example& example::operator=(const example& other)
 {
-  if (this == &other) return *this;
+  if (this == &other) { return *this; }
+
   example_predict::operator=(other);
+
   l = other.l;
   pred = other.pred.clone();
   weight = other.weight;
@@ -94,6 +96,7 @@ example& example::operator=(const example& other)
   end_pass = other.end_pass;
   sorted = other.sorted;
   in_use = other.in_use;
+
   return *this;
 }
 
@@ -128,7 +131,6 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 
