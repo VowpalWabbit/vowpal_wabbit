@@ -92,7 +92,7 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes, uint32_t bandwidth)
       if (bandwidth)
       {
         right_only = (id == (_num_leaf_nodes / (2 * bandwidth) - 1));
-        left_only = (id == (_num_leaf_nodes / (2 * bandwidth) - 2));
+        left_only = (id == (_num_leaf_nodes / (bandwidth) - 2));
       }
       nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
 
@@ -100,7 +100,7 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes, uint32_t bandwidth)
       if (bandwidth)
       {
         right_only = (id == (_num_leaf_nodes / (2 * bandwidth) - 1));
-        left_only = (id == (_num_leaf_nodes / (2 * bandwidth) - 2));
+        left_only = (id == (_num_leaf_nodes / (bandwidth) - 2));
       }
       nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
     }
