@@ -133,7 +133,7 @@ void copy_label_additional_fields(LabelT& dst, LabelT& src)
 template <typename LabelT = CB::label>
 void copy_label(LabelT& dst, LabelT& src)
 {
-  copy_array(dst.costs, src.costs);
+  dst.costs = src.costs;
   copy_label_additional_fields(dst, src);
 }
 }  // namespace CB
