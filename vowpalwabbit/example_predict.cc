@@ -37,7 +37,7 @@ example_predict::example_predict(const example_predict& other)
   _debug_current_reduction_depth = other._debug_current_reduction_depth;
 }
 
-example_predict::example_predict& operator=(const example_predict& other)
+example_predict& example_predict::operator=(const example_predict& other)
 {
   if (this == &other) { return *this; }
 
