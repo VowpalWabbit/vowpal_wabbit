@@ -625,7 +625,7 @@ void del_features_in_top_namespace(search_private& /* priv */, example& ec, size
     //(size_t)ec.indices.last()); }
   }
   features& fs = ec.feature_space[ns];
-  ec.indices.decr();
+  ec.indices.pop_back();
   ec.num_features -= fs.size();
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
   fs.clear();

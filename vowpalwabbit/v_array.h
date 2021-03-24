@@ -181,7 +181,11 @@ public:
   T last() const { return *(_end - 1); }
 
   bool empty() const { return _begin == _end; }
+
+  VW_DEPRECATED("v_array::decr() is deprecated. Use pop_back()")
   void decr() { _end--; }
+
+  VW_DEPRECATED("v_array::incr() is deprecated. Use push_back()")
   void incr()
   {
     if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
