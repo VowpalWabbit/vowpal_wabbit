@@ -30,16 +30,16 @@ void features::clear()
 void features::truncate_to(const features_value_iterator& pos)
 {
   auto i = pos._begin - values.begin();
-  values.actual_resize(i);
-  if (indicies.end() != indicies.begin()) { indicies.actual_resize(i); }
+  values.resize_but_with_stl_behavior(i);
+  if (indicies.end() != indicies.begin()) { indicies.resize_but_with_stl_behavior(i); }
 
   if (space_names.begin() != space_names.end()) { space_names.erase(space_names.begin() + i, space_names.end()); }
 }
 
 void features::truncate_to(size_t i)
 {
-  values.actual_resize(i);
-  if (indicies.end() != indicies.begin()) { indicies.actual_resize(i); }
+  values.resize_but_with_stl_behavior(i);
+  if (indicies.end() != indicies.begin()) { indicies.resize_but_with_stl_behavior(i); }
 
   if (space_names.size() > i) { space_names.erase(space_names.begin() + i, space_names.end()); }
 }

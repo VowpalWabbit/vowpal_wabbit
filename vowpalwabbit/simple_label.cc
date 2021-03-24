@@ -21,6 +21,17 @@
 
 namespace logger = VW::io::logger;
 
+label_data::label_data() { reset_to_default(); }
+
+label_data::label_data(float label, float weight, float initial) : label(label), weight(weight), initial(initial) {}
+
+void label_data::reset_to_default()
+{
+  label = FLT_MAX;
+  weight = 1.f;
+  initial = 0.f;
+}
+
 char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 {
   memcpy(&ld.label, c, sizeof(ld.label));
@@ -64,12 +75,7 @@ void cache_simple_label(label_data& ld, io_buf& cache)
   bufcache_simple_label(ld, c);
 }
 
-void default_simple_label(label_data& ld)
-{
-  ld.label = FLT_MAX;
-  ld.weight = 1.;
-  ld.initial = 0.;
-}
+void default_simple_label(label_data& ld) { ld.reset_to_default(); }
 
 bool test_label(label_data& ld) { return ld.label == FLT_MAX; }
 
