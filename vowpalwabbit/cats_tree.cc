@@ -92,7 +92,7 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes, uint32_t bandwidth)
       if (bandwidth)
       {
         right_only = (id == (_num_leaf_nodes / (2 * bandwidth) - 1));
-        left_only = (id == (_num_leaf_nodes / (2 * bandwidth)-2));
+        left_only = (id == (_num_leaf_nodes / (2 * bandwidth) - 2));
       }
       nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
 
@@ -100,7 +100,7 @@ void min_depth_binary_tree::build_tree(uint32_t num_nodes, uint32_t bandwidth)
       if (bandwidth)
       {
         right_only = (id == (_num_leaf_nodes / (2 * bandwidth) - 1));
-        left_only = (id == (_num_leaf_nodes / (2 * bandwidth)-2));
+        left_only = (id == (_num_leaf_nodes / (2 * bandwidth) - 2));
       }
       nodes.emplace_back(id, 0, 0, i, depth, left_only, right_only, true);
     }
@@ -279,17 +279,34 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
           VW_DBG(ec) << "tree_c: learn() after binary predict:" << scalar_pred_to_string(ec)
                      << ", local_action = " << (local_action) << std::endl;
           float trained_action = (ec.pred.scalar < 0) ? LEFT : RIGHT;
-          if (trained_action != local_action)
+
+          if (trained_action == local_action)
           {
-            cost_parent = (std::min)(cost_v, cost_w) * std::abs(ec.pred.scalar) +
-                (std::max)(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar));
-            VW_DBG(ec) << "tree_c: learn() ec.pred.scalar == local_action" << std::endl;
+            if (std::abs(ec.pred.scalar) == 1 && (cost_v == 0 || cost_w == 0))
+            {
+              // cost_parent shouldn't be zero if one of the costs is not zero
+              cost_parent = std::max(cost_v, cost_w);
+            }
+            else
+            {
+              cost_parent = std::min(cost_v, cost_w) * std::abs(ec.pred.scalar) +
+                  std::max(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar));
+            }
+            VW_DBG(ec) << "tree_c: learn() ec.pred.scalar != local_action" << std::endl;
           }
           else
           {
-            cost_parent = (std::max)(cost_v, cost_w) * std::abs(ec.pred.scalar) +
-                (std::min)(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar));
-            VW_DBG(ec) << "tree_c: learn() ec.pred.scalar != local_action" << std::endl;
+            if (ec.pred.scalar == 0 && (cost_v == 0 || cost_w == 0))
+            {
+              // cost_parent shouldn't be zero if one of the costs is not zero
+              cost_parent = std::max(cost_v, cost_w);
+            }
+            else
+            {
+              cost_parent = std::max(cost_v, cost_w) * std::abs(ec.pred.scalar) +
+                  std::min(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar));
+            }
+            VW_DBG(ec) << "tree_c: learn() ec.pred.scalar == local_action" << std::endl;
           }
         }
       }
