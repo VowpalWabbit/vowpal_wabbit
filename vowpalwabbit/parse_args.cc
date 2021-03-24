@@ -1511,8 +1511,8 @@ bool check_interaction_settings_collision(options_i& options, std::string file_o
   return file_options_has_interaction;
 }
 
-void merge_options_from_header_strings(
-    const std::vector<std::string>& strings, bool skip_interactions, VW::config::options_i& options)
+void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
+    VW::config::options_i& options, bool& is_ccb_input_model)
 {
   po::options_description desc("");
 
@@ -1523,6 +1523,7 @@ void merge_options_from_header_strings(
   std::string saved_key = "";
   unsigned int count = 0;
   bool first_seen = false;
+
   for (auto opt : pos.options)
   {
     // If we previously encountered an option we want to skip, ignore tokens without --.
@@ -1571,6 +1572,7 @@ void merge_options_from_header_strings(
         continue;
       }
       saved_key = opt.string_key;
+      is_ccb_input_model = is_ccb_input_model || (saved_key == "ccb_explore_adf");
 
       if (opt.value.size() > 0)
       {
@@ -1608,7 +1610,7 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model,
   std::istringstream ss{file_options};
   std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
-  merge_options_from_header_strings(container, interactions_settings_duplicated, options);
+  merge_options_from_header_strings(container, interactions_settings_duplicated, options, all.is_ccb_input_model);
 
   return options;
 }
