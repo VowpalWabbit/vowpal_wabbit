@@ -43,7 +43,7 @@ template <bool cache_sub_predictions>
 void predict(mf& data, single_learner& base, example& ec)
 {
   float prediction = 0;
-  if (cache_sub_predictions) data.sub_predictions.resize(2 * data.rank + 1);
+  if (cache_sub_predictions) { data.sub_predictions.resize_but_with_stl_behavior(2 * data.rank + 1); }
 
   // predict from linear terms
   base.predict(ec);
