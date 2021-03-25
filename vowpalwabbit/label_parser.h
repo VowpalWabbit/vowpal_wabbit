@@ -29,6 +29,7 @@ enum class label_type_t
   continuous  // continuous actions
 };
 
+struct example;
 struct label_parser
 {
   void (*default_label)(polylabel*);

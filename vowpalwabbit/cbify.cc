@@ -359,6 +359,7 @@ template <bool use_cs>
 void predict_adf(cbify& data, multi_learner& base, example& ec)
 {
   const auto save_label = ec.l;
+  uint32_t chosen_action;
 
   data.adf_data.copy_example_to_adf(data.all->weights, ec);
   base.predict(data.adf_data.ecs);
@@ -379,6 +380,8 @@ void learn_adf(cbify& data, multi_learner& base, example& ec)
   auto& out_ec = *data.adf_data.ecs[0];
   MULTICLASS::label_t ld;
   COST_SENSITIVE::label csl;
+  uint32_t chosen_action = 0;
+
   if (use_cs)
     csl = ec.l.cs;
   else
@@ -405,7 +408,7 @@ void learn_adf(cbify& data, multi_learner& base, example& ec)
 
 void do_actual_predict_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 {
-    uint32_t chosen_action;
+  uint32_t chosen_action;
 
   // change label and pred data for cb
   if (data.cs_costs.size() < ec_seq.size()) data.cs_costs.resize(ec_seq.size());
@@ -447,8 +450,10 @@ void do_actual_predict_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 {
   CB::cb_class cl;
-  cl.action = data.cb_as[0][data.chosen_action].action + 1;
-  cl.probability = data.cb_as[0][data.chosen_action].score;
+  uint32_t chosen_action = 0;
+
+  cl.action = data.cb_as[0][chosen_action].action + 1;
+  cl.probability = data.cb_as[0][chosen_action].score;
 
   if (!cl.action) THROW("No action with non-zero probability found!");
 
