@@ -10,6 +10,10 @@
 #include "global_data.h"
 #include "vw_exception.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 class squaredloss : public loss_function
 {
 public:
@@ -118,8 +122,9 @@ public:
 
   float getLoss(shared_data*, float prediction, float label)
   {
+    // TODO: warning or error?
     if (label != -1.f && label != 1.f)
-      std::cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << std::endl;
+      logger::log_warn("You are using label {} not -1 or 1 as loss function expects!", label);
     float e = 1 - label * prediction;
     return (e > 0) ? e : 0;
   }
@@ -157,8 +162,9 @@ public:
 
   float getLoss(shared_data*, float prediction, float label)
   {
+    // TODO: warning or error?
     if (label != -1.f && label != 1.f)
-      std::cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << std::endl;
+      logger::log_warn("You are using label {} not -1 or 1 as loss function expects!", label);
     return log(1 + correctedExp(-label * prediction));
   }
 
@@ -301,8 +307,9 @@ public:
 
   float getLoss(shared_data*, float prediction, float label)
   {
+    // TODO: warning or error?
     if (label < 0.f)
-      std::cout << "You are using label " << label << " but loss function expects label >= 0!" << std::endl;
+      logger::log_warn("You are using label {} but loss function expects label >= 0!", label);
     float exp_prediction = expf(prediction);
     // deviance is used instead of log-likelihood
     return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));

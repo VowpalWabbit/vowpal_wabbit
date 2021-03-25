@@ -15,7 +15,8 @@
 #include "scope_exit.h"
 #include <algorithm>
 #include <cmath>
-#include <vector>
+#include <cfloat>
+#include "scope_exit.h"
 
 // Random Network Distillation style exploration.  Basically predicts
 // something whose true expectation is zero and uses the MSE(prediction

@@ -6,15 +6,21 @@
   by John Langford.
 */
 
+#include <cfloat>
 #include <iostream>
 #include <fstream>
 #include <ctime>
 #include <numeric>
+#include <fmt/core.h>
 
 #include "reductions.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 struct direction
 {
@@ -47,18 +53,9 @@ struct ect
   uint32_t last_pair;
 
   v_array<bool> tournaments_won;
-
-  ~ect()
-  {
-    final_nodes.delete_v();
-    up_directions.delete_v();
-    directions.delete_v();
-    down_directions.delete_v();
-    tournaments_won.delete_v();
-  }
 };
 
-bool exists(v_array<size_t> db)
+bool exists(const v_array<size_t>& db)
 {
   for (size_t i : db)
     if (i != 0) return true;
@@ -70,7 +67,7 @@ size_t final_depth(size_t eliminations)
   eliminations--;
   for (size_t i = 0; i < 32; i++)
     if (eliminations >> i == 0) return i;
-  std::cerr << "too many eliminations" << std::endl;
+  logger::errlog_error("too many eliminations");
   return 31;
 }
 
@@ -83,12 +80,14 @@ bool not_empty(std::vector<v_array<uint32_t>> const& tournaments)
 
 void print_level(std::vector<v_array<uint32_t>> const& level)
 {
+  fmt::memory_buffer buffer;
   for (auto const& t : level)
   {
-    for (auto i : t) std::cout << " " << i;
-    std::cout << " | ";
+    for (auto i : t) fmt::format_to(buffer, " {}", i);
+    fmt::format_to(buffer, " | ");
   }
-  std::cout << std::endl;
+  logger::pattern_guard("%v");
+  logger::log_info("{}", fmt::to_string(buffer));
 }
 
 size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
@@ -260,7 +259,8 @@ void ect_train(ect& e, single_learner& base, example& ec)
     }
   } while (id != 0);
 
-  if (e.tournaments_won.empty()) std::cout << "badness!" << std::endl;
+  //TODO: error? warn? info? what level is this supposed to be?
+  if (e.tournaments_won.empty()) logger::log_error("badness!");
 
   // tournaments_won is a bit vector determining which tournaments the label won.
   for (size_t i = 0; i < e.tree_height; i++)
@@ -289,9 +289,10 @@ void ect_train(ect& e, single_learner& base, example& ec)
         else
           e.tournaments_won[j] = left;
       }
+
       if (e.tournaments_won.size() % 2 == 1)
-        e.tournaments_won[e.tournaments_won.size() / 2] = e.tournaments_won[e.tournaments_won.size() - 1];
-      e.tournaments_won.end() = e.tournaments_won.begin() + (1 + e.tournaments_won.size()) / 2;
+      { e.tournaments_won[e.tournaments_won.size() / 2] = e.tournaments_won[e.tournaments_won.size() - 1]; }
+      e.tournaments_won.resize_but_with_stl_behavior((1 + e.tournaments_won.size()) / 2);
     }
   }
 }
@@ -300,7 +301,11 @@ void predict(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
-    std::cout << "label " << mc.label << " is not in {1," << e.k << "} This won't work right." << std::endl;
+  {
+    // In order to print curly braces, they need to be embedded within curly braces to escape them.
+    // The funny looking part will just print {1, e.k}
+    logger::log_warn("label {0} is not in {{1, {1}}} This won't work right.", mc.label, e.k);
+  }
   ec.pred.multiclass = ect_predict(e, base, ec);
   ec.l.multi = mc;
 }

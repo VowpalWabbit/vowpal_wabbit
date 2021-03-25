@@ -298,6 +298,14 @@ std::string get_arguments(vw_ptr all)
   return serializer.str();
 }
 
+py::list get_enabled_reductions(vw_ptr all)
+{
+  py::list enabled_reductions;
+  for (auto ex : all->enabled_reductions) { enabled_reductions.append(ex); }
+
+  return enabled_reductions;
+}
+
 predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
 {
   Search::predictor* P = new Search::predictor(*sch, my_tag);
@@ -1135,6 +1143,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("audit_example", &my_audit_example, "print example audit information")
       .def("get_id", &get_model_id, "return the model id")
       .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
+      .def("get_enabled_reductions", &get_enabled_reductions, "return the list of names of the enabled reductions")
 
       .def("learn_multi", &my_learn_multi_ex, "given a list pyvw examples, learn (and predict) on those examples")
       .def("predict_multi", &my_predict_multi_ex, "given a list of pyvw examples, predict on that example")

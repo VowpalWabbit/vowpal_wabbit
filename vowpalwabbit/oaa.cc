@@ -9,7 +9,10 @@
 #include "vw_exception.h"
 #include "vw.h"
 
+#include "io/logger.h"
+
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 struct oaa
 {
@@ -31,7 +34,8 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t ld = ec.l.multi;
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
-    std::cout << "label " << ld.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
+      logger::log_error("label {0} is not in {{1,{1}}} This won't work right.",
+			ld.label, o.k);
 
   ec.l.simple = {1., VW::UNUSED_1, VW::UNUSED_0};  // truth
   base.learn(ec, ld.label - 1);
@@ -72,7 +76,8 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 
   // Label validation
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
-    std::cout << "label " << mc_label_data.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
+      logger::log_error("label {0} is not in {{1,{1}}} This won't work right.",
+			mc_label_data.label, o.k);
 
   ec.l.simple = {FLT_MAX, VW::UNUSED_1, VW::UNUSED_0};
 

@@ -13,7 +13,11 @@
 #include "cb_label_parser.h"
 #include "vw_string_view.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
+
+namespace logger = VW::io::logger;
 
 namespace CB
 {
@@ -58,19 +62,21 @@ void parse_label(parser* p, shared_data*, CB::label& ld, std::vector<VW::string_
 
     if (f.probability > 1.0)
     {
-      std::cerr << "invalid probability > 1 specified for an action, resetting to 1." << std::endl;
+      logger::errlog_warn("invalid probability > 1 specified for an action, resetting to 1.");
       f.probability = 1.0;
     }
     if (f.probability < 0.0)
     {
-      std::cerr << "invalid probability < 0 specified for an action, resetting to 0." << std::endl;
+      logger::errlog_warn("invalid probability < 0 specified for an action, resetting to 0.");
       f.probability = .0;
     }
     if (p->parse_name[0] == "shared")
     {
       if (p->parse_name.size() == 1) { f.probability = -1.f; }
       else
-        std::cerr << "shared feature vectors should not have costs" << std::endl;
+      {
+        logger::errlog_warn("shared feature vectors should not have costs");
+      }
     }
 
     ld.costs.push_back(f);
@@ -143,12 +149,12 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
         pred_buf << ec.pred.a_s[0].action << ":" << ec.pred.a_s[0].score << "...";
       else
         pred_buf << "no action";
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_features,
-          all.progress_add, all.progress_arg);
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
+          num_features, all.progress_add, all.progress_arg);
     }
     else
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, (uint32_t)pred, num_features,
-          all.progress_add, all.progress_arg);
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, (uint32_t)pred,
+          num_features, all.progress_add, all.progress_arg);
   }
 }
 }  // namespace CB

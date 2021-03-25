@@ -15,16 +15,21 @@
 #include "constant.h"
 #include "example.h"
 #include "vw_math.h"
+#include "vw_string_view.h"
+#include "parse_primitives.h"
+
+#include "io/logger.h"
 
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
 #include <cmath>
-#include "vw_string_view.h"
 
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 namespace CCB
 {
@@ -157,7 +162,6 @@ void default_label(label& ld)
   // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
   if (ld.outcome != nullptr)
   {
-    ld.outcome->probabilities.delete_v();
     delete ld.outcome;
     ld.outcome = nullptr;
   }
@@ -173,7 +177,6 @@ void delete_label(label& ld)
 {
   if (ld.outcome)
   {
-    ld.outcome->probabilities.delete_v();
     delete ld.outcome;
     ld.outcome = nullptr;
   }
@@ -188,10 +191,10 @@ void copy_label(label& ldDst, label& ldSrc)
     ldDst.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
     ldDst.outcome->cost = ldSrc.outcome->cost;
-    copy_array(ldDst.outcome->probabilities, ldSrc.outcome->probabilities);
+    ldDst.outcome->probabilities = ldSrc.outcome->probabilities;
   }
 
-  copy_array(ldDst.explicit_included_actions, ldSrc.explicit_included_actions);
+  ldDst.explicit_included_actions = ldSrc.explicit_included_actions;
   ldDst.type = ldSrc.type;
   ldDst.weight = ldSrc.weight;
 }
@@ -205,12 +208,12 @@ ACTION_SCORE::action_score convert_to_score(
 
   if (probability > 1.0)
   {
-    std::cerr << "invalid probability > 1 specified for an outcome, resetting to 1.\n";
+    logger::errlog_warn("invalid probability > 1 specified for an action, resetting to 1.");
     probability = 1.0;
   }
   if (probability < 0.0)
   {
-    std::cerr << "invalid probability < 0 specified for an outcome, resetting to 0.\n";
+    logger::errlog_warn("invalid probability < 0 specified for an action, resetting to 0.");
     probability = .0;
   }
 

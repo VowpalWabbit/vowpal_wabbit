@@ -29,8 +29,9 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include "allreduce.h"
 #include "vw_exception.h"
 
-using std::cerr;
-using std::endl;
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
 
 // port is already in network order
 socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
@@ -54,7 +55,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
     if (getnameinfo((sockaddr*)&far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV))
       THROWERRNO("getnameinfo(" << dotted_quad << ")");
 
-    if (!quiet) cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs((u_short)port) << endl;
+    logger::errlog_info("connecting to {0} = {1}:{2}", dotted_quad, hostname, ntohs((u_short)port));
   }
 
   size_t count = 0;
@@ -62,12 +63,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
   while ((ret = connect(sock, (sockaddr*)&far_end, sizeof(far_end))) == -1 && count < 100)
   {
     count++;
-    std::stringstream msg;
-    if (!quiet)
-    {
-      msg << "connect attempt " << count << " failed: " << VW::strerror_to_string(errno);
-      cerr << msg.str() << endl;
-    }
+    logger::errlog_error("connection attempt {0} failed: {1}", count, VW::strerror_to_string(errno));
 #ifdef _WIN32
     Sleep(1);
 #else
@@ -94,7 +90,7 @@ socket_t AllReduceSockets::getsock()
   int on = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
   {
-    if (!quiet) cerr << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
+    logger::errlog_error("setsockopt SO_REUSEADDR: {}", VW::strerror_to_string(errno));
   }
 #endif
 
@@ -102,7 +98,7 @@ socket_t AllReduceSockets::getsock()
   int enableTKA = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
   {
-    if (!quiet) cerr << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
+    logger::errlog_error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno));
   }
 
   return sock;
@@ -129,25 +125,25 @@ void AllReduceSockets::all_reduce_init()
   { THROW("write unique_id=" << unique_id << " to span server failed"); }
   else
   {
-    if (!quiet) cerr << "wrote unique_id=" << unique_id << endl;
+    logger::errlog_info("wrote unique_id={}", unique_id);
   }
   if (send(master_sock, (const char*)&total, sizeof(total), 0) < (int)sizeof(total))
   { THROW("write total=" << total << " to span server failed"); }
   else
   {
-    if (!quiet) cerr << "wrote total=" << total << endl;
+    logger::errlog_info("wrote total={}", total);
   }
   if (send(master_sock, (char*)&node, sizeof(node), 0) < (int)sizeof(node))
   { THROW("write node=" << node << " to span server failed"); }
   else
   {
-    if (!quiet) cerr << "wrote node=" << node << endl;
+    logger::errlog_info("wrote node={}", node);
   }
   int ok;
   if (recv(master_sock, (char*)&ok, sizeof(ok), 0) < (int)sizeof(ok)) { THROW("read ok from span server failed"); }
   else
   {
-    if (!quiet) cerr << "read ok=" << ok << endl;
+    logger::errlog_info("read ok={}", ok);
   }
   if (!ok) THROW("mapper already connected");
 
@@ -159,7 +155,7 @@ void AllReduceSockets::all_reduce_init()
   { THROW("read kid_count from span server failed"); }
   else
   {
-    if (!quiet) cerr << "read kid_count=" << kid_count << endl;
+    logger::errlog_info("read kid_count={}", kid_count);
   }
 
   auto sock = static_cast<socket_t>(-1);
@@ -193,7 +189,7 @@ void AllReduceSockets::all_reduce_init()
       {
         if (listen(sock, kid_count) < 0)
         {
-          if (!quiet) cerr << "listen: " << VW::strerror_to_string(errno) << endl;
+	  logger::errlog_error("listen: {}", VW::strerror_to_string(errno));
           CLOSESOCK(sock);
           sock = getsock();
         }
@@ -215,19 +211,18 @@ void AllReduceSockets::all_reduce_init()
     char dotted_quad[INET_ADDRSTRLEN];
     if (nullptr == inet_ntop(AF_INET, (char*)&parent_ip, dotted_quad, INET_ADDRSTRLEN))
     {
-      if (!quiet)
-        cerr << "read parent_ip=" << parent_ip << "(inet_ntop: " << VW::strerror_to_string(errno) << ")" << endl;
+      logger::errlog_error("read parent_ip={0}(inet_ntop: {1})", parent_ip, VW::strerror_to_string(errno));
     }
     else
     {
-      if (!quiet) cerr << "read parent_ip=" << dotted_quad << endl;
+      logger::errlog_info("read parent_ip={}", dotted_quad);
     }
   }
   if (recv(master_sock, (char*)&parent_port, sizeof(parent_port), 0) < (int)sizeof(parent_port))
   { THROW("read parent_port failed!"); }
   else
   {
-    if (!quiet) cerr << "read parent_port=" << parent_port << endl;
+    logger::errlog_info("read parent_port={}", parent_port);
   }
 
   CLOSESOCK(master_sock);

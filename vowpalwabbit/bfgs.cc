@@ -105,7 +105,6 @@ struct bfgs
 
   ~bfgs()
   {
-    predictions.delete_v();
     free(mem);
     free(rho);
     free(alpha);
@@ -296,6 +295,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
       (&(*w))[W_DIR] -= ((&(*w))[W_COND]) * ((&(*w))[W_GT]);
       (&(*w))[W_GT] = 0;
     }
+    // TODO: spdlog can't print partial log lines. Figure out how to handle this..
     if (!all.logger.quiet) fprintf(stderr, "%f\t", beta);
     return;
   }

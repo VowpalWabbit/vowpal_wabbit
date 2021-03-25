@@ -106,11 +106,17 @@
 #include "io/io_adapter.h"
 #include "io/custom_streambuf.h"
 #include "io/owning_stream.h"
+#include "io/logger.h"
 
-using std::cerr;
+#ifdef BUILD_EXTERNAL_PARSER
+#  include "parse_example_binary.h"
+#endif
+
 using std::cout;
 using std::endl;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 //
 // Does std::string end with a certain substring?
@@ -365,10 +371,12 @@ void parse_diagnostics(options_i& options, vw& all)
 
   options.add_and_parse(diagnostic_group);
 
+  if(all.logger.quiet) logger::log_set_level(logger::log_level::off);
+
   // pass all.logger.quiet around
   if (all.all_reduce) all.all_reduce->quiet = all.logger.quiet;
 
-  // Upon direct query for version -- spit it out to stdout
+  // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
   {
     std::cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
@@ -448,6 +456,9 @@ input_options parse_source(vw& all, options_i& options)
                      "migrate you to the new behavior and silence the warning."))
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
                .help("data file will be interpreted as a flatbuffer file"));
+#ifdef BUILD_EXTERNAL_PARSER
+  VW::external::parser::set_parse_args(input_options, parsed_options);
+#endif
 
   options.add_and_parse(input_options);
 
@@ -581,7 +592,7 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
       }
       else
       {
-        std::cerr << "Possibly malformed hex representation of a namespace: '\\x" << substr << "'\n";
+        logger::errlog_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
         res.push_back(arg[pos++]);
       }
     }
@@ -1500,8 +1511,8 @@ bool check_interaction_settings_collision(options_i& options, std::string file_o
   return file_options_has_interaction;
 }
 
-void merge_options_from_header_strings(
-    const std::vector<std::string>& strings, bool skip_interactions, VW::config::options_i& options)
+void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
+    VW::config::options_i& options, bool& is_ccb_input_model)
 {
   po::options_description desc("");
 
@@ -1512,6 +1523,7 @@ void merge_options_from_header_strings(
   std::string saved_key = "";
   unsigned int count = 0;
   bool first_seen = false;
+
   for (auto opt : pos.options)
   {
     // If we previously encountered an option we want to skip, ignore tokens without --.
@@ -1560,6 +1572,7 @@ void merge_options_from_header_strings(
         continue;
       }
       saved_key = opt.string_key;
+      is_ccb_input_model = is_ccb_input_model || (saved_key == "ccb_explore_adf");
 
       if (opt.value.size() > 0)
       {
@@ -1597,7 +1610,7 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model,
   std::istringstream ss{file_options};
   std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
-  merge_options_from_header_strings(container, interactions_settings_duplicated, options);
+  merge_options_from_header_strings(container, interactions_settings_duplicated, options, all.is_ccb_input_model);
 
   return options;
 }
@@ -1760,6 +1773,8 @@ vw* initialize(
 vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skipModelLoad,
     trace_message_t trace_listener, void* trace_context)
 {
+  // Set up logger as early as possible
+  logger::initialize_logger();
   vw& all = parse_args(std::move(options), trace_listener, trace_context);
 
   try
@@ -1795,9 +1810,10 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
       exit(0);
     }
 
+    print_enabled_reductions(all);
+
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {
-      print_enabled_reductions(all);
       if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
       { all.sd->print_update_header(*all.trace_message); }
       all.l->init_driver();

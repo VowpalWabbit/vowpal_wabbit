@@ -15,6 +15,8 @@
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_adf
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace CB;
 using namespace ACTION_SCORE;
@@ -22,6 +24,8 @@ using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace VW::config;
 using namespace exploration;
+
+namespace logger = VW::io::logger;
 
 namespace CB_ADF
 {
@@ -98,18 +102,6 @@ public:
   const cb_to_cs_adf& get_gen_cs() const { return _gen_cs; }
 
   const VW::version_struct* get_model_file_ver() const { return _model_file_ver; }
-
-  ~cb_adf()
-  {
-    _cs_labels.costs.delete_v();
-    _backup_weights.delete_v();
-    _backup_nf.delete_v();
-    _prob_s.delete_v();
-
-    _a_s.delete_v();
-    _a_s_mtr_cs.delete_v();
-    _gen_cs.pred_scores.costs.delete_v();
-  }
 
 private:
   void learn_IPS(multi_learner& base, multi_ex& examples);
@@ -329,7 +321,7 @@ void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& fi
   for (auto& sink : final_prediction_sink)
   {
     ssize_t t = sink->write(temp, 1);
-    if (t != 1) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != 1) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 

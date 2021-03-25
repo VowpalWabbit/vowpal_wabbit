@@ -5,7 +5,6 @@
 #pragma once
 
 #include "v_array.h"
-#include "parse_primitives.h"
 #include "io_buf.h"
 #include "reduction_features.h"
 

@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <random>
+#include <cfloat>
 
 #include "gd.h"
 #include "io_buf.h"
@@ -247,8 +248,9 @@ void report_progress(vw& all, example& ec)
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
   {
-    all.sd->print_update(all.holdout_set_off, all.current_pass, ec.test_only ? "unknown" : to_string(costs[0]),
-        get_pred_repr(ec), ec.num_features, all.progress_add, all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
+        ec.test_only ? "unknown" : to_string(costs[0]), get_pred_repr(ec), ec.num_features, all.progress_add,
+        all.progress_arg);
   }
 }
 

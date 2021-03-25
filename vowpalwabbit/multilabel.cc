@@ -6,6 +6,14 @@
 #include "gd.h"
 #include "vw.h"
 #include "example.h"
+#include "vw_string_view_fmt.h"
+#include "parse_primitives.h"
+
+#include "io/logger.h"
+// needed for printing ranges of objects (eg: all elements of a vector)
+#include <fmt/ranges.h>
+
+namespace logger = VW::io::logger;
 
 namespace MULTILABEL
 {
@@ -17,7 +25,7 @@ char* bufread_label(labels& ld, char* c, io_buf& cache)
   size_t total = sizeof(uint32_t) * num;
   if (cache.buf_read(c, (int)total) < total)
   {
-    std::cout << "error in demarshal of cost data" << std::endl;
+    logger::log_error("error in demarshal of cost data");
     return c;
   }
   for (size_t i = 0; i < num; i++)
@@ -68,7 +76,7 @@ bool test_label(MULTILABEL::labels& ld) { return ld.label_v.size() == 0; }
 
 void delete_label(MULTILABEL::labels& ld) { ld.label_v.delete_v(); }
 
-void copy_label(MULTILABEL::labels& dst, MULTILABEL::labels& src) { copy_array(dst.label_v, src.label_v); }
+void copy_label(MULTILABEL::labels& dst, MULTILABEL::labels& src) { dst.label_v = src.label_v; }
 
 void parse_label(
     parser* p, shared_data*, MULTILABEL::labels& ld, std::vector<VW::string_view>& words, reduction_features&)
@@ -87,9 +95,7 @@ void parse_label(
       }
       break;
     default:
-      std::cerr << "example with an odd label, what is ";
-      for (const auto& word : words) std::cerr << word << " ";
-      std::cerr << std::endl;
+      logger::errlog_error("example with an odd label, what is {}", fmt::join(words, " "));
   }
 }
 
@@ -136,8 +142,8 @@ void print_update(vw& all, bool is_test, example& ec)
     std::stringstream pred_string;
     for (unsigned int i : ec.pred.multilabels.label_v) pred_string << " " << i;
 
-    all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
-        all.progress_add, all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
+        pred_string.str(), ec.num_features, all.progress_add, all.progress_arg);
   }
 }
 

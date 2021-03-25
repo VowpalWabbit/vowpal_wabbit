@@ -43,7 +43,6 @@ public:
 
   cb_explore_adf_bag(
       float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state);
-  ~cb_explore_adf_bag();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner &base, multi_ex &examples);
@@ -128,8 +127,6 @@ void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner &base, multi_ex &examp
       VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
   }
 }
-
-cb_explore_adf_bag::~cb_explore_adf_bag() { _action_probs.delete_v(); }
 
 void finish_bag_example(vw &all, cb_explore_adf_base<cb_explore_adf_bag> &data, multi_ex &ec_seq)
 {

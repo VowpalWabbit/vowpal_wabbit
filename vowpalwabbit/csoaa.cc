@@ -14,6 +14,10 @@
 #include "csoaa.h"
 #include "scope_exit.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
@@ -165,11 +169,6 @@ struct ldf
   uint64_t ft_offset;
 
   std::vector<action_scores> stored_preds;
-
-  ~ldf()
-  {
-    a_s.delete_v();
-  }
 };
 
 bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or just "label:___"
@@ -230,16 +229,15 @@ void unsubtract_example(example* ec)
 {
   if (ec->indices.empty())
   {
-    std::cerr << "internal error (bug): trying to unsubtract_example, but there are no namespaces!" << std::endl;
+    logger::errlog_error("internal error (bug): trying to unsubtract_example, but there are no namespaces!");
     return;
   }
 
   if (ec->indices.back() != wap_ldf_namespace)
   {
-    std::cerr
-        << "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
-           "after and not removed!"
-        << std::endl;
+    logger::errlog_error(
+      "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
+      "after and not removed!");
     return;
   }
 
@@ -247,7 +245,7 @@ void unsubtract_example(example* ec)
   ec->num_features -= fs.size();
   ec->total_sum_feat_sq -= fs.sum_feat_sq;
   fs.clear();
-  ec->indices.decr();
+  ec->indices.pop_back();
 }
 
 void make_single_prediction(ldf& data, single_learner& base, example& ec)
@@ -564,7 +562,7 @@ void global_print_newline(vw& all)
   {
     ssize_t t;
     t = sink->write(temp, 1);
-    if (t != 1) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != 1) logger::errlog_error("write error: ", VW::strerror_to_string(errno));
   }
 }
 

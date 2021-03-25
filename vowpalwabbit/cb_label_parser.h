@@ -5,6 +5,9 @@
 #pragma once
 #include "cb.h"
 
+#include "io/logger.h"
+#include <cfloat>
+
 namespace CB
 {
 template <typename LabelT = CB::label>
@@ -24,7 +27,7 @@ char* bufread_label(LabelT& ld, char* c, io_buf& cache)
   size_t total = sizeof(LabelElmT) * num;
   if (cache.buf_read(c, total) < total)
   {
-    std::cout << "error in demarshal of cost data" << std::endl;
+    VW::io::logger::log_error("error in demarshal of cost data");
     return c;
   }
   for (size_t i = 0; i < num; i++)
@@ -130,7 +133,7 @@ void copy_label_additional_fields(LabelT& dst, LabelT& src)
 template <typename LabelT = CB::label>
 void copy_label(LabelT& dst, LabelT& src)
 {
-  copy_array(dst.costs, src.costs);
+  dst.costs = src.costs;
   copy_label_additional_fields(dst, src);
 }
 }  // namespace CB

@@ -2,11 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include <string>
+#include <cfloat>
 #include "correctedMath.h"
 #include "gd.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 #define W_XT 0  // current parameter
 #define W_ZT 1  // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
@@ -260,20 +265,22 @@ void learn_proximal(ftrl& a, single_learner& base, example& ec)
   update_after_prediction_proximal(a, ec);
 }
 
+template <bool audit>
 void learn_pistol(ftrl& a, single_learner& base, example& ec)
 {
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
-
+  if (audit) GD::print_audit_features(*(a.all), ec);
   // update state based on the prediction
   update_after_prediction_pistol(a, ec);
 }
 
+template <bool audit>
 void learn_coin_betting(ftrl& a, single_learner& base, example& ec)
 {
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);
-
+  if (audit) GD::print_audit_features(*(a.all), ec);
   // update state based on the prediction
   coin_betting_update_after_prediction(a, ec);
 }
@@ -357,7 +364,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   if (ftrl_option)
   {
     algorithm_name = "Proximal-FTRL";
-    if (all.audit)
+    if (all.audit || all.hash_inv)
       learn_ptr = learn_proximal<true>;
     else
       learn_ptr = learn_proximal<false>;
@@ -367,7 +374,10 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   else if (pistol)
   {
     algorithm_name = "PiSTOL";
-    learn_ptr = learn_pistol;
+    if (all.audit || all.hash_inv)
+      learn_ptr = learn_pistol<true>;
+    else
+      learn_ptr = learn_pistol<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 4;
     learn_returns_prediction = true;
@@ -375,7 +385,10 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   else if (coin)
   {
     algorithm_name = "Coin Betting";
-    learn_ptr = learn_coin_betting;
+    if (all.audit || all.hash_inv)
+      learn_ptr = learn_coin_betting<true>;
+    else
+      learn_ptr = learn_coin_betting<false>;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
     learn_returns_prediction = true;
@@ -388,12 +401,12 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   if (!all.logger.quiet)
   {
-    std::cerr << "Enabling FTRL based optimization" << std::endl;
-    std::cerr << "Algorithm used: " << algorithm_name << std::endl;
-    std::cerr << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
-    std::cerr << "ftrl_beta = " << b->ftrl_beta << std::endl;
+    *(all.trace_message) << "Enabling FTRL based optimization" << std::endl;
+    *(all.trace_message) << "Algorithm used: " << algorithm_name << std::endl;
+    *(all.trace_message) << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
+    *(all.trace_message) << "ftrl_beta = " << b->ftrl_beta << std::endl;
   }
-
+  
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;

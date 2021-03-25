@@ -187,7 +187,6 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
       expected_learners.begin(), expected_learners.end());
 
   destroy_free<test_learner_t>(&base);
-  CB::delete_label(ec.l.cb);
 }
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)

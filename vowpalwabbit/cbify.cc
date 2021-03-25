@@ -6,6 +6,7 @@
 #include <vector>
 #include "reductions.h"
 #include "cb_algs.h"
+#include "cbify.h"
 #include "vw.h"
 #include "hash.h"
 #include "explore.h"
@@ -27,12 +28,6 @@ struct cbify;
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cbify
-
-struct cbify_adf_data
-{
-  multi_ex ecs;
-  size_t num_actions;
-};
 
 struct cbify_reg
 {
@@ -60,24 +55,11 @@ struct cbify
   cbify_adf_data adf_data;
   float loss0;
   float loss1;
-  uint32_t chosen_action;
 
   // for ldf inputs
   std::vector<v_array<COST_SENSITIVE::wclass>> cs_costs;
   std::vector<v_array<CB::cb_class>> cb_costs;
   std::vector<ACTION_SCORE::action_scores> cb_as;
-
-  ~cbify()
-  {
-    CB::delete_label(cb_label);
-    a_s.delete_v();
-    regression_data.cb_cont_label.costs.delete_v();
-
-    if (use_adf)
-    {
-      for (auto* ex : adf_data.ecs) { VW::dealloc_examples(ex, 1); }
-    }
-  }
 };
 
 float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
@@ -120,19 +102,35 @@ float loss_csldf(
 void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
 {
   if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
-
-  data.cb_cont_label.costs.delete_v();  // todo: instead of above
 }
 
-void copy_example_to_adf(cbify& data, example& ec)
+void cbify_adf_data::init_adf_data(const std::size_t num_actions, namespace_interactions& interactions)
 {
-  cbify_adf_data& adf_data = data.adf_data;
-  const uint64_t ss = data.all->weights.stride_shift();
-  const uint64_t mask = data.all->weights.mask();
+  this->num_actions = num_actions;
 
-  for (size_t a = 0; a < adf_data.num_actions; ++a)
+  ecs.resize(num_actions);
+  for (size_t a = 0; a < num_actions; ++a)
   {
-    auto& eca = *adf_data.ecs[a];
+    ecs[a] = VW::alloc_examples(1);
+    auto& lab = ecs[a]->l.cb;
+    CB::default_label(lab);
+    ecs[a]->interactions = &interactions;
+  }
+}
+
+cbify_adf_data::~cbify_adf_data()
+{
+  for (auto* ex : ecs) { VW::dealloc_examples(ex, 1); }
+}
+
+void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
+{
+  const uint64_t ss = weights.stride_shift();
+  const uint64_t mask = weights.mask();
+
+  for (size_t a = 0; a < num_actions; ++a)
+  {
+    auto& eca = *ecs[a];
     // clear label
     auto& lab = eca.l.cb;
     CB::default_label(lab);
@@ -362,16 +360,16 @@ void predict_adf(cbify& data, multi_learner& base, example& ec)
 {
   const auto save_label = ec.l;
 
-  copy_example_to_adf(data, ec);
+  data.adf_data.copy_example_to_adf(data.all->weights, ec);
   base.predict(data.adf_data.ecs);
 
   auto& out_ec = *data.adf_data.ecs[0];
 
   if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
-          end_scores(out_ec.pred.a_s), data.chosen_action))
+          end_scores(out_ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
-  ec.pred.multiclass = out_ec.pred.a_s[data.chosen_action].action + 1;
+  ec.pred.multiclass = out_ec.pred.a_s[chosen_action].action + 1;
   ec.l = save_label;
 }
 
@@ -387,8 +385,8 @@ void learn_adf(cbify& data, multi_learner& base, example& ec)
     ld = ec.l.multi;
 
   CB::cb_class cl;
-  cl.action = out_ec.pred.a_s[data.chosen_action].action + 1;
-  cl.probability = out_ec.pred.a_s[data.chosen_action].score;
+  cl.action = out_ec.pred.a_s[chosen_action].action + 1;
+  cl.probability = out_ec.pred.a_s[chosen_action].score;
 
   if (!cl.action) THROW("No action with non-zero probability found!");
 
@@ -405,23 +403,10 @@ void learn_adf(cbify& data, multi_learner& base, example& ec)
   base.learn(data.adf_data.ecs);
 }
 
-void init_adf_data(cbify& data, const size_t num_actions)
-{
-  auto& adf_data = data.adf_data;
-  adf_data.num_actions = num_actions;
-
-  adf_data.ecs.resize(num_actions);
-  for (size_t a = 0; a < num_actions; ++a)
-  {
-    adf_data.ecs[a] = VW::alloc_examples(1);
-    auto& lab = adf_data.ecs[a]->l.cb;
-    CB::default_label(lab);
-    adf_data.ecs[a]->interactions = &data.all->interactions;
-  }
-}
-
 void do_actual_predict_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 {
+    uint32_t chosen_action;
+
   // change label and pred data for cb
   if (data.cs_costs.size() < ec_seq.size()) data.cs_costs.resize(ec_seq.size());
   if (data.cb_costs.size() < ec_seq.size()) data.cb_costs.resize(ec_seq.size());
@@ -441,11 +426,11 @@ void do_actual_predict_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   auto& out_ec = *ec_seq[0];
 
   if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
-          end_scores(out_ec.pred.a_s), data.chosen_action))
+          end_scores(out_ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
   // Get the predicted action (adjusting for 1 based start)
-  const auto predicted_action = out_ec.pred.a_s[data.chosen_action].action + 1;
+  const auto predicted_action = out_ec.pred.a_s[chosen_action].action + 1;
 
   // Set cs prediction
   for (size_t i = 0; i < ec_seq.size(); ++i)
@@ -692,7 +677,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   data->a_s = v_init<action_score>();
   data->all = &all;
 
-  if (data->use_adf) { init_adf_data(*data.get(), num_actions); }
+  if (data->use_adf) { data->adf_data.init_adf_data(num_actions, all.interactions); }
 
   if (use_reg)
   {
@@ -750,11 +735,17 @@ base_learner* cbify_setup(options_i& options, vw& all)
   {
     multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
-      l = &init_cost_sensitive_learner(data, base, learn_adf<true>, predict_adf<true>, all.example_parser, 1,
-          all.get_setupfn_name(cbify_setup) + "-adf-cs");
+    {
+      l = &init_cost_sensitive_learner(data, base, learn_adf<true>, predict_adf<true>,
+          all.example_parser, 1, all.get_setupfn_name(cbify_setup) + "-adf-cs");
+      all.example_parser->lbl_parser.label_type = label_type_t::cs;
+    }
     else
-      l = &init_multiclass_learner(data, base, learn_adf<false>, predict_adf<false>, all.example_parser, 1,
-          all.get_setupfn_name(cbify_setup) + "-adf");
+    {
+      l = &init_multiclass_learner(data, base, learn_adf<false>, predict_adf<false>,
+          all.example_parser, 1, all.get_setupfn_name(cbify_setup) + "-adf");
+      all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
+    }
   }
   else
   {

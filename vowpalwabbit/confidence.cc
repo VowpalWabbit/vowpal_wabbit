@@ -6,9 +6,14 @@
 #include "vw.h"
 #include "math.h"
 
-using namespace VW::LEARNER;
+#include "io/logger.h"
 
+#include <cfloat>
+
+using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 struct confidence
 {
@@ -51,9 +56,14 @@ void confidence_print_result(VW::io::writer* f, float res, float confidence, v_a
     ss << std::fixed << res << " " << confidence;
     if (!print_tag_by_ref(ss, tag)) ss << ' ';
     ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-    if (t != len) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    // avoid serializing the stringstream multiple times
+    auto ss_string(ss.str());
+    ssize_t len = ss_string.size();
+    ssize_t t = f->write(ss_string.c_str(), (unsigned int)len);
+    if (t != len)
+    {
+      logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
+    }
   }
 }
 
@@ -91,10 +101,8 @@ base_learner* confidence_setup(options_i& options, vw& all)
 
   if (!all.training)
   {
-    std::cout
-        << "Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when "
-           "saving the model and avoid --test_only"
-        << std::endl;
+    logger::log_warn("Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when "
+		     "saving the model and avoid --test_only");
     return nullptr;
   }
 

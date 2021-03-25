@@ -14,6 +14,8 @@
 #include "scope_exit.h"
 #include "cb_label_parser.h"
 
+#include "io/logger.h"
+
 #include <vector>
 #include <memory>
 
@@ -21,6 +23,8 @@ using namespace VW::LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 #define WARM_START 1
 #define INTERACTION 2
@@ -87,16 +91,12 @@ struct warm_cb
 
   ~warm_cb()
   {
-    CB::delete_label(cb_label);
-    a_s.delete_v();
-
     for (size_t a = 0; a < num_actions; ++a) { COST_SENSITIVE::delete_label(csls[a]); }
     free(csls);
     free(cbls);
 
     for (size_t a = 0; a < num_actions; ++a) { VW::dealloc_examples(ecs[a], 1); }
 
-    a_s_adf.delete_v();
     for (auto* ex : ws_vali) { VW::dealloc_examples(ex, 1); }
   }
 };
@@ -146,10 +146,10 @@ void finish(warm_cb& data)
 
   if (!data.all->logger.quiet)
   {
-    std::cerr << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
-    std::cerr << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
-    std::cerr << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from " << data.lambdas[0]
-              << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
+    *(data.all->trace_message) << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
+    *(data.all->trace_message) << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
+    *(data.all->trace_message) << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from "
+                               << data.lambdas[0] << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
   }
 }
 
@@ -385,7 +385,7 @@ uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, example& ec)
     THROW("Failed to sample from pdf");
 
   auto& a_s = data.a_s_adf;
-  copy_array<action_score>(a_s, out_ec.pred.a_s);
+  a_s = out_ec.pred.a_s;
 
   return chosen_action;
 }
@@ -611,7 +611,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("epsilon"))
   {
-    std::cerr << "Warning: no epsilon (greedy parameter) specified; resetting to 0.05" << std::endl;
+    logger::errlog_warn("Warning: no epsilon (greedy parameter) specified; resetting to 0.05");
     data->epsilon = 0.05f;
   }
 

@@ -31,12 +31,9 @@ VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 safe_example_predict::safe_example_predict()
 {
-  indices = v_init<namespace_index>();
   ft_offset = 0;
-  // feature_space is initialized through constructors
 }
 
-safe_example_predict::~safe_example_predict() { indices.delete_v(); }
 VW_WARNING_STATE_POP
 void safe_example_predict::clear()
 {

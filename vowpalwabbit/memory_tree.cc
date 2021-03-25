@@ -17,9 +17,14 @@
 #include "v_array.h"
 #include "future_compat.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
+// TODO: This file has several cout print statements. It looks like
+//       they should be using trace_message, but its difficult to tell
 namespace memory_tree_ns
 {
 ///////////////////////Helper//////////////////////////////
@@ -29,7 +34,7 @@ void remove_at_index(std::vector<T>& array, uint32_t index)
 {
   if (index >= array.size())
   {
-    std::cout << "ERROR: index is larger than the size" << std::endl;
+    logger::log_error("ERROR: index is larger than the size");
     return;
   }
 
@@ -45,8 +50,7 @@ void copy_example_data(example* dst, example* src, bool oas = false)  // copy ex
   }
   else
   {
-    dst->l.multilabels.label_v.delete_v();
-    copy_array(dst->l.multilabels.label_v, src->l.multilabels.label_v);
+    dst->l.multilabels.label_v = src->l.multilabels.label_v;
   }
   VW::copy_example_data(false, dst, src);
 }
@@ -336,7 +340,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
     else
     {
       std::cout << cn << " " << b.nodes[cn].nl << " " << b.nodes[cn].nr << std::endl;
-      std::cout << "Error:  nl = 0, and nr = 0, exit...";
+      logger::log_error("Error:  nl = 0, and nr = 0, exit...");
       exit(0);
     }
 
@@ -546,7 +550,7 @@ inline uint32_t hamming_loss(v_array<uint32_t>& array_1, v_array<uint32_t>& arra
 
 void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, v_array<uint32_t>& leaf_labs)
 {
-  if (b.nodes[cn].internal != -1) std::cout << "something is wrong, it should be a leaf node" << std::endl;
+  if (b.nodes[cn].internal != -1) logger::log_error("something is wrong, it should be a leaf node");
 
   leaf_labs.clear();
   for (size_t i = 0; i < b.nodes[cn].examples_index.size(); i++)

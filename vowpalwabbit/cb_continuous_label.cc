@@ -11,8 +11,11 @@
 #include "cb_continuous_label.h"
 #include "debug_print.h"
 
+#include "io/logger.h"
+
 using namespace LEARNER;
-using std::endl;
+
+namespace logger = VW::io::logger;
 
 namespace CB
 {
@@ -118,7 +121,7 @@ void parse_label(parser* p, shared_data*, continuous_label& ld, std::vector<VW::
 
       if (f.pdf_value < 0.0)
       {
-        std::cerr << "invalid pdf_value < 0 specified for an action, resetting to 0." << endl;
+        logger::errlog_warn("invalid pdf_value < 0 specified for an action, resetting to 0.");
         f.pdf_value = .0;
       }
 

@@ -117,6 +117,9 @@ python/.coverage
 python/docs/build
 env/**
 
+# Java
+java/pom.xml
+
 /COPYING
 /README
 /compile

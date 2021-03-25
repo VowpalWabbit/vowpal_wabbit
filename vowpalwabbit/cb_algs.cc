@@ -11,11 +11,16 @@
 #include "gen_cs_example.h"
 #include "cb_label_parser.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
 
 using namespace CB;
 using namespace GEN_CS;
+
+namespace logger = VW::io::logger;
+
 namespace CB_ALGS
 {
 struct cb
@@ -56,7 +61,7 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 
   // cost observed, not default
   if (optional_cost.first && (c.known_cost.action < 1 || c.known_cost.action > c.num_actions))
-    std::cerr << "invalid action: " << c.known_cost.action << std::endl;
+    logger::errlog_error("invalid action: ", c.known_cost.action);
 
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs);
@@ -100,6 +105,11 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   cb_to_cs& c = data.cbcs;
   if (!CB::is_test_label(ld)) loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
+  generic_output_example(all, loss, ec, ld);
+}
+
+void generic_output_example(vw& all, float loss, example& ec, const CB::label& ld)
+{
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.num_features);
 
   for (auto& sink : all.final_prediction_sink) all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
@@ -174,7 +184,7 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   }
   else
   {
-    std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
+    logger::errlog_warn("warning: cb_type must be in {'ips','dm','dr'}; resetting to dr.");
     c.cb_type = CB_TYPE_DR;
   }
 

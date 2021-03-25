@@ -6,6 +6,7 @@
 
 #include "baseline.h"
 #include "guard.h"
+#include <cfloat>
 
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
 VW::LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
@@ -51,17 +52,26 @@ float get_cost_pred(
   return pred;
 }
 
+// IPS estimate
 inline float get_cost_estimate(const CB::cb_class& observation, uint32_t action, float offset = 0.)
 {
   if (action == observation.action) return (observation.cost - offset) / observation.probability;
   return 0.;
 }
 
+// doubly robust estimate
 inline float get_cost_estimate(const CB::cb_class& observation, const COST_SENSITIVE::label& scores, uint32_t action)
 {
   for (auto& cl : scores.costs)
     if (cl.class_index == action) return get_cost_estimate(observation, action, cl.x) + cl.x;
   return get_cost_estimate(observation, action);
+}
+
+inline float get_cost_estimate(const CB::label& ld, uint32_t action)
+{
+  for (auto& cl : ld.costs)
+    if (cl.action == action) return get_cost_estimate(cl, action);
+  return 0.0f;
 }
 
 inline float get_cost_estimate(const ACTION_SCORE::action_score& a_s, float cost, uint32_t action, float offset = 0.)
@@ -74,4 +84,7 @@ inline bool example_is_newline_not_header(example const& ec)
 {
   return (example_is_newline(ec) && !CB::ec_is_example_header(ec));
 }
+
+void generic_output_example(vw& all, float loss, example& ec, const CB::label& ld);
+
 }  // namespace CB_ALGS

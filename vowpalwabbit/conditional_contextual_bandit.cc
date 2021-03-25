@@ -18,6 +18,8 @@
 #include "version.h"
 #include "debug_log.h"
 
+#include "io/logger.h"
+
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
@@ -29,6 +31,8 @@
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 template <typename T>
 void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
@@ -68,6 +72,9 @@ struct ccb
   // If the reduction has not yet seen a multi slot example, it will behave the same as if it were CB.
   // This means the interactions aren't added and the slot feature is not added.
   bool has_seen_multi_slot_example = false;
+  // Introduction has_seen_multi_slot_example was breaking change in terms of model format.
+  // This flag is required for loading cb models (which do not have has_seen_multi_slot_example flag) into ccb reduction
+  bool is_ccb_input_model = false;
 };
 
 namespace CCB
@@ -102,7 +109,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
         data.slots.push_back(ex);
         break;
       default:
-        std::cout << "ccb_adf_explore: badly formatted example - invalid example type";
+        logger::log_error("ccb_adf_explore: badly formatted example - invalid example type");
         return false;
     }
 
@@ -391,6 +398,11 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   clear_all(data);
   // split shared, actions and slots
   if (!split_multi_example_and_stash_labels(examples, data)) { return; }
+  auto restore_labels_guard = VW::scope_exit([&data, &examples] {
+    // Restore ccb labels to the example objects.
+    for (size_t i = 0; i < examples.size(); i++)
+    { examples[i]->l.conditional_contextual_bandit = std::move(data.stored_labels[i]); }
+  });
 
   if (data.slots.size() > data.actions.size())
   {
@@ -426,13 +438,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
-  auto restore_guard = VW::scope_exit([&data, &examples] {
-    delete_cb_labels(data);
-
-    // Restore ccb labels to the example objects.
-    for (size_t i = 0; i < examples.size(); i++)
-    { examples[i]->l.conditional_contextual_bandit = std::move(data.stored_labels[i]); }
-  });
+  auto delete_cb_labels_guard = VW::scope_exit([&data, &examples] { delete_cb_labels(data); });
 
   // this is temporary only so we can get some logging of what's going on
   try
@@ -600,7 +606,9 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
   }
 
   if (num_labelled > 0 && num_labelled < slots.size())
-  { std::cerr << "Warning: Unlabeled example in train set, was this intentional?\n"; }
+  {
+    logger::errlog_warn("Unlabeled example in train set, was this intentional?");
+  }
 
   bool holdout_example = num_labelled > 0;
   for (const auto& example : ec_seq) { holdout_example &= example->test_only; }
@@ -634,7 +642,7 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 
   // We want to enter this block if either we are writing, or reading a model file after the version in which this was
   // added.
-  if (!read || sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  if (!read || (sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG && sm.is_ccb_input_model))
   {
     std::stringstream msg;
     if (!read) { msg << "CCB: has_seen_multi_slot_example = " << sm.has_seen_multi_slot_example << "\n"; }
@@ -648,6 +656,9 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
+
+  data->is_ccb_input_model = all.is_ccb_input_model;
+
   option_group_definition new_options("EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF");
   new_options
       .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
