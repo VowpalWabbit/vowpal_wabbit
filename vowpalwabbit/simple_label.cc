@@ -23,7 +23,10 @@ namespace logger = VW::io::logger;
 
 label_data::label_data() { reset_to_default(); }
 
-label_data::label_data(float label, float weight, float initial) : label(label), serialized_weight(weight), serialized_initial(initial) {}
+label_data::label_data(float label, float weight, float initial)
+    : label(label), serialized_weight(weight), serialized_initial(initial)
+{
+}
 
 void label_data::reset_to_default()
 {

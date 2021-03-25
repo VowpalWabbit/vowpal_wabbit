@@ -741,14 +741,14 @@ base_learner* cbify_setup(options_i& options, vw& all)
     multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
     {
-      l = &init_cost_sensitive_learner(data, base, learn_adf<true>, predict_adf<true>,
-          all.example_parser, 1, all.get_setupfn_name(cbify_setup) + "-adf-cs");
+      l = &init_cost_sensitive_learner(data, base, learn_adf<true>, predict_adf<true>, all.example_parser, 1,
+          all.get_setupfn_name(cbify_setup) + "-adf-cs");
       all.example_parser->lbl_parser.label_type = label_type_t::cs;
     }
     else
     {
-      l = &init_multiclass_learner(data, base, learn_adf<false>, predict_adf<false>,
-          all.example_parser, 1, all.get_setupfn_name(cbify_setup) + "-adf");
+      l = &init_multiclass_learner(data, base, learn_adf<false>, predict_adf<false>, all.example_parser, 1,
+          all.get_setupfn_name(cbify_setup) + "-adf");
       all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
     }
   }
