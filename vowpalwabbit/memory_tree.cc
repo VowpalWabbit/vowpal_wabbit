@@ -1159,7 +1159,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
     }
     else
     {
-      size_t ss = b.all->weights.stride_shift();
+      uint32_t ss = b.all->weights.stride_shift();
       writeit(ss, "stride_shift");
     }
 
@@ -1189,7 +1189,10 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
         b.examples.push_back(new_ec);
       }
     }
-    for (uint32_t i = 0; i < n_examples; i++) save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
+    for (uint32_t i = 0; i < n_examples; i++) {
+      save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
+      b.examples[i]->interactions = &b.all->interactions;
+    }
     // std::cout<<"done loading...."<< std::endl;
   }
 }
