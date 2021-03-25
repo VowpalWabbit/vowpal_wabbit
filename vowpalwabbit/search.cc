@@ -893,12 +893,12 @@ inline void cs_costs_erase(bool isCB, polylabel& ld)
     ld.cs.costs.clear();
 }
 
-inline void cs_costs_resize(bool isCB, polylabel& ld, size_t new_size)
+inline void cs_costs_reserve(bool isCB, polylabel& ld, size_t new_size)
 {
   if (isCB)
-    ld.cb.costs.resize(new_size);
+    ld.cb.costs.reserve(new_size);
   else
-    ld.cs.costs.resize(new_size);
+    ld.cs.costs.reserve(new_size);
 }
 
 inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float value)
@@ -925,7 +925,7 @@ polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const acti
   if (priv.is_ldf)  // LDF version easier
   {
     if (num_costs > ec_cnt)
-      cs_costs_resize(isCB, ld, ec_cnt);
+      cs_costs_reserve(isCB, ld, ec_cnt);
     else if (num_costs < ec_cnt)
       for (action k = num_costs; k < ec_cnt; k++) cs_cost_push_back(isCB, ld, k, FLT_MAX);
   }

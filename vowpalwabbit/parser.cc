@@ -439,7 +439,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       // create children
       size_t num_children = all.num_children;
       v_array<int> children = v_init<int>();
-      children.resize(num_children);
+      children.resize_but_with_stl_behavior(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
         // fork() returns pid if parent, 0 if child
