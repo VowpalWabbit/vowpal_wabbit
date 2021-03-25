@@ -1330,7 +1330,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
     all.example_parser->_shared_data = all.sd;
   }
 
-  ld->v.resize(all.lda * ld->minibatch);
+  ld->v.resize_but_with_stl_behavior(all.lda * ld->minibatch);
 
   ld->decay_levels.push_back(0.f);
 
