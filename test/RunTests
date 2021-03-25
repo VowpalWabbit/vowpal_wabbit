@@ -1984,7 +1984,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} -d train-sets/multiclass.fb -k --ect 10 \
      --flatbuffer
          train-sets/ref/multiclass_fb.stderr
-         
+
 # Test 243: Flatbuffer CS Test
 {VW} -k -d train-sets/cs.fb --invariant \
      --csoaa_ldf multiline --flatbuffer
@@ -2162,16 +2162,16 @@ train-sets/ref/slates_simple_w_interactions.stderr
 
 # Test 279: FTRL readable model test
 # TODO: investigate slow convergence
-{VW} -d train-sets/regression_simple.txt --noconstant --ftrl --invert_hash ftrl.readable 
+{VW} -d train-sets/regression_simple.txt --noconstant --ftrl --invert_hash ftrl.readable
     train-sets/ref/ftrl.readable
 
 # Test 280: pistol readable model test
-{VW} -d train-sets/regression_simple.txt --noconstant --pistol --invert_hash pistol.readable 
+{VW} -d train-sets/regression_simple.txt --noconstant --pistol --invert_hash pistol.readable
     train-sets/ref/pistol.readable
 
 # Test 281: coin readable model test
 # TODO: should be fixed after #2834 issue is resolved
-{VW} -d train-sets/regression_simple.txt --noconstant --coin --invert_hash coin.readable 
+{VW} -d train-sets/regression_simple.txt --noconstant --coin --invert_hash coin.readable
     train-sets/ref/coin.readable
 
 # Test 282: generate cb model
@@ -2181,5 +2181,9 @@ train-sets/ref/slates_simple_w_interactions.stderr
 # Test 283: load cb model into ccb learner
 {VW} -d train-sets/cb_as_ccb.json --dsjson --ccb_explore_adf --save_resume -i models/cb_model.bin
     train-sets/ref/cb_as_ccb.ccb.stderr
+
+# Test 284: memory_tree
+{VW} -d aloi_train.vw --memory_tree 1204 --learn_at_leaf 1 --max_number_of_labels 1000 --dream_at_update 0 \
+    --dream_repeats 20 --oas 0 --online 1 --leaf_example_multiplier 10
 
 # Do not delete this line or the empty line above it
