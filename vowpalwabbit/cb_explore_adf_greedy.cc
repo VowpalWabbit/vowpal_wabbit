@@ -102,7 +102,11 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   if (!cb_explore_adf_option || !use_greedy) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
+  if (!options.was_supplied("cb_adf"))
+  {
+    options.insert("cb_adf", "");
+    options.insert("no_predict", "");
+  }
 
   size_t problem_multiplier = 1;
 

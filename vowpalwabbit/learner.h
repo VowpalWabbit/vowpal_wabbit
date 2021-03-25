@@ -528,8 +528,6 @@ public:
 
     VW_DBG_0 << "Added Reduction: " << name << std::endl;
 
-    VW_DBG_0 << "Added Reduction: " << name << std::endl;
-
     return ret;
   }
 };
