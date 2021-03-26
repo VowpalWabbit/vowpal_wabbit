@@ -13,12 +13,12 @@ lr = 0.001
 bits = 29
 alpha = 0.1 #0.3
 passes = 1  #3 #5
-use_oas = 0
+use_oas = False
 dream_at_update = 0
-learn_at_leaf = 1 #turn on leaf at leaf actually works better
+learn_at_leaf = True #turn on leaf at leaf actually works better
 loss = "squared"
 dream_repeats = 20 #3
-online = 1
+online = True
 #random_seed = 4000
 
 tree_node = int(2*passes*(num_of_classes*shots/(np.log(num_of_classes*shots)/np.log(2)*leaf_example_multiplier)));
@@ -35,11 +35,10 @@ saved_model = "{}.vw".format(train_data)
 
 print("## Training...")
 start = time.time()
-os.system("../../build/vowpalwabbit/vw {} --memory_tree {} --learn_at_leaf {} --max_number_of_labels {} --dream_at_update {}\
-                   --dream_repeats {} --oas {} --online {}\
-                --leaf_example_multiplier {} --alpha {} -l {} -b {} -c --passes {} --loss_function {} --holdout_off -f {}".format(
-                train_data, tree_node, learn_at_leaf, num_of_classes, dream_at_update,
-                dream_repeats, use_oas, online, leaf_example_multiplier, alpha, lr, bits, passes, loss, saved_model))
+command_line = f"../../build/vowpalwabbit/vw -d {train_data} --memory_tree {tree_node} {'--learn_at_leaf' if learn_at_leaf else ''} --max_number_of_labels {num_of_classes} --dream_at_update {dream_at_update} \
+                   --dream_repeats {dream_repeats} {'--oas' if use_oas else ''} {'--online' if online else ''} \
+                --leaf_example_multiplier {leaf_example_multiplier} --alpha {alpha} -l {lr} -b {bits} -c --passes {passes} --loss_function {loss} --holdout_off -f {saved_model}"
+os.system(command_line)
 train_time = time.time() - start
 
     #test:

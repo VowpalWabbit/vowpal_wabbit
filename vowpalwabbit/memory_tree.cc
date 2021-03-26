@@ -1159,7 +1159,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
     }
     else
     {
-      size_t ss = b.all->weights.stride_shift();
+      uint32_t ss = b.all->weights.stride_shift();
       writeit(ss, "stride_shift");
     }
 
@@ -1189,7 +1189,11 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
         b.examples.push_back(new_ec);
       }
     }
-    for (uint32_t i = 0; i < n_examples; i++) save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
+    for (uint32_t i = 0; i < n_examples; i++)
+    {
+      save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
+      b.examples[i]->interactions = &b.all->interactions;
+    }
     // std::cout<<"done loading...."<< std::endl;
   }
 }
@@ -1219,7 +1223,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
                .default_value(1)
                .help("number of dream operations per example (default = 1)"))
       .add(make_option("top_K", tree->top_K).default_value(1).help("top K prediction error (default 1)"))
-      .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("whether or not learn at leaf (default = True)"))
+      .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("Enable learning at leaf"))
       .add(make_option("oas", tree->oas).help("use oas at the leaf"))
       .add(make_option("dream_at_update", tree->dream_at_update)
                .default_value(0)
