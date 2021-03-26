@@ -17,11 +17,12 @@ struct ExampleBuilder
   VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
   flatbuffers::Offset<void> label = 0;
   std::string tag;
+  bool is_newline = false;
 
   flatbuffers::Offset<VW::parsers::flatbuffer::Example> to_flat_example(flatbuffers::FlatBufferBuilder& builder)
   {
     auto ex = VW::parsers::flatbuffer::CreateExampleDirect(
-        builder, &namespaces, label_type, label, tag.empty() ? nullptr : tag.c_str());
+        builder, &namespaces, label_type, label, tag.empty() ? nullptr : tag.c_str(), is_newline);
     clear();
     return ex;
   }
