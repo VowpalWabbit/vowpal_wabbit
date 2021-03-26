@@ -142,7 +142,7 @@ void copy_example_label(example* dst, example* src, void (*copy_label)(polylabel
     dst->l = src->l;
 }
 
-void copy_example_metadata(bool /* audit */, example* dst, example* src)
+void copy_example_metadata(example* dst, const example* src)
 {
   dst->tag = src->tag;
   dst->example_counter = src->example_counter;
@@ -165,9 +165,14 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
   dst->sorted = src->sorted;
 }
 
+void copy_example_metadata(bool /* audit */, example* dst, example* src)
+{
+  copy_example_metadata(dst, src);
+}
+
 void copy_example_data(bool audit, example* dst, example* src)
 {
-  copy_example_metadata(audit, dst, src);
+  copy_example_metadata(dst, src);
 
   // copy feature data
   dst->indices = src->indices;
