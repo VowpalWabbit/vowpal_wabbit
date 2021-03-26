@@ -165,10 +165,7 @@ void copy_example_metadata(example* dst, const example* src)
   dst->sorted = src->sorted;
 }
 
-void copy_example_metadata(bool /* audit */, example* dst, example* src)
-{
-  copy_example_metadata(dst, src);
-}
+void copy_example_metadata(bool /* audit */, example* dst, example* src) { copy_example_metadata(dst, src); }
 
 void copy_example_data(bool audit, example* dst, example* src)
 {

@@ -162,7 +162,8 @@ void move_feature_namespace(example* dst, example* src, namespace_index c);
 void copy_example(example*, const example*);
 
 /// Copy only metadata fields.
-/// Fields: tag, example_counter, ft_offset, partial_prediction, passthrough, loss, weight, confidence, test_only, end_pass, sorted
+/// Fields: tag, example_counter, ft_offset, partial_prediction, passthrough, loss, weight, confidence, test_only,
+/// end_pass, sorted
 void copy_example_metadata(example*, const example*);
 
 // after export_example, must call releaseFeatureSpace to free native memory
