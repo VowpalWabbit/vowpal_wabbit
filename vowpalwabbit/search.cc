@@ -625,7 +625,7 @@ void del_features_in_top_namespace(search_private& /* priv */, example& ec, size
     //(size_t)ec.indices.last()); }
   }
   features& fs = ec.feature_space[ns];
-  ec.indices.decr();
+  ec.indices.pop_back();
   ec.num_features -= fs.size();
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
   fs.clear();
@@ -893,12 +893,12 @@ inline void cs_costs_erase(bool isCB, polylabel& ld)
     ld.cs.costs.clear();
 }
 
-inline void cs_costs_resize(bool isCB, polylabel& ld, size_t new_size)
+inline void cs_costs_reserve(bool isCB, polylabel& ld, size_t new_size)
 {
   if (isCB)
-    ld.cb.costs.resize(new_size);
+    ld.cb.costs.reserve(new_size);
   else
-    ld.cs.costs.resize(new_size);
+    ld.cs.costs.reserve(new_size);
 }
 
 inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float value)
@@ -925,7 +925,7 @@ polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const acti
   if (priv.is_ldf)  // LDF version easier
   {
     if (num_costs > ec_cnt)
-      cs_costs_resize(isCB, ld, ec_cnt);
+      cs_costs_reserve(isCB, ld, ec_cnt);
     else if (num_costs < ec_cnt)
       for (action k = num_costs; k < ec_cnt; k++) cs_cost_push_back(isCB, ld, k, FLT_MAX);
   }
@@ -1039,13 +1039,13 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 template <class T>
 void ensure_size(v_array<T>& A, size_t sz)
 {
-  A.actual_resize(sz);
+  A.resize_but_with_stl_behavior(sz);
 }
 
 template <class T>
 void push_at(v_array<T>& v, T item, size_t pos)
 {
-  if (pos > v.size()) { v.actual_resize(pos); }
+  if (pos > v.size()) { v.resize_but_with_stl_behavior(pos); }
   v.insert(v.begin() + pos, item);
 }
 
@@ -1660,11 +1660,8 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
       // copy conditioning stuff and allowed actions
       if (priv.auto_condition_features)
       {
-        ensure_size(priv.learn_condition_on, condition_on_cnt);
+        priv.learn_condition_on.resize_but_with_stl_behavior(condition_on_cnt);
         ensure_size(priv.learn_condition_on_act, condition_on_cnt);
-
-        priv.learn_condition_on.end() =
-            priv.learn_condition_on.begin() + condition_on_cnt;  // allow .size() to be used in lieu of _cnt
 
         memcpy(priv.learn_condition_on.begin(), condition_on, condition_on_cnt * sizeof(ptag));
 

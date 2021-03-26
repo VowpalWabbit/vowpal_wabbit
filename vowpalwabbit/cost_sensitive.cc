@@ -101,7 +101,7 @@ bool test_label(label& ld)
 
 void delete_label(label& ld) { ld.costs.delete_v(); }
 
-void copy_label(label& dst, label& src) { copy_array(dst.costs, src.costs); }
+void copy_label(label& dst, label& src) { dst.costs = src.costs; }
 
 void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
@@ -230,13 +230,13 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
       else
         pred_buf << ec.pred.a_s[0].action;
       if (action_scores) pred_buf << ".....";
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_current_features,
-          all.progress_add, all.progress_arg);
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
+          num_current_features, all.progress_add, all.progress_arg);
       ;
     }
     else
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, prediction, num_current_features,
-          all.progress_add, all.progress_arg);
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, prediction,
+          num_current_features, all.progress_add, all.progress_arg);
   }
 }
 

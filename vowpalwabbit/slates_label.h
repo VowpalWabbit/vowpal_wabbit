@@ -40,6 +40,18 @@ struct label
   // For slot examples
   // Only valid if labeled
   ACTION_SCORE::action_scores probabilities;
+
+  label() { reset_to_default(); }
+
+  void reset_to_default()
+  {
+    type = example_type::unset;
+    weight = 1.f;
+    labeled = false;
+    cost = 0.f;
+    slot_id = 0;
+    probabilities.clear();
+  }
 };
 
 void default_label(VW::slates::label& v);

@@ -46,7 +46,7 @@ private:
     }
     _begin = nullptr;
     _end = nullptr;
-    end_array = nullptr;
+    _end_array = nullptr;
     _erase_count = 0;
   }
 
@@ -56,15 +56,16 @@ private:
     const size_t old_len = size();
 
     T* temp = reinterpret_cast<T*>(std::realloc(_begin, sizeof(T) * length));
-    if (temp == nullptr) { THROW_OR_RETURN("realloc of " << length << " failed in resize().  out of memory?"); }
+    if (temp == nullptr)
+    { THROW_OR_RETURN("realloc of " << length << " failed in reserve_nocheck().  out of memory?"); }
     else
     {
       _begin = temp;
     }
 
     _end = _begin + std::min(old_len, length);
-    end_array = _begin + length;
-    memset(_end, 0, (end_array - _end) * sizeof(T));
+    _end_array = _begin + length;
+    memset(_end, 0, (_end_array - _end) * sizeof(T));
   }
 
   // This will move all elements after idx by width positions and reallocate the underlying buffer if needed.
@@ -75,15 +76,24 @@ private:
     memmove(&_begin[idx + width], &_begin[idx], (size() - (idx + width)) * sizeof(T));
   }
 
-public:
-  // private:
+  void resize_no_initialize(size_t old_size, size_t length)
+  {
+    // if new length is smaller than current size destroy the excess elements
+    for (auto idx = length; idx < old_size; ++idx) { _begin[idx].~T(); }
+    reserve(length);
+    _end = _begin + length;
+  }
+
+  void copy_into_this(const v_array<T>& src)
+  {
+    clear();
+    resize_no_initialize(size(), src.size());
+    std::copy(src.begin(), src.end(), begin());
+  }
+
   T* _begin;
   T* _end;
-
-public:
-  T* end_array;
-
-private:
+  T* _end_array;
   size_t _erase_count;
 
 public:
@@ -95,17 +105,20 @@ public:
   using iterator = value_type*;
   using const_iterator = const value_type*;
 
+  pointer data() noexcept { return _begin; }
+  const_pointer data() const noexcept { return _begin; }
+
   // enable C++ 11 for loops
-  inline iterator& begin() { return _begin; }
-  inline iterator& end() { return _end; }
+  inline iterator begin() noexcept { return _begin; }
+  inline iterator end() noexcept { return _end; }
 
-  inline const_iterator begin() const { return _begin; }
-  inline const_iterator end() const { return _end; }
+  inline const_iterator begin() const noexcept { return _begin; }
+  inline const_iterator end() const noexcept { return _end; }
 
-  inline const_iterator cbegin() const { return _begin; }
-  inline const_iterator cend() const { return _end; }
+  inline const_iterator cbegin() const noexcept { return _begin; }
+  inline const_iterator cend() const noexcept { return _end; }
 
-  v_array() noexcept : _begin(nullptr), _end(nullptr), end_array(nullptr), _erase_count(0) {}
+  v_array() noexcept : _begin(nullptr), _end(nullptr), _end_array(nullptr), _erase_count(0) {}
   ~v_array() { delete_v_array(); }
 
   v_array(v_array<T>&& other) noexcept
@@ -113,11 +126,11 @@ public:
     _erase_count = 0;
     _begin = nullptr;
     _end = nullptr;
-    end_array = nullptr;
+    _end_array = nullptr;
 
     std::swap(_begin, other._begin);
     std::swap(_end, other._end);
-    std::swap(end_array, other.end_array);
+    std::swap(_end_array, other._end_array);
     std::swap(_erase_count, other._erase_count);
   }
 
@@ -125,7 +138,7 @@ public:
   {
     std::swap(_begin, other._begin);
     std::swap(_end, other._end);
-    std::swap(end_array, other.end_array);
+    std::swap(_end_array, other._end_array);
     std::swap(_erase_count, other._erase_count);
     return *this;
   }
@@ -134,11 +147,10 @@ public:
   {
     _begin = nullptr;
     _end = nullptr;
-    end_array = nullptr;
+    _end_array = nullptr;
     _erase_count = 0;
 
-    // TODO this should use the other version when T is trivially copyable and this otherwise.
-    copy_array_no_memcpy(*this, other);
+    copy_into_this(other);
   }
 
   v_array<T>& operator=(const v_array<T>& other)
@@ -146,8 +158,7 @@ public:
     if (this == &other) return *this;
 
     delete_v_array();
-    // TODO this should use the other version when T is trivially copyable and this otherwise.
-    copy_array_no_memcpy(*this, other);
+    copy_into_this(other);
     return *this;
   }
 
@@ -173,31 +184,32 @@ public:
   T last() const { return *(_end - 1); }
 
   bool empty() const { return _begin == _end; }
+
+  VW_DEPRECATED("v_array::decr() is deprecated. Use pop_back()")
   void decr() { _end--; }
+
+  VW_DEPRECATED("v_array::incr() is deprecated. Use push_back()")
   void incr()
   {
-    if (_end == end_array) resize(2 * capacity() + 3);
+    if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
     _end++;
   }
   T& operator[](size_t i) const { return _begin[i]; }
   inline size_t size() const { return _end - _begin; }
-  inline size_t capacity() const { return end_array - _begin; }
+  inline size_t capacity() const { return _end_array - _begin; }
 
   // maintain the original (deprecated) interface for compatibility. To be removed in VW 10
-  //   VW_DEPRECATED(
-  //       "v_array::resize() is deprecated. Use reserve() instead.
-  // For standard resize behavior, use actual_resize(). The function names will be re-aligned in VW 10")
+  VW_DEPRECATED(
+      "v_array::resize() is deprecated. Use reserve() instead. For standard resize behavior, use "
+      "resize_but_with_stl_behavior()")
   void resize(size_t length) { reserve_nocheck(length); }
 
   // change the number of elements in the vector
   // to be renamed to resize() in VW 10
-  void actual_resize(size_t length)
+  void resize_but_with_stl_behavior(size_t length)
   {
     auto old_size = size();
-    // if new length is smaller than current size destroy the excess elements
-    for (auto idx = length; idx < old_size; ++idx) { _begin[idx].~T(); }
-    reserve(length);
-    _end = _begin + length;
+    resize_no_initialize(old_size, length);
     // default construct any newly added elements
     // TODO: handle non-default constructable objects
     // requires second interface
@@ -327,7 +339,7 @@ public:
 
   void push_back(const T& new_ele)
   {
-    if (_end == end_array) resize(2 * capacity() + 3);
+    if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
     new (_end++) T(new_ele);
   }
 
@@ -336,7 +348,7 @@ public:
   template <class... Args>
   void emplace_back(Args&&... args)
   {
-    if (_end == end_array) resize(2 * capacity() + 3);
+    if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
     new (_end++) T(std::forward<Args>(args)...);
   }
 
@@ -373,13 +385,15 @@ public:
 
     if (!contain_sorted(new_ele, index))
     {
-      if (_end == end_array) resize(2 * capacity() + 3);
+      if (_end == _end_array) { reserve_nocheck(2 * capacity() + 3); }
 
       to_move = size - index;
 
       if (to_move > 0)
+      {
         memmove(_begin + index + 1, _begin + index,
             to_move * sizeof(T));  // kopiuje to_move*.. bytow z _begin+index do _begin+index+1
+      }
 
       _begin[index] = new_ele;
 
@@ -407,14 +421,14 @@ inline v_array<T> v_init()
 }
 
 template <class T>
+VW_DEPRECATED("Use v_array's copy constructor or assignment directly instead")
 void copy_array(v_array<T>& dst, const v_array<T>& src)
 {
-  dst.clear();
-  dst.insert(dst.end(), src.begin(), src.end());
+  dst = src;
 }
 
-// use to copy arrays of types with non-trivial copy constructors, such as shared_ptr
 template <class T>
+VW_DEPRECATED("Use v_array's copy constructor or assignment directly instead")
 void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src)
 {
   dst.clear();
@@ -422,6 +436,7 @@ void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src)
 }
 
 template <class T>
+VW_DEPRECATED("Use v_array's copy constructor directly instead")
 void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(const T&))
 {
   dst.clear();

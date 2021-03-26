@@ -711,9 +711,8 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
   } while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
   ec->pred.scalars.clear();
-  ec->pred.scalars.resize(l.topics);
+  ec->pred.scalars.resize_but_with_stl_behavior(l.topics);
   memcpy(ec->pred.scalars.begin(), new_gamma.begin(), l.topics * sizeof(float));
-  ec->pred.scalars.end() = ec->pred.scalars.begin() + l.topics;
 
   score += theta_kl(l, Elogtheta, new_gamma.begin());
 
@@ -812,8 +811,8 @@ void return_example(vw &all, example &ec)
   for (auto &sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag); }
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
-    all.sd->print_update(
-        all.holdout_set_off, all.current_pass, "none", 0, ec.num_features, all.progress_add, all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, "none", 0, ec.num_features,
+        all.progress_add, all.progress_arg);
   VW::finish_example(all, ec);
 }
 
@@ -833,9 +832,8 @@ void learn_batch(lda &l)
     for (size_t d = 0; d < l.examples.size(); d++)
     {
       l.examples[d]->pred.scalars.clear();
-      l.examples[d]->pred.scalars.resize(l.topics);
+      l.examples[d]->pred.scalars.resize_but_with_stl_behavior(l.topics);
       memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
-      l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
       l.examples[d]->pred.scalars.clear();
 
@@ -1332,7 +1330,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
     all.example_parser->_shared_data = all.sd;
   }
 
-  ld->v.resize(all.lda * ld->minibatch);
+  ld->v.resize_but_with_stl_behavior(all.lda * ld->minibatch);
 
   ld->decay_levels.push_back(0.f);
 

@@ -68,6 +68,9 @@ struct ccb
   // If the reduction has not yet seen a multi slot example, it will behave the same as if it were CB.
   // This means the interactions aren't added and the slot feature is not added.
   bool has_seen_multi_slot_example = false;
+  // Introduction has_seen_multi_slot_example was breaking change in terms of model format.
+  // This flag is required for loading cb models (which do not have has_seen_multi_slot_example flag) into ccb reduction
+  bool is_ccb_input_model = false;
 };
 
 namespace CCB
@@ -600,7 +603,7 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 
   // We want to enter this block if either we are writing, or reading a model file after the version in which this was
   // added.
-  if (!read || sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  if (!read || (sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG && sm.is_ccb_input_model))
   {
     std::stringstream msg;
     if (!read) { msg << "CCB: has_seen_multi_slot_example = " << sm.has_seen_multi_slot_example << "\n"; }
@@ -614,6 +617,9 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
+
+  data->is_ccb_input_model = all.is_ccb_input_model;
+
   option_group_definition new_options("EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF");
   new_options
       .add(make_option("ccb_explore_adf", ccb_explore_adf_option)

@@ -67,7 +67,7 @@ VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 struct example : public example_predict  // core example datatype.
 {
-  example();
+  example() = default;
   ~example();
 
   example(const example&) = delete;
