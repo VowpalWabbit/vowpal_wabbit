@@ -169,6 +169,7 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src) { copy_
 
 void copy_example_data(bool audit, example* dst, example* src)
 {
+  std::ignore = audit;
   copy_example_metadata(dst, src);
 
   // copy feature data
