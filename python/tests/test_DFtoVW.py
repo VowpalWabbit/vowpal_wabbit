@@ -2,7 +2,6 @@ import pytest
 import pandas as pd
 
 from vowpalwabbit.DFtoVW import (
-    ContextualBanditLabel,
     DFtoVW,
     Feature,
     MulticlassLabel,

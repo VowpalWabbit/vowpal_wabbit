@@ -627,7 +627,7 @@ class DFtoVW:
         df : pandas.DataFrame
             The dataframe used.
         label_type: str (default: 'simple_label')
-            The type of the label. Available labels: 'simple_label', 'multiclass_label', 'multi_label', 'contextual_bandit_label'
+            The type of the label. Available labels: 'simple_label', 'multiclass_label', 'multi_label'.
 
         Raises
         ------
@@ -659,7 +659,6 @@ class DFtoVW:
             "simple_label": SimpleLabel,
             "multiclass_label": MulticlassLabel,
             "multi_label": MultiLabel,
-            "contextual_bandit_label": ContextualBanditLabel,
         }
 
         if label_type not in dict_label_type:
@@ -671,7 +670,7 @@ class DFtoVW:
 
         y = y if isinstance(y, list) else [y]
 
-        if label_type not in ["multi_label", "contextual_bandit_label"]:
+        if label_type not in ["multi_label"]:
             if len(y) > 1:
                 raise TypeError(
                 "When label_type is 'simple_label' or 'multiclass', argument 'y' should be a string (or any hashable type) "+
@@ -754,7 +753,7 @@ class DFtoVW:
         TypeError
             If label is not of type SimpleLabel or MulticlassLabel.
         """
-        available_labels = (SimpleLabel, MulticlassLabel, MultiLabel, ContextualBanditLabel)
+        available_labels = (SimpleLabel, MulticlassLabel, MultiLabel)
 
         if self.label is None:
             pass
