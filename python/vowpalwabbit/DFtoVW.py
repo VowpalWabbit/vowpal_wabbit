@@ -469,9 +469,9 @@ class Namespace(object):
         self : Namespace
         """
 
-        if (value is not None) and (name is None):
+        if (value is not None) and (name is None or name == ""):
             raise ValueError(
-                "Namespace can't have a 'value' argument without a 'name' argument"
+                "Namespace can't have a 'value' argument without a 'name' argument or an empty string 'name' argument"
             )
 
         self.name = name
