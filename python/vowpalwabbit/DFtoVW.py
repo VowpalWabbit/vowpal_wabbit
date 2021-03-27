@@ -1,6 +1,13 @@
 import numpy as np
 import pandas as pd
 
+# Done:
+# - raise error when namespace has value but no name
+# - add a 'name' attribute for feature
+# - simplify the column checking function
+# - get_colname() to get_name() (also possible:  make_valid_feature_name)
+
+
 class _Col:
     """_Col class. It refers to a column of a dataframe."""
     
@@ -183,44 +190,26 @@ class AttributeDescriptor(object):
         arg: str
             The argument to set.
         """
-        # set instance attribute to None if arg is None
-        if arg is None:
-            instance.__dict__[self.attribute_name] = arg
-        else:
-            self.initialize_col_type(instance, arg)
-
-    def initialize_col_type(self, instance, colname):
-        """Initialize the attribute as a _Col type
-
-        Parameters
-        ----------
-        instance: object
-            The managed instance.
-        colname: str/int/float
-            The colname used for the _Col instance.
-        """
         # initialize empty set that register the column names
         if "columns" not in instance.__dict__:
             instance.__dict__["columns"] = set()
         
-        if isinstance(colname, list):
-            for col in colname:
-                instance.__dict__["columns"].add(col)
-
+        # set instance attribute to None if arg is None
+        if arg is None:
+            instance.__dict__[self.attribute_name] = arg
+        else:
+            arg_is_list = isinstance(arg, list)
+            colnames = arg if arg_is_list else [arg]
+            instance.__dict__["columns"].update(colnames)
             instance.__dict__[self.attribute_name] = [_Col(
                 colname=col,
                 expected_type=self.expected_type,
                 min_value=self.min_value,
                 max_value=self.max_value
-            ) for col in colname ]
-        else:
-            instance.__dict__["columns"].add(colname)
-            instance.__dict__[self.attribute_name] = _Col(
-                colname=colname,
-                expected_type=self.expected_type,
-                min_value=self.min_value,
-                max_value=self.max_value
-            )
+            ) for col in colnames ]
+
+            if not arg_is_list:
+                instance.__dict__[self.attribute_name] = instance.__dict__[self.attribute_name][0]
 
 
 class SimpleLabel(object):
