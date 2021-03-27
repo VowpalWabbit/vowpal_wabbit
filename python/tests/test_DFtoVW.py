@@ -147,7 +147,7 @@ def test_non_numerical_error():
     df = pd.DataFrame({"y": ["a"], "x": ["featX"]})
     with pytest.raises(TypeError) as type_error:
         DFtoVW(df=df, label=SimpleLabel(label="y"), features=Feature("x"))
-    expected = "In argument 'label' of 'SimpleLabel', column 'y' should be either of the following type(s): 'int', 'float', 'int64'."
+    expected = "In argument 'label' of 'SimpleLabel', column 'y' should be either of the following type(s): 'int', 'float'."
     assert expected == str(type_error.value)
 
 

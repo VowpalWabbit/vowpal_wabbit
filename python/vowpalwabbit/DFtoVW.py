@@ -3,7 +3,9 @@ import pandas as pd
 
 class _Col:
     """_Col class. It refers to a column of a dataframe."""
-
+    
+    mapping_python_numpy = {int: np.integer, float: np.floating, object: np.dtype("O"), str: np.dtype("O")}
+    
     def __init__(self, colname, expected_type, min_value=None, max_value=None):
         """Initialize a _Col instance
 
@@ -61,21 +63,21 @@ class _Col:
             The dataframe from which to check the column's type.
         """
         col_type = df[self.colname].dtype
-        return np.issubsctype(col_type, np.number)
+        return np.issubdtype(col_type, np.number)
 
-    def get_colname(self):
-        """Returns a colname that is compatible with VW (no ':' nor ' ').
+    def get_name(self):
+        """Returns a feature name (from the column name) that is compatible with VW (no ':' nor ' ').
 
         Returns
         -------
-        colname : str
-            A valid colname.
+        name : str
+            A valid VW feature name.
         """
-        colname = str(self.colname)
-        colname = colname.replace(":", " ")
-        colname = colname.strip()
-        colname = colname.replace(" ", "_")
-        return colname
+        name = str(self.colname)
+        name = name.replace(":", " ")
+        name = name.strip()
+        name = name.replace(" ", "_")
+        return name
 
     def check_col_type(self, df):
         """Check if the type of the column is valid.
@@ -90,18 +92,15 @@ class _Col:
         TypeError
             If the type of the column is not valid.
         """
-        expected_type = list(self.expected_type)
-        if str in expected_type:
-            expected_type.append(object)
-        if int in expected_type:
-            expected_type.append(np.int64)
-
+        expected_type = [self.mapping_python_numpy[exp_type] for exp_type in self.expected_type]
         col_type = df[self.colname].dtype
-        if not (col_type in expected_type):
+        
+        if not any(np.issubdtype(col_type, exp_type) for exp_type in expected_type):
             raise TypeError(
                 "column '{colname}' should be either of the following type(s): {type_name}.".format(
                     colname=self.colname,
-                    type_name=str([x.__name__ for x in expected_type])[1:-1],
+                    type_name=str([x.__name__ for x in self.expected_type])[1:-1],
+
                 )
             )
 
@@ -184,10 +183,6 @@ class AttributeDescriptor(object):
         arg: str
             The argument to set.
         """
-        # initialize empty set that register the column names
-        if "columns" not in instance.__dict__:
-            instance.__dict__["columns"] = set()
-
         # set instance attribute to None if arg is None
         if arg is None:
             instance.__dict__[self.attribute_name] = arg
@@ -204,6 +199,10 @@ class AttributeDescriptor(object):
         colname: str/int/float
             The colname used for the _Col instance.
         """
+        # initialize empty set that register the column names
+        if "columns" not in instance.__dict__:
+            instance.__dict__["columns"] = set()
+        
         if isinstance(colname, list):
             for col in colname:
                 instance.__dict__["columns"].add(col)
@@ -404,7 +403,7 @@ class ContextualBanditLabel(object):
 
 class Feature(object):
     """The feature type for the constructor of DFtoVW"""
-    value = AttributeDescriptor("value", expected_type=(str, int, float))
+    value = AttributeDescriptor("value", expected_type=(object, int, float))
 
     def __init__(self, value, rename_feature=None, as_type=None):
         """
@@ -423,7 +422,7 @@ class Feature(object):
         self : Feature
         """
         self.value = value
-        self.rename_feature = rename_feature
+        self.name = rename_feature if rename_feature is not None else self.value.get_name()
         if as_type is not None and as_type not in ("numerical", "categorical"):
             raise ValueError("Argument 'as_type' can either be 'numerical' or 'categorical'")
         else:
@@ -442,14 +441,13 @@ class Feature(object):
         pandas.Series
             The Feature string representation.
         """
-        name = self.rename_feature if self.rename_feature is not None else self.value.get_colname()
         value_col = self.value.get_col(df)
         if self.as_type:
             sep = ':' if self.as_type == "numerical" else '='
         else:
             sep = ':' if self.value.is_number(df) else '='
 
-        out = name + sep + value_col
+        out = self.name + sep + value_col
         return out
 
 
@@ -656,7 +654,21 @@ class DFtoVW:
         """
         self.df = df
         self.n_rows = df.shape[0]
-        self.label = label
+        
+        if not isinstance(label, list):
+            self.label = label
+        else:
+            pass
+            if isinstance(label[0], ContextualBanditLabel):
+                dict_list = [vars(cls) for cls in label]
+                list_args = [
+                    [d["action"], d["cost"], d["proba"]]
+                    for d in dict_list
+                ]
+                
+                self.label = ContextualBanditLabel(*list_args)
+            else:
+                raise TypeError("Only ContextualBanditLabel can be passed as a list.")
         self.tag = _Tag(tag) if tag else None
 
         if features is not None:
@@ -847,38 +859,31 @@ class DFtoVW:
         df_colnames = set(self.df.columns)
 
         try:
-            missing_cols = self.label.columns
+            label_columns = self.label.names
         except AttributeError:
             pass
-        else:
-            if missing_cols is not None:
-                type_label = type(self.label).__name__
-                absent_cols[type_label] = list(missing_cols - df_colnames)
+        else:        
+            type_label = type(self.label).__name__
+            label_columns = label_columns if isinstance(label_columns, list) else [label_columns]
+            absent_cols[type_label] = set(label_columns) - df_colnames
 
         try:
-            missing_cols = self.tag.columns
+            tag_columns = self.tag.columns
         except AttributeError:
             pass
         else:
-            if missing_cols is not None:
-                absent_cols["tag"] = list(missing_cols - df_colnames)
+            absent_cols["tag"] = list(tag_columns - df_colnames)
 
         all_features = [
             feature
             for namespace in self.namespaces
             for feature in namespace.features
         ]
-        missing_features_cols = []
+        missing_features_cols = set()
         for feature in all_features:
-            try:
-                missing_cols = feature.columns
-            except AttributeError:
-                pass
-            else:
-                if missing_cols is not None:
-                    missing_features_cols += list(missing_cols - df_colnames)
+            missing_features_cols.update(feature.columns - df_colnames)
 
-        absent_cols["Feature"] = sorted(list(set(missing_features_cols)))
+        absent_cols["Feature"] = sorted(list(missing_features_cols))
 
         absent_cols = {
             key: value
