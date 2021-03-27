@@ -347,60 +347,6 @@ class MultiLabel(object):
         return out
 
 
-class ContextualBanditLabel(object):
-    """The contextual bandit label type for the constructor of DFtoVW."""
-
-    action = AttributeDescriptor("action", expected_type=(int,), min_value=1)
-    cost = AttributeDescriptor("cost", expected_type=(float, int))
-    proba = AttributeDescriptor("proba", expected_type=(float,), min_value=0, max_value=1)
-
-    def __init__(self, label):
-        """Initialize a ContextualBanditLabel instance.
-
-        Parameters
-        ----------
-        label : tuple/list or list of tuple/list
-            The (list of) column name(s) of the contextual bandit label.
-
-        Returns
-        -------
-        self : ContextualBanditLabel
-        """
-        try:
-            list_of_labels = [[x[i] for x in label] for i in range(3)]
-        except IndexError:
-            self.action, self.cost, self.proba = label
-            self.is_list = False
-        else:
-            self.action, self.cost, self.proba = list_of_labels
-            self.is_list = True
-
-    def process(self, df):
-        """Returns the ContextualBanditLabel string representation.
-
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The dataframe from which to select the column(s).
-
-        Returns
-        -------
-        pandas.Series
-            The ContextualBanditLabel string representation.
-        """
-        if self.is_list:
-            for i, (action, cost, proba) in enumerate(zip(self.action, self.cost, self.proba)):
-                parsed_label = action.get_col(df) + ":" + cost.get_col(df) + ":" + proba.get_col(df)
-                if i == 0:
-                    out = parsed_label
-                else:
-                    out += " " + parsed_label
-        else:
-            out = self.action.get_col(df) + ":" + self.cost.get_col(df) + ":" + self.proba.get_col(df)
-
-        return out
-
-
 class Feature(object):
     """The feature type for the constructor of DFtoVW"""
     value = AttributeDescriptor("value", expected_type=(object, int, float))
