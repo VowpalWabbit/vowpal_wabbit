@@ -654,21 +654,7 @@ class DFtoVW:
         """
         self.df = df
         self.n_rows = df.shape[0]
-        
-        if not isinstance(label, list):
-            self.label = label
-        else:
-            pass
-            if isinstance(label[0], ContextualBanditLabel):
-                dict_list = [vars(cls) for cls in label]
-                list_args = [
-                    [d["action"], d["cost"], d["proba"]]
-                    for d in dict_list
-                ]
-                
-                self.label = ContextualBanditLabel(*list_args)
-            else:
-                raise TypeError("Only ContextualBanditLabel can be passed as a list.")
+        self.label = label
         self.tag = _Tag(tag) if tag else None
 
         if features is not None:
@@ -855,24 +841,23 @@ class DFtoVW:
 
     def check_columns_existence_in_df(self):
         """Check if the columns are in the dataframe."""
-        absent_cols = {}
+        missing_cols = {}
         df_colnames = set(self.df.columns)
 
         try:
-            label_columns = self.label.names
+            label_columns = self.label.columns
         except AttributeError:
             pass
         else:        
             type_label = type(self.label).__name__
-            label_columns = label_columns if isinstance(label_columns, list) else [label_columns]
-            absent_cols[type_label] = set(label_columns) - df_colnames
+            missing_cols[type_label] = label_columns - df_colnames
 
         try:
             tag_columns = self.tag.columns
         except AttributeError:
             pass
         else:
-            absent_cols["tag"] = list(tag_columns - df_colnames)
+            missing_cols["tag"] = tag_columns - df_colnames
 
         all_features = [
             feature
@@ -883,14 +868,14 @@ class DFtoVW:
         for feature in all_features:
             missing_features_cols.update(feature.columns - df_colnames)
 
-        absent_cols["Feature"] = sorted(list(missing_features_cols))
+        missing_cols["Feature"] = sorted(list(missing_features_cols))
 
-        absent_cols = {
+        missing_cols = {
             key: value
-            for (key, value) in absent_cols.items()
+            for (key, value) in missing_cols.items()
             if len(value) > 0
         }
-        self.generate_missing_col_error(absent_cols)
+        self.generate_missing_col_error(missing_cols)
 
     def generate_missing_col_error(self, absent_cols_dict):
         """Generate error if some columns are missing
