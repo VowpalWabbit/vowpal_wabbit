@@ -28,6 +28,11 @@ struct cb_sample_data
   template <bool is_learn>
   inline void learn_or_predict(multi_learner &base, multi_ex &examples)
   {
+    // If base.learn() does not return prediction then we need to predict first
+    // so that there is something to sample from
+    if(is_learn && !base.learn_returns_prediction)
+      multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+
     multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
     auto &action_scores = examples[0]->pred.a_s;
@@ -111,9 +116,6 @@ base_learner *cb_sample_setup(options_i &options, vw &all)
       make_option("cb_sample", cb_sample_option).keep().necessary().help("Sample from CB pdf and swap top action."));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
-
-  if (options.was_supplied("no_predict"))
-  { THROW("cb_sample cannot be used with no_predict, as there would be no predictions to sample."); }
 
   auto data = scoped_calloc_or_throw<cb_sample_data>(all.get_random_state());
   return make_base(
