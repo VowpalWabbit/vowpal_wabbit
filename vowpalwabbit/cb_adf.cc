@@ -103,6 +103,13 @@ public:
 
   const VW::version_struct* get_model_file_ver() const { return _model_file_ver; }
 
+  bool learn_returns_prediction(){
+    return ((_gen_cs.cb_type == CB_TYPE_MTR) && !_no_predict) || 
+                                  _gen_cs.cb_type == CB_TYPE_IPS ||
+                                  _gen_cs.cb_type == CB_TYPE_DR ||
+                                  CB_TYPE_DM;
+  }
+
 private:
   void learn_IPS(multi_learner& base, multi_ex& examples);
   void learn_DR(multi_learner& base, multi_ex& examples);
@@ -276,10 +283,10 @@ example* test_adf_sequence(multi_ex& ec_seq)
 
 void cb_adf::learn(multi_learner& base, multi_ex& ec_seq)
 {
-  _offset = ec_seq[0]->ft_offset;
-  _gen_cs.known_cost = get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
   if (test_adf_sequence(ec_seq) != nullptr)
   {
+    _offset = ec_seq[0]->ft_offset;
+    _gen_cs.known_cost = get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
     switch (_gen_cs.cb_type)
     {
       case CB_TYPE_IPS:
@@ -303,6 +310,10 @@ void cb_adf::learn(multi_learner& base, multi_ex& ec_seq)
       default:
         THROW("Unknown cb_type specified for contextual bandit learning: " << _gen_cs.cb_type);
     }
+  }
+  else if(learn_returns_prediction())
+  {
+    predict(base,ec_seq);
   }
 }
 
@@ -525,8 +536,9 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
   all.example_parser->lbl_parser = CB::cb_label;
 
   cb_adf* bare = ld.get();
+
   learner<cb_adf, multi_ex>& l = init_learner(ld, base, learn, predict, problem_multiplier,
-      prediction_type_t::action_scores, all.get_setupfn_name(cb_adf_setup), !no_predict);
+      prediction_type_t::action_scores, all.get_setupfn_name(cb_adf_setup), ld->learn_returns_prediction());
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   bare->set_scorer(all.scorer);
