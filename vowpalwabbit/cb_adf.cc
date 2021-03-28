@@ -103,11 +103,10 @@ public:
 
   const VW::version_struct* get_model_file_ver() const { return _model_file_ver; }
 
-  bool learn_returns_prediction(){
-    return ((_gen_cs.cb_type == CB_TYPE_MTR) && !_no_predict) || 
-                                  _gen_cs.cb_type == CB_TYPE_IPS ||
-                                  _gen_cs.cb_type == CB_TYPE_DR ||
-                                  CB_TYPE_DM;
+  bool learn_returns_prediction()
+  {
+    return ((_gen_cs.cb_type == CB_TYPE_MTR) && !_no_predict) || _gen_cs.cb_type == CB_TYPE_IPS ||
+        _gen_cs.cb_type == CB_TYPE_DR || CB_TYPE_DM;
   }
 
 private:
@@ -311,9 +310,9 @@ void cb_adf::learn(multi_learner& base, multi_ex& ec_seq)
         THROW("Unknown cb_type specified for contextual bandit learning: " << _gen_cs.cb_type);
     }
   }
-  else if(learn_returns_prediction())
+  else if (learn_returns_prediction())
   {
-    predict(base,ec_seq);
+    predict(base, ec_seq);
   }
 }
 
