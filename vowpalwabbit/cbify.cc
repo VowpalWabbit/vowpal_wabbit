@@ -55,6 +55,7 @@ struct cbify
   cbify_adf_data adf_data;
   float loss0;
   float loss1;
+  uint32_t chosen_action;
 
   // for ldf inputs
   std::vector<v_array<COST_SENSITIVE::wclass>> cs_costs;
@@ -366,10 +367,10 @@ void predict_adf(cbify& data, multi_learner& base, example& ec)
   auto& out_ec = *data.adf_data.ecs[0];
 
   if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
-          end_scores(out_ec.pred.a_s), data.adf_data.chosen_action))
+          end_scores(out_ec.pred.a_s), data.chosen_action))
     THROW("Failed to sample from pdf");
 
-  ec.pred.multiclass = out_ec.pred.a_s[data.adf_data.chosen_action].action + 1;
+  ec.pred.multiclass = out_ec.pred.a_s[data.chosen_action].action + 1;
   ec.l = save_label;
 }
 
@@ -386,8 +387,8 @@ void learn_adf(cbify& data, multi_learner& base, example& ec)
     ld = ec.l.multi;
 
   CB::cb_class cl;
-  cl.action = out_ec.pred.a_s[data.adf_data.chosen_action].action + 1;
-  cl.probability = out_ec.pred.a_s[data.adf_data.chosen_action].score;
+  cl.action = out_ec.pred.a_s[data.chosen_action].action + 1;
+  cl.probability = out_ec.pred.a_s[data.chosen_action].score;
 
   if (!cl.action) THROW("No action with non-zero probability found!");
 
@@ -406,8 +407,6 @@ void learn_adf(cbify& data, multi_learner& base, example& ec)
 
 void do_actual_predict_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 {
-  uint32_t chosen_action;
-
   // change label and pred data for cb
   if (data.cs_costs.size() < ec_seq.size()) data.cs_costs.resize(ec_seq.size());
   if (data.cb_costs.size() < ec_seq.size()) data.cb_costs.resize(ec_seq.size());
@@ -427,11 +426,11 @@ void do_actual_predict_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   auto& out_ec = *ec_seq[0];
 
   if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
-          end_scores(out_ec.pred.a_s), chosen_action))
+          end_scores(out_ec.pred.a_s), data.chosen_action))
     THROW("Failed to sample from pdf");
 
   // Get the predicted action (adjusting for 1 based start)
-  const auto predicted_action = out_ec.pred.a_s[chosen_action].action + 1;
+  const auto predicted_action = out_ec.pred.a_s[data.chosen_action].action + 1;
 
   // Set cs prediction
   for (size_t i = 0; i < ec_seq.size(); ++i)
@@ -448,10 +447,9 @@ void do_actual_predict_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 {
   CB::cb_class cl;
-  uint32_t chosen_action = 0;
 
-  cl.action = data.cb_as[0][chosen_action].action + 1;
-  cl.probability = data.cb_as[0][chosen_action].score;
+  cl.action = data.cb_as[0][data.chosen_action].action + 1;
+  cl.probability = data.cb_as[0][data.chosen_action].score;
 
   if (!cl.action) THROW("No action with non-zero probability found!");
 
