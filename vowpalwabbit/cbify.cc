@@ -359,7 +359,6 @@ template <bool use_cs>
 void predict_adf(cbify& data, multi_learner& base, example& ec)
 {
   const auto save_label = ec.l;
-  uint32_t chosen_action;
 
   data.adf_data.copy_example_to_adf(data.all->weights, ec);
   base.predict(data.adf_data.ecs);
@@ -367,10 +366,10 @@ void predict_adf(cbify& data, multi_learner& base, example& ec)
   auto& out_ec = *data.adf_data.ecs[0];
 
   if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
-          end_scores(out_ec.pred.a_s), chosen_action))
+          end_scores(out_ec.pred.a_s), data.adf_data.chosen_action))
     THROW("Failed to sample from pdf");
 
-  ec.pred.multiclass = out_ec.pred.a_s[chosen_action].action + 1;
+  ec.pred.multiclass = out_ec.pred.a_s[data.adf_data.chosen_action].action + 1;
   ec.l = save_label;
 }
 
@@ -380,7 +379,6 @@ void learn_adf(cbify& data, multi_learner& base, example& ec)
   auto& out_ec = *data.adf_data.ecs[0];
   MULTICLASS::label_t ld;
   COST_SENSITIVE::label csl;
-  uint32_t chosen_action = 0;
 
   if (use_cs)
     csl = ec.l.cs;
@@ -388,8 +386,8 @@ void learn_adf(cbify& data, multi_learner& base, example& ec)
     ld = ec.l.multi;
 
   CB::cb_class cl;
-  cl.action = out_ec.pred.a_s[chosen_action].action + 1;
-  cl.probability = out_ec.pred.a_s[chosen_action].score;
+  cl.action = out_ec.pred.a_s[data.adf_data.chosen_action].action + 1;
+  cl.probability = out_ec.pred.a_s[data.adf_data.chosen_action].score;
 
   if (!cl.action) THROW("No action with non-zero probability found!");
 

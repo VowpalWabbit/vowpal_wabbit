@@ -10,6 +10,7 @@ struct cbify_adf_data
 {
   multi_ex ecs;
   size_t num_actions;
+  uint32_t chosen_action;
 
   void init_adf_data(const std::size_t num_actions, namespace_interactions& interactions);
   void copy_example_to_adf(parameters& weights, example& ec);
