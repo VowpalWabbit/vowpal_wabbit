@@ -539,7 +539,8 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
 
   all.weights.stride_shift((uint32_t)ceil(log2(ON->m + 2)));
 
-  learner<OjaNewton, example>& l = init_learner(ON, learn, predict, all.weights.stride());
+  learner<OjaNewton, example>& l =
+      init_learner(ON, learn, predict, all.weights.stride(), all.get_setupfn_name(OjaNewton_setup));
   l.set_save_load(save_load);
   l.set_finish_example(keep_example);
   return make_base(l);

@@ -333,7 +333,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
 
   try
   {
-    example* ex = VW::alloc_examples(0, 1);
+    example* ex = VW::alloc_examples(1);
     ex->interactions = &all->interactions;
 
     if (isEmpty)
@@ -359,8 +359,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish(JN
 
   try
   {
-    VW::dealloc_example(all->example_parser->lbl_parser.delete_label, *ex);
-    ::free_it(ex);
+    VW::dealloc_examples(ex, 1);
   }
   catch (...)
   {

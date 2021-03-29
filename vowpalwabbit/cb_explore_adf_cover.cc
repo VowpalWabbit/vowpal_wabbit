@@ -46,14 +46,13 @@ private:
   std::vector<float> _scores;
   COST_SENSITIVE::label _cs_labels;
   COST_SENSITIVE::label _cs_labels_2;
-  v_array<COST_SENSITIVE::label> _prepped_cs_labels;
-  v_array<CB::label> _cb_labels;
+  std::vector<COST_SENSITIVE::label> _prepped_cs_labels;
+  std::vector<CB::label> _cb_labels;
 
 public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
       VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type,
       VW::version_struct model_file_version);
-  ~cb_explore_adf_cover();
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
@@ -85,7 +84,7 @@ template <bool is_learn>
 void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   // Redundant with the call in cb_explore_adf_base, but encapsulation means we need to do this again here
-  _gen_cs.known_cost = CB_ADF::get_observed_cost(examples);
+  _gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
 
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
@@ -196,17 +195,6 @@ void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
   }
 }
 
-cb_explore_adf_cover::~cb_explore_adf_cover()
-{
-  _cb_labels.delete_v();
-  for (size_t i = 0; i < _prepped_cs_labels.size(); i++) _prepped_cs_labels[i].costs.delete_v();
-  _prepped_cs_labels.delete_v();
-  _cs_labels_2.costs.delete_v();
-  _cs_labels.costs.delete_v();
-  _action_probs.delete_v();
-  _gen_cs.pred_scores.costs.delete_v();
-}
-
 VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
 {
   using config::make_option;
@@ -219,7 +207,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   bool first_only = false;
   float epsilon = 0.;
 
-  config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
+  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (online cover)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
@@ -250,8 +238,6 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
   // Set cb_type
   size_t cb_type_enum;
   if (type_string.compare("dr") == 0)
@@ -260,13 +246,13 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
     cb_type_enum = CB_TYPE_IPS;
   else if (type_string.compare("mtr") == 0)
   {
-    all.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr"
-                      << std::endl;
+    *(all.trace_message) << "warning: currently, mtr is only used for the first policy in cover, other policies use dr"
+                         << std::endl;
     cb_type_enum = CB_TYPE_MTR;
   }
   else
   {
-    all.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to mtr." << std::endl;
+    *(all.trace_message) << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to mtr." << std::endl;
     options.replace("cb_type", "mtr");
     cb_type_enum = CB_TYPE_MTR;
   }
@@ -276,7 +262,6 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
 
   VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
-  all.label_type = label_type_t::cb;
 
   bool epsilon_decay;
   if (options.was_supplied("epsilon"))
@@ -294,8 +279,8 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<explore_type>(cover_size, psi, nounif, epsilon, epsilon_decay, first_only,
       as_multiline(all.cost_sensitive), all.scorer, cb_type_enum, all.model_file_ver);
 
-  VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
+  VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(data, base, explore_type::learn, explore_type::predict,
+      problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-cover");
 
   l.set_finish_example(explore_type::finish_multiline_example);
   l.set_save_load(explore_type::save_load);

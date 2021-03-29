@@ -6,11 +6,13 @@
 #include <vector>
 #include "reductions.h"
 #include "cb_algs.h"
+#include "cbify.h"
 #include "vw.h"
 #include "hash.h"
 #include "explore.h"
 #include "prob_dist_cont.h"
 #include "debug_log.h"
+#include "cb_label_parser.h"
 
 using namespace VW::LEARNER;
 using namespace exploration;
@@ -23,14 +25,6 @@ using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
 
 struct cbify;
-
-VW_DEBUG_ENABLE(false)
-
-struct cbify_adf_data
-{
-  multi_ex ecs;
-  size_t num_actions;
-};
 
 struct cbify_reg
 {
@@ -63,27 +57,9 @@ struct cbify
   std::vector<v_array<COST_SENSITIVE::wclass>> cs_costs;
   std::vector<v_array<CB::cb_class>> cb_costs;
   std::vector<ACTION_SCORE::action_scores> cb_as;
-
-  ~cbify()
-  {
-    CB::cb_label.delete_label(&cb_label);
-    a_s.delete_v();
-    regression_data.cb_cont_label.costs.delete_v();
-
-    if (use_adf)
-    {
-      for (size_t a = 0; a < adf_data.num_actions; ++a)
-      {
-        adf_data.ecs[a]->pred.a_s.delete_v();
-        VW::dealloc_example(CB::cb_label.delete_label, *adf_data.ecs[a]);
-        free_it(adf_data.ecs[a]);
-      }
-      for (auto& as : cb_as) as.delete_v();
-    }
-  }
 };
 
-float loss(cbify& data, uint32_t label, uint32_t final_prediction)
+float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
 {
   if (label != final_prediction)
     return data.loss1;
@@ -91,10 +67,10 @@ float loss(cbify& data, uint32_t label, uint32_t final_prediction)
     return data.loss0;
 }
 
-float loss_cs(cbify& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
+float loss_cs(const cbify& data, const v_array<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
 {
   float cost = 0.;
-  for (auto wc : costs)
+  for (const auto& wc : costs)
   {
     if (wc.class_index == final_prediction)
     {
@@ -105,10 +81,11 @@ float loss_cs(cbify& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t fina
   return data.loss0 + (data.loss1 - data.loss0) * cost;
 }
 
-float loss_csldf(cbify& data, std::vector<v_array<COST_SENSITIVE::wclass>>& cs_costs, uint32_t final_prediction)
+float loss_csldf(
+    const cbify& data, const std::vector<v_array<COST_SENSITIVE::wclass>>& cs_costs, uint32_t final_prediction)
 {
   float cost = 0.;
-  for (auto costs : cs_costs)
+  for (const auto& costs : cs_costs)
   {
     if (costs[0].class_index == final_prediction)
     {
@@ -122,22 +99,38 @@ float loss_csldf(cbify& data, std::vector<v_array<COST_SENSITIVE::wclass>>& cs_c
 void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
 {
   if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
-
-  data.cb_cont_label.costs.delete_v();  // todo: instead of above
 }
 
-void copy_example_to_adf(cbify& data, example& ec)
+void cbify_adf_data::init_adf_data(const std::size_t num_actions, namespace_interactions& interactions)
 {
-  cbify_adf_data& adf_data = data.adf_data;
-  const uint64_t ss = data.all->weights.stride_shift();
-  const uint64_t mask = data.all->weights.mask();
+  this->num_actions = num_actions;
 
-  for (size_t a = 0; a < adf_data.num_actions; ++a)
+  ecs.resize(num_actions);
+  for (size_t a = 0; a < num_actions; ++a)
   {
-    auto& eca = *adf_data.ecs[a];
+    ecs[a] = VW::alloc_examples(1);
+    auto& lab = ecs[a]->l.cb;
+    CB::default_label(lab);
+    ecs[a]->interactions = &interactions;
+  }
+}
+
+cbify_adf_data::~cbify_adf_data()
+{
+  for (auto* ex : ecs) { VW::dealloc_examples(ex, 1); }
+}
+
+void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
+{
+  const uint64_t ss = weights.stride_shift();
+  const uint64_t mask = weights.mask();
+
+  for (size_t a = 0; a < num_actions; ++a)
+  {
+    auto& eca = *ecs[a];
     // clear label
     auto& lab = eca.l.cb;
-    CB::cb_label.default_label(&lab);
+    CB::default_label(lab);
 
     // copy data
     VW::copy_example_data(false, &eca, &ec);
@@ -187,7 +180,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
   label_data regression_label = ec.l.simple;
   data.cb_label.costs.clear();
   ec.l.cb = data.cb_label;
-  ec.pred.a_s = data.a_s;
+  ec.pred.a_s = std::move(data.a_s);
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
@@ -235,8 +228,9 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
     }
   }
 
-  data.a_s = ec.pred.a_s;
+  data.a_s = std::move(ec.pred.a_s);
   data.a_s.clear();
+  ec.l.cb.costs = v_init<CB::cb_class>();
 
   ec.l.simple = regression_label;
   ec.pred.scalar = converted_action;
@@ -311,6 +305,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
     }
   }
 
+  ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   ec.l.simple = regression_label;  // restore the regression label
   ec.pred.scalar = cb_cont_lbl.action;
 }
@@ -322,48 +317,39 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   MULTICLASS::label_t ld;
   COST_SENSITIVE::label csl;
   if (use_cs)
-    csl = ec.l.cs;
+    csl = std::move(ec.l.cs);
   else
-    ld = ec.l.multi;
+    ld = std::move(ec.l.multi);
 
-  data.cb_label.costs.clear();
-  ec.l.cb = data.cb_label;
-  ec.pred.a_s = data.a_s;
+  ec.l.cb.costs.clear();
+  ec.pred.a_s.clear();
 
   // Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
-  // data.probs = ec.pred.scalars;
 
   uint32_t chosen_action;
   if (sample_after_normalizing(
           data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
-  CB::cb_class cl;
-  cl.action = chosen_action + 1;
-  cl.probability = ec.pred.a_s[chosen_action].score;
-
-  if (!cl.action) THROW("No action with non-zero probability found!");
-  if (use_cs)
-    cl.cost = loss_cs(data, csl.costs, cl.action);
-  else
-    cl.cost = loss(data, ld.label, cl.action);
-
   // Create a new cb label
-  data.cb_label.costs.push_back(cl);
-  ec.l.cb = data.cb_label;
+  const auto action = chosen_action + 1;
+  const auto cost = use_cs ? loss_cs(data, csl.costs, action) : loss(data, ld.label, action);
+  ec.l.cb.costs.push_back(CB::cb_class{
+      cost,
+      action,                           // action
+      ec.pred.a_s[chosen_action].score  // probability
+  });
 
-  if (is_learn) base.learn(ec);
-
-  data.a_s = ec.pred.a_s;
-  data.a_s.clear();
+  if (is_learn) { base.learn(ec); }
 
   if (use_cs)
-    ec.l.cs = csl;
+    ec.l.cs = std::move(csl);
   else
-    ec.l.multi = ld;
+    ec.l.multi = std::move(ld);
 
-  ec.pred.multiclass = cl.action;
+  ec.pred.multiclass = action;
+  ec.l.cb.costs.clear();
 }
 
 template <bool is_learn, bool use_cs>
@@ -377,7 +363,7 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   else
     ld = ec.l.multi;
 
-  copy_example_to_adf(data, ec);
+  data.adf_data.copy_example_to_adf(data.all->weights, ec);
   base.predict(data.adf_data.ecs);
 
   auto& out_ec = *data.adf_data.ecs[0];
@@ -408,21 +394,6 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   ec.pred.multiclass = cl.action;
 }
 
-void init_adf_data(cbify& data, const size_t num_actions)
-{
-  auto& adf_data = data.adf_data;
-  adf_data.num_actions = num_actions;
-
-  adf_data.ecs.resize(num_actions);
-  for (size_t a = 0; a < num_actions; ++a)
-  {
-    adf_data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
-    auto& lab = adf_data.ecs[a]->l.cb;
-    CB::cb_label.default_label(&lab);
-    adf_data.ecs[a]->interactions = &data.all->interactions;
-  }
-}
-
 template <bool is_learn>
 void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
 {
@@ -435,9 +406,9 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
     auto& ec = *ec_seq[i];
     data.cs_costs[i] = ec.l.cs.costs;
     data.cb_costs[i].clear();
-    data.cb_as[i].clear();
     ec.l.cb.costs = data.cb_costs[i];
-    ec.pred.a_s = data.cb_as[i];
+    ec.pred.a_s = std::move(data.cb_as[i]);
+    ec.pred.a_s.clear();
   }
 
   base.predict(ec_seq);
@@ -469,7 +440,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
   for (size_t i = 0; i < ec_seq.size(); ++i)
   {
     auto& ec = *ec_seq[i];
-    data.cb_as[i] = ec.pred.a_s;  // store action_score vector for later reuse.
+    data.cb_as[i] = std::move(ec.pred.a_s);  // store action_score vector for later reuse.
     if (i == cl.action - 1)
       data.cb_label = ec.l.cb;
     else
@@ -479,6 +450,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
       ec.pred.multiclass = cl.action;
     else
       ec.pred.multiclass = 0;
+    ec.l.cb.costs = v_init<CB::cb_class>();
   }
 }
 
@@ -540,7 +512,7 @@ void output_example_seq(vw& all, multi_ex& ec_seq)
 
   if (all.raw_prediction != nullptr)
   {
-    v_array<char> empty = {nullptr, nullptr, nullptr, 0};
+    v_array<char> empty;
     all.print_text_by_ref(all.raw_prediction.get(), "", empty);
   }
 }
@@ -674,7 +646,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   data->a_s = v_init<action_score>();
   data->all = &all;
 
-  if (data->use_adf) { init_adf_data(*data.get(), num_actions); }
+  if (data->use_adf) { data->adf_data.init_adf_data(num_actions, all.interactions); }
 
   if (use_reg)
   {
@@ -733,15 +705,15 @@ base_learner* cbify_setup(options_i& options, vw& all)
     multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
     {
-      l = &init_cost_sensitive_learner(
-          data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.example_parser, 1);
-      all.label_type = label_type_t::cs;
+      l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>,
+          all.example_parser, 1, all.get_setupfn_name(cbify_setup) + "-adf-cs");
+      all.example_parser->lbl_parser.label_type = label_type_t::cs;
     }
     else
     {
-      l = &init_multiclass_learner(
-          data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.example_parser, 1);
-      all.label_type = label_type_t::mc;
+      l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>,
+          all.example_parser, 1, all.get_setupfn_name(cbify_setup) + "-adf");
+      all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
     }
   }
   else
@@ -750,34 +722,33 @@ base_learner* cbify_setup(options_i& options, vw& all)
     if (use_reg)
     {
       all.example_parser->lbl_parser = simple_label_parser;
-      all.label_type = label_type_t::simple;
       if (use_discrete)
       {
         l = &init_learner(data, base, predict_or_learn_regression_discrete<true>,
-            predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar);
-        l->set_finish_example(finish_example_cb_reg_discrete);  // todo: check
+            predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar,
+            all.get_setupfn_name(cbify_setup) + "-reg-discrete");
+        l->set_finish_example(finish_example_cb_reg_discrete);
       }
       else
       {
         l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
-            prediction_type_t::scalar);
+            prediction_type_t::scalar, all.get_setupfn_name(cbify_setup) + "-reg");
         l->set_finish_example(finish_example_cb_reg_continous);
       }
     }
     else if (use_cs)
     {
-      l = &init_cost_sensitive_learner(
-          data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.example_parser, 1);
-      all.label_type = label_type_t::cs;
+      l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>,
+          all.example_parser, 1, all.get_setupfn_name(cbify_setup) + "-cs", prediction_type_t::multiclass);
+      all.example_parser->lbl_parser.label_type = label_type_t::cs;
     }
     else
     {
-      l = &init_multiclass_learner(
-          data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.example_parser, 1);
-      all.label_type = label_type_t::mc;
+      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>,
+          all.example_parser, 1, all.get_setupfn_name(cbify_setup), prediction_type_t::multiclass);
+      all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
     }
   }
-  all.delete_prediction = nullptr;
 
   return make_base(*l);
 }
@@ -814,12 +785,11 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
   }
 
   multi_learner* base = as_multiline(setup_base(options, all));
-  learner<cbify, multi_ex>& l = init_learner(
-      data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type_t::multiclass);
+  learner<cbify, multi_ex>& l = init_learner(data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1,
+      prediction_type_t::multiclass, all.get_setupfn_name(cbifyldf_setup));
 
   l.set_finish_example(finish_multiline_example);
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
-  all.delete_prediction = nullptr;
 
   return make_base(l);
 }

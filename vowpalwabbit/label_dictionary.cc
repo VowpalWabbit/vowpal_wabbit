@@ -17,7 +17,7 @@ void del_example_namespace(example& ec, namespace_index ns, features& fs)
   features& del_target = ec.feature_space[(size_t)ns];
   assert(del_target.size() >= fs.size());
   assert(ec.indices.size() > 0);
-  if (ec.indices.last() == ns && ec.feature_space[(size_t)ns].size() == fs.size()) ec.indices.pop();
+  if (ec.indices.back() == ns && ec.feature_space[(size_t)ns].size() == fs.size()) ec.indices.pop_back();
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
   ec.num_features -= fs.size();
   del_target.truncate_to(del_target.size() - fs.size());

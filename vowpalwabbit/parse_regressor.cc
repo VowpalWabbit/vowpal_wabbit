@@ -230,8 +230,8 @@ void save_load_header(
           // Only the read path is implemented since this is for old version read support.
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
           std::vector<namespace_index> temp(pair, *(&pair + 1));
-          if (std::count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-          { all.interactions.emplace_back(temp.begin(), temp.end()); }
+          if (std::count(all.interactions.interactions.begin(), all.interactions.interactions.end(), temp) == 0)
+          { all.interactions.interactions.emplace_back(temp.begin(), temp.end()); }
         }
 
         msg << "\n";
@@ -252,8 +252,8 @@ void save_load_header(
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
 
           std::vector<namespace_index> temp(triple, *(&triple + 1));
-          if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-          { all.interactions.emplace_back(temp.begin(), temp.end()); }
+          if (count(all.interactions.interactions.begin(), all.interactions.interactions.end(), temp) == 0)
+          { all.interactions.interactions.emplace_back(temp.begin(), temp.end()); }
         }
 
         msg << "\n";
@@ -283,8 +283,8 @@ void save_load_header(
             if (size != inter_len) { THROW("Failed to read interaction from model file."); }
 
             std::vector<namespace_index> temp(buff2, buff2 + size);
-            if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-            { all.interactions.emplace_back(buff2, buff2 + inter_len); }
+            if (count(all.interactions.interactions.begin(), all.interactions.interactions.end(), temp) == 0)
+            { all.interactions.interactions.emplace_back(buff2, buff2 + inter_len); }
           }
 
           msg << "\n";
@@ -309,9 +309,9 @@ void save_load_header(
             file_options += " " + temp.str();
           }
           else
-            all.trace_message << "WARNING: this model file contains 'rank: " << rank
-                              << "' value but it will be ignored as another value specified via the command line."
-                              << std::endl;
+            *(all.trace_message) << "WARNING: this model file contains 'rank: " << rank
+                                 << "' value but it will be ignored as another value specified via the command line."
+                                 << std::endl;
         }
       }
 
@@ -517,11 +517,11 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
 
     if (!all.logger.quiet)
     {
-      // all.trace_message << "initial_regressor = " << regs[0] << std::endl;
+      // *(all.trace_message) << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
       {
-        all.trace_message << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors"
-                          << std::endl;
+        *(all.trace_message) << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors"
+                             << std::endl;
       }
     }
   }

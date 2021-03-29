@@ -6,25 +6,30 @@
 #include "gd.h"
 #include "cb_algs.h"
 #include "io_buf.h"
+#include "cb.h"
+
+#include "io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
 
+namespace logger = VW::io::logger;
+
 namespace MWT
 {
 struct policy_data
 {
-  double cost;
-  uint32_t action;
-  bool seen;
+  double cost = 0.0;
+  uint32_t action = 0;
+  bool seen = false;
 };
 
 struct mwt
 {
   bool namespaces[256];        // the set of namespaces to evaluate.
   v_array<policy_data> evals;  // accrued losses of features.
-  CB::cb_class* observation;
+  std::pair<bool, CB::cb_class> optional_observation;
   v_array<uint64_t> policies;
   double total;
   uint32_t num_classes;
@@ -33,33 +38,11 @@ struct mwt
   v_array<namespace_index> indices;  // excluded namespaces
   features feature_space[256];
   vw* all;
-
-  ~mwt()
-  {
-    evals.delete_v();
-    policies.delete_v();
-    indices.delete_v();
-  }
 };
-
-inline bool observed_cost(CB::cb_class* cl)
-{
-  // cost observed for this action if it has non zero probability and cost != FLT_MAX
-  if (cl != nullptr)
-    if (cl->cost != FLT_MAX && cl->probability > .0) return true;
-  return false;
-}
-
-CB::cb_class* get_observed_cost(CB::label& ld)
-{
-  for (auto& cl : ld.costs)
-    if (observed_cost(&cl)) return &cl;
-  return nullptr;
-}
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
 {
-  if (val < 0 || floor(val) != val) std::cout << "error " << val << " is not a valid action " << std::endl;
+  if (val < 0 || floor(val) != val) logger::log_error("error {} is not a valid action", val);
 
   uint32_t value = (uint32_t)val;
   uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
@@ -76,9 +59,9 @@ void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a
 template <bool learn, bool exclude, bool is_learn>
 void predict_or_learn(mwt& c, single_learner& base, example& ec)
 {
-  c.observation = get_observed_cost(ec.l.cb);
+  c.optional_observation = get_observed_cost_cb(ec.l.cb);
 
-  if (c.observation != nullptr)
+  if (c.optional_observation.first)
   {
     c.total++;
     // For each nonzero feature in observed namespaces, check it's value.
@@ -86,10 +69,11 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
       if (c.namespaces[ns]) GD::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c);
     for (uint64_t policy : c.policies)
     {
-      c.evals[policy].cost += get_cost_estimate(c.observation, c.evals[policy].action);
+      c.evals[policy].cost += get_cost_estimate(c.optional_observation.second, c.evals[policy].action);
       c.evals[policy].action = 0;
     }
   }
+
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_CPP_17_LANG_EXT
   if VW_STD17_CONSTEXPR (exclude || learn)
@@ -131,7 +115,8 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   if VW_STD17_CONSTEXPR (exclude || learn)
     while (!c.indices.empty())
     {
-      unsigned char ns = c.indices.pop();
+      unsigned char ns = c.indices.back();
+      c.indices.pop_back();
       std::swap(c.feature_space[ns], ec.feature_space[ns]);
     }
   VW_WARNING_STATE_POP
@@ -163,7 +148,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-    if (t != len) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 
@@ -171,8 +156,9 @@ void finish_example(vw& all, mwt& c, example& ec)
 {
   float loss = 0.;
   if (c.learn)
-    if (c.observation != nullptr) loss = get_cost_estimate(c.observation, (uint32_t)ec.pred.scalars[0]);
-  all.sd->update(ec.test_only, c.observation != nullptr, loss, 1.f, ec.num_features);
+    if (c.optional_observation.first)
+      loss = get_cost_estimate(c.optional_observation.second, (uint32_t)ec.pred.scalars[0]);
+  all.sd->update(ec.test_only, c.optional_observation.first, loss, 1.f, ec.num_features);
 
   for (auto& sink : all.final_prediction_sink) print_scalars(sink.get(), ec.pred.scalars, ec.tag);
 
@@ -180,7 +166,7 @@ void finish_example(vw& all, mwt& c, example& ec)
   {
     v_array<float> temp = ec.pred.scalars;
     ec.pred.multiclass = (uint32_t)temp[0];
-    CB::print_update(all, c.observation != nullptr, ec, nullptr, false);
+    CB::print_update(all, c.optional_observation.first, ec, nullptr, false);
     ec.pred.scalars = temp;
   }
   VW::finish_example(all, ec);
@@ -200,11 +186,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
   size_t policies_size = c.policies.size();
   bin_text_read_write_fixed_validated(model_file, (char*)&policies_size, sizeof(policies_size), "", read, msg, text);
 
-  if (read)
-  {
-    c.policies.resize(policies_size);
-    c.policies.end() = c.policies.begin() + policies_size;
-  }
+  if (read) { c.policies.resize_but_with_stl_behavior(policies_size); }
   else
   {
     msg << "policies: ";
@@ -240,12 +222,8 @@ base_learner* mwt_setup(options_i& options, vw& all)
   for (char i : s) c->namespaces[(unsigned char)i] = true;
   c->all = &all;
 
-  calloc_reserve(c->evals, all.length());
-  c->evals.end() = c->evals.begin() + all.length();
-
-  all.delete_prediction = delete_scalars;
+  c->evals.resize_but_with_stl_behavior(all.length());
   all.example_parser->lbl_parser = CB::cb_label;
-  all.label_type = label_type_t::cb;
 
   if (c->num_classes > 0)
   {
@@ -263,13 +241,15 @@ base_learner* mwt_setup(options_i& options, vw& all)
   if (c->learn)
     if (exclude_eval)
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, true, true>,
-          predict_or_learn<true, true, false>, 1, prediction_type_t::scalars);
+          predict_or_learn<true, true, false>, 1, prediction_type_t::scalars,
+          all.get_setupfn_name(mwt_setup) + "-no_eval");
     else
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, false, true>,
-          predict_or_learn<true, false, false>, 1, prediction_type_t::scalars);
+          predict_or_learn<true, false, false>, 1, prediction_type_t::scalars,
+          all.get_setupfn_name(mwt_setup) + "-eval");
   else
     l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<false, false, true>,
-        predict_or_learn<false, false, false>, 1, prediction_type_t::scalars);
+        predict_or_learn<false, false, false>, 1, prediction_type_t::scalars, all.get_setupfn_name(mwt_setup));
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);

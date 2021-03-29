@@ -3,12 +3,27 @@ configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc io/logger.h io/logger.cc)
+target_include_directories(vw_io PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_link_libraries(vw_io PUBLIC ${spdlog_target} fmt::fmt PRIVATE ZLIB::ZLIB)
+
+if(SPDLOG_SYS_DEP)
+  # this doesn't get defined when using a system-installed spdlog
+  target_compile_definitions(vw_io PUBLIC SPDLOG_FMT_EXTERNAL)
+endif()
+
+add_library(VowpalWabbit::io ALIAS vw_io)
+
 add_library(allreduce STATIC allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
 target_include_directories(allreduce PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 add_library(VowpalWabbit::allreduce ALIAS allreduce)
+
+target_link_libraries(allreduce PRIVATE vw_io)
 
 # Winsock32 should be available on Windows
 if(WIN32)
@@ -17,14 +32,13 @@ else()
   target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
 
-add_library(vw_io STATIC io/io_adapter.h io/io_adapter.cc)
-target_link_libraries(vw_io PRIVATE ZLIB::ZLIB)
-add_library(VowpalWabbit::io ALIAS vw_io)
 
-add_subdirectory(parser/flatbuffer)
-add_library(FlatbuffersTarget INTERFACE)
-target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
-add_dependencies(FlatbuffersTarget fbschemas)
+if(BUILD_FLATBUFFERS)
+  add_subdirectory(parser/flatbuffer)
+  add_library(FlatbuffersTarget INTERFACE)
+  target_include_directories(FlatbuffersTarget INTERFACE ${FLATBUFFERS_INCLUDE_DIR})
+  add_dependencies(FlatbuffersTarget fbschemas)
+endif()
 
 set(vw_all_headers
   accumulate.h
@@ -76,6 +90,7 @@ set(vw_all_headers
   confidence.h
   config.h.in
   constant.h
+  cbzo.h
   correctedMath.h
   cost_sensitive.h
   crossplat_compat.h
@@ -150,7 +165,6 @@ set(vw_all_headers
   parse_regressor.h
   parse_slates_example_json.h
   parser.h
-  parser/flatbuffer/parse_example_flatbuffer.h
   pmf_to_pdf.h
   plt.h
   reduction_features.h
@@ -198,6 +212,14 @@ set(vw_all_headers
   warm_cb.h
 )
 
+if(BUILD_FLATBUFFERS)
+  set(vw_all_headers ${vw_all_headers} parser/flatbuffer/parse_example_flatbuffer.h)
+endif()
+
+if(BUILD_EXTERNAL_PARSER)
+  set(vw_all_headers ${vw_all_headers} ${external_parser_headers})
+endif()
+
 set(vw_all_sources
   accumulate.cc
   action_score.cc
@@ -238,6 +260,7 @@ set(vw_all_sources
   classweight.cc
   conditional_contextual_bandit.cc
   confidence.cc
+  cbzo.cc
   cost_sensitive.cc
   cs_active.cc
   csoaa.cc
@@ -254,6 +277,7 @@ set(vw_all_sources
   gen_cs_example.cc
   get_pmf.cc
   global_data.cc
+  hashstring.cc
   interact.cc
   interactions.cc
   io_buf.cc
@@ -288,8 +312,6 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
-  parser/flatbuffer/parse_example_flatbuffer.cc
-  parser/flatbuffer/parse_label.cc
   pmf_to_pdf.cc
   plt.cc
   print.cc
@@ -322,18 +344,40 @@ set(vw_all_sources
   warm_cb.cc
 )
 
+if(BUILD_FLATBUFFERS)
+  set(vw_all_sources ${vw_all_sources}
+    parser/flatbuffer/parse_example_flatbuffer.cc
+    parser/flatbuffer/parse_label.cc)
+endif()
+
+if(BUILD_EXTERNAL_PARSER)
+  set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
+endif()
+
 add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})
 
 target_link_libraries(vw
   PUBLIC
-    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost
+    VowpalWabbit::explore VowpalWabbit::allreduce Boost::boost ${spdlog_target} fmt::fmt
   PRIVATE
     Boost::program_options ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
-    $<BUILD_INTERFACE:RapidJSON>
-    $<BUILD_INTERFACE:FlatbuffersTarget>)
+    $<BUILD_INTERFACE:RapidJSON>)
+
+if (BUILD_EXTERNAL_PARSER)
+  target_compile_definitions(vw PUBLIC BUILD_EXTERNAL_PARSER)
+  target_include_directories(vw PRIVATE ${EXTERNAL_PARSER_DIR})
+  target_link_libraries(vw PRIVATE ${EXTERNAL_PARSER_LIBS})
+endif()
+
+if(BUILD_FLATBUFFERS)
+  target_link_libraries(vw
+      PRIVATE
+      $<BUILD_INTERFACE:FlatbuffersTarget>)
+  target_compile_definitions(vw PUBLIC BUILD_FLATBUFFERS)
+endif()
 
 
 add_library(VowpalWabbit::vw ALIAS vw)

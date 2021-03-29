@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hashstring.h"
+
 #include <boost/version.hpp>
 
 #if BOOST_VERSION < 106100

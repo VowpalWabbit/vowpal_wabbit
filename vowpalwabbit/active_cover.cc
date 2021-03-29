@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <cerrno>
+#include <cfloat>
 #include <memory>
 #include "reductions.h"
 #include "rand48.h"
@@ -249,8 +250,8 @@ base_learner* active_cover_setup(options_i& options, vw& all)
   }
 
   // Create new learner
-  learner<active_cover, example>& l = init_learner(
-      data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data->cover_size + 1);
+  learner<active_cover, example>& l = init_learner(data, base, predict_or_learn_active_cover<true>,
+      predict_or_learn_active_cover<false>, data->cover_size + 1, all.get_setupfn_name(active_cover_setup));
 
   return make_base(l);
 }

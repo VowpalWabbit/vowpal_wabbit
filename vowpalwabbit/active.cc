@@ -11,8 +11,12 @@
 #include "active.h"
 #include "vw_exception.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
@@ -101,7 +105,9 @@ void active_print_result(VW::io::writer* f, float res, float weight, v_array<cha
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
-  if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
+  if (t != len) {
+    logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
+  }
 }
 
 void output_and_account_example(vw& all, active& a, example& ec)
@@ -152,11 +158,13 @@ base_learner* active_setup(options_i& options, vw& all)
   // Create new learner
   learner<active, example>* l;
   if (options.was_supplied("simulation"))
-    l = &init_learner(data, base, predict_or_learn_simulation<true>, predict_or_learn_simulation<false>);
+    l = &init_learner(data, base, predict_or_learn_simulation<true>, predict_or_learn_simulation<false>,
+        all.get_setupfn_name(active_setup) + "-simulation");
   else
   {
     all.active = true;
-    l = &init_learner(data, base, predict_or_learn_active<true>, predict_or_learn_active<false>);
+    l = &init_learner(
+        data, base, predict_or_learn_active<true>, predict_or_learn_active<false>, all.get_setupfn_name(active_setup));
     l->set_finish_example(return_active_example);
   }
 

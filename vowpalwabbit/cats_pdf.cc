@@ -14,6 +14,7 @@
 #include "cb_continuous_label.h"
 #include "debug_log.h"
 
+#include <cfloat>
 // Aliases
 using std::endl;
 using VW::cb_continuous::continuous_label;
@@ -24,7 +25,8 @@ using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
-VW_DEBUG_ENABLE(false)
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cats_pdf
 
 // Forward declarations
 namespace VW
@@ -144,7 +146,7 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
-    all.sd->print_update(all.holdout_set_off, all.current_pass,
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0]),  // Label
         to_string(ec.pred.pdf),                                       // Prediction
         ec.num_features, all.progress_add, all.progress_arg);
@@ -157,12 +159,10 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 // Setup reduction in stack
 LEARNER::base_learner* setup(config::options_i& options, vw& all)
 {
-  option_group_definition new_options("Continuous action tree with smoothing");
-  int num_actions = 0, pdf_num_actions = 0, cats_tree_actions = 0;
-  new_options
-      .add(make_option("cats_pdf", num_actions).keep().necessary().help("Continuous action tree with smoothing (pdf)"))
-      .add(make_option("pmf_to_pdf", pdf_num_actions).keep().help("Convert pmf to pdf"))
-      .add(make_option("cats_tree", cats_tree_actions).keep().help("Continuous action tree"));
+  option_group_definition new_options("Continuous action tree with smoothing with full pdf");
+  int num_actions = 0;
+  new_options.add(
+      make_option("cats_pdf", num_actions).keep().necessary().help("number of tree labels <k> for cats_pdf"));
 
   // If cats reduction was not invoked, don't add anything
   // to the reduction stack;
@@ -172,25 +172,17 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
 
   // cats stack = [cats_pdf -> cb_explore_pdf -> pmf_to_pdf -> get_pmf -> cats_tree]
   if (!options.was_supplied("cb_explore_pdf")) options.insert("cb_explore_pdf", "");
-  if (!options.insert_arguments("pmf_to_pdf", num_actions))
-  {
-    std::stringstream err_desc;
-    err_desc << error_code::options_disagree_s << "  Check values of pmf_to_pdf.";
-    THROW(err_desc.str());
-  }
+  options.insert("pmf_to_pdf", std::to_string(num_actions));
+
   if (!options.was_supplied("get_pmf")) options.insert("get_pmf", "");
-  if (!options.insert_arguments("cats_tree", num_actions))
-  {
-    std::stringstream err_desc;
-    err_desc << error_code::options_disagree_s << "  Check values of cats_tree.";
-    THROW(err_desc.str());
-  }
+  options.insert("cats_tree", std::to_string(num_actions));
+
   LEARNER::base_learner* p_base = setup_base(options, all);
   bool always_predict = all.final_prediction_sink.size() > 0;
   auto p_reduction = scoped_calloc_or_throw<cats_pdf>(as_singleline(p_base), always_predict);
 
-  LEARNER::learner<cats_pdf, example>& l = init_learner(
-      p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf);
+  LEARNER::learner<cats_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, 1, prediction_type_t::pdf, all.get_setupfn_name(setup));
 
   l.set_finish_example(finish_example);
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;

@@ -28,12 +28,18 @@
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v141</PlatformToolset>
     <VcpkgOSTarget Condition="'$(VcpkgPlatformToolset)'=='v141'">windows-v141</VcpkgOSTarget>
+    <BuildFlatbuffers Condition="'$(BUILD_FLATBUFFERS)'=='BUILD_FLATBUFFERS'">ON</BuildFlatbuffers>
+    <BuildFlatbuffers Condition="'$(BUILD_FLATBUFFERS)'!='BUILD_FLATBUFFERS'">OFF</BuildFlatbuffers>
     <!-- This is the ruleset file for code analysis, you can change it in VS -->
     <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
+  <PropertyGroup Condition="'$(VcpkgAutoLink)'!=''">
+    <VcpkgAutoLink>false</VcpkgAutoLink>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
@@ -83,8 +89,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include;$(ProjectDir)\..\explore</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\ext_libs\rapidjson\include;$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -103,9 +109,9 @@
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Message>Generate FlatBuffer</Message>
+      <Message>Generate config.h and flatbuffer if flatbuffers enabled</Message>
       <Command>
-        $(flatcPath) -o $(SolutionDir)parser\flatbuffer\generated\ --cpp $(SolutionDir)parser\flatbuffer\schema\example.fbs
+        if $(BuildFlatbuffers) == ON ($(flatcPath) -o $(ProjectDir)\parser\flatbuffer\generated\ --cpp $(ProjectDir)\parser\flatbuffer\schema\example.fbs)
         win32\make_config_h.exe
       </Command>
     </PreBuildEvent>
@@ -124,6 +130,7 @@
     <ClInclude Include="errors_data.h" />
     <ClInclude Include="err_constants.h" />
     <ClInclude Include="get_pmf.h" />
+    <ClInclude Include="io\logger.h" />
     <ClInclude Include="offset_tree.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="action_score.h" />
@@ -163,6 +170,7 @@
     <ClInclude Include="classweight.h" />
     <ClInclude Include="conditional_contextual_bandit.h" />
     <ClInclude Include="confidence.h" />
+    <ClInclude Include="cbzo.h" />
     <ClInclude Include="constant.h" />
     <ClInclude Include="cost_sensitive.h" />
     <ClInclude Include="crossplat_compat.h" />
@@ -179,6 +187,7 @@
     <ClInclude Include="ftrl.h" />
     <ClInclude Include="gd_mf.h" />
     <ClInclude Include="gd.h" />
+    <ClInclude Include="gd_predict.h" />
     <ClInclude Include="gen_cs_example.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="guard.h" />
@@ -216,7 +225,7 @@
     <ClInclude Include="options_serializer_boost_po.h" />
     <ClInclude Include="options_types.h" />
     <ClInclude Include="options.h" />
-    <ClInclude Include="parser\flatbuffer\parse_example_flatbuffer.h" />
+    <ClInclude Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser\flatbuffer\parse_example_flatbuffer.h" />
     <ClInclude Include="parse_args.h" />
     <ClInclude Include="parse_dispatch_loop.h" />
     <ClInclude Include="parse_example_json.h" />
@@ -268,10 +277,21 @@
     <ClInclude Include="warm_cb.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="../ext_libs/fmt/src/format.cc" />
+    <ClCompile Include="../ext_libs/fmt/src/os.cc" />
+    <ClCompile Include="../ext_libs/spdlog/src/async.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/cfg.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/color_sinks.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/file_sinks.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/fmt.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/spdlog.cpp" />
+    <ClCompile Include="../ext_libs/spdlog/src/stdout_sinks.cpp" />
     <ClCompile Include="cats.cc" />
     <ClCompile Include="cats_pdf.cc" />
     <ClCompile Include="cb_continuous_label.cc" />
     <ClCompile Include="cb_explore_pdf.cc" />
+    <ClCompile Include="hashstring.cc" />
+    <ClCompile Include="io\logger.cc" />
     <ClCompile Include="offset_tree.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="action_score.cc" />
@@ -309,6 +329,7 @@
     <ClCompile Include="classweight.cc" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
+    <ClCompile Include="cbzo.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cs_active.cc" />
     <ClCompile Include="csoaa.cc" />
@@ -354,8 +375,8 @@
     <ClCompile Include="OjaNewton.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
-    <ClCompile Include="parser\flatbuffer\parse_example_flatbuffer.cc" />
-    <ClCompile Include="parser\flatbuffer\parse_label.cc" />
+    <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser\flatbuffer\parse_example_flatbuffer.cc" />
+    <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="parser\flatbuffer\parse_label.cc" />
     <ClCompile Include="parse_args.cc" />
     <ClCompile Include="parse_example.cc" />
     <ClCompile Include="parse_primitives.cc" />
@@ -412,7 +433,6 @@
     <Import Project="$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" />
     <Import Project="$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets" Condition="Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" />
   </ImportGroup>
-  <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
@@ -421,6 +441,9 @@
     <Error Condition="!Exists('$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\boost_program_options-vc141.1.70.0.0\build\boost_program_options-vc141.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x64.1.2.11.8900\build\native\zlib-msvc-x64.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\zlib-msvc-x86.1.2.11.8900\build\native\zlib-msvc-x86.targets'))" />
+  </Target>
+  <Target Name="Check Vcpkg" AfterTargets="PrepareForBuild">
+    <Error Condition="'$(VcpkgAutoLink)'=='' and Exists('$(VcpkgIntegration)')" Text="Vcpkg version is too old, doesn't contain VcpkgAutoLink flag, please upgrade to avoid linking problems" />
   </Target>
   <Target Name="AfterClean">
     <RemoveDir Directories="$(SolutionDir)parser\flatbuffer\generated" />

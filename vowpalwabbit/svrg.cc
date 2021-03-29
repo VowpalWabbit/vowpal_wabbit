@@ -116,7 +116,7 @@ void learn(svrg& s, single_learner& base, example& ec)
   {
     if (s.prev_pass != pass && !s.all->logger.quiet)
     {
-      std::cout << "svrg pass " << pass << ": committing stable point" << std::endl;
+      *(s.all->trace_message) << "svrg pass " << pass << ": committing stable point" << std::endl;
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
       {
         float w = VW::get_weight(*s.all, j, W_INNER);
@@ -124,7 +124,7 @@ void learn(svrg& s, single_learner& base, example& ec)
         VW::set_weight(*s.all, j, W_STABLEGRAD, 0.f);
       }
       s.stable_grad_count = 0;
-      std::cout << "svrg pass " << pass << ": computing exact gradient" << std::endl;
+      *(s.all->trace_message) << "svrg pass " << pass << ": computing exact gradient" << std::endl;
     }
     update_stable(s, ec);
     s.stable_grad_count++;
@@ -132,7 +132,7 @@ void learn(svrg& s, single_learner& base, example& ec)
   else  // Perform updates
   {
     if (s.prev_pass != pass && !s.all->logger.quiet)
-    { std::cout << "svrg pass " << pass << ": taking steps" << std::endl; }
+    { *(s.all->trace_message) << "svrg pass " << pass << ": taking steps" << std::endl; }
     update_inner(s, ec);
   }
 
@@ -180,7 +180,8 @@ base_learner* svrg_setup(options_i& options, vw& all)
 
   // Request more parameter storage (4 floats per feature)
   all.weights.stride_shift(2);
-  learner<svrg, example>& l = init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift());
+  learner<svrg, example>& l =
+      init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift(), all.get_setupfn_name(svrg_setup));
   l.set_save_load(save_load);
   return make_base(l);
 }

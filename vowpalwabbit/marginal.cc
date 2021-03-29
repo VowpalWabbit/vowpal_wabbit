@@ -6,7 +6,10 @@
 #include "reductions.h"
 #include "correctedMath.h"
 
+#include "io/logger.h"
+
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 namespace MARGINAL
 {
@@ -76,15 +79,15 @@ void make_marginal(data& sm, example& ec)
         uint64_t first_index = j.index() & mask;
         if (++j == sm.temp[n].end())
         {
-          std::cout << "warning: id feature namespace has " << sm.temp[n].size()
-                    << " features. Should be a multiple of 2" << std::endl;
+          logger::log_warn("warning: id feature namespace has {} features. Should be a multiple of 2",
+                           sm.temp[n].size());
           break;
         }
         float second_value = j.value();
         uint64_t second_index = j.index() & mask;
         if (first_value != 1. || second_value != 1.)
         {
-          std::cout << "warning: bad id features, must have value 1." << std::endl;
+          logger::log_warn("warning: bad id features, must have value 1.");
           continue;
         }
         uint64_t key = second_index + ec.ft_offset;
@@ -345,7 +348,7 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
   free_ptr<MARGINAL::data> d = scoped_calloc_or_throw<MARGINAL::data>();
   std::string marginal;
 
-  option_group_definition marginal_options("VW options");
+  option_group_definition marginal_options("Marginal options");
   marginal_options.add(
       make_option("marginal", marginal).keep().necessary().help("substitute marginal label estimates for ids"));
   marginal_options.add(
@@ -367,8 +370,8 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
   for (size_t u = 0; u < 256; u++)
     if (marginal.find((char)u) != std::string::npos) d->id_features[u] = true;
 
-  VW::LEARNER::learner<MARGINAL::data, example>& ret =
-      init_learner(d, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
+  VW::LEARNER::learner<MARGINAL::data, example>& ret = init_learner(d, as_singleline(setup_base(options, all)),
+      predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(marginal_setup));
   ret.set_save_load(save_load);
 
   return make_base(ret);

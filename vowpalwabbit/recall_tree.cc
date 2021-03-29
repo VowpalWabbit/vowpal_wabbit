@@ -55,11 +55,8 @@ struct node
       , n(0)
       , entropy(0)
       , passes(1)
-      , preds(v_init<node_pred>())
   {
   }
-
-  ~node() { preds.delete_v(); }
 };
 
 struct recall_tree
@@ -239,7 +236,7 @@ void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, example& ec
 {
   features& fs = ec.feature_space[node_id_namespace];
   fs.clear();
-  ec.indices.pop();
+  ec.indices.pop_back();
 }
 
 uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example& ec)
@@ -502,15 +499,16 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
   init_tree(*tree.get());
 
   if (!all.logger.quiet)
-    all.trace_message << "recall_tree:"
-                      << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
-                      << " max_depth = " << tree->max_depth << " routing = "
-                      << (all.training ? (tree->randomized_routing ? "randomized" : "deterministic") : "n/a testonly")
-                      << std::endl;
+    *(all.trace_message) << "recall_tree:"
+                         << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
+                         << " max_depth = " << tree->max_depth << " routing = "
+                         << (all.training ? (tree->randomized_routing ? "randomized" : "deterministic")
+                                          : "n/a testonly")
+                         << std::endl;
 
-  learner<recall_tree, example>& l = init_multiclass_learner(
-      tree, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, tree->max_routers + tree->k);
-  all.label_type = label_type_t::mc;
+  learner<recall_tree, example>& l = init_multiclass_learner(tree, as_singleline(setup_base(options, all)), learn,
+      predict, all.example_parser, tree->max_routers + tree->k, all.get_setupfn_name(recall_tree_setup));
+  all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   l.set_save_load(save_load_tree);
 
   return make_base(l);

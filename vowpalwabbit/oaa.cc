@@ -10,7 +10,10 @@
 #include "vw_exception.h"
 #include "vw.h"
 
+#include "io/logger.h"
+
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 struct oaa
 {
@@ -32,7 +35,8 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t ld = ec.l.multi;
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
-    std::cout << "label " << ld.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
+      logger::log_error("label {0} is not in {{1,{1}}} This won't work right.",
+			ld.label, o.k);
 
   ec.l.simple = {1., 0.f, 0.f};  // truth
   base.learn(ec, ld.label - 1);
@@ -70,7 +74,8 @@ void predict_or_learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc_label_data = ec.l.multi;
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
-    std::cout << "label " << mc_label_data.label << " is not in {1," << o.k << "} This won't work right." << std::endl;
+      logger::log_error("label {0} is not in {{1,{1}}} This won't work right.",
+			mc_label_data.label, o.k);
 
   std::stringstream outputStringStream;
   uint32_t prediction = 1;
@@ -214,7 +219,7 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     if (data->num_subsample >= data->k)
     {
       data->num_subsample = 0;
-      all.trace_message << "oaa is turning off subsampling because your parameter >= K" << std::endl;
+      *(all.trace_message) << "oaa is turning off subsampling because your parameter >= K" << std::endl;
     }
     else
     {
@@ -235,38 +240,42 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
   auto base = as_singleline(setup_base(options, all));
   if (probabilities || scores)
   {
-    all.delete_prediction = delete_scalars;
     if (probabilities)
     {
       auto loss_function_type = all.loss->getType();
       if (loss_function_type != "logistic")
-        all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
+        *(all.trace_message) << "WARNING: --probabilities should be used only with --loss_function=logistic"
+                             << std::endl;
       // the three boolean template parameters are: is_learn, print_all and scores
       l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, true>,
-          predict_or_learn<false, false, true, true>, all.example_parser, data->k, prediction_type_t::scalars);
-      all.label_type = label_type_t::mc;
+          predict_or_learn<false, false, true, true>, all.example_parser, data->k,
+          all.get_setupfn_name(oaa_setup) + "-prob", prediction_type_t::scalars);
+      all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
       all.sd->report_multiclass_log_loss = true;
       l->set_finish_example(finish_example_scores<true>);
     }
     else
     {
       l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, false>,
-          predict_or_learn<false, false, true, false>, all.example_parser, data->k, prediction_type_t::scalars);
-      all.label_type = label_type_t::mc;
+          predict_or_learn<false, false, true, false>, all.example_parser, data->k,
+          all.get_setupfn_name(oaa_setup) + "-scores", prediction_type_t::scalars);
+      all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
       l->set_finish_example(finish_example_scores<false>);
     }
   }
   else if (all.raw_prediction != nullptr)
   {
     l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
-        predict_or_learn<false, true, false, false>, all.example_parser, data->k, prediction_type_t::multiclass);
-    all.label_type = label_type_t::mc;
+        predict_or_learn<false, true, false, false>, all.example_parser, data->k,
+        all.get_setupfn_name(oaa_setup) + "-raw", prediction_type_t::multiclass);
+    all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   }
   else
   {
     l = &VW::LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, false, false>,
-        predict_or_learn<false, false, false, false>, all.example_parser, data->k, prediction_type_t::multiclass);
-    all.label_type = label_type_t::mc;
+        predict_or_learn<false, false, false, false>, all.example_parser, data->k, all.get_setupfn_name(oaa_setup),
+        prediction_type_t::multiclass);
+    all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   }
 
   if (data_ptr->num_subsample > 0)

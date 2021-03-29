@@ -16,7 +16,7 @@ class Test:
     @staticmethod
     def check_add_unique_id(idnum):
         if idnum in Test.unique_id:
-            raise Exception("test id is repeated. fatal id: " + idnum)
+            raise Exception("test id is repeated. fatal id: " + str(idnum))
         else:
             Test.unique_id.add(idnum)
 
@@ -88,6 +88,7 @@ class Test:
 
             # check who produces the input files of this test
             files = Parser.get_values_of_vwarg(self.vw_command, "-i")
+            files += Parser.get_values_of_vwarg(self.vw_command, "--feature_mask")
             depends_on = []
             for f in files:
                 if "model-sets" not in f:
@@ -155,6 +156,11 @@ class Parser:
         tokens = line.split("/")
         return tokens[0] in ["train-sets", "pred-sets", "test-sets"]
 
+    # RunTests has the contract of ending with this perl commment
+    @staticmethod
+    def is_last_comment(line):
+        return "Do not delete this line or the empty line above it" in line
+
     # returns a Test(n, ...) instance if line has format:
     # '# Test n:'...
     @staticmethod
@@ -195,7 +201,7 @@ class Parser:
             if new_test: # we reached a perl comment that declares a new test
                 self.commit_parsed_test()
                 self.curr_test = new_test
-            else: # its any other perl comment
+            elif not self.is_last_comment(line): # its any other perl comment
                 self.curr_test.add_more_comments(line)
         elif self.curr_test.append_cmd_if_incomplete(line): # check case if previous line ended in \
             pass
@@ -217,14 +223,30 @@ def file_to_obj(filename):
         for line in f:
             RTParser.process_line(line)
     
-    return RTParser.get_results()
+    results = RTParser.get_results()
 
-def main():
-    possible_paths = ["./RunTests", "./test/RunTests"]
+    # check for missing ids
+    i = 1
+    for r in results:
+        if i != r.id:
+            raise Exception("test id being skipped: " + str(i))
+        i+=1
+
+    return results
+
+def find_runtest_file():
+    rtfile = None
+
+    possible_paths = [path.join(path.dirname(path.abspath(__file__)), "RunTests")]
+
     for p in possible_paths:
         if path.exists(p):
             rtfile = p
+    
+    return rtfile
 
+def main():
+    rtfile = find_runtest_file()
     results = file_to_obj(rtfile)
 
     with open(path.join(path.dirname(rtfile), "runtests.AUTOGEN.json"), "w") as f:

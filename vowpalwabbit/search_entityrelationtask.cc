@@ -4,10 +4,15 @@
 #include "search_entityrelationtask.h"
 #include "vw.h"
 
+#include "io/logger.h"
+
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 #define R_NONE 10      // label for NONE relation
 #define LABEL_SKIP 11  // label for SKIP
+
+constexpr size_t NUM_LDF_ENTITY_EXAMPLES = 10;
 
 namespace EntityRelationTask
 {
@@ -72,9 +77,9 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   if (my_task_data->search_order != 3 && my_task_data->search_order != 4) { sch.set_options(0); }
   else
   {
-    example* ldf_examples = VW::alloc_examples(sizeof(CS::label), 10);
+    example* ldf_examples = VW::alloc_examples(NUM_LDF_ENTITY_EXAMPLES);
     CS::wclass default_wclass = {0., 0, 0., 0.};
-    for (size_t a = 0; a < 10; a++)
+    for (size_t a = 0; a < NUM_LDF_ENTITY_EXAMPLES; a++)
     {
       ldf_examples[a].l.cs.costs.push_back(default_wclass);
       ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
@@ -93,11 +98,7 @@ void finish(Search::search& sch)
   task_data* my_task_data = sch.get_task_data<task_data>();
   my_task_data->y_allowed_entity.delete_v();
   my_task_data->y_allowed_relation.delete_v();
-  if (my_task_data->search_order == 3)
-  {
-    for (size_t a = 0; a < 10; a++) VW::dealloc_example(CS::cs_label.delete_label, my_task_data->ldf_entity[a]);
-    free(my_task_data->ldf_entity);
-  }
+  if (my_task_data->search_order == 3) { VW::dealloc_examples(my_task_data->ldf_entity, NUM_LDF_ENTITY_EXAMPLES); }
   delete my_task_data;
 }  // if we had task data, we'd want to free it here
 
@@ -149,7 +150,7 @@ size_t predict_entity(
                      .set_allowed(my_task_data->y_allowed_entity)
                      .set_learner_id(1)
                      .predict();
-    my_task_data->y_allowed_entity.pop();
+    my_task_data->y_allowed_entity.pop_back();
   }
   else
   {
@@ -231,7 +232,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
                      .add_condition(id1, 'a')
                      .add_condition(id2, 'b')
                      .predict();
-    constrained_relation_labels.pop();
+    constrained_relation_labels.pop_back();
   }
   else
   {
@@ -398,7 +399,7 @@ void run(Search::search& sch, multi_ex& ec)
       entity_first_decoding(sch, ec, predictions, true);  // LDF = true
       break;
     default:
-      std::cerr << "search order " << my_task_data->search_order << "is undefined." << std::endl;
+      logger::errlog_error("search order {} is undefined", my_task_data->search_order);
   }
 
   for (size_t i = 0; i < ec.size(); i++)

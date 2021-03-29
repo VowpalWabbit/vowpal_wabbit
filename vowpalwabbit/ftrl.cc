@@ -2,11 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include <string>
+#include <cfloat>
 #include "correctedMath.h"
 #include "gd.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 #define W_XT 0  // current parameter
 #define W_ZT 1  // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
@@ -24,6 +29,7 @@ struct ftrl_update_data
   float l2_lambda;
   float predict;
   float normalized_squared_norm_x;
+  float average_squared_norm_x;
 };
 
 struct ftrl
@@ -204,6 +210,8 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   w[W_ZT] += -gradient;
   w[W_G2] += fabs(gradient);
   w[W_WE] += (-gradient * w[W_XT]);
+
+  w[W_XT] /= d.average_squared_norm_x;
 }
 
 void coin_betting_predict(ftrl& b, single_learner&, example& ec)
@@ -215,8 +223,9 @@ void coin_betting_predict(ftrl& b, single_learner&, example& ec)
 
   b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
+  b.data.average_squared_norm_x = ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
-  ec.partial_prediction = b.data.predict / ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
+  ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
@@ -260,20 +269,22 @@ void learn_proximal(ftrl& a, single_learner& base, example& ec)
   update_after_prediction_proximal(a, ec);
 }
 
+template <bool audit>
 void learn_pistol(ftrl& a, single_learner& base, example& ec)
 {
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
-
+  if (audit) GD::print_audit_features(*(a.all), ec);
   // update state based on the prediction
   update_after_prediction_pistol(a, ec);
 }
 
+template <bool audit>
 void learn_coin_betting(ftrl& a, single_learner& base, example& ec)
 {
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);
-
+  if (audit) GD::print_audit_features(*(a.all), ec);
   // update state based on the prediction
   coin_betting_update_after_prediction(a, ec);
 }
@@ -356,7 +367,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   if (ftrl_option)
   {
     algorithm_name = "Proximal-FTRL";
-    if (all.audit)
+    if (all.audit || all.hash_inv)
       learn_ptr = learn_proximal<true>;
     else
       learn_ptr = learn_proximal<false>;
@@ -366,14 +377,20 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   else if (pistol)
   {
     algorithm_name = "PiSTOL";
-    learn_ptr = learn_pistol;
+    if (all.audit || all.hash_inv)
+      learn_ptr = learn_pistol<true>;
+    else
+      learn_ptr = learn_pistol<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 4;
   }
   else if (coin)
   {
     algorithm_name = "Coin Betting";
-    learn_ptr = learn_coin_betting;
+    if (all.audit || all.hash_inv)
+      learn_ptr = learn_coin_betting<true>;
+    else
+      learn_ptr = learn_coin_betting<false>;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
   }
@@ -385,12 +402,12 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   if (!all.logger.quiet)
   {
-    std::cerr << "Enabling FTRL based optimization" << std::endl;
-    std::cerr << "Algorithm used: " << algorithm_name << std::endl;
-    std::cerr << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
-    std::cerr << "ftrl_beta = " << b->ftrl_beta << std::endl;
+    *(all.trace_message) << "Enabling FTRL based optimization" << std::endl;
+    *(all.trace_message) << "Algorithm used: " << algorithm_name << std::endl;
+    *(all.trace_message) << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
+    *(all.trace_message) << "ftrl_beta = " << b->ftrl_beta << std::endl;
   }
-
+  
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
@@ -399,9 +416,11 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   learner<ftrl, example>* l;
   if (all.audit || all.hash_inv)
-    l = &init_learner(b, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift());
+    l = &init_learner(b, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift(),
+        all.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + "-audit");
   else
-    l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift());
+    l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift(),
+        all.get_setupfn_name(ftrl_setup) + "-" + algorithm_name);
   l->set_sensitivity(sensitivity);
   if (all.audit || all.hash_inv)
     l->set_multipredict(multipredict<true>);

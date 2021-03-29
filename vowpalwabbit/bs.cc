@@ -15,8 +15,12 @@
 #include "bs.h"
 #include "vw_exception.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 struct bs
 {
@@ -135,7 +139,10 @@ void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float 
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
-  if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
+  if (t != len)
+  {
+    logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
+  }
 }
 
 void output_example(vw& all, bs& d, example& ec)
@@ -235,7 +242,7 @@ base_learner* bs_setup(options_i& options, vw& all)
       data->bs_type = BS_TYPE_VOTE;
     else
     {
-      std::cerr << "warning: bs_type must be in {'mean','vote'}; resetting to mean." << std::endl;
+      logger::errlog_warn("bs_type must be in {'mean','vote'}; resetting to mean.");
       data->bs_type = BS_TYPE_MEAN;
     }
   }
@@ -246,8 +253,8 @@ base_learner* bs_setup(options_i& options, vw& all)
   data->all = &all;
   data->_random_state = all.get_random_state();
 
-  learner<bs, example>& l = init_learner(
-      data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, data->B);
+  learner<bs, example>& l = init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>,
+      predict_or_learn<false>, data->B, all.get_setupfn_name(bs_setup));
   l.set_finish_example(finish_example);
 
   return make_base(l);

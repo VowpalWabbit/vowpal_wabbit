@@ -1,5 +1,7 @@
 add_executable(vw-benchmarks.out
+  benchmark_main.cc
   input_format_benchmarks.cc
+  rcv1_benchmarks.cc
 )
 
 find_package(benchmark REQUIRED)

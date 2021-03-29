@@ -28,9 +28,11 @@ std::string to_string(const pdf_segment& seg)
 }
 
 // Convert pdf to string of form 'begin-end:pdf_value, ... '
-std::string to_string(const probability_density_function& pdf, bool newline)
+std::string to_string(const probability_density_function& pdf, bool newline, int precision)
 {
   std::stringstream ss;
+  if (precision >= 0) ss << std::setprecision(precision);
+
   for (size_t i = 0; i < pdf.size(); i++)
   {
     if (i > 0) ss << ',';
@@ -42,10 +44,12 @@ std::string to_string(const probability_density_function& pdf, bool newline)
   return ss.str();
 }
 
-void delete_probability_density_function(void* v)
+bool is_valid_pdf(probability_density_function& pdf)
 {
-  v_array<pdf_segment>* pdf = (v_array<pdf_segment>*)v;
-  pdf->delete_v();
+  float mass = 0.f;
+  for (const auto& segment : pdf) { mass += (segment.right - segment.left) * segment.pdf_value; }
+  if (mass < 0.9999 || mass > 1.0001) { return false; }
+  return true;
 }
 
 }  // namespace continuous_actions

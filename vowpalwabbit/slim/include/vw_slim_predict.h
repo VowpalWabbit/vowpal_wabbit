@@ -224,7 +224,7 @@ class vw_predict
   std::string _id;
   std::string _version;
   std::string _command_line_arguments;
-  std::vector<std::vector<namespace_index>> _interactions;
+  namespace_interactions _interactions;
   std::array<bool, NUM_NAMESPACES> _ignore_linear;
   bool _no_constant;
 
@@ -292,21 +292,30 @@ public:
       return E_VW_PREDICT_ERR_HASH_SEED_NOT_SUPPORTED;
 
     _interactions.clear();
-    find_opt(_command_line_arguments, "-q", _interactions);
-    find_opt(_command_line_arguments, "--quadratic", _interactions);
-    find_opt(_command_line_arguments, "--cubic", _interactions);
-    find_opt(_command_line_arguments, "--interactions", _interactions);
+    find_opt(_command_line_arguments, "-q", _interactions.interactions);
+    find_opt(_command_line_arguments, "--quadratic", _interactions.interactions);
+    find_opt(_command_line_arguments, "--cubic", _interactions.interactions);
+    find_opt(_command_line_arguments, "--interactions", _interactions.interactions);
 
-    // VW performs the following transformation as a side-effect of looking for duplicates.
-    // This affects how interaction hashes are generated.
-    std::vector<std::vector<namespace_index>> vec_sorted;
-    for (auto& interaction : _interactions)
+    if (_interactions.interactions.size() == 1 && _interactions.interactions[0].size() == 2 &&
+        _interactions.interactions[0][0] == ':' && _interactions.interactions[0][1] == ':')
     {
-      std::vector<namespace_index> sorted_i(interaction);
-      std::sort(std::begin(sorted_i), std::end(sorted_i));
-      vec_sorted.push_back(sorted_i);
+      _interactions.interactions.clear();
+      _interactions.quadratics_wildcard_expansion = true;
     }
-    _interactions = vec_sorted;
+    else
+    {
+      // VW performs the following transformation as a side-effect of looking for duplicates.
+      // This affects how interaction hashes are generated.
+      std::vector<std::vector<namespace_index>> vec_sorted;
+      for (auto& interaction : _interactions.interactions)
+      {
+        std::vector<namespace_index> sorted_i(interaction);
+        std::sort(std::begin(sorted_i), std::end(sorted_i));
+        vec_sorted.push_back(sorted_i);
+      }
+      _interactions.interactions = vec_sorted;
+    }
 
     // TODO: take --cb_type dr into account
     uint64_t num_weights = 0;

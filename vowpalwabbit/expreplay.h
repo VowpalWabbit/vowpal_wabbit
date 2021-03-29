@@ -7,6 +7,7 @@
 #include "vw.h"
 #include "parse_args.h"
 #include "rand48.h"
+
 #include <memory>
 
 namespace ExpReplay
@@ -25,12 +26,7 @@ struct expreplay
 
   ~expreplay()
   {
-    for (size_t n = 0; n < N; n++)
-    {
-      lp.delete_label(&buf[n].l);
-      VW::dealloc_example(NULL, buf[n], NULL);  // TODO: need to free label
-    }
-    free(buf);
+    VW::dealloc_examples(buf, N);
     free(filled);
   }
 };
@@ -88,7 +84,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
   replay_count_string += "_count";
 
   auto er = scoped_calloc_or_throw<expreplay<lp>>();
-  VW::config::option_group_definition new_options("Experience Replay");
+  VW::config::option_group_definition new_options("Experience Replay / " + replay_string);
   new_options
       .add(VW::config::make_option(replay_string, er->N)
                .keep()
@@ -103,7 +99,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
 
   er->all = &all;
   er->_random_state = all.get_random_state();
-  er->buf = VW::alloc_examples(1, er->N);
+  er->buf = VW::alloc_examples(er->N);
   er->buf->interactions = &all.interactions;
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_CPP_17_LANG_EXT
@@ -113,12 +109,12 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
   er->filled = calloc_or_throw<bool>(er->N);
 
   if (!all.logger.quiet)
-    std::cerr << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count
+    *(all.trace_message) << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count
               << std::endl;
 
   er->base = VW::LEARNER::as_singleline(setup_base(options, all));
   VW::LEARNER::learner<expreplay<lp>, example>* l =
-      &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>);
+      &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>, replay_string);
   l->set_end_pass(end_pass<lp>);
 
   return make_base(*l);

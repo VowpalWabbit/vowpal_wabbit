@@ -42,8 +42,8 @@ public:
   }
   vw_exception(const vw_exception& ex) = default;
   vw_exception& operator=(const vw_exception& other) = default;
-  vw_exception(vw_exception&& ex) noexcept = default;
-  vw_exception& operator=(vw_exception&& other) noexcept = default;
+  vw_exception(vw_exception&& ex) = default;
+  vw_exception& operator=(vw_exception&& other) = default;
   ~vw_exception() noexcept = default;
 
   const char* what() const noexcept override { return _message.c_str(); }
@@ -61,8 +61,8 @@ public:
 
   vw_argument_disagreement_exception(const vw_argument_disagreement_exception& ex) = default;
   vw_argument_disagreement_exception& operator=(const vw_argument_disagreement_exception& other) = default;
-  vw_argument_disagreement_exception(vw_argument_disagreement_exception&& ex) noexcept = default;
-  vw_argument_disagreement_exception& operator=(vw_argument_disagreement_exception&& other) noexcept = default;
+  vw_argument_disagreement_exception(vw_argument_disagreement_exception&& ex) = default;
+  vw_argument_disagreement_exception& operator=(vw_argument_disagreement_exception&& other) = default;
   ~vw_argument_disagreement_exception() noexcept override = default;
 };
 
@@ -76,8 +76,8 @@ public:
 
   vw_argument_invalid_value_exception(const vw_argument_invalid_value_exception& ex) = default;
   vw_argument_invalid_value_exception& operator=(const vw_argument_invalid_value_exception& other) = default;
-  vw_argument_invalid_value_exception(vw_argument_invalid_value_exception&& ex) noexcept = default;
-  vw_argument_invalid_value_exception& operator=(vw_argument_invalid_value_exception&& other) noexcept = default;
+  vw_argument_invalid_value_exception(vw_argument_invalid_value_exception&& ex) = default;
+  vw_argument_invalid_value_exception& operator=(vw_argument_invalid_value_exception&& other) = default;
   ~vw_argument_invalid_value_exception() noexcept override = default;
 };
 
@@ -91,8 +91,8 @@ public:
 
   vw_unrecognised_option_exception(const vw_unrecognised_option_exception& ex) = default;
   vw_unrecognised_option_exception& operator=(const vw_unrecognised_option_exception& other) = default;
-  vw_unrecognised_option_exception(vw_unrecognised_option_exception&& ex) noexcept = default;
-  vw_unrecognised_option_exception& operator=(vw_unrecognised_option_exception&& other) noexcept = default;
+  vw_unrecognised_option_exception(vw_unrecognised_option_exception&& ex) = default;
+  vw_unrecognised_option_exception& operator=(vw_unrecognised_option_exception&& other) = default;
   ~vw_unrecognised_option_exception() noexcept override = default;
 };
 
@@ -250,9 +250,3 @@ bool launchDebugger();
 
 #endif
 #define _UNUSED(x) ((void)(x))
-
-#define DBG(x)                                                                                                      \
-  do                                                                                                                \
-  {                                                                                                                 \
-    std::cerr << "(" << __FILENAME__ << ":" << __LINE__ << "," << __func__ << ") " << #x << ": " << x << std::endl; \
-  } while (0)

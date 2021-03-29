@@ -5,11 +5,17 @@
 #include <cmath>
 #include <cctype>
 #include "parse_example.h"
+#include "parse_primitives.h"
 #include "hash.h"
 #include "unique_sort.h"
 #include "global_data.h"
 #include "constant.h"
 #include "vw_string_view.h"
+#include "future_compat.h"
+
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
 
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
@@ -67,7 +73,9 @@ public:
 
   ~TC_parser() {}
 
-  inline void parserWarning(const char* message, VW::string_view var_msg, const char* message2)
+  //TODO: Currently this function is called by both warning and error conditions. We only log
+  //      to warning here though.
+  inline FORCE_INLINE void parserWarning(const char* message, VW::string_view var_msg, const char* message2)
   {
     // VW::string_view will output the entire view into the output stream.
     // That means if there is a null character somewhere in the range, it will terminate
@@ -77,15 +85,20 @@ public:
     auto tmp_view = _line.substr(0, _line.find('\0'));
     std::stringstream ss;
     ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples.load() << ": \"" << tmp_view
-       << "\"" << std::endl;
-    if (_p->strict_parse) { THROW_EX(VW::strict_parse_exception, ss.str()); }
+       << "\"";
+
+    if (_p->strict_parse) {
+      // maintain newline behavior
+      ss << std::endl;
+      THROW_EX(VW::strict_parse_exception, ss.str());
+    }
     else
     {
-      std::cerr << ss.str();
+      logger::errlog_warn(ss.str());
     }
   }
 
-  inline VW::string_view stringFeatureValue(VW::string_view sv)
+  inline FORCE_INLINE VW::string_view stringFeatureValue(VW::string_view sv)
   {
     size_t start_idx = sv.find_first_not_of(" \t\r\n");
     if (start_idx > 0 && start_idx != std::string::npos)
@@ -100,7 +113,7 @@ public:
     return sv.substr(0, end_idx);
   }
 
-  inline bool isFeatureValueFloat(float& float_feature_value)
+  inline FORCE_INLINE bool isFeatureValueFloat(float& float_feature_value)
   {
     if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
         _line[_read_idx] == '\r')
@@ -135,7 +148,7 @@ public:
     }
   }
 
-  inline VW::string_view read_name()
+  inline FORCE_INLINE VW::string_view read_name()
   {
     size_t name_start = _read_idx;
     while (!(_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == ':' ||
@@ -145,7 +158,7 @@ public:
     return _line.substr(name_start, _read_idx - name_start);
   }
 
-  inline void maybeFeature()
+  inline FORCE_INLINE void maybeFeature()
   {
     if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
         _line[_read_idx] == '\r')
@@ -238,7 +251,7 @@ public:
             affix_v.push_back(is_prefix ? '+' : '-');
             affix_v.push_back('0' + (char)len);
             affix_v.push_back('=');
-            push_many(affix_v, affix_name.begin(), affix_name.size());
+            affix_v.insert(affix_v.end(), affix_name.begin(), affix_name.end());
             affix_v.push_back('\0');
             affix_fs.space_names.push_back(audit_strings_ptr(new audit_strings("affix", affix_v.begin())));
           }
@@ -279,7 +292,7 @@ public:
             spelling_v.push_back(_index);
             spelling_v.push_back('_');
           }
-          push_many(spelling_v, spelling_strview.begin(), spelling_strview.size());
+          spelling_v.insert(spelling_v.end(), spelling_strview.begin(), spelling_strview.end());
           spelling_v.push_back('\0');
           spell_fs.space_names.push_back(audit_strings_ptr(new audit_strings("spelling", spelling_v.begin())));
         }
@@ -297,8 +310,8 @@ public:
             const auto& feats = feats_it->second;
             features& dict_fs = _ae->feature_space[dictionary_namespace];
             if (dict_fs.size() == 0) _ae->indices.push_back(dictionary_namespace);
-            push_many(dict_fs.values, feats->values.begin(), feats->values.size());
-            push_many(dict_fs.indicies, feats->indicies.begin(), feats->indicies.size());
+            dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
+            dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
             dict_fs.sum_feat_sq += feats->sum_feat_sq;
             if (audit)
               for (const auto& id : feats->indicies)
@@ -315,7 +328,7 @@ public:
     }
   }
 
-  inline void nameSpaceInfoValue()
+  inline FORCE_INLINE void nameSpaceInfoValue()
   {
     if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
         _line[_read_idx] == '\r')
@@ -346,7 +359,7 @@ public:
     }
   }
 
-  inline void nameSpaceInfo()
+  inline FORCE_INLINE void nameSpaceInfo()
   {
     if (_read_idx >= _line.size() || _line[_read_idx] == '|' || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' ||
         _line[_read_idx] == ':' || _line[_read_idx] == '\r')
@@ -367,7 +380,7 @@ public:
     }
   }
 
-  inline void listFeatures()
+  inline FORCE_INLINE void listFeatures()
   {
     while ((_read_idx < _line.size()) && (_line[_read_idx] == ' ' || _line[_read_idx] == '\t'))
     {
@@ -382,7 +395,7 @@ public:
     }
   }
 
-  inline void nameSpace()
+  inline FORCE_INLINE void nameSpace()
   {
     _cur_channel_v = 1.0;
     _index = 0;
@@ -418,7 +431,7 @@ public:
     if (_new_index && _ae->feature_space[_index].size() > 0) _ae->indices.push_back(_index);
   }
 
-  inline void listNameSpace()
+  inline FORCE_INLINE void listNameSpace()
   {
     while ((_read_idx < _line.size()) && (_line[_read_idx] == '|'))  // ListNameSpace --> '|' NameSpace ListNameSpace
     {
@@ -478,14 +491,14 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
     {
       VW::string_view tag = all->example_parser->words.back();
       all->example_parser->words.pop_back();
-      if (tag.front() == '\'') tag.remove_prefix(1);
-      push_many(ae->tag, tag.begin(), tag.size());
+      if (tag.front() == '\'') { tag.remove_prefix(1); }
+      ae->tag.insert(ae->tag.end(), tag.begin(), tag.end());
     }
   }
 
   if (!all->example_parser->words.empty())
-    all->example_parser->lbl_parser.parse_label(
-        all->example_parser, all->example_parser->_shared_data, &ae->l, all->example_parser->words);
+    all->example_parser->lbl_parser.parse_label(all->example_parser, all->example_parser->_shared_data, &ae->l,
+        all->example_parser->words, ae->_reduction_features);
 
   if (bar_idx != VW::string_view::npos)
   {

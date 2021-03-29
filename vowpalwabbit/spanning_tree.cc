@@ -16,6 +16,9 @@
 #include <map>
 #include <future>
 
+// TODO: spanning tree exists outside the normal VW source (it should live in cluster/).
+//       If we use io/logger.h here, we need to link it to the cluster library
+
 struct client
 {
   uint32_t client_ip;

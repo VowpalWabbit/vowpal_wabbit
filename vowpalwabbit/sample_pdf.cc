@@ -19,9 +19,6 @@ using VW::config::option_group_definition;
 using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
-// Enable/Disable indented debug statements
-VW_DEBUG_ENABLE(false)
-
 namespace VW
 {
 namespace continuous_action
@@ -34,7 +31,6 @@ struct sample_pdf
   int predict(example& ec, experimental::api_status* status);
 
   void init(single_learner* p_base, uint64_t* p_random_seed);
-  ~sample_pdf();
 
 private:
   uint64_t* _p_random_state;
@@ -75,10 +71,8 @@ void sample_pdf::init(single_learner* p_base, uint64_t* p_random_seed)
 {
   _base = p_base;
   _p_random_state = p_random_seed;
-  _pred_pdf = v_init<continuous_actions::pdf_segment>();
+  _pred_pdf.clear();
 }
-
-sample_pdf::~sample_pdf() { _pred_pdf.delete_v(); }
 
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
@@ -100,7 +94,7 @@ void predict_or_learn(sample_pdf& reduction, single_learner&, example& ec)
 
 LEARNER::base_learner* sample_pdf_setup(options_i& options, vw& all)
 {
-  option_group_definition new_options("Continuous actions");
+  option_group_definition new_options("Continuous actions - sample pdf");
   bool invoked = false;
   new_options.add(
       make_option("sample_pdf", invoked).keep().necessary().help("Sample a pdf and pick a continuous valued action"));
@@ -114,9 +108,7 @@ LEARNER::base_learner* sample_pdf_setup(options_i& options, vw& all)
   p_reduction->init(as_singleline(p_base), &all.random_seed);
 
   LEARNER::learner<sample_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value);
-
-  all.delete_prediction = nullptr;
+      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, all.get_setupfn_name(sample_pdf_setup));
 
   return make_base(l);
 }

@@ -11,48 +11,60 @@
 #include "accumulate.h"
 #include "best_constant.h"
 #include "vw_string_view.h"
+#include "example.h"
+#include "vw_string_view_fmt.h"
+
+#include "io/logger.h"
+// needed for printing ranges of objects (eg: all elements of a vector)
+#include <fmt/ranges.h>
+
+namespace logger = VW::io::logger;
 
 namespace no_label
 {
-char* bufread_no_label(shared_data*, label_data*, char* c) { return c; }
-
-size_t read_cached_no_label(shared_data*, void*, io_buf&) { return 1; }
-
-float get_weight(void*) { return 1.; }
-
-char* bufcache_no_label(label_data*, char* c) { return c; }
-
-void cache_no_label(void*, io_buf&) {}
-
-void default_no_label(void*) {}
-
-bool test_label(void*) { return false; }
-
-void delete_no_label(void*) {}
-
-void parse_no_label(parser*, shared_data*, void*, std::vector<VW::string_view>& words)
+void parse_no_label(const std::vector<VW::string_view>& words)
 {
   switch (words.size())
   {
     case 0:
       break;
     default:
-      std::cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-      for (const auto& word : words) std::cout << word;
-      std::cout << std::endl;
+      logger::log_error("Error: {0} is too many tokens for a simple label: {1}",
+			words.size(), fmt::join(words, " "));
   }
 }
 
-label_parser no_label_parser = {default_no_label, parse_no_label, cache_no_label, read_cached_no_label, delete_no_label,
-    get_weight, nullptr, test_label, sizeof(nullptr)};
+// clang-format off
+label_parser no_label_parser = {
+  // default_label
+  [](polylabel*) {},
+  // parse_label
+  [](parser*, shared_data*, polylabel*, std::vector<VW::string_view>& words, reduction_features&) {
+    parse_no_label(words);
+  },
+  // cache_label
+  [](polylabel*, io_buf&) {},
+  // read_cached_label
+  [](shared_data*, polylabel*, io_buf&) -> size_t { return 1; },
+  // delete_label
+  [](polylabel*) {},
+   // get_weight
+  [](polylabel*) { return 1.f; },
+  // copy_label
+  nullptr,
+  // test_label
+  [](polylabel*) { return false; },
+  label_type_t::nolabel
+};
+// clang-format on
 
 void print_no_label_update(vw& all, example& ec)
 {
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
       !all.logger.quiet && !all.bfgs)
   {
-    all.sd->print_update(all.holdout_set_off, all.current_pass, 0.f, ec.pred.scalar, ec.num_features, all.progress_add,
-        all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, 0.f, ec.pred.scalar,
+        ec.num_features, all.progress_add, all.progress_arg);
   }
 }
 

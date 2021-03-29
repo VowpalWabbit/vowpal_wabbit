@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "io_buf.h"
-#include "parse_primitives.h"
 #include "example.h"
 #include "future_compat.h"
 
@@ -26,6 +25,7 @@
 #include "vw_string_view.h"
 #include "queue.h"
 #include "object_pool.h"
+#include "hashstring.h"
 
 struct vw;
 struct input_options;
@@ -43,18 +43,12 @@ struct parser
     this->input = new io_buf{};
     this->output = new io_buf{};
     this->lbl_parser = simple_label_parser;
-
-    // Free parser must still be used for the following fields.
-    this->ids = v_init<size_t>();
-    this->counts = v_init<size_t>();
   }
 
   ~parser()
   {
     delete input;
     delete output;
-    ids.delete_v();
-    counts.delete_v();
   }
 
   // delete copy constructor

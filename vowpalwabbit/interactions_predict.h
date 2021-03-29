@@ -95,8 +95,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 // it must be in header file to avoid compilation problems
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*),
     class W>  // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(std::vector<std::vector<namespace_index>>& interactions, bool permutations,
-    example_predict& ec, R& dat,
+inline void generate_interactions(namespace_interactions& interactions, bool permutations, example_predict& ec, R& dat,
     W& weights)  // default value removed to eliminate ambiguity in old complers
 {
   features* features_data = ec.feature_space.data();
@@ -106,7 +105,7 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
   //    const uint64_t stride_shift = all.stride_shift; // it seems we don't need stride shift in FTRL-like hash
 
   // statedata for generic non-recursive iteration
-  v_array<feature_gen_data> state_data = v_init<feature_gen_data>();
+  v_array<feature_gen_data> state_data;
 
   feature_gen_data empty_ns_data;  // micro-optimization. don't want to call its constructor each time in loop.
   empty_ns_data.loop_idx = 0;
@@ -114,8 +113,7 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
   empty_ns_data.loop_end = 0;
   empty_ns_data.self_interaction = false;
 
-  // loop throw the set of possible interactions
-  for (auto& ns : interactions)
+  for (auto& ns : interactions.interactions)
   {  // current list of namespaces to interact.
 
 #ifndef GEN_INTER_LOOP
@@ -183,7 +181,7 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
               {  // f3 x k*(f2 x k*f1)
                 if (audit)
                 {
-                  audit_func(dat, i < second.space_names.size() ? second.space_names[i].get() : &EMPTY_AUDIT_STRINGS);
+                  audit_func(dat, j < second.space_names.size() ? second.space_names[j].get() : &EMPTY_AUDIT_STRINGS);
                 }
                 feature_index halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
                 feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);
@@ -357,7 +355,5 @@ inline void generate_interactions(std::vector<std::vector<namespace_index>>& int
       }    // while do_it
     }
   }  // foreach interaction in all.interactions
-
-  state_data.delete_v();
 }
 }  // namespace INTERACTIONS

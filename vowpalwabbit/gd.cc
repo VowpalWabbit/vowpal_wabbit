@@ -22,11 +22,15 @@
 #include "reductions.h"
 #include "vw.h"
 
+#include "io/logger.h"
+
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
 #define VERSION_PASS_UINT64 "8.3.3"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 // todo:
 // 4. Factor various state out of vw&
@@ -263,6 +267,7 @@ void print_lda_features(vw& all, example& ec)
   uint32_t stride_shift = weights.stride_shift();
   size_t count = 0;
   for (features& fs : ec) count += fs.size();
+  // TODO: Where should audit stuff output to?
   for (features& fs : ec)
   {
     for (features::iterator_all& f : fs.values_indices_audit())
@@ -315,13 +320,12 @@ void print_audit_features(vw& all, example& ec)
   print_features(all, ec);
 }
 
-float finalize_prediction(shared_data* sd, vw_logger& logger, float ret)
+float finalize_prediction(shared_data* sd, vw_logger&, float ret)
 {
   if (std::isnan(ret))
   {
     ret = 0.;
-    if (!logger.quiet)
-    { std::cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << std::endl; }
+    logger::errlog_warn("NAN prediction in example {0}, forcing {1}", sd->example_number + 1, ret);
     return ret;
   }
   if (ret > sd->max_label) return (float)sd->max_label;
@@ -349,6 +353,7 @@ inline float trunc_predict(vw& all, example& ec, double gravity)
 
 inline void vec_add_print(float& p, const float fx, float& fw)
 {
+  // TODO: partial line logging. This function isn't actually called from anywhere though?
   p += fw * fx;
   std::cerr << " + " << fw << "*" << fx;
 }
@@ -507,7 +512,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       if (x2 > x2_max)
       {
         norm_x2 = 1;
-        std::cerr << "your features have too much magnitude" << std::endl;
+	logger::errlog_error("your features have too much magnitude");
       }
       nd.norm_x += norm_x2;
     }
@@ -592,7 +597,7 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
 float compute_update(gd& g, example& ec)
 {
   // invariant: not a test label, importance weight > 0
-  label_data& ld = ec.l.simple;
+  const label_data& ld = ec.l.simple;
   vw& all = *g.all;
 
   float update = 0.;
@@ -622,7 +627,7 @@ float compute_update(gd& g, example& ec)
 
   if (std::isnan(update))
   {
-    std::cerr << "update is NAN, replacing with 0" << std::endl;
+    logger::errlog_warn("update is NAN, replacing with 0");
     update = 0.;
   }
 
@@ -1004,7 +1009,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     if (resume)
     {
       if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
-        all.trace_message
+        *(all.trace_message)
             << std::endl
             << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than "
             << VERSION_SAVE_RESUME_FIX << std::endl
@@ -1187,9 +1192,9 @@ base_learner* setup(options_i& options, vw& all)
   if (g->adax && !all.weights.adaptive) THROW("Cannot use adax without adaptive");
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001)
-    all.trace_message << "Warning: the learning rate for the last pass is multiplied by: "
-                      << pow((double)all.eta_decay_rate, (double)all.numpasses)
-                      << " adjust --decay_learning_rate larger to avoid this." << std::endl;
+    *(all.trace_message) << "Warning: the learning rate for the last pass is multiplied by: "
+                         << pow((double)all.eta_decay_rate, (double)all.numpasses)
+                         << " adjust --decay_learning_rate larger to avoid this." << std::endl;
 
   if (all.reg_mode % 2)
     if (all.audit || all.hash_inv)
@@ -1222,7 +1227,8 @@ base_learner* setup(options_i& options, vw& all)
   all.weights.stride_shift((uint32_t)ceil_log_2(stride - 1));
 
   gd* bare = g.get();
-  learner<gd, example>& ret = init_learner(g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()));
+  learner<gd, example>& ret = init_learner(
+      g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()), all.get_setupfn_name(setup));
   ret.set_sensitivity(bare->sensitivity);
   ret.set_multipredict(bare->multipredict);
   ret.set_update(bare->update);

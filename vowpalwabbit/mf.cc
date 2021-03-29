@@ -37,20 +37,13 @@ struct mf
   features temp_features;
 
   vw* all;  // for pairs? and finalize
-
-  ~mf()
-  {
-    // clean up local v_arrays
-    indices.delete_v();
-    sub_predictions.delete_v();
-  }
 };
 
 template <bool cache_sub_predictions>
 void predict(mf& data, single_learner& base, example& ec)
 {
   float prediction = 0;
-  if (cache_sub_predictions) data.sub_predictions.resize(2 * data.rank + 1);
+  if (cache_sub_predictions) { data.sub_predictions.resize_but_with_stl_behavior(2 * data.rank + 1); }
 
   // predict from linear terms
   base.predict(ec);
@@ -60,7 +53,7 @@ void predict(mf& data, single_learner& base, example& ec)
   prediction += ec.partial_prediction;
 
   // store namespace indices
-  copy_array(data.predict_indices, ec.indices);
+  data.predict_indices = ec.indices;
 
   // erase indices
   ec.indices.clear();
@@ -97,7 +90,7 @@ void predict(mf& data, single_learner& base, example& ec)
     }
   }
   // restore namespace indices and label
-  copy_array(ec.indices, data.predict_indices);
+  ec.indices = data.predict_indices;
 
   // finalize prediction
   ec.partial_prediction = prediction;
@@ -115,7 +108,7 @@ void learn(mf& data, single_learner& base, example& ec)
   ec.pred.scalar = ec.updated_prediction;
 
   // store namespace indices
-  copy_array(data.indices, ec.indices);
+  data.indices = ec.indices;
 
   // erase indices
   ec.indices.clear();
@@ -176,7 +169,7 @@ void learn(mf& data, single_learner& base, example& ec)
     }
   }
   // restore namespace indices
-  copy_array(ec.indices, data.indices);
+  ec.indices = data.indices;
 
   // restore original prediction
   ec.pred.scalar = predicted;
@@ -194,16 +187,16 @@ base_learner* mf_setup(options_i& options, vw& all)
   data->all = &all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  auto non_pair_count = std::count_if(all.interactions.begin(), all.interactions.end(),
+  auto non_pair_count = std::count_if(all.interactions.interactions.begin(), all.interactions.interactions.end(),
       [](const std::vector<unsigned char>& interaction) { return interaction.size() != 2; });
   if (non_pair_count > 0) { THROW("can only use pairs with new_mf"); }
 
-  data->pairs = all.interactions;
-  all.interactions.clear();
+  data->pairs = all.interactions.interactions;
+  all.interactions.interactions.clear();
 
   all.random_positive_weights = true;
 
-  learner<mf, example>& l =
-      init_learner(data, as_singleline(setup_base(options, all)), learn, predict<false>, 2 * data->rank + 1);
+  learner<mf, example>& l = init_learner(data, as_singleline(setup_base(options, all)), learn, predict<false>,
+      2 * data->rank + 1, all.get_setupfn_name(mf_setup));
   return make_base(l);
 }

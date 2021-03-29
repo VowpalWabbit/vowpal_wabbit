@@ -17,9 +17,14 @@
 #include "v_array.h"
 #include "future_compat.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
+// TODO: This file has several cout print statements. It looks like
+//       they should be using trace_message, but its difficult to tell
 namespace memory_tree_ns
 {
 ///////////////////////Helper//////////////////////////////
@@ -29,7 +34,7 @@ void remove_at_index(std::vector<T>& array, uint32_t index)
 {
   if (index >= array.size())
   {
-    std::cout << "ERROR: index is larger than the size" << std::endl;
+    logger::log_error("ERROR: index is larger than the size");
     return;
   }
 
@@ -45,16 +50,9 @@ void copy_example_data(example* dst, example* src, bool oas = false)  // copy ex
   }
   else
   {
-    dst->l.multilabels.label_v.delete_v();
-    copy_array(dst->l.multilabels.label_v, src->l.multilabels.label_v);
+    dst->l.multilabels.label_v = src->l.multilabels.label_v;
   }
   VW::copy_example_data(false, dst, src);
-}
-
-inline void free_example(example* ec)
-{
-  VW::dealloc_example(nullptr, *ec);
-  free(ec);
 }
 
 ////Implement kronecker_product between two examples:
@@ -96,7 +94,6 @@ int cmpfunc(const void* a, const void* b) { return *(char*)a - *(char*)b; }
 void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool oas = false)
 {
   // copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
-  VW::dealloc_example(nullptr, ec, nullptr);  // clear ec
   copy_example_data(&ec, &ec1, oas);
 
   ec.total_sum_feat_sq = 0.0;  // sort namespaces.  pass indices array into sort...template (leave this to the end)
@@ -233,9 +230,8 @@ struct memory_tree
   ~memory_tree()
   {
     // nodes.delete_v();
-    for (auto ex : examples) free_example(ex);
-    examples.delete_v();
-    if (kprod_ec) free_example(kprod_ec);
+    for (auto* ex : examples) { VW::dealloc_examples(ex, 1); }
+    if (kprod_ec) { VW::dealloc_examples(kprod_ec, 1); }
   }
 };
 
@@ -297,7 +293,7 @@ void init_tree(memory_tree& b)
   b.nodes[0].internal = -1;  // mark the root as leaf
   b.nodes[0].base_router = (b.routers_used++);
 
-  b.kprod_ec = &calloc_or_throw<example>();  // allocate space for kronecker product example
+  b.kprod_ec = VW::alloc_examples(1);  // allocate space for kronecker product example
 
   b.total_num_queries = 0;
   b.max_routers = b.max_nodes;
@@ -344,7 +340,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
     else
     {
       std::cout << cn << " " << b.nodes[cn].nl << " " << b.nodes[cn].nr << std::endl;
-      std::cout << "Error:  nl = 0, and nr = 0, exit...";
+      logger::log_error("Error:  nl = 0, and nr = 0, exit...");
       exit(0);
     }
 
@@ -551,7 +547,7 @@ inline uint32_t hamming_loss(v_array<uint32_t>& array_1, v_array<uint32_t>& arra
 
 void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, v_array<uint32_t>& leaf_labs)
 {
-  if (b.nodes[cn].internal != -1) std::cout << "something is wrong, it should be a leaf node" << std::endl;
+  if (b.nodes[cn].internal != -1) logger::log_error("something is wrong, it should be a leaf node");
 
   leaf_labs.clear();
   for (size_t i = 0; i < b.nodes[cn].examples_index.size(); i++)
@@ -1028,7 +1024,7 @@ void learn(memory_tree& b, single_learner& base, example& ec)
 
     if (b.current_pass < 1)
     {  // in the first pass, we need to store the memory:
-      example* new_ec = &calloc_or_throw<example>();
+      example* new_ec = VW::alloc_examples(1);
       copy_example_data(new_ec, &ec, b.oas);
       b.examples.push_back(new_ec);
       if (b.online == true)
@@ -1163,7 +1159,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
     }
     else
     {
-      size_t ss = b.all->weights.stride_shift();
+      uint32_t ss = b.all->weights.stride_shift();
       writeit(ss, "stride_shift");
     }
 
@@ -1189,11 +1185,15 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
       b.examples.clear();
       for (uint32_t i = 0; i < n_examples; i++)
       {
-        example* new_ec = &calloc_or_throw<example>();
+        example* new_ec = VW::alloc_examples(1);
         b.examples.push_back(new_ec);
       }
     }
-    for (uint32_t i = 0; i < n_examples; i++) save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
+    for (uint32_t i = 0; i < n_examples; i++)
+    {
+      save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
+      b.examples[i]->interactions = &b.all->interactions;
+    }
     // std::cout<<"done loading...."<< std::endl;
   }
 }
@@ -1223,7 +1223,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
                .default_value(1)
                .help("number of dream operations per example (default = 1)"))
       .add(make_option("top_K", tree->top_K).default_value(1).help("top K prediction error (default 1)"))
-      .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("whether or not learn at leaf (default = True)"))
+      .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("Enable learning at leaf"))
       .add(make_option("oas", tree->oas).help("use oas at the leaf"))
       .add(make_option("dream_at_update", tree->dream_at_update)
                .default_value(0)
@@ -1242,13 +1242,13 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   init_tree(*tree);
 
   if (!all.logger.quiet)
-    all.trace_message << "memory_tree:"
-                      << " "
-                      << "max_nodes = " << tree->max_nodes << " "
-                      << "max_leaf_examples = " << tree->max_leaf_examples << " "
-                      << "alpha = " << tree->alpha << " "
-                      << "oas = " << tree->oas << " "
-                      << "online =" << tree->online << " " << std::endl;
+    *(all.trace_message) << "memory_tree:"
+                         << " "
+                         << "max_nodes = " << tree->max_nodes << " "
+                         << "max_leaf_examples = " << tree->max_leaf_examples << " "
+                         << "alpha = " << tree->alpha << " "
+                         << "oas = " << tree->oas << " "
+                         << "online =" << tree->online << " " << std::endl;
 
   size_t num_learners = 0;
 
@@ -1256,9 +1256,9 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   if (tree->oas == false)
   {
     num_learners = tree->max_nodes + 1;
-    learner<memory_tree, example>& l = init_multiclass_learner(
-        tree, as_singleline(setup_base(options, all)), learn, predict, all.example_parser, num_learners);
-    all.label_type = label_type_t::mc;
+    learner<memory_tree, example>& l = init_multiclass_learner(tree, as_singleline(setup_base(options, all)), learn,
+        predict, all.example_parser, num_learners, all.get_setupfn_name(memory_tree_setup));
+    all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
     // srand(time(0));
     l.set_save_load(save_load_memory_tree);
     l.set_end_pass(end_pass);
@@ -1268,20 +1268,13 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   else
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
-    learner<memory_tree, example>& l = init_learner(
-        tree, as_singleline(setup_base(options, all)), learn, predict, num_learners, prediction_type_t::multilabels);
+    learner<memory_tree, example>& l = init_learner(tree, as_singleline(setup_base(options, all)), learn, predict,
+        num_learners, prediction_type_t::multilabels, all.get_setupfn_name(memory_tree_setup));
 
-    // all.p->lp = MULTILABEL::multilabel;
-    // all.label_type = label_type_t::multi;
-    // all.delete_prediction = MULTILABEL::multilabel.delete_label;
-    // srand(time(0));
     l.set_end_pass(end_pass);
     l.set_save_load(save_load_memory_tree);
-    // l.set_end_pass(end_pass);
 
     all.example_parser->lbl_parser = MULTILABEL::multilabel;
-    all.label_type = label_type_t::multi;
-    all.delete_prediction = MULTILABEL::multilabel.delete_label;
 
     return make_base(l);
   }

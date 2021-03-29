@@ -17,15 +17,18 @@
 #include <sstream>
 #include <vector>
 #include <memory>
+#include <fmt/core.h>
 
 #include "reductions.h"
 #include "vw.h"
 #include "rand48.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
-using std::cerr;
 using std::endl;
 
 inline float sign(float w)
@@ -310,14 +313,23 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
       bin_text_write_fixed(model_file, (char*)&(o.v[i]), sizeof(o.v[i]), os2, text);
     }
 
-  if (read) { cerr << "Loading alpha and v: " << endl; }
+  // avoid making syscalls multiple times
+  fmt::memory_buffer buffer;
+  if (read)
+  {
+    fmt::format_to(buffer, "Loading alpha and v: \n");
+  }
   else
   {
-    cerr << "Saving alpha and v, current weighted_examples = "
-         << o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples << endl;
+    fmt::format_to(buffer, "Saving alpha and v, current weighted_examples = {}\n",
+		      o.all->sd->weighted_labeled_examples + o.all->sd->weighted_unlabeled_examples);
   }
-  for (int i = 0; i < o.N; i++) { cerr << o.alpha[i] << " " << o.v[i] << endl; }
-  cerr << endl;
+
+  for (int i = 0; i < o.N; i++)
+  {
+    fmt::format_to(buffer, "{0} {1}\n", o.alpha[i], o.v[i]);
+  }
+  logger::errlog_info("{}", fmt::to_string(buffer));
 }
 
 void return_example(vw& all, boosting& /* a */, example& ec)
@@ -351,13 +363,23 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 
   if (!o.all->logger.quiet)
   {
+    // avoid making syscalls multiple times
+    fmt::memory_buffer buffer;
     if (read)
-      cerr << "Loading alpha: " << endl;
+    {
+      fmt::format_to(buffer, "Loading alpha: \n");
+    }
     else
-      cerr << "Saving alpha, current weighted_examples = " << o.all->sd->weighted_examples() << endl;
-    for (int i = 0; i < o.N; i++) cerr << o.alpha[i] << " " << endl;
+    {
+      fmt::format_to(buffer, "Saving alpha, current weighted_examples = {)\n",
+		       o.all->sd->weighted_examples());
+    }
 
-    cerr << endl;
+    for (int i = 0; i < o.N; i++)
+    {
+      fmt::format_to(buffer, "{} \n", o.alpha[i]);
+    }
+    logger::errlog_info("{}", fmt::to_string(buffer));
   }
 }
 
@@ -384,8 +406,8 @@ VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   // "adaptive" implements AdaBoost.OL (Algorithm 2 in BLK'15,
   // 	    using sampling rather than importance weighting)
 
-  if (!all.logger.quiet) cerr << "Number of weak learners = " << data->N << endl;
-  if (!all.logger.quiet) cerr << "Gamma = " << data->gamma << endl;
+  logger::errlog_info("Number of weak learners = {}", data->N);
+  logger::errlog_info("Gamma = {}", data->gamma);
 
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;
@@ -396,18 +418,18 @@ VW::LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
 
   learner<boosting, example>* l;
   if (data->alg == "BBM")
-    l = &init_learner<boosting, example>(
-        data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, data->N);
+    l = &init_learner<boosting, example>(data, as_singleline(setup_base(options, all)), predict_or_learn<true>,
+        predict_or_learn<false>, data->N, all.get_setupfn_name(boosting_setup));
   else if (data->alg == "logistic")
   {
     l = &init_learner<boosting, example>(data, as_singleline(setup_base(options, all)), predict_or_learn_logistic<true>,
-        predict_or_learn_logistic<false>, data->N);
+        predict_or_learn_logistic<false>, data->N, all.get_setupfn_name(boosting_setup) + "-logistic");
     l->set_save_load(save_load);
   }
   else if (data->alg == "adaptive")
   {
     l = &init_learner<boosting, example>(data, as_singleline(setup_base(options, all)), predict_or_learn_adaptive<true>,
-        predict_or_learn_adaptive<false>, data->N);
+        predict_or_learn_adaptive<false>, data->N, all.get_setupfn_name(boosting_setup) + "-adaptive");
     l->set_save_load(save_load_sampling);
   }
   else

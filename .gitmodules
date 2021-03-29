@@ -1,3 +1,9 @@
 [submodule "rapidjson"]
-	path = rapidjson
+	path = ext_libs/rapidjson
 	url = https://github.com/Tencent/rapidjson.git
+[submodule "ext_libs/spdlog"]
+	path = ext_libs/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "ext_libs/fmt"]
+	path = ext_libs/fmt
+	url = https://github.com/fmtlib/fmt.git

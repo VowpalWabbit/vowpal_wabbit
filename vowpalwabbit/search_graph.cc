@@ -115,7 +115,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   D->K = num_actions;
   D->numN = (D->directed + 1) * (D->K + 1);
-  std::cerr << "K=" << D->K << ", numN=" << D->numN << std::endl;
+  *(sch.get_vw_pointer_unsafe().trace_message) << "K=" << D->K << ", numN=" << D->numN << std::endl;
   D->neighbor_predictions = calloc_or_throw<float>(D->numN);
 
   D->confusion_matrix = calloc_or_throw<uint32_t>((D->K + 1) * (D->K + 1));
@@ -313,9 +313,6 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
     }
 
     if (pred_total == 0.) continue;
-    // std::cerr << n << ':' << i << " -> ["; for (size_t k=0; k<D.numN; k++) std::cerr << ' ' <<
-    // D.neighbor_predictions[k]; std::cerr
-    // << " ]" << std::endl;
     for (size_t k = 0; k < D.numN; k++) D.neighbor_predictions[k] /= pred_total;
     example& edge = *ec[i];
 
@@ -332,7 +329,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
   ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 
   vw& all = sch.get_vw_pointer_unsafe();
-  for (auto& i : all.interactions)
+  for (auto& i : all.interactions.interactions)
   {
     if (i.size() != 2) continue;
     int i0 = (int)i[0];
@@ -347,7 +344,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
 
 void del_edge_features(task_data& /*D*/, uint32_t n, multi_ex& ec)
 {
-  ec[n]->indices.pop();
+  ec[n]->indices.pop_back();
   features& fs = ec[n]->feature_space[neighbor_namespace];
   ec[n]->total_sum_feat_sq -= fs.sum_feat_sq;
   ec[n]->num_features -= fs.size();

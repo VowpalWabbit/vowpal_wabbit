@@ -9,6 +9,7 @@ using namespace VW::config;
 
 using std::cout;
 
+// TODO: This file should probably(?) use trace_message
 struct print
 {
   vw* all;
@@ -56,6 +57,6 @@ VW::LEARNER::base_learner* print_setup(options_i& options, vw& all)
 
   all.weights.stride_shift(0);
 
-  VW::LEARNER::learner<print, example>& ret = init_learner(p, learn, learn, 1);
+  VW::LEARNER::learner<print, example>& ret = init_learner(p, learn, learn, 1, all.get_setupfn_name(print_setup));
   return make_base(ret);
 }

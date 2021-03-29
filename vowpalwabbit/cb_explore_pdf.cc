@@ -15,9 +15,6 @@ using VW::config::option_group_definition;
 using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
-// Enable/Disable indented debug statements
-VW_DEBUG_ENABLE(false)
-
 namespace VW
 {
 namespace continuous_action
@@ -52,13 +49,14 @@ int cb_explore_pdf::predict(example& ec, experimental::api_status*)
   if (first_only && !reduction_features.is_pdf_set() && !reduction_features.is_chosen_action_set())
   {
     // uniform random
-    ec.pred.pdf.push_back({min_value, max_value, static_cast<float>(1. / (max_value - min_value))});
+    ec.pred.pdf.push_back(
+        VW::continuous_actions::pdf_segment{min_value, max_value, static_cast<float>(1. / (max_value - min_value))});
     return error_code::success;
   }
   else if (first_only && reduction_features.is_pdf_set())
   {
     // pdf provided
-    copy_array(ec.pred.pdf, reduction_features.pdf);
+    ec.pred.pdf = reduction_features.pdf;
     return error_code::success;
   }
 
@@ -91,7 +89,7 @@ void predict_or_learn(cb_explore_pdf& reduction, single_learner&, example& ec)
 // Setup reduction in stack
 LEARNER::base_learner* cb_explore_pdf_setup(config::options_i& options, vw& all)
 {
-  option_group_definition new_options("Continuous actions");
+  option_group_definition new_options("Continuous actions - cb_explore_pdf");
   bool invoked = false;
   float epsilon;
   float min;
@@ -128,8 +126,9 @@ LEARNER::base_learner* cb_explore_pdf_setup(config::options_i& options, vw& all)
   p_reduction->max_value = max;
   p_reduction->first_only = first_only;
 
-  LEARNER::learner<cb_explore_pdf, example>& l = init_learner(
-      p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::pdf);
+  LEARNER::learner<cb_explore_pdf, example>& l =
+      init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1,
+          prediction_type_t::pdf, all.get_setupfn_name(cb_explore_pdf_setup));
 
   return make_base(l);
 }

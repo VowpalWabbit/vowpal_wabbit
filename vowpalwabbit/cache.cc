@@ -46,7 +46,7 @@ size_t read_cached_tag(io_buf& cache, example* ae)
   if (cache.buf_read(c, tag_size) < tag_size) return 0;
 
   ae->tag.clear();
-  push_many(ae->tag, c, tag_size);
+  ae->tag.insert(ae->tag.end(), c, c + tag_size);
   return tag_size + sizeof(tag_size);
 }
 
@@ -81,7 +81,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     unsigned char index = 0;
     if ((temp = input->buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
     {
-      all->trace_message << "truncated example! " << temp << " " << char_size + sizeof(size_t) << std::endl;
+      *(all->trace_message) << "truncated example! " << temp << " " << char_size + sizeof(size_t) << std::endl;
       return 0;
     }
 
@@ -95,7 +95,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     total += storage;
     if (input->buf_read(c, storage) < storage)
     {
-      all->trace_message << "truncated example! wanted: " << storage << " bytes" << std::endl;
+      *(all->trace_message) << "truncated example! wanted: " << storage << " bytes" << std::endl;
       return 0;
     }
 
@@ -181,7 +181,7 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
   *(size_t*)storage_size_loc = c - storage_size_loc - sizeof(size_t);
 }
 
-void cache_tag(io_buf& cache, v_array<char> tag)
+void cache_tag(io_buf& cache, const v_array<char>& tag)
 {
   char* c;
   cache.buf_write(c, sizeof(size_t) + tag.size());

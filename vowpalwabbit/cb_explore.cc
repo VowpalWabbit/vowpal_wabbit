@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "cb_explore.h"
 #include "reductions.h"
 #include "cb_algs.h"
 #include "rand48.h"
@@ -12,6 +13,8 @@
 #include "scope_exit.h"
 #include "vw_versions.h"
 #include "version.h"
+#include "cb_label_parser.h"
+#include <cfloat>
 
 #include <memory>
 
@@ -23,8 +26,6 @@ using namespace exploration;
 using namespace VW::config;
 using std::endl;
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
-
-VW_DEBUG_ENABLE(false)
 
 namespace CB_EXPLORE
 {
@@ -41,25 +42,16 @@ struct cb_explore
 
   learner<cb_explore, example>* cs;
 
-  size_t tau;
+  uint64_t tau;
   float epsilon;
-  size_t bag_size;
-  size_t cover_size;
+  uint64_t bag_size;
+  uint64_t cover_size;
   float psi;
   bool nounif;
   bool epsilon_decay;
   VW::version_struct model_file_version;
 
   size_t counter;
-
-  ~cb_explore()
-  {
-    preds.delete_v();
-    cover_probs.delete_v();
-    COST_SENSITIVE::cs_label.delete_label(&cbcs.pred_scores);
-    COST_SENSITIVE::cs_label.delete_label(&cs_label);
-    COST_SENSITIVE::cs_label.delete_label(&second_cs_label);
-  }
 };
 
 template <bool is_learn>
@@ -108,7 +100,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
 
   VW_DBG(ec) << "cb_explore: " << (is_learn ? "learn() " : "predict() ") << multiclass_pred_to_string(ec) << endl;
 
-  probs.resize(data.cbcs.num_actions);
+  probs.reserve(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) probs.push_back({i, 0});
   generate_epsilon_greedy(data.epsilon, ec.pred.multiclass - 1, begin_scores(probs), end_scores(probs));
 
@@ -158,7 +150,7 @@ void get_cover_probabilities(
       data.cs->predict(ec, i + 1);
     uint32_t pred = ec.pred.multiclass;
     probs[pred - 1].score += additive_probability;
-    data.preds.push_back((uint32_t)pred);
+    data.preds.push_back(pred);
   }
   uint32_t num_actions = data.cbcs.num_actions;
 
@@ -210,11 +202,17 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     data.cs_label.costs.clear();
     float norm = min_prob * num_actions;
     ec.l.cb = data.cb_label;
-    data.cbcs.known_cost = get_observed_cost(data.cb_label);
+    auto optional_cost = get_observed_cost_cb(data.cb_label);
+    // cost observed, not default
+    if (optional_cost.first) { data.cbcs.known_cost = optional_cost.second; }
+    else
+    {
+      data.cbcs.known_cost = CB::cb_class{};
+    }
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
-    for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0;
+    for (uint32_t i = 0; i < num_actions; i++) probabilities[i] = 0.f;
 
-    ec.l.cs = data.second_cs_label;
+    ec.l.cs = std::move(data.second_cs_label);
     // 2. Update functions
     for (size_t i = 0; i < cover_size; i++)
     {
@@ -223,8 +221,8 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
       {
         float pseudo_cost =
             data.cs_label.costs[j].x - data.psi * min_prob / (std::max(probabilities[j], min_prob) / norm) + 1;
-        data.second_cs_label.costs[j].class_index = j + 1;
-        data.second_cs_label.costs[j].x = pseudo_cost;
+        ec.l.cs.costs[j].class_index = j + 1;
+        ec.l.cs.costs[j].x = pseudo_cost;
       }
       if (i != 0) data.cs->learn(ec, i + 1);
       if (probabilities[predictions[i] - 1] < min_prob)
@@ -233,8 +231,10 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
         norm += additive_probability;
       probabilities[predictions[i] - 1] += additive_probability;
     }
+    data.second_cs_label = std::move(ec.l.cs);
   }
 
+  ec.l.cs = COST_SENSITIVE::label{};
   ec.pred.a_s = probs;
 }
 
@@ -250,22 +250,31 @@ void print_update_cb_explore(vw& all, bool is_test, example& ec, std::stringstre
       const auto& cost = ec.l.cb.costs[0];
       label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
     }
-    all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
-        all.progress_add, all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
+        pred_string.str(), ec.num_features, all.progress_add, all.progress_arg);
   }
 }
 
-void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
+float calc_loss(cb_explore& data, example& ec, const CB::label& ld)
 {
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
 
-  if ((c.known_cost = get_observed_cost(ld)) != nullptr)
+  auto optional_cost = CB::get_observed_cost_cb(ld);
+  // cost observed, not default
+  if (optional_cost.first == true)
+  {
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-      loss += get_cost_estimate(c.known_cost, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
+      loss += get_cost_estimate(optional_cost.second, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
+  }
 
-  all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
+  return loss;
+}
+
+void generic_output_example(vw& all, float loss, example& ec, CB::label& ld)
+{
+  all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.num_features);
 
   std::stringstream ss;
   float maxprob = 0.;
@@ -276,19 +285,21 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
     if (ec.pred.a_s[i].score > maxprob)
     {
       maxprob = ec.pred.a_s[i].score;
-      maxid = i + 1;
+      maxid = ec.pred.a_s[i].action + 1;
     }
   }
   for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss.str(), ec.tag);
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;
-  print_update_cb_explore(all, CB::cb_label.test_label(&ld), ec, sso);
+  print_update_cb_explore(all, CB::is_test_label(ld), ec, sso);
 }
 
-void finish_example(vw& all, cb_explore& c, example& ec)
+void finish_example(vw& all, cb_explore& data, example& ec)
 {
-  output_example(all, c, ec, ec.l.cb);
+  float loss = calc_loss(data, ec, ec.l.cb);
+
+  CB_EXPLORE::generic_output_example(all, loss, ec, ec.l.cb);
   VW::finish_example(all, ec);
 }
 
@@ -345,7 +356,6 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
 
   if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
-  all.delete_prediction = delete_action_scores;
   data->cbcs.cb_type = CB_TYPE_DR;
 
   single_learner* base = as_singleline(setup_base(options, all));
@@ -365,25 +375,22 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
       data->epsilon_decay = true;
     }
     data->cs = (learner<cb_explore, example>*)(as_singleline(all.cost_sensitive));
-    data->second_cs_label.costs.resize(num_actions);
-    data->second_cs_label.costs.end() = data->second_cs_label.costs.begin() + num_actions;
-    data->cover_probs = v_init<float>();
-    data->cover_probs.resize(num_actions);
-    data->preds = v_init<uint32_t>();
-    data->preds.resize(data->cover_size);
+    for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(COST_SENSITIVE::wclass{}); }
+    data->cover_probs.resize_but_with_stl_behavior(num_actions);
+    data->preds.reserve(data->cover_size);
     data->model_file_version = all.model_file_ver;
     l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1,
-        prediction_type_t::action_probs);
+        prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-cover");
   }
   else if (options.was_supplied("bag"))
     l = &init_learner(data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data->bag_size,
-        prediction_type_t::action_probs);
+        prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-bag");
   else if (options.was_supplied("first"))
-    l = &init_learner(
-        data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type_t::action_probs);
+    l = &init_learner(data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1,
+        prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-first");
   else  // greedy
-    l = &init_learner(
-        data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type_t::action_probs);
+    l = &init_learner(data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1,
+        prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-greedy");
 
   l->set_finish_example(finish_example);
   l->set_save_load(save_load);

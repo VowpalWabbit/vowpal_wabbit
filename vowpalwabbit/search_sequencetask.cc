@@ -140,7 +140,8 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   if (search_span_bilou)
   {
-    std::cerr << "switching to BILOU encoding for sequence span labeling" << std::endl;
+    // TODO: is this the right logger?
+    *(sch.get_vw_pointer_unsafe().trace_message) << "switching to BILOU encoding for sequence span labeling" << std::endl;
     D->encoding = BILOU;
     num_actions = num_actions * 2 - 1;
   }
@@ -371,11 +372,11 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 {
   CS::wclass default_wclass = {0., 0, 0., 0.};
 
-  example* ldf_examples = VW::alloc_examples(sizeof(CS::label), num_actions);
+  example* ldf_examples = VW::alloc_examples(num_actions);
   for (size_t a = 0; a < num_actions; a++)
   {
     CS::label& lab = ldf_examples[a].l.cs;
-    CS::cs_label.default_label(&lab);
+    CS::default_label(lab);
     lab.costs.push_back(default_wclass);
     ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
   }
@@ -393,8 +394,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 void finish(Search::search& sch)
 {
   task_data* data = sch.get_task_data<task_data>();
-  for (size_t a = 0; a < data->num_actions; a++) VW::dealloc_example(CS::cs_label.delete_label, data->ldf_examples[a]);
-  free(data->ldf_examples);
+  VW::dealloc_examples(data->ldf_examples, data->num_actions);
   free(data);
 }
 

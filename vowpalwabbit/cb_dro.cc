@@ -2,12 +2,15 @@
 #include "cb_dro.h"
 #include "distributionally_robust.h"
 #include "explore.h"
-
 #include "rand48.h"
+
+#include "io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 namespace VW
 {
@@ -128,10 +131,10 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
 
   if (!all.logger.quiet)
   {
-    std::cerr << "Using DRO for CB learning" << std::endl;
-    std::cerr << "cb_dro_alpha = " << alpha << std::endl;
-    std::cerr << "cb_dro_tau = " << tau << std::endl;
-    std::cerr << "cb_dro_wmax = " << wmax << std::endl;
+    *(all.trace_message) << "Using DRO for CB learning" << std::endl;
+    *(all.trace_message) << "cb_dro_alpha = " << alpha << std::endl;
+    *(all.trace_message) << "cb_dro_tau = " << tau << std::endl;
+    *(all.trace_message) << "cb_dro_wmax = " << wmax << std::endl;
   }
 
   auto data = scoped_calloc_or_throw<cb_dro_data>(alpha, tau, wmax);
@@ -141,11 +144,13 @@ base_learner *cb_dro_setup(options_i &options, vw &all)
   if (options.was_supplied("cb_explore_adf"))
   {
     return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, true>,
-        learn_or_predict<false, true>, 1 /* weights */, prediction_type_t::action_probs));
+        learn_or_predict<false, true>, 1 /* weights */, prediction_type_t::action_probs,
+        all.get_setupfn_name(cb_dro_setup) + "-cb_explore_adf"));
   }
   else
   {
     return make_base(init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true, false>,
-        learn_or_predict<false, false>, 1 /* weights */, prediction_type_t::action_probs));
+        learn_or_predict<false, false>, 1 /* weights */, prediction_type_t::action_probs,
+        all.get_setupfn_name(cb_dro_setup)));
   }
 }

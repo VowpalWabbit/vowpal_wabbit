@@ -25,6 +25,8 @@
 #include "array_parameters.h"
 #include "vw_exception.h"
 
+#include "io/logger.h"
+
 #include <boost/version.hpp>
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/gamma.hpp>
@@ -34,6 +36,8 @@
 #endif
 
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 enum lda_math_mode
 {
@@ -89,18 +93,6 @@ struct lda
   inline float powf(float x, float p);
   inline void expdigammify(vw &all, float *gamma);
   inline void expdigammify_2(vw &all, float *gamma, float *norm);
-
-  ~lda()
-  {
-    Elogtheta.delete_v();
-    decay_levels.delete_v();
-    total_new.delete_v();
-    examples.delete_v();
-    total_lambda.delete_v();
-    doc_lengths.delete_v();
-    digammas.delete_v();
-    v.delete_v();
-  }
 };
 
 // #define VW_NO_INLINE_SIMD
@@ -531,17 +523,14 @@ float lda::digamma(float x)
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      // std::cerr << "lda::digamma FAST_APPROX ";
       return ldamath::digamma<float, USE_FAST_APPROX>(x);
     case USE_PRECISE:
-      // std::cerr << "lda::digamma PRECISE ";
       return ldamath::digamma<float, USE_PRECISE>(x);
     case USE_SIMD:
-      // std::cerr << "lda::digamma SIMD ";
       return ldamath::digamma<float, USE_SIMD>(x);
     default:
       // Should not happen.
-      std::cerr << "lda::digamma: Trampled or invalid math mode, aborting" << std::endl;
+      logger::errlog_critical("lda::digamma: Trampled or invalid math mode, aborting");
       abort();
       return 0.0f;
   }
@@ -552,16 +541,13 @@ float lda::lgamma(float x)
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      // std::cerr << "lda::lgamma FAST_APPROX ";
       return ldamath::lgamma<float, USE_FAST_APPROX>(x);
     case USE_PRECISE:
-      // std::cerr << "lda::lgamma PRECISE ";
       return ldamath::lgamma<float, USE_PRECISE>(x);
     case USE_SIMD:
-      // std::cerr << "lda::gamma SIMD ";
       return ldamath::lgamma<float, USE_SIMD>(x);
     default:
-      std::cerr << "lda::lgamma: Trampled or invalid math mode, aborting" << std::endl;
+      logger::errlog_critical("lda::lgamma: Trampled or invalid math mode, aborting");
       abort();
       return 0.0f;
   }
@@ -572,16 +558,13 @@ float lda::powf(float x, float p)
   switch (mmode)
   {
     case USE_FAST_APPROX:
-      // std::cerr << "lda::powf FAST_APPROX ";
       return ldamath::powf<float, USE_FAST_APPROX>(x, p);
     case USE_PRECISE:
-      // std::cerr << "lda::powf PRECISE ";
       return ldamath::powf<float, USE_PRECISE>(x, p);
     case USE_SIMD:
-      // std::cerr << "lda::powf SIMD ";
       return ldamath::powf<float, USE_SIMD>(x, p);
     default:
-      std::cerr << "lda::powf: Trampled or invalid math mode, aborting" << std::endl;
+      logger::errlog_critical("lda::powf: Trampled or invalid math mode, aborting");
       abort();
       return 0.0f;
   }
@@ -601,7 +584,7 @@ void lda::expdigammify(vw &all_, float *gamma)
       ldamath::expdigammify<float, USE_SIMD>(all_, gamma, underflow_threshold, 0.0f);
       break;
     default:
-      std::cerr << "lda::expdigammify: Trampled or invalid math mode, aborting" << std::endl;
+      logger::errlog_critical("lda::expdigammify: Trampled or invalid math mode, aborting");
       abort();
   }
 }
@@ -620,7 +603,7 @@ void lda::expdigammify_2(vw &all_, float *gamma, float *norm)
       ldamath::expdigammify_2<float, USE_SIMD>(all_, gamma, norm, underflow_threshold);
       break;
     default:
-      std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
+      logger::errlog_critical("lda::expdigammify_2: Trampled or invalid math mode, aborting");
       abort();
   }
 }
@@ -728,9 +711,8 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
   } while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
   ec->pred.scalars.clear();
-  ec->pred.scalars.resize(l.topics);
+  ec->pred.scalars.resize_but_with_stl_behavior(l.topics);
   memcpy(ec->pred.scalars.begin(), new_gamma.begin(), l.topics * sizeof(float));
-  ec->pred.scalars.end() = ec->pred.scalars.begin() + l.topics;
 
   score += theta_kl(l, Elogtheta, new_gamma.begin());
 
@@ -829,8 +811,8 @@ void return_example(vw &all, example &ec)
   for (auto &sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag); }
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
-    all.sd->print_update(
-        all.holdout_set_off, all.current_pass, "none", 0, ec.num_features, all.progress_add, all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, "none", 0, ec.num_features,
+        all.progress_add, all.progress_arg);
   VW::finish_example(all, ec);
 }
 
@@ -850,9 +832,8 @@ void learn_batch(lda &l)
     for (size_t d = 0; d < l.examples.size(); d++)
     {
       l.examples[d]->pred.scalars.clear();
-      l.examples[d]->pred.scalars.resize(l.topics);
+      l.examples[d]->pred.scalars.resize_but_with_stl_behavior(l.topics);
       memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
-      l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
       l.examples[d]->pred.scalars.clear();
 
@@ -892,7 +873,7 @@ void learn_batch(lda &l)
   eta = l.all->eta * l.powf((float)l.example_t, -l.all->power_t);
   minuseta = 1.0f - eta;
   eta *= l.lda_D / batch_size;
-  l.decay_levels.push_back(l.decay_levels.last() + log(minuseta));
+  l.decay_levels.push_back(l.decay_levels.back() + log(minuseta));
 
   l.digammas.clear();
   float additional = (float)(l.all->length()) * l.lda_rho;
@@ -1241,7 +1222,7 @@ void end_examples(lda &l, T &weights)
   for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
   {
     float decay_component =
-        l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
+        l.decay_levels.back() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
     float decay = fmin(1.f, correctedExp(decay_component));
 
     weight *wp = &(*iter);
@@ -1318,7 +1299,6 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
   ld->finish_example_count = 0;
 
   all.lda = (uint32_t)ld->topics;
-  all.delete_prediction = delete_scalars;
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = false;
   ld->all = &all;
@@ -1337,7 +1317,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   if (all.eta > 1.)
   {
-    std::cerr << "your learning rate is too high, setting it to 1" << std::endl;
+    logger::errlog_warn("your learning rate is too high, setting it to 1");
     all.eta = std::min(all.eta, 1.f);
   }
 
@@ -1350,7 +1330,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
     all.example_parser->_shared_data = all.sd;
   }
 
-  ld->v.resize(all.lda * ld->minibatch);
+  ld->v.resize_but_with_stl_behavior(all.lda * ld->minibatch);
 
   ld->decay_levels.push_back(0.f);
 
@@ -1358,7 +1338,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   VW::LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
-      prediction_type_t::scalars);
+      prediction_type_t::scalars, all.get_setupfn_name(lda_setup));
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
