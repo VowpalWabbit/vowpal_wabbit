@@ -176,7 +176,7 @@ namespace cs_unittest
 
                 examplesToCompare.AddRange(nativeExampleWithString.Examples);
 
-                examplesToCompare = examplesToCompare.Where(e => !e.IsNewLine).ToList();
+                examplesToCompare = examplesToCompare.Where(e => (!e.IsNewLine && !e.VowpalWabbitString.Equals(SharedLabel.Instance.ToString()))).ToList();
 
                 Assert.AreEqual(strExamples.Length, examplesToCompare.Count);
 
