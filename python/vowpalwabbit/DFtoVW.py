@@ -6,6 +6,8 @@ import pandas as pd
 # - add a 'name' attribute for feature
 # - simplify the column checking function
 # - get_colname() to get_name() (also possible:  make_valid_feature_name)
+# - simplify __set__ function
+# - Use more appropriate numpy type (plateform independant).
 
 
 class _Col:
