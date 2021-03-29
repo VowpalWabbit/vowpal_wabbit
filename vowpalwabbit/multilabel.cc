@@ -76,7 +76,7 @@ bool test_label(MULTILABEL::labels& ld) { return ld.label_v.size() == 0; }
 
 void delete_label(MULTILABEL::labels& ld) { ld.label_v.delete_v(); }
 
-void copy_label(MULTILABEL::labels& dst, MULTILABEL::labels& src) { copy_array(dst.label_v, src.label_v); }
+void copy_label(MULTILABEL::labels& dst, MULTILABEL::labels& src) { dst.label_v = src.label_v; }
 
 void parse_label(
     parser* p, shared_data*, MULTILABEL::labels& ld, std::vector<VW::string_view>& words, reduction_features&)

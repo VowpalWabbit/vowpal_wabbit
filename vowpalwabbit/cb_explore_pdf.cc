@@ -56,7 +56,7 @@ int cb_explore_pdf::predict(example& ec, experimental::api_status*)
   else if (first_only && reduction_features.is_pdf_set())
   {
     // pdf provided
-    copy_array(ec.pred.pdf, reduction_features.pdf);
+    ec.pred.pdf = reduction_features.pdf;
     return error_code::success;
   }
 
