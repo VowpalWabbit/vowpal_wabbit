@@ -118,8 +118,9 @@ namespace cs_unittest
 
                     if (!strExample.IsNewLine)
                     {
-                        Assert.IsFalse(string.IsNullOrEmpty(nativeExampleWithString.VowpalWabbitString));
-                        Assert.IsFalse(string.IsNullOrEmpty(this.factorySerializer.SerializeToString(example, label)));
+                        Assert.IsFalse("\n".Equals(nativeExampleWithString.VowpalWabbitString));
+                        Assert.IsFalse(string.IsNullOrEmpty(strExample.ToString()) &&  string.IsNullOrEmpty(nativeExampleWithString.VowpalWabbitString));
+                        Assert.IsFalse(string.IsNullOrEmpty(strExample.ToString()) && string.IsNullOrEmpty(this.factorySerializer.SerializeToString(example, label)));
                     }
 
                     if (this.vw.Native.Settings.TypeInspector == JsonTypeInspector.Default)
