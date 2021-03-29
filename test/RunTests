@@ -2244,7 +2244,6 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/pistol.readable
 
 # Test 298: coin readable model test
-# TODO: should be fixed after #2834 issue is resolved
 {VW} -d train-sets/regression_simple.txt --noconstant --coin --invert_hash coin.readable
     train-sets/ref/coin.readable
 
