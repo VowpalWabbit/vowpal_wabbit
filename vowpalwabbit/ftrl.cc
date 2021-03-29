@@ -29,6 +29,7 @@ struct ftrl_update_data
   float l2_lambda;
   float predict;
   float normalized_squared_norm_x;
+  float average_squared_norm_x;
 };
 
 struct ftrl
@@ -209,6 +210,8 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   w[W_ZT] += -gradient;
   w[W_G2] += fabs(gradient);
   w[W_WE] += (-gradient * w[W_XT]);
+
+  w[W_XT] /= d.average_squared_norm_x;
 }
 
 void coin_betting_predict(ftrl& b, single_learner&, example& ec)
@@ -220,8 +223,9 @@ void coin_betting_predict(ftrl& b, single_learner&, example& ec)
 
   b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
+  b.data.average_squared_norm_x = ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
-  ec.partial_prediction = b.data.predict / ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
+  ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
