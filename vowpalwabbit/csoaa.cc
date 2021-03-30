@@ -539,7 +539,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
     }
 
     ////////////////////// compute probabilities
-    if (data.is_probabilities) convert_to_probabilities(ec_seq);
+    if (data.is_probabilities) { convert_to_probabilities(ec_seq); }
   });
 
   for (uint32_t k = 0; k < K; k++)
@@ -772,7 +772,7 @@ void inline process_label(ldf& data, example* ec)
  */
 multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
 {
-  if (ec_seq_all.empty()) return ec_seq_all;  // nothing to do
+  if (ec_seq_all.empty()) { return ec_seq_all; }  // nothing to do
 
   example* ec = ec_seq_all[0];
 

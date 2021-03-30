@@ -137,10 +137,10 @@ void print_update(vw& all, bool is_test, example& ec)
     if (is_test)
       label_string << " unknown";
     else
-      for (uint32_t i : ec.l.multilabels.label_v) label_string << " " << i;
+      for (uint32_t i : ec.l.multilabels.label_v) { label_string << " " << i; }
 
     std::stringstream pred_string;
-    for (uint32_t i : ec.pred.multilabels.label_v) pred_string << " " << i;
+    for (uint32_t i : ec.pred.multilabels.label_v) { pred_string << " " << i; }
 
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
         pred_string.str(), ec.num_features, all.progress_add, all.progress_arg);
