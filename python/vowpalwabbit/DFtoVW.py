@@ -1,21 +1,13 @@
+import warnings
 import numpy as np
 import pandas as pd
-
-# Done:
-# - raise error when namespace has value but no name
-# - add a 'name' attribute for feature
-# - simplify the column checking function
-# - get_colname() to get_name() (also possible:  make_valid_feature_name)
-# - simplify __set__ function
-# - Use more appropriate numpy type (plateform independant).
-
 
 class _Col:
     """_Col class. It refers to a column of a dataframe."""
     
     mapping_python_numpy = {int: np.integer, float: np.floating, object: np.dtype("O"), str: np.dtype("O")}
     
-    def __init__(self, colname, expected_type, min_value=None, max_value=None):
+    def __init__(self, colname, expected_type, min_value=None):
         """Initialize a _Col instance
 
         Parameters
@@ -26,13 +18,42 @@ class _Col:
             The expected type of the column.
         min_value: int/float
             The minimum value to which the column must be superior or equal to.
-        max_value: int/float
-            The maximum value to which the column must be inferior or equal to.
         """
         self.colname = colname
         self.expected_type = expected_type
         self.min_value = min_value
-        self.max_value = max_value
+
+    @staticmethod
+    def make_valid_name(name):
+        """Returns a feature/namespace name that is compatible with VW (no ':' nor ' ').
+
+        Parameters
+        ----------
+        name : str
+            The name that will be made valid.
+
+        Returns
+        -------
+        valid_name : str
+            A valid VW feature name.
+        """
+        name = str(name)
+        valid_name = (
+            name
+            .replace(":", " ")
+            .strip()
+            .replace(" ", "_")
+        )
+
+        if valid_name != name:
+            warnings.warn(
+                "Name '{name}' was not a valid feature/namespace name. It has been renamed '{valid_name}'".format(
+                    name=name,
+                    valid_name=valid_name,
+                    )
+                )
+
+        return valid_name
 
     def get_col(self, df):
         """Returns the column defined in attribute 'colname' from the dataframe 'df'.
@@ -74,20 +95,6 @@ class _Col:
         col_type = df[self.colname].dtype
         return np.issubdtype(col_type, np.number)
 
-    def get_name(self):
-        """Returns a feature name (from the column name) that is compatible with VW (no ':' nor ' ').
-
-        Returns
-        -------
-        name : str
-            A valid VW feature name.
-        """
-        name = str(self.colname)
-        name = name.replace(":", " ")
-        name = name.strip()
-        name = name.replace(" ", "_")
-        return name
-
     def check_col_type(self, df):
         """Check if the type of the column is valid.
 
@@ -115,26 +122,18 @@ class _Col:
 
     def check_col_value(self, df):
         """Check if the value range of the column is valid.
-
         Parameters
         ----------
         df : pandas.DataFrame
             The dataframe from which to check the column.
-
         Raises
         ------
         ValueError
             If the values of the column are not valid.
         """
-        if self.min_value is not None and self.max_value is not None:
-            col_value = df[self.colname]
-            if not ((col_value >= self.min_value).all() and (col_value <= self.max_value).all()):
-                raise ValueError(
-                    "column '{colname}' must be >= {min_value} and <= {max_value}.".format(
-                        colname=self.colname, min_value=self.min_value, max_value=self.max_value
-                    )
-                )
-        elif self.min_value is not None:
+        if self.min_value is None:
+            pass
+        else:
             col_value = df[self.colname]
             if not (col_value >= self.min_value).all():
                 raise ValueError(
@@ -142,8 +141,6 @@ class _Col:
                         colname=self.colname, min_value=self.min_value
                     )
                 )
-        else:
-            pass
 
 
 class AttributeDescriptor(object):
@@ -153,7 +150,7 @@ class AttributeDescriptor(object):
     class is used in the following managed class: SimpleLabel, MulticlassLabel, Feature, etc.
     """
 
-    def __init__(self, attribute_name, expected_type, min_value=None, max_value=None):
+    def __init__(self, attribute_name, expected_type, min_value=None):
         """Initialize an AttributeDescriptor instance
 
         Parameters
@@ -164,8 +161,6 @@ class AttributeDescriptor(object):
             The expected type of the attribute.
         min_value: str/int/float
             The minimum value of the attribute.
-        max_value: str/int/float
-            The maximum value of the attribute.
 
         Raises
         ------
@@ -179,7 +174,6 @@ class AttributeDescriptor(object):
             raise TypeError("Argument 'expected_type' must be a tuple")
         self.expected_type = expected_type
         self.min_value = min_value
-        self.max_value = max_value
 
     def __set__(self, instance, arg):
         """Implement set protocol to enforce type (and value range) checking
@@ -207,7 +201,6 @@ class AttributeDescriptor(object):
                 colname=col,
                 expected_type=self.expected_type,
                 min_value=self.min_value,
-                max_value=self.max_value
             ) for col in colnames ]
 
             if not arg_is_list:
@@ -359,7 +352,8 @@ class Feature(object):
         self : Feature
         """
         self.value = value
-        self.name = rename_feature if rename_feature is not None else self.value.get_name()
+        name = rename_feature if rename_feature is not None else self.value.colname
+        self.name = _Col.make_valid_name(name)
         if as_type is not None and as_type not in ("numerical", "categorical"):
             raise ValueError("Argument 'as_type' can either be 'numerical' or 'categorical'")
         else:
@@ -465,7 +459,7 @@ class Namespace(object):
                 "Namespace can't have a 'value' argument without a 'name' argument or an empty string 'name' argument"
             )
 
-        self.name = name
+        self.name = _Col.make_valid_name(name)
         self.value = value
         self.features = (
             list(features) if isinstance(features, (list, set)) else [features]
