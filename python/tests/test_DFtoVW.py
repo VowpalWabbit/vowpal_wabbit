@@ -40,7 +40,7 @@ def test_namespace_with_value_but_no_name():
 
 
 # Tests for SimpleLabel
-def test_from_colnames_constructor(self):
+def test_from_colnames_constructor():
     df = pd.DataFrame({"y": [1], "x": [2]})
     conv = DFtoVW.from_colnames(y="y", x=["x"], df=df)
     lines_list = conv.convert_df()
