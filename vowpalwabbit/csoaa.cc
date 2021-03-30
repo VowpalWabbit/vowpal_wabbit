@@ -772,7 +772,7 @@ void inline process_label(ldf& data, example* ec)
  */
 multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
 {
-  if (ec_seq_all.empty()) return ec_seq_all;  // nothing to do
+  if (ec_seq_all.empty()) { return ec_seq_all; }  // nothing to do
 
   example* ec = ec_seq_all[0];
 
