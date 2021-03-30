@@ -596,7 +596,7 @@ class DFtoVW:
         self.check_label_type()
         self.check_namespaces_type()
 
-        self.check_columns_existence_in_df()
+        self.check_missing_columns_df()
         self.check_columns_type_and_values()
 
     @classmethod
@@ -769,7 +769,7 @@ class DFtoVW:
                 "Argument 'namespaces' should be a Namespace or a list of Namespace."
             )
 
-    def check_columns_existence_in_df(self):
+    def check_missing_columns_df(self):
         """Check if the columns are in the dataframe."""
         missing_cols = {}
         df_colnames = set(self.df.columns)
