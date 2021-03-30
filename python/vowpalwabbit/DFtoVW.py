@@ -189,7 +189,7 @@ class AttributeDescriptor(object):
         # initialize empty set that register the column names
         if "columns" not in instance.__dict__:
             instance.__dict__["columns"] = set()
-        
+
         # set instance attribute to None if arg is None
         if arg is None:
             instance.__dict__[self.attribute_name] = arg

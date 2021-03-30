@@ -232,4 +232,3 @@ def test_multilabel_non_positive_label_error():
         )
     expected = "In argument 'label' of 'MultiLabel', column 'y' must be >= 1."
     assert expected == str(value_error.value)
-
