@@ -122,10 +122,10 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
   // Print predictions to a file
   if (print_all)
   {
-    std::stringstream outputStringStream;
-    outputStringStream << "1:" << o.pred[0].scalar;
-    for (uint32_t i = 2; i <= o.k; i++) outputStringStream << ' ' << i << ':' << o.pred[i - 1].scalar;
-    o.all->print_text_by_ref(o.all->raw_prediction.get(), outputStringStream.str(), ec.tag);
+    std::stringstream output_string_stream;
+    output_string_stream << "1:" << o.pred[0].scalar;
+    for (uint32_t i = 2; i <= o.k; i++) output_string_stream << ' ' << i << ':' << o.pred[i - 1].scalar;
+    o.all->print_text_by_ref(o.all->raw_prediction.get(), output_string_stream.str(), ec.tag);
   }
 
   // The predictions are an array of scores (as opposed to a single index of a

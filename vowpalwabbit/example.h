@@ -133,7 +133,7 @@ struct vw;
 struct flat_example
 {
   polylabel l;
-  float weight;  // a relative importance weight for the example, default = 1
+  float weight = 1.f;  // a relative importance weight for the example, default = 1
 
   size_t tag_len;
   char* tag;  // An identifier for the example.

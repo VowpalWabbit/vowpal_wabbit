@@ -95,6 +95,7 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
   dst->test_only = src->test_only;
   dst->end_pass = src->end_pass;
   dst->sorted = src->sorted;
+  dst->initial = src->initial;
 }
 
 void copy_example_data(bool audit, example* dst, example* src)

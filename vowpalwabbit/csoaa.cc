@@ -447,7 +447,7 @@ void learn_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   }
 }
 
-void convert_to_probabilities(multi_ex ec_seq)
+void convert_to_probabilities(multi_ex& ec_seq)
 {
   float sum_prob = 0;
   for (const auto& example : ec_seq)
