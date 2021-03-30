@@ -333,7 +333,7 @@ class MultiLabel(object):
 
 class Feature(object):
     """The feature type for the constructor of DFtoVW"""
-    value = AttributeDescriptor("value", expected_type=(object, int, float))
+    value = AttributeDescriptor("value", expected_type=(str, int, float))
 
     def __init__(self, value, rename_feature=None, as_type=None):
         """
