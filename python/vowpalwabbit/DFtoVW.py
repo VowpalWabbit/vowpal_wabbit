@@ -4,9 +4,9 @@ import pandas as pd
 
 class _Col:
     """_Col class. It refers to a column of a dataframe."""
-    
+
     mapping_python_numpy = {int: np.integer, float: np.floating, object: np.dtype("O"), str: np.dtype("O")}
-    
+
     def __init__(self, colname, expected_type, min_value=None):
         """Initialize a _Col instance
 
@@ -352,8 +352,9 @@ class Feature(object):
         self : Feature
         """
         self.value = value
-        name = rename_feature if rename_feature is not None else self.value.colname
-        self.name = _Col.make_valid_name(name)
+        self.name = _Col.make_valid_name(
+            rename_feature if rename_feature is not None else self.value.colname
+        )
         if as_type is not None and as_type not in ("numerical", "categorical"):
             raise ValueError("Argument 'as_type' can either be 'numerical' or 'categorical'")
         else:
@@ -458,8 +459,7 @@ class Namespace(object):
             raise ValueError(
                 "Namespace can't have a 'value' argument without a 'name' argument or an empty string 'name' argument"
             )
-
-        self.name = _Col.make_valid_name(name)
+        self.name = _Col.make_valid_name(name) if name else None
         self.value = value
         self.features = (
             list(features) if isinstance(features, (list, set)) else [features]
