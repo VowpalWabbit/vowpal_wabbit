@@ -29,10 +29,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 {
   data.adf_data.copy_example_to_adf(*data.weights, ec);
 
-  if (!data.learn_returns_prediction || !is_learn)
-  {
-    base.predict(data.adf_data.ecs);
-  }
+  if (!data.learn_returns_prediction || !is_learn) { base.predict(data.adf_data.ecs); }
 
   if (is_learn && !CB::is_test_label(ec.l.cb))
   {
@@ -200,8 +197,8 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   }
   else
   {
-    l = &init_learner(
-        data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass, "cb_to_cb_adf", base->learn_returns_prediction);
+    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass,
+        "cb_to_cb_adf", base->learn_returns_prediction);
   }
 
   l->set_finish_example(finish_example);
