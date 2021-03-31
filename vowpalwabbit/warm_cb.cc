@@ -450,8 +450,8 @@ void accumu_var_adf(warm_cb& data, multi_learner& base, example& ec)
   data.cumu_var += temp_var;
 }
 
-template <bool is_learn, bool use_cs>
-void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
+template <bool use_cs>
+void predict_and_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 {
   // Corrupt labels (only corrupting multiclass labels as of now)
   if (use_cs)
@@ -617,16 +617,16 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
 
   if (use_cs)
   {
-    l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>,
+    l = &init_cost_sensitive_learner(data, base, predict_and_learn_adf<true>, predict_and_learn_adf<true>,
         all.example_parser, data->choices_lambda, all.get_setupfn_name(warm_cb_setup) + "-cs",
-        prediction_type_t::multiclass);
+        prediction_type_t::multiclass, true);
     all.example_parser->lbl_parser.label_type = label_type_t::cs;
   }
   else
   {
-    l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>,
+    l = &init_multiclass_learner(data, base, predict_and_learn_adf<false>, predict_and_learn_adf<false>,
         all.example_parser, data->choices_lambda, all.get_setupfn_name(warm_cb_setup) + "-multi",
-        prediction_type_t::multiclass);
+        prediction_type_t::multiclass, true);
     all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   }
 

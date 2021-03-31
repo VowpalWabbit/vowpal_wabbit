@@ -30,7 +30,8 @@ struct reduction_test_harness
   void test_learn(single_learner& base, example& ec)
   {
     _labels.emplace_back(ec.l.simple);
-    _labels.back().weight = ec.weight;
+    _labels.back().serialized_weight = ec.weight;
+    _labels.back().serialized_initial = ec.initial;
     _learner_offset.emplace_back(ec.ft_offset);
   }
 
@@ -86,12 +87,13 @@ using namespace VW::cats_tree;
 
 bool operator!=(const label_data& lhs, const label_data& rhs)
 {
-  return !(lhs.label == rhs.label && lhs.weight == rhs.weight && lhs.initial == rhs.initial);
+  return !(lhs.label == rhs.label && lhs.serialized_weight == rhs.serialized_weight &&
+      lhs.serialized_initial == rhs.serialized_initial);
 }
 
 std::ostream& operator<<(std::ostream& o, label_data const& lbl)
 {
-  o << "{l=" << lbl.label << ", w=" << lbl.weight << ", i=" << lbl.initial << "}";
+  o << "{l=" << lbl.label << ", w=" << lbl.serialized_weight << ", i=" << lbl.serialized_initial << "}";
   return o;
 }
 

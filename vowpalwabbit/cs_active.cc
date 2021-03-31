@@ -11,7 +11,7 @@
 #include "vw.h"
 #include "vw_exception.h"
 #include "csoaa.h"
-
+#include "debug_log.h"
 #include "io/logger.h"
 //#define B_SEARCH_MAX_ITER 50
 #define B_SEARCH_MAX_ITER 20
@@ -25,6 +25,9 @@ namespace logger = VW::io::logger;
 
 using std::endl;
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cs_active
+
 struct lq_data
 {
   // The following are used by cost-sensitive active learning
@@ -32,7 +35,7 @@ struct lq_data
   float min_pred;            // The min cost for this label predicted by the current set of good regressors
   bool is_range_large;       // Indicator of whether this label's cost range was large
   bool is_range_overlapped;  // Indicator of whether this label's cost range overlaps with the cost range that has the
-                             // minimnum max_pred
+                             // minimum max_pred
   bool query_needed;         // Used in reduction mode: tell upper-layer whether a query is needed for this label
   COST_SENSITIVE::wclass* cl;
 };
@@ -48,10 +51,10 @@ struct cs_active
   uint32_t num_classes;
   size_t t;
 
+  bool print_debug_stuff;
   size_t min_labels;
   size_t max_labels;
 
-  bool print_debug_stuff;
   bool is_baseline;
   bool use_domination;
 
@@ -98,7 +101,6 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
   if (is_learn)
   {
     vw& all = *cs_a.all;
-    ec.l.simple.weight = 1.;
     ec.weight = 1.;
     if (is_simulation)
     {
@@ -188,7 +190,6 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     *(cs_a.all->trace_message) << endl << "Number of examples with at least one query = " << cs_a.num_any_queries;
     // Double label query budget
     cs_a.min_labels *= 2;
-
     
     for (size_t i = 0; i < cs_a.examples_by_queries.size(); i++)
     {
@@ -206,7 +207,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
-  ec.l.simple = {0., 0., 0.};
+  ec.l.simple = {0., VW::UNUSED_1, VW::UNUSED_0};
 
   float min_max_cost = FLT_MAX;
   float t = (float)cs_a.t;  // ec.example_t;  // current round
@@ -234,17 +235,10 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     {
       lqd.is_range_overlapped = (lqd.min_pred <= min_max_cost);
       n_overlapped += (uint32_t)(lqd.is_range_overlapped);
-      // large_range = large_range || (cl.is_range_overlapped && cl.is_range_large);
-      // if(cl.is_range_overlapped && is_learn)
-      //{ std::cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred <<
-      //",
-      // is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << endl;
-      //}
       cs_a.overlapped_and_range_small += (size_t)(lqd.is_range_overlapped && !lqd.is_range_large);
       if (lqd.cl->x > lqd.max_pred || lqd.cl->x < lqd.min_pred)
       {
         cs_a.labels_outside_range++;
-        // cs_a.all->sd->distance_to_range[cl.class_index-1] += std::max(cl.x - cl.max_pred, cl.min_pred - cl.x);
         cs_a.distance_to_range += std::max(lqd.cl->x - lqd.max_pred, lqd.min_pred - lqd.cl->x);
         cs_a.range += lqd.max_pred - lqd.min_pred;
       }
@@ -252,7 +246,6 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 
     bool query = (n_overlapped > 1);
     size_t queries = cs_a.all->sd->queries;
-    // bool any_query = false;
     for (lq_data& lqd : cs_a.query_data)
     {
       bool query_label = ((query && cs_a.is_baseline) || (!cs_a.use_domination && lqd.is_range_large) ||
@@ -274,8 +267,6 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     if (cs_a.all->sd->queries - queries > 0) cs_a.num_any_queries++;
 
     cs_a.examples_by_queries[cs_a.all->sd->queries - queries] += 1;
-    // if(any_query)
-    // cs_a.num_any_queries++;
 
     ec.partial_prediction = score;
     if (is_learn) { cs_a.t++; }
@@ -348,8 +339,8 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("adax")) *(all.trace_message) << "WARNING: --cs_active should be used with --adax" << endl;
 
-  all.example_parser->lbl_parser = cs_label;  // assigning the label parser
-
+  // Label parser set to cost sensitive label parser
+  all.example_parser->lbl_parser = cs_label;
   all.set_minmax(all.sd, data->cost_max);
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);
@@ -357,10 +348,10 @@ base_learner* cs_active_setup(options_i& options, vw& all)
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
             predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels,
-            all.get_setupfn_name(cs_active_setup) + "-sim")
+            all.get_setupfn_name(cs_active_setup) + "-sim", true)
       : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
             predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels,
-            all.get_setupfn_name(cs_active_setup));
+            all.get_setupfn_name(cs_active_setup), true);
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);
