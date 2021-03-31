@@ -418,11 +418,7 @@ void run(Search::search& sch, multi_ex& ec)
     {
       if (sch.predictNeedsExample())  // we can skip this work if `predict` won't actually use the example data
       {
-        // In the past this was copied specifically without the label.
-        // This behavior was brought forward here.
-        auto label = std::move(data->ldf_examples[a].l);
-        data->ldf_examples[a] = std::move(ec[i]->clone());
-        data->ldf_examples[a].l = std::move(label);
+        VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
         // now, offset it appropriately for the action id
         my_update_example_indicies(sch, true, &data->ldf_examples[a], 28904713, 4832917 * (uint64_t)a);
       }

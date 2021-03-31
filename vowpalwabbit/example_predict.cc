@@ -27,30 +27,6 @@ bool example_predict::iterator::operator!=(const iterator& rhs) { return _index 
 example_predict::iterator example_predict::begin() { return {feature_space.data(), indices.begin()}; }
 example_predict::iterator example_predict::end() { return {feature_space.data(), indices.end()}; }
 
-example_predict::example_predict(const example_predict& other)
-{
-  indices = other.indices;
-  for (namespace_index c : other.indices) { feature_space[c].deep_copy_from(other.feature_space[c]); }
-  ft_offset = other.ft_offset;
-  interactions = other.interactions;
-  _reduction_features = other._reduction_features;
-  _debug_current_reduction_depth = other._debug_current_reduction_depth;
-}
-
-example_predict& example_predict::operator=(const example_predict& other)
-{
-  if (this == &other) { return *this; }
-
-  indices = other.indices;
-  for (namespace_index c : other.indices) { feature_space[c].deep_copy_from(other.feature_space[c]); }
-  ft_offset = other.ft_offset;
-  interactions = other.interactions;
-  _reduction_features = other._reduction_features;
-  _debug_current_reduction_depth = other._debug_current_reduction_depth;
-
-  return *this;
-}
-
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 safe_example_predict::safe_example_predict()
