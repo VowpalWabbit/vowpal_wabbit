@@ -665,6 +665,7 @@ void setup_example(vw& all, example* ae)
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
+  ae->initial = 0.;
   ae->_debug_current_reduction_depth = 0;
 
   ae->example_counter = (size_t)(all.example_parser->end_parsed_examples.load());
@@ -738,6 +739,12 @@ void setup_example(vw& all, example* ae)
   INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
   ae->num_features += new_features_cnt;
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
+
+  // Notes: Allows the label parser to update the example after parsing is done.
+  // For example we set the initial value used in gd during predict() (if set)
+  // simple_label_parser is defined with this post parse setup step.
+  if (all.example_parser->lbl_parser.post_parse_setup != nullptr)
+  { all.example_parser->lbl_parser.post_parse_setup(ae); }
 }
 }  // namespace VW
 
@@ -777,7 +784,7 @@ void add_constant_feature(vw& vw, example* ec)
 void add_label(example* ec, float label, float weight, float base)
 {
   ec->l.simple.label = label;
-  ec->l.simple.initial = base;
+  ec->initial = base;
   ec->weight = weight;
 }
 
@@ -852,6 +859,7 @@ void empty_example(vw& /*all*/, example& ec)
   ec.sorted = false;
   ec.end_pass = false;
   ec._reduction_features.clear();
+  ec.initial = 0.f;
 }
 
 void clean_example(vw& all, example& ec, bool rewind)
@@ -903,7 +911,7 @@ float get_label(example* ec) { return ec->l.simple.label; }
 
 float get_importance(example* ec) { return ec->weight; }
 
-float get_initial(example* ec) { return ec->l.simple.initial; }
+float get_initial(example* ec) { return ec->initial; }
 
 float get_prediction(example* ec) { return ec->pred.scalar; }
 

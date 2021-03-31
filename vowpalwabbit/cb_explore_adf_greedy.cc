@@ -38,6 +38,7 @@ public:
 private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void update_example_prediction(multi_ex& examples);
 };
 
 cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
@@ -45,12 +46,8 @@ cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
 {
 }
 
-template <bool is_learn>
-void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_greedy::update_example_prediction(multi_ex& examples)
 {
-  // Explore uniform random an epsilon fraction of the time.
-  VW::LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
-
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
 
   uint32_t num_actions = (uint32_t)preds.size();
@@ -65,6 +62,18 @@ void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& ba
   }
   else
     preds[0].score += 1.f - _epsilon;
+}
+
+template <bool is_learn>
+void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+{
+  // Explore uniform random an epsilon fraction of the time.
+  if (is_learn)
+    base.learn(examples);
+  else
+    base.predict(examples);
+
+  update_example_prediction(examples);
 }
 
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
@@ -93,7 +102,11 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   if (!cb_explore_adf_option || !use_greedy) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
+  if (!options.was_supplied("cb_adf"))
+  {
+    options.insert("cb_adf", "");
+    options.insert("no_predict", "");
+  }
 
   size_t problem_multiplier = 1;
 

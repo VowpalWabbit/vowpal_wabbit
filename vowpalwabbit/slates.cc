@@ -250,7 +250,7 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
   auto* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = slates_label_parser;
   auto& l = VW::LEARNER::init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
-      prediction_type_t::decision_probs, all.get_setupfn_name(slates_setup));
+      prediction_type_t::decision_probs, all.get_setupfn_name(slates_setup), base->learn_returns_prediction);
   l.set_finish_example(finish_multiline_example);
   return VW::LEARNER::make_base(l);
 }

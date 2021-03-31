@@ -54,6 +54,8 @@ label_parser no_label_parser = {
   nullptr,
   // test_label
   [](polylabel*) { return false; },
+  // post parse processing
+  nullptr,
   label_type_t::nolabel
 };
 // clang-format on

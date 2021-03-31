@@ -72,17 +72,24 @@ private:
   // used in output_example
   CB::label _action_label;
   CB::label _empty_label;
-  ExploreType explore;
+  ACTION_SCORE::action_scores _saved_pred;
 
 public:
   template <typename... Args>
   cb_explore_adf_base(Args&&... args) : explore(std::forward<Args>(args)...)
   {
+    _saved_pred = v_init<ACTION_SCORE::action_score>();
   }
+
+  ~cb_explore_adf_base() { _saved_pred.delete_v(); }
+
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
+
+public:
+  ExploreType explore;
 
 private:
   void output_example_seq(vw& all, multi_ex& ec_seq);

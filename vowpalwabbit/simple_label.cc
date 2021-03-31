@@ -23,23 +23,26 @@ namespace logger = VW::io::logger;
 
 label_data::label_data() { reset_to_default(); }
 
-label_data::label_data(float label, float weight, float initial) : label(label), weight(weight), initial(initial) {}
+label_data::label_data(float label, float weight, float initial)
+    : label(label), serialized_weight(weight), serialized_initial(initial)
+{
+}
 
 void label_data::reset_to_default()
 {
   label = FLT_MAX;
-  weight = 1.f;
-  initial = 0.f;
+  serialized_weight = 1.f;
+  serialized_initial = 0.f;
 }
 
 char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 {
   memcpy(&ld.label, c, sizeof(ld.label));
   c += sizeof(ld.label);
-  memcpy(&ld.weight, c, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  memcpy(&ld.initial, c, sizeof(ld.initial));
-  c += sizeof(ld.initial);
+  memcpy(&ld.serialized_weight, c, sizeof(ld.serialized_weight));
+  c += sizeof(ld.serialized_weight);
+  memcpy(&ld.serialized_initial, c, sizeof(ld.serialized_initial));
+  c += sizeof(ld.serialized_initial);
 
   count_label(sd, ld.label);
   return c;
@@ -48,30 +51,30 @@ char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
 size_t read_cached_simple_label(shared_data* sd, label_data& ld, io_buf& cache)
 {
   char* c;
-  size_t total = sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial);
+  size_t total = sizeof(ld.label) + sizeof(ld.serialized_weight) + sizeof(ld.serialized_initial);
   if (cache.buf_read(c, total) < total) return 0;
   bufread_simple_label(sd, ld, c);
 
   return total;
 }
 
-float get_weight(label_data& ld) { return ld.weight; }
+float get_weight(label_data& ld) { return ld.serialized_weight; }
 
 char* bufcache_simple_label(label_data& ld, char* c)
 {
   memcpy(c, &ld.label, sizeof(ld.label));
   c += sizeof(ld.label);
-  memcpy(c, &ld.weight, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  memcpy(c, &ld.initial, sizeof(ld.initial));
-  c += sizeof(ld.initial);
+  memcpy(c, &ld.serialized_weight, sizeof(ld.serialized_weight));
+  c += sizeof(ld.serialized_weight);
+  memcpy(c, &ld.serialized_initial, sizeof(ld.serialized_initial));
+  c += sizeof(ld.serialized_initial);
   return c;
 }
 
 void cache_simple_label(label_data& ld, io_buf& cache)
 {
   char* c;
-  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial));
+  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.serialized_weight) + sizeof(ld.serialized_initial));
   bufcache_simple_label(ld, c);
 }
 
@@ -79,6 +82,8 @@ void default_simple_label(label_data& ld) { ld.reset_to_default(); }
 
 bool test_label(label_data& ld) { return ld.label == FLT_MAX; }
 
+// Example: 0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924
+// label := 0, weight := 1, initial := 0.5
 void parse_simple_label(
     parser*, shared_data* sd, label_data& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
@@ -91,12 +96,12 @@ void parse_simple_label(
       break;
     case 2:
       ld.label = float_of_string(words[0]);
-      ld.weight = float_of_string(words[1]);
+      ld.serialized_weight = float_of_string(words[1]);
       break;
     case 3:
       ld.label = float_of_string(words[0]);
-      ld.weight = float_of_string(words[1]);
-      ld.initial = float_of_string(words[2]);
+      ld.serialized_weight = float_of_string(words[1]);
+      ld.serialized_initial = float_of_string(words[2]);
       break;
     default:
       logger::log_error("Error: {0} is too many tokens for a simple label: {1}",
@@ -104,6 +109,8 @@ void parse_simple_label(
   }
   count_label(sd, ld.label);
 }
+
+void post_parse_setup(example* ec) { ec->initial = ec->l.simple.serialized_initial; }
 
 // clang-format off
 label_parser simple_label_parser = {
@@ -125,6 +132,8 @@ label_parser simple_label_parser = {
   nullptr,
   // test_label
   [](polylabel* v) { return test_label(v->simple); },
+  // test_label
+  post_parse_setup,
   label_type_t::simple
 };
 // clang-format on

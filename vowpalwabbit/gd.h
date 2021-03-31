@@ -46,8 +46,11 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
   {
     i += fi;
     for (; i <= top; i += mp.step, ++p)
-      p->scalar +=
-          fx * mp.weights[i];  // TODO: figure out how to use weight_parameters::iterator (not using change_begin())
+    {
+      p->scalar += fx * mp.weights[i];  // TODO: figure out how to use
+                                        // weight_parameters::iterator (not using
+                                        // change_begin())
+    }
   }
   else  // TODO: this could be faster by unrolling into two loops
     for (size_t c = 0; c < mp.count; ++c, fi += (uint64_t)mp.step, ++p)
@@ -94,9 +97,9 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 inline float inline_predict(vw& all, example& ec)
 {
   return all.weights.sparse ? inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear,
-                                  all.ignore_linear, *ec.interactions, all.permutations, ec, ec.l.simple.initial)
+                                  all.ignore_linear, *ec.interactions, all.permutations, ec, ec.initial)
                             : inline_predict<dense_parameters>(all.weights.dense_weights, all.ignore_some_linear,
-                                  all.ignore_linear, *ec.interactions, all.permutations, ec, ec.l.simple.initial);
+                                  all.ignore_linear, *ec.interactions, all.permutations, ec, ec.initial);
 }
 
 inline float sign(float w)

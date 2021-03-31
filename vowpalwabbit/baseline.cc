@@ -109,7 +109,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
     }
     VW::copy_example_metadata(data.ec, &ec);
     base.predict(*data.ec);
-    ec.l.simple.initial = data.ec->pred.scalar;
+    ec.initial = data.ec->pred.scalar;
     base.predict(ec);
   }
   else
@@ -145,7 +145,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
       base.learn(*data.ec);
 
     // regress residual
-    ec.l.simple.initial = data.ec->pred.scalar;
+    ec.initial = data.ec->pred.scalar;
     base.learn(ec);
 
     if (!data.global_only)
@@ -174,7 +174,7 @@ float sensitivity(baseline& data, base_learner& base, example& ec)
 
   // sensitivity of residual
   as_singleline(&base)->predict(*data.ec);
-  ec.l.simple.initial = data.ec->pred.scalar;
+  ec.initial = data.ec->pred.scalar;
   const float sens = base.sensitivity(ec);
   return baseline_sens + sens;
 }

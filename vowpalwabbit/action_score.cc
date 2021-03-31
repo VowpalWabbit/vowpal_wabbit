@@ -33,7 +33,7 @@ void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, con
   if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
 }
 
-std::ostream& operator<<(std::ostream& os, action_score& a_s)
+std::ostream& operator<<(std::ostream& os, const action_score& a_s)
 {
   os << "(" << a_s.action << "," << a_s.score << ")";
   return os;

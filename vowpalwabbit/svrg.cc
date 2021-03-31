@@ -44,7 +44,7 @@ inline void vec_add(float& p, const float x, float& w)
 template <int offset>
 inline float inline_predict(vw& all, example& ec)
 {
-  float acc = ec.l.simple.initial;
+  float acc = ec.initial;
   GD::foreach_feature<float, vec_add<offset> >(all, ec, acc);
   return acc;
 }
