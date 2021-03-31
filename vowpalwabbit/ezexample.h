@@ -273,7 +273,7 @@ public:
     else  // is multiline
     {     // we need to make a copy
       example* copy = get_new_example();
-      *copy = std::move(ec->clone());
+      VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->example_parser->lbl_parser.copy_label);
       vw_ref->learn(*copy);
       example_copies.push_back(copy);
     }

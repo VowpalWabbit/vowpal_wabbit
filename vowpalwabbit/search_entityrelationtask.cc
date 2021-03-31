@@ -158,7 +158,7 @@ size_t predict_entity(
     {
       for (uint32_t a = 0; a < 4; a++)
       {
-        my_task_data->ldf_entity[a] = std::move(ex->clone());
+        VW::copy_example_data(false, &my_task_data->ldf_entity[a], ex);
         update_example_indicies(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * (uint64_t)(a + 1));
         CS::label& lab = my_task_data->ldf_entity[a].l.cs;
         lab.costs[0].x = 0.f;
@@ -241,7 +241,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
       int correct_label = 0;  // if correct label is not in the set, use the first one
       for (size_t a = 0; a < constrained_relation_labels.size(); a++)
       {
-        my_task_data->ldf_relation[a] = std::move(ex->clone());
+        VW::copy_example_data(false, &my_task_data->ldf_relation[a], ex);
         update_example_indicies(
             true, &my_task_data->ldf_relation[a], 28904713, 4832917 * (uint64_t)(constrained_relation_labels[a]));
         CS::label& lab = my_task_data->ldf_relation[a].l.cs;
