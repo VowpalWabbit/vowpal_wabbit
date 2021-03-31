@@ -56,10 +56,15 @@ struct example_predict
     bool operator!=(const iterator& rhs);
   };
 
+protected:
+  // interactions is a shallow copy as the example object should never own this - but rather have a reference to the
+  // object for use.
+  example_predict(const example_predict& other);
+  example_predict& operator=(const example_predict& other);
+
+public:
   example_predict() = default;
   ~example_predict() = default;
-  example_predict(const example_predict&) = delete;
-  example_predict& operator=(const example_predict&) = delete;
   example_predict(example_predict&& other) = default;
   example_predict& operator=(example_predict&& other) = default;
 

@@ -10,6 +10,7 @@
 #include <sstream>
 #include <ctime>
 #include <memory>
+#include <tuple>
 
 #include "reductions.h"
 #include "rand48.h"
@@ -39,20 +40,6 @@ void remove_at_index(std::vector<T>& array, uint32_t index)
   }
 
   array.erase(array.begin() + index);
-}
-
-void copy_example_data(example* dst, example* src, bool oas = false)  // copy example data.
-{
-  if (oas == false)
-  {
-    dst->l = src->l;
-    dst->l.multi.label = src->l.multi.label;
-  }
-  else
-  {
-    dst->l.multilabels.label_v = src->l.multilabels.label_v;
-  }
-  VW::copy_example_data(false, dst, src);
 }
 
 ////Implement kronecker_product between two examples:
@@ -93,8 +80,8 @@ int cmpfunc(const void* a, const void* b) { return *(char*)a - *(char*)b; }
 
 void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool oas = false)
 {
-  // copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
-  copy_example_data(&ec, &ec1, oas);
+  std::ignore = oas;
+  ec = std::move(ec1.clone());
 
   ec.total_sum_feat_sq = 0.0;  // sort namespaces.  pass indices array into sort...template (leave this to the end)
 
@@ -1031,7 +1018,7 @@ void learn(memory_tree& b, single_learner& base, example& ec)
     if (b.current_pass < 1)
     {  // in the first pass, we need to store the memory:
       example* new_ec = VW::alloc_examples(1);
-      copy_example_data(new_ec, &ec, b.oas);
+      *new_ec = std::move(ec.clone());
       b.examples.push_back(new_ec);
       if (b.online == true)
         update_rew(b, base, (uint32_t)(b.examples.size() - 1), *b.examples[b.examples.size() - 1]);  // query and learn
