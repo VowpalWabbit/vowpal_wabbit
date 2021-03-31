@@ -61,6 +61,7 @@ example::example(const example& other) : example_predict(other)
   end_pass = other.end_pass;
   sorted = other.sorted;
   in_use = other.in_use;
+  initial = other.initial;
 }
 
 example& example::operator=(const example& other)
@@ -96,6 +97,7 @@ example& example::operator=(const example& other)
   end_pass = other.end_pass;
   sorted = other.sorted;
   in_use = other.in_use;
+  initial = other.initial;
 
   return *this;
 }
