@@ -47,7 +47,11 @@ void learn(expreplay<lp> &er, LEARNER::single_learner &base, example &ec)
   if (er.filled[n]) base.learn(er.buf[n]);
 
   er.filled[n] = true;
-  er.buf[n] = std::move(ec.clone());
+  VW::copy_example_data(er.all->audit, &er.buf[n], &ec);  // don't copy the label
+  if (lp.copy_label)
+    lp.copy_label(&er.buf[n].l, &ec.l);
+  else
+    er.buf[n].l = ec.l;
 }
 
 template <label_parser &lp>
