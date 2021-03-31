@@ -21,12 +21,18 @@ struct cb_to_cb_adf
   parameters* weights;
   cbify_adf_data adf_data;
   bool explore_mode;
+  bool learn_returns_prediction;
 };
 
 template <bool is_learn>
 void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 {
   data.adf_data.copy_example_to_adf(*data.weights, ec);
+
+  if (!data.learn_returns_prediction || !is_learn)
+  {
+    base.predict(data.adf_data.ecs);
+  }
 
   if (is_learn && !CB::is_test_label(ec.l.cb))
   {
@@ -39,15 +45,6 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 
       base.learn(data.adf_data.ecs);
     }
-    else
-    {
-      std::cerr << "warning: malformed label blah outside of range bluh. skipping." << std::endl;
-      base.predict(data.adf_data.ecs);
-    }
-  }
-  else
-  {
-    base.predict(data.adf_data.ecs);
   }
 
   if (data.explore_mode) { ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s); }
@@ -195,15 +192,16 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   learner<cb_to_cb_adf, example>* l;
 
+  data->learn_returns_prediction = base->learn_returns_prediction;
   if (data->explore_mode)
   {
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::action_probs,
-        "cb_to_cb_adf");
+        "cb_to_cb_adf", base->learn_returns_prediction);
   }
   else
   {
     l = &init_learner(
-        data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass, "cb_to_cb_adf");
+        data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass, "cb_to_cb_adf", base->learn_returns_prediction);
   }
 
   l->set_finish_example(finish_example);
