@@ -278,7 +278,7 @@ void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& example
 
   if (is_learn)
   {
-    if (predict_first) base.predict(examples, (int32_t)id);
+    if (predict_first) { base.predict(examples, (int32_t)id); }
     base.learn(examples, (int32_t)id);
   }
   else
