@@ -460,7 +460,7 @@ size_t suboptimality(svm_model* model, double* subopt)
   {
     float tmp = model->alpha[i] * model->support_vec[i]->ex.l.simple.label;
 
-    if ((tmp < model->support_vec[i]->ex.l.simple.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
+    if ((tmp < model->support_vec[i]->ex.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
       subopt[i] = fabs(model->delta[i]);
     else
       subopt[i] = 0;
@@ -538,8 +538,8 @@ bool update(svm_params& params, size_t pos)
   float proj = alphaKi * ld.label;
   float ai = (params.lambda - proj) / inprods[pos];
 
-  if (ai > fec->ex.l.simple.weight)
-    ai = fec->ex.l.simple.weight;
+  if (ai > fec->ex.weight)
+    ai = fec->ex.weight;
   else if (ai < 0)
     ai = 0;
 
@@ -627,12 +627,6 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
         params.pool[i]->init_svm_example(fec);
         train_pool[i] = true;
         params.pool_pos++;
-        // for(int j = 0;j < fec->feature_map_len;j++)
-        //   params.all->opts_n_args.trace_message<<fec->feature_map[j].weight_index<<":"<<fec->feature_map[j].x<<" ";
-        // params.all->opts_n_args.trace_message<< endl;
-        // params.pool[i]->in_use = true;
-        // params.current_t += ((label_data*) params.pool[i]->ld)->weight;
-        // params.pool[i]->example_t = params.current_t;
       }
       else
         break;
@@ -690,7 +684,7 @@ void train(svm_params& params)
         if (params._random_state->get_and_update_random() < queryp)
         {
           svm_example* fec = params.pool[i];
-          fec->ex.l.simple.weight *= 1 / queryp;
+          fec->ex.weight *= 1 / queryp;
           train_pool[i] = 1;
         }
       }

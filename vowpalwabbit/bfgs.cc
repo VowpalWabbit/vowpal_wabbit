@@ -176,7 +176,7 @@ inline void add_DIR(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * f
 
 float dot_with_direction(vw& all, example& ec)
 {
-  float temp = ec.l.simple.initial;
+  float temp = ec.initial;
   GD::foreach_feature<float, add_DIR>(all, ec, temp);
   return temp;
 }

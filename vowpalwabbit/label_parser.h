@@ -29,6 +29,7 @@ enum class label_type_t
   continuous  // continuous actions
 };
 
+struct example;
 struct label_parser
 {
   void (*default_label)(polylabel*);
@@ -43,5 +44,6 @@ struct label_parser
                                 // label_size is sufficient, so you need only specify this function if your label
                                 // constains, for instance, pointers (otherwise you'll get double-free errors)
   bool (*test_label)(polylabel*);
+  void (*post_parse_setup)(example*);
   label_type_t label_type;
 };

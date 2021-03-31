@@ -283,13 +283,13 @@ String^ VowpalWabbitSimpleLabelComparator::Diff(VowpalWabbitExample^ ex1, Vowpal
 { auto s1 = ex1->m_example->l.simple;
   auto s2 = ex2->m_example->l.simple;
 
-  if (!(FloatEqual(s1.initial, s2.initial) &&
+  if (!(FloatEqual(ex1->m_example->initial, ex2->m_example->initial) &&
         FloatEqual(s1.label, s2.label) &&
-        FloatEqual(s1.weight, s2.weight)))
+        FloatEqual(ex1->m_example->weight, ex2->m_example->weight)))
   { return System::String::Format("Label differ. label {0} vs {1}. initial {2} vs {3}. weight {4} vs {5}",
                                   s1.label, s2.label,
-                                  s1.initial, s2.initial,
-                                  s1.weight, s2.weight);
+                                  ex1->m_example->initial, ex2->m_example->initial,
+                                  ex1->m_example->weight, ex2->m_example->weight);
   }
 
   return nullptr;

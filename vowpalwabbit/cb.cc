@@ -37,6 +37,10 @@ void parse_label(parser* p, shared_data*, CB::label& ld, std::vector<VW::string_
 
   for (auto const& word : words)
   {
+    // Format is the following:
+    // <action>:<cost>:<probability> | shared
+    // for example "1:2:0.5"
+    // action = 1, cost = 2, probability = 0.5
     cb_class f;
     tokenize(':', word, p->parse_name);
 
@@ -103,6 +107,8 @@ label_parser cb_label = {
   },
   // test_label
   [](polylabel* v) { return CB::is_test_label(v->cb); },
+  // post parse processing
+  nullptr,
   label_type_t::cb
 };
 // clang-format on
@@ -230,8 +236,9 @@ label_parser cb_eval = {
   },
   // test_label
   [](polylabel* v) { return CB_EVAL::test_label(v->cb_eval); },
+  // post parse processing
+  nullptr,
   label_type_t::cb_eval
 };
 // clang-format on
-
 }  // namespace CB_EVAL

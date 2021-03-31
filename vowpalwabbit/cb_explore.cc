@@ -27,6 +27,9 @@ using namespace VW::config;
 using std::endl;
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cb_explore
+
 namespace CB_EXPLORE
 {
 struct cb_explore
@@ -160,6 +163,7 @@ void get_cover_probabilities(
 template <bool is_learn>
 void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 {
+  VW_DBG(ec) << "predict_or_learn_cover:" << is_learn << " start" << endl;
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
 
