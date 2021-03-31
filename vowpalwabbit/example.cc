@@ -37,6 +37,73 @@ void example::delete_unions(void (*delete_union)(polylabel*), void (*delete_pred
   std::ignore = delete_prediction;
 }
 
+example::example(const example& other) : example_predict(other)
+{
+  l = other.l;
+  pred = other.pred.clone();
+  weight = other.weight;
+  tag = other.tag;
+  example_counter = num_features = other.num_features;
+  partial_prediction = other.partial_prediction;
+  updated_prediction = other.updated_prediction;
+  loss = other.loss;
+  total_sum_feat_sq = other.total_sum_feat_sq;
+  confidence = other.confidence;
+
+  passthrough = nullptr;
+  if (other.passthrough != nullptr)
+  {
+    passthrough = new features();
+    passthrough->deep_copy_from(*other.passthrough);
+  }
+
+  test_only = other.test_only;
+  end_pass = other.end_pass;
+  sorted = other.sorted;
+  in_use = other.in_use;
+  initial = other.initial;
+}
+
+example& example::operator=(const example& other)
+{
+  if (this == &other) { return *this; }
+
+  example_predict::operator=(other);
+
+  l = other.l;
+  pred = other.pred.clone();
+  weight = other.weight;
+  tag = other.tag;
+  example_counter = num_features = other.num_features;
+  partial_prediction = other.partial_prediction;
+  updated_prediction = other.updated_prediction;
+  loss = other.loss;
+  total_sum_feat_sq = other.total_sum_feat_sq;
+  confidence = other.confidence;
+
+  if (passthrough != nullptr)
+  {
+    delete passthrough;
+    passthrough = nullptr;
+  }
+
+  if (other.passthrough != nullptr)
+  {
+    passthrough = new features();
+    passthrough->deep_copy_from(*other.passthrough);
+  }
+
+  test_only = other.test_only;
+  end_pass = other.end_pass;
+  sorted = other.sorted;
+  in_use = other.in_use;
+  initial = other.initial;
+
+  return *this;
+}
+
+example example::clone() const { return *this; }
+
 float collision_cleanup(features& fs)
 {
   uint64_t last_index = (uint64_t)-1;
@@ -66,6 +133,9 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+
 void copy_example_label(example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
 {
   if (copy_label)
@@ -74,7 +144,7 @@ void copy_example_label(example* dst, example* src, void (*copy_label)(polylabel
     dst->l = src->l;
 }
 
-void copy_example_metadata(bool /* audit */, example* dst, example* src)
+void copy_example_metadata(example* dst, const example* src)
 {
   dst->tag = src->tag;
   dst->example_counter = src->example_counter;
@@ -98,9 +168,12 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
   dst->initial = src->initial;
 }
 
+void copy_example_metadata(bool /* audit */, example* dst, example* src) { copy_example_metadata(dst, src); }
+
 void copy_example_data(bool audit, example* dst, example* src)
 {
-  copy_example_metadata(audit, dst, src);
+  std::ignore = audit;
+  copy_example_metadata(dst, src);
 
   // copy feature data
   dst->indices = src->indices;
@@ -122,6 +195,10 @@ void copy_example_data(
 {
   copy_example_data(audit, dst, src, copy_label);
 }
+
+VW_WARNING_STATE_POP
+
+void copy_example(example* dst, const example* src) { *dst = std::move(src->clone()); }
 
 void move_feature_namespace(example* dst, example* src, namespace_index c)
 {
