@@ -123,10 +123,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-    {
-      logger::errlog_error("write error: ", VW::strerror_to_string(errno));
-    }
+    if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
 
@@ -140,10 +137,7 @@ void print_raw_text(VW::io::writer* f, std::string s, v_array<char> tag)
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-  if (t != len)
-  {
-    logger::errlog_error("write error: ", VW::strerror_to_string(errno));
-  }
+  if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_array<char>& tag)
@@ -156,10 +150,7 @@ void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_arra
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-  if (t != len)
-  {
-    logger::errlog_error("write error: ", VW::strerror_to_string(errno));
-  }
+  if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void set_mm(shared_data* sd, float label)

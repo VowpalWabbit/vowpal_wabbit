@@ -520,7 +520,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       if (x2 > x2_max)
       {
         norm_x2 = 1;
-	logger::errlog_error("your features have too much magnitude");
+        logger::errlog_error("your features have too much magnitude");
       }
       nd.norm_x += norm_x2;
     }
