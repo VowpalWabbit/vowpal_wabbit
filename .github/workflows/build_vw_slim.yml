@@ -22,4 +22,4 @@ jobs:
         run: ./.scripts/linux/build-slim.sh
       - name: Test VWSlim
         shell: bash
-        run: ./.scripts/linux/build-slim.sh
+        run: ./.scripts/linux/test-slim.sh
