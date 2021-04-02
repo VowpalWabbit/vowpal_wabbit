@@ -84,9 +84,8 @@ std::shared_ptr<std::vector<char>> get_cache_buffer(const std::string& es)
 {
   auto vw = VW::initialize("--cb 2 --quiet");
   auto buffer = std::make_shared<std::vector<char>>();
-  io_buf writer_view_of_buffer;
-  writer_view_of_buffer.add_file(VW::io::create_vector_writer(buffer));
-  vw->example_parser->output = &writer_view_of_buffer;
+  vw->example_parser->output = VW::make_unique<io_buf>();
+  vw->example_parser->output->add_file(VW::io::create_vector_writer(buffer));
   vw->example_parser->write_cache = true;
   auto ae = &VW::get_unused_example(vw);
 
@@ -115,12 +114,11 @@ static void bench_cache_io_buf(benchmark::State& state, ExtraArgs&&... extra_arg
   auto examples = v_init<example*>();
   examples.push_back(&VW::get_unused_example(vw));
 
-  io_buf reader_view_of_buffer;
-  vw->example_parser->input = &reader_view_of_buffer;
+  vw->example_parser->input = VW::make_unique<io_buf>();
 
   for (auto _ : state)
   {
-    reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size()));
+    vw->example_parser->input->add_file(VW::io::create_buffer_view(buffer->data(), buffer->size()));
     read_cached_features(vw, examples);
     VW::empty_example(*vw, *examples[0]);
     benchmark::ClobberMemory();
@@ -163,12 +161,11 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
   auto examples = v_init<example*>();
   examples.push_back(&VW::get_unused_example(vw));
 
-  io_buf reader_view_of_buffer;
-  vw->example_parser->input = &reader_view_of_buffer;
+  vw->example_parser->input = VW::make_unique<io_buf>();
 
   for (auto _ : state)
   {
-    reader_view_of_buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
+    vw->example_parser->input->add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
     vw->example_parser->reader(vw, examples);
     VW::empty_example(*vw, *examples[0]);
     benchmark::ClobberMemory();
@@ -186,13 +183,12 @@ static void benchmark_example_reuse(benchmark::State& state)
 
   auto examples = v_init<example*>();
 
-  io_buf reader_view_of_buffer;
-  vw->example_parser->input = &reader_view_of_buffer;
+  vw->example_parser->input = VW::make_unique<io_buf>();
 
   for (auto _ : state)
   {
     examples.push_back(&VW::get_unused_example(vw));
-    reader_view_of_buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
+    vw->example_parser->input->add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
     vw->example_parser->reader(vw, examples);
     VW::finish_example(*vw, *examples[0]);
     examples.clear();
