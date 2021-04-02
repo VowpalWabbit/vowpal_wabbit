@@ -174,7 +174,7 @@ void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
 
 void reset_source(vw& all, size_t numbits)
 {
-  io_buf* input = all.example_parser->input;
+  io_buf* input = all.example_parser->input.get();
   input->current = 0;
 
   // If in write cache mode then close all of the input files then open the written cache as the new input.
@@ -246,7 +246,7 @@ void finalize_source(parser*) {}
 
 void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
-  io_buf* output = all.example_parser->output;
+  io_buf* output = all.example_parser->output.get();
   if (output->num_files() != 0)
   {
     *(all.trace_message) << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
@@ -297,7 +297,8 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.example_parser->input, all.example_parser->input->get_input_files().back().get());
+      uint64_t c =
+          cache_numbits(all.example_parser->input.get(), all.example_parser->input->get_input_files().back().get());
       if (c < all.num_bits)
       {
         if (!quiet)
