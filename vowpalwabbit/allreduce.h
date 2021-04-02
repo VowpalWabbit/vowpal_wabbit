@@ -96,8 +96,8 @@ struct Data
 class AllReduceSync
 {
 private:
-  std::mutex* m_mutex;
-  std::condition_variable* m_cv;
+  std::mutex m_mutex;
+  std::condition_variable m_cv;
 
   // total number of threads we wait for
   size_t m_total;
