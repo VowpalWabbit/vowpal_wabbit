@@ -98,7 +98,7 @@ label_parser cb_label = {
   // delete_label
   [](polylabel* v) { CB::delete_label(v->cb); },
    // get_weight
-  [](polylabel*) { return 1.f; },
+  [](polylabel*, const reduction_features&) { return 1.f; },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {
@@ -227,7 +227,7 @@ label_parser cb_eval = {
   // delete_label
   [](polylabel* v) { CB_EVAL::delete_label(v->cb_eval); },
    // get_weight
-  [](polylabel*) { return 1.f; },
+  [](polylabel*, const reduction_features&) { return 1.f; },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {

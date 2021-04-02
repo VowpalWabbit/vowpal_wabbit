@@ -114,7 +114,7 @@ label_parser multilabel = {
   // delete_label
   [](polylabel* v) { if (v) delete_label(v->multilabels); },
    // get_weight
-  [](polylabel* v) { return weight(v->multilabels); },
+  [](polylabel* v, const reduction_features&) { return weight(v->multilabels); },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {

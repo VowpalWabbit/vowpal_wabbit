@@ -37,7 +37,7 @@ struct label_parser
   void (*cache_label)(polylabel*, reduction_features&, io_buf& cache);
   size_t (*read_cached_label)(shared_data*, polylabel*, reduction_features&, io_buf& cache);
   void (*delete_label)(polylabel*);
-  float (*get_weight)(polylabel*);
+  float (*get_weight)(polylabel*, const reduction_features&);
   void (*copy_label)(
       polylabel*, polylabel*);  // copy_label(dst,src) performs a DEEP copy of src into dst (dst is allocated
                                 // correctly).  if this function is nullptr, then we assume that a memcpy of size

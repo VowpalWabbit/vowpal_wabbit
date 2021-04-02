@@ -182,7 +182,7 @@ label_parser cs_label = {
   // delete_label
   [](polylabel* v) { if (v) delete_label(v->cs); },
    // get_weight
-  [](polylabel* v) { return weight(v->cs); },
+  [](polylabel* v, const reduction_features&) { return weight(v->cs); },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {

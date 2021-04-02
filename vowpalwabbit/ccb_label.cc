@@ -333,7 +333,7 @@ label_parser ccb_label_parser = {
   // delete_label
   [](polylabel* v) { delete_label(v->conditional_contextual_bandit); },
    // get_weight
-  [](polylabel* v) { return ccb_weight(v->conditional_contextual_bandit); },
+  [](polylabel* v, const ::reduction_features&) { return ccb_weight(v->conditional_contextual_bandit); },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {

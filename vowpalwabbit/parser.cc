@@ -682,7 +682,7 @@ void setup_example(vw& all, example* ae)
           (all.example_parser->lbl_parser.label_type != label_type_t::ccb || CCB::ec_is_example_unset(*ae))))
     all.example_parser->in_pass_counter++;
 
-  ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l);
+  ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l, ae->_reduction_features);
 
   if (all.ignore_some)
   {

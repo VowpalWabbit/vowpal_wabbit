@@ -195,7 +195,7 @@ label_parser slates_label_parser = {
   // delete_label
   [](polylabel* v) { delete_label(v->slates); },
    // get_weight
-  [](polylabel* v) { return weight(v->slates); },
+  [](polylabel* v, const reduction_features&) { return weight(v->slates); },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {

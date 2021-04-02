@@ -49,7 +49,7 @@ label_parser no_label_parser = {
   // delete_label
   [](polylabel*) {},
    // get_weight
-  [](polylabel*) { return 1.f; },
+  [](polylabel*, const reduction_features&) { return 1.f; },
   // copy_label
   nullptr,
   // test_label
