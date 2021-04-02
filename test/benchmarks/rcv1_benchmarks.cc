@@ -4841,10 +4841,8 @@ static void benchmark_rcv1_dataset(benchmark::State& state, std::string command_
   for (auto _ : state)
   {
     auto vw = VW::initialize(command_line, nullptr, false, nullptr, nullptr);
-    io_buf* reader_view_of_buffer = new io_buf;
-    delete vw->example_parser->input;
-    vw->example_parser->input = reader_view_of_buffer;
-    reader_view_of_buffer->add_file(VW::io::create_buffer_view(RCV1_DATA.data(), RCV1_DATA.size()));
+    vw->example_parser->input = VW::make_unique<io_buf>();
+    vw->example_parser->input->add_file(VW::io::create_buffer_view(RCV1_DATA.data(), RCV1_DATA.size()));
     VW::start_parser(*vw);
     VW::LEARNER::generic_driver(*vw);
     VW::end_parser(*vw);
