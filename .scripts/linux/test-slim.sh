@@ -6,4 +6,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR=$SCRIPT_DIR/../../
 cd $REPO_DIR
 
-./build/vowpalwabbit/slim/test/vw-slim-test
+cd ./build/vowpalwabbit/slim/test/
+# Needs to be run from this directory as tests load files relative to current dir.
+./vw-slim-test
