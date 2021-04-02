@@ -66,12 +66,10 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
+void copy_example_label(example* dst, example* src, void (*)(polylabel*, polylabel*))
 {
-  if (copy_label)
-    copy_label(&dst->l, &src->l);  // TODO: we really need to delete_label on dst :(
-  else
-    dst->l = src->l;
+  dst->l = src->l;
+  dst->_reduction_features = src->_reduction_features;
 }
 
 void copy_example_metadata(bool /* audit */, example* dst, example* src)
@@ -95,7 +93,6 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
   dst->test_only = src->test_only;
   dst->end_pass = src->end_pass;
   dst->sorted = src->sorted;
-  dst->initial = src->initial;
 }
 
 void copy_example_data(bool audit, example* dst, example* src)

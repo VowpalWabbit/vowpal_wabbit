@@ -349,7 +349,8 @@ inline void vec_add_trunc(trunc_data& p, const float fx, float& fw)
 
 inline float trunc_predict(vw& all, example& ec, double gravity)
 {
-  trunc_data temp = {ec.initial, (float)gravity};
+  const auto& simple_red_features = ec._reduction_features.get<simple_label_reduction_features>();
+  trunc_data temp = {simple_red_features.initial, (float)gravity};
   foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp);
   return temp.prediction;
 }

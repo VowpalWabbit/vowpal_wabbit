@@ -37,7 +37,8 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
       logger::log_error("label {0} is not in {{1,{1}}} This won't work right.",
 			ld.label, o.k);
 
-  ec.l.simple = {1., VW::UNUSED_1, VW::UNUSED_0};  // truth
+  ec.l.simple = {1.};  // truth
+  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
   base.learn(ec, ld.label - 1);
 
   size_t prediction = ld.label;
@@ -79,11 +80,12 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
       logger::log_error("label {0} is not in {{1,{1}}} This won't work right.",
 			mc_label_data.label, o.k);
 
-  ec.l.simple = {FLT_MAX, VW::UNUSED_1, VW::UNUSED_0};
+  ec.l.simple = {FLT_MAX};
+  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
 
   for (uint32_t i = 1; i <= o.k; i++)
   {
-    ec.l.simple = {(mc_label_data.label == i) ? 1.f : -1.f, VW::UNUSED_1, VW::UNUSED_0};
+    ec.l.simple = {(mc_label_data.label == i) ? 1.f : -1.f};
     // The following is an unfortunate loss of abstraction
     // Downstream reduction (gd.update) uses the prediction
     // from here

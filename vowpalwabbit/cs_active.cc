@@ -190,7 +190,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     *(cs_a.all->trace_message) << endl << "Number of examples with at least one query = " << cs_a.num_any_queries;
     // Double label query budget
     cs_a.min_labels *= 2;
-    
+
     for (size_t i = 0; i < cs_a.examples_by_queries.size(); i++)
     {
       *(cs_a.all->trace_message) << endl << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i];
@@ -200,14 +200,15 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     *(cs_a.all->trace_message) << endl << "average distance to range = "
 			       << cs_a.distance_to_range / ((float)cs_a.labels_outside_range);
     *(cs_a.all->trace_message) << endl << "average range = " << cs_a.range / ((float)cs_a.labels_outside_range);
-    
+
   }
 
   if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes) return;
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
-  ec.l.simple = {0., VW::UNUSED_1, VW::UNUSED_0};
+  ec.l.simple = {0.f};
+  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
 
   float min_max_cost = FLT_MAX;
   float t = (float)cs_a.t;  // ec.example_t;  // current round

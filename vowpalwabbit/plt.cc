@@ -126,7 +126,8 @@ void learn(plt& p, single_learner& base, example& ec)
   else
     p.negative_nodes.insert(0);
 
-  ec.l.simple = {1.f, 1.f, 0.f};
+  ec.l.simple = {1.f};
+  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
   for (auto& n : p.positive_nodes) learn_node(p, n, base, ec);
 
   ec.l.simple.label = -1.f;
@@ -141,7 +142,8 @@ void learn(plt& p, single_learner& base, example& ec)
 
 inline float predict_node(uint32_t n, single_learner& base, example& ec)
 {
-  ec.l.simple = {FLT_MAX, 1.f, 0.f};
+  ec.l.simple = {FLT_MAX};
+  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
   base.predict(ec, n);
   return 1.0f / (1.0f + exp(-ec.partial_prediction));
 }
@@ -177,7 +179,8 @@ void predict(plt& p, single_learner& base, example& ec)
       p.node_queue.pop_back();
 
       uint32_t n_child = p.kary * node.n + 1;
-      ec.l.simple = {FLT_MAX, 1.f, 0.f};
+      ec.l.simple = {FLT_MAX};
+      ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
       base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
 
       for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
@@ -225,7 +228,9 @@ void predict(plt& p, single_learner& base, example& ec)
       if (node.n < p.ti)
       {
         uint32_t n_child = p.kary * node.n + 1;
-        ec.l.simple = {FLT_MAX, 1.f, 0.f};
+        ec.l.simple = {FLT_MAX};
+        ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+
         base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
 
         for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
