@@ -739,12 +739,6 @@ void setup_example(vw& all, example* ae)
   INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
   ae->num_features += new_features_cnt;
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
-
-  // Notes: Allows the label parser to update the example after parsing is done.
-  // For example we set the initial value used in gd during predict() (if set)
-  // simple_label_parser is defined with this post parse setup step.
-  if (all.example_parser->lbl_parser.post_parse_setup != nullptr)
-  { all.example_parser->lbl_parser.post_parse_setup(ae); }
 }
 }  // namespace VW
 

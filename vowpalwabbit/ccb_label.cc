@@ -342,8 +342,6 @@ label_parser ccb_label_parser = {
   },
   // test_label
   [](polylabel* v) { return test_label(v->conditional_contextual_bandit); },
-  // parse post processing
-  nullptr,
   label_type_t::ccb
 };
 // clang-format on

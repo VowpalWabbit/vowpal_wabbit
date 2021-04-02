@@ -155,8 +155,6 @@ label_parser the_label_parser = {
   },
   // test_label
   [](polylabel* v) { return CB::is_test_label<continuous_label, continuous_label_elm>(v->cb_cont); },
-  // post_parse_setup
-  nullptr,
   label_type_t::continuous
 };
 

@@ -105,8 +105,6 @@ label_parser mc_label = {
   nullptr,
   // test_label
   [](polylabel* v) { return test_label(v->multi); },
-  // post parse processing
-  nullptr,
   label_type_t::multiclass
 };
 // clang-format on

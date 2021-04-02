@@ -123,8 +123,6 @@ label_parser multilabel = {
   },
   // test_label
   [](polylabel* v) { return test_label(v->multilabels); },
-  // post parse processing
-  nullptr,
   label_type_t::multilabel
 };
 // clang-format on

@@ -63,7 +63,7 @@ size_t read_cached_simple_label(shared_data* sd, label_data& ld, reduction_featu
   return total;
 }
 
-float get_weight(label_data& ld, const reduction_features& red_features) {
+float get_weight(label_data&, const reduction_features& red_features) {
   auto& simple_red_features = red_features.get<simple_label_reduction_features>();
   return simple_red_features.weight;
 }
@@ -120,8 +120,6 @@ void parse_simple_label(
   count_label(sd, ld.label);
 }
 
-void post_parse_setup(example* ec) {  }
-
 // clang-format off
 label_parser simple_label_parser = {
   // default_label
@@ -143,7 +141,6 @@ label_parser simple_label_parser = {
   // test_label
   [](polylabel* v) { return test_label(v->simple); },
   // test_label
-  post_parse_setup,
   label_type_t::simple
 };
 // clang-format on
