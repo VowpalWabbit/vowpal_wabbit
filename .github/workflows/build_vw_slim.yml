@@ -1,4 +1,4 @@
-name: Build and test VWSlim
+name: Build and test VW Slim
 on:
   push:
     branches:
@@ -8,7 +8,7 @@ on:
       - master
 
 jobs:
-  Coverage:
+  build:
     container:
       image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
@@ -17,9 +17,9 @@ jobs:
       - name: Install GTest
         shell: bash
         run: ./.scripts/linux/install-gtest.sh
-      - name: Build VWSlim
+      - name: Build VW Slim
         shell: bash
         run: ./.scripts/linux/build-slim.sh
-      - name: Test VWSlim
+      - name: Test VW Slim
         shell: bash
         run: ./.scripts/linux/test-slim.sh
