@@ -185,7 +185,7 @@ flat_example* flatten_example(vw& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
-  fec.weight = ec->weight;
+  fec._reduction_features = ec->_reduction_features;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len > 0)

@@ -11,17 +11,16 @@ struct vw;
 struct label_data
 {
   float label = 0.f;
-  // only used for serialization and parsing.  example.weight is used for
-  // computation
-  // DeSerialized/Parsed values are copied into example in VW::setup_example()
-  float serialized_weight = 0.f;
-  // Only used for serialization and parsing.  example.initial is used for
-  // computation
-  // DeSerialized/Parsed values are copied into example in VW::setup_example()
-  float serialized_initial = 0.f;
 
   label_data();
-  label_data(float label, float weight, float initial);
+  label_data(float label);
+  void reset_to_default();
+};
+
+struct simple_label_reduction_features
+{
+  float weight = 1.f;
+  float initial = 0.f;
   void reset_to_default();
 };
 

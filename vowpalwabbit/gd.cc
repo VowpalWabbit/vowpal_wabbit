@@ -393,7 +393,12 @@ void multipredict(
     gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *g.all;
-  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.initial;
+  for (size_t c = 0; c < count; c++)
+  {
+    const auto& simple_red_features = ec._reduction_features.get<simple_label_reduction_features>();
+    pred[c].scalar = simple_red_features.initial;
+  }
+
   if (g.all->weights.sparse)
   {
     multipredict_info<sparse_parameters> mp = {
