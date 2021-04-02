@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <cstring>
 #include <ostream>
 #include <string>
 #include <utility>
