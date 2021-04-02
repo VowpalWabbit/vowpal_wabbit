@@ -189,9 +189,9 @@ label_parser slates_label_parser = {
     parse_label(p, sd, v->slates, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { cache_label(v->slates, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->slates, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->slates, cache); },
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->slates, cache); },
   // delete_label
   [](polylabel* v) { delete_label(v->slates); },
    // get_weight

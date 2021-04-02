@@ -43,9 +43,9 @@ label_parser no_label_parser = {
     parse_no_label(words);
   },
   // cache_label
-  [](polylabel*, io_buf&) {},
+  [](polylabel*, reduction_features&, io_buf&) {},
   // read_cached_label
-  [](shared_data*, polylabel*, io_buf&) -> size_t { return 1; },
+  [](shared_data*, polylabel*, reduction_features&, io_buf&) -> size_t { return 1; },
   // delete_label
   [](polylabel*) {},
    // get_weight

@@ -657,7 +657,7 @@ void setup_example(vw& all, example* ae)
 
   if (all.example_parser->write_cache)
   {
-    all.example_parser->lbl_parser.cache_label(&ae->l, *(all.example_parser->output));
+    all.example_parser->lbl_parser.cache_label(&ae->l, ae->_reduction_features, *(all.example_parser->output));
     cache_features(*(all.example_parser->output), ae, all.parse_mask);
   }
 

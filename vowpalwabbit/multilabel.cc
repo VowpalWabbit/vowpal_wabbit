@@ -108,9 +108,9 @@ label_parser multilabel = {
     parse_label(p, sd, v->multilabels, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { cache_label(v->multilabels, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->multilabels, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->multilabels, cache); },
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->multilabels, cache); },
   // delete_label
   [](polylabel* v) { if (v) delete_label(v->multilabels); },
    // get_weight
