@@ -60,7 +60,7 @@ char* bufread_simple_label(shared_data* sd, label_data& ld, simple_label_reducti
 
 size_t read_cached_simple_label(shared_data* sd, label_data& ld, reduction_features& red_features, io_buf& cache)
 {
-  auto& simple_red_features = red_features.get<simple_label_reduction_features>();
+  auto& simple_red_features = red_features.template get<simple_label_reduction_features>();
   char* c;
   size_t total = sizeof(ld.label) + sizeof(simple_red_features.weight) + sizeof(simple_red_features.initial);
   if (cache.buf_read(c, total) < total) return 0;
@@ -70,7 +70,7 @@ size_t read_cached_simple_label(shared_data* sd, label_data& ld, reduction_featu
 }
 
 float get_weight(label_data&, const reduction_features& red_features) {
-  auto& simple_red_features = red_features.get<simple_label_reduction_features>();
+  auto& simple_red_features = red_features.template get<simple_label_reduction_features>();
   return simple_red_features.weight;
 }
 
@@ -87,7 +87,7 @@ char* bufcache_simple_label(label_data& ld, simple_label_reduction_features& red
 
 void cache_simple_label(label_data& ld, reduction_features& red_features, io_buf& cache)
 {
-  auto& simple_red_features = red_features.get<simple_label_reduction_features>();
+  auto& simple_red_features = red_features.template get<simple_label_reduction_features>();
   char* c;
   cache.buf_write(c, sizeof(ld.label) + sizeof(simple_red_features.weight) + sizeof(simple_red_features.initial));
   bufcache_simple_label(ld, simple_red_features, c);
@@ -102,7 +102,7 @@ bool test_label(label_data& ld) { return ld.label == FLT_MAX; }
 void parse_simple_label(
     parser*, shared_data* sd, label_data& ld, std::vector<VW::string_view>& words, reduction_features& red_features)
 {
-  auto& simple_red_features = red_features.get<simple_label_reduction_features>();
+  auto& simple_red_features = red_features.template get<simple_label_reduction_features>();
   switch (words.size())
   {
     case 0:
