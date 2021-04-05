@@ -74,10 +74,7 @@ void copy_example_label(example* dst, example* src, void (*copy_label)(polylabel
     dst->l = src->l;
 }
 
-void copy_example_label(example* dst, const example* src)
-{
-  dst->l = src->l;
-}
+void copy_example_label(example* dst, const example* src) { dst->l = src->l; }
 
 void copy_example_metadata(example* dst, const example* src)
 {
@@ -116,15 +113,9 @@ void copy_example_data(example* dst, const example* src)
   dst->_debug_current_reduction_depth = src->_debug_current_reduction_depth;
 }
 
-void copy_example_metadata(bool /* audit */, example* dst, example* src)
-{
-  copy_example_metadata(dst, src);
-}
+void copy_example_metadata(bool /* audit */, example* dst, example* src) { copy_example_metadata(dst, src); }
 
-void copy_example_data(bool /* audit */, example* dst, example* src)
-{
-  copy_example_data(dst, src);
-}
+void copy_example_data(bool /* audit */, example* dst, example* src) { copy_example_data(dst, src); }
 
 void copy_example_data(bool audit, example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
 {
