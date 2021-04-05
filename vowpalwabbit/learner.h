@@ -711,11 +711,13 @@ struct common_learner_builder
     this->_learner->learn_fd.predict_f = (learn_data::fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
+
   FluentBuilderT& set_learn(void (*u)(DataT&, BaseLearnerT&, ExampleT&))
   {
     this->_learner->learn_fd.learn_f = (learn_data::fn)u;
     return *static_cast<FluentBuilderT*>(this);
   }
+
   FluentBuilderT& set_multipredict(void (*u)(DataT&, BaseLearnerT&, ExampleT&, size_t, size_t, polyprediction*, bool))
   {
     this->_learner->learn_fd.multipredict_f = (learn_data::multi_fn)u;
@@ -735,7 +737,6 @@ struct common_learner_builder
     this->_learner->sensitivity_fd.sensitivity_f = (sensitivity_data::fn)u;
 
     return *static_cast<FluentBuilderT*>(this);
-    ;
   }
 
   FluentBuilderT& set_learn_returns_prediction(bool learn_returns_prediction)
@@ -743,6 +744,7 @@ struct common_learner_builder
     _learner->learn_returns_prediction = learn_returns_prediction;
     return *static_cast<FluentBuilderT*>(this);
   }
+
   FluentBuilderT& set_save_load(void (*sl)(DataT&, io_buf&, bool, bool))
   {
     _learner->save_load_fd.save_load_f = (save_load_data::fn)sl;
