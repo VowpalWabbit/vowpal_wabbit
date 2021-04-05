@@ -13,3 +13,4 @@ ELSE()
 ENDIF()
 
 add_subdirectory(common)
+add_subdirectory(cli)
