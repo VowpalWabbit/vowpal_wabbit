@@ -778,7 +778,7 @@ void add_constant_feature(vw& vw, example* ec)
 void add_label(example* ec, float label, float weight, float base)
 {
   ec->l.simple.label = label;
-  auto& simple_red_features = ec->_reduction_features.get<simple_label_reduction_features>();
+  auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
   simple_red_features.initial = base;
   ec->weight = weight;
 }
@@ -906,7 +906,7 @@ float get_label(example* ec) { return ec->l.simple.label; }
 float get_importance(example* ec) { return ec->weight; }
 
 float get_initial(example* ec) {
-  const auto& simple_red_features = ec->_reduction_features.get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
   return simple_red_features.initial;
 }
 

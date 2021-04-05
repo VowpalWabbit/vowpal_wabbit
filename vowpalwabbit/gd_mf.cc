@@ -94,7 +94,7 @@ template <class T>
 float mf_predict(gdmf& d, example& ec, T& weights)
 {
   vw& all = *d.all;
-  const auto& simple_red_features = ec._reduction_features.get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   float prediction = simple_red_features.initial;
 
   for (const auto& i : d.all->interactions.interactions)

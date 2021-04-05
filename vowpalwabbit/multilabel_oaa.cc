@@ -24,7 +24,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
   preds.label_v.clear();
 
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   uint32_t multilabel_index = 0;
   for (uint32_t i = 0; i < o.k; i++)
   {

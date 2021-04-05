@@ -72,7 +72,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = {0.};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
   bool dont_learn = DO_MULTIPREDICT && !is_learn;
 
@@ -85,7 +85,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   else if (dont_learn)
   {
     ec.l.simple = {FLT_MAX};
-    ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+    ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
     for (uint32_t i = 1; i <= c.num_classes; i++)
@@ -268,7 +268,7 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
   });
 
   ec.l.simple = label_data{FLT_MAX};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
@@ -311,7 +311,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
     // save original variables
     COST_SENSITIVE::label save_cs_label = ec1->l.cs;
     label_data& simple_lbl = ec1->l.simple;
-    auto& simple_red_features = ec1->_reduction_features.get<simple_label_reduction_features>();
+    auto& simple_red_features = ec1->_reduction_features.template get<simple_label_reduction_features>();
 
     v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
     if (costs1[0].class_index == (uint32_t)-1) continue;
@@ -402,7 +402,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
         ec->weight = old_weight * (costs[0].x - min_cost);
       }
     }
-    auto& simple_red_features = ec->_reduction_features.get<simple_label_reduction_features>();
+    auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
     simple_red_features.initial = 0.;
     ec->l.simple = simple_lbl;
 

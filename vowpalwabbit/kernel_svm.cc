@@ -459,7 +459,7 @@ size_t suboptimality(svm_model* model, double* subopt)
   for (size_t i = 0; i < model->num_support; i++)
   {
     float tmp = model->alpha[i] * model->support_vec[i]->ex.l.simple.label;
-    const auto& simple_red_features = model->support_vec[i]->ex._reduction_features.get<simple_label_reduction_features>();
+    const auto& simple_red_features = model->support_vec[i]->ex._reduction_features.template get<simple_label_reduction_features>();
     if ((tmp < simple_red_features.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
       subopt[i] = fabs(model->delta[i]);
     else
@@ -538,7 +538,7 @@ bool update(svm_params& params, size_t pos)
   float proj = alphaKi * ld.label;
   float ai = (params.lambda - proj) / inprods[pos];
 
-  const auto& simple_red_features = fec->ex._reduction_features.get<simple_label_reduction_features>();
+  const auto& simple_red_features = fec->ex._reduction_features.template get<simple_label_reduction_features>();
   if (ai > simple_red_features.weight)
     ai = simple_red_features.weight;
   else if (ai < 0)
@@ -685,7 +685,7 @@ void train(svm_params& params)
         if (params._random_state->get_and_update_random() < queryp)
         {
           svm_example* fec = params.pool[i];
-          auto& simple_red_features = fec->ex._reduction_features.get<simple_label_reduction_features>();
+          auto& simple_red_features = fec->ex._reduction_features.template get<simple_label_reduction_features>();
           simple_red_features.weight *= 1 / queryp;
           train_pool[i] = 1;
         }

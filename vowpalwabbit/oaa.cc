@@ -38,7 +38,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 			ld.label, o.k);
 
   ec.l.simple = {1.};  // truth
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   base.learn(ec, ld.label - 1);
 
   size_t prediction = ld.label;
@@ -81,7 +81,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 			mc_label_data.label, o.k);
 
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
   for (uint32_t i = 1; i <= o.k; i++)
   {

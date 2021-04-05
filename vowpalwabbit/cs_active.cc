@@ -208,7 +208,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   uint32_t prediction = 1;
   float score = FLT_MAX;
   ec.l.simple = {0.f};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
   float min_max_cost = FLT_MAX;
   float t = (float)cs_a.t;  // ec.example_t;  // current round

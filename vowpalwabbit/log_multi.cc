@@ -302,7 +302,7 @@ void predict(log_multi& b, single_learner& base, example& ec)
   MULTICLASS::label_t mc = ec.l.multi;
 
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
 
   uint32_t cn = 0;
@@ -326,7 +326,7 @@ void learn(log_multi& b, single_learner& base, example& ec)
 
     uint32_t class_index = 0;
     ec.l.simple = {FLT_MAX};
-    ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+    ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
     uint32_t cn = 0;
     uint32_t depth = 0;
     while (children(b, cn, class_index, mc.label))

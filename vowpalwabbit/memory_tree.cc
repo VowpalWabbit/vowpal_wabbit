@@ -391,7 +391,7 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
   }
 
   ec.l.simple = {1.f};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
   base.predict(ec, b.nodes[cn].base_router);
   float prediction = ec.pred.scalar;
@@ -405,7 +405,7 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
   float ec_input_weight = ec.weight;
   ec.weight = 1.f;
   ec.l.simple = {route_label};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
   base.learn(ec, b.nodes[cn].base_router);  // update the router according to the new example.
 
@@ -479,7 +479,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
     }
 
     b.examples[ec_pos]->l.simple = {1.f};
-    b.examples[ec_pos]->_reduction_features.get<simple_label_reduction_features>().reset_to_default();
+    b.examples[ec_pos]->_reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
     base.predict(*b.examples[ec_pos], b.nodes[cn].base_router);  // re-predict
     float scalar = b.examples[ec_pos]->pred.scalar;              // this is spliting the leaf.
@@ -573,7 +573,7 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   for (size_t i = 0; i < leaf_labs.size(); i++)
   {
     ec.l.simple.label = -1.f;
@@ -593,7 +593,7 @@ inline uint32_t compute_hamming_loss_via_oas(
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   for (size_t i = 0; i < leaf_labs.size(); i++)
   {
     base.predict(ec, b.max_routers + 1 + leaf_labs[i]);
@@ -625,7 +625,7 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, ex
         float tmp_s = normalized_linear_prod(b, &ec, b.examples[loc]);
         diag_kronecker_product_test(ec, *b.examples[loc], *b.kprod_ec, b.oas);
         b.kprod_ec->l.simple = {FLT_MAX};
-        auto& simple_red_features = b.kprod_ec->_reduction_features.get<simple_label_reduction_features>();
+        auto& simple_red_features = b.kprod_ec->_reduction_features.template get<simple_label_reduction_features>();
         simple_red_features.initial = tmp_s;
         base.predict(*b.kprod_ec, b.max_routers);
         score = b.kprod_ec->partial_prediction;
@@ -684,7 +684,7 @@ void predict(memory_tree& b, single_learner& base, example& ec)
 
   uint64_t cn = 0;
   ec.l.simple = {-1.f};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   while (b.nodes[cn].internal == 1)
   {  // if it's internal{
     base.predict(ec, b.nodes[cn].base_router);
@@ -752,7 +752,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
     preds = ec.pred.multilabels;
   }
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   while (b.nodes[cn].internal != -1)
   {
     base.predict(ec, b.nodes[cn].base_router);
@@ -790,7 +790,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
     float score = normalized_linear_prod(b, &ec, b.examples[closest_ec]);
     diag_kronecker_product_test(ec, *b.examples[closest_ec], *b.kprod_ec, b.oas);
     b.kprod_ec->l.simple = {reward};
-    auto& simple_red_features = b.kprod_ec->_reduction_features.get<simple_label_reduction_features>();
+    auto& simple_red_features = b.kprod_ec->_reduction_features.template get<simple_label_reduction_features>();
     simple_red_features.initial = -score;
     b.kprod_ec->weight = weight;
     base.learn(*b.kprod_ec, b.max_routers);
@@ -818,7 +818,7 @@ void learn_at_leaf_random(
     float score = normalized_linear_prod(b, &ec, b.examples[ec_id]);
     diag_kronecker_product_test(ec, *b.examples[ec_id], *b.kprod_ec, b.oas);
     b.kprod_ec->l.simple = {reward};
-    auto& simple_red_features = b.kprod_ec->_reduction_features.get<simple_label_reduction_features>();
+    auto& simple_red_features = b.kprod_ec->_reduction_features.template get<simple_label_reduction_features>();
     simple_red_features.initial = -score;
     b.kprod_ec->weight = weight;  //* b.nodes[leaf_id].examples_index.size();
     base.learn(*b.kprod_ec, b.max_routers);
@@ -850,7 +850,7 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
 
   path.clear();
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   while (b.nodes[cn].internal != -1)
   {
     path.push_back(cn);  // path stores node id from the root to the leaf
@@ -934,7 +934,7 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
       else if (ec.weight < .01f)
         ec.weight = 0.01f;
       ec.l.simple = {objective < 0. ? -1.f : 1.f};
-      ec._reduction_features.get<simple_label_reduction_features>().reset_to_default();
+      ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
       base.learn(ec, b.nodes[cn].base_router);
 
       if (b.oas == false)

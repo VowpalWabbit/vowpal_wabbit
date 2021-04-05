@@ -281,13 +281,13 @@ public:
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
       simple_red_features.initial = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
       simple_red_features.weight = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
@@ -330,7 +330,7 @@ public:
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
       simple_red_features.initial = v;
       found = true;
     }
