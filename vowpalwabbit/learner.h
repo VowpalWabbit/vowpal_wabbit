@@ -846,6 +846,7 @@ struct base_learner_builder
     this->_learner->learn_fd.data = this->_learner->learner_data.get();
     this->_learner->pred_type = pred_type;
     // TODO add label type as something learner knows about itself.
+    std::ignore = label_type;
     // this->_learner.label_type = label_type;
 
     set_params_per_weight(1);
