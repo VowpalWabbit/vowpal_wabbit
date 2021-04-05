@@ -21,6 +21,9 @@ struct simple_label_reduction_features
 {
   float weight = 1.f;
   float initial = 0.f;
+
+  simple_label_reduction_features();
+  simple_label_reduction_features(float weight, float initial);
   void reset_to_default();
 };
 
