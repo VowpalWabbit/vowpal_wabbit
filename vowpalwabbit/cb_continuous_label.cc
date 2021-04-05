@@ -139,14 +139,14 @@ label_parser the_label_parser = {
     parse_label(p, sd, v->cb_cont, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { CB::cache_label<continuous_label, continuous_label_elm>(v->cb_cont, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { CB::cache_label<continuous_label, continuous_label_elm>(v->cb_cont, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return CB::read_cached_label<continuous_label, continuous_label_elm>(sd, v->cb_cont, cache); },
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return CB::read_cached_label<continuous_label, continuous_label_elm>(sd, v->cb_cont, cache); },
   // delete_label
   [](polylabel* v) { CB::delete_label<continuous_label>(v->cb_cont); },
   // get_weight
   // CB::weight just returns 1.f? This seems like it could be a bug...
-  [](polylabel*) { return 1.f; },
+  [](polylabel*, const reduction_features&) { return 1.f; },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {
@@ -155,9 +155,10 @@ label_parser the_label_parser = {
   },
   // test_label
   [](polylabel* v) { return CB::is_test_label<continuous_label, continuous_label_elm>(v->cb_cont); },
+  // post_parse_setup
+  nullptr,
   label_type_t::continuous
 };
-// clang-format on
 
 // End: parse a,c,p label format
 ////////////////////////////////////////////////////

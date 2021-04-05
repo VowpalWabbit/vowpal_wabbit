@@ -224,8 +224,8 @@ public:
     label_data* ld = &ex->l.simple;
 
     m_label = ld->label;
-    m_weight = ld->weight;
-    m_initial = ld->initial;
+    m_weight = ex->weight;
+    m_initial = ex->initial;
   }
 
   virtual void UpdateExample(vw* vw, example* ex)
@@ -233,11 +233,9 @@ public:
     label_data* ld = &ex->l.simple;
     ld->label = m_label;
 
-    if (m_weight.HasValue)
-      ld->weight = m_weight.Value;
+    if (m_weight.HasValue) ex->weight = m_weight.Value;
 
-    if (m_initial.HasValue)
-      ld->initial = m_initial.Value;
+    if (m_initial.HasValue) ex->initial = m_initial.Value;
 
     count_label(vw->sd, ld->label);
   }

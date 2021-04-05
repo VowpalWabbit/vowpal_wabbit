@@ -126,6 +126,21 @@
     <ClCompile Include="vwdll_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="numeric_cast_tests.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse_args_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vw_versions_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="weights_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="flatbuffer_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="v_array_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

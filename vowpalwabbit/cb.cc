@@ -37,6 +37,10 @@ void parse_label(parser* p, shared_data*, CB::label& ld, std::vector<VW::string_
 
   for (auto const& word : words)
   {
+    // Format is the following:
+    // <action>:<cost>:<probability> | shared
+    // for example "1:2:0.5"
+    // action = 1, cost = 2, probability = 0.5
     cb_class f;
     tokenize(':', word, p->parse_name);
 
@@ -88,13 +92,13 @@ label_parser cb_label = {
     CB::parse_label(p, sd, v->cb, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { CB::cache_label(v->cb, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { CB::cache_label(v->cb, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return CB::read_cached_label(sd, v->cb, cache); },
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return CB::read_cached_label(sd, v->cb, cache); },
   // delete_label
   [](polylabel* v) { CB::delete_label(v->cb); },
    // get_weight
-  [](polylabel*) { return 1.f; },
+  [](polylabel*, const reduction_features&) { return 1.f; },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {
@@ -103,6 +107,8 @@ label_parser cb_label = {
   },
   // test_label
   [](polylabel* v) { return CB::is_test_label(v->cb); },
+  // post parse processing
+  nullptr,
   label_type_t::cb
 };
 // clang-format on
@@ -215,13 +221,13 @@ label_parser cb_eval = {
     CB_EVAL::parse_label(p, sd, v->cb_eval, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { CB_EVAL::cache_label(v->cb_eval, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { CB_EVAL::cache_label(v->cb_eval, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return CB_EVAL::read_cached_label(sd, v->cb_eval, cache); },
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return CB_EVAL::read_cached_label(sd, v->cb_eval, cache); },
   // delete_label
   [](polylabel* v) { CB_EVAL::delete_label(v->cb_eval); },
    // get_weight
-  [](polylabel*) { return 1.f; },
+  [](polylabel*, const reduction_features&) { return 1.f; },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {
@@ -230,8 +236,9 @@ label_parser cb_eval = {
   },
   // test_label
   [](polylabel* v) { return CB_EVAL::test_label(v->cb_eval); },
+  // post parse processing
+  nullptr,
   label_type_t::cb_eval
 };
 // clang-format on
-
 }  // namespace CB_EVAL

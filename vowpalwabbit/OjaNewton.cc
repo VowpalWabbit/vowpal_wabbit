@@ -404,7 +404,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
   predict(ON, base, ec);
 
   oja_n_update_data& data = ON.data;
-  data.g = ON.all->loss->first_derivative(ON.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.l.simple.weight;
+  data.g = ON.all->loss->first_derivative(ON.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
   data.g /= 2;  // for half square loss
 
   if (ON.normalize) GD::foreach_feature<oja_n_update_data, update_normalization>(*ON.all, ec, data);

@@ -24,14 +24,13 @@ void print_feature(vw& /* all */, float value, uint64_t index)
 
 void learn(print& p, VW::LEARNER::base_learner&, example& ec)
 {
-  label_data& ld = ec.l.simple;
-  if (ld.label != FLT_MAX)
+  if (ec.l.simple.label != FLT_MAX)
   {
-    cout << ld.label << " ";
-    if (ec.weight != 1 || ld.initial != 0)
+    cout << ec.l.simple.label << " ";
+    if (ec.weight != 1 || ec.initial != 0)
     {
       cout << ec.weight << " ";
-      if (ld.initial != 0) cout << ld.initial << " ";
+      if (ec.initial != 0) cout << ec.initial << " ";
     }
   }
   if (!ec.tag.empty())

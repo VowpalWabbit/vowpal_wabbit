@@ -481,7 +481,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
   {
     label_data* ld = &ex->l.simple;
     ld->label = label;
-    ld->weight = weight;
+    ld->serialized_weight = weight;
 
     count_label(all->sd, ld->label);
   }
@@ -612,7 +612,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
     if (!memcmp(&lp, &simple_label_parser, sizeof(lp)))
     {
       label_data* ld = &ex->l.simple;
-      ostr << "simple " << ld->label << ":" << ld->weight << ":" << ld->initial;
+      ostr << "simple " << ld->label << ":" << ld->serialized_weight << ":" << ld->serialized_initial;
     }
     else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
     {
