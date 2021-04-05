@@ -19,4 +19,4 @@
 #define VERSION_FILE_WITH_CB_ADF_SAVE "8.3.2"  // first version with user supplied header
 #define VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG \
   "8.9.0"  // CCB optimization for models with only single slot used introduced in this version.
-#define VERSION_FILE_WITH_CB_TO_CBADF "8.10.0"  // first version that maps --cb to use cb_adf
+#define VERSION_FILE_WITH_CB_TO_CBADF "8.11.0"  // first version that maps --cb to use cb_adf
