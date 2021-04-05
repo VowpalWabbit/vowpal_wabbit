@@ -42,6 +42,9 @@ endif()
 if(WIN32)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/Win32.cmake)
   message(STATUS "WinSDK Version: ${CMAKE_SYSTEM_VERSION}")
+  if (vw_BUILD_NETFX)
+    message(STATUS ".NET Framework Version: ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION}")
+  endif()
 endif()
 
 project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
@@ -254,6 +257,10 @@ endif()
 
 if(BUILD_PYTHON)
   add_subdirectory(python)
+endif()
+
+if(vw_BUILD_NETFX)
+  add_subdirectory(cs)
 endif()
 
 if(BUILD_SLIM_VW)
