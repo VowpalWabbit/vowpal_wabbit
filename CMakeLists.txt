@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 if(POLICY CMP0076)
-  cmake_policy(SET CMP0076 NEW)
+  cmake_policy(SET CMP0076 NEW) 
 endif()
 
 # Do not add /W3 to MSVC flags by default. We set this to /W4.
@@ -38,11 +39,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# VW targets Windows 10.0.16299.0 SDK
-# CMAKE_SYSTEM_VERSION must come before the project is defined in the top level CMakeLists file
-# https://stackoverflow.com/questions/45692367/how-to-set-msvc-target-platform-version-with-cmake
 if(WIN32)
-  set(CMAKE_SYSTEM_VERSION "10.0.16299.0" CACHE INTERNAL "Windows SDK version to target.")
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/Win32.cmake)
+  message(STATUS "WinSDK Version: ${CMAKE_SYSTEM_VERSION}")
 endif()
 
 project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
