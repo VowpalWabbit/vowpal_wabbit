@@ -188,8 +188,7 @@ BOOST_AUTO_TEST_CASE(slates_copy_label)
 
   VW::slates::label copied_to;
   VW::slates::default_label(copied_to);
-  VW::slates::copy_label(copied_to, label);
-
+  copied_to = label;
   BOOST_CHECK_EQUAL(copied_to.type, VW::slates::example_type::slot);
   BOOST_CHECK_EQUAL(copied_to.labeled, true);
   check_collections_with_float_tolerance(
