@@ -30,8 +30,7 @@ struct reduction_test_harness
   void test_learn(single_learner& base, example& ec)
   {
     _labels.emplace_back(ec.l.simple);
-    _simple_label_reduction_features.emplace_back(
-        ec._reduction_features.template get<simple_label_reduction_features>());
+    _weights.emplace_back(ec.weight);
     _learner_offset.emplace_back(ec.ft_offset);
   }
 
@@ -47,7 +46,7 @@ struct reduction_test_harness
 
   vector<float> _predictions;
   vector<label_data> _labels;
-  vector<simple_label_reduction_features> _simple_label_reduction_features;
+  vector<float> _weights;
   vector<uint64_t> _learner_offset;
   int _curr_idx;
 };
@@ -124,14 +123,13 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<label_data> expected_labels = {{-1}, {1}};
-  vector<simple_label_reduction_features> expected_reduction_features = {{3.5f / .5f, 0}, {3.5f / .5f, 0}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_simple_label_reduction_features.begin(),
-      pharness->_simple_label_reduction_features.end(), expected_reduction_features.begin(),
-      expected_reduction_features.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
+      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 0};
@@ -158,13 +156,12 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<label_data> expected_labels = {{-1}};
-  vector<simple_label_reduction_features> expected_reduction_features = {{3.5f / .5f, 0}};
+  vector<float> expected_weights = {3.5f / 0.5f};
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_simple_label_reduction_features.begin(),
-      pharness->_simple_label_reduction_features.end(), expected_reduction_features.begin(),
-      expected_reduction_features.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
+      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1};
@@ -194,13 +191,12 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<label_data> expected_labels = {{-1}, {1}};
-  vector<simple_label_reduction_features> expected_reduction_features = {{3.5f / .5f, 0}, {3.5f / .5f, 0}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_simple_label_reduction_features.begin(),
-      pharness->_simple_label_reduction_features.end(), expected_reduction_features.begin(),
-      expected_reduction_features.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
+      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 0};
@@ -228,14 +224,12 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<label_data> expected_labels = {{-1}, {1}, {1}, {1}};
-  vector<simple_label_reduction_features> expected_reduction_features = {
-      {3.5f / .5f, 0}, {3.5f / .5f, 0}, {3.5f / .5f, 0}, {3.5f / .5f, 0}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_simple_label_reduction_features.begin(),
-      pharness->_simple_label_reduction_features.end(), expected_reduction_features.begin(),
-      expected_reduction_features.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
+      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {3, 4, 1, 0};
@@ -269,14 +263,12 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
       {1},
       {1},
   };
-  vector<simple_label_reduction_features> expected_reduction_features = {
-      {3.5f / .5f, 0}, {3.5f / .5f, 0}, {3.5f / .5f, 0}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_simple_label_reduction_features.begin(),
-      pharness->_simple_label_reduction_features.end(), expected_reduction_features.begin(),
-      expected_reduction_features.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
+      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {4, 1, 0};
@@ -306,14 +298,12 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<label_data> expected_labels = {{-1}, {1}, {-1}};
-  vector<simple_label_reduction_features> expected_reduction_features = {
-      {3.5f / .5f, 0}, {3.5f / .5f, 0}, {3.5f / .5f, 0}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_simple_label_reduction_features.begin(),
-      pharness->_simple_label_reduction_features.end(), expected_reduction_features.begin(),
-      expected_reduction_features.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
+      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 2, 0};
@@ -343,14 +333,12 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<label_data> expected_labels = {{1}, {-1}, {1}, {1}};
-  vector<simple_label_reduction_features> expected_reduction_features = {
-      {3.5f / .5f, 0}, {3.5f / .5f, 0}, {3.5f / .5f, 0}, {3.5f / .5f, 0}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_simple_label_reduction_features.begin(),
-      pharness->_simple_label_reduction_features.end(), expected_reduction_features.begin(),
-      expected_reduction_features.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
+      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {6, 1, 2, 0};
@@ -380,13 +368,12 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<label_data> expected_labels = {};
-  vector<simple_label_reduction_features> expected_reduction_features = {};
+  vector<float> expected_weights = {};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_simple_label_reduction_features.begin(),
-      pharness->_simple_label_reduction_features.end(), expected_reduction_features.begin(),
-      expected_reduction_features.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
+      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {};
@@ -416,14 +403,12 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<label_data> expected_labels = {{1}, {1}, {1}};
-  vector<simple_label_reduction_features> expected_reduction_features = {
-      {3.5f / .5f, 0}, {3.5f / .5f, 0}, {3.5f / .5f, 0}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_simple_label_reduction_features.begin(),
-      pharness->_simple_label_reduction_features.end(), expected_reduction_features.begin(),
-      expected_reduction_features.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
+      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {12, 5, 0};
@@ -457,14 +442,12 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
       {1},
       {1},
   };
-  vector<simple_label_reduction_features> expected_reduction_features = {
-      {3.5f / .5f, 0}, {3.5f / .5f, 0}, {3.5f / .5f, 0}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_simple_label_reduction_features.begin(),
-      pharness->_simple_label_reduction_features.end(), expected_reduction_features.begin(),
-      expected_reduction_features.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
+      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {5, 2, 0};
