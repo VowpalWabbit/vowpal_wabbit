@@ -117,7 +117,7 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src) { copy_
 
 void copy_example_data(bool /* audit */, example* dst, example* src) { copy_example_data(dst, src); }
 
-void copy_example_data(bool audit, example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
+void copy_example_data(bool /* audit */, example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
 {
   copy_example_data(dst, src);
   copy_example_label(dst, src, copy_label);
