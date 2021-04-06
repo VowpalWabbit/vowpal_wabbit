@@ -726,7 +726,8 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_multipredict(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&, size_t, size_t, polyprediction*, bool))
+  FluentBuilderT& set_multipredict(
+      void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&, size_t, size_t, polyprediction*, bool))
   {
     this->_learner->learn_fd.multipredict_f = (learn_data::multi_fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
