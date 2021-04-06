@@ -104,6 +104,7 @@ table Example {
   namespaces:[Namespace];
   label:Label;
   tag:string;
+  is_newline:bool = false;
 }
 
 table MultiExample

@@ -96,6 +96,7 @@ void copy_example_metadata(example* dst, const example* src)
   dst->confidence = src->confidence;
   dst->test_only = src->test_only;
   dst->end_pass = src->end_pass;
+  dst->is_newline = src->is_newline;
   dst->sorted = src->sorted;
   dst->initial = src->initial;
 }
