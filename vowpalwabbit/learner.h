@@ -537,6 +537,14 @@ public:
   }
 };
 
+// OLD WAY:
+// The init_learner set of functions is the old way to create a learner. They
+// have been replaced with:
+//   - make_reduction_learner
+//   - make_base_learner
+// They were replaced due to how many different overloads there are and the
+// fact defaults are very hard to express. This problem got worse as more
+// arguments got added.
 template <class T, class E, class L>
 learner<T, E> &init_learner(free_ptr<T> &dat, L *base, void (*learn)(T &, L &, E &), void (*predict)(T &, L &, E &),
     size_t ws, prediction_type_t pred_type, const std::string &name, bool learn_returns_prediction = false)
@@ -863,6 +871,8 @@ struct base_learner_builder
 };
 VW_WARNING_STATE_POP
 
+// NEW WAY:
+// Use these two functions when creating a new learner.
 template <class DataT, class ExampleT, class BaseLearnerT>
 reduction_learner_builder<DataT, ExampleT, BaseLearnerT> make_reduction_learner(std::unique_ptr<DataT>&& data,
     BaseLearnerT* base, void (*learn_fn)(DataT&, BaseLearnerT&, ExampleT&),
