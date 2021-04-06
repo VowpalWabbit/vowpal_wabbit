@@ -200,7 +200,6 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     *(cs_a.all->trace_message) << endl << "average distance to range = "
 			       << cs_a.distance_to_range / ((float)cs_a.labels_outside_range);
     *(cs_a.all->trace_message) << endl << "average range = " << cs_a.range / ((float)cs_a.labels_outside_range);
-
   }
 
   if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes) return;

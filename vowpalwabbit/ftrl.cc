@@ -92,7 +92,8 @@ void multipredict(
     ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *b.all;
-  for (size_t c = 0; c < count; c++) {
+  for (size_t c = 0; c < count; c++)
+  {
     const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
     pred[c].scalar = simple_red_features.initial;
   }

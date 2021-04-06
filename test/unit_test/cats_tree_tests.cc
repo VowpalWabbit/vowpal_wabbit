@@ -127,8 +127,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
-      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 0};
@@ -161,8 +161,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
-      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1};
@@ -197,8 +197,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
-      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 0};
@@ -232,8 +232,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
-      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {3, 4, 1, 0};
@@ -272,8 +272,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
-      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {4, 1, 0};
@@ -308,8 +308,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
-      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 2, 0};
@@ -344,8 +344,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
-      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {6, 1, 2, 0};
@@ -380,8 +380,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
-      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {};
@@ -416,8 +416,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
-      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {12, 5, 0};
@@ -456,8 +456,8 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_weights.begin(),
-      pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {5, 2, 0};

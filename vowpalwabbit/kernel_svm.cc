@@ -459,7 +459,8 @@ size_t suboptimality(svm_model* model, double* subopt)
   for (size_t i = 0; i < model->num_support; i++)
   {
     float tmp = model->alpha[i] * model->support_vec[i]->ex.l.simple.label;
-    const auto& simple_red_features = model->support_vec[i]->ex._reduction_features.template get<simple_label_reduction_features>();
+    const auto& simple_red_features =
+        model->support_vec[i]->ex._reduction_features.template get<simple_label_reduction_features>();
     if ((tmp < simple_red_features.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
       subopt[i] = fabs(model->delta[i]);
     else

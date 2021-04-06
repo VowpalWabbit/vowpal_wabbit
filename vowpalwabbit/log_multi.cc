@@ -304,7 +304,6 @@ void predict(log_multi& b, single_learner& base, example& ec)
   ec.l.simple = {FLT_MAX};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
-
   uint32_t cn = 0;
   uint32_t depth = 0;
   while (b.nodes[cn].internal)

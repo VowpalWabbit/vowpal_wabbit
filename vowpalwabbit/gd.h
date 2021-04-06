@@ -97,10 +97,11 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 inline float inline_predict(vw& all, example& ec)
 {
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
-  return all.weights.sparse ? inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear,
-                                  all.ignore_linear, *ec.interactions, all.permutations, ec, simple_red_features.initial)
-                            : inline_predict<dense_parameters>(all.weights.dense_weights, all.ignore_some_linear,
-                                  all.ignore_linear, *ec.interactions, all.permutations, ec, simple_red_features.initial);
+  return all.weights.sparse
+      ? inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear, all.ignore_linear,
+            *ec.interactions, all.permutations, ec, simple_red_features.initial)
+      : inline_predict<dense_parameters>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear,
+            *ec.interactions, all.permutations, ec, simple_red_features.initial);
 }
 
 inline float sign(float w)

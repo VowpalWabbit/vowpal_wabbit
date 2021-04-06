@@ -96,9 +96,9 @@ void to_flat::write_to_file(bool collection, bool is_multiline, MultiExampleBuil
 void to_flat::create_simple_label(example* v, ExampleBuilder& ex_builder)
 {
   const auto& red_features = v->_reduction_features.template get<simple_label_reduction_features>();
-  ex_builder.label = VW::parsers::flatbuffer::CreateSimpleLabel(
-      _builder, v->l.simple.label, red_features.weight, red_features.initial)
-                         .Union();
+  ex_builder.label =
+      VW::parsers::flatbuffer::CreateSimpleLabel(_builder, v->l.simple.label, red_features.weight, red_features.initial)
+          .Union();
   ex_builder.label_type = VW::parsers::flatbuffer::Label_SimpleLabel;
 }
 

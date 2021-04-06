@@ -23,10 +23,7 @@ namespace logger = VW::io::logger;
 
 label_data::label_data() { reset_to_default(); }
 
-label_data::label_data(float label)
-    : label(label)
-{
-}
+label_data::label_data(float label) : label(label) {}
 
 void label_data::reset_to_default()
 {
@@ -57,7 +54,8 @@ size_t read_cached_simple_label(shared_data* sd, label_data& ld, reduction_featu
   return total;
 }
 
-float get_weight(label_data&, const reduction_features& red_features) {
+float get_weight(label_data&, const reduction_features& red_features)
+{
   auto& simple_red_features = red_features.template get<simple_label_reduction_features>();
   return simple_red_features.weight;
 }

@@ -74,7 +74,6 @@ reduction_features::get<VW::continuous_actions::reduction_features>() const
   return _contact_reduction_features;
 }
 
-
 template <>
 inline simple_label_reduction_features& reduction_features::get<simple_label_reduction_features>()
 {
@@ -82,8 +81,7 @@ inline simple_label_reduction_features& reduction_features::get<simple_label_red
 }
 
 template <>
-inline const simple_label_reduction_features&
-reduction_features::get<simple_label_reduction_features>() const
+inline const simple_label_reduction_features& reduction_features::get<simple_label_reduction_features>() const
 {
   return _simple_label_reduction_features;
 }

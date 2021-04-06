@@ -906,7 +906,8 @@ float get_label(example* ec) { return ec->l.simple.label; }
 
 float get_importance(example* ec) { return ec->weight; }
 
-float get_initial(example* ec) {
+float get_initial(example* ec)
+{
   const auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
   return simple_red_features.initial;
 }
