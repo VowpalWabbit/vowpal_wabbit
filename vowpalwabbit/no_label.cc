@@ -50,8 +50,6 @@ label_parser no_label_parser = {
   [](polylabel*) {},
    // get_weight
   [](polylabel*, const reduction_features&) { return 1.f; },
-  // copy_label
-  nullptr,
   // test_label
   [](polylabel*) { return false; },
   // post parse processing
