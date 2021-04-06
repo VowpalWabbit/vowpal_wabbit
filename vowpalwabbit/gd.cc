@@ -17,11 +17,14 @@
 #  endif
 #endif
 
-#include "gd.h"
 #include "accumulate.h"
+#include "debug_log.h"
+#include "gd.h"
 #include "reductions.h"
 #include "vw.h"
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::gd
 #include "io/logger.h"
 
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
@@ -55,7 +58,6 @@ struct gd
   bool adaptive_input;
   bool normalized_input;
   bool adax;
-
   vw* all;  // parallel, features, parameters
 };
 
@@ -138,6 +140,7 @@ template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normali
 void train(gd& g, example& ec, float update)
 {
   if VW_STD17_CONSTEXPR (normalized != 0) { update *= g.update_multiplier; }
+  VW_DBG(ec) << "gd: train() spare=" << spare << std::endl;
   foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
 }
 
@@ -346,7 +349,7 @@ inline void vec_add_trunc(trunc_data& p, const float fx, float& fw)
 
 inline float trunc_predict(vw& all, example& ec, double gravity)
 {
-  trunc_data temp = {ec.l.simple.initial, (float)gravity};
+  trunc_data temp = {ec.initial, (float)gravity};
   foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp);
   return temp.prediction;
 }
@@ -361,6 +364,8 @@ inline void vec_add_print(float& p, const float fx, float& fw)
 template <bool l1, bool audit>
 void predict(gd& g, base_learner&, example& ec)
 {
+  VW_DBG(ec) << "gd.predict(): ex#=" << ec.example_counter << ", offset=" << ec.ft_offset << std::endl;
+
   vw& all = *g.all;
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
@@ -369,6 +374,9 @@ void predict(gd& g, base_learner&, example& ec)
 
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, all.logger, ec.partial_prediction);
+
+  VW_DBG(ec) << "gd: predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << std::endl;
+
   if (audit) print_audit_features(all, ec);
 }
 
@@ -385,7 +393,7 @@ void multipredict(
     gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *g.all;
-  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple.initial;
+  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.initial;
   if (g.all->weights.sparse)
   {
     multipredict_info<sparse_parameters> mp = {
@@ -512,7 +520,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       if (x2 > x2_max)
       {
         norm_x2 = 1;
-	logger::errlog_error("your features have too much magnitude");
+        logger::errlog_error("your features have too much magnitude");
       }
       nd.norm_x += norm_x2;
     }
@@ -1228,7 +1236,7 @@ base_learner* setup(options_i& options, vw& all)
 
   gd* bare = g.get();
   learner<gd, example>& ret = init_learner(
-      g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()), all.get_setupfn_name(setup));
+      g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()), all.get_setupfn_name(setup), true);
   ret.set_sensitivity(bare->sensitivity);
   ret.set_multipredict(bare->multipredict);
   ret.set_update(bare->update);

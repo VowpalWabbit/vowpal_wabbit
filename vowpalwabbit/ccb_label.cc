@@ -17,6 +17,7 @@
 #include "vw_math.h"
 #include "vw_string_view.h"
 #include "parse_primitives.h"
+#include "reduction_features.h"
 
 #include "io/logger.h"
 
@@ -326,13 +327,13 @@ label_parser ccb_label_parser = {
     parse_label(p, sd, v->conditional_contextual_bandit, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { cache_label(v->conditional_contextual_bandit, cache); },
+  [](polylabel* v, ::reduction_features&, io_buf& cache) { cache_label(v->conditional_contextual_bandit, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->conditional_contextual_bandit, cache); },
+  [](shared_data* sd, polylabel* v, ::reduction_features&, io_buf& cache) { return read_cached_label(sd, v->conditional_contextual_bandit, cache); },
   // delete_label
   [](polylabel* v) { delete_label(v->conditional_contextual_bandit); },
    // get_weight
-  [](polylabel* v) { return ccb_weight(v->conditional_contextual_bandit); },
+  [](polylabel* v, const ::reduction_features&) { return ccb_weight(v->conditional_contextual_bandit); },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {
@@ -341,8 +342,9 @@ label_parser ccb_label_parser = {
   },
   // test_label
   [](polylabel* v) { return test_label(v->conditional_contextual_bandit); },
+  // parse post processing
+  nullptr,
   label_type_t::ccb
 };
 // clang-format on
-
 }  // namespace CCB

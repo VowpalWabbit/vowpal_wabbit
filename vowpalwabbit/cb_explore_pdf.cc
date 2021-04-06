@@ -15,6 +15,10 @@ using VW::config::option_group_definition;
 using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
+// Enable/Disable indented debug statements
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cb_explore_pdf
+
 namespace VW
 {
 namespace continuous_action

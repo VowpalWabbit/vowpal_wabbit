@@ -174,7 +174,7 @@ void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
 
 void reset_source(vw& all, size_t numbits)
 {
-  io_buf* input = all.example_parser->input;
+  io_buf* input = all.example_parser->input.get();
   input->current = 0;
 
   // If in write cache mode then close all of the input files then open the written cache as the new input.
@@ -246,7 +246,7 @@ void finalize_source(parser*) {}
 
 void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
-  io_buf* output = all.example_parser->output;
+  io_buf* output = all.example_parser->output.get();
   if (output->num_files() != 0)
   {
     *(all.trace_message) << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
@@ -297,7 +297,8 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.example_parser->input, all.example_parser->input->get_input_files().back().get());
+      uint64_t c =
+          cache_numbits(all.example_parser->input.get(), all.example_parser->input->get_input_files().back().get());
       if (c < all.num_bits)
       {
         if (!quiet)
@@ -657,7 +658,7 @@ void setup_example(vw& all, example* ae)
 
   if (all.example_parser->write_cache)
   {
-    all.example_parser->lbl_parser.cache_label(&ae->l, *(all.example_parser->output));
+    all.example_parser->lbl_parser.cache_label(&ae->l, ae->_reduction_features, *(all.example_parser->output));
     cache_features(*(all.example_parser->output), ae, all.parse_mask);
   }
 
@@ -665,6 +666,7 @@ void setup_example(vw& all, example* ae)
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
+  ae->initial = 0.;
   ae->_debug_current_reduction_depth = 0;
 
   ae->example_counter = (size_t)(all.example_parser->end_parsed_examples.load());
@@ -681,7 +683,7 @@ void setup_example(vw& all, example* ae)
           (all.example_parser->lbl_parser.label_type != label_type_t::ccb || CCB::ec_is_example_unset(*ae))))
     all.example_parser->in_pass_counter++;
 
-  ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l);
+  ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l, ae->_reduction_features);
 
   if (all.ignore_some)
   {
@@ -738,6 +740,12 @@ void setup_example(vw& all, example* ae)
   INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
   ae->num_features += new_features_cnt;
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
+
+  // Notes: Allows the label parser to update the example after parsing is done.
+  // For example we set the initial value used in gd during predict() (if set)
+  // simple_label_parser is defined with this post parse setup step.
+  if (all.example_parser->lbl_parser.post_parse_setup != nullptr)
+  { all.example_parser->lbl_parser.post_parse_setup(ae); }
 }
 }  // namespace VW
 
@@ -777,7 +785,7 @@ void add_constant_feature(vw& vw, example* ec)
 void add_label(example* ec, float label, float weight, float base)
 {
   ec->l.simple.label = label;
-  ec->l.simple.initial = base;
+  ec->initial = base;
   ec->weight = weight;
 }
 
@@ -853,6 +861,7 @@ void empty_example(vw& /*all*/, example& ec)
   ec.end_pass = false;
   ec.is_newline = false;
   ec._reduction_features.clear();
+  ec.initial = 0.f;
 }
 
 void clean_example(vw& all, example& ec, bool rewind)
@@ -904,7 +913,7 @@ float get_label(example* ec) { return ec->l.simple.label; }
 
 float get_importance(example* ec) { return ec->weight; }
 
-float get_initial(example* ec) { return ec->l.simple.initial; }
+float get_initial(example* ec) { return ec->initial; }
 
 float get_prediction(example* ec) { return ec->pred.scalar; }
 

@@ -65,9 +65,10 @@ int read_cached_features(vw* all, v_array<example*>& examples)
 {
   example* ae = examples[0];
   ae->sorted = all->example_parser->sorted_cache;
-  io_buf* input = all->example_parser->input;
+  io_buf* input = all->example_parser->input.get();
 
-  size_t total = all->example_parser->lbl_parser.read_cached_label(all->example_parser->_shared_data, &ae->l, *input);
+  size_t total = all->example_parser->lbl_parser.read_cached_label(
+      all->example_parser->_shared_data, &ae->l, ae->_reduction_features, *input);
   if (total == 0) return 0;
   if (read_cached_tag(*input, ae) == 0) return 0;
   char* c;

@@ -189,13 +189,13 @@ label_parser slates_label_parser = {
     parse_label(p, sd, v->slates, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { cache_label(v->slates, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->slates, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->slates, cache); },
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->slates, cache); },
   // delete_label
   [](polylabel* v) { delete_label(v->slates); },
    // get_weight
-  [](polylabel* v) { return weight(v->slates); },
+  [](polylabel* v, const reduction_features&) { return weight(v->slates); },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {
@@ -204,6 +204,8 @@ label_parser slates_label_parser = {
   },
   // test_label
   [](polylabel* v) { return test_label(v->slates); },
+  // post parse processing
+  nullptr,
   label_type_t::slates
 };
 // clang-format on

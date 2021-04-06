@@ -96,6 +96,7 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
   dst->end_pass = src->end_pass;
   dst->is_newline = src->is_newline;
   dst->sorted = src->sorted;
+  dst->initial = src->initial;
 }
 
 void copy_example_data(bool audit, example* dst, example* src)
@@ -185,7 +186,7 @@ flat_example* flatten_example(vw& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
-  fec.l.simple.weight = ec->weight;
+  fec.weight = ec->weight;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len > 0)

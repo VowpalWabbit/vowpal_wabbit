@@ -61,7 +61,7 @@ void predict_or_learn(cb& data, single_learner& base, example& ec)
 
   // cost observed, not default
   if (optional_cost.first && (c.known_cost.action < 1 || c.known_cost.action > c.num_actions))
-    logger::errlog_error("invalid action: ", c.known_cost.action);
+    logger::errlog_error("invalid action: {}", c.known_cost.action);
 
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs);
@@ -206,7 +206,7 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   if (eval)
   {
     l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass,
-        all.get_setupfn_name(cb_algs_setup) + "-eval");
+        all.get_setupfn_name(cb_algs_setup) + "-eval", true);
     l->set_finish_example(eval_finish_example);
   }
   else
