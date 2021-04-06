@@ -176,13 +176,13 @@ label_parser cs_label = {
     parse_label(p, sd, v->cs, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { cache_label(v->cs, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->cs, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->cs, cache); },
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->cs, cache); },
   // delete_label
   [](polylabel* v) { if (v) delete_label(v->cs); },
    // get_weight
-  [](polylabel* v) { return weight(v->cs); },
+  [](polylabel* v, const reduction_features&) { return weight(v->cs); },
   // copy_label
   [](polylabel* dst, polylabel* src) {
     if (dst && src) {
