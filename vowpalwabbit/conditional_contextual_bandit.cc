@@ -706,7 +706,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
                 .set_finish_example(finish_multiline_example)
                 .set_save_load(save_load)
                 .build();
-  return make_base(l);
+  return make_base(*l);
 }
 
 bool ec_is_example_header(example const& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }
