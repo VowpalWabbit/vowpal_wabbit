@@ -1752,6 +1752,7 @@ inline void append_empty_newline_example_for_driver(vw* all, v_array<example*>& 
     static const char empty[] = "";
     VW::string_view example(empty);
     substring_to_example(all, &ae, example);
+    ae.is_newline = true;
 
     examples.push_back(&ae);
   }

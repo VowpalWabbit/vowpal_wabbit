@@ -412,6 +412,7 @@ void to_flat::convert_txt_to_flat(vw& all)
                   ae->l.slates.type == VW::slates::slot)))
       {
         ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
+        ex_builder.is_newline = ae->is_newline;
         ex_builder.tag = tag;
         multi_ex_builder.examples.push_back(ex_builder);
         ex_builder.clear();
@@ -420,10 +421,15 @@ void to_flat::convert_txt_to_flat(vw& all)
         ae = all.example_parser->ready_parsed_examples.pop();
         continue;
       }
+      else
+      {
+        ex_builder.is_newline = true;
+      }
     }
     else
     {
       ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
+      ex_builder.is_newline = ae->is_newline;
       ex_builder.tag = tag;
       _examples++;
     }
