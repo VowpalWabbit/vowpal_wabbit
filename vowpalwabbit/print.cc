@@ -12,6 +12,7 @@ using std::cout;
 // TODO: This file should probably(?) use trace_message
 struct print
 {
+  print(vw* all) : all(all) {}
   vw* all;
 };  // regressor, feature loop
 
@@ -51,11 +52,9 @@ VW::LEARNER::base_learner* print_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto p = scoped_calloc_or_throw<print>();
-  p->all = &all;
-
   all.weights.stride_shift(0);
-
-  VW::LEARNER::learner<print, example>& ret = init_learner(p, learn, learn, 1, all.get_setupfn_name(print_setup));
-  return make_base(ret);
+  auto* learner = VW::LEARNER::make_base_learner(VW::make_unique<print>(&all), learn, learn,
+      all.get_setupfn_name(print_setup), prediction_type_t::scalar, label_type_t::simple)
+                      .build();
+  return VW::LEARNER::make_base(*learner);
 }
