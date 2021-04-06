@@ -19,12 +19,16 @@ struct label_data
 
 struct simple_label_reduction_features
 {
-  float weight = 1.f;
-  float initial = 0.f;
+  float weight;
+  float initial;
 
-  simple_label_reduction_features();
-  simple_label_reduction_features(float weight, float initial);
-  void reset_to_default();
+  simple_label_reduction_features() { reset_to_default(); }
+  simple_label_reduction_features(float weight, float initial) : weight(weight), initial(initial) {}
+  void reset_to_default() noexcept
+  {
+    weight = 1.f;
+    initial = 0.f;
+  }
 };
 
 void return_simple_example(vw& all, void*, example& ec);

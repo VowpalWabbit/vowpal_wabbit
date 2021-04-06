@@ -27,22 +27,10 @@ label_data::label_data(float label)
     : label(label)
 {
 }
-simple_label_reduction_features::simple_label_reduction_features() { reset_to_default(); }
-
-simple_label_reduction_features::simple_label_reduction_features(float weight, float initial)
-    : weight(weight), initial(initial)
-{
-}
 
 void label_data::reset_to_default()
 {
   label = FLT_MAX;
-}
-
-void simple_label_reduction_features::reset_to_default()
-{
-  weight = 1.f;
-  initial = 0.f;
 }
 
 char* bufread_simple_label(shared_data* sd, label_data& ld, simple_label_reduction_features& red_features, char* c)
