@@ -52,7 +52,7 @@ void copy_example_data(example* dst, example* src, bool oas = false)  // copy ex
   {
     dst->l.multilabels.label_v = src->l.multilabels.label_v;
   }
-  VW::copy_example_data(false, dst, src);
+  VW::copy_example_data(dst, src);
 }
 
 ////Implement kronecker_product between two examples:
