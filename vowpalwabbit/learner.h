@@ -720,15 +720,15 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_learn(void (*u)(DataT&, BaseLearnerT&, ExampleT&))
+  FluentBuilderT& set_learn(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&))
   {
-    this->_learner->learn_fd.learn_f = (learn_data::fn)u;
+    this->_learner->learn_fd.learn_f = (learn_data::fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_multipredict(void (*u)(DataT&, BaseLearnerT&, ExampleT&, size_t, size_t, polyprediction*, bool))
+  FluentBuilderT& set_multipredict(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&, size_t, size_t, polyprediction*, bool))
   {
-    this->_learner->learn_fd.multipredict_f = (learn_data::multi_fn)u;
+    this->_learner->learn_fd.multipredict_f = (learn_data::multi_fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
 
@@ -739,10 +739,10 @@ struct common_learner_builder
   }
 
   // used for active learning and confidence to determine how easily predictions are changed
-  FluentBuilderT& set_sensitivity(float (*u)(DataT& data, base_learner& base, example&))
+  FluentBuilderT& set_sensitivity(float (*fn_ptr)(DataT& data, base_learner& base, example&))
   {
     this->_learner->sensitivity_fd.data = this->_learner->learn_fd.data;
-    this->_learner->sensitivity_fd.sensitivity_f = (sensitivity_data::fn)u;
+    this->_learner->sensitivity_fd.sensitivity_f = (sensitivity_data::fn)fn_ptr;
 
     return *static_cast<FluentBuilderT*>(this);
   }
@@ -753,42 +753,42 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_save_load(void (*sl)(DataT&, io_buf&, bool, bool))
+  FluentBuilderT& set_save_load(void (*fn_ptr)(DataT&, io_buf&, bool, bool))
   {
-    _learner->save_load_fd.save_load_f = (save_load_data::fn)sl;
+    _learner->save_load_fd.save_load_f = (save_load_data::fn)fn_ptr;
     _learner->save_load_fd.data = _learner->learn_fd.data;
     _learner->save_load_fd.base = _learner->learn_fd.base;
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_finish(void (*f)(DataT&))
+  FluentBuilderT& set_finish(void (*fn_ptr)(DataT&))
   {
-    _learner->finisher_fd = func_data(_learner->learn_fd.data, _learner->learn_fd.base, (finish_fptr_type)(f));
+    _learner->finisher_fd = func_data(_learner->learn_fd.data, _learner->learn_fd.base, (finish_fptr_type)(fn_ptr));
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_end_pass(void (*f)(DataT&))
+  FluentBuilderT& set_end_pass(void (*fn_ptr)(DataT&))
   {
-    _learner->end_pass_fd = func_data(_learner->learn_fd.data, _learner->learn_fd.base, (func_data::fn)f);
+    _learner->end_pass_fd = func_data(_learner->learn_fd.data, _learner->learn_fd.base, (func_data::fn)fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_end_examples(void (*f)(DataT&))
+  FluentBuilderT& set_end_examples(void (*fn_ptr)(DataT&))
   {
-    _learner->end_examples_fd = func_data(_learner->learn_fd.data, _learner->learn_fd.base, (func_data::fn)f);
+    _learner->end_examples_fd = func_data(_learner->learn_fd.data, _learner->learn_fd.base, (func_data::fn)fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_init_driver(void (*f)(DataT&))
+  FluentBuilderT& set_init_driver(void (*fn_ptr)(DataT&))
   {
-    _learner->init_fd = func_data(_learner->learn_fd.data, _learner->learn_fd.base, (func_data::fn)f);
+    _learner->init_fd = func_data(_learner->learn_fd.data, _learner->learn_fd.base, (func_data::fn)fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_finish_example(void (*f)(vw& all, DataT&, ExampleT&))
+  FluentBuilderT& set_finish_example(void (*fn_ptr)(vw& all, DataT&, ExampleT&))
   {
     _learner->finish_example_fd.data = _learner->learn_fd.data;
-    _learner->finish_example_fd.finish_example_f = (end_fptr_type)(f);
+    _learner->finish_example_fd.finish_example_f = (end_fptr_type)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 };
