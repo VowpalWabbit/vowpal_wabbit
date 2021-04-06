@@ -1,0 +1,48 @@
+include(CSharpUtilities)
+include(NetFxNuget)
+
+# TODO: Make AssemblyInfo a configure()ed file
+add_library(cs_json SHARED
+  Properties/AssemblyInfo.cs 
+  Serializer/IVowpalWabbitJsonConverter.cs
+  Serializer/JsonRawStringConverter.cs
+  Serializer/JsonRawStringListConverter.cs
+  Serializer/JsonTypeInspector.cs
+  Serializer/PrefixedJsonReader.cs
+  Serializer/VowpalWabbitJsonBuilder.cs
+  Serializer/VowpalWabbitJsonException.cs
+  Serializer/VowpalWabbitJsonOptimizedSerializable.cs
+  Serializer/VowpalWabbitJsonReferenceResolver.cs
+  Serializer/VowpalWabbitJsonSerializable.cs
+  Serializer/VowpalWabbitJsonSerializer.cs
+  VowpalWabbitJson.cs
+  VowpalWabbitJsonThreadedPrediction.cs
+  VowpalWabbitMarshalAction.cs
+  ../vw_key.snk
+  )
+
+CSHARP_SET_DESIGNER_CS_PROPERTIES(
+    "Properties/AssemblyInfo.cs"
+)
+
+set (vw_DOTNET_FRAMEWORK_REFERENCES
+    System
+    System.Core
+    System.Data
+    System.Data.DataSetExtensions
+    System.Runtime.Caching
+    System.Xml
+    System.Xml.Linq
+    Microsoft.CSharp
+)
+
+target_link_libraries(cs_json 
+  PUBLIC vw_common vw_clr vw_cs 
+)
+
+target_add_nuget_references(cs_json "Newtonsoft.JSON@9.0.1")
+
+set_target_properties(cs_json 
+    PROPERTIES VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
+               VS_GLOBAL_ROOTNAMESPACE VW
+)
