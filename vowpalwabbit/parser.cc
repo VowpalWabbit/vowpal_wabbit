@@ -859,6 +859,7 @@ void empty_example(vw& /*all*/, example& ec)
   ec.tag.clear();
   ec.sorted = false;
   ec.end_pass = false;
+  ec.is_newline = false;
   ec._reduction_features.clear();
   ec.initial = 0.f;
 }
