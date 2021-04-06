@@ -166,7 +166,7 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     CB::default_label(lab);
 
     // copy data
-    VW::copy_example_data(false, &eca, &ec);
+    VW::copy_example_data(&eca, &ec);
 
     // offset indicies for given action
     for (features& fs : eca)
