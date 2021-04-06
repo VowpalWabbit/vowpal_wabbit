@@ -14,8 +14,7 @@ add_library(vw_common SHARED
   Serializer/StringProcessing.cs
   Bag.cs
   VowpalWabbitDecisionServiceInteractionHeader.cs
-  ../vw_key.snk
-  )
+)
 
 CSHARP_SET_DESIGNER_CS_PROPERTIES(
     "Properties/AssemblyInfo.cs"
