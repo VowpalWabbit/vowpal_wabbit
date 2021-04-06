@@ -698,11 +698,14 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_str.append("_id");
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
-  learner<ccb, multi_ex>& l = init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
-      prediction_type_t::decision_probs, all.get_setupfn_name(ccb_explore_adf_setup), true);
-
-  l.set_finish_example(finish_multiline_example);
-  l.set_save_load(save_load);
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
+      all.get_setupfn_name(ccb_explore_adf_setup))
+                .set_learn_returns_prediction(true)
+                .set_prediction_type(prediction_type_t::decision_probs)
+                .set_label_type(prediction_type_t::ccb)
+                .set_finish_example(finish_multiline_example)
+                .set_save_load(save_load)
+                .build();
   return make_base(l);
 }
 
