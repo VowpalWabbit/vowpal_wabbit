@@ -121,13 +121,13 @@ label_parser simple_label_parser = {
     parse_simple_label(p, sd, v->simple, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { cache_simple_label(v->simple, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { cache_simple_label(v->simple, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_simple_label(sd, v->simple, cache); },
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_simple_label(sd, v->simple, cache); },
   // delete_label
   [](polylabel*) {},
    // get_weight
-  [](polylabel* v) { return get_weight(v->simple); },
+  [](polylabel* v, const reduction_features&) { return get_weight(v->simple); },
   // copy_label
   nullptr,
   // test_label

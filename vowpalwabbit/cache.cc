@@ -11,6 +11,8 @@ constexpr size_t int_size = 11;
 constexpr size_t char_size = 2;
 constexpr size_t neg_1 = 1;
 constexpr size_t general = 2;
+constexpr unsigned char newline_example = '1';
+constexpr unsigned char non_newline_example = '0';
 
 inline char* run_len_decode(char* p, uint64_t& i)
 {
@@ -65,10 +67,23 @@ int read_cached_features(vw* all, v_array<example*>& examples)
   ae->sorted = all->example_parser->sorted_cache;
   io_buf* input = all->example_parser->input.get();
 
-  size_t total = all->example_parser->lbl_parser.read_cached_label(all->example_parser->_shared_data, &ae->l, *input);
+  size_t total = all->example_parser->lbl_parser.read_cached_label(
+      all->example_parser->_shared_data, &ae->l, ae->_reduction_features, *input);
   if (total == 0) return 0;
   if (read_cached_tag(*input, ae) == 0) return 0;
   char* c;
+  // is newline example or not
+  unsigned char newline_indicator = 0;
+  if (input->buf_read(c, sizeof(newline_indicator)) < sizeof(newline_indicator)) return 0;
+  newline_indicator = *(unsigned char*)c;
+  if (newline_indicator == newline_example) { ae->is_newline = true; }
+  else
+  {
+    ae->is_newline = false;
+  }
+  c += sizeof(newline_indicator);
+  all->example_parser->input->set(c);
+  // read indices
   unsigned char num_indices = 0;
   if (input->buf_read(c, sizeof(num_indices)) < sizeof(num_indices)) return 0;
   num_indices = *(unsigned char*)c;
@@ -87,6 +102,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
 
     index = *(unsigned char*)c;
     c += sizeof(index);
+
     ae->indices.push_back((size_t)index);
     features& ours = ae->feature_space[index];
     size_t storage = *(size_t*)c;
@@ -195,6 +211,12 @@ void cache_tag(io_buf& cache, const v_array<char>& tag)
 void cache_features(io_buf& cache, example* ae, uint64_t mask)
 {
   cache_tag(cache, ae->tag);
+
+  if (ae->is_newline) { output_byte(cache, newline_example); }
+  else
+  {
+    output_byte(cache, non_newline_example);
+  }
   output_byte(cache, (unsigned char)ae->indices.size());
 
   for (namespace_index ns : ae->indices) output_features(cache, ns, ae->feature_space[ns], mask);

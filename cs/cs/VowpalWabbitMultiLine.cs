@@ -194,8 +194,10 @@ namespace VW
                     {
                         examples.Add(sharedExample);
 
-                        if (!sharedExample.IsNewLine)
+                        if (!serializer.Serialize(example, null).IsNewLine)
                         {
+                            // empty shared example (i.e. "shared |") used to be considered as newline
+                            // serializing with out the default label string should result in the same thing as a newline
                             validExamples.Add(sharedExample);
                         }
                     }
