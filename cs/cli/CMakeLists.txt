@@ -1,4 +1,5 @@
 include(CSharpUtilities)
+include(NetFxNuget)
 
 set(vw_CLI_HEADERS
   clr_io.h
@@ -16,9 +17,11 @@ set(vw_CLI_HEADERS
   vw_model.h
   vw_prediction.h
   vw_settings.h
+  resource.h
 )
 
 set(vw_CLI_SOURCES
+  AssemblyInfo.cpp
   clr_io.cpp
   spanning_tree_clr.cpp
   vowpalwabbit.cpp
@@ -37,11 +40,28 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${vw_CLI_HEADERS} ${vw_CLI_S
 add_library(vw_clr SHARED
   ${vw_CLI_HEADERS}
   ${vw_CLI_SOURCES}
-  )
+  Resource.rc
+)
 
+# This ensures that the assembly is built with /clr. It is empty because we have mixed native and
+# managed C++. It is important to set this property ahead of doing StrongName signing, as it is
+# used to determine whether the assembly is build from a vcxproj vs. a csproj.
+set_property(TARGET vw_clr PROPERTY COMMON_LANGUAGE_RUNTIME "")
+
+set (vw_DOTNET_FRAMEWORK_REFERENCES
+    System
+    System.Core
+)
+
+set (vw_clr_NUGET_REFERENCES
+  Newtonsoft.Json@9.0.1
+)
+
+target_add_nuget_references(vw_clr "${vw_clr_NUGET_REFERENCES}")
+   
 # Define dependencies.
 target_link_libraries(vw_clr 
-    PUBLIC vw_common 
+    PUBLIC VowpalWabbit.Common
     PRIVATE vw
     # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
@@ -49,21 +69,9 @@ target_link_libraries(vw_clr
     $<BUILD_INTERFACE:RapidJSON>
 )
 
-set_property(TARGET vw_clr PROPERTY COMMON_LANGUAGE_RUNTIME "")
-
-set (vw_DOTNET_FRAMEWORK_REFERENCES
-    System
-    )
-
-find_program(NuGet NAMES nuget) # TODO: Ensure this works in VW / under init.cmd
-exec_program(${NuGet}
-    ARGS install "Newtonsoft.Json" -Version 9.0.1 -OutputDirectory ${CMAKE_BINARY_DIR}/packages)
-
-set_property(TARGET vw_clr PROPERTY 
-    VS_DOTNET_REFERENCE_Newtonsoft.Json 
-    ${CMAKE_BINARY_DIR}/packages/EntityFramework.9.0.1/lib/net45/EntityFramework.dll)
-    
 set_target_properties(vw_clr PROPERTIES
-    VS_DOTNET_REFERENCES ${vw_DOTNET_FRAMEWORK_REFERENCES}
+    VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
+    VS_DOTNET_TARGET_FRAMEWORK_VERSION ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION}
     VS_GLOBAL_ROOTNAMESPACE vw_clr
+    VS_GLOBAL_CLRSupport "True"
 )
