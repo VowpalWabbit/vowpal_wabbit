@@ -59,7 +59,7 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
     uint32_t num_leaves, uint32_t bandwidth);
 
 template <typename T = reduction_test_harness>
-std::unique_ptr<learner<T, example>> get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+learner<T, example>* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
 {
   T* pharness = nullptr;
   return get_test_harness_reduction(base_reduction_predictions, pharness);
