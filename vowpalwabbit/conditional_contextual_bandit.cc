@@ -44,8 +44,8 @@ void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
 
 struct ccb
 {
-  vw* all;
-  example* shared;
+  vw* all = nullptr;
+  example* shared= nullptr;
   std::vector<example*> actions, slots;
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label;
@@ -53,17 +53,17 @@ struct ccb
   namespace_interactions generated_interactions;
   namespace_interactions* original_interactions;
   std::vector<CCB::label> stored_labels;
-  size_t action_with_label;
+  size_t action_with_label = 0;
 
   multi_ex cb_ex;
 
   // All of these hashes are with a hasher seeded with the below namespace hash.
   std::vector<uint64_t> slot_id_hashes;
-  uint64_t id_namespace_hash;
+  uint64_t id_namespace_hash = 0;
   std::string id_namespace_str;
 
-  size_t base_learner_stride_shift;
-  bool all_slots_loss_report;
+  size_t base_learner_stride_shift = 0;
+  bool all_slots_loss_report = false;
 
   VW::v_array_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
@@ -653,7 +653,7 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 
 base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 {
-  auto data = scoped_calloc_or_throw<ccb>();
+  auto data = VW::make_unique<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
 
@@ -702,7 +702,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
       all.get_setupfn_name(ccb_explore_adf_setup))
                 .set_learn_returns_prediction(true)
                 .set_prediction_type(prediction_type_t::decision_probs)
-                .set_label_type(prediction_type_t::ccb)
+                .set_label_type(label_type_t::ccb)
                 .set_finish_example(finish_multiline_example)
                 .set_save_load(save_load)
                 .build();
