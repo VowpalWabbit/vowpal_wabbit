@@ -45,7 +45,7 @@ void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
 struct ccb
 {
   vw* all = nullptr;
-  example* shared= nullptr;
+  example* shared = nullptr;
   std::vector<example*> actions, slots;
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label;
