@@ -95,8 +95,7 @@ void parse_simple_label(
       simple_red_features.initial = float_of_string(words[2]);
       break;
     default:
-      logger::log_error("Error: {0} is too many tokens for a simple label: {1}",
-			words.size(), fmt::join(words, " "));
+      logger::log_error("Error: {0} is too many tokens for a simple label: {1}", words.size(), fmt::join(words, " "));
   }
   count_label(sd, ld.label);
 }
