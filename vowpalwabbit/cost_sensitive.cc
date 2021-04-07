@@ -99,8 +99,6 @@ bool test_label(label& ld)
   return true;
 }
 
-void delete_label(label& ld) { ld.costs.delete_v(); }
-
 void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   ld.costs.clear();
@@ -177,9 +175,7 @@ label_parser cs_label = {
   [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->cs, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->cs, cache); },
-  // delete_label
-  [](polylabel* v) { if (v) delete_label(v->cs); },
-   // get_weight
+  // get_weight
   [](polylabel* v, const reduction_features&) { return weight(v->cs); },
   // test_label
   [](polylabel* v) { return test_label(v->cs); },
