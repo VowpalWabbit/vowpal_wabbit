@@ -1,8 +1,11 @@
+import warnings
 import numpy as np
 import pandas as pd
 
 class _Col:
     """_Col class. It refers to a column of a dataframe."""
+
+    mapping_python_numpy = {int: np.integer, float: np.floating, object: np.dtype("O"), str: np.dtype("O")}
 
     def __init__(self, colname, expected_type, min_value=None, max_value=None):
         """Initialize a _Col instance
@@ -22,6 +25,38 @@ class _Col:
         self.expected_type = expected_type
         self.min_value = min_value
         self.max_value = max_value
+
+    @staticmethod
+    def make_valid_name(name):
+        """Returns a feature/namespace name that is compatible with VW (no ':' nor ' ').
+
+        Parameters
+        ----------
+        name : str
+            The name that will be made valid.
+
+        Returns
+        -------
+        valid_name : str
+            A valid VW feature name.
+        """
+        name = str(name)
+        valid_name = (
+            name
+            .replace(":", " ")
+            .strip()
+            .replace(" ", "_")
+        )
+
+        if valid_name != name:
+            warnings.warn(
+                "Name '{name}' was not a valid feature/namespace name. It has been renamed '{valid_name}'".format(
+                    name=name,
+                    valid_name=valid_name,
+                    )
+                )
+
+        return valid_name
 
     def get_col(self, df):
         """Returns the column defined in attribute 'colname' from the dataframe 'df'.
@@ -61,21 +96,7 @@ class _Col:
             The dataframe from which to check the column's type.
         """
         col_type = df[self.colname].dtype
-        return np.issubsctype(col_type, np.number)
-
-    def get_colname(self):
-        """Returns a colname that is compatible with VW (no ':' nor ' ').
-
-        Returns
-        -------
-        colname : str
-            A valid colname.
-        """
-        colname = str(self.colname)
-        colname = colname.replace(":", " ")
-        colname = colname.strip()
-        colname = colname.replace(" ", "_")
-        return colname
+        return np.issubdtype(col_type, np.number)
 
     def check_col_type(self, df):
         """Check if the type of the column is valid.
@@ -90,29 +111,24 @@ class _Col:
         TypeError
             If the type of the column is not valid.
         """
-        expected_type = list(self.expected_type)
-        if str in expected_type:
-            expected_type.append(object)
-        if int in expected_type:
-            expected_type.append(np.int64)
-
+        expected_type = [self.mapping_python_numpy[exp_type] for exp_type in self.expected_type]
         col_type = df[self.colname].dtype
-        if not (col_type in expected_type):
+        
+        if not any(np.issubdtype(col_type, exp_type) for exp_type in expected_type):
             raise TypeError(
                 "column '{colname}' should be either of the following type(s): {type_name}.".format(
                     colname=self.colname,
-                    type_name=str([x.__name__ for x in expected_type])[1:-1],
+                    type_name=str([x.__name__ for x in self.expected_type])[1:-1],
+
                 )
             )
 
     def check_col_value(self, df):
         """Check if the value range of the column is valid.
-
         Parameters
         ----------
         df : pandas.DataFrame
             The dataframe from which to check the column.
-
         Raises
         ------
         ValueError
@@ -158,7 +174,6 @@ class AttributeDescriptor(object):
             The minimum value of the attribute.
         max_value: str/int/float
             The maximum value of the attribute.
-
         Raises
         ------
         TypeError
@@ -188,40 +203,21 @@ class AttributeDescriptor(object):
         if "columns" not in instance.__dict__:
             instance.__dict__["columns"] = set()
 
-        # set instance attribute to None if arg is None
         if arg is None:
             instance.__dict__[self.attribute_name] = arg
         else:
-            self.initialize_col_type(instance, arg)
-
-    def initialize_col_type(self, instance, colname):
-        """Initialize the attribute as a _Col type
-
-        Parameters
-        ----------
-        instance: object
-            The managed instance.
-        colname: str/int/float
-            The colname used for the _Col instance.
-        """
-        if isinstance(colname, list):
-            for col in colname:
-                instance.__dict__["columns"].add(col)
-
+            arg_is_list = isinstance(arg, list)
+            colnames = arg if arg_is_list else [arg]
+            instance.__dict__["columns"].update(colnames)
             instance.__dict__[self.attribute_name] = [_Col(
                 colname=col,
                 expected_type=self.expected_type,
                 min_value=self.min_value,
                 max_value=self.max_value
-            ) for col in colname ]
-        else:
-            instance.__dict__["columns"].add(colname)
-            instance.__dict__[self.attribute_name] = _Col(
-                colname=colname,
-                expected_type=self.expected_type,
-                min_value=self.min_value,
-                max_value=self.max_value
-            )
+            ) for col in colnames ]
+
+            if not arg_is_list:
+                instance.__dict__[self.attribute_name] = instance.__dict__[self.attribute_name][0]
 
 
 class SimpleLabel(object):
@@ -348,56 +344,40 @@ class MultiLabel(object):
         return out
 
 
-class ContextualBanditLabel(object):
+class ContextualbanditLabel(object):
     """The contextual bandit label type for the constructor of DFtoVW."""
 
     action = AttributeDescriptor("action", expected_type=(int,), min_value=1)
     cost = AttributeDescriptor("cost", expected_type=(float, int))
     proba = AttributeDescriptor("proba", expected_type=(float,), min_value=0, max_value=1)
 
-    def __init__(self, label):
+    def __init__(self, action, cost, proba):
         """Initialize a ContextualBanditLabel instance.
-
         Parameters
         ----------
-        label : tuple/list or list of tuple/list
-            The (list of) column name(s) of the contextual bandit label.
-
+        action : 
+        cost:
+        proba:
         Returns
         -------
-        self : ContextualBanditLabel
+        self : ContextualbanditLabel
         """
-        try:
-            list_of_labels = [[x[i] for x in label] for i in range(3)]
-        except IndexError:
-            self.action, self.cost, self.proba = label
-            self.is_list = False
-        else:
-            self.action, self.cost, self.proba = list_of_labels
-            self.is_list = True
+        self.action = action
+        self.cost = action
+        self.proba = proba
 
     def process(self, df):
-        """Returns the ContextualBanditLabel string representation.
-
+        """Returns the ContextualbanditLabel string representation.
         Parameters
         ----------
         df : pandas.DataFrame
             The dataframe from which to select the column(s).
-
         Returns
         -------
         pandas.Series
-            The ContextualBanditLabel string representation.
+            The ContextualbanditLabel string representation.
         """
-        if self.is_list:
-            for i, (action, cost, proba) in enumerate(zip(self.action, self.cost, self.proba)):
-                parsed_label = action.get_col(df) + ":" + cost.get_col(df) + ":" + proba.get_col(df)
-                if i == 0:
-                    out = parsed_label
-                else:
-                    out += " " + parsed_label
-        else:
-            out = self.action.get_col(df) + ":" + self.cost.get_col(df) + ":" + self.proba.get_col(df)
+        out = self.action.get_col(df) + ":" + self.cost.get_col(df) + ":"  + self.proba.get_col(df)
 
         return out
 
@@ -423,7 +403,9 @@ class Feature(object):
         self : Feature
         """
         self.value = value
-        self.rename_feature = rename_feature
+        self.name = _Col.make_valid_name(
+            rename_feature if rename_feature is not None else self.value.colname
+        )
         if as_type is not None and as_type not in ("numerical", "categorical"):
             raise ValueError("Argument 'as_type' can either be 'numerical' or 'categorical'")
         else:
@@ -442,14 +424,13 @@ class Feature(object):
         pandas.Series
             The Feature string representation.
         """
-        name = self.rename_feature if self.rename_feature is not None else self.value.get_colname()
         value_col = self.value.get_col(df)
         if self.as_type:
             sep = ':' if self.as_type == "numerical" else '='
         else:
             sep = ':' if self.value.is_number(df) else '='
 
-        out = name + sep + value_col
+        out = self.name + sep + value_col
         return out
 
 
@@ -525,12 +506,11 @@ class Namespace(object):
         self : Namespace
         """
 
-        if (value is not None) and (name is None):
+        if (value is not None) and (name is None or name == ""):
             raise ValueError(
-                "Namespace can't have a 'value' argument without a 'name' argument"
+                "Namespace can't have a 'value' argument without a 'name' argument or an empty string 'name' argument"
             )
-
-        self.name = name
+        self.name = _Col.make_valid_name(name) if name else None
         self.value = value
         self.features = (
             list(features) if isinstance(features, (list, set)) else [features]
@@ -582,6 +562,66 @@ class Namespace(object):
                 out += [":", str(self.value)]
 
         return "".join(out)
+
+
+class _ListLabel(object):
+    """Build a list of label"""
+
+    available_labels = (ContextualbanditLabel, MultiLabel)
+    sep_by_label = dict(ContextualbanditLabel=' ', MultiLabel=',')
+
+    def __init__(self, label_list, sep=" "):
+        
+        instance_classes = set([type(label_instance).__name__ for label_instance in label_list])
+        if len(instance_classes) > 1:
+            raise ValueError("The list passed as label has mixed label types.")
+
+        if not all(isinstance(label_instance, self.available_labels) for label_instance in label_list):
+            raise ValueError(
+                "The only labels that can be used with list are {accepted}".format(
+                    accepted=self.available_labels
+                )
+            )
+        
+        # Unpack columns
+        columns = set()
+        for label in label_list:
+            columns.update(label.columns)
+        self.columns = columns
+        
+        self.label_list = label_list
+
+        # Unpack attributes of type _Col
+        label_cols = []
+        for label_instance in label_list:
+            label_cols += [value for key, value in vars(label_instance).items() if isinstance(value, _Col)]
+        self.label_cols = label_cols
+
+        self.sep = self.sep_by_label[list(instance_classes)[0]]
+
+        # Dynamically change class_name
+        _ListLabel.__name__ = "List[{typename}]".format(typename=type(label_list[0]).__name__)
+    
+    def __getitem__(self, idx):
+        return self.label_list[idx]
+    
+    def __len__(self):
+        return len(self.label_list)
+    
+    def __repr__(self):
+        return type(self).__name__
+    
+    def __iter__(self):
+        return iter(self.label_list)
+    
+    def process(self, df):
+        for (i, label) in enumerate(self):
+            if i == 0:
+                out = label.process(df)
+            else:
+                out += (self.sep + label.process(df))
+            
+        return out
 
 
 class DFtoVW:
@@ -656,18 +696,21 @@ class DFtoVW:
         """
         self.df = df
         self.n_rows = df.shape[0]
-        self.label = label
+        if isinstance(label, list):
+            self.label = _ListLabel(label)
+        else:
+            self.label = label
         self.tag = _Tag(tag) if tag else None
+        
+        if label is not None:
+            self.check_label_type()
 
         if features is not None:
             self.check_features_type(features)
-
-        self.set_namespaces_or_features(namespaces, features)
-
-        self.check_label_type()
+        
+        self.set_namespaces(namespaces, features)
         self.check_namespaces_type()
-
-        self.check_columns_existence_in_df()
+        self.check_missing_columns_df()
         self.check_columns_type_and_values()
 
     @classmethod
@@ -683,7 +726,7 @@ class DFtoVW:
         df : pandas.DataFrame
             The dataframe used.
         label_type: str (default: 'simple_label')
-            The type of the label. Available labels: 'simple_label', 'multiclass_label', 'multi_label', 'contextual_bandit_label'
+            The type of the label. Available labels: 'simple_label', 'multiclass_label', 'multi_label'.
 
         Raises
         ------
@@ -715,7 +758,6 @@ class DFtoVW:
             "simple_label": SimpleLabel,
             "multiclass_label": MulticlassLabel,
             "multi_label": MultiLabel,
-            "contextual_bandit_label": ContextualBanditLabel,
         }
 
         if label_type not in dict_label_type:
@@ -727,7 +769,7 @@ class DFtoVW:
 
         y = y if isinstance(y, list) else [y]
 
-        if label_type not in ["multi_label", "contextual_bandit_label"]:
+        if label_type not in ["multi_label"]:
             if len(y) > 1:
                 raise TypeError(
                 "When label_type is 'simple_label' or 'multiclass', argument 'y' should be a string (or any hashable type) "+
@@ -769,7 +811,7 @@ class DFtoVW:
                 "Argument 'features' should be a Feature or a list of Feature."
             )
 
-    def set_namespaces_or_features(self, namespaces, features):
+    def set_namespaces(self, namespaces, features):
         """Set namespaces attributes
 
         Parameters
@@ -810,19 +852,18 @@ class DFtoVW:
         TypeError
             If label is not of type SimpleLabel or MulticlassLabel.
         """
-        available_labels = (SimpleLabel, MulticlassLabel, MultiLabel, ContextualBanditLabel)
+        available_labels = (SimpleLabel, MulticlassLabel, MultiLabel, ContextualbanditLabel)
 
-        if self.label is None:
-            pass
-        else:
-            if not isinstance(self.label, available_labels):
-                raise TypeError(
-                    "Argument 'label' should be either of the following type: {label_types}.".format(
-                        label_types=repr(
-                            [x.__name__ for x in available_labels]
-                        )[1:-1]
-                    )
+        label = self.label[0] if isinstance(self.label, _ListLabel) else self.label
+
+        if not isinstance(label, available_labels):
+            raise TypeError(
+                "Argument 'label' should be either of the following type: {label_types}.".format(
+                    label_types=repr(
+                        [x.__name__ for x in available_labels]
+                    )[1:-1]
                 )
+            )
 
     def check_namespaces_type(self):
         """Check if namespaces arguments are of type Namespace.
@@ -841,83 +882,73 @@ class DFtoVW:
                 "Argument 'namespaces' should be a Namespace or a list of Namespace."
             )
 
-    def check_columns_existence_in_df(self):
+    def check_missing_columns_df(self):
         """Check if the columns are in the dataframe."""
-        absent_cols = {}
+        missing_cols = {}
         df_colnames = set(self.df.columns)
 
         try:
-            missing_cols = self.label.columns
+            label_columns = self.label.columns
         except AttributeError:
             pass
-        else:
-            if missing_cols is not None:
-                type_label = type(self.label).__name__
-                absent_cols[type_label] = list(missing_cols - df_colnames)
+        else:        
+            type_label = type(self.label).__name__
+            missing_cols[type_label] = label_columns - df_colnames
 
         try:
-            missing_cols = self.tag.columns
+            tag_columns = self.tag.columns
         except AttributeError:
             pass
         else:
-            if missing_cols is not None:
-                absent_cols["tag"] = list(missing_cols - df_colnames)
+            missing_cols["tag"] = tag_columns - df_colnames
 
         all_features = [
             feature
             for namespace in self.namespaces
             for feature in namespace.features
         ]
-        missing_features_cols = []
+        missing_features_cols = set()
         for feature in all_features:
-            try:
-                missing_cols = feature.columns
-            except AttributeError:
-                pass
-            else:
-                if missing_cols is not None:
-                    missing_features_cols += list(missing_cols - df_colnames)
+            missing_features_cols.update(feature.columns - df_colnames)
 
-        absent_cols["Feature"] = sorted(list(set(missing_features_cols)))
+        missing_cols["Feature"] = missing_features_cols
 
-        absent_cols = {
-            key: value
-            for (key, value) in absent_cols.items()
+        missing_cols = {
+            key: sorted(list(value))
+            for (key, value) in missing_cols.items()
             if len(value) > 0
         }
-        self.generate_missing_col_error(absent_cols)
+        if missing_cols:
+            self.raise_missing_col_error(missing_cols)
 
-    def generate_missing_col_error(self, absent_cols_dict):
-        """Generate error if some columns are missing
+    def raise_missing_col_error(self, missing_cols_dict):
+        """Raises error if some columns are missing.
 
         Raises
         ------
         ValueError
             If one or more columns are not in the dataframe.
         """
-        if absent_cols_dict:
-            msg_error = ""
-            for attribute_name, missing_cols in absent_cols_dict.items():
-                missing_cols = (
-                    repr(missing_cols)[1:-1]
-                    if isinstance(missing_cols, list)
-                    else missing_cols
-                )
-                if len(msg_error) > 0:
-                    msg_error += " "
-                msg_error += "In '{attribute}': column(s) {colnames} not found in dataframe.".format(
-                    attribute=attribute_name, colnames=missing_cols,
-                )
-            raise ValueError(msg_error)
+        error_msg = ""
+        for attribute_name, missing_cols in missing_cols_dict.items():
+            missing_cols_str = repr(missing_cols)[1:-1]
+            if len(error_msg) > 0:
+                error_msg += " "
+            error_msg += "In '{attribute}': column(s) {colnames} not found in dataframe.".format(
+                attribute=attribute_name, colnames=missing_cols_str,
+            )
+        raise ValueError(error_msg)
 
     def check_columns_type_and_values(self):
-        """Check columns type and values range"""
+        """Check columns type and values range."""
         for instance in [self.tag, self.label]:
-            self.check_instance_columns(instance)
+            if instance is not None:
+                self.check_instance_columns(instance)
 
         for namespace in self.namespaces:
             for feature in namespace.features:
-                self.check_instance_columns(feature)
+                if instance is not None:
+                    self.check_instance_columns(feature)
 
     def check_instance_columns(self, instance):
         """Check the columns type and values of a given instance.
@@ -934,45 +965,37 @@ class DFtoVW:
         ValueError
             If a column values are not in the valid range.
         """
-        if instance is None:
-            pass
-        else:
-            class_name = type(instance).__name__
-            for attribute_name in vars(instance):
-                attribute_value = getattr(instance, attribute_name)
+        class_name = type(instance).__name__
 
-                if isinstance(attribute_value, list):
-                    list_of_col = all([isinstance(x, _Col) for x in attribute_value])
-                else:
-                    list_of_col = False
+        for attribute_name, attribute_value in vars(instance).items():
+            
+            if not isinstance(attribute_value, list):
+                attribute_value = [attribute_value]
+            
+            if not all([isinstance(x, _Col) for x in attribute_value]):
+                continue
 
-                if isinstance(attribute_value, _Col) or list_of_col:
-                    # Testing column type
-                    try:
-                        if list_of_col:
-                            [x.check_col_type(self.df) for x in attribute_value]
-                        else:
-                            attribute_value.check_col_type(self.df)
-                    except TypeError as type_error:
-                        type_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
-                            class_name=class_name,
-                            attribute=attribute_name,
-                            error=str(type_error),
-                        )
-                        raise TypeError(type_error_msg)
-                    # Testing column value range
-                    try:
-                        if list_of_col:
-                            [x.check_col_value(self.df) for x in attribute_value]
-                        else:
-                            attribute_value.check_col_value(self.df)
-                    except ValueError as value_error:
-                        value_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
-                            class_name=class_name,
-                            attribute=attribute_name,
-                            error=str(value_error),
-                        )
-                        raise ValueError(value_error_msg)
+            # Testing columns type
+            try:
+                [x.check_col_type(self.df) for x in attribute_value]
+            except TypeError as type_error:
+                type_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
+                    class_name=class_name,
+                    attribute=attribute_name,
+                    error=str(type_error),
+                )
+                raise TypeError(type_error_msg)
+            
+            # Testing columns value range
+            try:
+                [x.check_col_value(self.df) for x in attribute_value]
+            except ValueError as value_error:
+                value_error_msg = "In argument '{attribute}' of '{class_name}', {error}".format(
+                    class_name=class_name,
+                    attribute=attribute_name,
+                    error=str(value_error),
+                )
+                raise ValueError(value_error_msg)
 
     def convert_df(self):
         """Main method that converts the dataframe to the VW format.
