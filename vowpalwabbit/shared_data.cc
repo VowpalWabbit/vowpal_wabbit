@@ -31,9 +31,7 @@ shared_data::shared_data(const shared_data& other)
   contraction = other.contraction;
   min_label = other.min_label;
   max_label = other.max_label;
-  if (other.ldict) {
-    ldict = VW::make_unique<VW::named_labels>(*other.ldict);
-  }
+  if (other.ldict) { ldict = VW::make_unique<VW::named_labels>(*other.ldict); }
   weighted_holdout_examples = other.weighted_holdout_examples;
   weighted_holdout_examples_since_last_dump = other.weighted_holdout_examples_since_last_dump;
   holdout_sum_loss_since_last_dump = other.holdout_sum_loss_since_last_dump;
@@ -68,9 +66,7 @@ shared_data& shared_data::operator=(const shared_data& other)
   contraction = other.contraction;
   min_label = other.min_label;
   max_label = other.max_label;
-  if (other.ldict) {
-    ldict = VW::make_unique<VW::named_labels>(*other.ldict);
-  }
+  if (other.ldict) { ldict = VW::make_unique<VW::named_labels>(*other.ldict); }
   weighted_holdout_examples = other.weighted_holdout_examples;
   weighted_holdout_examples_since_last_dump = other.weighted_holdout_examples_since_last_dump;
   holdout_sum_loss_since_last_dump = other.holdout_sum_loss_since_last_dump;

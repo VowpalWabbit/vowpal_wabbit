@@ -22,32 +22,30 @@ BOOST_AUTO_TEST_CASE(multiclass_label_parser)
 {
   auto lp = MULTICLASS::mc_label;
   parser p{8 /*ring_size*/, false /*strict parse*/};
-  auto sd = &calloc_or_throw<shared_data>();
+  shared_data sd;
 
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
-    BOOST_REQUIRE_THROW(parse_label(lp, &p, sd, "1,2,3", *plabel), VW::vw_exception);
+    BOOST_REQUIRE_THROW(parse_label(lp, &p, &sd, "1,2,3", *plabel), VW::vw_exception);
   }
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
-    BOOST_REQUIRE_THROW(parse_label(lp, &p, sd, "1a", *plabel), VW::vw_exception);
+    BOOST_REQUIRE_THROW(parse_label(lp, &p, &sd, "1a", *plabel), VW::vw_exception);
   }
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
-    BOOST_REQUIRE_THROW(parse_label(lp, &p, sd, "1 2 3", *plabel), VW::vw_exception);
+    BOOST_REQUIRE_THROW(parse_label(lp, &p, &sd, "1 2 3", *plabel), VW::vw_exception);
   }
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
-    parse_label(lp, &p, sd, "2", *plabel);
+    parse_label(lp, &p, &sd, "2", *plabel);
     BOOST_ASSERT(plabel->multi.label == 2);
     BOOST_ASSERT(plabel->multi.weight == 1.0);
   }
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
-    parse_label(lp, &p, sd, "2 2", *plabel);
+    parse_label(lp, &p, &sd, "2 2", *plabel);
     BOOST_ASSERT(plabel->multi.label == 2);
     BOOST_ASSERT(plabel->multi.weight == 2.0);
   }
-
-  free(sd);
 }

@@ -374,10 +374,7 @@ vw::~vw()
   }
 
   const bool seeded = weights.seeded() > 0;
-  if (!seeded)
-  {
-    delete sd;
-  }
+  if (!seeded) { delete sd; }
 
   delete all_reduce;
 }
