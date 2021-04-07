@@ -2238,7 +2238,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
     generate_training_example(priv, priv.learn_losses, 1., true);  // , min_loss);  // TODO: weight
     if (!priv.examples_dont_change)
     {
-      for(auto& ex : priv.learn_ec_copy)
+      for (auto& ex : priv.learn_ec_copy)
       {
         // Reset the state of the polylabel
         ex.l = polylabel{};
