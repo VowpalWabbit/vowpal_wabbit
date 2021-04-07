@@ -66,7 +66,6 @@ private:
 
     _end = _begin + std::min(old_len, length);
     _end_array = _begin + length;
-    memset(_end, 0, (_end_array - _end) * sizeof(T));
   }
 
   // This will move all elements after idx by width positions and reallocate the underlying buffer if needed.
