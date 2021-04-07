@@ -6,6 +6,7 @@
 
 #include "example.h"
 #include "gd.h"
+#include "simple_label_parser.h"
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE

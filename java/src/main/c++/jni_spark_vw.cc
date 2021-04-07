@@ -4,6 +4,7 @@
 #include "util.h"
 #include "options_serializer_boost_po.h"
 #include "learner.h"
+#include "simple_label_parser.h"
 #include <algorithm>
 #include <exception>
 

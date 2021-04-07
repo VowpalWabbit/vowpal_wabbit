@@ -5,6 +5,7 @@
 #include "vowpalwabbit.h"
 #include "vw_example.h"
 #include "vw_prediction.h"
+#include "simple_label_parser.h"
 #include "gd.h"
 #include <algorithm>
 
