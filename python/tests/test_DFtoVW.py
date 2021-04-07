@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 
 from vowpalwabbit.DFtoVW import (
-    ContextualBanditLabel,
+    ContextualbanditLabel,
     DFtoVW,
     Feature,
     MulticlassLabel,
@@ -235,11 +235,11 @@ def test_multilabel_non_positive_label_error():
     assert expected == str(value_error.value)
 
 
-# Tests for ContextualBanditLabel
+# Tests for ContextualbanditLabel
 def test_contextualbanditlabel_one_label():
     df = pd.DataFrame({"a": [1], "c": [-0.5], "p": [0.1], "x": [1]})
     conv = DFtoVW(
-            df=df, label=ContextualBanditLabel(["a", "c", "p"]), features=Feature("x")
+            df=df, label=ContextualbanditLabel(action="a", cost="c", proba="p"), features=Feature("x")
     )
     first_line = conv.convert_df()[0]
     assert first_line == "1:-0.5:0.1 | x:1"
@@ -251,23 +251,23 @@ def test_contextualbanditlabel_multiple_label():
                        "x": [1]})
     conv = DFtoVW(
             df=df,
-            label=ContextualBanditLabel([["a1", "c1", "p1"], ["a2", "c2", "p2"]]),
+            label=[ContextualbanditLabel("a1", "c1", "p1"), ContextualbanditLabel("a2", "c2", "p2")],
             features=Feature("x")
     )
     first_line = conv.convert_df()[0]
     assert first_line == "1:-0.5:0.1 2:-1.5:0.6 | x:1"
 
 
-# Exception tests for ContextualBanditLabel
+# Exception tests for ContextualbanditLabel
 def test_contextualbanditlabel_over_one_proba_error():
     df = pd.DataFrame({"a": [1], "c": [-0.5], "p": [1.1], "x": [1]})
     with pytest.raises(ValueError) as value_error:
         DFtoVW(
             df=df,
-            label=ContextualBanditLabel(["a", "c", "p"]),
+            label=ContextualbanditLabel(action="a", cost="c", proba="p"),
             features=Feature("x"),
         )
-    expected = "In argument 'proba' of 'ContextualBanditLabel', column 'p' must be >= 0 and <= 1."
+    expected = "In argument 'proba' of 'ContextualbanditLabel', column 'p' must be >= 0 and <= 1."
     assert expected == str(value_error.value)
 
 
@@ -276,10 +276,10 @@ def test_contextualbanditlabel_negative_proba_error():
     with pytest.raises(ValueError) as value_error:
         DFtoVW(
             df=df,
-            label=ContextualBanditLabel(["a", "c", "p"]),
+            label=ContextualbanditLabel(action="a", cost="c", proba="p"),
             features=Feature("x"),
         )
-    expected = "In argument 'proba' of 'ContextualBanditLabel', column 'p' must be >= 0 and <= 1."
+    expected = "In argument 'proba' of 'ContextualbanditLabel', column 'p' must be >= 0 and <= 1."
     assert expected == str(value_error.value)
 
 
@@ -288,9 +288,9 @@ def test_contextualbanditlabel_non_positive_action():
     with pytest.raises(ValueError) as value_error:
         DFtoVW(
             df=df,
-            label=ContextualBanditLabel(["a", "c", "p"]),
+            label=ContextualbanditLabel(action="a", cost="c", proba="p"),
             features=Feature("x"),
         )
-    expected = "In argument 'action' of 'ContextualBanditLabel', column 'a' must be >= 1."
+    expected = "In argument 'action' of 'ContextualbanditLabel', column 'a' must be >= 1."
     assert expected == str(value_error.value)
 

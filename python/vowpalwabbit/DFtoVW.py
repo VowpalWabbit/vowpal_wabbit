@@ -58,38 +58,6 @@ class _Col:
 
         return valid_name
 
-    @staticmethod
-    def make_valid_name(name):
-        """Returns a feature/namespace name that is compatible with VW (no ':' nor ' ').
-
-        Parameters
-        ----------
-        name : str
-            The name that will be made valid.
-
-        Returns
-        -------
-        valid_name : str
-            A valid VW feature name.
-        """
-        name = str(name)
-        valid_name = (
-            name
-            .replace(":", " ")
-            .strip()
-            .replace(" ", "_")
-        )
-
-        if valid_name != name:
-            warnings.warn(
-                "Name '{name}' was not a valid feature/namespace name. It has been renamed '{valid_name}'".format(
-                    name=name,
-                    valid_name=valid_name,
-                    )
-                )
-
-        return valid_name
-
     def get_col(self, df):
         """Returns the column defined in attribute 'colname' from the dataframe 'df'.
 
@@ -384,7 +352,7 @@ class ContextualbanditLabel(object):
     proba = AttributeDescriptor("proba", expected_type=(float,), min_value=0, max_value=1)
 
     def __init__(self, action, cost, proba):
-        """Initialize a ContextualBanditLabel instance.
+        """Initialize a ContextualbanditLabel instance.
         Parameters
         ----------
         action : 
@@ -395,7 +363,7 @@ class ContextualbanditLabel(object):
         self : ContextualbanditLabel
         """
         self.action = action
-        self.cost = action
+        self.cost = cost
         self.proba = proba
 
     def process(self, df):
