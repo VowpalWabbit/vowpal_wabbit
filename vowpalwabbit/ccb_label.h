@@ -104,7 +104,6 @@ struct label
 };
 
 void default_label(CCB::label& ld);
-void delete_label(CCB::label& ld);
 void parse_label(parser* p, shared_data*, CCB::label& ld, std::vector<VW::string_view>& words, ::reduction_features&);
 void cache_label(CCB::label& ld, io_buf& cache);
 size_t read_cached_label(shared_data*, CCB::label& ld, io_buf& cache);

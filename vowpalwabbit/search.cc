@@ -2237,13 +2237,13 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
     cdbg << "gte" << endl;
     generate_training_example(priv, priv.learn_losses, 1., true);  // , min_loss);  // TODO: weight
     if (!priv.examples_dont_change)
-      for (size_t n = 0; n < priv.learn_ec_copy.size(); n++)
+    {
+      for(auto& ex : priv.learn_ec_copy)
       {
-        if (sch.priv->is_ldf)
-          CS::cs_label.delete_label(&priv.learn_ec_copy[n].l);
-        else
-          MC::mc_label.delete_label(&priv.learn_ec_copy[n].l);
+        // Reset the state of the polylabel
+        ex.l = polylabel{};
       }
+    }
     if (priv.cb_learner)
       priv.learn_losses.cb.costs.clear();
     else

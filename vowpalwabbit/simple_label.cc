@@ -124,9 +124,7 @@ label_parser simple_label_parser = {
   [](polylabel* v, reduction_features&, io_buf& cache) { cache_simple_label(v->simple, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_simple_label(sd, v->simple, cache); },
-  // delete_label
-  [](polylabel*) {},
-   // get_weight
+  // get_weight
   [](polylabel* v, const reduction_features&) { return get_weight(v->simple); },
   // copy_label
   nullptr,

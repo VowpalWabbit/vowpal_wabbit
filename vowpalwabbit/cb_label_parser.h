@@ -119,12 +119,6 @@ bool is_test_label(LabelT& ld)
 }
 
 template <typename LabelT = CB::label>
-void delete_label(LabelT& ld)
-{
-  ld.costs.delete_v();
-}
-
-template <typename LabelT = CB::label>
 void copy_label_additional_fields(LabelT& dst, LabelT& src)
 {
   dst.weight = src.weight;

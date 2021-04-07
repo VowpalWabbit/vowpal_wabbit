@@ -85,16 +85,12 @@ struct warm_cb
   uint32_t inter_iter;
   MULTICLASS::label_t mc_label;
   COST_SENSITIVE::label cs_label;
-  COST_SENSITIVE::label* csls;
-  CB::label* cbls;
+  std::vector<COST_SENSITIVE::label> csls;
+  std::vector<CB::label> cbls;
   bool use_cs;
 
   ~warm_cb()
   {
-    for (size_t a = 0; a < num_actions; ++a) { COST_SENSITIVE::delete_label(csls[a]); }
-    free(csls);
-    free(cbls);
-
     for (size_t a = 0; a < num_actions; ++a) { VW::dealloc_examples(ecs[a], 1); }
 
     for (auto* ex : ws_vali) { VW::dealloc_examples(ex, 1); }
@@ -511,13 +507,13 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   }
 
   // The rest of the initialization is for warm start CB
-  data.csls = calloc_or_throw<COST_SENSITIVE::label>(num_actions);
+  data.csls.resize(num_actions);
   for (uint32_t a = 0; a < num_actions; ++a)
   {
     COST_SENSITIVE::default_label(data.csls[a]);
     data.csls[a].costs.push_back({0, a + 1, 0, 0});
   }
-  data.cbls = calloc_or_throw<CB::label>(num_actions);
+  data.cbls.resize(num_actions);
 
   data.ws_train_size = data.ws_period;
   data.ws_vali_size = 0;
