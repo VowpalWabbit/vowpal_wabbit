@@ -107,7 +107,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
       init_global(data);
       data.global_initialized = true;
     }
-    VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
+    VW::copy_example_metadata(data.ec, &ec);
     base.predict(*data.ec);
     auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
     simple_red_features.initial = data.ec->pred.scalar;
@@ -125,7 +125,7 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
     if (!data.global_only)
     {
       // move label & constant features data over to baseline example
-      VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
+      VW::copy_example_metadata(data.ec, &ec);
       VW::move_feature_namespace(data.ec, &ec, constant_namespace);
     }
 
@@ -169,7 +169,7 @@ float sensitivity(baseline& data, base_learner& base, example& ec)
   if (!data.global_only) THROW("sensitivity for baseline without --global_only not implemented");
 
   // sensitivity of baseline term
-  VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
+  VW::copy_example_metadata(data.ec, &ec);
   data.ec->l.simple.label = ec.l.simple.label;
   data.ec->pred.scalar = ec.pred.scalar;
   const float baseline_sens = base.sensitivity(*data.ec);

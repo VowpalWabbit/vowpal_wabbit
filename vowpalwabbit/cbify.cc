@@ -137,7 +137,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     CB::default_label(lab);
 
     // copy data
-    VW::copy_example_data(false, &eca, &ec);
+    VW::copy_example_data(&eca, &ec);
 
     // offset indices for given action
     for (features& fs : eca)

@@ -72,7 +72,9 @@ void copy_example_label(example* dst, example* src, void (*)(polylabel*, polylab
   dst->_reduction_features = src->_reduction_features;
 }
 
-void copy_example_metadata(bool /* audit */, example* dst, example* src)
+void copy_example_label(example* dst, const example* src) { dst->l = src->l; }
+
+void copy_example_metadata(example* dst, const example* src)
 {
   dst->tag = src->tag;
   dst->example_counter = src->example_counter;
@@ -96,9 +98,9 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
   dst->sorted = src->sorted;
 }
 
-void copy_example_data(bool audit, example* dst, example* src)
+void copy_example_data(example* dst, const example* src)
 {
-  copy_example_metadata(audit, dst, src);
+  copy_example_metadata(dst, src);
 
   // copy feature data
   dst->indices = src->indices;
@@ -109,9 +111,13 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->_debug_current_reduction_depth = src->_debug_current_reduction_depth;
 }
 
-void copy_example_data(bool audit, example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
+void copy_example_metadata(bool /* audit */, example* dst, example* src) { copy_example_metadata(dst, src); }
+
+void copy_example_data(bool /* audit */, example* dst, example* src) { copy_example_data(dst, src); }
+
+void copy_example_data(bool /* audit */, example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
 {
-  copy_example_data(audit, dst, src);
+  copy_example_data(dst, src);
   copy_example_label(dst, src, copy_label);
 }
 
@@ -119,6 +125,12 @@ void copy_example_data(
     bool audit, example* dst, example* src, size_t /*label_size*/, void (*copy_label)(polylabel*, polylabel*))
 {
   copy_example_data(audit, dst, src, copy_label);
+}
+
+void copy_example_data_with_label(example* dst, const example* src)
+{
+  copy_example_data(dst, src);
+  copy_example_label(dst, src);
 }
 
 void move_feature_namespace(example* dst, example* src, namespace_index c)

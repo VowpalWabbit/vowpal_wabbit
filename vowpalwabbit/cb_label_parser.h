@@ -124,16 +124,4 @@ void delete_label(LabelT& ld)
   ld.costs.delete_v();
 }
 
-template <typename LabelT = CB::label>
-void copy_label_additional_fields(LabelT& dst, LabelT& src)
-{
-  dst.weight = src.weight;
-}
-
-template <typename LabelT = CB::label>
-void copy_label(LabelT& dst, LabelT& src)
-{
-  dst.costs = src.costs;
-  copy_label_additional_fields(dst, src);
-}
 }  // namespace CB

@@ -128,8 +128,6 @@ label_parser simple_label_parser = {
   [](polylabel*) {},
    // get_weight
   [](polylabel* v, const reduction_features& red) { return get_weight(v->simple, red); },
-  // copy_label
-  nullptr,
   // test_label
   [](polylabel* v) { return test_label(v->simple); },
   // test_label
