@@ -308,8 +308,6 @@ label_parser ccb_label_parser = {
   [](polylabel* v, const ::reduction_features&) { return ccb_weight(v->conditional_contextual_bandit); },
   // test_label
   [](polylabel* v) { return test_label(v->conditional_contextual_bandit); },
-  // parse post processing
-  nullptr,
   label_type_t::ccb
 };
 // clang-format on

@@ -80,9 +80,6 @@ struct stagewise_poly
     // synth_ec.feature_space[tree_atomics].delete_v();
     free(sd);
     free(depthsbits);
-
-    // Intentionally do not clear the unions here.
-    synth_ec.delete_unions(nullptr, nullptr);
   }
 };
 

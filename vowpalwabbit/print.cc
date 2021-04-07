@@ -28,10 +28,11 @@ void learn(print& p, VW::LEARNER::base_learner&, example& ec)
   if (ec.l.simple.label != FLT_MAX)
   {
     cout << ec.l.simple.label << " ";
-    if (ec.weight != 1 || ec.initial != 0)
+    const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    if (ec.weight != 1 || simple_red_features.initial != 0)
     {
       cout << ec.weight << " ";
-      if (ec.initial != 0) cout << ec.initial << " ";
+      if (simple_red_features.initial != 0) cout << simple_red_features.initial << " ";
     }
   }
   if (!ec.tag.empty())

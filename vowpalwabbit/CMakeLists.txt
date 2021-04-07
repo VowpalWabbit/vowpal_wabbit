@@ -188,6 +188,7 @@ set(vw_all_headers
   search.h
   sender.h
   shared_feature_merger.h
+  simple_label_parser.h
   simple_label.h
   slates_label.h
   slates.h
@@ -330,6 +331,7 @@ set(vw_all_sources
   search.cc
   sender.cc
   shared_feature_merger.cc
+  simple_label_parser.cc
   simple_label.cc
   slates_label.cc
   slates.cc

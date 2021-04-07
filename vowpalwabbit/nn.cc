@@ -132,7 +132,7 @@ void finish_setup(nn& n, vw& all)
   n.outputweight.total_sum_feat_sq++;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
-  n.outputweight.initial = 0.f;
+  n.outputweight._reduction_features.template get<simple_label_reduction_features>().initial = 0.f;
 
   n.finished_setup = true;
 }
@@ -300,7 +300,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     {
       n.output_layer.ft_offset = ec.ft_offset;
       n.output_layer.l.simple = ec.l.simple;
-      n.output_layer.initial = ec.initial;
+      n.output_layer._reduction_features.template get<simple_label_reduction_features>().initial =
+          ec._reduction_features.template get<simple_label_reduction_features>().initial;
       n.output_layer.weight = ec.weight;
       n.output_layer.partial_prediction = 0;
       if (is_learn)
