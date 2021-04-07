@@ -17,6 +17,7 @@
 #include "vw_versions.h"
 #include "version.h"
 #include "debug_log.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 

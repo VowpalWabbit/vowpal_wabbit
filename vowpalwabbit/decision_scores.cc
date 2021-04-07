@@ -9,6 +9,7 @@
 #include "action_score.h"
 #include "io_buf.h"
 #include "global_data.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 

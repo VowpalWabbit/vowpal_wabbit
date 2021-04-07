@@ -13,6 +13,7 @@
 #include "api_status.h"
 #include "cb_continuous_label.h"
 #include "debug_log.h"
+#include "shared_data.h"
 
 #include <cfloat>
 // Aliases

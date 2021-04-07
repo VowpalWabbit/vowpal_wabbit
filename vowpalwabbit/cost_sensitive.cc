@@ -10,6 +10,7 @@
 #include "vw_string_view.h"
 #include "example.h"
 #include "parse_primitives.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 

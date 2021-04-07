@@ -7,6 +7,7 @@
 
 #include "reductions.h"
 #include "vw.h"
+#include "shared_data.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

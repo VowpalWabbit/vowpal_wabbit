@@ -22,6 +22,7 @@
 #include "gd.h"
 #include "reductions.h"
 #include "vw.h"
+#include "shared_data.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::gd

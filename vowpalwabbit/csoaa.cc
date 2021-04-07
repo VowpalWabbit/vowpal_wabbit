@@ -13,6 +13,7 @@
 #include <algorithm>
 #include "csoaa.h"
 #include "scope_exit.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 

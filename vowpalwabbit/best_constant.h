@@ -5,6 +5,7 @@
 #pragma once
 #include <cfloat>
 #include "vw.h"
+#include "shared_data.h"
 
 // TODO: This function is unsafe in daemon mode, which uses multiple processes
 inline void count_label(shared_data* sd, float l)

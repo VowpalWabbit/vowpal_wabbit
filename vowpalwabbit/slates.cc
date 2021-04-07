@@ -16,6 +16,7 @@
 #include "decision_scores.h"
 #include "action_score.h"
 #include "ccb_label.h"
+#include "shared_data.h"
 
 using namespace VW::config;
 

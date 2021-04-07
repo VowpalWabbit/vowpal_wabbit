@@ -16,6 +16,7 @@
 #include "options_boost_po.h"
 #include "hash.h"
 #include "cb_algs.h"
+#include "shared_data.h"
 
 void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder& builder,
     flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot>& root)

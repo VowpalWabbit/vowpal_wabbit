@@ -10,6 +10,7 @@
 #include "vw_exception.h"
 #include "gen_cs_example.h"
 #include "cb_label_parser.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 
