@@ -101,8 +101,6 @@ label_parser mc_label = {
   [](polylabel*) {},
    // get_weight
   [](polylabel* v, const reduction_features&) { return weight(v->multi); },
-  // copy_label
-  nullptr,
   // test_label
   [](polylabel* v) { return test_label(v->multi); },
   // post parse processing
