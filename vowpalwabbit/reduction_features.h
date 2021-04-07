@@ -5,6 +5,7 @@
 #pragma once
 #include "ccb_reduction_features.h"
 #include "continuous_actions_reduction_features.h"
+#include "simple_label.h"
 
 /*
  * class reduction_features
@@ -31,6 +32,7 @@ class reduction_features
 private:
   CCB::reduction_features _ccb_reduction_features;
   VW::continuous_actions::reduction_features _contact_reduction_features;
+  simple_label_reduction_features _simple_label_reduction_features;
 
 public:
   template <typename T>
@@ -43,6 +45,7 @@ public:
   {
     _ccb_reduction_features.clear();
     _contact_reduction_features.clear();
+    _simple_label_reduction_features.reset_to_default();
   }
 };
 
@@ -69,4 +72,16 @@ inline const VW::continuous_actions::reduction_features&
 reduction_features::get<VW::continuous_actions::reduction_features>() const
 {
   return _contact_reduction_features;
+}
+
+template <>
+inline simple_label_reduction_features& reduction_features::get<simple_label_reduction_features>()
+{
+  return _simple_label_reduction_features;
+}
+
+template <>
+inline const simple_label_reduction_features& reduction_features::get<simple_label_reduction_features>() const
+{
+  return _simple_label_reduction_features;
 }

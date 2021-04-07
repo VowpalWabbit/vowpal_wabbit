@@ -183,8 +183,6 @@ label_parser cs_label = {
   [](polylabel* v, const reduction_features&) { return weight(v->cs); },
   // test_label
   [](polylabel* v) { return test_label(v->cs); },
-  // parse post processing
-  nullptr,
   label_type_t::cs
 };
 // clang-format on
