@@ -19,6 +19,13 @@
 #ifdef BUILD_FLATBUFFERS
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif
+#ifdef BUILD_EXTERNAL_PARSER
+#  include "parse_example_external.h"
+#endif
+
+#include "io/logger.h"
+namespace logger = VW::io::logger;
+
 
 struct global_prediction
 {
@@ -116,7 +123,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-    if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
+    if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
 
@@ -130,7 +137,7 @@ void print_raw_text(VW::io::writer* f, std::string s, v_array<char> tag)
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-  if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
+  if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_array<char>& tag)
@@ -143,7 +150,7 @@ void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_arra
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-  if (t != len) { std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl; }
+  if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void set_mm(shared_data* sd, float label)
@@ -161,7 +168,14 @@ void vw::learn(example& ec)
   if (ec.test_only || !training)
     VW::LEARNER::as_singleline(l)->predict(ec);
   else
-    VW::LEARNER::as_singleline(l)->learn(ec);
+  {
+    if (l->learn_returns_prediction) { VW::LEARNER::as_singleline(l)->learn(ec); }
+    else
+    {
+      VW::LEARNER::as_singleline(l)->predict(ec);
+      VW::LEARNER::as_singleline(l)->learn(ec);
+    }
+  }
 }
 
 void vw::learn(multi_ex& ec)
@@ -171,7 +185,14 @@ void vw::learn(multi_ex& ec)
   if (!training)
     VW::LEARNER::as_multiline(l)->predict(ec);
   else
-    VW::LEARNER::as_multiline(l)->learn(ec);
+  {
+    if (l->learn_returns_prediction) { VW::LEARNER::as_multiline(l)->learn(ec); }
+    else
+    {
+      VW::LEARNER::as_multiline(l)->predict(ec);
+      VW::LEARNER::as_multiline(l)->learn(ec);
+    }
+  }
 }
 
 void vw::predict(example& ec)
@@ -209,7 +230,7 @@ void vw::finish_example(multi_ex& ec)
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet)
+void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool /*quiet*/)
 {
   for (size_t i = 0; i < limits.size(); i++)
   {
@@ -217,16 +238,16 @@ void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NA
     if (isdigit(limit[0]))
     {
       int n = atoi(limit.c_str());
-      if (!quiet) std::cerr << "limiting to " << n << "features for each namespace." << std::endl;
+      logger::errlog_warn("limiting to {} features for each namespace.", n);
       for (size_t j = 0; j < 256; j++) dest[j] = n;
     }
     else if (limit.size() == 1)
-      std::cout << "You must specify the namespace index before the n" << std::endl;
+      logger::log_error("You must specify the namespace index before the n");
     else
     {
       int n = atoi(limit.c_str() + 1);
       dest[(uint32_t)limit[0]] = n;
-      if (!quiet) std::cerr << "limiting to " << n << " for namespaces " << limit[0] << std::endl;
+      logger::errlog_warn("limiting to {0} for namespaces {1}", n, limit[0]);
     }
   }
 }
@@ -356,7 +377,7 @@ vw::~vw()
   if (l != nullptr)
   {
     l->finish();
-    free(l);
+    delete l;
   }
 
   // TODO: migrate all finalization into parser destructor

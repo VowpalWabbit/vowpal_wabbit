@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "io_buf.h"
-#include "parse_primitives.h"
 #include "example.h"
 #include "future_compat.h"
 
@@ -26,6 +25,8 @@
 #include "vw_string_view.h"
 #include "queue.h"
 #include "object_pool.h"
+#include "hashstring.h"
+#include "simple_label_parser.h"
 
 struct vw;
 struct input_options;
@@ -40,21 +41,9 @@ struct parser
       , finished_examples(0)
       , strict_parse{strict_parse_}
   {
-    this->input = new io_buf{};
-    this->output = new io_buf{};
+    this->input = VW::make_unique<io_buf>();
+    this->output = VW::make_unique<io_buf>();
     this->lbl_parser = simple_label_parser;
-
-    // Free parser must still be used for the following fields.
-    this->ids = v_init<size_t>();
-    this->counts = v_init<size_t>();
-  }
-
-  ~parser()
-  {
-    delete input;
-    delete output;
-    ids.delete_v();
-    counts.delete_v();
   }
 
   // delete copy constructor
@@ -67,7 +56,7 @@ struct parser
   VW::object_pool<example> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
 
-  io_buf* input = nullptr;  // Input source(s)
+  std::unique_ptr<io_buf> input;  // Input source(s)
   /// reader consumes the input io_buf in the vw object and is generally for file based parsing
   int (*reader)(vw*, v_array<example*>& examples);
   /// text_reader consumes the char* input and is for text based parsing
@@ -77,7 +66,7 @@ struct parser
 
   hash_func_t hasher;
   bool resettable;           // Whether or not the input can be reset.
-  io_buf* output = nullptr;  // Where to output the cache.
+  std::unique_ptr<io_buf> output;  // Where to output the cache.
   std::string currentname;
   std::string finalname;
 

@@ -8,17 +8,21 @@
 #include "io_buf.h"
 #include "cb.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 namespace MWT
 {
 struct policy_data
 {
-  double cost;
-  uint32_t action;
-  bool seen;
+  double cost = 0.0;
+  uint32_t action = 0;
+  bool seen = false;
 };
 
 struct mwt
@@ -34,18 +38,11 @@ struct mwt
   v_array<namespace_index> indices;  // excluded namespaces
   features feature_space[256];
   vw* all;
-
-  ~mwt()
-  {
-    evals.delete_v();
-    policies.delete_v();
-    indices.delete_v();
-  }
 };
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
 {
-  if (val < 0 || floor(val) != val) std::cout << "error " << val << " is not a valid action " << std::endl;
+  if (val < 0 || floor(val) != val) logger::log_error("error {} is not a valid action", val);
 
   uint32_t value = (uint32_t)val;
   uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
@@ -151,7 +148,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
-    if (t != len) std::cerr << "write error: " << VW::strerror_to_string(errno) << std::endl;
+    if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
 
@@ -189,11 +186,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
   size_t policies_size = c.policies.size();
   bin_text_read_write_fixed_validated(model_file, (char*)&policies_size, sizeof(policies_size), "", read, msg, text);
 
-  if (read)
-  {
-    c.policies.resize(policies_size);
-    c.policies.end() = c.policies.begin() + policies_size;
-  }
+  if (read) { c.policies.resize_but_with_stl_behavior(policies_size); }
   else
   {
     msg << "policies: ";
@@ -229,9 +222,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
   for (char i : s) c->namespaces[(unsigned char)i] = true;
   c->all = &all;
 
-  calloc_reserve(c->evals, all.length());
-  c->evals.end() = c->evals.begin() + all.length();
-
+  c->evals.resize_but_with_stl_behavior(all.length());
   all.example_parser->lbl_parser = CB::cb_label;
 
   if (c->num_classes > 0)
@@ -251,14 +242,14 @@ base_learner* mwt_setup(options_i& options, vw& all)
     if (exclude_eval)
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, true, true>,
           predict_or_learn<true, true, false>, 1, prediction_type_t::scalars,
-          all.get_setupfn_name(mwt_setup) + "-no_eval");
+          all.get_setupfn_name(mwt_setup) + "-no_eval", true);
     else
       l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<true, false, true>,
           predict_or_learn<true, false, false>, 1, prediction_type_t::scalars,
-          all.get_setupfn_name(mwt_setup) + "-eval");
+          all.get_setupfn_name(mwt_setup) + "-eval", true);
   else
     l = &init_learner(c, as_singleline(setup_base(options, all)), predict_or_learn<false, false, true>,
-        predict_or_learn<false, false, false>, 1, prediction_type_t::scalars, all.get_setupfn_name(mwt_setup));
+        predict_or_learn<false, false, false>, 1, prediction_type_t::scalars, all.get_setupfn_name(mwt_setup), true);
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);

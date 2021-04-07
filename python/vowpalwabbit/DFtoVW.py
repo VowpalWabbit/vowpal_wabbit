@@ -58,6 +58,38 @@ class _Col:
 
         return valid_name
 
+    @staticmethod
+    def make_valid_name(name):
+        """Returns a feature/namespace name that is compatible with VW (no ':' nor ' ').
+
+        Parameters
+        ----------
+        name : str
+            The name that will be made valid.
+
+        Returns
+        -------
+        valid_name : str
+            A valid VW feature name.
+        """
+        name = str(name)
+        valid_name = (
+            name
+            .replace(":", " ")
+            .strip()
+            .replace(" ", "_")
+        )
+
+        if valid_name != name:
+            warnings.warn(
+                "Name '{name}' was not a valid feature/namespace name. It has been renamed '{valid_name}'".format(
+                    name=name,
+                    valid_name=valid_name,
+                    )
+                )
+
+        return valid_name
+
     def get_col(self, df):
         """Returns the column defined in attribute 'colname' from the dataframe 'df'.
 
@@ -710,6 +742,7 @@ class DFtoVW:
         
         self.set_namespaces(namespaces, features)
         self.check_namespaces_type()
+
         self.check_missing_columns_df()
         self.check_columns_type_and_values()
 

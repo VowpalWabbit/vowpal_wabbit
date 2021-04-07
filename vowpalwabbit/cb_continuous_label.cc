@@ -11,8 +11,11 @@
 #include "cb_continuous_label.h"
 #include "debug_print.h"
 
+#include "io/logger.h"
+
 using namespace LEARNER;
-using std::endl;
+
+namespace logger = VW::io::logger;
 
 namespace CB
 {
@@ -35,11 +38,6 @@ void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb
 {
 }
 
-template <>
-void copy_label_additional_fields<VW::cb_continuous::continuous_label>(
-    VW::cb_continuous::continuous_label&, VW::cb_continuous::continuous_label&)
-{
-}
 }  // namespace CB
 
 void parse_pdf(
@@ -118,7 +116,7 @@ void parse_label(parser* p, shared_data*, continuous_label& ld, std::vector<VW::
 
       if (f.pdf_value < 0.0)
       {
-        std::cerr << "invalid pdf_value < 0 specified for an action, resetting to 0." << endl;
+        logger::errlog_warn("invalid pdf_value < 0 specified for an action, resetting to 0.");
         f.pdf_value = .0;
       }
 
@@ -136,25 +134,18 @@ label_parser the_label_parser = {
     parse_label(p, sd, v->cb_cont, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { CB::cache_label<continuous_label, continuous_label_elm>(v->cb_cont, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { CB::cache_label<continuous_label, continuous_label_elm>(v->cb_cont, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return CB::read_cached_label<continuous_label, continuous_label_elm>(sd, v->cb_cont, cache); },
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return CB::read_cached_label<continuous_label, continuous_label_elm>(sd, v->cb_cont, cache); },
   // delete_label
   [](polylabel* v) { CB::delete_label<continuous_label>(v->cb_cont); },
   // get_weight
   // CB::weight just returns 1.f? This seems like it could be a bug...
-  [](polylabel*) { return 1.f; },
-  // copy_label
-  [](polylabel* dst, polylabel* src) {
-    if (dst && src) {
-      CB::copy_label<continuous_label>(dst->cb_cont, src->cb_cont);
-    }
-  },
+  [](polylabel*, const reduction_features&) { return 1.f; },
   // test_label
   [](polylabel* v) { return CB::is_test_label<continuous_label, continuous_label_elm>(v->cb_cont); },
   label_type_t::continuous
 };
-// clang-format on
 
 // End: parse a,c,p label format
 ////////////////////////////////////////////////////

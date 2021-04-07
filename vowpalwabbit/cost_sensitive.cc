@@ -3,12 +3,17 @@
 // license as described in the file LICENSE.
 
 #include <cfloat>
+#include <cmath>
 #include "gd.h"
 #include "vw.h"
 #include "vw_exception.h"
-#include <cmath>
 #include "vw_string_view.h"
 #include "example.h"
+#include "parse_primitives.h"
+
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
 
 namespace COST_SENSITIVE
 {
@@ -27,7 +32,7 @@ void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v
       if (std::isnan(v)) THROW("error NaN value for: " << name[0]);
       break;
     default:
-      std::cerr << "example with a wierd name.  What is '" << s << "'?\n";
+      logger::errlog_error("example with a wierd name. What is '{}'?", s);
   }
 }
 
@@ -39,7 +44,7 @@ char* bufread_label(label& ld, char* c, io_buf& cache)
   size_t total = sizeof(wclass) * num;
   if (cache.buf_read(c, (int)total) < total)
   {
-    std::cout << "error in demarshal of cost data" << std::endl;
+    logger::log_error("error in demarshal of cost data");
     return c;
   }
   for (size_t i = 0; i < num; i++)
@@ -96,8 +101,6 @@ bool test_label(label& ld)
 
 void delete_label(label& ld) { ld.costs.delete_v(); }
 
-void copy_label(label& dst, label& src) { copy_array(dst.costs, src.costs); }
-
 void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
   ld.costs.clear();
@@ -119,7 +122,7 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
       if (eq_shared)
       {
         if (p->parse_name.size() != 1)
-          std::cerr << "shared feature vectors should not have costs on: " << words[0] << std::endl;
+          logger::errlog_error("shared feature vectors should not have costs on: {}", words[0]);
         else
         {
           wclass f = {-FLT_MAX, 0, 0., 0.};
@@ -129,7 +132,7 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
       if (eq_label)
       {
         if (p->parse_name.size() != 2)
-          std::cerr << "label feature vectors should have exactly one cost on: " << words[0] << std::endl;
+          logger::errlog_error("label feature vectors should have exactly one cost on: {}", words[0]);
         else
         {
           wclass f = {float_of_string(p->parse_name[1]), 0, 0., 0.};
@@ -171,19 +174,13 @@ label_parser cs_label = {
     parse_label(p, sd, v->cs, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { cache_label(v->cs, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->cs, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->cs, cache); },
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->cs, cache); },
   // delete_label
   [](polylabel* v) { if (v) delete_label(v->cs); },
    // get_weight
-  [](polylabel* v) { return weight(v->cs); },
-  // copy_label
-  [](polylabel* dst, polylabel* src) {
-    if (dst && src) {
-      copy_label(dst->cs, src->cs);
-    }
-  },
+  [](polylabel* v, const reduction_features&) { return weight(v->cs); },
   // test_label
   [](polylabel* v) { return test_label(v->cs); },
   label_type_t::cs
@@ -225,13 +222,13 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
       else
         pred_buf << ec.pred.a_s[0].action;
       if (action_scores) pred_buf << ".....";
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_current_features,
-          all.progress_add, all.progress_arg);
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
+          num_current_features, all.progress_add, all.progress_arg);
       ;
     }
     else
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, prediction, num_current_features,
-          all.progress_add, all.progress_arg);
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, prediction,
+          num_current_features, all.progress_add, all.progress_arg);
   }
 }
 
@@ -253,8 +250,7 @@ void output_example(vw& all, example& ec)
       if (cl.x < min) min = cl.x;
     }
     if (chosen_loss == FLT_MAX)
-      std::cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?"
-                << std::endl;
+      logger::errlog_warn("csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?");
 
     loss = (chosen_loss - min) * ec.weight;
     // TODO(alberto): add option somewhere to allow using absolute loss instead?

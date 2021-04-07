@@ -6,6 +6,14 @@
 #include "gd.h"
 #include "vw.h"
 #include "example.h"
+#include "vw_string_view_fmt.h"
+#include "parse_primitives.h"
+
+#include "io/logger.h"
+// needed for printing ranges of objects (eg: all elements of a vector)
+#include <fmt/ranges.h>
+
+namespace logger = VW::io::logger;
 
 namespace MULTILABEL
 {
@@ -17,7 +25,7 @@ char* bufread_label(labels& ld, char* c, io_buf& cache)
   size_t total = sizeof(uint32_t) * num;
   if (cache.buf_read(c, (int)total) < total)
   {
-    std::cout << "error in demarshal of cost data" << std::endl;
+    logger::log_error("error in demarshal of cost data");
     return c;
   }
   for (size_t i = 0; i < num; i++)
@@ -68,8 +76,6 @@ bool test_label(MULTILABEL::labels& ld) { return ld.label_v.size() == 0; }
 
 void delete_label(MULTILABEL::labels& ld) { ld.label_v.delete_v(); }
 
-void copy_label(MULTILABEL::labels& dst, MULTILABEL::labels& src) { copy_array(dst.label_v, src.label_v); }
-
 void parse_label(
     parser* p, shared_data*, MULTILABEL::labels& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
@@ -87,9 +93,7 @@ void parse_label(
       }
       break;
     default:
-      std::cerr << "example with an odd label, what is ";
-      for (const auto& word : words) std::cerr << word << " ";
-      std::cerr << std::endl;
+      logger::errlog_error("example with an odd label, what is {}", fmt::join(words, " "));
   }
 }
 
@@ -102,19 +106,13 @@ label_parser multilabel = {
     parse_label(p, sd, v->multilabels, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { cache_label(v->multilabels, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->multilabels, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->multilabels, cache); },
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->multilabels, cache); },
   // delete_label
   [](polylabel* v) { if (v) delete_label(v->multilabels); },
    // get_weight
-  [](polylabel* v) { return weight(v->multilabels); },
-  // copy_label
-  [](polylabel* dst, polylabel* src) {
-    if (dst && src) {
-      copy_label(dst->multilabels, src->multilabels);
-    }
-  },
+  [](polylabel* v, const reduction_features&) { return weight(v->multilabels); },
   // test_label
   [](polylabel* v) { return test_label(v->multilabels); },
   label_type_t::multilabel
@@ -129,14 +127,13 @@ void print_update(vw& all, bool is_test, example& ec)
     if (is_test)
       label_string << " unknown";
     else
-      for (size_t i = 0; i < ec.l.multilabels.label_v.size(); i++) label_string << " " << ec.l.multilabels.label_v[i];
+      for (uint32_t i : ec.l.multilabels.label_v) { label_string << " " << i; }
 
     std::stringstream pred_string;
-    for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
-      pred_string << " " << ec.pred.multilabels.label_v[i];
+    for (uint32_t i : ec.pred.multilabels.label_v) { pred_string << " " << i; }
 
-    all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(), ec.num_features,
-        all.progress_add, all.progress_arg);
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
+        pred_string.str(), ec.num_features, all.progress_add, all.progress_arg);
   }
 }
 
@@ -148,8 +145,8 @@ void output_example(vw& all, example& ec)
   if (!test_label(ld))
   {
     // need to compute exact loss
-    labels preds = ec.pred.multilabels;
-    labels given = ec.l.multilabels;
+    const labels& preds = ec.pred.multilabels;
+    const labels& given = ec.l.multilabels;
 
     uint32_t preds_index = 0;
     uint32_t given_index = 0;

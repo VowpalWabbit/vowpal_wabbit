@@ -14,6 +14,7 @@
 #include "cb_continuous_label.h"
 #include "debug_log.h"
 
+#include <cfloat>
 // Aliases
 using std::endl;
 using VW::cb_continuous::continuous_label;
@@ -145,7 +146,7 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
-    all.sd->print_update(all.holdout_set_off, all.current_pass,
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0]),  // Label
         to_string(ec.pred.pdf),                                       // Prediction
         ec.num_features, all.progress_add, all.progress_arg);
@@ -181,7 +182,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   auto p_reduction = scoped_calloc_or_throw<cats_pdf>(as_singleline(p_base), always_predict);
 
   LEARNER::learner<cats_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::pdf, all.get_setupfn_name(setup));
+      predict_or_learn<false>, 1, prediction_type_t::pdf, all.get_setupfn_name(setup), true);
 
   l.set_finish_example(finish_example);
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;

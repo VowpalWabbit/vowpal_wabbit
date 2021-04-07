@@ -148,44 +148,77 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
 
 template <bool audit>
 void parse_context(const Value& context, vw& all, v_array<example*>& examples, VW::example_factory_t example_factory,
-    void* ex_factory_context, std::vector<example*>& slot_examples)
+    void* ex_factory_context, std::vector<example*>& slot_examples,
+    std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   std::vector<Namespace<audit>> namespaces;
   handle_features_value(" ", context, examples[0], namespaces, all);
   all.example_parser->lbl_parser.default_label(&examples[0]->l);
-  examples[0]->l.slates.type = VW::slates::example_type::shared;
+  if (context.HasMember("_slot_id"))
+  {
+    auto slot_id = context["_slot_id"].GetInt();
+    examples[0]->l.slates.slot_id = slot_id;
+    examples[0]->l.slates.type = VW::slates::example_type::action;
+  }
+  else
+  {
+    examples[0]->l.slates.type = VW::slates::example_type::shared;
+  }
 
   assert(namespaces.size() == 0);
 
-  const auto& multi = context["_multi"].GetArray();
-  for (const Value& obj : multi)
+  if (context.HasMember("_multi"))
   {
-    auto ex = &(*example_factory)(ex_factory_context);
-    all.example_parser->lbl_parser.default_label(&ex->l);
-    ex->l.slates.type = VW::slates::example_type::action;
-    examples.push_back(ex);
-    auto slot_id = obj["_slot_id"].GetInt();
-    ex->l.slates.slot_id = slot_id;
-    handle_features_value(" ", obj, ex, namespaces, all);
-    assert(namespaces.size() == 0);
+    const auto& multi = context["_multi"].GetArray();
+
+    for (const Value& obj : multi)
+    {
+      auto ex = &(*example_factory)(ex_factory_context);
+      all.example_parser->lbl_parser.default_label(&ex->l);
+      ex->l.slates.type = VW::slates::example_type::action;
+      examples.push_back(ex);
+      if (dedup_examples && !dedup_examples->empty() && obj.HasMember("__aid"))
+      {
+        auto dedup_id = obj["__aid"].GetUint64();
+
+        if (dedup_examples->find(dedup_id) == dedup_examples->end()) { THROW("dedup id not found: " << dedup_id); }
+
+        auto* stored_ex = (*dedup_examples)[dedup_id];
+        ex->indices = stored_ex->indices;
+        for (auto& ns : ex->indices) { ex->feature_space[ns].deep_copy_from(stored_ex->feature_space[ns]); }
+        ex->ft_offset = stored_ex->ft_offset;
+        ex->l.slates.slot_id = stored_ex->l.slates.slot_id;
+      }
+      else
+      {
+        auto slot_id = obj["_slot_id"].GetInt();
+        ex->l.slates.slot_id = slot_id;
+        handle_features_value(" ", obj, ex, namespaces, all);
+        assert(namespaces.size() == 0);
+      }
+    }
   }
 
-  const auto& slots = context["_slots"].GetArray();
-  for (const Value& slot_object : slots)
+  if (context.HasMember("_slots"))
   {
-    auto ex = &(*example_factory)(ex_factory_context);
-    all.example_parser->lbl_parser.default_label(&ex->l);
-    ex->l.slates.type = VW::slates::example_type::slot;
-    examples.push_back(ex);
-    slot_examples.push_back(ex);
-    handle_features_value(" ", slot_object, ex, namespaces, all);
-    assert(namespaces.size() == 0);
+    const auto& slots = context["_slots"].GetArray();
+    for (const Value& slot_object : slots)
+    {
+      auto ex = &(*example_factory)(ex_factory_context);
+      all.example_parser->lbl_parser.default_label(&ex->l);
+      ex->l.slates.type = VW::slates::example_type::slot;
+      examples.push_back(ex);
+      slot_examples.push_back(ex);
+      handle_features_value(" ", slot_object, ex, namespaces, all);
+      assert(namespaces.size() == 0);
+    }
   }
 }
 
 template <bool audit>
 void parse_slates_example_json(vw& all, v_array<example*>& examples, char* line, size_t /*length*/,
-    VW::example_factory_t example_factory, void* ex_factory_context)
+    VW::example_factory_t example_factory, void* ex_factory_context,
+    std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   Document document;
   document.ParseInsitu(line);
@@ -193,12 +226,13 @@ void parse_slates_example_json(vw& all, v_array<example*>& examples, char* line,
   // Build shared example
   const Value& context = document.GetObject();
   std::vector<example*> slot_examples;
-  parse_context<audit>(context, all, examples, example_factory, ex_factory_context, slot_examples);
+  parse_context<audit>(context, all, examples, example_factory, ex_factory_context, slot_examples, dedup_examples);
 }
 
 template <bool audit>
 void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* line, size_t /*length*/,
-    VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
+    VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data,
+    std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   Document document;
   document.ParseInsitu(line);
@@ -206,7 +240,7 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
   // Build shared example
   const Value& context = document["c"].GetObject();
   std::vector<example*> slot_examples;
-  parse_context<audit>(context, all, examples, example_factory, ex_factory_context, slot_examples);
+  parse_context<audit>(context, all, examples, example_factory, ex_factory_context, slot_examples, dedup_examples);
 
   if (document.HasMember("_label_cost"))
   {

@@ -44,7 +44,8 @@ inline void vec_add(float& p, const float x, float& w)
 template <int offset>
 inline float inline_predict(vw& all, example& ec)
 {
-  float acc = ec.l.simple.initial;
+  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  float acc = simple_red_features.initial;
   GD::foreach_feature<float, vec_add<offset> >(all, ec, acc);
   return acc;
 }
@@ -116,7 +117,7 @@ void learn(svrg& s, single_learner& base, example& ec)
   {
     if (s.prev_pass != pass && !s.all->logger.quiet)
     {
-      std::cout << "svrg pass " << pass << ": committing stable point" << std::endl;
+      *(s.all->trace_message) << "svrg pass " << pass << ": committing stable point" << std::endl;
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
       {
         float w = VW::get_weight(*s.all, j, W_INNER);
@@ -124,7 +125,7 @@ void learn(svrg& s, single_learner& base, example& ec)
         VW::set_weight(*s.all, j, W_STABLEGRAD, 0.f);
       }
       s.stable_grad_count = 0;
-      std::cout << "svrg pass " << pass << ": computing exact gradient" << std::endl;
+      *(s.all->trace_message) << "svrg pass " << pass << ": computing exact gradient" << std::endl;
     }
     update_stable(s, ec);
     s.stable_grad_count++;
@@ -132,7 +133,7 @@ void learn(svrg& s, single_learner& base, example& ec)
   else  // Perform updates
   {
     if (s.prev_pass != pass && !s.all->logger.quiet)
-    { std::cout << "svrg pass " << pass << ": taking steps" << std::endl; }
+    { *(s.all->trace_message) << "svrg pass " << pass << ": taking steps" << std::endl; }
     update_inner(s, ec);
   }
 

@@ -13,8 +13,11 @@
 #include "reductions.h"
 #include "vw.h"
 
+#include "io/logger.h"
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 namespace plt_ns
 {
@@ -58,19 +61,11 @@ struct plt
 
   plt()
   {
-    nodes_time = v_init<float>();
-    tp_at = v_init<uint32_t>();
     tp = 0;
     fp = 0;
     fn = 0;
     ec_count = 0;
     true_count = 0;
-  }
-
-  ~plt()
-  {
-    nodes_time.delete_v();
-    tp_at.delete_v();
   }
 };
 
@@ -112,8 +107,8 @@ void learn(plt& p, single_learner& base, example& ec)
       }
     }
     if (multilabels.label_v.back() >= p.k)
-      std::cout << "label " << multilabels.label_v.back() << " is not in {0," << p.k - 1 << "} This won't work right."
-                << std::endl;
+      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.",
+                        multilabels.label_v.back(), p.k - 1);
 
     for (auto& n : p.positive_nodes)
     {
@@ -131,7 +126,8 @@ void learn(plt& p, single_learner& base, example& ec)
   else
     p.negative_nodes.insert(0);
 
-  ec.l.simple = {1.f, 1.f, 0.f};
+  ec.l.simple = {1.f};
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   for (auto& n : p.positive_nodes) learn_node(p, n, base, ec);
 
   ec.l.simple.label = -1.f;
@@ -146,7 +142,8 @@ void learn(plt& p, single_learner& base, example& ec)
 
 inline float predict_node(uint32_t n, single_learner& base, example& ec)
 {
-  ec.l.simple = {FLT_MAX, 1.f, 0.f};
+  ec.l.simple = {FLT_MAX};
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   base.predict(ec, n);
   return 1.0f / (1.0f + exp(-ec.partial_prediction));
 }
@@ -165,7 +162,7 @@ void predict(plt& p, single_learner& base, example& ec)
     if (label < p.k)
       p.true_labels.insert(label);
     else
-      std::cout << "label " << label << " is not in {0," << p.k - 1 << "} Model can't predict it." << std::endl;
+      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
   }
 
   p.node_queue.clear();  // clear node queue
@@ -182,7 +179,8 @@ void predict(plt& p, single_learner& base, example& ec)
       p.node_queue.pop_back();
 
       uint32_t n_child = p.kary * node.n + 1;
-      ec.l.simple = {FLT_MAX, 1.f, 0.f};
+      ec.l.simple = {FLT_MAX};
+      ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
       base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
 
       for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
@@ -230,7 +228,9 @@ void predict(plt& p, single_learner& base, example& ec)
       if (node.n < p.ti)
       {
         uint32_t n_child = p.kary * node.n + 1;
-        ec.l.simple = {FLT_MAX, 1.f, 0.f};
+        ec.l.simple = {FLT_MAX};
+        ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+
         base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
 
         for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
@@ -284,16 +284,18 @@ void finish(plt& p)
       for (size_t i = 0; i < p.top_k; ++i)
       {
         correct += p.tp_at[i];
-        std::cerr << "p@" << i + 1 << " = " << correct / (p.ec_count * (i + 1)) << std::endl;
-        std::cerr << "r@" << i + 1 << " = " << correct / p.true_count << std::endl;
+        // TODO: is this the correct logger?
+        *(p.all->trace_message) << "p@" << i + 1 << " = " << correct / (p.ec_count * (i + 1)) << std::endl;
+        *(p.all->trace_message) << "r@" << i + 1 << " = " << correct / p.true_count << std::endl;
       }
     }
 
     else if (p.threshold > 0)
     {
-      std::cerr << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
-      std::cerr << "precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
-      std::cerr << "recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
+      // TODO: is this the correct logger?
+      *(p.all->trace_message) << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
+      *(p.all->trace_message) << "precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
+      *(p.all->trace_message) << "recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
     }
   }
 }
@@ -358,18 +360,18 @@ base_learner* plt_setup(options_i& options, vw& all)
   }
 
   // resize v_arrays
-  tree->nodes_time.resize(tree->t);
+  tree->nodes_time.resize_but_with_stl_behavior(tree->t);
   std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
   tree->node_preds.resize(tree->kary);
-  if (tree->top_k > 0) tree->tp_at.resize(tree->top_k);
+  if (tree->top_k > 0) tree->tp_at.resize_but_with_stl_behavior(tree->top_k);
 
   learner<plt, example>* l;
   if (tree->top_k > 0)
     l = &init_learner(tree, as_singleline(setup_base(options, all)), learn, predict<false>, tree->t,
-        prediction_type_t::multilabels, all.get_setupfn_name(plt_setup) + "-top_k");
+        prediction_type_t::multilabels, all.get_setupfn_name(plt_setup) + "-top_k", true);
   else
     l = &init_learner(tree, as_singleline(setup_base(options, all)), learn, predict<true>, tree->t,
-        prediction_type_t::multilabels, all.get_setupfn_name(plt_setup));
+        prediction_type_t::multilabels, all.get_setupfn_name(plt_setup), true);
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
 

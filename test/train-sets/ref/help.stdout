@@ -37,7 +37,8 @@ Diagnostic options:
   --quiet               Don't output disgnostics and progress updates
   --dry_run             Parse arguments and print corresponding metadata. Will 
                         not execute driver.
-  -h [ --help ]         Look here: http://hunch.net/~vw/ and click on Tutorial.
+  -h [ --help ]         More information on vowpal wabbit can be found here 
+                        https://vowpalwabbit.org.
 Randomization options:
   --random_seed arg     seed random number generator
 Feature options:
@@ -223,7 +224,16 @@ Bootstrap:
   --bootstrap arg       k-way bootstrap by online importance resampling
   --bs_type arg         prediction type {mean,vote}
 Continuous actions tree with smoothing:
-  --cats arg            number of tree labels <k> for cats
+  --cats arg            number of discrete actions <k> for cats
+  --min_value arg       Minimum continuous value
+  --max_value arg       Maximum continuous value
+  --bandwidth arg       Bandwidth (radius) of randomization around discrete 
+                        actions in terms of continuous range. By default will 
+                        be set to half of the continuous action unit-range 
+                        resulting in smoothing that stays inside the action 
+                        space unit-range:
+                        unit_range = (max_value - min_value)/num-of-actions
+                        default bandwidth = unit_range / 2.0
 Continuous action tree with smoothing with full pdf:
   --cats_pdf arg        number of tree labels <k> for cats_pdf
 CATS Tree Options:
@@ -495,8 +505,7 @@ Memory Tree:
   --dream_repeats arg (=1, )           number of dream operations per example 
                                        (default = 1)
   --top_K arg (=1, )                   top K prediction error (default 1)
-  --learn_at_leaf                      whether or not learn at leaf (default = 
-                                       True)
+  --learn_at_leaf                      Enable learning at leaf
   --oas                                use oas at the leaf
   --dream_at_update arg (=0, )         turn on dream operations at reward based
                                        update as well
@@ -536,8 +545,8 @@ Probabilistic Label Tree :
                            greater than <thr> threshold
   --top_k arg (=0, )       predict top-<k> labels instead of labels above 
                            threshold
-Convert discrete PDF into continuous PDF:
-  --pmf_to_pdf arg (=0, ) number of tree labels <k> for pmf_to_pdf
+Convert discrete PMF into continuous PDF:
+  --pmf_to_pdf arg (=0, ) number of discrete actions <k> for pmf_to_pdf
   --min_value arg         Minimum continuous value
   --max_value arg         Maximum continuous value
   --bandwidth arg         Bandwidth (radius) of randomization around discrete 
@@ -545,7 +554,7 @@ Convert discrete PDF into continuous PDF:
                           be set to half of the continuous action unit-range 
                           resulting in smoothing that stays inside the action 
                           space unit-range:
-                          unit_range = (max_value - min_value) / num_actions
+                          unit_range = (max_value - min_value)/num-of-actions
                           default bandwidth = unit_range / 2.0
   --first_only            Use user provided first action or user provided pdf 
                           or uniform random

@@ -159,7 +159,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
       unsigned char right = i[(which + 1) % 2];
       ec.feature_space[right].truncate_to(lrq.orig_size[right]);
     }
-  }
+  }  // end for(max_iter)
 }
 
 base_learner* lrq_setup(options_i& options, vw& all)
@@ -209,8 +209,9 @@ base_learner* lrq_setup(options_i& options, vw& all)
   if (!all.logger.quiet) *(all.trace_message) << std::endl;
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);
-  learner<LRQstate, example>& l = init_learner(lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>,
-      predict_or_learn<false>, 1 + maxk, all.get_setupfn_name(lrq_setup));
+  auto base = setup_base(options, all);
+  learner<LRQstate, example>& l = init_learner(lrq, as_singleline(base), predict_or_learn<true>,
+      predict_or_learn<false>, 1 + maxk, all.get_setupfn_name(lrq_setup), base->learn_returns_prediction);
   l.set_end_pass(reset_seed);
 
   // TODO: leaks memory ?

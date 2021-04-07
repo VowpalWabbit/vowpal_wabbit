@@ -6,29 +6,12 @@
 
 #include "example.h"
 #include "gd.h"
-
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-example::example()
-{
-  memset(&l, 0, sizeof(polylabel));
-  tag = v_init<char>();
-}
-VW_WARNING_STATE_POP
+#include "simple_label_parser.h"
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
 {
-  tag.delete_v();
-
-  // TODO move this to the destructor once we're done cleaning up usage of polyprediction
-  pred.scalars.delete_v();
-  pred.a_s.delete_v();
-  for (auto& decision : pred.decision_scores) { decision.delete_v(); }
-  pred.multilabels.label_v.delete_v();
-  pred.pdf.delete_v();
-
   if (passthrough)
   {
     delete passthrough;
@@ -84,17 +67,17 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
+void copy_example_label(example* dst, example* src, void (*)(polylabel*, polylabel*))
 {
-  if (copy_label)
-    copy_label(&dst->l, &src->l);  // TODO: we really need to delete_label on dst :(
-  else
-    dst->l = src->l;
+  dst->l = src->l;
+  dst->_reduction_features = src->_reduction_features;
 }
 
-void copy_example_metadata(bool /* audit */, example* dst, example* src)
+void copy_example_label(example* dst, const example* src) { dst->l = src->l; }
+
+void copy_example_metadata(example* dst, const example* src)
 {
-  copy_array(dst->tag, src->tag);
+  dst->tag = src->tag;
   dst->example_counter = src->example_counter;
 
   dst->ft_offset = src->ft_offset;
@@ -112,27 +95,30 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
   dst->confidence = src->confidence;
   dst->test_only = src->test_only;
   dst->end_pass = src->end_pass;
+  dst->is_newline = src->is_newline;
   dst->sorted = src->sorted;
 }
 
-void copy_example_data(bool audit, example* dst, example* src)
+void copy_example_data(example* dst, const example* src)
 {
-  // std::cerr << "copy_example_data dst = " << dst << std::endl;
-  copy_example_metadata(audit, dst, src);
+  copy_example_metadata(dst, src);
 
   // copy feature data
-  copy_array(dst->indices, src->indices);
+  dst->indices = src->indices;
   for (namespace_index c : src->indices) dst->feature_space[c].deep_copy_from(src->feature_space[c]);
-  // copy_array(dst->atomics[i], src->atomics[i]);
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->interactions = src->interactions;
   dst->_debug_current_reduction_depth = src->_debug_current_reduction_depth;
 }
 
-void copy_example_data(bool audit, example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
+void copy_example_metadata(bool /* audit */, example* dst, example* src) { copy_example_metadata(dst, src); }
+
+void copy_example_data(bool /* audit */, example* dst, example* src) { copy_example_data(dst, src); }
+
+void copy_example_data(bool /* audit */, example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
 {
-  copy_example_data(audit, dst, src);
+  copy_example_data(dst, src);
   copy_example_label(dst, src, copy_label);
 }
 
@@ -140,6 +126,12 @@ void copy_example_data(
     bool audit, example* dst, example* src, size_t /*label_size*/, void (*copy_label)(polylabel*, polylabel*))
 {
   copy_example_data(audit, dst, src, copy_label);
+}
+
+void copy_example_data_with_label(example* dst, const example* src)
+{
+  copy_example_data(dst, src);
+  copy_example_label(dst, src);
 }
 
 void move_feature_namespace(example* dst, example* src, namespace_index c)
@@ -204,7 +196,7 @@ flat_example* flatten_example(vw& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
-  fec.l.simple.weight = ec->weight;
+  fec._reduction_features = ec->_reduction_features;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len > 0)

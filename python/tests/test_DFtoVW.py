@@ -32,6 +32,14 @@ def test_no_label_multiple_features():
     assert first_line == "| a:2 b:3"
 
 
+# Exception tests for Namespace
+def test_namespace_with_value_but_no_name():
+    with pytest.raises(ValueError) as value_error:
+        Namespace(features=Feature("a"), value=10)
+    expected = "Namespace can't have a 'value' argument without a 'name' argument or an empty string 'name' argument"
+    assert expected == str(value_error.value)
+
+
 # Tests for SimpleLabel
 def test_from_colnames_constructor():
     df = pd.DataFrame({"y": [1], "x": [2]})
@@ -114,7 +122,6 @@ def test_multiple_named_namespaces_multiple_features_multiple_lines():
     label = SimpleLabel("y")
     conv = DFtoVW(df=df, label=label, namespaces=[ns1, ns2])
     lines_list = conv.convert_df()
-    return lines_list
     assert lines_list == ['1 |FirstNameSpace a:2 |DoubleIt:2 b=x1 c:36.4',
                           '-1 |FirstNameSpace a:3 |DoubleIt:2 b=x2 c:47.8']
 
@@ -147,7 +154,7 @@ def test_non_numerical_error():
     df = pd.DataFrame({"y": ["a"], "x": ["featX"]})
     with pytest.raises(TypeError) as type_error:
         DFtoVW(df=df, label=SimpleLabel(label="y"), features=Feature("x"))
-    expected = "In argument 'label' of 'SimpleLabel', column 'y' should be either of the following type(s): 'int', 'float', 'int64'."
+    expected = "In argument 'label' of 'SimpleLabel', column 'y' should be either of the following type(s): 'int', 'float'."
     assert expected == str(type_error.value)
 
 

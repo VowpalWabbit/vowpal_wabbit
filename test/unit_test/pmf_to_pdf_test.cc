@@ -69,7 +69,7 @@ void check_pdf_sums_to_one(VW::continuous_actions::probability_density_function&
 }
 
 void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_function& pdf, float min_value,
-    float max_value, uint32_t bandwidth, uint32_t num_actions, uint32_t action)
+    float max_value, float bandwidth, uint32_t num_actions, uint32_t action)
 {
   // check that left <= right for all pdf
   float prev_pdf_limit = 0;
@@ -148,9 +148,8 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   learn(*data, *as_singleline(test_harness), ec);
 
-  CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
   test_harness->finish();
-  destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
+  delete test_harness;
 }
 
 BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
@@ -184,8 +183,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
     check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
 
     test_harness->finish();
-    destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
-    CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
+    delete test_harness;
   }
 }
 
@@ -221,8 +219,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
     check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
 
     test_harness->finish();
-    destroy_free<VW::pmf_to_pdf::reduction_test_harness>(test_harness);
-    CB::delete_label<VW::cb_continuous::continuous_label>(ec.l.cb_cont);
+    delete test_harness;
   }
 }
 

@@ -13,8 +13,13 @@
 #include "vw.h"
 #include "guard.h"
 
+#include "io/logger.h"
+
+
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 constexpr float hidden_min_activation = -3;
 constexpr float hidden_max_activation = 3;
@@ -127,6 +132,7 @@ void finish_setup(nn& n, vw& all)
   n.outputweight.total_sum_feat_sq++;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
+  n.outputweight._reduction_features.template get<simple_label_reduction_features>().initial = 0.f;
 
   n.finished_setup = true;
 }
@@ -294,6 +300,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     {
       n.output_layer.ft_offset = ec.ft_offset;
       n.output_layer.l.simple = ec.l.simple;
+      n.output_layer._reduction_features.template get<simple_label_reduction_features>().initial =
+          ec._reduction_features.template get<simple_label_reduction_features>().initial;
       n.output_layer.weight = ec.weight;
       n.output_layer.partial_prediction = 0;
       if (is_learn)
@@ -426,20 +434,19 @@ base_learner* nn_setup(options_i& options, vw& all)
   n->_random_state = all.get_random_state();
 
   if (n->multitask && !all.logger.quiet)
-    std::cerr << "using multitask sharing for neural network " << (all.training ? "training" : "testing") << std::endl;
+    logger::errlog_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
 
   if (options.was_supplied("meanfield"))
   {
     n->dropout = false;
-    if (!all.logger.quiet)
-      std::cerr << "using mean field for neural network " << (all.training ? "training" : "testing") << std::endl;
+    logger::errlog_info("using mean field for neural network {}", (all.training ? "training" : "testing"));
   }
 
   if (n->dropout && !all.logger.quiet)
-    std::cerr << "using dropout for neural network " << (all.training ? "training" : "testing") << std::endl;
+    logger::errlog_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
 
   if (n->inpass && !all.logger.quiet)
-    std::cerr << "using input passthrough for neural network " << (all.training ? "training" : "testing") << std::endl;
+    logger::errlog_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
 
   n->finished_setup = false;
   n->squared_loss = getLossFunction(all, "squared", 0);
@@ -457,7 +464,7 @@ base_learner* nn_setup(options_i& options, vw& all)
   n->increment = base->increment;  // Indexing of output layer is odd.
   nn& nv = *n.get();
   learner<nn, example>& l = init_learner(n, base, predict_or_learn_multi<true, true>,
-      predict_or_learn_multi<false, true>, n->k + 1, all.get_setupfn_name(nn_setup));
+      predict_or_learn_multi<false, true>, n->k + 1, all.get_setupfn_name(nn_setup), true);
   if (nv.multitask) l.set_multipredict(multipredict);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);

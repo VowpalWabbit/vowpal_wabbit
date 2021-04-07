@@ -12,6 +12,8 @@
 #include "vw_allreduce.h"
 
 //#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
+// TODO: This file makes extensive use of #ifdef DEBUG for printing
+//       leave this alone for now
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -96,7 +98,6 @@ inline uint64_t stride_un_shift(const stagewise_poly &poly, uint64_t idx)
 
 inline uint64_t do_ft_offset(const stagewise_poly &poly, uint64_t idx)
 {
-  // std::cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset << std::endl;
   assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
   return idx + poly.synth_ec.ft_offset;
 }
@@ -694,6 +695,7 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
 
   learner<stagewise_poly, example> &l = init_learner(
       poly, as_singleline(setup_base(options, all)), learn, predict, all.get_setupfn_name(stagewise_poly_setup));
+
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);

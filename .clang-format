@@ -12,3 +12,5 @@ BreakConstructorInitializersBeforeComma: true
 ColumnLimit: 120
 SortIncludes: false
 IndentPPDirectives: AfterHash
+PointerAlignment: Left
+DerivePointerAlignment: false

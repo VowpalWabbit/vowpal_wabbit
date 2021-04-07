@@ -9,6 +9,10 @@
 #include "vw_exception.h"
 #include "gen_cs_example.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 namespace GEN_CS
 {
 using namespace VW::LEARNER;
@@ -20,7 +24,7 @@ float safe_probability(float prob)
 {
   if (prob <= 0.)
   {
-    std::cout << "Probability " << prob << " is not possible, replacing with 1e-3.  Fix your dataset. " << std::endl;
+    logger::log_warn("Probability {} is not possible, replacing with 1e-3.  Fix your dataset. ", prob);
     return 1e-3f;
   }
   else
@@ -167,4 +171,22 @@ void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset, ACT
     cs_labels.costs.push_back(wc);
   }
 }
+
+void cs_prep_labels(multi_ex& examples, std::vector<CB::label>& cb_labels, COST_SENSITIVE::label& cs_labels,
+    std::vector<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset)
+{
+  cb_labels.clear();
+  if (prepped_cs_labels.size() < cs_labels.costs.size() + 1) { prepped_cs_labels.resize(cs_labels.costs.size() + 1); }
+
+  size_t index = 0;
+  for (auto ec : examples)
+  {
+    cb_labels.emplace_back(std::move(ec->l.cb));
+    prepped_cs_labels[index].costs.clear();
+    prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
+    ec->l.cs = std::move(prepped_cs_labels[index++]);
+    ec->ft_offset = offset;
+  }
+}
+
 }  // namespace GEN_CS

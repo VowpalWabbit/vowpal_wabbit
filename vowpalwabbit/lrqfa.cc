@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <string>
+#include <cfloat>
 #include "reductions.h"
 #include "rand48.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
@@ -124,14 +125,8 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
     {
       namespace_index right = i;
       features& rfs = ec.feature_space[right];
-      rfs.values.end() = rfs.values.begin() + lrq.orig_size[right];
-
-      if (all.audit || all.hash_inv)
-      {
-        for (size_t j = lrq.orig_size[right]; j < rfs.space_names.size(); ++j) rfs.space_names[j].~audit_strings_ptr();
-
-        rfs.space_names.end() = rfs.space_names.begin() + lrq.orig_size[right];
-      }
+      rfs.values.resize_but_with_stl_behavior(lrq.orig_size[right]);
+      if (all.audit || all.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }
     }
   }
 }
@@ -157,8 +152,10 @@ VW::LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
   for (char i : lrq->field_name) lrq->field_id[(int)i] = fd_id++;
 
   all.wpp = all.wpp * (uint64_t)(1 + lrq->k);
-  learner<LRQFAstate, example>& l = init_learner(lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>,
-      predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k, all.get_setupfn_name(lrqfa_setup));
+  auto base = setup_base(options, all);
+  learner<LRQFAstate, example>& l =
+      init_learner(lrq, as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
+          1 + lrq->field_name.size() * lrq->k, all.get_setupfn_name(lrqfa_setup), base->learn_returns_prediction);
 
   return make_base(l);
 }

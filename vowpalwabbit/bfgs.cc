@@ -105,7 +105,6 @@ struct bfgs
 
   ~bfgs()
   {
-    predictions.delete_v();
     free(mem);
     free(rho);
     free(alpha);
@@ -177,7 +176,8 @@ inline void add_DIR(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * f
 
 float dot_with_direction(vw& all, example& ec)
 {
-  float temp = ec.l.simple.initial;
+  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  float temp = simple_red_features.initial;
   GD::foreach_feature<float, add_DIR>(all, ec, temp);
   return temp;
 }
@@ -296,6 +296,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
       (&(*w))[W_DIR] -= ((&(*w))[W_COND]) * ((&(*w))[W_GT]);
       (&(*w))[W_GT] = 0;
     }
+    // TODO: spdlog can't print partial log lines. Figure out how to handle this..
     if (!all.logger.quiet) fprintf(stderr, "%f\t", beta);
     return;
   }

@@ -9,6 +9,6 @@ cd $REPO_DIR
 rm -rf build
 mkdir build
 cd build
-cmake .. -DBUILD_BENCHMARKS=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off
+cmake .. -DBUILD_BENCHMARKS=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_FLATBUFFERS=On
 NUM_PROCESSORS=$(cat nprocs.txt)
 make vw-benchmarks.out -j ${NUM_PROCESSORS}

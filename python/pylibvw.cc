@@ -15,6 +15,7 @@
 #include "options_serializer_boost_po.h"
 #include "future_compat.h"
 #include "slates_label.h"
+#include "simple_label_parser.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -296,6 +297,14 @@ std::string get_arguments(vw_ptr all)
   }
 
   return serializer.str();
+}
+
+py::list get_enabled_reductions(vw_ptr all)
+{
+  py::list enabled_reductions;
+  for (auto ex : all->enabled_reductions) { enabled_reductions.append(ex); }
+
+  return enabled_reductions;
 }
 
 predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
@@ -716,8 +725,11 @@ void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t la
 }
 
 float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
-float ex_get_simplelabel_weight(example_ptr ec) { return ec->l.simple.weight; }
-float ex_get_simplelabel_initial(example_ptr ec) { return ec->l.simple.initial; }
+float ex_get_simplelabel_weight(example_ptr ec) { return ec->weight; }
+float ex_get_simplelabel_initial(example_ptr ec)
+{
+  return ec->_reduction_features.template get<simple_label_reduction_features>().initial;
+}
 float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
 float ex_get_prob(example_ptr ec) { return ec->pred.prob; }
 
@@ -1135,6 +1147,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("audit_example", &my_audit_example, "print example audit information")
       .def("get_id", &get_model_id, "return the model id")
       .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
+      .def("get_enabled_reductions", &get_enabled_reductions, "return the list of names of the enabled reductions")
 
       .def("learn_multi", &my_learn_multi_ex, "given a list pyvw examples, learn (and predict) on those examples")
       .def("predict_multi", &my_predict_multi_ex, "given a list of pyvw examples, predict on that example")

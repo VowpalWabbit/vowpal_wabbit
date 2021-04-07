@@ -6,7 +6,10 @@
 #include "reductions.h"
 #include "vw.h"
 
+#include "io/logger.h"
+
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 struct multi_oaa
 {
@@ -20,7 +23,8 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
   MULTILABEL::labels preds = ec.pred.multilabels;
   preds.label_v.clear();
 
-  ec.l.simple = {FLT_MAX, 1.f, 0.f};
+  ec.l.simple = {FLT_MAX};
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   uint32_t multilabel_index = 0;
   for (uint32_t i = 0; i < o.k; i++)
   {
@@ -42,8 +46,8 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
   {
     if (multilabel_index < multilabels.label_v.size())
     {
-      std::cout << "label " << multilabels.label_v[multilabel_index] << " is not in {0," << o.k - 1
-                << "} This won't work right." << std::endl;
+      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.",
+                        multilabels.label_v[multilabel_index], o.k - 1);
     }
   }
   ec.pred.multilabels = preds;
@@ -65,9 +69,9 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  VW::LEARNER::learner<multi_oaa, example>& l =
-      VW::LEARNER::init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>,
-          predict_or_learn<false>, data->k, prediction_type_t::multilabels, all.get_setupfn_name(multilabel_oaa_setup));
+  VW::LEARNER::learner<multi_oaa, example>& l = VW::LEARNER::init_learner(data, as_singleline(setup_base(options, all)),
+      predict_or_learn<true>, predict_or_learn<false>, data->k, prediction_type_t::multilabels,
+      all.get_setupfn_name(multilabel_oaa_setup), true);
   l.set_finish_example(finish_example);
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
 

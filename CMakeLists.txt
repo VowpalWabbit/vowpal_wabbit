@@ -3,6 +3,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 if(POLICY CMP0076)
   cmake_policy(SET CMP0076 NEW)
 endif()
+
+# Do not add /W3 to MSVC flags by default. We set this to /W4.
+if(POLICY CMP0092)
+  cmake_policy(SET CMP0092 NEW)
+endif()
+
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
@@ -87,7 +93,9 @@ option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
-option(BUILD_FLATBUFFERS "Build flatbuffers" ON)
+option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead will use find_package" OFF)
+option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
+option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -106,9 +114,15 @@ if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAV
   message(FATAL_ERROR "Unsupported option enabled on Windows build")
 endif()
 
+# This was the previous default but is only valid on x86_64 systems.
+set(linux_x86_64_opt_flags "")
+if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+  set(linux_x86_64_opt_flags -msse2 -mfpmath=sse)
+endif()
+
 # Add -ffast-math for speed, remove for testability.
 # no-stack-check is added to mitigate stack alignment issue on Catalina where there is a bug with aligning stack-check instructions, and stack-check became default option
-set(linux_release_config -O3 -fno-strict-aliasing -msse2 -mfpmath=sse -fno-stack-check)
+set(linux_release_config -O3 -fno-strict-aliasing ${linux_x86_64_opt_flags} -fno-stack-check)
 set(linux_debug_config -g -O0 -fno-stack-check)
 
 if((NOT PROFILE) AND (NOT GCOV))
@@ -204,52 +218,26 @@ endif()
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
 
-if(RAPIDJSON_SYS_DEP)
-  # Since EXACT is not specified, any version compatible with 1.1.0 is accepted (>= 1.1.0)
-  find_package(RapidJSON 1.1.0 CONFIG REQUIRED)
-  add_library(RapidJSON INTERFACE)
-  target_include_directories(RapidJSON INTERFACE ${RAPIDJSON_INCLUDE_DIRS})
-else()
-  # Ensure rapidjson submodule is ready
-  find_package(Git QUIET)
-  if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-    # Update submodules as needed
-    option(GIT_SUBMODULE "Check submodules during build" ON)
-    if(GIT_SUBMODULE)
-      message(STATUS "Submodule update")
-      execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                      RESULT_VARIABLE GIT_SUBMOD_RESULT)
-      if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-        message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
-      endif()
+# Ensure submodules are ready
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+  # Update submodules as needed
+  option(GIT_SUBMODULE "Check submodules during build" ON)
+  if(GIT_SUBMODULE)
+    message(STATUS "Submodule update")
+    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      RESULT_VARIABLE GIT_SUBMOD_RESULT)
+    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+      message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
     endif()
-  endif()
-
-  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/rapidjson/CMakeLists.txt")
-    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-  endif()
-  add_library(RapidJSON INTERFACE)
-  target_include_directories(RapidJSON INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  )
-
-  if(VW_INSTALL)
-    install(
-      TARGETS RapidJSON
-      EXPORT VowpalWabbitConfig)
-
-    install(
-      DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/rapidjson/
-      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rapidjson
-    )
   endif()
 endif()
 
 add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)
+include(ext_libs/ext_libs.cmake)
 add_subdirectory(vowpalwabbit)
 
 if (BUILD_FLATBUFFERS)
@@ -315,7 +303,7 @@ endif()
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
   find_package(Boost REQUIRED COMPONENTS program_options)
-  
+
   FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
     SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
   ENDFOREACH()

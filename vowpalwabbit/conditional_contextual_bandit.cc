@@ -16,15 +16,23 @@
 #include "decision_scores.h"
 #include "vw_versions.h"
 #include "version.h"
+#include "debug_log.h"
+
+#include "io/logger.h"
 
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
 #include <bitset>
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::ccb
+
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 template <typename T>
 void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
@@ -64,6 +72,9 @@ struct ccb
   // If the reduction has not yet seen a multi slot example, it will behave the same as if it were CB.
   // This means the interactions aren't added and the slot feature is not added.
   bool has_seen_multi_slot_example = false;
+  // Introduction has_seen_multi_slot_example was breaking change in terms of model format.
+  // This flag is required for loading cb models (which do not have has_seen_multi_slot_example flag) into ccb reduction
+  bool is_ccb_input_model = false;
 };
 
 namespace CCB
@@ -98,7 +109,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
         data.slots.push_back(ex);
         break;
       default:
-        std::cout << "ccb_adf_explore: badly formatted example - invalid example type";
+        logger::log_error("ccb_adf_explore: badly formatted example - invalid example type");
         return false;
     }
 
@@ -362,6 +373,23 @@ void build_cb_example(multi_ex& cb_ex, example* slot, const CCB::label& ccb_labe
   std::swap(data.shared->tag, slot->tag);
 }
 
+std::string ccb_decision_to_string(const ccb& data)
+{
+  std::ostringstream outstrm;
+  auto& pred = data.shared->pred.a_s;
+  // correct indices: we want index relative to the original ccb multi-example,
+  // with no actions filtered
+  outstrm << "a_s [";
+  for (const auto& action_score : pred) outstrm << action_score.action << ":" << action_score.score << ", ";
+  outstrm << "] ";
+
+  outstrm << "excl [";
+  for (const auto& excl : data.exclude_list) outstrm << excl << ",";
+  outstrm << "] ";
+
+  return outstrm.str();
+}
+
 // iterate over slots contained in the multi-example, and for each slot, build a cb example and perform a
 // cb_explore_adf call.
 template <bool is_learn>
@@ -370,6 +398,11 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   clear_all(data);
   // split shared, actions and slots
   if (!split_multi_example_and_stash_labels(examples, data)) { return; }
+  auto restore_labels_guard = VW::scope_exit([&data, &examples] {
+    // Restore ccb labels to the example objects.
+    for (size_t i = 0; i < examples.size(); i++)
+    { examples[i]->l.conditional_contextual_bandit = std::move(data.stored_labels[i]); }
+  });
 
   if (data.slots.size() > data.actions.size())
   {
@@ -405,13 +438,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
-  auto restore_guard = VW::scope_exit([&data, &examples] {
-    delete_cb_labels(data);
-
-    // Restore ccb labels to the example objects.
-    for (size_t i = 0; i < examples.size(); i++)
-    { examples[i]->l.conditional_contextual_bandit = std::move(data.stored_labels[i]); }
-  });
+  auto delete_cb_labels_guard = VW::scope_exit([&data, &examples] { delete_cb_labels(data); });
 
   // this is temporary only so we can get some logging of what's going on
   try
@@ -455,11 +482,29 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         }
       }
 
+      // the cb example contains at least 1 action
       if (has_action(data.cb_ex))
       {
-        // the cb example contains at least 1 action
-        multiline_learn_or_predict<is_learn>(base, data.cb_ex, examples[0]->ft_offset);
+        // Notes:  Prediction is needed for output purposes. i.e.
+        // save_action_scores needs it.
+        // This is will be used to a) display prediction, b) output to a predict
+        // file c) progressive loss calcs
+        //
+        // Strictly speaking, predict is not needed to learn.  The only reason
+        // for doing this here
+        // instead of letting the framework call predict before learn is to
+        // avoid extra work in example manipulation.
+        //
+        // The right thing to do here is to detect library mode and not have to
+        // call predict if prediction is
+        // not needed for learn.  This will be part of a future PR
+        if (!is_learn) multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
+
+        if (is_learn) { multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset); }
+
         save_action_scores(data, decision_scores);
+        VW_DBG(examples) << "ccb "
+                         << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
         clear_pred_and_label(data);
       }
       else
@@ -561,7 +606,9 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
   }
 
   if (num_labelled > 0 && num_labelled < slots.size())
-  { std::cerr << "Warning: Unlabeled example in train set, was this intentional?\n"; }
+  {
+    logger::errlog_warn("Unlabeled example in train set, was this intentional?");
+  }
 
   bool holdout_example = num_labelled > 0;
   for (const auto& example : ec_seq) { holdout_example &= example->test_only; }
@@ -595,7 +642,7 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 
   // We want to enter this block if either we are writing, or reading a model file after the version in which this was
   // added.
-  if (!read || sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  if (!read || (sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG && sm.is_ccb_input_model))
   {
     std::stringstream msg;
     if (!read) { msg << "CCB: has_seen_multi_slot_example = " << sm.has_seen_multi_slot_example << "\n"; }
@@ -609,6 +656,9 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
+
+  data->is_ccb_input_model = all.is_ccb_input_model;
+
   option_group_definition new_options("EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF");
   new_options
       .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
@@ -635,7 +685,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   auto* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CCB::ccb_label_parser;
 
-  // Stash the base learners stride_shift so we can properly add a feature later.
+  // Stash the base learners stride_shift so we can properly add a feature
+  // later.
   data->base_learner_stride_shift = all.weights.stride_shift();
 
   // Extract from lower level reductions
@@ -648,7 +699,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
   learner<ccb, multi_ex>& l = init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
-      prediction_type_t::decision_probs, all.get_setupfn_name(ccb_explore_adf_setup));
+      prediction_type_t::decision_probs, all.get_setupfn_name(ccb_explore_adf_setup), true);
 
   l.set_finish_example(finish_multiline_example);
   l.set_save_load(save_load);

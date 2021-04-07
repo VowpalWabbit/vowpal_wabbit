@@ -9,7 +9,9 @@
 #include "vw_string_view.h"
 #include "constant.h"
 #include "vw_math.h"
+#include "parse_primitives.h"
 #include <numeric>
+
 namespace VW
 {
 namespace slates
@@ -72,29 +74,11 @@ void cache_label(slates::label& ld, io_buf& cache)
 
 float weight(slates::label& ld) { return ld.weight; }
 
-void default_label(slates::label& ld)
-{
-  ld.type = example_type::unset;
-  ld.weight = 1.f;
-  ld.labeled = false;
-  ld.cost = 0.f;
-  ld.slot_id = 0;
-  ld.probabilities.clear();
-}
+void default_label(slates::label& ld) { ld.reset_to_default(); }
 
 bool test_label(slates::label& ld) { return ld.labeled == false; }
 
 void delete_label(slates::label& ld) { ld.probabilities.delete_v(); }
-
-void copy_label(slates::label& dst, slates::label& src)
-{
-  dst.type = src.type;
-  dst.weight = src.weight;
-  dst.labeled = src.labeled;
-  dst.cost = src.cost;
-  dst.slot_id = src.slot_id;
-  copy_array(dst.probabilities, src.probabilities);
-}
 
 // Slates labels come in three types, shared, action and slot with the following structure:
 // slates shared [global_cost]
@@ -195,19 +179,13 @@ label_parser slates_label_parser = {
     parse_label(p, sd, v->slates, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { cache_label(v->slates, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->slates, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->slates, cache); },
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->slates, cache); },
   // delete_label
   [](polylabel* v) { delete_label(v->slates); },
    // get_weight
-  [](polylabel* v) { return weight(v->slates); },
-  // copy_label
-  [](polylabel* dst, polylabel* src) {
-    if (dst && src) {
-      copy_label(dst->slates, src->slates);
-    }
-  },
+  [](polylabel* v, const reduction_features&) { return weight(v->slates); },
   // test_label
   [](polylabel* v) { return test_label(v->slates); },
   label_type_t::slates

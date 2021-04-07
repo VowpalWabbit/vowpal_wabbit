@@ -12,6 +12,9 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+// TODO: This file makes extensive use of cout and partial line logging.
+//       Will require some investigation on how to proceed
+
 class node_pred
 {
 public:
@@ -148,6 +151,8 @@ inline void update_min_count(log_multi& b, uint32_t node)
 
 void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
 {
+  // TODO: its likely possible to replicate this output with the logger, but will
+  //       require some research
   for (uint32_t i = 0; i < depth; i++) std::cout << "\t";
   std::cout << node.min_count << " " << node.left << " " << node.right;
   std::cout << " label = " << node.max_count_label << " labels = ";
@@ -261,6 +266,7 @@ void train_node(
       (float)b.nodes[current].preds[class_index].Ehk / b.nodes[current].preds[class_index].nk;
 }
 
+// TODO: currently unused. Is this useful to keep around?
 void verify_min_dfs(log_multi& b, const node& node)
 {
   if (node.internal)
@@ -295,7 +301,9 @@ void predict(log_multi& b, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
 
-  ec.l.simple = {FLT_MAX, 0.f, 0.f};
+  ec.l.simple = {FLT_MAX};
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+
   uint32_t cn = 0;
   uint32_t depth = 0;
   while (b.nodes[cn].internal)
@@ -310,16 +318,14 @@ void predict(log_multi& b, single_learner& base, example& ec)
 
 void learn(log_multi& b, single_learner& base, example& ec)
 {
-  //    verify_min_dfs(b, b.nodes[0]);
-  if (ec.l.multi.label == (uint32_t)-1 || b.progress) predict(b, base, ec);
-
   if (ec.l.multi.label != (uint32_t)-1)  // if training the tree
   {
     MULTICLASS::label_t mc = ec.l.multi;
     uint32_t start_pred = ec.pred.multiclass;
 
     uint32_t class_index = 0;
-    ec.l.simple = {FLT_MAX, 0.f, 0.f};
+    ec.l.simple = {FLT_MAX};
+    ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
     uint32_t cn = 0;
     uint32_t depth = 0;
     while (children(b, cn, class_index, mc.label))

@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_standalone_example)
   uint8_t* buf = builder.GetBufferPointer();
   int size = builder.GetSize();
 
-  auto examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(all));
   all->flat_converter->parse_examples(all, examples, buf);
 
@@ -82,13 +82,13 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_standalone_example)
   // Check vw example
   BOOST_CHECK_EQUAL(examples.size(), 1);
   BOOST_CHECK_CLOSE(examples[0]->l.simple.label, 0.f, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->l.simple.weight, 1.f, FLOAT_TOL);
+  const auto& red_features = examples[0]->_reduction_features.template get<simple_label_reduction_features>();
+  BOOST_CHECK_CLOSE(red_features.weight, 1.f, FLOAT_TOL);
 
   BOOST_CHECK_EQUAL(examples[0]->indices[0], constant_namespace);
   BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
 
   VW::finish_example(*all, *examples[0]);
-  examples.delete_v();
   VW::finish(*all);
 }
 
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
   uint8_t* buf = builder.GetBufferPointer();
   int size = builder.GetSize();
 
-  auto examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(all));
   all->flat_converter->parse_examples(all, examples, buf);
 
@@ -122,12 +122,12 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
   // check vw example
   BOOST_CHECK_EQUAL(examples.size(), 1);
   BOOST_CHECK_CLOSE(examples[0]->l.simple.label, 0.f, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->l.simple.weight, 1.f, FLOAT_TOL);
+  const auto& red_features = examples[0]->_reduction_features.template get<simple_label_reduction_features>();
+  BOOST_CHECK_CLOSE(red_features.weight, 1.f, FLOAT_TOL);
 
   BOOST_CHECK_EQUAL(examples[0]->indices[0], constant_namespace);
   BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
 
   VW::finish_example(*all, *examples[0]);
-  examples.delete_v();
   VW::finish(*all);
 }

@@ -15,16 +15,22 @@
 #include "constant.h"
 #include "example.h"
 #include "vw_math.h"
+#include "vw_string_view.h"
+#include "parse_primitives.h"
+#include "reduction_features.h"
+
+#include "io/logger.h"
 
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
 #include <cmath>
-#include "vw_string_view.h"
 
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 namespace CCB
 {
@@ -157,7 +163,6 @@ void default_label(label& ld)
   // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
   if (ld.outcome != nullptr)
   {
-    ld.outcome->probabilities.delete_v();
     delete ld.outcome;
     ld.outcome = nullptr;
   }
@@ -173,27 +178,10 @@ void delete_label(label& ld)
 {
   if (ld.outcome)
   {
-    ld.outcome->probabilities.delete_v();
     delete ld.outcome;
     ld.outcome = nullptr;
   }
   ld.explicit_included_actions.delete_v();
-}
-
-void copy_label(label& ldDst, label& ldSrc)
-{
-  if (ldSrc.outcome)
-  {
-    ldDst.outcome = new CCB::conditional_contextual_bandit_outcome();
-    ldDst.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
-
-    ldDst.outcome->cost = ldSrc.outcome->cost;
-    copy_array(ldDst.outcome->probabilities, ldSrc.outcome->probabilities);
-  }
-
-  copy_array(ldDst.explicit_included_actions, ldSrc.explicit_included_actions);
-  ldDst.type = ldSrc.type;
-  ldDst.weight = ldSrc.weight;
 }
 
 ACTION_SCORE::action_score convert_to_score(
@@ -205,12 +193,12 @@ ACTION_SCORE::action_score convert_to_score(
 
   if (probability > 1.0)
   {
-    std::cerr << "invalid probability > 1 specified for an outcome, resetting to 1.\n";
+    logger::errlog_warn("invalid probability > 1 specified for an action, resetting to 1.");
     probability = 1.0;
   }
   if (probability < 0.0)
   {
-    std::cerr << "invalid probability < 0 specified for an outcome, resetting to 0.\n";
+    logger::errlog_warn("invalid probability < 0 specified for an action, resetting to 0.");
     probability = .0;
   }
 
@@ -323,23 +311,16 @@ label_parser ccb_label_parser = {
     parse_label(p, sd, v->conditional_contextual_bandit, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { cache_label(v->conditional_contextual_bandit, cache); },
+  [](polylabel* v, ::reduction_features&, io_buf& cache) { cache_label(v->conditional_contextual_bandit, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->conditional_contextual_bandit, cache); },
+  [](shared_data* sd, polylabel* v, ::reduction_features&, io_buf& cache) { return read_cached_label(sd, v->conditional_contextual_bandit, cache); },
   // delete_label
   [](polylabel* v) { delete_label(v->conditional_contextual_bandit); },
    // get_weight
-  [](polylabel* v) { return ccb_weight(v->conditional_contextual_bandit); },
-  // copy_label
-  [](polylabel* dst, polylabel* src) {
-    if (dst && src) {
-      copy_label(dst->conditional_contextual_bandit, src->conditional_contextual_bandit);
-    }
-  },
+  [](polylabel* v, const ::reduction_features&) { return ccb_weight(v->conditional_contextual_bandit); },
   // test_label
   [](polylabel* v) { return test_label(v->conditional_contextual_bandit); },
   label_type_t::ccb
 };
 // clang-format on
-
 }  // namespace CCB

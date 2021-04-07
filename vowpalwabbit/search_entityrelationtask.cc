@@ -4,7 +4,10 @@
 #include "search_entityrelationtask.h"
 #include "vw.h"
 
+#include "io/logger.h"
+
 using namespace VW::config;
+namespace logger = VW::io::logger;
 
 #define R_NONE 10      // label for NONE relation
 #define LABEL_SKIP 11  // label for SKIP
@@ -155,7 +158,7 @@ size_t predict_entity(
     {
       for (uint32_t a = 0; a < 4; a++)
       {
-        VW::copy_example_data(false, &my_task_data->ldf_entity[a], ex);
+        VW::copy_example_data(&my_task_data->ldf_entity[a], ex);
         update_example_indicies(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * (uint64_t)(a + 1));
         CS::label& lab = my_task_data->ldf_entity[a].l.cs;
         lab.costs[0].x = 0.f;
@@ -238,7 +241,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
       int correct_label = 0;  // if correct label is not in the set, use the first one
       for (size_t a = 0; a < constrained_relation_labels.size(); a++)
       {
-        VW::copy_example_data(false, &my_task_data->ldf_relation[a], ex);
+        VW::copy_example_data(&my_task_data->ldf_relation[a], ex);
         update_example_indicies(
             true, &my_task_data->ldf_relation[a], 28904713, 4832917 * (uint64_t)(constrained_relation_labels[a]));
         CS::label& lab = my_task_data->ldf_relation[a].l.cs;
@@ -396,7 +399,7 @@ void run(Search::search& sch, multi_ex& ec)
       entity_first_decoding(sch, ec, predictions, true);  // LDF = true
       break;
     default:
-      std::cerr << "search order " << my_task_data->search_order << "is undefined." << std::endl;
+      logger::errlog_error("search order {} is undefined", my_task_data->search_order);
   }
 
   for (size_t i = 0; i < ec.size(); i++)

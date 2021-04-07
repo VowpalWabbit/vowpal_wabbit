@@ -40,6 +40,18 @@ struct label
   // For slot examples
   // Only valid if labeled
   ACTION_SCORE::action_scores probabilities;
+
+  label() { reset_to_default(); }
+
+  void reset_to_default()
+  {
+    type = example_type::unset;
+    weight = 1.f;
+    labeled = false;
+    cost = 0.f;
+    slot_id = 0;
+    probabilities.clear();
+  }
 };
 
 void default_label(VW::slates::label& v);
@@ -48,7 +60,6 @@ void parse_label(
 void delete_label(VW::slates::label& ld);
 void cache_label(VW::slates::label& ld, io_buf& cache);
 size_t read_cached_label(shared_data* /*sd*/, VW::slates::label& ld, io_buf& cache);
-void copy_label(VW::slates::label& dst, VW::slates::label& src);
 
 extern label_parser slates_label_parser;
 }  // namespace slates
