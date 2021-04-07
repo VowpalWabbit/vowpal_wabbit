@@ -115,8 +115,6 @@ label_parser multilabel = {
   [](polylabel* v, const reduction_features&) { return weight(v->multilabels); },
   // test_label
   [](polylabel* v) { return test_label(v->multilabels); },
-  // post parse processing
-  nullptr,
   label_type_t::multilabel
 };
 // clang-format on

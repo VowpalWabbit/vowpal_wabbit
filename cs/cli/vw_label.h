@@ -224,8 +224,10 @@ public:
     label_data* ld = &ex->l.simple;
 
     m_label = ld->label;
-    m_weight = ex->weight;
-    m_initial = ex->initial;
+
+    const auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+    m_weight = red_fts.weight;
+    m_initial = red_fts.initial;
   }
 
   virtual void UpdateExample(vw* vw, example* ex)
@@ -235,7 +237,11 @@ public:
 
     if (m_weight.HasValue) ex->weight = m_weight.Value;
 
-    if (m_initial.HasValue) ex->initial = m_initial.Value;
+    if (m_initial.HasValue)
+    {
+      auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+      red_fts.initial = m_initial.Value;
+    }
 
     count_label(vw->sd, ld->label);
   }

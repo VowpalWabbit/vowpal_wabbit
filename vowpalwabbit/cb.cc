@@ -101,8 +101,6 @@ label_parser cb_label = {
   [](polylabel*, const reduction_features&) { return 1.f; },
   // test_label
   [](polylabel* v) { return CB::is_test_label(v->cb); },
-  // post parse processing
-  nullptr,
   label_type_t::cb
 };
 // clang-format on
@@ -218,8 +216,6 @@ label_parser cb_eval = {
   [](polylabel*, const reduction_features&) { return 1.f; },
   // test_label
   [](polylabel* v) { return CB_EVAL::test_label(v->cb_eval); },
-  // post parse processing
-  nullptr,
   label_type_t::cb_eval
 };
 // clang-format on

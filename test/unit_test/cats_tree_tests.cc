@@ -30,8 +30,7 @@ struct reduction_test_harness
   void test_learn(single_learner& base, example& ec)
   {
     _labels.emplace_back(ec.l.simple);
-    _labels.back().serialized_weight = ec.weight;
-    _labels.back().serialized_initial = ec.initial;
+    _weights.emplace_back(ec.weight);
     _learner_offset.emplace_back(ec.ft_offset);
   }
 
@@ -47,6 +46,7 @@ struct reduction_test_harness
 
   vector<float> _predictions;
   vector<label_data> _labels;
+  vector<float> _weights;
   vector<uint64_t> _learner_offset;
   int _curr_idx;
 };
@@ -85,15 +85,22 @@ learner<T, example>* get_test_harness_reduction(const predictions_t& base_reduct
 
 using namespace VW::cats_tree;
 
-bool operator!=(const label_data& lhs, const label_data& rhs)
+bool operator!=(const label_data& lhs, const label_data& rhs) { return !(lhs.label == rhs.label); }
+
+bool operator!=(const simple_label_reduction_features& lhs, const simple_label_reduction_features& rhs)
 {
-  return !(lhs.label == rhs.label && lhs.serialized_weight == rhs.serialized_weight &&
-      lhs.serialized_initial == rhs.serialized_initial);
+  return !(lhs.weight == rhs.weight && lhs.initial == rhs.initial);
 }
 
 std::ostream& operator<<(std::ostream& o, label_data const& lbl)
 {
-  o << "{l=" << lbl.label << ", w=" << lbl.serialized_weight << ", i=" << lbl.serialized_initial << "}";
+  o << "{l=" << lbl.label << "}";
+  return o;
+}
+
+std::ostream& operator<<(std::ostream& o, simple_label_reduction_features const& red_fts)
+{
+  o << "{w=" << red_fts.weight << ", i=" << red_fts.initial << "}";
   return o;
 }
 
@@ -114,10 +121,14 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1, 3.5f / .5f, 0}, {1, 3.5f / .5f, 0}};
+  vector<label_data> expected_labels = {{-1}, {1}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 0};
@@ -145,9 +156,13 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1, 3.5f / .5f, 0}};
+  vector<label_data> expected_labels = {{-1}};
+  vector<float> expected_weights = {3.5f / 0.5f};
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1};
@@ -177,9 +192,13 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1, 3.5f / .5f, 0}, {1, 3.5f / .5f, 0}};
+  vector<label_data> expected_labels = {{-1}, {1}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f};
+
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 0};
@@ -208,10 +227,13 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {
-      {-1, 3.5f / .5f, 0}, {1, 3.5f / .5f, 0}, {1, 3.5f / .5f, 0}, {1, 3.5f / .5f, 0}};
+  vector<label_data> expected_labels = {{-1}, {1}, {1}, {1}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
+
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {3, 4, 1, 0};
@@ -242,12 +264,16 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<label_data> expected_labels = {
-      {1, 3.5f / .5f, 0},
-      {1, 3.5f / .5f, 0},
-      {1, 3.5f / .5f, 0},
+      {1},
+      {1},
+      {1},
   };
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
+
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {4, 1, 0};
@@ -277,9 +303,13 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1, 3.5f / .5f, 0}, {1, 3.5f / .5f, 0}, {-1, 3.5f / .5f, 0}};
+  vector<label_data> expected_labels = {{-1}, {1}, {-1}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
+
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 2, 0};
@@ -309,10 +339,13 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {
-      {1, 3.5f / .5f, 0}, {-1, 3.5f / .5f, 0}, {1, 3.5f / .5f, 0}, {1, 3.5f / .5f, 0}};
+  vector<label_data> expected_labels = {{1}, {-1}, {1}, {1}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
+
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {6, 1, 2, 0};
@@ -343,9 +376,12 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<label_data> expected_labels = {};
+  vector<float> expected_weights = {};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {};
@@ -375,10 +411,13 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{1, 3.5f / .5f, 0}, {1, 3.5f / .5f, 0}, {1, 3.5f / .5f, 0}};
+  vector<label_data> expected_labels = {{1}, {1}, {1}};
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {12, 5, 0};
@@ -409,12 +448,16 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<label_data> expected_labels = {
-      {1, 3.5f / .5f, 0},
-      {1, 3.5f / .5f, 0},
-      {1, 3.5f / .5f, 0},
+      {1},
+      {1},
+      {1},
   };
+  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
+
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(
+      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {5, 2, 0};
