@@ -9,6 +9,7 @@
 #include "multiclass.h"
 #include "parser.h"
 #include "global_data.h"
+#include "shared_data.h"
 
 void parse_label(label_parser& lp, parser* p, shared_data* sd, VW::string_view label, polylabel& l)
 {
