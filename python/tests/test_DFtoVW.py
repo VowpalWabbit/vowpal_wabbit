@@ -292,8 +292,20 @@ def test_contextualbanditlabel_negative_proba_error():
     assert expected == str(value_error.value)
 
 
+def test_contextualbanditlabel_non_float_proba_error():
+    df = pd.DataFrame({"a": [1], "c": [-0.5], "p": [1], "x": [1]})
+    with pytest.raises(TypeError) as value_error:
+        DFtoVW(
+            df=df,
+            label=ContextualbanditLabel("a", "c", "p"),
+            features=Feature("x"),
+        )
+    expected = "In argument 'probability' of 'ContextualbanditLabel', column 'p' should be either of the following type(s): 'float'."
+    assert expected == str(value_error.value)
+
+
 def test_contextualbanditlabel_non_positive_action():
-    df = pd.DataFrame({"a": [0], "c": [-0.5], "p": [0], "x": [1]})
+    df = pd.DataFrame({"a": [0], "c": [-0.5], "p": [0.5], "x": [1]})
     with pytest.raises(ValueError) as value_error:
         DFtoVW(
             df=df,
