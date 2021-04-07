@@ -118,16 +118,4 @@ bool is_test_label(LabelT& ld)
   return true;
 }
 
-template <typename LabelT = CB::label>
-void copy_label_additional_fields(LabelT& dst, LabelT& src)
-{
-  dst.weight = src.weight;
-}
-
-template <typename LabelT = CB::label>
-void copy_label(LabelT& dst, LabelT& src)
-{
-  dst.costs = src.costs;
-  copy_label_additional_fields(dst, src);
-}
 }  // namespace CB

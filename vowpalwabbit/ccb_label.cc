@@ -174,22 +174,6 @@ void default_label(label& ld)
 
 bool test_label(CCB::label& ld) { return ld.outcome == nullptr; }
 
-void copy_label(label& ldDst, label& ldSrc)
-{
-  if (ldSrc.outcome)
-  {
-    ldDst.outcome = new CCB::conditional_contextual_bandit_outcome();
-    ldDst.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
-
-    ldDst.outcome->cost = ldSrc.outcome->cost;
-    ldDst.outcome->probabilities = ldSrc.outcome->probabilities;
-  }
-
-  ldDst.explicit_included_actions = ldSrc.explicit_included_actions;
-  ldDst.type = ldSrc.type;
-  ldDst.weight = ldSrc.weight;
-}
-
 ACTION_SCORE::action_score convert_to_score(
     const VW::string_view& action_id_str, const VW::string_view& probability_str)
 {
@@ -322,12 +306,6 @@ label_parser ccb_label_parser = {
   [](shared_data* sd, polylabel* v, ::reduction_features&, io_buf& cache) { return read_cached_label(sd, v->conditional_contextual_bandit, cache); },
   // get_weight
   [](polylabel* v, const ::reduction_features&) { return ccb_weight(v->conditional_contextual_bandit); },
-  // copy_label
-  [](polylabel* dst, polylabel* src) {
-    if (dst && src) {
-      copy_label(dst->conditional_contextual_bandit, src->conditional_contextual_bandit);
-    }
-  },
   // test_label
   [](polylabel* v) { return test_label(v->conditional_contextual_bandit); },
   // parse post processing

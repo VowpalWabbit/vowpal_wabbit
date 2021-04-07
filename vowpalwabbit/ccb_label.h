@@ -107,7 +107,6 @@ void default_label(CCB::label& ld);
 void parse_label(parser* p, shared_data*, CCB::label& ld, std::vector<VW::string_view>& words, ::reduction_features&);
 void cache_label(CCB::label& ld, io_buf& cache);
 size_t read_cached_label(shared_data*, CCB::label& ld, io_buf& cache);
-void copy_label(CCB::label& ldDst, CCB::label& ldSrc);
 
 extern label_parser ccb_label_parser;
 }  // namespace CCB

@@ -418,7 +418,7 @@ void run(Search::search& sch, multi_ex& ec)
     {
       if (sch.predictNeedsExample())  // we can skip this work if `predict` won't actually use the example data
       {
-        VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
+        VW::copy_example_data(&data->ldf_examples[a], ec[i]);  // copy but leave label alone!
         // now, offset it appropriately for the action id
         my_update_example_indicies(sch, true, &data->ldf_examples[a], 28904713, 4832917 * (uint64_t)a);
       }
