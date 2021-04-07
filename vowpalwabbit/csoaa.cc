@@ -71,7 +71,8 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   uint32_t prediction = 1;
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
-  ec.l.simple = {0., VW::UNUSED_1, VW::UNUSED_0};
+  ec.l.simple = {0.};
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
   bool dont_learn = DO_MULTIPREDICT && !is_learn;
 
@@ -83,7 +84,9 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   }
   else if (dont_learn)
   {
-    ec.l.simple = {FLT_MAX, VW::UNUSED_1, VW::UNUSED_0};
+    ec.l.simple = {FLT_MAX};
+    ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
     for (uint32_t i = 1; i <= c.num_classes; i++)
     {
@@ -264,7 +267,9 @@ void make_single_prediction(ldf& data, single_learner& base, example& ec)
     LabelDict::del_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
   });
 
-  ec.l.simple = label_data{FLT_MAX, VW::UNUSED_1, VW::UNUSED_0};
+  ec.l.simple = label_data{FLT_MAX};
+  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
 }
@@ -306,6 +311,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
     // save original variables
     COST_SENSITIVE::label save_cs_label = ec1->l.cs;
     label_data& simple_lbl = ec1->l.simple;
+    auto& simple_red_features = ec1->_reduction_features.template get<simple_label_reduction_features>();
 
     v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
     if (costs1[0].class_index == (uint32_t)-1) continue;
@@ -336,7 +342,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       // learn
       float old_weight = ec1->weight;
       uint64_t old_offset = ec1->ft_offset;
-      ec1->initial = 0.;
+      simple_red_features.initial = 0.;
       simple_lbl.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
       ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
@@ -396,7 +402,8 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, multi_ex& ec_seq)
         ec->weight = old_weight * (costs[0].x - min_cost);
       }
     }
-    ec->initial = 0.;
+    auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
+    simple_red_features.initial = 0.;
     ec->l.simple = simple_lbl;
 
     // Prepare examples for learning

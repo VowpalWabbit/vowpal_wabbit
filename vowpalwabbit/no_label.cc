@@ -52,8 +52,6 @@ label_parser no_label_parser = {
   [](polylabel*, const reduction_features&) { return 1.f; },
   // test_label
   [](polylabel*) { return false; },
-  // post parse processing
-  nullptr,
   label_type_t::nolabel
 };
 // clang-format on

@@ -4,10 +4,6 @@
 
 #pragma once
 
-#include "v_array.h"
-#include "io_buf.h"
-#include "reduction_features.h"
-
 #include "vw_string_view.h"
 
 #include <vector>
@@ -15,6 +11,9 @@
 struct parser;
 struct shared_data;
 struct polylabel;
+class io_buf;
+class reduction_features;
+
 enum class label_type_t
 {
   simple,
@@ -39,6 +38,5 @@ struct label_parser
   void (*delete_label)(polylabel*);
   float (*get_weight)(polylabel*, const reduction_features&);
   bool (*test_label)(polylabel*);
-  void (*post_parse_setup)(example*);
   label_type_t label_type;
 };

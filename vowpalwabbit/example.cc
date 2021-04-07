@@ -6,6 +6,7 @@
 
 #include "example.h"
 #include "gd.h"
+#include "simple_label_parser.h"
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
@@ -48,12 +49,10 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
+void copy_example_label(example* dst, example* src, void (*)(polylabel*, polylabel*))
 {
-  if (copy_label)
-    copy_label(&dst->l, &src->l);  // TODO: we really need to delete_label on dst :(
-  else
-    dst->l = src->l;
+  dst->l = src->l;
+  dst->_reduction_features = src->_reduction_features;
 }
 
 void copy_example_label(example* dst, const example* src) { dst->l = src->l; }
@@ -80,7 +79,6 @@ void copy_example_metadata(example* dst, const example* src)
   dst->end_pass = src->end_pass;
   dst->is_newline = src->is_newline;
   dst->sorted = src->sorted;
-  dst->initial = src->initial;
 }
 
 void copy_example_data(example* dst, const example* src)
@@ -180,7 +178,7 @@ flat_example* flatten_example(vw& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
-  fec.weight = ec->weight;
+  fec._reduction_features = ec->_reduction_features;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len > 0)

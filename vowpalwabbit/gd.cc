@@ -349,7 +349,8 @@ inline void vec_add_trunc(trunc_data& p, const float fx, float& fw)
 
 inline float trunc_predict(vw& all, example& ec, double gravity)
 {
-  trunc_data temp = {ec.initial, (float)gravity};
+  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  trunc_data temp = {simple_red_features.initial, (float)gravity};
   foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp);
   return temp.prediction;
 }
@@ -393,7 +394,12 @@ void multipredict(
     gd& g, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
   vw& all = *g.all;
-  for (size_t c = 0; c < count; c++) pred[c].scalar = ec.initial;
+  for (size_t c = 0; c < count; c++)
+  {
+    const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    pred[c].scalar = simple_red_features.initial;
+  }
+
   if (g.all->weights.sparse)
   {
     multipredict_info<sparse_parameters> mp = {

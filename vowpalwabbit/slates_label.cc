@@ -188,8 +188,6 @@ label_parser slates_label_parser = {
   [](polylabel* v, const reduction_features&) { return weight(v->slates); },
   // test_label
   [](polylabel* v) { return test_label(v->slates); },
-  // post parse processing
-  nullptr,
   label_type_t::slates
 };
 // clang-format on
