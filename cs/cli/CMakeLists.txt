@@ -1,5 +1,6 @@
 include(CSharpUtilities)
 include(NetFxNuget)
+include(NetFxStrongName)
 
 set(vw_CLI_HEADERS
   clr_io.h
@@ -47,6 +48,8 @@ add_library(vw_clr SHARED
 # managed C++. It is important to set this property ahead of doing StrongName signing, as it is
 # used to determine whether the assembly is build from a vcxproj vs. a csproj.
 set_property(TARGET vw_clr PROPERTY COMMON_LANGUAGE_RUNTIME "")
+
+strongname_sign_target(vw_clr ${vw_DOTNET_SIGNING_KEY})
 
 set (vw_DOTNET_FRAMEWORK_REFERENCES
     System

@@ -12,6 +12,10 @@ ELSE()
   SET(CMAKE_CSharp_FLAGS "/platform:AnyCPU")
 ENDIF()
 
+# StrongName signing for VW assemblies - stage the keyfile, and set its location
+configure_file(vw_key.snk vw_key.snk COPYONLY)
+set(vw_DOTNET_SIGNING_KEY ${CMAKE_CURRENT_BINARY_DIR}/vw_key.snk)
+
 add_subdirectory(common)
 add_subdirectory(cli)
 add_subdirectory(cs)

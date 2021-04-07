@@ -1,5 +1,6 @@
 include(CSharpUtilities)
 include(T4Template)
+include(NetFxStrongName)
 
 set (vw_cs_SOURCES
   Properties/AssemblyInfo.cs 
@@ -56,6 +57,7 @@ add_library(vw_cs SHARED
   ${vw_cs_T4TEMPLATES}
 )
 
+strongname_sign_target(vw_cs ${vw_DOTNET_SIGNING_KEY})
 
 CSHARP_SET_DESIGNER_CS_PROPERTIES(
   "Properties/AssemblyInfo.cs"

@@ -1,5 +1,6 @@
 include(CSharpUtilities)
 include(NetFxNuget)
+include(NetFxStrongName)
 
 # TODO: Make AssemblyInfo a configure()ed file
 add_library(cs_parallel SHARED
@@ -11,6 +12,8 @@ add_library(cs_parallel SHARED
 CSHARP_SET_DESIGNER_CS_PROPERTIES(
   "Properties/AssemblyInfo.cs"
 )
+
+strongname_sign_target(cs_parallel ${vw_DOTNET_SIGNING_KEY})
 
 set (vw_DOTNET_FRAMEWORK_REFERENCES
   System

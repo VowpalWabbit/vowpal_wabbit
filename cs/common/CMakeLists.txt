@@ -1,4 +1,6 @@
 include(CSharpUtilities)
+include(NetFxStrongName)
+include(NetFxResource)
 
 # TODO: Make AssemblyInfo a configure()ed file
 add_library(vw_common SHARED
@@ -15,6 +17,15 @@ add_library(vw_common SHARED
   Bag.cs
   VowpalWabbitDecisionServiceInteractionHeader.cs
 )
+
+strongname_sign_target(vw_common ${vw_DOTNET_SIGNING_KEY})
+
+# The VowpalWabbit .NET bindings generate a dynamic assembly for the serialization logic to enable
+# efficient type-safe bindings. Unfortunately, in order to reference internal members, this dynamic
+# assembly needs to be StrongName signed, since the assemblies in the NuGet are StrongName signed.
+# To that end, we need to embed the keyfile into the NuGet, so that we can sign the generated assembly
+# on the fly.
+add_target_resources(vw_common ${vw_DOTNET_SIGNING_KEY})
 
 CSHARP_SET_DESIGNER_CS_PROPERTIES(
     "Properties/AssemblyInfo.cs"
