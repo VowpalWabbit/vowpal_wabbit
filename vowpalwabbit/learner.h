@@ -764,25 +764,25 @@ struct common_learner_builder
 
   FluentBuilderT& set_finish(void (*fn_ptr)(DataT&))
   {
-    _learner->finisher_fd = func_data(_learner->learn_fd.data, _learner->learn_fd.base, (finish_fptr_type)(fn_ptr));
+    _learner->finisher_fd = tuple_dbf(_learner->learn_fd.data, _learner->learn_fd.base, (finish_fptr_type)(fn_ptr));
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_end_pass(void (*fn_ptr)(DataT&))
   {
-    _learner->end_pass_fd = func_data(_learner->learn_fd.data, _learner->learn_fd.base, (func_data::fn)fn_ptr);
+    _learner->end_pass_fd = tuple_dbf(_learner->learn_fd.data, _learner->learn_fd.base, (func_data::fn)fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_end_examples(void (*fn_ptr)(DataT&))
   {
-    _learner->end_examples_fd = func_data(_learner->learn_fd.data, _learner->learn_fd.base, (func_data::fn)fn_ptr);
+    _learner->end_examples_fd = tuple_dbf(_learner->learn_fd.data, _learner->learn_fd.base, (func_data::fn)fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_init_driver(void (*fn_ptr)(DataT&))
   {
-    _learner->init_fd = func_data(_learner->learn_fd.data, _learner->learn_fd.base, (func_data::fn)fn_ptr);
+    _learner->init_fd = tuple_dbf(_learner->learn_fd.data, _learner->learn_fd.base, (func_data::fn)fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
