@@ -237,7 +237,11 @@ public:
 
     if (m_weight.HasValue) ex->weight = m_weight.Value;
 
-    if (m_initial.HasValue) ex->initial = m_initial.Value;
+    if (m_initial.HasValue)
+    {
+      auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+      red_fts.initial = m_initial.Value;
+    }
 
     count_label(vw->sd, ld->label);
   }
