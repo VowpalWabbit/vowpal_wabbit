@@ -211,6 +211,15 @@ def test_multilabel():
     assert first_line == "1,2 | x:3"
 
 
+def test_multilabel_with_listlabel_builder():
+    df = pd.DataFrame({"y1": [1], "y2": [2], "x": [3]})
+    conv = DFtoVW(
+        df=df, label=[MultiLabel("y1"), MultiLabel("y2")], features=Feature("x")
+    )
+    first_line = conv.convert_df()[0]
+    assert first_line == "1,2 | x:3"
+
+
 def test_multilabel_list_of_len_1():
     df = pd.DataFrame({"y": [1], "x": [2]})
     conv1 = DFtoVW(
@@ -239,7 +248,7 @@ def test_multilabel_non_positive_label_error():
 def test_contextualbanditlabel_one_label():
     df = pd.DataFrame({"a": [1], "c": [-0.5], "p": [0.1], "x": [1]})
     conv = DFtoVW(
-            df=df, label=ContextualbanditLabel(action="a", cost="c", proba="p"), features=Feature("x")
+            df=df, label=ContextualbanditLabel("a", "c", "p"), features=Feature("x")
     )
     first_line = conv.convert_df()[0]
     assert first_line == "1:-0.5:0.1 | x:1"
@@ -264,10 +273,10 @@ def test_contextualbanditlabel_over_one_proba_error():
     with pytest.raises(ValueError) as value_error:
         DFtoVW(
             df=df,
-            label=ContextualbanditLabel(action="a", cost="c", proba="p"),
+            label=ContextualbanditLabel("a", "c", "p"),
             features=Feature("x"),
         )
-    expected = "In argument 'proba' of 'ContextualbanditLabel', column 'p' must be >= 0 and <= 1."
+    expected = "In argument 'probability' of 'ContextualbanditLabel', column 'p' must be >= 0 and <= 1."
     assert expected == str(value_error.value)
 
 
@@ -276,10 +285,10 @@ def test_contextualbanditlabel_negative_proba_error():
     with pytest.raises(ValueError) as value_error:
         DFtoVW(
             df=df,
-            label=ContextualbanditLabel(action="a", cost="c", proba="p"),
+            label=ContextualbanditLabel("a", "c", "p"),
             features=Feature("x"),
         )
-    expected = "In argument 'proba' of 'ContextualbanditLabel', column 'p' must be >= 0 and <= 1."
+    expected = "In argument 'probability' of 'ContextualbanditLabel', column 'p' must be >= 0 and <= 1."
     assert expected == str(value_error.value)
 
 
@@ -288,9 +297,8 @@ def test_contextualbanditlabel_non_positive_action():
     with pytest.raises(ValueError) as value_error:
         DFtoVW(
             df=df,
-            label=ContextualbanditLabel(action="a", cost="c", proba="p"),
+            label=ContextualbanditLabel("a", "c", "p"),
             features=Feature("x"),
         )
     expected = "In argument 'action' of 'ContextualbanditLabel', column 'a' must be >= 1."
     assert expected == str(value_error.value)
-

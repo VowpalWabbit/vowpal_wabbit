@@ -269,7 +269,7 @@ class MulticlassLabel(object):
         Parameters
         ----------
         label : str
-            The column name with the multi class label.
+            The column name with the multi class label. 
         weight: str, optional
             The column name with the (importance) weight of the multi class label.
 
@@ -349,22 +349,25 @@ class ContextualbanditLabel(object):
 
     action = AttributeDescriptor("action", expected_type=(int,), min_value=1)
     cost = AttributeDescriptor("cost", expected_type=(float, int))
-    proba = AttributeDescriptor("proba", expected_type=(float,), min_value=0, max_value=1)
+    probability = AttributeDescriptor("probability", expected_type=(float,), min_value=0, max_value=1)
 
-    def __init__(self, action, cost, proba):
+    def __init__(self, action, cost, probability):
         """Initialize a ContextualbanditLabel instance.
         Parameters
         ----------
-        action : 
-        cost:
-        proba:
+        action: str
+            The action taken where we observed the cost.
+        cost: str
+            The cost observed for this action (lower is better)
+        probability: str
+            The probability of the exploration policy to choose this action when collecting the data.
         Returns
         -------
         self : ContextualbanditLabel
         """
         self.action = action
         self.cost = cost
-        self.proba = proba
+        self.probability = probability
 
     def process(self, df):
         """Returns the ContextualbanditLabel string representation.
@@ -377,7 +380,7 @@ class ContextualbanditLabel(object):
         pandas.Series
             The ContextualbanditLabel string representation.
         """
-        out = self.action.get_col(df) + ":" + self.cost.get_col(df) + ":"  + self.proba.get_col(df)
+        out = self.action.get_col(df) + ":" + self.cost.get_col(df) + ":" + self.probability.get_col(df)
 
         return out
 
@@ -554,7 +557,13 @@ class Namespace(object):
             )
 
     def process(self):
-        """Returns the Namespace string representation"""
+        """Returns the Namespace string representation
+
+        Returns
+        -------
+        str
+            The Namespace string representation.
+        """
         out = ["|"]
         if self.name is not None:
             out += str(self.name)
@@ -565,12 +574,27 @@ class Namespace(object):
 
 
 class _ListLabel(object):
-    """Build a list of label"""
+    """Build a list of label.
+    
+    The class is essentially used in the DFtoVW class. It parsed the list of labels
+    that the user could provide in the label parameter of DFtoVW. The class only accept
+    a pre-defined set of label classes (defined in the class attribute `available_labels`).
+
+    Parameters
+    ----------
+    label_list: list
+        The list of labels that the user passed in the attribute label of DFtoVW.
+
+    Raises
+    ------
+    ValueError
+        If the list passed has mixed types or if the labels should not be used in a list.
+    """
 
     available_labels = (ContextualbanditLabel, MultiLabel)
     sep_by_label = dict(ContextualbanditLabel=' ', MultiLabel=',')
 
-    def __init__(self, label_list, sep=" "):
+    def __init__(self, label_list):
         
         instance_classes = set([type(label_instance).__name__ for label_instance in label_list])
         if len(instance_classes) > 1:
@@ -578,7 +602,7 @@ class _ListLabel(object):
 
         if not all(isinstance(label_instance, self.available_labels) for label_instance in label_list):
             raise ValueError(
-                "The only labels that can be used with list are {accepted}".format(
+                "The only labels that can be used with list are {accepted}.".format(
                     accepted=self.available_labels
                 )
             )
@@ -591,7 +615,7 @@ class _ListLabel(object):
         
         self.label_list = label_list
 
-        # Unpack attributes of type _Col
+        # Unpack attributes that are of type _Col
         label_cols = []
         for label_instance in label_list:
             label_cols += [value for key, value in vars(label_instance).items() if isinstance(value, _Col)]
@@ -605,21 +629,30 @@ class _ListLabel(object):
     def __getitem__(self, idx):
         return self.label_list[idx]
     
-    def __len__(self):
-        return len(self.label_list)
-    
-    def __repr__(self):
-        return type(self).__name__
-    
     def __iter__(self):
         return iter(self.label_list)
     
+    def __len__(self):
+        return len(self.label_list)
+
     def process(self, df):
+        """Return the string representation of the labels of the underlying list, separated by a pre-defined character.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe from which to select the columns.
+
+        Returns
+        -------
+        pandas.Series
+            The _ListLabel string representation.
+        """
         for (i, label) in enumerate(self):
             if i == 0:
                 out = label.process(df)
             else:
-                out += (self.sep + label.process(df))
+                out += self.sep + label.process(df)
             
         return out
 
