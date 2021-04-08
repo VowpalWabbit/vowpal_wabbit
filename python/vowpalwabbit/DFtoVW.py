@@ -570,7 +570,7 @@ class Namespace(object):
 
 
 class _ListLabel(object):
-    """Build a list of label.
+    """An helper class that handles a list of labels.
 
     The class is to be used in the `DFtoVW` class. It parses the list of labels
     that the user could provide in the `label` argument of `DFtoVW`. The class only accepts
@@ -578,7 +578,7 @@ class _ListLabel(object):
 
     Parameters
     ----------
-    label_list: list
+    label_list : list
         The list of labels that the user passed in the attribute label of DFtoVW.
 
     Raises
@@ -594,14 +594,14 @@ class _ListLabel(object):
 
         instance_classes = set([type(label_instance).__name__ for label_instance in label_list])
         if len(instance_classes) > 1:
-            raise ValueError("The list passed as label has mixed label types.")
+            raise TypeError("The list passed in 'label' has mixed label types.")
 
         if not all(
             isinstance(label_instance, self.available_labels) for label_instance in label_list
         ):
-            raise ValueError(
+            raise TypeError(
                 "The only labels that can be used with list are {accepted}.".format(
-                    accepted=self.available_labels
+                    accepted=repr([cls.__name__ for cls in self.available_labels])[1:-1]
                 )
             )
 

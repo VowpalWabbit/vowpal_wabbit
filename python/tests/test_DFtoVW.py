@@ -302,3 +302,30 @@ def test_contextualbanditlabel_non_positive_action():
         )
     expected = "In argument 'action' of 'ContextualbanditLabel', column 'a' must be >= 1."
     assert expected == str(value_error.value)
+
+
+# Exception tests for _ListLabel
+def test_listlabel_mixed_label_error():
+    with pytest.raises(TypeError) as type_error:
+        df = pd.DataFrame({"a": [1], "c": [-0.5], "p": [0.1], "b": [2], "x": [1]})
+        conv = DFtoVW(
+            df=df,
+            label=[ContextualbanditLabel("a", "c", "p"), MultiLabel("b")],
+            features=Feature("x"),
+        )
+    expected = "The list passed in 'label' has mixed label types."
+    assert expected == str(type_error.value)
+
+
+def test_listlabel_not_allowed_label_error():
+    with pytest.raises(TypeError) as type_error:
+        df = pd.DataFrame({"a": [1], "b": [2], "x": [1]})
+        conv = DFtoVW(
+            df=df,
+            label=[SimpleLabel("a"), SimpleLabel("b")],
+            features=Feature("x"),
+        )
+    expected = (
+        "The only labels that can be used with list are 'ContextualbanditLabel', 'MultiLabel'."
+    )
+    assert expected == str(type_error.value)
