@@ -99,15 +99,9 @@ bool test_label_internal(const label& ld)
   return true;
 }
 
-bool test_label(const label& ld)
-{
-  return test_label_internal(ld);
-}
+bool test_label(const label& ld) { return test_label_internal(ld); }
 
-bool test_label(label& ld)
-{
-  return test_label_internal(ld);
-}
+bool test_label(label& ld) { return test_label_internal(ld); }
 
 void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
@@ -288,10 +282,7 @@ void output_example(vw& all, example& ec, const COST_SENSITIVE::label& cs_label,
   print_update(all, test_label(cs_label), ec, nullptr, false, multiclass_prediction);
 }
 
-void output_example(vw& all, example& ec)
-{
-  output_example(all, ec, ec.l.cs, ec.pred.multiclass);
-}
+void output_example(vw& all, example& ec) { output_example(all, ec, ec.l.cs, ec.pred.multiclass); }
 
 void finish_example(vw& all, example& ec)
 {

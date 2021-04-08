@@ -9,8 +9,9 @@
 
 namespace VW
 {
-  struct active_multiclass_prediction {
-    uint32_t predicted_class = 0;
-    v_array<uint32_t> more_info_required_for_classes;
-  };
-}
+struct active_multiclass_prediction
+{
+  uint32_t predicted_class = 0;
+  v_array<uint32_t> more_info_required_for_classes;
+};
+}  // namespace VW
