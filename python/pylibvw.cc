@@ -1189,8 +1189,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
       .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
       .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
-      .def_readonly("pPDF", pPDF, "PDF prediction type");
-  .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type");
+      .def_readonly("pPDF", pPDF, "PDF prediction type")
+      .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
