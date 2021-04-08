@@ -27,8 +27,7 @@ char* bufread_label(LabelT& ld, char* c, io_buf& cache)
   size_t total = sizeof(LabelElmT) * num;
   if (cache.buf_read(c, total) < total)
   {
-    VW::io::logger::log_error("error in demarshal of cost data");
-    return c;
+    THROW("error in demarshal of cost data");
   }
   for (size_t i = 0; i < num; i++)
   {

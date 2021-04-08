@@ -44,8 +44,7 @@ char* bufread_label(label& ld, char* c, io_buf& cache)
   size_t total = sizeof(wclass) * num;
   if (cache.buf_read(c, (int)total) < total)
   {
-    logger::log_error("error in demarshal of cost data");
-    return c;
+    THROW("error in demarshal of cost data");
   }
   for (size_t i = 0; i < num; i++)
   {
