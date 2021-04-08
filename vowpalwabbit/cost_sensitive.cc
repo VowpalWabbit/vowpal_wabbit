@@ -91,7 +91,7 @@ void cache_label(label& ld, io_buf& cache)
 
 void default_label(label& ld) { ld.costs.clear(); }
 
-bool test_label(const label& ld)
+bool test_label_internal(const label& ld)
 {
   if (ld.costs.size() == 0) return true;
   for (unsigned int i = 0; i < ld.costs.size(); i++)
@@ -99,9 +99,14 @@ bool test_label(const label& ld)
   return true;
 }
 
+bool test_label(const label& ld)
+{
+  return test_label_internal(ld);
+}
+
 bool test_label(label& ld)
 {
-  return test_label(ld);
+  return test_label_internal(ld);
 }
 
 void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_view>& words, reduction_features&)
