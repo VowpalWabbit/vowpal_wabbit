@@ -1,5 +1,6 @@
 
 include(CSharpUtilities)
+include(FindVSTest)
 include(NetFxNuget)
 include(NetFxResource)
 include(NetFxStrongName)
@@ -149,8 +150,6 @@ set_target_properties(cs_unittest
   VS_GLOBAL_PROJECT_TYPES "{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
   VS_GLOBAL_TestProjectType "UnitTest"
 )
-
-find_program(VSTEST_COMMAND "vstest.console.exe" REQUIRED)
 
 get_property(cs_unittest_RUNTIME_OUTPUT_DIRECTORY TARGET cs_unittest PROPERTY RUNTIME_OUTPUT_DIRECTORY)
 
