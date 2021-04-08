@@ -13,6 +13,7 @@
 #include "prob_dist_cont.h"
 #include "debug_log.h"
 #include "cb_label_parser.h"
+#include "simple_label_parser.h"
 
 using namespace VW::LEARNER;
 using namespace exploration;

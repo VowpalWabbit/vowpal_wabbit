@@ -97,14 +97,10 @@ label_parser mc_label = {
   [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->multi, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->multi, cache); },
-  // delete_label
-  [](polylabel*) {},
-   // get_weight
+  // get_weight
   [](polylabel* v, const reduction_features&) { return weight(v->multi); },
   // test_label
   [](polylabel* v) { return test_label(v->multi); },
-  // post parse processing
-  nullptr,
   label_type_t::multiclass
 };
 // clang-format on

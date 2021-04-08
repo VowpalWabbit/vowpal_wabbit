@@ -178,7 +178,8 @@ inline void add_DIR(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * f
 
 float dot_with_direction(vw& all, example& ec)
 {
-  float temp = ec.initial;
+  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  float temp = simple_red_features.initial;
   GD::foreach_feature<float, add_DIR>(all, ec, temp);
   return temp;
 }

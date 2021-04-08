@@ -4,6 +4,7 @@
 #include "util.h"
 #include "options_serializer_boost_po.h"
 #include "learner.h"
+#include "simple_label_parser.h"
 #include <algorithm>
 #include <exception>
 
@@ -481,7 +482,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
   {
     label_data* ld = &ex->l.simple;
     ld->label = label;
-    ld->serialized_weight = weight;
+    auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+    red_fts.weight = weight;
 
     count_label(all->sd, ld->label);
   }
@@ -612,7 +614,8 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
     if (!memcmp(&lp, &simple_label_parser, sizeof(lp)))
     {
       label_data* ld = &ex->l.simple;
-      ostr << "simple " << ld->label << ":" << ld->serialized_weight << ":" << ld->serialized_initial;
+      const auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+      ostr << "simple " << ld->label << ":" << red_fts.weight << ":" << red_fts.initial;
     }
     else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
     {

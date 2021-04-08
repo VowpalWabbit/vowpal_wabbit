@@ -6,6 +6,7 @@
 
 #include "example.h"
 #include "gd.h"
+#include "simple_label_parser.h"
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
@@ -18,24 +19,6 @@ example::~example()
   }
 }
 VW_WARNING_STATE_POP
-
-void example::delete_unions(void (*delete_union)(polylabel*), void (*delete_prediction)(void*))
-{
-  // TODO migrate deletion logic into each struct.
-  no_label::no_label_parser.delete_label(&l);
-  simple_label_parser.delete_label(&l);
-  MULTICLASS::mc_label.delete_label(&l);
-  COST_SENSITIVE::cs_label.delete_label(&l);
-  CB::cb_label.delete_label(&l);
-  VW::cb_continuous::the_label_parser.delete_label(&l);
-  CCB::ccb_label_parser.delete_label(&l);
-  VW::slates::slates_label_parser.delete_label(&l);
-  CB_EVAL::cb_eval.delete_label(&l);
-  MULTILABEL::multilabel.delete_label(&l);
-
-  std::ignore = delete_union;
-  std::ignore = delete_prediction;
-}
 
 float collision_cleanup(features& fs)
 {
@@ -66,12 +49,10 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
+void copy_example_label(example* dst, example* src, void (*)(polylabel*, polylabel*))
 {
-  if (copy_label)
-    copy_label(&dst->l, &src->l);  // TODO: we really need to delete_label on dst :(
-  else
-    dst->l = src->l;
+  dst->l = src->l;
+  dst->_reduction_features = src->_reduction_features;
 }
 
 void copy_example_label(example* dst, const example* src) { dst->l = src->l; }
@@ -98,7 +79,6 @@ void copy_example_metadata(example* dst, const example* src)
   dst->end_pass = src->end_pass;
   dst->is_newline = src->is_newline;
   dst->sorted = src->sorted;
-  dst->initial = src->initial;
 }
 
 void copy_example_data(example* dst, const example* src)
@@ -198,7 +178,7 @@ flat_example* flatten_example(vw& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
-  fec.weight = ec->weight;
+  fec._reduction_features = ec->_reduction_features;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len > 0)

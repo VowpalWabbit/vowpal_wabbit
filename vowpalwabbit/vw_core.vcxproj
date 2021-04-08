@@ -255,6 +255,7 @@
     <ClInclude Include="search.h" />
     <ClInclude Include="sender.h" />
     <ClInclude Include="shared_feature_merger.h" />
+    <ClInclude Include="simple_label_parser.h" />
     <ClInclude Include="simple_label.h" />
     <ClInclude Include="slates_label.h" />
     <ClInclude Include="slates.h" />
@@ -400,6 +401,7 @@
     <ClCompile Include="search.cc" />
     <ClCompile Include="sender.cc" />
     <ClCompile Include="shared_feature_merger.cc" />
+    <ClCompile Include="simple_label_parser.cc" />
     <ClCompile Include="simple_label.cc" />
     <ClCompile Include="slates_label.cc" />
     <ClCompile Include="slates.cc" />

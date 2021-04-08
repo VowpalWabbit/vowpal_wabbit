@@ -45,7 +45,7 @@ private:
   void parse_features(vw* all, features& fs, const Feature* feature, const flatbuffers::String* ns);
   void parse_flat_label(shared_data* sd, example* ae, const Example* eg);
 
-  void parse_simple_label(shared_data* sd, polylabel* l, const SimpleLabel* label);
+  void parse_simple_label(shared_data* sd, polylabel* l, reduction_features* red_features, const SimpleLabel* label);
   void parse_cb_label(polylabel* l, const CBLabel* label);
   void parse_ccb_label(polylabel* l, const CCBLabel* label);
   void parse_cs_label(polylabel* l, const CS_Label* label);
