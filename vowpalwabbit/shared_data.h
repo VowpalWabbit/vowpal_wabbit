@@ -17,8 +17,8 @@ struct shared_data
   ~shared_data() = default;
   shared_data(const shared_data& other);
   shared_data& operator=(const shared_data& other);
-  shared_data(shared_data&& other) noexcept = default;
-  shared_data& operator=(shared_data&& other) noexcept = default;
+  shared_data(shared_data&& other) noexcept;
+  shared_data& operator=(shared_data&& other) noexcept;
 
   size_t queries = 0;
 
