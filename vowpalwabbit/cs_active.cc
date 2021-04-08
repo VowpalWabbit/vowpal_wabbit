@@ -324,6 +324,7 @@ base_learner* cs_active_setup(options_i& options, vw& all)
       .add(make_option("csa_debug", data->print_debug_stuff).help("print debug stuff for cs_active"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+
   data->use_domination = true;
   if (options.was_supplied("domination") && !domination) data->use_domination = false;
 
@@ -349,6 +350,7 @@ base_learner* cs_active_setup(options_i& options, vw& all)
   all.set_minmax(all.sd, data->cost_max);
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);
+
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
             predict_or_learn<false, true>, data->num_classes, prediction_type_t::active_multiclass,
@@ -360,6 +362,5 @@ base_learner* cs_active_setup(options_i& options, vw& all)
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);
   all.cost_sensitive = b;
-  std::cout << "here finally" << std::endl;
   return b;
 }
