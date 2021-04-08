@@ -22,3 +22,8 @@ add_subdirectory(cs)
 add_subdirectory(cs_json)
 add_subdirectory(cs_parallel)
 add_subdirectory(cs_console)
+
+if (BUILD_TESTS)
+  add_subdirectory(testcommon)
+  add_subdirectory(unittest)
+endif()

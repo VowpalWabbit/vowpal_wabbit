@@ -35,5 +35,6 @@ target_add_nuget_references(cs_console "Newtonsoft.JSON@9.0.1")
 set_target_properties(cs_console 
     PROPERTIES VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
                VS_GLOBAL_ROOTNAMESPACE VW
+               ENABLE_EXPORTS TRUE
                WIN32_EXECUTABLE TRUE
 )
