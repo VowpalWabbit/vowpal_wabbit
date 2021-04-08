@@ -969,16 +969,6 @@ void free_parser(vw& all)
 
   // There should be no examples in flight at this point.
   assert(all.example_parser->ready_parsed_examples.size() == 0);
-
-  std::vector<example*> drain_pool;
-  drain_pool.reserve(all.example_parser->example_pool.size());
-  while (!all.example_parser->example_pool.empty())
-  {
-    example* temp = all.example_parser->example_pool.get_object();
-    temp->delete_unions(all.example_parser->lbl_parser.delete_label, nullptr);
-    drain_pool.push_back(temp);
-  }
-  for (auto* example_ptr : drain_pool) { all.example_parser->example_pool.return_object(example_ptr); }
 }
 
 namespace VW

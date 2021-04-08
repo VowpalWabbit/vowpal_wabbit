@@ -35,7 +35,6 @@ struct label_parser
   void (*parse_label)(parser*, shared_data*, polylabel*, std::vector<VW::string_view>&, reduction_features&);
   void (*cache_label)(polylabel*, reduction_features&, io_buf& cache);
   size_t (*read_cached_label)(shared_data*, polylabel*, reduction_features&, io_buf& cache);
-  void (*delete_label)(polylabel*);
   float (*get_weight)(polylabel*, const reduction_features&);
   bool (*test_label)(polylabel*);
   label_type_t label_type;

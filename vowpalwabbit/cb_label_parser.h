@@ -118,10 +118,4 @@ bool is_test_label(LabelT& ld)
   return true;
 }
 
-template <typename LabelT = CB::label>
-void delete_label(LabelT& ld)
-{
-  ld.costs.delete_v();
-}
-
 }  // namespace CB

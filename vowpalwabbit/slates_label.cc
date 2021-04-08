@@ -78,8 +78,6 @@ void default_label(slates::label& ld) { ld.reset_to_default(); }
 
 bool test_label(slates::label& ld) { return ld.labeled == false; }
 
-void delete_label(slates::label& ld) { ld.probabilities.delete_v(); }
-
 // Slates labels come in three types, shared, action and slot with the following structure:
 // slates shared [global_cost]
 // slates action <slot_id>
@@ -182,9 +180,7 @@ label_parser slates_label_parser = {
   [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->slates, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->slates, cache); },
-  // delete_label
-  [](polylabel* v) { delete_label(v->slates); },
-   // get_weight
+  // get_weight
   [](polylabel* v, const reduction_features&) { return weight(v->slates); },
   // test_label
   [](polylabel* v) { return test_label(v->slates); },
