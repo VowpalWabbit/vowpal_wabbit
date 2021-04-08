@@ -23,6 +23,8 @@ add_subdirectory(cs_json)
 add_subdirectory(cs_parallel)
 add_subdirectory(cs_console)
 
+add_subdirectory(examples/simulator)
+
 if (BUILD_TESTS)
   add_subdirectory(testcommon)
   add_subdirectory(unittest)
