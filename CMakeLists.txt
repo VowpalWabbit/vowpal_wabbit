@@ -279,9 +279,12 @@ if(BUILD_TESTS)
     set(vw_c_api_unit_test_target "vw_c_api_unit_test")
   endif()
 
-  set(vw_cs_unittest_target "")
+  set(vw_cs_unittest_targets "")
   if (vw_BUILD_NETFX)
-    set(vw_cs_unittest_target "cs_unittest")
+    set(vw_cs_unittest_targets 
+      cs_unittest
+      cs_unittest_nofriend
+    )
   endif()
 
   # The Visual Studio expression generator
@@ -293,7 +296,7 @@ if(BUILD_TESTS)
   # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
   add_custom_target(test_with_output
     COMMAND ${CMAKE_CTEST_COMMAND} ${cmake_test_configuration} --verbose
-    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target} ${vw_cs_unittest_target}
+    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target} ${vw_cs_unittest_targets}
   )
 
   # Don't offer these make dependent targets on Windows
