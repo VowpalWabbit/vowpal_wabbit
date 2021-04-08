@@ -27,11 +27,6 @@ namespace CB_ALGS
 struct cb
 {
   cb_to_cs cbcs;
-
-  ~cb()
-  {
-    COST_SENSITIVE::delete_label(cbcs.pred_scores);
-  }
 };
 
 bool know_all_cost_example(CB::label& ld)

@@ -46,8 +46,6 @@ label_parser no_label_parser = {
   [](polylabel*, reduction_features&, io_buf&) {},
   // read_cached_label
   [](shared_data*, polylabel*, reduction_features&, io_buf&) -> size_t { return 1; },
-  // delete_label
-  [](polylabel*) {},
    // get_weight
   [](polylabel*, const reduction_features&) { return 1.f; },
   // test_label

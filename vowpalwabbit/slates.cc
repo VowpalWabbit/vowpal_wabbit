@@ -100,7 +100,6 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
 
   for (size_t i = 0; i < examples.size(); i++)
   {
-    CCB::delete_label(examples[i]->l.conditional_contextual_bandit);
     examples[i]->l.slates = std::move(_stashed_labels[i]);
   }
   _stashed_labels.clear();
