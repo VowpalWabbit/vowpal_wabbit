@@ -382,11 +382,5 @@ public:
   /// Use for multiclass predictions with probabilities
   /// </summary>
   static initonly VowpalWabbitMulticlassProbabilitiesPredictionFactory^ MultiClassProbabilities = gcnew VowpalWabbitMulticlassProbabilitiesPredictionFactory;
-
-  /// <summary>
-  /// Use for multi label predictions.
-  /// </summary>
-  static initonly VowpalWabbitActiveMulticlassPredictionFactory^ ActiveMulticlass = gcnew VowpalWabbitActiveMulticlassPredictionFactory;
-
 };
 }
