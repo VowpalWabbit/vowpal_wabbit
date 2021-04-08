@@ -33,7 +33,8 @@ enum class prediction_type_t
   prob,
   multiclassprobs,
   decision_probs,
-  action_pdf_value
+  action_pdf_value,
+  active_multiclass
 };
 
 const char* to_string(prediction_type_t prediction_type);

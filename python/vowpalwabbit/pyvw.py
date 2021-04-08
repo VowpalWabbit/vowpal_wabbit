@@ -256,6 +256,7 @@ def get_prediction(ec, prediction_type):
         pylibvw.vw.pDECISION_SCORES: ec.get_decision_scores,
         pylibvw.vw.pACTION_PDF_VALUE: ec.get_action_pdf_value,
         pylibvw.vw.pPDF: ec.get_pdf,
+        pylibvw.vw.pACTIVE_MULTICLASS: ec.ex_get_active_multiclass,
     }
     return switch_prediction_type[prediction_type]()
 
