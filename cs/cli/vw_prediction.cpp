@@ -158,24 +158,6 @@ cli::array<float>^ VowpalWabbitTopicPredictionFactory::Create(vw* vw, example* e
   return values;
 }
 
-VowpalWabbitActiveMulticlass^ VowpalWabbitMultilabelPredictionFactory::Create(vw* vw, example* ex)
-{
-  CheckExample(vw, ex, prediction_type_t::active_multiclass);
-  auto struct_obj = gcnew VowpalWabbitActiveMulticlass();
-  const auto length = ex->pred.active_multiclass.more_info_required_for_classes.size();
-  struct_obj->more_info_required_for_classes = gcnew cli::array<int>(length);
-
-  if (length > 0)
-  {
-    Marshal::Copy(IntPtr(ex->pred.active_multiclass.more_info_required_for_classes.data()),
-        struct_obj->more_info_required_for_classes, 0, (int)length);
-  }
-
-  struct_obj->predicted_class = ex->pred.active_multiclass.predicted_class;
-
-  return struct_obj;
-}
-
 System::Object^ VowpalWabbitDynamicPredictionFactory::Create(vw* vw, example* ex)
 { if (ex == nullptr)
     throw gcnew ArgumentNullException("ex");
@@ -197,8 +179,6 @@ System::Object^ VowpalWabbitDynamicPredictionFactory::Create(vw* vw, example* ex
       return VowpalWabbitPredictionType::Probability->Create(vw, ex);
     case prediction_type_t::multiclassprobs:
       return VowpalWabbitPredictionType::MultiClassProbabilities->Create(vw, ex);
-    case prediction_type_t::active_multiclass:
-      return VowpalWabbitPredictionType::ActiveMulticlass->Create(vw, ex);
     default:
     { auto sb = gcnew StringBuilder();
       sb->Append("Unsupported prediction type: ");
