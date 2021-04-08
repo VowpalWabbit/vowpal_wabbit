@@ -4,6 +4,7 @@
 #pragma once
 #include "label_parser.h"
 #include <vector>
+#include <cstdint>
 
 struct example;
 struct vw;
