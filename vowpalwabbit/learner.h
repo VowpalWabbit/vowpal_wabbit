@@ -817,8 +817,8 @@ struct reduction_learner_builder
     set_params_per_weight(1);
 
     this->_learner->pred_type = base->pred_type;
-    // TODO add label type as something learner knows about itself, this will enable more type checking and better description of the learner.
-    // this->_learner.label_type = label_type;
+    // TODO add label type as something learner knows about itself, this will enable more type checking and better
+    // description of the learner. this->_learner.label_type = label_type;
   }
 
   reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_prediction_type(prediction_type_t pred_type)
@@ -829,8 +829,8 @@ struct reduction_learner_builder
 
   reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_label_type(label_type_t label_type)
   {
-    // TODO add label type as something learner knows about itself, this will enable more type checking and better description of the learner.
-    // this->_learner.label_type = label_type;
+    // TODO add label type as something learner knows about itself, this will enable more type checking and better
+    // description of the learner. this->_learner.label_type = label_type;
     std::ignore = label_type;
     return *this;
   }
