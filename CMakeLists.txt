@@ -259,10 +259,6 @@ if(BUILD_PYTHON)
   add_subdirectory(python)
 endif()
 
-if(vw_BUILD_NETFX)
-  add_subdirectory(cs)
-endif()
-
 if(BUILD_SLIM_VW)
   add_subdirectory(vowpalwabbit/slim)
 endif()
@@ -283,10 +279,21 @@ if(BUILD_TESTS)
     set(vw_c_api_unit_test_target "vw_c_api_unit_test")
   endif()
 
+  set(vw_cs_unittest_target "")
+  if (vw_BUILD_NETFX)
+    set(vw_cs_unittest_target "cs_unittest")
+  endif()
+
+  # The Visual Studio expression generator
+  set(cmake_test_configuration "")
+  if (${CMAKE_GENERATOR} MATCHES "^Visual Studio")
+    set(cmake_test_configuration -C $<CONFIG>)
+  endif()
+
   # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
   add_custom_target(test_with_output
-    COMMAND ${CMAKE_CTEST_COMMAND} --verbose
-    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target}
+    COMMAND ${CMAKE_CTEST_COMMAND} ${cmake_test_configuration} --verbose
+    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target} ${vw_cs_unittest_target}
   )
 
   # Don't offer these make dependent targets on Windows
@@ -304,7 +311,10 @@ if(BUILD_EXPERIMENTAL_BINDING)
   add_subdirectory(bindings)
 endif()
 
-# TODO convert cs directory to cmake
+if(vw_BUILD_NETFX)
+  add_subdirectory(cs)
+endif()
+
 # TODO convert c_test directory to cmake
 
 # Handle installation of targets, version, config and pkgconfig
