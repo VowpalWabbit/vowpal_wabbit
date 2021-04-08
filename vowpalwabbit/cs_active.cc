@@ -283,7 +283,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   ec.l.cs = ld;
 }
 
-void finish_example(vw& all, cs_active& cs_a, example& ec)
+void finish_example(vw& all, cs_active&, example& ec)
 {
   COST_SENSITIVE::output_example(all, ec, ec.l.cs, ec.pred.active_multiclass.predicted_class);
   VW::finish_example(all, ec);
