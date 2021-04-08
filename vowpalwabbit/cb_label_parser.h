@@ -25,10 +25,7 @@ char* bufread_label(LabelT& ld, char* c, io_buf& cache)
   ld.costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(LabelElmT) * num;
-  if (cache.buf_read(c, total) < total)
-  {
-    THROW("error in demarshal of cost data");
-  }
+  if (cache.buf_read(c, total) < total) { THROW("error in demarshal of cost data"); }
   for (size_t i = 0; i < num; i++)
   {
     LabelElmT temp = *(LabelElmT*)c;
