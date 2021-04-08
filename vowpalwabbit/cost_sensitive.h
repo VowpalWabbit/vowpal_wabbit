@@ -37,7 +37,6 @@ void finish_example(vw& all, T&, example& ec)
   finish_example(all, ec);
 }
 
-void delete_label(label& ld);
 void default_label(label& ld);
 extern label_parser cs_label;
 

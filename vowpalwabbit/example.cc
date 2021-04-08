@@ -20,24 +20,6 @@ example::~example()
 }
 VW_WARNING_STATE_POP
 
-void example::delete_unions(void (*delete_union)(polylabel*), void (*delete_prediction)(void*))
-{
-  // TODO migrate deletion logic into each struct.
-  no_label::no_label_parser.delete_label(&l);
-  simple_label_parser.delete_label(&l);
-  MULTICLASS::mc_label.delete_label(&l);
-  COST_SENSITIVE::cs_label.delete_label(&l);
-  CB::cb_label.delete_label(&l);
-  VW::cb_continuous::the_label_parser.delete_label(&l);
-  CCB::ccb_label_parser.delete_label(&l);
-  VW::slates::slates_label_parser.delete_label(&l);
-  CB_EVAL::cb_eval.delete_label(&l);
-  MULTILABEL::multilabel.delete_label(&l);
-
-  std::ignore = delete_union;
-  std::ignore = delete_prediction;
-}
-
 float collision_cleanup(features& fs)
 {
   uint64_t last_index = (uint64_t)-1;

@@ -74,8 +74,6 @@ void default_label(MULTILABEL::labels& ld) { ld.label_v.clear(); }
 
 bool test_label(MULTILABEL::labels& ld) { return ld.label_v.size() == 0; }
 
-void delete_label(MULTILABEL::labels& ld) { ld.label_v.delete_v(); }
-
 void parse_label(
     parser* p, shared_data*, MULTILABEL::labels& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
@@ -109,9 +107,7 @@ label_parser multilabel = {
   [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->multilabels, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->multilabels, cache); },
-  // delete_label
-  [](polylabel* v) { if (v) delete_label(v->multilabels); },
-   // get_weight
+  // get_weight
   [](polylabel* v, const reduction_features&) { return weight(v->multilabels); },
   // test_label
   [](polylabel* v) { return test_label(v->multilabels); },

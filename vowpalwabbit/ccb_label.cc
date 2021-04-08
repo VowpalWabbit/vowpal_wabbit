@@ -174,16 +174,6 @@ void default_label(label& ld)
 
 bool test_label(CCB::label& ld) { return ld.outcome == nullptr; }
 
-void delete_label(label& ld)
-{
-  if (ld.outcome)
-  {
-    delete ld.outcome;
-    ld.outcome = nullptr;
-  }
-  ld.explicit_included_actions.delete_v();
-}
-
 ACTION_SCORE::action_score convert_to_score(
     const VW::string_view& action_id_str, const VW::string_view& probability_str)
 {
@@ -314,9 +304,7 @@ label_parser ccb_label_parser = {
   [](polylabel* v, ::reduction_features&, io_buf& cache) { cache_label(v->conditional_contextual_bandit, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, ::reduction_features&, io_buf& cache) { return read_cached_label(sd, v->conditional_contextual_bandit, cache); },
-  // delete_label
-  [](polylabel* v) { delete_label(v->conditional_contextual_bandit); },
-   // get_weight
+  // get_weight
   [](polylabel* v, const ::reduction_features&) { return ccb_weight(v->conditional_contextual_bandit); },
   // test_label
   [](polylabel* v) { return test_label(v->conditional_contextual_bandit); },
