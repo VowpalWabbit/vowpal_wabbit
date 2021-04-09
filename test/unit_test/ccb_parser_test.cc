@@ -153,8 +153,7 @@ BOOST_AUTO_TEST_CASE(ccb_copy_label)
   auto copied_to = scoped_calloc_or_throw<CCB::label>();
   CCB::default_label(*copied_to);
 
-  CCB::copy_label(*copied_to, *label);
-
+  *copied_to = *label;
   BOOST_CHECK_EQUAL(copied_to->explicit_included_actions.size(), 2);
   BOOST_CHECK_EQUAL(copied_to->explicit_included_actions[0], 3);
   BOOST_CHECK_EQUAL(copied_to->explicit_included_actions[1], 4);

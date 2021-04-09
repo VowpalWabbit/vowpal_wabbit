@@ -95,20 +95,10 @@ label_parser cb_label = {
   [](polylabel* v, reduction_features&, io_buf& cache) { CB::cache_label(v->cb, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return CB::read_cached_label(sd, v->cb, cache); },
-  // delete_label
-  [](polylabel* v) { CB::delete_label(v->cb); },
    // get_weight
   [](polylabel*, const reduction_features&) { return 1.f; },
-  // copy_label
-  [](polylabel* dst, polylabel* src) {
-    if (dst && src) {
-      CB::copy_label(dst->cb, src->cb);
-    }
-  },
   // test_label
   [](polylabel* v) { return CB::is_test_label(v->cb); },
-  // post parse processing
-  nullptr,
   label_type_t::cb
 };
 // clang-format on
@@ -190,13 +180,6 @@ void default_label(CB_EVAL::label& ld)
 
 bool test_label(CB_EVAL::label& ld) { return CB::is_test_label(ld.event); }
 
-void delete_label(CB_EVAL::label& ld) { CB::delete_label(ld.event); }
-
-void copy_label(CB_EVAL::label& dst, CB_EVAL::label& src)
-{
-  CB::copy_label(dst.event, src.event);
-  dst.action = src.action;
-}
 
 void parse_label(parser* p, shared_data* sd, CB_EVAL::label& ld, std::vector<VW::string_view>& words,
     reduction_features& red_features)
@@ -224,20 +207,10 @@ label_parser cb_eval = {
   [](polylabel* v, reduction_features&, io_buf& cache) { CB_EVAL::cache_label(v->cb_eval, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return CB_EVAL::read_cached_label(sd, v->cb_eval, cache); },
-  // delete_label
-  [](polylabel* v) { CB_EVAL::delete_label(v->cb_eval); },
-   // get_weight
+  // get_weight
   [](polylabel*, const reduction_features&) { return 1.f; },
-  // copy_label
-  [](polylabel* dst, polylabel* src) {
-    if (dst && src) {
-      CB_EVAL::copy_label(dst->cb_eval, src->cb_eval);
-    }
-  },
   // test_label
   [](polylabel* v) { return CB_EVAL::test_label(v->cb_eval); },
-  // post parse processing
-  nullptr,
   label_type_t::cb_eval
 };
 // clang-format on

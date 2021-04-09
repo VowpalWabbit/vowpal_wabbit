@@ -144,12 +144,20 @@ void finish_example(vw& all, example& ec);
 void finish_example(vw& all, multi_ex& ec);
 void empty_example(vw& all, example& ec);
 
-VW_DEPRECATED("label size is no longer used, please use the other overload")
+VW_DEPRECATED("label size or copy_label are no longer used, please use the other overload")
 void copy_example_data(bool audit, example*, example*, size_t, void (*copy_label)(polylabel*, polylabel*));
+VW_DEPRECATED("copy_label is no longer required. Use copy_example_data_with_label")
 void copy_example_data(bool audit, example*, example*, void (*copy_label)(polylabel*, polylabel*));
+
+VW_DEPRECATED("Use the overload without audit and with added const.")
 void copy_example_metadata(bool audit, example*, example*);
+VW_DEPRECATED("Use the overload without audit and with added const.")
 void copy_example_data(bool audit, example*, example*);  // metadata + features, don't copy the label
 void move_feature_namespace(example* dst, example* src, namespace_index c);
+
+void copy_example_metadata(example*, const example*);
+void copy_example_data(example*, const example*);  // metadata + features, don't copy the label
+void copy_example_data_with_label(example* dst, const example* src);
 
 // after export_example, must call releaseFeatureSpace to free native memory
 primitive_feature_space* export_example(vw& all, example* e, size_t& len);

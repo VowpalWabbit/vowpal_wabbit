@@ -133,6 +133,7 @@ bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffe
 void parser::parse_example(vw* all, example* ae, const Example* eg)
 {
   all->example_parser->lbl_parser.default_label(&ae->l);
+  ae->is_newline = eg->is_newline();
   parse_flat_label(all->sd, ae, eg);
 
   if (flatbuffers::IsFieldPresent(eg, Example::VT_TAG))
@@ -150,6 +151,7 @@ void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
   if (_multi_ex_index >= eg->examples()->size())
   {
     // done with multi example, send a newline example and reset
+    ae->is_newline = true;
     _multi_ex_index = 0;
     _active_multi_ex = false;
     _multi_example_object = nullptr;
@@ -202,7 +204,7 @@ void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg)
     case Label_SimpleLabel:
     {
       const SimpleLabel* simple_lbl = static_cast<const SimpleLabel*>(eg->label());
-      parse_simple_label(sd, &(ae->l), simple_lbl);
+      parse_simple_label(sd, &(ae->l), &(ae->_reduction_features), simple_lbl);
       break;
     }
     case Label_CBLabel:
