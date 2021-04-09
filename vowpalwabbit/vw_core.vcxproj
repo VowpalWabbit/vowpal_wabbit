@@ -30,12 +30,15 @@
     <VcpkgOSTarget Condition="'$(VcpkgPlatformToolset)'=='v141'">windows-v141</VcpkgOSTarget>
     <BuildFlatbuffers Condition="'$(BUILD_FLATBUFFERS)'=='BUILD_FLATBUFFERS'">ON</BuildFlatbuffers>
     <BuildFlatbuffers Condition="'$(BUILD_FLATBUFFERS)'!='BUILD_FLATBUFFERS'">OFF</BuildFlatbuffers>
+    <BuildExternalParser Condition="'$(BUILD_EXTERNAL_PARSER_TARGETS)'!=''">ON</BuildExternalParser>
+    <BuildExternalParser Condition="'$(BUILD_EXTERNAL_PARSER_TARGETS)'==''">OFF</BuildExternalParser>
     <!-- This is the ruleset file for code analysis, you can change it in VS -->
     <CodeAnalysisRuleSet>$(MSBuildProjectDirectory)\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Condition="'$(BuildExternalParser)'=='ON'" Project="$(BUILD_EXTERNAL_PARSER_TARGETS)" />
   <Import Project="$(VcpkgIntegration)" Condition="Exists('$(VcpkgIntegration)')" />
   <PropertyGroup Condition="'$(VcpkgAutoLink)'!=''">
     <VcpkgAutoLink>false</VcpkgAutoLink>
@@ -89,8 +92,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\ext_libs\rapidjson\include;$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\ext_libs\rapidjson\include;$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include;$(ExternalParserAdditionalIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);$(BUILD_EXTERNAL_PARSER);SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
