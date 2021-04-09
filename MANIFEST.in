@@ -5,7 +5,7 @@ recursive-include python/vowpalwabbit *
 recursive-include cluster *
 recursive-include cmake *
 recursive-include library *
-recursive-include rapidjson *
+recursive-include ext_libs *
 recursive-include vowpalwabbit *
 recursive-include explore *
 recursive-include python/bin python/*.dll
