@@ -220,7 +220,7 @@ public:
   void mini_setup_example()
   {
     ec->partial_prediction = 0.;
-    ec->weight = vw_par_ref->example_parser->lbl_parser.get_weight(&ec->l);
+    ec->weight = vw_par_ref->example_parser->lbl_parser.get_weight(&ec->l, ec->_reduction_features);
 
     ec->num_features -= quadratic_features_num;
     ec->total_sum_feat_sq -= quadratic_features_sqr;
@@ -273,7 +273,7 @@ public:
     else  // is multiline
     {     // we need to make a copy
       example* copy = get_new_example();
-      VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->example_parser->lbl_parser.copy_label);
+      VW::copy_example_data_with_label(copy, ec);
       vw_ref->learn(*copy);
       example_copies.push_back(copy);
     }

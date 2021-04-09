@@ -1,0 +1,25 @@
+name: VW Slim
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  linux:
+    container:
+      image: vowpalwabbit/ubuntu1604-build:latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install GTest
+        shell: bash
+        run: ./.scripts/linux/install-gtest.sh
+      - name: Build VW Slim
+        shell: bash
+        run: ./.scripts/linux/build-slim.sh
+      - name: Test VW Slim
+        shell: bash
+        run: ./.scripts/linux/test-slim.sh

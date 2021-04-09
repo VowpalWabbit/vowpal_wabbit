@@ -15,6 +15,10 @@ using VW::config::option_group_definition;
 using VW::config::options_i;
 using VW::LEARNER::single_learner;
 
+// Enable/Disable indented debug statements
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cb_explore_pdf
+
 namespace VW
 {
 namespace continuous_action
@@ -56,7 +60,7 @@ int cb_explore_pdf::predict(example& ec, experimental::api_status*)
   else if (first_only && reduction_features.is_pdf_set())
   {
     // pdf provided
-    copy_array(ec.pred.pdf, reduction_features.pdf);
+    ec.pred.pdf = reduction_features.pdf;
     return error_code::success;
   }
 

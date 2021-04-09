@@ -10,6 +10,9 @@
 #include "vw_string_view.h"
 #include "tag_utils.h"
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::cb_sample
+
 using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
@@ -25,6 +28,11 @@ struct cb_sample_data
   template <bool is_learn>
   inline void learn_or_predict(multi_learner &base, multi_ex &examples)
   {
+    // If base.learn() does not return prediction then we need to predict first
+    // so that there is something to sample from
+    if (is_learn && !base.learn_returns_prediction)
+      multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+
     multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
     auto &action_scores = examples[0]->pred.a_s;
@@ -74,7 +82,18 @@ struct cb_sample_data
     auto result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
     assert(result == S_EXPLORATION_OK);
 
+    VW_DBG(examples) << "cb " << cb_decision_to_string(examples[0]->pred.a_s)
+                     << " rnd:" << _random_state->get_current_state() << std::endl;
+
     _UNUSED(result);
+  }
+
+  std::string cb_decision_to_string(const ACTION_SCORE::action_scores &action_scores)
+  {
+    std::ostringstream ostrm;
+    if (action_scores.empty()) return "";
+    ostrm << "chosen" << action_scores[0] << action_scores;
+    return ostrm.str();
   }
 
 private:
@@ -98,11 +117,8 @@ base_learner *cb_sample_setup(options_i &options, vw &all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  if (options.was_supplied("no_predict"))
-  { THROW("cb_sample cannot be used with no_predict, as there would be no predictions to sample."); }
-
   auto data = scoped_calloc_or_throw<cb_sample_data>(all.get_random_state());
   return make_base(
       init_learner(data, as_multiline(setup_base(options, all)), learn_or_predict<true>, learn_or_predict<false>,
-          1 /* weights */, prediction_type_t::action_probs, all.get_setupfn_name(cb_sample_setup)));
+          1 /* weights */, prediction_type_t::action_probs, all.get_setupfn_name(cb_sample_setup), true));
 }

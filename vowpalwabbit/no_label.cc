@@ -43,15 +43,11 @@ label_parser no_label_parser = {
     parse_no_label(words);
   },
   // cache_label
-  [](polylabel*, io_buf&) {},
+  [](polylabel*, reduction_features&, io_buf&) {},
   // read_cached_label
-  [](shared_data*, polylabel*, io_buf&) -> size_t { return 1; },
-  // delete_label
-  [](polylabel*) {},
+  [](shared_data*, polylabel*, reduction_features&, io_buf&) -> size_t { return 1; },
    // get_weight
-  [](polylabel*) { return 1.f; },
-  // copy_label
-  nullptr,
+  [](polylabel*, const reduction_features&) { return 1.f; },
   // test_label
   [](polylabel*) { return false; },
   label_type_t::nolabel

@@ -132,6 +132,7 @@ void finish_setup(nn& n, vw& all)
   n.outputweight.total_sum_feat_sq++;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
+  n.outputweight._reduction_features.template get<simple_label_reduction_features>().initial = 0.f;
 
   n.finished_setup = true;
 }
@@ -299,6 +300,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
     {
       n.output_layer.ft_offset = ec.ft_offset;
       n.output_layer.l.simple = ec.l.simple;
+      n.output_layer._reduction_features.template get<simple_label_reduction_features>().initial =
+          ec._reduction_features.template get<simple_label_reduction_features>().initial;
       n.output_layer.weight = ec.weight;
       n.output_layer.partial_prediction = 0;
       if (is_learn)
@@ -461,7 +464,7 @@ base_learner* nn_setup(options_i& options, vw& all)
   n->increment = base->increment;  // Indexing of output layer is odd.
   nn& nv = *n.get();
   learner<nn, example>& l = init_learner(n, base, predict_or_learn_multi<true, true>,
-      predict_or_learn_multi<false, true>, n->k + 1, all.get_setupfn_name(nn_setup));
+      predict_or_learn_multi<false, true>, n->k + 1, all.get_setupfn_name(nn_setup), true);
   if (nv.multitask) l.set_multipredict(multipredict);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);

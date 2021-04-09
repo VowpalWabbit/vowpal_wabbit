@@ -15,6 +15,7 @@
 #include "options_serializer_boost_po.h"
 #include "future_compat.h"
 #include "slates_label.h"
+#include "simple_label_parser.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -724,8 +725,11 @@ void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t la
 }
 
 float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
-float ex_get_simplelabel_weight(example_ptr ec) { return ec->l.simple.weight; }
-float ex_get_simplelabel_initial(example_ptr ec) { return ec->l.simple.initial; }
+float ex_get_simplelabel_weight(example_ptr ec) { return ec->weight; }
+float ex_get_simplelabel_initial(example_ptr ec)
+{
+  return ec->_reduction_features.template get<simple_label_reduction_features>().initial;
+}
 float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
 float ex_get_prob(example_ptr ec) { return ec->pred.prob; }
 

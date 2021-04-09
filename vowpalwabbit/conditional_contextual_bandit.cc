@@ -16,6 +16,7 @@
 #include "decision_scores.h"
 #include "vw_versions.h"
 #include "version.h"
+#include "debug_log.h"
 
 #include "io/logger.h"
 
@@ -23,6 +24,9 @@
 #include <algorithm>
 #include <unordered_set>
 #include <bitset>
+
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::ccb
 
 using namespace VW::LEARNER;
 using namespace VW;
@@ -40,8 +44,8 @@ void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
 
 struct ccb
 {
-  vw* all;
-  example* shared;
+  vw* all = nullptr;
+  example* shared = nullptr;
   std::vector<example*> actions, slots;
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label;
@@ -49,17 +53,17 @@ struct ccb
   namespace_interactions generated_interactions;
   namespace_interactions* original_interactions;
   std::vector<CCB::label> stored_labels;
-  size_t action_with_label;
+  size_t action_with_label = 0;
 
   multi_ex cb_ex;
 
   // All of these hashes are with a hasher seeded with the below namespace hash.
   std::vector<uint64_t> slot_id_hashes;
-  uint64_t id_namespace_hash;
+  uint64_t id_namespace_hash = 0;
   std::string id_namespace_str;
 
-  size_t base_learner_stride_shift;
-  bool all_slots_loss_report;
+  size_t base_learner_stride_shift = 0;
+  bool all_slots_loss_report = false;
 
   VW::v_array_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
@@ -369,6 +373,23 @@ void build_cb_example(multi_ex& cb_ex, example* slot, const CCB::label& ccb_labe
   std::swap(data.shared->tag, slot->tag);
 }
 
+std::string ccb_decision_to_string(const ccb& data)
+{
+  std::ostringstream outstrm;
+  auto& pred = data.shared->pred.a_s;
+  // correct indices: we want index relative to the original ccb multi-example,
+  // with no actions filtered
+  outstrm << "a_s [";
+  for (const auto& action_score : pred) outstrm << action_score.action << ":" << action_score.score << ", ";
+  outstrm << "] ";
+
+  outstrm << "excl [";
+  for (const auto& excl : data.exclude_list) outstrm << excl << ",";
+  outstrm << "] ";
+
+  return outstrm.str();
+}
+
 // iterate over slots contained in the multi-example, and for each slot, build a cb example and perform a
 // cb_explore_adf call.
 template <bool is_learn>
@@ -461,11 +482,29 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         }
       }
 
+      // the cb example contains at least 1 action
       if (has_action(data.cb_ex))
       {
-        // the cb example contains at least 1 action
-        multiline_learn_or_predict<is_learn>(base, data.cb_ex, examples[0]->ft_offset);
+        // Notes:  Prediction is needed for output purposes. i.e.
+        // save_action_scores needs it.
+        // This is will be used to a) display prediction, b) output to a predict
+        // file c) progressive loss calcs
+        //
+        // Strictly speaking, predict is not needed to learn.  The only reason
+        // for doing this here
+        // instead of letting the framework call predict before learn is to
+        // avoid extra work in example manipulation.
+        //
+        // The right thing to do here is to detect library mode and not have to
+        // call predict if prediction is
+        // not needed for learn.  This will be part of a future PR
+        if (!is_learn) multiline_learn_or_predict<false>(base, data.cb_ex, examples[0]->ft_offset);
+
+        if (is_learn) { multiline_learn_or_predict<true>(base, data.cb_ex, examples[0]->ft_offset); }
+
         save_action_scores(data, decision_scores);
+        VW_DBG(examples) << "ccb "
+                         << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
         clear_pred_and_label(data);
       }
       else
@@ -614,7 +653,7 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 
 base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 {
-  auto data = scoped_calloc_or_throw<ccb>();
+  auto data = VW::make_unique<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
 
@@ -646,7 +685,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   auto* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CCB::ccb_label_parser;
 
-  // Stash the base learners stride_shift so we can properly add a feature later.
+  // Stash the base learners stride_shift so we can properly add a feature
+  // later.
   data->base_learner_stride_shift = all.weights.stride_shift();
 
   // Extract from lower level reductions
@@ -658,12 +698,15 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_str.append("_id");
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
-  learner<ccb, multi_ex>& l = init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
-      prediction_type_t::decision_probs, all.get_setupfn_name(ccb_explore_adf_setup));
-
-  l.set_finish_example(finish_multiline_example);
-  l.set_save_load(save_load);
-  return make_base(l);
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
+      all.get_setupfn_name(ccb_explore_adf_setup))
+                .set_learn_returns_prediction(true)
+                .set_prediction_type(prediction_type_t::decision_probs)
+                .set_label_type(label_type_t::ccb)
+                .set_finish_example(finish_multiline_example)
+                .set_save_load(save_load)
+                .build();
+  return make_base(*l);
 }
 
 bool ec_is_example_header(example const& ec) { return ec.l.conditional_contextual_bandit.type == example_type::shared; }

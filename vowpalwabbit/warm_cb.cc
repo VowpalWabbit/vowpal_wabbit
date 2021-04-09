@@ -85,16 +85,12 @@ struct warm_cb
   uint32_t inter_iter;
   MULTICLASS::label_t mc_label;
   COST_SENSITIVE::label cs_label;
-  COST_SENSITIVE::label* csls;
-  CB::label* cbls;
+  std::vector<COST_SENSITIVE::label> csls;
+  std::vector<CB::label> cbls;
   bool use_cs;
 
   ~warm_cb()
   {
-    for (size_t a = 0; a < num_actions; ++a) { COST_SENSITIVE::delete_label(csls[a]); }
-    free(csls);
-    free(cbls);
-
     for (size_t a = 0; a < num_actions; ++a) { VW::dealloc_examples(ecs[a], 1); }
 
     for (auto* ex : ws_vali) { VW::dealloc_examples(ex, 1); }
@@ -166,7 +162,7 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     CB::default_label(lab);
 
     // copy data
-    VW::copy_example_data(false, &eca, &ec);
+    VW::copy_example_data(&eca, &ec);
 
     // offset indicies for given action
     for (features& fs : eca)
@@ -309,12 +305,7 @@ void add_to_vali(warm_cb& data, example& ec)
 {
   // TODO: set the first parameter properly
   example* ec_copy = VW::alloc_examples(1);
-
-  if (use_cs)
-    VW::copy_example_data(false, ec_copy, &ec, COST_SENSITIVE::cs_label.copy_label);
-  else
-    VW::copy_example_data(false, ec_copy, &ec, MULTICLASS::mc_label.copy_label);
-
+  VW::copy_example_data_with_label(ec_copy, &ec);
   data.ws_vali.push_back(ec_copy);
 }
 
@@ -385,7 +376,7 @@ uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, example& ec)
     THROW("Failed to sample from pdf");
 
   auto& a_s = data.a_s_adf;
-  copy_array<action_score>(a_s, out_ec.pred.a_s);
+  a_s = out_ec.pred.a_s;
 
   return chosen_action;
 }
@@ -450,8 +441,8 @@ void accumu_var_adf(warm_cb& data, multi_learner& base, example& ec)
   data.cumu_var += temp_var;
 }
 
-template <bool is_learn, bool use_cs>
-void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
+template <bool use_cs>
+void predict_and_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 {
   // Corrupt labels (only corrupting multiclass labels as of now)
   if (use_cs)
@@ -511,13 +502,13 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   }
 
   // The rest of the initialization is for warm start CB
-  data.csls = calloc_or_throw<COST_SENSITIVE::label>(num_actions);
+  data.csls.resize(num_actions);
   for (uint32_t a = 0; a < num_actions; ++a)
   {
     COST_SENSITIVE::default_label(data.csls[a]);
     data.csls[a].costs.push_back({0, a + 1, 0, 0});
   }
-  data.cbls = calloc_or_throw<CB::label>(num_actions);
+  data.cbls.resize(num_actions);
 
   data.ws_train_size = data.ws_period;
   data.ws_vali_size = 0;
@@ -617,16 +608,16 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
 
   if (use_cs)
   {
-    l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>,
+    l = &init_cost_sensitive_learner(data, base, predict_and_learn_adf<true>, predict_and_learn_adf<true>,
         all.example_parser, data->choices_lambda, all.get_setupfn_name(warm_cb_setup) + "-cs",
-        prediction_type_t::multiclass);
+        prediction_type_t::multiclass, true);
     all.example_parser->lbl_parser.label_type = label_type_t::cs;
   }
   else
   {
-    l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>,
+    l = &init_multiclass_learner(data, base, predict_and_learn_adf<false>, predict_and_learn_adf<false>,
         all.example_parser, data->choices_lambda, all.get_setupfn_name(warm_cb_setup) + "-multi",
-        prediction_type_t::multiclass);
+        prediction_type_t::multiclass, true);
     all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   }
 

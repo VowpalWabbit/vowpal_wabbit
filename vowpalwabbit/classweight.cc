@@ -44,8 +44,8 @@ struct classweights
   }
 };
 
-template <bool is_learn, prediction_type_t pred_type>
-static void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base, example& ec)
+template <prediction_type_t pred_type>
+void update_example_weight(classweights& cweights, example& ec)
 {
   switch (pred_type)
   {
@@ -59,11 +59,20 @@ static void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner
       // suppress the warning
       break;
   }
+}
 
+template <bool is_learn, prediction_type_t pred_type>
+void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base, example& ec)
+{
   if (is_learn)
+  {
+    update_example_weight<pred_type>(cweights, ec);
     base.learn(ec);
+  }
   else
+  {
     base.predict(ec);
+  }
 }
 }  // namespace CLASSWEIGHTS
 

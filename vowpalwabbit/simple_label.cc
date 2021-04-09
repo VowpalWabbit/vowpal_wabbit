@@ -23,111 +23,12 @@ namespace logger = VW::io::logger;
 
 label_data::label_data() { reset_to_default(); }
 
-label_data::label_data(float label, float weight, float initial) : label(label), weight(weight), initial(initial) {}
+label_data::label_data(float label) : label(label) {}
 
 void label_data::reset_to_default()
 {
   label = FLT_MAX;
-  weight = 1.f;
-  initial = 0.f;
 }
-
-char* bufread_simple_label(shared_data* sd, label_data& ld, char* c)
-{
-  memcpy(&ld.label, c, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(&ld.weight, c, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  memcpy(&ld.initial, c, sizeof(ld.initial));
-  c += sizeof(ld.initial);
-
-  count_label(sd, ld.label);
-  return c;
-}
-
-size_t read_cached_simple_label(shared_data* sd, label_data& ld, io_buf& cache)
-{
-  char* c;
-  size_t total = sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial);
-  if (cache.buf_read(c, total) < total) return 0;
-  bufread_simple_label(sd, ld, c);
-
-  return total;
-}
-
-float get_weight(label_data& ld) { return ld.weight; }
-
-char* bufcache_simple_label(label_data& ld, char* c)
-{
-  memcpy(c, &ld.label, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(c, &ld.weight, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  memcpy(c, &ld.initial, sizeof(ld.initial));
-  c += sizeof(ld.initial);
-  return c;
-}
-
-void cache_simple_label(label_data& ld, io_buf& cache)
-{
-  char* c;
-  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight) + sizeof(ld.initial));
-  bufcache_simple_label(ld, c);
-}
-
-void default_simple_label(label_data& ld) { ld.reset_to_default(); }
-
-bool test_label(label_data& ld) { return ld.label == FLT_MAX; }
-
-void parse_simple_label(
-    parser*, shared_data* sd, label_data& ld, std::vector<VW::string_view>& words, reduction_features&)
-{
-  switch (words.size())
-  {
-    case 0:
-      break;
-    case 1:
-      ld.label = float_of_string(words[0]);
-      break;
-    case 2:
-      ld.label = float_of_string(words[0]);
-      ld.weight = float_of_string(words[1]);
-      break;
-    case 3:
-      ld.label = float_of_string(words[0]);
-      ld.weight = float_of_string(words[1]);
-      ld.initial = float_of_string(words[2]);
-      break;
-    default:
-      logger::log_error("Error: {0} is too many tokens for a simple label: {1}",
-			words.size(), fmt::join(words, " "));
-  }
-  count_label(sd, ld.label);
-}
-
-// clang-format off
-label_parser simple_label_parser = {
-  // default_label
-  [](polylabel* v) { default_simple_label(v->simple); },
-  // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
-    parse_simple_label(p, sd, v->simple, words, red_features);
-  },
-  // cache_label
-  [](polylabel* v, io_buf& cache) { cache_simple_label(v->simple, cache); },
-  // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_simple_label(sd, v->simple, cache); },
-  // delete_label
-  [](polylabel*) {},
-   // get_weight
-  [](polylabel* v) { return get_weight(v->simple); },
-  // copy_label
-  nullptr,
-  // test_label
-  [](polylabel* v) { return test_label(v->simple); },
-  label_type_t::simple
-};
-// clang-format on
 
 void print_update(vw& all, example& ec)
 {

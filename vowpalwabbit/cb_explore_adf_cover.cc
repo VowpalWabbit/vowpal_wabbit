@@ -95,6 +95,18 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
       GEN_CS::gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels);
     else
       GEN_CS::gen_cs_example<false>(_gen_cs, examples, _cs_labels);
+
+    if (base.learn_returns_prediction)
+    {
+      // First predict() since the result of the predictions are used to learn
+      // later in the reduction
+      VW_DBG(examples) << "cb_explore_adf_cover: "
+                          "LEARNER::multiline_learn_or_predict<false>()"
+                       << std::endl;
+      VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+    }
+
+    VW_DBG(examples) << "cb_explore_adf_cover: LEARNER::multiline_learn_or_predict<true>()" << std::endl;
     VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
   }
   else
@@ -143,12 +155,13 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
             _cs_labels.costs[j].x - _psi * min_prob / ((std::max)(_action_probs[j].score, min_prob) / norm);
         _cs_labels_2.costs.push_back({pseudo_cost, j, 0., 0.});
       }
-      GEN_CS::call_cs_ldf<true>(
-          *(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels, examples[0]->ft_offset, i + 1);
+
+      GEN_CS::cs_ldf_learn_or_predict<true>(*(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels,
+          true, examples[0]->ft_offset, i + 1);
     }
     else
-      GEN_CS::call_cs_ldf<false>(
-          *(_cs_ldf_learner), examples, _cb_labels, _cs_labels, _prepped_cs_labels, examples[0]->ft_offset, i + 1);
+      GEN_CS::cs_ldf_learn_or_predict<false>(*(_cs_ldf_learner), examples, _cb_labels, _cs_labels, _prepped_cs_labels,
+          false, examples[0]->ft_offset, i + 1);
 
     for (uint32_t j = 0; j < num_actions; j++) _scores[j] += preds[j].score;
     if (!_first_only)
@@ -180,6 +193,17 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
 
   sort_action_probs(_action_probs, _scores);
   for (size_t i = 0; i < num_actions; i++) preds[i] = _action_probs[i];
+
+  if (VW_DEBUG_LOG)
+  {
+    VW_DBG(examples) << "a_p[]=";
+    for (auto const& ap : _action_probs) VW_DBG_0 << ap.action << "::" << ap.score << ",";
+    VW_DBG_0 << std::endl;
+
+    VW_DBG(examples) << "scores[]=";
+    for (auto const& s : _scores) VW_DBG_0 << s << ",";
+    VW_DBG_0 << std::endl;
+  }
 
   if (is_learn) ++_counter;
 }
@@ -258,7 +282,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   }
 
   // Set explore_type
-  size_t problem_multiplier = cover_size + 1;
+  const size_t problem_multiplier = cover_size + 1;
 
   VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
@@ -280,7 +304,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
       as_multiline(all.cost_sensitive), all.scorer, cb_type_enum, all.model_file_ver);
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(data, base, explore_type::learn, explore_type::predict,
-      problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-cover");
+      problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-cover", true);
 
   l.set_finish_example(explore_type::finish_multiline_example);
   l.set_save_load(explore_type::save_load);

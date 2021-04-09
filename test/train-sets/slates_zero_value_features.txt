@@ -1,0 +1,26 @@
+slates shared 0.8 | shared_0 shared_1
+slates action 0 | action_0:0
+slates action 0 | action_1:0
+slates action 0 | action_2:0
+slates action 1 | action_3
+slates action 1 | action_4
+slates slot 1:0.8 | slot_0
+slates slot 0:0.6 | slot_1
+
+slates shared 0.8 | shared_0:0 shared_1:0
+slates action 0 | action_0
+slates action 0 | action_1
+slates action 0 | action_2
+slates action 1 | action_3
+slates action 1 | action_4
+slates slot 1:0.8,0:0.1,2:0.1 | slot_0:0
+slates slot  0:0.6,1:0.4 | slot_1
+
+slates shared |  shared_0 shared_1
+slates action 0 |  action_0
+slates action 0 |  action_1
+slates action 0 |  action_2
+slates action 1 |  action_3
+slates action 1 |  action_4
+slates slot |  slot_0:0
+slates slot |  slot_1:0

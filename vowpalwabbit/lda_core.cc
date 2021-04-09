@@ -1330,7 +1330,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
     all.example_parser->_shared_data = all.sd;
   }
 
-  ld->v.resize(all.lda * ld->minibatch);
+  ld->v.resize_but_with_stl_behavior(all.lda * ld->minibatch);
 
   ld->decay_levels.push_back(0.f);
 
@@ -1338,7 +1338,7 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   VW::LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
-      prediction_type_t::scalars, all.get_setupfn_name(lda_setup));
+      prediction_type_t::scalars, all.get_setupfn_name(lda_setup), true);
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

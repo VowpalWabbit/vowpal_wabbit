@@ -1,5 +1,5 @@
-Version 8.9.0
-Id 
+Version 8.10.1
+Id
 Min label:0
 Max label:2
 bits:18
@@ -9,5 +9,5 @@ lda:0
 options: --coin
 Checksum: 984031238
 :0
-f2:82936:1.3329
-f1:259761:1.33312
+f2:82936:0.999676
+f1:259761:0.999843
