@@ -66,3 +66,4 @@ jobs:
           pip install ${wheel_file}
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
+
