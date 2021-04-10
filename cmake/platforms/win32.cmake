@@ -7,9 +7,9 @@ if(WIN32)
   # VW targets Windows 10.0.16299.0 SDK
   set(CMAKE_SYSTEM_VERSION "10.0.16299.0" CACHE INTERNAL "Windows SDK version to target.")
 
-  option(vw_BUILD_NETFX "Build .NET Framework targets" OFF)
+  option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
 
-  if (vw_BUILD_NETFX)
+  if (vw_BUILD_NET_FRAMEWORK)
     cmake_minimum_required(VERSION 3.14)
     set(CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION  "v4.5.2" CACHE INTERNAL ".NET Framework SDK version to target.")
 

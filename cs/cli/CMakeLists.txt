@@ -66,7 +66,7 @@ target_add_nuget_references(vw_clr "${vw_clr_NUGET_REFERENCES}")
 target_link_libraries(vw_clr 
     PUBLIC VowpalWabbit.Common
     PRIVATE vw
-    # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
+    # Workaround an issue where RapidJSON needed to be exported to install the target. This is
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
     $<BUILD_INTERFACE:RapidJSON>

@@ -361,7 +361,7 @@ if(BUILD_EXTERNAL_PARSER)
   set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
 endif()
 
-if (vw_BUILD_NETFX)
+if (vw_BUILD_NET_FRAMEWORK)
 set(vw_all_sources ${vw_all_sources} spanning_tree.cc)
 endif()
 

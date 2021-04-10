@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 if(POLICY CMP0076)
-  cmake_policy(SET CMP0076 NEW) 
+  cmake_policy(SET CMP0076 NEW)
 endif()
 
 # Do not add /W3 to MSVC flags by default. We set this to /W4.
@@ -40,9 +40,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 if(WIN32)
-  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/Win32.cmake)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/win32.cmake)
   message(STATUS "WinSDK Version: ${CMAKE_SYSTEM_VERSION}")
-  if (vw_BUILD_NETFX)
+  if (vw_BUILD_NET_FRAMEWORK)
     message(STATUS ".NET Framework Version: ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION}")
   endif()
 endif()
@@ -280,7 +280,7 @@ if(BUILD_TESTS)
   endif()
 
   set(vw_cs_unittest_targets "")
-  if (vw_BUILD_NETFX)
+  if (vw_BUILD_NET_FRAMEWORK)
     set(vw_cs_unittest_targets 
       cs_unittest
       cs_unittest_nofriend
@@ -314,7 +314,7 @@ if(BUILD_EXPERIMENTAL_BINDING)
   add_subdirectory(bindings)
 endif()
 
-if(vw_BUILD_NETFX)
+if(vw_BUILD_NET_FRAMEWORK)
   add_subdirectory(cs)
 endif()
 
