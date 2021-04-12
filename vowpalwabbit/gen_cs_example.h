@@ -205,6 +205,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
 
     if (c.known_cost.action == i)
     {
+      // std::cout<<"gen_cs_example:known_cost "<<c.known_cost.action<<":"<<c.known_cost.cost<<":"<<c.known_cost.probability<<std::endl;
       int known_index = c.known_cost.action;
       c.known_cost.action = 0;
       // get cost prediction for this label

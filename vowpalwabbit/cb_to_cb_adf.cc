@@ -12,6 +12,7 @@
 #include "cb_algs.h"
 #include "cb_explore.h"
 #include "cb_label_parser.h"
+#include "cb_adf.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -22,34 +23,50 @@ struct cb_to_cb_adf
   cbify_adf_data adf_data;
   bool explore_mode;
   bool learn_returns_prediction;
+  CB_ADF::cb_adf* cb_adf_data;
 };
+
+CB::label* get_label(cb_to_cb_adf& data, example& ec)
+{
+  if (!CB::is_test_label(ec.l.cb))
+  {
+    uint32_t chosen_action = ec.l.cb.costs[0].action - 1;
+    if (chosen_action < data.adf_data.num_actions)
+    {
+      return &data.adf_data.ecs[chosen_action]->l.cb;
+    }
+  }
+
+  return nullptr;
+}
 
 template <bool is_learn>
 void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 {
   data.adf_data.copy_example_to_adf(*data.weights, ec);
 
+  auto ld = get_label(data, ec);
+  CB::label saved_ld;
+
+  if (ld != nullptr)
+  {
+    saved_ld = *ld;
+    *ld = ec.l.cb;
+  }
+    
+  auto restore_guard = VW::scope_exit([&ld, &saved_ld] { if(ld != nullptr) *ld = saved_ld; });
+
   if (!data.learn_returns_prediction || !is_learn) { base.predict(data.adf_data.ecs); }
 
-  if (is_learn && !CB::is_test_label(ec.l.cb))
-  {
-    uint32_t chosen_action = ec.l.cb.costs[0].action - 1;
-    if (chosen_action < data.adf_data.num_actions)
-    {
-      CB::label ld = data.adf_data.ecs[chosen_action]->l.cb;
-      data.adf_data.ecs[chosen_action]->l.cb = ec.l.cb;
-      auto restore_guard = VW::scope_exit([&data, &ld, chosen_action] { data.adf_data.ecs[chosen_action]->l.cb = ld; });
+  if (is_learn)
+    base.learn(data.adf_data.ecs);
 
-      base.learn(data.adf_data.ecs);
-    }
-  }
-
-  if (data.explore_mode) { ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s); }
-  else
-  {
+  // if (data.explore_mode) { ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s); }
+  // else
+  // {
     // cb_adf => first action is a greedy action TODO: is this a contract?
     ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
-  }
+  // }
 }
 
 float calc_loss(example& ec, CB::label& ld)
@@ -70,28 +87,50 @@ float calc_loss(example& ec, CB::label& ld)
   return loss;
 }
 
-void output_example(vw& all, bool explore_mode, example& ec, CB::label& ld)
-{
-  if (explore_mode)
+// void output_example(vw& all, bool explore_mode, example& ec, CB::label& ld)
+// {
+//   if (explore_mode)
+//   {
+//     float loss = calc_loss(ec, ld);
+//     CB_EXPLORE::generic_output_example(all, loss, ec, ld);
+//   }
+//   else
+//   {
+//     // call 3 arg vs
+
+//     float loss = CB_ALGS::get_cost_estimate(ld, ec.pred.multiclass);
+//     CB_ALGS::generic_output_example(all, loss, ec, ld);
+//   }
+// }
+
+//new one
+  void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
   {
-    float loss = calc_loss(ec, ld);
-    CB_EXPLORE::generic_output_example(all, loss, ec, ld);
+    auto ld = get_label(c, ec);
+    if (ld != nullptr)
+    {
+      auto saved_ld = *ld;
+      *ld = ec.l.cb;
+    
+      auto restore_guard = VW::scope_exit([&ld, &saved_ld] { *ld = saved_ld; });
+      CB_ADF::update_and_output(all, *c.cb_adf_data, c.adf_data.ecs);
+    }
+    else
+    {
+      CB_ADF::update_and_output(all, *c.cb_adf_data, c.adf_data.ecs);
+    }
+
+    VW::finish_example(all, ec);
   }
-  else
-  {
-    float loss = CB_ALGS::get_cost_estimate(ld, ec.pred.multiclass);
-    CB_ALGS::generic_output_example(all, loss, ec, ld);
-  }
-}
 
-void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
-{
-  output_example(all, c.explore_mode, ec, ec.l.cb);
+// void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
+// {
+//   output_example(all, c.explore_mode, ec, ec.l.cb);
 
-  if (c.explore_mode) c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
+//   if (c.explore_mode) c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
 
-  VW::finish_example(all, ec);
-}
+//   VW::finish_example(all, ec);
+// }
 
 /*
     Purpose: run before cb, cb_explore, cbify and cb_adf related reductions
@@ -99,10 +138,10 @@ void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
     Except when:
         - the model file loaded is from a version older or including 8.9.0
         - user bypasses this translation step using '--cb_force_legacy'
-        - user specifies the cb_type to 'dm' (not implemented in adf)
 
     Related files: cb_algs.cc, cb_explore.cc, cbify.cc
 */
+
 VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 {
   bool compat_old_cb = false;
@@ -136,7 +175,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   if (options.was_supplied("cbify_reg")) compat_old_cb = true;
 
   // dm not implemented in cb_adf
-  if (type_string == "dm") compat_old_cb = true;
+  // if (type_string == "dm") compat_old_cb = true;
 
   if (force_legacy) compat_old_cb = true;
 
@@ -183,13 +222,13 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<cb_to_cb_adf>();
   data->explore_mode = override_cb_explore;
   data->weights = &(all.weights);
-  data->adf_data.init_adf_data(num_actions, all.interactions);
 
   multi_learner* base = as_multiline(setup_base(options, all));
 
   learner<cb_to_cb_adf, example>* l;
 
   data->learn_returns_prediction = base->learn_returns_prediction;
+  data->adf_data.init_adf_data(num_actions, base->increment, all.interactions);
   if (data->explore_mode)
   {
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::action_probs,
@@ -197,6 +236,9 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   }
   else
   {
+    // fish out cb_adf when it is not explore mode:
+    data->cb_adf_data = reinterpret_cast<CB_ADF::cb_adf*>(base->get_learn_data("cb_adf"));
+    
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass,
         "cb_to_cb_adf", base->learn_returns_prediction);
   }

@@ -1046,9 +1046,8 @@ __DATA__
     train-sets/ref/rcv1_raw_new_cb_ips.stderr
 
 # Test 41: cb with dm
-# this test defaults to cb_force_legacy (even if the flag is not specified) bc it uses dm
 {VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg
-    train-sets/ref/rcv1_raw_cb_dm.stderr
+    train-sets/ref/rcv1_raw_new_cb_dm.stderr
 
 # Test 42: --lda --passes 2 hang regression
 {VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off

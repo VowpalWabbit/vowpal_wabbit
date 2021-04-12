@@ -105,9 +105,10 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
   if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
 }
 
-void cbify_adf_data::init_adf_data(const std::size_t num_actions, namespace_interactions& interactions)
+void cbify_adf_data::init_adf_data(const std::size_t num_actions, std::size_t increment, namespace_interactions& interactions)
 {
   this->num_actions = num_actions;
+  this->increment = increment;
 
   ecs.resize(num_actions);
   for (size_t a = 0; a < num_actions; ++a)
@@ -126,7 +127,7 @@ cbify_adf_data::~cbify_adf_data()
 
 void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
 {
-  const uint64_t ss = weights.stride_shift();
+  const uint64_t ss = increment * weights.stride_shift();
   const uint64_t mask = weights.mask();
 
   for (size_t a = 0; a < num_actions; ++a)
@@ -142,7 +143,14 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     // offset indices for given action
     for (features& fs : eca)
     {
-      for (feature_index& idx : fs.indicies) { idx = (((idx >> ss) * num_actions + a) << ss) & mask; }
+      for (feature_index& idx : fs.indicies) { 
+        auto rawidx = idx >> ss;
+        rawidx -= rawidx % num_actions;
+        rawidx += a;
+        rawidx <<= ss;
+        idx = rawidx & mask; 
+        // std::cerr<<"action " << a << " idx = " << idx << " ss = " << ss << " rawidx = " << rawidx << std::endl;
+      }
     }
 
     // avoid empty example by adding a tag (hacky)
@@ -677,8 +685,6 @@ base_learner* cbify_setup(options_i& options, vw& all)
   data->a_s = v_init<action_score>();
   data->all = &all;
 
-  if (data->use_adf) { data->adf_data.init_adf_data(num_actions, all.interactions); }
-
   if (use_reg)
   {
     // Check invalid parameter combinations
@@ -734,6 +740,9 @@ base_learner* cbify_setup(options_i& options, vw& all)
   if (data->use_adf)
   {
     multi_learner* base = as_multiline(setup_base(options, all));
+
+    if (data->use_adf) { data->adf_data.init_adf_data(num_actions, base->increment, all.interactions); }
+
     if (use_cs)
     {
       l = &init_cost_sensitive_learner(data, base, learn_adf<true>, predict_adf<true>, all.example_parser, 1,
