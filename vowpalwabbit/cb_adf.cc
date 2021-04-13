@@ -347,10 +347,7 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
   float loss = 0.;
 
   bool labeled_example = true;
-  if (_gen_cs.known_cost.probability > 0)
-  {
-    loss = get_cost_estimate(_gen_cs.known_cost, _gen_cs.pred_scores, action);
-  }
+  if (_gen_cs.known_cost.probability > 0) { loss = get_cost_estimate(_gen_cs.known_cost, _gen_cs.pred_scores, action); }
   else
     labeled_example = false;
 
@@ -545,7 +542,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   learner<cb_adf, multi_ex>& l = init_learner(ld, base, learn, predict, problem_multiplier,
       prediction_type_t::action_scores, all.get_setupfn_name(cb_adf_setup), ld->learn_returns_prediction());
-  
+
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   bare->set_scorer(all.scorer);

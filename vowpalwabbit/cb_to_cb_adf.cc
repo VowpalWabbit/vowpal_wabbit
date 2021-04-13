@@ -31,10 +31,7 @@ CB::label* get_label(cb_to_cb_adf& data, example& ec)
   if (!CB::is_test_label(ec.l.cb))
   {
     uint32_t chosen_action = ec.l.cb.costs[0].action - 1;
-    if (chosen_action < data.adf_data.num_actions)
-    {
-      return &data.adf_data.ecs[chosen_action]->l.cb;
-    }
+    if (chosen_action < data.adf_data.num_actions) { return &data.adf_data.ecs[chosen_action]->l.cb; }
   }
 
   return nullptr;
@@ -53,19 +50,20 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
     saved_ld = *ld;
     *ld = ec.l.cb;
   }
-    
-  auto restore_guard = VW::scope_exit([&ld, &saved_ld] { if(ld != nullptr) *ld = saved_ld; });
+
+  auto restore_guard = VW::scope_exit([&ld, &saved_ld] {
+    if (ld != nullptr) *ld = saved_ld;
+  });
 
   if (!data.learn_returns_prediction || !is_learn) { base.predict(data.adf_data.ecs); }
 
-  if (is_learn)
-    base.learn(data.adf_data.ecs);
+  if (is_learn) base.learn(data.adf_data.ecs);
 
   // if (data.explore_mode) { ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s); }
   // else
   // {
-    // cb_adf => first action is a greedy action TODO: is this a contract?
-    ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
+  // cb_adf => first action is a greedy action TODO: is this a contract?
+  ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
   // }
 }
 
@@ -103,25 +101,25 @@ float calc_loss(example& ec, CB::label& ld)
 //   }
 // }
 
-//new one
-  void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
+// new one
+void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
+{
+  auto ld = get_label(c, ec);
+  if (ld != nullptr)
   {
-    auto ld = get_label(c, ec);
-    if (ld != nullptr)
-    {
-      auto saved_ld = *ld;
-      *ld = ec.l.cb;
-    
-      auto restore_guard = VW::scope_exit([&ld, &saved_ld] { *ld = saved_ld; });
-      CB_ADF::update_and_output(all, *c.cb_adf_data, c.adf_data.ecs);
-    }
-    else
-    {
-      CB_ADF::update_and_output(all, *c.cb_adf_data, c.adf_data.ecs);
-    }
+    auto saved_ld = *ld;
+    *ld = ec.l.cb;
 
-    VW::finish_example(all, ec);
+    auto restore_guard = VW::scope_exit([&ld, &saved_ld] { *ld = saved_ld; });
+    CB_ADF::update_and_output(all, *c.cb_adf_data, c.adf_data.ecs);
   }
+  else
+  {
+    CB_ADF::update_and_output(all, *c.cb_adf_data, c.adf_data.ecs);
+  }
+
+  VW::finish_example(all, ec);
+}
 
 // void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
 // {
@@ -235,7 +233,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   {
     // fish out cb_adf when it is not explore mode:
     data->cb_adf_data = reinterpret_cast<CB_ADF::cb_adf*>(base->get_learn_data("cb_adf"));
-    
+
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass,
         "cb_to_cb_adf", base->learn_returns_prediction);
   }

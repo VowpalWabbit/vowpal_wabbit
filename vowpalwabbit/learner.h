@@ -534,14 +534,13 @@ public:
 
   void* get_learn_data(std::string reduction_name)
   {
-    if (name==reduction_name)
-    {
-      return learn_fd.data;
-    }
+    if (name == reduction_name) { return learn_fd.data; }
     else
     {
-      if (learn_fd.base != nullptr) return learn_fd.base->get_learn_data(reduction_name);
-      else THROW("fatal: could not find in learner chain: " << reduction_name);
+      if (learn_fd.base != nullptr)
+        return learn_fd.base->get_learn_data(reduction_name);
+      else
+        THROW("fatal: could not find in learner chain: " << reduction_name);
     }
   }
 };

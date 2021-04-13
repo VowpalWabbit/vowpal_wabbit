@@ -105,7 +105,8 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
   if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
 }
 
-void cbify_adf_data::init_adf_data(const std::size_t num_actions, std::size_t increment, namespace_interactions& interactions)
+void cbify_adf_data::init_adf_data(
+    const std::size_t num_actions, std::size_t increment, namespace_interactions& interactions)
 {
   this->num_actions = num_actions;
   this->increment = increment;
@@ -143,12 +144,13 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     // offset indices for given action
     for (features& fs : eca)
     {
-      for (feature_index& idx : fs.indicies) { 
+      for (feature_index& idx : fs.indicies)
+      {
         auto rawidx = idx >> ss;
         rawidx -= rawidx % num_actions;
         rawidx += a;
         rawidx <<= ss;
-        idx = rawidx & mask; 
+        idx = rawidx & mask;
       }
     }
 
