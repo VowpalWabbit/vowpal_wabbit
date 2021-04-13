@@ -247,18 +247,6 @@ public:
     VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
   }
 
-  void* get_learn_data(std::string reduction_name)
-  {
-    if (name==reduction_name)
-    {
-      return learn_fd.data;
-    }
-    else
-    {
-      return learn_fd.base->get_learn_data(reduction_name);
-    }
-  }
-
   /// \brief Will update the model according to the labels and examples supplied.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid label set for every ::example in the field
@@ -542,6 +530,19 @@ public:
     VW_DBG_0 << "Added Reduction: " << name << std::endl;
 
     return ret;
+  }
+
+  void* get_learn_data(std::string reduction_name)
+  {
+    if (name==reduction_name)
+    {
+      return learn_fd.data;
+    }
+    else
+    {
+      if (learn_fd.base != nullptr) return learn_fd.base->get_learn_data(reduction_name);
+      else THROW("fatal: could not find in learner chain: " << reduction_name);
+    }
   }
 };
 

@@ -43,7 +43,6 @@ void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels, fl
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
       wc.x = ld.costs[0].cost / safe_probability(std::max(ld.costs[0].probability, clip_p));
-      // std::cout<<"gen_cs_example_ips: "<< wc.x<<std::endl;
     }
     cs_labels.costs.push_back(wc);
   }

@@ -149,7 +149,6 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
         rawidx += a;
         rawidx <<= ss;
         idx = rawidx & mask; 
-        // std::cerr<<"action " << a << " idx = " << idx << " ss = " << ss << " rawidx = " << rawidx << std::endl;
       }
     }
 

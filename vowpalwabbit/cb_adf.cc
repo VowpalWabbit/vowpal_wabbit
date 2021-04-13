@@ -349,10 +349,6 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
   bool labeled_example = true;
   if (_gen_cs.known_cost.probability > 0)
   {
-    // for (auto c : _gen_cs.pred_scores.costs)
-    // {
-    //   std::cout<< c.x<<std::endl;
-    // }
     loss = get_cost_estimate(_gen_cs.known_cost, _gen_cs.pred_scores, action);
   }
   else

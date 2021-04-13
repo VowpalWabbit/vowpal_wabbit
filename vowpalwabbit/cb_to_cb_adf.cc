@@ -174,9 +174,6 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   // not compatible with adf
   if (options.was_supplied("cbify_reg")) compat_old_cb = true;
 
-  // dm not implemented in cb_adf
-  // if (type_string == "dm") compat_old_cb = true;
-
   if (force_legacy) compat_old_cb = true;
 
   bool override_cb = options.was_supplied("cb");
