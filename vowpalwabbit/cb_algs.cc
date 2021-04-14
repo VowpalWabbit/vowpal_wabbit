@@ -152,7 +152,9 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
                .help("Use contextual bandit learning with <k> costs"))
       .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"))
       .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."))
-      .add(make_option("cb_force_legacy", force_legacy).keep().help("Default to non-adf cb implementation (cb_to_cb_adf)"));
+      .add(make_option("cb_force_legacy", force_legacy)
+               .keep()
+               .help("Default to non-adf cb implementation (cb_to_cb_adf)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
