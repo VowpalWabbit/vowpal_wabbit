@@ -10,20 +10,20 @@ num sources = 1
 Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, shared_feature_merger, cb_to_cbadf
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-2.000000 2.000000            1            1.0    known        1      280
-1.000000 0.000000            2            2.0    known        2      598
-0.500000 0.000000            4            4.0    known        2      784
-0.500000 0.500000            8            8.0    known        2      850
-0.875000 1.250000           16           16.0    known        1      118
-0.500000 0.125000           32           32.0    known        2      166
-0.468750 0.437500           64           64.0    known        1      340
-0.421875 0.375000          128          128.0    known        1      610
-0.476562 0.531250          256          256.0    known        2      712
-0.500000 0.523438          512          512.0    known        1      424
+2.000000 2.000000            1            1.0    known        0:0...      560
+1.000000 0.000000            2            2.0    known        1:0...     1196
+0.520192 0.040384            4            4.0    known        0:-0.34627...     1568
+0.260096 0.000000            8            8.0    known        1:0...     1700
+0.426062 0.592027           16           16.0    known        1:-0.0668964...      236
+0.417481 0.408901           32           32.0    known        1:0.0519634...      332
+0.475729 0.533977           64           64.0    known        1:0.301916...      680
+0.446631 0.417532          128          128.0    known        1:-0.637007...     1220
+0.462119 0.477608          256          256.0    known        1:0.0322126...     1424
+0.438755 0.415392          512          512.0    known        0:-0.127503...      848
 
 finished run
 number of examples = 1000
 weighted example sum = 1000.000000
 weighted label sum = 0.000000
-average loss = 0.442000
-total feature number = 440020
+average loss = 0.407881
+total feature number = 880040

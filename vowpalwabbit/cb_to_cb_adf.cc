@@ -9,10 +9,7 @@
 #include "learner.h"
 #include "vw.h"
 #include "cbify.h"
-#include "cb_algs.h"
-#include "cb_explore.h"
 #include "cb_label_parser.h"
-#include "cb_adf.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -23,7 +20,7 @@ struct cb_to_cb_adf
   cbify_adf_data adf_data;
   bool explore_mode;
   bool learn_returns_prediction;
-  CB_ADF::cb_adf* cb_adf_data;
+  multi_learner* adf_learner;
 };
 
 CB::label* get_label(cb_to_cb_adf& data, example& ec)
@@ -59,31 +56,31 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 
   if (is_learn) base.learn(data.adf_data.ecs);
 
-  // if (data.explore_mode) { ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s); }
-  // else
-  // {
-  // cb_adf => first action is a greedy action TODO: is this a contract?
-  ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
-  // }
-}
-
-float calc_loss(example& ec, CB::label& ld)
-{
-  float loss = 0.;
-
-  if (!CB::is_test_label(ld))
+  if (data.explore_mode) { ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s); }
+  else
   {
-    auto optional_cost = CB::get_observed_cost_cb(ld);
-    // cost observed, not default
-    if (optional_cost.first == true)
-    {
-      for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-      { loss += CB_ALGS::get_cost_estimate(optional_cost.second, ec.pred.a_s[i].action + 1) * ec.pred.a_s[i].score; }
-    }
+    // cb_adf => first action is a greedy action TODO: is this a contract?
+    ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
   }
-
-  return loss;
 }
+
+// float calc_loss(example& ec, CB::label& ld)
+// {
+//   float loss = 0.;
+
+//   if (!CB::is_test_label(ld))
+//   {
+//     auto optional_cost = CB::get_observed_cost_cb(ld);
+//     // cost observed, not default
+//     if (optional_cost.first == true)
+//     {
+//       for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
+//       { loss += CB_ALGS::get_cost_estimate(optional_cost.second, ec.pred.a_s[i].action + 1) * ec.pred.a_s[i].score; }
+//     }
+//   }
+
+//   return loss;
+// }
 
 // void output_example(vw& all, bool explore_mode, example& ec, CB::label& ld)
 // {
@@ -111,24 +108,17 @@ void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
     *ld = ec.l.cb;
 
     auto restore_guard = VW::scope_exit([&ld, &saved_ld] { *ld = saved_ld; });
-    CB_ADF::update_and_output(all, *c.cb_adf_data, c.adf_data.ecs);
+
+    c.adf_learner->print_example(all, c.adf_data.ecs);
   }
   else
   {
-    CB_ADF::update_and_output(all, *c.cb_adf_data, c.adf_data.ecs);
+    c.adf_learner->print_example(all, c.adf_data.ecs);
   }
 
+  if (c.explore_mode) c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
   VW::finish_example(all, ec);
 }
-
-// void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
-// {
-//   output_example(all, c.explore_mode, ec, ec.l.cb);
-
-//   if (c.explore_mode) c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
-
-//   VW::finish_example(all, ec);
-// }
 
 /*
     Purpose: run before cb, cb_explore, cbify and cb_adf related reductions
@@ -139,7 +129,6 @@ void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
 
     Related files: cb_algs.cc, cb_explore.cc, cbify.cc
 */
-
 VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 {
   bool compat_old_cb = false;
@@ -226,13 +215,15 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   data->adf_data.init_adf_data(num_actions, base->increment, all.interactions);
   if (data->explore_mode)
   {
+    data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
+
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::action_probs,
         "cb_to_cb_adf", base->learn_returns_prediction);
   }
   else
   {
     // fish out cb_adf when it is not explore mode:
-    data->cb_adf_data = reinterpret_cast<CB_ADF::cb_adf*>(base->get_learn_data("cb_adf"));
+    data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_adf"));
 
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass,
         "cb_to_cb_adf", base->learn_returns_prediction);

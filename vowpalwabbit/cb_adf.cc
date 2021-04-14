@@ -544,6 +544,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
       prediction_type_t::action_scores, all.get_setupfn_name(cb_adf_setup), ld->learn_returns_prediction());
 
   l.set_finish_example(CB_ADF::finish_multiline_example);
+  l.set_print_example(CB_ADF::update_and_output);
 
   bare->set_scorer(all.scorer);
 

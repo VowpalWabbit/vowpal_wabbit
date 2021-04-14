@@ -13,6 +13,4 @@ namespace CB_ADF
 void global_print_newline(const std::vector<std::unique_ptr<VW::io::writer>>& final_prediction_sink);
 example* test_adf_sequence(multi_ex& ec_seq);
 CB::cb_class get_observed_cost_or_default_cb_adf(const multi_ex& examples);
-struct cb_adf;
-void update_and_output(vw& all, cb_adf& data, multi_ex& ec_seq);
 }  // namespace CB_ADF
