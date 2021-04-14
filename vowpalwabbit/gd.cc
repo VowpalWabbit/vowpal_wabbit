@@ -825,6 +825,19 @@ void save_load_online_state(
     {
       i = v.index() >> weights.stride_shift();
 
+      if (all.print_invert)  // write readable model with feature names
+      {
+        if (*v != 0.f)
+        {
+          const auto map_it = all.index_name_map.find(i);
+          if (map_it != all.index_name_map.end())
+          {
+            msg << map_it->second << ":";
+            bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
+          }
+        }
+      }
+
       if (ftrl_size == 3)
       {
         if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0.)
@@ -889,7 +902,6 @@ void save_load_online_state(
 void save_load_online_state(
     vw& all, io_buf& model_file, bool read, bool text, double& total_weight, gd* g, uint32_t ftrl_size)
 {
-  // vw& all = *g.all;
   std::stringstream msg;
 
   msg << "initial_t " << all.initial_t << "\n";
