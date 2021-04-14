@@ -26,7 +26,7 @@ set (vw_DOTNET_FRAMEWORK_REFERENCES
 )
 
 target_link_libraries(cs_unittest_nofriend 
-  PUBLIC vw_common vw_clr vw_cs
+  PUBLIC VowpalWabbit.Common VowpalWabbit.Core VowpalWabbit
 )
 
 set_target_properties(cs_unittest_nofriend 

@@ -27,7 +27,7 @@ set (vw_DOTNET_FRAMEWORK_REFERENCES
 )
 
 target_link_libraries(cs_console 
-  PUBLIC vw_common vw_clr vw_cs cs_json
+  PUBLIC VowpalWabbit.Common VowpalWabbit.Core VowpalWabbit VowpalWabbit.JSON
 )
 
 target_add_nuget_references(cs_console "Newtonsoft.JSON@9.0.1")

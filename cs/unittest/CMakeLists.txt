@@ -139,7 +139,7 @@ target_add_nuget_imports(cs_unittest
   "${cs_unittest_NUGET_IMPORTS}")
 
 target_link_libraries(cs_unittest 
-  PUBLIC vw_common vw_clr vw_cs cs_json cs_parallel cs_console cs_testcommon
+  PUBLIC VowpalWabbit.Common VowpalWabbit.Core vw_cs VowpalWabbit.JSON VowpalWabbit.Parallel cs_console cs_testcommon
 )
 
 set_target_properties(cs_unittest 

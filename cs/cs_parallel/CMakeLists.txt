@@ -3,7 +3,7 @@ include(NetFxNuget)
 include(NetFxStrongName)
 
 # TODO: Make AssemblyInfo a configure()ed file
-add_library(cs_parallel SHARED
+add_library(VowpalWabbit.Parallel SHARED
   Properties/AssemblyInfo.cs 
   VowpalWabbitAsync.cs
   VowpalWabbitThreadedLearning.cs
@@ -13,7 +13,7 @@ CSHARP_SET_DESIGNER_CS_PROPERTIES(
   "Properties/AssemblyInfo.cs"
 )
 
-strongname_sign_target(cs_parallel ${vw_DOTNET_SIGNING_KEY})
+strongname_sign_target(VowpalWabbit.Parallel ${vw_DOTNET_SIGNING_KEY})
 
 set (vw_DOTNET_FRAMEWORK_REFERENCES
   System
@@ -26,13 +26,13 @@ set (vw_DOTNET_FRAMEWORK_REFERENCES
   Microsoft.CSharp
 )
 
-target_add_nuget_references(cs_parallel "Microsoft.Tpl.Dataflow@4.5.24@System.Threading.Tasks.Dataflow")
+target_add_nuget_references(VowpalWabbit.Parallel "Microsoft.Tpl.Dataflow@4.5.24@System.Threading.Tasks.Dataflow")
 
-target_link_libraries(cs_parallel 
-  PUBLIC vw_common vw_clr vw_cs 
+target_link_libraries(VowpalWabbit.Parallel 
+  PUBLIC VowpalWabbit.Common VowpalWabbit.Core VowpalWabbit 
 )
 
-set_target_properties(cs_parallel 
+set_target_properties(VowpalWabbit.Parallel 
     PROPERTIES VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
                VS_GLOBAL_ROOTNAMESPACE VW
 )

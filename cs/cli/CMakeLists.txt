@@ -38,7 +38,7 @@ set(vw_CLI_SOURCES
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${vw_CLI_HEADERS} ${vw_CLI_SOURCES})
 
 # TODO: Make AssemblyInfo a configure()ed file
-add_library(vw_clr SHARED
+add_library(VowpalWabbit.Core SHARED
   ${vw_CLI_HEADERS}
   ${vw_CLI_SOURCES}
   Resource.rc
@@ -47,23 +47,23 @@ add_library(vw_clr SHARED
 # This ensures that the assembly is built with /clr. It is empty because we have mixed native and
 # managed C++. It is important to set this property ahead of doing StrongName signing, as it is
 # used to determine whether the assembly is build from a vcxproj vs. a csproj.
-set_property(TARGET vw_clr PROPERTY COMMON_LANGUAGE_RUNTIME "")
+set_property(TARGET VowpalWabbit.Core PROPERTY COMMON_LANGUAGE_RUNTIME "")
 
-strongname_sign_target(vw_clr ${vw_DOTNET_SIGNING_KEY})
+strongname_sign_target(VowpalWabbit.Core ${vw_DOTNET_SIGNING_KEY})
 
 set (vw_DOTNET_FRAMEWORK_REFERENCES
     System
     System.Core
 )
 
-set (vw_clr_NUGET_REFERENCES
+set (VowpalWabbit.Core_NUGET_REFERENCES
   Newtonsoft.Json@9.0.1
 )
 
-target_add_nuget_references(vw_clr "${vw_clr_NUGET_REFERENCES}")
+target_add_nuget_references(VowpalWabbit.Core "${VowpalWabbit.Core_NUGET_REFERENCES}")
    
 # Define dependencies.
-target_link_libraries(vw_clr 
+target_link_libraries(VowpalWabbit.Core 
     PUBLIC VowpalWabbit.Common
     PRIVATE vw
     # Workaround an issue where RapidJSON needed to be exported to install the target. This is
@@ -72,9 +72,9 @@ target_link_libraries(vw_clr
     $<BUILD_INTERFACE:RapidJSON>
 )
 
-set_target_properties(vw_clr PROPERTIES
+set_target_properties(VowpalWabbit.Core PROPERTIES
     VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
     VS_DOTNET_TARGET_FRAMEWORK_VERSION ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION}
-    VS_GLOBAL_ROOTNAMESPACE vw_clr
+    VS_GLOBAL_ROOTNAMESPACE VowpalWabbit.Core
     VS_GLOBAL_CLRSupport "True"
 )

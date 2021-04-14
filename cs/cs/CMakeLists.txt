@@ -2,7 +2,7 @@ include(CSharpUtilities)
 include(T4Template)
 include(NetFxStrongName)
 
-set (vw_cs_SOURCES
+set (VowpalWabbit_SOURCES
   Properties/AssemblyInfo.cs 
   Properties/AssemblyInfoInternal.cs # Things seem to work without this, but going to keep it here to be 1:1 with previous
   Serializer/Attributes/CacheableAttribute.cs
@@ -44,20 +44,20 @@ set (vw_cs_SOURCES
   VowpalWabbitThreadedPredictionBase.cs
 )
 
-set(vw_cs_T4TEMPLATES
+set(VowpalWabbit_T4TEMPLATES
   Serializer/VowpalWabbitDefaultMarshallerExt.tt
 )
 
-configure_t4(${vw_cs_T4TEMPLATES} vw_cs_GENERATED_SOURCES)
+configure_t4(${VowpalWabbit_T4TEMPLATES} VowpalWabbit_GENERATED_SOURCES)
 
 # TODO: Make AssemblyInfo a configure()ed file
-add_library(vw_cs SHARED
-  ${vw_cs_SOURCES}
-  ${vw_cs_GENERATED_SOURCES}
-  ${vw_cs_T4TEMPLATES}
+add_library(VowpalWabbit SHARED
+  ${VowpalWabbit_SOURCES}
+  ${VowpalWabbit_GENERATED_SOURCES}
+  ${VowpalWabbit_T4TEMPLATES}
 )
 
-strongname_sign_target(vw_cs ${vw_DOTNET_SIGNING_KEY})
+strongname_sign_target(VowpalWabbit ${vw_DOTNET_SIGNING_KEY})
 
 CSHARP_SET_DESIGNER_CS_PROPERTIES(
   "Properties/AssemblyInfo.cs"
@@ -73,11 +73,11 @@ set (vw_DOTNET_FRAMEWORK_REFERENCES
   Microsoft.CSharp
 )
 
-target_link_libraries(vw_cs 
-  PUBLIC vw_common vw_clr
+target_link_libraries(VowpalWabbit 
+  PUBLIC VowpalWabbit.Common VowpalWabbit.Core
 )
 
-set_target_properties(vw_cs PROPERTIES
+set_target_properties(VowpalWabbit PROPERTIES
   VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
   VS_GLOBAL_ROOTNAMESPACE VW
   VS_GLOBAL_AllowUnsafeBlocks "True"

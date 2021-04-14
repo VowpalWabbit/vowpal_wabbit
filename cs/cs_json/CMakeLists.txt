@@ -3,7 +3,7 @@ include(NetFxNuget)
 include(NetFxStrongName)
 
 # TODO: Make AssemblyInfo a configure()ed file
-add_library(cs_json SHARED
+add_library(VowpalWabbit.JSON SHARED
   Properties/AssemblyInfo.cs 
   Serializer/IVowpalWabbitJsonConverter.cs
   Serializer/JsonRawStringConverter.cs
@@ -26,7 +26,7 @@ CSHARP_SET_DESIGNER_CS_PROPERTIES(
     "Properties/AssemblyInfo.cs"
 )
 
-strongname_sign_target(cs_json ${vw_DOTNET_SIGNING_KEY})
+strongname_sign_target(VowpalWabbit.JSON ${vw_DOTNET_SIGNING_KEY})
 
 set (vw_DOTNET_FRAMEWORK_REFERENCES
     System
@@ -39,13 +39,13 @@ set (vw_DOTNET_FRAMEWORK_REFERENCES
     Microsoft.CSharp
 )
 
-target_link_libraries(cs_json 
-  PUBLIC vw_common vw_clr vw_cs 
+target_link_libraries(VowpalWabbit.JSON 
+  PUBLIC VowpalWabbit.Common VowpalWabbit.Core VowpalWabbit 
 )
 
-target_add_nuget_references(cs_json "Newtonsoft.JSON@9.0.1")
+target_add_nuget_references(VowpalWabbit.JSON "Newtonsoft.JSON@9.0.1")
 
-set_target_properties(cs_json 
+set_target_properties(VowpalWabbit.JSON 
     PROPERTIES VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
                VS_GLOBAL_ROOTNAMESPACE VW
 )
