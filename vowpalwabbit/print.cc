@@ -12,6 +12,7 @@ using std::cout;
 // TODO: This file should probably(?) use trace_message
 struct print
 {
+  print(vw* all) : all(all) {}
   vw* all;
 };  // regressor, feature loop
 
@@ -27,10 +28,11 @@ void learn(print& p, VW::LEARNER::base_learner&, example& ec)
   if (ec.l.simple.label != FLT_MAX)
   {
     cout << ec.l.simple.label << " ";
-    if (ec.weight != 1 || ec.initial != 0)
+    const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    if (ec.weight != 1 || simple_red_features.initial != 0)
     {
       cout << ec.weight << " ";
-      if (ec.initial != 0) cout << ec.initial << " ";
+      if (simple_red_features.initial != 0) cout << simple_red_features.initial << " ";
     }
   }
   if (!ec.tag.empty())
@@ -51,11 +53,9 @@ VW::LEARNER::base_learner* print_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto p = scoped_calloc_or_throw<print>();
-  p->all = &all;
-
   all.weights.stride_shift(0);
-
-  VW::LEARNER::learner<print, example>& ret = init_learner(p, learn, learn, 1, all.get_setupfn_name(print_setup));
-  return make_base(ret);
+  auto* learner = VW::LEARNER::make_base_learner(VW::make_unique<print>(&all), learn, learn,
+      all.get_setupfn_name(print_setup), prediction_type_t::scalar, label_type_t::simple)
+                      .build();
+  return VW::LEARNER::make_base(*learner);
 }

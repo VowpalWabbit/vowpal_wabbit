@@ -171,7 +171,6 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
     {
       ec.partial_prediction = 0.f;
       ec.pred.scalar = 0.f;
-      ec.initial = 0.f;  // needed for gd.predict()
       base.predict(ec, cur_node.id);
       VW_DBG(ec) << "tree_c: predict() after base.predict() " << scalar_pred_to_string(ec)
                  << ", nodeid = " << cur_node.id << std::endl;
@@ -256,7 +255,6 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
         if (((cost_v < cost_w) ? v : w).id == v_parent.left_id) { local_action = LEFT; }
 
         ec.l.simple.label = local_action;
-        ec.initial = 0.f;
         ec.weight = std::abs(cost_v - cost_w);
 
         bool filter = false;

@@ -377,7 +377,7 @@ vw::~vw()
   if (l != nullptr)
   {
     l->finish();
-    free(l);
+    delete l;
   }
 
   // TODO: migrate all finalization into parser destructor

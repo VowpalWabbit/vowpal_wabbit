@@ -13,6 +13,7 @@
 #include "prob_dist_cont.h"
 #include "debug_log.h"
 #include "cb_label_parser.h"
+#include "simple_label_parser.h"
 
 using namespace VW::LEARNER;
 using namespace exploration;
@@ -139,7 +140,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     CB::default_label(lab);
 
     // copy data
-    VW::copy_example_data(false, &eca, &ec);
+    VW::copy_example_data(&eca, &ec);
 
     // offset indices for given action
     for (features& fs : eca)

@@ -26,6 +26,7 @@
 #include "queue.h"
 #include "object_pool.h"
 #include "hashstring.h"
+#include "simple_label_parser.h"
 
 struct vw;
 struct input_options;
