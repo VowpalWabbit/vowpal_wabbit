@@ -563,9 +563,7 @@ public:
 
   base_learner* get_learner_by_name_prefix(std::string reduction_name)
   {
-    if (name.find(reduction_name) != std::string::npos) { 
-      return (base_learner*)this;
-    }
+    if (name.find(reduction_name) != std::string::npos) { return (base_learner*)this; }
     else
     {
       if (learn_fd.base != nullptr)

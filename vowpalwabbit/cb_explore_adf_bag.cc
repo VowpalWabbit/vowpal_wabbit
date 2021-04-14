@@ -135,7 +135,7 @@ void finish_bag_example(vw &all, cb_explore_adf_base<cb_explore_adf_bag> &data, 
   cb_explore_adf_base<cb_explore_adf_bag>::finish_multiline_example(all, data, ec_seq);
 }
 
-void print_bag_example(vw &all, cb_explore_adf_base<cb_explore_adf_bag> &data, multi_ex &ec_seq)
+void print_bag_example(vw& all, cb_explore_adf_base<cb_explore_adf_bag>& data, multi_ex& ec_seq)
 {
   assert(ec_seq.size() > 0);
   ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
