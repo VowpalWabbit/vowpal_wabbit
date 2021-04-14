@@ -101,6 +101,8 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 // new one
 void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
 {
+  if (c.explore_mode) c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
+
   auto ld = get_label(c, ec);
   if (ld != nullptr)
   {
@@ -116,7 +118,6 @@ void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
     c.adf_learner->print_example(all, c.adf_data.ecs);
   }
 
-  if (c.explore_mode) c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
   VW::finish_example(all, ec);
 }
 
