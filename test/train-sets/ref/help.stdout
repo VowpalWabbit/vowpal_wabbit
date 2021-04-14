@@ -246,6 +246,7 @@ Contextual Bandit Options:
   --cb arg              Use contextual bandit learning with <k> costs
   --cb_type arg         contextual bandit method to use in {ips,dm,dr}
   --eval                Evaluate a policy rather than optimizing.
+  --cb_force_legacy     Default to non-adf cb implementation (cb_to_cb_adf)
 Contextual Bandit with Action Dependent Features:
   --cb_adf              Do Contextual Bandit learning with multiline action 
                         dependent features.
@@ -367,7 +368,7 @@ Contextual Bandit Options: cb -> cb_adf:
   --cbify arg           Translate cbify to cb_adf. Disable with 
                         cb_force_legacy.
   --cb_type arg         contextual bandit method to use in {}
-  --cb_force_legacy     Default to old cb implementation
+  --cb_force_legacy     Default to non-adf cb implementation (cb_algs)
 Make Multiclass into Contextual Bandit:
   --cbify arg                  Convert multiclass on <k> classes into a 
                                contextual bandit problem

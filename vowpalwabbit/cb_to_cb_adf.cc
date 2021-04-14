@@ -114,7 +114,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
       .add(
           make_option("cbify", cbi_num_actions).keep().help("Translate cbify to cb_adf. Disable with cb_force_legacy."))
       .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {}"))
-      .add(make_option("cb_force_legacy", force_legacy).keep().help("Default to old cb implementation"));
+      .add(make_option("cb_force_legacy", force_legacy).keep().help("Default to non-adf cb implementation (cb_algs)"));
 
   options.add_parse_and_check_necessary(new_options);
 
@@ -142,6 +142,8 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
     if (compat_old_cb)
     {
       options.insert("cb_force_legacy", "");
+      // make sure cb_force_legacy gets serialized to the model on write
+      options.add_and_parse(new_options);
       return nullptr;
     }
   }
