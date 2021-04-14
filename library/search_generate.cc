@@ -35,6 +35,8 @@ struct nextstr
   nextstr(char _c, float _cw, std::string _s, float _sw) : c(_c), cw(_cw), s(_s), sw(_sw) {}
 };
 
+inline float min_float(float a, float b) { return (a < b) ? a : b; }
+
 class Trie
 {
 public:
@@ -164,23 +166,21 @@ public:
     return A;
   }
 
-  float minf(float a, float b) { return (a < b) ? a : b; }
-
   std::vector<std::pair<action,float>> all_next()
-  {std::vector<std::pair<action,float>> B;
-    for (size_t a=1; a<=29; a++)
-      B.push_back(std::make_pair(a, 1.) );
-    B[ char2action('$')-1 ].second = minf(100., (float)(prev_row[N] - prev_row_min));
-    for (size_t n=0; n<N; n++)
-      if (prev_row[n] == prev_row_min)
-        B[ char2action(target[n])-1 ].second = 0.;
+  { std::vector<std::pair<action,float>> B;
+    for (action a=1; a<=29; a++) B.push_back(std::make_pair(a, 1.f) );
+    
+    B[ char2action('$')-1 ].second = min_float(100.f, (float)(prev_row[N] - prev_row_min));
+
+    for (action n=0; n<N; n++)
+      if (prev_row[n] == prev_row_min) B[ char2action(target[n])-1 ].second = 0.f;
     return B;
   }
 
   std::string out() { return output_string; }
   size_t distance() { return prev_row_min; }
   size_t finish_distance()
-  { // find last occurance of prev_row_min
+  {  // find last occurrence of prev_row_min
     int n = (int)N;
     while (n >= 0 && prev_row[n] > prev_row_min) n--;
     return (N-n) * ins_cost + prev_row_min;
@@ -210,15 +210,13 @@ struct input
 
 typedef std::string output;
 
-#define minf(a,b) (((a) < (b)) ? (a) : (b))
-
 float max_cost = 100.;
 
 float get_or_one(std::vector<std::pair<char,size_t> >& v, char c)
 { // TODO: could binary search
   for (auto& p : v)
     if (p.first == c)
-      return minf(max_cost, (float)p.second);
+      return min_float(max_cost, (float)p.second);
   return 1.;
 }
 
@@ -239,8 +237,6 @@ public:
 
   void _run(Search::search& sch, input& in, output& out)
   { IncrementalEditDistance ied(in.out);
-
-    Trie* cdict = dict;
 
     v_array<action> ref = v_init<action>();
     int N = (int)in.in.length();
@@ -283,9 +279,9 @@ public:
       ex("w=" + tmp);
 
       // do we match the trie?
-      if (cdict)
+      if (dict)
       { next.clear();
-        cdict->get_next(nullptr, next);
+        dict->get_next(nullptr, next);
         ex(vw_namespace('d'));
         char best_char = '~'; float best_count = 0.;
         for (auto xx : next)
@@ -337,7 +333,7 @@ public:
       if (c == '$') break;
       out += c;
       ied.append(c);
-      if (cdict) cdict = cdict->step(c);
+      if (dict) dict = dict->step(c);
     }
 
     dist = ied.finish_distance();
