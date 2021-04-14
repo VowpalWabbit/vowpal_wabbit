@@ -282,7 +282,13 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   }
 
   // Set explore_type
-  const size_t problem_multiplier = cover_size + 1;
+  size_t problem_multiplier = cover_size + 1;
+
+  // Cover is using doubly robust without the cooperation of the base reduction
+  if (cb_type_enum == CB_TYPE_MTR)
+  {
+    problem_multiplier *= 2; 
+  }
 
   VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;

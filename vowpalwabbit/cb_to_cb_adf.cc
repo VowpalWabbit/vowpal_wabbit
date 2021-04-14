@@ -214,6 +214,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   data->learn_returns_prediction = base->learn_returns_prediction;
   data->adf_data.init_adf_data(num_actions, base->increment, all.interactions);
+
   if (data->explore_mode)
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));

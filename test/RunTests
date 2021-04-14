@@ -1645,9 +1645,8 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/hash_seed_test.stderr
 
 # Test 168: test cb with dm
-# this test defaults to cb_force_legacy bc it uses dm
 {VW} -d train-sets/rcv1_raw_cb_small.vw -t -i cb_dm.reg
-    train-sets/ref/rcv1_raw_cb_dm_test_legacy.stderr
+    train-sets/ref/rcv1_raw_cb_dm_test.stderr
 
 # Test 169: test cbify large
 {VW} -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05

@@ -129,7 +129,7 @@ cbify_adf_data::~cbify_adf_data()
 
 void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
 {
-  const uint64_t ss = increment * weights.stride_shift();
+  const uint64_t ss = weights.stride_shift();
   const uint64_t mask = weights.mask();
 
   for (size_t a = 0; a < num_actions; ++a)
@@ -148,8 +148,8 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
       for (feature_index& idx : fs.indicies)
       {
         auto rawidx = idx >> ss;
-        rawidx -= rawidx % num_actions;
-        rawidx += a;
+        rawidx -= rawidx % (num_actions * increment);
+        rawidx += a * increment;
         rawidx <<= ss;
         idx = rawidx & mask;
       }
