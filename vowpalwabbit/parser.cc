@@ -131,11 +131,14 @@ void set_string_reader(vw& all)
   all.print_by_ref = print_result_by_ref;
 }
 
-bool is_currently_json_reader(const vw& all) {
-  return all.example_parser->reader == &read_features_json<true> || all.example_parser->reader == &read_features_json<false>;
+bool is_currently_json_reader(const vw& all)
+{
+  return all.example_parser->reader == &read_features_json<true> ||
+      all.example_parser->reader == &read_features_json<false>;
 }
 
-bool is_currently_dsjson_reader(const vw& all) {
+bool is_currently_dsjson_reader(const vw& all)
+{
   return is_currently_json_reader(all) && all.example_parser->decision_service_json;
 }
 
