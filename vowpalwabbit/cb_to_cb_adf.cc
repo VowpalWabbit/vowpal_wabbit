@@ -90,7 +90,7 @@ void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
     Purpose: run before cb, cb_explore, cbify and cb_adf related reductions
     This will 'translate' cb (non adf) input commands into their cb_adf counterparts
     Except when:
-        - the model file loaded is from a version older or including 8.9.0
+        - the model file loaded is from a version older than and not including 8.11.0
         - user bypasses this translation step using '--cb_force_legacy'
 
     Related files: cb_algs.cc, cb_explore.cc, cbify.cc
