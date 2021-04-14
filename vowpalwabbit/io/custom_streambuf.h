@@ -29,7 +29,7 @@ public:
 
     const auto* begin = pbase();
     const auto* end = pptr();
-    assert(end > begin);
+    assert(end >= begin);
     _writer->write(begin, end - begin);
     _writer->flush();
 
