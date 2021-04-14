@@ -358,8 +358,6 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     std::stringstream ss;
     ss << data->cbcs.num_actions;
     options.insert("cb", ss.str());
-    // --cb_explore only works with legacy cb
-    options.insert("cb_force_legacy", "");
   }
 
   if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }

@@ -64,41 +64,6 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
   }
 }
 
-// float calc_loss(example& ec, CB::label& ld)
-// {
-//   float loss = 0.;
-
-//   if (!CB::is_test_label(ld))
-//   {
-//     auto optional_cost = CB::get_observed_cost_cb(ld);
-//     // cost observed, not default
-//     if (optional_cost.first == true)
-//     {
-//       for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-//       { loss += CB_ALGS::get_cost_estimate(optional_cost.second, ec.pred.a_s[i].action + 1) * ec.pred.a_s[i].score; }
-//     }
-//   }
-
-//   return loss;
-// }
-
-// void output_example(vw& all, bool explore_mode, example& ec, CB::label& ld)
-// {
-//   if (explore_mode)
-//   {
-//     float loss = calc_loss(ec, ld);
-//     CB_EXPLORE::generic_output_example(all, loss, ec, ld);
-//   }
-//   else
-//   {
-//     // call 3 arg vs
-
-//     float loss = CB_ALGS::get_cost_estimate(ld, ec.pred.multiclass);
-//     CB_ALGS::generic_output_example(all, loss, ec, ld);
-//   }
-// }
-
-// new one
 void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
 {
   if (c.explore_mode) c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
@@ -224,7 +189,6 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   }
   else
   {
-    // fish out cb_adf when it is not explore mode:
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_adf"));
 
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass,
