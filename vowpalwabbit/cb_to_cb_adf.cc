@@ -104,16 +104,16 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   uint32_t cbx_num_actions;
   uint32_t cbi_num_actions;
 
-  option_group_definition new_options("Contextual Bandit Options");
+  option_group_definition new_options("Contextual Bandit Options: cb -> cb_adf");
   new_options
       .add(make_option("cb_to_cbadf", num_actions).necessary().help("Maps cb_adf to cb. Disable with cb_force_legacy."))
       .add(make_option("cb", num_actions).keep().help("Maps cb_adf to cb. Disable with cb_force_legacy."))
       .add(make_option("cb_explore", cbx_num_actions)
                .keep()
-               .help("Translate cb explore to cbexploreadf. Disable with cb_force_legacy."))
+               .help("Translate cb explore to cb_explore_adf. Disable with cb_force_legacy."))
       .add(make_option("cbify", cbi_num_actions)
                .keep()
-               .help("Translate cbify to cbexploreadf. Disable with cb_force_legacy."))
+               .help("Translate cbify to cb_adf. Disable with cb_force_legacy."))
       .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {}"))
       .add(make_option("cb_force_legacy", force_legacy).keep().help("Default to old cb implementation"));
 
