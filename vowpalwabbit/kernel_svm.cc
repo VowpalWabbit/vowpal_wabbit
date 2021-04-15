@@ -321,7 +321,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   // params.all->opts_n_args.trace_message<<"Read num support "<<model->num_support<< endl;
 
   flat_example* fec = nullptr;
-  if (read) model->support_vec.resize(model->num_support);
+  if (read) { model->support_vec.reserve(model->num_support); }
 
   for (uint32_t i = 0; i < model->num_support; i++)
   {
@@ -339,12 +339,12 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
     }
   }
 
-  if (read) model->alpha.resize(model->num_support);
+  if (read) { model->alpha.resize_but_with_stl_behavior(model->num_support); }
   bin_text_read_write_fixed(
-      model_file, (char*)model->alpha.begin(), (uint32_t)model->num_support * sizeof(float), "", read, msg, text);
-  if (read) model->delta.resize(model->num_support);
+      model_file, (char*)model->alpha.data(), (uint32_t)model->num_support * sizeof(float), "", read, msg, text);
+  if (read) { model->delta.resize_but_with_stl_behavior(model->num_support); }
   bin_text_read_write_fixed(
-      model_file, (char*)model->delta.begin(), (uint32_t)model->num_support * sizeof(float), "", read, msg, text);
+      model_file, (char*)model->delta.data(), (uint32_t)model->num_support * sizeof(float), "", read, msg, text);
 }
 
 void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
@@ -459,8 +459,9 @@ size_t suboptimality(svm_model* model, double* subopt)
   for (size_t i = 0; i < model->num_support; i++)
   {
     float tmp = model->alpha[i] * model->support_vec[i]->ex.l.simple.label;
-
-    if ((tmp < model->support_vec[i]->ex.l.simple.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
+    const auto& simple_red_features =
+        model->support_vec[i]->ex._reduction_features.template get<simple_label_reduction_features>();
+    if ((tmp < simple_red_features.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
       subopt[i] = fabs(model->delta[i]);
     else
       subopt[i] = 0;
@@ -538,8 +539,9 @@ bool update(svm_params& params, size_t pos)
   float proj = alphaKi * ld.label;
   float ai = (params.lambda - proj) / inprods[pos];
 
-  if (ai > fec->ex.l.simple.weight)
-    ai = fec->ex.l.simple.weight;
+  const auto& simple_red_features = fec->ex._reduction_features.template get<simple_label_reduction_features>();
+  if (ai > simple_red_features.weight)
+    ai = simple_red_features.weight;
   else if (ai < 0)
     ai = 0;
 
@@ -627,12 +629,6 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
         params.pool[i]->init_svm_example(fec);
         train_pool[i] = true;
         params.pool_pos++;
-        // for(int j = 0;j < fec->feature_map_len;j++)
-        //   params.all->opts_n_args.trace_message<<fec->feature_map[j].weight_index<<":"<<fec->feature_map[j].x<<" ";
-        // params.all->opts_n_args.trace_message<< endl;
-        // params.pool[i]->in_use = true;
-        // params.current_t += ((label_data*) params.pool[i]->ld)->weight;
-        // params.pool[i]->example_t = params.current_t;
       }
       else
         break;
@@ -690,7 +686,8 @@ void train(svm_params& params)
         if (params._random_state->get_and_update_random() < queryp)
         {
           svm_example* fec = params.pool[i];
-          fec->ex.l.simple.weight *= 1 / queryp;
+          auto& simple_red_features = fec->ex._reduction_features.template get<simple_label_reduction_features>();
+          simple_red_features.weight *= 1 / queryp;
           train_pool[i] = 1;
         }
       }

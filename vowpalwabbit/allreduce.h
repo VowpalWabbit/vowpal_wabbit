@@ -25,9 +25,6 @@ namespace std
 template <typename T>
 class promise;
 
-class condition_variable;
-
-class mutex;
 }  // namespace std
 #else
 #  include <sys/socket.h>
@@ -46,6 +43,9 @@ typedef int socket_t;
 #include "vw_exception.h"
 #include "vwvis.h"
 #include <cassert>
+
+#include <mutex>
+#include <condition_variable>
 
 constexpr size_t ar_buf_size = 1 << 16;
 
@@ -96,8 +96,8 @@ struct Data
 class AllReduceSync
 {
 private:
-  std::mutex* m_mutex;
-  std::condition_variable* m_cv;
+  std::mutex m_mutex;
+  std::condition_variable m_cv;
 
   // total number of threads we wait for
   size_t m_total;

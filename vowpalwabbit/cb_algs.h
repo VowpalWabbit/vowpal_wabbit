@@ -23,8 +23,10 @@ template <bool is_learn>
 float get_cost_pred(
     VW::LEARNER::single_learner* scorer, const CB::cb_class& known_cost, example& ec, uint32_t index, uint32_t base)
 {
+  VW_DBG(ec) << "get_cost_pred:" << is_learn << std::endl;
+  CB::label ld = ec.l.cb;
+
   label_data simple_temp;
-  simple_temp.initial = 0.;
   if (index == known_cost.action)
     simple_temp.label = known_cost.cost;
   else

@@ -80,9 +80,6 @@ struct stagewise_poly
     // synth_ec.feature_space[tree_atomics].delete_v();
     free(sd);
     free(depthsbits);
-
-    // Intentionally do not clear the unions here.
-    synth_ec.delete_unions(nullptr, nullptr);
   }
 };
 
@@ -695,6 +692,7 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
 
   learner<stagewise_poly, example> &l = init_learner(
       poly, as_singleline(setup_base(options, all)), learn, predict, all.get_setupfn_name(stagewise_poly_setup));
+
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);

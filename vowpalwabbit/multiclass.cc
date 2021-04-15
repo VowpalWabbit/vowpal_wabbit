@@ -94,15 +94,11 @@ label_parser mc_label = {
     parse_label(p, sd, v->multi, words, red_features);
   },
   // cache_label
-  [](polylabel* v, io_buf& cache) { cache_label(v->multi, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->multi, cache); },
   // read_cached_label
-  [](shared_data* sd, polylabel* v, io_buf& cache) { return read_cached_label(sd, v->multi, cache); },
-  // delete_label
-  [](polylabel*) {},
-   // get_weight
-  [](polylabel* v) { return weight(v->multi); },
-  // copy_label
-  nullptr,
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->multi, cache); },
+  // get_weight
+  [](polylabel* v, const reduction_features&) { return weight(v->multi); },
   // test_label
   [](polylabel* v) { return test_label(v->multi); },
   label_type_t::multiclass

@@ -1984,7 +1984,7 @@ python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build
 {VW} -d train-sets/multiclass.fb -k --ect 10 \
      --flatbuffer
          train-sets/ref/multiclass_fb.stderr
-         
+
 # Test 243: Flatbuffer CS Test
 {VW} -k -d train-sets/cs.fb --invariant \
      --csoaa_ldf multiline --flatbuffer
@@ -2162,16 +2162,15 @@ train-sets/ref/slates_simple_w_interactions.stderr
 
 # Test 279: FTRL readable model test
 # TODO: investigate slow convergence
-{VW} -d train-sets/regression_simple.txt --noconstant --ftrl --invert_hash ftrl.readable 
+{VW} -d train-sets/regression_simple.txt --noconstant --ftrl --invert_hash ftrl.readable
     train-sets/ref/ftrl.readable
 
 # Test 280: pistol readable model test
-{VW} -d train-sets/regression_simple.txt --noconstant --pistol --invert_hash pistol.readable 
+{VW} -d train-sets/regression_simple.txt --noconstant --pistol --invert_hash pistol.readable
     train-sets/ref/pistol.readable
 
 # Test 281: coin readable model test
-# TODO: should be fixed after #2834 issue is resolved
-{VW} -d train-sets/regression_simple.txt --noconstant --coin --invert_hash coin.readable 
+{VW} -d train-sets/regression_simple.txt --noconstant --coin --invert_hash coin.readable
     train-sets/ref/coin.readable
 
 # Test 282: generate cb model
@@ -2181,5 +2180,47 @@ train-sets/ref/slates_simple_w_interactions.stderr
 # Test 283: load cb model into ccb learner
 {VW} -d train-sets/cb_as_ccb.json --dsjson --ccb_explore_adf --save_resume -i models/cb_model.bin
     train-sets/ref/cb_as_ccb.ccb.stderr
+
+# Test 284: memory_tree create model
+{VW} -d train-sets/aloi_short_train.dat --memory_tree 1204 --learn_at_leaf --max_number_of_labels 1000 --dream_at_update 0 \
+    --dream_repeats 20 --online --leaf_example_multiplier 10 -f cmt.model
+    train-sets/ref/cmt_train_model.stderr
+
+# Test 285: memory_tree load model
+{VW} -d test-sets/aloi_short_test.dat -i cmt.model
+    train-sets/ref/cmt_test_model.stderr
+
+# Test 286: cb file with no extra newline at the end
+{VW} --cb_explore_adf --epsilon 0.1 -d train-sets/cb_test_nonewline.ldf --noconstant -p cbe_adf_nonewline.predict
+    train-sets/ref/cbe_adf_nonewline.stderr
+    pred-sets/ref/cbe_adf_nonewline.predict
+
+# Test 287: ccb file with no extra newline at the end
+{VW} --ccb_explore_adf  -d train-sets/ccb_test_nonewline.dat -p ccb_test_nonewline.predict
+    train-sets/ref/ccb_test_nonewline.stderr
+    train-sets/ref/ccb_test_nonewline.predict
+
+# Test 288: slates file with no extra newline at the end
+{VW} --slates -d train-sets/slates_simple_nonewline.txt -p slates_simple_nonewline.predict
+    train-sets/ref/slates_simple_nonewline.stderr
+    pred-sets/ref/slates_simple_nonewline.predict
+
+# Test 289: cb json dataset with zero feature values
+{VW} --cb_explore_adf --dsjson -d train-sets/cb_features_w_zero_vals.dsjson -p cb_zero_feature_vals_dsjson.predict
+    train-sets/ref/cb_zero_feature_vals_dsjson.stderr
+    pred-sets/ref/cb_zero_feature_vals_dsjson.predict
+
+# Test 290: cb text dataset with zero feature values
+{VW} --cb_explore_adf -d train-sets/cb_features_w_zero_vals.dat -p cb_zero_feature_vals.predict
+    train-sets/ref/cb_zero_feature_vals.stderr
+    pred-sets/ref/cb_zero_feature_vals.predict
+
+# Test 291: ccb text dataset with zero feature values in actions/slot/shared feature
+{VW} --ccb_explore_adf -d train-sets/ccb_zero_value_features.dat
+    train-sets/ref/ccb_zero_value_features.stderr
+
+# Test 292: slate text dataset with zero feature values in actions/slot/shared feature
+{VW} --slates -d train-sets/slates_zero_value_features.txt
+    train-sets/ref/slates_zero_value_features.stderr
 
 # Do not delete this line or the empty line above it

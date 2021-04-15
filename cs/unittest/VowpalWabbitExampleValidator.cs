@@ -118,8 +118,9 @@ namespace cs_unittest
 
                     if (!strExample.IsNewLine)
                     {
-                        Assert.IsFalse(string.IsNullOrEmpty(nativeExampleWithString.VowpalWabbitString));
-                        Assert.IsFalse(string.IsNullOrEmpty(this.factorySerializer.SerializeToString(example, label)));
+                        Assert.IsFalse("\n".Equals(nativeExampleWithString.VowpalWabbitString));
+                        Assert.IsFalse(string.IsNullOrEmpty(strExample.ToString()) &&  string.IsNullOrEmpty(nativeExampleWithString.VowpalWabbitString));
+                        Assert.IsFalse(string.IsNullOrEmpty(strExample.ToString()) && string.IsNullOrEmpty(this.factorySerializer.SerializeToString(example, label)));
                     }
 
                     if (this.vw.Native.Settings.TypeInspector == JsonTypeInspector.Default)
@@ -176,7 +177,7 @@ namespace cs_unittest
 
                 examplesToCompare.AddRange(nativeExampleWithString.Examples);
 
-                examplesToCompare = examplesToCompare.Where(e => !e.IsNewLine).ToList();
+                examplesToCompare = examplesToCompare.Where(e => (!e.IsNewLine && !e.VowpalWabbitString.Equals(SharedLabel.Instance.ToString()))).ToList();
 
                 Assert.AreEqual(strExamples.Length, examplesToCompare.Count);
 

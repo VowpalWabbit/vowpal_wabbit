@@ -141,7 +141,8 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   if (search_span_bilou)
   {
     // TODO: is this the right logger?
-    *(sch.get_vw_pointer_unsafe().trace_message) << "switching to BILOU encoding for sequence span labeling" << std::endl;
+    *(sch.get_vw_pointer_unsafe().trace_message)
+        << "switching to BILOU encoding for sequence span labeling" << std::endl;
     D->encoding = BILOU;
     num_actions = num_actions * 2 - 1;
   }
@@ -417,7 +418,7 @@ void run(Search::search& sch, multi_ex& ec)
     {
       if (sch.predictNeedsExample())  // we can skip this work if `predict` won't actually use the example data
       {
-        VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
+        VW::copy_example_data(&data->ldf_examples[a], ec[i]);  // copy but leave label alone!
         // now, offset it appropriately for the action id
         my_update_example_indicies(sch, true, &data->ldf_examples[a], 28904713, 4832917 * (uint64_t)a);
       }

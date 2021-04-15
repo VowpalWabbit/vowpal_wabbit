@@ -625,7 +625,7 @@ void del_features_in_top_namespace(search_private& /* priv */, example& ec, size
     //(size_t)ec.indices.last()); }
   }
   features& fs = ec.feature_space[ns];
-  ec.indices.decr();
+  ec.indices.pop_back();
   ec.num_features -= fs.size();
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
   fs.clear();
@@ -893,12 +893,12 @@ inline void cs_costs_erase(bool isCB, polylabel& ld)
     ld.cs.costs.clear();
 }
 
-inline void cs_costs_resize(bool isCB, polylabel& ld, size_t new_size)
+inline void cs_costs_reserve(bool isCB, polylabel& ld, size_t new_size)
 {
   if (isCB)
-    ld.cb.costs.resize(new_size);
+    ld.cb.costs.reserve(new_size);
   else
-    ld.cs.costs.resize(new_size);
+    ld.cs.costs.reserve(new_size);
 }
 
 inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float value)
@@ -925,7 +925,7 @@ polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const acti
   if (priv.is_ldf)  // LDF version easier
   {
     if (num_costs > ec_cnt)
-      cs_costs_resize(isCB, ld, ec_cnt);
+      cs_costs_reserve(isCB, ld, ec_cnt);
     else if (num_costs < ec_cnt)
       for (action k = num_costs; k < ec_cnt; k++) cs_cost_push_back(isCB, ld, k, FLT_MAX);
   }
@@ -1648,11 +1648,8 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
         priv.learn_ec_ref = ecs;
       else
       {
-        void (*label_copy_fn)(polylabel*, polylabel*) = priv.is_ldf ? CS::cs_label.copy_label : nullptr;
-
         priv.learn_ec_copy.resize(ec_cnt);
-        for (size_t i = 0; i < ec_cnt; i++)
-          VW::copy_example_data(priv.all->audit, &priv.learn_ec_copy[i], ecs + i, label_copy_fn);
+        for (size_t i = 0; i < ec_cnt; i++) { VW::copy_example_data_with_label(&priv.learn_ec_copy[i], ecs + i); }
 
         priv.learn_ec_ref = priv.learn_ec_copy.data();
       }
@@ -2237,13 +2234,13 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
     cdbg << "gte" << endl;
     generate_training_example(priv, priv.learn_losses, 1., true);  // , min_loss);  // TODO: weight
     if (!priv.examples_dont_change)
-      for (size_t n = 0; n < priv.learn_ec_copy.size(); n++)
+    {
+      for (auto& ex : priv.learn_ec_copy)
       {
-        if (sch.priv->is_ldf)
-          CS::cs_label.delete_label(&priv.learn_ec_copy[n].l);
-        else
-          MC::mc_label.delete_label(&priv.learn_ec_copy[n].l);
+        // Reset the state of the polylabel
+        ex.l = polylabel{};
       }
+    }
     if (priv.cb_learner)
       priv.learn_losses.cb.costs.clear();
     else
@@ -2813,7 +2810,7 @@ base_learner* setup(options_i& options, vw& all)
   cdbg << "num_learners = " << priv.num_learners << endl;
 
   learner<search, multi_ex>& l = init_learner(sch, make_base(*base), do_actual_learning<true>,
-      do_actual_learning<false>, priv.total_number_of_policies * priv.num_learners, all.get_setupfn_name(setup));
+      do_actual_learning<false>, priv.total_number_of_policies * priv.num_learners, all.get_setupfn_name(setup), true);
 
   l.set_finish_example(finish_multiline_example);
   l.set_end_examples(end_examples);
@@ -3072,7 +3069,7 @@ void predictor::set_input_at(size_t posn, example& ex)
   if (posn >= ec_cnt)
     THROW("call to set_input_at with too large a position: posn (" << posn << ") >= ec_cnt(" << ec_cnt << ")");
 
-  VW::copy_example_data(false, ec + posn, &ex, CS::cs_label.copy_label);  // TODO: the false is "audit"
+  VW::copy_example_data_with_label(ec + posn, &ex);
 }
 
 predictor& predictor::erase_oracles()

@@ -31,13 +31,11 @@ struct expreplay
   }
 };
 
-template <bool is_learn, label_parser& lp>
-void predict_or_learn(expreplay<lp>& er, VW::LEARNER::single_learner& base, example& ec)
-{  // regardless of what happens, we must predict
-  base.predict(ec);
-  // if we're not learning, that's all that has to happen
-  if (!is_learn) return;
-  if (lp.get_weight(&ec.l) == 0.) return;
+template <label_parser &lp>
+void learn(expreplay<lp> &er, LEARNER::single_learner &base, example &ec)
+{
+  // Cannot learn if the example weight is 0.
+  if (lp.get_weight(&ec.l, ec._reduction_features) == 0.) return;
 
   for (size_t replay = 1; replay < er.replay_count; replay++)
   {
@@ -49,16 +47,18 @@ void predict_or_learn(expreplay<lp>& er, VW::LEARNER::single_learner& base, exam
   if (er.filled[n]) base.learn(er.buf[n]);
 
   er.filled[n] = true;
-  VW::copy_example_data(er.all->audit, &er.buf[n], &ec);  // don't copy the label
-  if (lp.copy_label)
-    lp.copy_label(&er.buf[n].l, &ec.l);
-  else
-    er.buf[n].l = ec.l;
+  VW::copy_example_data_with_label(&er.buf[n], &ec);
 }
 
-template <label_parser& lp>
-void multipredict(expreplay<lp>&, VW::LEARNER::single_learner& base, example& ec, size_t count, size_t step,
-    polyprediction* pred, bool finalize_predictions)
+template <label_parser &lp>
+void predict(expreplay<lp> &, LEARNER::single_learner &base, example &ec)
+{
+  base.predict(ec);
+}
+
+template <label_parser &lp>
+void multipredict(expreplay<lp> &, LEARNER::single_learner &base, example &ec, size_t count, size_t step,
+    polyprediction *pred, bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
 }
@@ -113,8 +113,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
               << std::endl;
 
   er->base = VW::LEARNER::as_singleline(setup_base(options, all));
-  VW::LEARNER::learner<expreplay<lp>, example>* l =
-      &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>, replay_string);
+  VW::LEARNER::learner<expreplay<lp>, example> *l = &init_learner(er, er->base, learn<lp>, predict<lp>, replay_string);
   l->set_end_pass(end_pass<lp>);
 
   return make_base(*l);

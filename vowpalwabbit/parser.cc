@@ -174,7 +174,7 @@ void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
 
 void reset_source(vw& all, size_t numbits)
 {
-  io_buf* input = all.example_parser->input;
+  io_buf* input = all.example_parser->input.get();
   input->current = 0;
 
   // If in write cache mode then close all of the input files then open the written cache as the new input.
@@ -246,7 +246,7 @@ void finalize_source(parser*) {}
 
 void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
-  io_buf* output = all.example_parser->output;
+  io_buf* output = all.example_parser->output.get();
   if (output->num_files() != 0)
   {
     *(all.trace_message) << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
@@ -297,7 +297,8 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.example_parser->input, all.example_parser->input->get_input_files().back().get());
+      uint64_t c =
+          cache_numbits(all.example_parser->input.get(), all.example_parser->input->get_input_files().back().get());
       if (c < all.num_bits)
       {
         if (!quiet)
@@ -439,7 +440,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       // create children
       size_t num_children = all.num_children;
       v_array<int> children = v_init<int>();
-      children.resize(num_children);
+      children.resize_but_with_stl_behavior(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
         // fork() returns pid if parent, 0 if child
@@ -657,7 +658,7 @@ void setup_example(vw& all, example* ae)
 
   if (all.example_parser->write_cache)
   {
-    all.example_parser->lbl_parser.cache_label(&ae->l, *(all.example_parser->output));
+    all.example_parser->lbl_parser.cache_label(&ae->l, ae->_reduction_features, *(all.example_parser->output));
     cache_features(*(all.example_parser->output), ae, all.parse_mask);
   }
 
@@ -681,7 +682,7 @@ void setup_example(vw& all, example* ae)
           (all.example_parser->lbl_parser.label_type != label_type_t::ccb || CCB::ec_is_example_unset(*ae))))
     all.example_parser->in_pass_counter++;
 
-  ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l);
+  ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l, ae->_reduction_features);
 
   if (all.ignore_some)
   {
@@ -777,7 +778,8 @@ void add_constant_feature(vw& vw, example* ec)
 void add_label(example* ec, float label, float weight, float base)
 {
   ec->l.simple.label = label;
-  ec->l.simple.initial = base;
+  auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
+  simple_red_features.initial = base;
   ec->weight = weight;
 }
 
@@ -851,6 +853,7 @@ void empty_example(vw& /*all*/, example& ec)
   ec.tag.clear();
   ec.sorted = false;
   ec.end_pass = false;
+  ec.is_newline = false;
   ec._reduction_features.clear();
 }
 
@@ -903,7 +906,11 @@ float get_label(example* ec) { return ec->l.simple.label; }
 
 float get_importance(example* ec) { return ec->weight; }
 
-float get_initial(example* ec) { return ec->l.simple.initial; }
+float get_initial(example* ec)
+{
+  const auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
+  return simple_red_features.initial;
+}
 
 float get_prediction(example* ec) { return ec->pred.scalar; }
 
@@ -962,16 +969,6 @@ void free_parser(vw& all)
 
   // There should be no examples in flight at this point.
   assert(all.example_parser->ready_parsed_examples.size() == 0);
-
-  std::vector<example*> drain_pool;
-  drain_pool.reserve(all.example_parser->example_pool.size());
-  while (!all.example_parser->example_pool.empty())
-  {
-    example* temp = all.example_parser->example_pool.get_object();
-    temp->delete_unions(all.example_parser->lbl_parser.delete_label, nullptr);
-    drain_pool.push_back(temp);
-  }
-  for (auto* example_ptr : drain_pool) { all.example_parser->example_pool.return_object(example_ptr); }
 }
 
 namespace VW

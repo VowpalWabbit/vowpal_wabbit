@@ -38,7 +38,11 @@ int read_features_string(vw* all, v_array<example*>& examples)
   char* line;
   size_t num_chars;
   size_t num_chars_initial = read_features(all, line, num_chars);
-  if (num_chars_initial < 1) return (int)num_chars_initial;
+  if (num_chars_initial < 1)
+  {
+    examples[0]->is_newline = true;
+    return (int)num_chars_initial;
+  }
 
   VW::string_view example(line, num_chars);
   substring_to_example(all, examples[0], example);
@@ -68,12 +72,11 @@ public:
   v_array<char> _spelling;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
-
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
 
   ~TC_parser() {}
 
-  //TODO: Currently this function is called by both warning and error conditions. We only log
+  // TODO: Currently this function is called by both warning and error conditions. We only log
   //      to warning here though.
   inline FORCE_INLINE void parserWarning(const char* message, VW::string_view var_msg, const char* message2)
   {
@@ -87,7 +90,8 @@ public:
     ss << message << var_msg << message2 << "in Example #" << this->_p->end_parsed_examples.load() << ": \"" << tmp_view
        << "\"";
 
-    if (_p->strict_parse) {
+    if (_p->strict_parse)
+    {
       // maintain newline behavior
       ss << std::endl;
       THROW_EX(VW::strict_parse_exception, ss.str());
@@ -462,11 +466,17 @@ public:
       this->_parse_mask = all.parse_mask;
       listNameSpace();
     }
+    else
+    {
+      ae->is_newline = true;
+    }
   }
 };
 
 void substring_to_example(vw* all, example* ae, VW::string_view example)
 {
+  if (example.empty()) { ae->is_newline = true; }
+
   all->example_parser->lbl_parser.default_label(&ae->l);
 
   size_t bar_idx = example.find('|');
