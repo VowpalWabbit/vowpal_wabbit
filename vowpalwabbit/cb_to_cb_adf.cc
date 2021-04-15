@@ -19,7 +19,6 @@ struct cb_to_cb_adf
   parameters* weights;
   cbify_adf_data adf_data;
   bool explore_mode;
-  bool learn_returns_prediction;
   multi_learner* adf_learner;
 };
 
@@ -52,7 +51,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
     if (ld != nullptr) *ld = saved_ld;
   });
 
-  if (!data.learn_returns_prediction || !is_learn) { base.predict(data.adf_data.ecs); }
+  if (!base.learn_returns_prediction || !is_learn) { base.predict(data.adf_data.ecs); }
 
   if (is_learn) base.learn(data.adf_data.ecs);
 
@@ -178,7 +177,6 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   learner<cb_to_cb_adf, example>* l;
 
-  data->learn_returns_prediction = base->learn_returns_prediction;
   data->adf_data.init_adf_data(num_actions, base->increment, all.interactions);
 
   if (data->explore_mode)
