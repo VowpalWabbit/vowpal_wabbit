@@ -53,7 +53,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 
   if (!base.learn_returns_prediction || !is_learn) { base.predict(data.adf_data.ecs); }
 
-  if (is_learn) base.learn(data.adf_data.ecs);
+  if (is_learn) { base.learn(data.adf_data.ecs); }
 
   if (data.explore_mode) { ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s); }
   else
