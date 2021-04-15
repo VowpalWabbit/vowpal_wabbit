@@ -39,6 +39,9 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: benchmark-module
+      - name: List
+        shell: bash
+        run: ls
       - name: Restore benchmark related script(s)
         shell: bash
         run: cp test/benchmarks/*benchmarks.sh ./.scripts/linux/
