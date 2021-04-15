@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
         with:
-          ref: master
+          ref: stash_benchmark_scripts
       - name: Store benchmark related script(s)
         shell: bash
         run: cp ./.scripts/linux/*benchmarks.sh test/benchmarks/
