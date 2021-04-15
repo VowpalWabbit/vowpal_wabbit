@@ -42,7 +42,7 @@ jobs:
           path: test/benchmarks/
       - name: List
         shell: bash
-        run: ls tests/benchmarks
+        run: ls test/benchmarks
       - name: Restore benchmark related script(s)
         shell: bash
         run: cp test/benchmarks/*benchmarks.sh ./.scripts/linux/
