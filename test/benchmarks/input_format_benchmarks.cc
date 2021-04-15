@@ -14,52 +14,7 @@
 #include "parser.h"
 #include "io/io_adapter.h"
 #include "vw.h"
-
-auto get_x_numerical_fts = [](int feature_size) {
-  std::stringstream ss;
-  ss << "1:1:0.5 |";
-  for (size_t i = 0; i < feature_size; i++) { ss << " " << std::to_string(i) + ":4.36352"; }
-  std::string s = ss.str();
-  return s;
-};
-
-auto get_x_string_fts = [](int feature_size) {
-  std::stringstream ss;
-  ss << "1:1:0.5 | ";
-  for (size_t i = 0; i < feature_size; i++) { ss << "bigfeaturename" + std::to_string(i) + ":10 "; }
-  std::string s = ss.str();
-  return s;
-};
-
-auto get_x_string_fts_no_label = [](int feature_size, size_t action_index = 0) {
-  std::stringstream ss;
-  ss << " | ";
-  for (size_t j = 0; j < feature_size; j++) { ss << std::to_string(action_index) + "_" + std::to_string(j) << +" "; }
-  ss << std::endl;
-
-  return ss.str();
-};
-
-auto get_x_string_fts_multi_ex = [](int feature_size, size_t actions, bool shared, bool label, size_t start_index = 0) {
-  size_t action_start = 0;
-  std::stringstream ss;
-  if (shared) { ss << "shared | s_1 s_2 s_3 s_4" << std::endl; }
-  if (label)
-  {
-    ss << "0:1.0:0.5 | ";
-    for (size_t j = 0; j < feature_size; j++) { ss << "0_" + std::to_string(j) << +" "; }
-    ss << std::endl;
-    action_start++;
-  }
-  for (size_t i = action_start; i < actions; i++)
-  {
-    ss << " | ";
-    for (size_t j = start_index; j < start_index + feature_size; j++)
-    { ss << std::to_string(i) + "_" + std::to_string(j) << +" "; }
-    ss << std::endl;
-  }
-  return ss.str();
-};
+#include "benchmarks_common.h"
 
 template <class... ExtraArgs>
 static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
@@ -135,8 +90,7 @@ static void bench_cache_io_buf_collections(benchmark::State& state, ExtraArgs&&.
 
   auto buffer = get_cache_buffer(example_string);
   auto vw = VW::initialize("--cb 2 --quiet");
-  io_buf reader_view_of_buffer;
-  vw->example_parser->input = &reader_view_of_buffer;
+  vw->example_parser->input = VW::make_unique<io_buf>();
 
   auto examples = v_init<example*>();
   examples.push_back(&VW::get_unused_example(vw));
@@ -144,7 +98,7 @@ static void bench_cache_io_buf_collections(benchmark::State& state, ExtraArgs&&.
   for (auto _ : state)
   {
     for (size_t i = 0; i < examples_size; i++)
-    { reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size())); }
+    { vw->example_parser->input->add_file(VW::io::create_buffer_view(buffer->data(), buffer->size())); }
     while (read_cached_features(vw, examples)) { VW::empty_example(*vw, *examples[0]); }
     benchmark::ClobberMemory();
   }
