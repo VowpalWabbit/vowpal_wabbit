@@ -42,10 +42,13 @@ jobs:
           path: test/benchmarks/
       - name: List
         shell: bash
-        run: ls
+        run: ls tests/benchmarks
       - name: Restore benchmark related script(s)
         shell: bash
         run: cp test/benchmarks/*benchmarks.sh ./.scripts/linux/
+      - name: List .scripts
+        shell: bash
+        run: ls ./.scripts/linux/
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmarks.sh
