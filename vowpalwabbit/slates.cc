@@ -234,7 +234,7 @@ void learn_or_predict(slates_data& data, VW::LEARNER::multi_learner& base, multi
 
 VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
 {
-  auto data = scoped_calloc_or_throw<slates_data>();
+  auto data = VW::make_unique<slates_data>();
   bool slates_option = false;
   option_group_definition new_options("Slates");
   new_options.add(make_option("slates", slates_option).keep().necessary().help("EXPERIMENTAL"));
@@ -249,10 +249,14 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
 
   auto* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = slates_label_parser;
-  auto& l = VW::LEARNER::init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1,
-      prediction_type_t::decision_probs, all.get_setupfn_name(slates_setup), base->learn_returns_prediction);
-  l.set_finish_example(finish_multiline_example);
-  return VW::LEARNER::make_base(l);
+  auto* l = VW::LEARNER::make_reduction_learner(
+      std::move(data), base, learn_or_predict<true>, learn_or_predict<false>, all.get_setupfn_name(slates_setup))
+                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .set_prediction_type(prediction_type_t::decision_probs)
+                .set_label_type(label_type_t::slates)
+                .set_finish_example(finish_multiline_example)
+                .build();
+  return VW::LEARNER::make_base(*l);
 }
 }  // namespace slates
 }  // namespace VW
