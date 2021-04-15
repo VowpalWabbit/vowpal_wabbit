@@ -22,6 +22,7 @@ Implementation by Miro Dudik.
 #include "vw_exception.h"
 #include <exception>
 #include <chrono>
+#include "shared_data.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

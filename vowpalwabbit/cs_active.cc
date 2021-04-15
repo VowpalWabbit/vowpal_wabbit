@@ -13,6 +13,8 @@
 #include "csoaa.h"
 #include "debug_log.h"
 #include "io/logger.h"
+#include "shared_data.h"
+
 //#define B_SEARCH_MAX_ITER 50
 #define B_SEARCH_MAX_ITER 20
 

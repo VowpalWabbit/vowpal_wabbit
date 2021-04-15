@@ -6,6 +6,7 @@
 #include "parse_args.h"
 #include "err_constants.h"
 #include "debug_log.h"
+#include "shared_data.h"
 
 #include <cfloat>
 // Aliases

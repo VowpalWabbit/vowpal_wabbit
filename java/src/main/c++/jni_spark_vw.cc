@@ -7,6 +7,7 @@
 #include "simple_label_parser.h"
 #include <algorithm>
 #include <exception>
+#include "shared_data.h"
 
 jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex);
 

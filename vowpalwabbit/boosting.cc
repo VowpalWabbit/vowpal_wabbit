@@ -22,6 +22,7 @@
 #include "reductions.h"
 #include "vw.h"
 #include "rand48.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 
