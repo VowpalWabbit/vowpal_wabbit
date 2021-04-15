@@ -27,7 +27,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: benchmark-module
-          path: test/benchmarks/
+          path: test/benchmarks
 # checkout first ref
       - uses: actions/checkout@v1
         with:
