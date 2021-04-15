@@ -49,6 +49,9 @@ jobs:
       - name: Restore benchmark related script(s)
         shell: bash
         run: cp test/benchmarks/*benchmarks.sh ./.scripts/linux/
+      - name: Change permissions to restored script(s)
+        shell: bash
+        run: chmod +x ./.scripts/linux/*.sh
       - name: List .scripts
         shell: bash
         run: ls ./.scripts/linux/
@@ -98,6 +101,9 @@ jobs:
       - name: Restore benchmark related script(s)
         shell: bash
         run: cp test/benchmarks/*benchmarks.sh ./.scripts/linux/
+      - name: Change permissions to restored script(s)
+        shell: bash
+        run: chmod +x ./.scripts/linux/*.sh
       - name: Build ${{ github.event.inputs.compare_ref }}
         shell: bash
         run: ./.scripts/linux/build-with-standalone-benchmarks.sh
