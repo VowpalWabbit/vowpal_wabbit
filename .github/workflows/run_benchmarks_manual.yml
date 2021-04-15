@@ -77,7 +77,7 @@ jobs:
       - name: Install benchmark compare requirements
         shell: bash
         run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
-      - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ # generated or downloaded files
+      - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ test/benchmarks/ # generated or downloaded files
 # checkout second ref
       - uses: actions/checkout@v1
         with:
