@@ -20,6 +20,7 @@
 #include "gen_cs_example.h"  // required for GEN_CS::cb_to_cs_adf
 #include "reductions_fwd.h"
 #include "vw_math.h"
+#include "shared_data.h"
 
 namespace VW
 {

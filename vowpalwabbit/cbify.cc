@@ -14,6 +14,7 @@
 #include "debug_log.h"
 #include "cb_label_parser.h"
 #include "simple_label_parser.h"
+#include "shared_data.h"
 
 using namespace VW::LEARNER;
 using namespace exploration;

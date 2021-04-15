@@ -10,6 +10,7 @@
 #include "learner.h"
 #include "parse_args.h"
 #include "vw.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 

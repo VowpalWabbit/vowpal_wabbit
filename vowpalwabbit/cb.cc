@@ -12,6 +12,7 @@
 #include "example.h"
 #include "cb_label_parser.h"
 #include "vw_string_view.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 

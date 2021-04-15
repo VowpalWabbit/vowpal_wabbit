@@ -255,6 +255,7 @@
     <ClInclude Include="search_sequencetask.h" />
     <ClInclude Include="search.h" />
     <ClInclude Include="sender.h" />
+    <ClInclude Include="shared_data.h" />
     <ClInclude Include="shared_feature_merger.h" />
     <ClInclude Include="simple_label_parser.h" />
     <ClInclude Include="simple_label.h" />
@@ -402,6 +403,7 @@
     <ClCompile Include="search_sequencetask.cc" />
     <ClCompile Include="search.cc" />
     <ClCompile Include="sender.cc" />
+    <ClCompile Include="shared_data.cc" />
     <ClCompile Include="shared_feature_merger.cc" />
     <ClCompile Include="simple_label_parser.cc" />
     <ClCompile Include="simple_label.cc" />

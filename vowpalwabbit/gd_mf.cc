@@ -16,6 +16,7 @@
 #include "reductions.h"
 #include "vw_exception.h"
 #include "array_parameters.h"
+#include "shared_data.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

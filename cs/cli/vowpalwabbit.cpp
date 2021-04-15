@@ -14,6 +14,7 @@
 #include "lda_core.h"
 #include "parse_example.h"
 #include "parse_example_json.h"
+#include "shared_data.h"
 
 using namespace System;
 using namespace System::Collections::Generic;

@@ -1110,8 +1110,7 @@ void parse_example_tweaks(options_i& options, vw& all)
 
   if (options.was_supplied("named_labels"))
   {
-    all.sd->ldict = &calloc_or_throw<VW::named_labels>();
-    new (all.sd->ldict) VW::named_labels(named_labels);
+    all.sd->ldict = VW::make_unique<VW::named_labels>(named_labels);
     if (!all.logger.quiet) *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
   }
 

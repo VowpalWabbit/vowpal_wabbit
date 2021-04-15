@@ -10,6 +10,7 @@
 #include "vw.h"
 #include "active.h"
 #include "vw_exception.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 
