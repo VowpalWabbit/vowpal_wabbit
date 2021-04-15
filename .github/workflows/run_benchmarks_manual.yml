@@ -10,6 +10,10 @@ on:
         description: 'Git ref to benchmark against base'
         required: true
         default: 'master'
+      benchmarks_ref:
+        description: 'Git ref to checkout test/benchmarks module from'
+        required: true
+        default: 'master'
 
 jobs:
   Benchmarking:
@@ -19,13 +23,10 @@ jobs:
     steps:
       - uses: actions/checkout@v1
         with:
-          ref: stash_benchmark_scripts
+          ref: ${{ github.event.inputs.benchmarks_ref }}
       - name: Store benchmark related script(s)
         shell: bash
         run: cp ./.scripts/linux/*benchmarks.sh test/benchmarks/
-      - name: List stored scripts
-        shell: bash
-        run: ls test/benchmarks/
       - name: Upload benchmark module
         uses: actions/upload-artifact@v2
         with:
@@ -43,18 +44,12 @@ jobs:
         with:
           name: benchmark-module
           path: test/benchmarks/
-      - name: List
-        shell: bash
-        run: ls test/benchmarks
       - name: Restore benchmark related script(s)
         shell: bash
         run: cp test/benchmarks/*benchmarks.sh ./.scripts/linux/
       - name: Change permissions to restored script(s)
         shell: bash
         run: chmod +x ./.scripts/linux/*.sh
-      - name: List .scripts
-        shell: bash
-        run: ls ./.scripts/linux/
       - name: Install google benchmarks
         shell: bash
         run: ./.scripts/linux/install-benchmarks.sh
