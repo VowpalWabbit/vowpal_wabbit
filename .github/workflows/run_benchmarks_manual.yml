@@ -20,6 +20,9 @@ jobs:
       - uses: actions/checkout@v1
         with:
           ref: master
+      - name: Store benchmark related script(s)
+        shell: bash
+        run: cp ./.scripts/linux/*benchmarks.sh test/benchmarks/
       - name: Upload benchmark module
         uses: actions/upload-artifact@v2
         with:
@@ -30,7 +33,7 @@ jobs:
           ref: ${{ github.event.inputs.base_ref }}
       - name: Install google benchmarks
         shell: bash
-        run: ./.scripts/linux/install-benchmark.sh
+        run: ./.scripts/linux/install-benchmarks.sh
       - name: Remove existing benchmark module (in favour of master)
         shell: bash
         run: rm -rf test/benchmarks
@@ -38,6 +41,9 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: benchmark-module
+      - name: Restore benchmark related script(s)
+        shell: bash
+        run: cp test/benchmarks/*benchmarks.sh ./.scripts/linux/
       - name: Build ${{ github.event.inputs.base_ref }}
         shell: bash
         run: ./.scripts/linux/build-with-standalone-benchmarks.sh
@@ -76,6 +82,9 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: benchmark-module
+      - name: Restore benchmark related script(s)
+        shell: bash
+        run: cp test/benchmarks/*benchmarks.sh ./.scripts/linux/
       - name: Build ${{ github.event.inputs.compare_ref }}
         shell: bash
         run: ./.scripts/linux/build-with-standalone-benchmarks.sh
