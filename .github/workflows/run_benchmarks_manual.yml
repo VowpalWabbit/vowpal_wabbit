@@ -23,6 +23,9 @@ jobs:
       - name: Store benchmark related script(s)
         shell: bash
         run: cp ./.scripts/linux/*benchmarks.sh test/benchmarks/
+      - name: List stored scripts
+        shell: bash
+        run: ls test/benchmarks/
       - name: Upload benchmark module
         uses: actions/upload-artifact@v2
         with:
