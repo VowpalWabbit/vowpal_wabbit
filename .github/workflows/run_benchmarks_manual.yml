@@ -28,12 +28,10 @@ jobs:
         with:
           name: benchmark-module
           path: test/benchmarks/
+# checkout first ref
       - uses: actions/checkout@v1
         with:
           ref: ${{ github.event.inputs.base_ref }}
-      - name: Install google benchmarks
-        shell: bash
-        run: ./.scripts/linux/install-benchmarks.sh
       - name: Remove existing benchmark module (in favour of master)
         shell: bash
         run: rm -rf test/benchmarks
@@ -44,6 +42,9 @@ jobs:
       - name: Restore benchmark related script(s)
         shell: bash
         run: cp test/benchmarks/*benchmarks.sh ./.scripts/linux/
+      - name: Install google benchmarks
+        shell: bash
+        run: ./.scripts/linux/install-benchmarks.sh
       - name: Build ${{ github.event.inputs.base_ref }}
         shell: bash
         run: ./.scripts/linux/build-with-standalone-benchmarks.sh
@@ -64,6 +65,7 @@ jobs:
         shell: bash
         run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
       - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ # generated or downloaded files
+# checkout second ref
       - uses: actions/checkout@v1
         with:
           ref: ${{ github.event.inputs.compare_ref }}
