@@ -86,6 +86,7 @@ option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by defaul
 option(VW_INSTALL "Add install targets." ON)
 option(BUILD_TESTS "Build and enable tests." ON)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
+option(BUILD_ONLY_STANDALONE_BENCHMARKS "Build only the benchmarks that can run standalone (and do not use vw internals)" OFF)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
