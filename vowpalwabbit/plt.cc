@@ -14,6 +14,7 @@
 #include "vw.h"
 
 #include "io/logger.h"
+#include "shared_data.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

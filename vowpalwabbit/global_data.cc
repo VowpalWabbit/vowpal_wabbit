@@ -16,6 +16,7 @@
 #include "future_compat.h"
 #include "vw_allreduce.h"
 #include "named_labels.h"
+#include "shared_data.h"
 #ifdef BUILD_FLATBUFFERS
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif
@@ -257,14 +258,7 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 
 vw::vw() : options(nullptr, nullptr)
 {
-  sd = &calloc_or_throw<shared_data>();
-  sd->dump_interval = 1.;  // next update progress dump
-  sd->contraction = 1.;
-  sd->first_observed_label = FLT_MAX;
-  sd->is_more_than_two_labels_observed = false;
-  sd->max_label = 0;
-  sd->min_label = 0;
-
+  sd = new shared_data();
   // Default is stderr.
   trace_message = VW::make_unique<std::ostream>(std::cerr.rdbuf());
 
@@ -361,14 +355,6 @@ vw::vw() : options(nullptr, nullptr)
   // Set by the '--progress <arg>' option and affect sd->dump_interval
   progress_add = false;  // default is multiplicative progress dumps
   progress_arg = 2.0;    // next update progress dump multiplier
-
-  sd->is_more_than_two_labels_observed = false;
-  sd->first_observed_label = FLT_MAX;
-  sd->second_observed_label = FLT_MAX;
-
-  sd->report_multiclass_log_loss = false;
-  sd->multiclass_log_loss = 0;
-  sd->holdout_multiclass_log_loss = 0;
 }
 VW_WARNING_STATE_POP
 
@@ -388,15 +374,7 @@ vw::~vw()
   }
 
   const bool seeded = weights.seeded() > 0;
-  if (!seeded)
-  {
-    if (sd->ldict)
-    {
-      sd->ldict->~named_labels();
-      free(sd->ldict);
-    }
-    free(sd);
-  }
+  if (!seeded) { delete sd; }
 
   delete all_reduce;
 }

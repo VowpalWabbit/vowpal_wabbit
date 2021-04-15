@@ -187,6 +187,7 @@ set(vw_all_headers
   search_sequencetask.h
   search.h
   sender.h
+  shared_data.h
   shared_feature_merger.h
   simple_label_parser.h
   simple_label.h
@@ -330,6 +331,7 @@ set(vw_all_sources
   search_sequencetask.cc
   search.cc
   sender.cc
+  shared_data.cc
   shared_feature_merger.cc
   simple_label_parser.cc
   simple_label.cc

@@ -10,6 +10,7 @@
 #include "rand48.h"
 #include "float.h"
 #include "vw.h"
+#include "shared_data.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

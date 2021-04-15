@@ -6,6 +6,7 @@
 #include "interactions.h"
 #include "parse_args.h"
 #include "vw.h"
+#include "shared_data.h"
 
 using namespace VW::config;
 
