@@ -27,7 +27,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: benchmark-module
-          path: test/benchmarks
+          path: test/benchmarks/
 # checkout first ref
       - uses: actions/checkout@v1
         with:
@@ -39,6 +39,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: benchmark-module
+          path: test/benchmarks/
       - name: List
         shell: bash
         run: ls
@@ -87,6 +88,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: benchmark-module
+          path: test/benchmarks/
       - name: Restore benchmark related script(s)
         shell: bash
         run: cp test/benchmarks/*benchmarks.sh ./.scripts/linux/
