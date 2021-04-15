@@ -5,6 +5,7 @@
 #include <cfloat>
 #include "correctedMath.h"
 #include "gd.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 

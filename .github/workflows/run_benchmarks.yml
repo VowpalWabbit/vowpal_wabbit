@@ -3,6 +3,7 @@ on:
   pull_request:
     branches:
       - master
+      - 'releases/**'
 
 jobs:
   Benchmarking:
@@ -15,7 +16,7 @@ jobs:
           ref: master
       - name: Install google benchmarks
         shell: bash
-        run: ./.scripts/linux/install-benchmark.sh
+        run: ./.scripts/linux/install-benchmarks.sh
       - name: Build master
         shell: bash
         run: ./.scripts/linux/build-with-benchmarks.sh

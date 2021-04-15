@@ -8,6 +8,7 @@
 #include "example.h"
 #include "vw_string_view_fmt.h"
 #include "parse_primitives.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 // needed for printing ranges of objects (eg: all elements of a vector)

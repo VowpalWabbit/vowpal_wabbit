@@ -131,6 +131,17 @@ void set_string_reader(vw& all)
   all.print_by_ref = print_result_by_ref;
 }
 
+bool is_currently_json_reader(const vw& all)
+{
+  return all.example_parser->reader == &read_features_json<true> ||
+      all.example_parser->reader == &read_features_json<false>;
+}
+
+bool is_currently_dsjson_reader(const vw& all)
+{
+  return is_currently_json_reader(all) && all.example_parser->decision_service_json;
+}
+
 void set_json_reader(vw& all, bool dsjson = false)
 {
   // TODO: change to class with virtual method
@@ -229,7 +240,7 @@ void reset_source(vw& all, size_t numbits)
       all.final_prediction_sink.push_back(socket->get_writer());
       all.example_parser->input->add_file(socket->get_reader());
 
-      set_daemon_reader(all);
+      set_daemon_reader(all, is_currently_json_reader(all), is_currently_dsjson_reader(all));
     }
     else
     {
