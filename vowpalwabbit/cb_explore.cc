@@ -15,6 +15,7 @@
 #include "version.h"
 #include "cb_label_parser.h"
 #include <cfloat>
+#include "shared_data.h"
 
 #include <memory>
 
