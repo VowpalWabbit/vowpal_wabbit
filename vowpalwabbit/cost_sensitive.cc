@@ -10,6 +10,7 @@
 #include "vw_string_view.h"
 #include "example.h"
 #include "parse_primitives.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 
@@ -42,11 +43,7 @@ char* bufread_label(label& ld, char* c, io_buf& cache)
   ld.costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(wclass) * num;
-  if (cache.buf_read(c, (int)total) < total)
-  {
-    logger::log_error("error in demarshal of cost data");
-    return c;
-  }
+  if (cache.buf_read(c, (int)total) < total) { THROW("error in demarshal of cost data"); }
   for (size_t i = 0; i < num; i++)
   {
     wclass temp = *(wclass*)c;

@@ -8,6 +8,7 @@
 #include "reductions.h"
 #include "vw_exception.h"
 #include "vw.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 

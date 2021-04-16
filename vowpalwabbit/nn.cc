@@ -12,6 +12,7 @@
 #include "gd.h"
 #include "vw.h"
 #include "guard.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 

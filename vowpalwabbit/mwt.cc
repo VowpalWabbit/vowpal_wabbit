@@ -7,6 +7,7 @@
 #include "cb_algs.h"
 #include "io_buf.h"
 #include "cb.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 
