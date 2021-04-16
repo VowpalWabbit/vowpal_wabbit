@@ -1,4 +1,4 @@
-name: "Require semantic PR title"
+name: Require semantic PR title
 
 on:
   pull_request_target:
