@@ -2223,4 +2223,13 @@ train-sets/ref/slates_simple_w_interactions.stderr
 {VW} --slates -d train-sets/slates_zero_value_features.txt
     train-sets/ref/slates_zero_value_features.stderr
 
+# Test 293: cats predict room tempertature learn
+{VW} -d train-sets/cats_room_temp.json --cats 32 --bandwidth 3 --min_value 0 --max_value 100 -f models/cats_room_temp.model --coin --json --chain_hash --epsilon 0.5
+    train-sets/ref/cats_room_temp.stderr
+
+# Test 294: cats predict room tempertature learn
+{VW} -d train-sets/cats_room_temp.json -i models/cats_room_temp.model --coin --json --chain_hash -p cats_room_temp.predict
+    train-sets/ref/cats_room_temp_pred.stderr
+    pred-sets/ref/cats_room_temp.predict
+
 # Do not delete this line or the empty line above it
