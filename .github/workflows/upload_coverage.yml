@@ -1,4 +1,4 @@
-name: Upload code coverage
+name: Coverage
 on:
   push:
     branches:
@@ -9,7 +9,7 @@ on:
       - master
 
 jobs:
-  Coverage:
+  upload:
     container:
       image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest

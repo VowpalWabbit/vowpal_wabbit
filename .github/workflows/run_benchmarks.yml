@@ -6,7 +6,7 @@ on:
       - 'releases/**'
 
 jobs:
-  Benchmarking:
+  benchmark:
     container:
       image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest

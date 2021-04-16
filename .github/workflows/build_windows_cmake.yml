@@ -10,7 +10,7 @@ on:
       - master
 
 jobs:
-  job:
+  check:
     runs-on: windows-latest
     strategy:
       matrix:
