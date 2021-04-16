@@ -283,14 +283,14 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
 
           if (trained_action == local_action)
           {
-            cost_parent = std::min(cost_v, cost_w) * (1 + std::abs(ec.pred.scalar) / 2.f) +
-                std::max(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar) / 2.f);
+            cost_parent = std::min(cost_v, cost_w) * (1 + std::abs(ec.pred.scalar)) / 2.f +
+                std::max(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar)) / 2.f;
             VW_DBG(ec) << "tree_c: learn() ec.pred.scalar == local_action" << std::endl;
           }
           else
           {
-            cost_parent = std::max(cost_v, cost_w) * (1 + std::abs(ec.pred.scalar) / 2.f) +
-                std::min(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar) / 2.f);
+            cost_parent = std::max(cost_v, cost_w) * (1 + std::abs(ec.pred.scalar)) / 2.f +
+                std::min(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar)) / 2.f;
             VW_DBG(ec) << "tree_c: learn() ec.pred.scalar != local_action" << std::endl;
           }
         }
