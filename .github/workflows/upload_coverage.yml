@@ -1,4 +1,4 @@
-name: Upload Code Coverage
+name: Upload code coverage
 on:
   push:
     branches:

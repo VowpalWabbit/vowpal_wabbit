@@ -1,4 +1,4 @@
-name: VW Slim
+name: Linux / C++ - VW Slim
 on:
   push:
     branches:

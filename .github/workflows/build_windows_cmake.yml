@@ -1,4 +1,4 @@
-name: Build Windows CMake
+name: Windows / C++ - CMake only
 
 on:
   push:
@@ -11,7 +11,6 @@ on:
 
 jobs:
   job:
-    name: windows-cmake-build
     runs-on: windows-latest
     strategy:
       matrix:

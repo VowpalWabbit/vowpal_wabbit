@@ -1,4 +1,4 @@
-name: Build MacOS Python Wheels
+name: MacOS / Python
 
 on:
   push:
