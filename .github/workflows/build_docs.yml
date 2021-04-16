@@ -12,7 +12,7 @@ on:
       - created
 
 jobs:
-  c++:
+  cpp:
     container:
       image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
@@ -57,7 +57,7 @@ jobs:
           name: python_docs
           path: python/docs/build/
   upload:
-    needs: [c++, python]
+    needs: [cpp, python]
     runs-on: ubuntu-latest
     # The upload step should only be run on the main repository.
     if: github.repository == 'VowpalWabbit/vowpal_wabbit'
