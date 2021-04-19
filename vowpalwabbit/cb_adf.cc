@@ -107,7 +107,7 @@ public:
   bool learn_returns_prediction()
   {
     return ((_gen_cs.cb_type == CB_TYPE_MTR) && !_no_predict) || _gen_cs.cb_type == CB_TYPE_IPS ||
-        _gen_cs.cb_type == CB_TYPE_DR || CB_TYPE_DM;
+        _gen_cs.cb_type == CB_TYPE_DR || _gen_cs.cb_type == CB_TYPE_DM;
   }
 
 private:
