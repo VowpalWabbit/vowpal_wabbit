@@ -254,7 +254,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
           (query && lqd.is_range_overlapped && lqd.is_range_large));
       inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl->class_index, lqd.cl->x, prediction, score,
           lqd.cl->partial_prediction, query_label, lqd.query_needed);
-      if (lqd.query_needed) ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
+      if (lqd.query_needed) { ec.pred.active_multiclass.more_info_required_for_classes.push_back(lqd.cl->class_index); }
       if (cs_a.print_debug_stuff)
         logger::errlog_info("label={0} x={1} prediction={2} score={3} pp={4} ql={5} qn={6} ro={7} rl={8} "
                             "[{9}, {10}] vs delta={11} n_overlapped={12} is_baseline={13}",
@@ -281,11 +281,15 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     { inner_loop<false, is_simulation>(cs_a, base, ec, i, FLT_MAX, prediction, score, temp, temp2, temp3); }
   }
 
-  ec.pred.multiclass = prediction;
+  ec.pred.active_multiclass.predicted_class = prediction;
   ec.l.cs = ld;
 }
 
-void finish_example(vw& all, cs_active& cs_a, example& ec) { CSOAA::finish_example(all, *(CSOAA::csoaa*)&cs_a, ec); }
+void finish_example(vw& all, cs_active&, example& ec)
+{
+  COST_SENSITIVE::output_example(all, ec, ec.l.cs, ec.pred.active_multiclass.predicted_class);
+  VW::finish_example(all, ec);
+}
 
 base_learner* cs_active_setup(options_i& options, vw& all)
 {
@@ -349,10 +353,10 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels,
+            predict_or_learn<false, true>, data->num_classes, prediction_type_t::active_multiclass,
             all.get_setupfn_name(cs_active_setup) + "-sim", true)
       : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
-            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels,
+            predict_or_learn<false, false>, data->num_classes, prediction_type_t::active_multiclass,
             all.get_setupfn_name(cs_active_setup), true);
 
   l.set_finish_example(finish_example);
