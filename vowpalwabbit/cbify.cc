@@ -147,7 +147,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     {
       for (feature_index& idx : fs.indicies)
       {
-        auto rawidx = idx; 
+        auto rawidx = idx;
         rawidx -= rawidx % (num_actions * increment);
         rawidx += a * increment;
         idx = rawidx & mask;
