@@ -55,17 +55,12 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 
   if (is_learn) { base.learn(data.adf_data.ecs); }
 
-  if (data.explore_mode) { ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s); }
-  else
-  {
-    // cb_adf => first action is a greedy action TODO: is this a contract?
-    ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
-  }
+  ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s);
 }
 
 void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
 {
-  if (c.explore_mode) { c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s); }
+  c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
 
   auto ld = get_label(c, ec);
   if (ld != nullptr)
