@@ -4,6 +4,7 @@
 #pragma once
 #include "label_parser.h"
 #include <vector>
+#include <cstdint>
 
 struct example;
 struct vw;
@@ -30,6 +31,7 @@ struct label
 };
 
 void output_example(vw& all, example& ec);
+void output_example(vw& all, example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction);
 void finish_example(vw& all, example& ec);
 template <class T>
 void finish_example(vw& all, T&, example& ec)

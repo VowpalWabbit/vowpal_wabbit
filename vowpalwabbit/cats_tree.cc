@@ -280,16 +280,17 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
           VW_DBG(ec) << "tree_c: learn() after binary predict:" << scalar_pred_to_string(ec)
                      << ", local_action = " << (local_action) << std::endl;
           float trained_action = (ec.pred.scalar < 0) ? LEFT : RIGHT;
+
           if (trained_action == local_action)
           {
-            cost_parent = (std::min)(cost_v, cost_w) * std::abs(ec.pred.scalar) +
-                (std::max)(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar));
+            cost_parent = std::min(cost_v, cost_w) * (1 + std::abs(ec.pred.scalar)) / 2.f +
+                std::max(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar)) / 2.f;
             VW_DBG(ec) << "tree_c: learn() ec.pred.scalar == local_action" << std::endl;
           }
           else
           {
-            cost_parent = (std::max)(cost_v, cost_w) * std::abs(ec.pred.scalar) +
-                (std::min)(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar));
+            cost_parent = std::max(cost_v, cost_w) * (1 + std::abs(ec.pred.scalar)) / 2.f +
+                std::min(cost_v, cost_w) * (1 - std::abs(ec.pred.scalar)) / 2.f;
             VW_DBG(ec) << "tree_c: learn() ec.pred.scalar != local_action" << std::endl;
           }
         }

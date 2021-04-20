@@ -24,11 +24,7 @@ char* bufread_label(labels& ld, char* c, io_buf& cache)
   ld.label_v.clear();
   c += sizeof(size_t);
   size_t total = sizeof(uint32_t) * num;
-  if (cache.buf_read(c, (int)total) < total)
-  {
-    logger::log_error("error in demarshal of cost data");
-    return c;
-  }
+  if (cache.buf_read(c, (int)total) < total) { THROW("error in demarshal of cost data"); }
   for (size_t i = 0; i < num; i++)
   {
     uint32_t temp = *(uint32_t*)c;
