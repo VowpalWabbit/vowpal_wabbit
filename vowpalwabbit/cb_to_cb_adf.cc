@@ -22,33 +22,27 @@ struct cb_to_cb_adf
   multi_learner* adf_learner;
 };
 
-CB::label* get_label(cb_to_cb_adf& data, example& ec)
-{
-  if (!CB::is_test_label(ec.l.cb))
-  {
-    uint32_t chosen_action = ec.l.cb.costs[0].action - 1;
-    if (chosen_action < data.adf_data.num_actions) { return &data.adf_data.ecs[chosen_action]->l.cb; }
-  }
-
-  return nullptr;
-}
-
 template <bool is_learn>
 void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 {
   data.adf_data.copy_example_to_adf(*data.weights, ec);
 
-  auto ld = get_label(data, ec);
-  CB::label saved_ld;
+  CB::label ld;
+  uint32_t chosen_action = ec.l.cb.costs[0].action - 1;
+  bool is_test_label = CB::is_test_label(ec.l.cb);
 
-  if (ld != nullptr)
+  if (!is_test_label && chosen_action < data.adf_data.num_actions)
   {
-    saved_ld = *ld;
-    *ld = ec.l.cb;
+    ld = std::move(data.adf_data.ecs[chosen_action]->l.cb);
+    data.adf_data.ecs[chosen_action]->l.cb = std::move(ec.l.cb);
   }
 
-  auto restore_guard = VW::scope_exit([&ld, &saved_ld] {
-    if (ld != nullptr) *ld = saved_ld;
+  auto restore_guard = VW::scope_exit([&ld, &data, &ec, &chosen_action, &is_test_label] {
+    if (!is_test_label && chosen_action < data.adf_data.num_actions)
+    {
+      ec.l.cb = std::move(data.adf_data.ecs[chosen_action]->l.cb);
+      data.adf_data.ecs[chosen_action]->l.cb = std::move(ld);
+    }
   });
 
   if (!base.learn_returns_prediction || !is_learn) { base.predict(data.adf_data.ecs); }
