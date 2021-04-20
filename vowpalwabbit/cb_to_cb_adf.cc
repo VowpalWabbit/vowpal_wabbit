@@ -28,8 +28,11 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
   data.adf_data.copy_example_to_adf(*data.weights, ec);
 
   CB::label ld;
-  uint32_t chosen_action = ec.l.cb.costs[0].action - 1;
   bool is_test_label = CB::is_test_label(ec.l.cb);
+
+  uint32_t chosen_action;
+  if (!is_test_label)
+    chosen_action = ec.l.cb.costs[0].action - 1;
 
   if (!is_test_label && chosen_action < data.adf_data.num_actions)
   {
