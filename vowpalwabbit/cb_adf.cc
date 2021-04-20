@@ -110,6 +110,14 @@ public:
         _gen_cs.cb_type == CB_TYPE_DR || _gen_cs.cb_type == CB_TYPE_DM;
   }
 
+  std::string known_cost_str()
+  {
+    std::stringstream label_string;
+    label_string.precision(2);
+    label_string << _gen_cs.known_cost.action << ":" << _gen_cs.known_cost.cost << ":" << _gen_cs.known_cost.probability;
+    return label_string.str();
+  }
+
 private:
   void learn_IPS(multi_learner& base, multi_ex& examples);
   void learn_DR(multi_learner& base, multi_ex& examples);
@@ -383,7 +391,10 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, !labeled_example, ec, ec_seq, true);
+  if (labeled_example)
+    CB::print_update(all, !labeled_example, ec, ec_seq, true, c.known_cost_str());
+  else
+    CB::print_update(all, !labeled_example, ec, ec_seq, true, "");
 }
 
 void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
@@ -408,7 +419,10 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, !labeled_example, ec, ec_seq, true);
+  if (labeled_example)
+    CB::print_update(all, !labeled_example, ec, ec_seq, true, c.known_cost_str());
+  else
+    CB::print_update(all, !labeled_example, ec, ec_seq, true, "");
 }
 
 void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)

@@ -101,10 +101,21 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   cb_to_cs& c = data.cbcs;
   if (!CB::is_test_label(ld)) loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
-  generic_output_example(all, loss, ec, ld);
+  bool is_ld_test_label = CB::is_test_label(ld);
+  if (!is_ld_test_label)
+  {
+    std::stringstream label_string;
+    label_string.precision(2);
+    label_string << c.known_cost.action << ":" << c.known_cost.cost << ":" << c.known_cost.probability;
+    generic_output_example(all, loss, ec, ld, label_string.str(), is_ld_test_label);
+  }
+  else
+  {
+    generic_output_example(all, loss, ec, ld, "", is_ld_test_label);
+  }
 }
 
-void generic_output_example(vw& all, float loss, example& ec, const CB::label& ld)
+void generic_output_example(vw& all, float loss, example& ec, const CB::label& ld, std::string label_string, bool is_ld_test_label)
 {
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.num_features);
 
@@ -122,7 +133,7 @@ void generic_output_example(vw& all, float loss, example& ec, const CB::label& l
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, CB::is_test_label(ld), ec, nullptr, false);
+  print_update(all, is_ld_test_label, ec, nullptr, false, label_string);
 }
 
 void finish_example(vw& all, cb& c, example& ec)

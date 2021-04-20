@@ -98,7 +98,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, !labeled_example, ec, ec_seq, true);
+  CB::print_update(all, !labeled_example, ec, ec_seq, true, "known");
 }
 
 void output_example_seq(vw& all, explore_eval& data, multi_ex& ec_seq)

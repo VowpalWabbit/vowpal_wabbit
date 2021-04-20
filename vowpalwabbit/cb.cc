@@ -112,7 +112,7 @@ bool ec_is_example_header(example const& ec)  // example headers just have "shar
   return false;
 }
 
-void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores)
+void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, std::string known_label)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
@@ -130,7 +130,7 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
     if (is_test)
       label_buf = " unknown";
     else
-      label_buf = " known";
+      label_buf = known_label;
 
     if (action_scores)
     {
