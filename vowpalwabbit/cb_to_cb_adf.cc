@@ -56,6 +56,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
   if (is_learn) { base.learn(data.adf_data.ecs); }
 
   ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s);
+  if (!data.explore_mode) ec.pred.multiclass = ec.pred.a_s[0].action + 1;
 }
 
 void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
