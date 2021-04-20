@@ -63,20 +63,7 @@ void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
 {
   c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
 
-  auto ld = get_label(c, ec);
-  if (ld != nullptr)
-  {
-    auto saved_ld = *ld;
-    *ld = ec.l.cb;
-
-    auto restore_guard = VW::scope_exit([&ld, &saved_ld] { *ld = saved_ld; });
-
-    c.adf_learner->print_example(all, c.adf_data.ecs);
-  }
-  else
-  {
-    c.adf_learner->print_example(all, c.adf_data.ecs);
-  }
+  c.adf_learner->print_example(all, c.adf_data.ecs);
 
   VW::finish_example(all, ec);
 }
