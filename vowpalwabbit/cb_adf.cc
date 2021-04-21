@@ -110,7 +110,7 @@ public:
         _gen_cs.cb_type == CB_TYPE_DR || _gen_cs.cb_type == CB_TYPE_DM;
   }
 
-  std::string known_cost_str(bool quiet) { return CB_ALGS::known_cost_to_str(quiet, _gen_cs.known_cost); }
+  CB::cb_class* known_cost() { return &_gen_cs.known_cost; }
 
 private:
   void learn_IPS(multi_learner& base, multi_ex& examples);
@@ -386,9 +386,9 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   }
 
   if (labeled_example)
-    CB::print_update(all, !labeled_example, ec, ec_seq, true, c.known_cost_str(all.logger.quiet));
+    CB::print_update(all, !labeled_example, ec, ec_seq, true, c.known_cost());
   else
-    CB::print_update(all, !labeled_example, ec, ec_seq, true, "known");
+    CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
 void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
@@ -414,9 +414,9 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   }
 
   if (labeled_example)
-    CB::print_update(all, !labeled_example, ec, ec_seq, true, c.known_cost_str(all.logger.quiet));
+    CB::print_update(all, !labeled_example, ec, ec_seq, true, c.known_cost());
   else
-    CB::print_update(all, !labeled_example, ec, ec_seq, true, "known");
+    CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
 void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)

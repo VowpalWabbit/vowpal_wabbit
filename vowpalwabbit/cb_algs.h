@@ -85,9 +85,6 @@ inline bool example_is_newline_not_header(example const& ec)
   return (example_is_newline(ec) && !CB::ec_is_example_header(ec));
 }
 
-void generic_output_example(
-    vw& all, float loss, example& ec, const CB::label& ld, std::string label_string, bool is_ld_test_label);
-
-std::string known_cost_to_str(bool quiet, CB::cb_class& known_cost);
+void generic_output_example(vw& all, float loss, example& ec, const CB::label& ld, CB::cb_class* known_cost);
 
 }  // namespace CB_ALGS
