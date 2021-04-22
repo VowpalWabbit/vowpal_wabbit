@@ -80,6 +80,7 @@
 #include "OjaNewton.h"
 #include "audit_regressor.h"
 #include "marginal.h"
+#include "metrics.h"
 #include "explore_eval.h"
 #include "baseline.h"
 #include "classweight.h"
@@ -1270,7 +1271,8 @@ void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
       {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"},
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
-      {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"}};
+      {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"},
+      {VW::metrics::metrics_setup, "metrics"}};
 
   auto name_extractor = options_name_extractor();
   vw dummy_all;
@@ -1381,6 +1383,7 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   reductions.push_back(Search::setup);
   reductions.push_back(audit_regressor_setup);
+  reductions.push_back(VW::metrics::metrics_setup);
 
   register_reductions(all, reductions);
   all.l = setup_base(options, all);
