@@ -158,12 +158,12 @@ cli::array<float>^ VowpalWabbitTopicPredictionFactory::Create(vw* vw, example* e
   return values;
 }
 
-VowpalWabbitActiveMulticlass^ VowpalWabbitMultilabelPredictionFactory::Create(vw* vw, example* ex)
+VowpalWabbitActiveMulticlass^ VowpalWabbitActiveMulticlassPredictionFactory::Create(vw* vw, example* ex)
 {
   CheckExample(vw, ex, prediction_type_t::active_multiclass);
   auto struct_obj = gcnew VowpalWabbitActiveMulticlass();
   const auto length = ex->pred.active_multiclass.more_info_required_for_classes.size();
-  struct_obj->more_info_required_for_classes = gcnew cli::array<int>(length);
+  struct_obj->more_info_required_for_classes = gcnew cli::array<int>((int)length);
 
   if (length > 0)
   {

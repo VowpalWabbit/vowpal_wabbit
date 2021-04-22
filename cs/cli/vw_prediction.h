@@ -324,7 +324,7 @@ public:
   cli::array<int>^ more_info_required_for_classes;
 };
 
-public ref class VowpalWabbitActiveMulticlassPredictionFactory sealed : IVowpalWabbitPredictionFactory<VowpalWabbitActiveMulticlass>
+public ref class VowpalWabbitActiveMulticlassPredictionFactory sealed : IVowpalWabbitPredictionFactory<VowpalWabbitActiveMulticlass^>
 {
 public:
   /// <summary>
