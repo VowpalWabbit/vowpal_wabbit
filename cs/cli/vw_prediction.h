@@ -317,28 +317,30 @@ public:
   }
 };
 
-public ref struct VowpalWabbitActiveMulticlass
+public
+ref struct VowpalWabbitActiveMulticlass
 {
 public:
   int predicted_class;
-  cli::array<int>^ more_info_required_for_classes;
+  cli::array<int> ^ more_info_required_for_classes;
 };
 
-public ref class VowpalWabbitActiveMulticlassPredictionFactory sealed : IVowpalWabbitPredictionFactory<VowpalWabbitActiveMulticlass^>
+public
+ref class VowpalWabbitActiveMulticlassPredictionFactory sealed
+    : IVowpalWabbitPredictionFactory<VowpalWabbitActiveMulticlass ^>
 {
 public:
   /// <summary>
   /// Extracts prediction results from example.
   /// </summary>
-  virtual VowpalWabbitActiveMulticlass^ Create(vw* vw, example* ex) sealed;
+  virtual VowpalWabbitActiveMulticlass ^ Create(vw* vw, example* ex) sealed;
 
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
   property prediction_type_t PredictionType
-  { virtual prediction_type_t get() sealed
-    { return prediction_type_t::active_multiclass;
-    }
+  {
+    virtual prediction_type_t get() sealed { return prediction_type_t::active_multiclass; }
   }
 };
 
@@ -411,6 +413,7 @@ public:
   /// <summary>
   /// Use for active multiclass predictions
   /// </summary>
-  static initonly VowpalWabbitActiveMulticlassPredictionFactory^ ActiveMulticlass = gcnew VowpalWabbitActiveMulticlassPredictionFactory;
+  static initonly VowpalWabbitActiveMulticlassPredictionFactory ^ ActiveMulticlass =
+      gcnew VowpalWabbitActiveMulticlassPredictionFactory;
 };
 }
