@@ -158,6 +158,9 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   data->adf_data.init_adf_data(num_actions, base->increment, all.interactions);
 
+  // see csoaa.cc ~ line 894 / setup for csldf_setup
+  all.example_parser->emptylines_separate_examples = false;
+
   if (data->explore_mode)
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
