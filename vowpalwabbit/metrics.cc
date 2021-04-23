@@ -5,8 +5,8 @@
 #include "debug_log.h"
 #include "reductions.h"
 #include "learner.h"
-#include "rapidjson/writer.h"
 #include "rapidjson/filewritestream.h"
+#include <rapidjson/prettywriter.h>
 #include <cfloat>
 
 #include "io/logger.h"
@@ -81,15 +81,15 @@ void end_examples(metrics_data& data)
   // where/when to write file?
   FILE* fp;
   VW::file_open(&fp, data.out_file.c_str(), "wt");
-
   char writeBuffer[1024];
   FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
+  PrettyWriter<FileWriteStream> writer(os);
 
-  Writer<FileWriteStream> writer(os);
   writer.StartObject();
   writer.Key("NumberOfPredicts");
   writer.Int(data.predict_count);
   writer.EndObject();
+
   fclose(fp);
 }
 

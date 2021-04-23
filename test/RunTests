@@ -2238,6 +2238,4 @@ train-sets/ref/slates_simple_w_interactions.stderr
     pred-sets/ref/cbe_adf_dsjson.predict
     test-sets/ref/metrics.json
 
-
-
 # Do not delete this line or the empty line above it
