@@ -2232,4 +2232,10 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/cats_room_temp_pred.stderr
     pred-sets/ref/cats_room_temp.predict
 
+# Test 295: test extra_metrics
+{VW} -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT -P 1 -p cbe_adf_dsjson.predict --extra_metrics somefile
+    train-sets/ref/cbe_adf_dsjson_metrics.stderr
+    pred-sets/ref/cbe_adf_dsjson.predict
+
+
 # Do not delete this line or the empty line above it

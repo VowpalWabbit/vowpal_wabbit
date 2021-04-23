@@ -70,10 +70,10 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
 
 void end_examples(metrics_data& data)
 {
-  std::cout << "learn count: " << data.learn_count << std::endl;
-  std::cout << "predict count: " << data.predict_count << std::endl;
-  std::cout << "class one count: " << data.predicted_first_option << std::endl;
-  std::cout << "class not one count: " << data.predicted_not_first << std::endl;
+  std::cerr << "learn count: " << data.learn_count << std::endl;
+  std::cerr << "predict count: " << data.predict_count << std::endl;
+  std::cerr << "class one count: " << data.predicted_first_option << std::endl;
+  std::cerr << "class not one count: " << data.predicted_not_first << std::endl;
 }
 
 VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
