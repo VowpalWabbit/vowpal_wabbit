@@ -121,6 +121,18 @@ void cbify_adf_data::init_adf_data(
     CB::default_label(lab);
     ecs[a]->interactions = &interactions;
   }
+
+  // cache mask for copy routine
+  uint64_t total = num_actions * increment;
+  uint64_t power_2 = 0;
+
+  while (total > 0)
+  {
+    total = total >> 1;
+    power_2++;
+  }
+
+  this->custom_index_mask = (uint64_t(1) << power_2) - 1;
 }
 
 cbify_adf_data::~cbify_adf_data()
@@ -148,7 +160,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
       for (feature_index& idx : fs.indicies)
       {
         auto rawidx = idx;
-        rawidx -= rawidx % (num_actions * increment);
+        rawidx -= rawidx & custom_index_mask;
         rawidx += a * increment;
         idx = rawidx & mask;
       }

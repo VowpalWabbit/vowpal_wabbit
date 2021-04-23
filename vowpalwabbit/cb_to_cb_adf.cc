@@ -156,6 +156,8 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
 
   learner<cb_to_cb_adf, example>* l;
 
+  if (num_actions <= 0) THROW("cb num actions must be positive");
+
   data->adf_data.init_adf_data(num_actions, base->increment, all.interactions);
 
   // see csoaa.cc ~ line 894 / setup for csldf_setup
