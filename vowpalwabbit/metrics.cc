@@ -5,12 +5,15 @@
 #include "debug_log.h"
 #include "reductions.h"
 #include "learner.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/filewritestream.h"
 #include <cfloat>
 
 #include "io/logger.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;
+using namespace rapidjson;
 
 namespace logger = VW::io::logger;
 
@@ -74,6 +77,20 @@ void end_examples(metrics_data& data)
   std::cerr << "predict count: " << data.predict_count << std::endl;
   std::cerr << "class one count: " << data.predicted_first_option << std::endl;
   std::cerr << "class not one count: " << data.predicted_not_first << std::endl;
+
+  // where/when to write file?
+  FILE* fp;
+  VW::file_open(&fp, data.out_file.c_str(), "wt");
+
+  char writeBuffer[1024];
+  FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
+
+  Writer<FileWriteStream> writer(os);
+  writer.StartObject();
+  writer.Key("NumberOfPredicts");
+  writer.Int(data.predict_count);
+  writer.EndObject();
+  fclose(fp);
 }
 
 VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
