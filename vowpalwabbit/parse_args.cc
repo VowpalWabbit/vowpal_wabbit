@@ -2004,6 +2004,8 @@ void finish(vw& all, bool delete_all)
     finalize_regressor_exception_thrown = true;
   }
 
+  metrics::output_metrics(all);
+
   if (delete_all) delete &all;
 
   if (finalize_regressor_exception_thrown) throw finalize_regressor_exception;

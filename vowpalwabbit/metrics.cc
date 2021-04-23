@@ -30,6 +30,22 @@ struct metrics_data
   int predicted_not_first = 0;
 };
 
+void output_metrics(vw& all)
+{
+  if (all.options->was_supplied("extra_metrics"))
+  {
+    // output extra metrics
+    // metrics of all
+#ifdef BUILD_EXTERNAL_PARSER
+    if (all.external_parser)
+    {
+      // fetch metrics of parser
+    }
+#endif
+    // metrics of stack
+  }
+}
+
 void count_post_predict(metrics_data& data, prediction_type_t pred_type, example& ec)
 {
   if (pred_type == prediction_type_t::multiclass)
