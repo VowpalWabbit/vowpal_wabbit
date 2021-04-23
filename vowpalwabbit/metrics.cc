@@ -6,7 +6,7 @@
 #include "reductions.h"
 #include "learner.h"
 #include "rapidjson/filewritestream.h"
-#include <rapidjson/prettywriter.h>
+#include <rapidjson/writer.h>
 #include <cfloat>
 
 #include "io/logger.h"
@@ -80,17 +80,24 @@ void end_examples(metrics_data& data)
 
   // where/when to write file?
   FILE* fp;
-  VW::file_open(&fp, data.out_file.c_str(), "wt");
-  char writeBuffer[1024];
-  FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
-  PrettyWriter<FileWriteStream> writer(os);
 
-  writer.StartObject();
-  writer.Key("NumberOfPredicts");
-  writer.Int(data.predict_count);
-  writer.EndObject();
+  if (VW::file_open(&fp, data.out_file.c_str(), "wt") == 0)
+  {
+    char writeBuffer[1024];
+    FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
+    Writer<FileWriteStream> writer(os);
 
-  fclose(fp);
+    writer.StartObject();
+    writer.Key("NumberOfPredicts");
+    writer.Int(data.predict_count);
+    writer.EndObject();
+
+    fclose(fp);
+  }
+  else
+  {
+    logger::errlog_warn("warning: skipping metrics. could not open file for metrics: {}", data.out_file);
+  }
 }
 
 VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
