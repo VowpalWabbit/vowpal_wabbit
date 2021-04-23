@@ -511,8 +511,9 @@ Memory Tree:
                                        update as well
   --online                             turn on dream operations at reward based
                                        update as well
-Metrics:
-  --extra_metrics arg   persist extra metrics on specified filename
+Debug: Metrics:
+  --extra_metrics arg   log extra metrics on specified filename as JSON. No fix
+                        schema.
 Multilabel One Against All:
   --multilabel_oaa arg  One-against-all multilabel with <k> labels
 Multiworld Testing Options:

@@ -104,9 +104,10 @@ VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<metrics_data>();
 
-  option_group_definition new_options("Metrics");
-  new_options.add(
-      make_option("extra_metrics", data->out_file).necessary().help("persist extra metrics on specified filename"));
+  option_group_definition new_options("Debug: Metrics");
+  new_options.add(make_option("extra_metrics", data->out_file)
+                      .necessary()
+                      .help("log extra metrics on specified filename as JSON. No fix schema."));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -118,7 +119,7 @@ VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
   {
     learner<metrics_data, multi_ex>* l = &init_learner(data, as_multiline(base_learner),
         predict_or_learn<true, multi_learner, multi_ex>, predict_or_learn<false, multi_learner, multi_ex>, 1,
-        prediction_type_t::action_probs, all.get_setupfn_name(metrics_setup), base_learner->learn_returns_prediction);
+        base_learner->pred_type, all.get_setupfn_name(metrics_setup), base_learner->learn_returns_prediction);
     l->set_end_examples(end_examples);
     return make_base(*l);
   }
@@ -126,7 +127,7 @@ VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
   {
     learner<metrics_data, example>* l = &init_learner(data, as_singleline(base_learner),
         predict_or_learn<true, single_learner, example>, predict_or_learn<false, single_learner, example>, 1,
-        prediction_type_t::multiclass, all.get_setupfn_name(metrics_setup), base_learner->learn_returns_prediction);
+        base_learner->pred_type, all.get_setupfn_name(metrics_setup), base_learner->learn_returns_prediction);
     l->set_end_examples(end_examples);
     return make_base(*l);
   }
