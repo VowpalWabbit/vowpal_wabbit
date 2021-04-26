@@ -446,6 +446,9 @@ Explore evaluation:
   --explore_eval        Evaluate explore_eval adf policies
   --multiplier arg      Multiplier used to make all rejection sample 
                         probabilities <= 1
+Debug: Metrics:
+  --extra_metrics arg   log extra metrics on specified filename as JSON. No fix
+                        schema.
 Follow the Regularized Leader:
   --ftrl                FTRL: Follow the Proximal Regularized Leader
   --coin                Coin betting optimizer
@@ -521,9 +524,6 @@ Memory Tree:
                                        update as well
   --online                             turn on dream operations at reward based
                                        update as well
-Debug: Metrics:
-  --extra_metrics arg   log extra metrics on specified filename as JSON. No fix
-                        schema.
 Multilabel One Against All:
   --multilabel_oaa arg  One-against-all multilabel with <k> labels
 Multiworld Testing Options:

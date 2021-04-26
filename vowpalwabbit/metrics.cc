@@ -93,6 +93,8 @@ void persist(metrics_data& data, Writer<FileWriteStream>& writer)
 {
   writer.Key("NumberOfPredicts");
   writer.Int(data.predict_count);
+  writer.Key("NumberOfLearns");
+  writer.Int(data.learn_count);
 }
 
 void end_examples(metrics_data& data)

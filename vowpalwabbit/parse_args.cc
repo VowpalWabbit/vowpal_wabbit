@@ -1272,8 +1272,7 @@ void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
       {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"},
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
-      {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"},
-      {VW::metrics::metrics_setup, "metrics"}};
+      {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"}};
 
   auto name_extractor = options_name_extractor();
   vw dummy_all;
