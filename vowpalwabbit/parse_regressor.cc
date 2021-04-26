@@ -215,7 +215,9 @@ void save_load_header(
 
       if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
       {
-        THROW("Cannot read model file with version before 7.10.3. You can use a VW after 7.10.3 but before 8.11 to convert to a newer model file format.");
+        THROW(
+            "Cannot read model file with version before 7.10.3. You can use a VW after 7.10.3 but before 8.11 to "
+            "convert to a newer model file format.");
       }
 
       if (all.model_file_ver <= VERSION_FILE_WITH_RANK_IN_HEADER)
