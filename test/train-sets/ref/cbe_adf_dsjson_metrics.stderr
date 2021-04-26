@@ -14,10 +14,6 @@ loss     last          counter         weight    label  predict features
 -0.102041 -0.102041            1            1.0    known        0:0.0833333...      361
 -0.051020 0.000000            2            2.0    known        6:0.816667...      361
 -0.040816 -0.020408            3            3.0    known        6:0.816667...      361
-learn count: 3
-predict count: 3
-class one count: 1
-class not one count: 2
 
 finished run
 number of examples = 3

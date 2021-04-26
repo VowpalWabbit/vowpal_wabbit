@@ -2238,4 +2238,9 @@ train-sets/ref/slates_simple_w_interactions.stderr
     pred-sets/ref/cbe_adf_dsjson.predict
     test-sets/ref/metrics.json
 
+# Test 296: test extra_metrics
+{VW}  -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25 --extra_metrics metrics_2.json
+    train-sets/ref/rcv1_raw_cb_dr_metrics.stderr
+    test-sets/ref/metrics_2.json
+
 # Do not delete this line or the empty line above it

@@ -34,6 +34,8 @@ void output_metrics(vw& all)
 {
   if (all.options->was_supplied("extra_metrics"))
   {
+    // end_examples(all.l->save_extra_metrics());
+
     // output extra metrics
     // metrics of all
 #ifdef BUILD_EXTERNAL_PARSER
@@ -87,13 +89,14 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
   if (!is_learn || base.learn_returns_prediction) { count_post_predict(data, base.pred_type, ec); }
 }
 
+void persist(metrics_data& data, Writer<FileWriteStream>& writer)
+{
+  writer.Key("NumberOfPredicts");
+  writer.Int(data.predict_count);
+}
+
 void end_examples(metrics_data& data)
 {
-  std::cerr << "learn count: " << data.learn_count << std::endl;
-  std::cerr << "predict count: " << data.predict_count << std::endl;
-  std::cerr << "class one count: " << data.predicted_first_option << std::endl;
-  std::cerr << "class not one count: " << data.predicted_not_first << std::endl;
-
   // where/when to write file?
   FILE* fp;
 
@@ -104,8 +107,7 @@ void end_examples(metrics_data& data)
     Writer<FileWriteStream> writer(os);
 
     writer.StartObject();
-    writer.Key("NumberOfPredicts");
-    writer.Int(data.predict_count);
+    persist(data, writer);
     writer.EndObject();
 
     fclose(fp);
