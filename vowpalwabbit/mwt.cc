@@ -167,7 +167,7 @@ void finish_example(vw& all, mwt& c, example& ec)
   {
     v_array<float> temp = ec.pred.scalars;
     ec.pred.multiclass = (uint32_t)temp[0];
-    CB::print_update(all, c.optional_observation.first, ec, nullptr, false);
+    CB::print_update(all, c.optional_observation.first, ec, nullptr, false, nullptr);
     ec.pred.scalars = temp;
   }
   VW::finish_example(all, ec);
