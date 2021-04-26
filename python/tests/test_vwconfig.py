@@ -18,7 +18,7 @@ def test_vw_config_manager():
     expected_set = {'--quiet', '--loss_function logistic', '--save_resume', '--data /root/vowpal_wabbit/test/train-sets/rcv1_small.dat'}
     expected_reductions = {'gd', 'scorer'}
 
-    vw = pyvw.vw(arg_str=" -d /root/vowpal_wabbit/test/train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --extra_metrics testtest")
+    vw = pyvw.vw(arg_str="--save_resume --loss_function logistic -d /root/vowpal_wabbit/test/train-sets/rcv1_small.dat --quiet")
     config = vw.get_config()
     enabled_reductions = vw.get_enabled_reductions()
 
@@ -48,7 +48,3 @@ def test_vw_get_all_options():
         cmd_str_list.add(name)
 
     assert len(cmd_str_list) >= 74
-
-import os
-print(os.getpid())
-test_vw_config_manager()
