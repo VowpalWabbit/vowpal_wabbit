@@ -85,6 +85,7 @@ public:
   ~cb_explore_adf_base() { _saved_pred.delete_v(); }
 
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
+  static void print_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
@@ -201,13 +202,20 @@ template <typename ExploreType>
 void cb_explore_adf_base<ExploreType>::finish_multiline_example(
     vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq)
 {
+  print_multiline_example(all, data, ec_seq);
+
+  VW::finish_example(all, ec_seq);
+}
+
+template <typename ExploreType>
+void cb_explore_adf_base<ExploreType>::print_multiline_example(
+    vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq)
+{
   if (ec_seq.size() > 0)
   {
     data.output_example_seq(all, ec_seq);
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
-
-  VW::finish_example(all, ec_seq);
 }
 
 template <typename ExploreType>
