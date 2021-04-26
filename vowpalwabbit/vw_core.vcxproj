@@ -164,6 +164,7 @@
     <ClInclude Include="cb_explore.h" />
     <ClInclude Include="cb_sample.h" />
     <ClInclude Include="cbify.h" />
+    <ClInclude Include="cb_to_cb_adf.h" />
     <ClInclude Include="ccb_label.h" />
     <ClInclude Include="ccb_reduction_features.h" />
     <ClInclude Include="continuous_actions_reduction_features.h" />
@@ -327,6 +328,7 @@
     <ClCompile Include="cb_sample.cc" />
     <ClCompile Include="cb.cc" />
     <ClCompile Include="cbify.cc" />
+    <ClCompile Include="cb_to_cb_adf.cc" />
     <ClCompile Include="ccb_label.cc" />
     <ClCompile Include="classweight.cc" />
     <ClCompile Include="conditional_contextual_bandit.cc" />

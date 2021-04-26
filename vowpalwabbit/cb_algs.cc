@@ -101,10 +101,10 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   cb_to_cs& c = data.cbcs;
   if (!CB::is_test_label(ld)) loss = get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
-  generic_output_example(all, loss, ec, ld);
+  generic_output_example(all, loss, ec, ld, &c.known_cost);
 }
 
-void generic_output_example(vw& all, float loss, example& ec, const CB::label& ld)
+void generic_output_example(vw& all, float loss, example& ec, const CB::label& ld, CB::cb_class* known_cost)
 {
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.num_features);
 
@@ -122,7 +122,12 @@ void generic_output_example(vw& all, float loss, example& ec, const CB::label& l
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, CB::is_test_label(ld), ec, nullptr, false);
+  bool is_ld_test_label = CB::is_test_label(ld);
+  if (!is_ld_test_label) { print_update(all, is_ld_test_label, ec, nullptr, false, known_cost); }
+  else
+  {
+    print_update(all, is_ld_test_label, ec, nullptr, false, nullptr);
+  }
 }
 
 void finish_example(vw& all, cb& c, example& ec)
@@ -143,6 +148,7 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<cb>();
   std::string type_string = "dr";
   bool eval = false;
+  bool force_legacy = true;
 
   option_group_definition new_options("Contextual Bandit Options");
   new_options
@@ -151,9 +157,14 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
                .necessary()
                .help("Use contextual bandit learning with <k> costs"))
       .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"))
-      .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."));
+      .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."))
+      .add(make_option("cb_force_legacy", force_legacy)
+               .keep()
+               .help("Default to non-adf cb implementation (cb_to_cb_adf)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+
+  if (!eval && !force_legacy) return nullptr;
 
   // Ensure serialization of this option in all cases.
   if (!options.was_supplied("cb_type"))

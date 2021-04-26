@@ -105,6 +105,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
           prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-first");
 
   l.set_finish_example(explore_type::finish_multiline_example);
+  l.set_print_example(explore_type::print_multiline_example);
   return make_base(l);
 }
 }  // namespace first
