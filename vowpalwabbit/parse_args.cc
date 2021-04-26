@@ -30,6 +30,7 @@
 #include "csoaa.h"
 #include "cb_algs.h"
 #include "cb_adf.h"
+#include "cb_to_cb_adf.h"
 #include "cb_dro.h"
 #include "cb_explore.h"
 #include "cb_explore_adf_bag.h"
@@ -1379,6 +1380,7 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(VW::continuous_action::cats::setup);
   reductions.push_back(cbify_setup);
   reductions.push_back(cbifyldf_setup);
+  reductions.push_back(cb_to_cb_adf_setup);
   reductions.push_back(VW::offset_tree::setup);
   reductions.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   reductions.push_back(Search::setup);

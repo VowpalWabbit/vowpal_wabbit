@@ -64,8 +64,8 @@ internal:
       m_numberOfActions = (int)options->get_typed_option<uint32_t>("cb").value();
     }
 
-	m_learning_rate = vw->eta;
-	m_power_t = vw->power_t;
+    m_learning_rate = vw->eta;
+    m_power_t = vw->power_t;
   }
 
 public:
