@@ -238,6 +238,9 @@ base_learner* mwt_setup(options_i& options, vw& all)
     }
   }
 
+  // default to legacy cb implementation
+  options.insert("cb_force_legacy", "");
+
   learner<mwt, example>* l;
   if (c->learn)
     if (exclude_eval)

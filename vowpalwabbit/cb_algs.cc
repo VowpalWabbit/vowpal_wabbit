@@ -148,6 +148,7 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<cb>();
   std::string type_string = "dr";
   bool eval = false;
+  bool force_legacy = true;
 
   option_group_definition new_options("Contextual Bandit Options");
   new_options
@@ -156,9 +157,14 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
                .necessary()
                .help("Use contextual bandit learning with <k> costs"))
       .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"))
-      .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."));
+      .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."))
+      .add(make_option("cb_force_legacy", force_legacy)
+               .keep()
+               .help("Default to non-adf cb implementation (cb_to_cb_adf)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+
+  if (!eval && !force_legacy) return nullptr;
 
   // Ensure serialization of this option in all cases.
   if (!options.was_supplied("cb_type"))
