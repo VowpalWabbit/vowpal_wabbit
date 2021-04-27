@@ -89,7 +89,8 @@ public:
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void print_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
-  static void persist_metrics(cb_explore_adf_base<ExploreType>& data, std::vector<std::tuple<std::string, size_t>>& metrics);
+  static void persist_metrics(
+      cb_explore_adf_base<ExploreType>& data, std::vector<std::tuple<std::string, size_t>>& metrics);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
