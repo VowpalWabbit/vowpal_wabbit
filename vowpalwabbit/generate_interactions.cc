@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #include <sstream>
 #include <cfloat>
+#include "generate_interactions.h"
 #include "reductions.h"
 #include "v_array.h"
 
@@ -10,35 +11,42 @@
 #include "interactions.h"
 #include "vw_math.h"
 #include <algorithm>
+#include <iterator>
 
 using namespace VW::config;
 
 namespace logger = VW::io::logger;
 
-struct generate_interactions
-{
-};
-
 std::vector<namespace_index> indices_to_values_one_based(
-    const std::vector<size_t>& indices, const v_array<namespace_index>& values)
+    const std::vector<size_t>& indices, const std::set<namespace_index>& values)
 {
   std::vector<namespace_index> result;
   result.reserve(indices.size());
-  for (size_t i = 0; i < indices.size(); i++) { result.push_back(values[indices[i] - 1]); }
+  for (size_t i = 0; i < indices.size(); i++)
+  {
+    auto it = values.begin();
+    std::advance(it, indices[i] - 1);
+    result.push_back(*it);
+  }
   return result;
 }
 
 std::vector<namespace_index> indices_to_values_ignore_last_index(
-    const std::vector<size_t>& indices, const v_array<namespace_index>& values)
+    const std::vector<size_t>& indices, const std::set<namespace_index>& values)
 {
   std::vector<namespace_index> result;
   result.reserve(indices.size() - 1);
-  for (size_t i = 0; i < indices.size() - 1; i++) { result.push_back(values[indices[i]]); }
+  for (size_t i = 0; i < indices.size() - 1; i++)
+  {
+    auto it = values.begin();
+    std::advance(it, indices[i]);
+    result.push_back(*it);
+  }
   return result;
 }
 
 std::vector<std::vector<namespace_index>> generate_combinations_with_repetiton(
-    const v_array<namespace_index>& namespaces, size_t num_to_pick)
+    const std::set<namespace_index>& namespaces, size_t num_to_pick)
 {
   std::vector<std::vector<namespace_index>> result;
   result.reserve(VW::math::number_of_combinations_with_repetition(namespaces.size(), num_to_pick));
@@ -69,10 +77,10 @@ std::vector<std::vector<namespace_index>> generate_combinations_with_repetiton(
 }
 
 using generate_func_t = std::vector<std::vector<namespace_index>>(
-    const v_array<namespace_index>& namespaces, size_t num_to_pick);
+    const std::set<namespace_index>& namespaces, size_t num_to_pick);
 
 std::vector<std::vector<namespace_index>> generate_permutations_with_repetition(
-    const v_array<namespace_index>& namespaces, size_t num_to_pick)
+    const std::set<namespace_index>& namespaces, size_t num_to_pick)
 {
   std::vector<std::vector<namespace_index>> result;
   result.reserve(VW::math::number_of_permutations_with_repetition(namespaces.size(), num_to_pick));
@@ -114,7 +122,7 @@ bool contains_wildcard(const std::vector<namespace_index>& interaction)
 
 template <generate_func_t generate_func>
 std::vector<std::vector<namespace_index>> compile_interaction(
-    const std::vector<namespace_index>& interaction, const v_array<namespace_index>& indices)
+    const std::vector<namespace_index>& interaction, const std::set<namespace_index>& indices)
 {
   std::vector<size_t> insertion_indices;
   std::vector<namespace_index> insertion_ns;
@@ -142,7 +150,7 @@ std::vector<std::vector<namespace_index>> compile_interaction(
 
 template <generate_func_t generate_func>
 std::vector<std::vector<namespace_index>> compile_interactions(
-    const std::vector<std::vector<namespace_index>>& interactions, const v_array<namespace_index>& indices)
+    const std::vector<std::vector<namespace_index>>& interactions, const std::set<namespace_index>& indices)
 {
   std::vector<std::vector<namespace_index>> final_interactions;
 
@@ -166,10 +174,13 @@ std::vector<std::vector<namespace_index>> compile_interactions(
 template <bool is_learn, generate_func_t generate_func>
 void transform_single_ex(generate_interactions& in, VW::LEARNER::single_learner& base, example& ec)
 {
-  std::vector<std::vector<namespace_index>> final_interactions =
-      compile_interactions<generate_func>(*ec.interactions, ec.indices);
+  auto prev_count = in.all_seen_namespaces.size();
+  in.all_seen_namespaces.insert(ec.indices.begin(), ec.indices.end());
+  if (prev_count != in.all_seen_namespaces.size())
+  { in.generated_interactions = compile_interactions<generate_func>(*ec.interactions, in.all_seen_namespaces); }
+
   auto* saved_interactions = ec.interactions;
-  ec.interactions = &final_interactions;
+  ec.interactions = &in.generated_interactions;
 
   if (is_learn) { base.learn(ec); }
   else
@@ -182,11 +193,25 @@ void transform_single_ex(generate_interactions& in, VW::LEARNER::single_learner&
 VW::LEARNER::base_learner* generate_interactions_setup(options_i& options, vw& all)
 {
   bool leave_duplicate_interactions;
-  option_group_definition new_options("scorer options");
+  option_group_definition new_options("Generate interactions");
   new_options.add(make_option("leave_duplicate_interactions", leave_duplicate_interactions)
                       .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
                             "duplicate: '-q ab -q ba' and a lot more in '-q ::'."));
   options.add_and_parse(new_options);
+
+  auto all_contains_wildcards = false;
+  for (const auto& inter : all.interactions)
+  {
+    if (contains_wildcard(inter))
+    {
+      all_contains_wildcards = true;
+      break;
+    }
+  }
+
+  // If there are no wildcards, then no expansion is required.
+  // ccb_explore_adf adds a wildcards post setup and so this reduction must be turned on.
+  if (!all_contains_wildcards && !options.was_supplied("ccb_explore_adf")) return nullptr;
 
   using learn_pred_func_t = void (*)(generate_interactions&, VW::LEARNER::single_learner&, example&);
   learn_pred_func_t learn_func;

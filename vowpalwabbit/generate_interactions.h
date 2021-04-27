@@ -7,9 +7,15 @@
 #include "example_predict.h"
 
 #include <vector>
+#include <set>
+
+struct generate_interactions
+{
+  std::set<namespace_index> all_seen_namespaces;
+  std::vector<std::vector<namespace_index>> generated_interactions;
+};
 
 VW::LEARNER::base_learner* generate_interactions_setup(VW::config::options_i& options, vw& all);
-
 
 std::vector<std::vector<namespace_index>> generate_combinations_with_repetiton(
     const std::vector<namespace_index>& namespaces, size_t num_to_pick);
