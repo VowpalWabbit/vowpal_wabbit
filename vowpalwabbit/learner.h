@@ -880,8 +880,9 @@ struct reduction_learner_builder
     this->_learner->finisher_fd.func = static_cast<func_data::fn>(noop);
 
     set_params_per_weight(1);
+    this->set_learn_returns_prediction(base->learn_returns_prediction);
 
-    this->_learner->pred_type = base->pred_type;
+    set_prediction_type(base->pred_type);
     // TODO add label type as something learner knows about itself, this will enable more type checking and better
     // description of the learner. this->_learner.label_type = label_type;
   }

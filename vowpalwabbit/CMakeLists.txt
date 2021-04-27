@@ -117,6 +117,7 @@ set(vw_all_headers
   gd_predict.h
   gd.h
   gen_cs_example.h
+  generate_interactions.h
   get_pmf.h
   global_data.h
   guard.h
@@ -127,6 +128,7 @@ set(vw_all_headers
   io_buf.h
   json_utils.h
   kernel_svm.h
+  kskip_ngram_transformer.h
   label_dictionary.h
   label_parser.h
   lda_core.h
@@ -144,13 +146,12 @@ set(vw_all_headers
   multilabel_oaa.h
   multilabel.h
   mwt.h
-  numeric_casts.h
   named_labels.h
   network.h
-  kskip_ngram_transformer.h
   nn.h
   no_label.h
   noop.h
+  numeric_casts.h
   oaa.h
   object_pool.h
   offset_tree.h
@@ -281,6 +282,7 @@ set(vw_all_sources
   gd_mf.cc
   gd.cc
   gen_cs_example.cc
+  generate_interactions.cc
   get_pmf.cc
   global_data.cc
   hashstring.cc
@@ -288,6 +290,7 @@ set(vw_all_sources
   interactions.cc
   io_buf.cc
   kernel_svm.cc
+  kskip_ngram_transformer.cc
   label_dictionary.cc
   lda_core.cc
   learner.cc
@@ -305,7 +308,6 @@ set(vw_all_sources
   mwt.cc
   named_labels.cc
   network.cc
-  kskip_ngram_transformer.cc
   nn.cc
   no_label.cc
   noop.cc
@@ -319,8 +321,8 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
-  pmf_to_pdf.cc
   plt.cc
+  pmf_to_pdf.cc
   print.cc
   prob_dist_cont.cc
   rand48.cc

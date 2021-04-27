@@ -43,6 +43,7 @@
 #include "cb_explore_adf_rnd.h"
 #include "cb_explore_adf_softmax.h"
 #include "slates.h"
+#include "generate_interactions.h"
 #include "mwt.h"
 #include "confidence.h"
 #include "scorer.h"
@@ -1315,6 +1316,7 @@ void parse_reductions(options_i& options, vw& all)
   // reductions.push_back(VW_CNTK::setup);
 
   reductions.push_back(count_interactions_setup);
+  reductions.push_back(generate_interactions_setup);
 
   // Score Users
   reductions.push_back(baseline_setup);
