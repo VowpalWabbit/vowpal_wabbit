@@ -1,4 +1,4 @@
-creating quadratic features for pairs: GT
+creating quadratic features for pairs: GT 
 predictions = cbe_adf_dsjson_chain_hash.predict
 Num weight bits = 18
 learning rate = 0.5
@@ -10,9 +10,9 @@ num sources = 1
 Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, shared_feature_merger
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
--0.102041 -0.102041            1            1.0    known        0:0.0833333...      361
--0.051020 0.000000            2            2.0    known        6:0.816667...      361
--0.040816 -0.020408            3            3.0    known        6:0.816667...      361
+-0.102041 -0.102041            1            1.0 9:-1:0.82        0:0.0833333...      361
+-0.051020 0.000000            2            2.0 9:0:0.82        6:0.816667...      361
+-0.040816 -0.020408            3            3.0 9:-1:0.82        6:0.816667...      361
 
 finished run
 number of examples = 3

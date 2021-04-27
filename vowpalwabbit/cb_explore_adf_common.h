@@ -191,7 +191,10 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
+  if (labeled_example)
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, &_known_cost);
+  else
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
 }
 
 template <typename ExploreType>
