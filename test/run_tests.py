@@ -594,7 +594,7 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
             test['skip'] = True
             continue
         #todo: understand why is it failing
-        if str(test_id) == '283':
+        if str(test_id) == '300':
             continue
 
         # test id is being used as an index here, not necessarily a contract

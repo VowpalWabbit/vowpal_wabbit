@@ -112,6 +112,7 @@ struct finish_example_data
   void* data = nullptr;
   base_learner* base = nullptr;
   fn finish_example_f = nullptr;
+  fn print_example_f = nullptr;
 };
 
 void generic_driver(vw& all);
@@ -473,6 +474,30 @@ public:
     VW_WARNING_STATE_POP
   }
 
+  // never called, convienience method in case reduction has a seperate
+  // print fn that mirrors the fn received on set_finish_example(..)
+  //
+  // usually finish_example routine prints and then deallocs
+  // that printing logic can be registered here
+  void set_print_example(void (*f)(vw& all, T&, E&))
+  {
+    finish_example_fd.data = learn_fd.data;
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
+    finish_example_fd.print_example_f = (end_fptr_type)(f);
+    VW_WARNING_STATE_POP
+  }
+
+  inline void print_example(vw& all, E& ec)
+  {
+    debug_log_message(ec, "print_example");
+
+    if (finish_example_fd.print_example_f == nullptr)
+      THROW("fatal: learner did not register print example fn: " + name);
+
+    finish_example_fd.print_example_f(all, finish_example_fd.data, (void*)&ec);
+  }
+
   template <class L>
   static learner<T, E> &init_learner(T *dat, L *base, void (*learn)(T &, L &, E &), void (*predict)(T &, L &, E &),
       size_t ws, prediction_type_t pred_type, const std::string &name, bool learn_returns_prediction = false)
@@ -535,6 +560,18 @@ public:
     VW_DBG_0 << "Added Reduction: " << name << std::endl;
 
     return ret;
+  }
+
+  base_learner* get_learner_by_name_prefix(std::string reduction_name)
+  {
+    if (name.find(reduction_name) != std::string::npos) { return (base_learner*)this; }
+    else
+    {
+      if (learn_fd.base != nullptr)
+        return learn_fd.base->get_learner_by_name_prefix(reduction_name);
+      else
+        THROW("fatal: could not find in learner chain: " << reduction_name);
+    }
   }
 };
 
