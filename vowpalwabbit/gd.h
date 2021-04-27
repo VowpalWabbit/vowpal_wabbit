@@ -9,6 +9,7 @@
 #include "interactions.h"
 #include "array_parameters.h"
 #include "gd_predict.h"
+#include "vw_math.h"
 
 namespace GD
 {
@@ -104,17 +105,9 @@ inline float inline_predict(vw& all, example& ec)
             *ec.interactions, all.permutations, ec, simple_red_features.initial);
 }
 
-inline float sign(float w)
-{
-  if (w < 0.)
-    return -1.;
-  else
-    return 1.;
-}
-
 inline float trunc_weight(const float w, const float gravity)
 {
-  return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
+  return (gravity < fabsf(w)) ? w - VW::math::sign(w) * gravity : 0.f;
 }
 
 }  // namespace GD
