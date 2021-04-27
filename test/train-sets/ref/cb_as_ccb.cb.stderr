@@ -10,7 +10,7 @@ num sources = 1
 Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, shared_feature_merger
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
--2.500000 -2.500000            1            1.0    known        0:0.5...        4
+-2.500000 -2.500000            1            1.0 1:-1:0.2        0:0.5...        4
 
 finished run
 number of examples = 1
