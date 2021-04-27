@@ -737,21 +737,6 @@ void setup_example(vw& all, example* ae)
     ae->total_sum_feat_sq += fs.sum_feat_sq;
   }
 
-  // Reset any previously counted interacted features.
-  ae->num_features_from_interactions = 0;
-  ae->total_sum_feat_sq_from_interactions = 0.f;
-
-  if (all.interactions.quadratics_wildcard_expansion)
-  {
-    // lock while adding interactions since reductions might also be adding their own interactions
-    std::unique_lock<std::mutex> lock(all.interactions.mut);
-    for (auto& ns : ae->indices)
-    {
-      if (ns < constant_namespace) { all.interactions.all_seen_namespaces.insert(ns); }
-    }
-    INTERACTIONS::expand_quadratics_wildcard_interactions(all.interactions);
-  }
-
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
 }

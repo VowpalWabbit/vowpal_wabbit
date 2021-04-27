@@ -80,48 +80,48 @@ std::vector<std::vector<namespace_index>> expand_interactions(
   }
   return res;
 }
-
-void expand_quadratics_wildcard_interactions(namespace_interactions& interactions)
-{
-  if (interactions.all_seen_namespaces_size == interactions.all_seen_namespaces.size())
-  {
-    // nothing new here
-    return;
-  }
-
-  interactions.all_seen_namespaces_size = interactions.all_seen_namespaces.size();
-  auto& set_interactions = interactions.all_seen_namespaces;
-  for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
-  {
-    if (interactions.active_interactions.find({*it, *it}) == interactions.active_interactions.end())
-    {
-      interactions.interactions.push_back({*it, *it});
-      interactions.active_interactions.insert({*it, *it});
-    }
-
-    for (auto jt = it; jt != set_interactions.end(); ++jt)
-    {
-      if (interactions.active_interactions.find({*it, *jt}) == interactions.active_interactions.end())
-      {
-        interactions.interactions.push_back({*it, *jt});
-        interactions.active_interactions.insert({*it, *jt});
-      }
-      if (interactions.active_interactions.find({*jt, *jt}) == interactions.active_interactions.end())
-      {
-        interactions.interactions.push_back({*jt, *jt});
-        interactions.active_interactions.insert({*jt, *jt});
-      }
-      if (interactions.leave_duplicate_interactions &&
-          interactions.active_interactions.find({*jt, *it}) == interactions.active_interactions.end())
-      {
-        interactions.interactions.push_back({*jt, *it});
-        interactions.active_interactions.insert({*jt, *it});
-      }
-    }
-  }
-
-  std::sort(interactions.interactions.begin(), interactions.interactions.end(), sort_interactions_comparator);
-}
+//
+//void expand_quadratics_wildcard_interactions(namespace_interactions& interactions)
+//{
+//  if (interactions.all_seen_namespaces_size == interactions.all_seen_namespaces.size())
+//  {
+//    // nothing new here
+//    return;
+//  }
+//
+//  interactions.all_seen_namespaces_size = interactions.all_seen_namespaces.size();
+//  auto& set_interactions = interactions.all_seen_namespaces;
+//  for (auto it = set_interactions.begin(); it != set_interactions.end(); ++it)
+//  {
+//    if (interactions.active_interactions.find({*it, *it}) == interactions.active_interactions.end())
+//    {
+//      interactions.push_back({*it, *it});
+//      interactions.active_interactions.insert({*it, *it});
+//    }
+//
+//    for (auto jt = it; jt != set_interactions.end(); ++jt)
+//    {
+//      if (interactions.active_interactions.find({*it, *jt}) == interactions.active_interactions.end())
+//      {
+//        interactions.push_back({*it, *jt});
+//        interactions.active_interactions.insert({*it, *jt});
+//      }
+//      if (interactions.active_interactions.find({*jt, *jt}) == interactions.active_interactions.end())
+//      {
+//        interactions.push_back({*jt, *jt});
+//        interactions.active_interactions.insert({*jt, *jt});
+//      }
+//      if (interactions.leave_duplicate_interactions &&
+//          interactions.active_interactions.find({*jt, *it}) == interactions.active_interactions.end())
+//      {
+//        interactions.push_back({*jt, *it});
+//        interactions.active_interactions.insert({*jt, *it});
+//      }
+//    }
+//  }
+//
+//  std::sort(interactions.begin(), interactions.end(), sort_interactions_comparator);
+//}
 
 bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b)
 {
@@ -293,7 +293,6 @@ void eval_count_of_generated_ft_combinations(
   {
     size_t num_features_in_inter = 1;
     float sum_feat_sq_in_inter = 1.;
-
     for (auto ns = inter.begin(); ns != inter.end(); ++ns)
     {
       if ((ns == inter.end() - 1) || (*ns != *(ns + 1)))  // neighbour namespaces are different

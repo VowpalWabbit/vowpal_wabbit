@@ -47,7 +47,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
       std::cout << ':' << (&weights[f.index()])[offset];
     }
   }
-  for (const auto& i : all.interactions.interactions)
+  for (const auto& i : all.interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
@@ -99,7 +99,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   float prediction = simple_red_features.initial;
 
-  for (const auto& i : d.all->interactions.interactions)
+  for (const auto& i : d.all->interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
@@ -123,7 +123,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   prediction += linear_prediction;
   // interaction terms
-  for (const auto& i : d.all->interactions.interactions)
+  for (const auto& i : d.all->interactions)
   {
     // The check for non-pair interactions is done in the previous loop
 
@@ -200,7 +200,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
   for (features& fs : ec) sd_offset_update<T>(weights, fs, 0, update, regularization);
 
   // quadratic update
-  for (const auto& i : all.interactions.interactions)
+  for (const auto& i : all.interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 

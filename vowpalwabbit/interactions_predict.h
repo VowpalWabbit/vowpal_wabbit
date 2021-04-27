@@ -96,7 +96,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 // it must be in header file to avoid compilation problems
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*),
     class W>  // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(namespace_interactions& interactions, bool permutations, example_predict& ec, R& dat,
+inline void generate_interactions(std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec, R& dat,
     W& weights)  // default value removed to eliminate ambiguity in old complers
 {
   features* features_data = ec.feature_space.data();
@@ -114,7 +114,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
   empty_ns_data.loop_end = 0;
   empty_ns_data.self_interaction = false;
 
-  for (auto& ns : interactions.interactions)
+  for (auto& ns : interactions)
   {  // current list of namespaces to interact.
 
 #ifndef GEN_INTER_LOOP

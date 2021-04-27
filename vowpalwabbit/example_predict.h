@@ -27,18 +27,18 @@ typedef unsigned char namespace_index;
 #  include <mutex>
 #endif
 
-struct namespace_interactions
-{
-  std::set<std::vector<namespace_index>> active_interactions;
-  std::set<namespace_index> all_seen_namespaces;
-  std::vector<std::vector<namespace_index>> interactions;
-  bool quadratics_wildcard_expansion = false;
-  bool leave_duplicate_interactions = false;
-  size_t all_seen_namespaces_size = 0;
-  void clear();
-  void append(const namespace_interactions& src);
-  mutable std::mutex mut;
-};
+// struct namespace_interactions
+// {
+//   std::set<std::vector<namespace_index>> active_interactions;
+//   std::set<namespace_index> all_seen_namespaces;
+//   std::vector<std::vector<namespace_index>> interactions;
+//   bool quadratics_wildcard_expansion = false;
+//   bool leave_duplicate_interactions = false;
+//   size_t all_seen_namespaces_size = 0;
+//   void clear();
+//   void append(const namespace_interactions& src);
+//   mutable std::mutex mut;
+// };
 
 struct example_predict
 {
@@ -74,7 +74,7 @@ struct example_predict
 
   // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
   // vector is an interaction and each char is a namespace.
-  namespace_interactions* interactions = nullptr;
+  std::vector<std::vector<namespace_index>>* interactions = nullptr;
   reduction_features _reduction_features;
 
   // Used for debugging reductions.  Keeps track of current reduction level.
