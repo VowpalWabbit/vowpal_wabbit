@@ -11,6 +11,7 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+using namespace VW::math;
 
 namespace logger = VW::io::logger;
 
@@ -56,14 +57,6 @@ struct uncertainty
     score = 0;
   }
 };
-
-inline float sign(float w)
-{
-  if (w < 0.)
-    return -1.;
-  else
-    return 1.;
-}
 
 inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
 {

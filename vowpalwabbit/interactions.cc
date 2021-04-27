@@ -5,6 +5,7 @@
 #include "interactions.h"
 
 #include "vw_exception.h"
+#include "vw_math.h"
 #include <algorithm>
 
 namespace INTERACTIONS
@@ -390,17 +391,17 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
           size_t n;
           if (cnt_ft_value_non_1 == 0)  // number of generated simple combinations is C(n,k)
-          { n = (size_t)choose((int64_t)ft_size, (int64_t)order_of_inter); }
+          { n = (size_t)VW::math::choose((int64_t)ft_size, (int64_t)order_of_inter); }
           else
           {
             n = 0;
             for (size_t l = 0; l <= order_of_inter; ++l)
             {
               // C(l+m-1, l) * C(n-m, k-l)
-              size_t num = (l == 0) ? 1 : (size_t)choose(l + cnt_ft_value_non_1 - 1, l);
+              size_t num = (l == 0) ? 1 : (size_t)VW::math::choose(l + cnt_ft_value_non_1 - 1, l);
 
               if (ft_size - cnt_ft_value_non_1 >= order_of_inter - l)
-                num *= (size_t)choose(ft_size - cnt_ft_value_non_1, order_of_inter - l);
+                num *= (size_t)VW::math::choose(ft_size - cnt_ft_value_non_1, order_of_inter - l);
               else
                 num = 0;
 
