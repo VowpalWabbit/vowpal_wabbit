@@ -43,9 +43,8 @@ void list_to_json_file(std::string filename, std::vector<std::tuple<std::string,
     writer.StartObject();
     for (std::tuple<std::string, size_t> m : metrics)
     {
-        std::string name = std::get<0>(m);
-        writer.Key(name.c_str());
-        writer.Int(std::get<1>(m));
+      writer.Key(std::get<0>(m).c_str());
+      writer.Int(std::get<1>(m));
     }
     writer.EndObject();
 
@@ -55,7 +54,6 @@ void list_to_json_file(std::string filename, std::vector<std::tuple<std::string,
   {
     logger::errlog_warn("warning: skipping metrics. could not open file for metrics: {}", filename);
   }
-
 }
 
 void output_metrics(vw& all)

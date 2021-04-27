@@ -427,7 +427,6 @@ public:
     persist_metrics_fd.base = learn_fd.base;
   }
 
-
   // called to clean up state.  Autorecursive.
   void set_finish(void (*f)(T&))
   {
