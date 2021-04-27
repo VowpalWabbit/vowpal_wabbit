@@ -26,18 +26,17 @@ inline float sign(float w)
 struct active_cover
 {
   // active learning algorithm parameters
-  float active_c0;
-  float alpha;
-  float beta_scale;
-  bool oracular;
-  size_t cover_size;
+  float active_c0 = 0.f;
+  float alpha = 0.f;
+  float beta_scale = 0.f;
+  bool oracular = false;
+  size_t cover_size = 0;
 
-  float* lambda_n;
-  float* lambda_d;
+  float* lambda_n = nullptr;
+  float* lambda_d = nullptr;
 
-  vw* all;  // statistics, loss
+  vw* all = nullptr;  // statistics, loss
   std::shared_ptr<rand_state> _random_state;
-  VW::LEARNER::base_learner* l;
 
   ~active_cover()
   {
@@ -208,7 +207,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
 
 base_learner* active_cover_setup(options_i& options, vw& all)
 {
-  auto data = scoped_calloc_or_throw<active_cover>();
+  auto data = VW::make_unique<active_cover>();
   option_group_definition new_options("Active Learning with Cover");
 
   bool active_cover_option = false;
@@ -239,7 +238,7 @@ base_learner* active_cover_setup(options_i& options, vw& all)
 
   if (options.was_supplied("active")) THROW("error: you can't use --active_cover and --active at the same time");
 
-  auto base = as_singleline(setup_base(options, all));
+  auto* base = as_singleline(setup_base(options, all));
 
   data->lambda_n = new float[data->cover_size];
   data->lambda_d = new float[data->cover_size];
@@ -250,9 +249,12 @@ base_learner* active_cover_setup(options_i& options, vw& all)
     data->lambda_d[i] = 1.f / 8.f;
   }
 
-  // Create new learner
-  learner<active_cover, example>& l = init_learner(data, base, predict_or_learn_active_cover<true>,
-      predict_or_learn_active_cover<false>, data->cover_size + 1, all.get_setupfn_name(active_cover_setup));
-
-  return make_base(l);
+  const auto cover_size = data->cover_size;
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn_active_cover<true>,
+      predict_or_learn_active_cover<false>, all.get_setupfn_name(active_cover_setup))
+                .set_params_per_weight(cover_size + 1)
+                .set_prediction_type(prediction_type_t::scalar)
+                .set_label_type(label_type_t::simple)
+                .build();
+  return make_base(*l);
 }
