@@ -183,6 +183,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   l.set_finish_example(finish_bag_example);
   l.set_print_example(print_bag_example);
+  l.set_persist_metrics(explore_type::persist_metrics);
   return make_base(l);
 }
 
