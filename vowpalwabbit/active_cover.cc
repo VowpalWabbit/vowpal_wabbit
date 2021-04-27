@@ -11,17 +11,10 @@
 #include "float.h"
 #include "vw.h"
 #include "shared_data.h"
+#include "vw_math.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
-
-inline float sign(float w)
-{
-  if (w <= 0.f)
-    return -1.f;
-  else
-    return 1.f;
-}
 
 struct active_cover
 {
@@ -96,7 +89,7 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
   for (size_t i = 0; i < a.cover_size; i++)
   {
     l.predict(ec, i + 1);
-    q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
+    q2 += ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
   }
 
   p = std::sqrt(q2) / (1 + std::sqrt(q2));
@@ -133,7 +126,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
     // Query (or not)
     if (!in_dis)  // Use predicted label
     {
-      ec.l.simple.label = sign(prediction);
+      ec.l.simple.label = VW::math::sign(prediction);
       ec.weight = ec_input_weight;
       base.learn(ec, 0);
     }
@@ -162,7 +155,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
     // Set up costs
     // cost = cost of predicting erm's prediction
     // cost_delta = cost - cost of predicting the opposite label
-    if (in_dis) { cost = r * (fmax(importance, 0.f)) * ((float)(sign(prediction) != sign(ec_input_label))); }
+    if (in_dis) { cost = r * (fmax(importance, 0.f)) * ((float)(VW::math::sign(prediction) != VW::math::sign(ec_input_label))); }
     else
     {
       cost = 0.f;
@@ -181,7 +174,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
 
       // Choose min-cost label as the label
       // Set importance weight to be the cost difference
-      ec.l.simple.label = -1.f * sign(cost_delta) * sign(prediction);
+      ec.l.simple.label = -1.f * VW::math::sign(cost_delta) * VW::math::sign(prediction);
       ec.weight = ec_input_weight * fabs(cost_delta);
 
       // Update learner
@@ -189,14 +182,14 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
       base.predict(ec, i + 1);
 
       // Update numerator of lambda
-      a.lambda_n[i] += 2.f * ((float)(sign(ec.pred.scalar) != sign(prediction))) * cost_delta;
+      a.lambda_n[i] += 2.f * ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) * cost_delta;
       a.lambda_n[i] = fmax(a.lambda_n[i], 0.f);
 
       // Update denominator of lambda
-      a.lambda_d[i] += ((float)(sign(ec.pred.scalar) != sign(prediction) && in_dis)) / (float)pow(q2, 1.5);
+      a.lambda_d[i] += ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction) && in_dis)) / (float)pow(q2, 1.5);
 
       // Accumulating weights of learners in the cover
-      q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
+      q2 += ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
     }
 
     // Restoring the weight, the label, and the prediction

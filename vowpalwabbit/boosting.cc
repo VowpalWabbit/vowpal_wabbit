@@ -23,37 +23,16 @@
 #include "vw.h"
 #include "rand48.h"
 #include "shared_data.h"
+#include "vw_math.h"
 
 #include "io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+
 namespace logger = VW::io::logger;
 
 using std::endl;
-
-inline float sign(float w)
-{
-  if (w <= 0.)
-    return -1.;
-  else
-    return 1.;
-}
-
-int64_t choose(int64_t n, int64_t k)
-{
-  if (k > n) return 0;
-  if (k < 0) return 0;
-  if (k == n) return 1;
-  if (k == 0 && n != 0) return 1;
-  int64_t r = 1;
-  for (int64_t d = 1; d <= k; ++d)
-  {
-    r *= n--;
-    r /= d;
-  }
-  return r;
-}
 
 struct boosting
 {
@@ -99,7 +78,7 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, example& e
         c = o.C[o.N - (i + 1)][(int64_t)k];
       else
       {
-        c = choose(o.N - (i + 1), (int64_t)k);
+        c = VW::math::choose(o.N - (i + 1), (int64_t)k);
         o.C[o.N - (i + 1)][(int64_t)k] = c;
       }
 
@@ -127,7 +106,7 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, example& e
 
   ec.weight = u;
   ec.partial_prediction = final_prediction;
-  ec.pred.scalar = sign(final_prediction);
+  ec.pred.scalar = VW::math::sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
@@ -185,7 +164,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, e
 
   ec.weight = u;
   ec.partial_prediction = final_prediction;
-  ec.pred.scalar = sign(final_prediction);
+  ec.pred.scalar = VW::math::sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
@@ -265,7 +244,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, e
 
   ec.weight = u;
   ec.partial_prediction = final_prediction;
-  ec.pred.scalar = sign(final_prediction);
+  ec.pred.scalar = VW::math::sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
