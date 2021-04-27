@@ -155,7 +155,8 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
     // Set up costs
     // cost = cost of predicting erm's prediction
     // cost_delta = cost - cost of predicting the opposite label
-    if (in_dis) { cost = r * (fmax(importance, 0.f)) * ((float)(VW::math::sign(prediction) != VW::math::sign(ec_input_label))); }
+    if (in_dis)
+    { cost = r * (fmax(importance, 0.f)) * ((float)(VW::math::sign(prediction) != VW::math::sign(ec_input_label))); }
     else
     {
       cost = 0.f;
@@ -186,7 +187,8 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
       a.lambda_n[i] = fmax(a.lambda_n[i], 0.f);
 
       // Update denominator of lambda
-      a.lambda_d[i] += ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction) && in_dis)) / (float)pow(q2, 1.5);
+      a.lambda_d[i] +=
+          ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction) && in_dis)) / (float)pow(q2, 1.5);
 
       // Accumulating weights of learners in the cover
       q2 += ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
