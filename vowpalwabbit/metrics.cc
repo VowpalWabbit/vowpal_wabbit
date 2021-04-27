@@ -44,7 +44,7 @@ void list_to_json_file(std::string filename, std::vector<std::tuple<std::string,
     for (std::tuple<std::string, size_t> m : metrics)
     {
       writer.Key(std::get<0>(m).c_str());
-      writer.Int(std::get<1>(m));
+      writer.Int64(static_cast<int32_t>(std::get<1>(m)));
     }
     writer.EndObject();
 
