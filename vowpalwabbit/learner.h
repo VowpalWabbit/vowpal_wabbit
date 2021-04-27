@@ -106,6 +106,14 @@ struct save_load_data
   fn save_load_f = nullptr;
 };
 
+struct save_metric_data
+{
+  using fn = void (*)(void*, std::vector<std::tuple<std::string, size_t>>& metrics_list);
+  void* data = nullptr;
+  base_learner* base = nullptr;
+  fn save_metric_f = nullptr;
+};
+
 struct finish_example_data
 {
   using fn = void (*)(vw&, void* data, void* ex);
@@ -120,6 +128,7 @@ void generic_driver(const std::vector<vw*>& alls);
 void generic_driver_onethread(vw& all);
 
 inline void noop_sl(void*, io_buf&, bool, bool) {}
+inline void noop_pm(void*, std::vector<std::tuple<std::string, size_t>>&) {}
 inline void noop(void*) {}
 inline float noop_sensitivity(void*, base_learner&, example&)
 {
@@ -225,6 +234,7 @@ private:
   save_load_data save_load_fd;
   func_data end_pass_fd;
   func_data end_examples_fd;
+  save_metric_data persist_metrics_fd;
   func_data finisher_fd;
   std::string name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
 
@@ -401,6 +411,23 @@ public:
     save_load_fd.base = learn_fd.base;
   }
 
+  // called when metrics is enabled.  Autorecursive.
+  void persist_metrics(std::vector<std::tuple<std::string, size_t>>& metrics_list)
+  {
+    persist_metrics_fd.save_metric_f(persist_metrics_fd.data, metrics_list);
+    if (persist_metrics_fd.base) persist_metrics_fd.base->persist_metrics(metrics_list);
+  }
+  void set_persist_metrics(void (*f)(T&, std::vector<std::tuple<std::string, size_t>>&))
+  {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_CAST_FUNC_TYPE
+    persist_metrics_fd.save_metric_f = (save_metric_data::fn)f;
+    VW_WARNING_STATE_POP
+    persist_metrics_fd.data = learn_fd.data;
+    persist_metrics_fd.base = learn_fd.base;
+  }
+
+
   // called to clean up state.  Autorecursive.
   void set_finish(void (*f)(T&))
   {
@@ -527,6 +554,7 @@ public:
       ret.increment = ws;
       ret.end_pass_fd.func = (func_data::fn)noop;
       ret.end_examples_fd.func = (func_data::fn)noop;
+      ret.persist_metrics_fd.save_metric_f = (save_metric_data::fn)noop_pm;
       ret.init_fd.func = (func_data::fn)noop;
       ret.save_load_fd.save_load_f = (save_load_data::fn)noop_sl;
       ret.finisher_fd.data = dat;

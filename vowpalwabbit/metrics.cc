@@ -5,7 +5,7 @@
 #include "debug_log.h"
 #include "reductions.h"
 #include "learner.h"
-#include "rapidjson/filewritestream.h"
+#include <rapidjson/filewritestream.h>
 #include <rapidjson/writer.h>
 #include <cfloat>
 
@@ -30,21 +30,52 @@ struct metrics_data
   int predicted_not_first = 0;
 };
 
+void list_to_json_file(std::string filename, std::vector<std::tuple<std::string, size_t>>& metrics)
+{
+  FILE* fp;
+
+  if (VW::file_open(&fp, filename.c_str(), "wt") == 0)
+  {
+    char writeBuffer[1024];
+    FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
+    Writer<FileWriteStream> writer(os);
+
+    writer.StartObject();
+    for (std::tuple<std::string, size_t> m : metrics)
+    {
+        std::string name = std::get<0>(m);
+        writer.Key(name.c_str());
+        writer.Int(std::get<1>(m));
+    }
+    writer.EndObject();
+
+    fclose(fp);
+  }
+  else
+  {
+    logger::errlog_warn("warning: skipping metrics. could not open file for metrics: {}", filename);
+  }
+
+}
+
 void output_metrics(vw& all)
 {
   if (all.options->was_supplied("extra_metrics"))
   {
-    // end_examples(all.l->save_extra_metrics());
+    std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
+    std::vector<std::tuple<std::string, size_t>> list_metrics;
 
-    // output extra metrics
-    // metrics of all
+    all.l->persist_metrics(list_metrics);
+
 #ifdef BUILD_EXTERNAL_PARSER
     if (all.external_parser)
     {
+      all.external_parser->persist_metrics(list_metrics);
       // fetch metrics of parser
     }
 #endif
-    // metrics of stack
+
+    list_to_json_file(filename, list_metrics);
   }
 }
 
@@ -89,35 +120,10 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
   if (!is_learn || base.learn_returns_prediction) { count_post_predict(data, base.pred_type, ec); }
 }
 
-void persist(metrics_data& data, Writer<FileWriteStream>& writer)
+void persist(metrics_data& data, std::vector<std::tuple<std::string, size_t>>& metrics)
 {
-  writer.Key("NumberOfPredicts");
-  writer.Int(data.predict_count);
-  writer.Key("NumberOfLearns");
-  writer.Int(data.learn_count);
-}
-
-void end_examples(metrics_data& data)
-{
-  // where/when to write file?
-  FILE* fp;
-
-  if (VW::file_open(&fp, data.out_file.c_str(), "wt") == 0)
-  {
-    char writeBuffer[1024];
-    FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
-    Writer<FileWriteStream> writer(os);
-
-    writer.StartObject();
-    persist(data, writer);
-    writer.EndObject();
-
-    fclose(fp);
-  }
-  else
-  {
-    logger::errlog_warn("warning: skipping metrics. could not open file for metrics: {}", data.out_file);
-  }
+  metrics.emplace_back("NumberOfPredicts", data.predict_count);
+  metrics.emplace_back("NumberOfLearns", data.learn_count);
 }
 
 VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
@@ -140,7 +146,7 @@ VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
     learner<metrics_data, multi_ex>* l = &init_learner(data, as_multiline(base_learner),
         predict_or_learn<true, multi_learner, multi_ex>, predict_or_learn<false, multi_learner, multi_ex>, 1,
         base_learner->pred_type, all.get_setupfn_name(metrics_setup), base_learner->learn_returns_prediction);
-    l->set_end_examples(end_examples);
+    l->set_persist_metrics(persist);
     return make_base(*l);
   }
   else
@@ -148,7 +154,7 @@ VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
     learner<metrics_data, example>* l = &init_learner(data, as_singleline(base_learner),
         predict_or_learn<true, single_learner, example>, predict_or_learn<false, single_learner, example>, 1,
         base_learner->pred_type, all.get_setupfn_name(metrics_setup), base_learner->learn_returns_prediction);
-    l->set_end_examples(end_examples);
+    l->set_persist_metrics(persist);
     return make_base(*l);
   }
 }
