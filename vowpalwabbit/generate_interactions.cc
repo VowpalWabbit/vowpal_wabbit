@@ -17,6 +17,12 @@ using namespace VW::config;
 
 namespace logger = VW::io::logger;
 
+struct generate_interactions
+{
+  std::set<namespace_index> all_seen_namespaces;
+  std::vector<std::vector<namespace_index>> generated_interactions;
+};
+
 std::vector<namespace_index> indices_to_values_one_based(
     const std::vector<size_t>& indices, const std::set<namespace_index>& values)
 {

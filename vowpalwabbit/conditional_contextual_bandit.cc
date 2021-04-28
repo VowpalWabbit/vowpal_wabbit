@@ -18,7 +18,6 @@
 #include "version.h"
 #include "debug_log.h"
 #include "shared_data.h"
-#include "generate_interactions.h"
 
 #include "io/logger.h"
 
@@ -72,7 +71,6 @@ struct ccb
   std::vector<bool> exclude_list, include_list;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label = 0;
-  generate_interactions* generate_interaction_reducton = nullptr;
 
   multi_ex cb_ex;
 
@@ -387,13 +385,14 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     }
   }
 
+  // Even though the interactions reduction caches things when we move into CCB
+  // mode a new namespace is added (ccb_id_namespace) and so we can be confident
+  // that the cache will be invalidated.
   auto prev_has_seen = data.has_seen_multi_slot_example;
   data.has_seen_multi_slot_example = data.has_seen_multi_slot_example || data.slots.size() > 1;
   if (!prev_has_seen && data.has_seen_multi_slot_example)
   {
     insert_ccb_interactions(data.all->interactions);
-    // This is terrible but we must invalidate the generated interactions now that things have changed.
-    data.generate_interaction_reducton->all_seen_namespaces.clear();
   }
 
   // If we have not seen more than one slot, we need to check if the user has supplied slot features.
@@ -653,9 +652,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 
   data->id_namespace_str.append("_id");
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
-
-  data->generate_interaction_reducton = reinterpret_cast<generate_interactions*>(
-      base->get_learner_by_name_prefix("generate_interactions")->unsafe_get_data());
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       all.get_setupfn_name(ccb_explore_adf_setup))
