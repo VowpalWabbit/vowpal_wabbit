@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include "future_compat.h"
+
 namespace VW
 {
 namespace math
@@ -23,20 +25,23 @@ bool are_same_rel(T lhs, T rhs, T tolerance = DEFAULT_TOLERANCE)
   return std::abs(lhs - rhs) <= (tolerance * (std::abs(lhs) + std::abs(rhs)));
 }
 
-VW_STD14_CONSTEXPR inline size_t factorial(size_t n) noexcept
+VW_STD14_CONSTEXPR inline int64_t factorial(int64_t n) noexcept
 {
-  size_t result = 1;
-  for (size_t i = 2; i <= n; i++) { result *= i; }
+  int64_t result = 1;
+  for (int64_t i = 2; i <= n; i++) { result *= i; }
   return result;
 }
 
 /// Both n and k must be non-zero
-VW_STD14_CONSTEXPR inline size_t number_of_combinations_with_repetition(size_t n, size_t k) noexcept
+VW_STD14_CONSTEXPR inline int64_t number_of_combinations_with_repetition(int64_t n, int64_t k) noexcept
 {
-  return factorial(n + k + 1) / (factorial(n - 1) * factorial(k));
+  return factorial(n + k - 1) / (factorial(n - 1) * factorial(k));
 }
 
-inline size_t number_of_permutations_with_repetition(size_t n, size_t k) { return static_cast<size_t>(std::pow(n, k)); }
+inline int64_t number_of_permutations_with_repetition(int64_t n, int64_t k)
+{
+  return static_cast<int64_t>(std::pow(n, k));
+}
 
 constexpr inline float sign(float w) noexcept { return (w <= 0.f) ? -1.f : 1.f; }
 
