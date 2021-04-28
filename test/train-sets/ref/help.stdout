@@ -447,8 +447,7 @@ Explore evaluation:
   --multiplier arg      Multiplier used to make all rejection sample 
                         probabilities <= 1
 Debug: Metrics:
-  --extra_metrics arg   log extra metrics on specified filename as JSON. No fix
-                        schema.
+  --extra_metrics arg   specify filename. No fix schema.
 Follow the Regularized Leader:
   --ftrl                FTRL: Follow the Proximal Regularized Leader
   --coin                Coin betting optimizer

@@ -24,10 +24,10 @@ namespace metrics
 struct metrics_data
 {
   std::string out_file;
-  int learn_count = 0;
-  int predict_count = 0;
-  int predicted_first_option = 0;
-  int predicted_not_first = 0;
+  size_t learn_count = 0;
+  size_t predict_count = 0;
+  size_t predicted_first_option = 0;
+  size_t predicted_not_first = 0;
 };
 
 void list_to_json_file(std::string filename, std::vector<std::tuple<std::string, size_t>>& metrics)
@@ -120,8 +120,10 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
 
 void persist(metrics_data& data, std::vector<std::tuple<std::string, size_t>>& metrics)
 {
-  metrics.emplace_back("NumberOfPredicts", data.predict_count);
-  metrics.emplace_back("NumberOfLearns", data.learn_count);
+  metrics.emplace_back("total_predict_calls", data.predict_count);
+  metrics.emplace_back("total_learn_calls", data.learn_count);
+  metrics.emplace_back("predicted_baseline_first", data.predicted_first_option);
+  metrics.emplace_back("predicted_not_first", data.predicted_not_first);
 }
 
 VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
@@ -129,9 +131,7 @@ VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<metrics_data>();
 
   option_group_definition new_options("Debug: Metrics");
-  new_options.add(make_option("extra_metrics", data->out_file)
-                      .necessary()
-                      .help("log extra metrics on specified filename as JSON. No fix schema."));
+  new_options.add(make_option("extra_metrics", data->out_file).necessary().help("specify filename. No fix schema."));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
