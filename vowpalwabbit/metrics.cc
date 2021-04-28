@@ -5,6 +5,9 @@
 #include "debug_log.h"
 #include "reductions.h"
 #include "learner.h"
+#ifdef BUILD_EXTERNAL_PARSER
+#  include "parse_example_external.h"
+#endif
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/writer.h>
 #include <cfloat>
