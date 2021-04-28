@@ -38,7 +38,10 @@ VW_STD14_CONSTEXPR inline int64_t number_of_combinations_with_repetition(int64_t
   return factorial(n + k - 1) / (factorial(n - 1) * factorial(k));
 }
 
-inline int64_t number_of_permutations_with_repetition(int64_t n, int64_t k) { return static_cast<int64_t>(std::pow(n, k)); }
+inline int64_t number_of_permutations_with_repetition(int64_t n, int64_t k)
+{
+  return static_cast<int64_t>(std::pow(n, k));
+}
 
 constexpr inline float sign(float w) noexcept { return (w <= 0.f) ? -1.f : 1.f; }
 
