@@ -55,7 +55,7 @@ void list_to_json_file(std::string filename, std::vector<std::tuple<std::string,
   }
   else
   {
-    logger::errlog_warn("warning: skipping metrics. could not open file for metrics: {}", filename);
+    logger::errlog_warn("skipping metrics. could not open file for metrics: {}", filename);
   }
 }
 
