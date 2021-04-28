@@ -750,7 +750,7 @@ void parse_feature_tweaks(
   }
 
   // prepare namespace interactions
-  std::vector<std::vector<namespace_index>> expanded_interactions;
+  std::vector<std::vector<namespace_index>> decoded_interactions;
 
   if ( ( (!all.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
@@ -772,55 +772,24 @@ void parse_feature_tweaks(
 
     for (auto& i : quadratics)
     {
-      i = spoof_hex_encoded_namespaces(i);
+      if (i.size() != 2) { THROW("error, quadratic features must involve two sets.)") }
+      auto encoded = spoof_hex_encoded_namespaces(i);
+      decoded_interactions.emplace_back(encoded.begin(), encoded.end());
       if (!all.logger.quiet) *(all.trace_message) << i << " ";
     }
-
-    std::vector<std::vector<namespace_index>> new_quadratics;
-    for (const auto& i : quadratics)
-    {
-      // if (i[0] == ':' && i[1] == ':') { all.interactions.quadratics_wildcard_expansion = true; }
-      new_quadratics.emplace_back(i.begin(), i.end());
-    }
-
-    // if (all.interactions.quadratics_wildcard_expansion)
-    // {
-    //   if (options.was_supplied("leave_duplicate_interactions"))
-    //   { all.interactions.leave_duplicate_interactions = true; }
-    //   else if (!all.logger.quiet)
-    //   {
-    //     *(all.trace_message) << endl
-    //                          << "WARNING: any duplicate namespace interactions will be removed" << endl
-    //                          << "You can use --leave_duplicate_interactions to disable this behaviour.";
-    //   }
-    // }
-
-    std::sort(new_quadratics.begin(), new_quadratics.end(), INTERACTIONS::sort_interactions_comparator);
-
-     expanded_interactions = new_quadratics;
-    //     INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
-
-    // if (!all.logger.quiet) *(all.trace_message) << endl;
+    if (!all.logger.quiet) *(all.trace_message) << endl;
   }
 
   if (options.was_supplied("cubic"))
   {
     if (!all.logger.quiet) *(all.trace_message) << "creating cubic features for triples: ";
-    for (auto i = cubics.begin(); i != cubics.end(); ++i)
+    for (const auto& i : cubics)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
-      if (!all.logger.quiet) *(all.trace_message) << *i << " ";
+      if (i.size() != 3) { THROW("error, cubic features must involve three sets.") }
+      auto encoded = spoof_hex_encoded_namespaces(i);
+      decoded_interactions.emplace_back(encoded.begin(), encoded.end());
+      if (!all.logger.quiet) *(all.trace_message) << i << " ";
     }
-
-    std::vector<std::vector<namespace_index>> new_cubics;
-    for (const auto& i : cubics) { new_cubics.emplace_back(i.begin(), i.end()); }
-
-    std::sort(new_cubics.begin(), new_cubics.end(), INTERACTIONS::sort_interactions_comparator);
-
-    // std::vector<std::vector<namespace_index>> exp_cubic =
-    //     INTERACTIONS::expand_interactions(new_cubics, 3, "error, cubic features must involve three sets.");
-    expanded_interactions.insert(std::begin(expanded_interactions), std::begin(new_cubics), std::end(new_cubics));
-
     if (!all.logger.quiet) *(all.trace_message) << endl;
   }
 
@@ -828,29 +797,26 @@ void parse_feature_tweaks(
   {
     if (!all.logger.quiet) *(all.trace_message) << "creating features for following interactions: ";
 
-    for (auto i = interactions.begin(); i != interactions.end(); ++i)
+    for (const auto& i : interactions)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
-      if (!all.logger.quiet) *(all.trace_message) << *i << " ";
+      if (i.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
+      auto encoded = spoof_hex_encoded_namespaces(i);
+      decoded_interactions.emplace_back(encoded.begin(), encoded.end());
+      if (!all.logger.quiet) *(all.trace_message) << i << " ";
     }
-
-    std::vector<std::vector<namespace_index>> new_interactions;
-    for (const auto& i : interactions) { new_interactions.emplace_back(i.begin(), i.end()); }
-
-    std::sort(new_interactions.begin(), new_interactions.end(), INTERACTIONS::sort_interactions_comparator);
-
-    // std::vector<std::vector<namespace_index>> exp_inter = INTERACTIONS::expand_interactions(new_interactions, 0, "");
-    expanded_interactions.insert(std::begin(expanded_interactions), std::begin(new_interactions), std::end(new_interactions));
-
     if (!all.logger.quiet) *(all.trace_message) << endl;
   }
 
-  if (expanded_interactions.size() > 0)
+  if (decoded_interactions.size() > 0)
   {
-    size_t removed_cnt;
-    size_t sorted_cnt;
+    // Sorts the overall list
+    std::sort(decoded_interactions.begin(), decoded_interactions.end(), INTERACTIONS::sort_interactions_comparator);
+
+    size_t removed_cnt = 0;
+    size_t sorted_cnt = 0;
+    // Sorts individual interactions
     INTERACTIONS::sort_and_filter_duplicate_interactions(
-        expanded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
+        decoded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
     if (removed_cnt > 0 && !all.logger.quiet)
     {
@@ -866,13 +832,7 @@ void parse_feature_tweaks(
                            << sorted_cnt << '.' << endl;
     }
 
-    if (all.interactions.size() > 0)
-    {
-      // should be empty, but just in case...
-      all.interactions.clear();
-    }
-
-    all.interactions = expanded_interactions;
+    all.interactions = std::move(decoded_interactions);
   }
 
   for (size_t i = 0; i < 256; i++)
