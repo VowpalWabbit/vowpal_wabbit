@@ -4,8 +4,8 @@ multi_ex parse_json(vw& all, const std::string& line)
 {
   v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(&all));
-  VW::read_line_json<true>(
-      all, examples, (char*)line.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)&all);
+  VW::read_line_json_s<true>(
+      all, examples, (char*)line.c_str(), line.length(), (VW::example_factory_t)&VW::get_unused_example, (void*)&all);
 
   multi_ex result;
   for (size_t i = 0; i < examples.size(); ++i)

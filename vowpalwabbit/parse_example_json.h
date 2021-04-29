@@ -1611,13 +1611,13 @@ struct json_parser
 namespace VW
 {
 template <bool audit>
-void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory,
+void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t length, example_factory_t example_factory,
     void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
     parse_slates_example_json<audit>(
-        all, examples, line, strlen(line), example_factory, ex_factory_context, dedup_examples);
+        all, examples, line, length, example_factory, ex_factory_context, dedup_examples);
     return;
   }
 
@@ -1627,7 +1627,7 @@ void read_line_json(vw& all, v_array<example*>& examples, char* line, example_fa
   json_parser<audit> parser;
 
   VWReaderHandler<audit>& handler = parser.handler;
-  handler.init(&all, &examples, &ss, line + strlen(line), example_factory, ex_factory_context, dedup_examples);
+  handler.init(&all, &examples, &ss, line + length, example_factory, ex_factory_context, dedup_examples);
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
@@ -1641,6 +1641,14 @@ void read_line_json(vw& all, v_array<example*>& examples, char* line, example_fa
                                 << handler.error().str()
                                 << "State: " << (current_state ? current_state->name : "null"));  // <<
   // "Line: '"<< line_copy << "'");
+}
+
+template <bool audit>
+VW_DEPRECATED("read_line_json has been deprecated; use read_line_json_s instead.")
+void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory,
+    void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+{
+  read_line_json_s<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context, dedup_examples);
 }
 
 inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
@@ -1732,8 +1740,8 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     }
   }
   else
-    VW::template read_line_json<audit>(
-        *all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
+    VW::template read_line_json_s<audit>(
+        *all, examples, line, num_chars, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
 
   return true;
 }
