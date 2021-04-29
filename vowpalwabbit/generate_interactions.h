@@ -11,7 +11,7 @@
 
 VW::LEARNER::base_learner* generate_interactions_setup(VW::config::options_i& options, vw& all);
 
-std::vector<std::vector<namespace_index>> generate_combinations_with_repetiton(
+std::vector<std::vector<namespace_index>> generate_combinations_with_repetition(
     const std::vector<namespace_index>& namespaces, size_t num_to_pick);
 std::vector<std::vector<namespace_index>> generate_permutations_with_repetition(
     const std::vector<namespace_index>& namespaces, size_t num_to_pick);

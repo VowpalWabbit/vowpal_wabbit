@@ -14,7 +14,7 @@
 BOOST_AUTO_TEST_CASE(interaction_generic_expand_wildcard_only)
 {
   std::vector<namespace_index> namespaces = {'a', 'b'};
-  auto result = generate_combinations_with_repetiton(namespaces, 2);
+  auto result = generate_combinations_with_repetition(namespaces, 2);
 
   namespace_interactions interactions;
   std::vector<std::vector<namespace_index>> compare_set = {{'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
