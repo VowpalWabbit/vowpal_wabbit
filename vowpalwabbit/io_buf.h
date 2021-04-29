@@ -186,7 +186,7 @@ public:
   size_t unflushed_bytes_count() { return head - _buffer._begin; }
 
   void flush();
-  
+
   bool close_file()
   {
     if (!input_files.empty())

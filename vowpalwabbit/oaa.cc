@@ -35,8 +35,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t ld = ec.l.multi;
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
-      logger::log_error("label {0} is not in {{1,{1}}} This won't work right.",
-			ld.label, o.k);
+    logger::log_error("label {0} is not in {{1,{1}}} This won't work right.", ld.label, o.k);
 
   ec.l.simple = {1.};  // truth
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
@@ -78,8 +77,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 
   // Label validation
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
-      logger::log_error("label {0} is not in {{1,{1}}} This won't work right.",
-			mc_label_data.label, o.k);
+    logger::log_error("label {0} is not in {{1,{1}}} This won't work right.", mc_label_data.label, o.k);
 
   ec.l.simple = {FLT_MAX};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();

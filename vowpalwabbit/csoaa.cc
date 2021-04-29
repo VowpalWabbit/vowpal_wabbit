@@ -240,8 +240,8 @@ void unsubtract_example(example* ec)
   if (ec->indices.back() != wap_ldf_namespace)
   {
     logger::errlog_error(
-      "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
-      "after and not removed!");
+        "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
+        "after and not removed!");
     return;
   }
 

@@ -31,8 +31,8 @@ struct expreplay
   }
 };
 
-template <label_parser &lp>
-void learn(expreplay<lp> &er, LEARNER::single_learner &base, example &ec)
+template <label_parser& lp>
+void learn(expreplay<lp>& er, LEARNER::single_learner& base, example& ec)
 {
   // Cannot learn if the example weight is 0.
   if (lp.get_weight(&ec.l, ec._reduction_features) == 0.) return;
@@ -50,15 +50,15 @@ void learn(expreplay<lp> &er, LEARNER::single_learner &base, example &ec)
   VW::copy_example_data_with_label(&er.buf[n], &ec);
 }
 
-template <label_parser &lp>
-void predict(expreplay<lp> &, LEARNER::single_learner &base, example &ec)
+template <label_parser& lp>
+void predict(expreplay<lp>&, LEARNER::single_learner& base, example& ec)
 {
   base.predict(ec);
 }
 
-template <label_parser &lp>
-void multipredict(expreplay<lp> &, LEARNER::single_learner &base, example &ec, size_t count, size_t step,
-    polyprediction *pred, bool finalize_predictions)
+template <label_parser& lp>
+void multipredict(expreplay<lp>&, LEARNER::single_learner& base, example& ec, size_t count, size_t step,
+    polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
 }
@@ -109,11 +109,11 @@ VW::LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& a
   er->filled = calloc_or_throw<bool>(er->N);
 
   if (!all.logger.quiet)
-    *(all.trace_message) << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count
-              << std::endl;
+    *(all.trace_message) << "experience replay level=" << er_level << ", buffer=" << er->N
+                         << ", replay count=" << er->replay_count << std::endl;
 
   er->base = VW::LEARNER::as_singleline(setup_base(options, all));
-  VW::LEARNER::learner<expreplay<lp>, example> *l = &init_learner(er, er->base, learn<lp>, predict<lp>, replay_string);
+  VW::LEARNER::learner<expreplay<lp>, example>* l = &init_learner(er, er->base, learn<lp>, predict<lp>, replay_string);
   l->set_end_pass(end_pass<lp>);
 
   return make_base(*l);

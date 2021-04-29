@@ -79,8 +79,8 @@ void make_marginal(data& sm, example& ec)
         uint64_t first_index = j.index() & mask;
         if (++j == sm.temp[n].end())
         {
-          logger::log_warn("warning: id feature namespace has {} features. Should be a multiple of 2",
-                           sm.temp[n].size());
+          logger::log_warn(
+              "warning: id feature namespace has {} features. Should be a multiple of 2", sm.temp[n].size());
           break;
         }
         float second_value = j.value();

@@ -14,12 +14,13 @@
 namespace fmt
 {
 // Enable VW::string_view in fmt calls (uses the fmt::string_view formatter underneath)
-template<>
+template <>
 struct formatter<VW::string_view> : formatter<fmt::string_view>
 {
   template <typename FormatContext>
-  auto format(const VW::string_view& sv, FormatContext& ctx) -> decltype(ctx.out()) {
+  auto format(const VW::string_view& sv, FormatContext& ctx) -> decltype(ctx.out())
+  {
     return formatter<fmt::string_view>::format({sv.begin(), sv.size()}, ctx);
   }
 };
-}
+}  // namespace fmt

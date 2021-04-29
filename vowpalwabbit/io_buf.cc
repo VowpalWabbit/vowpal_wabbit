@@ -129,4 +129,3 @@ void io_buf::flush()
     output_files[0]->flush();
   }
 }
-

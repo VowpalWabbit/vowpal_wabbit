@@ -65,7 +65,7 @@ struct parser
   shared_data* _shared_data = nullptr;
 
   hash_func_t hasher;
-  bool resettable;           // Whether or not the input can be reset.
+  bool resettable;                 // Whether or not the input can be reset.
   std::unique_ptr<io_buf> output;  // Where to output the cache.
   std::string currentname;
   std::string finalname;

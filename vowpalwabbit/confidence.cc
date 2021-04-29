@@ -61,10 +61,7 @@ void confidence_print_result(VW::io::writer* f, float res, float confidence, v_a
     auto ss_string(ss.str());
     ssize_t len = ss_string.size();
     ssize_t t = f->write(ss_string.c_str(), (unsigned int)len);
-    if (t != len)
-    {
-      logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
-    }
+    if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
 
@@ -102,8 +99,9 @@ base_learner* confidence_setup(options_i& options, vw& all)
 
   if (!all.training)
   {
-    logger::log_warn("Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when "
-		     "saving the model and avoid --test_only");
+    logger::log_warn(
+        "Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when "
+        "saving the model and avoid --test_only");
     return nullptr;
   }
 

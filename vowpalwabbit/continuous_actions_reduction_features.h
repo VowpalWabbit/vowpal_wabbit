@@ -21,10 +21,7 @@ struct reduction_features
   bool is_chosen_action_set() const { return !std::isnan(chosen_action); }
   bool is_pdf_set() const { return pdf.size() > 0; }
 
-  reduction_features()
-  {
-    chosen_action = std::numeric_limits<float>::quiet_NaN();
-  }
+  reduction_features() { chosen_action = std::numeric_limits<float>::quiet_NaN(); }
 
   void clear()
   {

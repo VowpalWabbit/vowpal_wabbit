@@ -103,10 +103,7 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
   std::vector<char> t(v_length);
   buf->read_file(filepointer, t.data(), v_length);
   VW::version_struct v_tmp(t.data());
-  if (v_tmp != VW::version)
-  {
-    return 0;
-  }
+  if (v_tmp != VW::version) { return 0; }
 
   char temp;
   if (buf->read_file(filepointer, &temp, 1) < 1) THROW("failed to read");

@@ -309,8 +309,7 @@ public:
   float getLoss(shared_data*, float prediction, float label)
   {
     // TODO: warning or error?
-    if (label < 0.f)
-      logger::log_warn("You are using label {} but loss function expects label >= 0!", label);
+    if (label < 0.f) logger::log_warn("You are using label {} but loss function expects label >= 0!", label);
     float exp_prediction = expf(prediction);
     // deviance is used instead of log-likelihood
     return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));

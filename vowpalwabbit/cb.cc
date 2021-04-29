@@ -191,7 +191,6 @@ void default_label(CB_EVAL::label& ld)
 
 bool test_label(CB_EVAL::label& ld) { return CB::is_test_label(ld.event); }
 
-
 void parse_label(parser* p, shared_data* sd, CB_EVAL::label& ld, std::vector<VW::string_view>& words,
     reduction_features& red_features)
 {
