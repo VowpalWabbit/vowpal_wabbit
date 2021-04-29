@@ -63,6 +63,9 @@
     <ClCompile Include="main.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="math_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="object_pool_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
