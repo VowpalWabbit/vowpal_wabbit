@@ -28,12 +28,6 @@ inline constexpr bool is_printable_namespace(const unsigned char ns)
   return ns >= printable_start && ns <= printable_end;
 }
 
-// exand all wildcard namespaces in vector<string>
-// req_length must be 0 if interactions of any length are allowed, otherwise contains required length
-// err_msg will be printed plus exception will be thrown if req_length != 0 and mismatch interaction length.
-std::vector<std::vector<namespace_index>> expand_interactions(
-    const std::vector<std::vector<namespace_index>>& vec, const size_t required_length, const std::string& err_msg);
-
 bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b);
 
 // remove duplicate interactions and sort namespaces in them (if required)

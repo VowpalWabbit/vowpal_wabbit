@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "future_compat.h"
+#include "vw_exception.h"
 
 namespace VW
 {
@@ -33,8 +34,10 @@ VW_STD14_CONSTEXPR inline int64_t factorial(int64_t n) noexcept
 }
 
 /// Both n and k must be non-zero
-VW_STD14_CONSTEXPR inline int64_t number_of_combinations_with_repetition(int64_t n, int64_t k) noexcept
+inline int64_t number_of_combinations_with_repetition(int64_t n, int64_t k)
 {
+  if (n > 21) { THROW("Magnitude of n is too large. Cannot compute computations.")}
+  if (k > 21) { THROW("Magnitude of k is too large. Cannot compute computations.")}
   return factorial(n + k - 1) / (factorial(n - 1) * factorial(k));
 }
 

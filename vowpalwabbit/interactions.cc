@@ -14,73 +14,6 @@ namespace INTERACTIONS
  *  Interactions preprocessing
  */
 
-// expand namespace interactions if contain wildcards
-// recursive function used internally in this module
-void expand_namespaces_with_recursion(std::vector<namespace_index> const& ns,
-    std::vector<std::vector<namespace_index>>& res, std::vector<namespace_index>& val, size_t pos)
-{
-  assert(pos <= ns.size());
-
-  if (pos == ns.size())
-  {
-    // we're at the end of interaction
-
-    // and store it in res
-    res.emplace_back(val);
-    // don't free s memory as it's data will be used later
-  }
-  else
-  {
-    // we're at the middle of interaction
-    if (ns[pos] != ':')
-    {
-      // not a wildcard
-      val.push_back(ns[pos]);
-      expand_namespaces_with_recursion(ns, res, val, pos + 1);
-      val.pop_back();  // i don't need value itself
-    }
-    else
-    {
-      for (unsigned char j = printable_start; j <= printable_end; ++j)
-      {
-        if (valid_ns(j))
-        {
-          val.push_back(j);
-          expand_namespaces_with_recursion(ns, res, val, pos + 1);
-          val.pop_back();  // i don't need value itself
-        }
-      }
-    }
-  }
-}
-
-// expand namespace interactions if contain wildcards
-// called from parse_args.cc
-// process all interactions in a vector
-
-std::vector<std::vector<namespace_index>> expand_interactions(
-    const std::vector<std::vector<namespace_index>>& vec, const size_t required_length, const std::string& err_msg)
-{
-  std::vector<std::vector<namespace_index>> res;
-
-  for (auto const& i : vec)
-  {
-    const size_t len = i.size();
-    if (required_length > 0 && len != required_length)
-    // got strict requirement of interaction length and it was failed.
-    {
-      THROW(err_msg);
-    }
-    else if (len < 2)
-      // regardles of required_length value this check is always performed
-      THROW("error, feature interactions must involve at least two namespaces" << err_msg);
-
-    std::vector<namespace_index> temp;
-    expand_namespaces_with_recursion(i, res, temp, 0);
-  }
-  return res;
-}
-
 bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b)
 {
   if (a.size() != b.size()) { return a.size() > b.size(); }
@@ -101,9 +34,8 @@ bool sort_interactions_comparator(const std::vector<namespace_index>& a, const s
  */
 
 // returns true if iteraction contains one or more duplicated namespaces
-// with one exeption - returns false if interaction made of one namespace
+// with one exemption - returns false if interaction made of one namespace
 // like 'aaa' as it has no sense to sort such things.
-
 inline bool must_be_left_sorted(const std::vector<namespace_index>& oi)
 {
   if (oi.size() <= 1) return true;  // one letter in std::string - no need to sort
@@ -126,10 +58,8 @@ inline bool must_be_left_sorted(const std::vector<namespace_index>& oi)
   return false;  // 'aaa' or 'abc'
 }
 
-// used from parse_args.cc
-// filter duplicate namespaces treating them as unordered sets of namespaces.
-// also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
-
+/// filter duplicate namespaces treating them as unordered sets of namespaces.
+/// also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
 void sort_and_filter_duplicate_interactions(
     std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
 {
