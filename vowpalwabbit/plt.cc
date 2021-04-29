@@ -49,7 +49,7 @@ struct plt
   float threshold;
   uint32_t top_k;
   std::vector<polyprediction> node_preds;  // for storing results of base.multipredict
-  std::vector<node> node_queue;        // container for queue used for both types of predictions
+  std::vector<node> node_queue;            // container for queue used for both types of predictions
 
   // for measuring predictive performance
   std::unordered_set<uint32_t> true_labels;
@@ -108,8 +108,7 @@ void learn(plt& p, single_learner& base, example& ec)
       }
     }
     if (multilabels.label_v.back() >= p.k)
-      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.",
-                        multilabels.label_v.back(), p.k - 1);
+      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.", multilabels.label_v.back(), p.k - 1);
 
     for (auto& n : p.positive_nodes)
     {

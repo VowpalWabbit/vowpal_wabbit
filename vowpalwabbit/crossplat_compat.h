@@ -24,7 +24,7 @@ constexpr uint64_t UINT64_32ONES = 0x00000000ffffffffi64;
 
 namespace VW
 {
-inline int string_cpy(char *dest, size_t dest_size, const char *src)
+inline int string_cpy(char* dest, size_t dest_size, const char* src)
 {
 #ifdef _WIN32
   // strcpy_s returns an errno_t
@@ -36,7 +36,7 @@ inline int string_cpy(char *dest, size_t dest_size, const char *src)
 #endif
 }
 
-inline int file_open(FILE **pf, const char *filename, const char *mode)
+inline int file_open(FILE** pf, const char* filename, const char* mode)
 {
 #ifdef _WIN32
   // fopen_s returns an errno_t

@@ -29,10 +29,7 @@ example_predict::iterator example_predict::end() { return {feature_space.data(),
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
-safe_example_predict::safe_example_predict()
-{
-  ft_offset = 0;
-}
+safe_example_predict::safe_example_predict() { ft_offset = 0; }
 
 VW_WARNING_STATE_POP
 void safe_example_predict::clear()

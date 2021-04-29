@@ -89,17 +89,13 @@ socket_t AllReduceSockets::getsock()
 #ifndef _WIN32
   int on = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-  {
-    logger::errlog_error("setsockopt SO_REUSEADDR: {}", VW::strerror_to_string(errno));
-  }
+  { logger::errlog_error("setsockopt SO_REUSEADDR: {}", VW::strerror_to_string(errno)); }
 #endif
 
   // Enable TCP Keep Alive to prevent socket leaks
   int enableTKA = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
-  {
-    logger::errlog_error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno));
-  }
+  { logger::errlog_error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno)); }
 
   return sock;
 }
@@ -189,7 +185,7 @@ void AllReduceSockets::all_reduce_init()
       {
         if (listen(sock, kid_count) < 0)
         {
-	  logger::errlog_error("listen: {}", VW::strerror_to_string(errno));
+          logger::errlog_error("listen: {}", VW::strerror_to_string(errno));
           CLOSESOCK(sock);
           sock = getsock();
         }
@@ -210,9 +206,7 @@ void AllReduceSockets::all_reduce_init()
   {
     char dotted_quad[INET_ADDRSTRLEN];
     if (nullptr == inet_ntop(AF_INET, (char*)&parent_ip, dotted_quad, INET_ADDRSTRLEN))
-    {
-      logger::errlog_error("read parent_ip={0}(inet_ntop: {1})", parent_ip, VW::strerror_to_string(errno));
-    }
+    { logger::errlog_error("read parent_ip={0}(inet_ntop: {1})", parent_ip, VW::strerror_to_string(errno)); }
     else
     {
       logger::errlog_info("read parent_ip={}", dotted_quad);

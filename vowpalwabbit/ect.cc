@@ -260,7 +260,7 @@ void ect_train(ect& e, single_learner& base, example& ec)
     }
   } while (id != 0);
 
-  //TODO: error? warn? info? what level is this supposed to be?
+  // TODO: error? warn? info? what level is this supposed to be?
   if (e.tournaments_won.empty()) logger::log_error("badness!");
 
   // tournaments_won is a bit vector determining which tournaments the label won.

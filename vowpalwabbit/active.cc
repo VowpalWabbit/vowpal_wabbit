@@ -106,9 +106,7 @@ void active_print_result(VW::io::writer* f, float res, float weight, v_array<cha
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
-  if (t != len) {
-    logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
-  }
+  if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void output_and_account_example(vw& all, active& a, example& ec)

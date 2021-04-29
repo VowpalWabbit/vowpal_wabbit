@@ -19,7 +19,6 @@ using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace CB;
 
-
 float safe_probability(float prob)
 {
   if (prob <= 0.)

@@ -2034,8 +2034,8 @@ void verify_active_csoaa(
       if (err > threshold)
       {
         logger::errlog_error("verify_active_csoaa failed: truth {0}:{1}, known[{2}]={3}, error={4} vs threshold {5}",
-                             wc.class_index /*0*/, wc.x/*1*/, i/*2*/, known[i].first.partial_prediction/*3*/,
-                             err/*4*/, threshold/*5*/);
+            wc.class_index /*0*/, wc.x /*1*/, i /*2*/, known[i].first.partial_prediction /*3*/, err /*4*/,
+            threshold /*5*/);
       }
     }
     i++;
@@ -2477,13 +2477,9 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
   while ((rd = fscanf_s(f, "%d:%d", &from, &to)) > 0)
   {
     if ((from < 0) || (from > (int)A))
-    {
-      logger::errlog_warn("warning: ignoring transition from {0} because it's out of the range [0,{1}]", from, A);
-    }
+    { logger::errlog_warn("warning: ignoring transition from {0} because it's out of the range [0,{1}]", from, A); }
     if ((to < 0) || (to > (int)A))
-    {
-      logger::errlog_warn("warning: ignoring transition to {0} because it's out of the range [0,{1}]", to, A);
-    }
+    { logger::errlog_warn("warning: ignoring transition to {0} because it's out of the range [0,{1}]", to, A); }
     bg[from * (A + 1) + to] = true;
     count++;
   }
@@ -2717,8 +2713,9 @@ base_learner* setup(options_i& options, vw& all)
     priv.total_number_of_policies = tmp_number_of_policies;
     if (priv.current_policy >
         0)  // we loaded a file but total number of policies didn't match what is needed for training
-      logger::errlog_warn("warning: you're attempting to train more classifiers than was allocated initially. "
-                          "Likely to cause bad performance.");
+      logger::errlog_warn(
+          "warning: you're attempting to train more classifiers than was allocated initially. "
+          "Likely to cause bad performance.");
   }
 
   // current policy currently points to a new policy we would train
@@ -2940,8 +2937,7 @@ void search::set_options(uint32_t opts)
 
   if (this->priv->use_action_costs && (this->priv->rollout_method != NO_ROLLOUT))
     logger::errlog_warn(
-      "warning: task is designed to use rollout costs, but this only works when --search_rollout none is specified"
-    );
+        "warning: task is designed to use rollout costs, but this only works when --search_rollout none is specified");
 }
 
 void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
@@ -2985,14 +2981,7 @@ void search::set_force_oracle(bool force) { this->priv->force_oracle = force; }
 
 // predictor implementation
 predictor::predictor(search& sch, ptag my_tag)
-    : is_ldf(false)
-    , my_tag(my_tag)
-    , ec(nullptr)
-    , ec_cnt(0)
-    , ec_alloced(false)
-    , weight(1.)
-    , learner_id(0)
-    , sch(sch)
+    : is_ldf(false), my_tag(my_tag), ec(nullptr), ec_cnt(0), ec_alloced(false), weight(1.), learner_id(0), sch(sch)
 {
   oracle_actions = v_init<action>();
   condition_on_tags = v_init<ptag>();
@@ -3013,10 +3002,7 @@ void predictor::free_ec()
   }
 }
 
-predictor::~predictor()
-{
-  free_ec();
-}
+predictor::~predictor() { free_ec(); }
 
 predictor& predictor::reset()
 {

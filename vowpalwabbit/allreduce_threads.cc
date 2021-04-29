@@ -13,10 +13,7 @@ AllReduceSync::AllReduceSync(const size_t total) : m_total(total), m_count(0), m
   buffers = new void*[total];
 }
 
-AllReduceSync::~AllReduceSync()
-{
-  delete[] buffers;
-}
+AllReduceSync::~AllReduceSync() { delete[] buffers; }
 
 void AllReduceSync::waitForSynchronization()
 {
