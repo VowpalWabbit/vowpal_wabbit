@@ -127,8 +127,8 @@ void generic_driver(vw& all);
 void generic_driver(const std::vector<vw*>& alls);
 void generic_driver_onethread(vw& all);
 
-inline void noop_sl(void*, io_buf&, bool, bool) {}
-inline void noop_pm(void*, std::vector<std::tuple<std::string, size_t>>&) {}
+inline void noop_save_load(void*, io_buf&, bool, bool) {}
+inline void noop_persist_metrics(void*, std::vector<std::tuple<std::string, size_t>>&) {}
 inline void noop(void*) {}
 inline float noop_sensitivity(void*, base_learner&, example&)
 {
@@ -553,9 +553,9 @@ public:
       ret.increment = ws;
       ret.end_pass_fd.func = (func_data::fn)noop;
       ret.end_examples_fd.func = (func_data::fn)noop;
-      ret.persist_metrics_fd.save_metric_f = (save_metric_data::fn)noop_pm;
+      ret.persist_metrics_fd.save_metric_f = (save_metric_data::fn)noop_persist_metrics;
       ret.init_fd.func = (func_data::fn)noop;
-      ret.save_load_fd.save_load_f = (save_load_data::fn)noop_sl;
+      ret.save_load_fd.save_load_f = (save_load_data::fn)noop_save_load;
       ret.finisher_fd.data = dat;
       ret.finisher_fd.func = (func_data::fn)noop;
       ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity;
@@ -924,7 +924,7 @@ struct base_learner_builder
     this->_learner->end_pass_fd.func = (func_data::fn)noop;
     this->_learner->end_examples_fd.func = (func_data::fn)noop;
     this->_learner->init_fd.func = (func_data::fn)noop;
-    this->_learner->save_load_fd.save_load_f = (save_load_data::fn)noop_sl;
+    this->_learner->save_load_fd.save_load_f = (save_load_data::fn)noop_save_load;
     this->_learner->finisher_fd.data = this->_learner->learner_data.get();
     this->_learner->finisher_fd.func = (func_data::fn)noop;
     this->_learner->sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity_base;
