@@ -289,13 +289,24 @@ if(BUILD_TESTS)
 
   # The Visual Studio expression generator
   set(cmake_test_configuration "")
+  set(cmake_test_verbosity "--verbose")
   if (${CMAKE_GENERATOR} MATCHES "^Visual Studio")
     set(cmake_test_configuration -C $<CONFIG>)
+    # The VS Generator builds fall over in test when STDOUT/ERR contains strings of the form 
+    # "(<other-stuff, snipped>)?error[^:]*:.*", which our native unit tests output as part of a 
+    # successful run. 
+    #
+    # This is caused by MSBuild being "helpful": 
+    # https://stackoverflow.com/questions/48117302/does-the-msbuild-exec-task-search-stdout-for-the-string-error
+    # 
+    # The CMake team has discussed this issue, but are using an MSBuild mechanism that does not support
+    # overriding this behaviour. The fix is to disable test output on Visual Studio generator builds. 
+    set(cmake_test_verbosity "")
   endif()
 
   # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
   add_custom_target(test_with_output
-    COMMAND ${CMAKE_CTEST_COMMAND} ${cmake_test_configuration} --verbose
+    COMMAND ${CMAKE_CTEST_COMMAND} ${cmake_test_configuration} ${cmake_test_verbosity}
     DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target} ${vw_cs_unittest_targets}
   )
 
