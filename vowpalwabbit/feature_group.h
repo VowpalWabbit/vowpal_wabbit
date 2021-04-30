@@ -93,7 +93,7 @@ public:
   {
     _begin_values++;
     _begin_indices++;
-    if (_begin_audit != nullptr) { _begin_indices++; }
+    if (_begin_audit != nullptr) { _begin_audit++; }
     return *this;
   }
 
@@ -101,7 +101,7 @@ public:
   {
     _begin_values += diff;
     _begin_indices += diff;
-    if (_begin_audit != nullptr) { _begin_indices++; }
+    if (_begin_audit != nullptr) { _begin_audit += diff; }
     return *this;
   }
 
@@ -109,7 +109,7 @@ public:
   {
     _begin_values -= diff;
     _begin_indices -= diff;
-    if (_begin_audit != nullptr) { _begin_indices++; }
+    if (_begin_audit != nullptr) { _begin_audit += diff; }
     return *this;
   }
 
