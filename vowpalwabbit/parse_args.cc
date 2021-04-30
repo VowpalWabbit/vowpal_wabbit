@@ -1274,9 +1274,8 @@ void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
       {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"},
-      {red_python_setup, "custom_python_reduction"},
-      {red_python_multiline_setup, "custom_python_multi_reduction"},
-      {red_python_base_setup, "custom_python_base_reduction"} };
+      {red_python_setup, "custom_python_reduction"}, {red_python_multiline_setup, "custom_python_multi_reduction"},
+      {red_python_base_setup, "custom_python_base_reduction"}};
 
   auto name_extractor = options_name_extractor();
   vw dummy_all;
@@ -1395,8 +1394,7 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   reductions.push_back(Search::setup);
   reductions.push_back(audit_regressor_setup);
-  if (!python_base_reduction)
-    reductions.push_back(red_python_setup);
+  if (!python_base_reduction) reductions.push_back(red_python_setup);
   reductions.push_back(VW::metrics::metrics_setup);
 
   register_reductions(all, reductions);
@@ -1411,8 +1409,8 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
   return static_cast<ssize_t>(num_bytes);
 }
 
-vw& parse_args(vw& all,
-    std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener, void* trace_context)
+vw& parse_args(vw& all, std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener,
+    void* trace_context)
 {
   all.options = std::move(options);
 
@@ -1777,8 +1775,8 @@ void print_enabled_reductions(vw& all)
   }
 }
 
-vw* initialize_with_options(vw& all, std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skipModelLoad,
-    trace_message_t trace_listener, void* trace_context)
+vw* initialize_with_options(vw& all, std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
+    bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   // Set up logger as early as possible
   logger::initialize_logger();
@@ -1868,7 +1866,7 @@ vw* initialize_with_reduction(std::string s, io_buf* model, bool skipModelLoad, 
     all.ext_binding = std::move(ext_binding);
 
     std::unique_ptr<options_i, options_deleter_type> options(
-      new config::options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
+        new config::options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
     ret = initialize_with_options(all, std::move(options), model, skipModelLoad, trace_listener, trace_context);
   }
   catch (...)

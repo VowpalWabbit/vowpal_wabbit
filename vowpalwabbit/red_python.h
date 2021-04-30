@@ -13,21 +13,21 @@ VW::LEARNER::base_learner* red_python_base_setup(VW::config::options_i& options,
 
 namespace RED_PYTHON
 {
-    class ExternalBinding
-    {
-        public:
-            virtual void SetBaseLearner(void* learner) = 0;
-            virtual void ActualLearn(example *) = 0;
-            virtual void ActualPredict(example *) = 0;
-            virtual void ActualSaveLoad(io_buf* model_file, bool read, bool text) = 0;
-            virtual bool ShouldRegisterFinishExample() = 0;
-            virtual bool ShouldRegisterSaveLoad() = 0;
-            virtual void ActualFinishExample(example *) = 0;
+class ExternalBinding
+{
+public:
+  virtual void SetBaseLearner(void* learner) = 0;
+  virtual void ActualLearn(example*) = 0;
+  virtual void ActualPredict(example*) = 0;
+  virtual void ActualSaveLoad(io_buf* model_file, bool read, bool text) = 0;
+  virtual bool ShouldRegisterFinishExample() = 0;
+  virtual bool ShouldRegisterSaveLoad() = 0;
+  virtual void ActualFinishExample(example*) = 0;
 
-            virtual void ActualLearn(multi_ex *) = 0;
-            virtual void ActualPredict(multi_ex *) = 0;
-            virtual void ActualFinishExample(multi_ex *) = 0;
+  virtual void ActualLearn(multi_ex*) = 0;
+  virtual void ActualPredict(multi_ex*) = 0;
+  virtual void ActualFinishExample(multi_ex*) = 0;
 
-            virtual ~ExternalBinding() {};
-    };
+  virtual ~ExternalBinding(){};
+};
 }  // namespace RED_PYTHON
