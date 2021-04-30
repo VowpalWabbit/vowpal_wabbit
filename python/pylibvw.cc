@@ -1015,7 +1015,7 @@ py::tuple examples_get_cb_label_from_adf(ExList examples)
   auto it = std::find_if(examples.begin(), examples.end(), [](example_ptr& ex) { return !(ex->l.cb.costs.empty()); });
   if (it != examples.end())
   {
-    u_int32_t labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), it));
+    uint32_t labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), it));
     return py::make_tuple(*it, labelled_action);
     // return *it;
   }
