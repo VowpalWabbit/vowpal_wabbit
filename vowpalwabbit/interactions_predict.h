@@ -184,10 +184,10 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
                 feature_index halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
                 feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);
 
-                auto begin = second.audit_cbegin();
+                auto begin = third.audit_cbegin();
                 // next index differs for permutations and simple combinations
                 if (same_namespace2) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1; }
-                auto end = second.audit_cend();
+                auto end = third.audit_cend();
                 inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weights, ft_value, halfhash);
                 if (audit) audit_func(dat, nullptr);
               }  // end for (snd)

@@ -61,16 +61,6 @@ public:
   {
   }
 
-  // This constructor converts from the const iterator verson to non const. So it should only be defined in the non
-  // const version of the iterator.
-  template <typename = std::enable_if<!std::is_const<feature_value_type_t> && !std::is_const<feature_index_type_t> &&
-                !std::is_const<audit_type_t>>::type>
-  audit_features_iterator(const audit_features_iterator<const typename std::decay<feature_value_type_t>::type,
-      const typename std::decay<feature_index_type_t>::type, const typename std::decay<audit_type_t>::type>& other)
-      : _begin_values(other._begin_values), _begin_indices(other._begin_indices), _begin_audit(other._begin_audit)
-  {
-  }
-
   audit_features_iterator(const audit_features_iterator&) = default;
   audit_features_iterator& operator=(const audit_features_iterator&) = default;
   audit_features_iterator(audit_features_iterator&&) = default;
@@ -93,7 +83,7 @@ public:
   {
     _begin_values++;
     _begin_indices++;
-    if (_begin_audit != nullptr) { _begin_indices++; }
+    if (_begin_audit != nullptr) { _begin_audit++; }
     return *this;
   }
 
@@ -101,7 +91,7 @@ public:
   {
     _begin_values += diff;
     _begin_indices += diff;
-    if (_begin_audit != nullptr) { _begin_indices++; }
+    if (_begin_audit != nullptr) { _begin_audit++; }
     return *this;
   }
 
@@ -109,7 +99,7 @@ public:
   {
     _begin_values -= diff;
     _begin_indices -= diff;
-    if (_begin_audit != nullptr) { _begin_indices++; }
+    if (_begin_audit != nullptr) { _begin_audit++; }
     return *this;
   }
 
@@ -195,16 +185,6 @@ public:
 
   features_iterator(feature_value_type_t* begin_values, feature_index_type_t* begin_indices)
       : _begin_values(begin_values), _begin_indices(begin_indices)
-  {
-  }
-
-  // This constructor converts from the const iterator verson to non const. So it should only be defined in the non
-  // const version of the iterator.
-  template <
-      typename = std::enable_if<!std::is_const<feature_value_type_t> && !std::is_const<feature_index_type_t>>::type>
-  features_iterator(const features_iterator<const typename std::decay<feature_value_type_t>::type,
-      const typename std::decay<feature_index_type_t>::type>& other)
-      : _begin_values(other._begin_values), _begin_indices(other._begin_indices)
   {
   }
 
