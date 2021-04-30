@@ -446,6 +446,9 @@ Explore evaluation:
   --explore_eval        Evaluate explore_eval adf policies
   --multiplier arg      Multiplier used to make all rejection sample 
                         probabilities <= 1
+Debug: Metrics:
+  --extra_metrics arg   Specify filename to write metrics to. Note: There is no
+                        fixed schema.
 Follow the Regularized Leader:
   --ftrl                FTRL: Follow the Proximal Regularized Leader
   --coin                Coin betting optimizer
