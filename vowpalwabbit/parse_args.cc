@@ -81,6 +81,7 @@
 #include "OjaNewton.h"
 #include "audit_regressor.h"
 #include "marginal.h"
+#include "metrics.h"
 #include "explore_eval.h"
 #include "baseline.h"
 #include "classweight.h"
@@ -1383,6 +1384,7 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   reductions.push_back(Search::setup);
   reductions.push_back(audit_regressor_setup);
+  reductions.push_back(VW::metrics::metrics_setup);
 
   register_reductions(all, reductions);
   all.l = setup_base(options, all);
@@ -2002,6 +2004,8 @@ void finish(vw& all, bool delete_all)
     finalize_regressor_exception = e;
     finalize_regressor_exception_thrown = true;
   }
+
+  metrics::output_metrics(all);
 
   if (delete_all) delete &all;
 
