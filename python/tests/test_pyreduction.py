@@ -70,6 +70,7 @@ def cpp_binary():
 import pytest
 
 def helper_compare_binary_output(a, b):
+    assert len(a) == len(b)
     line_number = 0
     for j, i in zip(a, b):
         if line_number == 7:
@@ -85,8 +86,6 @@ def test_python_binary_reduction():
     noop_binary_log = noop_example()
     python_binary_log = python_binary()
     native_binary_log = cpp_binary()
-    assert len(noop_binary_log) == len(python_binary_log)
-    assert len(python_binary_log) == len(native_binary_log)
 
     helper_compare_binary_output(python_binary_log, native_binary_log)
     helper_compare_binary_output(noop_binary_log, native_binary_log)
