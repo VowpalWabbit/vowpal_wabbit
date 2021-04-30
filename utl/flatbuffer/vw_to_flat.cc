@@ -377,7 +377,7 @@ void to_flat::convert_txt_to_flat(vw& all)
         {
           auto& ns_fts = ae->feature_space[ns];
           std::string ns_name;
-          for (auto& f : ns_fts.values_indices_audit())
+          for (const auto& f : ns_fts.audit_range())
           {
             ns_name = f.audit()->get()->first;
             fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(
