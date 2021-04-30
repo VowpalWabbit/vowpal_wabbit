@@ -72,8 +72,7 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1 * val
 
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*), class W>
 inline void inner_kernel(R& dat, features::const_audit_iterator& begin, features::const_audit_iterator& end,
-    const uint64_t offset,
-    W& weights, feature_value ft_value, feature_index halfhash)
+    const uint64_t offset, W& weights, feature_value ft_value, feature_index halfhash)
 {
   if (audit)
   {

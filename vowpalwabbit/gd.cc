@@ -295,7 +295,7 @@ void print_features(vw& all, example& ec)
     for (features& fs : ec)
     {
       if (fs.space_names.size() > 0)
-         for (const auto& f : fs.audit_range())
+        for (const auto& f : fs.audit_range())
         {
           audit_interaction(dat, f.audit()->get());
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
