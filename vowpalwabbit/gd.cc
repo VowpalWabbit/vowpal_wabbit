@@ -274,9 +274,9 @@ void print_lda_features(vw& all, example& ec)
   // TODO: Where should audit stuff output to?
   for (features& fs : ec)
   {
-    for (features::iterator_all& f : fs.values_indices_audit())
+    for (const auto& f : fs.audit_range())
     {
-      std::cout << '\t' << f.audit()->get()->first << '^' << f.audit()->get()->second << ':'
+      std::cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':'
                 << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
       for (size_t k = 0; k < all.lda; k++) std::cout << ':' << (&weights[f.index()])[k];
     }
@@ -295,14 +295,16 @@ void print_features(vw& all, example& ec)
     for (features& fs : ec)
     {
       if (fs.space_names.size() > 0)
-        for (features::iterator_all& f : fs.values_indices_audit())
+         for (const auto& f : fs.audit_range())
         {
-          audit_interaction(dat, f.audit()->get());
+          audit_interaction(dat, f.audit().get());
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
           audit_interaction(dat, NULL);
         }
       else
-        for (features::iterator& f : fs) audit_feature(dat, f.value(), f.index() + ec.ft_offset);
+      {
+        for (const auto& f : fs) { audit_feature(dat, f.value(), f.index() + ec.ft_offset); }
+      }
     }
 
     INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction>(

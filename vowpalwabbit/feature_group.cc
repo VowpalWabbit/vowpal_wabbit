@@ -27,14 +27,9 @@ void features::clear()
   space_names.clear();
 }
 
-void features::truncate_to(const features_value_iterator& pos)
-{
-  auto i = pos._begin - values.begin();
-  values.resize_but_with_stl_behavior(i);
-  if (indicies.end() != indicies.begin()) { indicies.resize_but_with_stl_behavior(i); }
+void features::truncate_to(const iterator& pos) { truncate_to(std::distance(begin(), pos)); }
 
-  if (space_names.begin() != space_names.end()) { space_names.erase(space_names.begin() + i, space_names.end()); }
-}
+void features::truncate_to(const audit_iterator& pos) { truncate_to(std::distance(audit_begin(), pos)); }
 
 void features::truncate_to(size_t i)
 {
@@ -60,7 +55,9 @@ bool features::sort(uint64_t parse_mask)
     std::vector<feature_slice> slice;
     slice.reserve(indicies.size());
     for (size_t i = 0; i < indicies.size(); i++)
-    { slice.push_back({values[i], indicies[i] & parse_mask, *space_names[i]}); }
+    {
+      slice.push_back({values[i], indicies[i] & parse_mask, *space_names[i]});
+    }
     // The comparator should return true if the first element is less than the second.
     std::sort(slice.begin(), slice.end(), [](const feature_slice& first, const feature_slice& second) {
       return (first.weight_index < second.weight_index) ||

@@ -14,16 +14,16 @@ namespace GD
 {
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
 template <class R, void (*T)(R&, float, uint64_t), class W>
-void foreach_feature(W& /*weights*/, features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
+void foreach_feature(W& /*weights*/, const features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
 {
-  for (features::iterator& f : fs) T(dat, mult * f.value(), f.index() + offset);
+  for (const auto& f : fs) { T(dat, mult * f.value(), f.index() + offset); }
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
 template <class R, void (*T)(R&, const float, float&), class W>
-inline void foreach_feature(W& weights, features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
+inline void foreach_feature(W& weights, const features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
 {
-  for (features::iterator& f : fs)
+  for (const auto& f : fs)
   {
     weight& w = weights[(f.index() + offset)];
     T(dat, mult * f.value(), w);
@@ -32,9 +32,9 @@ inline void foreach_feature(W& weights, features& fs, R& dat, uint64_t offset = 
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
 template <class R, void (*T)(R&, const float, const float&), class W>
-inline void foreach_feature(const W& weights, features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
+inline void foreach_feature(const W& weights, const features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
 {
-  for (features::iterator& f : fs)
+  for (const auto& f : fs)
   {
     const weight& w = weights[(f.index() + offset)];
     T(dat, mult * f.value(), w);

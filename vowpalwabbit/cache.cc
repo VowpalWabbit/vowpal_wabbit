@@ -174,7 +174,7 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
   c += sizeof(size_t);
 
   uint64_t last = 0;
-  for (features::iterator& f : fs)
+  for (const auto& f : fs)
   {
     feature_index fi = f.index() & mask;
     int64_t s_diff = (fi - last);

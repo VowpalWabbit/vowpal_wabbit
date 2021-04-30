@@ -40,167 +40,269 @@ struct feature
 
 static_assert(std::is_trivial<feature>::value, "To be used in v_array feature must be trivial");
 
-/// iterator over feature values only
-class features_value_iterator
+template <typename feature_value_type_t, typename feature_index_type_t, typename audit_type_t>
+class audit_features_iterator final
 {
-protected:
-  feature_value* _begin;
+private:
+  feature_value_type_t* _begin_values;
+  feature_index_type_t* _begin_indices;
+  audit_type_t* _begin_audit;
 
 public:
-  explicit features_value_iterator(feature_value* begin) : _begin(begin) {}
+  using iterator_category = std::random_access_iterator_tag;
+  using difference_type = std::ptrdiff_t;
+  using value_type = audit_features_iterator<feature_value_type_t, feature_index_type_t, audit_type_t>;
+  using pointer = value_type*;
+  using reference = value_type&;
 
-  features_value_iterator(const features_value_iterator&) = default;
-  features_value_iterator& operator=(const features_value_iterator&) = default;
-  features_value_iterator(features_value_iterator&&) = default;
-  features_value_iterator& operator=(features_value_iterator&&) = default;
-
-  inline features_value_iterator& operator++()
+  audit_features_iterator(
+      feature_value_type_t* begin_values, feature_index_type_t* begin_indices, audit_type_t* begin_audit)
+      : _begin_values(begin_values), _begin_indices(begin_indices), _begin_audit(begin_audit)
   {
-    _begin++;
+  }
+
+  // This constructor converts from the const iterator verson to non const. So it should only be defined in the non
+  // const version of the iterator.
+  template <typename = std::enable_if<!std::is_const<feature_value_type_t> && !std::is_const<feature_index_type_t> &&
+                !std::is_const<audit_type_t>>::type>
+  audit_features_iterator(const audit_features_iterator<const typename std::decay<feature_value_type_t>::type,
+      const typename std::decay<feature_index_type_t>::type, const typename std::decay<audit_type_t>::type>& other)
+      : _begin_values(other._begin_values), _begin_indices(other._begin_indices), _begin_audit(other._begin_audit)
+  {
+  }
+
+  audit_features_iterator(const audit_features_iterator&) = default;
+  audit_features_iterator& operator=(const audit_features_iterator&) = default;
+  audit_features_iterator(audit_features_iterator&&) = default;
+  audit_features_iterator& operator=(audit_features_iterator&&) = default;
+
+  inline feature_value_type_t& value() { return *_begin_values; }
+  inline const feature_value_type_t& value() const { return *_begin_values; }
+
+  inline feature_index_type_t& index() { return *_begin_indices; }
+  inline const feature_index_type_t& index() const { return *_begin_indices; }
+
+  inline audit_type_t& audit() { return *_begin_audit; }
+  inline const audit_type_t& audit() const { return *_begin_audit; }
+
+  inline reference operator*() { return *this; }
+  inline const reference operator*() const { return *this; }
+
+  // Required for forward_iterator
+  audit_features_iterator& operator++()
+  {
+    _begin_values++;
+    _begin_indices++;
+    if (_begin_audit != nullptr) { _begin_indices++; }
     return *this;
   }
 
-  /// \return reference to the current value
-  inline feature_value& value() { return *_begin; }
-
-  inline features_value_iterator operator+(std::ptrdiff_t index) { return features_value_iterator(_begin + index); }
-
-  inline features_value_iterator& operator+=(std::ptrdiff_t index)
+  audit_features_iterator& operator+=(difference_type diff)
   {
-    _begin += index;
+    _begin_values += diff;
+    _begin_indices += diff;
+    if (_begin_audit != nullptr) { _begin_indices++; }
     return *this;
   }
 
-  inline features_value_iterator& operator-=(std::ptrdiff_t index)
+  audit_features_iterator& operator-=(difference_type diff)
   {
-    _begin -= index;
+    _begin_values -= diff;
+    _begin_indices -= diff;
+    if (_begin_audit != nullptr) { _begin_indices++; }
     return *this;
   }
 
-  inline features_value_iterator& operator*() { return *this; }
+  friend audit_features_iterator<feature_value_type_t, feature_index_type_t, audit_type_t> operator+(
+      const audit_features_iterator& lhs, difference_type rhs)
+  {
+    return {lhs._begin_values + rhs, lhs._begin_indices + rhs,
+        lhs._begin_audit != nullptr ? lhs._begin_audit + rhs : nullptr};
+  }
 
-  bool operator==(const features_value_iterator& rhs) { return _begin == rhs._begin; }
-  bool operator!=(const features_value_iterator& rhs) { return _begin != rhs._begin; }
+  friend audit_features_iterator<feature_value_type_t, feature_index_type_t, audit_type_t> operator+(
+      difference_type lhs, const audit_features_iterator& rhs)
+  {
+    return {rhs._begin_values + lhs, rhs._begin_indices + lhs,
+        rhs._begin_audit != nullptr ? rhs._begin_audit + lhs : nullptr};
+  }
 
-  friend void swap(features_value_iterator& lhs, features_value_iterator& rhs) { std::swap(lhs._begin, rhs._begin); }
+  friend difference_type operator-(const audit_features_iterator& lhs, const audit_features_iterator& rhs)
+  {
+    return lhs._begin_values - rhs._begin_values;
+  }
+
+  friend audit_features_iterator<feature_value_type_t, feature_index_type_t, audit_type_t> operator-(
+      const audit_features_iterator& lhs, difference_type rhs)
+  {
+    return {lhs._begin_values - rhs, lhs._begin_indices - rhs,
+        lhs._begin_audit != nullptr ? lhs._begin_audit - rhs : nullptr};
+  }
+
+  // For all of the comparison operations only _begin_values is used, since the other values are incremented in sequence
+  // (or ignored in the case of _begin_audit if it is nullptr)
+  friend bool operator<(const audit_features_iterator& lhs, const audit_features_iterator& rhs)
+  {
+    return lhs._begin_values < rhs._begin_values;
+  }
+
+  friend bool operator>(const audit_features_iterator& lhs, const audit_features_iterator& rhs)
+  {
+    return lhs._begin_values > rhs._begin_values;
+  }
+
+  friend bool operator<=(const audit_features_iterator& lhs, const audit_features_iterator& rhs)
+  {
+    return !(lhs > rhs);
+  }
+  friend bool operator>=(const audit_features_iterator& lhs, const audit_features_iterator& rhs)
+  {
+    return !(lhs < rhs);
+  }
+
+  friend bool operator==(const audit_features_iterator& lhs, const audit_features_iterator& rhs)
+  {
+    return lhs._begin_values == rhs._begin_values;
+  }
+
+  friend bool operator!=(const audit_features_iterator& lhs, const audit_features_iterator& rhs)
+  {
+    return !(lhs == rhs);
+  }
+
+  friend void swap(audit_features_iterator& lhs, audit_features_iterator& rhs)
+  {
+    std::swap(lhs._begin_values, rhs._begin_values);
+    std::swap(lhs._begin_indices, rhs._begin_indices);
+    std::swap(lhs._begin_audit, rhs._begin_audit);
+  }
   friend struct features;
 };
 
-/// iterator over values and indicies
-class features_value_index_iterator : public features_value_iterator
+template <typename feature_value_type_t, typename feature_index_type_t>
+class features_iterator final
 {
-protected:
-  feature_index* _begin_index;
+private:
+  feature_value_type_t* _begin_values;
+  feature_index_type_t* _begin_indices;
 
 public:
-  features_value_index_iterator(feature_value* begin, feature_index* begin_index)
-      : features_value_iterator(begin), _begin_index(begin_index)
+  using iterator_category = std::random_access_iterator_tag;
+  using difference_type = std::ptrdiff_t;
+  using value_type = features_iterator<feature_value_type_t, feature_index_type_t>;
+  using pointer = value_type*;
+  using reference = value_type&;
+
+  features_iterator(feature_value_type_t* begin_values, feature_index_type_t* begin_indices)
+      : _begin_values(begin_values), _begin_indices(begin_indices)
   {
   }
 
-  features_value_index_iterator(const features_value_index_iterator&) = default;
-  features_value_index_iterator& operator=(const features_value_index_iterator&) = default;
-  features_value_index_iterator(features_value_index_iterator&&) = default;
-  features_value_index_iterator& operator=(features_value_index_iterator&&) = default;
-
-  inline features_value_index_iterator& operator++()
+  // This constructor converts from the const iterator verson to non const. So it should only be defined in the non
+  // const version of the iterator.
+  template <
+      typename = std::enable_if<!std::is_const<feature_value_type_t> && !std::is_const<feature_index_type_t>>::type>
+  features_iterator(const features_iterator<const typename std::decay<feature_value_type_t>::type,
+      const typename std::decay<feature_index_type_t>::type>& other)
+      : _begin_values(other._begin_values), _begin_indices(other._begin_indices)
   {
-    features_value_iterator::operator++();
-    _begin_index++;
+  }
+
+  features_iterator(const features_iterator&) = default;
+  features_iterator& operator=(const features_iterator&) = default;
+  features_iterator(features_iterator&&) = default;
+  features_iterator& operator=(features_iterator&&) = default;
+
+  inline feature_value_type_t& value() { return *_begin_values; }
+  inline const feature_value_type_t& value() const { return *_begin_values; }
+
+  inline feature_index_type_t& index() { return *_begin_indices; }
+  inline const feature_index_type_t& index() const { return *_begin_indices; }
+
+  inline reference operator*() { return *this; }
+  inline const reference operator*() const { return *this; }
+
+  features_iterator& operator++()
+  {
+    _begin_values++;
+    _begin_indices++;
     return *this;
   }
 
-  inline feature_index& index() { return *_begin_index; }
-
-  inline features_value_index_iterator& operator+=(std::ptrdiff_t index)
+  features_iterator& operator+=(difference_type diff)
   {
-    features_value_iterator::operator+=(index);
-    _begin_index += index;
+    _begin_values += diff;
+    _begin_indices += diff;
     return *this;
   }
 
-  inline features_value_index_iterator operator+(std::ptrdiff_t index)
+  features_iterator& operator-=(difference_type diff)
   {
-    return {_begin + index, _begin_index + index};
-  }
-
-  inline features_value_index_iterator& operator-=(std::ptrdiff_t index)
-  {
-    features_value_iterator::operator-=(index);
-    _begin_index -= index;
+    _begin_values -= diff;
+    _begin_indices -= diff;
     return *this;
   }
 
-  inline features_value_index_iterator& operator*() { return *this; }
-
-  friend void swap(features_value_index_iterator& lhs, features_value_index_iterator& rhs)
+  friend features_iterator<feature_value_type_t, feature_index_type_t> operator+(
+      const features_iterator& lhs, difference_type rhs)
   {
-    swap(static_cast<features_value_iterator&>(lhs), static_cast<features_value_iterator&>(rhs));
-    std::swap(lhs._begin_index, rhs._begin_index);
-  }
-};
-
-/// iterator over values, indicies and audit space names
-class features_value_index_audit_iterator : public features_value_index_iterator
-{
-protected:
-  audit_strings_ptr* _begin_audit;
-
-public:
-  features_value_index_audit_iterator(feature_value* begin, feature_index* begin_index, audit_strings_ptr* begin_audit)
-      : features_value_index_iterator(begin, begin_index), _begin_audit(begin_audit)
-  {
+    return {lhs._begin_values + rhs, lhs._begin_indices + rhs};
   }
 
-  features_value_index_audit_iterator(const features_value_index_audit_iterator&) = default;
-  features_value_index_audit_iterator& operator=(const features_value_index_audit_iterator&) = default;
-  features_value_index_audit_iterator(features_value_index_audit_iterator&&) = default;
-  features_value_index_audit_iterator& operator=(features_value_index_audit_iterator&&) = default;
-
-  // prefix increment
-  inline features_value_index_audit_iterator& operator++()
+  friend features_iterator<feature_value_type_t, feature_index_type_t> operator+(
+      difference_type lhs, const features_iterator& rhs)
   {
-    features_value_index_iterator::operator++();
-    if (_begin_audit != nullptr) { _begin_audit++; }
-    return *this;
+    return {rhs._begin_values + lhs, rhs._begin_indices + lhs};
   }
 
-  inline audit_strings_ptr* audit() { return _begin_audit; }
-
-  inline features_value_index_audit_iterator& operator+=(std::ptrdiff_t index)
+  friend difference_type operator-(const features_iterator& lhs, const features_iterator& rhs)
   {
-    features_value_index_iterator::operator+=(index);
-    if (_begin_audit != nullptr) { _begin_audit += index; }
-    return *this;
+    return lhs._begin_values - rhs._begin_values;
   }
 
-  inline features_value_index_audit_iterator operator+(std::ptrdiff_t index)
+  friend features_iterator<feature_value_type_t, feature_index_type_t> operator-(
+      const features_iterator& lhs, difference_type rhs)
   {
-    return {_begin + index, _begin_index + index, _begin_audit + index};
+    return {lhs._begin_values - rhs, lhs._begin_indices - rhs};
   }
 
-  inline features_value_index_audit_iterator& operator-=(std::ptrdiff_t index)
+  // For all of the comparison operations only _begin_values is used, since _begin_indices is incremented along with it
+  friend bool operator<(const features_iterator& lhs, const features_iterator& rhs)
   {
-    features_value_index_iterator::operator-=(index);
-    _begin_audit += index;
-    return *this;
+    return lhs._begin_values < rhs._begin_values;
   }
 
-  inline features_value_index_audit_iterator& operator*() { return *this; }
-
-  friend void swap(features_value_index_audit_iterator& lhs, features_value_index_audit_iterator& rhs)
+  friend bool operator>(const features_iterator& lhs, const features_iterator& rhs)
   {
-    swap(static_cast<features_value_index_iterator&>(lhs), static_cast<features_value_index_iterator&>(rhs));
-    std::swap(lhs._begin_audit, rhs._begin_audit);
+    return lhs._begin_values > rhs._begin_values;
   }
+
+  friend bool operator<=(const features_iterator& lhs, const features_iterator& rhs) { return !(lhs > rhs); }
+  friend bool operator>=(const features_iterator& lhs, const features_iterator& rhs) { return !(lhs < rhs); }
+
+  friend bool operator==(const features_iterator& lhs, const features_iterator& rhs)
+  {
+    return lhs._begin_values == rhs._begin_values;
+  }
+
+  friend bool operator!=(const features_iterator& lhs, const features_iterator& rhs) { return !(lhs == rhs); }
+
+  friend void swap(features_iterator& lhs, features_iterator& rhs)
+  {
+    std::swap(lhs._begin_values, rhs._begin_values);
+    std::swap(lhs._begin_indices, rhs._begin_indices);
+  }
+  friend struct features;
 };
 
 /// the core definition of a set of features.
 struct features
 {
-  using iterator = features_value_index_iterator;
-  using iterator_value = features_value_iterator;
-  using iterator_all = features_value_index_audit_iterator;
+  using iterator = features_iterator<feature_value, feature_index>;
+  using const_iterator = features_iterator<const feature_value, const feature_index>;
+  using audit_iterator = audit_features_iterator<feature_value, feature_index, audit_strings_ptr>;
+  using const_audit_iterator =
+      audit_features_iterator<const feature_value, const feature_index, const audit_strings_ptr>;
 
   v_array<feature_value> values;               // Always needed.
   v_array<feature_index> indicies;             // Optional for sparse data.
@@ -208,23 +310,33 @@ struct features
 
   float sum_feat_sq = 0.f;
 
-  /// defines a "range" usable by C++ 11 for loops
-  class features_value_index_audit_range
+  class features_audit_range
   {
   private:
     features* _outer;
 
   public:
-    features_value_index_audit_range(features* outer) : _outer(outer) {}
+    explicit features_audit_range(features* outer) : _outer(outer) {}
 
-    inline features_value_index_audit_iterator begin()
-    {
-      return {_outer->values.begin(), _outer->indicies.begin(), _outer->space_names.data()};
-    }
-    inline features_value_index_audit_iterator end()
-    {
-      return {_outer->values.end(), _outer->indicies.end(), _outer->space_names.data() + _outer->space_names.size()};
-    }
+    inline audit_iterator begin() { return _outer->audit_begin(); }
+    inline const_audit_iterator begin() const { return _outer->audit_cbegin(); }
+    inline audit_iterator end() { return _outer->audit_end(); }
+    inline const_audit_iterator end() const { return _outer->audit_cend(); }
+
+    inline const_audit_iterator cbegin() const { return _outer->audit_cbegin(); }
+    inline const_audit_iterator cend() const { return _outer->audit_cend(); }
+  };
+
+  class const_features_audit_range
+  {
+  private:
+    const features* _outer;
+
+  public:
+    explicit const_features_audit_range(const features* outer) : _outer(outer) {}
+
+    inline const_audit_iterator cbegin() const { return _outer->audit_cbegin(); }
+    inline const_audit_iterator cend() const { return _outer->audit_cend(); }
   };
 
   features() = default;
@@ -239,18 +351,41 @@ struct features
 
   inline size_t size() const { return values.size(); }
 
-  inline bool nonempty() const { return !values.empty(); }
+  inline bool empty() const { return values.empty(); }
+  inline bool nonempty() const { return !empty(); }
 
   VW_DEPRECATED("Freeing space names is handled directly by truncation or removal.")
   void free_space_names(size_t i);
 
-  inline features_value_index_audit_range values_indices_audit() { return features_value_index_audit_range{this}; }
   // default iterator for values & features
   inline iterator begin() { return {values.begin(), indicies.begin()}; }
+  inline const_iterator begin() const { return {values.begin(), indicies.begin()}; }
   inline iterator end() { return {values.end(), indicies.end()}; }
+  inline const_iterator end() const { return {values.end(), indicies.end()}; }
+
+  inline const_iterator cbegin() const { return {values.cbegin(), indicies.cbegin()}; }
+  inline const_iterator cend() const { return {values.cend(), indicies.cend()}; }
+
+  inline features_audit_range audit_range() { return features_audit_range{this}; }
+  inline const_features_audit_range audit_range() const { return const_features_audit_range{this}; }
+
+  inline audit_iterator audit_begin() { return {values.begin(), indicies.begin(), space_names.data()}; }
+  inline const_audit_iterator audit_begin() const { return {values.begin(), indicies.begin(), space_names.data()}; }
+  inline audit_iterator audit_end() { return {values.end(), indicies.end(), space_names.data() + space_names.size()}; }
+  inline const_audit_iterator audit_end() const
+  {
+    return {values.end(), indicies.end(), space_names.data() + space_names.size()};
+  }
+
+  inline const_audit_iterator audit_cbegin() const { return {values.begin(), indicies.begin(), space_names.data()}; }
+  inline const_audit_iterator audit_cend() const
+  {
+    return {values.end(), indicies.end(), space_names.data() + space_names.size()};
+  }
 
   void clear();
-  void truncate_to(const features_value_iterator& pos);
+  void truncate_to(const audit_iterator& pos);
+  void truncate_to(const iterator& pos);
   void truncate_to(size_t i);
   void push_back(feature_value v, feature_index i);
   bool sort(uint64_t parse_mask);

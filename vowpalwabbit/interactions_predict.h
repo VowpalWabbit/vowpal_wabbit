@@ -71,14 +71,15 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1 * val
 // #define GEN_INTER_LOOP
 
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*), class W>
-inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterator_all& end, const uint64_t offset,
+inline void inner_kernel(R& dat, features::const_audit_iterator& begin, features::const_audit_iterator& end,
+    const uint64_t offset,
     W& weights, feature_value ft_value, feature_index halfhash)
 {
   if (audit)
   {
     for (; begin != end; ++begin)
     {
-      audit_func(dat, begin.audit() == nullptr ? &EMPTY_AUDIT_STRINGS : begin.audit()->get());
+      audit_func(dat, begin.audit() == nullptr ? &EMPTY_AUDIT_STRINGS : begin.audit().get());
       call_T<R, T>(dat, weights, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
       audit_func(dat, nullptr);
     }
@@ -121,15 +122,14 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
     // unless GEN_INTER_LOOP is defined we use nested 'for' loops for interactions length 2 (pairs) and 3 (triples)
     // and generic non-recursive algorythm for all other cases.
     // nested 'for' loops approach is faster, but can't be used for interation of any length.
-
     const size_t len = ns.size();
 
     if (len == 2)  // special case of pairs
     {
-      features& first = features_data[ns[0]];
+      const features& first = features_data[ns[0]];
       if (first.nonempty())
       {
-        features& second = features_data[ns[1]];
+        const features& second = features_data[ns[1]];
         if (second.nonempty())
         {
           const bool same_namespace = (!permutations && (ns[0] == ns[1]));
@@ -141,11 +141,9 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
             { audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS); }
             // next index differs for permutations and simple combinations
             feature_value ft_value = first.values[i];
-            features::features_value_index_audit_range range = second.values_indices_audit();
-            features::iterator_all begin = range.begin();
-            if (same_namespace) begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1;
-
-            features::iterator_all end = range.end();
+            auto begin = second.audit_cbegin();
+            if (same_namespace) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1; }
+            auto end = second.audit_cend();
             inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weights, ft_value, halfhash);
 
             if (audit) audit_func(dat, nullptr);
@@ -186,12 +184,10 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
                 feature_index halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
                 feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);
 
-                features::features_value_index_audit_range range = third.values_indices_audit();
-                features::iterator_all begin = range.begin();
-                if (same_namespace2)  // next index differs for permutations and simple combinations
-                  begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1;
-
-                features::iterator_all end = range.end();
+                auto begin = second.audit_cbegin();
+                // next index differs for permutations and simple combinations
+                if (same_namespace2) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1; }
+                auto end = second.audit_cend();
                 inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weights, ft_value, halfhash);
                 if (audit) audit_func(dat, nullptr);
               }  // end for (snd)
@@ -321,20 +317,18 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
           ++cur_data;
         }
         else
-        {                     // last namespace - iterate its features and go back
-          if (!permutations)  // start value is not a constant in this case
-            start_i = fgd2->loop_idx;
+        {
+          // last namespace - iterate its features and go back
+          // start value is not a constant in this case
+          if (!permutations) { start_i = fgd2->loop_idx; }
 
           features& fs = *(fgd2->ft_arr);
 
           feature_value ft_value = fgd2->x;
           feature_index halfhash = fgd2->hash;
 
-          features::features_value_index_audit_range range = fs.values_indices_audit();
-          features::iterator_all begin = range.begin();
-          begin += start_i;
-          features::iterator_all end = range.begin();
-          end += fgd2->loop_end + 1;
+          auto begin = fs.audit_cbegin() + start_i;
+          auto end = fs.audit_cbegin() + (fgd2->loop_end + 1);
           inner_kernel<R, S, T, audit, audit_func, W>(dat, begin, end, offset, weights, ft_value, halfhash);
 
           // trying to go back increasing loop_idx of each namespace by the way
