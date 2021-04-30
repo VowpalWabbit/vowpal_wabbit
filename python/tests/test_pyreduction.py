@@ -47,7 +47,7 @@ class BinaryPythonReduction(pyvw.Copperhead):
 # this should match cpp_binary() output
 # doesn't do anything, runs in python see class impl NoopPythonicReductions
 def noop_example():
-    vw = pyvw.vw(enable_logging=True, python_reduction=NoopPythonReduction, arg_str="--loss_function logistic --binary -d /root/vowpal_wabbit/test/train-sets/rcv1_small.dat")
+    vw = pyvw.vw(enable_logging=True, python_reduction=NoopPythonReduction, arg_str="--loss_function logistic --binary -d test/train-sets/rcv1_small.dat")
     vw.run_parser()
     vw.finish()
     return vw.get_log()
@@ -55,14 +55,14 @@ def noop_example():
 # this should match cpp_binary() output
 # mirror implementation of the cpp, runs in python see class impl BinaryPythonReductions
 def python_binary():
-    vw = pyvw.vw(enable_logging=True, python_reduction=BinaryPythonReduction, arg_str="--loss_function logistic -d /root/vowpal_wabbit/test/train-sets/rcv1_small.dat")
+    vw = pyvw.vw(enable_logging=True, python_reduction=BinaryPythonReduction, arg_str="--loss_function logistic -d test/train-sets/rcv1_small.dat")
     vw.run_parser()
     vw.finish()
     return vw.get_log()
 
 # this should be the baseline
 def cpp_binary():
-    vw = pyvw.vw("--loss_function logistic --binary -d /root/vowpal_wabbit/test/train-sets/rcv1_small.dat", enable_logging=True)
+    vw = pyvw.vw("--loss_function logistic --binary -d test/train-sets/rcv1_small.dat", enable_logging=True)
     vw.run_parser()
     vw.finish()
     return vw.get_log()
@@ -90,5 +90,3 @@ def test_python_binary_reduction():
 
     helper_compare_binary_output(python_binary_log, native_binary_log)
     helper_compare_binary_output(noop_binary_log, native_binary_log)
-
-test_python_binary_reduction()
