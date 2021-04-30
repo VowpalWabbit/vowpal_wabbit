@@ -97,7 +97,7 @@ VW::LEARNER::base_learner* red_python_multiline_setup(options_i& options, vw& al
 }
 
 using namespace RED_PYTHON;
-VW::LEARNER::base_learner* red_python_base_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* red_python_base_setup(options_i&, vw& all)
 {
   if (!all.ext_binding) return nullptr;
 
