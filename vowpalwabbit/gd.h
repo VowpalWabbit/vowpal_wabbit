@@ -62,15 +62,6 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
-template <class R, typename T>
-inline void foreach_feature(vw& all, features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
-{
-  if (all.weights.sparse)
-    foreach_feature(all.weights.sparse_weights, fs, dat, offset, mult);
-  else
-    foreach_feature(all.weights.dense_weights, fs, dat, offset, mult);
-}
-
 template <class R, class S, void (*T)(R&, float, S)>
 inline void foreach_feature(vw& all, example& ec, R& dat)
 {
