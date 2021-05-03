@@ -209,6 +209,7 @@
     <ClInclude Include="marginal.h" />
     <ClInclude Include="memory_tree.h" />
     <ClInclude Include="memory.h" />
+    <ClInclude Include="metrics.h" />
     <ClInclude Include="mf.h" />
     <ClInclude Include="multiclass.h" />
     <ClInclude Include="multilabel_oaa.h" />
@@ -366,6 +367,7 @@
     <ClCompile Include="lrqfa.cc" />
     <ClCompile Include="marginal.cc" />
     <ClCompile Include="memory_tree.cc" />
+    <ClCompile Include="metrics.cc" />
     <ClCompile Include="mf.cc" />
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="multilabel_oaa.cc" />

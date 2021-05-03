@@ -139,6 +139,7 @@ set(vw_all_headers
   marginal.h
   memory_tree.h
   memory.h
+  metrics.h
   mf.h
   multiclass.h
   multilabel_oaa.h
@@ -297,6 +298,7 @@ set(vw_all_sources
   lrqfa.cc
   marginal.cc
   memory_tree.cc
+  metrics.cc
   mf.cc
   multiclass.cc
   multilabel_oaa.cc
