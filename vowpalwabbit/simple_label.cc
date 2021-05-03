@@ -36,7 +36,7 @@ void print_update(vw& all, example& ec)
       !all.logger.quiet && !all.bfgs)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
-        ec.num_features, all.progress_add, all.progress_arg);
+        ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
 
@@ -44,7 +44,7 @@ void output_and_account_example(vw& all, example& ec)
 {
   const label_data& ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);

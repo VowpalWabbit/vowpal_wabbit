@@ -731,6 +731,10 @@ void setup_example(vw& all, example* ae)
     ae->total_sum_feat_sq += fs.sum_feat_sq;
   }
 
+  // Reset any previously counted interacted features.
+  ae->num_features_from_interactions = 0;
+  ae->total_sum_feat_sq_from_interactions = 0.f;
+
   if (all.interactions.quadratics_wildcard_expansion)
   {
     // lock while adding interactions since reductions might also be adding their own interactions
@@ -744,12 +748,6 @@ void setup_example(vw& all, example* ae)
 
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
-
-  size_t new_features_cnt;
-  float new_features_sum_feat_sq;
-  INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
-  ae->num_features += new_features_cnt;
-  ae->total_sum_feat_sq += new_features_sum_feat_sq;
 }
 }  // namespace VW
 
@@ -953,7 +951,7 @@ size_t get_tag_length(example* ec) { return ec->tag.size(); }
 
 const char* get_tag(example* ec) { return ec->tag.begin(); }
 
-size_t get_feature_number(example* ec) { return ec->num_features; }
+size_t get_feature_number(example* ec) { return ec->get_num_features(); }
 
 float get_confidence(example* ec) { return ec->confidence; }
 }  // namespace VW

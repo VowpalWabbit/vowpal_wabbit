@@ -126,7 +126,7 @@ void print_update(vw& all, bool is_test, example& ec)
     for (uint32_t i : ec.pred.multilabels.label_v) { pred_string << " " << i; }
 
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
-        pred_string.str(), ec.num_features, all.progress_add, all.progress_arg);
+        pred_string.str(), ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
 
@@ -166,7 +166,7 @@ void output_example(vw& all, example& ec)
     loss += preds.label_v.size() - preds_index;
   }
 
-  all.sd->update(ec.test_only, !test_label(ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !test_label(ld), loss, 1.f, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
   {

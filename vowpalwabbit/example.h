@@ -88,11 +88,21 @@ struct example : public example_predict  // core example datatype.
   size_t example_counter = 0;
 
   // helpers
-  size_t num_features = 0;         // precomputed, cause it's fast&easy.
+  // precomputed, cause it's fast&easy. These values are the number of singular/non interacted features.
+  size_t num_features = 0;
+  // precomputed, cause it's fast&easy.
+  size_t num_features_from_interactions = 0;
+  // calculated when interactions are present
+  float total_sum_feat_sq = 0.f;
+  // calculated when interactions are present
+  float total_sum_feat_sq_from_interactions = 0.f;
+
+  inline size_t get_num_features() const noexcept { return num_features + num_features_from_interactions; }
+  inline float get_total_sum_feat_sq() const noexcept { return total_sum_feat_sq + total_sum_feat_sq_from_interactions; }
+
   float partial_prediction = 0.f;  // shared data for prediction.
   float updated_prediction = 0.f;  // estimated post-update prediction.
   float loss = 0.f;
-  float total_sum_feat_sq = 0.f;  // precomputed, cause it's kind of fast & easy.
   float confidence = 0.f;
   features* passthrough =
       nullptr;  // if a higher-up reduction wants access to internal state of lower-down reductions, they go here

@@ -808,11 +808,11 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 
 void return_example(vw &all, example &ec)
 {
-  all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.get_num_features());
   for (auto &sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag); }
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, "none", 0, ec.num_features,
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, "none", 0, ec.get_num_features(),
         all.progress_add, all.progress_arg);
   VW::finish_example(all, ec);
 }

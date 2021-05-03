@@ -241,7 +241,7 @@ public:
     ec->interactions = &vw_ref->interactions;
   }
 
-  size_t get_num_features() { return ec->num_features; }
+  size_t get_num_features() { return ec->get_num_features(); }
 
   example* get()
   {

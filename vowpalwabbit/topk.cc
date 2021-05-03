@@ -100,7 +100,7 @@ void output_example(vw& all, example& ec)
 {
   label_data& ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
   print_update(all, ec);

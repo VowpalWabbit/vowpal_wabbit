@@ -88,6 +88,7 @@
 #include "warm_cb.h"
 #include "shared_feature_merger.h"
 #include "cbzo.h"
+#include "count_interactions.h"
 // #include "cntk.h"
 
 #include "cats.h"
@@ -1269,6 +1270,7 @@ void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
 {
   std::map<reduction_setup_fn, std::string> allowlist = {{GD::setup, "gd"}, {ftrl_setup, "ftrl"},
       {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"},
+      {count_interactions_setup, "count_interactions"},
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
       {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"}};
@@ -1311,6 +1313,8 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(bfgs_setup);
   reductions.push_back(OjaNewton_setup);
   // reductions.push_back(VW_CNTK::setup);
+
+  reductions.push_back(count_interactions_setup);
 
   // Score Users
   reductions.push_back(baseline_setup);

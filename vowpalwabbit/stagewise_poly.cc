@@ -628,7 +628,7 @@ void end_pass(stagewise_poly &poly)
 void finish_example(vw &all, stagewise_poly &poly, example &ec)
 {
   size_t temp_num_features = ec.num_features;
-  ec.num_features = poly.synth_ec.num_features;
+  ec.num_features = poly.synth_ec.get_num_features();
   output_and_account_example(all, ec);
   ec.num_features = temp_num_features;
   VW::finish_example(all, ec);

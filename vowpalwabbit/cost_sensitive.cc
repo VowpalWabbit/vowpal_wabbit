@@ -188,14 +188,14 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
-    size_t num_current_features = ec.num_features;
+    size_t num_current_features = ec.get_num_features();
     // for csoaa_ldf we want features from the whole (multiline example),
     // not only from one line (the first one) represented by ec
     if (ec_seq != nullptr)
     {
       num_current_features = 0;
       // TODO: including quadratic and cubic.
-      for (auto& ecc : *ec_seq) num_current_features += ecc->num_features;
+      for (auto& ecc : *ec_seq) num_current_features += ecc->get_num_features();
     }
 
     std::string label_buf;
@@ -252,7 +252,7 @@ void output_example(vw& all, example& ec, const COST_SENSITIVE::label& cs_label,
     // loss = chosen_loss;
   }
 
-  all.sd->update(ec.test_only, !test_label(cs_label), loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, !test_label(cs_label), loss, ec.weight, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
   {

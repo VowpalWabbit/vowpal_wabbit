@@ -203,9 +203,9 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag);
 
   // === Report updates using zero-one loss
-  all.sd->update(ec.test_only, ec.l.multi.label != (uint32_t)-1, zero_one_loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, ec.l.multi.label != (uint32_t)-1, zero_one_loss, ec.weight, ec.get_num_features());
   // Alternatively, we could report multiclass_log_loss.
-  // all.sd->update(ec.test_only, multiclass_log_loss, ec.weight, ec.num_features);
+  // all.sd->update(ec.test_only, multiclass_log_loss, ec.weight, ec.get_num_features());
   // Even better would be to report both losses, but this would mean to increase
   // the number of columns and this would not fit narrow screens.
   // So let's report (average) multiclass_log_loss only in the final resume.

@@ -72,28 +72,29 @@ set(vw_all_headers
   cb_explore_adf_first.h
   cb_explore_adf_greedy.h
   cb_explore_adf_regcb.h
-  cb_explore_adf_squarecb.h
-  cb_explore_adf_synthcover.h
   cb_explore_adf_rnd.h
   cb_explore_adf_softmax.h
+  cb_explore_adf_squarecb.h
+  cb_explore_adf_synthcover.h
   cb_explore_pdf.h
   cb_explore.h
   cb_label_parser.h
+  cb_to_cb_adf.h
   cb.h
   cbify.h
-  cb_to_cb_adf.h
+  cbzo.h
   ccb_label.h
   ccb_reduction_features.h
-  continuous_actions_reduction_features.h
   classweight.h
   compat.h
   conditional_contextual_bandit.h
   confidence.h
   config.h.in
   constant.h
-  cbzo.h
+  continuous_actions_reduction_features.h
   correctedMath.h
   cost_sensitive.h
+  count_interactions.h
   crossplat_compat.h
   cs_active.h
   csoaa.h
@@ -250,22 +251,23 @@ set(vw_all_sources
   cb_explore_adf_first.cc
   cb_explore_adf_greedy.cc
   cb_explore_adf_regcb.cc
-  cb_explore_adf_squarecb.cc
-  cb_explore_adf_synthcover.cc
   cb_explore_adf_rnd.cc
   cb_explore_adf_softmax.cc
+  cb_explore_adf_squarecb.cc
+  cb_explore_adf_synthcover.cc
   cb_explore_pdf.cc
   cb_explore.cc
   cb_sample.cc
+  cb_to_cb_adf.cc
   cb.cc
   cbify.cc
-  cb_to_cb_adf.cc
+  cbzo.cc
   ccb_label.cc
   classweight.cc
   conditional_contextual_bandit.cc
   confidence.cc
-  cbzo.cc
   cost_sensitive.cc
+  count_interactions.cc
   cs_active.cc
   csoaa.cc
   decision_scores.cc

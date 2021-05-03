@@ -150,7 +150,7 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   auto& ec = *ec_seq[0];
   const auto& preds = ec.pred.a_s;
 
-  for (const auto& example : ec_seq) { num_features += example->num_features; }
+  for (const auto& example : ec_seq) { num_features += example->get_num_features(); }
 
   bool labeled_example = true;
   if (_known_cost.probability > 0)
