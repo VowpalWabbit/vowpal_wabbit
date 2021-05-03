@@ -62,15 +62,14 @@ VW::LEARNER::base_learner* count_interactions_setup(options_i& options, vw& all)
   bool permutations;
   option_group_definition new_options("Generate interactions");
   new_options.add(make_option("permutations", permutations)
-               .help("Use permutations instead of combinations for feature interactions of same namespace."));
+                      .help("Use permutations instead of combinations for feature interactions of same namespace."));
   options.add_and_parse(new_options);
 
   // This reduction is not needed when there are no interactions.
   // CCB implicitly adds interactions and so much be explicitly specified here.
-  if ((all.interactions.interactions.empty() && !all.interactions.quadratics_wildcard_expansion) && !options.was_supplied("ccb_explore_adf"))
-  {
-    return nullptr;
-  }
+  if ((all.interactions.interactions.empty() && !all.interactions.quadratics_wildcard_expansion) &&
+      !options.was_supplied("ccb_explore_adf"))
+  { return nullptr; }
 
   using learn_pred_func_t = void (*)(count_interactions&, VW::LEARNER::single_learner&, example&);
   using multipredict_func_t =
@@ -93,7 +92,6 @@ VW::LEARNER::base_learner* count_interactions_setup(options_i& options, vw& all)
     pred_func = transform_single_ex<false, INTERACTIONS::eval_count_of_generated_ft_combinations>;
     update_func = update<INTERACTIONS::eval_count_of_generated_ft_combinations>;
     multipredict_func = multipredict<INTERACTIONS::eval_count_of_generated_ft_combinations>;
-
   }
 
   auto data = VW::make_unique<count_interactions>();

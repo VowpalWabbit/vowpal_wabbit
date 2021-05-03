@@ -1269,8 +1269,7 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
 {
   std::map<reduction_setup_fn, std::string> allowlist = {{GD::setup, "gd"}, {ftrl_setup, "ftrl"},
-      {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"},
-      {count_interactions_setup, "count_interactions"},
+      {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"}, {count_interactions_setup, "count_interactions"},
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
       {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"}};

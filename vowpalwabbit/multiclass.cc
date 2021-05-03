@@ -169,7 +169,8 @@ void finish_example(vw& all, example& ec, bool update_loss)
   float loss = 0;
   if (ec.l.multi.label != (uint32_t)ec.pred.multiclass && ec.l.multi.label != (uint32_t)-1) loss = ec.weight;
 
-  all.sd->update(ec.test_only, update_loss && (ec.l.multi.label != (uint32_t)-1), loss, ec.weight, ec.get_num_features());
+  all.sd->update(
+      ec.test_only, update_loss && (ec.l.multi.label != (uint32_t)-1), loss, ec.weight, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
     if (!all.sd->ldict)

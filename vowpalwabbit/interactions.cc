@@ -364,9 +364,7 @@ void eval_count_of_generated_ft_combinations(
 
         size_t n;
         if (cnt_ft_value_non_1 == 0)  // number of generated simple combinations is C(n,k)
-        {
-          n = (size_t)VW::math::choose((int64_t)ft_size, (int64_t)order_of_inter);
-        }
+        { n = (size_t)VW::math::choose((int64_t)ft_size, (int64_t)order_of_inter); }
         else
         {
           n = 0;

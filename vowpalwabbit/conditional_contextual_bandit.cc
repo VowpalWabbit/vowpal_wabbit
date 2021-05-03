@@ -586,9 +586,7 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
     // merged the slot into the shared example and then later down the stack the
     // shared example is merged into each action.
     if (ec->l.conditional_contextual_bandit.type == CCB::example_type::action)
-    {
-      num_features += ec->get_num_features();
-    }
+    { num_features += ec->get_num_features(); }
 
     if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot) { slots.push_back(ec); }
   }

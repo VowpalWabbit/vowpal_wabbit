@@ -98,7 +98,10 @@ struct example : public example_predict  // core example datatype.
   float total_sum_feat_sq_from_interactions = 0.f;
 
   inline size_t get_num_features() const noexcept { return num_features + num_features_from_interactions; }
-  inline float get_total_sum_feat_sq() const noexcept { return total_sum_feat_sq + total_sum_feat_sq_from_interactions; }
+  inline float get_total_sum_feat_sq() const noexcept
+  {
+    return total_sum_feat_sq + total_sum_feat_sq_from_interactions;
+  }
 
   float partial_prediction = 0.f;  // shared data for prediction.
   float updated_prediction = 0.f;  // estimated post-update prediction.
