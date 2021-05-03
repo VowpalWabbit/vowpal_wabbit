@@ -580,10 +580,15 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
   size_t num_features = 0;
   float loss = 0.;
 
-  // Should this be done for shared, action and slot?
   for (auto* ec : ec_seq)
   {
-    num_features += ec->num_features;
+    // Only features in action examples should be counted. This is because we
+    // merged the slot into the shared example and then later down the stack the
+    // shared example is merged into each action.
+    if (ec->l.conditional_contextual_bandit.type == CCB::example_type::action)
+    {
+      num_features += ec->num_features;
+    }
 
     if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot) { slots.push_back(ec); }
   }
