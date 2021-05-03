@@ -1,5 +1,13 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
+#include "feature_group.h"
+#include "global_data.h"
+#include "hash.h"
+#include "vw.h"
+
 // Decision Service JSON header information - required to construct final label
 struct DecisionServiceInteraction
 {

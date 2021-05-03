@@ -4,7 +4,10 @@
 
 #pragma once
 #include "reductions_fwd.h"
-#include "example.h"
+
+class parameters;
+struct example;
+struct namespace_interactions;
 
 struct cbify_adf_data
 {

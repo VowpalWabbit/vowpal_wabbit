@@ -5,6 +5,8 @@
 #pragma once
 
 #include <cstdint>
+#include <sys/mman.h>
+
 #include "memory.h"
 
 typedef float weight;
@@ -85,7 +87,7 @@ public:
 
   void shallow_copy(const dense_parameters& input)
   {
-    if (!_seeded) free(_begin);
+    if (!_seeded) { free(_begin); }
     _begin = input._begin;
     _weight_mask = input._weight_mask;
     _stride_shift = input._stride_shift;
@@ -107,7 +109,7 @@ public:
 
   void set_zero(size_t offset)
   {
-    for (iterator iter = begin(); iter != end(); ++iter) (&(*iter))[offset] = 0;
+    for (iterator iter = begin(); iter != end(); ++iter) { (&(*iter))[offset] = 0; }
   }
 
   uint64_t mask() const { return _weight_mask; }

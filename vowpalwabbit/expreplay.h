@@ -7,6 +7,7 @@
 #include "vw.h"
 #include "parse_args.h"
 #include "rand48.h"
+#include "rand_state.h"
 
 #include <memory>
 

@@ -102,9 +102,7 @@ set(vw_all_headers
   distributionally_robust.h
   ect.h
   error_constants.h
-  error_data.h
   error_reporting.h
-  errors_data.h
   example_predict.h
   example.h
   explore_eval.h

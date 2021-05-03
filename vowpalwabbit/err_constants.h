@@ -16,7 +16,7 @@
   }
 //! [Error Generator]
 
-#include "errors_data.h"
+#include "errors_data.txt"
 
 namespace VW
 {
