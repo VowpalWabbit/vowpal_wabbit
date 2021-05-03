@@ -18,7 +18,7 @@ extern "C"
 // Generate all error codes based on the definitions provided in "error_data.h"
 // This macro gets expanded for each individual error definition
 #define ERROR_CODE_DEFINITION(code, name, message) static const VWStatus VW_##name = code;
-#include "vw/experimental/error_data.txt"
+#include "vw/experimental/error_data.h"
 #undef ERROR_CODE_DEFINITION
 
   typedef uint32_t VWLabelType;

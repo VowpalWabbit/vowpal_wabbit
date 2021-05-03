@@ -17,7 +17,7 @@
   }                                                \
   }
 
-#include "error_data.txt"
+#include "error_data.h"
 
 namespace VW
 {
