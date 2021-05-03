@@ -1,21 +1,15 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <sstream>
-#include <cfloat>
-#include "count_interactions.h"
-#include "reductions.h"
-#include "v_array.h"
 
-#include "io/logger.h"
+#include <cstddef>
+
 #include "interactions.h"
-#include "vw_math.h"
-#include <algorithm>
-#include <iterator>
+#include "example.h"
+#include "memory.h"
+#include "parse_args.h"
 
 using namespace VW::config;
-
-namespace logger = VW::io::logger;
 
 struct count_interactions
 {
