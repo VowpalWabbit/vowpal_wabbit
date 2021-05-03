@@ -406,6 +406,9 @@ importance weight classes:
 Confidence:
   --confidence                 Get confidence for binary predictions
   --confidence_after_training  Confidence after training
+Generate interactions:
+  --permutations        Use permutations instead of combinations for feature 
+                        interactions of same namespace.
 Cost-sensitive Active Learning:
   --cs_active arg                       Cost-sensitive active learning with <k>
                                         costs
