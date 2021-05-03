@@ -46,6 +46,7 @@
 #include "decision_scores.h"
 #include "feature_group.h"
 #include "rand_state.h"
+#include "allreduce.h"
 
 #include "options.h"
 #include "version.h"
