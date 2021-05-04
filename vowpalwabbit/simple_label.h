@@ -3,6 +3,8 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include <cstddef>
+
 struct example;
 struct vw;
 
