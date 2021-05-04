@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "get_pmf.h"
-#include "err_constants.h"
+#include "error_constants.h"
 #include "api_status.h"
 #include "debug_log.h"
 #include "parse_args.h"
@@ -43,7 +43,7 @@ private:
 int get_pmf::learn(example& ec, experimental::api_status*)
 {
   _base->learn(ec);
-  return error_code::success;
+  return VW::experimental::error_code::success;
 }
 
 int get_pmf::predict(example& ec, experimental::api_status*)
@@ -60,7 +60,7 @@ int get_pmf::predict(example& ec, experimental::api_status*)
   ec.pred.a_s.clear();
   ec.pred.a_s.push_back({base_prediction, 1.0f});
 
-  return error_code::success;
+  return VW::experimental::error_code::success;
 }
 
 void get_pmf::init(single_learner* p_base, float epsilon)
@@ -79,7 +79,7 @@ void predict_or_learn(get_pmf& reduction, single_learner&, example& ec)
   else
     reduction.predict(ec, &status);
 
-  if (status.get_error_code() != error_code::success) { VW_DBG(ec) << status.get_error_msg() << endl; }
+  if (status.get_error_code() != VW::experimental::error_code::success) { VW_DBG(ec) << status.get_error_msg() << endl; }
 }
 
 // END sample_pdf reduction and reduction methods

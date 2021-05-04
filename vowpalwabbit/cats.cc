@@ -4,7 +4,7 @@
 
 #include "cats.h"
 #include "parse_args.h"
-#include "err_constants.h"
+#include "error_constants.h"
 #include "debug_log.h"
 #include "shared_data.h"
 
@@ -41,7 +41,7 @@ int cats::predict(example& ec, experimental::api_status*)
 {
   VW_DBG(ec) << "cats::predict(), " << features_to_string(ec) << endl;
   _base->predict(ec);
-  return error_code::success;
+  return VW::experimental::error_code::success;
 }
 
 // Pass through
@@ -51,7 +51,7 @@ int cats::learn(example& ec, experimental::api_status* status = nullptr)
   predict(ec, status);
   VW_DBG(ec) << "cats::learn(), " << to_string(ec.l.cb_cont) << features_to_string(ec) << endl;
   _base->learn(ec);
-  return error_code::success;
+  return VW::experimental::error_code::success;
 }
 
 float cats::get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, float predicted_action) const
@@ -92,7 +92,7 @@ void predict_or_learn(cats& reduction, single_learner&, example& ec)
   else
     reduction.predict(ec, &status);
 
-  if (status.get_error_code() != error_code::success) { VW_DBG(ec) << status.get_error_msg() << endl; }
+  if (status.get_error_code() != VW::experimental::error_code::success) { VW_DBG(ec) << status.get_error_msg() << endl; }
 }
 
 // END cats reduction and reduction methods
@@ -179,7 +179,7 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  if (num_actions <= 0) THROW(error_code::num_actions_gt_zero_s);
+  if (num_actions <= 0) THROW(VW::experimental::error_code::num_actions_gt_zero_s);
 
   // cats stack = [cats -> sample_pdf -> cats_pdf ... rest specified by cats_pdf]
   if (!options.was_supplied("sample_pdf")) options.insert("sample_pdf", "");
