@@ -5,6 +5,7 @@
 #include "reductions.h"
 #include "vw.h"
 #include "math.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 

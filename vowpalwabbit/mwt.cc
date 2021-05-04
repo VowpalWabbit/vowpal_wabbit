@@ -1,12 +1,15 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include <cmath>
+
 #include "vw.h"
 #include "reductions.h"
 #include "gd.h"
 #include "cb_algs.h"
 #include "io_buf.h"
 #include "cb.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 
@@ -42,7 +45,7 @@ struct mwt
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
 {
-  if (val < 0 || floor(val) != val) logger::log_error("error {} is not a valid action", val);
+  if (val < 0 || std::floor(val) != val) logger::log_error("error {} is not a valid action", val);
 
   uint32_t value = (uint32_t)val;
   uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
@@ -166,7 +169,7 @@ void finish_example(vw& all, mwt& c, example& ec)
   {
     v_array<float> temp = ec.pred.scalars;
     ec.pred.multiclass = (uint32_t)temp[0];
-    CB::print_update(all, c.optional_observation.first, ec, nullptr, false);
+    CB::print_update(all, c.optional_observation.first, ec, nullptr, false, nullptr);
     ec.pred.scalars = temp;
   }
   VW::finish_example(all, ec);
@@ -236,6 +239,9 @@ base_learner* mwt_setup(options_i& options, vw& all)
       options.insert("cb", ss.str());
     }
   }
+
+  // default to legacy cb implementation
+  options.insert("cb_force_legacy", "");
 
   learner<mwt, example>* l;
   if (c->learn)

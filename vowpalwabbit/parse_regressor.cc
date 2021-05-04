@@ -27,6 +27,7 @@
 #include "vw_validate.h"
 #include "vw_versions.h"
 #include "options_serializer_boost_po.h"
+#include "shared_data.h"
 
 void initialize_weights_as_random_positive(weight* weights, uint64_t index) { weights[0] = 0.1f * merand48(index); }
 void initialize_weights_as_random(weight* weights, uint64_t index) { weights[0] = merand48(index) - 0.5f; }
@@ -116,7 +117,7 @@ bool resize_buf_if_needed(char*& __dest, size_t& __dest_size, const size_t __n)
   char* new_dest;
   if (__dest_size < __n)
   {
-    if ((new_dest = (char*)realloc(__dest, __n)) == NULL)
+    if ((new_dest = (char*)realloc(__dest, __n)) == nullptr)
       THROW("Can't realloc enough memory.")
     else
     {

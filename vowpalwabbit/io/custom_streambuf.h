@@ -4,6 +4,7 @@
 
 #include <streambuf>
 #include <memory>
+#include <cassert>
 
 #include "io_adapter.h"
 
@@ -29,7 +30,7 @@ public:
 
     const auto* begin = pbase();
     const auto* end = pptr();
-    assert(end > begin);
+    assert(end >= begin);
     _writer->write(begin, end - begin);
     _writer->flush();
 

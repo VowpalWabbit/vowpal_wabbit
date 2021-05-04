@@ -26,6 +26,7 @@
 #include "vw_exception.h"
 
 #include "io/logger.h"
+#include "shared_data.h"
 
 #include <boost/version.hpp>
 #include <boost/math/special_functions/digamma.hpp>

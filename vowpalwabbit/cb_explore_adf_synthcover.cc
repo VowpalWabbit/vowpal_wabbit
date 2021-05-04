@@ -215,7 +215,9 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
           prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-synthcover");
 
   l.set_finish_example(explore_type::finish_multiline_example);
+  l.set_print_example(explore_type::print_multiline_example);
   l.set_save_load(explore_type::save_load);
+  l.set_persist_metrics(explore_type::persist_metrics);
   return make_base(l);
 }
 

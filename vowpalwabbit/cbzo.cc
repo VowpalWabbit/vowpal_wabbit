@@ -12,6 +12,7 @@
 #include "vw.h"
 #include "vw_math.h"
 #include "prob_dist_cont.h"
+#include "shared_data.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;

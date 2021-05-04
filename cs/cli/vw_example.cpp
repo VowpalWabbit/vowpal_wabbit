@@ -8,6 +8,7 @@
 #include "simple_label_parser.h"
 #include "gd.h"
 #include <algorithm>
+#include "shared_data.h"
 
 namespace VW
 {

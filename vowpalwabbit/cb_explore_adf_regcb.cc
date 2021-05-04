@@ -12,6 +12,7 @@
 #include "explore.h"
 #include "action_score.h"
 #include "cb.h"
+#include <cmath>
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -86,7 +87,7 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
       u = w;
     else
       l = w;
-    if (fabs(v) <= tol || u - l <= tol) break;
+    if (std::fabs(v) <= tol || u - l <= tol) break;
   }
 
   return l;
@@ -272,6 +273,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
           prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-regcb");
 
   l.set_finish_example(explore_type::finish_multiline_example);
+  l.set_print_example(explore_type::print_multiline_example);
+  l.set_persist_metrics(explore_type::persist_metrics);
   return make_base(l);
 }
 

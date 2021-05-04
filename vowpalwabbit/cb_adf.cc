@@ -11,6 +11,7 @@
 #include "vw_versions.h"
 #include "explore.h"
 #include "cb_adf.h"
+#include "shared_data.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_adf
@@ -106,8 +107,10 @@ public:
   bool learn_returns_prediction()
   {
     return ((_gen_cs.cb_type == CB_TYPE_MTR) && !_no_predict) || _gen_cs.cb_type == CB_TYPE_IPS ||
-        _gen_cs.cb_type == CB_TYPE_DR || CB_TYPE_DM;
+        _gen_cs.cb_type == CB_TYPE_DR || _gen_cs.cb_type == CB_TYPE_DM;
   }
+
+  CB::cb_class* known_cost() { return &_gen_cs.known_cost; }
 
 private:
   void learn_IPS(multi_learner& base, multi_ex& examples);
@@ -347,8 +350,7 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
   float loss = 0.;
 
   bool labeled_example = true;
-  if (_gen_cs.known_cost.probability > 0)
-    loss = get_cost_estimate(_gen_cs.known_cost, _gen_cs.pred_scores, action);
+  if (_gen_cs.known_cost.probability > 0) { loss = get_cost_estimate(_gen_cs.known_cost, _gen_cs.pred_scores, action); }
   else
     labeled_example = false;
 
@@ -382,7 +384,10 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, !labeled_example, ec, ec_seq, true);
+  if (labeled_example)
+    CB::print_update(all, !labeled_example, ec, ec_seq, true, c.known_cost());
+  else
+    CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
 void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
@@ -407,7 +412,10 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, !labeled_example, ec, ec_seq, true);
+  if (labeled_example)
+    CB::print_update(all, !labeled_example, ec, ec_seq, true, c.known_cost());
+  else
+    CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
 void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
@@ -425,13 +433,18 @@ void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
   }
 }
 
-void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
+void update_and_output(vw& all, cb_adf& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
     output_example_seq(all, data, ec_seq);
     global_print_newline(all.final_prediction_sink);
   }
+}
+
+void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
+{
+  update_and_output(all, data, ec_seq);
   VW::finish_example(all, ec_seq);
 }
 
@@ -538,7 +551,9 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   learner<cb_adf, multi_ex>& l = init_learner(ld, base, learn, predict, problem_multiplier,
       prediction_type_t::action_scores, all.get_setupfn_name(cb_adf_setup), ld->learn_returns_prediction());
+
   l.set_finish_example(CB_ADF::finish_multiline_example);
+  l.set_print_example(CB_ADF::update_and_output);
 
   bare->set_scorer(all.scorer);
 

@@ -12,6 +12,7 @@
 #include "example.h"
 #include "cb_label_parser.h"
 #include "vw_string_view.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 
@@ -111,7 +112,17 @@ bool ec_is_example_header(example const& ec)  // example headers just have "shar
   return false;
 }
 
-void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores)
+std::string known_cost_to_str(CB::cb_class* known_cost)
+{
+  if (known_cost == nullptr) return " known";
+
+  std::stringstream label_string;
+  label_string.precision(2);
+  label_string << known_cost->action << ":" << known_cost->cost << ":" << known_cost->probability;
+  return label_string.str();
+}
+
+void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, CB::cb_class* known_cost)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
@@ -129,7 +140,7 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
     if (is_test)
       label_buf = " unknown";
     else
-      label_buf = " known";
+      label_buf = known_cost_to_str(known_cost);
 
     if (action_scores)
     {

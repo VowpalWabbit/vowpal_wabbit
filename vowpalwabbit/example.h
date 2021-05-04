@@ -22,6 +22,7 @@
 #include "decision_scores.h"
 #include "cb_continuous_label.h"
 #include "prob_dist_cont.h"
+#include "active_multiclass_prediction.h"
 
 #include <cstdint>
 #include <vector>
@@ -61,6 +62,7 @@ struct polyprediction
   float prob = 0.f;                                          // for --probabilities --csoaa_ldf=mc
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
+  VW::active_multiclass_prediction active_multiclass;
 };
 
 VW_WARNING_STATE_PUSH

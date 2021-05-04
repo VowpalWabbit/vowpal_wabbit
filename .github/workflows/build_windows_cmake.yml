@@ -1,16 +1,16 @@
-name: Build Windows CMake
+name: Windows / C++ - CMake only
 
 on:
   push:
     branches:
       - master
+      - 'releases/**'
   pull_request:
     branches:
       - master
 
 jobs:
-  job:
-    name: windows-cmake-build
+  check:
     runs-on: windows-latest
     strategy:
       matrix:

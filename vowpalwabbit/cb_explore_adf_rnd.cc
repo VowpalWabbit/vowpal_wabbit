@@ -302,6 +302,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       explore_type::predict, problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-rnd");
 
   l.set_finish_example(explore_type::finish_multiline_example);
+  l.set_print_example(explore_type::print_multiline_example);
+  l.set_persist_metrics(explore_type::persist_metrics);
   return make_base(l);
 }
 }  // namespace rnd

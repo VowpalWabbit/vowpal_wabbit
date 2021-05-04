@@ -22,6 +22,7 @@
 #include "gd.h"
 #include "reductions.h"
 #include "vw.h"
+#include "shared_data.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::gd
@@ -298,7 +299,7 @@ void print_features(vw& all, example& ec)
         {
           audit_interaction(dat, f.audit()->get());
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
-          audit_interaction(dat, NULL);
+          audit_interaction(dat, nullptr);
         }
       else
         for (features::iterator& f : fs) audit_feature(dat, f.value(), f.index() + ec.ft_offset);
@@ -627,7 +628,7 @@ float compute_update(gd& g, example& ec)
     // changed from ec.partial_prediction to ld.prediction
     ec.updated_prediction += pred_per_update * update;
 
-    if (all.reg_mode && fabs(update) > 1e-8)
+    if (all.reg_mode && std::fabs(update) > 1e-8)
     {
       double dev1 = all.loss->first_derivative(all.sd, ec.pred.scalar, ld.label);
       double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
@@ -728,11 +729,11 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
         if (map_it != all.index_name_map.end())
         {
           msg << map_it->second;
-          bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
+          bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
         }
 
         msg << ":" << weight_index << ":" << weight_value << "\n";
-        bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
+        bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
       }
     }
     return;
@@ -809,7 +810,7 @@ void save_load_online_state(
         weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
         if (ftrl_size > 0)
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * ftrl_size, "");
-        else if (g == NULL || (!g->adaptive_input && !g->normalized_input))
+        else if (g == nullptr || (!g->adaptive_input && !g->normalized_input))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]), "");
         else if ((g->adaptive_input && !g->normalized_input) || (!g->adaptive_input && g->normalized_input))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 2, "");
@@ -824,6 +825,19 @@ void save_load_online_state(
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
     {
       i = v.index() >> weights.stride_shift();
+
+      if (all.print_invert)  // write readable model with feature names
+      {
+        if (*v != 0.f)
+        {
+          const auto map_it = all.index_name_map.find(i);
+          if (map_it != all.index_name_map.end())
+          {
+            msg << map_it->second << ":";
+            bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
+          }
+        }
+      }
 
       if (ftrl_size == 3)
       {
@@ -889,7 +903,6 @@ void save_load_online_state(
 void save_load_online_state(
     vw& all, io_buf& model_file, bool read, bool text, double& total_weight, gd* g, uint32_t ftrl_size)
 {
-  // vw& all = *g.all;
   std::stringstream msg;
 
   msg << "initial_t " << all.initial_t << "\n";

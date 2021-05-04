@@ -1,9 +1,10 @@
-name: Build Linux Python Wheels
+name: Linux / Python
 
 on:
   push:
     branches:
       - master
+      - 'releases/**'
   pull_request:
     branches:
       - master

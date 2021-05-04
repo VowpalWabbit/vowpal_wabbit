@@ -15,6 +15,7 @@
 #include "version.h"
 #include "cb_label_parser.h"
 #include <cfloat>
+#include "shared_data.h"
 
 #include <memory>
 
@@ -344,6 +345,8 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
       .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+
+  if (!options.was_supplied("cb_force_legacy")) return nullptr;
 
   data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;

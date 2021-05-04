@@ -127,8 +127,6 @@
     <ClInclude Include="cb_explore_pdf.h" />
     <ClInclude Include="cb_label_parser.h" />
     <ClInclude Include="debug_log.h" />
-    <ClInclude Include="errors_data.h" />
-    <ClInclude Include="err_constants.h" />
     <ClInclude Include="get_pmf.h" />
     <ClInclude Include="io\logger.h" />
     <ClInclude Include="offset_tree.h" />
@@ -164,6 +162,7 @@
     <ClInclude Include="cb_explore.h" />
     <ClInclude Include="cb_sample.h" />
     <ClInclude Include="cbify.h" />
+    <ClInclude Include="cb_to_cb_adf.h" />
     <ClInclude Include="ccb_label.h" />
     <ClInclude Include="ccb_reduction_features.h" />
     <ClInclude Include="continuous_actions_reduction_features.h" />
@@ -207,6 +206,7 @@
     <ClInclude Include="marginal.h" />
     <ClInclude Include="memory_tree.h" />
     <ClInclude Include="memory.h" />
+    <ClInclude Include="metrics.h" />
     <ClInclude Include="mf.h" />
     <ClInclude Include="multiclass.h" />
     <ClInclude Include="multilabel_oaa.h" />
@@ -254,6 +254,7 @@
     <ClInclude Include="search_sequencetask.h" />
     <ClInclude Include="search.h" />
     <ClInclude Include="sender.h" />
+    <ClInclude Include="shared_data.h" />
     <ClInclude Include="shared_feature_merger.h" />
     <ClInclude Include="simple_label_parser.h" />
     <ClInclude Include="simple_label.h" />
@@ -326,6 +327,7 @@
     <ClCompile Include="cb_sample.cc" />
     <ClCompile Include="cb.cc" />
     <ClCompile Include="cbify.cc" />
+    <ClCompile Include="cb_to_cb_adf.cc" />
     <ClCompile Include="ccb_label.cc" />
     <ClCompile Include="classweight.cc" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
@@ -361,6 +363,7 @@
     <ClCompile Include="lrqfa.cc" />
     <ClCompile Include="marginal.cc" />
     <ClCompile Include="memory_tree.cc" />
+    <ClCompile Include="metrics.cc" />
     <ClCompile Include="mf.cc" />
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="multilabel_oaa.cc" />
@@ -400,6 +403,7 @@
     <ClCompile Include="search_sequencetask.cc" />
     <ClCompile Include="search.cc" />
     <ClCompile Include="sender.cc" />
+    <ClCompile Include="shared_data.cc" />
     <ClCompile Include="shared_feature_merger.cc" />
     <ClCompile Include="simple_label_parser.cc" />
     <ClCompile Include="simple_label.cc" />

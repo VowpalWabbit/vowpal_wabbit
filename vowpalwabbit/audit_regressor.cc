@@ -6,6 +6,7 @@
 #include "interactions.h"
 #include "parse_args.h"
 #include "vw.h"
+#include "shared_data.h"
 
 using namespace VW::config;
 
@@ -118,7 +119,7 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
           {
             audit_regressor_interaction(rd, fs.space_names[j].get());
             audit_regressor_feature(rd, fs.values[j], (uint32_t)fs.indicies[j] + ec.ft_offset);
-            audit_regressor_interaction(rd, NULL);
+            audit_regressor_interaction(rd, nullptr);
           }
         else
           for (size_t j = 0; j < fs.size(); ++j)
@@ -146,9 +147,9 @@ void end_examples(audit_regressor_data& d)
   d.out_file->flush();  // close_file() should do this for me ...
   d.out_file->close_file();
   delete (d.out_file);
-  d.out_file = NULL;
+  d.out_file = nullptr;
   delete d.ns_pre;
-  d.ns_pre = NULL;
+  d.ns_pre = nullptr;
 }
 
 inline void print_ex(vw& all, size_t ex_processed, size_t vals_found, size_t progress)

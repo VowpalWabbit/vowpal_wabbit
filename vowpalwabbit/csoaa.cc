@@ -11,8 +11,10 @@
 #include "gd.h"  // GD::foreach_feature() needed in subtract_example()
 #include "vw_exception.h"
 #include <algorithm>
+#include <cmath>
 #include "csoaa.h"
 #include "scope_exit.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 
@@ -332,7 +334,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       v_array<COST_SENSITIVE::wclass> costs2 = ec2->l.cs.costs;
 
       if (costs2[0].class_index == (uint32_t)-1) continue;
-      float value_diff = fabs(costs2[0].wap_value - costs1[0].wap_value);
+      float value_diff = std::fabs(costs2[0].wap_value - costs1[0].wap_value);
       // float value_diff = fabs(costs2[0].x - costs1[0].x);
       if (value_diff < 1e-6) continue;
 
@@ -730,7 +732,7 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
 
       float multiclass_log_loss = 999;  // -log(0) = plus infinity
       float correct_class_prob = ec_seq[correct_class_k]->pred.prob;
-      if (correct_class_prob > 0) multiclass_log_loss = -log(correct_class_prob);
+      if (correct_class_prob > 0) multiclass_log_loss = -std::log(correct_class_prob);
 
       // TODO: How to detect if we should update holdout or normal loss?
       // (ec.test_only) OR (COST_SENSITIVE::example_is_test(ec))

@@ -1,6 +1,7 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include <cmath>
 #include <string>
 #include "gd.h"
 #include "vw.h"
@@ -87,7 +88,7 @@ struct OjaNewton
             r2 = _random_state->get_and_update_random();
           } while (r1 == 0.f);
 
-          (&w)[j] = std::sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
+          (&w)[j] = std::sqrt(-2.f * std::log(r1)) * (float)cos(PI2 * r2);
         }
       }
     }
@@ -125,7 +126,7 @@ struct OjaNewton
   {
     for (int i = 1; i <= m; i++)
     {
-      float gamma = fmin(learning_rate_cnt / t, 1.f);
+      float gamma = std::fmin(learning_rate_cnt / t, 1.f);
       float temp = data.AZx[i] * data.sketch_cnt;
 
       if (t == 1) { ev[i] = gamma * temp * temp; }
@@ -141,7 +142,7 @@ struct OjaNewton
     data.bdelta = 0;
     for (int i = 1; i <= m; i++)
     {
-      float gamma = fmin(learning_rate_cnt / t, 1.f);
+      float gamma = std::fmin(learning_rate_cnt / t, 1.f);
 
       // if different learning rates are used
       /*data.delta[i] = gamma * data.AZx[i] * data.sketch_cnt;
@@ -219,8 +220,8 @@ struct OjaNewton
   {
     for (int j = 1; j <= m; j++)
     {
-      float scale = fabs(A[j][j]);
-      for (int i = j + 1; i <= m; i++) scale = fmin(fabs(A[i][j]), scale);
+      float scale = std::fabs(A[j][j]);
+      for (int i = j + 1; i <= m; i++) scale = std::fmin(std::fabs(A[i][j]), scale);
       if (scale < 1e-10) continue;
       for (int i = 1; i <= m; i++)
       {
@@ -238,7 +239,7 @@ struct OjaNewton
   {
     double max_norm = 0;
     for (int i = 1; i <= m; i++)
-      for (int j = i; j <= m; j++) max_norm = fmax(max_norm, fabs(K[i][j]));
+      for (int j = i; j <= m; j++) max_norm = fmax(max_norm, std::fabs(K[i][j]));
     // printf("|K| = %f\n", max_norm);
     if (max_norm < 1e7) return;
 

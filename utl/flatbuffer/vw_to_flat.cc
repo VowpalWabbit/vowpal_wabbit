@@ -16,6 +16,7 @@
 #include "options_boost_po.h"
 #include "hash.h"
 #include "cb_algs.h"
+#include "shared_data.h"
 
 void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder& builder,
     flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot>& root)
@@ -321,7 +322,7 @@ void to_flat::convert_txt_to_flat(vw& all)
         to_flat::create_multi_label(ae, ex_builder);
         break;
       case label_type_t::multiclass:
-        to_flat::create_mc_label(all.sd->ldict, ae, ex_builder);
+        to_flat::create_mc_label(all.sd->ldict.get(), ae, ex_builder);
         break;
       case label_type_t::cs:
         to_flat::create_cs_label(ae, ex_builder);

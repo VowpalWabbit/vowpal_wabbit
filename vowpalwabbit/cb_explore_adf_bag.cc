@@ -135,6 +135,13 @@ void finish_bag_example(vw &all, cb_explore_adf_base<cb_explore_adf_bag> &data, 
   cb_explore_adf_base<cb_explore_adf_bag>::finish_multiline_example(all, data, ec_seq);
 }
 
+void print_bag_example(vw& all, cb_explore_adf_base<cb_explore_adf_bag>& data, multi_ex& ec_seq)
+{
+  assert(ec_seq.size() > 0);
+  ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
+  cb_explore_adf_base<cb_explore_adf_bag>::print_multiline_example(all, data, ec_seq);
+}
+
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
@@ -175,6 +182,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
       explore_type::predict, problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-bag");
 
   l.set_finish_example(finish_bag_example);
+  l.set_print_example(print_bag_example);
+  l.set_persist_metrics(explore_type::persist_metrics);
   return make_base(l);
 }
 

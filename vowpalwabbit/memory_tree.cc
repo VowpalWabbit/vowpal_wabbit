@@ -928,7 +928,7 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
         preds = ec.pred.multilabels;
       }
 
-      ec.weight = fabs(objective);
+      ec.weight = std::fabs(objective);
       if (ec.weight >= 100.f)  // crop the weight, otherwise sometimes cause NAN outputs.
         ec.weight = 100.f;
       else if (ec.weight < .01f)

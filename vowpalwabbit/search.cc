@@ -5,6 +5,7 @@
 #include <string.h>
 #include <math.h>
 #include <memory>
+#include <algorithm>
 #include "vw.h"
 #include "rand48.h"
 #include "reductions.h"
@@ -21,6 +22,7 @@
 #include "active.h"
 #include "label_dictionary.h"
 #include "vw_exception.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 // needed for printing ranges of objects (eg: all elements of a vector)
@@ -1136,7 +1138,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
 
   as_singleline(priv.base_learner)->predict(ec, policy);
 
-  uint32_t act = ec.pred.multiclass;
+  uint32_t act = priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass;
   cdbg << "a=" << act << " from";
   if (allowed_actions)
   {
@@ -1221,7 +1223,8 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
          "}" << endl; */
       CS::wclass& wc = ec.l.cs.costs[k];
       // Get query_needed from pred
-      bool query_needed = v_array_contains(ec.pred.multilabels.label_v, wc.class_index);
+      const auto& query_list = ec.pred.active_multiclass.more_info_required_for_classes;
+      bool query_needed = std::find(query_list.begin(), query_list.end(), wc.class_index) != query_list.end();
       std::pair<CS::wclass&, bool> p = {wc, query_needed};
       // Push into active_known[cur_t] with wc
       priv.active_known[cur_t].push_back(p);

@@ -94,9 +94,9 @@ VW_STD14_CONSTEXPR inline float fast_pow10(int8_t exponent)
   return exponent > details::VALUES_ABOVE_ZERO ? std::numeric_limits<float>::infinity()
                                                : (exponent < -1 * details::VALUES_BELOW_ZERO)
           ? 0.f
-          : exponent >= 0 ? details::pow_10_positive_lookup_table[static_cast<size_t>(exponent)]
-                          : details::pow_10_negative_lookup_table[static_cast<size_t>(exponent) +
-                                static_cast<size_t>(details::VALUES_BELOW_ZERO)];
+          : exponent >= 0 ? details::pow_10_positive_lookup_table[static_cast<std::size_t>(exponent)]
+                          : details::pow_10_negative_lookup_table[static_cast<std::size_t>(exponent) +
+                                static_cast<std::size_t>(details::VALUES_BELOW_ZERO)];
 }
 
 }  // namespace VW

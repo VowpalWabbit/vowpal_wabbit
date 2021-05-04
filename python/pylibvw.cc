@@ -16,6 +16,7 @@
 #include "future_compat.h"
 #include "slates_label.h"
 #include "simple_label_parser.h"
+#include "shared_data.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -59,6 +60,7 @@ const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 const size_t pACTION_PDF_VALUE = 9;
 const size_t pPDF = 10;
+const size_t pACTIVE_MULTICLASS = 11;
 
 void dont_delete_me(void* arg) {}
 
@@ -398,6 +400,8 @@ size_t my_get_prediction_type(vw_ptr all)
       return pACTION_PDF_VALUE;
     case prediction_type_t::pdf:
       return pPDF;
+    case prediction_type_t::active_multiclass:
+      return pACTIVE_MULTICLASS;
     default:
       THROW("unsupported prediction type used");
   }
@@ -783,6 +787,15 @@ py::list ex_get_pdf(example_ptr ec)
   for (auto const& segment : ec->pred.pdf)
   { values.append(py::make_tuple(segment.left, segment.right, segment.pdf_value)); }
   return values;
+}
+
+py::tuple ex_get_active_multiclass(example_ptr ec)
+{
+  py::list values;
+  for (auto const& query_needed_class : ec->pred.active_multiclass.more_info_required_for_classes)
+  { values.append(query_needed_class); }
+
+  return py::make_tuple(ec->pred.active_multiclass.predicted_class, values);
 }
 
 py::list ex_get_multilabel_predictions(example_ptr ec)
@@ -1177,7 +1190,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
       .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
       .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
-      .def_readonly("pPDF", pPDF, "PDF prediction type");
+      .def_readonly("pPDF", pPDF, "PDF prediction type")
+      .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1248,6 +1262,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_decision_scores", &ex_get_decision_scores, "Get decision scores from example prediction")
       .def("get_action_pdf_value", &ex_get_action_pdf_value, "Get action and pdf value from example prediction")
       .def("get_pdf", &ex_get_pdf, "Get pdf from example prediction")
+      .def("get_active_multiclass", &ex_get_active_multiclass, "Get active multiclass from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,

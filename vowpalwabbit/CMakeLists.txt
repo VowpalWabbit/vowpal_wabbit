@@ -81,6 +81,7 @@ set(vw_all_headers
   cb_label_parser.h
   cb.h
   cbify.h
+  cb_to_cb_adf.h
   ccb_label.h
   ccb_reduction_features.h
   continuous_actions_reduction_features.h
@@ -103,7 +104,6 @@ set(vw_all_headers
   error_constants.h
   error_data.h
   error_reporting.h
-  errors_data.h
   example_predict.h
   example.h
   explore_eval.h
@@ -137,6 +137,7 @@ set(vw_all_headers
   marginal.h
   memory_tree.h
   memory.h
+  metrics.h
   mf.h
   multiclass.h
   multilabel_oaa.h
@@ -187,6 +188,7 @@ set(vw_all_headers
   search_sequencetask.h
   search.h
   sender.h
+  shared_data.h
   shared_feature_merger.h
   simple_label_parser.h
   simple_label.h
@@ -257,6 +259,7 @@ set(vw_all_sources
   cb_sample.cc
   cb.cc
   cbify.cc
+  cb_to_cb_adf.cc
   ccb_label.cc
   classweight.cc
   conditional_contextual_bandit.cc
@@ -292,6 +295,7 @@ set(vw_all_sources
   lrqfa.cc
   marginal.cc
   memory_tree.cc
+  metrics.cc
   mf.cc
   multiclass.cc
   multilabel_oaa.cc
@@ -330,6 +334,7 @@ set(vw_all_sources
   search_sequencetask.cc
   search.cc
   sender.cc
+  shared_data.cc
   shared_feature_merger.cc
   simple_label_parser.cc
   simple_label.cc

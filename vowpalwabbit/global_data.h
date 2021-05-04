@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 #include <iostream>
-#include <iomanip>
 #include <utility>
 #include <vector>
 #include <map>
@@ -46,10 +45,11 @@
 #include "hashstring.h"
 #include "decision_scores.h"
 #include "feature_group.h"
+#include "rand_state.h"
+#include "allreduce.h"
 
 #include "options.h"
 #include "version.h"
-#include "named_labels.h"
 #include "kskip_ngram_transformer.h"
 
 typedef float weight;
@@ -59,230 +59,13 @@ typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::config::options_i&,
 
 using options_deleter_type = void (*)(VW::config::options_i*);
 
+struct shared_data;
+
 struct dictionary_info
 {
   std::string name;
   uint64_t file_hash;
   std::shared_ptr<feature_dict> dict;
-};
-
-struct shared_data
-{
-  size_t queries;
-
-  uint64_t example_number;
-  uint64_t total_features;
-
-  double t;
-  double weighted_labeled_examples;
-  double old_weighted_labeled_examples;
-  double weighted_unlabeled_examples;
-  double weighted_labels;
-  double sum_loss;
-  double sum_loss_since_last_dump;
-  float dump_interval;  // when should I update for the user.
-  double gravity;
-  double contraction;
-  float min_label;  // minimum label encountered
-  float max_label;  // maximum label encountered
-
-  VW::named_labels* ldict;
-
-  // for holdout
-  double weighted_holdout_examples;
-  double weighted_holdout_examples_since_last_dump;
-  double holdout_sum_loss_since_last_dump;
-  double holdout_sum_loss;
-  // for best model selection
-  double holdout_best_loss;
-  double weighted_holdout_examples_since_last_pass;  // reserved for best predictor selection
-  double holdout_sum_loss_since_last_pass;
-  size_t holdout_best_pass;
-  // for --probabilities
-  bool report_multiclass_log_loss;
-  double multiclass_log_loss;
-  double holdout_multiclass_log_loss;
-
-  std::atomic<bool> is_more_than_two_labels_observed;
-  std::atomic<float> first_observed_label;
-  std::atomic<float> second_observed_label;
-
-  // Column width, precision constants:
-  static constexpr int col_avg_loss = 8;
-  static constexpr int prec_avg_loss = 6;
-  static constexpr int col_since_last = 8;
-  static constexpr int prec_since_last = 6;
-  static constexpr int col_example_counter = 12;
-  static constexpr int col_example_weight = col_example_counter + 2;
-  static constexpr int prec_example_weight = 1;
-  static constexpr int col_current_label = 8;
-  static constexpr int prec_current_label = 4;
-  static constexpr int col_current_predict = 8;
-  static constexpr int prec_current_predict = 4;
-  static constexpr int col_current_features = 8;
-
-  double weighted_examples() const { return weighted_labeled_examples + weighted_unlabeled_examples; }
-
-  void update(bool test_example, bool labeled_example, float loss, float weight, size_t num_features)
-  {
-    t += weight;
-    if (test_example && labeled_example)
-    {
-      weighted_holdout_examples += weight;  // test weight seen
-      weighted_holdout_examples_since_last_dump += weight;
-      weighted_holdout_examples_since_last_pass += weight;
-      holdout_sum_loss += loss;
-      holdout_sum_loss_since_last_dump += loss;
-      holdout_sum_loss_since_last_pass += loss;  // since last pass
-    }
-    else
-    {
-      if (labeled_example)
-        weighted_labeled_examples += weight;
-      else
-        weighted_unlabeled_examples += weight;
-      sum_loss += loss;
-      sum_loss_since_last_dump += loss;
-      total_features += num_features;
-      example_number++;
-    }
-  }
-
-  inline void update_dump_interval(bool progress_add, float progress_arg)
-  {
-    sum_loss_since_last_dump = 0.0;
-    old_weighted_labeled_examples = weighted_labeled_examples;
-    if (progress_add) { dump_interval = static_cast<float>(weighted_examples()) + progress_arg; }
-    else
-    {
-      dump_interval = static_cast<float>(weighted_examples()) * progress_arg;
-    }
-  }
-
-  // progressive validation header
-  void print_update_header(std::ostream& trace_message)
-  {
-    trace_message << std::left << std::setw(col_avg_loss) << std::left << "average"
-                  << " " << std::setw(col_since_last) << std::left << "since"
-                  << " " << std::right << std::setw(col_example_counter) << "example"
-                  << " " << std::setw(col_example_weight) << "example"
-                  << " " << std::setw(col_current_label) << "current"
-                  << " " << std::setw(col_current_predict) << "current"
-                  << " " << std::setw(col_current_features) << "current" << std::endl;
-    trace_message << std::left << std::setw(col_avg_loss) << std::left << "loss"
-                  << " " << std::setw(col_since_last) << std::left << "last"
-                  << " " << std::right << std::setw(col_example_counter) << "counter"
-                  << " " << std::setw(col_example_weight) << "weight"
-                  << " " << std::setw(col_current_label) << "label"
-                  << " " << std::setw(col_current_predict) << "predict"
-                  << " " << std::setw(col_current_features) << "features" << std::endl;
-  }
-
-  void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, float label,
-      float prediction, size_t num_features, bool progress_add, float progress_arg)
-  {
-    std::ostringstream label_buf, pred_buf;
-
-    label_buf << std::setw(col_current_label) << std::setfill(' ');
-    if (label < FLT_MAX)
-      label_buf << std::setprecision(prec_current_label) << std::fixed << std::right << label;
-    else
-      label_buf << std::left << " unknown";
-
-    pred_buf << std::setw(col_current_predict) << std::setprecision(prec_current_predict) << std::fixed << std::right
-             << std::setfill(' ') << prediction;
-
-    print_update(output_stream, holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
-        progress_add, progress_arg);
-  }
-
-  void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, uint32_t label,
-      uint32_t prediction, size_t num_features, bool progress_add, float progress_arg)
-  {
-    std::ostringstream label_buf, pred_buf;
-
-    label_buf << std::setw(col_current_label) << std::setfill(' ');
-    if (label < INT_MAX)
-      label_buf << std::right << label;
-    else
-      label_buf << std::left << " unknown";
-
-    pred_buf << std::setw(col_current_predict) << std::right << std::setfill(' ') << prediction;
-
-    print_update(output_stream, holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
-        progress_add, progress_arg);
-  }
-
-  void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, const std::string& label,
-      uint32_t prediction, size_t num_features, bool progress_add, float progress_arg)
-  {
-    std::ostringstream pred_buf;
-
-    pred_buf << std::setw(col_current_predict) << std::right << std::setfill(' ') << prediction;
-
-    print_update(
-        output_stream, holdout_set_off, current_pass, label, pred_buf.str(), num_features, progress_add, progress_arg);
-  }
-
-  void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, const std::string& label,
-      const std::string& prediction, size_t num_features, bool progress_add, float progress_arg)
-  {
-    std::streamsize saved_w = output_stream.width();
-    std::streamsize saved_prec = output_stream.precision();
-    std::ostream::fmtflags saved_f = output_stream.flags();
-    bool holding_out = false;
-
-    if (!holdout_set_off && current_pass >= 1)
-    {
-      if (holdout_sum_loss == 0. && weighted_holdout_examples == 0.)
-        output_stream << std::setw(col_avg_loss) << std::left << " unknown";
-      else
-        output_stream << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::fixed << std::right
-                      << (holdout_sum_loss / weighted_holdout_examples);
-
-      output_stream << " ";
-
-      if (holdout_sum_loss_since_last_dump == 0. && weighted_holdout_examples_since_last_dump == 0.)
-        output_stream << std::setw(col_since_last) << std::left << " unknown";
-      else
-        output_stream << std::setw(col_since_last) << std::setprecision(prec_since_last) << std::fixed << std::right
-                      << (holdout_sum_loss_since_last_dump / weighted_holdout_examples_since_last_dump);
-
-      weighted_holdout_examples_since_last_dump = 0;
-      holdout_sum_loss_since_last_dump = 0.0;
-
-      holding_out = true;
-    }
-    else
-    {
-      output_stream << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::right << std::fixed;
-      if (weighted_labeled_examples > 0.)
-        output_stream << (sum_loss / weighted_labeled_examples);
-      else
-        output_stream << "n.a.";
-      output_stream << " " << std::setw(col_since_last) << std::setprecision(prec_avg_loss) << std::right << std::fixed;
-      if (weighted_labeled_examples == old_weighted_labeled_examples)
-        output_stream << "n.a.";
-      else
-        output_stream << (sum_loss_since_last_dump / (weighted_labeled_examples - old_weighted_labeled_examples));
-    }
-    output_stream << " " << std::setw(col_example_counter) << std::right << example_number << " "
-                  << std::setw(col_example_weight) << std::setprecision(prec_example_weight) << std::right
-                  << weighted_examples() << " " << std::setw(col_current_label) << std::right << label << " "
-                  << std::setw(col_current_predict) << std::right << prediction << " "
-                  << std::setw(col_current_features) << std::right << num_features;
-
-    if (holding_out) output_stream << " h";
-
-    output_stream << std::endl;
-    output_stream.flush();
-
-    output_stream.width(saved_w);
-    output_stream.precision(saved_prec);
-    output_stream.setf(saved_f);
-
-    update_dump_interval(progress_add, progress_arg);
-  }
 };
 
 enum AllReduceType
@@ -292,21 +75,6 @@ enum AllReduceType
 };
 
 class AllReduce;
-
-struct rand_state
-{
-private:
-  uint64_t random_state;
-
-public:
-  constexpr rand_state() : random_state(0) {}
-  rand_state(uint64_t initial) : random_state(initial) {}
-  constexpr uint64_t get_current_state() const noexcept { return random_state; }
-  float get_and_update_random() { return merand48(random_state); }
-  float get_and_update_gaussian() { return merand48_boxmuller(random_state); }
-  float get_random() const { return merand48_noadvance(random_state); }
-  void set_random_state(uint64_t initial) noexcept { random_state = initial; }
-};
 
 struct vw_logger
 {

@@ -20,6 +20,7 @@
 #include "gen_cs_example.h"  // required for GEN_CS::cb_to_cs_adf
 #include "reductions_fwd.h"
 #include "vw_math.h"
+#include "shared_data.h"
 
 namespace VW
 {
@@ -73,6 +74,8 @@ private:
   CB::label _action_label;
   CB::label _empty_label;
   ACTION_SCORE::action_scores _saved_pred;
+  size_t _metric_labeled;
+  size_t _metric_predict_in_learn;
 
 public:
   template <typename... Args>
@@ -84,7 +87,10 @@ public:
   ~cb_explore_adf_base() { _saved_pred.delete_v(); }
 
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
+  static void print_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
+  static void persist_metrics(
+      cb_explore_adf_base<ExploreType>& data, std::vector<std::tuple<std::string, size_t>>& metrics);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
@@ -129,10 +135,12 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     data._known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
+    data._metric_labeled++;
   }
   else
   {
     predict(data, base, examples);
+    data._metric_predict_in_learn++;
   }
 }
 
@@ -183,7 +191,10 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, !labeled_example, ec, &ec_seq, true);
+  if (labeled_example)
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, &_known_cost);
+  else
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
 }
 
 template <typename ExploreType>
@@ -200,13 +211,20 @@ template <typename ExploreType>
 void cb_explore_adf_base<ExploreType>::finish_multiline_example(
     vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq)
 {
+  print_multiline_example(all, data, ec_seq);
+
+  VW::finish_example(all, ec_seq);
+}
+
+template <typename ExploreType>
+void cb_explore_adf_base<ExploreType>::print_multiline_example(
+    vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq)
+{
   if (ec_seq.size() > 0)
   {
     data.output_example_seq(all, ec_seq);
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
-
-  VW::finish_example(all, ec_seq);
 }
 
 template <typename ExploreType>
@@ -214,6 +232,14 @@ inline void cb_explore_adf_base<ExploreType>::save_load(
     cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text)
 {
   data.explore.save_load(io, read, text);
+}
+
+template <typename ExploreType>
+inline void cb_explore_adf_base<ExploreType>::persist_metrics(
+    cb_explore_adf_base<ExploreType>& data, std::vector<std::tuple<std::string, size_t>>& metrics)
+{
+  metrics.emplace_back("cbea_labeled_ex", data._metric_labeled);
+  metrics.emplace_back("cbea_predict_in_learn", data._metric_predict_in_learn);
 }
 
 }  // namespace cb_explore_adf
