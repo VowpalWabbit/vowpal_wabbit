@@ -778,7 +778,8 @@ example* read_example(vw& all, char* example_line)
   return ret;
 }
 
-example* read_example(vw& all, std::string example_line) {
+example* read_example(vw& all, std::string example_line)
+{
   return read_example(all, const_cast<char*>(example_line.c_str()));
 }
 

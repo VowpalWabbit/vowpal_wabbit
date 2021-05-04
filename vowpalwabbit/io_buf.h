@@ -157,7 +157,8 @@ public:
 
   // You can definitely call read directly on the reader object. This function hasn't been changed yet to reduce churn
   // in the refactor.
-  static ssize_t read_file(VW::io::reader* f, void* buf, size_t nbytes) {
+  static ssize_t read_file(VW::io::reader* f, void* buf, size_t nbytes)
+  {
     return f->read(static_cast<char*>(buf), nbytes);
   }
 
