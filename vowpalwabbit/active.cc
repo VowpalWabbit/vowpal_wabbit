@@ -4,6 +4,7 @@
 
 #include <cerrno>
 #include <cfloat>
+#include <cmath>
 
 #include "reductions.h"
 #include "rand48.h"
@@ -40,7 +41,7 @@ float query_decision(active& a, float ec_revert_weight, float k)
   else
   {
     weighted_queries = (float)a.all->sd->weighted_labeled_examples;
-    avg_loss = (float)(a.all->sd->sum_loss / k + std::sqrt((1. + 0.5 * log(k)) / (weighted_queries + 0.0001)));
+    avg_loss = (float)(a.all->sd->sum_loss / k + std::sqrt((1. + 0.5 * std::log(k)) / (weighted_queries + 0.0001)));
     bias = get_active_coin_bias(k, avg_loss, ec_revert_weight / k, a.active_c0);
   }
   if (a._random_state->get_and_update_random() < bias)

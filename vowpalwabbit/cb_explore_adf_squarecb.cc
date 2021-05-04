@@ -12,6 +12,7 @@
 #include "explore.h"
 #include "action_score.h"
 #include "cb.h"
+#include <cmath>
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -114,7 +115,7 @@ float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens
       u = w;
     else
       l = w;
-    if (fabs(v) <= tol || u - l <= tol) break;
+    if (std::fabs(v) <= tol || u - l <= tol) break;
   }
 
   return l;

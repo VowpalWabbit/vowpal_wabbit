@@ -1,6 +1,7 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include <cmath>
 #include <fstream>
 #include <sstream>
 #include <cfloat>
@@ -548,9 +549,9 @@ bool update(svm_params& params, size_t pos)
   ai *= ld.label;
   float diff = ai - alpha_old;
 
-  if (fabs(diff) > 1.0e-06) overshoot = true;
+  if (std::fabs(diff) > 1.0e-06) overshoot = true;
 
-  if (fabs(diff) > 1.)
+  if (std::fabs(diff) > 1.)
   {
     // params.all->opts_n_args.trace_message<<"Here\n";
     diff = (float)(diff > 0) - (diff < 0);
@@ -563,7 +564,7 @@ bool update(svm_params& params, size_t pos)
     model->delta[i] += diff * inprods[i] * ldi.label / params.lambda;
   }
 
-  if (fabs(ai) <= 1.0e-10)
+  if (std::fabs(ai) <= 1.0e-10)
     remove(params, pos);
   else
     model->alpha[pos] = ai;
@@ -659,7 +660,7 @@ void train(svm_params& params)
     {
       std::multimap<double, size_t> scoremap;
       for (size_t i = 0; i < params.pool_pos; i++)
-        scoremap.insert(std::pair<const double, const size_t>(fabs(scores[i]), i));
+        scoremap.insert(std::pair<const double, const size_t>(std::fabs(scores[i]), i));
 
       std::multimap<double, size_t>::iterator iter = scoremap.begin();
       // params.all->opts_n_args.trace_message<<params.pool_size<<" "<<"Scoremap: ";
@@ -681,8 +682,8 @@ void train(svm_params& params)
       {
         float queryp = 2.0f /
             (1.0f +
-                expf(
-                    (float)(params.active_c * fabs(scores[i])) * (float)pow(params.pool[i]->ex.example_counter, 0.5f)));
+                expf((float)(params.active_c * std::fabs(scores[i])) *
+                    (float)pow(params.pool[i]->ex.example_counter, 0.5f)));
         if (params._random_state->get_and_update_random() < queryp)
         {
           svm_example* fec = params.pool[i];

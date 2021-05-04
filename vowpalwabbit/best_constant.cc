@@ -4,6 +4,8 @@
 
 #include "best_constant.h"
 
+#include <cmath>
+
 bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
 {
   if (all.sd->first_observed_label == FLT_MAX ||  // no non-test labels observed or function was never called
@@ -60,7 +62,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
     else if (label2_cnt <= 0)
       best_constant = -1.;
     else
-      best_constant = log(label2_cnt / label1_cnt);
+      best_constant = std::log(label2_cnt / label1_cnt);
   }
   else if (funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0)
   {
