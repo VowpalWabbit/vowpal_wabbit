@@ -628,7 +628,7 @@ float compute_update(gd& g, example& ec)
     // changed from ec.partial_prediction to ld.prediction
     ec.updated_prediction += pred_per_update * update;
 
-    if (all.reg_mode && fabs(update) > 1e-8)
+    if (all.reg_mode && std::fabs(update) > 1e-8)
     {
       double dev1 = all.loss->first_derivative(all.sd, ec.pred.scalar, ld.label);
       double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
