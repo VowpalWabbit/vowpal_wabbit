@@ -60,7 +60,7 @@ float get_threshold(float sum_loss, float t, float c0, float alpha)
   else
   {
     float avg_loss = sum_loss / t;
-    float threshold = std::sqrt(c0 * avg_loss / t) + fmax(2.f * alpha, 4.f) * c0 * log(t) / t;
+    float threshold = std::sqrt(c0 * avg_loss / t) + std::fmax(2.f * alpha, 4.f) * c0 * std::log(t) / t;
     return threshold;
   }
 }
@@ -71,7 +71,7 @@ float get_pmin(float sum_loss, float t)
   if (t <= 2.f) { return 1.f; }
 
   float avg_loss = sum_loss / t;
-  float pmin = fmin(1.f / (std::sqrt(t * avg_loss) + log(t)), 0.5f);
+  float pmin = std::fmin(1.f / (std::sqrt(t * avg_loss) + std::log(t)), 0.5f);
   return pmin;  // treating n*eps_n = 1
 }
 
@@ -155,7 +155,9 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
     // cost = cost of predicting erm's prediction
     // cost_delta = cost - cost of predicting the opposite label
     if (in_dis)
-    { cost = r * (fmax(importance, 0.f)) * ((float)(VW::math::sign(prediction) != VW::math::sign(ec_input_label))); }
+    {
+      cost = r * (std::fmax(importance, 0.f)) * ((float)(VW::math::sign(prediction) != VW::math::sign(ec_input_label)));
+    }
     else
     {
       cost = 0.f;
@@ -169,13 +171,13 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
       {
         p = std::sqrt(q2) / (1.f + std::sqrt(q2));
         s = 2.f * a.alpha * a.alpha - 1.f / p;
-        cost_delta = 2.f * cost - r * (fmax(importance, 0.f)) - s;
+        cost_delta = 2.f * cost - r * (std::fmax(importance, 0.f)) - s;
       }
 
       // Choose min-cost label as the label
       // Set importance weight to be the cost difference
       ec.l.simple.label = -1.f * VW::math::sign(cost_delta) * VW::math::sign(prediction);
-      ec.weight = ec_input_weight * fabs(cost_delta);
+      ec.weight = ec_input_weight * std::fabs(cost_delta);
 
       // Update learner
       base.learn(ec, i + 1);
@@ -183,7 +185,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
 
       // Update numerator of lambda
       a.lambda_n[i] += 2.f * ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) * cost_delta;
-      a.lambda_n[i] = fmax(a.lambda_n[i], 0.f);
+      a.lambda_n[i] = std::fmax(a.lambda_n[i], 0.f);
 
       // Update denominator of lambda
       a.lambda_d[i] +=

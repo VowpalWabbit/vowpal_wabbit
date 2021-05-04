@@ -89,7 +89,7 @@ float binarySearch(float fhat, float delta, float sens, float tol)
       u = w;
     else
       l = w;
-    if (fabs(v) <= tol || u - l <= tol) break;
+    if (std::fabs(v) <= tol || u - l <= tol) break;
   }
 
   return l;

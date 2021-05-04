@@ -102,7 +102,7 @@ void learn(plt& p, single_learner& base, example& ec)
         p.positive_nodes.insert(tn);
         while (tn > 0)
         {
-          tn = static_cast<uint32_t>(floor(static_cast<float>(tn - 1) / p.kary));
+          tn = static_cast<uint32_t>(std::floor(static_cast<float>(tn - 1) / p.kary));
           p.positive_nodes.insert(tn);
         }
       }
@@ -146,7 +146,7 @@ inline float predict_node(uint32_t n, single_learner& base, example& ec)
   ec.l.simple = {FLT_MAX};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   base.predict(ec, n);
-  return 1.0f / (1.0f + exp(-ec.partial_prediction));
+  return 1.0f / (1.0f + std::exp(-ec.partial_prediction));
 }
 
 template <bool threshold>
@@ -186,7 +186,7 @@ void predict(plt& p, single_learner& base, example& ec)
 
       for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
       {
-        float cp_child = node.p * (1.f / (1.f + exp(-p.node_preds[i].scalar)));
+        float cp_child = node.p * (1.f / (1.f + std::exp(-p.node_preds[i].scalar)));
         if (cp_child > p.threshold)
         {
           if (n_child < p.ti)
@@ -236,7 +236,7 @@ void predict(plt& p, single_learner& base, example& ec)
 
         for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
         {
-          float cp_child = node.p * (1.0f / (1.0f + exp(-p.node_preds[i].scalar)));
+          float cp_child = node.p * (1.0f / (1.0f + std::exp(-p.node_preds[i].scalar)));
           p.node_queue.push_back({n_child, cp_child});
           std::push_heap(p.node_queue.begin(), p.node_queue.end());
         }

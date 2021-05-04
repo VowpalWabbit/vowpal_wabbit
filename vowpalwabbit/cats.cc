@@ -9,6 +9,7 @@
 #include "shared_data.h"
 
 #include <cfloat>
+#include <cmath>
 // Aliases
 using std::endl;
 using VW::cb_continuous::continuous_label;
@@ -63,7 +64,7 @@ float cats::get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, f
     const float unit_range = continuous_range / num_actions;
 
     const float ac = (predicted_action - min_value) / unit_range;
-    int discretized_action = std::min(static_cast<int>(num_actions - 1), static_cast<int>(floor(ac)));
+    int discretized_action = std::min(static_cast<int>(num_actions - 1), static_cast<int>(std::floor(ac)));
     // centre of predicted action
     const float centre = min_value + discretized_action * unit_range + unit_range / 2.0f;
 
