@@ -127,8 +127,6 @@
     <ClInclude Include="cb_explore_pdf.h" />
     <ClInclude Include="cb_label_parser.h" />
     <ClInclude Include="debug_log.h" />
-    <ClInclude Include="errors_data.h" />
-    <ClInclude Include="err_constants.h" />
     <ClInclude Include="get_pmf.h" />
     <ClInclude Include="io\logger.h" />
     <ClInclude Include="offset_tree.h" />
