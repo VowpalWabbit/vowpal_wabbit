@@ -442,7 +442,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       // learning state to be shared across children
       shared_data* sd =
-          (shared_data*)mmap(0, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+          (shared_data*)mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
       memcpy(sd, all.sd, sizeof(shared_data));
       free(all.sd);
       all.sd = sd;

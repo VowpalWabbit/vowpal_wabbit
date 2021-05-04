@@ -262,10 +262,10 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
 
   // feature based on the top three examples in stack ec_buf[0]: s1, ec_buf[1]: s2, ec_buf[2]: s3
   for (size_t i = 0; i < 3; i++)
-    ec_buf[i] = (stack.size() > i && *(stack.end() - (i + 1)) != 0) ? ec[*(stack.end() - (i + 1)) - 1] : 0;
+    ec_buf[i] = (stack.size() > i && *(stack.end() - (i + 1)) != 0) ? ec[*(stack.end() - (i + 1)) - 1] : nullptr;
 
   // features based on examples in string buffer ec_buf[3]: b1, ec_buf[4]: b2, ec_buf[5]: b3
-  for (size_t i = 3; i < 6; i++) ec_buf[i] = (idx + (i - 3) - 1 < n) ? ec[idx + i - 3 - 1] : 0;
+  for (size_t i = 3; i < 6; i++) ec_buf[i] = (idx + (i - 3) - 1 < n) ? ec[idx + i - 3 - 1] : nullptr;
 
   // features based on the leftmost and the rightmost children of the top element stack ec_buf[6]: sl1, ec_buf[7]: sl2,
   // ec_buf[8]: sr1, ec_buf[9]: sr2;
@@ -274,10 +274,10 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
 
   // features based on leftmost children of the top element in bufer ec_buf[10]: bl1, ec_buf[11]: bl2
   for (size_t i = 10; i < 12; i++)
-    ec_buf[i] = (idx <= n && children[i - 8][idx] != 0) ? ec[children[i - 8][idx] - 1] : 0;
+    ec_buf[i] = (idx <= n && children[i - 8][idx] != 0) ? ec[children[i - 8][idx] - 1] : nullptr;
   ec_buf[12] = (stack.size() > 1 && *(stack.end() - 2) != 0 && children[2][*(stack.end() - 2)] != 0)
       ? ec[children[2][*(stack.end() - 2)] - 1]
-      : 0;
+      : nullptr;
 
   // unigram features
   for (size_t i = 0; i < 13; i++)
