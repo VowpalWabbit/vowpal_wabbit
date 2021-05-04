@@ -4,6 +4,7 @@
 
 #include <cfloat>
 #include <cassert>
+#include <cmath>
 
 #include "gd.h"
 #include "accumulate.h"
@@ -282,7 +283,7 @@ void sort_data_update_support(stagewise_poly &poly)
   assert(poly.original_ec);
   poly.original_ec->ft_offset = 0;
 
-  size_t num_new_features = (size_t)pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent);
+  size_t num_new_features = (size_t)std::pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent);
   num_new_features = (num_new_features > poly.all->length()) ? (uint64_t)poly.all->length() : num_new_features;
   sort_data_ensure_sz(poly, num_new_features);
 

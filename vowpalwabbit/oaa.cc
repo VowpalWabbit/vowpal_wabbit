@@ -1,6 +1,7 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include <cmath>
 #include <sstream>
 #include <cfloat>
 #include <cmath>
@@ -173,7 +174,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   {
     if (ec.l.multi.label <= o.k)  // prevent segmentation fault if labeĺ==(uint32_t)-1
       correct_class_prob = ec.pred.scalars[ec.l.multi.label - 1];
-    if (correct_class_prob > 0) multiclass_log_loss = -log(correct_class_prob) * ec.weight;
+    if (correct_class_prob > 0) multiclass_log_loss = -std::log(correct_class_prob) * ec.weight;
     if (ec.test_only)
       all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
     else
