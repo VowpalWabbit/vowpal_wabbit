@@ -118,8 +118,8 @@ void learn(mf& data, single_learner& base, example& ec)
   // looping over all pairs of non-empty namespaces
   for (auto& i : data.pairs)
   {
-    int left_ns = (int)i[0];
-    int right_ns = (int)i[1];
+    int left_ns = static_cast<int>(i[0]);
+    int right_ns = static_cast<int>(i[1]);
 
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
     {

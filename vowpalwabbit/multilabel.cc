@@ -20,14 +20,14 @@ namespace MULTILABEL
 {
 char* bufread_label(labels& ld, char* c, io_buf& cache)
 {
-  size_t num = *(size_t*)c;
+  size_t num = *reinterpret_cast<size_t*>(c);
   ld.label_v.clear();
   c += sizeof(size_t);
   size_t total = sizeof(uint32_t) * num;
-  if (cache.buf_read(c, (int)total) < total) { THROW("error in demarshal of cost data"); }
+  if (cache.buf_read(c, static_cast<int>(total)) < total) { THROW("error in demarshal of cost data"); }
   for (size_t i = 0; i < num; i++)
   {
-    uint32_t temp = *(uint32_t*)c;
+    uint32_t temp = *reinterpret_cast<uint32_t*>(c);
     c += sizeof(uint32_t);
     ld.label_v.push_back(temp);
   }
@@ -40,7 +40,7 @@ size_t read_cached_label(shared_data*, MULTILABEL::labels& ld, io_buf& cache)
   ld.label_v.clear();
   char* c;
   size_t total = sizeof(size_t);
-  if (cache.buf_read(c, (int)total) < total) return 0;
+  if (cache.buf_read(c, static_cast<int>(total)) < total) return 0;
   bufread_label(ld, c, cache);
 
   return total;
@@ -50,11 +50,11 @@ float weight(MULTILABEL::labels&) { return 1.; }
 
 char* bufcache_label(labels& ld, char* c)
 {
-  *(size_t*)c = ld.label_v.size();
+  *reinterpret_cast<size_t*>(c) = ld.label_v.size();
   c += sizeof(size_t);
   for (unsigned int i = 0; i < ld.label_v.size(); i++)
   {
-    *(uint32_t*)c = ld.label_v[i];
+    *reinterpret_cast<uint32_t*>(c) = ld.label_v[i];
     c += sizeof(uint32_t);
   }
   return c;

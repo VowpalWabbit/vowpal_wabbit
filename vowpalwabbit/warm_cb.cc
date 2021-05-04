@@ -168,7 +168,7 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     for (features& fs : eca)
     {
       for (feature_index& idx : fs.indicies)
-      { idx = ((((idx >> ss) * 28904713) + 4832917 * (uint64_t)a) << ss) & mask; }
+      { idx = ((((idx >> ss) * 28904713) + 4832917 * static_cast<uint64_t>(a)) << ss) & mask; }
     }
 
     // avoid empty example by adding a tag (hacky)
@@ -268,8 +268,8 @@ bool ind_update(warm_cb& data, int ec_type)
 float compute_weight_multiplier(warm_cb& data, size_t i, int ec_type)
 {
   float weight_multiplier;
-  float ws_train_size = (float)data.ws_train_size;
-  float inter_train_size = (float)data.inter_period;
+  float ws_train_size = static_cast<float>(data.ws_train_size);
+  float inter_train_size = static_cast<float>(data.inter_period);
   float total_train_size = ws_train_size + inter_train_size;
   float total_weight = (1 - data.lambdas[i]) * ws_train_size + data.lambdas[i] * inter_train_size;
 

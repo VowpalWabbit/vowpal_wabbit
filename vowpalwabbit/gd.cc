@@ -125,14 +125,14 @@ float average_update(float total_weight, float normalized_sum_norm_x, float neg_
   {
     if (sqrt_rate)
     {
-      float avg_norm = (float)(total_weight / normalized_sum_norm_x);
+      float avg_norm = (total_weight / normalized_sum_norm_x);
       if (adaptive)
         return std::sqrt(avg_norm);
       else
         return avg_norm;
     }
     else
-      return powf((float)(normalized_sum_norm_x / total_weight), neg_norm_power);
+      return powf((normalized_sum_norm_x / total_weight), neg_norm_power);
   }
   return 1.f;
 }
@@ -239,7 +239,8 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
   {
     std::ostringstream tempstream;
     tempstream << ':' << (index >> stride_shift) << ':' << ft_weight << ':'
-               << trunc_weight(weights[index], (float)dat.all.sd->gravity) * (float)dat.all.sd->contraction;
+               << trunc_weight(weights[index], static_cast<float>(dat.all.sd->gravity)) *
+            static_cast<float>(dat.all.sd->contraction);
 
     if (weights.adaptive)  // adaptive
       tempstream << '@' << (&weights[index])[1];
@@ -299,7 +300,7 @@ void print_features(vw& all, example& ec)
         {
           audit_interaction(dat, f.audit()->get());
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
-          audit_interaction(dat, NULL);
+          audit_interaction(dat, nullptr);
         }
       else
       {
@@ -334,8 +335,8 @@ float finalize_prediction(shared_data* sd, vw_logger&, float ret)
     logger::errlog_warn("NAN prediction in example {0}, forcing {1}", sd->example_number + 1, ret);
     return ret;
   }
-  if (ret > sd->max_label) return (float)sd->max_label;
-  if (ret < sd->min_label) return (float)sd->min_label;
+  if (ret > sd->max_label) return sd->max_label;
+  if (ret < sd->min_label) return sd->min_label;
   return ret;
 }
 
@@ -353,7 +354,7 @@ inline void vec_add_trunc(trunc_data& p, const float fx, float& fw)
 inline float trunc_predict(vw& all, example& ec, double gravity)
 {
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
-  trunc_data temp = {simple_red_features.initial, (float)gravity};
+  trunc_data temp = {simple_red_features.initial, static_cast<float>(gravity)};
   foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp);
   return temp.prediction;
 }
@@ -376,7 +377,7 @@ void predict(gd& g, base_learner&, example& ec)
   else
     ec.partial_prediction = inline_predict(all, ec);
 
-  ec.partial_prediction *= (float)all.sd->contraction;
+  ec.partial_prediction *= static_cast<float>(all.sd->contraction);
   ec.pred.scalar = finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
   VW_DBG(ec) << "gd: predict() " << scalar_pred_to_string(ec) << features_to_string(ec) << std::endl;
@@ -406,7 +407,7 @@ void multipredict(
   if (g.all->weights.sparse)
   {
     multipredict_info<sparse_parameters> mp = {
-        count, step, pred, g.all->weights.sparse_weights, (float)all.sd->gravity};
+        count, step, pred, g.all->weights.sparse_weights, static_cast<float>(all.sd->gravity)};
     if (l1)
       foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_trunc_multipredict>(all, ec, mp);
     else
@@ -414,14 +415,15 @@ void multipredict(
   }
   else
   {
-    multipredict_info<dense_parameters> mp = {count, step, pred, g.all->weights.dense_weights, (float)all.sd->gravity};
+    multipredict_info<dense_parameters> mp = {
+        count, step, pred, g.all->weights.dense_weights, static_cast<float>(all.sd->gravity)};
     if (l1)
       foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_trunc_multipredict>(all, ec, mp);
     else
       foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_multipredict>(all, ec, mp);
   }
   if (all.sd->contraction != 1.)
-    for (size_t c = 0; c < count; c++) pred[c].scalar *= (float)all.sd->contraction;
+    for (size_t c = 0; c < count; c++) pred[c].scalar *= static_cast<float>(all.sd->contraction);
   if (finalize_predictions)
     for (size_t c = 0; c < count; c++) pred[c].scalar = finalize_prediction(all.sd, all.logger, pred[c].scalar);
   if (audit)
@@ -430,9 +432,9 @@ void multipredict(
     {
       ec.pred.scalar = pred[c].scalar;
       print_audit_features(all, ec);
-      ec.ft_offset += (uint64_t)step;
+      ec.ft_offset += static_cast<uint64_t>(step);
     }
-    ec.ft_offset -= (uint64_t)(step * count);
+    ec.ft_offset -= static_cast<uint64_t>(step * count);
   }
 }
 
@@ -559,15 +561,15 @@ float get_pred_per_update(gd& g, example& ec)
   {
     if (!stateless)
     {
-      g.all->normalized_sum_norm_x += ((double)ec.weight) * nd.norm_x;
+      g.all->normalized_sum_norm_x += (static_cast<double>(ec.weight)) * nd.norm_x;
       g.total_weight += ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(
-          (float)g.total_weight, (float)g.all->normalized_sum_norm_x, g.neg_norm_power);
+          static_cast<float>(g.total_weight), static_cast<float>(g.all->normalized_sum_norm_x), g.neg_norm_power);
     }
     else
     {
-      float nsnx = ((float)g.all->normalized_sum_norm_x) + ec.weight * nd.norm_x;
-      float tw = (float)g.total_weight + ec.weight;
+      float nsnx = (static_cast<float>(g.all->normalized_sum_norm_x)) + ec.weight * nd.norm_x;
+      float tw = static_cast<float>(g.total_weight) + ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
     }
     nd.pred_per_update *= g.update_multiplier;
@@ -595,8 +597,8 @@ float get_scale(gd& g, example& /* ec */, float weight)
   float update_scale = g.all->eta * weight;
   if (!adaptive)
   {
-    float t =
-        (float)(g.all->sd->t + weight - g.all->sd->weighted_holdout_examples - g.all->sd->weighted_unlabeled_examples);
+    float t = static_cast<float>(
+        g.all->sd->t + weight - g.all->sd->weighted_holdout_examples - g.all->sd->weighted_unlabeled_examples);
     update_scale *= powf(t, g.neg_power_t);
   }
   return update_scale;
@@ -635,7 +637,7 @@ float compute_update(gd& g, example& ec)
       double dev1 = all.loss->first_derivative(all.sd, ec.pred.scalar, ld.label);
       double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
       if (fabs(dev1) > 1e-8) all.sd->contraction *= (1. - all.l2_lambda * eta_bar);
-      update /= (float)all.sd->contraction;
+      update /= static_cast<float>(all.sd->contraction);
       all.sd->gravity += eta_bar * all.l1_lambda;
     }
   }
@@ -684,10 +686,10 @@ void sync_weights(vw& all)
 
   if (all.weights.sparse)
     for (weight& w : all.weights.sparse_weights)
-      w = trunc_weight(w, (float)all.sd->gravity) * (float)all.sd->contraction;
+      w = trunc_weight(w, static_cast<float>(all.sd->gravity)) * static_cast<float>(all.sd->contraction);
   else
     for (weight& w : all.weights.dense_weights)
-      w = trunc_weight(w, (float)all.sd->gravity) * (float)all.sd->contraction;
+      w = trunc_weight(w, static_cast<float>(all.sd->gravity)) * static_cast<float>(all.sd->contraction);
 
   all.sd->gravity = 0.;
   all.sd->contraction = 1.;
@@ -702,11 +704,11 @@ size_t write_index(io_buf& model_file, std::stringstream& msg, bool text, uint32
 
   if (num_bits < 31)
   {
-    old_i = (uint32_t)i;
-    brw = bin_text_write_fixed(model_file, (char*)&old_i, sizeof(old_i), msg, text);
+    old_i = static_cast<uint32_t>(i);
+    brw = bin_text_write_fixed(model_file, reinterpret_cast<char*>(&old_i), sizeof(old_i), msg, text);
   }
   else
-    brw = bin_text_write_fixed(model_file, (char*)&i, sizeof(i), msg, text);
+    brw = bin_text_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), msg, text);
 
   return brw;
 }
@@ -731,11 +733,11 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
         if (map_it != all.index_name_map.end())
         {
           msg << map_it->second;
-          bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
+          bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
         }
 
         msg << ":" << weight_index << ":" << weight_value << "\n";
-        bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
+        bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
       }
     }
     return;
@@ -743,24 +745,24 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 
   uint64_t i = 0;
   uint32_t old_i = 0;
-  uint64_t length = (uint64_t)1 << all.num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (read) do
     {
       brw = 1;
       if (all.num_bits < 31)  // backwards compatible
       {
-        brw = model_file.bin_read_fixed((char*)&old_i, sizeof(old_i), "");
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&old_i), sizeof(old_i), "");
         i = old_i;
       }
       else
-        brw = model_file.bin_read_fixed((char*)&i, sizeof(i), "");
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i), "");
       if (brw > 0)
       {
         if (i >= length)
           THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length "
                                                                    << length);
         weight* v = &weights.strided_index(i);
-        brw += model_file.bin_read_fixed((char*)&(*v), sizeof(*v), "");
+        brw += model_file.bin_read_fixed(reinterpret_cast<char*>(&(*v)), sizeof(*v), "");
       }
     } while (brw > 0);
   else  // write
@@ -788,7 +790,7 @@ template <class T>
 void save_load_online_state(
     vw& all, io_buf& model_file, bool read, bool text, gd* g, std::stringstream& msg, uint32_t ftrl_size, T& weights)
 {
-  uint64_t length = (uint64_t)1 << all.num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
 
   uint64_t i = 0;
   uint32_t old_i = 0;
@@ -799,11 +801,11 @@ void save_load_online_state(
       brw = 1;
       if (all.num_bits < 31)  // backwards compatible
       {
-        brw = model_file.bin_read_fixed((char*)&old_i, sizeof(old_i), "");
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&old_i), sizeof(old_i), "");
         i = old_i;
       }
       else
-        brw = model_file.bin_read_fixed((char*)&i, sizeof(i), "");
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i), "");
       if (brw > 0)
       {
         if (i >= length)
@@ -811,13 +813,13 @@ void save_load_online_state(
                                                                    << length);
         weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
         if (ftrl_size > 0)
-          brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * ftrl_size, "");
-        else if (g == NULL || (!g->adaptive_input && !g->normalized_input))
-          brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]), "");
+          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * ftrl_size, "");
+        else if (g == nullptr || (!g->adaptive_input && !g->normalized_input))
+          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]), "");
         else if ((g->adaptive_input && !g->normalized_input) || (!g->adaptive_input && g->normalized_input))
-          brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 2, "");
+          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * 2, "");
         else  // adaptive and normalized
-          brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 3, "");
+          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * 3, "");
         uint32_t stride = 1 << weights.stride_shift();
         weight* v = &weights.strided_index(i);
         for (size_t j = 0; j < stride; j++) v[j] = buff[j];
@@ -836,7 +838,7 @@ void save_load_online_state(
           if (map_it != all.index_name_map.end())
           {
             msg << map_it->second << ":";
-            bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
+            bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
           }
         }
       }
@@ -908,53 +910,58 @@ void save_load_online_state(
   std::stringstream msg;
 
   msg << "initial_t " << all.initial_t << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.initial_t, sizeof(all.initial_t), "", read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&all.initial_t), sizeof(all.initial_t), "", read, msg, text);
 
   msg << "norm normalizer " << all.normalized_sum_norm_x << "\n";
-  bin_text_read_write_fixed(
-      model_file, (char*)&all.normalized_sum_norm_x, sizeof(all.normalized_sum_norm_x), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.normalized_sum_norm_x),
+      sizeof(all.normalized_sum_norm_x), "", read, msg, text);
 
   msg << "t " << all.sd->t << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->t, sizeof(all.sd->t), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->t), sizeof(all.sd->t), "", read, msg, text);
 
   msg << "sum_loss " << all.sd->sum_loss << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->sum_loss, sizeof(all.sd->sum_loss), "", read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&all.sd->sum_loss), sizeof(all.sd->sum_loss), "", read, msg, text);
 
   msg << "sum_loss_since_last_dump " << all.sd->sum_loss_since_last_dump << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->sum_loss_since_last_dump,
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->sum_loss_since_last_dump),
       sizeof(all.sd->sum_loss_since_last_dump), "", read, msg, text);
 
   float dump_interval = all.sd->dump_interval;
   msg << "dump_interval " << dump_interval << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&dump_interval, sizeof(dump_interval), "", read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&dump_interval), sizeof(dump_interval), "", read, msg, text);
   if (!read || (all.training && all.preserve_performance_counters))  // update dump_interval from input model
     all.sd->dump_interval = dump_interval;
 
   msg << "min_label " << all.sd->min_label << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->min_label, sizeof(all.sd->min_label), "", read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&all.sd->min_label), sizeof(all.sd->min_label), "", read, msg, text);
 
   msg << "max_label " << all.sd->max_label << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->max_label, sizeof(all.sd->max_label), "", read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&all.sd->max_label), sizeof(all.sd->max_label), "", read, msg, text);
 
   msg << "weighted_labeled_examples " << all.sd->weighted_labeled_examples << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_labeled_examples,
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->weighted_labeled_examples),
       sizeof(all.sd->weighted_labeled_examples), "", read, msg, text);
 
   msg << "weighted_labels " << all.sd->weighted_labels << "\n";
-  bin_text_read_write_fixed(
-      model_file, (char*)&all.sd->weighted_labels, sizeof(all.sd->weighted_labels), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->weighted_labels),
+      sizeof(all.sd->weighted_labels), "", read, msg, text);
 
   msg << "weighted_unlabeled_examples " << all.sd->weighted_unlabeled_examples << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_unlabeled_examples,
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->weighted_unlabeled_examples),
       sizeof(all.sd->weighted_unlabeled_examples), "", read, msg, text);
 
   msg << "example_number " << all.sd->example_number << "\n";
-  bin_text_read_write_fixed(
-      model_file, (char*)&all.sd->example_number, sizeof(all.sd->example_number), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->example_number),
+      sizeof(all.sd->example_number), "", read, msg, text);
 
   msg << "total_features " << all.sd->total_features << "\n";
-  bin_text_read_write_fixed(
-      model_file, (char*)&all.sd->total_features, sizeof(all.sd->total_features), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->total_features),
+      sizeof(all.sd->total_features), "", read, msg, text);
 
   if (!read || all.model_file_ver >= VERSION_SAVE_RESUME_FIX)
   {
@@ -962,21 +969,24 @@ void save_load_online_state(
 
     // fix average loss
     msg << "total_weight " << total_weight << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&total_weight, sizeof(total_weight), "", read, msg, text);
+    bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&total_weight), sizeof(total_weight), "", read, msg, text);
 
     // fix "loss since last" for first printed out example details
     msg << "sd::oec.weighted_labeled_examples " << all.sd->old_weighted_labeled_examples << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&all.sd->old_weighted_labeled_examples,
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->old_weighted_labeled_examples),
         sizeof(all.sd->old_weighted_labeled_examples), "", read, msg, text);
 
     // fix "number of examples per pass"
     msg << "current_pass " << all.current_pass << "\n";
     if (all.model_file_ver >= VERSION_PASS_UINT64)
-      bin_text_read_write_fixed(model_file, (char*)&all.current_pass, sizeof(all.current_pass), "", read, msg, text);
+      bin_text_read_write_fixed(
+          model_file, reinterpret_cast<char*>(&all.current_pass), sizeof(all.current_pass), "", read, msg, text);
     else  // backwards compatiblity.
     {
-      size_t temp_pass = (size_t)all.current_pass;
-      bin_text_read_write_fixed(model_file, (char*)&temp_pass, sizeof(temp_pass), "", read, msg, text);
+      size_t temp_pass = static_cast<size_t>(all.current_pass);
+      bin_text_read_write_fixed(
+          model_file, reinterpret_cast<char*>(&temp_pass), sizeof(temp_pass), "", read, msg, text);
       all.current_pass = temp_pass;
     }
   }
@@ -1034,7 +1044,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     bool resume = all.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), "", read, msg, text);
     if (resume)
     {
       if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
@@ -1203,7 +1213,7 @@ base_learner* setup(options_i& options, vw& all)
         all.sd->t = 1.f;
         all.initial_t = 1.f;
       }
-      all.eta *= powf((float)(all.sd->t), all.power_t);
+      all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
     }
   }
   else
@@ -1220,9 +1230,9 @@ base_learner* setup(options_i& options, vw& all)
 
   if (g->adax && !all.weights.adaptive) THROW("Cannot use adax without adaptive");
 
-  if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001)
+  if (pow(static_cast<double>(all.eta_decay_rate), static_cast<double>(all.numpasses)) < 0.0001)
     *(all.trace_message) << "Warning: the learning rate for the last pass is multiplied by: "
-                         << pow((double)all.eta_decay_rate, (double)all.numpasses)
+                         << pow(static_cast<double>(all.eta_decay_rate), static_cast<double>(all.numpasses))
                          << " adjust --decay_learning_rate larger to avoid this." << std::endl;
 
   if (all.reg_mode % 2)
@@ -1253,11 +1263,11 @@ base_learner* setup(options_i& options, vw& all)
   else
     stride = set_learn<false>(all, feature_mask_off, *g.get());
 
-  all.weights.stride_shift((uint32_t)ceil_log_2(stride - 1));
+  all.weights.stride_shift(static_cast<uint32_t>(ceil_log_2(stride - 1)));
 
   gd* bare = g.get();
-  learner<gd, example>& ret = init_learner(
-      g, g->learn, bare->predict, ((uint64_t)1 << all.weights.stride_shift()), all.get_setupfn_name(setup), true);
+  learner<gd, example>& ret = init_learner(g, g->learn, bare->predict,
+      (static_cast<uint64_t>(1) << all.weights.stride_shift()), all.get_setupfn_name(setup), true);
   ret.set_sensitivity(bare->sensitivity);
   ret.set_multipredict(bare->multipredict);
   ret.set_update(bare->update);

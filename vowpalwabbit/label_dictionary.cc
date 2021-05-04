@@ -14,10 +14,10 @@ void del_example_namespace(example& ec, namespace_index ns, features& fs)
   // so we need to keep the ec.num_features correct,
   // so shared features are included in the reported number of "current features"
   // ec.num_features -= numf;
-  features& del_target = ec.feature_space[(size_t)ns];
+  features& del_target = ec.feature_space[static_cast<size_t>(ns)];
   assert(del_target.size() >= fs.size());
   assert(ec.indices.size() > 0);
-  if (ec.indices.back() == ns && ec.feature_space[(size_t)ns].size() == fs.size()) ec.indices.pop_back();
+  if (ec.indices.back() == ns && ec.feature_space[static_cast<size_t>(ns)].size() == fs.size()) ec.indices.pop_back();
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
   ec.num_features -= fs.size();
   del_target.truncate_to(del_target.size() - fs.size());
@@ -28,16 +28,16 @@ void add_example_namespace(example& ec, namespace_index ns, features& fs)
 {
   bool has_ns = false;
   for (size_t i = 0; i < ec.indices.size(); i++)
-    if (ec.indices[i] == (size_t)ns)
+    if (ec.indices[i] == static_cast<size_t>(ns))
     {
       has_ns = true;
       break;
     }
 
-  if (!has_ns) ec.indices.push_back((size_t)ns);
+  if (!has_ns) ec.indices.push_back(static_cast<size_t>(ns));
 
   bool audit = fs.space_names.size() > 0;
-  features& add_fs = ec.feature_space[(size_t)ns];
+  features& add_fs = ec.feature_space[static_cast<size_t>(ns)];
   for (size_t i = 0; i < fs.size(); ++i)
   {
     add_fs.push_back(fs.values[i], fs.indicies[i]);

@@ -199,9 +199,11 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     }
 
     *(cs_a.all->trace_message) << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
-    *(cs_a.all->trace_message) << endl << "average distance to range = "
-			       << cs_a.distance_to_range / ((float)cs_a.labels_outside_range);
-    *(cs_a.all->trace_message) << endl << "average range = " << cs_a.range / ((float)cs_a.labels_outside_range);
+    *(cs_a.all->trace_message) << endl
+                               << "average distance to range = "
+                               << cs_a.distance_to_range / (static_cast<float>(cs_a.labels_outside_range));
+    *(cs_a.all->trace_message) << endl
+                               << "average range = " << cs_a.range / (static_cast<float>(cs_a.labels_outside_range));
   }
 
   if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes) return;
@@ -212,11 +214,11 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
   float min_max_cost = FLT_MAX;
-  float t = (float)cs_a.t;  // ec.example_t;  // current round
+  float t = static_cast<float>(cs_a.t);  // ec.example_t;  // current round
   float t_prev = t - 1.f;   // ec.weight; // last round
 
   float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / std::sqrt(t);  // threshold on cost range
-  float delta = cs_a.c0 * std::log((float)(cs_a.num_classes * std::max(t_prev, 1.f))) *
+  float delta = cs_a.c0 * std::log((cs_a.num_classes * std::max(t_prev, 1.f))) *
       static_cast<float>(std::pow(cs_a.cost_max - cs_a.cost_min, 2));  // threshold on empirical loss difference
 
   if (ld.costs.size() > 0)
@@ -236,8 +238,8 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     for (lq_data& lqd : cs_a.query_data)
     {
       lqd.is_range_overlapped = (lqd.min_pred <= min_max_cost);
-      n_overlapped += (uint32_t)(lqd.is_range_overlapped);
-      cs_a.overlapped_and_range_small += (size_t)(lqd.is_range_overlapped && !lqd.is_range_large);
+      n_overlapped += static_cast<uint32_t>(lqd.is_range_overlapped);
+      cs_a.overlapped_and_range_small += static_cast<size_t>(lqd.is_range_overlapped && !lqd.is_range_large);
       if (lqd.cl->x > lqd.max_pred || lqd.cl->x < lqd.min_pred)
       {
         cs_a.labels_outside_range++;

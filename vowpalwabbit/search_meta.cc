@@ -215,7 +215,7 @@ void run(Search::search& sch, multi_ex& ec)
       .maybe_override_prediction([](Search::search& sch, size_t t, action& a, float& a_cost) -> bool {
         task_data& d = *sch.get_metatask_data<task_data>();
         path& path = d.final[d.cur_branch].first.second;
-        if ((t >= path.size()) || (path[t].first == (action)-1)) return false;
+        if ((t >= path.size()) || (path[t].first == static_cast<action>(-1))) return false;
         a = path[t].first;
         a_cost = path[t].second;
         return true;

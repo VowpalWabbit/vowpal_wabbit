@@ -23,7 +23,7 @@ namespace logger = VW::io::logger;
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
   float b, sb, rs, sl;
-  b = (float)(c0 * (log(k + 1.) + 0.0001) / (k + 0.0001));
+  b = static_cast<float>(c0 * (log(k + 1.) + 0.0001) / (k + 0.0001));
   sb = std::sqrt(b);
   avg_loss = std::min(1.f, std::max(0.f, avg_loss));  // loss should be in [0,1]
 
@@ -40,8 +40,9 @@ float query_decision(active& a, float ec_revert_weight, float k)
     bias = 1.;
   else
   {
-    weighted_queries = (float)a.all->sd->weighted_labeled_examples;
-    avg_loss = (float)(a.all->sd->sum_loss / k + std::sqrt((1. + 0.5 * std::log(k)) / (weighted_queries + 0.0001)));
+    weighted_queries = static_cast<float>(a.all->sd->weighted_labeled_examples);
+    avg_loss =
+        static_cast<float>(a.all->sd->sum_loss / k + std::sqrt((1. + 0.5 * std::log(k)) / (weighted_queries + 0.0001)));
     bias = get_active_coin_bias(k, avg_loss, ec_revert_weight / k, a.active_c0);
   }
   if (a._random_state->get_and_update_random() < bias)
@@ -59,7 +60,7 @@ void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
   {
     vw& all = *a.all;
 
-    float k = (float)all.sd->t;
+    float k = static_cast<float>(all.sd->t);
     float threshold = 0.f;
 
     ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
@@ -106,7 +107,7 @@ void active_print_result(VW::io::writer* f, float res, float weight, v_array<cha
   ss << '\n';
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
-  ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
+  ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
   if (t != len) {
     logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
   }
@@ -117,11 +118,12 @@ void output_and_account_example(vw& all, active& a, example& ec)
   label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
+  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
   float ai = -1;
-  if (ld.label == FLT_MAX) ai = query_decision(a, ec.confidence, (float)all.sd->weighted_unlabeled_examples);
+  if (ld.label == FLT_MAX)
+    ai = query_decision(a, ec.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples));
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
   for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag); }

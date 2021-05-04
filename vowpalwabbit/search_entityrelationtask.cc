@@ -159,7 +159,7 @@ size_t predict_entity(
       for (uint32_t a = 0; a < 4; a++)
       {
         VW::copy_example_data(&my_task_data->ldf_entity[a], ex);
-        update_example_indicies(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * (uint64_t)(a + 1));
+        update_example_indicies(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * static_cast<uint64_t>(a + 1));
         CS::label& lab = my_task_data->ldf_entity[a].l.cs;
         lab.costs[0].x = 0.f;
         lab.costs[0].class_index = a;
@@ -212,7 +212,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   }
   for (size_t j = 0; j < my_task_data->y_allowed_relation.size(); j++)
   {
-    if (!my_task_data->constraints || hist[0] == (size_t)0 ||
+    if (!my_task_data->constraints || hist[0] == static_cast<size_t>(0) ||
         check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j]))
       constrained_relation_labels.push_back(my_task_data->y_allowed_relation[j]);
   }
@@ -242,14 +242,14 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
       for (size_t a = 0; a < constrained_relation_labels.size(); a++)
       {
         VW::copy_example_data(&my_task_data->ldf_relation[a], ex);
-        update_example_indicies(
-            true, &my_task_data->ldf_relation[a], 28904713, 4832917 * (uint64_t)(constrained_relation_labels[a]));
+        update_example_indicies(true, &my_task_data->ldf_relation[a], 28904713,
+            4832917 * static_cast<uint64_t>(constrained_relation_labels[a]));
         CS::label& lab = my_task_data->ldf_relation[a].l.cs;
         lab.costs[0].x = 0.f;
         lab.costs[0].class_index = constrained_relation_labels[a];
         lab.costs[0].partial_prediction = 0.f;
         lab.costs[0].wap_value = 0.f;
-        if (constrained_relation_labels[a] == ex->l.multi.label) { correct_label = (int)a; }
+        if (constrained_relation_labels[a] == ex->l.multi.label) { correct_label = static_cast<int>(a); }
       }
       size_t pred_pos = Search::predictor(sch, my_tag)
                             .set_input(my_task_data->ldf_relation, constrained_relation_labels.size())
@@ -287,21 +287,21 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
 void entity_first_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions, bool isLdf = false)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
-  size_t n_ent = (size_t)(std::sqrt(ec.size() * 8 + 1) - 1) / 2;
+  size_t n_ent = static_cast<size_t>(std::sqrt(ec.size() * 8 + 1) - 1) / 2;
   // Do entity recognition first
   for (size_t i = 0; i < ec.size(); i++)
   {
     if (i < n_ent)
-      predictions[i] = predict_entity(sch, ec[i], predictions, (ptag)i, isLdf);
+      predictions[i] = predict_entity(sch, ec[i], predictions, static_cast<ptag>(i), isLdf);
     else
-      predictions[i] = predict_relation(sch, ec[i], predictions, (ptag)i, isLdf);
+      predictions[i] = predict_relation(sch, ec[i], predictions, static_cast<ptag>(i), isLdf);
   }
 }
 
 void er_mixed_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
-  uint32_t n_ent = (uint32_t)((std::sqrt(ec.size() * 8 + 1) - 1) / 2);
+  uint32_t n_ent = static_cast<uint32_t>((std::sqrt(ec.size() * 8 + 1) - 1) / 2);
   for (uint32_t t = 0; t < ec.size(); t++)
   {
     // Do entity recognition first
@@ -318,7 +318,7 @@ void er_mixed_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predi
       {
         if (count == t)
         {
-          ptag rel_index = (ptag)(n_ent + (2 * n_ent - j - 1) * j / 2 + i - j - 1);
+          ptag rel_index = static_cast<ptag>(n_ent + (2 * n_ent - j - 1) * j / 2 + i - j - 1);
           predictions[rel_index] = predict_relation(sch, ec[rel_index], predictions, rel_index);
           break;
         }
@@ -332,7 +332,7 @@ void er_allow_skip_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& 
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
   // ec.size = #entity + #entity*(#entity-1)/2
-  size_t n_ent = (size_t)(std::sqrt(ec.size() * 8 + 1) - 1) / 2;
+  size_t n_ent = static_cast<size_t>(std::sqrt(ec.size() * 8 + 1) - 1) / 2;
 
   bool must_predict = false;
   size_t n_predicts = 0;
@@ -342,7 +342,7 @@ void er_allow_skip_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& 
   // loop until all the entity and relation types are predicted
   for (ptag t = 0;; t++)
   {
-    ptag i = t % (uint32_t)ec.size();
+    ptag i = t % static_cast<uint32_t>(ec.size());
     if (n_predicts == ec.size()) break;
 
     if (predictions[i] == 0)

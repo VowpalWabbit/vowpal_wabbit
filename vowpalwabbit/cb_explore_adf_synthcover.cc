@@ -89,7 +89,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   }
 
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)examples.size();
+  uint32_t num_actions = static_cast<uint32_t>(examples.size());
   if (num_actions == 0)
   {
     preds.clear();
@@ -151,10 +151,10 @@ void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool te
   {
     std::stringstream msg;
     if (!read) msg << "_min_cost " << _min_cost << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&_min_cost, sizeof(_min_cost), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_min_cost), sizeof(_min_cost), "", read, msg, text);
 
     if (!read) msg << "_max_cost " << _max_cost << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&_max_cost, sizeof(_max_cost), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_max_cost), sizeof(_max_cost), "", read, msg, text);
   }
 }
 

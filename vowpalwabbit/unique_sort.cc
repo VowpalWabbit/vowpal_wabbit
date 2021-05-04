@@ -11,7 +11,7 @@ void unique_features(features& fs, int max)
 
   auto range = fs.audit_range();
   auto last_index = range.begin();
-  auto end = max > 0 ? range.begin() + std::min(fs.size(), (size_t)max) : range.end();
+  auto end = max > 0 ? range.begin() + std::min(fs.size(), static_cast<size_t>(max)) : range.end();
 
   for (auto i = ++range.begin(); i != end; ++i)
     if (i.index() != last_index.index())

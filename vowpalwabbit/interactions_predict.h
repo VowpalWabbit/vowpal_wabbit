@@ -136,7 +136,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
 
           for (size_t i = 0; i < first.indicies.size(); ++i)
           {
-            feature_index halfhash = FNV_prime * (uint64_t)first.indicies[i];
+            feature_index halfhash = FNV_prime * static_cast<uint64_t>(first.indicies[i]);
             if (audit)
             { audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS); }
             // next index differs for permutations and simple combinations
@@ -169,7 +169,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
             {
               if (audit)
               { audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS); }
-              const uint64_t halfhash1 = FNV_prime * (uint64_t)first.indicies[i];
+              const uint64_t halfhash1 = FNV_prime * static_cast<uint64_t>(first.indicies[i]);
               const float& first_ft_value = first.values[i];
               size_t j = 0;
               if (same_namespace1)  // next index differs for permutations and simple combinations
@@ -181,7 +181,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
                 {
                   audit_func(dat, j < second.space_names.size() ? second.space_names[j].get() : &EMPTY_AUDIT_STRINGS);
                 }
-                feature_index halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
+                feature_index halfhash = FNV_prime * (halfhash1 ^ static_cast<uint64_t>(second.indicies[j]));
                 feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);
 
                 auto begin = third.audit_cbegin();
@@ -208,7 +208,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
       feature_gen_data* fgd2;  // for further use
       for (auto n : ns)
       {
-        features& ft = features_data[(int32_t)n];
+        features& ft = features_data[static_cast<int32_t>(n)];
         const size_t ft_cnt = ft.indicies.size();
 
         if (ft_cnt == 0)
@@ -305,12 +305,12 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
 
           if (cur_data == fgd)  // first namespace
           {
-            next_data->hash = FNV_prime * (uint64_t)fs.indicies[feature];
+            next_data->hash = FNV_prime * static_cast<uint64_t>(fs.indicies[feature]);
             next_data->x = fs.values[feature];  // data->x == 1.
           }
           else
           {  // feature2 xor (16777619*feature1)
-            next_data->hash = FNV_prime * (cur_data->hash ^ (uint64_t)fs.indicies[feature]);
+            next_data->hash = FNV_prime * (cur_data->hash ^ static_cast<uint64_t>(fs.indicies[feature]));
             next_data->x = INTERACTION_VALUE(fs.values[feature], cur_data->x);
           }
 
