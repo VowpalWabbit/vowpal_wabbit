@@ -48,7 +48,7 @@ int open_socket(const char* host)
 
   if (he == nullptr) THROWERRNO("gethostbyname(" << host << ")");
 
-  int sd = socket(PF_INET, SOCK_STREAM, 0);
+  int sd = static_cast<int>(socket(PF_INET, SOCK_STREAM, 0));
   if (sd == -1) THROWERRNO("socket");
 
   sockaddr_in far_end;

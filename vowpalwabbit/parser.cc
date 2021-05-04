@@ -228,7 +228,7 @@ void reset_source(vw& all, size_t numbits)
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
-      int f = accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size);
+      int f = static_cast<int>(accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
       if (f < 0) THROW("accept: " << VW::strerror_to_string(errno));
 
       // Disable Nagle delay algorithm due to daemon mode's interactive workload
@@ -359,7 +359,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     int lastError = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (lastError != 0) THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
-    all.example_parser->bound_sock = socket(PF_INET, SOCK_STREAM, 0);
+    all.example_parser->bound_sock = static_cast<int>(socket(PF_INET, SOCK_STREAM, 0));
     if (all.example_parser->bound_sock < 0)
     {
       std::stringstream msg;
@@ -510,7 +510,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
     if (!all.logger.quiet) *(all.trace_message) << "calling accept" << endl;
-    auto f_a = accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size);
+    auto f_a = static_cast<int>(accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
     if (f_a < 0) THROWERRNO("accept");
 
     // Disable Nagle delay algorithm due to daemon mode's interactive workload
