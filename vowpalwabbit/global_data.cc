@@ -36,7 +36,7 @@ struct global_prediction
 
 size_t really_read(VW::io::reader* sock, void* in, size_t count)
 {
-  char* buf = (char*)in;
+  char* buf = static_cast<char*>(in);
   size_t done = 0;
   ssize_t r = 0;
   while (done < count)
@@ -123,7 +123,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
     print_tag_by_ref(ss, tag);
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
+    ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
     if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
   }
 }
@@ -137,7 +137,7 @@ void print_raw_text(VW::io::writer* f, std::string s, v_array<char> tag)
   print_tag_by_ref(ss, tag);
   ss << '\n';
   ssize_t len = ss.str().size();
-  ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
+  ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
   if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
@@ -150,7 +150,7 @@ void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_arra
   print_tag_by_ref(ss, tag);
   ss << '\n';
   ssize_t len = ss.str().size();
-  ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
+  ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
   if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
@@ -247,7 +247,7 @@ void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NA
     else
     {
       int n = atoi(limit.c_str() + 1);
-      dest[(uint32_t)limit[0]] = n;
+      dest[static_cast<uint32_t>(limit[0])] = n;
       logger::errlog_warn("limiting to {0} for namespaces {1}", n, limit[0]);
     }
   }

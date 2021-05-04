@@ -88,7 +88,7 @@ struct OjaNewton
             r2 = _random_state->get_and_update_random();
           } while (r1 == 0.f);
 
-          (&w)[j] = std::sqrt(-2.f * std::log(r1)) * (float)cos(PI2 * r2);
+          (&w)[j] = std::sqrt(-2.f * std::log(r1)) * static_cast<float>(cos(PI2 * r2));
         }
       }
     }
@@ -101,15 +101,15 @@ struct OjaNewton
         double temp = 0;
 
         for (uint32_t i = 0; i < length; i++)
-          temp += ((double)(&(weights.strided_index(i)))[j]) * (&(weights.strided_index(i)))[k];
+          temp += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[k];
         for (uint32_t i = 0; i < length; i++)
-          (&(weights.strided_index(i)))[j] -= (float)temp * (&(weights.strided_index(i)))[k];
+          (&(weights.strided_index(i)))[j] -= static_cast<float>(temp) * (&(weights.strided_index(i)))[k];
       }
       double norm = 0;
       for (uint32_t i = 0; i < length; i++)
-        norm += ((double)(&(weights.strided_index(i)))[j]) * (&(weights.strided_index(i)))[j];
+        norm += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[j];
       norm = std::sqrt(norm);
-      for (uint32_t i = 0; i < length; i++) (&(weights.strided_index(i)))[j] /= (float)norm;
+      for (uint32_t i = 0; i < length; i++) (&(weights.strided_index(i)))[j] /= static_cast<float>(norm);
     }
   }
 
@@ -354,7 +354,7 @@ void predict(OjaNewton& ON, base_learner&, example& ec)
 {
   ON.data.prediction = 0;
   GD::foreach_feature<oja_n_update_data, make_pred>(*ON.all, ec, ON.data);
-  ec.partial_prediction = (float)ON.data.prediction;
+  ec.partial_prediction = ON.data.prediction;
   ec.pred.scalar = GD::finalize_prediction(ON.all->sd, ON.all->logger, ec.partial_prediction);
 }
 
@@ -465,7 +465,7 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
     bool resume = all.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), "", read, msg, text);
 
     double temp = 0.;
     if (resume)
@@ -538,7 +538,7 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
   ON->data.AZx = calloc_or_throw<float>(ON->m + 1);
   ON->data.delta = calloc_or_throw<float>(ON->m + 1);
 
-  all.weights.stride_shift((uint32_t)ceil(log2(ON->m + 2)));
+  all.weights.stride_shift(static_cast<uint32_t>(ceil(log2(ON->m + 2))));
 
   learner<OjaNewton, example>& l =
       init_learner(ON, learn, predict, all.weights.stride(), all.get_setupfn_name(OjaNewton_setup));

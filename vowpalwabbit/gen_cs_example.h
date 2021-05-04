@@ -201,7 +201,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::labe
   {
     if (CB_ALGS::example_is_newline_not_header(*examples[i])) continue;
 
-    COST_SENSITIVE::wclass wc = {0., (uint32_t)i, 0., 0.};
+    COST_SENSITIVE::wclass wc = {0., static_cast<uint32_t>(i), 0., 0.};
 
     if (c.known_cost.action == i)
     {
@@ -278,11 +278,11 @@ void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& example
 
   if (is_learn)
   {
-    if (predict_first) { base.predict(examples, (int32_t)id); }
-    base.learn(examples, (int32_t)id);
+    if (predict_first) { base.predict(examples, static_cast<int32_t>(id)); }
+    base.learn(examples, static_cast<int32_t>(id));
   }
   else
-    base.predict(examples, (int32_t)id);
+    base.predict(examples, static_cast<int32_t>(id));
 }
 
 }  // namespace GEN_CS

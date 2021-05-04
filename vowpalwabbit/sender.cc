@@ -56,7 +56,7 @@ void open_sockets(sender& s, std::string host)
 void send_features(io_buf* b, example& ec, uint32_t mask)
 {
   // note: subtracting 1 b/c not sending constant
-  output_byte(*b, (unsigned char)(ec.indices.size() - 1));
+  output_byte(*b, static_cast<unsigned char>(ec.indices.size() - 1));
 
   for (namespace_index ns : ec.indices)
   {
@@ -87,7 +87,7 @@ void learn(sender& s, VW::LEARNER::single_learner&, example& ec)
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   s.all->example_parser->lbl_parser.cache_label(&ec.l, ec._reduction_features, *s.buf);  // send label information.
   cache_tag(*s.buf, ec.tag);
-  send_features(s.buf, ec, (uint32_t)s.all->parse_mask);
+  send_features(s.buf, ec, static_cast<uint32_t>(s.all->parse_mask));
   s.delay_ring[s.sent_index++ % s.all->example_parser->ring_size] = &ec;
 }
 

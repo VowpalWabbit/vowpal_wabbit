@@ -95,7 +95,7 @@ void set_compressed(parser* /*par*/) {}
 uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
 {
   size_t v_length;
-  buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
+  buf->read_file(filepointer, reinterpret_cast<char*>(&v_length), sizeof(v_length));
   if (v_length > 61) THROW("cache version too long, cache file is probably invalid");
 
   if (v_length == 0) THROW("cache version too short, cache file is probably invalid");
@@ -114,7 +114,8 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
   if (temp != 'c') THROW("data file is not a cache file");
 
   uint32_t cache_numbits;
-  if (buf->read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < (int)sizeof(cache_numbits)) { return true; }
+  if (buf->read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < static_cast<int>(sizeof(cache_numbits)))
+  { return true; }
 
   return cache_numbits;
 }
@@ -227,7 +228,7 @@ void reset_source(vw& all, size_t numbits)
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
-      int f = (int)accept(all.example_parser->bound_sock, (sockaddr*)&client_address, &size);
+      int f = accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size);
       if (f < 0) THROW("accept: " << VW::strerror_to_string(errno));
 
       // Disable Nagle delay algorithm due to daemon mode's interactive workload
@@ -275,7 +276,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
     return;
   }
 
-  size_t v_length = (uint64_t)VW::version.to_string().length() + 1;
+  size_t v_length = static_cast<uint64_t>(VW::version.to_string().length()) + 1;
 
   output->bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
   output->bin_write_fixed(VW::version.to_string().c_str(), v_length);
@@ -331,7 +332,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
     }
   }
 
-  all.parse_mask = ((uint64_t)1 << all.num_bits) - 1;
+  all.parse_mask = (static_cast<uint64_t>(1) << all.num_bits) - 1;
   if (cache_files.size() == 0)
   {
     if (!quiet) *(all.trace_message) << "using no cache" << endl;
@@ -358,7 +359,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     int lastError = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (lastError != 0) THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
-    all.example_parser->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
+    all.example_parser->bound_sock = socket(PF_INET, SOCK_STREAM, 0);
     if (all.example_parser->bound_sock < 0)
     {
       std::stringstream msg;
@@ -368,23 +369,26 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     }
 
     int on = 1;
-    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
+    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) <
+        0)
       *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
-    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
+    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA),
+            sizeof(enableTKA)) < 0)
       *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
 
     sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     short unsigned int port = 26542;
-    if (all.options->was_supplied("port")) port = (uint16_t)input_options.port;
+    if (all.options->was_supplied("port")) port = static_cast<uint16_t>(input_options.port);
     address.sin_port = htons(port);
 
     // attempt to bind to socket
-    if (::bind(all.example_parser->bound_sock, (sockaddr*)&address, sizeof(address)) < 0) THROWERRNO("bind");
+    if (::bind(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&address), sizeof(address)) < 0)
+      THROWERRNO("bind");
 
     // listen on socket
     if (listen(all.example_parser->bound_sock, 1) < 0) THROWERRNO("listen");
@@ -393,7 +397,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     if (all.options->was_supplied("port_file"))
     {
       socklen_t address_size = sizeof(address);
-      if (getsockname(all.example_parser->bound_sock, (sockaddr*)&address, &address_size) < 0)
+      if (getsockname(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&address), &address_size) < 0)
       { *(all.trace_message) << "getsockname: " << VW::strerror_to_string(errno) << endl; }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
@@ -441,8 +445,8 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       all.weights.share(all.length());
 
       // learning state to be shared across children
-      shared_data* sd =
-          (shared_data*)mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+      shared_data* sd = static_cast<shared_data*>(
+          mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
       memcpy(sd, all.sd, sizeof(shared_data));
       free(all.sd);
       all.sd = sd;
@@ -506,7 +510,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
     if (!all.logger.quiet) *(all.trace_message) << "calling accept" << endl;
-    auto f_a = (int)accept(all.example_parser->bound_sock, (sockaddr*)&client_address, &size);
+    auto f_a = accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size);
     if (f_a < 0) THROWERRNO("accept");
 
     // Disable Nagle delay algorithm due to daemon mode's interactive workload
@@ -679,7 +683,7 @@ void setup_example(vw& all, example* ae)
   ae->loss = 0.;
   ae->_debug_current_reduction_depth = 0;
 
-  ae->example_counter = (size_t)(all.example_parser->end_parsed_examples.load());
+  ae->example_counter = static_cast<size_t>(all.example_parser->end_parsed_examples.load());
   if (!all.example_parser->emptylines_separate_examples) all.example_parser->in_pass_counter++;
 
   // Determine if this example is part of the holdout set.
@@ -718,7 +722,7 @@ void setup_example(vw& all, example* ae)
 
   if (!all.limit_strings.empty()) feature_limit(all, ae);
 
-  uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
+  uint64_t multiplier = static_cast<uint64_t>(all.wpp) << all.weights.stride_shift();
 
   if (multiplier != 1)  // make room for per-feature information.
     for (features& fs : *ae)
@@ -760,7 +764,7 @@ example* new_unused_example(vw& all)
   example* ec = &get_unused_example(&all);
   all.example_parser->lbl_parser.default_label(&ec->l);
   all.example_parser->begin_parsed_examples++;
-  ec->example_counter = (size_t)all.example_parser->begin_parsed_examples.load();
+  ec->example_counter = static_cast<size_t>(all.example_parser->begin_parsed_examples.load());
   return ec;
 }
 example* read_example(vw& all, char* example_line)
@@ -774,7 +778,9 @@ example* read_example(vw& all, char* example_line)
   return ret;
 }
 
-example* read_example(vw& all, std::string example_line) { return read_example(all, (char*)example_line.c_str()); }
+example* read_example(vw& all, std::string example_line) {
+  return read_example(all, const_cast<char*>(example_line.c_str()));
+}
 
 void add_constant_feature(vw& vw, example* ec)
 {
@@ -925,7 +931,7 @@ float get_initial(example* ec)
 
 float get_prediction(example* ec) { return ec->pred.scalar; }
 
-float get_cost_sensitive_prediction(example* ec) { return (float)ec->pred.multiclass; }
+float get_cost_sensitive_prediction(example* ec) { return static_cast<float>(ec->pred.multiclass); }
 
 v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec) { return ec->pred.scalars; }
 
