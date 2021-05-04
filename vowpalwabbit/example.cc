@@ -22,7 +22,7 @@ VW_WARNING_STATE_POP
 
 float collision_cleanup(features& fs)
 {
-  uint64_t last_index = (uint64_t)-1;
+  uint64_t last_index = static_cast<uint64_t>(-1);
   float sum_sq = 0.f;
   features::iterator pos = fs.begin();
   for (features::iterator& f : fs)
@@ -142,7 +142,7 @@ struct features_and_source
 
 void vec_store(features_and_source& p, float fx, uint64_t fi)
 {
-  p.feature_map.push_back(feature(fx, (uint64_t)(fi >> p.stride_shift) & p.mask));
+  p.feature_map.push_back(feature(fx, (fi >> p.stride_shift) & p.mask));
 }
 
 namespace VW
@@ -151,7 +151,7 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 {
   features_and_source fs;
   fs.stride_shift = all.weights.stride_shift();
-  fs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
+  fs.mask = all.weights.mask() >> all.weights.stride_shift();
   fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
@@ -171,7 +171,7 @@ struct full_features_and_source
 
 void vec_ffs_store(full_features_and_source& p, float fx, uint64_t fi)
 {
-  p.fs.push_back(fx, (uint64_t)(fi >> p.stride_shift) & p.mask);
+  p.fs.push_back(fx, (fi >> p.stride_shift) & p.mask);
 }
 
 flat_example* flatten_example(vw& all, example* ec)
@@ -194,9 +194,9 @@ flat_example* flatten_example(vw& all, example* ec)
   full_features_and_source ffs;
   ffs.stride_shift = all.weights.stride_shift();
   if (all.weights.not_null())  // TODO:temporary fix. all.weights is not initialized at this point in some cases.
-    ffs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
+    ffs.mask = all.weights.mask() >> all.weights.stride_shift();
   else
-    ffs.mask = (uint64_t)LONG_MAX >> all.weights.stride_shift();
+    ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift();
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   std::swap(fec.fs, ffs.fs);

@@ -246,7 +246,7 @@ constexpr size_t size_fast_factorial = sizeof(fast_factorial) / sizeof(*fast_fac
 inline size_t factor(const size_t n, const size_t start_from = 1)
 {
   if (n <= 0) return 1;
-  if (start_from == 1 && n < size_fast_factorial) return (size_t)fast_factorial[n];
+  if (start_from == 1 && n < size_fast_factorial) return static_cast<size_t>(fast_factorial[n]);
 
   size_t res = 1;
   for (size_t i = start_from + 1; i <= n; ++i) res *= i;
@@ -364,17 +364,20 @@ void eval_count_of_generated_ft_combinations(
 
         size_t n;
         if (cnt_ft_value_non_1 == 0)  // number of generated simple combinations is C(n,k)
-        { n = (size_t)VW::math::choose((int64_t)ft_size, (int64_t)order_of_inter); }
+        {
+          n = static_cast<size_t>(
+              VW::math::choose(static_cast<int64_t>(ft_size), static_cast<int64_t>(order_of_inter)));
+        }
         else
         {
           n = 0;
           for (size_t l = 0; l <= order_of_inter; ++l)
           {
             // C(l+m-1, l) * C(n-m, k-l)
-            size_t num = (l == 0) ? 1 : (size_t)VW::math::choose(l + cnt_ft_value_non_1 - 1, l);
+            size_t num = (l == 0) ? 1 : static_cast<size_t>(VW::math::choose(l + cnt_ft_value_non_1 - 1, l));
 
             if (ft_size - cnt_ft_value_non_1 >= order_of_inter - l)
-              num *= (size_t)VW::math::choose(ft_size - cnt_ft_value_non_1, order_of_inter - l);
+              num *= static_cast<size_t>(VW::math::choose(ft_size - cnt_ft_value_non_1, order_of_inter - l));
             else
               num = 0;
 

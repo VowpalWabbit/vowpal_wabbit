@@ -115,12 +115,12 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
-  const uint32_t num_actions = (uint32_t)preds.size();
+  const uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
-  float additive_probability = 1.f / (float)_cover_size;
+  float additive_probability = 1.f / static_cast<float>(_cover_size);
 
   float min_prob = _epsilon_decay
-      ? std::min(_epsilon / num_actions, _epsilon / (float)std::sqrt(_counter * num_actions))
+      ? std::min(_epsilon / num_actions, _epsilon / static_cast<float>(std::sqrt(_counter * num_actions)))
       : _epsilon / num_actions;
 
   _action_probs.clear();
@@ -215,7 +215,7 @@ void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
   {
     std::stringstream msg;
     if (!read) { msg << "cb cover adf storing example counter:  = " << _counter << "\n"; }
-    bin_text_read_write_fixed_validated(io, (char*)&_counter, sizeof(_counter), "", read, msg, text);
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), "", read, msg, text);
   }
 }
 

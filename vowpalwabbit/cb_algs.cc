@@ -108,7 +108,8 @@ void generic_output_example(vw& all, float loss, example& ec, const CB::label& l
 {
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
-  for (auto& sink : all.final_prediction_sink) all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
+  for (auto& sink : all.final_prediction_sink)
+    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag);
 
   if (all.raw_prediction != nullptr)
   {

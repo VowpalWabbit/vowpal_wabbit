@@ -47,9 +47,9 @@ int open_socket(const char* host, unsigned short port)
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
   far_end.sin_port = htons(port);
-  far_end.sin_addr = *(in_addr*)(he->h_addr);
+  far_end.sin_addr = *reinterpret_cast<in_addr*>(he->h_addr);
   memset(&far_end.sin_zero, '\0', 8);
-  if (connect(sd, (sockaddr*)&far_end, sizeof(far_end)) == -1)
+  if (connect(sd, reinterpret_cast<sockaddr*>(&far_end), sizeof(far_end)) == -1)
   {
     std::stringstream msg;
     msg << "connect(" << host << ':' << port << "): " << strerror(errno);
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
 
   if (argc > 1) { host = argv[1]; }
   if (argc > 2) { port = atoi(argv[2]); }
-  if (port <= 1024 || port == (unsigned short)(~0u)) { port = 26542; }
+  if (port <= 1024 || port == static_cast<unsigned short>(~0u)) { port = 26542; }
 
   s = open_socket(host, port);
   size_t id = 0;

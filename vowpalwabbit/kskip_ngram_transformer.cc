@@ -62,7 +62,7 @@ void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NU
     else
     {
       int n = atoi(gram.c_str() + 1);
-      dest[(uint32_t)(unsigned char)*gram.c_str()] = n;
+      dest[static_cast<uint32_t>(static_cast<unsigned char>(*gram.c_str()))] = n;
       logger::errlog_info("Generating {0}-{1} for {2} namespaces.", n, descriptor, gram[0]);
     }
   }

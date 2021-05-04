@@ -39,14 +39,14 @@ void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v
 
 char* bufread_label(label& ld, char* c, io_buf& cache)
 {
-  size_t num = *(size_t*)c;
+  size_t num = *reinterpret_cast<size_t*>(c);
   ld.costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(wclass) * num;
-  if (cache.buf_read(c, (int)total) < total) { THROW("error in demarshal of cost data"); }
+  if (cache.buf_read(c, static_cast<int>(total)) < total) { THROW("error in demarshal of cost data"); }
   for (size_t i = 0; i < num; i++)
   {
-    wclass temp = *(wclass*)c;
+    wclass temp = *reinterpret_cast<wclass*>(c);
     c += sizeof(wclass);
     ld.costs.push_back(temp);
   }
@@ -59,7 +59,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
   ld.costs.clear();
   char* c;
   size_t total = sizeof(size_t);
-  if (cache.buf_read(c, (int)total) < total) return 0;
+  if (cache.buf_read(c, static_cast<int>(total)) < total) return 0;
   bufread_label(ld, c, cache);
 
   return total;
@@ -69,11 +69,11 @@ float weight(label&) { return 1.; }
 
 char* bufcache_label(label& ld, char* c)
 {
-  *(size_t*)c = ld.costs.size();
+  *reinterpret_cast<size_t*>(c) = ld.costs.size();
   c += sizeof(size_t);
   for (unsigned int i = 0; i < ld.costs.size(); i++)
   {
-    *(wclass*)c = ld.costs[i];
+    *reinterpret_cast<wclass*>(c) = ld.costs[i];
     c += sizeof(wclass);
   }
   return c;
@@ -152,8 +152,9 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
 
     if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3)
     {
-      f.class_index = sd->ldict ? (uint32_t)sd->ldict->get(p->parse_name[0])
-                                : (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
+      f.class_index = sd->ldict
+          ? sd->ldict->get(p->parse_name[0])
+          : static_cast<uint32_t>(hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0));
       if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
     }
@@ -235,7 +236,7 @@ void output_example(vw& all, example& ec, const COST_SENSITIVE::label& cs_label,
   if (!test_label(cs_label))
   {
     // need to compute exact loss
-    size_t pred = (size_t)multiclass_prediction;
+    size_t pred = static_cast<size_t>(multiclass_prediction);
 
     float chosen_loss = FLT_MAX;
     float min = FLT_MAX;
@@ -256,7 +257,7 @@ void output_example(vw& all, example& ec, const COST_SENSITIVE::label& cs_label,
 
   for (auto& sink : all.final_prediction_sink)
   {
-    if (!all.sd->ldict) { all.print_by_ref(sink.get(), (float)multiclass_prediction, 0, ec.tag); }
+    if (!all.sd->ldict) { all.print_by_ref(sink.get(), static_cast<float>(multiclass_prediction), 0, ec.tag); }
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(multiclass_prediction);

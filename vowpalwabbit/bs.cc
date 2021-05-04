@@ -36,7 +36,7 @@ struct bs
 
 void bs_predict_mean(vw& all, example& ec, std::vector<double>& pred_vec)
 {
-  ec.pred.scalar = (float)accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0) / pred_vec.size();
+  ec.pred.scalar = static_cast<float>(accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0)) / pred_vec.size();
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 }
@@ -53,8 +53,8 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
 
   for (size_t i = 0; i < pred_vec_int.size(); i++)
   {
-    pred_vec_int[i] = (int)floor(
-        pred_vec[i] + 0.5);  // could be added: link(), min_label/max_label, cutoff between true/false for binary
+    pred_vec_int[i] = static_cast<int>(
+        floor(pred_vec[i] + 0.5));  // could be added: link(), min_label/max_label, cutoff between true/false for binary
 
     if (!multivote_detected)  // distinct(votes)>2 detection bloc
     {
@@ -122,7 +122,7 @@ void bs_predict_vote(example& ec, std::vector<double>& pred_vec)
         sum_labels += pred_vec[i]; */
   }
   // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
-  ec.pred.scalar = (float)current_label;
+  ec.pred.scalar = static_cast<float>(current_label);
 
   // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ec.weight; //replace line below for: "avg on votes"
   // and getLoss()
@@ -139,7 +139,7 @@ void print_result(VW::io::writer* f, float res, const v_array<char>& tag, float 
   ss << std::fixed << ' ' << lb << ' ' << ub << '\n';
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
-  ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
+  ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
   if (t != len)
   {
     logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
@@ -151,7 +151,7 @@ void output_example(vw& all, bs& d, example& ec)
   label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
-  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
+  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
 
   if (!all.final_prediction_sink.empty())  // get confidence interval only when printing out predictions
   {
@@ -159,8 +159,8 @@ void output_example(vw& all, bs& d, example& ec)
     d.ub = -FLT_MAX;
     for (double v : d.pred_vec)
     {
-      if (v > d.ub) d.ub = (float)v;
-      if (v < d.lb) d.lb = (float)v;
+      if (v > d.ub) d.ub = static_cast<float>(v);
+      if (v < d.lb) d.lb = static_cast<float>(v);
     }
   }
 
@@ -182,7 +182,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
 
   for (size_t i = 1; i <= d.B; i++)
   {
-    ec.weight = weight_temp * (float)BS::weight_gen(d._random_state);
+    ec.weight = weight_temp * static_cast<float>(BS::weight_gen(d._random_state));
 
     if (is_learn)
       base.learn(ec, i - 1);

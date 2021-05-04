@@ -46,7 +46,7 @@ bool dis_test(vw& all, example& ec, single_learner& base, float /* prediction */
   float middle = 0.f;
   ec.confidence = fabsf(ec.pred.scalar - middle) / base.sensitivity(ec);
 
-  float k = (float)all.sd->t;
+  float k = static_cast<float>(all.sd->t);
   float loss_delta = ec.confidence / k;
 
   bool result = (loss_delta <= threshold);
@@ -88,7 +88,8 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
   for (size_t i = 0; i < a.cover_size; i++)
   {
     l.predict(ec, i + 1);
-    q2 += ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
+    q2 += (static_cast<float>(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) *
+        (a.lambda_n[i] / a.lambda_d[i]);
   }
 
   p = std::sqrt(q2) / (1 + std::sqrt(q2));
@@ -112,14 +113,14 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
     vw& all = *a.all;
 
     float prediction = ec.pred.scalar;
-    float t = (float)a.all->sd->t;
+    float t = static_cast<float>(a.all->sd->t);
     float ec_input_weight = ec.weight;
     float ec_input_label = ec.l.simple.label;
 
     // Compute threshold defining allowed set A
-    float threshold = get_threshold((float)all.sd->sum_loss, t, a.active_c0, a.alpha);
+    float threshold = get_threshold(static_cast<float>(all.sd->sum_loss), t, a.active_c0, a.alpha);
     bool in_dis = dis_test(all, ec, base, prediction, threshold);
-    float pmin = get_pmin((float)all.sd->sum_loss, t);
+    float pmin = get_pmin(static_cast<float>(all.sd->sum_loss), t);
     float importance = query_decision(a, base, ec, prediction, pmin, in_dis);
 
     // Query (or not)
@@ -156,7 +157,8 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
     // cost_delta = cost - cost of predicting the opposite label
     if (in_dis)
     {
-      cost = r * (std::fmax(importance, 0.f)) * ((float)(VW::math::sign(prediction) != VW::math::sign(ec_input_label)));
+      cost = r * (std::fmax(importance, 0.f)) *
+          (static_cast<float>(VW::math::sign(prediction) != VW::math::sign(ec_input_label)));
     }
     else
     {
@@ -184,15 +186,17 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
       base.predict(ec, i + 1);
 
       // Update numerator of lambda
-      a.lambda_n[i] += 2.f * ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) * cost_delta;
+      a.lambda_n[i] +=
+          2.f * (static_cast<float>(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) * cost_delta;
       a.lambda_n[i] = std::fmax(a.lambda_n[i], 0.f);
 
       // Update denominator of lambda
-      a.lambda_d[i] +=
-          ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction) && in_dis)) / (float)pow(q2, 1.5);
+      a.lambda_d[i] += (static_cast<float>(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction) && in_dis)) /
+          static_cast<float>(pow(q2, 1.5));
 
       // Accumulating weights of learners in the cover
-      q2 += ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
+      q2 += (static_cast<float>(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) *
+          (a.lambda_n[i] / a.lambda_d[i]);
     }
 
     // Restoring the weight, the label, and the prediction

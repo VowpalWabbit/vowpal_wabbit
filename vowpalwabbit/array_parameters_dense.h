@@ -128,8 +128,8 @@ public:
 #  ifndef DISABLE_SHARED_WEIGHTS
   void share(size_t length)
   {
-    float* shared_weights = (float*)mmap(
-        nullptr, (length << _stride_shift) * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    float* shared_weights = static_cast<float*>(mmap(
+        nullptr, (length << _stride_shift) * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
     size_t float_count = length << _stride_shift;
     weight* dest = shared_weights;
     memcpy(dest, _begin, float_count * sizeof(float));

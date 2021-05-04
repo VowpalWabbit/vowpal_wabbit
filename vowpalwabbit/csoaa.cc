@@ -207,7 +207,7 @@ void compute_wap_values(std::vector<COST_SENSITIVE::wclass*> costs)
   std::sort(costs.begin(), costs.end(), cmp_wclass_ptr);
   costs[0]->wap_value = 0.;
   for (size_t i = 1; i < costs.size(); i++)
-    costs[i]->wap_value = costs[i - 1]->wap_value + (costs[i]->x - costs[i - 1]->x) / (float)i;
+    costs[i]->wap_value = costs[i - 1]->wap_value + (costs[i]->x - costs[i - 1]->x) / static_cast<float>(i);
 }
 
 // Substract a given feature from example ec.
@@ -316,7 +316,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
     auto& simple_red_features = ec1->_reduction_features.template get<simple_label_reduction_features>();
 
     v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
-    if (costs1[0].class_index == (uint32_t)-1) continue;
+    if (costs1[0].class_index == static_cast<uint32_t>(-1)) continue;
 
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
 
@@ -333,7 +333,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
       example* ec2 = ec_seq[k2];
       v_array<COST_SENSITIVE::wclass> costs2 = ec2->l.cs.costs;
 
-      if (costs2[0].class_index == (uint32_t)-1) continue;
+      if (costs2[0].class_index == static_cast<uint32_t>(-1)) continue;
       float value_diff = std::fabs(costs2[0].wap_value - costs1[0].wap_value);
       // float value_diff = fabs(costs2[0].x - costs1[0].x);
       if (value_diff < 1e-6) continue;
@@ -488,7 +488,7 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   // handle label definitions
   auto ec_seq = process_labels(data, ec_seq_all);
 
-  uint32_t K = (uint32_t)ec_seq.size();
+  uint32_t K = static_cast<uint32_t>(ec_seq.size());
   uint32_t predicted_K = 0;
 
   auto restore_guard = VW::scope_exit([&data, &ec_seq, K, &predicted_K] {
@@ -531,7 +531,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, multi_ex& ec_seq_al
   auto ec_seq = process_labels(data, ec_seq_all);
   if (ec_seq.empty()) return;  // nothing more to do
 
-  uint32_t K = (uint32_t)ec_seq.size();
+  uint32_t K = static_cast<uint32_t>(ec_seq.size());
 
   /////////////////////// do prediction
   data.a_s.clear();
@@ -601,7 +601,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
       if (ec_k->partial_prediction < min_score)
       {
         min_score = ec_k->partial_prediction;
-        predicted_K = (uint32_t)k;
+        predicted_K = static_cast<uint32_t>(k);
       }
     }
     predicted_class = (*ec_seq)[predicted_K]->l.cs.costs[0].class_index;
@@ -626,7 +626,8 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
   }
 
   for (auto& sink : all.final_prediction_sink)
-    all.print_by_ref(sink.get(), data.is_probabilities ? ec.pred.prob : (float)ec.pred.multiclass, 0, ec.tag);
+    all.print_by_ref(
+        sink.get(), data.is_probabilities ? ec.pred.prob : static_cast<float>(ec.pred.multiclass), 0, ec.tag);
 
   if (all.raw_prediction != nullptr)
   {
@@ -770,7 +771,7 @@ void inline process_label(ldf& data, example* ec)
   auto& costs = ec->l.cs.costs;
   for (auto const& cost : costs)
   {
-    const auto lab = (size_t)cost.x;
+    const auto lab = static_cast<size_t>(cost.x);
     LabelDict::set_label_features(data.label_features, lab, ec->feature_space[ec->indices[0]]);
   }
 }

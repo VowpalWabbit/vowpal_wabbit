@@ -172,11 +172,12 @@ void cb_explore_adf_regcb::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)preds.size();
+  uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   const float max_range = _max_cb_cost - _min_cb_cost;
   // threshold on empirical loss difference
-  const float delta = _c0 * std::log((float)(num_actions * _counter)) * static_cast<float>(std::pow(max_range, 2));
+  const float delta =
+      _c0 * std::log(static_cast<float>(num_actions * _counter)) * static_cast<float>(std::pow(max_range, 2));
 
   if (!is_learn)
   {

@@ -535,7 +535,8 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
     all.sd->sum_loss_since_last_dump += loss;
   }
 
-  for (const auto& sink : all.final_prediction_sink) all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
+  for (const auto& sink : all.final_prediction_sink)
+    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag);
 
   if (all.raw_prediction != nullptr)
   {

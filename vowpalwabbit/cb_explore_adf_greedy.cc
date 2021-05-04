@@ -50,7 +50,7 @@ void cb_explore_adf_greedy::update_example_prediction(multi_ex& examples)
 {
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
 
-  uint32_t num_actions = (uint32_t)preds.size();
+  uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   size_t tied_actions = fill_tied(preds);
 
