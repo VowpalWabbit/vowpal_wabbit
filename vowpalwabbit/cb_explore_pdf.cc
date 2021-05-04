@@ -84,7 +84,8 @@ void predict_or_learn(cb_explore_pdf& reduction, single_learner&, example& ec)
   else
     reduction.predict(ec, &status);
 
-  if (status.get_error_code() != VW::experimental::error_code::success) { VW_DBG(ec) << status.get_error_msg() << endl; }
+  if (status.get_error_code() != VW::experimental::error_code::success)
+  { VW_DBG(ec) << status.get_error_msg() << endl; }
 }
 
 // END sample_pdf reduction and reduction methods

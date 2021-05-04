@@ -87,10 +87,12 @@ void predict_or_learn(sample_pdf& reduction, single_learner&, example& ec)
     reduction.learn(ec, &status);
   else
   {
-    if (VW::experimental::error_code::success != reduction.predict(ec, &status)) THROW(VW::experimental::error_code::sample_pdf_failed_s);
+    if (VW::experimental::error_code::success != reduction.predict(ec, &status))
+      THROW(VW::experimental::error_code::sample_pdf_failed_s);
   }
 
-  if (status.get_error_code() != VW::experimental::error_code::success) { VW_DBG(ec) << status.get_error_msg() << endl; }
+  if (status.get_error_code() != VW::experimental::error_code::success)
+  { VW_DBG(ec) << status.get_error_msg() << endl; }
 }
 
 // END sample_pdf reduction and reduction methods
