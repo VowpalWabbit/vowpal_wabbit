@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 
 #ifdef _WIN32
-#define NOMINMAX
-#include <winsock2.h>
+#  define NOMINMAX
+#  include <winsock2.h>
 #else
-#include <netdb.h>
+#  include <netdb.h>
 #endif
 
 #include "reductions.h"
@@ -37,32 +37,23 @@ struct mf
   features temp_features;
 
   vw* all;  // for pairs? and finalize
-
-  ~mf()
-  {
-    // clean up local v_arrays
-    indices.delete_v();
-    sub_predictions.delete_v();
-  }
 };
 
 template <bool cache_sub_predictions>
 void predict(mf& data, single_learner& base, example& ec)
 {
   float prediction = 0;
-  if (cache_sub_predictions)
-    data.sub_predictions.resize(2 * data.rank + 1);
+  if (cache_sub_predictions) { data.sub_predictions.resize_but_with_stl_behavior(2 * data.rank + 1); }
 
   // predict from linear terms
   base.predict(ec);
 
   // store linear prediction
-  if (cache_sub_predictions)
-    data.sub_predictions[0] = ec.partial_prediction;
+  if (cache_sub_predictions) data.sub_predictions[0] = ec.partial_prediction;
   prediction += ec.partial_prediction;
 
   // store namespace indices
-  copy_array(data.predict_indices, ec.indices);
+  data.predict_indices = ec.indices;
 
   // erase indices
   ec.indices.clear();
@@ -71,29 +62,27 @@ void predict(mf& data, single_learner& base, example& ec)
   // add interaction terms to prediction
   for (auto& i : data.pairs)
   {
-    int left_ns = (int)i[0];
-    int right_ns = (int)i[1];
+    auto left_ns = static_cast<int>(i[0]);
+    auto right_ns = static_cast<int>(i[1]);
 
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
     {
       for (size_t k = 1; k <= data.rank; k++)
       {
-        ec.indices[0] = left_ns;
+        ec.indices[0] = static_cast<namespace_index>(left_ns);
 
         // compute l^k * x_l using base learner
         base.predict(ec, k);
         float x_dot_l = ec.partial_prediction;
-        if (cache_sub_predictions)
-          data.sub_predictions[2 * k - 1] = x_dot_l;
+        if (cache_sub_predictions) data.sub_predictions[2 * k - 1] = x_dot_l;
 
         // set example to right namespace only
-        ec.indices[0] = right_ns;
+        ec.indices[0] = static_cast<namespace_index>(right_ns);
 
         // compute r^k * x_r using base learner
         base.predict(ec, k + data.rank);
         float x_dot_r = ec.partial_prediction;
-        if (cache_sub_predictions)
-          data.sub_predictions[2 * k] = x_dot_r;
+        if (cache_sub_predictions) data.sub_predictions[2 * k] = x_dot_r;
 
         // accumulate prediction
         prediction += (x_dot_l * x_dot_r);
@@ -101,7 +90,7 @@ void predict(mf& data, single_learner& base, example& ec)
     }
   }
   // restore namespace indices and label
-  copy_array(ec.indices, data.predict_indices);
+  ec.indices = data.predict_indices;
 
   // finalize prediction
   ec.partial_prediction = prediction;
@@ -119,7 +108,7 @@ void learn(mf& data, single_learner& base, example& ec)
   ec.pred.scalar = ec.updated_prediction;
 
   // store namespace indices
-  copy_array(data.indices, ec.indices);
+  data.indices = ec.indices;
 
   // erase indices
   ec.indices.clear();
@@ -135,7 +124,7 @@ void learn(mf& data, single_learner& base, example& ec)
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
     {
       // set example to left namespace only
-      ec.indices[0] = left_ns;
+      ec.indices[0] = static_cast<namespace_index>(left_ns);
 
       // store feature values in left namespace
       data.temp_features.deep_copy_from(ec.feature_space[left_ns]);
@@ -144,7 +133,7 @@ void learn(mf& data, single_learner& base, example& ec)
       {
         features& fs = ec.feature_space[left_ns];
         // multiply features in left namespace by r^k * x_r
-        for (size_t i = 0; i < fs.size(); ++i) fs.values[i] *= data.sub_predictions[2 * k];
+        for (size_t j = 0; j < fs.size(); ++j) fs.values[j] *= data.sub_predictions[2 * k];
 
         // update l^k using base learner
         base.update(ec, k);
@@ -159,7 +148,7 @@ void learn(mf& data, single_learner& base, example& ec)
       }
 
       // set example to right namespace only
-      ec.indices[0] = right_ns;
+      ec.indices[0] = static_cast<namespace_index>(right_ns);
 
       // store feature values for right namespace
       data.temp_features.deep_copy_from(ec.feature_space[right_ns]);
@@ -168,7 +157,7 @@ void learn(mf& data, single_learner& base, example& ec)
       {
         features& fs = ec.feature_space[right_ns];
         // multiply features in right namespace by l^k * x_l
-        for (size_t i = 0; i < fs.size(); ++i) fs.values[i] *= data.sub_predictions[2 * k - 1];
+        for (size_t j = 0; j < fs.size(); ++j) fs.values[j] *= data.sub_predictions[2 * k - 1];
 
         // update r^k using base learner
         base.update(ec, k + data.rank);
@@ -180,38 +169,34 @@ void learn(mf& data, single_learner& base, example& ec)
     }
   }
   // restore namespace indices
-  copy_array(ec.indices, data.indices);
+  ec.indices = data.indices;
 
   // restore original prediction
   ec.pred.scalar = predicted;
-}
-
-void finish(mf& o)
-{
-  // restore global pairs
-  o.all->pairs = o.pairs;
 }
 
 base_learner* mf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<mf>();
   option_group_definition new_options("Matrix Factorization Reduction");
-  new_options.add(make_option("new_mf", data->rank).keep().help("rank for reduction-based matrix factorization"));
-  options.add_and_parse(new_options);
+  new_options.add(
+      make_option("new_mf", data->rank).keep().necessary().help("rank for reduction-based matrix factorization"));
 
-  if (!options.was_supplied("new_mf"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->all = &all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  data->pairs = all.pairs;
-  all.pairs.clear();
+  auto non_pair_count = std::count_if(all.interactions.interactions.begin(), all.interactions.interactions.end(),
+      [](const std::vector<unsigned char>& interaction) { return interaction.size() != 2; });
+  if (non_pair_count > 0) { THROW("can only use pairs with new_mf"); }
+
+  data->pairs = all.interactions.interactions;
+  all.interactions.interactions.clear();
 
   all.random_positive_weights = true;
 
-  learner<mf, example>& l =
-      init_learner(data, as_singleline(setup_base(options, all)), learn, predict<false>, 2 * data->rank + 1);
-  l.set_finish(finish);
+  learner<mf, example>& l = init_learner(data, as_singleline(setup_base(options, all)), learn, predict<false>,
+      2 * data->rank + 1, all.get_setupfn_name(mf_setup));
   return make_base(l);
 }

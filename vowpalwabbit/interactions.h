@@ -34,6 +34,10 @@ inline constexpr bool is_printable_namespace(const unsigned char ns)
 std::vector<std::vector<namespace_index>> expand_interactions(
     const std::vector<std::vector<namespace_index>>& vec, const size_t required_length, const std::string& err_msg);
 
+void expand_quadratics_wildcard_interactions(namespace_interactions& interactions);
+
+bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b);
+
 // remove duplicate interactions and sort namespaces in them (if required)
 void sort_and_filter_duplicate_interactions(
     std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt);
@@ -66,27 +70,6 @@ inline void generate_interactions(vw& all, example_predict& ec, R& dat)
   else
     generate_interactions<R, S, T, dense_parameters>(
         all.interactions, all.permutations, ec, dat, all.weights.dense_weights);
-}
-
-// C(n,k) = n!/(k!(n-k)!)
-
-inline int64_t choose(int64_t n, int64_t k)
-{
-  if (k > n)
-    return 0;
-  if (k < 0)
-    return 0;
-  if (k == n)
-    return 1;
-  if (k == 0 && n != 0)
-    return 1;
-  int64_t r = 1;
-  for (int64_t d = 1; d <= k; ++d)
-  {
-    r *= n--;
-    r /= d;
-  }
-  return r;
 }
 
 }  // namespace INTERACTIONS

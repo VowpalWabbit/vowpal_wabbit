@@ -18,16 +18,17 @@ struct action_score
 
 typedef v_array<action_score> action_scores;
 
-class score_iterator : public virtual std::iterator<std::random_access_iterator_tag,  // iterator_category
-                           float,                                                     // value_type
-                           long,                                                      // difference_type
-                           float*,                                                    // pointer
-                           float                                                      // reference
-                           >
+class score_iterator
 {
   action_score* _p;
 
- public:
+public:
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = float;
+  using difference_type = long;
+  using pointer = float*;
+  using reference = float;
+
   score_iterator(action_score* p) : _p(p) {}
 
   score_iterator& operator++()
@@ -55,10 +56,8 @@ inline score_iterator end_scores(action_scores& a_s) { return {a_s.end()}; }
 
 inline int cmp(size_t a, size_t b)
 {
-  if (a == b)
-    return 0;
-  if (a > b)
-    return 1;
+  if (a == b) return 0;
+  if (a > b) return 1;
   return -1;
 }
 
@@ -81,5 +80,5 @@ inline int reverse_order(const void* p1, const void* p2) { return score_comp(p2,
 
 void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>&);
 
-void delete_action_scores(void* v);
+std::ostream& operator<<(std::ostream& os, const action_score& a_s);
 }  // namespace ACTION_SCORE

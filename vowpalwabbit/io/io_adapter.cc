@@ -1,13 +1,17 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "io_adapter.h"
 
 #ifdef _WIN32
-#define NOMINMAX
-#define ssize_t int64_t
-#include <winsock2.h>
-#include <io.h>
+#  define NOMINMAX
+#  define ssize_t int64_t
+#  include <winsock2.h>
+#  include <io.h>
 #else
-#include <sys/socket.h>
-#include <unistd.h>
+#  include <sys/socket.h>
+#  include <unistd.h>
 #endif
 
 #include <sys/stat.h>
@@ -24,14 +28,14 @@
 
 #include <zlib.h>
 #if (ZLIB_VERNUM < 0x1252)
-using void* gzFile;
+typedef void* gzFile;
 #else
 struct gzFile_s;
 typedef struct gzFile_s* gzFile;
 #endif
 
 #ifndef O_LARGEFILE  // for OSX
-#define O_LARGEFILE 0
+#  define O_LARGEFILE 0
 #endif
 
 using namespace VW::io;
@@ -41,6 +45,24 @@ enum class file_mode
   read,
   write
 };
+
+int get_stdin_fileno()
+{
+#ifdef _WIN32
+  return _fileno(stdin);
+#else
+  return fileno(stdin);
+#endif
+}
+
+int get_stdout_fileno()
+{
+#ifdef _WIN32
+  return _fileno(stdout);
+#else
+  return fileno(stdout);
+#endif
+}
 
 struct socket_adapter : public writer, public reader
 {
@@ -56,18 +78,12 @@ private:
   std::shared_ptr<details::socket_closer> _closer;
 };
 
-struct stdio_adapter : public writer, public reader
-{
-  stdio_adapter() : reader(false /*is_resettable*/) {}
-  ssize_t read(char* buffer, size_t num_bytes) override;
-  ssize_t write(const char* buffer, size_t num_bytes) override;
-};
 struct file_adapter : public writer, public reader
 {
   // investigate whether not using the old flags affects perf. Old claim:
   // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
   file_adapter(const char* filename, file_mode mode);
-  file_adapter(int file_descriptor, file_mode mode);
+  file_adapter(int file_descriptor, file_mode mode, bool should_close);
   ~file_adapter();
   ssize_t read(char* buffer, size_t num_bytes) override;
   ssize_t write(const char* buffer, size_t num_bytes) override;
@@ -78,6 +94,23 @@ struct file_adapter : public writer, public reader
 private:
   int _file_descriptor;
   file_mode _mode;
+  bool _should_close;
+};
+
+struct stdio_adapter : public writer, public reader
+{
+  stdio_adapter()
+      : reader(false /*is_resettable*/)
+      , _stdin_file(get_stdin_fileno(), file_mode::read, false)
+      , _stdout_file(get_stdout_fileno(), file_mode::write, false)
+  {
+  }
+  ssize_t read(char* buffer, size_t num_bytes) override;
+  ssize_t write(const char* buffer, size_t num_bytes) override;
+
+private:
+  file_adapter _stdin_file;
+  file_adapter _stdout_file;
 };
 
 struct gzip_file_adapter : public writer, public reader
@@ -105,6 +138,17 @@ struct gzip_stdio_adapter : public writer, public reader
 private:
   gzFile _gz_stdin;
   gzFile _gz_stdout;
+};
+
+struct custom_func_writer : public writer
+{
+  custom_func_writer(void* context, write_func_t write_func);
+  ~custom_func_writer() = default;
+  ssize_t write(const char* buffer, size_t num_bytes) override;
+
+private:
+  void* _context;
+  write_func_t _write_func;
 };
 
 struct vector_writer : public writer
@@ -163,6 +207,11 @@ std::unique_ptr<reader> open_stdin() { return std::unique_ptr<reader>(new stdio_
 std::unique_ptr<writer> open_stdout() { return std::unique_ptr<writer>(new stdio_adapter); }
 
 std::unique_ptr<socket> wrap_socket_descriptor(int fd) { return std::unique_ptr<socket>(new socket(fd)); }
+
+std::unique_ptr<writer> create_custom_writer(void* context, write_func_t write_func)
+{
+  return std::unique_ptr<writer>(new custom_func_writer(context, write_func));
+}
 
 std::unique_ptr<writer> create_vector_writer(std::shared_ptr<std::vector<char>>& buffer)
 {
@@ -223,24 +272,16 @@ std::unique_ptr<writer> socket::get_writer()
 // stdio_adapter
 //
 
-ssize_t stdio_adapter::read(char* buffer, size_t num_bytes)
-{
-  std::cin.read(buffer, num_bytes);
-  return std::cin.gcount();
-}
+ssize_t stdio_adapter::read(char* buffer, size_t num_bytes) { return _stdin_file.read(buffer, num_bytes); }
 
-ssize_t stdio_adapter::write(const char* buffer, size_t num_bytes)
-{
-  std::cout.write(buffer, num_bytes);
-  // TODO is there a reliable way to do this?
-  return num_bytes;
-}
+ssize_t stdio_adapter::write(const char* buffer, size_t num_bytes) { return _stdout_file.write(buffer, num_bytes); }
 
 //
 // file_adapter
 //
 
-file_adapter::file_adapter(const char* filename, file_mode mode) : reader(true /*is_resettable*/), _mode(mode)
+file_adapter::file_adapter(const char* filename, file_mode mode)
+    : reader(true /*is_resettable*/), _mode(mode), _should_close(true)
 {
 #ifdef _WIN32
   if (_mode == file_mode::read)
@@ -254,24 +295,18 @@ file_adapter::file_adapter(const char* filename, file_mode mode) : reader(true /
         &_file_descriptor, filename, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
   }
 #else
-  if (_mode == file_mode::read)
-  {
-    _file_descriptor = open(filename, O_RDONLY | O_LARGEFILE);
-  }
+  if (_mode == file_mode::read) { _file_descriptor = open(filename, O_RDONLY | O_LARGEFILE); }
   else
   {
     _file_descriptor = open(filename, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
   }
 #endif
 
-  if (_file_descriptor == -1 && *filename != '\0')
-  {
-    THROWERRNO("can't open: " << filename);
-  }
+  if (_file_descriptor == -1 && *filename != '\0') { THROWERRNO("can't open: " << filename); }
 }
 
-file_adapter::file_adapter(int file_descriptor, file_mode mode)
-    : reader(true /*is_resettable*/), _file_descriptor(file_descriptor), _mode(mode)
+file_adapter::file_adapter(int file_descriptor, file_mode mode, bool should_close)
+    : reader(true /*is_resettable*/), _file_descriptor(file_descriptor), _mode(mode), _should_close(should_close)
 {
 }
 
@@ -306,11 +341,14 @@ void file_adapter::reset()
 
 file_adapter::~file_adapter()
 {
+  if (_should_close)
+  {
 #ifdef _WIN32
-  ::_close(_file_descriptor);
+    ::_close(_file_descriptor);
 #else
-  ::close(_file_descriptor);
+    ::close(_file_descriptor);
 #endif
+  }
 }
 
 size_t file_adapter::get_data_size() {
@@ -406,6 +444,20 @@ ssize_t vector_writer::write(const char* buffer, size_t num_bytes)
 }
 
 //
+// custom_func_writer
+//
+
+custom_func_writer::custom_func_writer(void* context, write_func_t write_func)
+    : _context(context), _write_func(write_func)
+{
+}
+
+ssize_t custom_func_writer::write(const char* buffer, size_t num_bytes)
+{
+  return _write_func(_context, buffer, num_bytes);
+}
+
+//
 // buffer_view
 //
 
@@ -414,8 +466,7 @@ buffer_view::buffer_view(const char* data, size_t len) : reader(true), _data(dat
 ssize_t buffer_view::read(char* buffer, size_t num_bytes)
 {
   num_bytes = std::min((_data + _len) - _read_head, static_cast<std::ptrdiff_t>(num_bytes));
-  if (num_bytes == 0)
-    return 0;
+  if (num_bytes == 0) return 0;
 
   std::memcpy(buffer, _read_head, num_bytes);
   _read_head += num_bytes;

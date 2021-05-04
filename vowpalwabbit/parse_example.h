@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 #include <cstdint>
-#include "parse_primitives.h"
 #include "example.h"
 #include "vw.h"
 #include "vw_string_view.h"
@@ -20,8 +19,8 @@ void substring_to_example(vw* all, example* ae, VW::string_view& example, v_arra
 namespace VW
 {
 example& get_unused_example(vw* all);
-void read_line(vw& all, example* ex, char * line);  // read example from the line.
-void read_lines(vw* all, char* line, size_t len,
+void read_line(vw& all, example* ex, char* line);  // read example from the line.
+void read_lines(vw* all, const char* line, size_t len,
     v_array<example*>& examples);  // read examples from the new line separated strings.
 
 }  // namespace VW

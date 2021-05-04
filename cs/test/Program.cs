@@ -73,8 +73,8 @@ namespace cs_test
 
         private static void RunVWTest()
         {
-            TestJsonDictClass tst = new TestJsonDictClass();
-            tst.TestJsonDictThreading();
+            // TestJsonDictClass tst = new TestJsonDictClass();
+            // tst.TestJsonDictThreading();
 
             //TestCbAdfClass tst = new TestCbAdfClass();
             //tst.TestCbAdfExplore();

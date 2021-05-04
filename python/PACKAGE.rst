@@ -1,50 +1,26 @@
 Python Packaging
 ================
 
-Setting up the python package for distribution on PyPI is done using commands through setup.py
-The following instructions assume you are working from the python directory.
+Binary wheels are produced in CI according to the `support table`_ and uploaded to PyPi for a release.
 
 Deployment Process
 ------------------
-
-0) Commit changes (increment the version in configure.ac file, PyPI will not overwrite a package using the same version)
-1) Update MANIFEST.in to include any additional files then check it to make sure the dist has the right data in it
-
-    .. code-block:: bash
-
-        $ check-manifest --ignore Makefile,PACKAGE.rst,*.cc,tox.ini,tests*,examples*,src*
-
-2) Lint the code:
-
-   .. code-block:: bash
-
-       $ pylint -f colorized vowpalwabbit
-
-3) Make sure code passes all tests under supported environments
-
-    .. code-block:: bash
-
-        # install virtualenv if necessary
-        $ pip install virtualenv
-        $ python setup.py test
-
-
-4) Create dist folder for package
-
-    .. code-block:: bash
-
-        $ python setup.py sdist
-
-5) Upload package to PyPI
+0) Binary wheels are automatically produced for every commit to master and uploaded as artifacts in the CI
+    * `Linux`_
+    * `Windows`_
+    * `MacOS`_
+1) When it is time to release a version on PyPi, download the set of artifacts from each workflow for the commit to release
+2) Upload package to PyPI
 
     You should have twine installed and configured and your PyPI / test PyPI user should have access to the package
-    <VERSION> corresponds to the new version in the configure.ac file which should match what step 4) creates in the dist sub-dir
+    <VERSION> corresponds to the new version in the `version.txt` file.
 
     a) Test package
 
     .. code-block:: bash
-
-        $ twine upload --repository-url https://test.pypi.org/legacy/ -u vowpalwabbit dist/vowpalwabbit-<VERSION>.tar.gz
+        
+        $ # Repeat for each wheel
+        $ twine upload --repository-url https://test.pypi.org/legacy/ -u vowpalwabbit vowpalwabbit-<VERSION>-cp37-cp37m-manylinux2010_x86_64.whl
         $ cd /tmp
         $ virtualenv test_vw_package
         $ source test_vw_package/bin/activate
@@ -56,18 +32,19 @@ Deployment Process
     b) Upload package
 
     .. code-block:: bash
-
-        $ twine upload -u <username> -p <password> dist/vowpalwabbit-<VERSION>.tar.gz
-
-6) Cleanup build and packaging artifacts / directories
-
+    
+        $ # Repeat for each wheel
+        $ twine upload -u <username> -p <password>  vowpalwabbit-<VERSION>-cp37-cp37m-manylinux2010_x86_64.whl
+    
+    c) Upload the source package
+   
     .. code-block:: bash
 
-        $ python setup.py clean
-
-References
-==========
-
-https://packaging.python.org/en/latest/distributing/
-
-http://setuptools.readthedocs.io/en/latest/setuptools.html
+        $ python setup.py sdist
+        $ twine upload -u <username> -p <password> dist/vowpalwabbit-<VERSION>.tar.gz
+        
+        
+.. _support table: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Python#support
+.. _Linux: https://github.com/VowpalWabbit/vowpal_wabbit/actions?query=workflow%3A%22Build+Linux+Python+Wheels%22
+.. _Windows: https://github.com/VowpalWabbit/vowpal_wabbit/actions?query=workflow%3A%22Build+Windows+Python+Wheels%22
+.. _MacOS: https://github.com/VowpalWabbit/vowpal_wabbit/actions?query=workflow%3A%22Build+MacOS+Python+Wheels%22

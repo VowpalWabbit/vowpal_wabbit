@@ -13,7 +13,7 @@ namespace details
 template <typename T>
 class swap_guard_impl
 {
- public:
+public:
   swap_guard_impl(T* original_location, T* value_to_swap) noexcept
       : _original_location(original_location), _value_to_swap(value_to_swap)
   {
@@ -50,7 +50,7 @@ class swap_guard_impl
     return false;
   }
 
- private:
+private:
   T* _original_location;
   T* _value_to_swap;
   bool _will_swap_back = true;
@@ -59,7 +59,7 @@ class swap_guard_impl
 template <typename T>
 class swap_guard_impl_rvalue
 {
- public:
+public:
   swap_guard_impl_rvalue(T* original_location, T&& value_to_swap) noexcept
       : _original_location(original_location), _value_to_swap(std::move(value_to_swap))
   {
@@ -95,7 +95,7 @@ class swap_guard_impl_rvalue
     return false;
   }
 
- private:
+private:
   T* _original_location;
   T _value_to_swap;
   bool _will_swap_back = true;
@@ -165,6 +165,38 @@ VW_ATTR(nodiscard)
 inline details::swap_guard_impl_rvalue<T> swap_guard(T& original_location, T&& value_to_swap) noexcept
 {
   return details::swap_guard_impl_rvalue<T>(&original_location, std::forward<T>(value_to_swap));
+}
+
+/// This guard will replace the location with a default constructed object on creation and upon deletion swap the
+/// original value back. This guard is equivalent to `swap_guard<T>(xxx, T())`
+///
+/// #### Example:
+/// \code
+/// void use_widget(widget& my_widget)
+/// {
+///   auto new_widget_value = ::get_new_widget_value();
+///   auto temp = std::move(my_widget.value);
+///   my_widget.value = std::move(new_widget_value);
+///
+///   do_thing_with_widget(my_widget);
+///
+///   new_widget_value = std::move(my_widget.value);
+///   my_widget.value = std::move(temp);
+/// }
+///
+/// // Can be replaced with:
+///
+/// void use_widget(widget& my_widget)
+/// {
+///   auto guard = VW::swap_guard(my_widget.value, ::get_new_widget_value(););
+///   do_thing_with_widget(my_widget);
+/// }
+/// \endcode
+template <typename T>
+VW_ATTR(nodiscard)
+inline details::swap_guard_impl_rvalue<T> stash_guard(T& original_location) noexcept
+{
+  return details::swap_guard_impl_rvalue<T>(&original_location, std::forward<T>(T()));
 }
 
 }  // namespace VW

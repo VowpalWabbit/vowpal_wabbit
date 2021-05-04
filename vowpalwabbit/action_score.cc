@@ -8,21 +8,21 @@
 #include "io_buf.h"
 #include "global_data.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 namespace ACTION_SCORE
 {
 void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, const v_array<char>& tag)
 {
-  if (f == nullptr)
-  {
-    return;
-  }
+  if (f == nullptr) { return; }
 
   std::stringstream ss;
 
   for (size_t i = 0; i < a_s.size(); i++)
   {
-    if (i > 0)
-      ss << ',';
+    if (i > 0) ss << ',';
     ss << a_s[i].action << ':' << a_s[i].score;
   }
   print_tag_by_ref(ss, tag);
@@ -30,14 +30,12 @@ void print_action_score(VW::io::writer* f, const v_array<action_score>& a_s, con
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), (unsigned int)len);
-  if (t != len)
-    std::cerr << "write error: " << strerror(errno) << std::endl;
+  if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
 }
 
-void delete_action_scores(void* v)
+std::ostream& operator<<(std::ostream& os, const action_score& a_s)
 {
-  v_array<action_score>* cs = (v_array<action_score>*)v;
-  cs->delete_v();
+  os << "(" << a_s.action << "," << a_s.score << ")";
+  return os;
 }
-
 }  // namespace ACTION_SCORE

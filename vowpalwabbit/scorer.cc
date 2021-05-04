@@ -7,6 +7,9 @@
 #include "reductions.h"
 #include "vw_exception.h"
 
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::scorer
+
 using namespace VW::config;
 
 struct scorer
@@ -17,8 +20,11 @@ struct scorer
 template <bool is_learn, float (*link)(float in)>
 void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
 {
-  s.all->set_minmax(s.all->sd, ec.l.simple.label);
-  if (is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0)
+  // Predict does not need set_minmax
+  if (is_learn) s.all->set_minmax(s.all->sd, ec.l.simple.label);
+
+  bool learn = is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0;
+  if (learn)
     base.learn(ec);
   else
     base.predict(ec);
@@ -27,6 +33,9 @@ void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, example& ec)
     ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   ec.pred.scalar = link(ec.pred.scalar);
+  VW_DBG(ec) << "ex#= " << ec.example_counter << ", offset=" << ec.ft_offset << ", lbl=" << ec.l.simple.label
+             << ", pred= " << ec.pred.scalar << ", wt=" << ec.weight << ", gd.raw=" << ec.partial_prediction
+             << ", loss=" << ec.loss << std::endl;
 }
 
 template <float (*link)(float in)>
@@ -41,6 +50,9 @@ void update(scorer& s, VW::LEARNER::single_learner& base, example& ec)
 {
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   base.update(ec);
+  VW_DBG(ec) << "ex#= " << ec.example_counter << ", offset=" << ec.ft_offset << ", lbl=" << ec.l.simple.label
+             << ", pred= " << ec.pred.scalar << ", wt=" << ec.weight << ", gd.raw=" << ec.partial_prediction
+             << ", loss=" << ec.loss << std::endl;
 }
 
 // y = f(x) -> [0, 1]
@@ -75,20 +87,24 @@ VW::LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
       multipredict<id>;
 
   if (link == "identity")
-    l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>);
+    l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>,
+        all.get_setupfn_name(scorer_setup) + "-identity", base->learn_returns_prediction);
   else if (link == "logistic")
   {
-    l = &init_learner(s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>);
+    l = &init_learner(s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>,
+        all.get_setupfn_name(scorer_setup) + "-logistic", base->learn_returns_prediction);
     multipredict_f = multipredict<logistic>;
   }
   else if (link == "glf1")
   {
-    l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>);
+    l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>,
+        all.get_setupfn_name(scorer_setup) + "-glf1", base->learn_returns_prediction);
     multipredict_f = multipredict<glf1>;
   }
   else if (link == "poisson")
   {
-    l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>);
+    l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>,
+        all.get_setupfn_name(scorer_setup) + "-poisson", base->learn_returns_prediction);
     multipredict_f = multipredict<expf>;
   }
   else

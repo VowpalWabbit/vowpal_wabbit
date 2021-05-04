@@ -99,7 +99,8 @@ public:
   }
 
   virtual void ReadFromExample(example* ex)
-  { CB::label* ld = (CB::label*)&ex->l;
+  {
+    CB::label* ld = &ex->l.cb;
     if (ld->costs.size() > 0)
     { cb_class& f = ld->costs[0];
 
@@ -110,7 +111,8 @@ public:
   }
 
   virtual void UpdateExample(vw* vw, example* ex)
-  { CB::label* ld = (CB::label*)&ex->l;
+  {
+    CB::label* ld = &ex->l.cb;
     cb_class f;
 
     f.partial_prediction = 0.;
@@ -150,7 +152,8 @@ public:
   static SharedLabel^ Instance = gcnew SharedLabel;
 
   virtual void UpdateExample(vw* vw, example* ex)
-  { CB::label* ld = (CB::label*)&ex->l;
+  {
+    CB::label* ld = &ex->l.cb;
     cb_class f;
 
     f.partial_prediction = 0.;
@@ -217,22 +220,28 @@ public:
   }
 
   virtual void ReadFromExample(example* ex)
-  { label_data* ld = (label_data*)&ex->l;
+  {
+    label_data* ld = &ex->l.simple;
 
     m_label = ld->label;
-    m_weight = ld->weight;
-    m_initial = ld->initial;
+
+    const auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+    m_weight = red_fts.weight;
+    m_initial = red_fts.initial;
   }
 
   virtual void UpdateExample(vw* vw, example* ex)
-  { label_data* ld = (label_data*)&ex->l;
+  {
+    label_data* ld = &ex->l.simple;
     ld->label = m_label;
 
-    if (m_weight.HasValue)
-      ld->weight = m_weight.Value;
+    if (m_weight.HasValue) ex->weight = m_weight.Value;
 
     if (m_initial.HasValue)
-      ld->initial = m_initial.Value;
+    {
+      auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+      red_fts.initial = m_initial.Value;
+    }
 
     count_label(vw->sd, ld->label);
   }

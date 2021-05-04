@@ -8,104 +8,112 @@
 #include "vw.h"
 #include "vw_exception.h"
 #include "vw_string_view.h"
+#include "example.h"
+#include "parse_primitives.h"
+#include "shared_data.h"
 
 namespace MULTICLASS
 {
-char* bufread_label(label_t* ld, char* c)
+label_t::label_t() { reset_to_default(); }
+
+label_t::label_t(uint32_t label, float weight) : label(label), weight(weight) {}
+
+void label_t::reset_to_default()
 {
-  memcpy(&ld->label, c, sizeof(ld->label));
-  c += sizeof(ld->label);
-  memcpy(&ld->weight, c, sizeof(ld->weight));
-  c += sizeof(ld->weight);
-  return c;
+  label = std::numeric_limits<uint32_t>::max();
+  weight = 1.f;
 }
 
-size_t read_cached_label(shared_data*, void* v, io_buf& cache)
-{
-  label_t* ld = (label_t*)v;
-  char* c;
-  size_t total = sizeof(ld->label) + sizeof(ld->weight);
-  if (cache.buf_read(c, total) < total)
-    return 0;
-  bufread_label(ld, c);
+void default_label(label_t& ld) { ld.reset_to_default(); }
 
+void cache_label(const label_t& ld, io_buf& cache)
+{
+  char* c;
+  cache.buf_write(c, sizeof(ld.label) + sizeof(ld.weight));
+  memcpy(c, &ld.label, sizeof(ld.label));
+  c += sizeof(ld.label);
+  memcpy(c, &ld.weight, sizeof(ld.weight));
+  c += sizeof(ld.weight);
+}
+
+size_t read_cached_label(shared_data*, label_t& ld, io_buf& cache)
+{
+  char* c;
+  size_t total = sizeof(ld.label) + sizeof(ld.weight);
+  if (cache.buf_read(c, total) < total) return 0;
+  memcpy(&ld.label, c, sizeof(ld.label));
+  c += sizeof(ld.label);
+  memcpy(&ld.weight, c, sizeof(ld.weight));
+  c += sizeof(ld.weight);
   return total;
 }
+float weight(label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
+bool test_label(const label_t& ld) { return ld.label == (uint32_t)-1; }
 
-float weight(void* v)
+void parse_label(parser*, shared_data* sd, label_t& ld, std::vector<VW::string_view>& words,
+                 std::vector<VW::string_view>&, reduction_features&)
 {
-  label_t* ld = (label_t*)v;
-  return (ld->weight > 0) ? ld->weight : 0.f;
-}
-
-char* bufcache_label(label_t* ld, char* c)
-{
-  memcpy(c, &ld->label, sizeof(ld->label));
-  c += sizeof(ld->label);
-  memcpy(c, &ld->weight, sizeof(ld->weight));
-  c += sizeof(ld->weight);
-  return c;
-}
-
-void cache_label(void* v, io_buf& cache)
-{
-  char* c;
-  label_t* ld = (label_t*)v;
-  cache.buf_write(c, sizeof(ld->label) + sizeof(ld->weight));
-  bufcache_label(ld, c);
-}
-
-void default_label(void* v)
-{
-  label_t* ld = (label_t*)v;
-  ld->label = (uint32_t)-1;
-  ld->weight = 1.;
-}
-
-bool test_label(void* v)
-{
-  label_t* ld = (label_t*)v;
-  return ld->label == (uint32_t)-1;
-}
-
-void delete_label(void*) {}
-
-void parse_label(parser*, shared_data* sd, void* v, v_array<VW::string_view>& words, v_array<VW::string_view>&)
-{
-  label_t* ld = (label_t*)v;
-
   switch (words.size())
   {
     case 0:
       break;
     case 1:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
-      ld->weight = 1.0;
+      if (sd->ldict) { ld.label = (uint32_t)sd->ldict->get(words[0]); }
+      else
+      {
+        char* char_after_int = nullptr;
+        ld.label = int_of_string(words[0], char_after_int);
+        if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
+        { THROW("malformed example: label has trailing character(s): " << *char_after_int); }
+      }
+      ld.weight = 1.0;
       break;
     case 2:
-      ld->label = sd->ldict ? (uint32_t)sd->ldict->get(words[0]) : int_of_string(words[0]);
-      ld->weight = float_of_string(words[1]);
+      if (sd->ldict) { ld.label = (uint32_t)sd->ldict->get(words[0]); }
+      else
+      {
+        char* char_after_int = nullptr;
+        ld.label = int_of_string(words[0], char_after_int);
+        if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
+        { THROW("malformed example: label has trailing character(s): " << *char_after_int); }
+      }
+      ld.weight = float_of_string(words[1]);
       break;
     default:
-      std::cerr << "malformed example!\n";
-      std::cerr << "words.size() = " << words.size() << std::endl;
+      THROW("malformed example, words.size() = " << words.size());
   }
-  if (ld->label == 0)
+  if (ld.label == 0)
     THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}"
         << (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
 }
 
-label_parser mc_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, nullptr,
-    test_label, sizeof(label_t)};
+// clang-format off
+label_parser mc_label = {
+  // default_label
+  [](polylabel* v) { default_label(v->multi); },
+  // parse_label
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
+    parse_label(p, sd, v->multi, words, red_features);
+  },
+  // cache_label
+  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->multi, cache); },
+  // read_cached_label
+  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->multi, cache); },
+  // get_weight
+  [](polylabel* v, const reduction_features&) { return weight(v->multi); },
+  // test_label
+  [](polylabel* v) { return test_label(v->multi); },
+  label_type_t::multiclass
+};
+// clang-format on
 
 void print_label_pred(vw& all, example& ec, uint32_t prediction)
 {
   VW::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
   VW::string_view sv_pred = all.sd->ldict->get(prediction);
-  all.sd->print_update(all.holdout_set_off, all.current_pass,
-      sv_label.empty() ? "unknown" : sv_label.to_string(),
-      sv_pred.empty() ? "unknown" : sv_pred.to_string(), ec.num_features,
-      all.progress_add, all.progress_arg);
+  all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
+      sv_label.empty() ? "unknown" : sv_label.to_string(), sv_pred.empty() ? "unknown" : sv_pred.to_string(),
+      ec.num_features, all.progress_add, all.progress_arg);
 }
 
 void print_probability(vw& all, example& ec, uint32_t prediction)
@@ -117,8 +125,8 @@ void print_probability(vw& all, example& ec, uint32_t prediction)
   std::stringstream label_ss;
   label_ss << ec.l.multi.label;
 
-  all.sd->print_update(all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), ec.num_features,
-      all.progress_add, all.progress_arg);
+  all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(),
+      ec.num_features, all.progress_add, all.progress_arg);
 }
 
 void print_score(vw& all, example& ec, uint32_t prediction)
@@ -129,14 +137,14 @@ void print_score(vw& all, example& ec, uint32_t prediction)
   std::stringstream label_ss;
   label_ss << ec.l.multi.label;
 
-  all.sd->print_update(all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), ec.num_features,
-      all.progress_add, all.progress_arg);
+  all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(),
+      ec.num_features, all.progress_add, all.progress_arg);
 }
 
 void direct_print_update(vw& all, example& ec, uint32_t prediction)
 {
-  all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.multi.label, prediction, ec.num_features,
-      all.progress_add, all.progress_arg);
+  all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.multi.label, prediction,
+      ec.num_features, all.progress_add, all.progress_arg);
 }
 
 template <void (*T)(vw&, example&, uint32_t)>
@@ -160,8 +168,7 @@ void print_update_with_score(vw& all, example& ec, uint32_t pred) { print_update
 void finish_example(vw& all, example& ec, bool update_loss)
 {
   float loss = 0;
-  if (ec.l.multi.label != (uint32_t)ec.pred.multiclass && ec.l.multi.label != (uint32_t)-1)
-    loss = ec.weight;
+  if (ec.l.multi.label != (uint32_t)ec.pred.multiclass && ec.l.multi.label != (uint32_t)-1) loss = ec.weight;
 
   all.sd->update(ec.test_only, update_loss && (ec.l.multi.label != (uint32_t)-1), loss, ec.weight, ec.num_features);
 

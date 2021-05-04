@@ -12,6 +12,7 @@ See documenation for the following modules in the package:
 .. toctree::
    vowpalwabbit.pyvw
    vowpalwabbit.sklearn
+   vowpalwabbit.DFtoVW
 
 Usage
 -----

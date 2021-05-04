@@ -1,13 +1,18 @@
 add_subdirectory(unit_test)
 add_subdirectory(tools)
 
+set(FB_FLAG "") # flatbuffers are off by default
+if(BUILD_FLATBUFFERS)
+  set(FB_FLAG "-F") # include flatbuffer tests in RunTests
+endif()
+
 # Don't offer target on Windows
 if(NOT WIN32)
   add_test(
     NAME RunTests_pass_1_onethread
     COMMAND
       ${CMAKE_COMMAND} -E env PATH=${CMAKE_CURRENT_BINARY_DIR}/../vowpalwabbit/:$ENV{PATH}
-      ./RunTests -d -fe -E 0.001 -O --onethread
+      ./RunTests -d -fe -E 0.001 -O --onethread ${FB_FLAG}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
@@ -15,7 +20,7 @@ if(NOT WIN32)
     NAME RunTests_pass_2
     COMMAND
       ${CMAKE_COMMAND} -E env PATH=${CMAKE_CURRENT_BINARY_DIR}/../vowpalwabbit/:$ENV{PATH}
-      ./RunTests -d -fe -E 0.001
+      ./RunTests -d -fe -E 0.001 ${FB_FLAG}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
@@ -46,9 +51,3 @@ if(NOT WIN32)
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 endif()
-
-# This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
-add_custom_target(test_with_output
-  COMMAND ${CMAKE_CTEST_COMMAND} --verbose
-  DEPENDS spanning_tree vw-unit-test.out vw-bin
-)

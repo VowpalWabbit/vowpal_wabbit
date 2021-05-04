@@ -5,7 +5,7 @@ pool:
   vmImage: 'ubuntu-16.04'
 
 container:
-  image: vowpalwabbit/ubuntu1604-build:0.3.0
+  image: vowpalwabbit/ubuntu1604-build:latest
   endpoint: DockerHub
 
 strategy:
@@ -17,12 +17,12 @@ strategy:
   maxParallel: 2
 
 steps:
-- bash: ./.scripts/linux/clang-format-check.sh
-  displayName: Clang format check
 - bash: ./.scripts/linux/build.sh $(BUILD_CONFIGURATION)
   displayName: Build C++
 - bash: ./.scripts/linux/test.sh
   displayName: Test C++
+- bash: ./.scripts/linux/test-flatbuffers.sh
+  displayName: RunTest flatbuffers C++
 - bash: ./.scripts/linux/java.sh
   displayName: Build + test Java
 - bash: ./.scripts/linux/python27.sh

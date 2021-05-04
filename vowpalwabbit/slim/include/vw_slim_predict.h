@@ -24,7 +24,7 @@ class location_reference;
 template <typename It1, typename It2>
 class location_value
 {
- public:
+public:
   using Val1 = typename std::iterator_traits<It1>::value_type;
   using Val2 = typename std::iterator_traits<It2>::value_type;
 
@@ -37,7 +37,7 @@ class location_value
 template <typename It1, typename It2>
 class location_reference
 {
- public:
+public:
   It1 _ptr1;
   It2 _ptr2;
   using Ref = location_reference<It1, It2>;
@@ -80,7 +80,7 @@ class collection_pair_iterator
   It1 _ptr1;
   It2 _ptr2;
 
- public:
+public:
   using Iter = collection_pair_iterator<It1, It2>;
   using Loc = location_value<It1, It2>;
   using Ref = location_reference<It1, It2>;
@@ -99,6 +99,9 @@ class collection_pair_iterator
   // must support: b = *a; a->m ;
   // must support: *a = t;
   Ref operator*() { return Ref(_ptr1, _ptr2); }  // Non-conforming - normally returns loc&
+
+  // VS library 14.25.28610 requires operator[] (since it's a random access iterator)
+  Ref operator[](size_t n) { return Ref(_ptr1 + n, _ptr2 + n); }
 
   // must support: ++a; a++; *a++;
   Iter& operator++()
@@ -184,7 +187,7 @@ class namespace_copy_guard
   unsigned char _ns;
   bool _remove_ns;
 
- public:
+public:
   namespace_copy_guard(example_predict& ex, unsigned char ns);
   ~namespace_copy_guard();
 
@@ -196,7 +199,7 @@ class feature_offset_guard
   example_predict& _ex;
   uint64_t _old_ft_offset;
 
- public:
+public:
   feature_offset_guard(example_predict& ex, uint64_t ft_offset);
   ~feature_offset_guard();
 };
@@ -206,7 +209,7 @@ class stride_shift_guard
   example_predict& _ex;
   uint64_t _shift;
 
- public:
+public:
   stride_shift_guard(example_predict& ex, uint64_t shift);
   ~stride_shift_guard();
 };
@@ -221,7 +224,7 @@ class vw_predict
   std::string _id;
   std::string _version;
   std::string _command_line_arguments;
-  std::vector<std::vector<namespace_index>> _interactions;
+  namespace_interactions _interactions;
   std::array<bool, NUM_NAMESPACES> _ignore_linear;
   bool _no_constant;
 
@@ -235,7 +238,7 @@ class vw_predict
   uint32_t _stride_shift;
   bool _model_loaded;
 
- public:
+public:
   vw_predict() : _model_loaded(false) {}
 
   /**
@@ -247,8 +250,7 @@ class vw_predict
    */
   int load(const char* model, size_t length)
   {
-    if (!model || length == 0)
-      return E_VW_PREDICT_ERR_INVALID_MODEL;
+    if (!model || length == 0) return E_VW_PREDICT_ERR_INVALID_MODEL;
 
     _model_loaded = false;
 
@@ -290,21 +292,30 @@ class vw_predict
       return E_VW_PREDICT_ERR_HASH_SEED_NOT_SUPPORTED;
 
     _interactions.clear();
-    find_opt(_command_line_arguments, "-q", _interactions);
-    find_opt(_command_line_arguments, "--quadratic", _interactions);
-    find_opt(_command_line_arguments, "--cubic", _interactions);
-    find_opt(_command_line_arguments, "--interactions", _interactions);
+    find_opt(_command_line_arguments, "-q", _interactions.interactions);
+    find_opt(_command_line_arguments, "--quadratic", _interactions.interactions);
+    find_opt(_command_line_arguments, "--cubic", _interactions.interactions);
+    find_opt(_command_line_arguments, "--interactions", _interactions.interactions);
 
-    // VW performs the following transformation as a side-effect of looking for duplicates.
-    // This affects how interaction hashes are generated.
-    std::vector<std::vector<namespace_index>> vec_sorted;
-    for (auto &interaction : _interactions)
+    if (_interactions.interactions.size() == 1 && _interactions.interactions[0].size() == 2 &&
+        _interactions.interactions[0][0] == ':' && _interactions.interactions[0][1] == ':')
     {
-      std::vector<namespace_index> sorted_i(interaction);
-      std::sort(std::begin(sorted_i), std::end(sorted_i));
-      vec_sorted.push_back(sorted_i);
+      _interactions.interactions.clear();
+      _interactions.quadratics_wildcard_expansion = true;
     }
-    _interactions = vec_sorted;
+    else
+    {
+      // VW performs the following transformation as a side-effect of looking for duplicates.
+      // This affects how interaction hashes are generated.
+      std::vector<std::vector<namespace_index>> vec_sorted;
+      for (auto& interaction : _interactions.interactions)
+      {
+        std::vector<namespace_index> sorted_i(interaction);
+        std::sort(std::begin(sorted_i), std::end(sorted_i));
+        vec_sorted.push_back(sorted_i);
+      }
+      _interactions.interactions = vec_sorted;
+    }
 
     // TODO: take --cb_type dr into account
     uint64_t num_weights = 0;
@@ -342,14 +353,12 @@ class vw_predict
     // perform check sum check
     uint32_t check_sum_len;
     RETURN_ON_FAIL((mp.read<uint32_t, false>("check_sum_len", check_sum_len)));
-    if (check_sum_len != sizeof(uint32_t))
-      return E_VW_PREDICT_ERR_INVALID_MODEL;
+    if (check_sum_len != sizeof(uint32_t)) return E_VW_PREDICT_ERR_INVALID_MODEL;
 
     uint32_t check_sum;
     RETURN_ON_FAIL((mp.read<uint32_t, false>("check_sum", check_sum)));
 
-    if (check_sum_computed != check_sum)
-      return E_VW_PREDICT_ERR_INVALID_MODEL_CHECK_SUM;
+    if (check_sum_computed != check_sum) return E_VW_PREDICT_ERR_INVALID_MODEL_CHECK_SUM;
 
     if (_command_line_arguments.find("--cb_adf") != std::string::npos)
     {
@@ -360,8 +369,7 @@ class vw_predict
     // gd.cc: save_load
     bool gd_resume;
     RETURN_ON_FAIL(mp.read("resume", gd_resume));
-    if (gd_resume)
-      return E_VW_PREDICT_ERR_GD_RESUME_NOT_SUPPORTED;
+    if (gd_resume) return E_VW_PREDICT_ERR_GD_RESUME_NOT_SUPPORTED;
 
     // read sparse weights into dense
     uint64_t weight_length = (uint64_t)1 << _num_bits;
@@ -404,8 +412,7 @@ class vw_predict
    */
   int predict(example_predict& ex, float& score)
   {
-    if (!_model_loaded)
-      return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
+    if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
 
     std::unique_ptr<namespace_copy_guard> ns_copy_guard;
 
@@ -424,11 +431,9 @@ class vw_predict
   // multiclass classification
   int predict(example_predict& shared, example_predict* actions, size_t num_actions, std::vector<float>& out_scores)
   {
-    if (!_model_loaded)
-      return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
+    if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
 
-    if (!is_csoaa_ldf())
-      return E_VW_PREDICT_ERR_NO_A_CSOAA_MODEL;
+    if (!is_csoaa_ldf()) return E_VW_PREDICT_ERR_NO_A_CSOAA_MODEL;
 
     out_scores.resize(num_actions);
 
@@ -459,11 +464,9 @@ class vw_predict
   int predict(const char* event_id, example_predict& shared, example_predict* actions, size_t num_actions,
       std::vector<float>& pdf, std::vector<int>& ranking)
   {
-    if (!_model_loaded)
-      return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
+    if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
 
-    if (!is_cb_explore_adf())
-      return E_VW_PREDICT_ERR_NOT_A_CB_MODEL;
+    if (!is_cb_explore_adf()) return E_VW_PREDICT_ERR_NOT_A_CB_MODEL;
 
     std::vector<float> scores;
 
@@ -564,8 +567,7 @@ class vw_predict
     const size_t pdf_size = pdf_last - pdf_first;
     const size_t ranking_size = ranking_last - ranking_begin;
 
-    if (pdf_size != ranking_size)
-      return E_EXPLORATION_PDF_RANKING_SIZE_MISMATCH;
+    if (pdf_size != ranking_size) return E_EXPLORATION_PMF_RANKING_SIZE_MISMATCH;
 
     // Initialize ranking with actions 0,1,2,3 ...
     std::iota(ranking_begin, ranking_last, 0);

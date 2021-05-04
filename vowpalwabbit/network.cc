@@ -2,16 +2,17 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #ifdef _WIN32
-#define NOMINMAX
-#include <WinSock2.h>
-#include <io.h>
+#  define NOMINMAX
+#  define _WINSOCK_DEPRECATED_NO_WARNINGS
+#  include <WinSock2.h>
+#  include <io.h>
 #else
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <netdb.h>
+#  include <sys/types.h>
+#  include <unistd.h>
+#  include <sys/socket.h>
+#  include <netinet/in.h>
+#  include <netinet/tcp.h>
+#  include <netdb.h>
 #endif
 
 #include <cstring>
@@ -22,6 +23,10 @@
 #include <sstream>
 #include <stdexcept>
 #include "vw_exception.h"
+
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
 
 int open_socket(const char* host)
 {
@@ -34,27 +39,24 @@ int open_socket(const char* host)
   hostent* he;
   if (colon != nullptr)
   {
-    port = atoi(colon + 1);
+    port = static_cast<short unsigned int>(atoi(colon + 1));
     std::string hostname(host, colon - host);
     he = gethostbyname(hostname.c_str());
   }
   else
     he = gethostbyname(host);
 
-  if (he == nullptr)
-    THROWERRNO("gethostbyname(" << host << ")");
+  if (he == nullptr) THROWERRNO("gethostbyname(" << host << ")");
 
   int sd = (int)socket(PF_INET, SOCK_STREAM, 0);
-  if (sd == -1)
-    THROWERRNO("socket");
+  if (sd == -1) THROWERRNO("socket");
 
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
   far_end.sin_port = htons(port);
   far_end.sin_addr = *(in_addr*)(he->h_addr);
   memset(&far_end.sin_zero, '\0', 8);
-  if (connect(sd, (sockaddr*)&far_end, sizeof(far_end)) == -1)
-    THROWERRNO("connect(" << host << ':' << port << ")");
+  if (connect(sd, (sockaddr*)&far_end, sizeof(far_end)) == -1) THROWERRNO("connect(" << host << ':' << port << ")");
 
   char id = '\0';
   if (
@@ -64,6 +66,6 @@ int open_socket(const char* host)
       write(sd, &id, sizeof(id)) < (int)sizeof(id)
 #endif
   )
-    std::cerr << "write failed!" << std::endl;
+    logger::errlog_error("write failed!");
   return sd;
 }

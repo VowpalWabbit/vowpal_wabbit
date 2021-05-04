@@ -30,6 +30,7 @@
 #include "csoaa.h"
 #include "cb_algs.h"
 #include "cb_adf.h"
+#include "cb_to_cb_adf.h"
 #include "cb_dro.h"
 #include "cb_explore.h"
 #include "cb_explore_adf_bag.h"
@@ -37,6 +38,8 @@
 #include "cb_explore_adf_first.h"
 #include "cb_explore_adf_greedy.h"
 #include "cb_explore_adf_regcb.h"
+#include "cb_explore_adf_squarecb.h"
+#include "cb_explore_adf_synthcover.h"
 #include "cb_explore_adf_rnd.h"
 #include "cb_explore_adf_softmax.h"
 #include "slates.h"
@@ -62,6 +65,7 @@
 #include "log_multi.h"
 #include "recall_tree.h"
 #include "memory_tree.h"
+#include "plt.h"
 #include "stagewise_poly.h"
 #include "active.h"
 #include "active_cover.h"
@@ -77,22 +81,44 @@
 #include "OjaNewton.h"
 #include "audit_regressor.h"
 #include "marginal.h"
+#include "metrics.h"
 #include "explore_eval.h"
 #include "baseline.h"
 #include "classweight.h"
 #include "cb_sample.h"
 #include "warm_cb.h"
 #include "shared_feature_merger.h"
+#include "cbzo.h"
 // #include "cntk.h"
 
+#include "cats.h"
+#include "cats_pdf.h"
+#include "cb_explore_pdf.h"
 #include "options.h"
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
+#include "offset_tree.h"
+#include "cats_tree.h"
+#include "get_pmf.h"
+#include "pmf_to_pdf.h"
+#include "sample_pdf.h"
+#include "named_labels.h"
+#include "kskip_ngram_transformer.h"
 
-using std::cerr;
+#include "io/io_adapter.h"
+#include "io/custom_streambuf.h"
+#include "io/owning_stream.h"
+#include "io/logger.h"
+
+#ifdef BUILD_EXTERNAL_PARSER
+#  include "parse_example_binary.h"
+#endif
+
 using std::cout;
 using std::endl;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 //
 // Does std::string end with a certain substring?
@@ -100,9 +126,7 @@ using namespace VW::config;
 bool ends_with(std::string const& fullString, std::string const& ending)
 {
   if (fullString.length() > ending.length())
-  {
-    return (fullString.compare(fullString.length() - ending.length(), ending.length(), ending) == 0);
-  }
+  { return (fullString.compare(fullString.length() - ending.length(), ending.length(), ending) == 0); }
   else
   {
     return false;
@@ -116,8 +140,7 @@ uint64_t hash_file_contents(VW::io::reader* f)
   while (true)
   {
     ssize_t n = f->read(buf, 1024);
-    if (n <= 0)
-      break;
+    if (n <= 0) break;
     for (ssize_t i = 0; i < n; i++)
     {
       v *= 341789041;
@@ -149,16 +172,14 @@ std::string find_in_path(std::vector<std::string> paths, std::string fname)
   {
     std::string full = ends_with(path, delimiter) ? (path + fname) : (path + delimiter + fname);
     std::ifstream f(full.c_str());
-    if (f.good())
-      return full;
+    if (f.good()) return full;
   }
   return "";
 }
 
 void parse_dictionary_argument(vw& all, const std::string& str)
 {
-  if (str.length() == 0)
-    return;
+  if (str.length() == 0) return;
   // expecting 'namespace:file', for instance 'w:foo.txt'
   // in the case of just 'foo.txt' it's applied to the default namespace
 
@@ -171,8 +192,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   }
 
   std::string fname = find_in_path(all.dictionary_path, std::string(s));
-  if (fname == "")
-    THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
+  if (fname == "") THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
 
   bool is_gzip = ends_with(fname, ".gz");
   std::unique_ptr<VW::io::reader> file_adapter;
@@ -189,8 +209,8 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   uint64_t fd_hash = hash_file_contents(file_adapter.get());
 
   if (!all.logger.quiet)
-    all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
-                      << std::dec << endl;
+    *(all.trace_message) << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
+                         << std::dec << endl;
 
   // see if we've already read this dictionary
   for (size_t id = 0; id < all.loaded_dictionaries.size(); id++)
@@ -215,7 +235,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   // mimicing old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
   map->max_load_factor(0.25);
-  example* ec = VW::alloc_examples(all.p->lp.label_size, 1);
+  example* ec = VW::alloc_examples(1);
 
   size_t def = (size_t)' ';
 
@@ -228,8 +248,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     do
     {
       nread = fd->read(&rc, 1);
-      if ((rc != EOF) && (nread > 0))
-        buffer[pos++] = rc;
+      if ((rc != EOF) && (nread > 0)) buffer[pos++] = rc;
       if (pos >= size - 1)
       {
         size *= 2;
@@ -237,8 +256,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
         if (new_buffer == nullptr)
         {
           free(buffer);
-          VW::dealloc_example(all.p->lp.delete_label, *ec);
-          free(ec);
+          VW::dealloc_examples(ec, 1);
           THROW("error: memory allocation failed in reading dictionary");
         }
         else
@@ -252,23 +270,16 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     while (*c == ' ' || *c == '\t') ++c;  // skip initial whitespace
     char* d = c;
     while (*d != ' ' && *d != '\t' && *d != '\n' && *d != '\0') ++d;  // gobble up initial word
-    if (d == c)
-      continue;  // no word
-    if (*d != ' ' && *d != '\t')
-      continue;  // reached end of line
+    if (d == c) continue;                                             // no word
+    if (*d != ' ' && *d != '\t') continue;                            // reached end of line
     std::string word(c, d - c);
     if (map->find(word) != map->end())  // don't overwrite old values!
-    {
-      continue;
-    }
+    { continue; }
     d--;
     *d = '|';  // set up for parser::read_line
     VW::read_line(all, ec, d);
     // now we just need to grab stuff from the default namespace of ec!
-    if (ec->feature_space[def].size() == 0)
-    {
-      continue;
-    }
+    if (ec->feature_space[def].size() == 0) { continue; }
     std::unique_ptr<features> arr(new features);
     arr->deep_copy_from(ec->feature_space[def]);
     map->emplace(word, std::move(arr));
@@ -276,18 +287,14 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     // clear up ec
     ec->tag.clear();
     ec->indices.clear();
-    for (size_t i = 0; i < 256; i++)
-    {
-      ec->feature_space[i].clear();
-    }
+    for (size_t i = 0; i < 256; i++) { ec->feature_space[i].clear(); }
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
-  VW::dealloc_example(all.p->lp.delete_label, *ec);
-  free(ec);
+  VW::dealloc_examples(ec, 1);
 
   if (!all.logger.quiet)
-    all.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s")
-                      << endl;
+    *(all.trace_message) << "dictionary " << s << " contains " << map->size() << " item"
+                         << (map->size() == 1 ? "" : "s") << endl;
 
   all.namespace_dictionaries[(size_t)ns].push_back(map);
   dictionary_info info = {s.to_string(), fd_hash, map};
@@ -296,30 +303,26 @@ void parse_dictionary_argument(vw& all, const std::string& str)
 
 void parse_affix_argument(vw& all, std::string str)
 {
-  if (str.length() == 0)
-    return;
+  if (str.length() == 0) return;
   char* cstr = calloc_or_throw<char>(str.length() + 1);
-  strcpy(cstr, str.c_str());
+  VW::string_cpy(cstr, (str.length() + 1), str.c_str());
 
-  char* p = strtok(cstr, ",");
+  char* next_token;
+  char* p = strtok_s(cstr, ",", &next_token);
 
   try
   {
-    while (p != 0)
+    while (p)
     {
       char* q = p;
       uint16_t prefix = 1;
-      if (q[0] == '+')
-      {
-        q++;
-      }
+      if (q[0] == '+') { q++; }
       else if (q[0] == '-')
       {
         prefix = 0;
         q++;
       }
-      if ((q[0] < '1') || (q[0] > '7'))
-        THROW("malformed affix argument (length must be 1..7): " << p);
+      if ((q[0] < '1') || (q[0] > '7')) THROW("malformed affix argument (length must be 1..7): " << p);
 
       uint16_t len = (uint16_t)(q[0] - '0');
       uint16_t ns = (uint16_t)' ';  // default namespace
@@ -330,15 +333,14 @@ void parse_affix_argument(vw& all, std::string str)
         else
           THROW("malformed affix argument (invalid namespace): " << p);
 
-        if (q[2] != 0)
-          THROW("malformed affix argument (too long): " << p);
+        if (q[2] != 0) THROW("malformed affix argument (too long): " << p);
       }
 
       uint16_t afx = (len << 1) | (prefix & 0x1);
       all.affix_features[ns] <<= 4;
       all.affix_features[ns] |= afx;
 
-      p = strtok(nullptr, ",");
+      p = strtok_s(nullptr, ",", &next_token);
     }
   }
   catch (...)
@@ -354,6 +356,7 @@ void parse_diagnostics(options_i& options, vw& all)
 {
   bool version_arg = false;
   bool help = false;
+  bool skip_driver = false;
   std::string progress_arg;
   option_group_definition diagnostic_group("Diagnostic options");
   diagnostic_group.add(make_option("version", version_arg).help("Version information"))
@@ -362,15 +365,20 @@ void parse_diagnostics(options_i& options, vw& all)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
       .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
-      .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
+      .add(make_option("dry_run", skip_driver)
+               .help("Parse arguments and print corresponding metadata. Will not execute driver."))
+      .add(make_option("help", help)
+               .short_name("h")
+               .help("More information on vowpal wabbit can be found here https://vowpalwabbit.org."));
 
   options.add_and_parse(diagnostic_group);
 
-  // pass all.logger.quiet around
-  if (all.all_reduce)
-    all.all_reduce->quiet = all.logger.quiet;
+  if(all.logger.quiet) logger::log_set_level(logger::log_level::off);
 
-  // Upon direct query for version -- spit it out to stdout
+  // pass all.logger.quiet around
+  if (all.all_reduce) all.all_reduce->quiet = all.logger.quiet;
+
+  // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
   {
     std::cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
@@ -387,8 +395,8 @@ void parse_diagnostics(options_i& options, vw& all)
       all.progress_add = true;
       if (all.progress_arg < 1)
       {
-        all.trace_message << "warning: additive --progress <int>"
-                          << " can't be < 1: forcing to 1" << endl;
+        *(all.trace_message) << "warning: additive --progress <int>"
+                             << " can't be < 1: forcing to 1" << endl;
         all.progress_arg = 1;
       }
       all.sd->dump_interval = all.progress_arg;
@@ -400,14 +408,14 @@ void parse_diagnostics(options_i& options, vw& all)
 
       if (all.progress_arg <= 1.0)
       {
-        all.trace_message << "warning: multiplicative --progress <float>: " << progress_arg << " is <= 1.0: adding 1.0"
-                          << endl;
+        *(all.trace_message) << "warning: multiplicative --progress <float>: " << progress_arg
+                             << " is <= 1.0: adding 1.0" << endl;
         all.progress_arg += 1.0;
       }
       else if (all.progress_arg > 9.0)
       {
-        all.trace_message << "warning: multiplicative --progress <float>"
-                          << " is > 9.0: you probably meant to use an integer" << endl;
+        *(all.trace_message) << "warning: multiplicative --progress <float>"
+                             << " is > 9.0: you probably meant to use an integer" << endl;
       }
       all.sd->dump_interval = 1.0;
     }
@@ -440,23 +448,31 @@ input_options parse_source(vw& all, options_i& options)
                   "use gzip format whenever possible. If a cache file is being created, this option creates a "
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
       .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"))
-      .add(make_option("no_daemon", all.no_daemon).help("Force a loaded daemon or active learning model to accept local input instead of starting in daemon mode"))
-      .add(make_option("chain_hash", parsed_options.chain_hash)
-               .help("enable chain hash for feature name and string feature value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C"));
-
+      .add(make_option("no_daemon", all.no_daemon)
+               .help("Force a loaded daemon or active learning model to accept local input instead of starting in "
+                     "daemon mode"))
+      .add(make_option("chain_hash", parsed_options.chain_hash_json)
+               .help("Enable chain hash in JSON for feature name and string feature value. e.g. {'A': {'B': 'C'}} is "
+                     "hashed as "
+                     "A^B^C. Note: this will become the default in a future version, so enabling this option will "
+                     "migrate you to the new behavior and silence the warning."))
+      .add(make_option("flatbuffer", parsed_options.flatbuffer)
+               .help("data file will be interpreted as a flatbuffer file"));
+#ifdef BUILD_EXTERNAL_PARSER
+  VW::external::parser::set_parse_args(input_options, parsed_options);
+#endif
 
   options.add_and_parse(input_options);
 
   // Check if the options provider has any positional args. Only really makes sense for command line, others just return
   // an empty list.
   const auto positional_tokens = options.get_positional_tokens();
-  if (positional_tokens.size() == 1)
-  {
-    all.data_filename = positional_tokens[0];
-  }
+  if (positional_tokens.size() == 1) { all.data_filename = positional_tokens[0]; }
   else if (positional_tokens.size() > 1)
   {
-    THROW("Only a single positional parameter is supported. This is the data argument.");
+    *(all.trace_message) << "Warning: Multiple data files passed as positional parameters, only the first one will be "
+                            "read and the rest will be ignored."
+                         << endl;
   }
 
   if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
@@ -467,10 +483,7 @@ input_options parse_source(vw& all, options_i& options)
   }
 
   // Add an implicit cache file based on the data filename.
-  if (parsed_options.cache)
-  {
-    parsed_options.cache_files.push_back(all.data_filename + ".cache");
-  }
+  if (parsed_options.cache) { parsed_options.cache_files.push_back(all.data_filename + ".cache"); }
 
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
@@ -480,20 +493,17 @@ input_options parse_source(vw& all, options_i& options)
           options.was_supplied("output_feature_regularizer_text")))
   {
     all.holdout_set_off = true;
-    all.trace_message << "Making holdout_set_off=true since output regularizer specified" << endl;
+    *(all.trace_message) << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
 
   return parsed_options;
 }
 
-bool interactions_settings_doubled = false;  // local setting setted in parse_modules()
 namespace VW
 {
 const char* are_features_compatible(vw& vw1, vw& vw2)
 {
-  if (vw1.p->hasher != vw2.p->hasher)
-    return "hasher";
-
+  if (vw1.example_parser->hasher != vw2.example_parser->hasher) return "hasher";
 
   if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
     return "spelling_features";
@@ -501,95 +511,107 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!std::equal(vw1.affix_features.begin(), vw1.affix_features.end(), vw2.affix_features.begin()))
     return "affix_features";
 
-  if (!std::equal(vw1.ngram.begin(), vw1.ngram.end(), vw2.ngram.begin()))
+  if (vw1.skip_gram_transformer != nullptr && vw2.skip_gram_transformer != nullptr)
+  {
+    const auto& vw1_ngram_strings = vw1.skip_gram_transformer->get_initial_ngram_definitions();
+    const auto& vw2_ngram_strings = vw2.skip_gram_transformer->get_initial_ngram_definitions();
+    const auto& vw1_skips_strings = vw1.skip_gram_transformer->get_initial_skip_definitions();
+    const auto& vw2_skips_strings = vw2.skip_gram_transformer->get_initial_skip_definitions();
+
+    if (!std::equal(vw1_ngram_strings.begin(), vw1_ngram_strings.end(), vw2_ngram_strings.begin())) return "ngram";
+
+    if (!std::equal(vw1_skips_strings.begin(), vw1_skips_strings.end(), vw2_skips_strings.begin())) return "skips";
+  }
+  else if (vw1.skip_gram_transformer != nullptr || vw2.skip_gram_transformer != nullptr)
+  {
+    // If one of them didn't define the ngram transformer then they differ by ngram (skips depends on ngram)
     return "ngram";
+  }
 
-  if (!std::equal(vw1.skips.begin(), vw1.skips.end(), vw2.skips.begin()))
-    return "skips";
+  if (!std::equal(vw1.limit.begin(), vw1.limit.end(), vw2.limit.begin())) return "limit";
 
-  if (!std::equal(vw1.limit.begin(), vw1.limit.end(), vw2.limit.begin()))
-    return "limit";
+  if (vw1.num_bits != vw2.num_bits) return "num_bits";
 
-  if (vw1.num_bits != vw2.num_bits)
-    return "num_bits";
+  if (vw1.permutations != vw2.permutations) return "permutations";
 
-  if (vw1.permutations != vw2.permutations)
-    return "permutations";
+  if (vw1.interactions.interactions.size() != vw2.interactions.interactions.size()) return "interactions size";
 
-  if (vw1.interactions.size() != vw2.interactions.size())
-    return "interactions size";
+  if (vw1.ignore_some != vw2.ignore_some) return "ignore_some";
 
-  if (vw1.ignore_some != vw2.ignore_some)
-    return "ignore_some";
+  if (vw1.ignore_some && !std::equal(vw1.ignore.begin(), vw1.ignore.end(), vw2.ignore.begin())) return "ignore";
 
-  if (vw1.ignore_some && !std::equal(vw1.ignore.begin(), vw1.ignore.end(), vw2.ignore.begin()))
-    return "ignore";
-
-  if (vw1.ignore_some_linear != vw2.ignore_some_linear)
-    return "ignore_some_linear";
+  if (vw1.ignore_some_linear != vw2.ignore_some_linear) return "ignore_some_linear";
 
   if (vw1.ignore_some_linear &&
       !std::equal(vw1.ignore_linear.begin(), vw1.ignore_linear.end(), vw2.ignore_linear.begin()))
     return "ignore_linear";
 
-  if (vw1.redefine_some != vw2.redefine_some)
-    return "redefine_some";
+  if (vw1.redefine_some != vw2.redefine_some) return "redefine_some";
 
   if (vw1.redefine_some && !std::equal(vw1.redefine.begin(), vw1.redefine.end(), vw2.redefine.begin()))
     return "redefine";
 
-  if (vw1.add_constant != vw2.add_constant)
-    return "add_constant";
+  if (vw1.add_constant != vw2.add_constant) return "add_constant";
 
-  if (vw1.dictionary_path.size() != vw2.dictionary_path.size())
-    return "dictionary_path size";
+  if (vw1.dictionary_path.size() != vw2.dictionary_path.size()) return "dictionary_path size";
 
   if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
-  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
-       ++i, ++j)
-    if (*i != *j)
-      return "interaction mismatch";
+  for (auto i = std::begin(vw1.interactions.interactions), j = std::begin(vw2.interactions.interactions);
+       i != std::end(vw1.interactions.interactions); ++i, ++j)
+    if (*i != *j) return "interaction mismatch";
 
   return nullptr;
 }
 
 }  // namespace VW
-// return a copy of std::string replacing \x00 sequences in it
+
+// Return a copy of std::string replacing \x00 sequences in it
 std::string spoof_hex_encoded_namespaces(const std::string& arg)
 {
+  constexpr size_t NUMBER_OF_HEX_CHARS = 2;
+  // "\x" + hex chars
+  constexpr size_t LENGTH_OF_HEX_TOKEN = 2 + NUMBER_OF_HEX_CHARS;
+  constexpr size_t HEX_BASE = 16;
+
+  // Too short to be hex encoded.
+  if (arg.size() < LENGTH_OF_HEX_TOKEN) { return arg; }
+
   std::string res;
-  int pos = 0;
-  while (pos < (int)arg.size() - 3)
+  size_t pos = 0;
+  while (pos < arg.size() - (LENGTH_OF_HEX_TOKEN - 1))
   {
     if (arg[pos] == '\\' && arg[pos + 1] == 'x')
     {
-      std::string substr = arg.substr(pos + 2, 2);
+      std::string substr = arg.substr(pos + NUMBER_OF_HEX_CHARS, NUMBER_OF_HEX_CHARS);
       char* p;
-      unsigned char c = (unsigned char)strtoul(substr.c_str(), &p, 16);
+      auto c = static_cast<namespace_index>(std::strtoul(substr.c_str(), &p, HEX_BASE));
       if (*p == '\0')
       {
         res.push_back(c);
-        pos += 4;
+        pos += LENGTH_OF_HEX_TOKEN;
       }
       else
       {
-        std::cerr << "Possibly malformed hex representation of a namespace: '\\x" << substr << "'\n";
+        logger::errlog_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
         res.push_back(arg[pos++]);
       }
     }
     else
+    {
       res.push_back(arg[pos++]);
+    }
   }
 
-  while (pos < (int)arg.size())  // copy last 2 characters
-    res.push_back(arg[pos++]);
+  // Copy last 2 characters
+  while (pos < arg.size()) { res.push_back(arg[pos++]); }
 
   return res;
 }
 
-void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>& dictionary_nses)
+void parse_feature_tweaks(
+    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
   std::string hash_function("strings");
   uint32_t new_bits;
@@ -601,6 +623,9 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   std::vector<std::string> ignore_linears;
   std::vector<std::string> keeps;
   std::vector<std::string> redefines;
+
+  std::vector<std::string> ngram_strings;
+  std::vector<std::string> skip_strings;
 
   std::vector<std::string> dictionary_path;
 
@@ -628,9 +653,9 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       .add(make_option("bit_precision", new_bits).short_name("b").help("number of bits in the feature table"))
       .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
       .add(make_option("constant", all.initial_constant).short_name("C").help("Set initial value of constant"))
-      .add(make_option("ngram", all.ngram_strings)
+      .add(make_option("ngram", ngram_strings)
                .help("Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN."))
-      .add(make_option("skips", all.skip_strings)
+      .add(make_option("skips", skip_strings)
                .help("Generate skips in N grams. This in conjunction with the ngram tag can be used to generate "
                      "generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN."))
       .add(make_option("feature_limit", all.limit_strings)
@@ -662,7 +687,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   options.add_and_parse(feature_options);
 
   // feature manipulation
-  all.p->hasher = getHasher(hash_function);
+  all.example_parser->hasher = getHasher(hash_function);
 
   if (options.was_supplied("spelling"))
   {
@@ -678,35 +703,37 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
   if (options.was_supplied("q:"))
   {
-    all.trace_message << "WARNING: '--q:' is deprecated and not supported. You can use : as a wildcard in interactions."
-                      << endl;
+    *(all.trace_message)
+        << "WARNING: '--q:' is deprecated and not supported. You can use : as a wildcard in interactions." << endl;
   }
 
-  if (options.was_supplied("affix"))
-    parse_affix_argument(all, spoof_hex_encoded_namespaces(affix));
+  if (options.was_supplied("affix")) parse_affix_argument(all, spoof_hex_encoded_namespaces(affix));
+
+  // Process ngram and skips arguments
+  if (options.was_supplied("skips"))
+  {
+    if (!options.was_supplied("ngram")) { THROW("You can not skip unless ngram is > 1"); }
+  }
 
   if (options.was_supplied("ngram"))
   {
-    if (options.was_supplied("sort_features"))
-      THROW("ngram is incompatible with sort_features.");
+    if (options.was_supplied("sort_features")) { THROW("ngram is incompatible with sort_features."); }
 
-    for (size_t i = 0; i < all.ngram_strings.size(); i++)
-      all.ngram_strings[i] = spoof_hex_encoded_namespaces(all.ngram_strings[i]);
-    compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.logger.quiet);
+    std::vector<std::string> hex_decoded_ngram_strings;
+    hex_decoded_ngram_strings.reserve(ngram_strings.size());
+    std::transform(ngram_strings.begin(), ngram_strings.end(), std::back_inserter(hex_decoded_ngram_strings),
+        [](const std::string& arg) { return spoof_hex_encoded_namespaces(arg); });
+
+    std::vector<std::string> hex_decoded_skip_strings;
+    hex_decoded_skip_strings.reserve(skip_strings.size());
+    std::transform(skip_strings.begin(), skip_strings.end(), std::back_inserter(hex_decoded_skip_strings),
+        [](const std::string& arg) { return spoof_hex_encoded_namespaces(arg); });
+
+    all.skip_gram_transformer = VW::make_unique<VW::kskip_ngram_transformer>(
+        VW::kskip_ngram_transformer::build(hex_decoded_ngram_strings, hex_decoded_skip_strings, all.logger.quiet));
   }
 
-  if (options.was_supplied("skips"))
-  {
-    if (!options.was_supplied("ngram"))
-      THROW("You can not skip unless ngram is > 1");
-
-    for (size_t i = 0; i < all.skip_strings.size(); i++)
-      all.skip_strings[i] = spoof_hex_encoded_namespaces(all.skip_strings[i]);
-    compile_gram(all.skip_strings, all.skips, (char*)"skips", all.logger.quiet);
-  }
-
-  if (options.was_supplied("feature_limit"))
-    compile_limits(all.limit_strings, all.limit, all.logger.quiet);
+  if (options.was_supplied("feature_limit")) compile_limits(all.limit_strings, all.limit, all.logger.quiet);
 
   if (options.was_supplied("bit_precision"))
   {
@@ -723,94 +750,100 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   // prepare namespace interactions
   std::vector<std::vector<namespace_index>> expanded_interactions;
 
-  if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
+  if ( ( (!all.interactions.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
        ||
-       interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
+       interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
-    all.trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
-                         "OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line."
-                      << endl;
+    *(all.trace_message)
+        << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
+           "OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line."
+        << endl;
 
     // in case arrays were already filled in with values from old model file - reset them
-    if (!all.pairs.empty())
-      all.pairs.clear();
-    if (!all.triples.empty())
-      all.triples.clear();
-    if (!all.interactions.empty())
-      all.interactions.clear();
+    if (!all.interactions.interactions.empty()) all.interactions.interactions.clear();
   }
 
   if (options.was_supplied("quadratic"))
   {
-    if (!all.logger.quiet)
-      all.trace_message << "creating quadratic features for pairs: ";
+    if (!all.logger.quiet) *(all.trace_message) << "creating quadratic features for pairs: ";
 
     for (auto& i : quadratics)
     {
       i = spoof_hex_encoded_namespaces(i);
-      if (!all.logger.quiet)
-        all.trace_message << i << " ";
+      if (!all.logger.quiet) *(all.trace_message) << i << " ";
     }
 
     std::vector<std::vector<namespace_index>> new_quadratics;
-    for (const auto& i : quadratics){
-      new_quadratics.emplace_back(i.begin(), i.end());
+    for (const auto& i : quadratics)
+    {
+      if (i[0] == ':' && i[1] == ':') { all.interactions.quadratics_wildcard_expansion = true; }
+      else
+      {
+        new_quadratics.emplace_back(i.begin(), i.end());
+      }
     }
+
+    if (all.interactions.quadratics_wildcard_expansion)
+    {
+      if (options.was_supplied("leave_duplicate_interactions"))
+      { all.interactions.leave_duplicate_interactions = true; }
+      else if (!all.logger.quiet)
+      {
+        *(all.trace_message) << endl
+                             << "WARNING: any duplicate namespace interactions will be removed" << endl
+                             << "You can use --leave_duplicate_interactions to disable this behaviour.";
+      }
+    }
+
+    std::sort(new_quadratics.begin(), new_quadratics.end(), INTERACTIONS::sort_interactions_comparator);
 
     expanded_interactions =
         INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
 
-    if (!all.logger.quiet)
-      all.trace_message << endl;
+    if (!all.logger.quiet) *(all.trace_message) << endl;
   }
 
   if (options.was_supplied("cubic"))
   {
-    if (!all.logger.quiet)
-      all.trace_message << "creating cubic features for triples: ";
+    if (!all.logger.quiet) *(all.trace_message) << "creating cubic features for triples: ";
     for (auto i = cubics.begin(); i != cubics.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      if (!all.logger.quiet)
-        all.trace_message << *i << " ";
+      if (!all.logger.quiet) *(all.trace_message) << *i << " ";
     }
 
     std::vector<std::vector<namespace_index>> new_cubics;
-    for (const auto& i : cubics){
-      new_cubics.emplace_back(i.begin(), i.end());
-    }
+    for (const auto& i : cubics) { new_cubics.emplace_back(i.begin(), i.end()); }
+
+    std::sort(new_cubics.begin(), new_cubics.end(), INTERACTIONS::sort_interactions_comparator);
 
     std::vector<std::vector<namespace_index>> exp_cubic =
         INTERACTIONS::expand_interactions(new_cubics, 3, "error, cubic features must involve three sets.");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
-    if (!all.logger.quiet)
-      all.trace_message << endl;
+    if (!all.logger.quiet) *(all.trace_message) << endl;
   }
 
   if (options.was_supplied("interactions"))
   {
-    if (!all.logger.quiet)
-      all.trace_message << "creating features for following interactions: ";
-    
+    if (!all.logger.quiet) *(all.trace_message) << "creating features for following interactions: ";
+
     for (auto i = interactions.begin(); i != interactions.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      if (!all.logger.quiet)
-        all.trace_message << *i << " ";
+      if (!all.logger.quiet) *(all.trace_message) << *i << " ";
     }
 
     std::vector<std::vector<namespace_index>> new_interactions;
-    for (const auto& i : interactions){
-      new_interactions.emplace_back(i.begin(), i.end());
-    }
+    for (const auto& i : interactions) { new_interactions.emplace_back(i.begin(), i.end()); }
+
+    std::sort(new_interactions.begin(), new_interactions.end(), INTERACTIONS::sort_interactions_comparator);
 
     std::vector<std::vector<namespace_index>> exp_inter = INTERACTIONS::expand_interactions(new_interactions, 0, "");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
-    if (!all.logger.quiet)
-      all.trace_message << endl;
+    if (!all.logger.quiet) *(all.trace_message) << endl;
   }
 
   if (expanded_interactions.size() > 0)
@@ -820,32 +853,27 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     INTERACTIONS::sort_and_filter_duplicate_interactions(
         expanded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
-    if (removed_cnt > 0)
-      all.trace_message << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.'
-                        << endl
-                        << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
-    if (sorted_cnt > 0)
-      all.trace_message << "WARNING: some interactions contain duplicate characters and their characters order has "
-                           "been changed. Interactions affected: "
-                        << sorted_cnt << '.' << endl;
+    if (removed_cnt > 0 && !all.logger.quiet)
+    {
+      *(all.trace_message) << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.'
+                           << endl
+                           << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+    }
 
-    if (all.interactions.size() > 0)
+    if (sorted_cnt > 0 && !all.logger.quiet)
+    {
+      *(all.trace_message) << "WARNING: some interactions contain duplicate characters and their characters order has "
+                              "been changed. Interactions affected: "
+                           << sorted_cnt << '.' << endl;
+    }
+
+    if (all.interactions.interactions.size() > 0)
     {
       // should be empty, but just in case...
-      all.interactions.clear();
+      all.interactions.interactions.clear();
     }
 
-    all.interactions = expanded_interactions;
-
-    // copy interactions of size 2 and 3 to old vectors for backward compatibility
-    for (const auto& i : expanded_interactions)
-    {
-      const size_t len = i.size();
-      if (len == 2)
-        all.pairs.push_back(i);
-      else if (len == 3)
-        all.triples.push_back(i);
-    }
+    all.interactions.interactions = expanded_interactions;
   }
 
   for (size_t i = 0; i < 256; i++)
@@ -860,7 +888,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     all.ignore_some = true;
 
-    for (auto & i : ignores)
+    for (auto& i : ignores)
     {
       i = spoof_hex_encoded_namespaces(i);
       for (auto j : i) all.ignore[(size_t)(unsigned char)j] = true;
@@ -868,11 +896,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     if (!all.logger.quiet)
     {
-      all.trace_message << "ignoring namespaces beginning with: ";
+      *(all.trace_message) << "ignoring namespaces beginning with: ";
       for (auto const& ignore : ignores)
-        for (auto const character : ignore) all.trace_message << character << " ";
+        for (auto const character : ignore) *(all.trace_message) << character << " ";
 
-      all.trace_message << endl;
+      *(all.trace_message) << endl;
     }
   }
 
@@ -880,20 +908,19 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   {
     all.ignore_some_linear = true;
 
-    for (auto & i : ignore_linears)
+    for (auto& i : ignore_linears)
     {
       i = spoof_hex_encoded_namespaces(i);
-      for (auto j : i)
-        all.ignore_linear[(size_t)(unsigned char)j] = true;
+      for (auto j : i) all.ignore_linear[(size_t)(unsigned char)j] = true;
     }
 
     if (!all.logger.quiet)
     {
-      all.trace_message << "ignoring linear terms for namespaces beginning with: ";
+      *(all.trace_message) << "ignoring linear terms for namespaces beginning with: ";
       for (auto const& ignore : ignore_linears)
-        for (auto const character : ignore) all.trace_message << character << " ";
+        for (auto const character : ignore) *(all.trace_message) << character << " ";
 
-      all.trace_message << endl;
+      *(all.trace_message) << endl;
     }
   }
 
@@ -903,7 +930,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     all.ignore_some = true;
 
-    for (auto & i : keeps)
+    for (auto& i : keeps)
     {
       i = spoof_hex_encoded_namespaces(i);
       for (const auto& j : i) all.ignore[(size_t)(unsigned char)j] = false;
@@ -911,11 +938,11 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
 
     if (!all.logger.quiet)
     {
-      all.trace_message << "using namespaces beginning with: ";
+      *(all.trace_message) << "using namespaces beginning with: ";
       for (auto const& keep : keeps)
-        for (auto const character : keep) all.trace_message << character << " ";
+        for (auto const character : keep) *(all.trace_message) << character << " ";
 
-      all.trace_message << endl;
+      *(all.trace_message) << endl;
     }
   }
 
@@ -930,9 +957,9 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
 
-    for (const auto & arg : redefines)
+    for (const auto& arg : redefines)
     {
-      const std::string & argument = spoof_hex_encoded_namespaces(arg);
+      const std::string& argument = spoof_hex_encoded_namespaces(arg);
       size_t arg_len = argument.length();
 
       size_t operator_pos = 0;  // keeps operator pos + 1 to stay unsigned type
@@ -944,10 +971,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
       {
         if (operator_found)
         {
-          if (i > 2)
-          {
-            new_namespace = argument[0];
-          }  // N is not empty
+          if (i > 2) { new_namespace = argument[0]; }  // N is not empty
           break;
         }
         else if (argument[i] == ':')
@@ -956,11 +980,10 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
           operator_found = true;
       }
 
-      if (!operator_found)
-        THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=");
+      if (!operator_found) THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=");
 
       if (++operator_pos > 3)  // seek operator end
-        all.trace_message
+        *(all.trace_message)
             << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('"
             << new_namespace << "') will be used as target namespace." << endl;
 
@@ -980,7 +1003,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
           else
           {
             // wildcard found: redefine all except default and break
-            for (size_t i = 0; i < 256; i++) all.redefine[i] = new_namespace;
+            for (size_t j = 0; j < 256; j++) all.redefine[j] = new_namespace;
             break;  // break processing S
           }
         }
@@ -990,16 +1013,23 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
   if (options.was_supplied("dictionary"))
   {
     if (options.was_supplied("dictionary_path"))
-      for (const std::string & path : dictionary_path)
-        if (directory_exists(path))
-          all.dictionary_path.push_back(path);
-    if (directory_exists("."))
-      all.dictionary_path.push_back(".");
+      for (const std::string& path : dictionary_path)
+        if (directory_exists(path)) all.dictionary_path.push_back(path);
+    if (directory_exists(".")) all.dictionary_path.push_back(".");
 
-    const std::string PATH = getenv("PATH");
 #if _WIN32
+    std::string PATH;
+    char* buf;
+    size_t buf_size;
+    auto err = _dupenv_s(&buf, &buf_size, "PATH");
+    if (!err && buf_size != 0)
+    {
+      PATH = std::string(buf, buf_size);
+      free(buf);
+    }
     const char delimiter = ';';
 #else
+    const std::string PATH = getenv("PATH");
     const char delimiter = ':';
 #endif
     if (!PATH.empty())
@@ -1016,8 +1046,7 @@ void parse_feature_tweaks(options_i& options, vw& all, std::vector<std::string>&
     }
   }
 
-  if (noconstant)
-    all.add_constant = false;
+  if (noconstant) all.add_constant = false;
 }
 
 void parse_example_tweaks(options_i& options, vw& all)
@@ -1044,7 +1073,7 @@ void parse_example_tweaks(options_i& options, vw& all)
       .add(make_option("examples", all.max_examples).help("number of examples to parse"))
       .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
       .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
-      .add(make_option("sort_features", all.p->sort_features)
+      .add(make_option("sort_features", all.example_parser->sort_features)
                .help("turn this on to disregard order in which features have been defined. This will lead to smaller "
                      "cache sizes"))
       .add(make_option("loss_function", loss_function)
@@ -1065,11 +1094,9 @@ void parse_example_tweaks(options_i& options, vw& all)
 
   if (test_only || all.eta == 0.)
   {
-    if (!all.logger.quiet)
-      all.trace_message << "only testing" << endl;
+    if (!all.logger.quiet) *(all.trace_message) << "only testing" << endl;
     all.training = false;
-    if (all.lda > 0)
-      all.eta = 0;
+    if (all.lda > 0) all.eta = 0;
   }
   else
     all.training = true;
@@ -1084,22 +1111,20 @@ void parse_example_tweaks(options_i& options, vw& all)
 
   if (options.was_supplied("named_labels"))
   {
-    all.sd->ldict = &calloc_or_throw<namedlabels>();
-    new (all.sd->ldict) namedlabels(named_labels);
-    if (!all.logger.quiet)
-      all.trace_message << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
+    all.sd->ldict = VW::make_unique<VW::named_labels>(named_labels);
+    if (!all.logger.quiet) *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
   }
 
   all.loss = getLossFunction(all, loss_function, loss_parameter);
 
   if (all.l1_lambda < 0.)
   {
-    all.trace_message << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
+    *(all.trace_message) << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
     all.l1_lambda = 0.;
   }
   if (all.l2_lambda < 0.)
   {
-    all.trace_message << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
+    *(all.trace_message) << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
     all.l2_lambda = 0.;
   }
   all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
@@ -1107,9 +1132,8 @@ void parse_example_tweaks(options_i& options, vw& all)
   if (!all.logger.quiet)
   {
     if (all.reg_mode % 2 && !options.was_supplied("bfgs"))
-      all.trace_message << "using l1 regularization = " << all.l1_lambda << endl;
-    if (all.reg_mode > 1)
-      all.trace_message << "using l2 regularization = " << all.l2_lambda << endl;
+      *(all.trace_message) << "using l1 regularization = " << all.l1_lambda << endl;
+    if (all.reg_mode > 1) *(all.trace_message) << "using l2 regularization = " << all.l2_lambda << endl;
   }
 }
 
@@ -1127,8 +1151,7 @@ void parse_output_preds(options_i& options, vw& all)
 
   if (options.was_supplied("predictions"))
   {
-    if (!all.logger.quiet)
-      all.trace_message << "predictions = " << predictions << endl;
+    if (!all.logger.quiet) *(all.trace_message) << "predictions = " << predictions << endl;
 
     if (predictions == "stdout")
     {
@@ -1142,7 +1165,7 @@ void parse_output_preds(options_i& options, vw& all)
       }
       catch (...)
       {
-        all.trace_message << "Error opening the predictions file: " << predictions << endl;
+        *(all.trace_message) << "Error opening the predictions file: " << predictions << endl;
       }
     }
   }
@@ -1151,15 +1174,12 @@ void parse_output_preds(options_i& options, vw& all)
   {
     if (!all.logger.quiet)
     {
-      all.trace_message << "raw predictions = " << raw_predictions << endl;
+      *(all.trace_message) << "raw predictions = " << raw_predictions << endl;
       if (options.was_supplied("binary"))
-        all.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output"
-                          << endl;
+        *(all.trace_message)
+            << "Warning: --raw_predictions has no defined value when --binary specified, expect no output" << endl;
     }
-    if (raw_predictions == "stdout")
-    {
-      all.raw_prediction = VW::io::open_stdout();
-    }
+    if (raw_predictions == "stdout") { all.raw_prediction = VW::io::open_stdout(); }
     else
     {
       all.raw_prediction = VW::io::open_file_writer(raw_predictions);
@@ -1189,10 +1209,9 @@ void parse_output_model(options_i& options, vw& all)
   options.add_and_parse(output_model_options);
 
   if (all.final_regressor_name.compare("") && !all.logger.quiet)
-    all.trace_message << "final_regressor = " << all.final_regressor_name << endl;
+    *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl;
 
-  if (options.was_supplied("invert_hash"))
-    all.hash_inv = true;
+  if (options.was_supplied("invert_hash")) all.hash_inv = true;
 
   // Question: This doesn't seem necessary
   // if (options.was_supplied("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())
@@ -1226,102 +1245,172 @@ void load_input_model(vw& all, io_buf& io_temp)
 
 VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
-  auto setup_func = all.reduction_stack.top();
-  all.reduction_stack.pop();
-  auto base = setup_func(options, all);
+  auto func_map = all.reduction_stack.back();
+  reduction_setup_fn setup_func = std::get<1>(func_map);
+  std::string setup_func_name = std::get<0>(func_map);
+  all.reduction_stack.pop_back();
 
-  if (base == nullptr)
-    return setup_base(options, all);
+  // 'hacky' way of keeping track of the option group created by the setup_func about to be created
+  options.tint(setup_func_name);
+  auto base = setup_func(options, all);
+  options.reset_tint();
+
+  // returning nullptr means that setup_func (any reduction) was not 'enabled' but
+  // only added their respective command args and did not add itself into the
+  // chain of learners, therefore we call into setup_base again
+  if (base == nullptr) { return setup_base(options, all); }
   else
+  {
+    all.enabled_reductions.push_back(setup_func_name);
     return base;
+  }
+}
+
+void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
+{
+  std::map<reduction_setup_fn, std::string> allowlist = {{GD::setup, "gd"}, {ftrl_setup, "ftrl"},
+      {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"},
+      {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
+      {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
+      {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"}};
+
+  auto name_extractor = options_name_extractor();
+  vw dummy_all;
+
+  for (auto setup_fn : reductions)
+  {
+    if (allowlist.count(setup_fn)) { all.reduction_stack.push_back(std::make_tuple(allowlist[setup_fn], setup_fn)); }
+    else
+    {
+      auto base = setup_fn(name_extractor, dummy_all);
+
+      if (base == nullptr)
+        all.reduction_stack.push_back(std::make_tuple(name_extractor.generated_name, setup_fn));
+      else
+        THROW("fatal: under register_reduction() all setup functions must return nullptr");
+    }
+  }
+
+  // populate setup_fn -> name map to be used to lookup names in setup_base
+  all.build_setupfn_name_dict();
 }
 
 void parse_reductions(options_i& options, vw& all)
 {
+  std::vector<reduction_setup_fn> reductions;
+
   // Base algorithms
-  all.reduction_stack.push(GD::setup);
-  all.reduction_stack.push(kernel_svm_setup);
-  all.reduction_stack.push(ftrl_setup);
-  all.reduction_stack.push(svrg_setup);
-  all.reduction_stack.push(sender_setup);
-  all.reduction_stack.push(gd_mf_setup);
-  all.reduction_stack.push(print_setup);
-  all.reduction_stack.push(noop_setup);
-  all.reduction_stack.push(lda_setup);
-  all.reduction_stack.push(bfgs_setup);
-  all.reduction_stack.push(OjaNewton_setup);
-  // all.reduction_stack.push(VW_CNTK::setup);
+  reductions.push_back(GD::setup);
+  reductions.push_back(kernel_svm_setup);
+  reductions.push_back(ftrl_setup);
+  reductions.push_back(svrg_setup);
+  reductions.push_back(sender_setup);
+  reductions.push_back(gd_mf_setup);
+  reductions.push_back(print_setup);
+  reductions.push_back(noop_setup);
+  reductions.push_back(lda_setup);
+  reductions.push_back(bfgs_setup);
+  reductions.push_back(OjaNewton_setup);
+  // reductions.push_back(VW_CNTK::setup);
 
   // Score Users
-  all.reduction_stack.push(baseline_setup);
-  all.reduction_stack.push(ExpReplay::expreplay_setup<'b', simple_label>);
-  all.reduction_stack.push(active_setup);
-  all.reduction_stack.push(active_cover_setup);
-  all.reduction_stack.push(confidence_setup);
-  all.reduction_stack.push(nn_setup);
-  all.reduction_stack.push(mf_setup);
-  all.reduction_stack.push(marginal_setup);
-  all.reduction_stack.push(autolink_setup);
-  all.reduction_stack.push(lrq_setup);
-  all.reduction_stack.push(lrqfa_setup);
-  all.reduction_stack.push(stagewise_poly_setup);
-  all.reduction_stack.push(scorer_setup);
+  reductions.push_back(baseline_setup);
+  reductions.push_back(ExpReplay::expreplay_setup<'b', simple_label_parser>);
+  reductions.push_back(active_setup);
+  reductions.push_back(active_cover_setup);
+  reductions.push_back(confidence_setup);
+  reductions.push_back(nn_setup);
+  reductions.push_back(mf_setup);
+  reductions.push_back(marginal_setup);
+  reductions.push_back(autolink_setup);
+  reductions.push_back(lrq_setup);
+  reductions.push_back(lrqfa_setup);
+  reductions.push_back(stagewise_poly_setup);
+  reductions.push_back(scorer_setup);
+  reductions.push_back(VW::cbzo::setup);
+
   // Reductions
-  all.reduction_stack.push(bs_setup);
-  all.reduction_stack.push(binary_setup);
+  reductions.push_back(bs_setup);
+  reductions.push_back(VW::binary::binary_setup);
 
-  all.reduction_stack.push(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
-  all.reduction_stack.push(topk_setup);
-  all.reduction_stack.push(oaa_setup);
-  all.reduction_stack.push(boosting_setup);
-  all.reduction_stack.push(ect_setup);
-  all.reduction_stack.push(log_multi_setup);
-  all.reduction_stack.push(recall_tree_setup);
-  all.reduction_stack.push(memory_tree_setup);
-  all.reduction_stack.push(classweight_setup);
-  all.reduction_stack.push(multilabel_oaa_setup);
+  reductions.push_back(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
+  reductions.push_back(topk_setup);
+  reductions.push_back(oaa_setup);
+  reductions.push_back(boosting_setup);
+  reductions.push_back(ect_setup);
+  reductions.push_back(log_multi_setup);
+  reductions.push_back(recall_tree_setup);
+  reductions.push_back(memory_tree_setup);
+  reductions.push_back(classweight_setup);
+  reductions.push_back(multilabel_oaa_setup);
+  reductions.push_back(plt_setup);
 
-  all.reduction_stack.push(cs_active_setup);
-  all.reduction_stack.push(CSOAA::csoaa_setup);
-  all.reduction_stack.push(interact_setup);
-  all.reduction_stack.push(CSOAA::csldf_setup);
-  all.reduction_stack.push(cb_algs_setup);
-  all.reduction_stack.push(cb_adf_setup);
-  all.reduction_stack.push(mwt_setup);
-  all.reduction_stack.push(cb_explore_setup);
-  all.reduction_stack.push(VW::cb_explore_adf::greedy::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::softmax::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::rnd::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::regcb::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::first::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::cover::setup);
-  all.reduction_stack.push(VW::cb_explore_adf::bag::setup);
-  all.reduction_stack.push(cb_dro_setup);
-  all.reduction_stack.push(cb_sample_setup);
-  all.reduction_stack.push(VW::shared_feature_merger::shared_feature_merger_setup);
-  all.reduction_stack.push(CCB::ccb_explore_adf_setup);
-  all.reduction_stack.push(VW::slates::slates_setup);
+  reductions.push_back(cs_active_setup);
+  reductions.push_back(CSOAA::csoaa_setup);
+  reductions.push_back(interact_setup);
+  reductions.push_back(CSOAA::csldf_setup);
+  reductions.push_back(cb_algs_setup);
+  reductions.push_back(cb_adf_setup);
+  reductions.push_back(mwt_setup);
+  reductions.push_back(VW::cats_tree::setup);
+  reductions.push_back(cb_explore_setup);
+  reductions.push_back(VW::cb_explore_adf::greedy::setup);
+  reductions.push_back(VW::cb_explore_adf::softmax::setup);
+  reductions.push_back(VW::cb_explore_adf::rnd::setup);
+  reductions.push_back(VW::cb_explore_adf::regcb::setup);
+  reductions.push_back(VW::cb_explore_adf::squarecb::setup);
+  reductions.push_back(VW::cb_explore_adf::synthcover::setup);
+  reductions.push_back(VW::cb_explore_adf::first::setup);
+  reductions.push_back(VW::cb_explore_adf::cover::setup);
+  reductions.push_back(VW::cb_explore_adf::bag::setup);
+  reductions.push_back(cb_dro_setup);
+  reductions.push_back(cb_sample_setup);
+  reductions.push_back(explore_eval_setup);
+  reductions.push_back(VW::shared_feature_merger::shared_feature_merger_setup);
+  reductions.push_back(CCB::ccb_explore_adf_setup);
+  reductions.push_back(VW::slates::slates_setup);
   // cbify/warm_cb can generate multi-examples. Merge shared features after them
-  all.reduction_stack.push(warm_cb_setup);
-  all.reduction_stack.push(cbify_setup);
-  all.reduction_stack.push(cbifyldf_setup);
-  all.reduction_stack.push(explore_eval_setup);
-  all.reduction_stack.push(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
-  all.reduction_stack.push(Search::setup);
-  all.reduction_stack.push(audit_regressor_setup);
+  reductions.push_back(warm_cb_setup);
+  reductions.push_back(VW::continuous_action::get_pmf_setup);
+  reductions.push_back(VW::pmf_to_pdf::setup);
+  reductions.push_back(VW::continuous_action::cb_explore_pdf_setup);
+  reductions.push_back(VW::continuous_action::cats_pdf::setup);
+  reductions.push_back(VW::continuous_action::sample_pdf_setup);
+  reductions.push_back(VW::continuous_action::cats::setup);
+  reductions.push_back(cbify_setup);
+  reductions.push_back(cbifyldf_setup);
+  reductions.push_back(cb_to_cb_adf_setup);
+  reductions.push_back(VW::offset_tree::setup);
+  reductions.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
+  reductions.push_back(Search::setup);
+  reductions.push_back(audit_regressor_setup);
+  reductions.push_back(VW::metrics::metrics_setup);
 
+  register_reductions(all, reductions);
   all.l = setup_base(options, all);
 }
 
-vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_context)
+ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t num_bytes)
+{
+  auto* wrapper_context = reinterpret_cast<trace_message_wrapper*>(context);
+  std::string str(buffer, num_bytes);
+  wrapper_context->_trace_message(wrapper_context->_inner_context, str);
+  return static_cast<ssize_t>(num_bytes);
+}
+
+vw& parse_args(
+    std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener, void* trace_context)
 {
   vw& all = *(new vw());
-  all.options = &options;
+  all.options = std::move(options);
 
   if (trace_listener)
   {
-    all.trace_message.trace_listener = trace_listener;
-    all.trace_message.trace_context = trace_context;
+    // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
+    // need to adapt between them here.
+    all.trace_message_wrapper_context = std::make_shared<trace_message_wrapper>(trace_context, trace_listener);
+    all.trace_message = VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(
+        VW::io::create_custom_writer(all.trace_message_wrapper_context.get(), trace_message_wrapper_adapter)));
   }
 
   try
@@ -1335,16 +1424,13 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"))
         .add(make_option("num_parse_threads", num_parse_threads).help("number of parser threads"));
-    options.add_and_parse(vw_args);
+    all.options->add_and_parse(vw_args);
 
-    if (ring_size_tmp <= 0)
-    {
-      THROW("ring_size should be positive");
-    }
+    if (ring_size_tmp <= 0) { THROW("ring_size should be positive"); }
     size_t ring_size = static_cast<size_t>(ring_size_tmp);
 
-    all.p = new parser{ring_size, strict_parse, num_parse_threads};
-    all.p->_shared_data = all.sd;
+    all.example_parser = new parser{ring_size, strict_parse, num_parse_threads};
+    all.example_parser->_shared_data = all.sd;
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
@@ -1355,7 +1441,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("feature_mask", all.feature_mask)
                  .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
                        "given, also used for initial weights."));
-    options.add_and_parse(update_args);
+    all.options->add_and_parse(update_args);
 
     option_group_definition weight_args("Weight options");
     weight_args
@@ -1367,7 +1453,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
         .add(make_option("input_feature_regularizer", all.per_feature_regularizer_input)
                  .help("Per feature regularization input file"));
-    options.add_and_parse(weight_args);
+    all.options->add_and_parse(weight_args);
 
     std::string span_server_arg;
     int span_server_port_arg;
@@ -1386,23 +1472,23 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
         .add(make_option("span_server_port", span_server_port_arg)
                  .default_value(26543)
                  .help("Port of the server for setting up spanning tree"));
-    options.add_and_parse(parallelization_args);
+    all.options->add_and_parse(parallelization_args);
 
     // total, unique_id and node must be specified together.
-    if ((options.was_supplied("total") || options.was_supplied("node") || options.was_supplied("unique_id")) &&
-        !(options.was_supplied("total") && options.was_supplied("node") && options.was_supplied("unique_id")))
-    {
-      THROW("you must specificy unique_id, total, and node if you specify any");
-    }
+    if ((all.options->was_supplied("total") || all.options->was_supplied("node") ||
+            all.options->was_supplied("unique_id")) &&
+        !(all.options->was_supplied("total") && all.options->was_supplied("node") &&
+            all.options->was_supplied("unique_id")))
+    { THROW("you must specificy unique_id, total, and node if you specify any"); }
 
-    if (options.was_supplied("span_server"))
+    if (all.options->was_supplied("span_server"))
     {
       all.all_reduce_type = AllReduceType::Socket;
       all.all_reduce = new AllReduceSockets(
           span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.logger.quiet);
     }
 
-    parse_diagnostics(options, all);
+    parse_diagnostics(*all.options.get(), all);
 
     all.initial_t = (float)all.sd->t;
     return all;
@@ -1419,8 +1505,7 @@ bool check_interaction_settings_collision(options_i& options, std::string file_o
   bool command_line_has_interaction = options.was_supplied("q") || options.was_supplied("quadratic") ||
       options.was_supplied("cubic") || options.was_supplied("interactions");
 
-  if (!command_line_has_interaction)
-    return false;
+  if (!command_line_has_interaction) return false;
 
   // we don't use -q to save pairs in all.file_options, so only 3 options checked
   bool file_options_has_interaction = file_options.find("--quadratic") != std::string::npos;
@@ -1431,26 +1516,19 @@ bool check_interaction_settings_collision(options_i& options, std::string file_o
   return file_options_has_interaction;
 }
 
-options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
+void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
+    VW::config::options_i& options, bool& is_ccb_input_model)
 {
-  std::string file_options;
-  save_load_header(all, model, true, false, file_options, options);
-
-  interactions_settings_doubled = check_interaction_settings_collision(options, file_options);
-
-  // Convert file_options into  vector.
-  std::istringstream ss{file_options};
-  std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
-
   po::options_description desc("");
 
   // Get list of options in file options std::string
-  po::parsed_options pos = po::command_line_parser(container).options(desc).allow_unregistered().run();
+  po::parsed_options pos = po::command_line_parser(strings).options(desc).allow_unregistered().run();
 
   bool skipping = false;
   std::string saved_key = "";
   unsigned int count = 0;
   bool first_seen = false;
+
   for (auto opt : pos.options)
   {
     // If we previously encountered an option we want to skip, ignore tokens without --.
@@ -1459,10 +1537,7 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
       for (auto token : opt.original_tokens)
       {
         auto found = token.find("--");
-        if (found != std::string::npos)
-        {
-          skipping = false;
-        }
+        if (found != std::string::npos) { skipping = false; }
       }
 
       if (skipping)
@@ -1479,18 +1554,7 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
     // not seem like an unreasonable restriction. The logical check here is: is "string_key" of the form {'-', <digit>,
     // <etc.>}.
     if (opt.string_key.length() > 1 && opt.string_key[0] == '-' && opt.string_key[1] >= '0' && opt.string_key[1] <= '9')
-    {
-      treat_as_value = true;
-    }
-
-    // If the interaction settings are doubled, the copy in the model file is ignored.
-    if (interactions_settings_doubled &&
-        (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
-    {
-      // skip this option.
-      skipping = true;
-      continue;
-    }
+    { treat_as_value = true; }
 
     // File options should always use long form.
 
@@ -1498,14 +1562,22 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
     if (!treat_as_value && opt.string_key != "")
     {
       // If the new token is a new option and there were no values previously it was a bool option. Add it as a switch.
-      if (count == 0 && first_seen)
-      {
-        options.insert(saved_key, "");
-      }
+      if (count == 0 && first_seen) { options.insert(saved_key, ""); }
 
-      saved_key = opt.string_key;
       count = 0;
       first_seen = true;
+
+      // If the interaction settings are doubled, the copy in the model file is ignored.
+      if (skip_interactions &&
+          (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
+      {
+        // skip this option.
+        skipping = true;
+        first_seen = false;
+        continue;
+      }
+      saved_key = opt.string_key;
+      is_ccb_input_model = is_ccb_input_model || (saved_key == "ccb_explore_adf");
 
       if (opt.value.size() > 0)
       {
@@ -1529,22 +1601,34 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
     }
   }
 
-  if (count == 0 && saved_key != "")
-  {
-    options.insert(saved_key, "");
-  }
+  if (count == 0 && saved_key != "") { options.insert(saved_key, ""); }
+}
+
+options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model, bool& interactions_settings_duplicated)
+{
+  std::string file_options;
+  save_load_header(all, model, true, false, file_options, options);
+
+  interactions_settings_duplicated = check_interaction_settings_collision(options, file_options);
+
+  // Convert file_options into  vector.
+  std::istringstream ss{file_options};
+  std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
+
+  merge_options_from_header_strings(container, interactions_settings_duplicated, options, all.is_ccb_input_model);
 
   return options;
 }
 
-void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictionary_nses)
+void parse_modules(
+    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
 
-  parse_feature_tweaks(options, all, dictionary_nses);  // feature tweaks
+  parse_feature_tweaks(options, all, interactions_settings_duplicated, dictionary_nses);  // feature tweaks
 
   parse_example_tweaks(options, all);  // example manipulation
 
@@ -1556,12 +1640,11 @@ void parse_modules(options_i& options, vw& all, std::vector<std::string>& dictio
 
   if (!all.logger.quiet)
   {
-    all.trace_message << "Num weight bits = " << all.num_bits << endl;
-    all.trace_message << "learning rate = " << all.eta << endl;
-    all.trace_message << "initial_t = " << all.sd->t << endl;
-    all.trace_message << "power_t = " << all.power_t << endl;
-    if (all.numpasses > 1)
-      all.trace_message << "decay_learning_rate = " << all.eta_decay_rate << endl;
+    *(all.trace_message) << "Num weight bits = " << all.num_bits << endl;
+    *(all.trace_message) << "learning rate = " << all.eta << endl;
+    *(all.trace_message) << "initial_t = " << all.sd->t << endl;
+    *(all.trace_message) << "power_t = " << all.power_t << endl;
+    if (all.numpasses > 1) *(all.trace_message) << "decay_learning_rate = " << all.eta_decay_rate << endl;
   }
 }
 
@@ -1629,7 +1712,7 @@ char** to_argv_escaped(std::string const& s, int& argc)
   for (size_t i = 0; i < tokens.size(); i++)
   {
     argv[i + 1] = calloc_or_throw<char>(tokens[i].length() + 1);
-    sprintf(argv[i + 1], "%s", tokens[i].data());
+    sprintf_s(argv[i + 1], (tokens[i].length() + 1), "%s", tokens[i].data());
   }
 
   argc = static_cast<int>(tokens.size() + 1);
@@ -1650,10 +1733,10 @@ char** to_argv(std::string const& s, int& argc)
   for (size_t i = 0; i < foo.size(); i++)
   {
     size_t len = foo[i].length();
-    argv[i+1] = calloc_or_throw<char>(len + 1);
-    memcpy(argv[i+1], foo[i].data(), len);
+    argv[i + 1] = calloc_or_throw<char>(len + 1);
+    memcpy(argv[i + 1], foo[i].data(), len);
     // copy() is supported with boost::string_view, not with string_ref
-    //foo[i].copy(argv[i], len);
+    // foo[i].copy(argv[i], len);
     // unnecessary because of the calloc, but needed if we change stuff in the future
     // argv[i][len] = '\0';
   }
@@ -1670,10 +1753,34 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-vw* initialize(
-    options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+void print_enabled_reductions(vw& all)
 {
-  vw& all = parse_args(options, trace_listener, trace_context);
+  // output list of enabled reductions
+  if (!all.logger.quiet && !all.options->was_supplied("audit_regressor") && !all.enabled_reductions.empty())
+  {
+    const char* const delim = ", ";
+    std::ostringstream imploded;
+    std::copy(all.enabled_reductions.begin(), all.enabled_reductions.end() - 1,
+        std::ostream_iterator<std::string>(imploded, delim));
+
+    *(all.trace_message) << "Enabled reductions: " << imploded.str() << all.enabled_reductions.back() << std::endl;
+  }
+}
+
+vw* initialize(
+    config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+{
+  std::unique_ptr<options_i, options_deleter_type> opts(&options, [](VW::config::options_i*) {});
+
+  return initialize(std::move(opts), model, skipModelLoad, trace_listener, trace_context);
+}
+
+vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skipModelLoad,
+    trace_message_t trace_listener, void* trace_context)
+{
+  // Set up logger as early as possible
+  logger::initialize_logger();
+  vw& all = parse_args(std::move(options), trace_listener, trace_context);
 
   try
   {
@@ -1682,41 +1789,46 @@ vw* initialize(
     if (!model)
     {
       std::vector<std::string> all_initial_regressor_files(all.initial_regressors);
-      if (options.was_supplied("input_feature_regularizer"))
-      {
-        all_initial_regressor_files.push_back(all.per_feature_regularizer_input);
-      }
+      if (all.options->was_supplied("input_feature_regularizer"))
+      { all_initial_regressor_files.push_back(all.per_feature_regularizer_input); }
       read_regressor_file(all, all_initial_regressor_files, localModel);
       model = &localModel;
     }
 
     // Loads header of model files and loads the command line options into the options object.
-    load_header_merge_options(options, all, *model);
+    bool interactions_settings_duplicated;
+    load_header_merge_options(*all.options.get(), all, *model, interactions_settings_duplicated);
 
     std::vector<std::string> dictionary_nses;
-    parse_modules(options, all, dictionary_nses);
-
-    parse_sources(options, all, *model, skipModelLoad);
+    parse_modules(*all.options.get(), all, interactions_settings_duplicated, dictionary_nses);
+    parse_sources(*all.options.get(), all, *model, skipModelLoad);
 
     // we must delay so parse_mask is fully defined.
     for (size_t id = 0; id < dictionary_nses.size(); id++) parse_dictionary_argument(all, dictionary_nses[id]);
 
-    options.check_unregistered();
+    all.options->check_unregistered();
 
     // upon direct query for help -- spit it out to stdout;
-    if (options.get_typed_option<bool>("help").value())
+    if (all.options->get_typed_option<bool>("help").value())
     {
-      cout << options.help();
+      cout << all.options->help(all.enabled_reductions);
       exit(0);
     }
 
-    all.l->init_driver();
+    print_enabled_reductions(all);
+
+    if (!all.options->get_typed_option<bool>("dry_run").value())
+    {
+      if (!all.logger.quiet && !all.bfgs && !all.searchstr && !all.options->was_supplied("audit_regressor"))
+      { all.sd->print_update_header(*all.trace_message); }
+      all.l->init_driver();
+    }
 
     return &all;
   }
   catch (std::exception& e)
   {
-    all.trace_message << "Error: " << e.what() << endl;
+    *(all.trace_message) << "Error: " << e.what() << endl;
     finish(all);
     throw;
   }
@@ -1771,12 +1883,9 @@ vw* initialize_escaped(
 vw* initialize(
     int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
-  options_i* options = new config::options_boost_po(argc, argv);
-  vw* all = initialize(*options, model, skipModelLoad, trace_listener, trace_context);
-
-  // When VW is deleted the options object will be cleaned up too.
-  all->should_delete_options = true;
-  return all;
+  std::unique_ptr<options_i, options_deleter_type> options(
+      new config::options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
+  return initialize(std::move(options), model, skipModelLoad, trace_listener, trace_context);
 }
 
 // Create a new VW instance while sharing the model with another instance
@@ -1790,10 +1899,7 @@ vw* seed_vw_model(vw* vw_model, const std::string extra_args, trace_message_t tr
     {
       // ignore no_stdin since it will be added by vw::initialize, and ignore -i since we don't want to reload the
       // model.
-      if (option->m_name == "no_stdin" || option->m_name == "initial_regressor")
-      {
-        continue;
-      }
+      if (option->m_name == "no_stdin" || option->m_name == "initial_regressor") { continue; }
 
       serializer.add(*option);
     }
@@ -1809,7 +1915,7 @@ vw* seed_vw_model(vw* vw_model, const std::string extra_args, trace_message_t tr
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
   new_model->sd = vw_model->sd;                        // shared data
-  new_model->p->_shared_data = new_model->sd;
+  new_model->example_parser->_shared_data = new_model->sd;
 
   return new_model;
 }
@@ -1838,53 +1944,52 @@ void finish(vw& all, bool delete_all)
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!all.logger.quiet && !all.options->was_supplied("audit_regressor"))
   {
-    all.trace_message.precision(6);
-    all.trace_message << std::fixed;
-    all.trace_message << endl << "finished run";
+    all.trace_message->precision(6);
+    *(all.trace_message) << std::fixed;
+    *(all.trace_message) << endl << "finished run";
     if (all.current_pass == 0 || all.current_pass == 1)
-      all.trace_message << endl << "number of examples = " << all.sd->example_number;
+      *(all.trace_message) << endl << "number of examples = " << all.sd->example_number;
     else
     {
-      all.trace_message << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
-      all.trace_message << endl << "passes used = " << all.current_pass;
+      *(all.trace_message) << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
+      *(all.trace_message) << endl << "passes used = " << all.current_pass;
     }
-    all.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
-    all.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
-    all.trace_message << endl << "average loss = ";
+    *(all.trace_message) << endl << "weighted example sum = " << all.sd->weighted_examples();
+    *(all.trace_message) << endl << "weighted label sum = " << all.sd->weighted_labels;
+    *(all.trace_message) << endl << "average loss = ";
     if (all.holdout_set_off)
       if (all.sd->weighted_labeled_examples > 0)
-        all.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
+        *(all.trace_message) << all.sd->sum_loss / all.sd->weighted_labeled_examples;
       else
-        all.trace_message << "n.a.";
+        *(all.trace_message) << "n.a.";
     else if ((all.sd->holdout_best_loss == FLT_MAX) || (all.sd->holdout_best_loss == FLT_MAX * 0.5))
-      all.trace_message << "undefined (no holdout)";
+      *(all.trace_message) << "undefined (no holdout)";
     else
-      all.trace_message << all.sd->holdout_best_loss << " h";
+      *(all.trace_message) << all.sd->holdout_best_loss << " h";
     if (all.sd->report_multiclass_log_loss)
     {
       if (all.holdout_set_off)
-        all.trace_message << endl
-                          << "average multiclass log loss = "
-                          << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
+        *(all.trace_message) << endl
+                             << "average multiclass log loss = "
+                             << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
       else
-        all.trace_message << endl
-                          << "average multiclass log loss = "
-                          << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
+        *(all.trace_message) << endl
+                             << "average multiclass log loss = "
+                             << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
     }
 
     float best_constant;
     float best_constant_loss;
     if (get_best_constant(all, best_constant, best_constant_loss))
     {
-      all.trace_message << endl << "best constant = " << best_constant;
+      *(all.trace_message) << endl << "best constant = " << best_constant;
       if (best_constant_loss != FLT_MIN)
-        all.trace_message << endl << "best constant's loss = " << best_constant_loss;
+        *(all.trace_message) << endl << "best constant's loss = " << best_constant_loss;
     }
 
-    all.trace_message << endl << "total feature number = " << all.sd->total_features;
-    if (all.sd->queries > 0)
-      all.trace_message << endl << "total queries = " << all.sd->queries;
-    all.trace_message << endl;
+    *(all.trace_message) << endl << "total feature number = " << all.sd->total_features;
+    if (all.sd->queries > 0) *(all.trace_message) << endl << "total queries = " << all.sd->queries;
+    *(all.trace_message) << endl;
   }
 
   // implement finally.
@@ -1902,10 +2007,10 @@ void finish(vw& all, bool delete_all)
     finalize_regressor_exception_thrown = true;
   }
 
-  if (delete_all)
-    delete &all;
+  metrics::output_metrics(all);
 
-  if (finalize_regressor_exception_thrown)
-    throw finalize_regressor_exception;
+  if (delete_all) delete &all;
+
+  if (finalize_regressor_exception_thrown) throw finalize_regressor_exception;
 }
 }  // namespace VW

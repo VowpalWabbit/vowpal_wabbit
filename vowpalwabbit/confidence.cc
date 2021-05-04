@@ -5,10 +5,16 @@
 #include "reductions.h"
 #include "vw.h"
 #include "math.h"
+#include "shared_data.h"
+
+#include "io/logger.h"
+
+#include <cfloat>
 
 using namespace VW::LEARNER;
-
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 struct confidence
 {
@@ -26,13 +32,11 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   {
     base.predict(ec);
     float opposite_label = 1.f;
-    if (ec.pred.scalar > 0)
-      opposite_label = -1.f;
+    if (ec.pred.scalar > 0) opposite_label = -1.f;
     ec.l.simple.label = opposite_label;
   }
 
-  if (!is_confidence_after_training)
-    sensitivity = base.sensitivity(ec);
+  if (!is_confidence_after_training) sensitivity = base.sensitivity(ec);
 
   ec.l.simple.label = existing_label;
   if (is_learn)
@@ -40,8 +44,7 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   else
     base.predict(ec);
 
-  if (is_confidence_after_training)
-    sensitivity = base.sensitivity(ec);
+  if (is_confidence_after_training) sensitivity = base.sensitivity(ec);
 
   ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
 }
@@ -52,13 +55,16 @@ void confidence_print_result(VW::io::writer* f, float res, float confidence, v_a
   {
     std::stringstream ss;
     ss << std::fixed << res << " " << confidence;
-    if (!print_tag_by_ref(ss, tag))
-      ss << ' ';
+    if (!print_tag_by_ref(ss, tag)) ss << ' ';
     ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
+    // avoid serializing the stringstream multiple times
+    auto ss_string(ss.str());
+    ssize_t len = ss_string.size();
+    ssize_t t = f->write(ss_string.c_str(), (unsigned int)len);
     if (t != len)
-      std::cerr << "write error: " << strerror(errno) << std::endl;
+    {
+      logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
+    }
   }
 }
 
@@ -67,15 +73,12 @@ void output_and_account_confidence_example(vw& all, example& ec)
   label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX && !ec.test_only)
-    all.sd->weighted_labels += ld.label * ec.weight;
+  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ld.label * ec.weight;
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
   for (const auto& sink : all.final_prediction_sink)
-  {
-    confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag);
-  }
+  { confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag); }
 
   print_update(all, ec);
 }
@@ -91,19 +94,16 @@ base_learner* confidence_setup(options_i& options, vw& all)
   bool confidence_arg = false;
   bool confidence_after_training = false;
   option_group_definition new_options("Confidence");
-  new_options.add(make_option("confidence", confidence_arg).keep().help("Get confidence for binary predictions"))
+  new_options
+      .add(make_option("confidence", confidence_arg).keep().necessary().help("Get confidence for binary predictions"))
       .add(make_option("confidence_after_training", confidence_after_training).help("Confidence after training"));
-  options.add_and_parse(new_options);
 
-  if (!confidence_arg)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (!all.training)
   {
-    std::cout
-        << "Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when "
-           "saving the model and avoid --test_only"
-        << std::endl;
+    logger::log_warn("Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when "
+		     "saving the model and avoid --test_only");
     return nullptr;
   }
 
@@ -124,9 +124,11 @@ base_learner* confidence_setup(options_i& options, vw& all)
     predict_with_confidence_ptr = predict_or_learn_with_confidence<false, false>;
   }
 
+  auto base = as_singleline(setup_base(options, all));
+
   // Create new learner
   learner<confidence, example>& l = init_learner(
-      data, as_singleline(setup_base(options, all)), learn_with_confidence_ptr, predict_with_confidence_ptr);
+      data, base, learn_with_confidence_ptr, predict_with_confidence_ptr, all.get_setupfn_name(confidence_setup), true);
 
   l.set_finish_example(return_confidence_example);
 

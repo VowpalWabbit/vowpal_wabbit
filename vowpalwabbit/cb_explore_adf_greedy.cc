@@ -23,11 +23,11 @@ namespace greedy
 {
 struct cb_explore_adf_greedy
 {
- private:
+private:
   float _epsilon;
   bool _first_only;
 
- public:
+public:
   cb_explore_adf_greedy(float epsilon, bool first_only);
   ~cb_explore_adf_greedy() = default;
 
@@ -35,9 +35,10 @@ struct cb_explore_adf_greedy
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
- private:
+private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void update_example_prediction(multi_ex& examples);
 };
 
 cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
@@ -45,12 +46,8 @@ cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
 {
 }
 
-template <bool is_learn>
-void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_greedy::update_example_prediction(multi_ex& examples)
 {
-  // Explore uniform random an epsilon fraction of the time.
-  VW::LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
-
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
 
   uint32_t num_actions = (uint32_t)preds.size();
@@ -67,6 +64,18 @@ void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& ba
     preds[0].score += 1.f - _epsilon;
 }
 
+template <bool is_learn>
+void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+{
+  // Explore uniform random an epsilon fraction of the time.
+  if (is_learn)
+    base.learn(examples);
+  else
+    base.predict(examples);
+
+  update_example_prediction(examples);
+}
+
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
@@ -74,57 +83,50 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   float epsilon = 0.;
   bool first_only = false;
 
-  config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
+  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (greedy)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("epsilon-greedy exploration"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
+
   options.add_and_parse(new_options);
 
   // NOTE: epsilon-greedy is the default explore type.
   // This basically runs if none of the other explore strategies are used
-  bool use_greedy = !(options.was_supplied("first")
-                   || options.was_supplied("bag")
-                   || options.was_supplied("cover")
-                   || options.was_supplied("regcb")
-                   || options.was_supplied("regcbopt")
-                   || options.was_supplied("rnd")
-                   || options.was_supplied("softmax"));
+  bool use_greedy = !(options.was_supplied("first") || options.was_supplied("bag") || options.was_supplied("cover") ||
+      options.was_supplied("regcb") || options.was_supplied("regcbopt") || options.was_supplied("squarecb") ||
+      options.was_supplied("rnd") || options.was_supplied("softmax") || options.was_supplied("synthcover"));
 
-  if (!cb_explore_adf_option || !use_greedy)
-    return nullptr;
+  if (!cb_explore_adf_option || !use_greedy) return nullptr;
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))
   {
     options.insert("cb_adf", "");
+    options.insert("no_predict", "");
   }
-
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   size_t problem_multiplier = 1;
 
-  if (!options.was_supplied("epsilon"))
-    epsilon = 0.05f;
+  if (!options.was_supplied("epsilon")) epsilon = 0.05f;
 
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
-  all.label_type = label_type_t::cb;
+  all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
   auto data = scoped_calloc_or_throw<explore_type>(epsilon, first_only);
 
-  if (epsilon < 0.0 || epsilon > 1.0)
-  {
-    THROW("The value of epsilon must be in [0,1]");
-  }
+  if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
-  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
+  VW::LEARNER::learner<explore_type, multi_ex>& l =
+      VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
+          prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-greedy");
 
   l.set_finish_example(explore_type::finish_multiline_example);
+  l.set_print_example(explore_type::print_multiline_example);
+  l.set_persist_metrics(explore_type::persist_metrics);
   return make_base(l);
 }
 

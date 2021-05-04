@@ -5,12 +5,40 @@
 
 typedef unsigned char namespace_index;
 
-#include "v_array.h"
-#include "feature_group.h"
 #include "constant.h"
 #include "future_compat.h"
+#include "reduction_features.h"
+#include "feature_group.h"
+#include "v_array.h"
+
 #include <vector>
+#include <set>
+#include <unordered_set>
 #include <array>
+// Mutex cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
+// project.
+#ifdef _M_CEE
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <mutex>
+#  define _M_CEE 001
+#  pragma managed(pop)
+#else
+#  include <mutex>
+#endif
+
+struct namespace_interactions
+{
+  std::set<std::vector<namespace_index>> active_interactions;
+  std::set<namespace_index> all_seen_namespaces;
+  std::vector<std::vector<namespace_index>> interactions;
+  bool quadratics_wildcard_expansion = false;
+  bool leave_duplicate_interactions = false;
+  size_t all_seen_namespaces_size = 0;
+  void clear();
+  void append(const namespace_interactions& src);
+  mutable std::mutex mut;
+};
 
 struct example_predict
 {
@@ -19,7 +47,7 @@ struct example_predict
     features* _feature_space;
     v_array<namespace_index>::iterator _index;
 
-   public:
+  public:
     iterator(features* feature_space, namespace_index* index);
     features& operator*();
     iterator& operator++();
@@ -28,12 +56,12 @@ struct example_predict
     bool operator!=(const iterator& rhs);
   };
 
-  example_predict();
-  ~example_predict();
+  example_predict() = default;
+  ~example_predict() = default;
   example_predict(const example_predict&) = delete;
   example_predict& operator=(const example_predict&) = delete;
-  example_predict(example_predict&& other) noexcept;
-  example_predict& operator=(example_predict&& other) noexcept;
+  example_predict(example_predict&& other) = default;
+  example_predict& operator=(example_predict&& other) = default;
 
   /// If indices is modified this iterator is invalidated.
   iterator begin();
@@ -42,11 +70,15 @@ struct example_predict
 
   v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
-  uint64_t ft_offset;                                  // An offset for all feature values.
+  uint64_t ft_offset = 0;                              // An offset for all feature values.
 
-  // Interactions are specified by this vector of vectors of unsigned characters, where each vector is an interaction
-  // and each char is a namespace.
-  std::vector<std::vector<namespace_index>>* interactions;
+  // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
+  // vector is an interaction and each char is a namespace.
+  namespace_interactions* interactions = nullptr;
+  reduction_features _reduction_features;
+
+  // Used for debugging reductions.  Keeps track of current reduction level.
+  uint32_t _debug_current_reduction_depth = 0;
 };
 
 // make sure we have an exception safe version of example_predict
@@ -54,9 +86,13 @@ struct example_predict
 class VW_DEPRECATED("example_predict is now RAII based. That class can be used instead.") safe_example_predict
     : public example_predict
 {
- public:
+public:
   safe_example_predict();
-  ~safe_example_predict();
+  ~safe_example_predict() = default;
 
   void clear();
 };
+
+std::string features_to_string(const example_predict& ec);
+std::string depth_indent_string(const example_predict& ec);
+std::string depth_indent_string(int32_t stack_depth);

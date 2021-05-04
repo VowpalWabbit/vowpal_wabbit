@@ -50,16 +50,11 @@ bool version_struct::operator!=(const char* v_str) const { return !(*this == v_s
 
 bool version_struct::operator>=(const version_struct& v) const
 {
-  if (major < v.major)
-    return false;
-  if (major > v.major)
-    return true;
-  if (minor < v.minor)
-    return false;
-  if (minor > v.minor)
-    return true;
-  if (rev >= v.rev)
-    return true;
+  if (major < v.major) return false;
+  if (major > v.major) return true;
+  if (minor < v.minor) return false;
+  if (minor > v.minor) return true;
+  if (rev >= v.rev) return true;
   return false;
 }
 
@@ -71,16 +66,11 @@ bool version_struct::operator>=(const char* v_str) const
 
 bool version_struct::operator>(const version_struct& v) const
 {
-  if (major < v.major)
-    return false;
-  if (major > v.major)
-    return true;
-  if (minor < v.minor)
-    return false;
-  if (minor > v.minor)
-    return true;
-  if (rev > v.rev)
-    return true;
+  if (major < v.major) return false;
+  if (major > v.major) return true;
+  if (minor < v.minor) return false;
+  if (minor > v.minor) return true;
+  if (rev > v.rev) return true;
   return false;
 }
 

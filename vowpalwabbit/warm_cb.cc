@@ -12,6 +12,9 @@
 #include "explore.h"
 #include "vw_exception.h"
 #include "scope_exit.h"
+#include "cb_label_parser.h"
+
+#include "io/logger.h"
 
 #include <vector>
 #include <memory>
@@ -20,6 +23,8 @@ using namespace VW::LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 using namespace VW::config;
+
+namespace logger = VW::io::logger;
 
 #define WARM_START 1
 #define INTERACTION 2
@@ -80,38 +85,15 @@ struct warm_cb
   uint32_t inter_iter;
   MULTICLASS::label_t mc_label;
   COST_SENSITIVE::label cs_label;
-  COST_SENSITIVE::label* csls;
-  CB::label* cbls;
+  std::vector<COST_SENSITIVE::label> csls;
+  std::vector<CB::label> cbls;
   bool use_cs;
 
   ~warm_cb()
   {
-    CB::cb_label.delete_label(&cb_label);
-    a_s.delete_v();
+    for (size_t a = 0; a < num_actions; ++a) { VW::dealloc_examples(ecs[a], 1); }
 
-    for (size_t a = 0; a < num_actions; ++a)
-    {
-      COST_SENSITIVE::cs_label.delete_label(&csls[a]);
-    }
-    free(csls);
-    free(cbls);
-
-    for (size_t a = 0; a < num_actions; ++a)
-    {
-      ecs[a]->pred.a_s.delete_v();
-      VW::dealloc_example(CB::cb_label.delete_label, *ecs[a]);
-      free_it(ecs[a]);
-    }
-
-    a_s_adf.delete_v();
-    for (size_t i = 0; i < ws_vali.size(); ++i)
-    {
-      if (use_cs)
-        VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *ws_vali[i]);
-      else
-        VW::dealloc_example(MULTICLASS::mc_label.delete_label, *ws_vali[i]);
-      free(ws_vali[i]);
-    }
+    for (auto* ex : ws_vali) { VW::dealloc_examples(ex, 1); }
   }
 };
 
@@ -160,10 +142,10 @@ void finish(warm_cb& data)
 
   if (!data.all->logger.quiet)
   {
-    std::cerr << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
-    std::cerr << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
-    std::cerr << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from " << data.lambdas[0]
-              << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
+    *(data.all->trace_message) << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
+    *(data.all->trace_message) << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
+    *(data.all->trace_message) << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from "
+                               << data.lambdas[0] << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
   }
 }
 
@@ -177,25 +159,20 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     auto& eca = *data.ecs[a];
     // clear label
     auto& lab = eca.l.cb;
-    CB::cb_label.default_label(&lab);
+    CB::default_label(lab);
 
     // copy data
-    VW::copy_example_data(false, &eca, &ec);
+    VW::copy_example_data(&eca, &ec);
 
     // offset indicies for given action
     for (features& fs : eca)
     {
       for (feature_index& idx : fs.indicies)
-      {
-        idx = ((((idx >> ss) * 28904713) + 4832917 * (uint64_t)a) << ss) & mask;
-      }
+      { idx = ((((idx >> ss) * 28904713) + 4832917 * (uint64_t)a) << ss) & mask; }
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l))
-    {
-      eca.tag.push_back('n');
-    }
+    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l)) { eca.tag.push_back('n'); }
   }
 }
 
@@ -248,8 +225,7 @@ uint32_t generate_uar_action(warm_cb& data)
 
   for (uint32_t i = 1; i <= data.num_actions; i++)
   {
-    if (randf <= float(i) / data.num_actions)
-      return i;
+    if (randf <= float(i) / data.num_actions) return i;
   }
   return data.num_actions;
 }
@@ -320,8 +296,7 @@ void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, example& ec)
   {
     uint32_t action = predict_sublearner_adf(data, base, ec, i);
 
-    if (action == cl.action)
-      data.cumulative_costs[i] += cl.cost / cl.probability;
+    if (action == cl.action) data.cumulative_costs[i] += cl.cost / cl.probability;
   }
 }
 
@@ -329,13 +304,8 @@ template <bool use_cs>
 void add_to_vali(warm_cb& data, example& ec)
 {
   // TODO: set the first parameter properly
-  example* ec_copy = VW::alloc_examples(sizeof(polylabel), 1);
-
-  if (use_cs)
-    VW::copy_example_data(false, ec_copy, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
-  else
-    VW::copy_example_data(false, ec_copy, &ec, 0, MULTICLASS::mc_label.copy_label);
-
+  example* ec_copy = VW::alloc_examples(1);
+  VW::copy_example_data_with_label(ec_copy, &ec);
   data.ws_vali.push_back(ec_copy);
 }
 
@@ -387,8 +357,7 @@ void predict_or_learn_sup_adf(warm_cb& data, multi_learner& base, example& ec, i
 {
   uint32_t action = predict_sup_adf(data, base, ec);
 
-  if (ind_update(data, ec_type))
-    learn_sup_adf<use_cs>(data, ec, ec_type);
+  if (ind_update(data, ec_type)) learn_sup_adf<use_cs>(data, ec, ec_type);
 
   ec.pred.multiclass = action;
 }
@@ -407,7 +376,7 @@ uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, example& ec)
     THROW("Failed to sample from pdf");
 
   auto& a_s = data.a_s_adf;
-  copy_array<action_score>(a_s, out_ec.pred.a_s);
+  a_s = out_ec.pred.a_s;
 
   return chosen_action;
 }
@@ -425,15 +394,9 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
   for (size_t a = 0; a < data.num_actions; ++a) old_weights.push_back(data.ecs[a]->weight);
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit(
-    [&old_weights, &data]
-    {
-      for (size_t a = 0; a < data.num_actions; ++a) 
-      {
-        data.ecs[a]->weight = old_weights[a];
-      }
-    }
-  );
+  auto restore_guard = VW::scope_exit([&old_weights, &data] {
+    for (size_t a = 0; a < data.num_actions; ++a) { data.ecs[a]->weight = old_weights[a]; }
+  });
 
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
@@ -453,19 +416,16 @@ void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec
   cl.action = a_s[chosen_action].action + 1;
   cl.probability = a_s[chosen_action].score;
 
-  if (!cl.action)
-    THROW("No action with non-zero probability found!");
+  if (!cl.action) THROW("No action with non-zero probability found!");
 
   if (use_cs)
     cl.cost = loss_cs(data, ec.l.cs.costs, cl.action);
   else
     cl.cost = loss(data, ec.l.multi.label, cl.action);
 
-  if (ec_type == INTERACTION)
-    accumu_costs_iv_adf(data, base, ec);
+  if (ec_type == INTERACTION) accumu_costs_iv_adf(data, base, ec);
 
-  if (ind_update(data, ec_type))
-    learn_bandit_adf(data, base, ec, ec_type);
+  if (ind_update(data, ec_type)) learn_bandit_adf(data, base, ec, ec_type);
 
   ec.pred.multiclass = cl.action;
 }
@@ -476,14 +436,13 @@ void accumu_var_adf(warm_cb& data, multi_learner& base, example& ec)
   float temp_var = 0.f;
 
   for (size_t a = 0; a < data.num_actions; ++a)
-    if (pred_best_approx == data.a_s_adf[a].action + 1)
-      temp_var = 1.0f / data.a_s_adf[a].score;
+    if (pred_best_approx == data.a_s_adf[a].action + 1) temp_var = 1.0f / data.a_s_adf[a].score;
 
   data.cumu_var += temp_var;
 }
 
-template <bool is_learn, bool use_cs>
-void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
+template <bool use_cs>
+void predict_and_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 {
   // Corrupt labels (only corrupting multiclass labels as of now)
   if (use_cs)
@@ -491,8 +450,7 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
   else
   {
     data.mc_label = ec.l.multi;
-    if (data.ws_iter < data.ws_period)
-      ec.l.multi.label = corrupt_action(data, data.mc_label.label, WARM_START);
+    if (data.ws_iter < data.ws_period) ec.l.multi.label = corrupt_action(data, data.mc_label.label, WARM_START);
   }
 
   // Warm start phase
@@ -538,19 +496,19 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   data.ecs.resize(num_actions);
   for (size_t a = 0; a < num_actions; ++a)
   {
-    data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
+    data.ecs[a] = VW::alloc_examples(1);
     auto& lab = data.ecs[a]->l.cb;
-    CB::cb_label.default_label(&lab);
+    CB::default_label(lab);
   }
 
   // The rest of the initialization is for warm start CB
-  data.csls = calloc_or_throw<COST_SENSITIVE::label>(num_actions);
+  data.csls.resize(num_actions);
   for (uint32_t a = 0; a < num_actions; ++a)
   {
-    COST_SENSITIVE::cs_label.default_label(&data.csls[a]);
+    COST_SENSITIVE::default_label(data.csls[a]);
     data.csls[a].costs.push_back({0, a + 1, 0, 0});
   }
-  data.cbls = calloc_or_throw<CB::label>(num_actions);
+  data.cbls.resize(num_actions);
 
   data.ws_train_size = data.ws_period;
   data.ws_vali_size = 0;
@@ -574,6 +532,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   new_options
       .add(make_option("warm_cb", num_actions)
                .keep()
+               .necessary()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
       .add(make_option("warm_cb_cs", use_cs)
                .help("consume cost-sensitive classification examples instead of multiclass"))
@@ -611,17 +570,10 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
       .add(make_option("sim_bandit", data->sim_bandit)
                .help("simulate contextual bandit updates on warm start examples"));
 
-  options.add_and_parse(new_options);
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (use_cs && (options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start")))
-  {
-    THROW("label corruption on cost-sensitive examples not currently supported");
-  }
-
-  if (!options.was_supplied("warm_cb"))
-  {
-    return nullptr;
-  }
+  { THROW("label corruption on cost-sensitive examples not currently supported"); }
 
   data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();
@@ -650,19 +602,26 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("epsilon"))
   {
-    std::cerr << "Warning: no epsilon (greedy parameter) specified; resetting to 0.05" << std::endl;
+    logger::errlog_warn("Warning: no epsilon (greedy parameter) specified; resetting to 0.05");
     data->epsilon = 0.05f;
   }
 
   if (use_cs)
-    l = &init_cost_sensitive_learner(
-        data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, data->choices_lambda);
+  {
+    l = &init_cost_sensitive_learner(data, base, predict_and_learn_adf<true>, predict_and_learn_adf<true>,
+        all.example_parser, data->choices_lambda, all.get_setupfn_name(warm_cb_setup) + "-cs",
+        prediction_type_t::multiclass, true);
+    all.example_parser->lbl_parser.label_type = label_type_t::cs;
+  }
   else
-    l = &init_multiclass_learner(
-        data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, data->choices_lambda);
+  {
+    l = &init_multiclass_learner(data, base, predict_and_learn_adf<false>, predict_and_learn_adf<false>,
+        all.example_parser, data->choices_lambda, all.get_setupfn_name(warm_cb_setup) + "-multi",
+        prediction_type_t::multiclass, true);
+    all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
+  }
 
   l->set_finish(finish);
-  all.delete_prediction = nullptr;
 
   return make_base(*l);
 }

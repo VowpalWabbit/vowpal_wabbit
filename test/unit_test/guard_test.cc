@@ -6,6 +6,7 @@
 #include <boost/test/test_tools.hpp>
 
 #include "guard.h"
+#include "memory.h"
 
 struct non_copyable_struct
 {
@@ -142,4 +143,50 @@ BOOST_AUTO_TEST_CASE(swap_guard_execute_temp_value_no_copy)
     BOOST_CHECK_EQUAL(original_location._value, 9999);
   }
   BOOST_CHECK_EQUAL(original_location._value, 1);
+}
+
+BOOST_AUTO_TEST_CASE(swap_guard_unique_ptr)
+{
+  std::unique_ptr<int> original_location = VW::make_unique<int>(1);
+
+  {
+    std::unique_ptr<int> inner_location = VW::make_unique<int>(9999);
+    BOOST_CHECK_EQUAL(*inner_location, 9999);
+    BOOST_CHECK_EQUAL(*original_location, 1);
+    auto guard = VW::swap_guard(original_location, inner_location);
+    BOOST_CHECK_EQUAL(*inner_location, 1);
+    BOOST_CHECK_EQUAL(*original_location, 9999);
+  }
+  BOOST_CHECK_EQUAL(*original_location, 1);
+}
+
+BOOST_AUTO_TEST_CASE(stash_guard_execute_on_scope_end)
+{
+  int target_location = 999;
+  {
+    BOOST_CHECK_EQUAL(target_location, 999);
+    auto guard = VW::stash_guard(target_location);
+    BOOST_CHECK_EQUAL(target_location, 0);
+  }
+  BOOST_CHECK_EQUAL(target_location, 999);
+}
+
+struct struct_with_non_trivial_ctor
+{
+  int value;
+  struct_with_non_trivial_ctor() : value(123) {}
+};
+
+BOOST_AUTO_TEST_CASE(stash_guard_used_default_ctor)
+{
+  struct_with_non_trivial_ctor target_location;
+  BOOST_CHECK_EQUAL(target_location.value, 123);
+
+  target_location.value = 456;
+  {
+    BOOST_CHECK_EQUAL(target_location.value, 456);
+    auto guard = VW::stash_guard(target_location);
+    BOOST_CHECK_EQUAL(target_location.value, 123);
+  }
+  BOOST_CHECK_EQUAL(target_location.value, 456);
 }

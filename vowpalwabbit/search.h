@@ -4,12 +4,14 @@
 #pragma once
 #include "global_data.h"
 
+// TODO: Search is using some macro-enabled logging logic for cdbg
+//       (going to clog [which in turn goes to err, with some differences])
+//       We may want to create/use some macro-based loggers (which will wrap the spdlog ones)
+//       to mimic this behavior.
 #define cdbg std::clog
 #undef cdbg
 #define cdbg \
-  if (1)     \
-  {          \
-  }          \
+  if (1) {}  \
   else       \
     std::clog
 // comment the previous two lines if you want loads of debug output :)
@@ -28,7 +30,7 @@ struct search;
 
 class BaseTask
 {
- public:
+public:
   BaseTask(search* _sch, multi_ex& _ec) : sch(_sch), ec(_ec)
   {
     _foreach_action = nullptr;
@@ -253,7 +255,7 @@ struct search_metatask
 // want to use crazy combinations of arguments
 class predictor
 {
- public:
+public:
   predictor(search& sch, ptag my_tag);
   ~predictor();
 
@@ -301,12 +303,10 @@ class predictor
   // set/add allowed but with per-actions costs specified
   predictor& add_allowed(action a, float cost);
   predictor& add_allowed(action* a, float* costs, size_t action_count);
-  predictor& add_allowed(v_array<std::pair<action, float> >& a);
   predictor& add_allowed(std::vector<std::pair<action, float> >& a);
 
   predictor& set_allowed(action a, float cost);
   predictor& set_allowed(action* a, float* costs, size_t action_count);
-  predictor& set_allowed(v_array<std::pair<action, float> >& a);
   predictor& set_allowed(std::vector<std::pair<action, float> >& a);
 
   // add a tag to condition on with a name, or set the conditioning
@@ -327,7 +327,7 @@ class predictor
   // make a prediction
   action predict();
 
- private:
+private:
   bool is_ldf;
   ptag my_tag;
   example* ec;
@@ -335,22 +335,13 @@ class predictor
   bool ec_alloced;
   float weight;
   v_array<action> oracle_actions;
-  bool oracle_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
   v_array<ptag> condition_on_tags;
   v_array<char> condition_on_names;
   v_array<action> allowed_actions;
-  bool allowed_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
   v_array<float> allowed_actions_cost;
-  bool allowed_cost_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
   size_t learner_id;
   search& sch;
 
-  template <class T>
-  void make_new_pointer(v_array<T>& A, size_t new_size);
-  template <class T>
-  predictor& add_to(v_array<T>& A, bool& A_is_ptr, T a, bool clear_first);
-  template <class T>
-  predictor& add_to(v_array<T>& A, bool& A_is_ptr, T* a, size_t count, bool clear_first);
   void free_ec();
 
   // prevent the user from doing something stupid :) ... ugh needed to turn this off for python :(

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -15,25 +15,31 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cc">
+    <ClCompile Include="cb_explore_adf_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="scope_exit_test.cc">
+    <ClCompile Include="ccb_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="guard_test.cc">
+    <ClCompile Include="ccb_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stable_unique_tests.cc">
+    <ClCompile Include="cats_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="io_adapter_test.cc">
+    <ClCompile Include="cats_user_provided_pdf.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="slates_test.cc">
+    <ClCompile Include="continuous_actions_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="slates_parser_test.cc">
+    <ClCompile Include="distributionally_robust_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dsjson_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="error_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="example_header_test.cc">
@@ -42,7 +48,25 @@
     <ClCompile Include="explore_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cb_explore_adf_test.cc">
+    <ClCompile Include="guard_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="initialize_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="io_adapter_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="json_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="math_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="object_pool_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="options_boost_po_test.cc">
@@ -51,35 +75,77 @@
     <ClCompile Include="options_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ccb_parser_test.cc">
+    <ClCompile Include="offset_tree_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="json_parser_test.cc">
+    <ClCompile Include="ostream_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dsjson_parser_test.cc">
+    <ClCompile Include="power_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="object_pool_test.cc">
+    <ClCompile Include="options_boost_po_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stable_unique_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vwdll_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="random_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pmf_to_pdf_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cats_tree_tests.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="ccb_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="distributionally_robust_test.cc">
+    <ClCompile Include="slates_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="prediction_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scope_exit_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="slates_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stable_unique_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tag_utils_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="test_common.cc">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vwdll_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="numeric_cast_tests.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse_args_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vw_versions_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="weights_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="flatbuffer_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="v_array_test.cc">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

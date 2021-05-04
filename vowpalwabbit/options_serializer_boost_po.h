@@ -20,11 +20,11 @@ struct options_serializer_boost_po : options_serializer_i
 {
   options_serializer_boost_po() { m_output_stream.precision(15); }
 
-  virtual void add(base_option& option) override;
-  virtual std::string str() override;
-  virtual size_t size() override;
+  void add(base_option& option) override;
+  std::string str() const override;
+  size_t size() const override;
 
- private:
+private:
   template <typename T>
   bool serialize_if_t(base_option& base_option)
   {
@@ -61,10 +61,7 @@ struct options_serializer_boost_po : options_serializer_i
   template <typename TTypes>
   void add_impl(base_option& options)
   {
-    if (serialize_if_t<typename TTypes::head>(options))
-    {
-      return;
-    }
+    if (serialize_if_t<typename TTypes::head>(options)) { return; }
     add_impl<typename TTypes::tail>(options);
   }
 

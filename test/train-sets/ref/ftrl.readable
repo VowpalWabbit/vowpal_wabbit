@@ -1,0 +1,13 @@
+Version 8.11.0
+Id
+Min label:0
+Max label:2
+bits:18
+lda:0
+0 ngram:
+0 skip:
+options: --ftrl
+Checksum: 3412999681
+:0
+f2:82936:0.277141
+f1:259761:0.277141

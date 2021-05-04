@@ -4,10 +4,10 @@ set(JAVA_JVM_LIBRARY NotNeeded)
 
 find_package(JNI REQUIRED)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(src_base src/main/c++)
 set(vw_jni_headers
   ${src_base}/jni_base_learner.h
+  ${src_base}/vowpalWabbit_learner_VWCCBLearner.h
   ${src_base}/vowpalWabbit_learner_VWActionProbsLearner.h
   ${src_base}/vowpalWabbit_learner_VWActionScoresLearner.h
   ${src_base}/vowpalWabbit_learner_VWLearners.h
@@ -24,6 +24,7 @@ set(vw_jni_headers
 
 set(vw_jni_sources
   ${src_base}/jni_base_learner.cc
+  ${src_base}/vowpalWabbit_learner_VWCCBLearner.cc
   ${src_base}/vowpalWabbit_learner_VWActionProbsLearner.cc
   ${src_base}/vowpalWabbit_learner_VWActionScoresLearner.cc
   ${src_base}/vowpalWabbit_learner_VWLearners.cc
@@ -41,6 +42,7 @@ set(vw_jni_sources
 
 add_library(vw_jni SHARED ${vw_jni_headers} ${vw_jni_sources})
 target_link_libraries(vw_jni PUBLIC vw)
+set_property(TARGET vw_jni PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(vw_jni PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${JNI_INCLUDE_DIRS})
@@ -52,10 +54,10 @@ add_custom_command(TARGET vw_jni POST_BUILD
 )
 
 if(STATIC_LINK_VW_JAVA)
-  target_link_libraries(vw_jni PUBLIC -static-libgcc -static-libstdc++ -fPIC vw)
+  target_link_libraries(vw_jni PUBLIC -Wl,--exclude-libs,ALL -static-libgcc -static-libstdc++ -fPIC)
 else()
   # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
-  target_link_libraries(vw_jni PUBLIC -fPIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\" vw)
+  target_link_libraries(vw_jni PUBLIC -fPIC -Wl,--enable-new-dtags -Wl,-rpath,\"\$ORIGIN\")
 endif()
 
 # Replace version number in POM

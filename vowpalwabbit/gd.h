@@ -9,6 +9,7 @@
 #include "interactions.h"
 #include "array_parameters.h"
 #include "gd_predict.h"
+#include "vw_math.h"
 
 namespace GD
 {
@@ -17,6 +18,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 struct gd;
 
 float finalize_prediction(shared_data* sd, vw_logger& logger, float ret);
+void print_features(vw& all, example& ec);
 void print_audit_features(vw&, example& ec);
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, double& total_weight,
@@ -35,8 +37,7 @@ struct multipredict_info
 template <class T>
 inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint64_t fi)
 {
-  if ((-1e-10 < fx) && (fx < 1e-10))
-    return;
+  if ((-1e-10 < fx) && (fx < 1e-10)) return;
   uint64_t mask = mp.weights.mask();
   polyprediction* p = mp.pred;
   fi &= mask;
@@ -46,8 +47,11 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
   {
     i += fi;
     for (; i <= top; i += mp.step, ++p)
-      p->scalar +=
-          fx * mp.weights[i];  // TODO: figure out how to use weight_parameters::iterator (not using change_begin())
+    {
+      p->scalar += fx * mp.weights[i];  // TODO: figure out how to use
+                                        // weight_parameters::iterator (not using
+                                        // change_begin())
+    }
   }
   else  // TODO: this could be faster by unrolling into two loops
     for (size_t c = 0; c < mp.count; ++c, fi += (uint64_t)mp.step, ++p)
@@ -93,23 +97,17 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 
 inline float inline_predict(vw& all, example& ec)
 {
-  return all.weights.sparse ? inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear,
-                                  all.ignore_linear, *ec.interactions, all.permutations, ec, ec.l.simple.initial)
-                            : inline_predict<dense_parameters>(all.weights.dense_weights, all.ignore_some_linear,
-                                  all.ignore_linear, *ec.interactions, all.permutations, ec, ec.l.simple.initial);
-}
-
-inline float sign(float w)
-{
-  if (w < 0.)
-    return -1.;
-  else
-    return 1.;
+  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  return all.weights.sparse
+      ? inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear, all.ignore_linear,
+            *ec.interactions, all.permutations, ec, simple_red_features.initial)
+      : inline_predict<dense_parameters>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear,
+            *ec.interactions, all.permutations, ec, simple_red_features.initial);
 }
 
 inline float trunc_weight(const float w, const float gravity)
 {
-  return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
+  return (gravity < fabsf(w)) ? w - VW::math::sign(w) * gravity : 0.f;
 }
 
 }  // namespace GD

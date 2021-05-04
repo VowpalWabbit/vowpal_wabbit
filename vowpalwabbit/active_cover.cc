@@ -4,38 +4,32 @@
 
 #include <cmath>
 #include <cerrno>
+#include <cfloat>
 #include <memory>
 #include "reductions.h"
 #include "rand48.h"
 #include "float.h"
 #include "vw.h"
+#include "shared_data.h"
+#include "vw_math.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-inline float sign(float w)
-{
-  if (w <= 0.f)
-    return -1.f;
-  else
-    return 1.f;
-}
-
 struct active_cover
 {
   // active learning algorithm parameters
-  float active_c0;
-  float alpha;
-  float beta_scale;
-  bool oracular;
-  size_t cover_size;
+  float active_c0 = 0.f;
+  float alpha = 0.f;
+  float beta_scale = 0.f;
+  bool oracular = false;
+  size_t cover_size = 0;
 
-  float* lambda_n;
-  float* lambda_d;
+  float* lambda_n = nullptr;
+  float* lambda_d = nullptr;
 
-  vw* all;  // statistics, loss
+  vw* all = nullptr;  // statistics, loss
   std::shared_ptr<rand_state> _random_state;
-  VW::LEARNER::base_learner* l;
 
   ~active_cover()
   {
@@ -46,10 +40,7 @@ struct active_cover
 
 bool dis_test(vw& all, example& ec, single_learner& base, float /* prediction */, float threshold)
 {
-  if (all.sd->t + ec.weight <= 3)
-  {
-    return true;
-  }
+  if (all.sd->t + ec.weight <= 3) { return true; }
 
   // Get loss difference
   float middle = 0.f;
@@ -65,10 +56,7 @@ bool dis_test(vw& all, example& ec, single_learner& base, float /* prediction */
 
 float get_threshold(float sum_loss, float t, float c0, float alpha)
 {
-  if (t < 3.f)
-  {
-    return 1.f;
-  }
+  if (t < 3.f) { return 1.f; }
   else
   {
     float avg_loss = sum_loss / t;
@@ -80,10 +68,7 @@ float get_threshold(float sum_loss, float t, float c0, float alpha)
 float get_pmin(float sum_loss, float t)
 {
   // t = ec.example_t - 1
-  if (t <= 2.f)
-  {
-    return 1.f;
-  }
+  if (t <= 2.f) { return 1.f; }
 
   float avg_loss = sum_loss / t;
   float pmin = fmin(1.f / (std::sqrt(t * avg_loss) + log(t)), 0.5f);
@@ -92,40 +77,25 @@ float get_pmin(float sum_loss, float t)
 
 float query_decision(active_cover& a, single_learner& l, example& ec, float prediction, float pmin, bool in_dis)
 {
-  if (a.all->sd->t + ec.weight <= 3)
-  {
-    return 1.f;
-  }
+  if (a.all->sd->t + ec.weight <= 3) { return 1.f; }
 
-  if (!in_dis)
-  {
-    return -1.f;
-  }
+  if (!in_dis) { return -1.f; }
 
-  if (a.oracular)
-  {
-    return 1.f;
-  }
+  if (a.oracular) { return 1.f; }
 
   float p, q2 = 4.f * pmin * pmin;
 
   for (size_t i = 0; i < a.cover_size; i++)
   {
     l.predict(ec, i + 1);
-    q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
+    q2 += ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
   }
 
   p = std::sqrt(q2) / (1 + std::sqrt(q2));
 
-  if (std::isnan(p))
-  {
-    p = 1.f;
-  }
+  if (std::isnan(p)) { p = 1.f; }
 
-  if (a._random_state->get_and_update_random() <= p)
-  {
-    return 1.f / p;
-  }
+  if (a._random_state->get_and_update_random() <= p) { return 1.f / p; }
   else
   {
     return -1.f;
@@ -155,7 +125,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
     // Query (or not)
     if (!in_dis)  // Use predicted label
     {
-      ec.l.simple.label = sign(prediction);
+      ec.l.simple.label = VW::math::sign(prediction);
       ec.weight = ec_input_weight;
       base.learn(ec, 0);
     }
@@ -185,9 +155,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
     // cost = cost of predicting erm's prediction
     // cost_delta = cost - cost of predicting the opposite label
     if (in_dis)
-    {
-      cost = r * (fmax(importance, 0.f)) * ((float)(sign(prediction) != sign(ec_input_label)));
-    }
+    { cost = r * (fmax(importance, 0.f)) * ((float)(VW::math::sign(prediction) != VW::math::sign(ec_input_label))); }
     else
     {
       cost = 0.f;
@@ -206,7 +174,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
 
       // Choose min-cost label as the label
       // Set importance weight to be the cost difference
-      ec.l.simple.label = -1.f * sign(cost_delta) * sign(prediction);
+      ec.l.simple.label = -1.f * VW::math::sign(cost_delta) * VW::math::sign(prediction);
       ec.weight = ec_input_weight * fabs(cost_delta);
 
       // Update learner
@@ -214,14 +182,15 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
       base.predict(ec, i + 1);
 
       // Update numerator of lambda
-      a.lambda_n[i] += 2.f * ((float)(sign(ec.pred.scalar) != sign(prediction))) * cost_delta;
+      a.lambda_n[i] += 2.f * ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) * cost_delta;
       a.lambda_n[i] = fmax(a.lambda_n[i], 0.f);
 
       // Update denominator of lambda
-      a.lambda_d[i] += ((float)(sign(ec.pred.scalar) != sign(prediction) && in_dis)) / (float)pow(q2, 1.5);
+      a.lambda_d[i] +=
+          ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction) && in_dis)) / (float)pow(q2, 1.5);
 
       // Accumulating weights of learners in the cover
-      q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
+      q2 += ((float)(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) * (a.lambda_n[i] / a.lambda_d[i]);
     }
 
     // Restoring the weight, the label, and the prediction
@@ -233,11 +202,13 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
 
 base_learner* active_cover_setup(options_i& options, vw& all)
 {
-  auto data = scoped_calloc_or_throw<active_cover>();
+  auto data = VW::make_unique<active_cover>();
   option_group_definition new_options("Active Learning with Cover");
 
   bool active_cover_option = false;
-  new_options.add(make_option("active_cover", active_cover_option).keep().help("enable active learning with cover"))
+  new_options
+      .add(
+          make_option("active_cover", active_cover_option).keep().necessary().help("enable active learning with cover"))
       .add(make_option("mellowness", data->active_c0)
                .default_value(8.f)
                .help("active learning mellowness parameter c_0. Default 8."))
@@ -249,25 +220,20 @@ base_learner* active_cover_setup(options_i& options, vw& all)
                .help("active learning variance upper bound parameter beta_scale. Default std::sqrt(10)."))
       .add(make_option("cover", data->cover_size).keep().default_value(12).help("cover size. Default 12."))
       .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not. Default false."));
-  options.add_and_parse(new_options);
 
-  if (!active_cover_option)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   data->all = &all;
   data->_random_state = all.get_random_state();
   data->beta_scale *= data->beta_scale;
 
-  if (data->oracular)
-    data->cover_size = 0;
+  if (data->oracular) data->cover_size = 0;
 
-  if (options.was_supplied("lda"))
-    THROW("error: you can't combine lda and active learning");
+  if (options.was_supplied("lda")) THROW("error: you can't combine lda and active learning");
 
-  if (options.was_supplied("active"))
-    THROW("error: you can't use --active_cover and --active at the same time");
+  if (options.was_supplied("active")) THROW("error: you can't use --active_cover and --active at the same time");
 
-  auto base = as_singleline(setup_base(options, all));
+  auto* base = as_singleline(setup_base(options, all));
 
   data->lambda_n = new float[data->cover_size];
   data->lambda_d = new float[data->cover_size];
@@ -278,9 +244,12 @@ base_learner* active_cover_setup(options_i& options, vw& all)
     data->lambda_d[i] = 1.f / 8.f;
   }
 
-  // Create new learner
-  learner<active_cover, example>& l = init_learner(
-      data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data->cover_size + 1);
-
-  return make_base(l);
+  const auto cover_size = data->cover_size;
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn_active_cover<true>,
+      predict_or_learn_active_cover<false>, all.get_setupfn_name(active_cover_setup))
+                .set_params_per_weight(cover_size + 1)
+                .set_prediction_type(prediction_type_t::scalar)
+                .set_label_type(label_type_t::simple)
+                .build();
+  return make_base(*l);
 }

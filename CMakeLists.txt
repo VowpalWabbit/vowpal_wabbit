@@ -3,10 +3,24 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 if(POLICY CMP0076)
   cmake_policy(SET CMP0076 NEW)
 endif()
+
+# Do not add /W3 to MSVC flags by default. We set this to /W4.
+if(POLICY CMP0092)
+  cmake_policy(SET CMP0092 NEW)
+endif()
+
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
+
+string(REPLACE "." ";" VW_VERSION_LIST ${PACKAGE_VERSION})
+list(GET VW_VERSION_LIST 0 VW_VERSION_MAJOR)
+list(GET VW_VERSION_LIST 1 VW_VERSION_MINOR)
+list(GET VW_VERSION_LIST 2 VW_VERSION_PATCH)
+
+# Set this to on so that tooling can make use of the outputted compile commands (such as clang-tidy)
+set(CMAKE_EXPORT_COMPILE_COMMANDS On)
 
 if(MSVC)
   # Do nothing as the default compile flags for MSVC are okay.
@@ -31,7 +45,7 @@ if(WIN32)
   set(CMAKE_SYSTEM_VERSION "10.0.16299.0" CACHE INTERNAL "Windows SDK version to target.")
 endif()
 
-project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES CXX)
+project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
@@ -65,17 +79,24 @@ option(PROFILE "Turn on flags required for profiling" OFF)
 option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF)
 option(GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
+option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
 
 option(VW_INSTALL "Add install targets." ON)
 option(BUILD_TESTS "Build and enable tests." ON)
+option(BUILD_BENCHMARKS "Build benchmarks" OFF)
+option(BUILD_ONLY_STANDALONE_BENCHMARKS "Build only the benchmarks that can run standalone (and do not use vw internals)" OFF)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
+option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(BUILD_SLIM_VW "Add targets for slim version of VW which implements only predict() for a subset of VW reductions." OFF)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
+option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead will use find_package" OFF)
+option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
+option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
@@ -94,9 +115,15 @@ if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAV
   message(FATAL_ERROR "Unsupported option enabled on Windows build")
 endif()
 
+# This was the previous default but is only valid on x86_64 systems.
+set(linux_x86_64_opt_flags "")
+if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+  set(linux_x86_64_opt_flags -msse2 -mfpmath=sse)
+endif()
+
 # Add -ffast-math for speed, remove for testability.
 # no-stack-check is added to mitigate stack alignment issue on Catalina where there is a bug with aligning stack-check instructions, and stack-check became default option
-set(linux_release_config -O3 -fno-strict-aliasing -msse2 -mfpmath=sse -fno-stack-check)
+set(linux_release_config -O3 -fno-strict-aliasing ${linux_x86_64_opt_flags} -fno-stack-check)
 set(linux_debug_config -g -O0 -fno-stack-check)
 
 if((NOT PROFILE) AND (NOT GCOV))
@@ -104,7 +131,7 @@ if((NOT PROFILE) AND (NOT GCOV))
 endif()
 
 #Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
-set(linux_flags -Wno-bad-function-cast -fvisibility=default $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}> $<$<CONFIG:RelWithDebInfo>:${linux_release_config}>)
+set(linux_flags -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}> $<$<CONFIG:RelWithDebInfo>:${linux_release_config}>)
 
 if(LTO)
 	if(NOT "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -139,13 +166,19 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(explore_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/explore/")
 
+if(WIN32)
+  set(STATIC_LIB_SUFFIXES ".lib" ".a")
+else()
+  set(STATIC_LIB_SUFFIXES ".a")
+endif()
+
 if(STATIC_LINK_VW_JAVA)
   set(Boost_USE_STATIC_LIBS ON)
-  SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
 else()
   if(STATIC_LINK_VW)
     set(Boost_USE_STATIC_LIBS ON)
-    SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ${STATIC_LIB_SUFFIXES})
     SET(BUILD_SHARED_LIBS OFF)
   else()
     set(Boost_USE_STATIC_LIBS OFF)
@@ -177,59 +210,40 @@ if(STATIC_LINK_VW)
 endif()
 
 # Align and foreach are also required, for some reason they can't be specified as components though.
-find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
+find_package(Boost REQUIRED COMPONENTS program_options system)
 find_package(ZLIB REQUIRED)
+if(BUILD_FLATBUFFERS)
+  find_package(flatbuffers REQUIRED)
+endif()
 
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
 
-if(RAPIDJSON_SYS_DEP)
-  # Since EXACT is not specified, any version compatible with 1.1.0 is accepted (>= 1.1.0)
-  find_package(RapidJSON 1.1.0 CONFIG REQUIRED)
-  add_library(RapidJSON INTERFACE)
-  target_include_directories(RapidJSON INTERFACE ${RAPIDJSON_INCLUDE_DIRS})
-else()
-  # Ensure rapidjson submodule is ready
-  find_package(Git QUIET)
-  if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-    # Update submodules as needed
-    option(GIT_SUBMODULE "Check submodules during build" ON)
-    if(GIT_SUBMODULE)
-      message(STATUS "Submodule update")
-      execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                      RESULT_VARIABLE GIT_SUBMOD_RESULT)
-      if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-        message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
-      endif()
+# Ensure submodules are ready
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+  # Update submodules as needed
+  option(GIT_SUBMODULE "Check submodules during build" ON)
+  if(GIT_SUBMODULE)
+    message(STATUS "Submodule update")
+    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      RESULT_VARIABLE GIT_SUBMOD_RESULT)
+    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+      message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
     endif()
-  endif()
-
-  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/rapidjson/CMakeLists.txt")
-    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-  endif()
-  add_library(RapidJSON INTERFACE)
-  target_include_directories(RapidJSON INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  )
-
-  if(VW_INSTALL)
-    install(
-      TARGETS RapidJSON
-      EXPORT VowpalWabbitConfig)
-
-    install(
-      DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/rapidjson/
-      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rapidjson
-    )
   endif()
 endif()
 
 add_subdirectory(explore)
 add_subdirectory(cluster)
 add_subdirectory(library)
+include(ext_libs/ext_libs.cmake)
 add_subdirectory(vowpalwabbit)
+
+if (BUILD_FLATBUFFERS)
+  add_subdirectory(utl/flatbuffer)
+endif()
 
 if(BUILD_DOCS)
   add_subdirectory(doc)
@@ -247,18 +261,41 @@ if(BUILD_SLIM_VW)
   add_subdirectory(vowpalwabbit/slim)
 endif()
 
+if(BUILD_BENCHMARKS)
+  add_subdirectory(test/benchmarks)
+endif()
+
 if(BUILD_TESTS)
+  # Boost test is only required if we are building tests
+  find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+
   enable_testing()
   add_subdirectory(test)
 
+  set(vw_c_api_unit_test_target "")
+  if(BUILD_EXPERIMENTAL_BINDING)
+    set(vw_c_api_unit_test_target "vw_c_api_unit_test")
+  endif()
+
+  # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
+  add_custom_target(test_with_output
+    COMMAND ${CMAKE_CTEST_COMMAND} --verbose
+    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target}
+  )
+
   # Don't offer these make dependent targets on Windows
   if(NOT WIN32)
-  # make bigtests BIG_TEST_ARGS="<args here>"
-  add_custom_target(bigtests
-    DEPENDS vw
-    COMMAND make \${BIG_TEST_ARGS}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/big_tests)
+    # make bigtests BIG_TEST_ARGS="<args here>"
+    add_custom_target(bigtests
+      DEPENDS vw
+      COMMAND make \${BIG_TEST_ARGS}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/big_tests)
   endif()
+endif()
+
+# Must be done after the test block so that enable_testing() has been called
+if(BUILD_EXPERIMENTAL_BINDING)
+  add_subdirectory(bindings)
 endif()
 
 # TODO convert cs directory to cmake
@@ -266,6 +303,8 @@ endif()
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
+  find_package(Boost REQUIRED COMPONENTS program_options)
+
   FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})
     SET (BOOST_LINK_LIBRARIES "${BOOST_LINK_LIBRARIES} ${BOOST_LIBRARY}")
   ENDFOREACH()
@@ -303,3 +342,18 @@ if(VW_INSTALL)
       ${CMAKE_INSTALL_LIBDIR}/cmake/VowpalWabbit)
 
 endif()
+
+set(CPACK_PACKAGE_VENDOR "Vowpal Wabbit")
+set(CPACK_PACKAGE_NAME "vowpal-wabbit")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Vowpal Wabbit is a machine learning system which pushes the frontier of machine learning with techniques such as online, hashing, allreduce, reductions, learning2search, active, and interactive learning.")
+set(CPACK_PACKAGE_VERSION_MAJOR ${VW_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${VW_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${VW_VERSION_PATCH})
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+# TODO Make this an email address or contact page
+set(CPACK_PACKAGE_CONTACT "https://github.com/VowpalWabbit/vowpal_wabbit")
+# Generates a package dependency list in the deb control file
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS On)
+
+include(CPack)

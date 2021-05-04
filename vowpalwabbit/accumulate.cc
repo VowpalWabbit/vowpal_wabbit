@@ -13,6 +13,10 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include "global_data.h"
 #include "vw_allreduce.h"
 
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
+
 void add_float(float& c1, const float& c2) { c1 += c2; }
 
 void accumulate(vw& all, parameters& weights, size_t offset)
@@ -75,8 +79,7 @@ float max_elem(float* arr, int length)
 {
   float max = arr[0];
   for (int i = 1; i < length; i++)
-    if (arr[i] > max)
-      max = arr[i];
+    if (arr[i] > max) max = arr[i];
   return max;
 }
 
@@ -84,8 +87,7 @@ float min_elem(float* arr, int length)
 {
   float min = arr[0];
   for (int i = 1; i < length; i++)
-    if (arr[i] < min && arr[i] > 0.001)
-      min = arr[i];
+    if (arr[i] < min && arr[i] > 0.001) min = arr[i];
   return min;
 }
 
@@ -100,9 +102,8 @@ void do_weighting(vw& all, uint64_t length, float* local_weights, T& weights)
       float ratio = weight[1] / local_weights[i];
       local_weights[i] = weight[0] * ratio;
       weight[0] *= ratio;
-      weight[1] *= ratio;  // A crude max
-      if (all.normalized_idx > 0)
-        weight[all.normalized_idx] *= ratio;  // A crude max
+      weight[1] *= ratio;                                               // A crude max
+      if (all.normalized_idx > 0) weight[all.normalized_idx] *= ratio;  // A crude max
     }
     else
     {
@@ -116,7 +117,8 @@ void accumulate_weighted_avg(vw& all, parameters& weights)
 {
   if (!weights.adaptive)
   {
-    all.trace_message << "Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
+    *(all.trace_message)
+        << "Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
 
@@ -139,7 +141,7 @@ void accumulate_weighted_avg(vw& all, parameters& weights)
     do_weighting(all, length, local_weights, weights.dense_weights);
 
   if (weights.sparse)
-    std::cout << "sparse parameters not supported with parallel computation!" << std::endl;
+    logger::log_error("sparse parameters not supported with parallel computation!");
   else
     all_reduce<float, add_float>(
         all, weights.dense_weights.first(), ((size_t)length) * (1ull << weights.stride_shift()));

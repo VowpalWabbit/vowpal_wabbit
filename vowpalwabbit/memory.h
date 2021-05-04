@@ -9,11 +9,15 @@
 #include <memory>
 #include "vw_exception.h"
 
+// unistd.h is needed for ::sysconf on linux toolchains
+#if defined(__linux__)
+#  include <unistd.h>
+#endif
+
 template <class T>
 T* calloc_or_throw(size_t nmemb)
 {
-  if (nmemb == 0)
-    return nullptr;
+  if (nmemb == 0) return nullptr;
 
   void* data = calloc(nmemb, sizeof(T));
   if (data == nullptr)
@@ -62,32 +66,37 @@ free_ptr<T> scoped_calloc_or_throw(Args&&... args)
 
 namespace VW
 {
-  template<typename T, typename... Args>
-  std::unique_ptr<T> make_unique(Args&&... params)
-  {
-    return std::unique_ptr<T>(new T(std::forward<Args>(params)...));
-  }
+template <typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... params)
+{
+  return std::unique_ptr<T>(new T(std::forward<Args>(params)...));
 }
+}  // namespace VW
 
 #ifdef MADV_MERGEABLE
 template <class T>
 T* calloc_mergable_or_throw(size_t nmemb)
 {
-  if (nmemb == 0)
-    return nullptr;
+  if (nmemb == 0) return nullptr;
   size_t length = nmemb * sizeof(T);
+#  if defined(ANDROID)
+  // posix_memalign is not available on Android
+  void* data = memalign(sysconf(_SC_PAGE_SIZE), length);
+  if (!data)
+#  else
   void* data;
   if (0 != posix_memalign(&data, sysconf(_SC_PAGE_SIZE), length))
+#  endif
   {
     const char* msg = "internal error: memory allocation failed!\n";
     fputs(msg, stderr);
-    THROW(msg);
+    THROW_OR_RETURN(msg, nullptr);
   }
   if (data == nullptr)
   {
     const char* msg = "internal error: memory allocation failed!\n";
     fputs(msg, stderr);
-    THROW(msg);
+    THROW_OR_RETURN(msg, nullptr);
   }
   memset(data, 0, length);
   // mark weight vector as KSM sharable
@@ -109,11 +118,10 @@ T* calloc_mergable_or_throw(size_t nmemb)
   return (T*)data;
 }
 #else
-#define calloc_mergable_or_throw calloc_or_throw
+#  define calloc_mergable_or_throw calloc_or_throw
 #endif
 
 inline void free_it(void* ptr)
 {
-  if (ptr != nullptr)
-    free(ptr);
+  if (ptr != nullptr) free(ptr);
 }

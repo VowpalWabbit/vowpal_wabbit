@@ -12,9 +12,9 @@ on:
       - created
 
 jobs:
-  CXX:
+  cpp:
     container:
-      image: vowpalwabbit/ubuntu1604-build:0.6.0
+      image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -32,9 +32,9 @@ jobs:
         with:
           name: cxx_docs
           path: doc/html/
-  Python:
+  python:
     container:
-      image: vowpalwabbit/ubuntu1604-build:0.6.0
+      image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -56,20 +56,19 @@ jobs:
         with:
           name: python_docs
           path: python/docs/build/
-  Upload:
-    name: Upload Docs
-    needs: [CXX, Python]
+  upload:
+    needs: [cpp, python]
     runs-on: ubuntu-latest
     # The upload step should only be run on the main repository.
     if: github.repository == 'VowpalWabbit/vowpal_wabbit'
     steps:
       - name: Set folder name to latest if push
         if: github.event_name == 'push'
-        run: echo "::set-env name=FOLDER_NAME::latest"
+        run: echo "FOLDER_NAME=latest" >> $GITHUB_ENV
       - name: Set folder name to version if release
         if: github.event_name == 'release'
-        run: echo "::set-env name=FOLDER_NAME::$(echo ${GITHUB_REF:10})"
-      - name: Download CXX Docs
+        run: echo "FOLDER_NAME=$(echo ${GITHUB_REF:10})" >> $GITHUB_ENV
+      - name: Download c++ Docs
         uses: actions/download-artifact@v1
         with:
           name: cxx_docs
@@ -99,18 +98,18 @@ jobs:
           cd docs
           pwd
           ls
-      - name: Copy CXX Docs
+      - name: Copy c++ Docs
         shell: bash
         run: |
-          rm -rf docs/vowpal_wabbit/cpp/${{ env.FOLDER_NAME }}/
-          mkdir -p docs/vowpal_wabbit/cpp/${{ env.FOLDER_NAME }}/
-          cp -r cxx_docs/* docs/vowpal_wabbit/cpp/${{ env.FOLDER_NAME }}/
+          rm -rf docs/vowpal_wabbit/cpp/$FOLDER_NAME/
+          mkdir -p docs/vowpal_wabbit/cpp/$FOLDER_NAME/
+          cp -r cxx_docs/* docs/vowpal_wabbit/cpp/$FOLDER_NAME/
       - name: Copy Python Docs
         shell: bash
         run: |
-          rm -rf docs/vowpal_wabbit/python/${{ env.FOLDER_NAME }}/
-          mkdir -p docs/vowpal_wabbit/python/${{ env.FOLDER_NAME }}/
-          cp -r python_docs/html/* docs/vowpal_wabbit/python/${{ env.FOLDER_NAME }}/
+          rm -rf docs/vowpal_wabbit/python/$FOLDER_NAME/
+          mkdir -p docs/vowpal_wabbit/python/$FOLDER_NAME/
+          cp -r python_docs/html/* docs/vowpal_wabbit/python/$FOLDER_NAME/
       - name: Checkout master
         shell: bash
         run: |

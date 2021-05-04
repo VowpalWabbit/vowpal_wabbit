@@ -3,14 +3,14 @@
 // license as described in the file LICENSE.
 #pragma once
 #include <string>
-#include "parse_primitives.h"
+#include <memory>
 
 struct shared_data;
 struct vw;
 
 class loss_function
 {
- public:
+public:
   // Identifies the type of the implementing loss function, matches the name used in getLossFunction.
   virtual std::string getType() = 0;
 
@@ -36,7 +36,7 @@ class loss_function
   virtual float getSquareGrad(float prediction, float label) = 0;
   virtual float first_derivative(shared_data*, float prediction, float label) = 0;
   virtual float second_derivative(shared_data*, float prediction, float label) = 0;
-  virtual ~loss_function(){};
+  virtual ~loss_function() = default;
 };
 
-loss_function* getLossFunction(vw&, std::string funcName, float function_parameter = 0);
+std::unique_ptr<loss_function> getLossFunction(vw&, const std::string& funcName, float function_parameter = 0);

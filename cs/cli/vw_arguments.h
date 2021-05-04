@@ -39,7 +39,7 @@ internal:
     m_testonly(!vw->training),
     m_passes((int)vw->numpasses)
   {
-    auto options = vw->options;
+    auto options = vw->options.get();
 
     if (vw->initial_regressors.size() > 0)
     { m_regressors = gcnew List<String^>;
@@ -64,8 +64,8 @@ internal:
       m_numberOfActions = (int)options->get_typed_option<uint32_t>("cb").value();
     }
 
-	m_learning_rate = vw->eta;
-	m_power_t = vw->power_t;
+    m_learning_rate = vw->eta;
+    m_power_t = vw->power_t;
   }
 
 public:

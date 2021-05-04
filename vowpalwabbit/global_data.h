@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #include <iostream>
-#include <iomanip>
+#include <utility>
 #include <vector>
 #include <map>
 #include <cfloat>
@@ -22,18 +22,17 @@
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
-#pragma managed(push, off)
-#undef _M_CEE
-#include <thread>
-#define _M_CEE 001
-#pragma managed(pop)
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <thread>
+#  define _M_CEE 001
+#  pragma managed(pop)
 #else
-#include <thread>
+#  include <thread>
 #endif
 
 #include "v_array.h"
 #include "array_parameters.h"
-#include "parse_primitives.h"
 #include "loss_functions.h"
 #include "example.h"
 #include "config.h"
@@ -50,268 +49,22 @@
 
 #include "options.h"
 #include "version.h"
+#include "kskip_ngram_transformer.h"
 
 typedef float weight;
 
 typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
+typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::config::options_i&, vw&);
+
+using options_deleter_type = void (*)(VW::config::options_i*);
+
+struct shared_data;
 
 struct dictionary_info
 {
   std::string name;
   uint64_t file_hash;
   std::shared_ptr<feature_dict> dict;
-};
-
-class namedlabels
-{
- private:
-  // NOTE: This ordering is critical. m_id2name and m_name2id contain pointers into m_label_list!
-  std::string m_label_list;
-  std::vector<VW::string_view> m_id2name;
-  std::unordered_map<VW::string_view, uint32_t> m_name2id;
-  uint32_t m_K;
-
- public:
-  namedlabels(const std::string& label_list) : m_label_list(label_list)
-  {
-    tokenize(',', m_label_list, m_id2name);
-
-    m_K = static_cast<uint32_t>(m_id2name.size());
-    m_name2id.max_load_factor(0.25);
-    m_name2id.reserve(m_K);
-
-    for (uint32_t k = 0; k < m_K; k++)
-    {
-      const VW::string_view& l = m_id2name[static_cast<size_t>(k)];
-      auto iter = m_name2id.find(l);
-      if (iter != m_name2id.end())
-        THROW("error: label dictionary initialized with multiple occurances of: " << l);
-      m_name2id.emplace(l, k + 1);
-    }
-  }
-
-  uint32_t getK() { return m_K; }
-
-  uint32_t get(VW::string_view s) const
-  {
-    auto iter = m_name2id.find(s);
-    if (iter == m_name2id.end())
-    {
-      std::cerr << "warning: missing named label '" << s << '\'' << std::endl;
-      return 0;
-    }
-    return iter->second;
-  }
-
-  VW::string_view get(uint32_t v) const
-  {
-    static_assert(sizeof(size_t) >= sizeof(uint32_t), "size_t is smaller than 32-bits. Potential overflow issues.");
-    if ((v == 0) || (v > m_K))
-    {
-      return VW::string_view();
-    }
-    else
-      return m_id2name[static_cast<size_t>(v - 1)];
-  }
-};
-
-struct shared_data
-{
-  size_t queries;
-
-  uint64_t example_number;
-  uint64_t total_features;
-
-  double t;
-  double weighted_labeled_examples;
-  double old_weighted_labeled_examples;
-  double weighted_unlabeled_examples;
-  double weighted_labels;
-  double sum_loss;
-  double sum_loss_since_last_dump;
-  float dump_interval;  // when should I update for the user.
-  double gravity;
-  double contraction;
-  float min_label;  // minimum label encountered
-  float max_label;  // maximum label encountered
-
-  namedlabels* ldict;
-
-  // for holdout
-  double weighted_holdout_examples;
-  double weighted_holdout_examples_since_last_dump;
-  double holdout_sum_loss_since_last_dump;
-  double holdout_sum_loss;
-  // for best model selection
-  double holdout_best_loss;
-  double weighted_holdout_examples_since_last_pass;  // reserved for best predictor selection
-  double holdout_sum_loss_since_last_pass;
-  size_t holdout_best_pass;
-  // for --probabilities
-  bool report_multiclass_log_loss;
-  double multiclass_log_loss;
-  double holdout_multiclass_log_loss;
-
-  std::atomic<bool> is_more_than_two_labels_observed;
-  std::atomic<float> first_observed_label;
-  std::atomic<float> second_observed_label;
-
-  // Column width, precision constants:
-  static constexpr int col_avg_loss = 8;
-  static constexpr int prec_avg_loss = 6;
-  static constexpr int col_since_last = 8;
-  static constexpr int prec_since_last = 6;
-  static constexpr int col_example_counter = 12;
-  static constexpr int col_example_weight = col_example_counter + 2;
-  static constexpr int prec_example_weight = 1;
-  static constexpr int col_current_label = 8;
-  static constexpr int prec_current_label = 4;
-  static constexpr int col_current_predict = 8;
-  static constexpr int prec_current_predict = 4;
-  static constexpr int col_current_features = 8;
-
-  double weighted_examples() { return weighted_labeled_examples + weighted_unlabeled_examples; }
-
-  void update(bool test_example, bool labeled_example, float loss, float weight, size_t num_features)
-  {
-    t += weight;
-    if (test_example && labeled_example)
-    {
-      weighted_holdout_examples += weight;  // test weight seen
-      weighted_holdout_examples_since_last_dump += weight;
-      weighted_holdout_examples_since_last_pass += weight;
-      holdout_sum_loss += loss;
-      holdout_sum_loss_since_last_dump += loss;
-      holdout_sum_loss_since_last_pass += loss;  // since last pass
-    }
-    else
-    {
-      if (labeled_example)
-        weighted_labeled_examples += weight;
-      else
-        weighted_unlabeled_examples += weight;
-      sum_loss += loss;
-      sum_loss_since_last_dump += loss;
-      total_features += num_features;
-      example_number++;
-    }
-  }
-
-  inline void update_dump_interval(bool progress_add, float progress_arg)
-  {
-    sum_loss_since_last_dump = 0.0;
-    old_weighted_labeled_examples = weighted_labeled_examples;
-    if (progress_add)
-      dump_interval = (float)weighted_examples() + progress_arg;
-    else
-      dump_interval = (float)weighted_examples() * progress_arg;
-  }
-
-  void print_update(bool holdout_set_off, size_t current_pass, float label, float prediction, size_t num_features,
-      bool progress_add, float progress_arg)
-  {
-    std::ostringstream label_buf, pred_buf;
-
-    label_buf << std::setw(col_current_label) << std::setfill(' ');
-    if (label < FLT_MAX)
-      label_buf << std::setprecision(prec_current_label) << std::fixed << std::right << label;
-    else
-      label_buf << std::left << " unknown";
-
-    pred_buf << std::setw(col_current_predict) << std::setprecision(prec_current_predict) << std::fixed << std::right
-             << std::setfill(' ') << prediction;
-
-    print_update(
-        holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features, progress_add, progress_arg);
-  }
-
-  void print_update(bool holdout_set_off, size_t current_pass, uint32_t label, uint32_t prediction, size_t num_features,
-      bool progress_add, float progress_arg)
-  {
-    std::ostringstream label_buf, pred_buf;
-
-    label_buf << std::setw(col_current_label) << std::setfill(' ');
-    if (label < INT_MAX)
-      label_buf << std::right << label;
-    else
-      label_buf << std::left << " unknown";
-
-    pred_buf << std::setw(col_current_predict) << std::right << std::setfill(' ') << prediction;
-
-    print_update(
-        holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features, progress_add, progress_arg);
-  }
-
-  void print_update(bool holdout_set_off, size_t current_pass, const std::string& label, uint32_t prediction,
-      size_t num_features, bool progress_add, float progress_arg)
-  {
-    std::ostringstream pred_buf;
-
-    pred_buf << std::setw(col_current_predict) << std::right << std::setfill(' ') << prediction;
-
-    print_update(holdout_set_off, current_pass, label, pred_buf.str(), num_features, progress_add, progress_arg);
-  }
-
-  void print_update(bool holdout_set_off, size_t current_pass, const std::string& label, const std::string& prediction,
-      size_t num_features, bool progress_add, float progress_arg)
-  {
-    std::streamsize saved_w = std::cerr.width();
-    std::streamsize saved_prec = std::cerr.precision();
-    std::ostream::fmtflags saved_f = std::cerr.flags();
-    bool holding_out = false;
-
-    if (!holdout_set_off && current_pass >= 1)
-    {
-      if (holdout_sum_loss == 0. && weighted_holdout_examples == 0.)
-        std::cerr << std::setw(col_avg_loss) << std::left << " unknown";
-      else
-        std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::fixed << std::right
-                  << (holdout_sum_loss / weighted_holdout_examples);
-
-      std::cerr << " ";
-
-      if (holdout_sum_loss_since_last_dump == 0. && weighted_holdout_examples_since_last_dump == 0.)
-        std::cerr << std::setw(col_since_last) << std::left << " unknown";
-      else
-        std::cerr << std::setw(col_since_last) << std::setprecision(prec_since_last) << std::fixed << std::right
-                  << (holdout_sum_loss_since_last_dump / weighted_holdout_examples_since_last_dump);
-
-      weighted_holdout_examples_since_last_dump = 0;
-      holdout_sum_loss_since_last_dump = 0.0;
-
-      holding_out = true;
-    }
-    else
-    {
-      std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::right << std::fixed;
-      if (weighted_labeled_examples > 0.)
-        std::cerr << (sum_loss / weighted_labeled_examples);
-      else
-        std::cerr << "n.a.";
-      std::cerr << " " << std::setw(col_since_last) << std::setprecision(prec_avg_loss) << std::right << std::fixed;
-      if (weighted_labeled_examples == old_weighted_labeled_examples)
-        std::cerr << "n.a.";
-      else
-        std::cerr << (sum_loss_since_last_dump / (weighted_labeled_examples - old_weighted_labeled_examples));
-    }
-    std::cerr << " " << std::setw(col_example_counter) << std::right << example_number << " "
-              << std::setw(col_example_weight) << std::setprecision(prec_example_weight) << std::right
-              << weighted_examples() << " " << std::setw(col_current_label) << std::right << label << " "
-              << std::setw(col_current_predict) << std::right << prediction << " " << std::setw(col_current_features)
-              << std::right << num_features;
-
-    if (holding_out)
-      std::cerr << " h";
-
-    std::cerr << std::endl;
-    std::cerr.flush();
-
-    std::cerr.width(saved_w);
-    std::cerr.precision(saved_prec);
-    std::cerr.setf(saved_f);
-
-    update_dump_interval(progress_add, progress_arg);
-  }
 };
 
 enum AllReduceType
@@ -322,24 +75,12 @@ enum AllReduceType
 
 class AllReduce;
 
-enum class label_type_t
-{
-  simple,
-  cb,       // contextual-bandit
-  cb_eval,  // contextual-bandit evaluation
-  cs,       // cost-sensitive
-  multi,
-  mc,
-  ccb,  // conditional contextual-bandit
-  slates
-};
-
 struct rand_state
 {
- private:
+private:
   uint64_t random_state;
 
- public:
+public:
   constexpr rand_state() : random_state(0) {}
   rand_state(uint64_t initial) : random_state(initial) {}
   constexpr uint64_t get_current_state() const noexcept { return random_state; }
@@ -353,34 +94,68 @@ struct vw_logger
 {
   bool quiet;
 
-  vw_logger()
-    : quiet(false) {
-  }
+  vw_logger() : quiet(false) {}
 
   vw_logger(const vw_logger& other) = delete;
   vw_logger& operator=(const vw_logger& other) = delete;
 };
 
+#ifdef BUILD_EXTERNAL_PARSER
+// forward declarations
+namespace VW
+{
+namespace external
+{
+class parser;
+struct parser_options;
+}  // namespace external
+}  // namespace VW
+#endif
+
+namespace VW
+{
+namespace parsers
+{
+namespace flatbuffer
+{
+class parser;
+}
+}  // namespace parsers
+}  // namespace VW
+
+struct trace_message_wrapper
+{
+  void* _inner_context;
+  trace_message_t _trace_message;
+
+  trace_message_wrapper(void* context, trace_message_t trace_message)
+      : _inner_context(context), _trace_message(trace_message)
+  {
+  }
+  ~trace_message_wrapper() = default;
+};
+
 struct vw
 {
- private:
+private:
   std::shared_ptr<rand_state> _random_state_sp = std::make_shared<rand_state>();  // per instance random_state
 
- public:
+public:
   shared_data* sd;
 
-  parser* p;
+  parser* example_parser;
   std::vector<std::thread> parse_threads;
   std::thread io_thread;
 
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
 
-  bool chain_hash = false;
+  bool chain_hash_json = false;
 
-  VW::LEARNER::base_learner* l;               // the top level learner
-  VW::LEARNER::single_learner* scorer;        // a scoring function
-  VW::LEARNER::base_learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
+  VW::LEARNER::base_learner* l;         // the top level learner
+  VW::LEARNER::single_learner* scorer;  // a scoring function
+  VW::LEARNER::base_learner*
+      cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 
   void learn(example&);
   void learn(multi_ex&);
@@ -398,7 +173,14 @@ struct vw
 
   uint32_t hash_seed;
 
-  std::string data_filename;  // was vm["data"]
+#ifdef BUILD_FLATBUFFERS
+  std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
+#endif
+
+#ifdef BUILD_EXTERNAL_PARSER
+  std::unique_ptr<VW::external::parser> external_parser;
+#endif
+  std::string data_filename;
 
   bool daemon;
   size_t num_children;
@@ -419,11 +201,10 @@ struct vw
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
   // error reporting
-  vw_ostream trace_message;
+  std::shared_ptr<trace_message_wrapper> trace_message_wrapper_context;
+  std::unique_ptr<std::ostream> trace_message;
 
-  // Flag used when VW internally manages lifetime of options object.
-  bool should_delete_options = false;
-  VW::config::options_i* options;
+  std::unique_ptr<VW::config::options_i, options_deleter_type> options;
 
   void* /*Search::search*/ searchstr;
 
@@ -452,11 +233,7 @@ struct vw
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  std::vector<std::vector<namespace_index> > interactions;
-  // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::vector<namespace_index> > pairs;  // pairs of features to cross.
-  // TODO #1863 deprecate in favor of only interactions field.
-  std::vector<std::vector<namespace_index> > triples;  // triples of features to cross.
+  namespace_interactions interactions;
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
@@ -464,10 +241,7 @@ struct vw
 
   bool redefine_some;                                  // --redefine param was used
   std::array<unsigned char, NUM_NAMESPACES> redefine;  // keeps new chars for namespaces
-  std::vector<std::string> ngram_strings;
-  std::vector<std::string> skip_strings;
-  std::array<uint32_t, NUM_NAMESPACES> ngram;  // ngrams to generate.
-  std::array<uint32_t, NUM_NAMESPACES> skips;  // skips in ngrams.
+  std::unique_ptr<VW::kskip_ngram_transformer> skip_gram_transformer;
   std::vector<std::string> limit_strings;      // descriptor of feature limits
   std::array<uint32_t, NUM_NAMESPACES> limit;  // count to limit features by
   std::array<uint64_t, NUM_NAMESPACES>
@@ -482,7 +256,9 @@ struct vw
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
+  VW_DEPRECATED("delete_prediction has been deprecated")
   void (*delete_prediction)(void*);
+
   vw_logger logger;
   bool audit;     // should I print lots of debugging information?
   bool training;  // Should I train if lable data is available?
@@ -512,11 +288,12 @@ struct vw
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  std::stack<VW::LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
+  std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
+  std::vector<std::string> enabled_reductions;
 
   // Prediction output
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
-  std::unique_ptr<VW::io::writer> raw_prediction;                  // file descriptors for text output.
+  std::unique_ptr<VW::io::writer> raw_prediction;                      // file descriptors for text output.
 
   VW_DEPRECATED("print has been deprecated, use print_by_ref")
   void (*print)(VW::io::writer*, float, float, v_array<char>);
@@ -524,14 +301,15 @@ struct vw
   VW_DEPRECATED("print_text has been deprecated, use print_text_by_ref")
   void (*print_text)(VW::io::writer*, std::string, v_array<char>);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&);
-  loss_function* loss;
+  std::unique_ptr<loss_function> loss;
 
   VW_DEPRECATED("This is unused and will be removed")
   char* program_name;
 
   bool stdin_off;
 
-  bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input when loaded instead.
+  bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input
+                           // when loaded instead.
 
   // runtime accounting variables.
   float initial_t;
@@ -554,7 +332,8 @@ struct vw
 
   std::map<uint64_t, std::string> index_name_map;
 
-  label_type_t label_type;
+  // hack to support cb model loading into ccb reduction
+  bool is_ccb_input_model = false;
 
   vw();
   ~vw();
@@ -567,6 +346,12 @@ struct vw
   // That pointer would be invalidated if it were to be moved.
   vw(const vw&&) = delete;
   vw& operator=(const vw&&) = delete;
+
+  std::string get_setupfn_name(reduction_setup_fn setup);
+  void build_setupfn_name_dict();
+
+private:
+  std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
 
 VW_DEPRECATED("Use print_result_by_ref instead")

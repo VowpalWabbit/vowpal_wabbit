@@ -6,5 +6,5 @@ struct example;
 
 namespace VW
 {
-  bool try_extract_random_seed(const example& ex, VW::string_view& view);
+bool try_extract_random_seed(const example& ex, VW::string_view& view);
 }

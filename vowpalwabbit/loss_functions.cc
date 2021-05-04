@@ -9,10 +9,15 @@
 
 #include "global_data.h"
 #include "vw_exception.h"
+#include "shared_data.h"
+
+#include "io/logger.h"
+
+namespace logger = VW::io::logger;
 
 class squaredloss : public loss_function
 {
- public:
+public:
   std::string getType() { return "squared"; }
 
   float getLoss(shared_data* sd, float prediction, float label)
@@ -80,7 +85,7 @@ class squaredloss : public loss_function
 
 class classic_squaredloss : public loss_function
 {
- public:
+public:
   std::string getType() { return "classic"; }
 
   float getLoss(shared_data*, float prediction, float label)
@@ -113,29 +118,28 @@ class classic_squaredloss : public loss_function
 
 class hingeloss : public loss_function
 {
- public:
+public:
   std::string getType() { return "hinge"; }
 
   float getLoss(shared_data*, float prediction, float label)
   {
+    // TODO: warning or error?
     if (label != -1.f && label != 1.f)
-      std::cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << std::endl;
+      logger::log_warn("You are using label {} not -1 or 1 as loss function expects!", label);
     float e = 1 - label * prediction;
     return (e > 0) ? e : 0;
   }
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update)
   {
-    if (label * prediction >= 1)
-      return 0;
+    if (label * prediction >= 1) return 0;
     float err = 1 - label * prediction;
     return label * (update_scale * pred_per_update < err ? update_scale : err / pred_per_update);
   }
 
   float getUnsafeUpdate(float prediction, float label, float update_scale)
   {
-    if (label * prediction >= 1)
-      return 0;
+    if (label * prediction >= 1) return 0;
     return label * update_scale;
   }
 
@@ -154,13 +158,14 @@ class hingeloss : public loss_function
 
 class logloss : public loss_function
 {
- public:
+public:
   std::string getType() { return "logistic"; }
 
   float getLoss(shared_data*, float prediction, float label)
   {
+    // TODO: warning or error?
     if (label != -1.f && label != 1.f)
-      std::cout << "You are using label " << label << " not -1 or 1 as loss function expects!" << std::endl;
+      logger::log_warn("You are using label {} not -1 or 1 as loss function expects!", label);
     return log(1 + correctedExp(-label * prediction));
   }
 
@@ -228,7 +233,7 @@ class logloss : public loss_function
 
 class quantileloss : public loss_function
 {
- public:
+public:
   quantileloss(float& tau_) : tau(tau_) {}
 
   std::string getType() { return "quantile"; }
@@ -245,8 +250,7 @@ class quantileloss : public loss_function
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update)
   {
     float err = label - prediction;
-    if (err == 0)
-      return 0;
+    if (err == 0) return 0;
     float normal = update_scale * pred_per_update;  // base update size
     if (err > 0)
     {
@@ -263,10 +267,8 @@ class quantileloss : public loss_function
   float getUnsafeUpdate(float prediction, float label, float update_scale)
   {
     float err = label - prediction;
-    if (err == 0)
-      return 0;
-    if (err > 0)
-      return tau * update_scale;
+    if (err == 0) return 0;
+    if (err > 0) return tau * update_scale;
     return -(1 - tau) * update_scale;
   }
 
@@ -284,8 +286,7 @@ class quantileloss : public loss_function
   float first_derivative(shared_data*, float prediction, float label)
   {
     float e = label - prediction;
-    if (e == 0)
-      return 0;
+    if (e == 0) return 0;
     return e > 0 ? -tau : (1 - tau);
   }
 
@@ -302,13 +303,14 @@ class quantileloss : public loss_function
 
 class poisson_loss : public loss_function
 {
- public:
+public:
   std::string getType() { return "poisson"; }
 
   float getLoss(shared_data*, float prediction, float label)
   {
+    // TODO: warning or error?
     if (label < 0.f)
-      std::cout << "You are using label " << label << " but loss function expects label >= 0!" << std::endl;
+      logger::log_warn("You are using label {} but loss function expects label >= 0!", label);
     float exp_prediction = expf(prediction);
     // deviance is used instead of log-likelihood
     return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));
@@ -358,35 +360,38 @@ class poisson_loss : public loss_function
   }
 };
 
-loss_function* getLossFunction(vw& all, std::string funcName, float function_parameter)
+std::unique_ptr<loss_function> getLossFunction(vw& all, const std::string& funcName, float function_parameter)
 {
-  if (funcName.compare("squared") == 0 || funcName.compare("Huber") == 0)
-    return new squaredloss();
-  else if (funcName.compare("classic") == 0)
-    return new classic_squaredloss();
-  else if (funcName.compare("hinge") == 0)
-    return new hingeloss();
-  else if (funcName.compare("logistic") == 0)
+  if (funcName == "squared" || funcName == "Huber") { return VW::make_unique<squaredloss>(); }
+  else if (funcName == "classic")
+  {
+    return VW::make_unique<classic_squaredloss>();
+  }
+  else if (funcName == "hinge")
+  {
+    return VW::make_unique<hingeloss>();
+  }
+  else if (funcName == "logistic")
   {
     if (all.set_minmax != noop_mm)
     {
       all.sd->min_label = -50;
       all.sd->max_label = 50;
     }
-    return new logloss();
+    return VW::make_unique<logloss>();
   }
-  else if (funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0)
+  else if (funcName == "quantile" || funcName == "pinball" || funcName == "absolute")
   {
-    return new quantileloss(function_parameter);
+    return VW::make_unique<quantileloss>(function_parameter);
   }
-  else if (funcName.compare("poisson") == 0)
+  else if (funcName == "poisson")
   {
     if (all.set_minmax != noop_mm)
     {
       all.sd->min_label = -50;
       all.sd->max_label = 50;
     }
-    return new poisson_loss();
+    return VW::make_unique<poisson_loss>();
   }
   else
     THROW("Invalid loss function name: \'" << funcName << "\' Bailing!");

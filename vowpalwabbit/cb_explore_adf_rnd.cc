@@ -3,17 +3,19 @@
 // license as described in the file LICENSE.
 
 #include "cb_explore_adf_rnd.h"
-#include "reductions.h"
-#include "cb_adf.h"
-#include "rand48.h"
 #include "bs.h"
+#include "cb_adf.h"
+#include "cb_explore.h"
+#include "debug_print.h"
+#include "explore.h"
 #include "gd_predict.h"
 #include "gen_cs_example.h"
-#include "cb_explore.h"
-#include "explore.h"
-#include <vector>
+#include "rand48.h"
+#include "reductions.h"
+#include "scope_exit.h"
 #include <algorithm>
 #include <cmath>
+#include <cfloat>
 #include "scope_exit.h"
 
 // Random Network Distillation style exploration.  Basically predicts
@@ -34,7 +36,7 @@ namespace rnd
 {
 struct cb_explore_adf_rnd
 {
- private:
+private:
   float epsilon;
   float alpha;
   float sqrtinvlambda;
@@ -67,8 +69,8 @@ struct cb_explore_adf_rnd
   template <bool>
   void base_learn_or_predict(VW::LEARNER::multi_learner&, multi_ex&, uint32_t);
 
- public:
-  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, size_t _numrnd, size_t _increment, vw* _all)
+public:
+  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, vw* _all)
       : epsilon(_epsilon)
       , alpha(_alpha)
       , sqrtinvlambda(std::sqrt(_invlambda))
@@ -98,19 +100,13 @@ void cb_explore_adf_rnd::accumulate_bonuses(multi_ex& examples)
 
 void cb_explore_adf_rnd::finish_bonuses()
 {
-  for (auto& b : bonuses)
-  {
-    b = std::sqrt(b / numrnd);
-  }
+  for (auto& b : bonuses) { b = std::sqrt(b / numrnd); }
 }
 
 void cb_explore_adf_rnd::compute_ci(v_array<ACTION_SCORE::action_score>& preds, float max_bonus)
 {
-  constexpr float eulergamma = 0.57721566490153286;
-  for (auto& p : preds)
-  {
-    p.score -= eulergamma * (bonuses[p.action] - max_bonus);
-  }
+  constexpr float eulergamma = 0.57721566490153286f;
+  for (auto& p : preds) { p.score -= eulergamma * (bonuses[p.action] - max_bonus); }
 }
 
 namespace
@@ -142,16 +138,10 @@ namespace
 {
 struct LazyGaussian
 {
-  inline float operator[](uint64_t index) const
-  {
-    return merand48_boxmuller(index);
-  }
+  inline float operator[](uint64_t index) const { return merand48_boxmuller(index); }
 };
 
-
-inline void vec_add_with_norm(std::pair<float, float>& p,
-                              const float fx,
-                              const float& fw)
+inline void vec_add_with_norm(std::pair<float, float>& p, const float fx, const float& fw)
 {
   p.first += fx * fx;
   p.second += fx * fw;
@@ -165,13 +155,7 @@ float cb_explore_adf_rnd::get_initial_prediction(example* ec)
 
   std::pair<float, float> dotwithnorm(0.f, 0.f);
   GD::foreach_feature<std::pair<float, float>, const float&, vec_add_with_norm, LazyGaussian>(
-    w,
-    all->ignore_some_linear,
-    all->ignore_linear,
-    all->interactions,
-    all->permutations,
-    *ec,
-    dotwithnorm);
+      w, all->ignore_some_linear, all->ignore_linear, all->interactions, all->permutations, *ec, dotwithnorm);
 
   return sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1e-12f, dotwithnorm.first));
 }
@@ -228,10 +212,7 @@ void cb_explore_adf_rnd::restore_labels(multi_ex& examples)
 template <bool is_learn>
 void cb_explore_adf_rnd::base_learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples, uint32_t id)
 {
-  if (is_learn)
-  {
-    base.learn(examples, id);
-  }
+  if (is_learn) { base.learn(examples, id); }
   else
   {
     base.predict(examples, id);
@@ -255,7 +236,7 @@ void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
     accumulate_bonuses(examples);
   }
   finish_bonuses();
-  
+
   // Labels need to be restored before calling base_learn_or_predict
   restore_guard.call();
   base_learn_or_predict<is_learn>(base, examples, 0);
@@ -264,7 +245,7 @@ void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
   float max_bonus = std::max(1e-3f, *std::max_element(bonuses.begin(), bonuses.end()));
   compute_ci(preds, max_bonus);
   exploration::generate_softmax(
-      -1.0 / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
+      -1.0f / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
   exploration::enforce_minimum_probability(epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
@@ -276,13 +257,14 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   float alpha = 0.;
   float invlambda = 0.;
   uint32_t numrnd = 1;
-  config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
+  config::option_group_definition new_options("Contextual Bandit Exploration with ADF (rnd)");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
+               .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("epsilon", epsilon).keep().allow_override().help("minimum exploration probability"))
-      .add(make_option("rnd", numrnd).keep().help("rnd based exploration"))
+      .add(make_option("rnd", numrnd).keep().necessary().help("rnd based exploration"))
       .add(make_option("rnd_alpha", alpha)
                .keep()
                .allow_override()
@@ -293,53 +275,35 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                .allow_override()
                .default_value(0.1f)
                .help("covariance regularization strength rnd (bigger => more exploration on new features)"));
-  options.add_and_parse(new_options);
 
-  if (!cb_explore_adf_option || !options.was_supplied("rnd"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  if (alpha <= 0)
-  {
-    THROW("The value of rnd_alpha must be positive.")
-  }
+  if (alpha <= 0) { THROW("The value of rnd_alpha must be positive.") }
 
-  if (invlambda <= 0)
-  {
-    THROW("The value of rnd_invlambda must be positive.")
-  }
+  if (invlambda <= 0) { THROW("The value of rnd_invlambda must be positive.") }
 
-  if (numrnd < 1)
-  {
-    THROW("The value of numrnd must be at least 1.")
-  }
+  if (numrnd < 1) { THROW("The value of numrnd must be at least 1.") }
 
   // Ensure serialization of cb_adf in all cases.
-  if (!options.was_supplied("cb_adf"))
-  {
-    options.insert("cb_adf", "");
-  }
-
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
+  if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
   size_t problem_multiplier = 1 + numrnd;
 
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
-  all.label_type = label_type_t::cb;
+  all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;
   auto data = scoped_calloc_or_throw<explore_type>(
       epsilon, alpha, invlambda, numrnd, base->increment * problem_multiplier, &all);
 
-  if (epsilon < 0.0 || epsilon > 1.0)
-  {
-    THROW("The value of epsilon must be in [0,1]");
-  }
+  if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
-  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(
-      data, base, explore_type::learn, explore_type::predict, problem_multiplier, prediction_type_t::action_probs);
+  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(data, base, explore_type::learn,
+      explore_type::predict, problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-rnd");
 
   l.set_finish_example(explore_type::finish_multiline_example);
+  l.set_print_example(explore_type::print_multiline_example);
+  l.set_persist_metrics(explore_type::persist_metrics);
   return make_base(l);
 }
 }  // namespace rnd

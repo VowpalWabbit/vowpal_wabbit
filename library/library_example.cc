@@ -3,7 +3,7 @@
 #include "../vowpalwabbit/vw.h"
 
 inline feature vw_feature_from_string(vw& v, std::string fstr, unsigned long seed, float val)
-{ uint32_t foo = VW::hash_feature(v, fstr, seed);
+{ auto foo = VW::hash_feature(v, fstr, seed);
   feature f = { val, foo};
   return f;
 }
@@ -21,8 +21,8 @@ int main(int argc, char *argv[])
   s->name = 's';
   t->name = 't';
 
-  uint32_t s_hash = VW::hash_space(*model, "s");
-  uint32_t t_hash = VW::hash_space(*model, "t");
+  uint32_t s_hash = static_cast<uint32_t>(VW::hash_space(*model, "s"));
+  uint32_t t_hash = static_cast<uint32_t>(VW::hash_space(*model, "t"));
   s->fs = new feature[3];
   s->len = 3;
   t->fs = new feature[3];
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < len; i++)
   { std::cout << "namespace = " << pfs[i].name;
     for (size_t j = 0; j < pfs[i].len; j++)
-      std::cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, pfs[i].fs[j].weight_index, 0);
+      std::cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, static_cast<uint32_t>(pfs[i].fs[j].weight_index), 0);
     std::cout << std::endl;
   }
 

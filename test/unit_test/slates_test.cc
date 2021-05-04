@@ -34,15 +34,15 @@ struct test_base
 };
 
 template <typename LearnFunc, typename PredictFunc>
-VW::LEARNER::base_learner* make_test_learner(const LearnFunc& learn, const PredictFunc& predict)
+VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, multi_ex>* make_test_learner(
+    const LearnFunc& learn, const PredictFunc& predict)
 {
   auto test_base_data = scoped_calloc_or_throw<test_base<LearnFunc, PredictFunc>>(learn, predict);
   using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::LEARNER::multi_learner&, multi_ex&);
   auto learn_fptr = &test_base<LearnFunc, PredictFunc>::invoke_learn;
   auto predict_fptr = &test_base<LearnFunc, PredictFunc>::invoke_predict;
-  auto& l = VW::LEARNER::init_learner(test_base_data, (VW::LEARNER::multi_learner*)nullptr, static_cast<func>(learn_fptr),
-      static_cast<func>(predict_fptr), 0, prediction_type_t::decision_probs);
-  return VW::LEARNER::make_base(l);
+  return &VW::LEARNER::init_learner(test_base_data, (VW::LEARNER::multi_learner*)nullptr, static_cast<func>(learn_fptr),
+      static_cast<func>(predict_fptr), 0, prediction_type_t::decision_probs, "mock_reduction");
 }
 
 BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
@@ -86,10 +86,9 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
     examples[0]->pred.decision_scores.push_back(slot_zero);
     examples[0]->pred.decision_scores.push_back(slot_one);
   };
-  auto test_base_learner =
-      VW::LEARNER::as_multiline(make_test_learner(mock_learn_or_pred, mock_learn_or_pred));
+  auto* test_base_learner = make_test_learner(mock_learn_or_pred, mock_learn_or_pred);
   VW::slates::slates_data slate_reduction;
-  slate_reduction.learn(*test_base_learner, examples);
+  slate_reduction.learn(*VW::LEARNER::as_multiline(test_base_learner), examples);
 
   // This confirms that the reductions converted the CCB space decision scores back to slates action index space.
   BOOST_CHECK_EQUAL(examples[0]->pred.decision_scores.size(), 2);
@@ -101,5 +100,5 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
   vw.finish_example(examples);
   VW::finish(vw);
   test_base_learner->finish();
-  free_it(test_base_learner);
+  delete test_base_learner;
 }

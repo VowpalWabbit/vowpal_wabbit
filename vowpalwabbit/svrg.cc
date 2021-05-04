@@ -44,7 +44,8 @@ inline void vec_add(float& p, const float x, float& w)
 template <int offset>
 inline float inline_predict(vw& all, example& ec)
 {
-  float acc = ec.l.simple.initial;
+  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  float acc = simple_red_features.initial;
   GD::foreach_feature<float, vec_add<offset> >(all, ec, acc);
   return acc;
 }
@@ -116,7 +117,7 @@ void learn(svrg& s, single_learner& base, example& ec)
   {
     if (s.prev_pass != pass && !s.all->logger.quiet)
     {
-      std::cout << "svrg pass " << pass << ": committing stable point" << std::endl;
+      *(s.all->trace_message) << "svrg pass " << pass << ": committing stable point" << std::endl;
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
       {
         float w = VW::get_weight(*s.all, j, W_INNER);
@@ -124,7 +125,7 @@ void learn(svrg& s, single_learner& base, example& ec)
         VW::set_weight(*s.all, j, W_STABLEGRAD, 0.f);
       }
       s.stable_grad_count = 0;
-      std::cout << "svrg pass " << pass << ": computing exact gradient" << std::endl;
+      *(s.all->trace_message) << "svrg pass " << pass << ": computing exact gradient" << std::endl;
     }
     update_stable(s, ec);
     s.stable_grad_count++;
@@ -132,9 +133,7 @@ void learn(svrg& s, single_learner& base, example& ec)
   else  // Perform updates
   {
     if (s.prev_pass != pass && !s.all->logger.quiet)
-    {
-      std::cout << "svrg pass " << pass << ": taking steps" << std::endl;
-    }
+    { *(s.all->trace_message) << "svrg pass " << pass << ": taking steps" << std::endl; }
     update_inner(s, ec);
   }
 
@@ -143,10 +142,7 @@ void learn(svrg& s, single_learner& base, example& ec)
 
 void save_load(svrg& s, io_buf& model_file, bool read, bool text)
 {
-  if (read)
-  {
-    initialize_regressor(*s.all);
-  }
+  if (read) { initialize_regressor(*s.all); }
 
   if (model_file.num_files() != 0)
   {
@@ -173,14 +169,11 @@ base_learner* svrg_setup(options_i& options, vw& all)
 
   bool svrg_option = false;
   option_group_definition new_options("Stochastic Variance Reduced Gradient");
-  new_options.add(make_option("svrg", svrg_option).keep().help("Streaming Stochastic Variance Reduced Gradient"))
+  new_options
+      .add(make_option("svrg", svrg_option).keep().necessary().help("Streaming Stochastic Variance Reduced Gradient"))
       .add(make_option("stage_size", s->stage_size).default_value(1).help("Number of passes per SVRG stage"));
-  options.add_and_parse(new_options);
 
-  if (!svrg_option)
-  {
-    return nullptr;
-  }
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   s->all = &all;
   s->prev_pass = -1;
@@ -188,7 +181,8 @@ base_learner* svrg_setup(options_i& options, vw& all)
 
   // Request more parameter storage (4 floats per feature)
   all.weights.stride_shift(2);
-  learner<svrg, example>& l = init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift());
+  learner<svrg, example>& l =
+      init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift(), all.get_setupfn_name(svrg_setup));
   l.set_save_load(save_load);
   return make_base(l);
 }

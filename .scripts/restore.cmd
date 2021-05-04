@@ -9,6 +9,8 @@ CALL %~dp0init.cmd
 PUSHD %~dp0
 
 REM TODO: This really should be out-of-source
+vcpkg install flatbuffers:x64-windows
+
 ECHO Restoring "%vwRoot%\cs\common\packages.config"
 "%nugetPath%" restore -o "%vwRoot%\vowpalwabbit\packages" "%vwRoot%\cs\common\packages.config"
 ECHO.

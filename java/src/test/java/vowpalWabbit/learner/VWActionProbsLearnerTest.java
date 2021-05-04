@@ -28,7 +28,7 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
             "3:1.5:0.7 | a d"
         };
 
-        VWActionProbsLearner vw = VWLearners.create("--quiet --cb_explore 4 -f " + model);
+        VWActionProbsLearner vw = VWLearners.create("--quiet --cb_force_legacy --cb_explore 4 -f " + model);
         ActionProbs[] trainPreds = new ActionProbs[cbTrain.length];
         for (int i=0; i<cbTrain.length; ++i) {
             trainPreds[i] = vw.learn(cbTrain[i]);

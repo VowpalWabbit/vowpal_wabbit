@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include <string>
+#include <cfloat>
 #include "reductions.h"
 #include "rand48.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
@@ -69,8 +70,10 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
                 (lindex + ((uint64_t)(rfd_id * k + n) << stride_shift));  // a feature has k weights in each field
             float* lw = &all.weights[lwindex & weight_mask];
             // perturb away from saddle point at (0, 0)
-            if (is_learn && !example_is_test(ec) && *lw == 0)
-              *lw = cheesyrand(lwindex) * 0.5f / sqrtk;
+            if (is_learn)
+            {
+              if (!example_is_test(ec) && *lw == 0) { *lw = cheesyrand(lwindex) * 0.5f / sqrtk; }
+            }
 
             for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
             {
@@ -122,14 +125,8 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
     {
       namespace_index right = i;
       features& rfs = ec.feature_space[right];
-      rfs.values.end() = rfs.values.begin() + lrq.orig_size[right];
-
-      if (all.audit || all.hash_inv)
-      {
-        for (size_t j = lrq.orig_size[right]; j < rfs.space_names.size(); ++j) rfs.space_names[j].~audit_strings_ptr();
-
-        rfs.space_names.end() = rfs.space_names.begin() + lrq.orig_size[right];
-      }
+      rfs.values.resize_but_with_stl_behavior(lrq.orig_size[right]);
+      if (all.audit || all.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }
     }
   }
 }
@@ -138,11 +135,10 @@ VW::LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
 {
   std::string lrqfa;
   option_group_definition new_options("Low Rank Quadratics FA");
-  new_options.add(make_option("lrqfa", lrqfa).keep().help("use low rank quadratic features with field aware weights"));
-  options.add_and_parse(new_options);
+  new_options.add(
+      make_option("lrqfa", lrqfa).keep().necessary().help("use low rank quadratic features with field aware weights"));
 
-  if (!options.was_supplied("lrqfa"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   auto lrq = scoped_calloc_or_throw<LRQFAstate>();
   lrq->all = &all;
@@ -156,8 +152,10 @@ VW::LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
   for (char i : lrq->field_name) lrq->field_id[(int)i] = fd_id++;
 
   all.wpp = all.wpp * (uint64_t)(1 + lrq->k);
-  learner<LRQFAstate, example>& l = init_learner(lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>,
-      predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k);
+  auto base = setup_base(options, all);
+  learner<LRQFAstate, example>& l =
+      init_learner(lrq, as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
+          1 + lrq->field_name.size() * lrq->k, all.get_setupfn_name(lrqfa_setup), base->learn_returns_prediction);
 
   return make_base(l);
 }

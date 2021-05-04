@@ -15,7 +15,7 @@
 
 BOOST_AUTO_TEST_CASE(tag_with_seed__seed_extraction)
 {
-  auto vw = VW::initialize("--json --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   std::string json = R"(
   {
     "_label": 1,
@@ -37,11 +37,12 @@ BOOST_AUTO_TEST_CASE(tag_with_seed__seed_extraction)
   BOOST_CHECK_EQUAL(expected, seed);
 
   VW::finish_example(*vw, examples);
+  VW::finish(*vw);
 }
 
 BOOST_AUTO_TEST_CASE(tag_without_seed__seed_extraction)
 {
-  auto vw = VW::initialize("--json --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   std::string json = R"(
   {
     "_label": 1,
@@ -60,11 +61,12 @@ BOOST_AUTO_TEST_CASE(tag_without_seed__seed_extraction)
   BOOST_CHECK_EQUAL(false, extracted);
 
   VW::finish_example(*vw, examples);
+  VW::finish(*vw);
 }
 
 BOOST_AUTO_TEST_CASE(no_tag__seed_extraction)
 {
-  auto vw = VW::initialize("--json --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   std::string json = R"(
   {
     "_label": 1,
@@ -82,6 +84,7 @@ BOOST_AUTO_TEST_CASE(no_tag__seed_extraction)
   BOOST_CHECK_EQUAL(false, extracted);
 
   VW::finish_example(*vw, examples);
+  VW::finish(*vw);
 }
 
 

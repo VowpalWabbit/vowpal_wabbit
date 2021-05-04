@@ -49,8 +49,7 @@ void run(Search::search& sch, multi_ex& ec)
                             .set_condition_range((ptag)i, sch.get_history_length(), 'p')
                             .predict();
 
-    if (sch.output().good())
-      sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
+    if (sch.output().good()) sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
   }
 }
 }  // namespace SequenceTask
@@ -141,7 +140,9 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   if (search_span_bilou)
   {
-    std::cerr << "switching to BILOU encoding for sequence span labeling" << std::endl;
+    // TODO: is this the right logger?
+    *(sch.get_vw_pointer_unsafe().trace_message)
+        << "switching to BILOU encoding for sequence span labeling" << std::endl;
     D->encoding = BILOU;
     num_actions = num_actions * 2 - 1;
   }
@@ -187,8 +188,7 @@ void finish(Search::search& sch)
 void setup(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
-  if (D.encoding == BILOU)
-    convert_bio_to_bilou(ec);
+  if (D.encoding == BILOU) convert_bio_to_bilou(ec);
 }
 
 void takedown(Search::search& sch, multi_ex& ec)
@@ -241,22 +241,19 @@ void run(Search::search& sch, multi_ex& ec)
         {
           P.set_allowed(D.allowed_actions);
           // we cannot allow in-X or last-X next
-          if ((oracle > 1) && (((oracle - 2) % 4 == 2) || ((oracle - 2) % 4 == 3)))
-            oracle = 1;
+          if ((oracle > 1) && (((oracle - 2) % 4 == 2) || ((oracle - 2) % 4 == 3))) oracle = 1;
         }
         else  // begin-X or in-X
         {
           action other = ((last_prediction - 2) % 4 == 1) ? (last_prediction + 2) : last_prediction;
           P.set_allowed(last_prediction + 1);
           P.add_allowed(other);
-          if ((oracle != last_prediction + 1) && (oracle != other))
-            oracle = other;
+          if ((oracle != last_prediction + 1) && (oracle != other)) oracle = other;
         }
       }
       P.set_input(*ec[i]);
       P.set_condition_range((ptag)i, sch.get_history_length(), 'p');
-      if (pass > 1)
-        P.add_condition_range((ptag)(i + 1 + sch.get_history_length()), sch.get_history_length() + 1, 'a');
+      if (pass > 1) P.add_condition_range((ptag)(i + 1 + sch.get_history_length()), sch.get_history_length() + 1, 'a');
       P.set_oracle(oracle);
       last_prediction = P.predict();
 
@@ -294,8 +291,7 @@ void run(Search::search& sch, multi_ex& ec)
                             .set_allowed(nullptr, costs, K)
                             .set_condition_range((ptag)i, sch.get_history_length(), 'p')
                             .predict();
-    if (sch.output().good())
-      sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
+    if (sch.output().good()) sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
   }
   free(costs);
 }
@@ -360,8 +356,7 @@ void run(Search::search& sch, multi_ex& ec)
     loss = 1.;
   sch.loss(loss);
 
-  if (sch.output().good())
-    sch.output() << max_prediction;
+  if (sch.output().good()) sch.output() << max_prediction;
 }
 }  // namespace ArgmaxTask
 
@@ -378,11 +373,11 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 {
   CS::wclass default_wclass = {0., 0, 0., 0.};
 
-  example* ldf_examples = VW::alloc_examples(sizeof(CS::label), num_actions);
+  example* ldf_examples = VW::alloc_examples(num_actions);
   for (size_t a = 0; a < num_actions; a++)
   {
     CS::label& lab = ldf_examples[a].l.cs;
-    CS::cs_label.default_label(&lab);
+    CS::default_label(lab);
     lab.costs.push_back(default_wclass);
     ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
   }
@@ -400,8 +395,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 void finish(Search::search& sch)
 {
   task_data* data = sch.get_task_data<task_data>();
-  for (size_t a = 0; a < data->num_actions; a++) VW::dealloc_example(CS::cs_label.delete_label, data->ldf_examples[a]);
-  free(data->ldf_examples);
+  VW::dealloc_examples(data->ldf_examples, data->num_actions);
   free(data);
 }
 
@@ -424,7 +418,7 @@ void run(Search::search& sch, multi_ex& ec)
     {
       if (sch.predictNeedsExample())  // we can skip this work if `predict` won't actually use the example data
       {
-        VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
+        VW::copy_example_data(&data->ldf_examples[a], ec[i]);  // copy but leave label alone!
         // now, offset it appropriately for the action id
         my_update_example_indicies(sch, true, &data->ldf_examples[a], 28904713, 4832917 * (uint64_t)a);
       }
@@ -446,8 +440,7 @@ void run(Search::search& sch, multi_ex& ec)
                          .predict();
     action prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
 
-    if (sch.output().good())
-      sch.output() << prediction << ' ';
+    if (sch.output().good()) sch.output() << prediction << ' ';
   }
 }
 }  // namespace SequenceTask_DemoLDF

@@ -5,10 +5,10 @@
 #include <cfloat>
 #include <cstdio>
 #ifdef _WIN32
-#define NOMINMAX
-#include <winsock2.h>
+#  define NOMINMAX
+#  include <winsock2.h>
 #else
-#include <netdb.h>
+#  include <netdb.h>
 #endif
 
 #include "gd.h"
@@ -16,6 +16,7 @@
 #include "reductions.h"
 #include "vw_exception.h"
 #include "array_parameters.h"
+#include "shared_data.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -27,11 +28,11 @@ struct gdmf
   uint32_t rank;
   size_t no_win_counter;
   uint64_t early_stop_thres;
-  ~gdmf() { scalars.delete_v(); }
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 {
+  // TODO: Where should audit stuff output to?
   vw& all = *d.all;
   parameters& weights = all.weights;
   uint64_t mask = weights.mask();
@@ -41,13 +42,15 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
     for (auto& f : fs.values_indices_audit())
     {
       std::cout << '\t';
-      if (audit)
-        std::cout << f.audit()->get()->first << '^' << f.audit()->get()->second << ':';
+      if (audit) std::cout << f.audit()->get()->first << '^' << f.audit()->get()->second << ':';
       std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
       std::cout << ':' << (&weights[f.index()])[offset];
     }
   }
-  for (auto& i : all.pairs)
+  for (const auto& i : all.interactions.interactions)
+  {
+    if (i.size() != 2) THROW("can only use pairs in matrix factorization");
+
     if (ec.feature_space[(unsigned char)i[0]].size() > 0 && ec.feature_space[(unsigned char)i[1]].size() > 0)
     {
       /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
@@ -70,8 +73,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
           }
       }
     }
-  if (all.triples.begin() != all.triples.end())
-    THROW("cannot use triples in matrix factorization");
+  }
   std::cout << std::endl;
 }
 
@@ -93,11 +95,13 @@ template <class T>
 float mf_predict(gdmf& d, example& ec, T& weights)
 {
   vw& all = *d.all;
-  label_data& ld = ec.l.simple;
-  float prediction = ld.initial;
+  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  float prediction = simple_red_features.initial;
 
-  for (auto& i : d.all->pairs)
+  for (const auto& i : d.all->interactions.interactions)
   {
+    if (i.size() != 2) THROW("can only use pairs in matrix factorization");
+
     ec.num_features -= ec.feature_space[(int)i[0]].size() * ec.feature_space[(int)i[1]].size();
     ec.num_features += ec.feature_space[(int)i[0]].size() * d.rank;
     ec.num_features += ec.feature_space[(int)i[1]].size() * d.rank;
@@ -117,8 +121,10 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   prediction += linear_prediction;
   // interaction terms
-  for (auto& i : d.all->pairs)
+  for (const auto& i : d.all->interactions.interactions)
   {
+    // The check for non-pair interactions is done in the previous loop
+
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {
       for (uint64_t k = 1; k <= d.rank; k++)
@@ -144,22 +150,17 @@ float mf_predict(gdmf& d, example& ec, T& weights)
     }
   }
 
-  if (all.triples.begin() != all.triples.end())
-    THROW("cannot use triples in matrix factorization");
-
   // d.scalars has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ...
 
   ec.partial_prediction = prediction;
 
-  all.set_minmax(all.sd, ld.label);
+  all.set_minmax(all.sd, ec.l.simple.label);
 
   ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
-  if (ld.label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
+  if (ec.l.simple.label != FLT_MAX) ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
-  if (all.audit)
-    mf_print_audit_features(d, ec, 0);
+  if (all.audit) mf_print_audit_features(d, ec, 0);
 
   return ec.pred.scalar;
 }
@@ -197,8 +198,10 @@ void mf_train(gdmf& d, example& ec, T& weights)
   for (features& fs : ec) sd_offset_update<T>(weights, fs, 0, update, regularization);
 
   // quadratic update
-  for (auto& i : all.pairs)
+  for (const auto& i : all.interactions.interactions)
   {
+    if (i.size() != 2) THROW("can only use pairs in matrix factorization");
+
     if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
     {
       // update l^k weights
@@ -219,8 +222,6 @@ void mf_train(gdmf& d, example& ec, T& weights)
       }
     }
   }
-  if (all.triples.begin() != all.triples.end())
-    THROW("cannot use triples in matrix factorization");
 }
 
 void mf_train(gdmf& d, example& ec)
@@ -231,16 +232,14 @@ void mf_train(gdmf& d, example& ec)
     mf_train(d, ec, d.all->weights.dense_weights);
 }
 
-template <class T>
-class set_rand_wrapper
+void initialize_weights(weight* weights, uint64_t index, uint32_t stride)
 {
- public:
-  static void func(weight& w, uint32_t& stride, uint64_t index)
+  for (size_t i = 0; i != stride; ++i, ++index)
   {
-    weight* pw = &w;
-    for (size_t i = 0; i != stride; ++i, ++index) pw[i] = (float)(0.1 * merand48(index));
+    float initial_value = 0.1f * merand48(index);
+    weights[i] = initial_value;
   }
-};
+}
 
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 {
@@ -252,10 +251,10 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     if (all.random_weights)
     {
       uint32_t stride = all.weights.stride();
-      if (all.weights.sparse)
-        all.weights.sparse_weights.set_default<uint32_t, set_rand_wrapper<sparse_parameters> >(stride);
-      else
-        all.weights.dense_weights.set_default<uint32_t, set_rand_wrapper<dense_parameters> >(stride);
+      auto weight_initializer = [stride](
+                                    weight* weights, uint64_t index) { initialize_weights(weights, index, stride); };
+
+      all.weights.set_default(weight_initializer);
     }
   }
 
@@ -286,8 +285,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
         brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
       }
 
-      if (!read)
-        ++i;
+      if (!read) ++i;
     } while ((!read && i < length) || (read && brw > 0));
   }
 }
@@ -297,13 +295,11 @@ void end_pass(gdmf& d)
   vw* all = d.all;
 
   all->eta *= all->eta_decay_rate;
-  if (all->save_per_pass)
-    save_predictor(*all, all->final_regressor_name, all->current_pass);
+  if (all->save_per_pass) save_predictor(*all, all->final_regressor_name, all->current_pass);
 
   if (!all->holdout_set_off)
   {
-    if (summarize_holdout_set(*all, d.no_win_counter))
-      finalize_regressor(*all, all->final_regressor_name);
+    if (summarize_holdout_set(*all, d.no_win_counter)) finalize_regressor(*all, all->final_regressor_name);
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
       set_done(*all);
@@ -317,8 +313,7 @@ void learn(gdmf& d, single_learner&, example& ec)
   vw& all = *d.all;
 
   mf_predict(d, ec);
-  if (all.training && ec.l.simple.label != FLT_MAX)
-    mf_train(d, ec);
+  if (all.training && ec.l.simple.label != FLT_MAX) mf_train(d, ec);
 }
 
 base_learner* gd_mf_setup(options_i& options, vw& all)
@@ -328,26 +323,21 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   bool bfgs = false;
   bool conjugate_gradient = false;
   option_group_definition gf_md_options("Gradient Descent Matrix Factorization");
-  gf_md_options.add(make_option("rank", data->rank).keep().help("rank for matrix factorization."));
+  gf_md_options.add(make_option("rank", data->rank).keep().necessary().help("rank for matrix factorization."));
 
   // Not supported, need to be checked to be false.
   gf_md_options.add(make_option("bfgs", bfgs).help("Option not supported by this reduction"));
   gf_md_options.add(
       make_option("conjugate_gradient", conjugate_gradient).help("Option not supported by this reduction"));
-  options.add_and_parse(gf_md_options);
 
-  if (!options.was_supplied("rank"))
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(gf_md_options)) return nullptr;
 
-  if (options.was_supplied("adaptive"))
-    THROW("adaptive is not implemented for matrix factorization");
-  if (options.was_supplied("normalized"))
-    THROW("normalized is not implemented for matrix factorization");
+  if (options.was_supplied("adaptive")) THROW("adaptive is not implemented for matrix factorization");
+  if (options.was_supplied("normalized")) THROW("normalized is not implemented for matrix factorization");
   if (options.was_supplied("exact_adaptive_norm"))
     THROW("normalized adaptive updates is not implemented for matrix factorization");
 
-  if (bfgs || conjugate_gradient)
-    THROW("bfgs is not implemented for matrix factorization");
+  if (bfgs || conjugate_gradient) THROW("bfgs is not implemented for matrix factorization");
 
   data->all = &all;
   data->no_win_counter = 0;
@@ -374,7 +364,8 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   }
   all.eta *= powf((float)(all.sd->t), all.power_t);
 
-  learner<gdmf, example>& l = init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()));
+  learner<gdmf, example>& l = init_learner(
+      data, learn, predict, (UINT64_ONE << all.weights.stride_shift()), all.get_setupfn_name(gd_mf_setup), true);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
 

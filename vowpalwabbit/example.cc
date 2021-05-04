@@ -6,117 +6,19 @@
 
 #include "example.h"
 #include "gd.h"
+#include "simple_label_parser.h"
 
-example::example()
-{
-  memset(&l, 0, sizeof(polylabel));
-  memset(&pred, 0, sizeof(polyprediction));
-  tag = v_init<char>();
-}
-
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
 {
-  tag.delete_v();
   if (passthrough)
   {
     delete passthrough;
     passthrough = nullptr;
   }
 }
-
-example::example(example&& other) noexcept
-    : example_predict(std::move(other))
-    , l(other.l)
-    , pred(other.pred)
-    , weight(other.weight)
-    , tag(std::move(other.tag))
-    , example_counter(other.example_counter)
-    , num_features(other.num_features)
-    , partial_prediction(other.partial_prediction)
-    , updated_prediction(other.updated_prediction)
-    , loss(other.loss)
-    , total_sum_feat_sq(other.total_sum_feat_sq)
-    , confidence(other.confidence)
-    , passthrough(other.passthrough)
-    , test_only(other.test_only)
-    , end_pass(other.end_pass)
-    , sorted(other.sorted)
-    , in_use(other.in_use)
-{
-  other.weight = 1.f;
-  auto& other_tag = other.tag;
-  other_tag._begin = nullptr;
-  other_tag._end = nullptr;
-  other_tag.end_array = nullptr;
-  other.example_counter = 0;
-  other.num_features = 0;
-  other.partial_prediction = 0.f;
-  other.updated_prediction = 0.f;
-  other.loss = 0.f;
-  other.total_sum_feat_sq = 0.f;
-  other.confidence = 0.f;
-  other.passthrough = nullptr;
-  other.test_only = false;
-  other.end_pass = false;
-  other.sorted = false;
-  other.in_use = false;
-}
-
-example& example::operator=(example&& other) noexcept
-{
-  example_predict::operator=(std::move(other));
-  l = other.l;
-  pred = other.pred;
-  weight = other.weight;
-  tag = std::move(other.tag);
-  example_counter = other.example_counter;
-  num_features = other.num_features;
-  partial_prediction = other.partial_prediction;
-  updated_prediction = other.updated_prediction;
-  loss = other.loss;
-  total_sum_feat_sq = other.total_sum_feat_sq;
-  confidence = other.confidence;
-  passthrough = other.passthrough;
-  test_only = other.test_only;
-  end_pass = other.end_pass;
-  sorted = other.sorted;
-  in_use = other.in_use;
-
-  other.weight = 1.f;
-
-  // We need to null out all the v_arrays to prevent double freeing during moves
-  auto& other_tag = other.tag;
-  other_tag._begin = nullptr;
-  other_tag._end = nullptr;
-  other_tag.end_array = nullptr;
-
-  other.example_counter = 0;
-  other.num_features = 0;
-  other.partial_prediction = 0.f;
-  other.updated_prediction = 0.f;
-  other.loss = 0.f;
-  other.total_sum_feat_sq = 0.f;
-  other.confidence = 0.f;
-  other.passthrough = nullptr;
-  other.test_only = false;
-  other.end_pass = false;
-  other.sorted = false;
-  other.in_use = false;
-  return *this;
-}
-
-void example::delete_unions(void (*delete_label)(void*), void (*delete_prediction)(void*))
-{
-  if (delete_label)
-  {
-    delete_label(&l);
-  }
-
-  if (delete_prediction)
-  {
-    delete_prediction(&pred);
-  }
-}
+VW_WARNING_STATE_POP
 
 float collision_cleanup(features& fs)
 {
@@ -147,17 +49,17 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, size_t, void (*copy_label)(void*, void*))
+void copy_example_label(example* dst, example* src, void (*)(polylabel*, polylabel*))
 {
-  if (copy_label)
-    copy_label(&dst->l, &src->l);  // TODO: we really need to delete_label on dst :(
-  else
-    dst->l = src->l;
+  dst->l = src->l;
+  dst->_reduction_features = src->_reduction_features;
 }
 
-void copy_example_metadata(bool /* audit */, example* dst, example* src)
+void copy_example_label(example* dst, const example* src) { dst->l = src->l; }
+
+void copy_example_metadata(example* dst, const example* src)
 {
-  copy_array(dst->tag, src->tag);
+  dst->tag = src->tag;
   dst->example_counter = src->example_counter;
 
   dst->ft_offset = src->ft_offset;
@@ -175,35 +77,49 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
   dst->confidence = src->confidence;
   dst->test_only = src->test_only;
   dst->end_pass = src->end_pass;
+  dst->is_newline = src->is_newline;
   dst->sorted = src->sorted;
 }
 
-void copy_example_data(bool audit, example* dst, example* src)
+void copy_example_data(example* dst, const example* src)
 {
-  // std::cerr << "copy_example_data dst = " << dst << std::endl;
-  copy_example_metadata(audit, dst, src);
+  copy_example_metadata(dst, src);
 
   // copy feature data
-  copy_array(dst->indices, src->indices);
+  dst->indices = src->indices;
   for (namespace_index c : src->indices) dst->feature_space[c].deep_copy_from(src->feature_space[c]);
-  // copy_array(dst->atomics[i], src->atomics[i]);
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->interactions = src->interactions;
+  dst->_debug_current_reduction_depth = src->_debug_current_reduction_depth;
 }
 
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
+void copy_example_metadata(bool /* audit */, example* dst, example* src) { copy_example_metadata(dst, src); }
+
+void copy_example_data(bool /* audit */, example* dst, example* src) { copy_example_data(dst, src); }
+
+void copy_example_data(bool /* audit */, example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
 {
-  copy_example_data(audit, dst, src);
-  copy_example_label(dst, src, label_size, copy_label);
+  copy_example_data(dst, src);
+  copy_example_label(dst, src, copy_label);
+}
+
+void copy_example_data(
+    bool audit, example* dst, example* src, size_t /*label_size*/, void (*copy_label)(polylabel*, polylabel*))
+{
+  copy_example_data(audit, dst, src, copy_label);
+}
+
+void copy_example_data_with_label(example* dst, const example* src)
+{
+  copy_example_data(dst, src);
+  copy_example_label(dst, src);
 }
 
 void move_feature_namespace(example* dst, example* src, namespace_index c)
 {
-  if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end())
-    return;  // index not present in src
-  if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end())
-    dst->indices.push_back(c);
+  if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end()) return;  // index not present in src
+  if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end()) dst->indices.push_back(c);
 
   auto& fdst = dst->feature_space[c];
   auto& fsrc = src->feature_space[c];
@@ -262,7 +178,7 @@ flat_example* flatten_example(vw& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
-  fec.l.simple.weight = ec->weight;
+  fec._reduction_features = ec->_reduction_features;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len > 0)
@@ -302,32 +218,87 @@ void free_flatten_example(flat_example* fec)
   if (fec)
   {
     fec->fs.~features();
-    if (fec->tag_len > 0)
-      free(fec->tag);
+    if (fec->tag_len > 0) free(fec->tag);
     free(fec);
   }
 }
 
+std::string cb_label_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "[l.cb={";
+  auto& costs = ec.l.cb.costs;
+  for (auto c = costs.cbegin(); c != costs.cend(); ++c)
+  {
+    strstream << "{c=" << c->cost << ",a=" << c->action << ",p=" << c->probability << ",pp=" << c->partial_prediction
+              << "}";
+  }
+  strstream << "}]";
+  return strstream.str();
+}
+
+std::string simple_label_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "[l=" << ec.l.simple.label << ",w=" << ec.weight << "]";
+  return strstream.str();
+}
+
+std::string scalar_pred_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "[p=" << ec.pred.scalar << ", pp=" << ec.partial_prediction << "]";
+  return strstream.str();
+}
+
+std::string a_s_pred_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "ec.pred.a_s[";
+  for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
+  { strstream << "(" << i << " = " << ec.pred.a_s[i].action << ", " << ec.pred.a_s[i].score << ")"; }
+  strstream << "]";
+  return strstream.str();
+}
+
+std::string multiclass_pred_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "ec.pred.multiclass = " << ec.pred.multiclass;
+  return strstream.str();
+}
+
+std::string prob_dist_pred_to_string(const example& ec)
+{
+  std::stringstream strstream;
+  strstream << "ec.pred.prob_dist[";
+  for (uint32_t i = 0; i < ec.pred.pdf.size(); i++)
+  {
+    strstream << "(" << i << " = " << ec.pred.pdf[i].left << "-" << ec.pred.pdf[i].right << ", "
+              << ec.pred.pdf[i].pdf_value << ")";
+  }
+  strstream << "]";
+  return strstream.str();
+}
+
 namespace VW
 {
-example* alloc_examples(size_t, size_t count = 1)
+example* alloc_examples(size_t, size_t count)
 {
   example* ec = calloc_or_throw<example>(count);
-  if (ec == nullptr)
-    return nullptr;
-  for (size_t i = 0; i < count; i++)
-  {
-    ec[i].ft_offset = 0;
-    //  std::cerr << "  alloc_example.indices.begin()=" << ec->indices.begin() << " end=" << ec->indices.end() << " //
-    //  ld = " << ec->ld << "\t|| me = " << ec << std::endl;
-  }
+  if (ec == nullptr) return nullptr;
+  for (size_t i = 0; i < count; i++) { new (ec + i) example; }
   return ec;
 }
 
-void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
+example* alloc_examples(size_t count) { return alloc_examples(0, count); }
+
+void dealloc_example(void (*)(polylabel*), example& ec, void (*)(void*)) { ec.~example(); }
+
+void dealloc_examples(example* example_ptr, size_t count)
 {
-  ec.delete_unions(delete_label, delete_prediction);
-  ec.~example();
+  for (size_t i = 0; i < count; i++) { (example_ptr + i)->~example(); }
+  free(example_ptr);
 }
 
 void finish_example(vw&, example&);
@@ -340,10 +311,14 @@ void finish_example(vw& all, multi_ex& ec_seq)
 
 void return_multiple_example(vw& all, v_array<example*>& examples)
 {
-  for (auto ec : examples)
-  {
-    clean_example(all, *ec, true);
-  }
+  for (auto ec : examples) { clean_example(all, *ec, true); }
   examples.clear();
 }
+
 }  // namespace VW
+
+std::string debug_depth_indent_string(const example& ec)
+{
+  return debug_depth_indent_string(ec._debug_current_reduction_depth);
+}
+std::string debug_depth_indent_string(const multi_ex& ec) { return debug_depth_indent_string(*ec[0]); }

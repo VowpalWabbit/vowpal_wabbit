@@ -5,13 +5,12 @@
 #include "vw_exception.h"
 
 #ifdef _WIN32
-#define NOMINMAX
-#include <Windows.h>
+#  define NOMINMAX
+#  include <Windows.h>
 #endif
 
 namespace VW
 {
-
 #ifdef _WIN32
 
 void vw_trace(const char* filename, int linenumber, const char* fmt, ...)
@@ -37,8 +36,7 @@ struct StopWatchData
 
 StopWatch::StopWatch() : data(new StopWatchData())
 {
-  if (!::QueryPerformanceFrequency(&data->frequency_))
-    THROW("Error with QueryPerformanceFrequency");
+  if (!::QueryPerformanceFrequency(&data->frequency_)) THROW("Error with QueryPerformanceFrequency");
   ::QueryPerformanceCounter(&data->startTime_);
 }
 
@@ -57,8 +55,7 @@ bool launchDebugger()
   // Get System directory, typically c:\windows\system32
   std::wstring systemDir(MAX_PATH + 1, '\0');
   UINT nChars = GetSystemDirectoryW(&systemDir[0], (UINT)systemDir.length());
-  if (nChars == 0)
-    return false;  // failed to get system directory
+  if (nChars == 0) return false;  // failed to get system directory
   systemDir.resize(nChars);
 
   // Get process ID and create the command line
@@ -75,8 +72,7 @@ bool launchDebugger()
   PROCESS_INFORMATION pi;
   ZeroMemory(&pi, sizeof(pi));
 
-  if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
-    return false;
+  if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) return false;
 
   // Close debugger process handles to eliminate resource leak
   CloseHandle(pi.hThread);

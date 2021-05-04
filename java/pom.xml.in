@@ -4,12 +4,12 @@
 
     <groupId>com.github.vowpalwabbit</groupId>
     <artifactId>vw-jni</artifactId>
-    <version>@PACKAGE_VERSION@.3</version>
+    <version>@PACKAGE_VERSION@</version>
     <packaging>jar</packaging>
     <name>Vowpal Wabbit JNI Layer</name>
     <description>
         A wrapper around Vowpal Wabbit that allows use through Java.  This wrapper requires that the vw_jni platform
-        specific library is installed on your java.library.path.
+        specific library is installed on your java.library.path.  In case the libary is not found, it tries to load it from the jar file directly.
     </description>
     <url>https://github.com/VowpalWabbit/vowpal_wabbit</url>
 

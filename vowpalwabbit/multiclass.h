@@ -13,6 +13,10 @@ struct label_t
 {
   uint32_t label;
   float weight;
+
+  label_t();
+  label_t(uint32_t label, float weight);
+  void reset_to_default();
 };
 
 extern label_parser mc_label;
@@ -21,6 +25,8 @@ void print_update_with_probability(vw& all, example& ec, uint32_t prediction);
 void print_update_with_score(vw& all, example& ec, uint32_t prediction);
 
 void finish_example(vw& all, example& ec, bool update_loss);
+
+bool test_label(const label_t& ld);
 
 template <class T>
 void finish_example(vw& all, T&, example& ec)

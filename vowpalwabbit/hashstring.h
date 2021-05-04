@@ -4,13 +4,11 @@
 
 #pragma once
 #include <cstdint>  // defines size_t
+#include <string>
 #include "future_compat.h"
 #include "hash.h"
 
-VW_STD14_CONSTEXPR inline uint64_t hashall(const char * s, size_t len, uint64_t h)
-{
-  return uniform_hash(s, len, h);
-}
+VW_STD14_CONSTEXPR inline uint64_t hashall(const char* s, size_t len, uint64_t h) { return uniform_hash(s, len, h); }
 
 VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_t h)
 {
@@ -20,10 +18,7 @@ VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_
     ++front;
     --len;
   }
-  while (len > 0 && front[len - 1] <= 0x20 && (int)(front[len - 1]) >= 0)
-  {
-    --len;
-  }
+  while (len > 0 && front[len - 1] <= 0x20 && (int)(front[len - 1]) >= 0) { --len; }
 
   size_t ret = 0;
   const char* p = front;
@@ -35,3 +30,7 @@ VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_
 
   return ret + h;
 }
+
+typedef uint64_t (*hash_func_t)(const char* s, size_t, uint64_t);
+
+hash_func_t getHasher(const std::string& s);

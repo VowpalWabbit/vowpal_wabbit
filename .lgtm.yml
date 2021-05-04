@@ -1,3 +1,6 @@
+path_classifiers:
+  library:
+    - ext_libs
 queries:
   exclude: "cs/useless-assignment-to-local"
 extraction:
@@ -7,3 +10,7 @@ extraction:
   csharp:
     index:
       buildless: true
+  cpp:
+    configure:
+      command:
+        - .scripts/linux/install-flatbuffers.sh

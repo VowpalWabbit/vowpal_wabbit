@@ -12,6 +12,8 @@
 #include "vw_allreduce.h"
 
 //#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
+// TODO: This file makes extensive use of #ifdef DEBUG for printing
+//       leave this alone for now
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -72,15 +74,12 @@ struct stagewise_poly
   ~stagewise_poly()
   {
 #ifdef DEBUG
-    cout << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
+    std::cout << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
 #endif  // DEBUG
 
-    //synth_ec.feature_space[tree_atomics].delete_v();
+    // synth_ec.feature_space[tree_atomics].delete_v();
     free(sd);
     free(depthsbits);
-
-    // Intentionally do not clear the unions here.
-    synth_ec.delete_unions(nullptr, nullptr);
   }
 };
 
@@ -96,7 +95,6 @@ inline uint64_t stride_un_shift(const stagewise_poly &poly, uint64_t idx)
 
 inline uint64_t do_ft_offset(const stagewise_poly &poly, uint64_t idx)
 {
-  // std::cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset << std::endl;
   assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
   return idx + poly.synth_ec.ft_offset;
 }
@@ -108,10 +106,7 @@ inline uint64_t un_ft_offset(const stagewise_poly &poly, uint64_t idx)
     return idx;
   else
   {
-    while (idx < poly.synth_ec.ft_offset)
-    {
-      idx += poly.all->length() << poly.all->weights.stride_shift();
-    }
+    while (idx < poly.synth_ec.ft_offset) { idx += poly.all->length() << poly.all->weights.stride_shift(); }
     return idx - poly.synth_ec.ft_offset;
   }
 }
@@ -356,7 +351,7 @@ void sort_data_update_support(stagewise_poly &poly)
     std::cout << "  [" << depth << "] = " << poly.depths[depth];
   std::cout << std::endl;
 
-  std::cout << "Sanity check after sort... " << flush;
+  std::cout << "Sanity check after sort... " << std::flush;
   sanity_check_state(poly);
   std::cout << "done" << std::endl;
 #endif  // DEBUG
@@ -403,8 +398,7 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.num_features = 0;
   poly.synth_ec.total_sum_feat_sq = 0;
 
-  if (poly.synth_ec.indices.size() == 0)
-    poly.synth_ec.indices.push_back(tree_atomics);
+  if (poly.synth_ec.indices.size() == 0) poly.synth_ec.indices.push_back(tree_atomics);
 }
 
 void synthetic_decycle(stagewise_poly &poly)
@@ -441,7 +435,7 @@ void synthetic_create_rec(stagewise_poly &poly, float v, uint64_t findex)
       // collisions.  Have not played with this issue yet...
       parent_toggle(poly, wid_cur);
     }
-    min_depths_set(poly, wid_cur, poly.cur_depth);
+    min_depths_set(poly, wid_cur, static_cast<uint8_t>(poly.cur_depth));
   }
 
   if (!cycle_get(poly, wid_cur) &&
@@ -585,8 +579,7 @@ void reduce_min_max(uint8_t &v1, const uint8_t &v2)
 
 void end_pass(stagewise_poly &poly)
 {
-  if (!!poly.batch_sz || (poly.all->all_reduce != nullptr && poly.numpasses > 1))
-    return;
+  if (!!poly.batch_sz || (poly.all->all_reduce != nullptr && poly.numpasses > 1)) return;
 
   uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
   uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
@@ -663,7 +656,8 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   auto poly = scoped_calloc_or_throw<stagewise_poly>();
   bool stage_poly = false;
   option_group_definition new_options("Stagewise polynomial options");
-  new_options.add(make_option("stage_poly", stage_poly).keep().help("use stagewise polynomial feature learning"))
+  new_options
+      .add(make_option("stage_poly", stage_poly).keep().necessary().help("use stagewise polynomial feature learning"))
       .add(make_option("sched_exponent", poly->sched_exponent)
                .default_value(1.f)
                .help("exponent controlling quantity of included features"))
@@ -675,10 +669,8 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   new_options.add(
       make_typed_option("magic_argument", poly->magic_argument).default_value(0.).help("magical feature flag"));
 #endif  // MAGIC_ARGUMENT
-  options.add_and_parse(new_options);
 
-  if (!stage_poly)
-    return nullptr;
+  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   poly->all = &all;
   depthsbits_create(*poly.get());
@@ -692,13 +684,15 @@ base_learner *stagewise_poly_setup(options_i &options, vw &all)
   poly->sum_sparsity_sync = 0;
   poly->sum_input_sparsity_sync = 0;
   poly->num_examples_sync = 0;
-  poly->last_example_counter = -1;
+  poly->last_example_counter = std::numeric_limits<uint64_t>::max();
   poly->numpasses = 1;
   poly->update_support = false;
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  learner<stagewise_poly, example> &l = init_learner(poly, as_singleline(setup_base(options, all)), learn, predict);
+  learner<stagewise_poly, example> &l = init_learner(
+      poly, as_singleline(setup_base(options, all)), learn, predict, all.get_setupfn_name(stagewise_poly_setup));
+
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);
