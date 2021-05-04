@@ -3,8 +3,10 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <cstdint>  // defines size_t
+#include <cstdint>
+#include <cstddef>  // defines size_t
 #include <string>
+
 #include "future_compat.h"
 #include "hash.h"
 
