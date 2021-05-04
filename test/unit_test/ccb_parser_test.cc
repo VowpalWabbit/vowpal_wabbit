@@ -11,14 +11,17 @@
 #include "conditional_contextual_bandit.h"
 #include "parser.h"
 #include "parse_primitives.h"
+#include "vw_string_view.h"
 #include <memory>
 
 void parse_ccb_label(parser* p, VW::string_view label, CCB::label& l)
 {
-  tokenize(' ', label, p->words);
-  CCB::default_label(l);
+  std::vector<VW::string_view> words;
+  std::vector<VW::string_view> parse_name;
   reduction_features red_fts;
-  CCB::parse_label(p, nullptr, l, p->words, p->parse_name, red_fts);
+  tokenize(' ', label, words);
+  CCB::default_label(l);
+  CCB::parse_label(p, nullptr, l, words, parse_name, red_fts);
 }
 
 BOOST_AUTO_TEST_CASE(ccb_parse_label)

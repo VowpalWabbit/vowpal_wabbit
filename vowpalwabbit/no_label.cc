@@ -22,7 +22,7 @@ namespace logger = VW::io::logger;
 
 namespace no_label
 {
-void parse_no_label(const std::vector<VW::string_view>& words, std::vector<VW::string_view>&)
+void parse_no_label(const std::vector<VW::string_view>& words)
 {
   switch (words.size())
   {
@@ -39,7 +39,7 @@ label_parser no_label_parser = {
   // default_label
   [](polylabel*) {},
   // parse_label
-  [](parser*, shared_data*, polylabel*, std::vector<VW::string_view>& words, reduction_features&) {
+  [](parser*, shared_data*, polylabel*, std::vector<VW::string_view>& words, std::vector<VW::string_view>&, reduction_features&) {
     parse_no_label(words);
   },
   // cache_label

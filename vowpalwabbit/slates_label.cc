@@ -174,8 +174,8 @@ label_parser slates_label_parser = {
   // default_label
   [](polylabel* v) { default_label(v->slates); },
   // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
-    parse_label(p, sd, v->slates, words, red_features);
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name, reduction_features& red_features) {
+    parse_label(p, sd, v->slates, words, parse_name, red_features);
   },
   // cache_label
   [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->slates, cache); },

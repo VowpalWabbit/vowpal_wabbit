@@ -231,7 +231,7 @@ void parse_explicit_inclusions(CCB::label& ld, const std::vector<VW::string_view
   for (const auto& inclusion : split_inclusions) { ld.explicit_included_actions.push_back(int_of_string(inclusion)); }
 }
 
-void parse_label(parser* p, shared_data*, label& ld, std::vector<VW::string_view>& words,
+void parse_label(parser*, shared_data*, label& ld, std::vector<VW::string_view>& words,
                  std::vector<VW::string_view>& parse_name_localcpy, ::reduction_features&)
 {
   ld.weight = 1.0;
@@ -298,8 +298,8 @@ label_parser ccb_label_parser = {
   // default_label
   [](polylabel* v) { default_label(v->conditional_contextual_bandit); },
   // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, ::reduction_features& red_features) {
-    parse_label(p, sd, v->conditional_contextual_bandit, words, red_features);
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name, ::reduction_features& red_features) {
+    parse_label(p, sd, v->conditional_contextual_bandit, words, parse_name, red_features);
   },
   // cache_label
   [](polylabel* v, ::reduction_features&, io_buf& cache) { cache_label(v->conditional_contextual_bandit, cache); },

@@ -170,8 +170,8 @@ label_parser cs_label = {
   // default_label
   [](polylabel* v) { default_label(v->cs); },
   // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
-    parse_label(p, sd, v->cs, words, red_features);
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, std::vector<VW::string_view>&  parse_name, reduction_features& red_features) {
+    parse_label(p, sd, v->cs, words, parse_name, red_features);
   },
   // cache_label
   [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->cs, cache); },

@@ -13,16 +13,18 @@
 
 void parse_label(label_parser& lp, parser* p, shared_data* sd, VW::string_view label, polylabel& l)
 {
-  tokenize(' ', label, p->words);
+  std::vector<VW::string_view> words;
+  std::vector<VW::string_view> parse_name;
+  tokenize(' ', label, words);
   lp.default_label(&l);
   reduction_features red_fts;
-  lp.parse_label(p, sd, &l, p->words, red_fts);
+  lp.parse_label(p, sd, &l, words, parse_name, red_fts);
 }
 
 BOOST_AUTO_TEST_CASE(multiclass_label_parser)
 {
   auto lp = MULTICLASS::mc_label;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*num threads*/};
   shared_data sd;
 
   {

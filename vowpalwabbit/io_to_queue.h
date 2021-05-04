@@ -17,7 +17,7 @@ inline void io_lines_toqueue(vw& all){
  while(counter_of_number_passes++ < num_passes_to_complete) {
 
     //  zeset done_with_io (set when we are done adding to io) to false at beginning of new pass
-    all.p->done_with_io.store(false);
+    all.example_parser->done_with_io.store(false);
 
     char* line = nullptr;
 
@@ -25,11 +25,11 @@ inline void io_lines_toqueue(vw& all){
 
     while(!should_finish)
     {   
-      should_finish = all.p->input_file_reader(all, line);
+      should_finish = all.example_parser->input_file_reader(all, line);
     }
 
-    while(all.p->done_with_io == false) {
-      all.p->can_end_pass.wait(lock);
+    while(all.example_parser->done_with_io == false) {
+      all.example_parser->can_end_pass.wait(lock);
     }
 
     if (counter_of_number_passes != num_passes_to_complete && num_passes_to_complete > 1) {
@@ -41,7 +41,7 @@ inline void io_lines_toqueue(vw& all){
 
   }
 
-  all.p->io_lines.set_done();
+  all.example_parser->io_lines.set_done();
 
  
 }
@@ -49,7 +49,7 @@ inline void io_lines_toqueue(vw& all){
 
 inline bool read_input_file_ascii(vw& all, char *&line) {
  
- size_t num_chars_initial = readto(*(all.p->input), line, '\n');
+ size_t num_chars_initial = all.example_parser->input->readto(line, '\n');
  
  bool finish = false;
  
@@ -58,7 +58,7 @@ inline bool read_input_file_ascii(vw& all, char *&line) {
 
   memcpy(byte_array->data(), line, num_chars_initial);
 
-  all.p->io_lines.push(std::move(byte_array));
+  all.example_parser->io_lines.push(std::move(byte_array));
  
   if(num_chars_initial <= 0){
     finish = true;
@@ -73,7 +73,7 @@ inline bool read_input_file_binary(vw& all, char *&line) {
  size_t total_num_input_bytes = 0;
  
  //read_all_data returns the number of bytes successfully read from the input files
- total_num_input_bytes = all.p->input->read_all_data(line, total_num_input_bytes);
+ total_num_input_bytes = all.example_parser->input->read_all_data(line, total_num_input_bytes);
  
  bool finish = true;
  
@@ -82,7 +82,7 @@ inline bool read_input_file_binary(vw& all, char *&line) {
 
   memcpy(byte_array->data(), line, total_num_input_bytes);
 
-  all.p->io_lines.push(std::move(byte_array));
+  all.example_parser->io_lines.push(std::move(byte_array));
  
  return finish;
 

@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <vector>
 #include <iostream>
+#include <condition_variable>
 
 
 struct polylabel
@@ -65,6 +66,52 @@ struct polyprediction
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
   VW::active_multiclass_prediction active_multiclass;
+};
+
+struct example_lock
+{
+  // NT set to false!!!
+  //std::atomic<bool> done_parsing; // flag used in multithreaded parsing to indicate that the example is done being parsed
+  std::atomic<bool>* done_parsing;
+  //for get_example
+  std::condition_variable* example_parsed;
+  //for cv notify and wait
+  std::mutex* example_cv_mutex;
+
+  example_lock()
+  : done_parsing(new std::atomic<bool>(false))
+  , example_parsed(new std::condition_variable)
+  , example_cv_mutex(new std::mutex)
+  
+  {}
+  ~example_lock()
+  {
+    delete done_parsing;
+    delete example_parsed;
+    delete example_cv_mutex;
+  }
+  
+  example_lock(const example_lock&) = delete;
+  example_lock& operator=(const example_lock&) = delete;
+  example_lock(example_lock&& other)
+  {
+    done_parsing = other.done_parsing;
+    example_parsed = other.example_parsed;
+    example_cv_mutex = other.example_cv_mutex;
+    other.done_parsing = nullptr;
+    other.example_parsed = nullptr;
+    other.example_cv_mutex = nullptr;
+  }
+  example_lock& operator=(example_lock&& other)
+  {
+    done_parsing = other.done_parsing;
+    example_parsed = other.example_parsed;
+    example_cv_mutex = other.example_cv_mutex;
+    other.done_parsing = nullptr;
+    other.example_parsed = nullptr;
+    other.example_cv_mutex = nullptr;
+    return *this;
+  }
 };
 
 VW_WARNING_STATE_PUSH
@@ -111,15 +158,8 @@ struct example : public example_predict  // core example datatype.
   //     them. " "Standalone examples are by definition always in use.")
   bool in_use = true;
 
-  // NT set to false!!!
-  //std::atomic<bool> done_parsing; // flag used in multithreaded parsing to indicate that the example is done being parsed
-  std::atomic<bool> done_parsing{false};
-  //for get_example
-  std::condition_variable example_parsed;
-  //for cv notify and wait
-  std::mutex example_cv_mutex;
-
-
+  // This object is only used because atomic signaling is not available in C++11
+  example_lock ex_lock;
 };
 VW_WARNING_STATE_POP
 

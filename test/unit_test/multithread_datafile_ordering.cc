@@ -22,7 +22,7 @@ void mock_io_lines_to_queue(vw *vw){
     // Mock out io lines before, since we aren't testing io-parser communication and instead want to set up the io beforehand for the parser
     std::string text = "0 | price:.23 sqft:.25 age:.05 2006\n1 | price:.18 sqft:.15 age:.35 1976\n0 | price:.53 sqft:.32 age:.87 1924\n0 | price:.23 sqft:.25 age:.05 2006\n\n";
 
-    vw->p->input->add_file(VW::io::create_buffer_view(text.data(), text.size()));
+    vw->example_parser->input->add_file(VW::io::create_buffer_view(text.data(), text.size()));
 
     io_lines_toqueue(*vw);
 
@@ -33,8 +33,8 @@ void run_thread_function(vw*& vw2, VW::ptr_queue<std::string>& input_lines, std:
     auto examples = v_init<example*>();
     examples.push_back(&VW::get_unused_example(vw2));
 
-    v_array<VW::string_view> words= v_init<VW::string_view>();
-    v_array<VW::string_view> parse_name = v_init<VW::string_view>();
+    std::vector<VW::string_view> words;
+    std::vector<VW::string_view> parse_name;
 
     std::atomic<bool> should_continue{true};
 
@@ -59,13 +59,13 @@ void run_thread_function(vw*& vw2, VW::ptr_queue<std::string>& input_lines, std:
             // causes someitmes failure.
             BOOST_CHECK_EQUAL(num_chars_returned, next_line.size());
 
-            BOOST_CHECK_EQUAL(vw2->p->io_lines.size(), --size);
+            BOOST_CHECK_EQUAL(vw2->example_parser->io_lines.size(), --size);
 
         }
 
     }
 
-    BOOST_CHECK_EQUAL(vw2->p->io_lines.size(), 0);
+    BOOST_CHECK_EQUAL(vw2->example_parser->io_lines.size(), 0);
 
 }
 

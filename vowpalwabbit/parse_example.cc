@@ -26,12 +26,12 @@ size_t read_features(vw *all, std::vector<char>& line, size_t&, v_array<example*
   std::vector<char> *io_lines_next_item;
 
   {
-    std::lock_guard<std::mutex> lck((*all).p->parser_mutex);
+    std::lock_guard<std::mutex> lck((*all).example_parser->parser_mutex);
     
-    io_lines_next_item = all->p->io_lines.pop();
+    io_lines_next_item = all->example_parser->io_lines.pop();
 
     if(io_lines_next_item != nullptr) {
-      (*all).p->ready_parsed_examples.push(examples[0]);
+      (*all).example_parser->ready_parsed_examples.push(examples[0]);
     } else {
       return 0;
     }
@@ -63,7 +63,7 @@ size_t strip_features_string(char*& line, size_t num_chars_init){
   return num_chars;
 }
 
-int read_features_string(vw* all, v_array<example*>& examples, v_array<VW::string_view>& words, v_array<VW::string_view>& parse_name)
+int read_features_string(vw* all, v_array<example*>& examples, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name)
 {
   // this needs to outlive the string_views pointing to it
   std::vector<char> line;
@@ -511,12 +511,12 @@ public:
   }
 };
 
-void substring_to_example(vw* all, example* ae, VW::string_view& example, v_array<VW::string_view>& words_localcpy, v_array<VW::string_view>& parse_name_localcpy)
+void substring_to_example(vw* all, example* ae, VW::string_view& example, std::vector<VW::string_view>& words_localcpy, std::vector<VW::string_view>& parse_name_localcpy)
 {
-  for (int i=0; i < (int)all->p->parse_name.size(); i++) {
+  for (int i=0; i < (int)parse_name_localcpy.size(); i++) {
 
     //need this?
-    parse_name_localcpy.push_back(all->p->parse_name[i]);
+    parse_name_localcpy.push_back(parse_name_localcpy[i]);
 
   }
 
@@ -543,8 +543,8 @@ void substring_to_example(vw* all, example* ae, VW::string_view& example, v_arra
     std::vector<VW::string_view> tokenized;
     tokenize(' ', label_space, words_localcpy);
     if (words_localcpy.size() > 0 &&
-        (words_localcpy.last().end() == label_space.end() ||
-        words_localcpy.last().front() == '\''))  // The last field is a tag, so record and strip it off
+        (words_localcpy.back().end() == label_space.end() ||
+        words_localcpy.back().front() == '\''))  // The last field is a tag, so record and strip it off
     {
       VW::string_view tag = words_localcpy.back();
       words_localcpy.pop_back();
@@ -574,8 +574,8 @@ void read_line(vw& all, example* ex, VW::string_view line)
 {
   while (line.size() > 0 && line.back() == '\n') line.remove_suffix(1);
 
-  v_array<VW::string_view> words = v_init<VW::string_view>();
-  v_array<VW::string_view> parse_name = v_init<VW::string_view>();
+  std::vector<VW::string_view> words;
+  std::vector<VW::string_view> parse_name;
   substring_to_example(&all, ex, line, words, parse_name);
 }
 

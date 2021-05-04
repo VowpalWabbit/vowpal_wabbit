@@ -124,13 +124,13 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
 
 void set_cache_reader(vw& all) {
   all.example_parser->reader = read_cached_features;
-  all.p->input_file_reader = read_input_file_binary;
+  all.example_parser->input_file_reader = read_input_file_binary;
 }
 
 void set_string_reader(vw& all)
 {
   all.example_parser->reader = read_features_string;
-  all.p->input_file_reader = read_input_file_ascii;
+  all.example_parser->input_file_reader = read_input_file_ascii;
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_DEPRECATED_USAGE
   all.print = print_result;
@@ -167,7 +167,7 @@ void set_json_reader(vw& all, bool dsjson = false)
   }
 
   all.example_parser->decision_service_json = dsjson;
-  all.p->input_file_reader = read_input_file_ascii;
+  all.example_parser->input_file_reader = read_input_file_ascii;
 }
 
 void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
@@ -768,11 +768,11 @@ void setup_example(vw& all, example* ae)
 void notify_examples_cv(example *& ex)
 {
 
-  std::unique_lock<std::mutex> lock(ex->example_cv_mutex);
+  std::unique_lock<std::mutex> lock(*(ex->ex_lock.example_cv_mutex));
 
-  ex->done_parsing.store(true); 
+  ex->ex_lock.done_parsing->store(true); 
   
-  ex->example_parsed.notify_one();
+  ex->ex_lock.example_parsed->notify_one();
 
 }
 
@@ -891,8 +891,8 @@ void empty_example(vw& /*all*/, example& ec)
   ec.is_newline = false;
   ec._reduction_features.clear();
   {
-    std::unique_lock<std::mutex> lock(ec.example_cv_mutex);
-    ec.done_parsing = false;
+    std::unique_lock<std::mutex> lock(*(ec.ex_lock.example_cv_mutex));
+    *(ec.ex_lock.done_parsing) = false;
   }
 }
 
@@ -947,9 +947,9 @@ example* get_example(parser* p) {
   }
 
   {
-    std::unique_lock<std::mutex> lock(ex->example_cv_mutex);
-    while(ex != nullptr && !ex->done_parsing) {
-      ex->example_parsed.wait(lock);
+    std::unique_lock<std::mutex> lock(*(ex->ex_lock.example_cv_mutex));
+    while(ex != nullptr && !*(ex->ex_lock.done_parsing)) {
+      ex->ex_lock.example_parsed->wait(lock);
     }
   }
 
@@ -1015,7 +1015,7 @@ void start_parser(vw& all) {
 
   //Will let user specify the number of threads on the CL. Default to 1.
   //int user_specified_num_parse_threads = 1;
-  int user_specified_num_parse_threads = all.p->num_parse_threads;
+  int user_specified_num_parse_threads = all.example_parser->num_parse_threads;
   
   //Edge case that user specifies a number of threads < 1
   if(user_specified_num_parse_threads < 1){

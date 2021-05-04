@@ -15,15 +15,17 @@
 
 void parse_label(label_parser& lp, parser* p, VW::string_view label, polylabel& l, reduction_features& red_fts)
 {
-  tokenize(' ', label, p->words);
+  std::vector<VW::string_view> words;
+  std::vector<VW::string_view> parse_name;
+  tokenize(' ', label, words);
   lp.default_label(&l);
-  lp.parse_label(p, nullptr, &l, p->words, red_fts);
+  lp.parse_label(p, nullptr, &l, words, parse_name, red_fts);
 }
 
 BOOST_AUTO_TEST_CASE(continuous_actions_parse_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*number of parse threads*/};
 
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
@@ -42,7 +44,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label)
 BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_pdf)
 {
   auto lp = VW::cb_continuous::the_label_parser;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*number of parse threads*/};
 
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
@@ -71,7 +73,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_pdf)
 BOOST_AUTO_TEST_CASE(continuous_actions_parse_only_pdf_no_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*num threads*/};
 
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
@@ -94,7 +96,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_only_pdf_no_label)
 BOOST_AUTO_TEST_CASE(continuous_actions_parse_malformed_pdf)
 {
   auto lp = VW::cb_continuous::the_label_parser;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*num threads*/};
 
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
@@ -113,7 +115,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_malformed_pdf)
 BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_chosen_action)
 {
   auto lp = VW::cb_continuous::the_label_parser;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*num threads*/};
 
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
@@ -136,7 +138,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_chosen_action)
 BOOST_AUTO_TEST_CASE(continuous_actions_chosen_action_only_no_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*num threads*/};
 
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
@@ -155,7 +157,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_chosen_action_only_no_label)
 BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_pdf_and_chosen_action)
 {
   auto lp = VW::cb_continuous::the_label_parser;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*num threads*/};
 
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
@@ -189,7 +191,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_pdf_and_chosen_action)
 BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*num threads*/};
 
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
@@ -206,7 +208,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label)
 BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label_w_prefix)
 {
   auto lp = VW::cb_continuous::the_label_parser;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*num threads*/};
 
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();
@@ -223,7 +225,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label_w_prefix)
 BOOST_AUTO_TEST_CASE(continus_actions_check_label_for_prefix)
 {
   auto lp = VW::cb_continuous::the_label_parser;
-  parser p{8 /*ring_size*/, false /*strict parse*/};
+  parser p{8 /*ring_size*/, false /*strict parse*/, 1 /*num threads*/};
 
   {
     auto plabel = scoped_calloc_or_throw<polylabel>();

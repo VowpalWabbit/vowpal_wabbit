@@ -14,10 +14,13 @@
 
 void parse_slates_label(parser* p, VW::string_view label, VW::slates::label& l)
 {
-  tokenize(' ', label, p->words);
-  VW::slates::default_label(l);
+  std::vector<VW::string_view> words;
+  std::vector<VW::string_view> parse_name;
   reduction_features red_fts;
-  VW::slates::parse_label(p, nullptr, l, p->words, p->parse_name, red_fts);
+
+  tokenize(' ', label, words);
+  VW::slates::default_label(l);
+  VW::slates::parse_label(p, nullptr, l, words, parse_name, red_fts);
 }
 
 BOOST_AUTO_TEST_CASE(slates_parse_label)

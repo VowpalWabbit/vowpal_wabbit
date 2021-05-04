@@ -254,8 +254,6 @@ public:
     return buf_read(buffer, size);
   }
 
-};
-
   bool isbinary();
   size_t readto(char*& pointer, char terminal);
   size_t copy_to(void* dst, size_t max_size);

@@ -63,7 +63,7 @@ __attribute__((packed))
 
 size_t read_cached_feature(vw *all, std::vector<char>& line, size_t&)
 { 
-  std::vector<char> *line_ptr = all->p->io_lines.pop();
+  std::vector<char> *line_ptr = all->example_parser->io_lines.pop();
   if(line_ptr != nullptr) {
     line = std::move(*line_ptr);
   }
@@ -78,19 +78,15 @@ void notify_examples_cache(vw& all, example *ex)
 {
 
   if (ex && ex != nullptr) {
-    ex->done_parsing.store(true);
+    ex->ex_lock.done_parsing->store(true);
   
-    all.p->example_parsed.notify_one();
+    all.example_parser->example_parsed.notify_one();
   }
 
 }
 
 int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
 {
-  example* ae = examples[0];
-  ae->sorted = all->example_parser->sorted_cache;
-  io_buf* input = all->example_parser->input.get();
-
   size_t total = all->example_parser->lbl_parser.read_cached_label(
       all->example_parser->_shared_data, &ae->l, ae->_reduction_features, *input);
   if (total == 0) return 0;
@@ -170,7 +166,7 @@ int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
 
 int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::string_view>&, std::vector<VW::string_view>&) {
 
-  std::lock_guard<std::mutex> lck((*all).p->parser_mutex);
+  std::lock_guard<std::mutex> lck((*all).example_parser->parser_mutex);
 
   // this needs to outlive the string_views pointing to it
   std::vector<char> line;
@@ -207,7 +203,7 @@ int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::s
 
   memcpy(unread_input->data(), buffer, remaining_bytes);
 
-  all->p->io_lines.push(unread_input);
+  all->example_parser->io_lines.push(unread_input);
 
   if(new_num_read == 0){
     return 0;
@@ -215,7 +211,7 @@ int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::s
 
   examples.push_back(ae);
   if (examples.size() > 0) {
-    (*all).p->ready_parsed_examples.push(ae);
+    (*all).example_parser->ready_parsed_examples.push(ae);
   }   
 
   return new_num_read;
@@ -228,7 +224,7 @@ int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::s
 // for parsing input, which is a reason why we use the implementation above.
 int read_cached_features(vw* all, v_array<example*>& examples, v_array<VW::string_view>&, v_array<VW::string_view>&) {
 
-  std::lock_guard<std::mutex> lck((*all).p->parser_mutex);
+  std::lock_guard<std::mutex> lck((*all).example_parser->parser_mutex);
 
   // this needs to outlive the string_views pointing to it
   std::vector<char> line;
@@ -267,7 +263,7 @@ int read_cached_features(vw* all, v_array<example*>& examples, v_array<VW::strin
 
       examples.push_back(ae);
        if (examples.size() > 0) {
-          (*all).p->ready_parsed_examples.push(ae);
+          (*all).example_parser->ready_parsed_examples.push(ae);
       }   
 
       VW::setup_examples(*all, examples);
@@ -275,7 +271,7 @@ int read_cached_features(vw* all, v_array<example*>& examples, v_array<VW::strin
     }
 
   }
-  all->p->done = true; 
+  all->example_parser->done = true; 
 
   return total_num_read;
 

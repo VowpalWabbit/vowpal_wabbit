@@ -105,7 +105,7 @@ label_parser simple_label_parser = {
   // default_label
   [](polylabel* v) { default_simple_label(v->simple); },
   // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
+  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, std::vector<VW::string_view>&, reduction_features& red_features) {
     parse_simple_label(p, sd, v->simple, words, red_features);
   },
   // cache_label

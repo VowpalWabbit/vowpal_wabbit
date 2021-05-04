@@ -21,8 +21,8 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
   size_t example_number = 0;  // for variable-size batch learning algorithms
 
   // for substring_to_example
-  v_array<VW::string_view> words_localcpy = v_init<VW::string_view>();
-  v_array<VW::string_view> parse_name_localcpy = v_init<VW::string_view>();
+  std::vector<VW::string_view> words_localcpy;
+  std::vector<VW::string_view> parse_name_localcpy;
 
   try
   {
@@ -33,7 +33,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       examples.push_back(example_ptr);
 
       if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
-          all.example_parser->reader(&all, examples, , words_localcpy, parse_name_localcpy) > 0)
+          all.example_parser->reader(&all, examples, words_localcpy, parse_name_localcpy) > 0)
       {
 
         VW::setup_examples(all, examples);
@@ -48,8 +48,8 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         reset_source(all, all.num_bits);
 
         // to call reset source in io thread
-        all.p->done_with_io.store(true);
-        all.p->can_end_pass.notify_one();
+        all.example_parser->done_with_io.store(true);
+        all.example_parser->can_end_pass.notify_one();
 
         all.do_reset_source = false;
         all.passes_complete++;
