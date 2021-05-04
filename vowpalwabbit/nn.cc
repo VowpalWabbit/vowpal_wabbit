@@ -325,7 +325,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       {
         float gradient = n.all->loss->first_derivative(n.all->sd, n.prediction, ld.label);
 
-        if (fabs(gradient) > 0)
+        if (std::fabs(gradient) > 0)
         {
           auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss, n.squared_loss);
           n.all->set_minmax = noop_mm;

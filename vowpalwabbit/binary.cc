@@ -5,6 +5,7 @@
 #include "debug_log.h"
 #include "reductions.h"
 #include <cfloat>
+#include <cmath>
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::binary
@@ -39,7 +40,7 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
 
   if (ec.l.simple.label != FLT_MAX)
   {
-    if (fabs(ec.l.simple.label) != 1.f)
+    if (std::fabs(ec.l.simple.label) != 1.f)
       logger::log_error("You are using label {} not -1 or 1 as loss function expects!", ec.l.simple.label);
     else if (ec.l.simple.label == ec.pred.scalar)
       ec.loss = 0.;
