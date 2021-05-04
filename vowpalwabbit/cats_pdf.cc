@@ -9,7 +9,7 @@
 
 #include "cats_pdf.h"
 #include "parse_args.h"
-#include "err_constants.h"
+#include "error_constants.h"
 #include "api_status.h"
 #include "cb_continuous_label.h"
 #include "debug_log.h"
@@ -60,7 +60,7 @@ int cats_pdf::predict(example& ec, experimental::api_status*)
 {
   VW_DBG(ec) << "cats_pdf::predict(), " << features_to_string(ec) << endl;
   _base->predict(ec);
-  return error_code::success;
+  return VW::experimental::error_code::success;
 }
 
 // Pass through
@@ -72,7 +72,7 @@ int cats_pdf::learn(example& ec, experimental::api_status*)
   if (_always_predict) { _base->predict(ec); }
 
   _base->learn(ec);
-  return error_code::success;
+  return VW::experimental::error_code::success;
 }
 
 cats_pdf::cats_pdf(single_learner* p_base, bool always_predict) : _base(p_base), _always_predict(always_predict) {}
@@ -87,7 +87,8 @@ void predict_or_learn(cats_pdf& reduction, single_learner&, example& ec)
   else
     reduction.predict(ec, &status);
 
-  if (status.get_error_code() != error_code::success) { VW_DBG(ec) << status.get_error_msg() << endl; }
+  if (status.get_error_code() != VW::experimental::error_code::success)
+  { VW_DBG(ec) << status.get_error_msg() << endl; }
 }
 // END cats_pdf reduction and reduction methods
 ////////////////////////////////////////////////////
@@ -169,7 +170,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  if (num_actions <= 0) THROW(error_code::num_actions_gt_zero_s);
+  if (num_actions <= 0) THROW(VW::experimental::error_code::num_actions_gt_zero_s);
 
   // cats stack = [cats_pdf -> cb_explore_pdf -> pmf_to_pdf -> get_pmf -> cats_tree]
   if (!options.was_supplied("cb_explore_pdf")) options.insert("cb_explore_pdf", "");
