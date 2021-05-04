@@ -41,7 +41,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
 
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
-  far_end.sin_port = (u_short)port;
+  far_end.sin_port = static_cast<u_short>(port);
 
   far_end.sin_addr = *(in_addr*)&ip;
   memset(&far_end.sin_zero, '\0', 8);
@@ -52,15 +52,16 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port)
 
     char hostname[NI_MAXHOST];
     char servInfo[NI_MAXSERV];
-    if (getnameinfo((sockaddr*)&far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV))
+    if (getnameinfo(reinterpret_cast<sockaddr*>(&far_end), sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV,
+            NI_NUMERICSERV))
       THROWERRNO("getnameinfo(" << dotted_quad << ")");
 
-    logger::errlog_info("connecting to {0} = {1}:{2}", dotted_quad, hostname, ntohs((u_short)port));
+    logger::errlog_info("connecting to {0} = {1}:{2}", dotted_quad, hostname, ntohs(static_cast<u_short>(port)));
   }
 
   size_t count = 0;
   int ret;
-  while ((ret = connect(sock, (sockaddr*)&far_end, sizeof(far_end))) == -1 && count < 100)
+  while ((ret = connect(sock, reinterpret_cast<sockaddr*>(&far_end), sizeof(far_end))) == -1 && count < 100)
   {
     count++;
     logger::errlog_error("connection attempt {0} failed: {1}", count, VW::strerror_to_string(errno));
@@ -88,7 +89,7 @@ socket_t AllReduceSockets::getsock()
     // of VW on the same machine to potentially contact the wrong tree node.
 #ifndef _WIN32
   int on = 1;
-  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
+  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) < 0)
   {
     logger::errlog_error("setsockopt SO_REUSEADDR: {}", VW::strerror_to_string(errno));
   }
@@ -96,7 +97,7 @@ socket_t AllReduceSockets::getsock()
 
   // Enable TCP Keep Alive to prevent socket leaks
   int enableTKA = 1;
-  if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
+  if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA), sizeof(enableTKA)) < 0)
   {
     logger::errlog_error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno));
   }
@@ -118,29 +119,31 @@ void AllReduceSockets::all_reduce_init()
 
   socks.current_master = span_server;
 
-  uint32_t master_ip = *((uint32_t*)master->h_addr);
+  uint32_t master_ip = *(reinterpret_cast<uint32_t*>(master->h_addr));
 
-  socket_t master_sock = sock_connect(master_ip, htons((u_short)port));
-  if (send(master_sock, (const char*)&unique_id, sizeof(unique_id), 0) < (int)sizeof(unique_id))
+  socket_t master_sock = sock_connect(master_ip, htons(static_cast<u_short>(port)));
+  if (send(master_sock, reinterpret_cast<const char*>(&unique_id), sizeof(unique_id), 0) <
+      static_cast<int>(sizeof(unique_id)))
   { THROW("write unique_id=" << unique_id << " to span server failed"); }
   else
   {
     logger::errlog_info("wrote unique_id={}", unique_id);
   }
-  if (send(master_sock, (const char*)&total, sizeof(total), 0) < (int)sizeof(total))
+  if (send(master_sock, reinterpret_cast<const char*>(&total), sizeof(total), 0) < static_cast<int>(sizeof(total)))
   { THROW("write total=" << total << " to span server failed"); }
   else
   {
     logger::errlog_info("wrote total={}", total);
   }
-  if (send(master_sock, (char*)&node, sizeof(node), 0) < (int)sizeof(node))
+  if (send(master_sock, (char*)&node, sizeof(node), 0) < static_cast<int>(sizeof(node)))
   { THROW("write node=" << node << " to span server failed"); }
   else
   {
     logger::errlog_info("wrote node={}", node);
   }
   int ok;
-  if (recv(master_sock, (char*)&ok, sizeof(ok), 0) < (int)sizeof(ok)) { THROW("read ok from span server failed"); }
+  if (recv(master_sock, reinterpret_cast<char*>(&ok), sizeof(ok), 0) < static_cast<int>(sizeof(ok)))
+  { THROW("read ok from span server failed"); }
   else
   {
     logger::errlog_info("read ok={}", ok);
@@ -151,7 +154,8 @@ void AllReduceSockets::all_reduce_init()
   uint16_t parent_port;
   uint32_t parent_ip;
 
-  if (recv(master_sock, (char*)&kid_count, sizeof(kid_count), 0) < (int)sizeof(kid_count))
+  if (recv(master_sock, reinterpret_cast<char*>(&kid_count), sizeof(kid_count), 0) <
+      static_cast<int>(sizeof(kid_count)))
   { THROW("read kid_count from span server failed"); }
   else
   {
@@ -171,7 +175,7 @@ void AllReduceSockets::all_reduce_init()
     bool listening = false;
     while (!listening)
     {
-      if (::bind(sock, (sockaddr*)&address, sizeof(address)) < 0)
+      if (::bind(sock, reinterpret_cast<sockaddr*>(&address), sizeof(address)) < 0)
       {
 #ifdef _WIN32
         if (WSAGetLastError() == WSAEADDRINUSE)
@@ -201,15 +205,17 @@ void AllReduceSockets::all_reduce_init()
     }
   }
 
-  if (send(master_sock, (const char*)&netport, sizeof(netport), 0) < (int)sizeof(netport))
+  if (send(master_sock, reinterpret_cast<const char*>(&netport), sizeof(netport), 0) <
+      static_cast<int>(sizeof(netport)))
     THROW("write netport failed!");
 
-  if (recv(master_sock, (char*)&parent_ip, sizeof(parent_ip), 0) < (int)sizeof(parent_ip))
+  if (recv(master_sock, reinterpret_cast<char*>(&parent_ip), sizeof(parent_ip), 0) <
+      static_cast<int>(sizeof(parent_ip)))
   { THROW("read parent_ip failed!"); }
   else
   {
     char dotted_quad[INET_ADDRSTRLEN];
-    if (nullptr == inet_ntop(AF_INET, (char*)&parent_ip, dotted_quad, INET_ADDRSTRLEN))
+    if (nullptr == inet_ntop(AF_INET, reinterpret_cast<char*>(&parent_ip), dotted_quad, INET_ADDRSTRLEN))
     {
       logger::errlog_error("read parent_ip={0}(inet_ntop: {1})", parent_ip, VW::strerror_to_string(errno));
     }
@@ -218,7 +224,8 @@ void AllReduceSockets::all_reduce_init()
       logger::errlog_info("read parent_ip={}", dotted_quad);
     }
   }
-  if (recv(master_sock, (char*)&parent_port, sizeof(parent_port), 0) < (int)sizeof(parent_port))
+  if (recv(master_sock, reinterpret_cast<char*>(&parent_port), sizeof(parent_port), 0) <
+      static_cast<int>(sizeof(parent_port)))
   { THROW("read parent_port failed!"); }
   else
   {
@@ -227,7 +234,7 @@ void AllReduceSockets::all_reduce_init()
 
   CLOSESOCK(master_sock);
 
-  if (parent_ip != (uint32_t)-1) { socks.parent = sock_connect(parent_ip, parent_port); }
+  if (parent_ip != static_cast<uint32_t>(-1)) { socks.parent = sock_connect(parent_ip, parent_port); }
   else
     socks.parent = static_cast<socket_t>(-1);
 
@@ -237,7 +244,7 @@ void AllReduceSockets::all_reduce_init()
   {
     sockaddr_in child_address;
     socklen_t size = sizeof(child_address);
-    socket_t f = accept(sock, (sockaddr*)&child_address, &size);
+    socket_t f = accept(sock, reinterpret_cast<sockaddr*>(&child_address), &size);
 #ifdef _WIN32
     if (f == INVALID_SOCKET)
 #else
@@ -263,10 +270,12 @@ void AllReduceSockets::pass_down(char* buffer, const size_t parent_read_pos, siz
   {
     // going to pass up this chunk of data to the children
     if (socks.children[0] != -1 &&
-        send(socks.children[0], buffer + children_sent_pos, (int)my_bufsize, 0) < (int)my_bufsize)
+        send(socks.children[0], buffer + children_sent_pos, static_cast<int>(my_bufsize), 0) <
+            static_cast<int>(my_bufsize))
     { THROW("Write to left child failed"); }
     if (socks.children[1] != -1 &&
-        send(socks.children[1], buffer + children_sent_pos, (int)my_bufsize, 0) < (int)my_bufsize)
+        send(socks.children[1], buffer + children_sent_pos, static_cast<int>(my_bufsize), 0) <
+            static_cast<int>(my_bufsize))
     { THROW("Write to right child failed"); }
 
     children_sent_pos += my_bufsize;
@@ -294,7 +303,7 @@ void AllReduceSockets::broadcast(char* buffer, const size_t n)
       if (parent_read_pos == n) THROW("I think parent has no data to send but he thinks he has");
 
       size_t count = std::min(ar_buf_size, n - parent_read_pos);
-      int read_size = recv(socks.parent, buffer + parent_read_pos, (int)count, 0);
+      int read_size = recv(socks.parent, buffer + parent_read_pos, static_cast<int>(count), 0);
       if (read_size == -1) { THROW("recv from parent: " << VW::strerror_to_string(errno)); }
       parent_read_pos += read_size;
     }

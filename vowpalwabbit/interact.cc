@@ -31,13 +31,13 @@ bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, inte
   {
     // Anchor feature must be a number instead of text so that the relative offsets functions correctly but I don't
     // think we are able to test for this here.
-    *(all.trace_message) << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
+    *(all.trace_message) << "Namespace '" << static_cast<char>(in.n1) << "' misses anchor feature with value 1";
     return false;
   }
 
   if (f_src2.values[0] != 1)
   {
-    *(all.trace_message) << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
+    *(all.trace_message) << "Namespace '" << static_cast<char>(in.n2) << "' misses anchor feature with value 1";
     return false;
   }
 
@@ -61,8 +61,8 @@ void multiply(features& f_dest, features& f_src2, interact& in)
   for (size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();)
   {
     // calculating the relative offset from the namespace offset used to match features
-    uint64_t cur_id1 = (uint64_t)(((f_src1.indicies[i1] & weight_mask) - base_id1) & weight_mask);
-    uint64_t cur_id2 = (uint64_t)(((f_src2.indicies[i2] & weight_mask) - base_id2) & weight_mask);
+    uint64_t cur_id1 = static_cast<uint64_t>(((f_src1.indicies[i1] & weight_mask) - base_id1) & weight_mask);
+    uint64_t cur_id2 = static_cast<uint64_t>(((f_src2.indicies[i2] & weight_mask) - base_id2) & weight_mask);
 
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
@@ -163,8 +163,8 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   auto data = scoped_calloc_or_throw<interact>();
 
-  data->n1 = (unsigned char)s[0];
-  data->n2 = (unsigned char)s[1];
+  data->n1 = static_cast<unsigned char>(s[0]);
+  data->n2 = static_cast<unsigned char>(s[1]);
   logger::errlog_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
   data->all = &all;
 

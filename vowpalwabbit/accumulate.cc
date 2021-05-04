@@ -53,7 +53,7 @@ float accumulate_scalar(vw& all, float local_sum)
 void accumulate_avg(vw& all, parameters& weights, size_t offset)
 {
   uint32_t length = 1 << all.num_bits;  // This is size of gradient
-  float numnodes = (float)all.all_reduce->total;
+  float numnodes = static_cast<float>(all.all_reduce->total);
   float* local_grad = new float[length];
 
   if (weights.sparse)
@@ -144,6 +144,6 @@ void accumulate_weighted_avg(vw& all, parameters& weights)
     logger::log_error("sparse parameters not supported with parallel computation!");
   else
     all_reduce<float, add_float>(
-        all, weights.dense_weights.first(), ((size_t)length) * (1ull << weights.stride_shift()));
+        all, weights.dense_weights.first(), (static_cast<size_t>(length)) * (1ull << weights.stride_shift()));
   delete[] local_weights;
 }

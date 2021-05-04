@@ -47,7 +47,7 @@ void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a
 {
   if (val < 0 || std::floor(val) != val) logger::log_error("error {} is not a valid action", val);
 
-  uint32_t value = (uint32_t)val;
+  uint32_t value = static_cast<uint32_t>(val);
   uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
 
   if (!c.evals[new_index].seen)
@@ -93,7 +93,8 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
           c.feature_space[ns].clear();
           for (features::iterator& f : ec.feature_space[ns])
           {
-            uint64_t new_index = ((f.index() & weight_mask) >> stride_shift) * c.num_classes + (uint64_t)f.value();
+            uint64_t new_index =
+                ((f.index() & weight_mask) >> stride_shift) * c.num_classes + static_cast<uint64_t>(f.value());
             c.feature_space[ns].push_back(1, new_index << stride_shift);
           }
         }
@@ -126,8 +127,9 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
 
   // modify the predictions to use a vector with a score for each evaluated feature.
   preds.clear();
-  if (learn) preds.push_back((float)ec.pred.multiclass);
-  for (uint64_t index : c.policies) preds.push_back((float)c.evals[index].cost / (float)c.total);
+  if (learn) preds.push_back(static_cast<float>(ec.pred.multiclass));
+  for (uint64_t index : c.policies)
+    preds.push_back(static_cast<float>(c.evals[index].cost) / static_cast<float>(c.total));
 
   ec.pred.scalars = preds;
 }
@@ -150,7 +152,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
     }
     ss << '\n';
     ssize_t len = ss.str().size();
-    ssize_t t = f->write(ss.str().c_str(), (unsigned int)len);
+    ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
     if (t != len) logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
   }
 }
@@ -160,7 +162,7 @@ void finish_example(vw& all, mwt& c, example& ec)
   float loss = 0.;
   if (c.learn)
     if (c.optional_observation.first)
-      loss = get_cost_estimate(c.optional_observation.second, (uint32_t)ec.pred.scalars[0]);
+      loss = get_cost_estimate(c.optional_observation.second, static_cast<uint32_t>(ec.pred.scalars[0]));
   all.sd->update(ec.test_only, c.optional_observation.first, loss, 1.f, ec.num_features);
 
   for (auto& sink : all.final_prediction_sink) print_scalars(sink.get(), ec.pred.scalars, ec.tag);
@@ -168,7 +170,7 @@ void finish_example(vw& all, mwt& c, example& ec)
   if (c.learn)
   {
     v_array<float> temp = ec.pred.scalars;
-    ec.pred.multiclass = (uint32_t)temp[0];
+    ec.pred.multiclass = static_cast<uint32_t>(temp[0]);
     CB::print_update(all, c.optional_observation.first, ec, nullptr, false, nullptr);
     ec.pred.scalars = temp;
   }
@@ -183,11 +185,13 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 
   // total
   msg << "total: " << c.total;
-  bin_text_read_write_fixed_validated(model_file, (char*)&c.total, sizeof(c.total), "", read, msg, text);
+  bin_text_read_write_fixed_validated(
+      model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), "", read, msg, text);
 
   // policies
   size_t policies_size = c.policies.size();
-  bin_text_read_write_fixed_validated(model_file, (char*)&policies_size, sizeof(policies_size), "", read, msg, text);
+  bin_text_read_write_fixed_validated(
+      model_file, reinterpret_cast<char*>(&policies_size), sizeof(policies_size), "", read, msg, text);
 
   if (read) { c.policies.resize_but_with_stl_behavior(policies_size); }
   else
@@ -196,15 +200,16 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
     for (feature_index& policy : c.policies) msg << policy << " ";
   }
 
-  bin_text_read_write_fixed_validated(
-      model_file, (char*)c.policies.begin(), policies_size * sizeof(feature_index), "", read, msg, text);
+  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(c.policies.begin()),
+      policies_size * sizeof(feature_index), "", read, msg, text);
 
   // c.evals is already initialized nicely to the same size as the regressor.
   for (feature_index& policy : c.policies)
   {
     policy_data& pd = c.evals[policy];
     if (read) msg << "evals: " << policy << ":" << pd.action << ":" << pd.cost << " ";
-    bin_text_read_write_fixed_validated(model_file, (char*)&c.evals[policy], sizeof(policy_data), "", read, msg, text);
+    bin_text_read_write_fixed_validated(
+        model_file, reinterpret_cast<char*>(&c.evals[policy]), sizeof(policy_data), "", read, msg, text);
   }
 }
 }  // namespace MWT
@@ -222,7 +227,7 @@ base_learner* mwt_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  for (char i : s) c->namespaces[(unsigned char)i] = true;
+  for (char i : s) c->namespaces[static_cast<unsigned char>(i)] = true;
   c->all = &all;
 
   c->evals.resize_but_with_stl_behavior(all.length());

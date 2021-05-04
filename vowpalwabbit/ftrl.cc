@@ -95,16 +95,17 @@ void multipredict(
   if (b.all->weights.sparse)
   {
     GD::multipredict_info<sparse_parameters> mp = {
-        count, step, pred, all.weights.sparse_weights, (float)all.sd->gravity};
+        count, step, pred, all.weights.sparse_weights, static_cast<float>(all.sd->gravity)};
     GD::foreach_feature<GD::multipredict_info<sparse_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
   }
   else
   {
-    GD::multipredict_info<dense_parameters> mp = {count, step, pred, all.weights.dense_weights, (float)all.sd->gravity};
+    GD::multipredict_info<dense_parameters> mp = {
+        count, step, pred, all.weights.dense_weights, static_cast<float>(all.sd->gravity)};
     GD::foreach_feature<GD::multipredict_info<dense_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
   }
   if (all.sd->contraction != 1.)
-    for (size_t c = 0; c < count; c++) pred[c].scalar *= (float)all.sd->contraction;
+    for (size_t c = 0; c < count; c++) pred[c].scalar *= static_cast<float>(all.sd->contraction);
   if (finalize_predictions)
     for (size_t c = 0; c < count; c++) pred[c].scalar = GD::finalize_prediction(all.sd, all.logger, pred[c].scalar);
   if (audit)
@@ -113,9 +114,9 @@ void multipredict(
     {
       ec.pred.scalar = pred[c].scalar;
       GD::print_audit_features(all, ec);
-      ec.ft_offset += (uint64_t)step;
+      ec.ft_offset += static_cast<uint64_t>(step);
     }
-    ec.ft_offset -= (uint64_t)(step * count);
+    ec.ft_offset -= static_cast<uint64_t>(step * count);
   }
 }
 
@@ -220,9 +221,9 @@ void coin_betting_predict(ftrl& b, single_learner&, example& ec)
 
   GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data);
 
-  b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
+  b.all->normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
-  b.data.average_squared_norm_x = ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
+  b.data.average_squared_norm_x = (static_cast<float>((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
   ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 
@@ -298,7 +299,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
     bool resume = all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), "", read, msg, text);
 
     if (resume)
       GD::save_load_online_state(*all, model_file, read, text, b.total_weight, nullptr, b.ftrl_size);

@@ -45,7 +45,7 @@ void output_and_account_example(vw& all, example& ec)
   const label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ((double)ld.label) * ec.weight;
+  if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
   for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag); }
@@ -62,7 +62,7 @@ void return_simple_example(vw& all, void*, example& ec)
 bool summarize_holdout_set(vw& all, size_t& no_win_counter)
 {
   float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0)
-      ? (float)(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass)
+      ? static_cast<float>(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass)
       : FLT_MAX * 0.5f;
   if (all.all_reduce != nullptr) thisLoss = accumulate_scalar(all, thisLoss);
 

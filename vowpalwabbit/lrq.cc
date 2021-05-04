@@ -93,7 +93,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
         {
           if (!do_dropout || cheesyrbit(lrq.seed))
           {
-            uint64_t lwindex = (lindex + ((uint64_t)n << stride_shift));
+            uint64_t lwindex = (lindex + (static_cast<uint64_t>(n) << stride_shift));
             weight* lw = &lrq.all->weights[lwindex];
 
             // perturb away from saddle point at (0, 0)
@@ -111,7 +111,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
               // NB: ec.ft_offset added by base learner
               float rfx = right_fs.values[rfn];
               uint64_t rindex = right_fs.indicies[rfn];
-              uint64_t rwindex = (rindex + ((uint64_t)n << stride_shift));
+              uint64_t rwindex = (rindex + (static_cast<uint64_t>(n) << stride_shift));
 
               right_fs.push_back(scale * *lw * lfx * rfx, rwindex);
 
@@ -200,15 +200,15 @@ base_learner* lrq_setup(options_i& options, vw& all)
 
     unsigned int k = atoi(i.c_str() + 2);
 
-    lrq->lrindices[(int)i[0]] = true;
-    lrq->lrindices[(int)i[1]] = true;
+    lrq->lrindices[static_cast<int>(i[0])] = true;
+    lrq->lrindices[static_cast<int>(i[1])] = true;
 
     maxk = std::max(k, k);
   }
 
   if (!all.logger.quiet) *(all.trace_message) << std::endl;
 
-  all.wpp = all.wpp * (uint64_t)(1 + maxk);
+  all.wpp = all.wpp * static_cast<uint64_t>(1 + maxk);
   auto base = setup_base(options, all);
   learner<LRQstate, example>& l = init_learner(lrq, as_singleline(base), predict_or_learn<true>,
       predict_or_learn<false>, 1 + maxk, all.get_setupfn_name(lrq_setup), base->learn_returns_prediction);

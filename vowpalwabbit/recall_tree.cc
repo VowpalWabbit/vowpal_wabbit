@@ -89,9 +89,9 @@ void init_tree(recall_tree& b, uint32_t root, uint32_t depth, uint32_t& routers_
   {
     uint32_t left_child;
     uint32_t right_child;
-    left_child = (uint32_t)b.nodes.size();
+    left_child = static_cast<uint32_t>(b.nodes.size());
     b.nodes.push_back(node());
-    right_child = (uint32_t)b.nodes.size();
+    right_child = static_cast<uint32_t>(b.nodes.size());
     b.nodes.push_back(node());
     b.nodes[root].base_router = routers_used++;
 
@@ -150,9 +150,9 @@ void compute_recall_lbest(recall_tree& b, node* n)
   for (node_pred* ls = n->preds.begin(); ls != n->preds.end() && ls < n->preds.begin() + b.max_candidates; ++ls)
   { mass_at_k += ls->label_count; }
 
-  float f = (float)mass_at_k / (float)n->n;
-  float stdf = std::sqrt(f * (1.f - f) / (float)n->n);
-  float diamf = 15.f / (std::sqrt(18.f) * (float)n->n);
+  float f = static_cast<float>(mass_at_k) / static_cast<float>(n->n);
+  float stdf = std::sqrt(f * (1.f - f) / static_cast<float>(n->n));
+  float diamf = 15.f / (std::sqrt(18.f) * static_cast<float>(n->n));
 
   n->recall_lbest = std::max(0.f, f - std::sqrt(b.bern_hyper) * stdf - b.bern_hyper * diamf);
 }
@@ -218,12 +218,12 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
   ec.indices.push_back(node_id_namespace);
   features& fs = ec.feature_space[node_id_namespace];
 
-  if (b.node_only) { fs.push_back(1., (((uint64_t)868771 * cn) << ss) & mask); }
+  if (b.node_only) { fs.push_back(1., ((static_cast<uint64_t>(868771) * cn) << ss) & mask); }
   else
   {
     while (cn > 0)
     {
-      fs.push_back(1., (((uint64_t)868771 * cn) << ss) & mask);
+      fs.push_back(1., ((static_cast<uint64_t>(868771) * cn) << ss) & mask);
       cn = b.nodes[cn].parent;
     }
   }
@@ -375,7 +375,7 @@ float train_node(recall_tree& b, single_learner& base, example& ec, uint32_t cn)
 
 void learn(recall_tree& b, single_learner& base, example& ec)
 {
-  if (b.all->training && ec.l.multi.label != (uint32_t)-1)  // if training the tree
+  if (b.all->training && ec.l.multi.label != static_cast<uint32_t>(-1))  // if training the tree
   {
     uint32_t cn = 0;
 
@@ -505,9 +505,10 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
   tree->_random_state = all.get_random_state();
   tree->max_candidates = options.was_supplied("max_candidates")
       ? tree->max_candidates
-      : std::min(tree->k, 4 * (uint32_t)(ceil(log(tree->k) / log(2.0))));
-  tree->max_depth =
-      options.was_supplied("max_depth") ? tree->max_depth : (uint32_t)std::ceil(std::log(tree->k) / std::log(2.0));
+      : std::min(tree->k, 4 * static_cast<uint32_t>(ceil(log(tree->k) / log(2.0))));
+  tree->max_depth = options.was_supplied("max_depth")
+      ? tree->max_depth
+      : static_cast<uint32_t>(std::ceil(std::log(tree->k) / std::log(2.0)));
 
   init_tree(*tree.get());
 
