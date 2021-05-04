@@ -228,7 +228,8 @@ void reset_source(vw& all, size_t numbits)
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
-      int f = static_cast<int>(accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
+      int f =
+          static_cast<int>(accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
       if (f < 0) THROW("accept: " << VW::strerror_to_string(errno));
 
       // Disable Nagle delay algorithm due to daemon mode's interactive workload
@@ -510,7 +511,8 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
     if (!all.logger.quiet) *(all.trace_message) << "calling accept" << endl;
-    auto f_a = static_cast<int>(accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
+    auto f_a =
+        static_cast<int>(accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
     if (f_a < 0) THROWERRNO("accept");
 
     // Disable Nagle delay algorithm due to daemon mode's interactive workload
