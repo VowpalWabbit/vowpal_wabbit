@@ -6,6 +6,7 @@
 #include <cstdint>
 #include "constant.h"
 #include "feature_group.h"
+#include "example_predict.h"
 #include <vector>
 #include <string>
 

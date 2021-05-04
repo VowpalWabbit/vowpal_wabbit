@@ -5,6 +5,8 @@
 #pragma once
 #include "reductions_fwd.h"
 
+struct feature;
+
 VW::LEARNER::base_learner* lda_setup(VW::config::options_i&, vw&);
 
 void get_top_weights(vw* all, int top_words_count, int topic, std::vector<feature>& output);

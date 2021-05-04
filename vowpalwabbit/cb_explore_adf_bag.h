@@ -9,8 +9,6 @@
 #include <vector>
 #include <memory>
 
-struct rand_state;
-
 namespace VW
 {
 namespace cb_explore_adf

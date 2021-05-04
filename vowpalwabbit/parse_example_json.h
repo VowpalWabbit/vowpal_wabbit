@@ -1174,6 +1174,11 @@ public:
     return return_state;
   }
 
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
+  {
+    return Float(ctx, static_cast<float>(i));
+  }
+
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override
   {
     *output_float = 0.f;

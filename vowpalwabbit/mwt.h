@@ -4,6 +4,8 @@
 #pragma once
 #include "reductions_fwd.h"
 
+#include "io/io_adapter.h"
+
 VW::LEARNER::base_learner* mwt_setup(VW::config::options_i& options, vw& all);
 
 namespace MWT
