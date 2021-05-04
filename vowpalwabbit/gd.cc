@@ -299,7 +299,7 @@ void print_features(vw& all, example& ec)
         {
           audit_interaction(dat, f.audit()->get());
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
-          audit_interaction(dat, NULL);
+          audit_interaction(dat, nullptr);
         }
       else
         for (features::iterator& f : fs) audit_feature(dat, f.value(), f.index() + ec.ft_offset);
@@ -729,11 +729,11 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
         if (map_it != all.index_name_map.end())
         {
           msg << map_it->second;
-          bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
+          bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
         }
 
         msg << ":" << weight_index << ":" << weight_value << "\n";
-        bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
+        bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
       }
     }
     return;
@@ -810,7 +810,7 @@ void save_load_online_state(
         weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
         if (ftrl_size > 0)
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * ftrl_size, "");
-        else if (g == NULL || (!g->adaptive_input && !g->normalized_input))
+        else if (g == nullptr || (!g->adaptive_input && !g->normalized_input))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]), "");
         else if ((g->adaptive_input && !g->normalized_input) || (!g->adaptive_input && g->normalized_input))
           brw += model_file.bin_read_fixed((char*)buff, sizeof(buff[0]) * 2, "");
@@ -834,7 +834,7 @@ void save_load_online_state(
           if (map_it != all.index_name_map.end())
           {
             msg << map_it->second << ":";
-            bin_text_write_fixed(model_file, 0 /*unused*/, 0 /*unused*/, msg, true);
+            bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
           }
         }
       }
