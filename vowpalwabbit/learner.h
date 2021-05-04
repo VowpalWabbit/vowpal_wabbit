@@ -307,7 +307,7 @@ public:
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
-    if (learn_fd.multipredict_f == NULL)
+    if (learn_fd.multipredict_f == nullptr)
     {
       increment_offset(ec, increment, lo);
       debug_log_message(ec, "multipredict");
