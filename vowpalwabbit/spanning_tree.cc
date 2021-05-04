@@ -170,7 +170,8 @@ void SpanningTree::Run()
     }
 
     char dotted_quad[INET_ADDRSTRLEN];
-    if (NULL == inet_ntop(AF_INET, &(client_address.sin_addr), dotted_quad, INET_ADDRSTRLEN)) THROWERRNO("inet_ntop: ");
+    if (nullptr == inet_ntop(AF_INET, &(client_address.sin_addr), dotted_quad, INET_ADDRSTRLEN))
+      THROWERRNO("inet_ntop: ");
 
     char hostname[NI_MAXHOST];
     char servInfo[NI_MAXSERV];

@@ -117,7 +117,7 @@ bool resize_buf_if_needed(char*& __dest, size_t& __dest_size, const size_t __n)
   char* new_dest;
   if (__dest_size < __n)
   {
-    if ((new_dest = (char*)realloc(__dest, __n)) == NULL)
+    if ((new_dest = (char*)realloc(__dest, __n)) == nullptr)
       THROW("Can't realloc enough memory.")
     else
     {
