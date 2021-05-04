@@ -2,9 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "label_parser.h"
+
 #include <vector>
 #include <cstdint>
+
+#include "label_parser.h"
+#include "v_array.h"
 
 struct example;
 struct vw;

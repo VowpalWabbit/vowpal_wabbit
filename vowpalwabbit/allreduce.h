@@ -44,8 +44,17 @@ typedef int socket_t;
 #include "vwvis.h"
 #include <cassert>
 
-#include <mutex>
-#include <condition_variable>
+#ifdef _M_CEE
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <condition_variable>
+#  include <mutex>
+#  define _M_CEE 001
+#  pragma managed(pop)
+#else
+#  include <condition_variable>
+#  include <mutex>
+#endif
 
 constexpr size_t ar_buf_size = 1 << 16;
 

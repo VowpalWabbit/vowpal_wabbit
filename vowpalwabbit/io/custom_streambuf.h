@@ -4,6 +4,7 @@
 
 #include <streambuf>
 #include <memory>
+#include <cassert>
 
 #include "io_adapter.h"
 
