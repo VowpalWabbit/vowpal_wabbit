@@ -39,7 +39,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
   for (features& fs : ec)
   {
     bool audit = !fs.space_names.empty();
-    for (auto& f : fs.values_indices_audit())
+    for (const auto& f : fs.audit_range())
     {
       std::cout << '\t';
       if (audit) std::cout << f.audit()->get()->first << '^' << f.audit()->get()->second << ':';
@@ -57,8 +57,8 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
       /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
       for (size_t k = 1; k <= d.rank; k++)
       {
-        for (features::iterator_all& f1 : ec.feature_space[static_cast<unsigned char>(i[0])].values_indices_audit())
-          for (features::iterator_all& f2 : ec.feature_space[static_cast<unsigned char>(i[1])].values_indices_audit())
+        for (const auto& f1 : ec.feature_space[static_cast<unsigned char>(i[0])].audit_range())
+          for (const auto& f2 : ec.feature_space[static_cast<unsigned char>(i[1])].audit_range())
           {
             std::cout << '\t' << f1.audit()->get()->first << k << '^' << f1.audit()->get()->second << ':'
                       << ((f1.index() + k) & mask) << "(" << ((f1.index() + offset + k) & mask) << ")" << ':'
