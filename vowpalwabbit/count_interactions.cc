@@ -98,6 +98,7 @@ VW::LEARNER::base_learner* count_interactions_setup(options_i& options, vw& all)
   auto* base = as_singleline(setup_base(options, all));
   auto* l = VW::LEARNER::make_reduction_learner(
       std::move(data), base, learn_func, pred_func, all.get_setupfn_name(count_interactions_setup))
+                .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_multipredict(multipredict_func)
                 .set_update(update_func)
                 .build();
