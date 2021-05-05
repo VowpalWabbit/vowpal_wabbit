@@ -239,6 +239,7 @@ struct features
 
   inline size_t size() const { return values.size(); }
 
+  inline bool empty() const { return values.empty(); }
   inline bool nonempty() const { return !values.empty(); }
 
   VW_DEPRECATED("Freeing space names is handled directly by truncation or removal.")

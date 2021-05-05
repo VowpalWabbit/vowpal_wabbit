@@ -7,6 +7,19 @@
 #include "example.h"
 #include "gd.h"
 #include "simple_label_parser.h"
+#include "interactions.h"
+
+float calculate_sum_features_squared(bool permutations, example& ec)
+{
+  float sum_features_squared = 0.f;
+  for (const features& fs : ec)
+  {
+    sum_features_squared += fs.sum_feat_sq;
+  }
+
+  sum_features_squared += INTERACTIONS::calculate_sum_interaction_features_squared(permutations, ec.interactions->interactions, ec.feature_space);
+  return sum_features_squared;
+}
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
@@ -90,6 +103,8 @@ void copy_example_data(example* dst, const example* src)
   for (namespace_index c : src->indices) dst->feature_space[c].deep_copy_from(src->feature_space[c]);
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
+  dst->total_sum_feat_sq_calculated = src->total_sum_feat_sq_calculated;
+  dst->use_permutations = src->use_permutations;
   dst->interactions = src->interactions;
   dst->_debug_current_reduction_depth = src->_debug_current_reduction_depth;
 }
@@ -125,10 +140,10 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
   auto& fsrc = src->feature_space[c];
 
   src->num_features -= fsrc.size();
-  src->total_sum_feat_sq -= fsrc.sum_feat_sq;
+  src->total_sum_feat_sq_calculated = false;
   std::swap(fdst, fsrc);
   dst->num_features += fdst.size();
-  dst->total_sum_feat_sq += fdst.sum_feat_sq;
+  dst->total_sum_feat_sq_calculated = false;
 }
 
 }  // namespace VW

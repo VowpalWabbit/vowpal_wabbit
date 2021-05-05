@@ -682,8 +682,10 @@ void setup_example(vw& all, example* ae)
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
+  ae->total_sum_feat_sq_calculated = false;
   ae->loss = 0.;
   ae->_debug_current_reduction_depth = 0;
+  ae->use_permutations = all.permutations;
 
   ae->example_counter = static_cast<size_t>(all.example_parser->end_parsed_examples.load());
   if (!all.example_parser->emptylines_separate_examples) all.example_parser->in_pass_counter++;
@@ -730,11 +732,9 @@ void setup_example(vw& all, example* ae)
     for (features& fs : *ae)
       for (auto& j : fs.indicies) j *= multiplier;
   ae->num_features = 0;
-  ae->total_sum_feat_sq = 0;
   for (const features& fs : *ae)
   {
     ae->num_features += fs.size();
-    ae->total_sum_feat_sq += fs.sum_feat_sq;
   }
 
   if (all.interactions.quadratics_wildcard_expansion)
@@ -750,12 +750,7 @@ void setup_example(vw& all, example* ae)
 
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
-
-  size_t new_features_cnt;
-  float new_features_sum_feat_sq;
-  INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
-  ae->num_features += new_features_cnt;
-  ae->total_sum_feat_sq += new_features_sum_feat_sq;
+  ae->num_features += INTERACTIONS::calculate_num_generated_interaction_features(all.permutations, ae->interactions->interactions, ae->feature_space);
 }
 }  // namespace VW
 

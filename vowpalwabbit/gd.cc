@@ -584,7 +584,7 @@ float sensitivity(gd& g, example& ec)
   else
   {
     _UNUSED(g);
-    return ec.total_sum_feat_sq;
+    return ec.get_total_sum_feat_sq();
   }
 }
 VW_WARNING_STATE_POP
