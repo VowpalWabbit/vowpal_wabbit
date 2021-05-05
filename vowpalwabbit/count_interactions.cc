@@ -8,6 +8,7 @@
 #include "example.h"
 #include "memory.h"
 #include "parse_args.h"
+#include "generate_interactions.h"
 
 using namespace VW::config;
 
@@ -67,7 +68,18 @@ VW::LEARNER::base_learner* count_interactions_setup(options_i& options, vw& all)
 
   // This reduction is not needed when there are no interactions.
   // CCB implicitly adds interactions and so much be explicitly specified here.
-  if ((all.interactions.interactions.empty() && !all.interactions.quadratics_wildcard_expansion) &&
+
+  auto interactions_spec_contains_wildcards = false;
+  for (const auto& inter : all.interactions)
+  {
+    if (contains_wildcard(inter))
+    {
+      interactions_spec_contains_wildcards = true;
+      break;
+    }
+  }
+
+  if ((all.interactions.empty() && !interactions_spec_contains_wildcards) &&
       !options.was_supplied("ccb_explore_adf"))
   { return nullptr; }
 

@@ -150,7 +150,7 @@ void eval_count_of_generated_ft_permutations(
   new_features_value = 0.f;
 
   // just multiply precomputed values for all namespaces
-  for (const auto& inter : ec.interactions->interactions)
+  for (const auto& inter : *ec.interactions)
   {
     size_t num_features_in_inter = 1;
     float sum_feat_sq_in_inter = 1.;
@@ -177,7 +177,7 @@ void eval_count_of_generated_ft_combinations(
 
   v_array<float> results;
 
-  for (const auto& inter : ec.interactions->interactions)
+  for (const auto& inter : *ec.interactions)
   {
     size_t num_features_in_inter = 1;
     float sum_feat_sq_in_inter = 1.;
