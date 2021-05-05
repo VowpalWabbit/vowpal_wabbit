@@ -485,8 +485,7 @@ size_t calculate_num_generated_interaction_features(bool permutations, const std
           // recurrent value calculations
           for (size_t i = 0; i < fs.size(); ++i)
           {
-            // TODO float compare?
-            if (fs.values[i] != 1.f)
+            if (PROCESS_SELF_INTERACTIONS(fs.values[i]))
             {
               ++cnt_ft_value_non_1;
             }
