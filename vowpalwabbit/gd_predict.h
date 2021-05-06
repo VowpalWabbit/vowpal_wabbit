@@ -60,8 +60,8 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
       interactions, permutations, ec, dat, weights);
 }
 
-// iterate through all namespaces and quadratic&cubic features, callback function FuncT(some_data_R, feature_value_x, WeightOrIndexT)
-// where WeightOrIndexT is EITHER float& feature_weight OR uint64_t feature_index
+// iterate through all namespaces and quadratic&cubic features, callback function FuncT(some_data_R, feature_value_x,
+// WeightOrIndexT) where WeightOrIndexT is EITHER float& feature_weight OR uint64_t feature_index
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), class WeightsT>
 inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
     namespace_interactions& interactions, bool permutations, example_predict& ec, DataT& dat)
