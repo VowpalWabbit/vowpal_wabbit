@@ -61,29 +61,29 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
     }
 }
 
-// iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
-template <class R, class S, void (*T)(R&, float, S)>
-inline void foreach_feature(vw& all, example& ec, R& dat)
+// iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
+template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT)>
+inline void foreach_feature(vw& all, example& ec, DataT& dat)
 {
   return all.weights.sparse
-      ? foreach_feature<R, S, T, sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear,
-            all.ignore_linear, *ec.interactions, all.permutations, ec, dat)
-      : foreach_feature<R, S, T, dense_parameters>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear,
-            *ec.interactions, all.permutations, ec, dat);
+      ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters>(all.weights.sparse_weights,
+            all.ignore_some_linear, all.ignore_linear, *ec.interactions, all.permutations, ec, dat)
+      : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters>(all.weights.dense_weights,
+            all.ignore_some_linear, all.ignore_linear, *ec.interactions, all.permutations, ec, dat);
 }
 
 // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x,
 // feature_weight)
-template <class R, void (*T)(R&, float, float&)>
-inline void foreach_feature(vw& all, example& ec, R& dat)
+template <class DataT, void (*FuncT)(DataT&, float, float&)>
+inline void foreach_feature(vw& all, example& ec, DataT& dat)
 {
-  foreach_feature<R, float&, T>(all, ec, dat);
+  foreach_feature<DataT, float&, FuncT>(all, ec, dat);
 }
 
-template <class R, void (*T)(R&, float, const float&)>
-inline void foreach_feature(vw& all, example& ec, R& dat)
+template <class DataT, void (*FuncT)(DataT&, float, const float&)>
+inline void foreach_feature(vw& all, example& ec, DataT& dat)
 {
-  foreach_feature<R, const float&, T>(all, ec, dat);
+  foreach_feature<DataT, const float&, FuncT>(all, ec, dat);
 }
 
 inline float inline_predict(vw& all, example& ec)
