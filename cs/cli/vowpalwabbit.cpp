@@ -383,9 +383,9 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			  interior_ptr<ParseJsonState^> state_ptr = &state;
 
 			  if (m_vw->audit)
-				VW::read_line_json<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), get_example_from_pool, &state);
+				VW::read_line_json_s<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, get_example_from_pool, &state);
 			  else
-				VW::read_line_json<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), get_example_from_pool, &state);
+				VW::read_line_json_s<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, get_example_from_pool, &state);
 
 			  // finalize example
 			  VW::setup_examples(*m_vw, examples);
