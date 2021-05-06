@@ -80,10 +80,10 @@ inline void foreach_feature(vw& all, example& ec, DataT& dat)
   foreach_feature<DataT, float&, FuncT>(all, ec, dat);
 }
 
-template <class DataT, void (*FuncT)(DataT&, float, const float&)>
+template <class DataT, void (*FuncT)(DataT&, float, float)>
 inline void foreach_feature(vw& all, example& ec, DataT& dat)
 {
-  foreach_feature<DataT, const float&, FuncT>(all, ec, dat);
+  foreach_feature<DataT, float, FuncT>(all, ec, dat);
 }
 
 inline float inline_predict(vw& all, example& ec)

@@ -32,15 +32,11 @@ inline void foreach_feature(WeightsT& weights, const features& fs, DataT& dat, u
 }
 
 // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
-template <class DataT, void (*FuncT)(DataT&, const float, const float&), class WeightsT>
+template <class DataT, void (*FuncT)(DataT&, float, float), class WeightsT>
 inline void foreach_feature(
     const WeightsT& weights, const features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
 {
-  for (const auto& f : fs)
-  {
-    const weight& w = weights[(f.index() + offset)];
-    FuncT(dat, mult * f.value(), w);
-  }
+  for (const auto& f : fs) { FuncT(dat, mult * f.value(), weights[(f.index() + offset)]); }
 }
 
 template <class DataT>
@@ -82,13 +78,13 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::arr
   generate_interactions<DataT, WeightOrIndexT, FuncT, WeightsT>(interactions, permutations, ec, dat, weights);
 }
 
-inline void vec_add(float& p, const float fx, const float& fw) { p += fw * fx; }
+inline void vec_add(float& p, float fx, float fw) { p += fw * fx; }
 
 template <class WeightsT>
 inline float inline_predict(WeightsT& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
     namespace_interactions& interactions, bool permutations, example_predict& ec, float initial = 0.f)
 {
-  foreach_feature<float, const float&, vec_add, WeightsT>(
+  foreach_feature<float, float, vec_add, WeightsT>(
       weights, ignore_some_linear, ignore_linear, interactions, permutations, ec, initial);
   return initial;
 }
