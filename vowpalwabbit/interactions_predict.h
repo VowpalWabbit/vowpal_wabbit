@@ -16,7 +16,7 @@ namespace INTERACTIONS
 {
 /*
  * By default include interactions of feature with itself.
- * This approach produces slightly more interactions but it'FeatureIndexOrValueT safier
+ * This approach produces slightly more interactions but it's safer
  * for some cases, as discussed in issues/698
  * Previous behaviour was: include interactions of feature with itself only if its value != value^2.
  *
@@ -241,7 +241,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
       if (!permutations)  // adjust state_data for simple combinations
       {                   // if permutations mode is disabeled then namespaces in ns are already sorted and thus grouped
         // (in fact, currently they are sorted even for enabled permutations mode)
-        // let'FeatureIndexOrValueT go throw the list and calculate number of features to skip in namespaces which
+        // let's go throw the list and calculate number of features to skip in namespaces which
         // repeated more than once to generate only simple combinations of features
 
         size_t margin = 0;  // number of features to ignore if namespace has been seen before
@@ -270,7 +270,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
         }
 
         // if impossible_without_permutations == true then we faced with case like interaction 'aaaa'
-        // where namespace 'a' contains less than 4 unique features. It'FeatureIndexOrValueT impossible to make simple
+        // where namespace 'a' contains less than 4 unique features. It's impossible to make simple
         // combination of length 4 without repetitions from 3 or less elements.
         if (must_skip_interaction) continue;  // impossible_without_permutations
       }                                       // end of state_data adjustment
