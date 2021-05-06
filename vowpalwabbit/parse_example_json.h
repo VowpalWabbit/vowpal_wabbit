@@ -1616,13 +1616,13 @@ struct json_parser
 namespace VW
 {
 template <bool audit>
-void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t length, example_factory_t example_factory,
-    void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t length,
+    example_factory_t example_factory, void* ex_factory_context,
+    std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
-    parse_slates_example_json<audit>(
-        all, examples, line, length, example_factory, ex_factory_context, dedup_examples);
+    parse_slates_example_json<audit>(all, examples, line, length, example_factory, ex_factory_context, dedup_examples);
     return;
   }
 
