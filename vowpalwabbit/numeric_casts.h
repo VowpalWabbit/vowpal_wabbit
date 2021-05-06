@@ -1,6 +1,6 @@
 #pragma once
 
-#include <numeric>
+#include <limits>
 #include <sstream>
 
 #include "vw_exception.h"

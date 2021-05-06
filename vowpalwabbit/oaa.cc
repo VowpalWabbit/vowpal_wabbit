@@ -1,6 +1,7 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include <cmath>
 #include <sstream>
 #include <cfloat>
 #include <cmath>
@@ -34,9 +35,8 @@ struct oaa
 void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t ld = ec.l.multi;
-  if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
-      logger::log_error("label {0} is not in {{1,{1}}} This won't work right.",
-			ld.label, o.k);
+  if (ld.label == 0 || (ld.label > o.k && ld.label != static_cast<uint32_t>(-1)))
+    logger::log_error("label {0} is not in {{1,{1}}} This won't work right.", ld.label, o.k);
 
   ec.l.simple = {1.};  // truth
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
@@ -47,7 +47,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 
   ec.l.simple.label = -1.;
   float weight_temp = ec.weight;
-  ec.weight *= ((float)o.k) / (float)o.num_subsample;
+  ec.weight *= (static_cast<float>(o.k)) / static_cast<float>(o.num_subsample);
   size_t p = o.subsample_id;
   size_t count = 0;
   while (count < o.num_subsample)
@@ -65,7 +65,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   }
   o.subsample_id = p;
 
-  ec.pred.multiclass = (uint32_t)prediction;
+  ec.pred.multiclass = static_cast<uint32_t>(prediction);
   ec.l.multi = ld;
   ec.weight = weight_temp;
 }
@@ -77,9 +77,8 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
   MULTICLASS::label_t mc_label_data = ec.l.multi;
 
   // Label validation
-  if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
-      logger::log_error("label {0} is not in {{1,{1}}} This won't work right.",
-			mc_label_data.label, o.k);
+  if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != static_cast<uint32_t>(-1)))
+    logger::log_error("label {0} is not in {{1,{1}}} This won't work right.", mc_label_data.label, o.k);
 
   ec.l.simple = {FLT_MAX};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
@@ -173,7 +172,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   {
     if (ec.l.multi.label <= o.k)  // prevent segmentation fault if labeĺ==(uint32_t)-1
       correct_class_prob = ec.pred.scalars[ec.l.multi.label - 1];
-    if (correct_class_prob > 0) multiclass_log_loss = -log(correct_class_prob) * ec.weight;
+    if (correct_class_prob > 0) multiclass_log_loss = -std::log(correct_class_prob) * ec.weight;
     if (ec.test_only)
       all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
     else
@@ -203,7 +202,8 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag);
 
   // === Report updates using zero-one loss
-  all.sd->update(ec.test_only, ec.l.multi.label != (uint32_t)-1, zero_one_loss, ec.weight, ec.num_features);
+  all.sd->update(
+      ec.test_only, ec.l.multi.label != static_cast<uint32_t>(-1), zero_one_loss, ec.weight, ec.num_features);
   // Alternatively, we could report multiclass_log_loss.
   // all.sd->update(ec.test_only, multiclass_log_loss, ec.weight, ec.num_features);
   // Even better would be to report both losses, but this would mean to increase
@@ -249,10 +249,11 @@ VW::LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
     else
     {
       data->subsample_order = calloc_or_throw<uint32_t>(data->k);
-      for (size_t i = 0; i < data->k; i++) data->subsample_order[i] = (uint32_t)i;
+      for (size_t i = 0; i < data->k; i++) data->subsample_order[i] = static_cast<uint32_t>(i);
       for (size_t i = 0; i < data->k; i++)
       {
-        size_t j = (size_t)(all.get_random_state()->get_and_update_random() * (float)(data->k - i)) + i;
+        size_t j =
+            static_cast<size_t>(all.get_random_state()->get_and_update_random() * static_cast<float>(data->k - i)) + i;
         uint32_t tmp = data->subsample_order[i];
         data->subsample_order[i] = data->subsample_order[j];
         data->subsample_order[j] = tmp;

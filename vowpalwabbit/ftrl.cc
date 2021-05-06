@@ -1,6 +1,7 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+#include <cmath>
 #include <string>
 #include <cfloat>
 #include "correctedMath.h"
@@ -94,16 +95,17 @@ void multipredict(
   if (b.all->weights.sparse)
   {
     GD::multipredict_info<sparse_parameters> mp = {
-        count, step, pred, all.weights.sparse_weights, (float)all.sd->gravity};
+        count, step, pred, all.weights.sparse_weights, static_cast<float>(all.sd->gravity)};
     GD::foreach_feature<GD::multipredict_info<sparse_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
   }
   else
   {
-    GD::multipredict_info<dense_parameters> mp = {count, step, pred, all.weights.dense_weights, (float)all.sd->gravity};
+    GD::multipredict_info<dense_parameters> mp = {
+        count, step, pred, all.weights.dense_weights, static_cast<float>(all.sd->gravity)};
     GD::foreach_feature<GD::multipredict_info<dense_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
   }
   if (all.sd->contraction != 1.)
-    for (size_t c = 0; c < count; c++) pred[c].scalar *= (float)all.sd->contraction;
+    for (size_t c = 0; c < count; c++) pred[c].scalar *= static_cast<float>(all.sd->contraction);
   if (finalize_predictions)
     for (size_t c = 0; c < count; c++) pred[c].scalar = GD::finalize_prediction(all.sd, all.logger, pred[c].scalar);
   if (audit)
@@ -112,9 +114,9 @@ void multipredict(
     {
       ec.pred.scalar = pred[c].scalar;
       GD::print_audit_features(all, ec);
-      ec.ft_offset += (uint64_t)step;
+      ec.ft_offset += static_cast<uint64_t>(step);
     }
-    ec.ft_offset -= (uint64_t)(step * count);
+    ec.ft_offset -= static_cast<uint64_t>(step * count);
   }
 }
 
@@ -144,7 +146,7 @@ void inner_update_pistol_state_and_predict(ftrl_update_data& d, float x, float& 
 {
   float* w = &wref;
 
-  float fabs_x = fabs(x);
+  float fabs_x = std::fabs(x);
   if (fabs_x > w[W_MX]) w[W_MX] = fabs_x;
 
   float squared_theta = w[W_ZT] * w[W_ZT];
@@ -160,7 +162,7 @@ void inner_update_pistol_post(ftrl_update_data& d, float x, float& wref)
   float gradient = d.update * x;
 
   w[W_ZT] += -gradient;
-  w[W_G2] += fabs(gradient);
+  w[W_G2] += std::fabs(gradient);
 }
 
 // Coin betting vectors
@@ -176,7 +178,7 @@ void inner_coin_betting_predict(ftrl_update_data& d, float x, float& wref)
   float w_mx = w[W_MX];
   float w_xt = 0.0;
 
-  float fabs_x = fabs(x);
+  float fabs_x = std::fabs(x);
   if (fabs_x > w_mx) { w_mx = fabs_x; }
 
   // COCOB update without sigmoid
@@ -189,12 +191,12 @@ void inner_coin_betting_predict(ftrl_update_data& d, float x, float& wref)
 void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, float& wref)
 {
   float* w = &wref;
-  float fabs_x = fabs(x);
+  float fabs_x = std::fabs(x);
   float gradient = d.update * x;
 
   if (fabs_x > w[W_MX]) { w[W_MX] = fabs_x; }
 
-  float fabs_gradient = fabs(d.update);
+  float fabs_gradient = std::fabs(d.update);
   if (fabs_gradient > w[W_MG]) w[W_MG] = fabs_gradient > d.ftrl_beta ? fabs_gradient : d.ftrl_beta;
 
   // COCOB update without sigmoid.
@@ -206,7 +208,7 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
     w[W_XT] = 0;
 
   w[W_ZT] += -gradient;
-  w[W_G2] += fabs(gradient);
+  w[W_G2] += std::fabs(gradient);
   w[W_WE] += (-gradient * w[W_XT]);
 
   w[W_XT] /= d.average_squared_norm_x;
@@ -219,9 +221,9 @@ void coin_betting_predict(ftrl& b, single_learner&, example& ec)
 
   GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data);
 
-  b.all->normalized_sum_norm_x += ((double)ec.weight) * b.data.normalized_squared_norm_x;
+  b.all->normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
-  b.data.average_squared_norm_x = ((float)((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
+  b.data.average_squared_norm_x = (static_cast<float>((b.all->normalized_sum_norm_x + 1e-6) / b.total_weight));
 
   ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 
@@ -297,7 +299,7 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
     bool resume = all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), "", read, msg, text);
 
     if (resume)
       GD::save_load_online_state(*all, model_file, read, text, b.total_weight, nullptr, b.ftrl_size);

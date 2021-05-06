@@ -172,7 +172,7 @@ void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
 
 bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t label)
 {
-  class_index = (uint32_t)b.nodes[current].preds.unique_add_sorted(node_pred(label));
+  class_index = static_cast<uint32_t>(b.nodes[current].preds.unique_add_sorted(node_pred(label)));
   b.nodes[current].preds[class_index].label_count++;
 
   if (b.nodes[current].preds[class_index].label_count > b.nodes[current].max_count)
@@ -192,11 +192,11 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
     uint32_t right_child;
     if (b.predictors_used < b.max_predictors)
     {
-      left_child = (uint32_t)b.nodes.size();
+      left_child = static_cast<uint32_t>(b.nodes.size());
       b.nodes.push_back(init_node());
-      right_child = (uint32_t)b.nodes.size();
+      right_child = static_cast<uint32_t>(b.nodes.size());
       b.nodes.push_back(init_node());
-      b.nodes[current].base_predictor = (uint32_t)b.predictors_used++;
+      b.nodes[current].base_predictor = static_cast<uint32_t>(b.predictors_used++);
     }
     else
     {
@@ -256,14 +256,14 @@ void train_node(
   ec.l.simple.label = FLT_MAX;
   base.predict(ec, b.nodes[current].base_predictor);  // depth
 
-  b.nodes[current].Eh += (double)ec.partial_prediction;
-  b.nodes[current].preds[class_index].Ehk += (double)ec.partial_prediction;
+  b.nodes[current].Eh += static_cast<double>(ec.partial_prediction);
+  b.nodes[current].preds[class_index].Ehk += static_cast<double>(ec.partial_prediction);
   b.nodes[current].n++;
   b.nodes[current].preds[class_index].nk++;
 
-  b.nodes[current].norm_Eh = (float)b.nodes[current].Eh / b.nodes[current].n;
+  b.nodes[current].norm_Eh = static_cast<float>(b.nodes[current].Eh) / b.nodes[current].n;
   b.nodes[current].preds[class_index].norm_Ehk =
-      (float)b.nodes[current].preds[class_index].Ehk / b.nodes[current].preds[class_index].nk;
+      static_cast<float>(b.nodes[current].preds[class_index].Ehk) / b.nodes[current].preds[class_index].nk;
 }
 
 // TODO: currently unused. Is this useful to keep around?
@@ -318,7 +318,7 @@ void predict(log_multi& b, single_learner& base, example& ec)
 
 void learn(log_multi& b, single_learner& base, example& ec)
 {
-  if (ec.l.multi.label != (uint32_t)-1)  // if training the tree
+  if (ec.l.multi.label != static_cast<uint32_t>(-1))  // if training the tree
   {
     MULTICLASS::label_t mc = ec.l.multi;
     uint32_t start_pred = ec.pred.multiclass;
@@ -353,11 +353,12 @@ void save_node_stats(log_multi& d)
 
   for (i = 0; i < b->nodes.size(); i++)
   {
-    fprintf(fp, "Node: %4d, Internal: %1d, Eh: %7.4f, n: %6d, \n", (int)i, (int)b->nodes[i].internal,
-        b->nodes[i].Eh / b->nodes[i].n, b->nodes[i].n);
+    fprintf(fp, "Node: %4d, Internal: %1d, Eh: %7.4f, n: %6d, \n", static_cast<int>(i),
+        static_cast<int>(b->nodes[i].internal), b->nodes[i].Eh / b->nodes[i].n, b->nodes[i].n);
 
     fprintf(fp, "Label:, ");
-    for (j = 0; j < b->nodes[i].preds.size(); j++) { fprintf(fp, "%6d,", (int)b->nodes[i].preds[j].label); }
+    for (j = 0; j < b->nodes[i].preds.size(); j++)
+    { fprintf(fp, "%6d,", static_cast<int>(b->nodes[i].preds[j].label)); }
     fprintf(fp, "\n");
 
     fprintf(fp, "Ehk:, ");
@@ -370,14 +371,14 @@ void save_node_stats(log_multi& d)
     fprintf(fp, "nk:, ");
     for (j = 0; j < b->nodes[i].preds.size(); j++)
     {
-      fprintf(fp, "%6d,", (int)b->nodes[i].preds[j].nk);
+      fprintf(fp, "%6d,", static_cast<int>(b->nodes[i].preds[j].nk));
       total += b->nodes[i].preds[j].nk;
     }
     fprintf(fp, "\n");
 
-    fprintf(fp, "max(lab:cnt:tot):, %3d,%6d,%7d,\n", (int)b->nodes[i].max_count_label, (int)b->nodes[i].max_count,
-        (int)total);
-    fprintf(fp, "left: %4d, right: %4d", (int)b->nodes[i].left, (int)b->nodes[i].right);
+    fprintf(fp, "max(lab:cnt:tot):, %3d,%6d,%7d,\n", static_cast<int>(b->nodes[i].max_count_label),
+        static_cast<int>(b->nodes[i].max_count), static_cast<int>(total));
+    fprintf(fp, "left: %4d, right: %4d", static_cast<int>(b->nodes[i].left), static_cast<int>(b->nodes[i].right));
     fprintf(fp, "\n\n");
   }
 
@@ -390,25 +391,29 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
   {
     std::stringstream msg;
     msg << "k = " << b.k;
-    bin_text_read_write_fixed(model_file, (char*)&b.max_predictors, sizeof(b.k), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&b.max_predictors), sizeof(b.k), "", read, msg, text);
 
     msg << "nodes = " << b.nodes.size() << " ";
-    uint32_t temp = (uint32_t)b.nodes.size();
-    bin_text_read_write_fixed(model_file, (char*)&temp, sizeof(temp), "", read, msg, text);
+    uint32_t temp = static_cast<uint32_t>(b.nodes.size());
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&temp), sizeof(temp), "", read, msg, text);
     if (read)
       for (uint32_t j = 1; j < temp; j++) b.nodes.push_back(init_node());
 
     msg << "max predictors = " << b.max_predictors << " ";
-    bin_text_read_write_fixed(model_file, (char*)&b.max_predictors, sizeof(b.max_predictors), "", read, msg, text);
+    bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&b.max_predictors), sizeof(b.max_predictors), "", read, msg, text);
 
     msg << "predictors_used = " << b.predictors_used << " ";
-    bin_text_read_write_fixed(model_file, (char*)&b.predictors_used, sizeof(b.predictors_used), "", read, msg, text);
+    bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&b.predictors_used), sizeof(b.predictors_used), "", read, msg, text);
 
     msg << "progress = " << b.progress << " ";
-    bin_text_read_write_fixed(model_file, (char*)&b.progress, sizeof(b.progress), "", read, msg, text);
+    bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&b.progress), sizeof(b.progress), "", read, msg, text);
 
     msg << "swap_resist = " << b.swap_resist << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&b.swap_resist, sizeof(b.swap_resist), "", read, msg, text);
+    bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&b.swap_resist), sizeof(b.swap_resist), "", read, msg, text);
 
     for (size_t j = 0; j < b.nodes.size(); j++)
     {
@@ -416,48 +421,53 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
       node& n = b.nodes[j];
 
       msg << " parent = " << n.parent;
-      bin_text_read_write_fixed(model_file, (char*)&n.parent, sizeof(n.parent), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&n.parent), sizeof(n.parent), "", read, msg, text);
 
-      temp = (uint32_t)n.preds.size();
+      temp = static_cast<uint32_t>(n.preds.size());
 
       msg << " preds = " << temp;
-      bin_text_read_write_fixed(model_file, (char*)&temp, sizeof(temp), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&temp), sizeof(temp), "", read, msg, text);
       if (read)
         for (uint32_t k = 0; k < temp; k++) n.preds.push_back(node_pred(1));
 
       msg << " min_count = " << n.min_count;
-      bin_text_read_write_fixed(model_file, (char*)&n.min_count, sizeof(n.min_count), "", read, msg, text);
+      bin_text_read_write_fixed(
+          model_file, reinterpret_cast<char*>(&n.min_count), sizeof(n.min_count), "", read, msg, text);
 
       msg << " internal = " << n.internal;
-      bin_text_read_write_fixed(model_file, (char*)&n.internal, sizeof(n.internal), "", read, msg, text);
+      bin_text_read_write_fixed(
+          model_file, reinterpret_cast<char*>(&n.internal), sizeof(n.internal), "", read, msg, text);
 
       if (n.internal)
       {
         msg << " base_predictor = " << n.base_predictor;
-        bin_text_read_write_fixed(model_file, (char*)&n.base_predictor, sizeof(n.base_predictor), "", read, msg, text);
+        bin_text_read_write_fixed(
+            model_file, reinterpret_cast<char*>(&n.base_predictor), sizeof(n.base_predictor), "", read, msg, text);
 
         msg << " left = " << n.left;
-        bin_text_read_write_fixed(model_file, (char*)&n.left, sizeof(n.left), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&n.left), sizeof(n.left), "", read, msg, text);
 
         msg << " right = " << n.right;
-        bin_text_read_write_fixed(model_file, (char*)&n.right, sizeof(n.right), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&n.right), sizeof(n.right), "", read, msg, text);
 
         msg << " norm_Eh = " << n.norm_Eh;
-        bin_text_read_write_fixed(model_file, (char*)&n.norm_Eh, sizeof(n.norm_Eh), "", read, msg, text);
+        bin_text_read_write_fixed(
+            model_file, reinterpret_cast<char*>(&n.norm_Eh), sizeof(n.norm_Eh), "", read, msg, text);
 
         msg << " Eh = " << n.Eh;
-        bin_text_read_write_fixed(model_file, (char*)&n.Eh, sizeof(n.Eh), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&n.Eh), sizeof(n.Eh), "", read, msg, text);
 
         msg << " n = " << n.n << "\n";
-        bin_text_read_write_fixed(model_file, (char*)&n.n, sizeof(n.n), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&n.n), sizeof(n.n), "", read, msg, text);
       }
       else
       {
         msg << " max_count = " << n.max_count;
-        bin_text_read_write_fixed(model_file, (char*)&n.max_count, sizeof(n.max_count), "", read, msg, text);
+        bin_text_read_write_fixed(
+            model_file, reinterpret_cast<char*>(&n.max_count), sizeof(n.max_count), "", read, msg, text);
         msg << " max_count_label = " << n.max_count_label << "\n";
         bin_text_read_write_fixed(
-            model_file, (char*)&n.max_count_label, sizeof(n.max_count_label), "", read, msg, text);
+            model_file, reinterpret_cast<char*>(&n.max_count_label), sizeof(n.max_count_label), "", read, msg, text);
       }
 
       for (size_t k = 0; k < n.preds.size(); k++)
@@ -465,19 +475,21 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
         node_pred& p = n.preds[k];
 
         msg << "  Ehk = " << p.Ehk;
-        bin_text_read_write_fixed(model_file, (char*)&p.Ehk, sizeof(p.Ehk), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&p.Ehk), sizeof(p.Ehk), "", read, msg, text);
 
         msg << " norm_Ehk = " << p.norm_Ehk;
-        bin_text_read_write_fixed(model_file, (char*)&p.norm_Ehk, sizeof(p.norm_Ehk), "", read, msg, text);
+        bin_text_read_write_fixed(
+            model_file, reinterpret_cast<char*>(&p.norm_Ehk), sizeof(p.norm_Ehk), "", read, msg, text);
 
         msg << " nk = " << p.nk;
-        bin_text_read_write_fixed(model_file, (char*)&p.nk, sizeof(p.nk), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&p.nk), sizeof(p.nk), "", read, msg, text);
 
         msg << " label = " << p.label;
-        bin_text_read_write_fixed(model_file, (char*)&p.label, sizeof(p.label), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&p.label), sizeof(p.label), "", read, msg, text);
 
         msg << " label_count = " << p.label_count << "\n";
-        bin_text_read_write_fixed(model_file, (char*)&p.label_count, sizeof(p.label_count), "", read, msg, text);
+        bin_text_read_write_fixed(
+            model_file, reinterpret_cast<char*>(&p.label_count), sizeof(p.label_count), "", read, msg, text);
       }
     }
   }

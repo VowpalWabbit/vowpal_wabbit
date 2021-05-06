@@ -125,7 +125,7 @@ inline float fastlog2(float x)
   memcpy(&vx, &x, sizeof(uint32_t));
 
   float y = static_cast<float>(vx);
-  y *= 1.0f / (float)(1 << 23);
+  y *= 1.0f / static_cast<float>(1 << 23);
 
   return y - 124.22544637f - 1.498030302f * mx_f - 1.72587999f / (0.3520887068f + mx_f);
 }
@@ -136,9 +136,10 @@ inline float fastpow2(float p)
 {
   float offset = (p < 0) * 1.0f;
   float clipp = (p < -126.0) ? -126.0f : p;
-  int w = (int)clipp;
+  int w = static_cast<int>(clipp);
   float z = clipp - w + offset;
-  uint32_t approx = (uint32_t)((1 << 23) * (clipp + 121.2740838f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z));
+  uint32_t approx =
+      static_cast<uint32_t>((1 << 23) * (clipp + 121.2740838f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z));
 
   float v;
   memcpy(&v, &approx, sizeof(uint32_t));
@@ -729,7 +730,7 @@ size_t next_pow2(size_t x)
     x >>= 1;
     i++;
   }
-  return ((size_t)1) << i;
+  return (static_cast<size_t>(1)) << i;
 }
 
 struct initial_weights
@@ -744,7 +745,7 @@ struct initial_weights
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 {
   vw &all = *(l.all);
-  uint64_t length = (uint64_t)1 << all.num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (read)
   {
     initialize_regressor(all);
@@ -777,12 +778,12 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
       if (!read && text) msg << i << " ";
 
       if (!read || all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
-        brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
+        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), "", read, msg, text);
       else
       {
         // support 32bit build models
         uint32_t j;
-        brw += bin_text_read_write_fixed(model_file, (char *)&j, sizeof(j), "", read, msg, text);
+        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&j), sizeof(j), "", read, msg, text);
         i = j;
       }
 
@@ -793,7 +794,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
         {
           weight *v = w + k;
           if (!read && text) msg << *v + l.lda_rho << " ";
-          brw += bin_text_read_write_fixed(model_file, (char *)v, sizeof(*v), "", read, msg, text);
+          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), "", read, msg, text);
         }
       }
       if (text)
@@ -871,13 +872,13 @@ void learn_batch(lda &l)
 
   sort(l.sorted_features.begin(), l.sorted_features.end());
 
-  eta = l.all->eta * l.powf((float)l.example_t, -l.all->power_t);
+  eta = l.all->eta * l.powf(static_cast<float>(l.example_t), -l.all->power_t);
   minuseta = 1.0f - eta;
   eta *= l.lda_D / batch_size;
   l.decay_levels.push_back(l.decay_levels.back() + log(minuseta));
 
   l.digammas.clear();
-  float additional = (float)(l.all->length()) * l.lda_rho;
+  float additional = static_cast<float>(l.all->length()) * l.lda_rho;
   for (size_t i = 0; i < l.all->lda; i++) l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
 
   auto last_weight_index = std::numeric_limits<uint64_t>::max();
@@ -887,12 +888,12 @@ void learn_batch(lda &l)
     last_weight_index = s->f.weight_index;
     // float *weights_for_w = &(weights[s->f.weight_index]);
     float *weights_for_w = &(weights[s->f.weight_index & weights.mask()]);
-    float decay_component =
-        l.decay_levels.end()[-2] - l.decay_levels.end()[(int)(-1 - l.example_t + *(weights_for_w + l.all->lda))];
+    float decay_component = l.decay_levels.end()[-2] -
+        l.decay_levels.end()[static_cast<int>(-1 - l.example_t + *(weights_for_w + l.all->lda))];
     float decay = fmin(1.0f, correctedExp(decay_component));
     float *u_for_w = weights_for_w + l.all->lda + 1;
 
-    *(weights_for_w + l.all->lda) = (float)l.example_t;
+    *(weights_for_w + l.all->lda) = static_cast<float>(l.example_t);
     for (size_t k = 0; k < l.all->lda; k++)
     {
       weights_for_w[k] *= decay;
@@ -964,7 +965,7 @@ void learn_batch(lda &l)
 
 void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
 {
-  uint32_t num_ex = (uint32_t)l.examples.size();
+  uint32_t num_ex = static_cast<uint32_t>(l.examples.size());
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
   for (features &fs : ec)
@@ -973,7 +974,7 @@ void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
     {
       index_feature temp = {num_ex, feature(f.value(), f.index())};
       l.sorted_features.push_back(temp);
-      l.doc_lengths[num_ex] += (int)f.value();
+      l.doc_lengths[num_ex] += static_cast<int>(f.value());
     }
   }
   if (++num_ex == l.minibatch) learn_batch(l);
@@ -992,7 +993,7 @@ void learn_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec)
       for (features::iterator &f : fs)
       {
         uint64_t idx = (f.index() & weight_mask) >> stride_shift;
-        l.feature_counts[idx] += (uint32_t)f.value();
+        l.feature_counts[idx] += static_cast<uint32_t>(f.value());
         l.feature_to_example_map[idx].push_back(ec.example_counter);
       }
     }
@@ -1027,7 +1028,7 @@ struct feature_pair
 template <class T>
 void get_top_weights(vw *all, int top_words_count, int topic, std::vector<feature> &output, T &weights)
 {
-  uint64_t length = (uint64_t)1 << all->num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << all->num_bits;
 
   // get top features for this topic
   auto cmp = [](feature left, feature right) { return left.x > right.x; };
@@ -1067,7 +1068,7 @@ void get_top_weights(vw *all, int top_words_count, int topic, std::vector<featur
 template <class T>
 void compute_coherence_metrics(lda &l, T &weights)
 {
-  uint64_t length = (uint64_t)1 << l.all->num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << l.all->num_bits;
 
   std::vector<std::vector<feature_pair>> topics_word_pairs;
   topics_word_pairs.resize(l.topics);
@@ -1185,7 +1186,7 @@ void compute_coherence_metrics(lda &l, T &weights)
       }
     }
 
-    printf("Topic %3d coherence: %f\n", (int)topic, coherence);
+    printf("Topic %3d coherence: %f\n", static_cast<int>(topic), coherence);
 
     // TODO: expose per topic coherence
 
@@ -1299,20 +1300,20 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   ld->finish_example_count = 0;
 
-  all.lda = (uint32_t)ld->topics;
+  all.lda = static_cast<uint32_t>(ld->topics);
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = false;
   ld->all = &all;
   ld->example_t = all.initial_t;
   if (ld->compute_coherence_metrics)
   {
-    ld->feature_counts.resize((uint32_t)(UINT64_ONE << all.num_bits));
-    ld->feature_to_example_map.resize((uint32_t)(UINT64_ONE << all.num_bits));
+    ld->feature_counts.resize(static_cast<uint32_t>(UINT64_ONE << all.num_bits));
+    ld->feature_to_example_map.resize(static_cast<uint32_t>(UINT64_ONE << all.num_bits));
   }
 
-  float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
+  float temp = ceilf(logf(static_cast<float>(all.lda * 2 + 1)) / logf(2.f));
 
-  all.weights.stride_shift((size_t)temp);
+  all.weights.stride_shift(static_cast<size_t>(temp));
   all.random_weights = true;
   all.add_constant = false;
 

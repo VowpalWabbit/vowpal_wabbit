@@ -5,6 +5,7 @@
 #pragma once
 
 #include "label_parser.h"
+#include "v_array.h"
 
 struct example;
 

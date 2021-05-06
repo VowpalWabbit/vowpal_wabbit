@@ -44,8 +44,17 @@ typedef int socket_t;
 #include "vwvis.h"
 #include <cassert>
 
-#include <mutex>
-#include <condition_variable>
+#ifdef _M_CEE
+#  pragma managed(push, off)
+#  undef _M_CEE
+#  include <condition_variable>
+#  include <mutex>
+#  define _M_CEE 001
+#  pragma managed(pop)
+#else
+#  include <condition_variable>
+#  include <mutex>
+#endif
 
 constexpr size_t ar_buf_size = 1 << 16;
 
@@ -192,7 +201,7 @@ private:
 
     if (my_bufsize > 0)
     {  // going to pass up this chunk of data to the parent
-      int write_size = send(socks.parent, buffer + parent_sent_pos, (int)my_bufsize, 0);
+      int write_size = send(socks.parent, buffer + parent_sent_pos, static_cast<int>(my_bufsize), 0);
       if (write_size < 0)
         THROW("Write to parent failed " << my_bufsize << " " << write_size << " " << parent_sent_pos << " "
                                         << left_read_pos << " " << right_read_pos);
@@ -228,7 +237,7 @@ private:
 
       if (child_read_pos[0] < n || child_read_pos[1] < n)
       {
-        if (max_fd > 0 && select((int)max_fd, &fds, nullptr, nullptr, nullptr) == -1) THROWERRNO("select");
+        if (max_fd > 0 && select(static_cast<int>(max_fd), &fds, nullptr, nullptr, nullptr) == -1) THROWERRNO("select");
 
         for (int i = 0; i < 2; i++)
         {
@@ -239,7 +248,8 @@ private:
                   << FD_ISSET(socks.children[0], &fds) << " " << FD_ISSET(socks.children[1], &fds));
 
             size_t count = std::min(ar_buf_size, n - child_read_pos[i]);
-            int read_size = recv(socks.children[i], &child_read_buf[i][child_unprocessed[i]], (int)count, 0);
+            int read_size =
+                recv(socks.children[i], &child_read_buf[i][child_unprocessed[i]], static_cast<int>(count), 0);
             if (read_size == -1) THROWERRNO("recv from child");
 
             addbufs<T, f>((T*)buffer + child_read_pos[i] / sizeof(T), (T*)child_read_buf[i],

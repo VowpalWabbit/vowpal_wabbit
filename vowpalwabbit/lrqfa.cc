@@ -42,7 +42,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   float first_loss = 0;
   unsigned int maxiter = (is_learn && !example_is_test(ec)) ? 2 : 1;
   unsigned int k = lrq.k;
-  float sqrtk = (float)std::sqrt(k);
+  float sqrtk = static_cast<float>(std::sqrt(k));
 
   uint32_t stride_shift = lrq.all->weights.stride_shift();
   uint64_t weight_mask = lrq.all->weights.mask();
@@ -66,8 +66,8 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
           uint64_t lindex = fs.indicies[lfn];
           for (unsigned int n = 1; n <= k; ++n)
           {
-            uint64_t lwindex =
-                (lindex + ((uint64_t)(rfd_id * k + n) << stride_shift));  // a feature has k weights in each field
+            uint64_t lwindex = (lindex +
+                (static_cast<uint64_t>(rfd_id * k + n) << stride_shift));  // a feature has k weights in each field
             float* lw = &all.weights[lwindex & weight_mask];
             // perturb away from saddle point at (0, 0)
             if (is_learn)
@@ -82,7 +82,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
               // NB: ec.ft_offset added by base learner
               float rfx = rfs.values[rfn];
               uint64_t rindex = rfs.indicies[rfn];
-              uint64_t rwindex = (rindex + ((uint64_t)(lfd_id * k + n) << stride_shift));
+              uint64_t rwindex = (rindex + (static_cast<uint64_t>(lfd_id * k + n) << stride_shift));
 
               rfs.push_back(*lw * lfx * rfx, rwindex);
               if (all.audit || all.hash_inv)
@@ -149,9 +149,9 @@ VW::LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
   lrq->k = atoi(lrqopt.substr(last_index + 1).c_str());
 
   int fd_id = 0;
-  for (char i : lrq->field_name) lrq->field_id[(int)i] = fd_id++;
+  for (char i : lrq->field_name) lrq->field_id[static_cast<int>(i)] = fd_id++;
 
-  all.wpp = all.wpp * (uint64_t)(1 + lrq->k);
+  all.wpp = all.wpp * static_cast<uint64_t>(1 + lrq->k);
   auto base = setup_base(options, all);
   learner<LRQFAstate, example>& l =
       init_learner(lrq, as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,

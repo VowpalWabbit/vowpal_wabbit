@@ -307,7 +307,7 @@ public:
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
         (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
-    if (learn_fd.multipredict_f == NULL)
+    if (learn_fd.multipredict_f == nullptr)
     {
       increment_offset(ec, increment, lo);
       debug_log_message(ec, "multipredict");
@@ -540,10 +540,10 @@ public:
       ret = *(learner<T, E>*)(base);
 
       ret.learn_fd.base = make_base(*base);
-      ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)recur_sensitivity;
+      ret.sensitivity_fd.sensitivity_f = static_cast<sensitivity_data::fn>(recur_sensitivity);
       ret.finisher_fd.data = dat;
       ret.finisher_fd.base = make_base(*base);
-      ret.finisher_fd.func = (func_data::fn)noop;
+      ret.finisher_fd.func = static_cast<func_data::fn>(noop);
       ret.weights = ws;
       ret.increment = base->increment * ret.weights;
     }
@@ -551,18 +551,18 @@ public:
     {
       ret.weights = 1;
       ret.increment = ws;
-      ret.end_pass_fd.func = (func_data::fn)noop;
-      ret.end_examples_fd.func = (func_data::fn)noop;
-      ret.persist_metrics_fd.save_metric_f = (save_metric_data::fn)noop_persist_metrics;
-      ret.init_fd.func = (func_data::fn)noop;
-      ret.save_load_fd.save_load_f = (save_load_data::fn)noop_save_load;
+      ret.end_pass_fd.func = static_cast<func_data::fn>(noop);
+      ret.end_examples_fd.func = static_cast<func_data::fn>(noop);
+      ret.persist_metrics_fd.save_metric_f = static_cast<save_metric_data::fn>(noop_persist_metrics);
+      ret.init_fd.func = static_cast<func_data::fn>(noop);
+      ret.save_load_fd.save_load_f = static_cast<save_load_data::fn>(noop_save_load);
       ret.finisher_fd.data = dat;
-      ret.finisher_fd.func = (func_data::fn)noop;
-      ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity;
+      ret.finisher_fd.func = static_cast<func_data::fn>(noop);
+      ret.sensitivity_fd.sensitivity_f = static_cast<sensitivity_data::fn>(noop_sensitivity);
       ret.finish_example_fd.data = dat;
       VW_WARNING_STATE_PUSH
       VW_WARNING_DISABLE_CAST_FUNC_TYPE
-      ret.finish_example_fd.finish_example_f = (finish_example_data::fn)return_simple_example;
+      ret.finish_example_fd.finish_example_f = reinterpret_cast<finish_example_data::fn>(return_simple_example);
       VW_WARNING_STATE_POP
     }
 
@@ -874,10 +874,10 @@ struct reduction_learner_builder
   {
     this->_learner->learn_fd.base = make_base(*base);
     this->_learner->learn_fd.data = this->_learner->learner_data.get();
-    this->_learner->sensitivity_fd.sensitivity_f = (sensitivity_data::fn)recur_sensitivity;
+    this->_learner->sensitivity_fd.sensitivity_f = static_cast<sensitivity_data::fn>(recur_sensitivity);
     this->_learner->finisher_fd.data = this->_learner->learner_data.get();
     this->_learner->finisher_fd.base = make_base(*base);
-    this->_learner->finisher_fd.func = (func_data::fn)noop;
+    this->_learner->finisher_fd.func = static_cast<func_data::fn>(noop);
 
     set_params_per_weight(1);
 
@@ -921,15 +921,16 @@ struct base_learner_builder
       : common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>(
             std::move(data), name)
   {
-    this->_learner->end_pass_fd.func = (func_data::fn)noop;
-    this->_learner->end_examples_fd.func = (func_data::fn)noop;
-    this->_learner->init_fd.func = (func_data::fn)noop;
-    this->_learner->save_load_fd.save_load_f = (save_load_data::fn)noop_save_load;
+    this->_learner->end_pass_fd.func = static_cast<func_data::fn>(noop);
+    this->_learner->end_examples_fd.func = static_cast<func_data::fn>(noop);
+    this->_learner->init_fd.func = static_cast<func_data::fn>(noop);
+    this->_learner->save_load_fd.save_load_f = static_cast<save_load_data::fn>(noop_save_load);
     this->_learner->finisher_fd.data = this->_learner->learner_data.get();
-    this->_learner->finisher_fd.func = (func_data::fn)noop;
-    this->_learner->sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity_base;
+    this->_learner->finisher_fd.func = static_cast<func_data::fn>(noop);
+    this->_learner->sensitivity_fd.sensitivity_f = reinterpret_cast<sensitivity_data::fn>(noop_sensitivity_base);
     this->_learner->finish_example_fd.data = this->_learner->learner_data.get();
-    this->_learner->finish_example_fd.finish_example_f = (finish_example_data::fn)return_simple_example;
+    this->_learner->finish_example_fd.finish_example_f =
+        reinterpret_cast<finish_example_data::fn>(return_simple_example);
 
     this->_learner->learn_fd.data = this->_learner->learner_data.get();
     this->_learner->pred_type = pred_type;

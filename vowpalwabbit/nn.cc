@@ -66,7 +66,7 @@ static inline float fastpow2(float p)
 {
   float offset = (p < 0) ? 1.0f : 0.0f;
   float clipp = (p < -126) ? -126.0f : p;
-  int w = (int)clipp;
+  int w = static_cast<int>(clipp);
   float z = clipp - w + offset;
   union
   {
@@ -99,7 +99,7 @@ void finish_setup(nn& n, vw& all)
       ss << "OutputLayer" << i;
       fs.space_names.push_back(audit_strings_ptr(new audit_strings("", ss.str())));
     }
-    nn_index += (uint64_t)n.increment;
+    nn_index += static_cast<uint64_t>(n.increment);
   }
   n.output_layer.num_features += n.k;
 
@@ -114,7 +114,7 @@ void finish_setup(nn& n, vw& all)
   // TODO: not correct if --noconstant
   n.hiddenbias.interactions = &all.interactions;
   n.hiddenbias.indices.push_back(constant_namespace);
-  n.hiddenbias.feature_space[constant_namespace].push_back(1, (uint64_t)constant);
+  n.hiddenbias.feature_space[constant_namespace].push_back(1, constant);
   if (all.audit || all.hash_inv)
     n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "HiddenBias")));
@@ -187,7 +187,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
         // avoid saddle point at 0
         if (hiddenbias_pred[i].scalar == 0)
         {
-          n.hiddenbias.l.simple.label = (float)(n._random_state->get_and_update_random() - 0.5);
+          n.hiddenbias.l.simple.label = static_cast<float>(n._random_state->get_and_update_random() - 0.5);
           base.learn(n.hiddenbias, i);
           n.hiddenbias.l.simple.label = FLT_MAX;
         }
@@ -253,8 +253,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       // avoid saddle point at 0
       if (wf == 0)
       {
-        float sqrtk = std::sqrt((float)n.k);
-        n.outputweight.l.simple.label = (float)(n._random_state->get_and_update_random() - 0.5) / sqrtk;
+        float sqrtk = std::sqrt(static_cast<float>(n.k));
+        n.outputweight.l.simple.label = static_cast<float>(n._random_state->get_and_update_random() - 0.5) / sqrtk;
         base.update(n.outputweight, n.k);
         n.outputweight.l.simple.label = FLT_MAX;
       }
@@ -325,7 +325,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       {
         float gradient = n.all->loss->first_derivative(n.all->sd, n.prediction, ld.label);
 
-        if (fabs(gradient) > 0)
+        if (std::fabs(gradient) > 0)
         {
           auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss, n.squared_loss);
           n.all->set_minmax = noop_mm;
@@ -403,9 +403,9 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
                                      // "fix" this by moving)
     else
       pred[c].scalar = ec.partial_prediction;
-    ec.ft_offset += (uint64_t)step;
+    ec.ft_offset += static_cast<uint64_t>(step);
   }
-  ec.ft_offset -= (uint64_t)(step * count);
+  ec.ft_offset -= static_cast<uint64_t>(step * count);
 }
 
 void finish_example(vw& all, nn&, example& ec)

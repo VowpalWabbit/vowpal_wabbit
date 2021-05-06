@@ -6,6 +6,9 @@
 
 #include <functional>
 
+#include "global_data.h"
+#include "v_array.h"
+#include "parse_example.h"
 #include "io/logger.h"
 
 using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;

@@ -6,6 +6,11 @@
 
 #include "baseline.h"
 #include "guard.h"
+
+#include "cb.h"
+#include "example.h"
+#include "learner.h"
+
 #include <cfloat>
 
 // TODO: extend to handle CSOAA_LDF and WAP_LDF

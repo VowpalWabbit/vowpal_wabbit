@@ -14,6 +14,9 @@
 #  define USE_CODECVT
 #endif
 
+#include "stdint.h"
+#include "stddef.h"
+
 #include "vwvis.h"
 
 #ifdef MS_CONV
