@@ -423,23 +423,23 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(
-      *vw, examples, (char*)action_1.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+  VW::read_line_json_s<true>(*vw, examples, (char*)action_1.c_str(), action_1.length(),
+      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
   dedup_examples.emplace(dedup_id_1, examples[0]);
 
   examples.clear();
 
   // parse second dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(
-      *vw, examples, (char*)action_2.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+  VW::read_line_json_s<true>(*vw, examples, (char*)action_2.c_str(), action_2.length(),
+      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
   dedup_examples.emplace(dedup_id_2, examples[0]);
 
   examples.clear();
 
   // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(),
+  VW::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
       (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples);
 
   BOOST_CHECK_EQUAL(examples.size(), 3);                    // shared example + 2 multi examples
@@ -487,24 +487,25 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb_missing_dedup_id)
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(
-      *vw, examples, (char*)action_1.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+  VW::read_line_json_s<true>(*vw, examples, (char*)action_1.c_str(), action_1.length(),
+      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
   dedup_examples.emplace(dedup_id_1, examples[0]);
 
   examples.clear();
 
   // parse second dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(
-      *vw, examples, (char*)action_2.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+  VW::read_line_json_s<true>(*vw, examples, (char*)action_2.c_str(), action_2.length(),
+      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
   dedup_examples.emplace(dedup_id_2, examples[0]);
 
   examples.clear();
 
   // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
   examples.push_back(&VW::get_unused_example(vw));
-  BOOST_REQUIRE_THROW(VW::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(),
-                          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
+  BOOST_REQUIRE_THROW(
+      VW::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
+          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
       VW::vw_exception);
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
@@ -555,23 +556,23 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(
-      *vw, examples, (char*)action_1.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+  VW::read_line_json_s<true>(*vw, examples, (char*)action_1.c_str(), action_1.length(),
+      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
   dedup_examples.emplace(dedup_id_1, examples[0]);
 
   examples.clear();
 
   // parse second dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(
-      *vw, examples, (char*)action_2.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+  VW::read_line_json_s<true>(*vw, examples, (char*)action_2.c_str(), action_2.length(),
+      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
   dedup_examples.emplace(dedup_id_2, examples[0]);
 
   examples.clear();
 
   // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(),
+  VW::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
       (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples);
 
   BOOST_CHECK_EQUAL(examples.size(), 6);                    // shared example + 2 multi examples + 3 slots
@@ -673,24 +674,25 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb_dedup_id_missing)
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(
-      *vw, examples, (char*)action_1.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+  VW::read_line_json_s<true>(*vw, examples, (char*)action_1.c_str(), action_1.length(),
+      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
   dedup_examples.emplace(dedup_id_1, examples[0]);
 
   examples.clear();
 
   // parse second dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(
-      *vw, examples, (char*)action_2.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+  VW::read_line_json_s<true>(*vw, examples, (char*)action_2.c_str(), action_2.length(),
+      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
   dedup_examples.emplace(dedup_id_2, examples[0]);
 
   examples.clear();
 
   // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
   examples.push_back(&VW::get_unused_example(vw));
-  BOOST_REQUIRE_THROW(VW::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(),
-                          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
+  BOOST_REQUIRE_THROW(
+      VW::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
+          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
       VW::vw_exception);
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
@@ -720,23 +722,23 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(
-      *vw, examples, (char*)action_1.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+  VW::read_line_json_s<true>(*vw, examples, (char*)action_1.c_str(), action_1.length(),
+      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
   dedup_examples.emplace(dedup_id_1, examples[0]);
 
   examples.clear();
 
   // parse second dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(
-      *vw, examples, (char*)action_2.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+  VW::read_line_json_s<true>(*vw, examples, (char*)action_2.c_str(), action_2.length(),
+      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
   dedup_examples.emplace(dedup_id_2, examples[0]);
 
   examples.clear();
 
   // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(),
+  VW::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
       (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples);
 
   BOOST_CHECK_EQUAL(examples.size(), 5);                    // shared example + 2 multi examples + 2 slots
@@ -796,16 +798,16 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates_dedup_id_missing)
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(
-      *vw, examples, (char*)action_1.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+  VW::read_line_json_s<true>(*vw, examples, (char*)action_1.c_str(), action_1.length(),
+      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
   dedup_examples.emplace(dedup_id_1, examples[0]);
 
   examples.clear();
 
   // parse second dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
-  VW::read_line_json<true>(
-      *vw, examples, (char*)action_2.c_str(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+  VW::read_line_json_s<true>(*vw, examples, (char*)action_2.c_str(), action_2.length(),
+      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
   dedup_examples.emplace(dedup_id_2, examples[0]);
 
   examples.clear();
@@ -813,8 +815,9 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates_dedup_id_missing)
   // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
   examples.push_back(&VW::get_unused_example(vw));
 
-  BOOST_REQUIRE_THROW(VW::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(),
-                          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
+  BOOST_REQUIRE_THROW(
+      VW::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
+          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
       VW::vw_exception);
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
