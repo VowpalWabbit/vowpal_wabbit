@@ -33,7 +33,8 @@ inline void foreach_feature(WeightsT& weights, const features& fs, DataT& dat, u
 
 // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
 template <class DataT, void (*FuncT)(DataT&, const float, const float&), class WeightsT>
-inline void foreach_feature(const WeightsT& weights, const features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
+inline void foreach_feature(
+    const WeightsT& weights, const features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
 {
   for (const auto& f : fs)
   {
@@ -47,13 +48,16 @@ inline void dummy_func(DataT&, const audit_strings*)
 {
 }  // should never be called due to call_audit overload
 
-template <class DataT, class S, void (*FuncT)(DataT&, float, S), class WeightsT>  // nullptr func can't be used as template param in old
-                                                               // compilers
-inline void generate_interactions(namespace_interactions& interactions, bool permutations, example_predict& ec, DataT& dat,
+template <class DataT, class S, void (*FuncT)(DataT&, float, S),
+    class WeightsT>  // nullptr func can't be used as template param in old
+                     // compilers
+inline void generate_interactions(namespace_interactions& interactions, bool permutations, example_predict& ec,
+    DataT& dat,
     WeightsT& weights)  // default value removed to eliminate
-                 // ambiguity in old complers
+                        // ambiguity in old complers
 {
-  INTERACTIONS::generate_interactions<DataT, S, FuncT, false, dummy_func<DataT>, WeightsT>(interactions, permutations, ec, dat, weights);
+  INTERACTIONS::generate_interactions<DataT, S, FuncT, false, dummy_func<DataT>, WeightsT>(
+      interactions, permutations, ec, dat, weights);
 }
 
 // iterate through all namespaces and quadratic&cubic features, callback function FuncT(some_data_R, feature_value_x, S)
