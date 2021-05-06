@@ -167,13 +167,14 @@ public:
   }
 
   std::vector<std::pair<action,float>> all_next()
-  { std::vector<std::pair<action,float>> B;
-    for (action a=1; a<=29; a++) B.push_back(std::make_pair(a, 1.f) );
-    
-    B[ char2action('$')-1 ].second = min_float(100.f, (float)(prev_row[N] - prev_row_min));
+  {
+    std::vector<std::pair<action, float>> B;
+    for (action a = 1; a <= 29; a++) B.push_back(std::make_pair(a, 1.f));
 
-    for (action n=0; n<N; n++)
-      if (prev_row[n] == prev_row_min) B[ char2action(target[n])-1 ].second = 0.f;
+    B[char2action('$') - 1].second = min_float(100.f, (float)(prev_row[N] - prev_row_min));
+
+    for (action n = 0; n < N; n++)
+      if (prev_row[n] == prev_row_min) B[char2action(target[n]) - 1].second = 0.f;
     return B;
   }
 
@@ -215,8 +216,7 @@ float max_cost = 100.;
 float get_or_one(std::vector<std::pair<char,size_t> >& v, char c)
 { // TODO: could binary search
   for (auto& p : v)
-    if (p.first == c)
-      return min_float(max_cost, (float)p.second);
+    if (p.first == c) return min_float(max_cost, (float)p.second);
   return 1.;
 }
 
