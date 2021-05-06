@@ -36,10 +36,7 @@ template <class DataT, void (*FuncT)(DataT&, float, float), class WeightsT>
 inline void foreach_feature(
     const WeightsT& weights, const features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
 {
-  for (const auto& f : fs)
-  {
-    FuncT(dat, mult * f.value(), weights[(f.index() + offset)]);
-  }
+  for (const auto& f : fs) { FuncT(dat, mult * f.value(), weights[(f.index() + offset)]); }
 }
 
 template <class DataT>
