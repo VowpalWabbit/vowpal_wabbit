@@ -71,7 +71,7 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1 * val
 
 // #define GEN_INTER_LOOP
 
-template <class DataT, class FeatureIndexOrValueT, void (*FuncT)(DataT&, float, FeatureIndexOrValueT), bool audit,
+template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
     void (*audit_func)(DataT&, const audit_strings*), class WeightsT>
 inline void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::const_audit_iterator& end,
     const uint64_t offset, WeightsT& weights, feature_value ft_value, feature_index halfhash)
@@ -97,7 +97,7 @@ inline void inner_kernel(DataT& dat, features::const_audit_iterator& begin, feat
 // this templated function generates new features for given example and set of interactions
 // and passes each of them to given function FuncT()
 // it must be in header file to avoid compilation problems
-template <class DataT, class FeatureIndexOrValueT, void (*FuncT)(DataT&, float, FeatureIndexOrValueT), bool audit,
+template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
     void (*audit_func)(DataT&, const audit_strings*),
     class WeightsT>  // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(namespace_interactions& interactions, bool permutations, example_predict& ec,
@@ -149,7 +149,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
             auto begin = second.audit_cbegin();
             if (same_namespace) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1; }
             auto end = second.audit_cend();
-            inner_kernel<DataT, FeatureIndexOrValueT, FuncT, audit, audit_func>(
+            inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
                 dat, begin, end, offset, weights, ft_value, halfhash);
 
             if (audit) audit_func(dat, nullptr);
@@ -194,7 +194,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
                 // next index differs for permutations and simple combinations
                 if (same_namespace2) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1; }
                 auto end = third.audit_cend();
-                inner_kernel<DataT, FeatureIndexOrValueT, FuncT, audit, audit_func>(
+                inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
                     dat, begin, end, offset, weights, ft_value, halfhash);
                 if (audit) audit_func(dat, nullptr);
               }  // end for (snd)
@@ -336,7 +336,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
 
           auto begin = fs.audit_cbegin() + start_i;
           auto end = fs.audit_cbegin() + (fgd2->loop_end + 1);
-          inner_kernel<DataT, FeatureIndexOrValueT, FuncT, audit, audit_func, WeightsT>(
+          inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func, WeightsT>(
               dat, begin, end, offset, weights, ft_value, halfhash);
 
           // trying to go back increasing loop_idx of each namespace by the way
