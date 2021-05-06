@@ -140,10 +140,10 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
   auto& fsrc = src->feature_space[c];
 
   src->num_features -= fsrc.size();
-  src->total_sum_feat_sq_calculated = false;
+  src->clear_total_sum_feat_sq();
   std::swap(fdst, fsrc);
   dst->num_features += fdst.size();
-  dst->total_sum_feat_sq_calculated = false;
+  dst->clear_total_sum_feat_sq();
 }
 
 }  // namespace VW

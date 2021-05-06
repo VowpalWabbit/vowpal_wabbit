@@ -485,8 +485,7 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
    */
   GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
   synthetic_decycle(poly);
-  poly.synth_ec.total_sum_feat_sq = poly.synth_ec.feature_space[tree_atomics].sum_feat_sq;
-  poly.synth_ec.total_sum_feat_sq_calculated = true;
+  poly.synth_ec.set_total_sum_feat_sq(poly.synth_ec.feature_space[tree_atomics].sum_feat_sq);
 
   if (training)
   {

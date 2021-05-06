@@ -227,7 +227,7 @@ void subtract_example(vw& all, example* ec, example* ecsub)
   GD::foreach_feature<example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
   ec->indices.push_back(wap_ldf_namespace);
   ec->num_features += wap_fs.size();
-  ec->total_sum_feat_sq_calculated = false;
+  ec->clear_total_sum_feat_sq();
 }
 
 void unsubtract_example(example* ec)
@@ -248,7 +248,7 @@ void unsubtract_example(example* ec)
 
   features& fs = ec->feature_space[wap_ldf_namespace];
   ec->num_features -= fs.size();
-  ec->total_sum_feat_sq_calculated = false;
+  ec->clear_total_sum_feat_sq();
   fs.clear();
   ec->indices.pop_back();
 }

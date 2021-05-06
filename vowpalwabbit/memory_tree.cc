@@ -116,7 +116,7 @@ void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool o
     {
       diag_kronecker_prod_fs_test(ec1.feature_space[c1], ec2.feature_space[c2], ec.feature_space[c1],
           ec.total_sum_feat_sq, ec1.total_sum_feat_sq, ec2.total_sum_feat_sq);
-          ec.total_sum_feat_sq_calculated = true;
+          ec1.set_total_sum_feat_sq(ec1.total_sum_feat_sq);
       idx1++;
       idx2++;
     }

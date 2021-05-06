@@ -67,7 +67,6 @@ struct polyprediction
 
 float calculate_sum_features_squared(bool permutations, example& ec);
 
-
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 struct example : public example_predict  // core example datatype.
@@ -95,17 +94,11 @@ struct example : public example_predict  // core example datatype.
   float partial_prediction = 0.f;  // shared data for prediction.
   float updated_prediction = 0.f;  // estimated post-update prediction.
   float loss = 0.f;
-  float total_sum_feat_sq = 0.f;  // precomputed, cause it's kind of fast & easy.
+
+  float total_sum_feat_sq = 0.f;
   bool total_sum_feat_sq_calculated = false;
   bool use_permutations = false;
-  float get_total_sum_feat_sq() {
-    if(!total_sum_feat_sq_calculated)
-    {
-      total_sum_feat_sq = calculate_sum_features_squared(use_permutations, *this);
-      total_sum_feat_sq_calculated = true;
-    }
-    return total_sum_feat_sq;
-  }
+
   float confidence = 0.f;
   features* passthrough =
       nullptr;  // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
@@ -121,6 +114,25 @@ struct example : public example_predict  // core example datatype.
   //     "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to
   //     them. " "Standalone examples are by definition always in use.")
   bool in_use = true;
+
+  float get_total_sum_feat_sq() {
+    if(!total_sum_feat_sq_calculated)
+    {
+      total_sum_feat_sq = calculate_sum_features_squared(use_permutations, *this);
+      total_sum_feat_sq_calculated = true;
+    }
+    return total_sum_feat_sq;
+  }
+
+  void set_total_sum_feat_sq(float value) {
+    total_sum_feat_sq = value;
+    total_sum_feat_sq_calculated = true;
+  }
+
+  void clear_total_sum_feat_sq() {
+    total_sum_feat_sq = 0.f;
+    clear_total_sum_feat_sq();
+  }
 };
 VW_WARNING_STATE_POP
 

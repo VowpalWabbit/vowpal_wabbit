@@ -114,7 +114,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   in.feat_store.deep_copy_from(f1);
 
   multiply(f1, f2, in);
-  ec.total_sum_feat_sq_calculated = false;
+  ec.clear_total_sum_feat_sq();
   ec.num_features += f1.size();
 
   // remove 2nd namespace

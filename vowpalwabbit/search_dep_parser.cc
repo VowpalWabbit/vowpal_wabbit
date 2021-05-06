@@ -145,7 +145,7 @@ void inline reset_ex(example *ex)
 {
   ex->num_features = 0;
   ex->total_sum_feat_sq = 0;
-  ex->total_sum_feat_sq_calculated = false;
+  ex->clear_total_sum_feat_sq();
   for (features &fs : *ex) fs.clear();
 }
 
@@ -319,8 +319,7 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
   INTERACTIONS::eval_count_of_generated_ft(all, *data->ex, new_count, new_weight);
 
   data->ex->num_features = count + new_count;
-  data->ex->total_sum_feat_sq = static_cast<float>(count) + new_weight;
-  data->ex->total_sum_feat_sq_calculated = true;
+  data->ex->set_total_sum_feat_sq(static_cast<float>(count) + new_weight);
 }
 
 void get_valid_actions(Search::search &sch, v_array<uint32_t> &valid_action, uint64_t idx, uint64_t n,

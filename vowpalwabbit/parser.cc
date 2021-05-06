@@ -682,7 +682,7 @@ void setup_example(vw& all, example* ae)
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
-  ae->total_sum_feat_sq_calculated = false;
+  ae->clear_total_sum_feat_sq();
   ae->loss = 0.;
   ae->_debug_current_reduction_depth = 0;
   ae->use_permutations = all.permutations;
