@@ -60,7 +60,7 @@ void update(count_interactions&, VW::LEARNER::single_learner& base, example& ec)
 VW::LEARNER::base_learner* count_interactions_setup(options_i& options, vw& all)
 {
   bool permutations;
-  option_group_definition new_options("Generate interactions");
+  option_group_definition new_options("Count interacted features");
   new_options.add(make_option("permutations", permutations)
                       .help("Use permutations instead of combinations for feature interactions of same namespace."));
   options.add_and_parse(new_options);

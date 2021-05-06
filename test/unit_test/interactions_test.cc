@@ -13,11 +13,6 @@
 #include "gd_predict.h"
 #include "interactions.h"
 
-// the code under DEBUG_EVAL_COUNT_OF_GEN_FT below is an alternative way of implementation of
-// eval_count_of_generated_ft() it just calls generate_interactions() with small function which counts generated
-// features and sums their squared values it's replaced with more fast (?) analytic solution but keeps just in case and
-// for doublecheck.
-
 struct eval_gen_data
 {
   size_t& new_features_cnt;
@@ -34,6 +29,10 @@ void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t)
   dat.new_features_value += fx * fx;
 }
 
+// eval_count_of_generated_ft_naive() is an alternative way of implementation of
+// eval_count_of_generated_ft() it just calls generate_interactions() with small
+// function which counts generated features and sums their squared values. We
+// use it to validate the with more fast (?) analytic solution
 void eval_count_of_generated_ft_naive(vw& all, example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {
   // Only makes sense to do this when not in permutations mode.
