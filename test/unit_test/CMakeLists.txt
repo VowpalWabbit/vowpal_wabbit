@@ -73,6 +73,6 @@ endif()
 
 add_test(
   NAME vw_unit_test
-  COMMAND ./vw-unit-test.out
+  COMMAND $<TARGET_FILE:vw-unit-test.out>
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
