@@ -15,8 +15,6 @@ add_executable(vw-unit-test.out
   explore_test.cc
   guard_test.cc
   initialize_test.cc
-  interactions_test.cc
-  interaction_tests.cc
   io_adapter_test.cc
   json_parser_test.cc
   main.cc
