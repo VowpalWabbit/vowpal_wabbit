@@ -266,8 +266,6 @@ public:
     VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
   }
 
-  void* unsafe_get_data() { return learner_data.get(); }
-
   /// \brief Will update the model according to the labels and examples supplied.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid label set for every ::example in the field

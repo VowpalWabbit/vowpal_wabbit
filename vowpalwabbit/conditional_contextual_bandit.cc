@@ -43,7 +43,6 @@ void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
   array = v_init<T>();
 }
 
-
 void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interactions_to_add_to)
 {
   std::vector<std::vector<namespace_index>> new_interactions;
