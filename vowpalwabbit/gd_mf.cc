@@ -199,6 +199,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
   // linear update
   for (features& fs : ec) sd_offset_update<T>(weights, fs, 0, update, regularization);
 
+  ec.num_features_from_interactions = 0;
   // quadratic update
   for (const auto& i : all.interactions.interactions)
   {
@@ -206,6 +207,8 @@ void mf_train(gdmf& d, example& ec, T& weights)
 
     if (ec.feature_space[static_cast<int>(i[0])].size() > 0 && ec.feature_space[static_cast<int>(i[1])].size() > 0)
     {
+      ec.num_features_from_interactions +=
+          ec.feature_space[static_cast<size_t>(i[0])].size() * ec.feature_space[static_cast<size_t>(i[1])].size();
       // update l^k weights
       for (size_t k = 1; k <= d.rank; k++)
       {
