@@ -278,26 +278,25 @@ inline size_t factor(const size_t n, const size_t start_from = 1)
 }
 
 // returns number of new features that will be generated for example and sum of their squared values
-
-void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, float& new_features_value)
+void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions, const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value)
 {
   new_features_cnt = 0;
   new_features_value = 0.;
 
   v_array<float> results;
 
-  if (all.permutations)
+  if (permutations)
   {
     // just multiply precomputed values for all namespaces
-    for (const auto& inter : ec.interactions->interactions)
+    for (const auto& inter : interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
 
       for (namespace_index ns : inter)
       {
-        num_features_in_inter *= ec.feature_space[ns].size();
-        sum_feat_sq_in_inter *= ec.feature_space[ns].sum_feat_sq;
+        num_features_in_inter *= feature_spaces[ns].size();
+        sum_feat_sq_in_inter *= feature_spaces[ns].sum_feat_sq;
         if (num_features_in_inter == 0) break;
       }
 
@@ -309,263 +308,6 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
   }
   else  // case of simple combinations
   {
-#ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
-    size_t correct_features_cnt = 0;
-    float correct_features_value = 0.;
-    eval_gen_data dat(correct_features_cnt, correct_features_value);
-    size_t num_interacted_features = 0;
-    generate_interactions<eval_gen_data, uint64_t, ft_cnt>(all, ec, dat, num_interacted_features);
-#endif
-
-    for (const auto& inter : ec.interactions->interactions)
-    {
-      size_t num_features_in_inter = 1;
-      float sum_feat_sq_in_inter = 1.;
-
-      for (auto ns = inter.begin(); ns != inter.end(); ++ns)
-      {
-        if ((ns == inter.end() - 1) || (*ns != *(ns + 1)))  // neighbour namespaces are different
-        {
-          // just multiply precomputed values
-          const int nsc = *ns;
-          num_features_in_inter *= ec.feature_space[nsc].size();
-          sum_feat_sq_in_inter *= ec.feature_space[nsc].sum_feat_sq;
-          if (num_features_in_inter == 0) break;  // one of namespaces has no features - go to next interaction
-        }
-        else  // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
-        {
-          // let's find out real length of this block
-          size_t order_of_inter = 2;  // alredy compared ns == ns+1
-
-          for (auto ns_end = ns + 2; ns_end < inter.end(); ++ns_end)
-            if (*ns == *ns_end) ++order_of_inter;
-
-          // namespace is same for whole block
-          features& fs = ec.feature_space[static_cast<int>(*ns)];
-
-          // count number of features with value != 1.;
-          size_t cnt_ft_value_non_1 = 0;
-
-          // in this block we shall calculate number of generated features and sum of their values
-          // keeping in mind rules applicable for simple combinations instead of permutations
-
-          // let's calculate sum of their squared value for whole block
-
-          // ensure results as big as order_of_inter and empty.
-          for (size_t i = 0; i < results.size(); ++i) results[i] = 0.;
-          while (results.size() < order_of_inter) results.push_back(0.);
-
-          // recurrent value calculations
-          for (size_t i = 0; i < fs.size(); ++i)
-          {
-            const float x = fs.values[i] * fs.values[i];
-
-            if (!PROCESS_SELF_INTERACTIONS(fs.values[i]))
-            {
-              for (size_t j = order_of_inter - 1; j > 0; --j) results[j] += results[j - 1] * x;
-
-              results[0] += x;
-            }
-            else
-            {
-              results[0] += x;
-
-              for (size_t j = 1; j < order_of_inter; ++j) results[j] += results[j - 1] * x;
-
-              ++cnt_ft_value_non_1;
-            }
-          }
-
-          sum_feat_sq_in_inter *= results[order_of_inter - 1];  // will be explained in http://bit.ly/1Hk9JX1
-
-          // let's calculate  the number of a new features
-
-          // if number of features is less than  order of interaction then go to the next interaction
-          // as you can't make simple combination of interaction 'aaa' if a contains < 3 features.
-          // unless one of them has value != 1. and we are counting them.
-          const size_t ft_size = fs.size();
-          if (cnt_ft_value_non_1 == 0 && ft_size < order_of_inter)
-          {
-            num_features_in_inter = 0;
-            break;
-          }
-
-          size_t n;
-          if (cnt_ft_value_non_1 == 0)  // number of generated simple combinations is C(n,k)
-          {
-            n = static_cast<size_t>(
-                VW::math::choose(static_cast<int64_t>(ft_size), static_cast<int64_t>(order_of_inter)));
-          }
-          else
-          {
-            n = 0;
-            for (size_t l = 0; l <= order_of_inter; ++l)
-            {
-              // C(l+m-1, l) * C(n-m, k-l)
-              size_t num = (l == 0) ? 1 : static_cast<size_t>(VW::math::choose(l + cnt_ft_value_non_1 - 1, l));
-
-              if (ft_size - cnt_ft_value_non_1 >= order_of_inter - l)
-                num *= static_cast<size_t>(VW::math::choose(ft_size - cnt_ft_value_non_1, order_of_inter - l));
-              else
-                num = 0;
-
-              n += num;
-            }
-
-          }  // details on http://bit.ly/1Hk9JX1
-
-          num_features_in_inter *= n;
-
-          ns += order_of_inter - 1;  // jump over whole block
-        }
-      }
-
-      if (num_features_in_inter == 0) continue;  // signal that values should be ignored (as default value is 1)
-
-      new_features_cnt += num_features_in_inter;
-      new_features_value += sum_feat_sq_in_inter;
-    }
-
-#ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
-    if (correct_features_cnt != new_features_cnt)
-      *(all.trace_message) << "Incorrect new features count " << new_features_cnt << " must be " << correct_features_cnt
-                           << std::endl;
-    if (fabs(correct_features_value - new_features_value) > 1e-5)
-      *(all.trace_message) << "Incorrect new features value " << new_features_value << " must be "
-                           << correct_features_value << std::endl;
-#endif
-  }
-}
-
-size_t calculate_num_generated_interaction_features(bool permutations, const std::vector<std::vector<namespace_index>>& interactions, const std::array<features, NUM_NAMESPACES>& feature_spaces)
-{
-  size_t feature_count = 0;
-  if (permutations)
-  {
-    // just multiply precomputed values for all namespaces
-    for (const auto& inter : interactions)
-    {
-      size_t num_features_in_inter = 1;
-      for (namespace_index ns : inter)
-      {
-        num_features_in_inter *= feature_spaces[ns].size();
-        if (num_features_in_inter == 0) break;
-      }
-      feature_count += num_features_in_inter;
-    }
-  }
-  else  // case of simple combinations
-  {
-    for (const auto& inter : interactions)
-    {
-      size_t num_features_in_inter = 1;
-      float sum_feat_sq_in_inter = 1.;
-
-      for (auto ns = inter.begin(); ns != inter.end(); ++ns)
-      {
-        if ((ns == inter.end() - 1) || (*ns != *(ns + 1)))  // neighbour namespaces are different
-        {
-          // just multiply precomputed values
-          num_features_in_inter *= feature_spaces[*ns].size();
-          if (num_features_in_inter == 0) break;  // one of namespaces has no features - go to next interaction
-        }
-        else  // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
-        {
-          // let's find out real length of this block
-          size_t order_of_inter = 2;  // alredy compared ns == ns+1
-
-          for (auto ns_end = ns + 2; ns_end < inter.end(); ++ns_end)
-            if (*ns == *ns_end) ++order_of_inter;
-
-          // namespace is same for whole block
-          const features& fs = feature_spaces[static_cast<int>(*ns)];
-
-          // count number of features with value != 1.;
-          size_t cnt_ft_value_non_1 = 0;
-
-          // recurrent value calculations
-          for (size_t i = 0; i < fs.size(); ++i)
-          {
-            if (PROCESS_SELF_INTERACTIONS(fs.values[i]))
-            {
-              ++cnt_ft_value_non_1;
-            }
-          }
-
-          // let's calculate  the number of a new features
-
-          // if number of features is less than  order of interaction then go to the next interaction
-          // as you can't make simple combination of interaction 'aaa' if a contains < 3 features.
-          // unless one of them has value != 1. and we are counting them.
-          const size_t ft_size = fs.size();
-          if (cnt_ft_value_non_1 == 0 && ft_size < order_of_inter)
-          {
-            num_features_in_inter = 0;
-            break;
-          }
-
-          size_t n;
-          if (cnt_ft_value_non_1 == 0)  // number of generated simple combinations is C(n,k)
-          {
-            n = static_cast<size_t>(
-                VW::math::choose(static_cast<int64_t>(ft_size), static_cast<int64_t>(order_of_inter)));
-          }
-          else
-          {
-            n = 0;
-            for (size_t l = 0; l <= order_of_inter; ++l)
-            {
-              // C(l+m-1, l) * C(n-m, k-l)
-              size_t num = (l == 0) ? 1 : static_cast<size_t>(VW::math::choose(l + cnt_ft_value_non_1 - 1, l));
-
-              if (ft_size - cnt_ft_value_non_1 >= order_of_inter - l)
-                num *= static_cast<size_t>(VW::math::choose(ft_size - cnt_ft_value_non_1, order_of_inter - l));
-              else
-                num = 0;
-
-              n += num;
-            }
-
-          }  // details on http://bit.ly/1Hk9JX1
-
-          num_features_in_inter *= n;
-
-          ns += order_of_inter - 1;  // jump over whole block
-        }
-      }
-
-      feature_count += num_features_in_inter;
-    }
-  }
-
-  return feature_count;
-}
-
-float calculate_sum_interaction_features_squared(bool permutations, const std::vector<std::vector<namespace_index>>& interactions, const std::array<features, NUM_NAMESPACES>& feature_spaces)
-{
-  float sum_features_squared = 0.f;
-  if (permutations)
-  {
-    // just multiply precomputed values for all namespaces
-    for (const auto& inter : interactions)
-    {
-      float sum_feat_sq_in_interaction = 1.;
-
-      bool skip_this_interaction = false;
-      for (auto ns : inter)
-      {
-        sum_feat_sq_in_interaction *= feature_spaces[ns].sum_feat_sq;
-        if (feature_spaces[ns].empty()) { skip_this_interaction = true; }
-      }
-
-      if (skip_this_interaction) continue;
-
-      sum_features_squared += sum_feat_sq_in_interaction;
-    }
-  }
-  else  // case of simple combinations
-  {
-    v_array<float> results;
     for (const auto& inter : interactions)
     {
       size_t num_features_in_inter = 1;
@@ -670,11 +412,11 @@ float calculate_sum_interaction_features_squared(bool permutations, const std::v
       }
 
       if (num_features_in_inter == 0) continue;  // signal that values should be ignored (as default value is 1)
-      sum_features_squared += sum_feat_sq_in_inter;
+
+      new_features_cnt += num_features_in_inter;
+      new_features_value += sum_feat_sq_in_inter;
     }
   }
-
-  return sum_features_squared;
 }
 
 }  // namespace INTERACTIONS

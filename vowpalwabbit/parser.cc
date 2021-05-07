@@ -955,7 +955,7 @@ size_t get_tag_length(example* ec) { return ec->tag.size(); }
 
 const char* get_tag(example* ec) { return ec->tag.begin(); }
 
-size_t get_feature_number(example* ec) { return ec->num_features; }
+size_t get_feature_number(example* ec) { return ec->get_num_features(); }
 
 float get_confidence(example* ec) { return ec->confidence; }
 }  // namespace VW

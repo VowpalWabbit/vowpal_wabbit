@@ -226,11 +226,10 @@ public:
     {
       ec->num_features += fs.size();
     }
-    ec->num_features += INTERACTIONS::calculate_num_generated_interaction_features(vw_ref->permutations, ec->interactions->interactions, ec->feature_space);
     ec->interactions = &vw_ref->interactions;
   }
 
-  size_t get_num_features() { return ec->num_features; }
+  size_t get_num_features() { return ec->get_num_features(); }
 
   example* get()
   {

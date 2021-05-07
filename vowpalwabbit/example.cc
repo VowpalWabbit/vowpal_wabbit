@@ -17,7 +17,10 @@ float calculate_sum_features_squared(bool permutations, example& ec)
     sum_features_squared += fs.sum_feat_sq;
   }
 
-  sum_features_squared += INTERACTIONS::calculate_sum_interaction_features_squared(permutations, ec.interactions->interactions, ec.feature_space);
+  size_t ignored_interacted_feature_count = 0;
+  float calculated_sum_features_squared = 0.f;
+  INTERACTIONS::eval_count_of_generated_ft(permutations, ec.interactions->interactions, ec.feature_space, ignored_interacted_feature_count, calculated_sum_features_squared);
+  sum_features_squared += calculated_sum_features_squared;
   return sum_features_squared;
 }
 

@@ -313,7 +313,7 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
     count += fs.size();
   }
 
-  data->ex->num_features = count + INTERACTIONS::calculate_num_generated_interaction_features(all.permutations, data->ex->interactions->interactions, data->ex->feature_space);
+  data->ex->num_features = count;
 }
 
 void get_valid_actions(Search::search &sch, v_array<uint32_t> &valid_action, uint64_t idx, uint64_t n,
