@@ -119,7 +119,7 @@ struct example : public example_predict  // core example datatype.
   //     them. " "Standalone examples are by definition always in use.")
   bool in_use = true;
 
-  float get_num_features() const noexcept {
+  size_t get_num_features() const noexcept {
     return num_features + num_features_from_interactions;
   }
 

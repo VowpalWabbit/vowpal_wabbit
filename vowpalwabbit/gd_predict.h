@@ -53,7 +53,7 @@ template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, Weight
                      // compilers
 inline void generate_interactions(namespace_interactions& interactions, bool permutations, example_predict& ec,
     DataT& dat,
-    WeightsT& weights, size_t num_interacted_features)  // default value removed to eliminate
+    WeightsT& weights, size_t& num_interacted_features)  // default value removed to eliminate
                         // ambiguity in old complers
 {
   INTERACTIONS::generate_interactions<DataT, WeightOrIndexT, FuncT, false, dummy_func<DataT>, WeightsT>(
