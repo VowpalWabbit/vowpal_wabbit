@@ -12,14 +12,12 @@
 float calculate_sum_features_squared(bool permutations, example& ec)
 {
   float sum_features_squared = 0.f;
-  for (const features& fs : ec)
-  {
-    sum_features_squared += fs.sum_feat_sq;
-  }
+  for (const features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
 
   size_t ignored_interacted_feature_count = 0;
   float calculated_sum_features_squared = 0.f;
-  INTERACTIONS::eval_count_of_generated_ft(permutations, ec.interactions->interactions, ec.feature_space, ignored_interacted_feature_count, calculated_sum_features_squared);
+  INTERACTIONS::eval_count_of_generated_ft(permutations, ec.interactions->interactions, ec.feature_space,
+      ignored_interacted_feature_count, calculated_sum_features_squared);
   sum_features_squared += calculated_sum_features_squared;
   return sum_features_squared;
 }

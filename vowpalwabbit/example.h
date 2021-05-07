@@ -29,10 +29,11 @@
 #include <iostream>
 
 struct vw;
-namespace VW {
-  void copy_example_data(example* dst, const example* src);
-  void setup_example(vw& all, example* ae);
-}
+namespace VW
+{
+void copy_example_data(example* dst, const example* src);
+void setup_example(vw& all, example* ae);
+}  // namespace VW
 
 struct polylabel
 {
@@ -119,12 +120,11 @@ struct example : public example_predict  // core example datatype.
   //     them. " "Standalone examples are by definition always in use.")
   bool in_use = true;
 
-  size_t get_num_features() const noexcept {
-    return num_features + num_features_from_interactions;
-  }
+  size_t get_num_features() const noexcept { return num_features + num_features_from_interactions; }
 
-  float get_total_sum_feat_sq() {
-    if(!total_sum_feat_sq_calculated)
+  float get_total_sum_feat_sq()
+  {
+    if (!total_sum_feat_sq_calculated)
     {
       total_sum_feat_sq = calculate_sum_features_squared(use_permutations, *this);
       total_sum_feat_sq_calculated = true;
@@ -132,7 +132,8 @@ struct example : public example_predict  // core example datatype.
     return total_sum_feat_sq;
   }
 
-  void reset_total_sum_feat_sq() {
+  void reset_total_sum_feat_sq()
+  {
     total_sum_feat_sq = 0.f;
     total_sum_feat_sq_calculated = false;
   }

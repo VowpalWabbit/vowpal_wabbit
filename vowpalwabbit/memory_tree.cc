@@ -92,7 +92,6 @@ void diag_kronecker_prod_fs_test(
 
 int cmpfunc(const void* a, const void* b) { return *(char*)a - *(char*)b; }
 
-
 void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool oas = false)
 {
   // copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
@@ -123,7 +122,6 @@ void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool o
     }
   }
 }
-
 
 ////////////////////////////end of helper/////////////////////////
 //////////////////////////////////////////////////////////////////

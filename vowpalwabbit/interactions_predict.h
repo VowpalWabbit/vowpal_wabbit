@@ -101,8 +101,8 @@ template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, Weight
     void (*audit_func)(DataT&, const audit_strings*),
     class WeightsT>  // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(namespace_interactions& interactions, bool permutations, example_predict& ec,
-    DataT& dat,
-    WeightsT& weights, size_t& num_features)  // default value removed to eliminate ambiguity in old complers
+    DataT& dat, WeightsT& weights,
+    size_t& num_features)  // default value removed to eliminate ambiguity in old complers
 {
   num_features = 0;
   features* features_data = ec.feature_space.data();

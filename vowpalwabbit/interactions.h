@@ -47,7 +47,8 @@ void sort_and_filter_duplicate_interactions(
  */
 
 // function estimates how many new features will be generated for example and their sum(value^2).
-void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions, const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value);
+void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
+    const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value);
 
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*)>
 inline void generate_interactions(vw& all, example_predict& ec, R& dat, size_t& num_interacted_features)

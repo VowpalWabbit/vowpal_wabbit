@@ -278,7 +278,8 @@ inline size_t factor(const size_t n, const size_t start_from = 1)
 }
 
 // returns number of new features that will be generated for example and sum of their squared values
-void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions, const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value)
+void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
+    const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value)
 {
   new_features_cnt = 0;
   new_features_value = 0.;

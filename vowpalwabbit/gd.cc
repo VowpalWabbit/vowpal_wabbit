@@ -412,18 +412,22 @@ void multipredict(
     multipredict_info<sparse_parameters> mp = {
         count, step, pred, g.all->weights.sparse_weights, static_cast<float>(all.sd->gravity)};
     if (l1)
-      foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_trunc_multipredict>(all, ec, mp, num_features_from_interactions);
+      foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_trunc_multipredict>(
+          all, ec, mp, num_features_from_interactions);
     else
-      foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_multipredict>(all, ec, mp, num_features_from_interactions);
+      foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_multipredict>(
+          all, ec, mp, num_features_from_interactions);
   }
   else
   {
     multipredict_info<dense_parameters> mp = {
         count, step, pred, g.all->weights.dense_weights, static_cast<float>(all.sd->gravity)};
     if (l1)
-      foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_trunc_multipredict>(all, ec, mp, num_features_from_interactions);
+      foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_trunc_multipredict>(
+          all, ec, mp, num_features_from_interactions);
     else
-      foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_multipredict>(all, ec, mp, num_features_from_interactions);
+      foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_multipredict>(
+          all, ec, mp, num_features_from_interactions);
   }
   ec.num_features_from_interactions = num_features_from_interactions;
 
