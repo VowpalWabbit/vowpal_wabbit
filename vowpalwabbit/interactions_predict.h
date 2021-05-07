@@ -34,7 +34,7 @@ inline void call_FuncT(DataT& dat, WeightsT& weights, const float ft_value, cons
   FuncT(dat, ft_value, weights[ft_idx]);
 }
 
-template <class DataT, void (*FuncT)(DataT&, const float, const float&), class WeightsT>
+template <class DataT, void (*FuncT)(DataT&, const float, float), class WeightsT>
 inline void call_FuncT(DataT& dat, const WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
   FuncT(dat, ft_value, weights[ft_idx]);
@@ -178,7 +178,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
               if (audit)
               { audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS); }
               const uint64_t halfhash1 = FNV_prime * static_cast<uint64_t>(first.indicies[i]);
-              const float& first_ft_value = first.values[i];
+              float first_ft_value = first.values[i];
               size_t j = 0;
               if (same_namespace1)  // next index differs for permutations and simple combinations
                 j = (PROCESS_SELF_INTERACTIONS(first_ft_value)) ? i : i + 1;
