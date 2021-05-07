@@ -278,7 +278,6 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
        * save_nn_output_namespace is destroyed
        */
       features save_nn_output_namespace = std::move(ec.feature_space[nn_output_namespace]);
-      auto tmp_sum_feat_sq = n.output_layer.feature_space[nn_output_namespace].sum_feat_sq;
       ec.feature_space[nn_output_namespace].deep_copy_from(n.output_layer.feature_space[nn_output_namespace]);
 
       if (is_learn)
