@@ -144,8 +144,7 @@ void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t 
 void inline reset_ex(example *ex)
 {
   ex->num_features = 0;
-  ex->total_sum_feat_sq = 0;
-  ex->clear_total_sum_feat_sq();
+  ex->reset_total_sum_feat_sq();
   for (features &fs : *ex) fs.clear();
 }
 
@@ -314,12 +313,7 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
     count += fs.size();
   }
 
-  size_t new_count;
-  float new_weight;
-  INTERACTIONS::eval_count_of_generated_ft(all, *data->ex, new_count, new_weight);
-
-  data->ex->num_features = count + new_count;
-  data->ex->set_total_sum_feat_sq(static_cast<float>(count) + new_weight);
+  data->ex->num_features = count + INTERACTIONS::calculate_num_generated_interaction_features(all.permutations, data->ex->interactions->interactions, data->ex->feature_space);
 }
 
 void get_valid_actions(Search::search &sch, v_array<uint32_t> &valid_action, uint64_t idx, uint64_t n,

@@ -399,7 +399,6 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
 
   poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;
-  poly.synth_ec.total_sum_feat_sq = 0;
 
   if (poly.synth_ec.indices.size() == 0) poly.synth_ec.indices.push_back(tree_atomics);
 }
@@ -485,7 +484,6 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
    */
   GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
   synthetic_decycle(poly);
-  poly.synth_ec.set_total_sum_feat_sq(poly.synth_ec.feature_space[tree_atomics].sum_feat_sq);
 
   if (training)
   {

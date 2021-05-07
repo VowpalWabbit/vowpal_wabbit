@@ -54,7 +54,7 @@ private:
     new_ec->updated_prediction = 0.;
     new_ec->passthrough = nullptr;
     new_ec->loss = 0.;
-    new_ec->clear_total_sum_feat_sq();
+    new_ec->reset_total_sum_feat_sq();
     new_ec->confidence = 0.;
     return new_ec;
   }
@@ -158,7 +158,7 @@ public:
     {
       if (ns_exists[static_cast<int>(current_ns)])
       {
-        ec->clear_total_sum_feat_sq();
+        ec->reset_total_sum_feat_sq();
         ec->feature_space[static_cast<int>(current_ns)].clear();
         ec->num_features -= ec->feature_space[static_cast<int>(current_ns)].size();
 
@@ -178,7 +178,7 @@ public:
     if (ensure_ns_exists(to_ns)) return 0;
 
     ec->feature_space[static_cast<int>(to_ns)].push_back(v, fint << vw_ref->weights.stride_shift());
-    ec->clear_total_sum_feat_sq();
+    ec->reset_total_sum_feat_sq();
     ec->num_features++;
     example_changed_since_prediction = true;
     return fint;
@@ -193,7 +193,7 @@ public:
     features& fs = other.feature_space[static_cast<int>(other_ns)];
     for (size_t i = 0; i < fs.size(); i++)
       ec->feature_space[static_cast<int>(to_ns)].push_back(fs.values[i], fs.indicies[i]);
-    ec->clear_total_sum_feat_sq();
+    ec->reset_total_sum_feat_sq();
     ec->num_features += fs.size();
     example_changed_since_prediction = true;
   }
@@ -220,8 +220,7 @@ public:
     ec->partial_prediction = 0.;
     ec->weight = vw_par_ref->example_parser->lbl_parser.get_weight(&ec->l, ec->_reduction_features);
 
-    ec->total_sum_feat_sq = 0;
-    ec->clear_total_sum_feat_sq();
+    ec->reset_total_sum_feat_sq();
     ec->num_features = 0;
     for (const features& fs : *ec)
     {

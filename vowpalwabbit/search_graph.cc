@@ -325,7 +325,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
       GD::foreach_feature<task_data, uint64_t, add_edge_features_group_fn>(sch.get_vw_pointer_unsafe(), edge, D);
   }
   ec[n]->indices.push_back(neighbor_namespace);
-  ec[n]->clear_total_sum_feat_sq();
+  ec[n]->reset_total_sum_feat_sq();
   ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 
   vw& all = sch.get_vw_pointer_unsafe();

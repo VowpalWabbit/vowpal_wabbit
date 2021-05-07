@@ -681,8 +681,7 @@ void setup_example(vw& all, example* ae)
 
   ae->partial_prediction = 0.;
   ae->num_features = 0;
-  ae->total_sum_feat_sq = 0;
-  ae->clear_total_sum_feat_sq();
+  ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
   ae->_debug_current_reduction_depth = 0;
   ae->use_permutations = all.permutations;
@@ -784,7 +783,6 @@ void add_constant_feature(vw& vw, example* ec)
 {
   ec->indices.push_back(constant_namespace);
   ec->feature_space[constant_namespace].push_back(1, constant);
-  ec->total_sum_feat_sq++;
   ec->num_features++;
   if (vw.audit || vw.hash_inv)
     ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));

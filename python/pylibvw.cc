@@ -545,7 +545,7 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
 {  // warning: assumes namespace exists!
   ec->feature_space[ns].push_back(v, fid);
   ec->num_features++;
-  ec->clear_total_sum_feat_sq();
+  ec->reset_total_sum_feat_sq();
 }
 
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
@@ -608,7 +608,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
     }
   }
   ec->num_features += count;
-  ec->clear_total_sum_feat_sq();
+  ec->reset_total_sum_feat_sq();
 }
 
 void ex_push_namespace(example_ptr ec, unsigned char ns) { ec->indices.push_back(ns); }
@@ -654,14 +654,14 @@ bool ex_pop_feature(example_ptr ec, unsigned char ns)
   if (ec->feature_space[ns].space_names.size() > 0) ec->feature_space[ns].space_names.pop_back();
   ec->num_features--;
   ec->feature_space[ns].sum_feat_sq -= val * val;
-  ec->clear_total_sum_feat_sq();
+  ec->reset_total_sum_feat_sq();
   return true;
 }
 
 void ex_erase_namespace(example_ptr ec, unsigned char ns)
 {
   ec->num_features -= ec->feature_space[ns].size();
-  ec->clear_total_sum_feat_sq();
+  ec->reset_total_sum_feat_sq();
   ec->feature_space[ns].sum_feat_sq = 0.;
   ec->feature_space[ns].clear();
 }
@@ -682,7 +682,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   vw& all = *vwP;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
-  ae->clear_total_sum_feat_sq();
+  ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
 
   if (all.ignore_some) { THROW("error: cannot unsetup example when some namespaces are ignored!"); }

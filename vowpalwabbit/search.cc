@@ -630,7 +630,7 @@ void del_features_in_top_namespace(search_private& /* priv */, example& ec, size
   features& fs = ec.feature_space[ns];
   ec.indices.pop_back();
   ec.num_features -= fs.size();
-  ec.clear_total_sum_feat_sq();
+  ec.reset_total_sum_feat_sq();
   fs.clear();
 }
 
@@ -675,7 +675,7 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
     if ((sz > 0) && (fs.sum_feat_sq > 0.))
     {
       me.indices.push_back(neighbor_namespace);
-      me.clear_total_sum_feat_sq();
+      me.reset_total_sum_feat_sq();
       me.num_features += sz;
     }
     else
@@ -858,7 +858,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
   if ((con_fs.size() > 0) && (con_fs.sum_feat_sq > 0.))
   {
     ec.indices.push_back(conditioning_namespace);
-    ec.clear_total_sum_feat_sq();
+    ec.reset_total_sum_feat_sq();
     ec.num_features += con_fs.size();
   }
   else

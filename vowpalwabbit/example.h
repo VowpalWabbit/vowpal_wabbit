@@ -28,6 +28,14 @@
 #include <vector>
 #include <iostream>
 
+namespace VW {
+  void copy_example_data(example* dst, const example* src);
+  void setup_example(vw& all, example* ae);
+}
+
+
+struct vw;
+
 struct polylabel
 {
   no_label::no_label empty;
@@ -96,9 +104,6 @@ struct example : public example_predict  // core example datatype.
   float loss = 0.f;
 
   float total_sum_feat_sq = 0.f;
-  bool total_sum_feat_sq_calculated = false;
-  bool use_permutations = false;
-
   float confidence = 0.f;
   features* passthrough =
       nullptr;  // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
@@ -124,15 +129,17 @@ struct example : public example_predict  // core example datatype.
     return total_sum_feat_sq;
   }
 
-  void set_total_sum_feat_sq(float value) {
-    total_sum_feat_sq = value;
-    total_sum_feat_sq_calculated = true;
+  void reset_total_sum_feat_sq() {
+    total_sum_feat_sq = 0.f;
+    total_sum_feat_sq_calculated = false;
   }
 
-  void clear_total_sum_feat_sq() {
-    total_sum_feat_sq = 0.f;
-    clear_total_sum_feat_sq();
-  }
+  friend void VW::copy_example_data(example* dst, const example* src);
+  friend void VW::setup_example(vw& all, example* ae);
+
+private:
+  bool total_sum_feat_sq_calculated = false;
+  bool use_permutations = false;
 };
 VW_WARNING_STATE_POP
 
