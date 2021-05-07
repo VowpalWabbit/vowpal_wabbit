@@ -749,7 +749,6 @@ void setup_example(vw& all, example* ae)
 
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
-  ae->num_features += INTERACTIONS::calculate_num_generated_interaction_features(all.permutations, ae->interactions->interactions, ae->feature_space);
 }
 }  // namespace VW
 
@@ -868,6 +867,7 @@ void empty_example(vw& /*all*/, example& ec)
   ec.end_pass = false;
   ec.is_newline = false;
   ec._reduction_features.clear();
+  ec.num_features_from_interactions = 0;
 }
 
 void clean_example(vw& all, example& ec, bool rewind)

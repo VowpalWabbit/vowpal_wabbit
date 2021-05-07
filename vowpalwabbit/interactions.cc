@@ -313,7 +313,8 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
     size_t correct_features_cnt = 0;
     float correct_features_value = 0.;
     eval_gen_data dat(correct_features_cnt, correct_features_value);
-    generate_interactions<eval_gen_data, uint64_t, ft_cnt>(all, ec, dat);
+    size_t num_interacted_features = 0;
+    generate_interactions<eval_gen_data, uint64_t, ft_cnt>(all, ec, dat, num_interacted_features);
 #endif
 
     for (const auto& inter : ec.interactions->interactions)

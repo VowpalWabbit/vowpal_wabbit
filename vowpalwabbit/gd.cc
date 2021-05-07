@@ -307,9 +307,9 @@ void print_features(vw& all, example& ec)
         for (const auto& f : fs) { audit_feature(dat, f.value(), f.index() + ec.ft_offset); }
       }
     }
-
+    size_t num_interacted_features = 0;
     INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction>(
-        all, ec, dat);
+        all, ec, dat, num_interacted_features);
 
     stable_sort(dat.results.begin(), dat.results.end());
     if (all.audit)
@@ -351,11 +351,11 @@ inline void vec_add_trunc(trunc_data& p, const float fx, float& fw)
   p.prediction += trunc_weight(fw, p.gravity) * fx;
 }
 
-inline float trunc_predict(vw& all, example& ec, double gravity)
+inline float trunc_predict(vw& all, example& ec, double gravity, size_t& num_interacted_features)
 {
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   trunc_data temp = {simple_red_features.initial, static_cast<float>(gravity)};
-  foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp);
+  foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp, num_interacted_features);
   return temp.prediction;
 }
 
@@ -372,11 +372,13 @@ void predict(gd& g, base_learner&, example& ec)
   VW_DBG(ec) << "gd.predict(): ex#=" << ec.example_counter << ", offset=" << ec.ft_offset << std::endl;
 
   vw& all = *g.all;
+  size_t num_interacted_features = 0;
   if (l1)
-    ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
+    ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity, num_interacted_features);
   else
-    ec.partial_prediction = inline_predict(all, ec);
+    ec.partial_prediction = inline_predict(all, ec, num_interacted_features);
 
+  ec.num_features_from_interactions = num_interacted_features;
   ec.partial_prediction *= static_cast<float>(all.sd->contraction);
   ec.pred.scalar = finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 

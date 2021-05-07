@@ -1046,7 +1046,7 @@ void learn(memory_tree& b, single_learner& base, example& ec)
 
     if (b.current_pass < 1)
     {  // in the first pass, we need to store the memory:
-      example* new_ec = ::VW::alloc_examples(1);
+      example* new_ec = VW::alloc_examples(1);
       copy_example_data(new_ec, &ec, b.oas);
       b.examples.push_back(new_ec);
       if (b.online == true)
@@ -1145,7 +1145,6 @@ void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, 
   }
 }
 
-
 void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
   writeit(cn.parent, "parent");
@@ -1206,7 +1205,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
       b.examples.clear();
       for (uint32_t i = 0; i < n_examples; i++)
       {
-        example* new_ec = ::VW::alloc_examples(1);
+        example* new_ec = VW::alloc_examples(1);
         b.examples.push_back(new_ec);
       }
     }

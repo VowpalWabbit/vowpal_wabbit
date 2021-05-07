@@ -487,8 +487,8 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
 
   if (training)
   {
-    poly.sum_sparsity += poly.synth_ec.num_features;
-    poly.sum_input_sparsity += ec.num_features;
+    poly.sum_sparsity += poly.synth_ec.get_num_features();
+    poly.sum_input_sparsity += ec.get_num_features();
     poly.num_examples += 1;
   }
 }

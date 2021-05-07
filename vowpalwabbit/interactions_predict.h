@@ -102,8 +102,9 @@ template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, Weight
     class WeightsT>  // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(namespace_interactions& interactions, bool permutations, example_predict& ec,
     DataT& dat,
-    WeightsT& weights)  // default value removed to eliminate ambiguity in old complers
+    WeightsT& weights, size_t& num_features)  // default value removed to eliminate ambiguity in old complers
 {
+  num_features = 0;
   features* features_data = ec.feature_space.data();
 
   // often used values
@@ -149,6 +150,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
             auto begin = second.audit_cbegin();
             if (same_namespace) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1; }
             auto end = second.audit_cend();
+            num_features += std::distance(begin, end);
             inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
                 dat, begin, end, offset, weights, ft_value, halfhash);
 
@@ -194,6 +196,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
                 // next index differs for permutations and simple combinations
                 if (same_namespace2) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1; }
                 auto end = third.audit_cend();
+                num_features += std::distance(begin, end);
                 inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
                     dat, begin, end, offset, weights, ft_value, halfhash);
                 if (audit) audit_func(dat, nullptr);
@@ -336,6 +339,7 @@ inline void generate_interactions(namespace_interactions& interactions, bool per
 
           auto begin = fs.audit_cbegin() + start_i;
           auto end = fs.audit_cbegin() + (fgd2->loop_end + 1);
+          num_features += std::distance(begin, end);
           inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func, WeightsT>(
               dat, begin, end, offset, weights, ft_value, halfhash);
 

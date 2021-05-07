@@ -28,13 +28,11 @@
 #include <vector>
 #include <iostream>
 
+struct vw;
 namespace VW {
   void copy_example_data(example* dst, const example* src);
   void setup_example(vw& all, example* ae);
 }
-
-
-struct vw;
 
 struct polylabel
 {
@@ -99,6 +97,7 @@ struct example : public example_predict  // core example datatype.
 
   // helpers
   size_t num_features = 0;         // precomputed, cause it's fast&easy.
+  size_t num_features_from_interactions = 0;
   float partial_prediction = 0.f;  // shared data for prediction.
   float updated_prediction = 0.f;  // estimated post-update prediction.
   float loss = 0.f;
@@ -119,6 +118,10 @@ struct example : public example_predict  // core example datatype.
   //     "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to
   //     them. " "Standalone examples are by definition always in use.")
   bool in_use = true;
+
+  float get_num_features() const noexcept {
+    return num_features + num_features_from_interactions;
+  }
 
   float get_total_sum_feat_sq() {
     if(!total_sum_feat_sq_calculated)

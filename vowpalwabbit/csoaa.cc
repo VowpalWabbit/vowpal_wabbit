@@ -583,7 +583,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
   if (example_is_newline(ec)) return;
   if (ec_is_label_definition(ec)) return;
 
-  all.sd->total_features += ec.num_features;
+  all.sd->total_features += ec.get_num_features();
 
   float loss = 0.;
 
@@ -652,7 +652,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
   if (example_is_newline(head_ec)) return;
   if (ec_is_label_definition(head_ec)) return;
 
-  all.sd->total_features += head_ec.num_features;
+  all.sd->total_features += head_ec.get_num_features();
 
   float loss = 0.;
   v_array<action_score>& preds = head_ec.pred.a_s;

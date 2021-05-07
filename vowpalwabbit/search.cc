@@ -1258,7 +1258,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
   ec.l = old_label;
 
   priv.total_predictions_made++;
-  priv.num_features += ec.num_features;
+  priv.num_features += ec.get_num_features();
 
   return act;
 }
@@ -1316,7 +1316,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     }
     if (this_cache) this_cache->push_back(action_cache(0., a, false, ecs[a].partial_prediction));
 
-    priv.num_features += ecs[a].num_features;
+    priv.num_features += ecs[a].get_num_features();
     ecs[a].l = old_label;
     if (start_K > 0) LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
   }
