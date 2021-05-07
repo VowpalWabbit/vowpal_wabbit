@@ -72,29 +72,28 @@ set(vw_all_headers
   cb_explore_adf_first.h
   cb_explore_adf_greedy.h
   cb_explore_adf_regcb.h
-  cb_explore_adf_rnd.h
-  cb_explore_adf_softmax.h
   cb_explore_adf_squarecb.h
   cb_explore_adf_synthcover.h
+  cb_explore_adf_rnd.h
+  cb_explore_adf_softmax.h
   cb_explore_pdf.h
   cb_explore.h
   cb_label_parser.h
-  cb_to_cb_adf.h
   cb.h
   cbify.h
-  cbzo.h
+  cb_to_cb_adf.h
   ccb_label.h
   ccb_reduction_features.h
+  continuous_actions_reduction_features.h
   classweight.h
   compat.h
   conditional_contextual_bandit.h
   confidence.h
   config.h.in
   constant.h
-  continuous_actions_reduction_features.h
+  cbzo.h
   correctedMath.h
   cost_sensitive.h
-  count_interactions.h
   crossplat_compat.h
   cs_active.h
   csoaa.h
@@ -128,7 +127,6 @@ set(vw_all_headers
   io_buf.h
   json_utils.h
   kernel_svm.h
-  kskip_ngram_transformer.h
   label_dictionary.h
   label_parser.h
   lda_core.h
@@ -146,12 +144,13 @@ set(vw_all_headers
   multilabel_oaa.h
   multilabel.h
   mwt.h
+  numeric_casts.h
   named_labels.h
   network.h
+  kskip_ngram_transformer.h
   nn.h
   no_label.h
   noop.h
-  numeric_casts.h
   oaa.h
   object_pool.h
   offset_tree.h
@@ -252,23 +251,22 @@ set(vw_all_sources
   cb_explore_adf_first.cc
   cb_explore_adf_greedy.cc
   cb_explore_adf_regcb.cc
-  cb_explore_adf_rnd.cc
-  cb_explore_adf_softmax.cc
   cb_explore_adf_squarecb.cc
   cb_explore_adf_synthcover.cc
+  cb_explore_adf_rnd.cc
+  cb_explore_adf_softmax.cc
   cb_explore_pdf.cc
   cb_explore.cc
   cb_sample.cc
-  cb_to_cb_adf.cc
   cb.cc
   cbify.cc
-  cbzo.cc
+  cb_to_cb_adf.cc
   ccb_label.cc
   classweight.cc
   conditional_contextual_bandit.cc
   confidence.cc
+  cbzo.cc
   cost_sensitive.cc
-  count_interactions.cc
   cs_active.cc
   csoaa.cc
   decision_scores.cc
@@ -290,7 +288,6 @@ set(vw_all_sources
   interactions.cc
   io_buf.cc
   kernel_svm.cc
-  kskip_ngram_transformer.cc
   label_dictionary.cc
   lda_core.cc
   learner.cc
@@ -308,6 +305,7 @@ set(vw_all_sources
   mwt.cc
   named_labels.cc
   network.cc
+  kskip_ngram_transformer.cc
   nn.cc
   no_label.cc
   noop.cc
@@ -321,8 +319,8 @@ set(vw_all_sources
   parse_primitives.cc
   parse_regressor.cc
   parser.cc
-  plt.cc
   pmf_to_pdf.cc
+  plt.cc
   print.cc
   prob_dist_cont.cc
   rand48.cc

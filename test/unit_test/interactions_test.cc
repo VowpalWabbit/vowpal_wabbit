@@ -32,7 +32,6 @@ void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t)
   dat.new_features_value += fx * fx;
 }
 
-
 // eval_count_of_generated_ft_naive() is an alternative way of implementation of
 // eval_count_of_generated_ft() it just calls generate_interactions() with small
 // function which counts generated features and sums their squared values. We
