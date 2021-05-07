@@ -6,6 +6,7 @@
 #include <cstdio>
 #include "parser.h"
 #include "vw.h"
+#include "interactions.h"
 
 typedef uint32_t fid;
 
@@ -29,7 +30,6 @@ private:
   bool we_create_ec;
   std::vector<fid> past_seeds;
   fid current_seed;
-  size_t quadratic_features_num;
   float quadratic_features_sqr;
   char current_ns;
   bool ns_exists[256];
@@ -54,7 +54,7 @@ private:
     new_ec->updated_prediction = 0.;
     new_ec->passthrough = nullptr;
     new_ec->loss = 0.;
-    new_ec->total_sum_feat_sq = 0.;
+    new_ec->reset_total_sum_feat_sq();
     new_ec->confidence = 0.;
     return new_ec;
   }
@@ -69,9 +69,6 @@ private:
     str[1] = 0;
     current_seed = 0;
     current_ns = 0;
-
-    quadratic_features_num = 0;
-    quadratic_features_sqr = 0.;
 
     for (bool& ns_exist : ns_exists) ns_exist = false;
 
@@ -161,7 +158,7 @@ public:
     {
       if (ns_exists[static_cast<int>(current_ns)])
       {
-        ec->total_sum_feat_sq -= ec->feature_space[static_cast<int>(current_ns)].sum_feat_sq;
+        ec->reset_total_sum_feat_sq();
         ec->feature_space[static_cast<int>(current_ns)].clear();
         ec->num_features -= ec->feature_space[static_cast<int>(current_ns)].size();
 
@@ -181,7 +178,7 @@ public:
     if (ensure_ns_exists(to_ns)) return 0;
 
     ec->feature_space[static_cast<int>(to_ns)].push_back(v, fint << vw_ref->weights.stride_shift());
-    ec->total_sum_feat_sq += v * v;
+    ec->reset_total_sum_feat_sq();
     ec->num_features++;
     example_changed_since_prediction = true;
     return fint;
@@ -196,7 +193,7 @@ public:
     features& fs = other.feature_space[static_cast<int>(other_ns)];
     for (size_t i = 0; i < fs.size(); i++)
       ec->feature_space[static_cast<int>(to_ns)].push_back(fs.values[i], fs.indicies[i]);
-    ec->total_sum_feat_sq += fs.sum_feat_sq;
+    ec->reset_total_sum_feat_sq();
     ec->num_features += fs.size();
     example_changed_since_prediction = true;
   }
@@ -223,22 +220,9 @@ public:
     ec->partial_prediction = 0.;
     ec->weight = vw_par_ref->example_parser->lbl_parser.get_weight(&ec->l, ec->_reduction_features);
 
-    ec->num_features -= quadratic_features_num;
-    ec->total_sum_feat_sq -= quadratic_features_sqr;
-
-    quadratic_features_num = 0;
-    quadratic_features_sqr = 0.;
-
-    for (auto const& interaction : vw_ref->interactions)
-    {
-      if (interaction.size() != 2) continue;
-      quadratic_features_num += ec->feature_space[static_cast<int>(interaction[0])].size() *
-          ec->feature_space[static_cast<int>(interaction[1])].size();
-      quadratic_features_sqr += ec->feature_space[static_cast<int>(interaction[0])].sum_feat_sq *
-          ec->feature_space[static_cast<int>(interaction[1])].sum_feat_sq;
-    }
-    ec->num_features += quadratic_features_num;
-    ec->total_sum_feat_sq += quadratic_features_sqr;
+    ec->reset_total_sum_feat_sq();
+    ec->num_features = 0;
+    for (const features& fs : *ec) { ec->num_features += fs.size(); }
     ec->interactions = &vw_ref->interactions;
   }
 

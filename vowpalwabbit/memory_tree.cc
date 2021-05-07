@@ -16,6 +16,7 @@
 #include "vw.h"
 #include "v_array.h"
 #include "future_compat.h"
+#include "example.h"
 
 #include "io/logger.h"
 
@@ -230,8 +231,8 @@ struct memory_tree
   ~memory_tree()
   {
     // nodes.delete_v();
-    for (auto* ex : examples) { VW::dealloc_examples(ex, 1); }
-    if (kprod_ec) { VW::dealloc_examples(kprod_ec, 1); }
+    for (auto* ex : examples) { ::VW::dealloc_examples(ex, 1); }
+    if (kprod_ec) { ::VW::dealloc_examples(kprod_ec, 1); }
   }
 };
 
@@ -293,7 +294,7 @@ void init_tree(memory_tree& b)
   b.nodes[0].internal = -1;  // mark the root as leaf
   b.nodes[0].base_router = (b.routers_used++);
 
-  b.kprod_ec = VW::alloc_examples(1);  // allocate space for kronecker product example
+  b.kprod_ec = ::VW::alloc_examples(1);  // allocate space for kronecker product example
 
   b.total_num_queries = 0;
   b.max_routers = b.max_nodes;

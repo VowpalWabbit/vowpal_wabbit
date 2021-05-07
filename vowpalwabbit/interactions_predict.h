@@ -34,7 +34,7 @@ inline void call_FuncT(DataT& dat, WeightsT& weights, const float ft_value, cons
   FuncT(dat, ft_value, weights[ft_idx]);
 }
 
-template <class DataT, void (*FuncT)(DataT&, const float, const float&), class WeightsT>
+template <class DataT, void (*FuncT)(DataT&, const float, float), class WeightsT>
 inline void call_FuncT(DataT& dat, const WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
   FuncT(dat, ft_value, weights[ft_idx]);
@@ -101,9 +101,10 @@ template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, Weight
     void (*audit_func)(DataT&, const audit_strings*),
     class WeightsT>  // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(const std::vector<std::vector<namespace_index>& interactions, bool permutations, example_predict& ec,
-    DataT& dat,
-    WeightsT& weights)  // default value removed to eliminate ambiguity in old complers
+    DataT& dat, WeightsT& weights,
+    size_t& num_features)  // default value removed to eliminate ambiguity in old complers
 {
+  num_features = 0;
   features* features_data = ec.feature_space.data();
 
   // often used values
@@ -149,6 +150,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
             auto begin = second.audit_cbegin();
             if (same_namespace) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1; }
             auto end = second.audit_cend();
+            num_features += std::distance(begin, end);
             inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
                 dat, begin, end, offset, weights, ft_value, halfhash);
 
@@ -176,7 +178,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
               if (audit)
               { audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS); }
               const uint64_t halfhash1 = FNV_prime * static_cast<uint64_t>(first.indicies[i]);
-              const float& first_ft_value = first.values[i];
+              float first_ft_value = first.values[i];
               size_t j = 0;
               if (same_namespace1)  // next index differs for permutations and simple combinations
                 j = (PROCESS_SELF_INTERACTIONS(first_ft_value)) ? i : i + 1;
@@ -194,6 +196,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                 // next index differs for permutations and simple combinations
                 if (same_namespace2) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1; }
                 auto end = third.audit_cend();
+                num_features += std::distance(begin, end);
                 inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
                     dat, begin, end, offset, weights, ft_value, halfhash);
                 if (audit) audit_func(dat, nullptr);
@@ -336,6 +339,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 
           auto begin = fs.audit_cbegin() + start_i;
           auto end = fs.audit_cbegin() + (fgd2->loop_end + 1);
+          num_features += std::distance(begin, end);
           inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func, WeightsT>(
               dat, begin, end, offset, weights, ft_value, halfhash);
 

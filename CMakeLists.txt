@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake/")
 if(POLICY CMP0076)
   cmake_policy(SET CMP0076 NEW)
@@ -38,11 +39,12 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# VW targets Windows 10.0.16299.0 SDK
-# CMAKE_SYSTEM_VERSION must come before the project is defined in the top level CMakeLists file
-# https://stackoverflow.com/questions/45692367/how-to-set-msvc-target-platform-version-with-cmake
 if(WIN32)
-  set(CMAKE_SYSTEM_VERSION "10.0.16299.0" CACHE INTERNAL "Windows SDK version to target.")
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/win32.cmake)
+  message(STATUS "WinSDK Version: ${CMAKE_SYSTEM_VERSION}")
+  if (vw_BUILD_NET_FRAMEWORK)
+    message(STATUS ".NET Framework Version: ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION}")
+  endif()
 endif()
 
 project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
@@ -277,10 +279,35 @@ if(BUILD_TESTS)
     set(vw_c_api_unit_test_target "vw_c_api_unit_test")
   endif()
 
+  set(vw_cs_unittest_targets "")
+  if (vw_BUILD_NET_FRAMEWORK)
+    set(vw_cs_unittest_targets 
+      cs_unittest
+      cs_unittest_nofriend
+    )
+  endif()
+
+  # The Visual Studio expression generator
+  set(cmake_test_configuration "")
+  set(cmake_test_verbosity "--verbose")
+  if (${CMAKE_GENERATOR} MATCHES "^Visual Studio")
+    set(cmake_test_configuration -C $<CONFIG>)
+    # The VS Generator builds fall over in test when STDOUT/ERR contains strings of the form 
+    # "(<other-stuff, snipped>)?error[^:]*:.*", which our native unit tests output as part of a 
+    # successful run. 
+    #
+    # This is caused by MSBuild being "helpful": 
+    # https://stackoverflow.com/questions/48117302/does-the-msbuild-exec-task-search-stdout-for-the-string-error
+    # 
+    # The CMake team has discussed this issue, but are using an MSBuild mechanism that does not support
+    # overriding this behaviour. The fix is to disable test output on Visual Studio generator builds. 
+    set(cmake_test_verbosity "")
+  endif()
+
   # This target ensures all dependencies are built and also uses verbose mode allowing the test output to be seen.
   add_custom_target(test_with_output
-    COMMAND ${CMAKE_CTEST_COMMAND} --verbose
-    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target}
+    COMMAND ${CMAKE_CTEST_COMMAND} ${cmake_test_configuration} ${cmake_test_verbosity}
+    DEPENDS spanning_tree vw-unit-test.out vw-bin ${vw_c_api_unit_test_target} ${vw_cs_unittest_targets}
   )
 
   # Don't offer these make dependent targets on Windows
@@ -298,7 +325,10 @@ if(BUILD_EXPERIMENTAL_BINDING)
   add_subdirectory(bindings)
 endif()
 
-# TODO convert cs directory to cmake
+if(vw_BUILD_NET_FRAMEWORK)
+  add_subdirectory(cs)
+endif()
+
 # TODO convert c_test directory to cmake
 
 # Handle installation of targets, version, config and pkgconfig

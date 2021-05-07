@@ -43,6 +43,7 @@ void print_update(vw& all, example& ec)
 void output_and_account_example(vw& all, example& ec)
 {
   const label_data& ld = ec.l.simple;
+
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
 

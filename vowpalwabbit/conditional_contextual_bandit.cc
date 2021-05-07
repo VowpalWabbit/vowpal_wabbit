@@ -531,13 +531,7 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
 
   for (auto* ec : ec_seq)
   {
-    // TODO: revisit this since we need to count with the same method as cb_adf,
-    // but do so for each slot.
-    // Only features in action examples should be counted. This is because we
-    // merged the slot into the shared example and then later down the stack the
-    // shared example is merged into each action.
-    if (ec->l.conditional_contextual_bandit.type == CCB::example_type::action)
-    { num_features += ec->get_num_features(); }
+    num_features += ec->get_num_features();
 
     if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot) { slots.push_back(ec); }
   }
