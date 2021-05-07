@@ -63,6 +63,7 @@ public:
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void save_load(io_buf& io, bool read, bool text);
 
 private:
   template <bool is_learn>
@@ -280,6 +281,14 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
   }
 }
 
+void cb_explore_adf_squarecb::save_load(io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+  std::stringstream msg;
+  if (!read) { msg << "cb squarecb adf storing example counter:  = " << _counter << "\n"; }
+  bin_text_read_write_fixed_validated(io, (char*)&_counter, sizeof(_counter), "", read, msg, text);
+}
+
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
@@ -355,6 +364,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   l.set_finish_example(explore_type::finish_multiline_example);
   l.set_print_example(explore_type::print_multiline_example);
   l.set_persist_metrics(explore_type::persist_metrics);
+  l.set_save_load(explore_type::save_load);
   return make_base(l);
 }
 
