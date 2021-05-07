@@ -104,7 +104,7 @@ inline float inline_predict(WeightsT& weights, bool ignore_some_linear, std::arr
     namespace_interactions& interactions, bool permutations, example_predict& ec, size_t& num_interacted_features,
     float initial = 0.f)
 {
-  foreach_feature<float, const float&, vec_add, WeightsT>(
+  foreach_feature<float, float, vec_add, WeightsT>(
       weights, ignore_some_linear, ignore_linear, interactions, permutations, ec, initial, num_interacted_features);
   return initial;
 }
