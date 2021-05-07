@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
   size_t fast_features_count;
   float fast_features_value;
   INTERACTIONS::eval_count_of_generated_ft(
-      vw.permutations, ex->interactions->interactions, ex->feature_space, fast_features_count, fast_features_value);
+      vw.permutations, *ex->interactions, ex->feature_space, fast_features_count, fast_features_value);
 
   BOOST_CHECK_EQUAL(naive_features_count, fast_features_count);
   BOOST_CHECK_CLOSE(naive_features_value, fast_features_value, FLOAT_TOL);
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_permuations_test)
   size_t fast_features_count;
   float fast_features_value;
   INTERACTIONS::eval_count_of_generated_ft(
-      vw.permutations, ex->interactions->interactions, ex->feature_space, fast_features_count, fast_features_value);
+      vw.permutations, *ex->interactions, ex->feature_space, fast_features_count, fast_features_value);
 
   vw.predict(*ex);
   BOOST_CHECK_EQUAL(fast_features_count, ex->num_features_from_interactions);

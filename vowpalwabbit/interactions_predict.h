@@ -100,7 +100,7 @@ inline void inner_kernel(DataT& dat, features::const_audit_iterator& begin, feat
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
     void (*audit_func)(DataT&, const audit_strings*),
     class WeightsT>  // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(const std::vector<std::vector<namespace_index>& interactions, bool permutations, example_predict& ec,
+inline void generate_interactions(const std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec,
     DataT& dat, WeightsT& weights,
     size_t& num_features)  // default value removed to eliminate ambiguity in old complers
 {

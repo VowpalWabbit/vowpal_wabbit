@@ -100,7 +100,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   float prediction = simple_red_features.initial;
 
   ec.num_features_from_interactions = 0;
-  for (const auto& i : d.all->interactions.interactions)
+  for (const auto& i : d.all->interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
     ec.num_features -=
