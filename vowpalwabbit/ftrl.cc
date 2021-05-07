@@ -77,7 +77,9 @@ float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
 template <bool audit>
 void predict(ftrl& b, single_learner&, example& ec)
 {
-  ec.partial_prediction = GD::inline_predict(*b.all, ec);
+  size_t num_features_from_interactions = 0;
+  ec.partial_prediction = GD::inline_predict(*b.all, ec, num_features_from_interactions);
+  ec.num_features_from_interactions = num_features_from_interactions;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
   if (audit) GD::print_audit_features(*(b.all), ec);
 }
@@ -92,18 +94,20 @@ void multipredict(
     const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
     pred[c].scalar = simple_red_features.initial;
   }
+  size_t num_features_from_interactions = 0;
   if (b.all->weights.sparse)
   {
     GD::multipredict_info<sparse_parameters> mp = {
         count, step, pred, all.weights.sparse_weights, static_cast<float>(all.sd->gravity)};
-    GD::foreach_feature<GD::multipredict_info<sparse_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
+    GD::foreach_feature<GD::multipredict_info<sparse_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp, num_features_from_interactions);
   }
   else
   {
     GD::multipredict_info<dense_parameters> mp = {
         count, step, pred, all.weights.dense_weights, static_cast<float>(all.sd->gravity)};
-    GD::foreach_feature<GD::multipredict_info<dense_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
+    GD::foreach_feature<GD::multipredict_info<dense_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp, num_features_from_interactions);
   }
+  ec.num_features_from_interactions = num_features_from_interactions;
   if (all.sd->contraction != 1.)
     for (size_t c = 0; c < count; c++) pred[c].scalar *= static_cast<float>(all.sd->contraction);
   if (finalize_predictions)
@@ -219,7 +223,9 @@ void coin_betting_predict(ftrl& b, single_learner&, example& ec)
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
 
-  GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data);
+  size_t num_features_from_interactions = 0;
+  GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data, num_features_from_interactions);
+  ec.num_features_from_interactions = num_features_from_interactions;
 
   b.all->normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
@@ -234,7 +240,10 @@ void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
 {
   b.data.predict = 0;
 
-  GD::foreach_feature<ftrl_update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data);
+  size_t num_features_from_interactions = 0;
+  GD::foreach_feature<ftrl_update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data, num_features_from_interactions);
+  ec.num_features_from_interactions = num_features_from_interactions;
+
   ec.partial_prediction = b.data.predict;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }

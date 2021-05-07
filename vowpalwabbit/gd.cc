@@ -406,6 +406,7 @@ void multipredict(
     pred[c].scalar = simple_red_features.initial;
   }
 
+  size_t num_features_from_interactions = 0;
   if (g.all->weights.sparse)
   {
     multipredict_info<sparse_parameters> mp = {
@@ -424,6 +425,8 @@ void multipredict(
     else
       foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_multipredict>(all, ec, mp);
   }
+  ec.num_features_from_interactions = num_features_from_interactions;
+
   if (all.sd->contraction != 1.)
     for (size_t c = 0; c < count; c++) pred[c].scalar *= static_cast<float>(all.sd->contraction);
   if (finalize_predictions)
