@@ -99,14 +99,16 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   float prediction = simple_red_features.initial;
 
+  ec.num_features_from_interactions = 0;
   for (const auto& i : d.all->interactions.interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
-
     ec.num_features -=
         ec.feature_space[static_cast<int>(i[0])].size() * ec.feature_space[static_cast<int>(i[1])].size();
     ec.num_features += ec.feature_space[static_cast<int>(i[0])].size() * d.rank;
     ec.num_features += ec.feature_space[static_cast<int>(i[1])].size() * d.rank;
+    ec.num_features_from_interactions +=
+        ec.feature_space[static_cast<size_t>(i[0])].size() * ec.feature_space[static_cast<size_t>(i[1])].size();
   }
 
   // clear stored predictions
@@ -123,6 +125,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   prediction += linear_prediction;
   // interaction terms
+
   for (const auto& i : d.all->interactions.interactions)
   {
     // The check for non-pair interactions is done in the previous loop
@@ -199,7 +202,6 @@ void mf_train(gdmf& d, example& ec, T& weights)
   // linear update
   for (features& fs : ec) sd_offset_update<T>(weights, fs, 0, update, regularization);
 
-  ec.num_features_from_interactions = 0;
   // quadratic update
   for (const auto& i : all.interactions.interactions)
   {
@@ -207,8 +209,6 @@ void mf_train(gdmf& d, example& ec, T& weights)
 
     if (ec.feature_space[static_cast<int>(i[0])].size() > 0 && ec.feature_space[static_cast<int>(i[1])].size() > 0)
     {
-      ec.num_features_from_interactions +=
-          ec.feature_space[static_cast<size_t>(i[0])].size() * ec.feature_space[static_cast<size_t>(i[1])].size();
       // update l^k weights
       for (size_t k = 1; k <= d.rank; k++)
       {
