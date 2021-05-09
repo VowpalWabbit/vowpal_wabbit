@@ -930,7 +930,7 @@ void finish_example(vw& all, example& ec)
 void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
   all.example_parser->end_parsed_examples += examples.size();
-  for (auto example : examples) { all.example_parser->ready_parsed_examples.push(example); }
+  // for (auto example : examples) { all.example_parser->ready_parsed_examples.push(example); }
   notify_examples_cv(examples[0]);
 }
 
