@@ -128,7 +128,10 @@ void transform_single_ex(generate_interactions& in, VW::LEARNER::single_learner&
   auto prev_count = in.all_seen_namespaces.size();
   in.all_seen_namespaces.insert(ec.indices.begin(), ec.indices.end());
   if (prev_count != in.all_seen_namespaces.size())
-  { in.generated_interactions = compile_interactions<generate_func, leave_duplicate_interactions>(*ec.interactions, in.all_seen_namespaces); }
+  {
+    in.generated_interactions =
+        compile_interactions<generate_func, leave_duplicate_interactions>(*ec.interactions, in.all_seen_namespaces);
+  }
 
   auto* saved_interactions = ec.interactions;
   ec.interactions = &in.generated_interactions;
@@ -138,6 +141,41 @@ void transform_single_ex(generate_interactions& in, VW::LEARNER::single_learner&
   {
     base.predict(ec);
   }
+  ec.interactions = saved_interactions;
+}
+
+template <generate_func_t generate_func, bool leave_duplicate_interactions>
+void update(generate_interactions& in, VW::LEARNER::single_learner& base, example& ec)
+{
+  auto prev_count = in.all_seen_namespaces.size();
+  in.all_seen_namespaces.insert(ec.indices.begin(), ec.indices.end());
+  if (prev_count != in.all_seen_namespaces.size())
+  {
+    in.generated_interactions =
+        compile_interactions<generate_func, leave_duplicate_interactions>(*ec.interactions, in.all_seen_namespaces);
+  }
+
+  auto* saved_interactions = ec.interactions;
+  ec.interactions = &in.generated_interactions;
+  base.update(ec);
+  ec.interactions = saved_interactions;
+}
+
+template <generate_func_t generate_func, bool leave_duplicate_interactions>
+inline void multipredict(generate_interactions& in, VW::LEARNER::single_learner& base, example& ec, size_t count, size_t,
+    polyprediction* pred, bool finalize_predictions)
+{
+  auto prev_count = in.all_seen_namespaces.size();
+  in.all_seen_namespaces.insert(ec.indices.begin(), ec.indices.end());
+  if (prev_count != in.all_seen_namespaces.size())
+  {
+    in.generated_interactions =
+        compile_interactions<generate_func, leave_duplicate_interactions>(*ec.interactions, in.all_seen_namespaces);
+  }
+
+  auto* saved_interactions = ec.interactions;
+  ec.interactions = &in.generated_interactions;
+  base.multipredict(ec, 0, count, pred, finalize_predictions);
   ec.interactions = saved_interactions;
 }
 
@@ -165,24 +203,35 @@ VW::LEARNER::base_learner* generate_interactions_setup(options_i& options, vw& a
   if (!interactions_spec_contains_wildcards && !options.was_supplied("ccb_explore_adf")) return nullptr;
 
   using learn_pred_func_t = void (*)(generate_interactions&, VW::LEARNER::single_learner&, example&);
+  using multipredict_func_t =
+      void (*)(generate_interactions&, VW::LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
+  learn_pred_func_t update_func;
+  multipredict_func_t multipredict_func;
 
   if (leave_duplicate_interactions)
   {
     learn_func = transform_single_ex<true, generate_permutations_with_repetition, true>;
     pred_func = transform_single_ex<false, generate_permutations_with_repetition, true>;
+    update_func = update<generate_permutations_with_repetition, true>;
+    multipredict_func = multipredict<generate_permutations_with_repetition, true>;
   }
   else
   {
     learn_func = transform_single_ex<true, generate_combinations_with_repetition, false>;
     pred_func = transform_single_ex<false, generate_combinations_with_repetition, false>;
+    update_func = update<generate_combinations_with_repetition, true>;
+    multipredict_func = multipredict<generate_combinations_with_repetition, true>;
   }
 
   auto data = VW::make_unique<generate_interactions>();
   auto* base = as_singleline(setup_base(options, all));
   auto* l = VW::LEARNER::make_reduction_learner(
       std::move(data), base, learn_func, pred_func, all.get_setupfn_name(generate_interactions_setup))
+                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .set_update(update_func)
+                .set_multipredict(multipredict_func)
                 .build();
   return VW::LEARNER::make_base(*l);
 }
