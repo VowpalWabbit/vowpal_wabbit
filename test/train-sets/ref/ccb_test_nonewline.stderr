@@ -6,18 +6,18 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/ccb_test_nonewline.dat
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
+Enabled reductions: gd, generate_interactions, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0 0:0,1:0,... 0,1,2,...       32
-0.000000 0.000000            2            2.0 3:0,4:0,... 3,4,0,...       32
-0.000000 0.000000            4            4.0 1:0,4:-1,... 1,4,2,...       32
--0.144345 -0.288690            8            8.0 4:-1,1:0,... 4,1,0,...       32
--0.076984 0.000000           16           16.0  ?,?,... 4,2,1,...       32
+0.000000 0.000000            1            1.0 0:0,1:0,... 0,1,2,...       43
+0.000000 0.000000            2            2.0 3:0,4:0,... 3,4,0,...       43
+0.000000 0.000000            4            4.0 1:0,4:-1,... 1,4,2,...       43
+-0.144345 -0.288690            8            8.0 4:-1,1:0,... 4,1,0,...       43
+-0.076984 0.000000           16           16.0  ?,?,... 4,2,1,...       43
 
 finished run
 number of examples = 24
 weighted example sum = 24.000000
 weighted label sum = 0.000000
 average loss = -0.076984
-total feature number = 768
+total feature number = 1032
