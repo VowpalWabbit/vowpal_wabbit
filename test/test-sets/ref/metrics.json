@@ -1,1 +1,1 @@
-{"total_predict_calls":3,"total_learn_calls":3,"predicted_baseline_first":1,"predicted_not_first":2,"cbea_labeled_ex":3,"cbea_predict_in_learn":0}
+{"total_predict_calls":3,"total_learn_calls":3,"predicted_baseline_first":1,"predicted_not_first":2,"cbea_labeled_ex":3,"cbea_predict_in_learn":0,"cbea_sum_cost":-2,"cbea_sum_cost_baseline":-1}

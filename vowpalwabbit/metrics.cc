@@ -33,7 +33,7 @@ struct metrics_data
   size_t predicted_not_first = 0;
 };
 
-void list_to_json_file(std::string filename, std::vector<std::tuple<std::string, size_t>>& metrics)
+void list_to_json_file(std::string filename, std::vector<std::tuple<std::string, int32_t>>& metrics)
 {
   FILE* fp;
 
@@ -44,10 +44,10 @@ void list_to_json_file(std::string filename, std::vector<std::tuple<std::string,
     Writer<FileWriteStream> writer(os);
 
     writer.StartObject();
-    for (std::tuple<std::string, size_t> m : metrics)
+    for (std::tuple<std::string, int32_t> m : metrics)
     {
       writer.Key(std::get<0>(m).c_str());
-      writer.Int64(static_cast<int32_t>(std::get<1>(m)));
+      writer.Int64(std::get<1>(m));
     }
     writer.EndObject();
 
@@ -64,7 +64,7 @@ void output_metrics(vw& all)
   if (all.options->was_supplied("extra_metrics"))
   {
     std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
-    std::vector<std::tuple<std::string, size_t>> list_metrics;
+    std::vector<std::tuple<std::string, int32_t>> list_metrics;
 
     all.l->persist_metrics(list_metrics);
 
@@ -121,7 +121,7 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
   if (!is_learn || base.learn_returns_prediction) { count_post_predict(data, base.pred_type, ec); }
 }
 
-void persist(metrics_data& data, std::vector<std::tuple<std::string, size_t>>& metrics)
+void persist(metrics_data& data, std::vector<std::tuple<std::string, int32_t>>& metrics)
 {
   metrics.emplace_back("total_predict_calls", data.predict_count);
   metrics.emplace_back("total_learn_calls", data.learn_count);
