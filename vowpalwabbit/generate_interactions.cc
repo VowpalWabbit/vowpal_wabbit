@@ -56,7 +56,7 @@ std::vector<std::vector<namespace_index>> generate_combinations_with_repetition(
 {
   std::vector<std::vector<namespace_index>> result;
   // This computation involves factorials and so can only be done with relatively small inputs.
-  if (namespaces.size() <= 21 && num_to_pick <= 21)
+  if ((namespaces.size() + num_to_pick) <= 21)
   {
     result.reserve(VW::math::number_of_combinations_with_repetition(namespaces.size(), num_to_pick));
   }
