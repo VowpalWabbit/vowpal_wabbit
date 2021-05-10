@@ -12,6 +12,9 @@
 #include "explore.h"
 #include "action_score.h"
 #include "cb.h"
+#include "vw_versions.h"
+#include "version.h"
+
 #include <cmath>
 #include <vector>
 #include <algorithm>
@@ -51,13 +54,16 @@ private:
   std::vector<float> _min_costs;
   std::vector<float> _max_costs;
 
+  VW::version_struct _model_file_version;
+
   // for backing up cb example data when computing sensitivities
   std::vector<ACTION_SCORE::action_scores> _ex_as;
   std::vector<v_array<CB::cb_class>> _ex_costs;
 
 public:
   cb_explore_adf_squarecb(
-      float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost);
+      float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost,
+      VW::version_struct model_file_version);
   ~cb_explore_adf_squarecb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -74,7 +80,8 @@ private:
 };
 
 cb_explore_adf_squarecb::cb_explore_adf_squarecb(
-    float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost)
+    float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost,
+    VW::version_struct model_file_version)
     : _counter(0)
     , _gamma_scale(gamma_scale)
     , _gamma_exponent(gamma_exponent)
@@ -82,6 +89,7 @@ cb_explore_adf_squarecb::cb_explore_adf_squarecb(
     , _c0(c0)
     , _min_cb_cost(min_cb_cost)
     , _max_cb_cost(max_cb_cost)
+    , _model_file_version(model_file_version)
 {
 }
 
@@ -284,9 +292,12 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
 void cb_explore_adf_squarecb::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  std::stringstream msg;
-  if (!read) { msg << "cb squarecb adf storing example counter:  = " << _counter << "\n"; }
-  bin_text_read_write_fixed_validated(io, (char*)&_counter, sizeof(_counter), "", read, msg, text);
+  if (!read || _model_file_version >= VERSION_FILE_WITH_CB_TO_CBADF)
+  {
+    std::stringstream msg;
+    if (!read) { msg << "cb squarecb adf storing example counter:  = " << _counter << "\n"; }
+    bin_text_read_write_fixed_validated(io, (char*)&_counter, sizeof(_counter), "", read, msg, text);
+  }
 }
 
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
