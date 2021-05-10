@@ -129,3 +129,17 @@ BOOST_AUTO_TEST_CASE(sort_and_filter_interactions)
   std::vector<std::vector<namespace_index>> compare_set = {{'b', 'a'}, {'a', 'b','a'}, {'a', 'a'}, {'b', 'b'}};
   check_vector_of_vectors_exact(input, compare_set);
 }
+
+BOOST_AUTO_TEST_CASE(compile_interactions_quadratic)
+{
+  std::set<namespace_index> indices = {'a', 'b', 'i', 'g'};
+  std::vector<std::vector<namespace_index>> interactions = {{':', 'a'}};
+
+  auto result = compile_interactions<generate_permutations_with_repetition, false>(interactions, indices);
+
+  std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'b', 'a'}, {'i', 'a'}, {'g', 'a'}};
+
+  std::sort(compare_set.begin(), compare_set.end());
+  std::sort(result.begin(), result.end());
+  check_vector_of_vectors_exact(result, compare_set);
+}
