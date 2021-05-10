@@ -7,6 +7,7 @@
 #include <set>
 #include <queue>
 #include <stack>
+#include <unordered_map>
 
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
