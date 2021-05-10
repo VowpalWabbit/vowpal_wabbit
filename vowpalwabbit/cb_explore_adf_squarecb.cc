@@ -292,11 +292,11 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
 void cb_explore_adf_squarecb::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VERSION_FILE_WITH_CB_TO_CBADF)
+  if (!read || _model_file_version >= VERSION_FILE_WITH_SAVE_RESUME)
   {
     std::stringstream msg;
     if (!read) { msg << "cb squarecb adf storing example counter:  = " << _counter << "\n"; }
-    bin_text_read_write_fixed_validated(io, (char*)&_counter, sizeof(_counter), "", read, msg, text);
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), "", read, msg, text);
   }
 }
 
@@ -367,8 +367,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
-  auto data = scoped_calloc_or_throw<explore_type>(gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost,
-      all.model_file_ver);
+  auto data = scoped_calloc_or_throw<explore_type>(
+    gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver);
   VW::LEARNER::learner<explore_type, multi_ex>& l =
       VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
           prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-squarecb");
