@@ -75,6 +75,6 @@ std::vector<std::vector<namespace_index>> compile_interactions(
   size_t removed_cnt = 0;
   size_t sorted_cnt = 0;
   INTERACTIONS::sort_and_filter_duplicate_interactions(
-      final_interactions, leave_duplicate_interactions, removed_cnt, sorted_cnt);
+      final_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
   return final_interactions;
 }

@@ -120,26 +120,129 @@ BOOST_AUTO_TEST_CASE(interaction_generic_with_duplicates_expand_wildcard_only)
 
 BOOST_AUTO_TEST_CASE(sort_and_filter_interactions)
 {
-  std::vector<std::vector<namespace_index>> input = {{'b', 'a'}, {'a', 'b','a'}, {'a', 'a'}, {'b', 'b'}};
+  std::vector<std::vector<namespace_index>> input = {{'b', 'a'}, {'a', 'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
 
   size_t removed_count = 0;
   size_t sorted_count = 0;
   INTERACTIONS::sort_and_filter_duplicate_interactions(input, false, removed_count, sorted_count);
 
-  std::vector<std::vector<namespace_index>> compare_set = {{'b', 'a'}, {'a', 'b','a'}, {'a', 'a'}, {'b', 'b'}};
+  std::vector<std::vector<namespace_index>> compare_set = {{'b', 'a'}, {'a', 'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
   check_vector_of_vectors_exact(input, compare_set);
 }
 
-BOOST_AUTO_TEST_CASE(compile_interactions_quadratic)
+void sort_all(std::vector<std::vector<namespace_index>>& interactions)
 {
-  std::set<namespace_index> indices = {'a', 'b', 'i', 'g'};
+  for (auto& interaction : interactions) { std::sort(interaction.begin(), interaction.end()); }
+  std::sort(interactions.begin(), interactions.end());
+}
+
+BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations_and_combinations_same)
+{
+  std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<namespace_index>> interactions = {{':', 'a'}};
 
-  auto result = compile_interactions<generate_permutations_with_repetition, false>(interactions, indices);
+  // Permutations implies leave duplicate interactions (second template arg)
+  auto result_perms = compile_interactions<generate_permutations_with_repetition, true>(interactions, indices);
+  auto result_combs = compile_interactions<generate_combinations_with_repetition, false>(interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'b', 'a'}, {'i', 'a'}, {'g', 'a'}};
+  std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'b', 'a'}, {'c', 'a'}, {'d', 'a'}};
 
-  std::sort(compare_set.begin(), compare_set.end());
-  std::sort(result.begin(), result.end());
+  sort_all(compare_set);
+  sort_all(result_perms);
+  sort_all(result_combs);
+  check_vector_of_vectors_exact(result_perms, compare_set);
+  check_vector_of_vectors_exact(result_combs, compare_set);
+}
+
+BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_combinations)
+{
+  std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
+  std::vector<std::vector<namespace_index>> interactions = {{':', ':'}};
+
+  auto result = compile_interactions<generate_combinations_with_repetition, false>(interactions, indices);
+
+  std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'b'},
+      {'b', 'c'}, {'b', 'd'}, {'c', 'c'}, {'c', 'd'}, {'d', 'd'}};
+
+  sort_all(compare_set);
+  sort_all(result);
+  check_vector_of_vectors_exact(result, compare_set);
+}
+
+BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations)
+{
+  std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
+  std::vector<std::vector<namespace_index>> interactions = {{':', ':'}};
+
+  auto result = compile_interactions<generate_permutations_with_repetition, true>(interactions, indices);
+
+  std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'a'},
+      {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'a'}, {'c', 'b'}, {'c', 'c'}, {'c', 'd'}, {'d', 'a'}, {'d', 'b'},
+      {'d', 'c'}, {'d', 'd'}};
+
+  sort_all(compare_set);
+  sort_all(result);
+  check_vector_of_vectors_exact(result, compare_set);
+}
+
+BOOST_AUTO_TEST_CASE(compile_interactions_cubic_combinations)
+{
+  std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
+  std::vector<std::vector<namespace_index>> interactions = {{':', ':', ':'}};
+
+  auto result = compile_interactions<generate_combinations_with_repetition, false>(interactions, indices);
+
+  std::vector<std::vector<namespace_index>> compare_set = {
+      {'a', 'a', 'a'},
+      {'a', 'a', 'b'},
+      {'a', 'a', 'c'},
+      {'a', 'a', 'd'},
+      {'a', 'b', 'b'},
+      {'a', 'b', 'c'},
+      {'a', 'b', 'd'},
+      {'a', 'c', 'c'},
+      {'a', 'c', 'd'},
+      {'a', 'd', 'd'},
+      {'b', 'b', 'b'},
+      {'b', 'b', 'c'},
+      {'b', 'b', 'd'},
+      {'b', 'c', 'c'},
+      {'b', 'c', 'd'},
+      {'b', 'd', 'd'},
+      {'c', 'c', 'c'},
+      {'c', 'c', 'd'},
+      {'c', 'd', 'd'},
+      {'d', 'd', 'd'},
+  };
+
+  sort_all(compare_set);
+  sort_all(result);
+  check_vector_of_vectors_exact(result, compare_set);
+}
+
+BOOST_AUTO_TEST_CASE(compile_interactions_cubic_permutations)
+{
+  std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
+  std::vector<std::vector<namespace_index>> interactions = {{':', ':', ':'}};
+
+  auto result = compile_interactions<generate_permutations_with_repetition, true>(interactions, indices);
+
+  std::vector<std::vector<namespace_index>> compare_set = {
+      {'a', 'a', 'a'}, {'a', 'a', 'b'}, {'a', 'a', 'c'}, {'a', 'a', 'd'}, {'a', 'b', 'a'}, {'a', 'b', 'b'},
+      {'a', 'b', 'c'}, {'a', 'b', 'd'}, {'a', 'c', 'a'}, {'a', 'c', 'b'}, {'a', 'c', 'c'}, {'a', 'c', 'd'},
+      {'a', 'd', 'a'}, {'a', 'd', 'b'}, {'a', 'd', 'c'}, {'a', 'd', 'd'}, {'b', 'a', 'a'}, {'b', 'a', 'b'},
+      {'b', 'a', 'c'}, {'b', 'a', 'd'}, {'b', 'b', 'a'}, {'b', 'b', 'b'}, {'b', 'b', 'c'}, {'b', 'b', 'd'},
+      {'b', 'c', 'a'}, {'b', 'c', 'b'}, {'b', 'c', 'c'}, {'b', 'c', 'd'}, {'b', 'd', 'a'}, {'b', 'd', 'b'},
+      {'b', 'd', 'c'}, {'b', 'd', 'd'}, {'c', 'a', 'a'}, {'c', 'a', 'b'}, {'c', 'a', 'c'}, {'c', 'a', 'd'},
+      {'c', 'b', 'a'}, {'c', 'b', 'b'}, {'c', 'b', 'c'}, {'c', 'b', 'd'}, {'c', 'c', 'a'}, {'c', 'c', 'b'},
+      {'c', 'c', 'c'}, {'c', 'c', 'd'}, {'c', 'd', 'a'}, {'c', 'd', 'b'}, {'c', 'd', 'c'}, {'c', 'd', 'd'},
+      {'d', 'a', 'a'}, {'d', 'a', 'b'}, {'d', 'a', 'c'}, {'d', 'a', 'd'}, {'d', 'b', 'a'}, {'d', 'b', 'b'},
+      {'d', 'b', 'c'}, {'d', 'b', 'd'}, {'d', 'c', 'a'}, {'d', 'c', 'b'}, {'d', 'c', 'c'}, {'d', 'c', 'd'},
+      {'d', 'd', 'a'}, {'d', 'd', 'b'}, {'d', 'd', 'c'}, {'d', 'd', 'd'}
+
+  };
+
+  sort_all(compare_set);
+  sort_all(result);
   check_vector_of_vectors_exact(result, compare_set);
 }
