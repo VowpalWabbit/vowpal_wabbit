@@ -75,6 +75,8 @@ BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
           examples[slot_example_indx]->tag.end(), event_ids[i].begin(), event_ids[i].end());
     }
 
+    for (auto* ex : examples) { VW::setup_example(*vw, ex); }
+
     vw->predict(examples);
     auto& decision_scores = examples[0]->pred.decision_scores;
     std::vector<uint32_t> current;
