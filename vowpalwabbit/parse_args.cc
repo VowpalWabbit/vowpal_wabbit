@@ -776,6 +776,21 @@ void parse_feature_tweaks(
       decoded_interactions.emplace_back(encoded.begin(), encoded.end());
       if (!all.logger.quiet) *(all.trace_message) << i << " ";
     }
+
+    if (!all.logger.quiet && !options.was_supplied("leave_duplicate_interactions"))
+    {
+      bool contains_wildcard_quadratic = std::find_if(quadratics.begin(), quadratics.end(), [](const std::string& interaction){ return interaction.find(':') != std::string::npos;}) != quadratics.end();
+      if (contains_wildcard_quadratic)
+      {
+
+          *(all.trace_message) << "\n"
+                               << "WARNING: any duplicate namespace interactions will be removed\n"
+                               << "You can use --leave_duplicate_interactions to disable this behaviour.";
+
+      }
+    }
+
+
     if (!all.logger.quiet) *(all.trace_message) << endl;
   }
 
