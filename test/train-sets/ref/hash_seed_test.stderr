@@ -10,23 +10,23 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/rcv1_mini.dat
 num sources = 1
-Enabled reductions: gd, scorer
+Enabled reductions: gd, generate_interactions, scorer
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.077284 0.077284            1            1.0  -1.0000  -0.7220    32385
-0.041675 0.006065            2            2.0  -1.0000  -0.9221     3741
-0.030923 0.020172            4            4.0  -1.0000  -0.8484    71631
-0.027503 0.024082            8            8.0   1.0000   0.9214     2211
-0.035516 0.043530           16           16.0   1.0000   0.9767     3570
-0.024695 0.013874           32           32.0  -1.0000  -0.9606     4278
-0.031099 0.037503           64           64.0   1.0000   1.0000     5671
-0.022095 0.013092          128          128.0  -1.0000  -1.0000     8778
+0.076894 0.076894            1            1.0  -1.0000  -0.7227    32639
+0.041130 0.005366            2            2.0  -1.0000  -0.9268     3827
+0.030162 0.019194            4            4.0  -1.0000  -0.8511    72009
+0.026823 0.023484            8            8.0   1.0000   0.9184     2277
+0.033109 0.039395           16           16.0   1.0000   0.9776     3654
+0.022439 0.011768           32           32.0  -1.0000  -0.9612     4370
+0.026783 0.031127           64           64.0   1.0000   1.0000     5777
+0.019295 0.011807          128          128.0  -1.0000  -1.0000     8910
 
 finished run
 number of examples = 250
 weighted example sum = 250.000000
 weighted label sum = -30.000000
-average loss = 0.014494
+average loss = 0.012495
 best constant = -0.120000
 best constant's loss = 0.985600
-total feature number = 4176509
+total feature number = 4214795

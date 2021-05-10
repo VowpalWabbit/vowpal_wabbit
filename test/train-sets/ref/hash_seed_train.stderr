@@ -11,25 +11,25 @@ decay_learning_rate = 1
 creating cache_file = train-sets/rcv1_mini.dat.cache
 Reading datafile = train-sets/rcv1_mini.dat
 num sources = 1
-Enabled reductions: gd, scorer
+Enabled reductions: gd, generate_interactions, scorer
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-1.000000 1.000000            1            1.0  -1.0000   0.0000    32385
-0.747407 0.494815            2            2.0  -1.0000  -0.2966     3741
-0.772949 0.798490            4            4.0  -1.0000  -1.0000    71631
-1.622789 2.472629            8            8.0   1.0000  -0.1378     2211
-1.372107 1.121425           16           16.0   1.0000   0.7096     3570
-1.483492 1.594877           32           32.0  -1.0000  -0.0765     4278
-1.323155 1.162818           64           64.0   1.0000   0.0982     5671
-1.230180 1.137205          128          128.0  -1.0000   0.0846     8778
-1.093884 0.957588          256          256.0  -1.0000  -0.9719    38781
+1.000000 1.000000            1            1.0  -1.0000   0.0000    32639
+0.746567 0.493135            2            2.0  -1.0000  -0.2978     3827
+0.773883 0.801198            4            4.0  -1.0000  -1.0000    72009
+1.600288 2.426693            8            8.0   1.0000  -0.0575     2277
+1.345943 1.091598           16           16.0   1.0000   0.7207     3654
+1.461333 1.576723           32           32.0  -1.0000  -0.0296     4370
+1.292798 1.124263           64           64.0   1.0000   0.1359     5777
+1.234871 1.176944          128          128.0  -1.0000   0.1527     8910
+1.103528 0.972186          256          256.0  -1.0000  -0.9556    39059
 
 finished run
 number of examples per pass = 250
 passes used = 2
 weighted example sum = 500.000000
 weighted label sum = -60.000000
-average loss = 0.638042
+average loss = 0.640085
 best constant = -0.120000
 best constant's loss = 0.985600
-total feature number = 8353018
+total feature number = 8429590
