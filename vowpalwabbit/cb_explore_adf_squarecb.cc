@@ -61,9 +61,8 @@ private:
   std::vector<v_array<CB::cb_class>> _ex_costs;
 
 public:
-  cb_explore_adf_squarecb(
-      float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost,
-      VW::version_struct model_file_version);
+  cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,
+      float max_cb_cost, VW::version_struct model_file_version);
   ~cb_explore_adf_squarecb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -79,9 +78,8 @@ private:
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };
 
-cb_explore_adf_squarecb::cb_explore_adf_squarecb(
-    float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost,
-    VW::version_struct model_file_version)
+cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0,
+    float min_cb_cost, float max_cb_cost, VW::version_struct model_file_version)
     : _counter(0)
     , _gamma_scale(gamma_scale)
     , _gamma_exponent(gamma_exponent)
@@ -367,8 +365,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
-  auto data = scoped_calloc_or_throw<explore_type>(
-    gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver);
+  auto data = scoped_calloc_or_throw<explore_type>(gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost,
+      all.model_file_ver);
   VW::LEARNER::learner<explore_type, multi_ex>& l =
       VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
           prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-squarecb");

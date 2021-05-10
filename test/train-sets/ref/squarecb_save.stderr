@@ -1,5 +1,5 @@
 creating quadratic features for pairs: UA 
-final_regressor = sqcb_ld.model
+final_regressor = models/sqcb_ld.model
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
