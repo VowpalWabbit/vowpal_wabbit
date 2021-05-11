@@ -74,8 +74,8 @@ private:
   CB::label _action_label;
   CB::label _empty_label;
   ACTION_SCORE::action_scores _saved_pred;
-  size_t _metric_labeled;
-  size_t _metric_predict_in_learn;
+  int32_t _metric_labeled;
+  int32_t _metric_predict_in_learn;
   float _metric_sum_cost;
   float _metric_sum_cost_first;
 

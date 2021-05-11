@@ -27,10 +27,10 @@ namespace metrics
 struct metrics_data
 {
   std::string out_file;
-  size_t learn_count = 0;
-  size_t predict_count = 0;
-  size_t predicted_first_option = 0;
-  size_t predicted_not_first = 0;
+  int32_t learn_count = 0;
+  int32_t predict_count = 0;
+  int32_t predicted_first_option = 0;
+  int32_t predicted_not_first = 0;
 };
 
 void list_to_json_file(std::string filename, std::vector<std::tuple<std::string, int32_t>>& metrics)
