@@ -105,7 +105,8 @@ struct parser
   std::unique_ptr<dsjson_metrics> metrics = nullptr;
 };
 
-struct dsjson_metrics {
+struct dsjson_metrics
+{
   size_t NumberOfSkippedEvents = 0;
   size_t NumberOfEventsZeroActions = 0;
   std::string FirstEventId;

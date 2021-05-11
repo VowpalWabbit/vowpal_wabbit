@@ -145,9 +145,7 @@ bool is_currently_dsjson_reader(const vw& all)
 
 void set_json_reader(vw& all, bool dsjson = false)
 {
-  if (dsjson) {
-    all.example_parser->metrics = VW::make_unique<dsjson_metrics>();
-  }
+  if (dsjson) { all.example_parser->metrics = VW::make_unique<dsjson_metrics>(); }
 
   // TODO: change to class with virtual method
   // --invert_hash requires the audit parser version to save the extra information.
