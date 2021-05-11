@@ -2315,4 +2315,12 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/rcv1_raw_cb_dr_metrics.stderr
     test-sets/ref/metrics_2.json
 
+# Test 314: squarecb save_load, save model
+{VW} -d train-sets/squarecb_load.dat --cb_explore_adf -q UA --squarecb -f models/sqcb_ld.model --save_resume
+    train-sets/ref/squarecb_save.stderr
+
+# Test 315: squarecb save_load, load model
+{VW} -d train-sets/squarecb_load.dat --cb_explore_adf -q UA --squarecb -i models/sqcb_ld.model -t
+    train-sets/ref/squarecb_load.stderr
+
 # Do not delete this line or the empty line above it
