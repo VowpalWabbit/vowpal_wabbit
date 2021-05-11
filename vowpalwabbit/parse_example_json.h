@@ -1732,14 +1732,21 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
         reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 
-    if (!interaction.eventId.empty() && all->example_parser->metrics->FirstEventId.empty())
-      all->example_parser->metrics->FirstEventId = std::move(interaction.eventId);
+    if (!interaction.eventId.empty())
+    {
+      if (all->example_parser->metrics->FirstEventId.empty())
+        all->example_parser->metrics->FirstEventId = std::move(interaction.eventId);
+      else
+        all->example_parser->metrics->LastEventId = std::move(interaction.eventId);
+    }
 
-    if (!interaction.timestamp.empty() && all->example_parser->metrics->FirstEventTime.empty())
-      all->example_parser->metrics->FirstEventTime = std::move(interaction.timestamp);
-    
-    all->example_parser->metrics->LastEventId = std::move(interaction.eventId);
-    all->example_parser->metrics->LastEventTime = std::move(interaction.timestamp);
+    if (!interaction.timestamp.empty())
+    {
+      if (all->example_parser->metrics->FirstEventTime.empty())
+        all->example_parser->metrics->FirstEventTime = std::move(interaction.timestamp);
+      else
+        all->example_parser->metrics->LastEventTime = std::move(interaction.timestamp);
+    }
 
     // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
     // stop suppressing "skipLearn" interactions. Also, not sure if this is the right logic
