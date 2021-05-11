@@ -10,4 +10,4 @@ struct metric_sink
   std::vector<std::tuple<std::string, size_t>> int_metrics_list;
   std::vector<std::tuple<std::string, float>> float_metrics_list;
 };
-}
+}  // namespace VW
