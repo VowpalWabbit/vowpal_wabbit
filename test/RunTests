@@ -2324,4 +2324,9 @@ train-sets/ref/slates_simple_w_interactions.stderr
 {VW} -d train-sets/squarecb_load.dat --cb_explore_adf -q UA --squarecb -i models/sqcb_ld.model -t
     train-sets/ref/squarecb_load.stderr
 
+# Test 315: test extra_metrics with djson timestamps
+{VW} -d train-sets/dsjson_cb.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT --extra_metrics metrics_time.json
+    train-sets/ref/metrics_time.stderr
+    test-sets/ref/metrics_time.json
+
 # Do not delete this line or the empty line above it
