@@ -103,6 +103,10 @@ struct example : public example_predict  // core example datatype.
   float updated_prediction = 0.f;  // estimated post-update prediction.
   float loss = 0.f;
 
+  // This value is only used for gd's sensitivity call, but it is costly to
+  // calculate. Therefore it is calculated only when needed. Anything that
+  // modifies the feature_groups in this example should invalidate this value
+  // with reset_total_sum_feat_sq() to ensure it gets recalculated if needed.
   float total_sum_feat_sq = 0.f;
   float confidence = 0.f;
   features* passthrough =
