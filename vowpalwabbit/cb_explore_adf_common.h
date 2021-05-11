@@ -139,7 +139,7 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     data.explore.learn(base, examples);
     data._metric_labeled++;
     data._metric_sum_cost += data._known_cost.cost;
-    if (examples[0]->pred.a_s[0].action == 0) data._metric_sum_cost_first += data._known_cost.cost;
+    if (examples[0]->pred.a_s[0].action == 0) { data._metric_sum_cost_first += data._known_cost.cost; }
   }
   else
   {
