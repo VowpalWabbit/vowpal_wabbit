@@ -72,7 +72,7 @@ struct polyprediction
   VW::active_multiclass_prediction active_multiclass;
 };
 
-float calculate_sum_features_squared(bool permutations, example& ec);
+float calculate_total_sum_features_squared(bool permutations, example& ec);
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
@@ -126,7 +126,7 @@ struct example : public example_predict  // core example datatype.
   {
     if (!total_sum_feat_sq_calculated)
     {
-      total_sum_feat_sq = calculate_sum_features_squared(use_permutations, *this);
+      total_sum_feat_sq = calculate_total_sum_features_squared(use_permutations, *this);
       total_sum_feat_sq_calculated = true;
     }
     return total_sum_feat_sq;

@@ -9,7 +9,7 @@
 #include "simple_label_parser.h"
 #include "interactions.h"
 
-float calculate_sum_features_squared(bool permutations, example& ec)
+float calculate_total_sum_features_squared(bool permutations, example& ec)
 {
   float sum_features_squared = 0.f;
   for (const features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
