@@ -33,7 +33,7 @@ struct metrics_data
   size_t predicted_not_first = 0;
 };
 
-void list_to_json_file(std::string filename, std::vector<std::tuple<std::string, size_t>>& metrics)
+void list_to_json_file(vw& all, std::string filename, std::vector<std::tuple<std::string, size_t>>& metrics)
 {
   FILE* fp;
 
@@ -49,6 +49,24 @@ void list_to_json_file(std::string filename, std::vector<std::tuple<std::string,
       writer.Key(std::get<0>(m).c_str());
       writer.Int64(static_cast<int32_t>(std::get<1>(m)));
     }
+
+    // dsjson
+    if (all.example_parser->metrics)
+    {
+      writer.Key("NumberOfSkippedEvents");
+      writer.Int64(all.example_parser->metrics->NumberOfSkippedEvents);
+      writer.Key("NumberOfEventsZeroActions");
+      writer.Int64(all.example_parser->metrics->NumberOfEventsZeroActions);
+      writer.Key("FirstEventId");
+      writer.String(all.example_parser->metrics->FirstEventId.c_str());
+      writer.Key("FirstEventTime");
+      writer.String(all.example_parser->metrics->FirstEventTime.c_str());
+      writer.Key("LastEventId");
+      writer.String(all.example_parser->metrics->LastEventId.c_str());
+      writer.Key("LastEventTime");
+      writer.String(all.example_parser->metrics->LastEventTime.c_str());
+    }
+
     writer.EndObject();
 
     fclose(fp);
@@ -76,7 +94,7 @@ void output_metrics(vw& all)
     }
 #endif
 
-    list_to_json_file(filename, list_metrics);
+    list_to_json_file(all, filename, list_metrics);
   }
 }
 
