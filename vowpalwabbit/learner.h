@@ -20,6 +20,7 @@
 #include "example.h"
 #include <memory>
 #include "scope_exit.h"
+#include "metric_sink.h"
 
 enum class prediction_type_t
 {
@@ -108,7 +109,7 @@ struct save_load_data
 
 struct save_metric_data
 {
-  using fn = void (*)(void*, std::vector<std::tuple<std::string, int32_t>>& metrics_list);
+  using fn = void (*)(void*, metric_sink& metrics);
   void* data = nullptr;
   base_learner* base = nullptr;
   fn save_metric_f = nullptr;
@@ -128,7 +129,7 @@ void generic_driver(const std::vector<vw*>& alls);
 void generic_driver_onethread(vw& all);
 
 inline void noop_save_load(void*, io_buf&, bool, bool) {}
-inline void noop_persist_metrics(void*, std::vector<std::tuple<std::string, int32_t>>&) {}
+inline void noop_persist_metrics(void*, metric_sink&) {}
 inline void noop(void*) {}
 inline float noop_sensitivity(void*, base_learner&, example&)
 {
@@ -412,12 +413,12 @@ public:
   }
 
   // called when metrics is enabled.  Autorecursive.
-  void persist_metrics(std::vector<std::tuple<std::string, int32_t>>& metrics_list)
+  void persist_metrics(metric_sink& metrics)
   {
-    persist_metrics_fd.save_metric_f(persist_metrics_fd.data, metrics_list);
-    if (persist_metrics_fd.base) persist_metrics_fd.base->persist_metrics(metrics_list);
+    persist_metrics_fd.save_metric_f(persist_metrics_fd.data, metrics);
+    if (persist_metrics_fd.base) persist_metrics_fd.base->persist_metrics(metrics);
   }
-  void set_persist_metrics(void (*f)(T&, std::vector<std::tuple<std::string, int32_t>>&))
+  void set_persist_metrics(void (*f)(T&, metric_sink&))
   {
     VW_WARNING_STATE_PUSH
     VW_WARNING_DISABLE_CAST_FUNC_TYPE

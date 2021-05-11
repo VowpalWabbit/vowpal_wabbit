@@ -21,6 +21,7 @@
 #include "reductions_fwd.h"
 #include "vw_math.h"
 #include "shared_data.h"
+#include "metric_sink.h"
 
 namespace VW
 {
@@ -74,8 +75,8 @@ private:
   CB::label _action_label;
   CB::label _empty_label;
   ACTION_SCORE::action_scores _saved_pred;
-  int32_t _metric_labeled;
-  int32_t _metric_predict_in_learn;
+  size_t _metric_labeled;
+  size_t _metric_predict_in_learn;
   float _metric_sum_cost;
   float _metric_sum_cost_first;
 
@@ -92,7 +93,7 @@ public:
   static void print_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
   static void persist_metrics(
-      cb_explore_adf_base<ExploreType>& data, std::vector<std::tuple<std::string, int32_t>>& metrics);
+      cb_explore_adf_base<ExploreType>& data, metric_sink& metrics);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
@@ -240,12 +241,12 @@ inline void cb_explore_adf_base<ExploreType>::save_load(
 
 template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::persist_metrics(
-    cb_explore_adf_base<ExploreType>& data, std::vector<std::tuple<std::string, int32_t>>& metrics)
+    cb_explore_adf_base<ExploreType>& data, metric_sink& metrics)
 {
-  metrics.emplace_back("cbea_labeled_ex", data._metric_labeled);
-  metrics.emplace_back("cbea_predict_in_learn", data._metric_predict_in_learn);
-  metrics.emplace_back("cbea_sum_cost", static_cast<int32_t>(data._metric_sum_cost));
-  metrics.emplace_back("cbea_sum_cost_baseline", static_cast<int32_t>(data._metric_sum_cost_first));
+  metrics.int_metrics_list.emplace_back("cbea_labeled_ex", data._metric_labeled);
+  metrics.int_metrics_list.emplace_back("cbea_predict_in_learn", data._metric_predict_in_learn);
+  metrics.float_metrics_list.emplace_back("cbea_sum_cost", data._metric_sum_cost);
+  metrics.float_metrics_list.emplace_back("cbea_sum_cost_baseline", data._metric_sum_cost_first);
 }
 
 }  // namespace cb_explore_adf
