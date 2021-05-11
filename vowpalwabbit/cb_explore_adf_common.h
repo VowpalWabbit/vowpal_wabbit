@@ -244,7 +244,7 @@ inline void cb_explore_adf_base<ExploreType>::persist_metrics(
 {
   metrics.emplace_back("cbea_labeled_ex", data._metric_labeled);
   metrics.emplace_back("cbea_predict_in_learn", data._metric_predict_in_learn);
-  metrics.emplace_back("cbea_sum_cost", static_cast<int>(data._metric_sum_cost));
+  metrics.emplace_back("cbea_sum_cost", static_cast<int32_t>(data._metric_sum_cost));
   metrics.emplace_back("cbea_sum_cost_baseline", static_cast<int>(data._metric_sum_cost_first));
 }
 
