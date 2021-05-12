@@ -135,7 +135,7 @@ void reduction_output::report_progress(vw& all, const cats& data, const example&
 {
   auto loss = data.get_loss(ec.l.cb_cont, ec.pred.pdf_value.action);
 
-  all.sd->update(ec.test_only, does_example_have_label(ec), loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, does_example_have_label(ec), loss, ec.weight, ec.get_num_features());
   all.sd->weighted_labels += ec.weight;
   print_update_cb_cont(all, ec);
 }
@@ -152,7 +152,7 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : to_string(ec.l.cb_cont.costs[0]),  // Label
         to_string(ec.pred.pdf_value),                                 // Prediction
-        ec.num_features, all.progress_add, all.progress_arg);
+        ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
 

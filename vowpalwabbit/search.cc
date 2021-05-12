@@ -630,7 +630,7 @@ void del_features_in_top_namespace(search_private& /* priv */, example& ec, size
   features& fs = ec.feature_space[ns];
   ec.indices.pop_back();
   ec.num_features -= fs.size();
-  ec.total_sum_feat_sq -= fs.sum_feat_sq;
+  ec.reset_total_sum_feat_sq();
   fs.clear();
 }
 
@@ -675,7 +675,7 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
     if ((sz > 0) && (fs.sum_feat_sq > 0.))
     {
       me.indices.push_back(neighbor_namespace);
-      me.total_sum_feat_sq += fs.sum_feat_sq;
+      me.reset_total_sum_feat_sq();
       me.num_features += sz;
     }
     else
@@ -858,7 +858,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
   if ((con_fs.size() > 0) && (con_fs.sum_feat_sq > 0.))
   {
     ec.indices.push_back(conditioning_namespace);
-    ec.total_sum_feat_sq += con_fs.sum_feat_sq;
+    ec.reset_total_sum_feat_sq();
     ec.num_features += con_fs.size();
   }
   else
@@ -1258,7 +1258,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
   ec.l = old_label;
 
   priv.total_predictions_made++;
-  priv.num_features += ec.num_features;
+  priv.num_features += ec.get_num_features();
 
   return act;
 }
@@ -1316,7 +1316,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     }
     if (this_cache) this_cache->push_back(action_cache(0., a, false, ecs[a].partial_prediction));
 
-    priv.num_features += ecs[a].num_features;
+    priv.num_features += ecs[a].get_num_features();
     ecs[a].l = old_label;
     if (start_K > 0) LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]);
   }
