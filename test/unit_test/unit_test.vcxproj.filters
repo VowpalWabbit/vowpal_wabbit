@@ -54,6 +54,9 @@
     <ClCompile Include="initialize_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="interactions_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="io_adapter_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

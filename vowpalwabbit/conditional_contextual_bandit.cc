@@ -583,7 +583,7 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
   // Should this be done for shared, action and slot?
   for (auto* ec : ec_seq)
   {
-    num_features += ec->num_features;
+    num_features += ec->get_num_features();
 
     if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot) { slots.push_back(ec); }
   }

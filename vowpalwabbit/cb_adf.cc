@@ -346,7 +346,7 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
   size_t num_features = 0;
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (const auto& example : *ec_seq) num_features += example->num_features;
+  for (const auto& example : *ec_seq) num_features += example->get_num_features();
 
   float loss = 0.;
 

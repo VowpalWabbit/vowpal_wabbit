@@ -227,7 +227,7 @@ void subtract_example(vw& all, example* ec, example* ecsub)
   GD::foreach_feature<example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
   ec->indices.push_back(wap_ldf_namespace);
   ec->num_features += wap_fs.size();
-  ec->total_sum_feat_sq += wap_fs.sum_feat_sq;
+  ec->reset_total_sum_feat_sq();
 }
 
 void unsubtract_example(example* ec)
@@ -248,7 +248,7 @@ void unsubtract_example(example* ec)
 
   features& fs = ec->feature_space[wap_ldf_namespace];
   ec->num_features -= fs.size();
-  ec->total_sum_feat_sq -= fs.sum_feat_sq;
+  ec->reset_total_sum_feat_sq();
   fs.clear();
   ec->indices.pop_back();
 }
@@ -583,7 +583,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
   if (example_is_newline(ec)) return;
   if (ec_is_label_definition(ec)) return;
 
-  all.sd->total_features += ec.num_features;
+  all.sd->total_features += ec.get_num_features();
 
   float loss = 0.;
 
@@ -652,7 +652,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
   if (example_is_newline(head_ec)) return;
   if (ec_is_label_definition(head_ec)) return;
 
-  all.sd->total_features += head_ec.num_features;
+  all.sd->total_features += head_ec.get_num_features();
 
   float loss = 0.;
   v_array<action_score>& preds = head_ec.pred.a_s;
