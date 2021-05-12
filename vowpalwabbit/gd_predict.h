@@ -60,9 +60,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 // WeightOrIndexT) where WeightOrIndexT is EITHER float& feature_weight OR uint64_t feature_index
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), class WeightsT>
 inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
-    const std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec, DataT& dat, size_t& num_interacted_features)
-
-{
+    const std::vector<std::vector<namespace_index>>& interactions, bool permutations, example_predict& ec, DataT& dat, size_t& num_interacted_features){
   uint64_t offset = ec.ft_offset;
   if (ignore_some_linear)
     for (example_predict::iterator i = ec.begin(); i != ec.end(); ++i)

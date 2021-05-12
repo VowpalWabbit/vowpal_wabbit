@@ -16,7 +16,6 @@
 #include "gd_predict.h"
 #include "interactions.h"
 #include "generate_interactions.h"
-
 struct eval_gen_data
 {
   size_t& new_features_cnt;
@@ -91,7 +90,7 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
 
 BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_permuations_test)
 {
-  auto& vw = *VW::initialize("--quiet -q :: --leave_duplicate_interactions", nullptr, false, nullptr, nullptr);
+   auto& vw = *VW::initialize("--quiet -q :: --leave_duplicate_interactions", nullptr, false, nullptr, nullptr);
   auto* ex = VW::read_example(vw, std::string("3 |f a b c |e x y z"));
 
   auto interactions = compile_interactions<generate_permutations_with_repetition, true>(

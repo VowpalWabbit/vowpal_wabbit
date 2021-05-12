@@ -103,12 +103,12 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   for (const auto& i : d.all->interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
-    ec.num_features -=
+    const auto interacted_count =
         ec.feature_space[static_cast<int>(i[0])].size() * ec.feature_space[static_cast<int>(i[1])].size();
+    ec.num_features -= interacted_count;
     ec.num_features += ec.feature_space[static_cast<int>(i[0])].size() * d.rank;
     ec.num_features += ec.feature_space[static_cast<int>(i[1])].size() * d.rank;
-    ec.num_features_from_interactions +=
-        ec.feature_space[static_cast<size_t>(i[0])].size() * ec.feature_space[static_cast<size_t>(i[1])].size();
+    ec.num_features_from_interactions += interacted_count;
   }
 
   // clear stored predictions

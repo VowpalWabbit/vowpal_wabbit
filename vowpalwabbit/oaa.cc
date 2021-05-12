@@ -204,7 +204,6 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   // === Report updates using zero-one loss
   all.sd->update(
       ec.test_only, ec.l.multi.label != static_cast<uint32_t>(-1), zero_one_loss, ec.weight, ec.get_num_features());
-
   // Alternatively, we could report multiclass_log_loss.
   // all.sd->update(ec.test_only, multiclass_log_loss, ec.weight, ec.get_num_features());
   // Even better would be to report both losses, but this would mean to increase
