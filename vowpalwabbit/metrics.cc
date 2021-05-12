@@ -46,7 +46,7 @@ void list_to_json_file(std::string filename, metric_sink& metrics)
     writer.StartObject();
     for (std::tuple<std::string, size_t> m : metrics.int_metrics_list)
     {
-      writer.Key(std::get<0>(m).c_str());
+      writer.Key(m->first.c_str());
       writer.Uint64(std::get<1>(m));
     }
     for (std::tuple<std::string, float> m : metrics.float_metrics_list)
