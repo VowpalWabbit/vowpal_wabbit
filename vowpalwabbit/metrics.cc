@@ -46,13 +46,13 @@ void list_to_json_file(std::string filename, metric_sink& metrics)
     writer.StartObject();
     for (const auto& m : metrics.int_metrics_list)
     {
-      writer.Key(m->first.c_str());
-      writer.Uint64(std::get<1>(m));
+      writer.Key(m.first.c_str());
+      writer.Uint64(m.second);
     }
-    for (std::tuple<std::string, float> m : metrics.float_metrics_list)
+    for (const auto& m : metrics.float_metrics_list)
     {
-      writer.Key(std::get<0>(m).c_str());
-      writer.Double(static_cast<double>(std::get<1>(m)));
+      writer.Key(m.first.c_str());
+      writer.Double(static_cast<double>(m.second));
     }
     writer.EndObject();
 
