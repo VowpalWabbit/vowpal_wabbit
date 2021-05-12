@@ -33,7 +33,8 @@ struct metrics_data
   size_t predicted_not_first = 0;
 };
 
-void list_to_json_file(dsjson_metrics* ds_metrics, std::string filename, std::vector<std::tuple<std::string, size_t>>& metrics)
+void list_to_json_file(
+    dsjson_metrics* ds_metrics, std::string filename, std::vector<std::tuple<std::string, size_t>>& metrics)
 {
   FILE* fp;
 
