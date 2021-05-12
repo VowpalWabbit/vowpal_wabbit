@@ -127,10 +127,14 @@ void transform_single_ex(generate_interactions& in, VW::LEARNER::single_learner&
 {
   auto prev_count = in.all_seen_namespaces.size();
   in.all_seen_namespaces.insert(ec.indices.begin(), ec.indices.end());
+
   if (prev_count != in.all_seen_namespaces.size())
   {
+    auto constant_namespace_it = in.all_seen_namespaces.find(constant_namespace);
+    if (constant_namespace_it != in.all_seen_namespaces.end()) { in.all_seen_namespaces.erase(constant_namespace_it); }
     in.generated_interactions =
         compile_interactions<generate_func, leave_duplicate_interactions>(*ec.interactions, in.all_seen_namespaces);
+    in.all_seen_namespaces.insert(constant_namespace);
   }
 
   auto* saved_interactions = ec.interactions;
@@ -149,10 +153,14 @@ void update(generate_interactions& in, VW::LEARNER::single_learner& base, exampl
 {
   auto prev_count = in.all_seen_namespaces.size();
   in.all_seen_namespaces.insert(ec.indices.begin(), ec.indices.end());
+
   if (prev_count != in.all_seen_namespaces.size())
   {
+    auto constant_namespace_it = in.all_seen_namespaces.find(constant_namespace);
+    if (constant_namespace_it != in.all_seen_namespaces.end()) { in.all_seen_namespaces.erase(constant_namespace_it); }
     in.generated_interactions =
         compile_interactions<generate_func, leave_duplicate_interactions>(*ec.interactions, in.all_seen_namespaces);
+    in.all_seen_namespaces.insert(constant_namespace);
   }
 
   auto* saved_interactions = ec.interactions;
@@ -162,15 +170,19 @@ void update(generate_interactions& in, VW::LEARNER::single_learner& base, exampl
 }
 
 template <generate_func_t generate_func, bool leave_duplicate_interactions>
-inline void multipredict(generate_interactions& in, VW::LEARNER::single_learner& base, example& ec, size_t count, size_t,
-    polyprediction* pred, bool finalize_predictions)
+inline void multipredict(generate_interactions& in, VW::LEARNER::single_learner& base, example& ec, size_t count,
+    size_t, polyprediction* pred, bool finalize_predictions)
 {
   auto prev_count = in.all_seen_namespaces.size();
   in.all_seen_namespaces.insert(ec.indices.begin(), ec.indices.end());
+
   if (prev_count != in.all_seen_namespaces.size())
   {
+    auto constant_namespace_it = in.all_seen_namespaces.find(constant_namespace);
+    if (constant_namespace_it != in.all_seen_namespaces.end()) { in.all_seen_namespaces.erase(constant_namespace_it); }
     in.generated_interactions =
         compile_interactions<generate_func, leave_duplicate_interactions>(*ec.interactions, in.all_seen_namespaces);
+    in.all_seen_namespaces.insert(constant_namespace);
   }
 
   auto* saved_interactions = ec.interactions;
