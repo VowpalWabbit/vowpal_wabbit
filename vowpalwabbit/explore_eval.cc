@@ -63,7 +63,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
   ACTION_SCORE::action_scores preds = (*ec_seq)[0]->pred.a_s;
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
-    if (!CB::ec_is_example_header(*(*ec_seq)[i])) num_features += (*ec_seq)[i]->num_features;
+    if (!CB::ec_is_example_header(*(*ec_seq)[i])) num_features += (*ec_seq)[i]->get_num_features();
 
   bool labeled_example = true;
   if (c.known_cost.probability > 0)

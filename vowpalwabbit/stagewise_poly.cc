@@ -399,7 +399,6 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
 
   poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;
-  poly.synth_ec.total_sum_feat_sq = 0;
 
   if (poly.synth_ec.indices.size() == 0) poly.synth_ec.indices.push_back(tree_atomics);
 }
@@ -485,12 +484,11 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
    */
   GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
   synthetic_decycle(poly);
-  poly.synth_ec.total_sum_feat_sq = poly.synth_ec.feature_space[tree_atomics].sum_feat_sq;
 
   if (training)
   {
-    poly.sum_sparsity += poly.synth_ec.num_features;
-    poly.sum_input_sparsity += ec.num_features;
+    poly.sum_sparsity += poly.synth_ec.get_num_features();
+    poly.sum_input_sparsity += ec.get_num_features();
     poly.num_examples += 1;
   }
 }
@@ -631,7 +629,7 @@ void end_pass(stagewise_poly &poly)
 void finish_example(vw &all, stagewise_poly &poly, example &ec)
 {
   size_t temp_num_features = ec.num_features;
-  ec.num_features = poly.synth_ec.num_features;
+  ec.num_features = poly.synth_ec.get_num_features();
   output_and_account_example(all, ec);
   ec.num_features = temp_num_features;
   VW::finish_example(all, ec);
