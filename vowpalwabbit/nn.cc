@@ -118,7 +118,6 @@ void finish_setup(nn& n, vw& all)
   if (all.audit || all.hash_inv)
     n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "HiddenBias")));
-  n.hiddenbias.total_sum_feat_sq++;
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
 
@@ -130,7 +129,6 @@ void finish_setup(nn& n, vw& all)
     n.outputweight.feature_space[nn_output_namespace].space_names.push_back(
         audit_strings_ptr(new audit_strings("", "OutputWeight")));
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
-  n.outputweight.total_sum_feat_sq++;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
   n.outputweight._reduction_features.template get<simple_label_reduction_features>().initial = 0.f;
@@ -225,7 +223,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 
   CONVERSE:  // That's right, I'm using goto.  So sue me.
 
-    n.output_layer.total_sum_feat_sq = 1;
+    n.output_layer.reset_total_sum_feat_sq();
     n.output_layer.feature_space[nn_output_namespace].sum_feat_sq = 1;
 
     n.outputweight.ft_offset = ec.ft_offset;
@@ -242,8 +240,6 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       float sigmah = (dropped_out[i]) ? 0.0f : dropscale * fasttanh(hidden_units[i].scalar);
       features& out_fs = n.output_layer.feature_space[nn_output_namespace];
       out_fs.values[i] = sigmah;
-
-      n.output_layer.total_sum_feat_sq += sigmah * sigmah;
       out_fs.sum_feat_sq += sigmah * sigmah;
 
       n.outputweight.feature_space[nn_output_namespace].indicies[0] = out_fs.indicies[i];
@@ -282,17 +278,14 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
        * save_nn_output_namespace is destroyed
        */
       features save_nn_output_namespace = std::move(ec.feature_space[nn_output_namespace]);
-      auto tmp_sum_feat_sq = n.output_layer.feature_space[nn_output_namespace].sum_feat_sq;
       ec.feature_space[nn_output_namespace].deep_copy_from(n.output_layer.feature_space[nn_output_namespace]);
 
-      ec.total_sum_feat_sq += tmp_sum_feat_sq;
       if (is_learn)
         base.learn(ec, n.k);
       else
         base.predict(ec, n.k);
       n.output_layer.partial_prediction = ec.partial_prediction;
       n.output_layer.loss = ec.loss;
-      ec.total_sum_feat_sq -= tmp_sum_feat_sq;
       ec.feature_space[nn_output_namespace].sum_feat_sq = 0;
       std::swap(ec.feature_space[nn_output_namespace], save_nn_output_namespace);
       ec.indices.pop_back();

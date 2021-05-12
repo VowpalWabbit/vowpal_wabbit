@@ -163,7 +163,7 @@ void finish_example(vw& all, mwt& c, example& ec)
   if (c.learn)
     if (c.optional_observation.first)
       loss = get_cost_estimate(c.optional_observation.second, static_cast<uint32_t>(ec.pred.scalars[0]));
-  all.sd->update(ec.test_only, c.optional_observation.first, loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, c.optional_observation.first, loss, 1.f, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink) print_scalars(sink.get(), ec.pred.scalars, ec.tag);
 

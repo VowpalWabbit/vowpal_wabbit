@@ -40,6 +40,7 @@
     <ClCompile Condition="'$(BuildFlatbuffers)'=='ON'" Include="flatbuffer_parser_test.cc" />
     <ClCompile Include="guard_test.cc" />
     <ClCompile Include="initialize_test.cc" />
+    <ClCompile Include="interactions_test.cc" />
     <ClCompile Include="io_adapter_test.cc" />
     <ClCompile Include="json_parser_test.cc" />
     <ClCompile Include="main.cc" />
