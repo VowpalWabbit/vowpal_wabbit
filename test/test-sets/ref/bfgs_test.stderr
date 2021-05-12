@@ -1,0 +1,26 @@
+predictions = bfgs_precon.predict
+enabling BFGS based optimization **without** curvature calculation
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+m = 15
+Allocated 34M for weights and mem
+## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size
+creating cache_file = test-sets/rcv1_small_test.data.cache
+Reading datafile = test-sets/rcv1_small_test.data
+num sources = 1
+Enabled reductions: bfgs, scorer
+ 1 0.65662   	0.45767   	25.46642  	          	          	          	1028.91205	61827.71875	0.02475
+ 3 h0.49469   	0.05367   	0.00000   	 0.532968  	0.069101  	          	          	10868.40137	0.00000
+
+finished run
+number of examples per pass = 450
+passes used = 3
+weighted example sum = 1350.000000
+weighted label sum = -24.000000
+average loss = 0.494691 h
+best constant = -0.017778
+best constant's loss = 0.999684
+total feature number = 105303
