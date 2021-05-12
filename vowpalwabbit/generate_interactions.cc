@@ -122,23 +122,32 @@ std::vector<std::vector<namespace_index>> generate_permutations_with_repetition(
   return result;
 }
 
-template <bool is_learn, generate_func_t generate_func, bool leave_duplicate_interactions>
-void transform_single_ex(generate_interactions& in, VW::LEARNER::single_learner& base, example& ec)
+template <generate_func_t generate_func, bool leave_duplicate_interactions>
+void update_interactions_if_new_namespace_seen(generate_interactions& data, const std::vector<std::vector<namespace_index>>& interactions, const v_array<namespace_index>& new_example_indices)
 {
-  auto prev_count = in.all_seen_namespaces.size();
-  in.all_seen_namespaces.insert(ec.indices.begin(), ec.indices.end());
+  auto prev_count = data.all_seen_namespaces.size();
+  data.all_seen_namespaces.insert(new_example_indices.begin(), new_example_indices.end());
 
-  if (prev_count != in.all_seen_namespaces.size())
+  if (prev_count != data.all_seen_namespaces.size())
   {
-    auto constant_namespace_it = in.all_seen_namespaces.find(constant_namespace);
-    if (constant_namespace_it != in.all_seen_namespaces.end()) { in.all_seen_namespaces.erase(constant_namespace_it); }
-    in.generated_interactions =
-        compile_interactions<generate_func, leave_duplicate_interactions>(*ec.interactions, in.all_seen_namespaces);
-    in.all_seen_namespaces.insert(constant_namespace);
+    // Generating interactions for the constant namespace doesn't really make sense since it will essentially just be another copy of each feature itself.
+    // To prevent these getting generated we remove it from the set temporarily then add it back after.
+    auto constant_namespace_it = data.all_seen_namespaces.find(constant_namespace);
+    if (constant_namespace_it != data.all_seen_namespaces.end()) { data.all_seen_namespaces.erase(constant_namespace_it); }
+    data.generated_interactions =
+        compile_interactions<generate_func, leave_duplicate_interactions>(interactions, data.all_seen_namespaces);
+    data.all_seen_namespaces.insert(constant_namespace);
   }
+}
+
+template <bool is_learn, generate_func_t generate_func, bool leave_duplicate_interactions>
+void transform_single_ex(generate_interactions& data, VW::LEARNER::single_learner& base, example& ec)
+{
+  // We pass *ec.interactions here BUT the contract is that this does not change...
+  update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(data, *ec.interactions, ec.indices);
 
   auto* saved_interactions = ec.interactions;
-  ec.interactions = &in.generated_interactions;
+  ec.interactions = &data.generated_interactions;
 
   if (is_learn) { base.learn(ec); }
   else
@@ -149,44 +158,26 @@ void transform_single_ex(generate_interactions& in, VW::LEARNER::single_learner&
 }
 
 template <generate_func_t generate_func, bool leave_duplicate_interactions>
-void update(generate_interactions& in, VW::LEARNER::single_learner& base, example& ec)
+void update(generate_interactions& data, VW::LEARNER::single_learner& base, example& ec)
 {
-  auto prev_count = in.all_seen_namespaces.size();
-  in.all_seen_namespaces.insert(ec.indices.begin(), ec.indices.end());
-
-  if (prev_count != in.all_seen_namespaces.size())
-  {
-    auto constant_namespace_it = in.all_seen_namespaces.find(constant_namespace);
-    if (constant_namespace_it != in.all_seen_namespaces.end()) { in.all_seen_namespaces.erase(constant_namespace_it); }
-    in.generated_interactions =
-        compile_interactions<generate_func, leave_duplicate_interactions>(*ec.interactions, in.all_seen_namespaces);
-    in.all_seen_namespaces.insert(constant_namespace);
-  }
+  // We pass *ec.interactions here BUT the contract is that this does not change...
+  update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(data, *ec.interactions, ec.indices);
 
   auto* saved_interactions = ec.interactions;
-  ec.interactions = &in.generated_interactions;
+  ec.interactions = &data.generated_interactions;
   base.update(ec);
   ec.interactions = saved_interactions;
 }
 
 template <generate_func_t generate_func, bool leave_duplicate_interactions>
-inline void multipredict(generate_interactions& in, VW::LEARNER::single_learner& base, example& ec, size_t count,
+inline void multipredict(generate_interactions& data, VW::LEARNER::single_learner& base, example& ec, size_t count,
     size_t, polyprediction* pred, bool finalize_predictions)
 {
-  auto prev_count = in.all_seen_namespaces.size();
-  in.all_seen_namespaces.insert(ec.indices.begin(), ec.indices.end());
-
-  if (prev_count != in.all_seen_namespaces.size())
-  {
-    auto constant_namespace_it = in.all_seen_namespaces.find(constant_namespace);
-    if (constant_namespace_it != in.all_seen_namespaces.end()) { in.all_seen_namespaces.erase(constant_namespace_it); }
-    in.generated_interactions =
-        compile_interactions<generate_func, leave_duplicate_interactions>(*ec.interactions, in.all_seen_namespaces);
-    in.all_seen_namespaces.insert(constant_namespace);
-  }
+  // We pass *ec.interactions here BUT the contract is that this does not change...
+  update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(data, *ec.interactions, ec.indices);
 
   auto* saved_interactions = ec.interactions;
-  ec.interactions = &in.generated_interactions;
+  ec.interactions = &data.generated_interactions;
   base.multipredict(ec, 0, count, pred, finalize_predictions);
   ec.interactions = saved_interactions;
 }
