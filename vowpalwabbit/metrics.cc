@@ -54,17 +54,17 @@ void list_to_json_file(
     // ds_metrics is nullptr when --dsjson is disabled
     if (ds_metrics)
     {
-      writer.Key("NumberOfSkippedEvents");
+      writer.Key("number_skipped_events");
       writer.Int64(ds_metrics->NumberOfSkippedEvents);
-      writer.Key("NumberOfEventsZeroActions");
+      writer.Key("number_events_zero_actions");
       writer.Int64(ds_metrics->NumberOfEventsZeroActions);
-      writer.Key("FirstEventId");
+      writer.Key("first_event_id");
       writer.String(ds_metrics->FirstEventId.c_str());
-      writer.Key("FirstEventTime");
+      writer.Key("first_event_time");
       writer.String(ds_metrics->FirstEventTime.c_str());
-      writer.Key("LastEventId");
+      writer.Key("last_event_id");
       writer.String(ds_metrics->LastEventId.c_str());
-      writer.Key("LastEventTime");
+      writer.Key("last_event_time");
       writer.String(ds_metrics->LastEventTime.c_str());
     }
 
