@@ -1732,20 +1732,23 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
         reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 
-    if (!interaction.eventId.empty())
+    if (all->example_parser->metrics)
     {
-      if (all->example_parser->metrics->FirstEventId.empty())
-        all->example_parser->metrics->FirstEventId = std::move(interaction.eventId);
-      else
-        all->example_parser->metrics->LastEventId = std::move(interaction.eventId);
-    }
+      if (!interaction.eventId.empty())
+      {
+        if (all->example_parser->metrics->FirstEventId.empty())
+          all->example_parser->metrics->FirstEventId = std::move(interaction.eventId);
+        else
+          all->example_parser->metrics->LastEventId = std::move(interaction.eventId);
+      }
 
-    if (!interaction.timestamp.empty())
-    {
-      if (all->example_parser->metrics->FirstEventTime.empty())
-        all->example_parser->metrics->FirstEventTime = std::move(interaction.timestamp);
-      else
-        all->example_parser->metrics->LastEventTime = std::move(interaction.timestamp);
+      if (!interaction.timestamp.empty())
+      {
+        if (all->example_parser->metrics->FirstEventTime.empty())
+          all->example_parser->metrics->FirstEventTime = std::move(interaction.timestamp);
+        else
+          all->example_parser->metrics->LastEventTime = std::move(interaction.timestamp);
+      }
     }
 
     // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
@@ -1753,7 +1756,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     // for counterfactual. (@marco)
     if (interaction.skipLearn)
     {
-      all->example_parser->metrics->NumberOfSkippedEvents++;
+      if (all->example_parser->metrics) all->example_parser->metrics->NumberOfSkippedEvents++;
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
       return false;
@@ -1762,7 +1765,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     // let's ask to continue reading data until we find a line with actions provided
     if (interaction.actions.size() == 0 && all->l->is_multiline)
     {
-      all->example_parser->metrics->NumberOfEventsZeroActions++;
+      if (all->example_parser->metrics) all->example_parser->metrics->NumberOfEventsZeroActions++;
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
       return false;
