@@ -224,8 +224,8 @@ VW::LEARNER::base_learner* generate_interactions_setup(options_i& options, vw& a
   {
     learn_func = transform_single_ex<true, generate_combinations_with_repetition, false>;
     pred_func = transform_single_ex<false, generate_combinations_with_repetition, false>;
-    update_func = update<generate_combinations_with_repetition, true>;
-    multipredict_func = multipredict<generate_combinations_with_repetition, true>;
+    update_func = update<generate_combinations_with_repetition, false>;
+    multipredict_func = multipredict<generate_combinations_with_repetition, false>;
   }
 
   auto data = VW::make_unique<generate_interactions>();
