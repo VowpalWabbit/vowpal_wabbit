@@ -76,7 +76,7 @@ void output_metrics(vw& all)
 #ifdef BUILD_EXTERNAL_PARSER
     if (all.external_parser)
     {
-      all.external_parser->persist_metrics(list_metrics);
+      all.external_parser->persist_metrics(list_metrics.int_metrics_list);
       // fetch metrics of parser
     }
 #endif
