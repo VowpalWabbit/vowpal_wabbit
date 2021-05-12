@@ -1287,6 +1287,8 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(OjaNewton_setup);
   // reductions.push_back(VW_CNTK::setup);
 
+  reductions.push_back(mf_setup);
+
   reductions.push_back(generate_interactions_setup);
 
   // Score Users
@@ -1296,7 +1298,6 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(active_cover_setup);
   reductions.push_back(confidence_setup);
   reductions.push_back(nn_setup);
-  reductions.push_back(mf_setup);
   reductions.push_back(marginal_setup);
   reductions.push_back(autolink_setup);
   reductions.push_back(lrq_setup);

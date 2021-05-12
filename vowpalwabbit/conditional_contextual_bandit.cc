@@ -56,8 +56,8 @@ void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interact
     new_interactions.push_back(interaction_copy2);
   }
   std::copy(new_interactions.begin(), new_interactions.end(), std::back_inserter(interactions_to_add_to));
-  interactions_to_add_to.push_back({':', ccb_id_namespace});
-  interactions_to_add_to.push_back({':', ccb_slot_namespace});
+  interactions_to_add_to.push_back({wildcard_namespace, ccb_id_namespace});
+  interactions_to_add_to.push_back({wildcard_namespace, ccb_slot_namespace});
 }
 
 struct ccb

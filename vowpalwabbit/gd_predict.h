@@ -73,6 +73,7 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::arr
     }
   else
     for (features& f : ec) foreach_feature<DataT, FuncT, WeightsT>(weights, f, dat, offset);
+
   generate_interactions<DataT, WeightOrIndexT, FuncT, WeightsT>(
       interactions, permutations, ec, dat, weights, num_interacted_features);
 }

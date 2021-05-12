@@ -19,7 +19,7 @@ std::vector<std::vector<namespace_index>> generate_permutations_with_repetition(
 
 inline bool contains_wildcard(const std::vector<namespace_index>& interaction)
 {
-  return std::find(interaction.begin(), interaction.end(), ':') != interaction.end();
+  return std::find(interaction.begin(), interaction.end(), wildcard_namespace) != interaction.end();
 }
 
 using generate_func_t = std::vector<std::vector<namespace_index>>(
@@ -34,7 +34,7 @@ std::vector<std::vector<namespace_index>> compile_interaction(
   size_t num_wildcards = 0;
   for (size_t i = 0; i < interaction.size(); i++)
   {
-    if (interaction[i] != ':')
+    if (interaction[i] != wildcard_namespace)
     {
       insertion_indices.push_back(i);
       insertion_ns.push_back(interaction[i]);
