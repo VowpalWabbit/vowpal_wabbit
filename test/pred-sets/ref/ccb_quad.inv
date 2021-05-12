@@ -13,7 +13,7 @@ event_sum 24
 action_sum 96
 :1
 initial_t 0
-norm normalizer 415.456
+norm normalizer 292.778
 t 8
 sum_loss -1.15476
 sum_loss_since_last_dump 0
@@ -24,7 +24,7 @@ weighted_labeled_examples 8
 weighted_labels 0
 weighted_unlabeled_examples 0
 example_number 8
-total_features 1151
+total_features 758
 total_weight 15.2712
 sd::oec.weighted_labeled_examples 8
 current_pass 1
