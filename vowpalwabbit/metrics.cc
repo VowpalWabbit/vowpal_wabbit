@@ -33,8 +33,7 @@ struct metrics_data
   size_t predicted_not_first = 0;
 };
 
-void list_to_json_file(
-    dsjson_metrics* ds_metrics, std::string filename, metric_sink& metrics)
+void list_to_json_file(dsjson_metrics* ds_metrics, std::string filename, metric_sink& metrics)
 {
   FILE* fp;
 
@@ -93,10 +92,7 @@ void output_metrics(vw& all)
     all.l->persist_metrics(list_metrics);
 
 #ifdef BUILD_EXTERNAL_PARSER
-    if (all.external_parser)
-    {
-      all.external_parser->persist_metrics(list_metrics.int_metrics_list);
-    }
+    if (all.external_parser) { all.external_parser->persist_metrics(list_metrics.int_metrics_list); }
 #endif
 
     list_to_json_file(all.example_parser->metrics.get(), filename, list_metrics);
