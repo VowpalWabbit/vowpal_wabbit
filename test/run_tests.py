@@ -594,9 +594,9 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
             test['skip'] = True
             continue
         #todo: 300 understand why is it failing
-        # test 189, 312, 316 and 317 depend on dsjson parser behaviour
+        # test 189, 312, 316, 317 and 318 depend on dsjson parser behaviour
         # they can be enabled if we ignore diffing the --extra_metrics
-        if str(test_id) in ('300', '189', '312', '316', '317'):
+        if str(test_id) in ('300', '189', '312', '316', '317', '318'):
             continue
 
         # test id is being used as an index here, not necessarily a contract

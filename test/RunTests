@@ -2334,4 +2334,9 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/metrics_ccb.stderr
     test-sets/ref/metrics_ccb.json
 
+# Test 318: test extra_metrics with djson ccb, without event_id
+{VW} -d train-sets/ccb_data_noevent.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_noevent.json
+    train-sets/ref/metrics_ccb_noevent.stderr
+    test-sets/ref/metrics_ccb_noevent.json
+
 # Do not delete this line or the empty line above it
