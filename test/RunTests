@@ -1729,8 +1729,9 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     pred-sets/ref/cb_adf_sm.predict
 
 # Test 189: test dsjson parser correctly processes checkpoint and dangling observation lines
-{VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -P 1
+{VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -P 1 --extra_metrics metrics_skip.json
     train-sets/ref/b1848_dsjson_parser_regression.stderr
+    test-sets/ref/metrics_skip.json
 
 # Test 190: one-against-all with subsampling
 {VW} -k --oaa 10 --oaa_subsample 5 -c --passes 10 -d train-sets/multiclass --holdout_off
@@ -2322,5 +2323,10 @@ train-sets/ref/slates_simple_w_interactions.stderr
 # Test 315: squarecb save_load, load model
 {VW} -d train-sets/squarecb_load.dat --cb_explore_adf -q UA --squarecb -i models/sqcb_ld.model -t
     train-sets/ref/squarecb_load.stderr
+
+# Test 316: test extra_metrics with djson timestamps
+{VW} -d train-sets/dsjson_cb.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT --extra_metrics metrics_time.json
+    train-sets/ref/metrics_time.stderr
+    test-sets/ref/metrics_time.json
 
 # Do not delete this line or the empty line above it

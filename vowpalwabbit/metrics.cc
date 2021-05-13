@@ -33,7 +33,7 @@ struct metrics_data
   size_t predicted_not_first = 0;
 };
 
-void list_to_json_file(std::string filename, metric_sink& metrics)
+void list_to_json_file(dsjson_metrics* ds_metrics, std::string filename, metric_sink& metrics)
 {
   FILE* fp;
 
@@ -54,6 +54,24 @@ void list_to_json_file(std::string filename, metric_sink& metrics)
       writer.Key(m.first.c_str());
       writer.Double(static_cast<double>(m.second));
     }
+
+    // ds_metrics is nullptr when --dsjson is disabled
+    if (ds_metrics)
+    {
+      writer.Key("number_skipped_events");
+      writer.Int64(ds_metrics->NumberOfSkippedEvents);
+      writer.Key("number_events_zero_actions");
+      writer.Int64(ds_metrics->NumberOfEventsZeroActions);
+      writer.Key("first_event_id");
+      writer.String(ds_metrics->FirstEventId.c_str());
+      writer.Key("first_event_time");
+      writer.String(ds_metrics->FirstEventTime.c_str());
+      writer.Key("last_event_id");
+      writer.String(ds_metrics->LastEventId.c_str());
+      writer.Key("last_event_time");
+      writer.String(ds_metrics->LastEventTime.c_str());
+    }
+
     writer.EndObject();
 
     fclose(fp);
@@ -74,14 +92,10 @@ void output_metrics(vw& all)
     all.l->persist_metrics(list_metrics);
 
 #ifdef BUILD_EXTERNAL_PARSER
-    if (all.external_parser)
-    {
-      all.external_parser->persist_metrics(list_metrics.int_metrics_list);
-      // fetch metrics of parser
-    }
+    if (all.external_parser) { all.external_parser->persist_metrics(list_metrics.int_metrics_list); }
 #endif
 
-    list_to_json_file(filename, list_metrics);
+    list_to_json_file(all.example_parser->metrics.get(), filename, list_metrics);
   }
 }
 

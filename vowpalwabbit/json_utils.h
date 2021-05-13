@@ -12,6 +12,7 @@
 struct DecisionServiceInteraction
 {
   std::string eventId;
+  std::string timestamp;
   std::vector<unsigned> actions;
   std::vector<float> probabilities;
   float probabilityOfDrop = 0.f;
