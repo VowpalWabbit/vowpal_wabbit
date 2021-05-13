@@ -2329,4 +2329,9 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/metrics_time.stderr
     test-sets/ref/metrics_time.json
 
+# Test 317: test extra_metrics with djson ccb
+{VW} -d train-sets/ccb_data.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb.json
+    train-sets/ref/metrics_ccb.stderr
+    test-sets/ref/metrics_ccb.json
+
 # Do not delete this line or the empty line above it
