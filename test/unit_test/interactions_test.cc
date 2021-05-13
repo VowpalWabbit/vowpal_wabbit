@@ -62,7 +62,7 @@ inline void noop_func(float& unused_dat, const float ft_weight, const uint64_t f
 
 BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
 {
-  auto& vw = *VW::initialize("--quiet -q ::", nullptr, false, nullptr, nullptr);
+  auto& vw = *VW::initialize("--quiet -q :: --noconstant", nullptr, false, nullptr, nullptr);
   auto* ex = VW::read_example(vw, std::string("3 |f a b c |e x y z"));
 
   size_t naive_features_count;
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
 
 BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_permuations_test)
 {
-  auto& vw = *VW::initialize("--quiet -q :: --leave_duplicate_interactions", nullptr, false, nullptr, nullptr);
+  auto& vw = *VW::initialize("--quiet -q :: --leave_duplicate_interactions --permutations --noconstant", nullptr, false, nullptr, nullptr);
   auto* ex = VW::read_example(vw, std::string("3 |f a b c |e x y z"));
 
   auto interactions = INTERACTIONS::compile_interactions<INTERACTIONS::generate_permutations_with_repetition, true>(

@@ -214,23 +214,22 @@ inline bool must_be_left_sorted(const std::vector<namespace_index>& oi)
 std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interactions(
     bool leave_duplicate_interactions, const std::set<namespace_index>& new_example_indices)
 {
-// TODO make this a set
-  std::vector<std::vector<namespace_index>> interactions;
+  std::set<std::vector<namespace_index>> interactions;
 
   for (auto it = new_example_indices.begin(); it != new_example_indices.end(); ++it)
   {
     auto idx1 = *it;
-    interactions.push_back({idx1, idx1});
+    interactions.insert({idx1, idx1});
 
     for (auto jt = it; jt != new_example_indices.end(); ++jt)
     {
       auto idx2 = *jt;
-      interactions.push_back({idx1, idx2});
-      interactions.push_back({idx2, idx2});
-      if (leave_duplicate_interactions) { interactions.push_back({idx2, idx1}); }
+      interactions.insert({idx1, idx2});
+      interactions.insert({idx2, idx2});
+      if (leave_duplicate_interactions) { interactions.insert({idx2, idx1}); }
     }
   }
-  return interactions;
+  return std::vector<std::vector<namespace_index>>(interactions.begin(), interactions.end());
 }
 
 
