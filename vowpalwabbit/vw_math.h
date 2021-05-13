@@ -36,7 +36,8 @@ VW_STD14_CONSTEXPR inline int64_t factorial(int64_t n) noexcept
 /// Both n and k must be non-zero
 inline int64_t number_of_combinations_with_repetition(int64_t n, int64_t k)
 {
-  if ((n + k) > 21) { THROW_OR_RETURN_NORMAL("Magnitude of (n + k) is too large (> 21). Cannot compute combinations.", 0); }
+  if ((n + k) > 21)
+  { THROW_OR_RETURN_NORMAL("Magnitude of (n + k) is too large (> 21). Cannot compute combinations.", 0); }
   return factorial(n + k - 1) / (factorial(n - 1) * factorial(k));
 }
 

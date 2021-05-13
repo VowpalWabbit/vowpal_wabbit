@@ -48,8 +48,8 @@ void update(INTERACTIONS::interactions_generator& data, VW::LEARNER::single_lear
 }
 
 template <INTERACTIONS::generate_func_t generate_func, bool leave_duplicate_interactions>
-inline void multipredict(INTERACTIONS::interactions_generator& data, VW::LEARNER::single_learner& base, example& ec, size_t count,
-    size_t, polyprediction* pred, bool finalize_predictions)
+inline void multipredict(INTERACTIONS::interactions_generator& data, VW::LEARNER::single_learner& base, example& ec,
+    size_t count, size_t, polyprediction* pred, bool finalize_predictions)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
@@ -85,8 +85,8 @@ VW::LEARNER::base_learner* generate_interactions_setup(options_i& options, vw& a
   if (!interactions_spec_contains_wildcards && !options.was_supplied("ccb_explore_adf")) return nullptr;
 
   using learn_pred_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, example&);
-  using multipredict_func_t =
-      void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool);
+  using multipredict_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, example&,
+      size_t, size_t, polyprediction*, bool);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
   learn_pred_func_t update_func;
@@ -101,10 +101,10 @@ VW::LEARNER::base_learner* generate_interactions_setup(options_i& options, vw& a
   }
   else
   {
-  learn_func = transform_single_ex<true, INTERACTIONS::generate_combinations_with_repetition, false>;
-  pred_func = transform_single_ex<false, INTERACTIONS::generate_combinations_with_repetition, false>;
-  update_func = update<INTERACTIONS::generate_combinations_with_repetition, false>;
-  multipredict_func = multipredict<INTERACTIONS::generate_combinations_with_repetition, false>;
+    learn_func = transform_single_ex<true, INTERACTIONS::generate_combinations_with_repetition, false>;
+    pred_func = transform_single_ex<false, INTERACTIONS::generate_combinations_with_repetition, false>;
+    update_func = update<INTERACTIONS::generate_combinations_with_repetition, false>;
+    multipredict_func = multipredict<INTERACTIONS::generate_combinations_with_repetition, false>;
   }
 
   auto data = VW::make_unique<INTERACTIONS::interactions_generator>();

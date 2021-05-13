@@ -18,7 +18,6 @@ using namespace VW::config;
 
 namespace INTERACTIONS
 {
-
 /*
  *  Estimation of generated features properties
  */
@@ -232,7 +231,6 @@ std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interaction
   return std::vector<std::vector<namespace_index>>(interactions.begin(), interactions.end());
 }
 
-
 // used from parse_args.cc
 // filter duplicate namespaces treating them as unordered sets of namespaces.
 // also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
@@ -389,6 +387,4 @@ std::vector<std::vector<namespace_index>> generate_permutations_with_repetition(
   return result;
 }
 
-
-
-}
+}  // namespace INTERACTIONS

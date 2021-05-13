@@ -303,10 +303,7 @@ public:
     // VW performs the following transformation as a side-effect of looking for duplicates.
     // This affects how interaction hashes are generated.
     std::vector<std::vector<namespace_index>> vec_sorted;
-    for (auto& interaction : _interactions)
-    {
-      std::sort(std::begin(interaction), std::end(interaction));
-    }
+    for (auto& interaction : _interactions) { std::sort(std::begin(interaction), std::end(interaction)); }
 
     for (const auto& inter : _interactions)
     {
@@ -426,10 +423,14 @@ public:
     if (_contains_wildcard)
     {
       // permutations is not supported by slim so we can just use combinations!
-      _generate_interactions.update_interactions_if_new_namespace_seen<INTERACTIONS::generate_combinations_with_repetition, false>(_interactions, ex.indices);
-      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions, /* permutations */ false, ex);
+      _generate_interactions
+          .update_interactions_if_new_namespace_seen<INTERACTIONS::generate_combinations_with_repetition, false>(
+              _interactions, ex.indices);
+      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions,
+          /* permutations */ false, ex);
     }
-    else{
+    else
+    {
       score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, /* permutations */ false, ex);
     }
     return S_VW_PREDICT_OK;

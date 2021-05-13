@@ -58,7 +58,6 @@ bool sort_interactions_comparator(const std::vector<namespace_index>& a, const s
 void sort_and_filter_duplicate_interactions(
     std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt);
 
-
 template <generate_func_t generate_func, bool leave_duplicate_interactions>
 std::vector<std::vector<namespace_index>> compile_interaction(
     const std::vector<namespace_index>& interaction, const std::set<namespace_index>& indices)
@@ -119,11 +118,13 @@ struct interactions_generator
 {
 private:
   std::set<namespace_index> all_seen_namespaces;
+
 public:
   std::vector<std::vector<namespace_index>> generated_interactions;
 
   template <generate_func_t generate_func, bool leave_duplicate_interactions>
-  void update_interactions_if_new_namespace_seen(const std::vector<std::vector<namespace_index>>& interactions, const v_array<namespace_index>& new_example_indices)
+  void update_interactions_if_new_namespace_seen(const std::vector<std::vector<namespace_index>>& interactions,
+      const v_array<namespace_index>& new_example_indices)
   {
     auto prev_count = all_seen_namespaces.size();
     all_seen_namespaces.insert(new_example_indices.begin(), new_example_indices.end());
@@ -134,8 +135,7 @@ public:
       // another copy of each feature itself. To prevent these getting generated we remove it from the set temporarily
       // then add it back after.
       auto constant_namespace_it = all_seen_namespaces.find(constant_namespace);
-      if (constant_namespace_it != all_seen_namespaces.end())
-      { all_seen_namespaces.erase(constant_namespace_it); }
+      if (constant_namespace_it != all_seen_namespaces.end()) { all_seen_namespaces.erase(constant_namespace_it); }
       generated_interactions =
           compile_interactions<generate_func, leave_duplicate_interactions>(interactions, all_seen_namespaces);
       all_seen_namespaces.insert(constant_namespace);
@@ -143,4 +143,4 @@ public:
   }
 };
 
-}
+}  // namespace INTERACTIONS

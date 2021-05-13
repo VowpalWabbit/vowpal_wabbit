@@ -91,7 +91,8 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
 
 BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_permuations_test)
 {
-  auto& vw = *VW::initialize("--quiet -q :: --leave_duplicate_interactions --permutations --noconstant", nullptr, false, nullptr, nullptr);
+  auto& vw = *VW::initialize(
+      "--quiet -q :: --leave_duplicate_interactions --permutations --noconstant", nullptr, false, nullptr, nullptr);
   auto* ex = VW::read_example(vw, std::string("3 |f a b c |e x y z"));
 
   auto interactions = INTERACTIONS::compile_interactions<INTERACTIONS::generate_permutations_with_repetition, true>(
@@ -158,8 +159,10 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations_and_combination
   std::vector<std::vector<namespace_index>> interactions = {{':', 'a'}};
 
   // Permutations implies leave duplicate interactions (second template arg)
-  auto result_perms = INTERACTIONS::compile_interactions<INTERACTIONS::generate_permutations_with_repetition, true>(interactions, indices);
-  auto result_combs = INTERACTIONS::compile_interactions<INTERACTIONS::generate_combinations_with_repetition, false>(interactions, indices);
+  auto result_perms = INTERACTIONS::compile_interactions<INTERACTIONS::generate_permutations_with_repetition, true>(
+      interactions, indices);
+  auto result_combs = INTERACTIONS::compile_interactions<INTERACTIONS::generate_combinations_with_repetition, false>(
+      interactions, indices);
 
   std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'b', 'a'}, {'c', 'a'}, {'d', 'a'}};
 
@@ -175,7 +178,8 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_combinations)
   std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<namespace_index>> interactions = {{':', ':'}};
 
-  auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_combinations_with_repetition, false>(interactions, indices);
+  auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_combinations_with_repetition, false>(
+      interactions, indices);
 
   std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'b'},
       {'b', 'c'}, {'b', 'd'}, {'c', 'c'}, {'c', 'd'}, {'d', 'd'}};
@@ -190,7 +194,8 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations)
   std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<namespace_index>> interactions = {{':', ':'}};
 
-  auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_permutations_with_repetition, true>(interactions, indices);
+  auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_permutations_with_repetition, true>(
+      interactions, indices);
 
   std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'a'},
       {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'a'}, {'c', 'b'}, {'c', 'c'}, {'c', 'd'}, {'d', 'a'}, {'d', 'b'},
@@ -206,7 +211,8 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_combinations)
   std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<namespace_index>> interactions = {{':', ':', ':'}};
 
-  auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_combinations_with_repetition, false>(interactions, indices);
+  auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_combinations_with_repetition, false>(
+      interactions, indices);
 
   std::vector<std::vector<namespace_index>> compare_set = {
       {'a', 'a', 'a'},
@@ -241,7 +247,8 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_permutations)
   std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<namespace_index>> interactions = {{':', ':', ':'}};
 
-  auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_permutations_with_repetition, true>(interactions, indices);
+  auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_permutations_with_repetition, true>(
+      interactions, indices);
 
   std::vector<std::vector<namespace_index>> compare_set = {
       {'a', 'a', 'a'}, {'a', 'a', 'b'}, {'a', 'a', 'c'}, {'a', 'a', 'd'}, {'a', 'b', 'a'}, {'a', 'b', 'b'},

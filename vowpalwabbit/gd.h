@@ -135,13 +135,10 @@ inline float trunc_weight(const float w, const float gravity)
   return (gravity < fabsf(w)) ? w - VW::math::sign(w) * gravity : 0.f;
 }
 
-
 }  // namespace GD
-
 
 namespace INTERACTIONS
 {
-
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*)>
 inline void generate_interactions(vw& all, example_predict& ec, R& dat, size_t& num_interacted_features)
 {
@@ -165,4 +162,4 @@ inline void generate_interactions(vw& all, example_predict& ec, R& dat, size_t& 
         all.interactions, all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features);
 }
 
-}
+}  // namespace INTERACTIONS
