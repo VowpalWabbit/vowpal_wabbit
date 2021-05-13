@@ -559,8 +559,8 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
-  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions);
-       i != std::end(vw1.interactions); ++i, ++j)
+  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
+       ++i, ++j)
     if (*i != *j) return "interaction mismatch";
 
   return nullptr;
@@ -762,7 +762,7 @@ void parse_feature_tweaks(
         << endl;
 
     // in case arrays were already filled in with values from old model file - reset them
-    if (!all.interactions.empty()) { all.interactions.clear();}
+    if (!all.interactions.empty()) { all.interactions.clear(); }
   }
 
   if (options.was_supplied("quadratic"))
@@ -779,14 +779,15 @@ void parse_feature_tweaks(
 
     if (!all.logger.quiet && !options.was_supplied("leave_duplicate_interactions"))
     {
-      bool contains_wildcard_quadratic = std::find_if(quadratics.begin(), quadratics.end(), [](const std::string& interaction){ return interaction.find(':') != std::string::npos;}) != quadratics.end();
+      bool contains_wildcard_quadratic =
+          std::find_if(quadratics.begin(), quadratics.end(), [](const std::string& interaction) {
+            return interaction.find(':') != std::string::npos;
+          }) != quadratics.end();
       if (contains_wildcard_quadratic)
       {
-
-          *(all.trace_message) << "\n"
-                               << "WARNING: any duplicate namespace interactions will be removed\n"
-                               << "You can use --leave_duplicate_interactions to disable this behaviour.";
-
+        *(all.trace_message) << "\n"
+                             << "WARNING: any duplicate namespace interactions will be removed\n"
+                             << "You can use --leave_duplicate_interactions to disable this behaviour.";
       }
     }
 

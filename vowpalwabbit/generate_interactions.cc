@@ -57,9 +57,7 @@ std::vector<std::vector<namespace_index>> generate_combinations_with_repetition(
   std::vector<std::vector<namespace_index>> result;
   // This computation involves factorials and so can only be done with relatively small inputs.
   if ((namespaces.size() + num_to_pick) <= 21)
-  {
-    result.reserve(VW::math::number_of_combinations_with_repetition(namespaces.size(), num_to_pick));
-  }
+  { result.reserve(VW::math::number_of_combinations_with_repetition(namespaces.size(), num_to_pick)); }
 
   auto last_index = namespaces.size() - 1;
   // last index is used to signal when done
@@ -123,17 +121,20 @@ std::vector<std::vector<namespace_index>> generate_permutations_with_repetition(
 }
 
 template <generate_func_t generate_func, bool leave_duplicate_interactions>
-void update_interactions_if_new_namespace_seen(generate_interactions& data, const std::vector<std::vector<namespace_index>>& interactions, const v_array<namespace_index>& new_example_indices)
+void update_interactions_if_new_namespace_seen(generate_interactions& data,
+    const std::vector<std::vector<namespace_index>>& interactions, const v_array<namespace_index>& new_example_indices)
 {
   auto prev_count = data.all_seen_namespaces.size();
   data.all_seen_namespaces.insert(new_example_indices.begin(), new_example_indices.end());
 
   if (prev_count != data.all_seen_namespaces.size())
   {
-    // Generating interactions for the constant namespace doesn't really make sense since it will essentially just be another copy of each feature itself.
-    // To prevent these getting generated we remove it from the set temporarily then add it back after.
+    // Generating interactions for the constant namespace doesn't really make sense since it will essentially just be
+    // another copy of each feature itself. To prevent these getting generated we remove it from the set temporarily
+    // then add it back after.
     auto constant_namespace_it = data.all_seen_namespaces.find(constant_namespace);
-    if (constant_namespace_it != data.all_seen_namespaces.end()) { data.all_seen_namespaces.erase(constant_namespace_it); }
+    if (constant_namespace_it != data.all_seen_namespaces.end())
+    { data.all_seen_namespaces.erase(constant_namespace_it); }
     data.generated_interactions =
         compile_interactions<generate_func, leave_duplicate_interactions>(interactions, data.all_seen_namespaces);
     data.all_seen_namespaces.insert(constant_namespace);
@@ -144,7 +145,8 @@ template <bool is_learn, generate_func_t generate_func, bool leave_duplicate_int
 void transform_single_ex(generate_interactions& data, VW::LEARNER::single_learner& base, example& ec)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
-  update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(data, *ec.interactions, ec.indices);
+  update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
+      data, *ec.interactions, ec.indices);
 
   auto* saved_interactions = ec.interactions;
   ec.interactions = &data.generated_interactions;
@@ -161,7 +163,8 @@ template <generate_func_t generate_func, bool leave_duplicate_interactions>
 void update(generate_interactions& data, VW::LEARNER::single_learner& base, example& ec)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
-  update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(data, *ec.interactions, ec.indices);
+  update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
+      data, *ec.interactions, ec.indices);
 
   auto* saved_interactions = ec.interactions;
   ec.interactions = &data.generated_interactions;
@@ -174,7 +177,8 @@ inline void multipredict(generate_interactions& data, VW::LEARNER::single_learne
     size_t, polyprediction* pred, bool finalize_predictions)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
-  update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(data, *ec.interactions, ec.indices);
+  update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
+      data, *ec.interactions, ec.indices);
 
   auto* saved_interactions = ec.interactions;
   ec.interactions = &data.generated_interactions;

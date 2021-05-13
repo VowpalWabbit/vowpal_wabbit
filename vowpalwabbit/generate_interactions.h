@@ -37,7 +37,8 @@ inline bool sort_interactions_comparator(const std::vector<namespace_index>& a, 
   return false;
 }
 
-inline std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interactions(bool leave_duplicate_interactions, const std::set<namespace_index>& new_example_indices)
+inline std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interactions(
+    bool leave_duplicate_interactions, const std::set<namespace_index>& new_example_indices)
 {
   std::vector<std::vector<namespace_index>> interactions;
 
@@ -51,10 +52,7 @@ inline std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_inte
       auto idx2 = *jt;
       interactions.push_back({idx1, idx2});
       interactions.push_back({idx2, idx2});
-      if (leave_duplicate_interactions)
-      {
-        interactions.push_back({idx2, idx1});
-      }
+      if (leave_duplicate_interactions) { interactions.push_back({idx2, idx1}); }
     }
   }
   return interactions;
@@ -84,7 +82,8 @@ std::vector<std::vector<namespace_index>> compile_interaction(
   }
 
   // Quadratic fast path or generic generation function.
-  auto result = num_wildcards == 2 ? expand_quadratics_wildcard_interactions(leave_duplicate_interactions, indices) : generate_func(indices, num_wildcards);
+  auto result = num_wildcards == 2 ? expand_quadratics_wildcard_interactions(leave_duplicate_interactions, indices)
+                                   : generate_func(indices, num_wildcards);
   for (size_t i = 0; i < insertion_indices.size(); i++)
   {
     for (auto& res : result) { res.insert(res.begin() + insertion_indices[i], insertion_ns[i]); }

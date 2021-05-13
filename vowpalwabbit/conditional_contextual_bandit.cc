@@ -389,10 +389,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // that the cache will be invalidated.
   auto prev_has_seen = data.has_seen_multi_slot_example;
   data.has_seen_multi_slot_example = data.has_seen_multi_slot_example || data.slots.size() > 1;
-  if (!prev_has_seen && data.has_seen_multi_slot_example)
-  {
-    insert_ccb_interactions(data.all->interactions);
-  }
+  if (!prev_has_seen && data.has_seen_multi_slot_example) { insert_ccb_interactions(data.all->interactions); }
 
   // If we have not seen more than one slot, we need to check if the user has supplied slot features.
   // In that case we will turn on CCB slot id/interactions.
