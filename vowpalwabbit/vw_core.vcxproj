@@ -207,6 +207,7 @@
     <ClInclude Include="memory_tree.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="metrics.h" />
+    <ClInclude Include="metric_sink.h" />
     <ClInclude Include="mf.h" />
     <ClInclude Include="multiclass.h" />
     <ClInclude Include="multilabel_oaa.h" />
