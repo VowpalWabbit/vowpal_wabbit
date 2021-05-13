@@ -2317,11 +2317,11 @@ train-sets/ref/slates_simple_w_interactions.stderr
     test-sets/ref/metrics_2.json
 
 # Test 314: squarecb save_load, save model
-{VW} -d train-sets/squarecb_load.dat --cb_explore_adf -q UA --squarecb -f models/sqcb_ld.model --save_resume
+{VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -f models/sqcb_ld.model --save_resume
     train-sets/ref/squarecb_save.stderr
 
 # Test 315: squarecb save_load, load model
-{VW} -d train-sets/squarecb_load.dat --cb_explore_adf -q UA --squarecb -i models/sqcb_ld.model -t
+{VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -i models/sqcb_ld.model -t
     train-sets/ref/squarecb_load.stderr
 
 # Test 316: test extra_metrics with djson timestamps
@@ -2332,5 +2332,13 @@ train-sets/ref/slates_simple_w_interactions.stderr
 # Test 317: bfgs preconditioner overflowing test
 {VW} -c -k -d train-sets/rcv1_small.dat --bfgs --passes 12 -f models/bfgs_precon.model --save_resume
     train-sets/ref/bfgs_train.stderr
+
+# Test 318: first save_load, save model
+{VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --first 130 -f models/first_ld.model --save_resume
+    train-sets/ref/first_save.stderr
+
+# Test 319: first save_load, load model
+{VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA -i models/first_ld.model -t
+    train-sets/ref/first_load.stderr
 
 # Do not delete this line or the empty line above it
