@@ -47,10 +47,8 @@ private:
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
 
-cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version) 
-    : _tau(tau)
-    , _epsilon(epsilon)
-    , _model_file_version(std::move(model_file_version))
+cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version)
+    : _tau(tau), _epsilon(epsilon), _model_file_version(std::move(model_file_version))
 {
 }
 
