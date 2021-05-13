@@ -27,14 +27,9 @@ void features::clear()
   space_names.clear();
 }
 
-void features::truncate_to(const features_value_iterator& pos)
-{
-  auto i = pos._begin - values.begin();
-  values.resize_but_with_stl_behavior(i);
-  if (indicies.end() != indicies.begin()) { indicies.resize_but_with_stl_behavior(i); }
+void features::truncate_to(const iterator& pos) { truncate_to(std::distance(begin(), pos)); }
 
-  if (space_names.begin() != space_names.end()) { space_names.erase(space_names.begin() + i, space_names.end()); }
-}
+void features::truncate_to(const audit_iterator& pos) { truncate_to(std::distance(audit_begin(), pos)); }
 
 void features::truncate_to(size_t i)
 {

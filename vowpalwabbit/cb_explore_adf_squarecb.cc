@@ -12,6 +12,9 @@
 #include "explore.h"
 #include "action_score.h"
 #include "cb.h"
+#include "vw_versions.h"
+#include "version.h"
+
 #include <cmath>
 #include <vector>
 #include <algorithm>
@@ -51,18 +54,21 @@ private:
   std::vector<float> _min_costs;
   std::vector<float> _max_costs;
 
+  VW::version_struct _model_file_version;
+
   // for backing up cb example data when computing sensitivities
   std::vector<ACTION_SCORE::action_scores> _ex_as;
   std::vector<v_array<CB::cb_class>> _ex_costs;
 
 public:
-  cb_explore_adf_squarecb(
-      float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost);
+  cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,
+      float max_cb_cost, VW::version_struct model_file_version);
   ~cb_explore_adf_squarecb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void save_load(io_buf& io, bool read, bool text);
 
 private:
   template <bool is_learn>
@@ -72,8 +78,8 @@ private:
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };
 
-cb_explore_adf_squarecb::cb_explore_adf_squarecb(
-    float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost, float max_cb_cost)
+cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0,
+    float min_cb_cost, float max_cb_cost, VW::version_struct model_file_version)
     : _counter(0)
     , _gamma_scale(gamma_scale)
     , _gamma_exponent(gamma_exponent)
@@ -81,6 +87,7 @@ cb_explore_adf_squarecb::cb_explore_adf_squarecb(
     , _c0(c0)
     , _min_cb_cost(min_cb_cost)
     , _max_cb_cost(max_cb_cost)
+    , _model_file_version(model_file_version)
 {
 }
 
@@ -201,7 +208,7 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
     VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)preds.size();
+  uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   // The actual parameter $\gamma$ used in the SquareCB.
   const float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
@@ -209,7 +216,8 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
   // RegCB action set parameters
   const float max_range = _max_cb_cost - _min_cb_cost;
   // threshold on empirical loss difference
-  const float delta = _c0 * std::log((float)(num_actions * _counter)) * static_cast<float>(std::pow(max_range, 2));
+  const float delta =
+      _c0 * std::log(static_cast<float>(num_actions * _counter)) * static_cast<float>(std::pow(max_range, 2));
 
   // SquareCB Exploration
   if (!is_learn)
@@ -276,6 +284,17 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
       }
       preds[a_min].score = 1.f - total_weight;
     }
+  }
+}
+
+void cb_explore_adf_squarecb::save_load(io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+  if (!read || _model_file_version >= VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME)
+  {
+    std::stringstream msg;
+    if (!read) { msg << "cb squarecb adf storing example counter:  = " << _counter << "\n"; }
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), "", read, msg, text);
   }
 }
 
@@ -346,7 +365,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
-  auto data = scoped_calloc_or_throw<explore_type>(gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost);
+  auto data = scoped_calloc_or_throw<explore_type>(
+      gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver);
   VW::LEARNER::learner<explore_type, multi_ex>& l =
       VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
           prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-squarecb");
@@ -354,6 +374,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   l.set_finish_example(explore_type::finish_multiline_example);
   l.set_print_example(explore_type::print_multiline_example);
   l.set_persist_metrics(explore_type::persist_metrics);
+  l.set_save_load(explore_type::save_load);
   return make_base(l);
 }
 

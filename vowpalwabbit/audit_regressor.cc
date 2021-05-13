@@ -64,7 +64,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   if (dat.total_class_cnt > 1)  // add class prefix for multiclass problems
     temp = std::to_string(dat.cur_class) + ':' + temp;
 
-  dat.out_file->bin_write_fixed(temp.c_str(), (uint32_t)temp.size());
+  dat.out_file->bin_write_fixed(temp.c_str(), static_cast<uint32_t>(temp.size()));
 
   weights[ft_idx] = 0.;  // mark value audited
 }
@@ -92,7 +92,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
     }
   }
 
-  rd.out_file->bin_write_fixed(tempstream.str().c_str(), (uint32_t)tempstream.str().size());
+  rd.out_file->bin_write_fixed(tempstream.str().c_str(), static_cast<uint32_t>(tempstream.str().size()));
 }
 
 // This is a learner which does nothing with examples.
@@ -113,27 +113,28 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
     {
       for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); ++i)
       {
-        features& fs = ec.feature_space[(size_t)*i];
+        features& fs = ec.feature_space[static_cast<size_t>(*i)];
         if (fs.space_names.size() > 0)
           for (size_t j = 0; j < fs.size(); ++j)
           {
             audit_regressor_interaction(rd, fs.space_names[j].get());
-            audit_regressor_feature(rd, fs.values[j], (uint32_t)fs.indicies[j] + ec.ft_offset);
+            audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indicies[j]) + ec.ft_offset);
             audit_regressor_interaction(rd, nullptr);
           }
         else
           for (size_t j = 0; j < fs.size(); ++j)
-            audit_regressor_feature(rd, fs.values[j], (uint32_t)fs.indicies[j] + ec.ft_offset);
+            audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indicies[j]) + ec.ft_offset);
       }
 
+      size_t num_interacted_features = 0;
       if (rd.all->weights.sparse)
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
-            audit_regressor_interaction, sparse_parameters>(
-            rd.all->interactions, rd.all->permutations, ec, rd, rd.all->weights.sparse_weights);
+            audit_regressor_interaction, sparse_parameters>(rd.all->interactions, rd.all->permutations, ec, rd,
+            rd.all->weights.sparse_weights, num_interacted_features);
       else
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
             audit_regressor_interaction, dense_parameters>(
-            rd.all->interactions, rd.all->permutations, ec, rd, rd.all->weights.dense_weights);
+            rd.all->interactions, rd.all->permutations, ec, rd, rd.all->weights.dense_weights, num_interacted_features);
 
       ec.ft_offset += rd.increment;
       ++rd.cur_class;
@@ -165,7 +166,7 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
   if (ec.example_counter + 1 >= all.sd->dump_interval && !all.logger.quiet)
   {
     print_ex(all, ec.example_counter + 1, dd.values_audited, dd.values_audited * 100 / dd.loaded_regressor_values);
-    all.sd->weighted_unlabeled_examples = (double)(ec.example_counter + 1);  // used in update_dump_interval
+    all.sd->weighted_unlabeled_examples = static_cast<double>(ec.example_counter + 1);  // used in update_dump_interval
     all.sd->update_dump_interval(all.progress_add, all.progress_arg);
     printed = true;
   }

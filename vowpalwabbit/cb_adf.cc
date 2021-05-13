@@ -194,7 +194,7 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
   {
     uint32_t current_action = action_score.action;
     _backup_weights.push_back(examples[current_action]->weight);
-    _backup_nf.push_back((uint32_t)examples[current_action]->num_features);
+    _backup_nf.push_back(static_cast<uint32_t>(examples[current_action]->num_features));
 
     if (current_action == chosen_action)
       examples[current_action]->weight *= example_weight * (1.0f - action_score.score);
@@ -242,10 +242,11 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   // We must go through the cost sensitive classifier layer to get
   // proper feature handling.
   gen_cs_example_mtr(_gen_cs, examples, _cs_labels);
-  uint32_t nf = (uint32_t)examples[_gen_cs.mtr_example]->num_features;
+  uint32_t nf = static_cast<uint32_t>(examples[_gen_cs.mtr_example]->num_features);
   float old_weight = examples[_gen_cs.mtr_example]->weight;
   const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
-  examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p * ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
+  examples[_gen_cs.mtr_example]->weight *=
+      1.f / clipped_p * (static_cast<float>(_gen_cs.event_sum) / static_cast<float>(_gen_cs.action_sum));
 
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are
@@ -345,7 +346,7 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
   size_t num_features = 0;
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (const auto& example : *ec_seq) num_features += example->num_features;
+  for (const auto& example : *ec_seq) num_features += example->get_num_features();
 
   float loss = 0.;
 
@@ -368,7 +369,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (auto& sink : all.final_prediction_sink) { all.print_by_ref(sink.get(), (float)action, 0, ec.tag); }
+  for (auto& sink : all.final_prediction_sink) { all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag); }
 
   if (all.raw_prediction != nullptr)
   {

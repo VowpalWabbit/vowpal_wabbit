@@ -74,7 +74,7 @@ void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner &base, multi_ex &exa
 {
   // Randomize over predictions from a base set of predictors
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)examples.size();
+  uint32_t num_actions = static_cast<uint32_t>(examples.size());
   if (num_actions == 0)
   {
     preds.clear();

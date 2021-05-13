@@ -141,7 +141,7 @@ struct LazyGaussian
   inline float operator[](uint64_t index) const { return merand48_boxmuller(index); }
 };
 
-inline void vec_add_with_norm(std::pair<float, float>& p, const float fx, const float& fw)
+inline void vec_add_with_norm(std::pair<float, float>& p, float fx, float fw)
 {
   p.first += fx * fx;
   p.second += fx * fw;
@@ -154,7 +154,7 @@ float cb_explore_adf_rnd::get_initial_prediction(example* ec)
   LazyGaussian w;
 
   std::pair<float, float> dotwithnorm(0.f, 0.f);
-  GD::foreach_feature<std::pair<float, float>, const float&, vec_add_with_norm, LazyGaussian>(
+  GD::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, LazyGaussian>(
       w, all->ignore_some_linear, all->ignore_linear, all->interactions, all->permutations, *ec, dotwithnorm);
 
   return sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1e-12f, dotwithnorm.first));

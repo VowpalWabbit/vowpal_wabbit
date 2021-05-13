@@ -23,7 +23,7 @@ void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i&
   sch.set_options(0);
   sch.set_num_learners(num_actions);
   my_task_data->max_label = num_actions;
-  my_task_data->num_level = (size_t)ceil(log(num_actions) / log(2));
+  my_task_data->num_level = static_cast<size_t>(ceil(log(num_actions) / log(2)));
   my_task_data->y_allowed.push_back(1);
   my_task_data->y_allowed.push_back(2);
   sch.set_task_data(my_task_data);

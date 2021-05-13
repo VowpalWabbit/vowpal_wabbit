@@ -66,13 +66,13 @@ void VW::autolink::prepare_example(VW::LEARNER::single_learner& base, example& e
       base_pred *= ec.pred.scalar;
     }
   }
-  ec.total_sum_feat_sq += fs.sum_feat_sq;
+  ec.reset_total_sum_feat_sq();
 }
 
 void VW::autolink::reset_example(example& ec)
 {
   features& fs = ec.feature_space[autolink_namespace];
-  ec.total_sum_feat_sq -= fs.sum_feat_sq;
+  ec.reset_total_sum_feat_sq();
   fs.clear();
   ec.indices.pop_back();
 }

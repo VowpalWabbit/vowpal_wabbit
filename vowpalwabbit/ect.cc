@@ -112,7 +112,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
   size_t level = 0;
 
-  uint32_t node = (uint32_t)e.directions.size();
+  uint32_t node = static_cast<uint32_t>(e.directions.size());
 
   while (not_empty(e.all_levels[level]))
   {
@@ -135,7 +135,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
         direction d = {id, i, 0, 0, left, right, false};
         e.directions.push_back(d);
-        uint32_t direction_index = (uint32_t)e.directions.size() - 1;
+        uint32_t direction_index = static_cast<uint32_t>(e.directions.size()) - 1;
         if (e.directions[left].tournament == i)
           e.directions[left].winner = direction_index;
         else
@@ -153,7 +153,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
             new_tournaments[i + 1].push_back(id);
           else  // winner eliminated.
             e.directions[direction_index].winner = 0;
-          e.final_nodes.push_back((uint32_t)(e.directions.size() - 1));
+          e.final_nodes.push_back(static_cast<uint32_t>(e.directions.size() - 1));
         }
         else
           new_tournaments[i].push_back(id);
@@ -168,7 +168,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
     level++;
   }
 
-  e.last_pair = (uint32_t)((max_label - 1) * eliminations);
+  e.last_pair = static_cast<uint32_t>((max_label - 1) * eliminations);
 
   if (max_label > 1) e.tree_height = final_depth(eliminations);
 
@@ -177,7 +177,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
 uint32_t ect_predict(ect& e, single_learner& base, example& ec)
 {
-  if (e.k == (size_t)1) return 1;
+  if (e.k == static_cast<size_t>(1)) return 1;
 
   uint32_t finals_winner = 0;
 
@@ -185,16 +185,17 @@ uint32_t ect_predict(ect& e, single_learner& base, example& ec)
   ec.l.simple = {FLT_MAX};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
-  for (size_t i = e.tree_height - 1; i != (size_t)0 - 1; i--)
+  for (size_t i = e.tree_height - 1; i != static_cast<size_t>(0) - 1; i--)
   {
-    if ((finals_winner | (((size_t)1) << i)) <= e.errors)
+    if ((finals_winner | ((static_cast<size_t>(1)) << i)) <= e.errors)
     {
       // a real choice exists
-      uint32_t problem_number = e.last_pair + (finals_winner | (((uint32_t)1) << i)) - 1;  // This is unique.
+      uint32_t problem_number =
+          e.last_pair + (finals_winner | ((static_cast<uint32_t>(1)) << i)) - 1;  // This is unique.
 
       base.learn(ec, problem_number);
 
-      if (ec.pred.scalar > e.class_boundary) finals_winner = finals_winner | (((size_t)1) << i);
+      if (ec.pred.scalar > e.class_boundary) finals_winner = finals_winner | ((static_cast<size_t>(1)) << i);
     }
   }
 
@@ -279,7 +280,7 @@ void ect_train(ect& e, single_learner& base, example& ec)
         else
           simple_temp.label = 1;
         ec.l.simple = simple_temp;
-        ec.weight = (float)(1 << (e.tree_height - i - 1));
+        ec.weight = static_cast<float>(1 << (e.tree_height - i - 1));
 
         uint32_t problem_number = e.last_pair + j * (1 << (i + 1)) + (1 << i) - 1;
 
@@ -301,7 +302,7 @@ void ect_train(ect& e, single_learner& base, example& ec)
 void predict(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
-  if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
+  if (mc.label == 0 || (mc.label > e.k && mc.label != static_cast<uint32_t>(-1)))
   {
     // In order to print curly braces, they need to be embedded within curly braces to escape them.
     // The funny looking part will just print {1, e.k}
@@ -316,7 +317,7 @@ void learn(ect& e, single_learner& base, example& ec)
   MULTICLASS::label_t mc = ec.l.multi;
   uint32_t pred = ec.pred.multiclass;
 
-  if (mc.label != (uint32_t)-1) ect_train(e, base, ec);
+  if (mc.label != static_cast<uint32_t>(-1)) ect_train(e, base, ec);
   ec.l.multi = mc;
   ec.pred.multiclass = pred;
 }

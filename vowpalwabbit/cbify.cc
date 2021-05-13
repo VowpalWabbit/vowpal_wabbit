@@ -513,7 +513,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
   if (example_is_newline(ec)) return;
   if (COST_SENSITIVE::ec_is_example_header(ec)) return;
 
-  all.sd->total_features += ec.num_features;
+  all.sd->total_features += ec.get_num_features();
 
   float loss = 0.;
 
@@ -535,7 +535,8 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
     all.sd->sum_loss_since_last_dump += loss;
   }
 
-  for (const auto& sink : all.final_prediction_sink) all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
+  for (const auto& sink : all.final_prediction_sink)
+    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag);
 
   if (all.raw_prediction != nullptr)
   {
@@ -580,7 +581,8 @@ void output_example_regression_discrete(vw& all, cbify& data, example& ec)
   if (cb_costs[0].cost > data.regression_data.max_cost) data.regression_data.max_cost = cb_costs[0].cost;
 
   if (cb_costs.size() > 0)
-    all.sd->update(ec.test_only, true /*cb_costs[0].action != FLT_MAX*/, cb_costs[0].cost, ec.weight, ec.num_features);
+    all.sd->update(
+        ec.test_only, true /*cb_costs[0].action != FLT_MAX*/, cb_costs[0].cost, ec.weight, ec.get_num_features());
 
   if (ld.label != FLT_MAX) all.sd->weighted_labels += static_cast<double>(cb_costs[0].action) * ec.weight;
 
@@ -598,7 +600,8 @@ void output_example_regression(vw& all, cbify& data, example& ec)
   if (cb_cont_costs[0].cost > data.regression_data.max_cost) data.regression_data.max_cost = cb_cont_costs[0].cost;
 
   if (cb_cont_costs.size() > 0)
-    all.sd->update(ec.test_only, cb_cont_costs[0].action != FLT_MAX, cb_cont_costs[0].cost, ec.weight, ec.num_features);
+    all.sd->update(
+        ec.test_only, cb_cont_costs[0].action != FLT_MAX, cb_cont_costs[0].cost, ec.weight, ec.get_num_features());
 
   if (ld.label != FLT_MAX) all.sd->weighted_labels += static_cast<double>(cb_cont_costs[0].action) * ec.weight;
 

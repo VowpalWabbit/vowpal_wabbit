@@ -31,8 +31,8 @@ struct beam_element
 inline int compare_on_cost(const void *void_a, const void *void_b)
 {
   if (void_a == void_b) return 0;
-  const beam_element<void> *a = (const beam_element<void> *)void_a;
-  const beam_element<void> *b = (const beam_element<void> *)void_b;
+  const beam_element<void>* a = static_cast<const beam_element<void>*>(void_a);
+  const beam_element<void>* b = static_cast<const beam_element<void>*>(void_b);
   if (a->active && !b->active)
     return -1;  // active things come before inactive things
   else if (!a->active && b->active)
@@ -50,8 +50,8 @@ inline int compare_on_cost(const void *void_a, const void *void_b)
 inline int compare_on_hash_then_cost(const void *void_a, const void *void_b)
 {
   if (void_a == void_b) return 0;
-  const beam_element<void> *a = (const beam_element<void> *)void_a;
-  const beam_element<void> *b = (const beam_element<void> *)void_b;
+  const beam_element<void>* a = static_cast<const beam_element<void>*>(void_a);
+  const beam_element<void>* b = static_cast<const beam_element<void>*>(void_b);
   if (a->active && !b->active)
     return -1;  // active things come before inactive things
   else if (!a->active && b->active)

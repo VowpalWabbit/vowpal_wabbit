@@ -48,7 +48,7 @@ size_t read_cached_label(shared_data*, label_t& ld, io_buf& cache)
   return total;
 }
 float weight(label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
-bool test_label(const label_t& ld) { return ld.label == (uint32_t)-1; }
+bool test_label(const label_t& ld) { return ld.label == static_cast<uint32_t>(-1); }
 
 void parse_label(parser*, shared_data* sd, label_t& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
@@ -57,7 +57,7 @@ void parse_label(parser*, shared_data* sd, label_t& ld, std::vector<VW::string_v
     case 0:
       break;
     case 1:
-      if (sd->ldict) { ld.label = (uint32_t)sd->ldict->get(words[0]); }
+      if (sd->ldict) { ld.label = sd->ldict->get(words[0]); }
       else
       {
         char* char_after_int = nullptr;
@@ -68,7 +68,7 @@ void parse_label(parser*, shared_data* sd, label_t& ld, std::vector<VW::string_v
       ld.weight = 1.0;
       break;
     case 2:
-      if (sd->ldict) { ld.label = (uint32_t)sd->ldict->get(words[0]); }
+      if (sd->ldict) { ld.label = sd->ldict->get(words[0]); }
       else
       {
         char* char_after_int = nullptr;
@@ -112,7 +112,7 @@ void print_label_pred(vw& all, example& ec, uint32_t prediction)
   VW::string_view sv_pred = all.sd->ldict->get(prediction);
   all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
       sv_label.empty() ? "unknown" : sv_label.to_string(), sv_pred.empty() ? "unknown" : sv_pred.to_string(),
-      ec.num_features, all.progress_add, all.progress_arg);
+      ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
 void print_probability(vw& all, example& ec, uint32_t prediction)
@@ -125,7 +125,7 @@ void print_probability(vw& all, example& ec, uint32_t prediction)
   label_ss << ec.l.multi.label;
 
   all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(),
-      ec.num_features, all.progress_add, all.progress_arg);
+      ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
 void print_score(vw& all, example& ec, uint32_t prediction)
@@ -137,13 +137,13 @@ void print_score(vw& all, example& ec, uint32_t prediction)
   label_ss << ec.l.multi.label;
 
   all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(),
-      ec.num_features, all.progress_add, all.progress_arg);
+      ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
 void direct_print_update(vw& all, example& ec, uint32_t prediction)
 {
   all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.multi.label, prediction,
-      ec.num_features, all.progress_add, all.progress_arg);
+      ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
 template <void (*T)(vw&, example&, uint32_t)>
@@ -167,13 +167,14 @@ void print_update_with_score(vw& all, example& ec, uint32_t pred) { print_update
 void finish_example(vw& all, example& ec, bool update_loss)
 {
   float loss = 0;
-  if (ec.l.multi.label != (uint32_t)ec.pred.multiclass && ec.l.multi.label != (uint32_t)-1) loss = ec.weight;
+  if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.label != static_cast<uint32_t>(-1)) loss = ec.weight;
 
-  all.sd->update(ec.test_only, update_loss && (ec.l.multi.label != (uint32_t)-1), loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, update_loss && (ec.l.multi.label != static_cast<uint32_t>(-1)), loss, ec.weight,
+      ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
     if (!all.sd->ldict)
-      all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag);
+      all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag);
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);

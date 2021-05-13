@@ -20,3 +20,4 @@
 #define VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG \
   "8.9.0"  // CCB optimization for models with only single slot used introduced in this version.
 #define VERSION_FILE_WITH_CB_TO_CBADF "8.11.0"  // first version that maps --cb to use cb_adf
+#define VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME "8.11.0"  // version that ensures accuracy of loaded models in squarecb

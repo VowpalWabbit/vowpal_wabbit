@@ -270,7 +270,7 @@ constexpr size_t size_fast_factorial = sizeof(fast_factorial) / sizeof(*fast_fac
 inline size_t factor(const size_t n, const size_t start_from = 1)
 {
   if (n <= 0) return 1;
-  if (start_from == 1 && n < size_fast_factorial) return (size_t)fast_factorial[n];
+  if (start_from == 1 && n < size_fast_factorial) return static_cast<size_t>(fast_factorial[n]);
 
   size_t res = 1;
   for (size_t i = start_from + 1; i <= n; ++i) res *= i;
@@ -278,26 +278,26 @@ inline size_t factor(const size_t n, const size_t start_from = 1)
 }
 
 // returns number of new features that will be generated for example and sum of their squared values
-
-void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, float& new_features_value)
+void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
+    const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value)
 {
   new_features_cnt = 0;
   new_features_value = 0.;
 
   v_array<float> results;
 
-  if (all.permutations)
+  if (permutations)
   {
     // just multiply precomputed values for all namespaces
-    for (const auto& inter : ec.interactions->interactions)
+    for (const auto& inter : interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
 
       for (namespace_index ns : inter)
       {
-        num_features_in_inter *= ec.feature_space[ns].size();
-        sum_feat_sq_in_inter *= ec.feature_space[ns].sum_feat_sq;
+        num_features_in_inter *= feature_spaces[ns].size();
+        sum_feat_sq_in_inter *= feature_spaces[ns].sum_feat_sq;
         if (num_features_in_inter == 0) break;
       }
 
@@ -309,14 +309,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
   }
   else  // case of simple combinations
   {
-#ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
-    size_t correct_features_cnt = 0;
-    float correct_features_value = 0.;
-    eval_gen_data dat(correct_features_cnt, correct_features_value);
-    generate_interactions<eval_gen_data, uint64_t, ft_cnt>(all, ec, dat);
-#endif
-
-    for (const auto& inter : ec.interactions->interactions)
+    for (const auto& inter : interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
@@ -327,8 +320,8 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
         {
           // just multiply precomputed values
           const int nsc = *ns;
-          num_features_in_inter *= ec.feature_space[nsc].size();
-          sum_feat_sq_in_inter *= ec.feature_space[nsc].sum_feat_sq;
+          num_features_in_inter *= feature_spaces[nsc].size();
+          sum_feat_sq_in_inter *= feature_spaces[nsc].sum_feat_sq;
           if (num_features_in_inter == 0) break;  // one of namespaces has no features - go to next interaction
         }
         else  // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
@@ -340,7 +333,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
             if (*ns == *ns_end) ++order_of_inter;
 
           // namespace is same for whole block
-          features& fs = ec.feature_space[static_cast<int>(*ns)];
+          const features& fs = feature_spaces[static_cast<int>(*ns)];
 
           // count number of features with value != 1.;
           size_t cnt_ft_value_non_1 = 0;
@@ -391,17 +384,20 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
           size_t n;
           if (cnt_ft_value_non_1 == 0)  // number of generated simple combinations is C(n,k)
-          { n = (size_t)VW::math::choose((int64_t)ft_size, (int64_t)order_of_inter); }
+          {
+            n = static_cast<size_t>(
+                VW::math::choose(static_cast<int64_t>(ft_size), static_cast<int64_t>(order_of_inter)));
+          }
           else
           {
             n = 0;
             for (size_t l = 0; l <= order_of_inter; ++l)
             {
               // C(l+m-1, l) * C(n-m, k-l)
-              size_t num = (l == 0) ? 1 : (size_t)VW::math::choose(l + cnt_ft_value_non_1 - 1, l);
+              size_t num = (l == 0) ? 1 : static_cast<size_t>(VW::math::choose(l + cnt_ft_value_non_1 - 1, l));
 
               if (ft_size - cnt_ft_value_non_1 >= order_of_inter - l)
-                num *= (size_t)VW::math::choose(ft_size - cnt_ft_value_non_1, order_of_inter - l);
+                num *= static_cast<size_t>(VW::math::choose(ft_size - cnt_ft_value_non_1, order_of_inter - l));
               else
                 num = 0;
 
@@ -421,15 +417,6 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
       new_features_cnt += num_features_in_inter;
       new_features_value += sum_feat_sq_in_inter;
     }
-
-#ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
-    if (correct_features_cnt != new_features_cnt)
-      *(all.trace_message) << "Incorrect new features count " << new_features_cnt << " must be " << correct_features_cnt
-                           << std::endl;
-    if (fabs(correct_features_value - new_features_value) > 1e-5)
-      *(all.trace_message) << "Incorrect new features value " << new_features_value << " must be "
-                           << correct_features_value << std::endl;
-#endif
   }
 }
 

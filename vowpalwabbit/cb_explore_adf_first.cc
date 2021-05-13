@@ -53,11 +53,11 @@ void cb_explore_adf_first::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)preds.size();
+  uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   if (_tau)
   {
-    float prob = 1.f / (float)num_actions;
+    float prob = 1.f / static_cast<float>(num_actions);
     for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
     if (is_learn) _tau--;
   }

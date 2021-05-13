@@ -271,7 +271,7 @@ public:
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
 
-  size_t length() { return ((size_t)1) << num_bits; };
+  size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
   std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
   std::vector<std::string> enabled_reductions;

@@ -283,8 +283,10 @@ void sort_data_update_support(stagewise_poly &poly)
   assert(poly.original_ec);
   poly.original_ec->ft_offset = 0;
 
-  size_t num_new_features = (size_t)std::pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent);
-  num_new_features = (num_new_features > poly.all->length()) ? (uint64_t)poly.all->length() : num_new_features;
+  size_t num_new_features =
+      static_cast<size_t>(std::pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent));
+  num_new_features =
+      (num_new_features > poly.all->length()) ? static_cast<uint64_t>(poly.all->length()) : num_new_features;
   sort_data_ensure_sz(poly, num_new_features);
 
   sort_data *heap_end = poly.sd;
@@ -309,7 +311,7 @@ void sort_data_update_support(stagewise_poly &poly)
         assert(heap_end >= poly.sd);
         assert(heap_end <= poly.sd + num_new_features);
 
-        if (heap_end - poly.sd == (int)num_new_features && poly.sd->weightsal < weightsal)
+        if (heap_end - poly.sd == static_cast<int>(num_new_features) && poly.sd->weightsal < weightsal)
         {
           std::pop_heap(poly.sd, heap_end, sort_data_compar_heap);
           --heap_end;
@@ -318,7 +320,7 @@ void sort_data_update_support(stagewise_poly &poly)
         assert(heap_end >= poly.sd);
         assert(heap_end < poly.sd + poly.sd_len);
 
-        if (heap_end - poly.sd < (int)num_new_features)
+        if (heap_end - poly.sd < static_cast<int>(num_new_features))
         {
           heap_end->weightsal = weightsal;
           heap_end->wid = wid;
@@ -328,7 +330,7 @@ void sort_data_update_support(stagewise_poly &poly)
       }
     }
   }
-  num_new_features = (uint64_t)(heap_end - poly.sd);
+  num_new_features = static_cast<uint64_t>(heap_end - poly.sd);
 
 #ifdef DEBUG
   // eyeballing weights a pain if unsorted.
@@ -397,7 +399,6 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
 
   poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;
-  poly.synth_ec.total_sum_feat_sq = 0;
 
   if (poly.synth_ec.indices.size() == 0) poly.synth_ec.indices.push_back(tree_atomics);
 }
@@ -483,12 +484,11 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
    */
   GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
   synthetic_decycle(poly);
-  poly.synth_ec.total_sum_feat_sq = poly.synth_ec.feature_space[tree_atomics].sum_feat_sq;
 
   if (training)
   {
-    poly.sum_sparsity += poly.synth_ec.num_features;
-    poly.sum_input_sparsity += ec.num_features;
+    poly.sum_sparsity += poly.synth_ec.get_num_features();
+    poly.sum_input_sparsity += ec.get_num_features();
     poly.num_examples += 1;
   }
 }
@@ -602,9 +602,9 @@ void end_pass(stagewise_poly &poly)
      */
     all_reduce<uint8_t, reduce_min_max>(all, poly.depthsbits, depthsbits_sizeof(poly));
 
-    sum_input_sparsity_inc = (uint64_t)accumulate_scalar(all, (float)sum_input_sparsity_inc);
-    sum_sparsity_inc = (uint64_t)accumulate_scalar(all, (float)sum_sparsity_inc);
-    num_examples_inc = (uint64_t)accumulate_scalar(all, (float)num_examples_inc);
+    sum_input_sparsity_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(sum_input_sparsity_inc)));
+    sum_sparsity_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(sum_sparsity_inc)));
+    num_examples_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(num_examples_inc)));
   }
 
   poly.sum_input_sparsity_sync = poly.sum_input_sparsity_sync + sum_input_sparsity_inc;
@@ -629,7 +629,7 @@ void end_pass(stagewise_poly &poly)
 void finish_example(vw &all, stagewise_poly &poly, example &ec)
 {
   size_t temp_num_features = ec.num_features;
-  ec.num_features = poly.synth_ec.num_features;
+  ec.num_features = poly.synth_ec.get_num_features();
   output_and_account_example(all, ec);
   ec.num_features = temp_num_features;
   VW::finish_example(all, ec);
@@ -640,8 +640,8 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   if (model_file.num_files() > 0)
   {
     std::stringstream msg;
-    bin_text_read_write_fixed(
-        model_file, (char *)poly.depthsbits, (uint32_t)depthsbits_sizeof(poly), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(poly.depthsbits),
+        static_cast<uint32_t>(depthsbits_sizeof(poly)), "", read, msg, text);
   }
   // unfortunately, following can't go here since save_load called before gd::save_load and thus
   // weight vector state uninitialiazed.

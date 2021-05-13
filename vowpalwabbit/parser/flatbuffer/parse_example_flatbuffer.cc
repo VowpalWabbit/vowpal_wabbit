@@ -167,7 +167,7 @@ void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
   namespace_index temp_index;
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
-    temp_index = (uint8_t)ns->name()->c_str()[0];
+    temp_index = static_cast<uint8_t>(ns->name()->c_str()[0]);
     _c_hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
   }
   else

@@ -204,7 +204,7 @@ public:
     return this;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override { return Float(ctx, (float)v); }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override { return Float(ctx, static_cast<float>(v)); }
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
@@ -345,7 +345,7 @@ public:
       if (found_cb_continuous) { cont_label_element.action = v; }
       else
       {
-        cb_label.action = (uint32_t)v;
+        cb_label.action = static_cast<uint32_t>(v);
         found_cb = true;
       }
     }
@@ -377,7 +377,7 @@ public:
     return this;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override { return Float(ctx, (float)v); }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override { return Float(ctx, static_cast<float>(v)); }
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
@@ -525,7 +525,7 @@ struct LabelState : BaseState<audit>
   BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override
   {
     // TODO: once we introduce label types, check here
-    ctx.ex->l.simple.label = (float)v;
+    ctx.ex->l.simple.label = static_cast<float>(v);
     return ctx.previous_state;
   }
 };
@@ -543,7 +543,7 @@ struct TextState : BaseState<audit>
     // split into individual features
     const char* start = str;
     const char* end = str + length;
-    for (char* p = (char*)str; p != end; p++)
+    for (char* p = const_cast<char*>(str); p != end; p++)
     {
       switch (*p)
       {
@@ -596,7 +596,7 @@ struct MultiState : BaseState<audit>
       CB::cb_class f;
 
       f.partial_prediction = 0.;
-      f.action = (uint32_t)uniform_hash("shared", 6, 0);
+      f.action = static_cast<uint32_t>(uniform_hash("shared", 6, 0));
       f.cost = FLT_MAX;
       f.probability = -1.f;
 
@@ -740,7 +740,7 @@ public:
     return this;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f) override { return Float(ctx, (float)f); }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f) override { return Float(ctx, static_cast<float>(f)); }
 
   BaseState<audit>* Null(Context<audit>& /* ctx */) override
   {
@@ -945,7 +945,7 @@ public:
   {
     // string escape
     const char* end = str + length;
-    for (char* p = (char*)str; p != end; p++)
+    for (char* p = const_cast<char*>(str); p != end; p++)
     {
       switch (*p)
       {
@@ -960,7 +960,7 @@ public:
     if (ctx.all->chain_hash_json) { ctx.CurrentNamespace().AddFeature(ctx.all, ctx.key, str); }
     else
     {
-      char* prepend = (char*)str - ctx.key_length;
+      char* prepend = const_cast<char*>(str) - ctx.key_length;
       memmove(prepend, ctx.key, ctx.key_length);
 
       ctx.CurrentNamespace().AddFeature(ctx.all, prepend);
@@ -1045,7 +1045,7 @@ public:
     return this;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f) override { return Float(ctx, (float)f); }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f) override { return Float(ctx, static_cast<float>(f)); }
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override { return ctx.array_state.StartArray(ctx); }
 };
@@ -1576,11 +1576,11 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 
   // virtual dispatch to current state
   bool Bool(bool v) { return ctx.TransitionState(ctx.current_state->Bool(ctx, v)); }
-  bool Int(int v) { return ctx.TransitionState(ctx.current_state->Float(ctx, (float)v)); }
+  bool Int(int v) { return ctx.TransitionState(ctx.current_state->Float(ctx, static_cast<float>(v))); }
   bool Uint(unsigned v) { return ctx.TransitionState(ctx.current_state->Uint(ctx, v)); }
-  bool Int64(int64_t v) { return ctx.TransitionState(ctx.current_state->Float(ctx, (float)v)); }
-  bool Uint64(uint64_t v) { return ctx.TransitionState(ctx.current_state->Float(ctx, (float)v)); }
-  bool Double(double v) { return ctx.TransitionState(ctx.current_state->Float(ctx, (float)v)); }
+  bool Int64(int64_t v) { return ctx.TransitionState(ctx.current_state->Float(ctx, static_cast<float>(v))); }
+  bool Uint64(uint64_t v) { return ctx.TransitionState(ctx.current_state->Float(ctx, static_cast<float>(v))); }
+  bool Double(double v) { return ctx.TransitionState(ctx.current_state->Float(ctx, static_cast<float>(v))); }
   bool String(const char* str, SizeType len, bool copy)
   {
     return ctx.TransitionState(ctx.current_state->String(ctx, str, len, copy));
@@ -1616,13 +1616,13 @@ struct json_parser
 namespace VW
 {
 template <bool audit>
-void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory,
-    void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t length,
+    example_factory_t example_factory, void* ex_factory_context,
+    std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
-    parse_slates_example_json<audit>(
-        all, examples, line, strlen(line), example_factory, ex_factory_context, dedup_examples);
+    parse_slates_example_json<audit>(all, examples, line, length, example_factory, ex_factory_context, dedup_examples);
     return;
   }
 
@@ -1632,7 +1632,7 @@ void read_line_json(vw& all, v_array<example*>& examples, char* line, example_fa
   json_parser<audit> parser;
 
   VWReaderHandler<audit>& handler = parser.handler;
-  handler.init(&all, &examples, &ss, line + strlen(line), example_factory, ex_factory_context, dedup_examples);
+  handler.init(&all, &examples, &ss, line + length, example_factory, ex_factory_context, dedup_examples);
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
@@ -1646,6 +1646,14 @@ void read_line_json(vw& all, v_array<example*>& examples, char* line, example_fa
                                 << handler.error().str()
                                 << "State: " << (current_state ? current_state->name : "null"));  // <<
   // "Line: '"<< line_copy << "'");
+}
+
+template <bool audit>
+VW_DEPRECATED("read_line_json has been deprecated; use read_line_json_s instead.")
+void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory,
+    void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
+{
+  read_line_json_s<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context, dedup_examples);
 }
 
 inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
@@ -1737,8 +1745,8 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     }
   }
   else
-    VW::template read_line_json<audit>(
-        *all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
+    VW::template read_line_json_s<audit>(
+        *all, examples, line, num_chars, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
 
   return true;
 }
@@ -1796,7 +1804,7 @@ int read_features_json(vw* all, v_array<example*>& examples)
     char* line;
     size_t num_chars;
     size_t num_chars_initial = read_features(all, line, num_chars);
-    if (num_chars_initial < 1) return (int)num_chars_initial;
+    if (num_chars_initial < 1) return static_cast<int>(num_chars_initial);
 
     // Ensure there is a null terminator.
     line[num_chars] = '\0';
