@@ -34,7 +34,7 @@ struct metrics_data
 };
 
 void list_to_json_file(
-    dsjson_metrics* ds_metrics, std::string filename, std::vector<std::tuple<std::string, size_t>>& metrics)
+    dsjson_metrics* ds_metrics, std::string filename, metric_sink& metrics)
 {
   FILE* fp;
 
@@ -45,10 +45,15 @@ void list_to_json_file(
     Writer<FileWriteStream> writer(os);
 
     writer.StartObject();
-    for (std::tuple<std::string, size_t> m : metrics)
+    for (const auto& m : metrics.int_metrics_list)
     {
-      writer.Key(std::get<0>(m).c_str());
-      writer.Int64(static_cast<int32_t>(std::get<1>(m)));
+      writer.Key(m.first.c_str());
+      writer.Uint64(m.second);
+    }
+    for (const auto& m : metrics.float_metrics_list)
+    {
+      writer.Key(m.first.c_str());
+      writer.Double(static_cast<double>(m.second));
     }
 
     // ds_metrics is nullptr when --dsjson is disabled
@@ -83,14 +88,14 @@ void output_metrics(vw& all)
   if (all.options->was_supplied("extra_metrics"))
   {
     std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
-    std::vector<std::tuple<std::string, size_t>> list_metrics;
+    metric_sink list_metrics;
 
     all.l->persist_metrics(list_metrics);
 
 #ifdef BUILD_EXTERNAL_PARSER
     if (all.external_parser)
     {
-      all.external_parser->persist_metrics(list_metrics);
+      all.external_parser->persist_metrics(list_metrics.int_metrics_list);
     }
 #endif
 
@@ -139,12 +144,12 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
   if (!is_learn || base.learn_returns_prediction) { count_post_predict(data, base.pred_type, ec); }
 }
 
-void persist(metrics_data& data, std::vector<std::tuple<std::string, size_t>>& metrics)
+void persist(metrics_data& data, metric_sink& metrics)
 {
-  metrics.emplace_back("total_predict_calls", data.predict_count);
-  metrics.emplace_back("total_learn_calls", data.learn_count);
-  metrics.emplace_back("predicted_baseline_first", data.predicted_first_option);
-  metrics.emplace_back("predicted_not_first", data.predicted_not_first);
+  metrics.int_metrics_list.emplace_back("total_predict_calls", data.predict_count);
+  metrics.int_metrics_list.emplace_back("total_learn_calls", data.learn_count);
+  metrics.int_metrics_list.emplace_back("predicted_baseline_first", data.predicted_first_option);
+  metrics.int_metrics_list.emplace_back("predicted_not_first", data.predicted_not_first);
 }
 
 VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)

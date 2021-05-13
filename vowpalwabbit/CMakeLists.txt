@@ -138,6 +138,7 @@ set(vw_all_headers
   memory_tree.h
   memory.h
   metrics.h
+  metric_sink.h
   mf.h
   multiclass.h
   multilabel_oaa.h
