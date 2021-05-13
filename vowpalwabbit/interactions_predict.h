@@ -6,6 +6,7 @@
 #include <cstdint>
 #include "constant.h"
 #include "feature_group.h"
+#include "interactions.h"
 #include "example_predict.h"
 #include <vector>
 #include <string>
@@ -21,10 +22,6 @@ namespace INTERACTIONS
  * Previous behaviour was: include interactions of feature with itself only if its value != value^2.
  *
  */
-constexpr bool feature_self_interactions = true;
-// must return logical expression
-/*old: ft_value != 1.0 && feature_self_interactions_for_value_other_than_1*/
-#define PROCESS_SELF_INTERACTIONS(ft_value) feature_self_interactions
 
 // 3 template functions to pass FuncT() proper argument (feature idx in regressor, or its coefficient)
 
@@ -362,4 +359,5 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     }
   }  // foreach interaction in all.interactions
 }
+
 }  // namespace INTERACTIONS

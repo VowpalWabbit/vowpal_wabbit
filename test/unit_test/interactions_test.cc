@@ -15,7 +15,7 @@
 #include "vw.h"
 #include "gd_predict.h"
 #include "interactions.h"
-#include "generate_interactions.h"
+
 struct eval_gen_data
 {
   size_t& new_features_cnt;

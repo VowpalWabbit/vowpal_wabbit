@@ -135,4 +135,34 @@ inline float trunc_weight(const float w, const float gravity)
   return (gravity < fabsf(w)) ? w - VW::math::sign(w) * gravity : 0.f;
 }
 
+
 }  // namespace GD
+
+
+namespace INTERACTIONS
+{
+
+template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*)>
+inline void generate_interactions(vw& all, example_predict& ec, R& dat, size_t& num_interacted_features)
+{
+  if (all.weights.sparse)
+    generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(
+        *ec.interactions, all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features);
+  else
+    generate_interactions<R, S, T, audit, audit_func, dense_parameters>(
+        *ec.interactions, all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features);
+}
+
+// this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
+template <class R, class S, void (*T)(R&, float, S)>
+inline void generate_interactions(vw& all, example_predict& ec, R& dat, size_t& num_interacted_features)
+{
+  if (all.weights.sparse)
+    generate_interactions<R, S, T, sparse_parameters>(
+        all.interactions, all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features);
+  else
+    generate_interactions<R, S, T, dense_parameters>(
+        all.interactions, all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features);
+}
+
+}
