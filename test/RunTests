@@ -2323,4 +2323,13 @@ train-sets/ref/slates_simple_w_interactions.stderr
 {VW} -d train-sets/squarecb_load.dat --cb_explore_adf -q UA --squarecb -i models/sqcb_ld.model -t
     train-sets/ref/squarecb_load.stderr
 
+# Test 316: bfgs preconditioner training
+{VW} -c -k -d train-sets/rcv1_small.dat --bfgs --passes 12 -f models/bfgs_precon.model --save_resume
+    train-sets/ref/bfgs_train.stderr
+    
+# Test 317: bfgs preconditioner testing
+{VW} -c -k -d test-sets/rcv1_small_test.data --bfgs --passes 12 -i models/bfgs_precon.model -p bfgs_precon.predict
+    test-sets/ref/bfgs_test.stderr
+    pred-sets/ref/bfgs_precon.predict
+
 # Do not delete this line or the empty line above it

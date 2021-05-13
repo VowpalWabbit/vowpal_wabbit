@@ -512,7 +512,7 @@ void finalize_preconditioner(vw& /* all */, bfgs& b, float regularization, T& we
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
   {
-    if (std::isinf(*w) || *w > max_precond) (&(*w))[W_COND] = max_precond;
+    if (std::isinf((&(*w))[W_COND]) || (&(*w))[W_COND] > max_precond) (&(*w))[W_COND] = max_precond;
   }
 }
 void finalize_preconditioner(vw& all, bfgs& b, float regularization)
