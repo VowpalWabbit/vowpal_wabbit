@@ -209,8 +209,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;
-  auto data =
-      scoped_calloc_or_throw<explore_type>(with_metrics, epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
+  auto data = scoped_calloc_or_throw<explore_type>(
+      with_metrics, epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
 
   VW::LEARNER::learner<explore_type, multi_ex>& l =
       VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
