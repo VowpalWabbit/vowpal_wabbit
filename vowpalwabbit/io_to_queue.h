@@ -8,13 +8,13 @@
 //Adds all lines of input to the input queue. The function version on this branch (multithread_parser_with_passes) supports passes.
 inline void io_lines_toqueue(vw& all){
 
- std::mutex mut;
- std::unique_lock<std::mutex> lock(mut);
+  std::mutex mut;
+  std::unique_lock<std::mutex> lock(mut);
+  
+  int num_passes_to_complete = all.numpasses;
  
- int num_passes_to_complete = all.numpasses;
- 
- int counter_of_number_passes = 0;
- while(counter_of_number_passes++ < num_passes_to_complete) {
+  int counter_of_number_passes = 0;
+  while(counter_of_number_passes++ < num_passes_to_complete) {
 
     //  zeset done_with_io (set when we are done adding to io) to false at beginning of new pass
     all.example_parser->done_with_io.store(false);

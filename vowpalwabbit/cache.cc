@@ -177,6 +177,7 @@ int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::s
   num_chars_initial = read_cached_feature(all, line, num_chars);
 
   if(line.size() == 0) {
+    VW::finish_example(*all, *examples.back());
     return 0;
   }
 
@@ -186,11 +187,7 @@ int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::s
     buf.add_file(VW::io::create_buffer_view(line.data(), line.size()));
   }
 
-  while (examples.size() > 0) {
-    examples.pop();
-  }
-
-  example *ae = &VW::get_unused_example(all);
+  example *ae = examples.back();//&VW::get_unused_example(all);
 
   int new_num_read = read_cached_features_single_example(all, ae, &buf);
 
@@ -206,13 +203,12 @@ int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::s
   all->example_parser->io_lines.push(unread_input);
 
   if(new_num_read == 0){
+    VW::finish_example(*all, *examples.back());
     return 0;
   }
 
-  examples.push_back(ae);
-  if (examples.size() > 0) {
-    (*all).example_parser->ready_parsed_examples.push(ae);
-  }   
+  //examples.push_back(ae);
+  all->example_parser->ready_parsed_examples.push(ae);
 
   return new_num_read;
 
