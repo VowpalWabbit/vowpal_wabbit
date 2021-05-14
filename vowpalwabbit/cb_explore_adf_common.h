@@ -64,6 +64,14 @@ inline size_t fill_tied(const v_array<ACTION_SCORE::action_score>& preds)
   return ret;
 }
 
+struct cb_explore_metrics
+{
+  size_t _metric_labeled;
+  size_t _metric_predict_in_learn;
+  float _metric_sum_cost;
+  float _metric_sum_cost_first;
+};
+
 // Object
 template <typename ExploreType>
 // data common to all cb_explore_adf reductions
@@ -75,15 +83,14 @@ private:
   CB::label _action_label;
   CB::label _empty_label;
   ACTION_SCORE::action_scores _saved_pred;
-  size_t _metric_labeled;
-  size_t _metric_predict_in_learn;
-  float _metric_sum_cost;
-  float _metric_sum_cost_first;
+  std::unique_ptr<cb_explore_metrics> _metrics;
 
 public:
   template <typename... Args>
-  cb_explore_adf_base(Args&&... args) : explore(std::forward<Args>(args)...)
+  cb_explore_adf_base(bool with_metrics, Args&&... args) : explore(std::forward<Args>(args)...)
   {
+    if (with_metrics) _metrics = VW::make_unique<cb_explore_metrics>();
+
     _saved_pred = v_init<ACTION_SCORE::action_score>();
   }
 
@@ -137,14 +144,17 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     data._known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
-    data._metric_labeled++;
-    data._metric_sum_cost += data._known_cost.cost;
-    if (examples[0]->pred.a_s[0].action == 0) { data._metric_sum_cost_first += data._known_cost.cost; }
+    if (data._metrics)
+    {
+      data._metrics->_metric_labeled++;
+      data._metrics->_metric_sum_cost += data._known_cost.cost;
+      if (examples[0]->pred.a_s[0].action == 0) { data._metrics->_metric_sum_cost_first += data._known_cost.cost; }
+    }
   }
   else
   {
     predict(data, base, examples);
-    data._metric_predict_in_learn++;
+    if (data._metrics) data._metrics->_metric_predict_in_learn++;
   }
 }
 
@@ -242,10 +252,13 @@ template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::persist_metrics(
     cb_explore_adf_base<ExploreType>& data, metric_sink& metrics)
 {
-  metrics.int_metrics_list.emplace_back("cbea_labeled_ex", data._metric_labeled);
-  metrics.int_metrics_list.emplace_back("cbea_predict_in_learn", data._metric_predict_in_learn);
-  metrics.float_metrics_list.emplace_back("cbea_sum_cost", data._metric_sum_cost);
-  metrics.float_metrics_list.emplace_back("cbea_sum_cost_baseline", data._metric_sum_cost_first);
+  if (data._metrics)
+  {
+    metrics.int_metrics_list.emplace_back("cbea_labeled_ex", data._metrics->_metric_labeled);
+    metrics.int_metrics_list.emplace_back("cbea_predict_in_learn", data._metrics->_metric_predict_in_learn);
+    metrics.float_metrics_list.emplace_back("cbea_sum_cost", data._metrics->_metric_sum_cost);
+    metrics.float_metrics_list.emplace_back("cbea_sum_cost_baseline", data._metrics->_metric_sum_cost_first);
+  }
 }
 
 }  // namespace cb_explore_adf
