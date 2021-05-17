@@ -22,10 +22,18 @@
 #include "decision_scores.h"
 #include "cb_continuous_label.h"
 #include "prob_dist_cont.h"
+#include "active_multiclass_prediction.h"
 
 #include <cstdint>
 #include <vector>
 #include <iostream>
+
+struct vw;
+namespace VW
+{
+void copy_example_data(example* dst, const example* src);
+void setup_example(vw& all, example* ae);
+}  // namespace VW
 
 struct polylabel
 {
@@ -61,7 +69,10 @@ struct polyprediction
   float prob = 0.f;                                          // for --probabilities --csoaa_ldf=mc
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
+  VW::active_multiclass_prediction active_multiclass;
 };
+
+float calculate_total_sum_features_squared(bool permutations, example& ec);
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
@@ -87,10 +98,16 @@ struct example : public example_predict  // core example datatype.
 
   // helpers
   size_t num_features = 0;         // precomputed, cause it's fast&easy.
+  size_t num_features_from_interactions = 0;
   float partial_prediction = 0.f;  // shared data for prediction.
   float updated_prediction = 0.f;  // estimated post-update prediction.
   float loss = 0.f;
-  float total_sum_feat_sq = 0.f;  // precomputed, cause it's kind of fast & easy.
+
+  // This value is only used for gd's sensitivity call, but it is costly to
+  // calculate. Therefore it is calculated only when needed. Anything that
+  // modifies the feature_groups in this example should invalidate this value
+  // with reset_total_sum_feat_sq() to ensure it gets recalculated if needed.
+  float total_sum_feat_sq = 0.f;
   float confidence = 0.f;
   features* passthrough =
       nullptr;  // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
@@ -106,6 +123,31 @@ struct example : public example_predict  // core example datatype.
   //     "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to
   //     them. " "Standalone examples are by definition always in use.")
   bool in_use = true;
+
+  size_t get_num_features() const noexcept { return num_features + num_features_from_interactions; }
+
+  float get_total_sum_feat_sq()
+  {
+    if (!total_sum_feat_sq_calculated)
+    {
+      total_sum_feat_sq = calculate_total_sum_features_squared(use_permutations, *this);
+      total_sum_feat_sq_calculated = true;
+    }
+    return total_sum_feat_sq;
+  }
+
+  void reset_total_sum_feat_sq()
+  {
+    total_sum_feat_sq = 0.f;
+    total_sum_feat_sq_calculated = false;
+  }
+
+  friend void VW::copy_example_data(example* dst, const example* src);
+  friend void VW::setup_example(vw& all, example* ae);
+
+private:
+  bool total_sum_feat_sq_calculated = false;
+  bool use_permutations = false;
 };
 VW_WARNING_STATE_POP
 

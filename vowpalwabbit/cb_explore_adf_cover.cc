@@ -74,7 +74,7 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
     , _epsilon_decay(epsilon_decay)
     , _first_only(first_only)
     , _cs_ldf_learner(cs_ldf_learner)
-    , _model_file_version(model_file_version)
+    , _model_file_version(std::move(model_file_version))
 {
   _gen_cs.cb_type = cb_type;
   _gen_cs.scorer = scorer;
@@ -115,12 +115,12 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
-  const uint32_t num_actions = (uint32_t)preds.size();
+  const uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
-  float additive_probability = 1.f / (float)_cover_size;
+  float additive_probability = 1.f / static_cast<float>(_cover_size);
 
   float min_prob = _epsilon_decay
-      ? std::min(_epsilon / num_actions, _epsilon / (float)std::sqrt(_counter * num_actions))
+      ? std::min(_epsilon / num_actions, _epsilon / static_cast<float>(std::sqrt(_counter * num_actions)))
       : _epsilon / num_actions;
 
   _action_probs.clear();
@@ -215,7 +215,7 @@ void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
   {
     std::stringstream msg;
     if (!read) { msg << "cb cover adf storing example counter:  = " << _counter << "\n"; }
-    bin_text_read_write_fixed_validated(io, (char*)&_counter, sizeof(_counter), "", read, msg, text);
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), "", read, msg, text);
   }
 }
 
@@ -282,7 +282,10 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   }
 
   // Set explore_type
-  const size_t problem_multiplier = cover_size + 1;
+  size_t problem_multiplier = cover_size + 1;
+
+  // Cover is using doubly robust without the cooperation of the base reduction
+  if (cb_type_enum == CB_TYPE_MTR) { problem_multiplier *= 2; }
 
   VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
@@ -299,15 +302,19 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
     epsilon_decay = true;
   }
 
+  bool with_metrics = options.was_supplied("extra_metrics");
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
-  auto data = scoped_calloc_or_throw<explore_type>(cover_size, psi, nounif, epsilon, epsilon_decay, first_only,
-      as_multiline(all.cost_sensitive), all.scorer, cb_type_enum, all.model_file_ver);
+  auto data = scoped_calloc_or_throw<explore_type>(with_metrics, cover_size, psi, nounif, epsilon, epsilon_decay,
+      first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type_enum, all.model_file_ver);
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(data, base, explore_type::learn, explore_type::predict,
       problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-cover", true);
 
   l.set_finish_example(explore_type::finish_multiline_example);
+  l.set_print_example(explore_type::print_multiline_example);
   l.set_save_load(explore_type::save_load);
+  l.set_persist_metrics(explore_type::persist_metrics);
   return make_base(l);
 }
 }  // namespace cover

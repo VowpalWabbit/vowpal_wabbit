@@ -60,6 +60,7 @@ const size_t pMULTICLASSPROBS = 7;
 const size_t pDECISION_SCORES = 8;
 const size_t pACTION_PDF_VALUE = 9;
 const size_t pPDF = 10;
+const size_t pACTIVE_MULTICLASS = 11;
 
 void dont_delete_me(void* arg) {}
 
@@ -399,6 +400,8 @@ size_t my_get_prediction_type(vw_ptr all)
       return pACTION_PDF_VALUE;
     case prediction_type_t::pdf:
       return pPDF;
+    case prediction_type_t::active_multiclass:
+      return pACTIVE_MULTICLASS;
     default:
       THROW("unsupported prediction type used");
   }
@@ -542,7 +545,7 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
 {  // warning: assumes namespace exists!
   ec->feature_space[ns].push_back(v, fid);
   ec->num_features++;
-  ec->total_sum_feat_sq += v * v;
+  ec->reset_total_sum_feat_sq();
 }
 
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
@@ -550,7 +553,6 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
   char ns_str[2] = {(char)ns, 0};
   uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0;
-  float sum_sq = 0.;
   for (ssize_t i = 0; i < len(a); i++)
   {
     feature f = {1., 0};
@@ -602,12 +604,11 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       {
         ec->feature_space[ns].push_back(f.x, f.weight_index);
         count++;
-        sum_sq += f.x * f.x;
       }
     }
   }
   ec->num_features += count;
-  ec->total_sum_feat_sq += sum_sq;
+  ec->reset_total_sum_feat_sq();
 }
 
 void ex_push_namespace(example_ptr ec, unsigned char ns) { ec->indices.push_back(ns); }
@@ -653,14 +654,14 @@ bool ex_pop_feature(example_ptr ec, unsigned char ns)
   if (ec->feature_space[ns].space_names.size() > 0) ec->feature_space[ns].space_names.pop_back();
   ec->num_features--;
   ec->feature_space[ns].sum_feat_sq -= val * val;
-  ec->total_sum_feat_sq -= val * val;
+  ec->reset_total_sum_feat_sq();
   return true;
 }
 
 void ex_erase_namespace(example_ptr ec, unsigned char ns)
 {
   ec->num_features -= ec->feature_space[ns].size();
-  ec->total_sum_feat_sq -= ec->feature_space[ns].sum_feat_sq;
+  ec->reset_total_sum_feat_sq();
   ec->feature_space[ns].sum_feat_sq = 0.;
   ec->feature_space[ns].clear();
 }
@@ -681,7 +682,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   vw& all = *vwP;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
-  ae->total_sum_feat_sq = 0;
+  ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
 
   if (all.ignore_some) { THROW("error: cannot unsetup example when some namespaces are ignored!"); }
@@ -786,6 +787,15 @@ py::list ex_get_pdf(example_ptr ec)
   return values;
 }
 
+py::tuple ex_get_active_multiclass(example_ptr ec)
+{
+  py::list values;
+  for (auto const& query_needed_class : ec->pred.active_multiclass.more_info_required_for_classes)
+  { values.append(query_needed_class); }
+
+  return py::make_tuple(ec->pred.active_multiclass.predicted_class, values);
+}
+
 py::list ex_get_multilabel_predictions(example_ptr ec)
 {
   py::list values;
@@ -815,11 +825,11 @@ float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec
 // example_counter is being overriden by lableType!
 size_t get_example_counter(example_ptr ec) { return ec->example_counter; }
 uint64_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
-size_t get_num_features(example_ptr ec) { return ec->num_features; }
+size_t get_num_features(example_ptr ec) { return ec->get_num_features(); }
 float get_partial_prediction(example_ptr ec) { return ec->partial_prediction; }
 float get_updated_prediction(example_ptr ec) { return ec->updated_prediction; }
 float get_loss(example_ptr ec) { return ec->loss; }
-float get_total_sum_feat_sq(example_ptr ec) { return ec->total_sum_feat_sq; }
+float get_total_sum_feat_sq(example_ptr ec) { return ec->get_total_sum_feat_sq(); }
 
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
@@ -1178,7 +1188,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
       .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
       .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
-      .def_readonly("pPDF", pPDF, "PDF prediction type");
+      .def_readonly("pPDF", pPDF, "PDF prediction type")
+      .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1249,6 +1260,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_decision_scores", &ex_get_decision_scores, "Get decision scores from example prediction")
       .def("get_action_pdf_value", &ex_get_action_pdf_value, "Get action and pdf value from example prediction")
       .def("get_pdf", &ex_get_pdf, "Get pdf from example prediction")
+      .def("get_active_multiclass", &ex_get_active_multiclass, "Get active multiclass from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,

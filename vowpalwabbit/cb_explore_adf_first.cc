@@ -12,6 +12,9 @@
 #include "cb_explore.h"
 #include "explore.h"
 #include "cb_explore_adf_common.h"
+#include "vw_versions.h"
+#include "version.h"
+
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -28,20 +31,26 @@ private:
   size_t _tau;
   float _epsilon;
 
+  VW::version_struct _model_file_version;
+
 public:
-  cb_explore_adf_first(size_t tau, float epsilon);
+  cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version);
   ~cb_explore_adf_first() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void save_load(io_buf& io, bool read, bool text);
 
 private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
 
-cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon) : _tau(tau), _epsilon(epsilon) {}
+cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version)
+    : _tau(tau), _epsilon(epsilon), _model_file_version(std::move(model_file_version))
+{
+}
 
 template <bool is_learn>
 void cb_explore_adf_first::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
@@ -53,11 +62,11 @@ void cb_explore_adf_first::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)preds.size();
+  uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   if (_tau)
   {
-    float prob = 1.f / (float)num_actions;
+    float prob = 1.f / static_cast<float>(num_actions);
     for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
     if (is_learn) _tau--;
   }
@@ -68,6 +77,17 @@ void cb_explore_adf_first::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   }
 
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
+}
+
+void cb_explore_adf_first::save_load(io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+  if (!read || _model_file_version >= VERSION_FILE_WITH_FIRST_SAVE_RESUME)
+  {
+    std::stringstream msg;
+    if (!read) { msg << "cb first adf storing example counter:  = " << _tau << "\n"; }
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_tau), sizeof(_tau), "", read, msg, text);
+  }
 }
 
 VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
@@ -95,8 +115,10 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
+  bool with_metrics = options.was_supplied("extra_metrics");
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_first>;
-  auto data = scoped_calloc_or_throw<explore_type>(tau, epsilon);
+  auto data = scoped_calloc_or_throw<explore_type>(with_metrics, tau, epsilon, all.model_file_ver);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
@@ -105,6 +127,9 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
           prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-first");
 
   l.set_finish_example(explore_type::finish_multiline_example);
+  l.set_print_example(explore_type::print_multiline_example);
+  l.set_persist_metrics(explore_type::persist_metrics);
+  l.set_save_load(explore_type::save_load);
   return make_base(l);
 }
 }  // namespace first

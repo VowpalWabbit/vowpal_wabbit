@@ -89,7 +89,7 @@ float binarySearch(float fhat, float delta, float sens, float tol)
       u = w;
     else
       l = w;
-    if (fabs(v) <= tol || u - l <= tol) break;
+    if (std::fabs(v) <= tol || u - l <= tol) break;
   }
 
   return l;
@@ -199,9 +199,11 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     }
 
     *(cs_a.all->trace_message) << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
-    *(cs_a.all->trace_message) << endl << "average distance to range = "
-			       << cs_a.distance_to_range / ((float)cs_a.labels_outside_range);
-    *(cs_a.all->trace_message) << endl << "average range = " << cs_a.range / ((float)cs_a.labels_outside_range);
+    *(cs_a.all->trace_message) << endl
+                               << "average distance to range = "
+                               << cs_a.distance_to_range / (static_cast<float>(cs_a.labels_outside_range));
+    *(cs_a.all->trace_message) << endl
+                               << "average range = " << cs_a.range / (static_cast<float>(cs_a.labels_outside_range));
   }
 
   if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes) return;
@@ -212,11 +214,11 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
   float min_max_cost = FLT_MAX;
-  float t = (float)cs_a.t;  // ec.example_t;  // current round
+  float t = static_cast<float>(cs_a.t);  // ec.example_t;  // current round
   float t_prev = t - 1.f;   // ec.weight; // last round
 
   float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / std::sqrt(t);  // threshold on cost range
-  float delta = cs_a.c0 * std::log((float)(cs_a.num_classes * std::max(t_prev, 1.f))) *
+  float delta = cs_a.c0 * std::log((cs_a.num_classes * std::max(t_prev, 1.f))) *
       static_cast<float>(std::pow(cs_a.cost_max - cs_a.cost_min, 2));  // threshold on empirical loss difference
 
   if (ld.costs.size() > 0)
@@ -236,8 +238,8 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     for (lq_data& lqd : cs_a.query_data)
     {
       lqd.is_range_overlapped = (lqd.min_pred <= min_max_cost);
-      n_overlapped += (uint32_t)(lqd.is_range_overlapped);
-      cs_a.overlapped_and_range_small += (size_t)(lqd.is_range_overlapped && !lqd.is_range_large);
+      n_overlapped += static_cast<uint32_t>(lqd.is_range_overlapped);
+      cs_a.overlapped_and_range_small += static_cast<size_t>(lqd.is_range_overlapped && !lqd.is_range_large);
       if (lqd.cl->x > lqd.max_pred || lqd.cl->x < lqd.min_pred)
       {
         cs_a.labels_outside_range++;
@@ -254,7 +256,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
           (query && lqd.is_range_overlapped && lqd.is_range_large));
       inner_loop<is_learn, is_simulation>(cs_a, base, ec, lqd.cl->class_index, lqd.cl->x, prediction, score,
           lqd.cl->partial_prediction, query_label, lqd.query_needed);
-      if (lqd.query_needed) ec.pred.multilabels.label_v.push_back(lqd.cl->class_index);
+      if (lqd.query_needed) { ec.pred.active_multiclass.more_info_required_for_classes.push_back(lqd.cl->class_index); }
       if (cs_a.print_debug_stuff)
         logger::errlog_info("label={0} x={1} prediction={2} score={3} pp={4} ql={5} qn={6} ro={7} rl={8} "
                             "[{9}, {10}] vs delta={11} n_overlapped={12} is_baseline={13}",
@@ -281,11 +283,15 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
     { inner_loop<false, is_simulation>(cs_a, base, ec, i, FLT_MAX, prediction, score, temp, temp2, temp3); }
   }
 
-  ec.pred.multiclass = prediction;
+  ec.pred.active_multiclass.predicted_class = prediction;
   ec.l.cs = ld;
 }
 
-void finish_example(vw& all, cs_active& cs_a, example& ec) { CSOAA::finish_example(all, *(CSOAA::csoaa*)&cs_a, ec); }
+void finish_example(vw& all, cs_active&, example& ec)
+{
+  COST_SENSITIVE::output_example(all, ec, ec.l.cs, ec.pred.active_multiclass.predicted_class);
+  VW::finish_example(all, ec);
+}
 
 base_learner* cs_active_setup(options_i& options, vw& all)
 {
@@ -349,10 +355,10 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   learner<cs_active, example>& l = simulation
       ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-            predict_or_learn<false, true>, data->num_classes, prediction_type_t::multilabels,
+            predict_or_learn<false, true>, data->num_classes, prediction_type_t::active_multiclass,
             all.get_setupfn_name(cs_active_setup) + "-sim", true)
       : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
-            predict_or_learn<false, false>, data->num_classes, prediction_type_t::multilabels,
+            predict_or_learn<false, false>, data->num_classes, prediction_type_t::active_multiclass,
             all.get_setupfn_name(cs_active_setup), true);
 
   l.set_finish_example(finish_example);

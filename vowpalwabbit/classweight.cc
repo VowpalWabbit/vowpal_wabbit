@@ -50,7 +50,7 @@ void update_example_weight(classweights& cweights, example& ec)
   switch (pred_type)
   {
     case prediction_type_t::scalar:
-      ec.weight *= cweights.get_class_weight((uint32_t)ec.l.simple.label);
+      ec.weight *= cweights.get_class_weight(static_cast<uint32_t>(ec.l.simple.label));
       break;
     case prediction_type_t::multiclass:
       ec.weight *= cweights.get_class_weight(ec.l.multi.label);

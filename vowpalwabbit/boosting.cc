@@ -23,37 +23,16 @@
 #include "vw.h"
 #include "rand48.h"
 #include "shared_data.h"
+#include "vw_math.h"
 
 #include "io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+
 namespace logger = VW::io::logger;
 
 using std::endl;
-
-inline float sign(float w)
-{
-  if (w <= 0.)
-    return -1.;
-  else
-    return 1.;
-}
-
-int64_t choose(int64_t n, int64_t k)
-{
-  if (k > n) return 0;
-  if (k < 0) return 0;
-  if (k == n) return 1;
-  if (k == 0 && n != 0) return 1;
-  int64_t r = 1;
-  for (int64_t d = 1; d <= k; ++d)
-  {
-    r *= n--;
-    r /= d;
-  }
-  return r;
-}
 
 struct boosting
 {
@@ -87,7 +66,7 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, example& e
   {
     if (is_learn)
     {
-      float k = floorf((float)(o.N - i - s) / 2);
+      float k = floorf((o.N - i - s) / 2);
       int64_t c;
       if (o.N - (i + 1) < 0)
         c = 0;
@@ -95,16 +74,16 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, example& e
         c = 0;
       else if (k < 0)
         c = 0;
-      else if (o.C[o.N - (i + 1)][(int64_t)k] != -1)
-        c = o.C[o.N - (i + 1)][(int64_t)k];
+      else if (o.C[o.N - (i + 1)][static_cast<int64_t>(k)] != -1)
+        c = o.C[o.N - (i + 1)][static_cast<int64_t>(k)];
       else
       {
-        c = choose(o.N - (i + 1), (int64_t)k);
-        o.C[o.N - (i + 1)][(int64_t)k] = c;
+        c = VW::math::choose(o.N - (i + 1), static_cast<int64_t>(k));
+        o.C[o.N - (i + 1)][static_cast<int64_t>(k)] = c;
       }
 
-      float w = c * (float)pow((double)(0.5 + o.gamma), (double)k) *
-          (float)pow((double)0.5 - o.gamma, (double)(o.N - (i + 1) - k));
+      float w = c * static_cast<float>(pow((0.5 + o.gamma), static_cast<double>(k))) *
+          static_cast<float>(pow((double)0.5 - o.gamma, static_cast<double>(o.N - (i + 1) - k)));
 
       // update ec.weight, weight for learner i (starting from 0)
       ec.weight = u * w;
@@ -127,7 +106,7 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, example& e
 
   ec.weight = u;
   ec.partial_prediction = final_prediction;
-  ec.pred.scalar = sign(final_prediction);
+  ec.pred.scalar = VW::math::sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
@@ -149,7 +128,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, e
   float u = ec.weight;
 
   if (is_learn) o.t++;
-  float eta = 4.f / sqrtf((float)o.t);
+  float eta = 4.f / sqrtf(static_cast<float>(o.t));
 
   for (int i = 0; i < o.N; i++)
   {
@@ -185,7 +164,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, e
 
   ec.weight = u;
   ec.partial_prediction = final_prediction;
-  ec.pred.scalar = sign(final_prediction);
+  ec.pred.scalar = VW::math::sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
@@ -205,7 +184,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, e
   float u = ec.weight;
 
   if (is_learn) o.t++;
-  float eta = 4.f / (float)sqrtf((float)o.t);
+  float eta = 4.f / sqrtf(static_cast<float>(o.t));
 
   float stopping_point = o._random_state->get_and_update_random();
 
@@ -265,7 +244,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, e
 
   ec.weight = u;
   ec.partial_prediction = final_prediction;
-  ec.pred.scalar = sign(final_prediction);
+  ec.pred.scalar = VW::math::sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
@@ -278,7 +257,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   if (model_file.num_files() == 0) return;
   std::stringstream os;
   os << "boosts " << o.N << endl;
-  bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&(o.N)), sizeof(o.N), "", read, os, text);
 
   if (read)
   {
@@ -290,28 +269,28 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     if (read)
     {
       float f;
-      model_file.bin_read_fixed((char*)&f, sizeof(f), "");
+      model_file.bin_read_fixed(reinterpret_cast<char*>(&f), sizeof(f), "");
       o.alpha[i] = f;
     }
     else
     {
       std::stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
-      bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
+      bin_text_write_fixed(model_file, reinterpret_cast<char*>(&(o.alpha[i])), sizeof(o.alpha[i]), os2, text);
     }
 
   for (int i = 0; i < o.N; i++)
     if (read)
     {
       float f;
-      model_file.bin_read_fixed((char*)&f, sizeof(f), "");
+      model_file.bin_read_fixed(reinterpret_cast<char*>(&f), sizeof(f), "");
       o.v[i] = f;
     }
     else
     {
       std::stringstream os2;
       os2 << "v " << o.v[i] << endl;
-      bin_text_write_fixed(model_file, (char*)&(o.v[i]), sizeof(o.v[i]), os2, text);
+      bin_text_write_fixed(model_file, reinterpret_cast<char*>(&(o.v[i])), sizeof(o.v[i]), os2, text);
     }
 
   // avoid making syscalls multiple times
@@ -344,7 +323,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
   if (model_file.num_files() == 0) return;
   std::stringstream os;
   os << "boosts " << o.N << endl;
-  bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&(o.N)), sizeof(o.N), "", read, os, text);
 
   if (read) o.alpha.resize(o.N);
 
@@ -352,14 +331,14 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
     if (read)
     {
       float f;
-      model_file.bin_read_fixed((char*)&f, sizeof(f), "");
+      model_file.bin_read_fixed(reinterpret_cast<char*>(&f), sizeof(f), "");
       o.alpha[i] = f;
     }
     else
     {
       std::stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
-      bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
+      bin_text_write_fixed(model_file, reinterpret_cast<char*>(&(o.alpha[i])), sizeof(o.alpha[i]), os2, text);
     }
 
   if (!o.all->logger.quiet)

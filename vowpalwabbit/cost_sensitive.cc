@@ -39,14 +39,14 @@ void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v
 
 char* bufread_label(label& ld, char* c, io_buf& cache)
 {
-  size_t num = *(size_t*)c;
+  size_t num = *reinterpret_cast<size_t*>(c);
   ld.costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(wclass) * num;
-  if (cache.buf_read(c, (int)total) < total) { THROW("error in demarshal of cost data"); }
+  if (cache.buf_read(c, static_cast<int>(total)) < total) { THROW("error in demarshal of cost data"); }
   for (size_t i = 0; i < num; i++)
   {
-    wclass temp = *(wclass*)c;
+    wclass temp = *reinterpret_cast<wclass*>(c);
     c += sizeof(wclass);
     ld.costs.push_back(temp);
   }
@@ -59,7 +59,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
   ld.costs.clear();
   char* c;
   size_t total = sizeof(size_t);
-  if (cache.buf_read(c, (int)total) < total) return 0;
+  if (cache.buf_read(c, static_cast<int>(total)) < total) return 0;
   bufread_label(ld, c, cache);
 
   return total;
@@ -69,11 +69,11 @@ float weight(label&) { return 1.; }
 
 char* bufcache_label(label& ld, char* c)
 {
-  *(size_t*)c = ld.costs.size();
+  *reinterpret_cast<size_t*>(c) = ld.costs.size();
   c += sizeof(size_t);
   for (unsigned int i = 0; i < ld.costs.size(); i++)
   {
-    *(wclass*)c = ld.costs[i];
+    *reinterpret_cast<wclass*>(c) = ld.costs[i];
     c += sizeof(wclass);
   }
   return c;
@@ -88,13 +88,17 @@ void cache_label(label& ld, io_buf& cache)
 
 void default_label(label& ld) { ld.costs.clear(); }
 
-bool test_label(label& ld)
+bool test_label_internal(const label& ld)
 {
   if (ld.costs.size() == 0) return true;
   for (unsigned int i = 0; i < ld.costs.size(); i++)
     if (FLT_MAX != ld.costs[i].x) return false;
   return true;
 }
+
+bool test_label(const label& ld) { return test_label_internal(ld); }
+
+bool test_label(label& ld) { return test_label_internal(ld); }
 
 void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_view>& words, reduction_features&)
 {
@@ -148,8 +152,9 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
 
     if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3)
     {
-      f.class_index = sd->ldict ? (uint32_t)sd->ldict->get(p->parse_name[0])
-                                : (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
+      f.class_index = sd->ldict
+          ? sd->ldict->get(p->parse_name[0])
+          : static_cast<uint32_t>(hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0));
       if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
     }
@@ -184,14 +189,14 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
-    size_t num_current_features = ec.num_features;
+    size_t num_current_features = ec.get_num_features();
     // for csoaa_ldf we want features from the whole (multiline example),
     // not only from one line (the first one) represented by ec
     if (ec_seq != nullptr)
     {
       num_current_features = 0;
       // TODO: including quadratic and cubic.
-      for (auto& ecc : *ec_seq) num_current_features += ecc->num_features;
+      for (auto& ecc : *ec_seq) num_current_features += ecc->get_num_features();
     }
 
     std::string label_buf;
@@ -225,19 +230,17 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
   }
 }
 
-void output_example(vw& all, example& ec)
+void output_example(vw& all, example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction)
 {
-  label& ld = ec.l.cs;
-
   float loss = 0.;
-  if (!test_label(ec.l.cs))
+  if (!test_label(cs_label))
   {
     // need to compute exact loss
-    size_t pred = (size_t)ec.pred.multiclass;
+    size_t pred = static_cast<size_t>(multiclass_prediction);
 
     float chosen_loss = FLT_MAX;
     float min = FLT_MAX;
-    for (auto& cl : ld.costs)
+    for (const auto& cl : cs_label.costs)
     {
       if (cl.class_index == pred) chosen_loss = cl.x;
       if (cl.x < min) min = cl.x;
@@ -250,14 +253,14 @@ void output_example(vw& all, example& ec)
     // loss = chosen_loss;
   }
 
-  all.sd->update(ec.test_only, !test_label(ec.l.cs), loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, !test_label(cs_label), loss, ec.weight, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
   {
-    if (!all.sd->ldict) { all.print_by_ref(sink.get(), (float)ec.pred.multiclass, 0, ec.tag); }
+    if (!all.sd->ldict) { all.print_by_ref(sink.get(), static_cast<float>(multiclass_prediction), 0, ec.tag); }
     else
     {
-      VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
+      VW::string_view sv_pred = all.sd->ldict->get(multiclass_prediction);
       all.print_text_by_ref(sink.get(), sv_pred.to_string(), ec.tag);
     }
   }
@@ -265,27 +268,29 @@ void output_example(vw& all, example& ec)
   if (all.raw_prediction != nullptr)
   {
     std::stringstream outputStringStream;
-    for (unsigned int i = 0; i < ld.costs.size(); i++)
+    for (unsigned int i = 0; i < cs_label.costs.size(); i++)
     {
-      wclass cl = ld.costs[i];
+      wclass cl = cs_label.costs[i];
       if (i > 0) outputStringStream << ' ';
       outputStringStream << cl.class_index << ':' << cl.partial_prediction;
     }
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, test_label(ec.l.cs), ec, nullptr, false, ec.pred.multiclass);
+  print_update(all, test_label(cs_label), ec, nullptr, false, multiclass_prediction);
 }
+
+void output_example(vw& all, example& ec) { output_example(all, ec, ec.l.cs, ec.pred.multiclass); }
 
 void finish_example(vw& all, example& ec)
 {
-  output_example(all, ec);
+  output_example(all, ec, ec.l.cs, ec.pred.multiclass);
   VW::finish_example(all, ec);
 }
 
 bool example_is_test(example& ec)
 {
-  v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
+  const auto& costs = ec.l.cs.costs;
   if (costs.size() == 0) return true;
   for (size_t j = 0; j < costs.size(); j++)
     if (costs[j].x != FLT_MAX) return false;
@@ -294,7 +299,7 @@ bool example_is_test(example& ec)
 
 bool ec_is_example_header(example const& ec)  // example headers look like "shared"
 {
-  v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
+  const auto& costs = ec.l.cs.costs;
   if (costs.size() != 1) return false;
   if (costs[0].class_index != 0) return false;
   if (costs[0].x != -FLT_MAX) return false;

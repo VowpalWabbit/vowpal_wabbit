@@ -175,7 +175,7 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
 
   for (auto* ec : ec_seq)
   {
-    num_features += ec->num_features;
+    num_features += ec->get_num_features();
 
     if (ec->l.slates.type == slates::example_type::slot)
     {

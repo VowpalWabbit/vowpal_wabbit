@@ -84,8 +84,10 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
+  bool with_metrics = options.was_supplied("extra_metrics");
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_softmax>;
-  auto data = scoped_calloc_or_throw<explore_type>(epsilon, lambda);
+  auto data = scoped_calloc_or_throw<explore_type>(with_metrics, epsilon, lambda);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
@@ -94,6 +96,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
           prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-softmax");
 
   l.set_finish_example(explore_type::finish_multiline_example);
+  l.set_print_example(explore_type::print_multiline_example);
+  l.set_persist_metrics(explore_type::persist_metrics);
   return make_base(l);
 }
 }  // namespace softmax

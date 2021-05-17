@@ -74,7 +74,7 @@ void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner &base, multi_ex &exa
 {
   // Randomize over predictions from a base set of predictors
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)examples.size();
+  uint32_t num_actions = static_cast<uint32_t>(examples.size());
   if (num_actions == 0)
   {
     preds.clear();
@@ -135,6 +135,13 @@ void finish_bag_example(vw &all, cb_explore_adf_base<cb_explore_adf_bag> &data, 
   cb_explore_adf_base<cb_explore_adf_bag>::finish_multiline_example(all, data, ec_seq);
 }
 
+void print_bag_example(vw& all, cb_explore_adf_base<cb_explore_adf_bag>& data, multi_ex& ec_seq)
+{
+  assert(ec_seq.size() > 0);
+  ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
+  cb_explore_adf_base<cb_explore_adf_bag>::print_multiline_example(all, data, ec_seq);
+}
+
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
@@ -168,13 +175,18 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
+  bool with_metrics = options.was_supplied("extra_metrics");
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
-  auto data = scoped_calloc_or_throw<explore_type>(epsilon, bag_size, greedify, first_only, all.get_random_state());
+  auto data = scoped_calloc_or_throw<explore_type>(
+      with_metrics, epsilon, bag_size, greedify, first_only, all.get_random_state());
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(data, base, explore_type::learn,
       explore_type::predict, problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-bag");
 
   l.set_finish_example(finish_bag_example);
+  l.set_print_example(print_bag_example);
+  l.set_persist_metrics(explore_type::persist_metrics);
   return make_base(l);
 }
 

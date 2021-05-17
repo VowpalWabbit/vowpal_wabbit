@@ -97,7 +97,7 @@ void update_inner(const svrg& s, example& ec)
   u.g_scalar_inner = gradient_scalar(s, ec, ec.pred.scalar);
   u.g_scalar_stable = gradient_scalar(s, ec, predict_stable(s, ec));
   u.eta = s.all->eta;
-  u.norm = (float)s.stable_grad_count;
+  u.norm = static_cast<float>(s.stable_grad_count);
   GD::foreach_feature<update, update_inner_feature>(*s.all, ec, u);
 }
 
@@ -111,7 +111,7 @@ void learn(svrg& s, single_learner& base, example& ec)
 {
   predict(s, base, ec);
 
-  const int pass = (int)s.all->passes_complete;
+  const int pass = static_cast<int>(s.all->passes_complete);
 
   if (pass % (s.stage_size + 1) == 0)  // Compute exact gradient
   {
@@ -149,7 +149,7 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     bool resume = s.all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), "", read, msg, text);
 
     double temp = 0.;
     if (resume)

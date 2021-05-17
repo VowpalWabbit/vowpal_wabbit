@@ -54,6 +54,9 @@
     <ClCompile Include="initialize_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="interactions_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="io_adapter_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -61,6 +64,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="math_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="object_pool_test.cc">

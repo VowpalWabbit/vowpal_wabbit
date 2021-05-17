@@ -6,6 +6,19 @@
 #include <vector>
 #include "reductions_fwd.h"
 
+namespace CB
+{
+struct cb_class;
+}
+
+namespace VW
+{
+namespace io
+{
+struct writer;
+}
+}  // namespace VW
+
 VW::LEARNER::base_learner* cb_adf_setup(VW::config::options_i& options, vw& all);
 
 namespace CB_ADF

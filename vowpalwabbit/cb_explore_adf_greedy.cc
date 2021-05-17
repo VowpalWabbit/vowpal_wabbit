@@ -50,7 +50,7 @@ void cb_explore_adf_greedy::update_example_prediction(multi_ex& examples)
 {
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
 
-  uint32_t num_actions = (uint32_t)preds.size();
+  uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   size_t tied_actions = fill_tied(preds);
 
@@ -115,8 +115,10 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
+  bool with_metrics = options.was_supplied("extra_metrics");
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
-  auto data = scoped_calloc_or_throw<explore_type>(epsilon, first_only);
+  auto data = scoped_calloc_or_throw<explore_type>(with_metrics, epsilon, first_only);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
@@ -125,6 +127,8 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
           prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-greedy");
 
   l.set_finish_example(explore_type::finish_multiline_example);
+  l.set_print_example(explore_type::print_multiline_example);
+  l.set_persist_metrics(explore_type::persist_metrics);
   return make_base(l);
 }
 

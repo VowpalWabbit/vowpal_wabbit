@@ -352,7 +352,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, const CCB::label& ccb_labe
     cb_ex.push_back(data.actions[i]);
 
     // Save the original index from the root multi-example
-    data.origin_index[index++] = (uint32_t)i;
+    data.origin_index[index++] = static_cast<uint32_t>(i);
 
     // Remember the index of the chosen action
     if (is_learn)
@@ -360,7 +360,7 @@ void build_cb_example(multi_ex& cb_ex, example* slot, const CCB::label& ccb_labe
       if (slot_has_label && i == ccb_label.outcome->probabilities[0].action)
       {
         // This is used to remove the label later.
-        data.action_with_label = (uint32_t)i;
+        data.action_with_label = static_cast<uint32_t>(i);
         attach_label_to_example(index, data.actions[i], ccb_label.outcome, data);
       }
     }
@@ -583,7 +583,7 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
   // Should this be done for shared, action and slot?
   for (auto* ec : ec_seq)
   {
-    num_features += ec->num_features;
+    num_features += ec->get_num_features();
 
     if (ec->l.conditional_contextual_bandit.type == CCB::example_type::slot) { slots.push_back(ec); }
   }
@@ -647,8 +647,8 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
   {
     std::stringstream msg;
     if (!read) { msg << "CCB: has_seen_multi_slot_example = " << sm.has_seen_multi_slot_example << "\n"; }
-    bin_text_read_write_fixed_validated(
-        io, (char*)&sm.has_seen_multi_slot_example, sizeof(sm.has_seen_multi_slot_example), "", read, msg, text);
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&sm.has_seen_multi_slot_example),
+        sizeof(sm.has_seen_multi_slot_example), "", read, msg, text);
   }
 }
 

@@ -110,7 +110,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
       const char* str = value.GetString();
       // String escape
       const char* end = str + value.GetStringLength();
-      for (char* p = (char*)str; p != end; p++)
+      for (char* p = const_cast<char*>(str); p != end; p++)
       {
         switch (*p)
         {
@@ -125,7 +125,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
       if (all.chain_hash_json) { namespaces.back().AddFeature(&all, key_namespace, str); }
       else
       {
-        char* prepend = (char*)str - key_namespace_length;
+        char* prepend = const_cast<char*>(str) - key_namespace_length;
         std::memmove(prepend, key_namespace, key_namespace_length);
         namespaces.back().AddFeature(&all, prepend);
       }
@@ -249,6 +249,8 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
   }
 
   if (document.HasMember("EventId")) { data->eventId = document["EventId"].GetString(); }
+
+  if (document.HasMember("Timestamp")) { data->timestamp = document["Timestamp"].GetString(); }
 
   if (document.HasMember("_skipLearn")) { data->skipLearn = document["_skipLearn"].GetBool(); }
 

@@ -100,7 +100,7 @@ void make_marginal(data& sm, example& ec)
             sm.expert_state.insert(std::make_pair(key, std::make_pair(e, e)));
           }
         }
-        float marginal_pred = (float)(sm.marginals[key].first / sm.marginals[key].second);
+        float marginal_pred = static_cast<float>(sm.marginals[key].first / sm.marginals[key].second);
         f.push_back(marginal_pred, first_index);
         if (!sm.temp[n].space_names.empty()) f.space_names.push_back(sm.temp[n].space_names[2 * (f.size() - 1)]);
 
@@ -175,7 +175,7 @@ void update_marginal(data& sm, example& ec)
         if (sm.compete)  // now update weights, before updating marginals
         {
           expert_pair& e = sm.expert_state[key];
-          float regret1 = sm.alg_loss - all.loss->getLoss(all.sd, (float)(m.first / m.second), label);
+          float regret1 = sm.alg_loss - all.loss->getLoss(all.sd, static_cast<float>(m.first / m.second), label);
           float regret2 = sm.alg_loss - all.loss->getLoss(all.sd, sm.feature_pred, label);
 
           e.first.regret += regret1 * weight;
@@ -246,10 +246,11 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
   uint64_t total_size;
   if (!read)
   {
-    total_size = (uint64_t)sm.marginals.size();
+    total_size = static_cast<uint64_t>(sm.marginals.size());
     msg << "marginals size = " << total_size << "\n";
   }
-  bin_text_read_write_fixed_validated(io, (char*)&total_size, sizeof(total_size), "", read, msg, text);
+  bin_text_read_write_fixed_validated(
+      io, reinterpret_cast<char*>(&total_size), sizeof(total_size), "", read, msg, text);
 
   auto iter = sm.marginals.begin();
   for (size_t i = 0; i < total_size; ++i)
@@ -260,21 +261,21 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
       index = iter->first >> stride_shift;
       msg << index << ":";
     }
-    bin_text_read_write_fixed(io, (char*)&index, sizeof(index), "", read, msg, text);
+    bin_text_read_write_fixed(io, reinterpret_cast<char*>(&index), sizeof(index), "", read, msg, text);
     double numerator;
     if (!read)
     {
       numerator = iter->second.first;
       msg << numerator << ":";
     }
-    bin_text_read_write_fixed(io, (char*)&numerator, sizeof(numerator), "", read, msg, text);
+    bin_text_read_write_fixed(io, reinterpret_cast<char*>(&numerator), sizeof(numerator), "", read, msg, text);
     double denominator;
     if (!read)
     {
       denominator = iter->second.second;
       msg << denominator << "\n";
     }
-    bin_text_read_write_fixed(io, (char*)&denominator, sizeof(denominator), "", read, msg, text);
+    bin_text_read_write_fixed(io, reinterpret_cast<char*>(&denominator), sizeof(denominator), "", read, msg, text);
     if (read)
       sm.marginals.insert(std::make_pair(index << stride_shift, std::make_pair(numerator, denominator)));
     else
@@ -285,10 +286,11 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
   {
     if (!read)
     {
-      total_size = (uint64_t)sm.expert_state.size();
+      total_size = static_cast<uint64_t>(sm.expert_state.size());
       msg << "expert_state size = " << total_size << "\n";
     }
-    bin_text_read_write_fixed_validated(io, (char*)&total_size, sizeof(total_size), "", read, msg, text);
+    bin_text_read_write_fixed_validated(
+        io, reinterpret_cast<char*>(&total_size), sizeof(total_size), "", read, msg, text);
 
     auto exp_iter = sm.expert_state.begin();
     for (size_t i = 0; i < total_size; ++i)
@@ -299,7 +301,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
         index = exp_iter->first >> stride_shift;
         msg << index << ":";
       }
-      bin_text_read_write_fixed(io, (char*)&index, sizeof(index), "", read, msg, text);
+      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&index), sizeof(index), "", read, msg, text);
       float r1 = 0;
       float c1 = 0;
       float w1 = 0;
@@ -316,17 +318,17 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
         w2 = exp_iter->second.second.weight;
         msg << r1 << ":";
       }
-      bin_text_read_write_fixed(io, (char*)&r1, sizeof(r1), "", read, msg, text);
+      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&r1), sizeof(r1), "", read, msg, text);
       if (!read) msg << c1 << ":";
-      bin_text_read_write_fixed(io, (char*)&c1, sizeof(c1), "", read, msg, text);
+      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&c1), sizeof(c1), "", read, msg, text);
       if (!read) msg << w1 << ":";
-      bin_text_read_write_fixed(io, (char*)&w1, sizeof(w1), "", read, msg, text);
+      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&w1), sizeof(w1), "", read, msg, text);
       if (!read) msg << r2 << ":";
-      bin_text_read_write_fixed(io, (char*)&r2, sizeof(r2), "", read, msg, text);
+      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&r2), sizeof(r2), "", read, msg, text);
       if (!read) msg << c2 << ":";
-      bin_text_read_write_fixed(io, (char*)&c2, sizeof(c2), "", read, msg, text);
+      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&c2), sizeof(c2), "", read, msg, text);
       if (!read) msg << w2 << ":";
-      bin_text_read_write_fixed(io, (char*)&w2, sizeof(w2), "", read, msg, text);
+      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&w2), sizeof(w2), "", read, msg, text);
 
       if (read)
       {
@@ -368,7 +370,7 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
   d->all = &all;
 
   for (size_t u = 0; u < 256; u++)
-    if (marginal.find((char)u) != std::string::npos) d->id_features[u] = true;
+    if (marginal.find(static_cast<char>(u)) != std::string::npos) d->id_features[u] = true;
 
   VW::LEARNER::learner<MARGINAL::data, example>& ret = init_learner(d, as_singleline(setup_base(options, all)),
       predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(marginal_setup), true);

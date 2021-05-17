@@ -9,6 +9,7 @@
 #include "interactions.h"
 #include "array_parameters.h"
 #include "gd_predict.h"
+#include "vw_math.h"
 
 namespace GD
 {
@@ -60,38 +61,53 @@ inline void vec_add_multipredict(multipredict_info<T>& mp, const float fx, uint6
     }
 }
 
-// iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
-template <class R, typename T>
-inline void foreach_feature(vw& all, features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
-{
-  if (all.weights.sparse)
-    foreach_feature(all.weights.sparse_weights, fs, dat, offset, mult);
-  else
-    foreach_feature(all.weights.dense_weights, fs, dat, offset, mult);
-}
-
-template <class R, class S, void (*T)(R&, float, S)>
-inline void foreach_feature(vw& all, example& ec, R& dat)
+// iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
+template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT)>
+inline void foreach_feature(vw& all, example& ec, DataT& dat)
 {
   return all.weights.sparse
-      ? foreach_feature<R, S, T, sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear,
-            all.ignore_linear, *ec.interactions, all.permutations, ec, dat)
-      : foreach_feature<R, S, T, dense_parameters>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear,
-            *ec.interactions, all.permutations, ec, dat);
+      ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters>(all.weights.sparse_weights,
+            all.ignore_some_linear, all.ignore_linear, *ec.interactions, all.permutations, ec, dat)
+      : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters>(all.weights.dense_weights,
+            all.ignore_some_linear, all.ignore_linear, *ec.interactions, all.permutations, ec, dat);
+}
+
+// iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
+template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT)>
+inline void foreach_feature(vw& all, example& ec, DataT& dat, size_t& num_interacted_features)
+{
+  return all.weights.sparse ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters>(
+                                  all.weights.sparse_weights, all.ignore_some_linear, all.ignore_linear,
+                                  *ec.interactions, all.permutations, ec, dat, num_interacted_features)
+                            : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters>(all.weights.dense_weights,
+                                  all.ignore_some_linear, all.ignore_linear, *ec.interactions, all.permutations, ec,
+                                  dat, num_interacted_features);
 }
 
 // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x,
 // feature_weight)
-template <class R, void (*T)(R&, float, float&)>
-inline void foreach_feature(vw& all, example& ec, R& dat)
+template <class DataT, void (*FuncT)(DataT&, float, float&)>
+inline void foreach_feature(vw& all, example& ec, DataT& dat)
 {
-  foreach_feature<R, float&, T>(all, ec, dat);
+  foreach_feature<DataT, float&, FuncT>(all, ec, dat);
 }
 
-template <class R, void (*T)(R&, float, const float&)>
-inline void foreach_feature(vw& all, example& ec, R& dat)
+template <class DataT, void (*FuncT)(DataT&, float, float)>
+inline void foreach_feature(vw& all, example& ec, DataT& dat)
 {
-  foreach_feature<R, const float&, T>(all, ec, dat);
+  foreach_feature<DataT, float, FuncT>(all, ec, dat);
+}
+
+template <class DataT, void (*FuncT)(DataT&, float, float&)>
+inline void foreach_feature(vw& all, example& ec, DataT& dat, size_t& num_interacted_features)
+{
+  foreach_feature<DataT, float&, FuncT>(all, ec, dat, num_interacted_features);
+}
+
+template <class DataT, void (*FuncT)(DataT&, float, const float&)>
+inline void foreach_feature(vw& all, example& ec, DataT& dat, size_t& num_interacted_features)
+{
+  foreach_feature<DataT, const float&, FuncT>(all, ec, dat, num_interacted_features);
 }
 
 inline float inline_predict(vw& all, example& ec)
@@ -104,17 +120,19 @@ inline float inline_predict(vw& all, example& ec)
             *ec.interactions, all.permutations, ec, simple_red_features.initial);
 }
 
-inline float sign(float w)
+inline float inline_predict(vw& all, example& ec, size_t& num_generated_features)
 {
-  if (w < 0.)
-    return -1.;
-  else
-    return 1.;
+  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  return all.weights.sparse
+      ? inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear, all.ignore_linear,
+            *ec.interactions, all.permutations, ec, num_generated_features, simple_red_features.initial)
+      : inline_predict<dense_parameters>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear,
+            *ec.interactions, all.permutations, ec, num_generated_features, simple_red_features.initial);
 }
 
 inline float trunc_weight(const float w, const float gravity)
 {
-  return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
+  return (gravity < fabsf(w)) ? w - VW::math::sign(w) * gravity : 0.f;
 }
 
 }  // namespace GD

@@ -41,7 +41,7 @@ void truncate(vw& all, T& weights)
 {
   static double sd = calculate_sd(all, weights);
   std::for_each(weights.begin(), weights.end(), [](float& v) {
-    if (std::fabs(v) > sd * 2) { v = (float)std::remainder(static_cast<double>(v), sd * 2); }
+    if (std::fabs(v) > sd * 2) { v = static_cast<float>(std::remainder(static_cast<double>(v), sd * 2)); }
   });
 }
 
@@ -63,7 +63,7 @@ void initialize_regressor(vw& all, T& weights)
   // Regressor is already initialized.
   if (weights.not_null()) return;
 
-  size_t length = ((size_t)1) << all.num_bits;
+  size_t length = (static_cast<size_t>(1)) << all.num_bits;
   try
   {
     uint32_t ss = weights.stride_shift();
@@ -117,7 +117,7 @@ bool resize_buf_if_needed(char*& __dest, size_t& __dest_size, const size_t __n)
   char* new_dest;
   if (__dest_size < __n)
   {
-    if ((new_dest = (char*)realloc(__dest, __n)) == NULL)
+    if ((new_dest = static_cast<char*>(realloc(__dest, __n))) == nullptr)
       THROW("Can't realloc enough memory.")
     else
     {
@@ -139,7 +139,7 @@ inline void safe_memcpy(char*& __dest, size_t& __dest_size, const void* __src, s
 void save_load_header(
     vw& all, io_buf& model_file, bool read, bool text, std::string& file_options, VW::config::options_i& options)
 {
-  char* buff2 = (char*)malloc(default_buf_size);
+  char* buff2 = static_cast<char*>(malloc(default_buf_size));
   size_t buf2_size = default_buf_size;
 
   try
@@ -148,7 +148,7 @@ void save_load_header(
     {
       size_t bytes_read_write = 0;
 
-      size_t v_length = (uint32_t)VW::version.to_string().length() + 1;
+      size_t v_length = static_cast<uint32_t>(VW::version.to_string().length()) + 1;
       std::stringstream msg;
       msg << "Version " << VW::version.to_string() << "\n";
       memcpy(buff2, VW::version.to_string().c_str(), std::min(v_length, buf2_size));
@@ -187,16 +187,16 @@ void save_load_header(
 
       msg << "Min label:" << all.sd->min_label << "\n";
       bytes_read_write += bin_text_read_write_fixed_validated(
-          model_file, (char*)&all.sd->min_label, sizeof(all.sd->min_label), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&all.sd->min_label), sizeof(all.sd->min_label), "", read, msg, text);
 
       msg << "Max label:" << all.sd->max_label << "\n";
       bytes_read_write += bin_text_read_write_fixed_validated(
-          model_file, (char*)&all.sd->max_label, sizeof(all.sd->max_label), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&all.sd->max_label), sizeof(all.sd->max_label), "", read, msg, text);
 
       msg << "bits:" << all.num_bits << "\n";
       uint32_t local_num_bits = all.num_bits;
       bytes_read_write += bin_text_read_write_fixed_validated(
-          model_file, (char*)&local_num_bits, sizeof(local_num_bits), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&local_num_bits), sizeof(local_num_bits), "", read, msg, text);
 
       if (read && !options.was_supplied("bit_precision"))
       {
@@ -220,8 +220,8 @@ void save_load_header(
         // -q, --cubic and --interactions are not saved in vw::file_options
         uint32_t pair_len = 0;
         msg << pair_len << " pairs: ";
-        bytes_read_write +=
-            bin_text_read_write_fixed_validated(model_file, (char*)&pair_len, sizeof(pair_len), "", read, msg, text);
+        bytes_read_write += bin_text_read_write_fixed_validated(
+            model_file, reinterpret_cast<char*>(&pair_len), sizeof(pair_len), "", read, msg, text);
 
         // TODO: validate pairs?
         for (size_t i = 0; i < pair_len; i++)
@@ -242,7 +242,7 @@ void save_load_header(
 
         msg << triple_len << " triples: ";
         bytes_read_write += bin_text_read_write_fixed_validated(
-            model_file, (char*)&triple_len, sizeof(triple_len), "", read, msg, text);
+            model_file, reinterpret_cast<char*>(&triple_len), sizeof(triple_len), "", read, msg, text);
 
         // TODO: validate triples?
         for (size_t i = 0; i < triple_len; i++)
@@ -269,15 +269,15 @@ void save_load_header(
           uint32_t len = 0;
 
           msg << len << " interactions: ";
-          bytes_read_write +=
-              bin_text_read_write_fixed_validated(model_file, (char*)&len, sizeof(len), "", read, msg, text);
+          bytes_read_write += bin_text_read_write_fixed_validated(
+              model_file, reinterpret_cast<char*>(&len), sizeof(len), "", read, msg, text);
 
           for (size_t i = 0; i < len; i++)
           {
             // Only the read path is implemented since this is for old version read support.
             uint32_t inter_len = 0;
             bytes_read_write += bin_text_read_write_fixed_validated(
-                model_file, (char*)&inter_len, sizeof(inter_len), "", read, msg, text);
+                model_file, reinterpret_cast<char*>(&inter_len), sizeof(inter_len), "", read, msg, text);
 
             auto size = bin_text_read_write_fixed_validated(model_file, buff2, inter_len, "", read, msg, text);
             bytes_read_write += size;
@@ -298,8 +298,8 @@ void save_load_header(
         // to fix compatibility that was broken in 7.9
         uint32_t rank = 0;
         msg << "rank:" << rank << "\n";
-        bytes_read_write +=
-            bin_text_read_write_fixed_validated(model_file, (char*)&rank, sizeof(rank), "", read, msg, text);
+        bytes_read_write += bin_text_read_write_fixed_validated(
+            model_file, reinterpret_cast<char*>(&rank), sizeof(rank), "", read, msg, text);
         if (rank != 0)
         {
           if (!options.was_supplied("rank"))
@@ -317,16 +317,16 @@ void save_load_header(
       }
 
       msg << "lda:" << all.lda << "\n";
-      bytes_read_write +=
-          bin_text_read_write_fixed_validated(model_file, (char*)&all.lda, sizeof(all.lda), "", read, msg, text);
+      bytes_read_write += bin_text_read_write_fixed_validated(
+          model_file, reinterpret_cast<char*>(&all.lda), sizeof(all.lda), "", read, msg, text);
 
       // TODO: validate ngram_len?
       auto* g_transformer = all.skip_gram_transformer.get();
       uint32_t ngram_len =
           (g_transformer != nullptr) ? static_cast<uint32_t>(g_transformer->get_initial_ngram_definitions().size()) : 0;
       msg << ngram_len << " ngram:";
-      bytes_read_write +=
-          bin_text_read_write_fixed_validated(model_file, (char*)&ngram_len, sizeof(ngram_len), "", read, msg, text);
+      bytes_read_write += bin_text_read_write_fixed_validated(
+          model_file, reinterpret_cast<char*>(&ngram_len), sizeof(ngram_len), "", read, msg, text);
 
       std::vector<std::string> temp_vec;
       const auto& ngram_strings = g_transformer != nullptr ? g_transformer->get_initial_ngram_definitions() : temp_vec;
@@ -355,8 +355,8 @@ void save_load_header(
       uint32_t skip_len =
           (g_transformer != nullptr) ? static_cast<uint32_t>(g_transformer->get_initial_skip_definitions().size()) : 0;
       msg << skip_len << " skip:";
-      bytes_read_write +=
-          bin_text_read_write_fixed_validated(model_file, (char*)&skip_len, sizeof(skip_len), "", read, msg, text);
+      bytes_read_write += bin_text_read_write_fixed_validated(
+          model_file, reinterpret_cast<char*>(&skip_len), sizeof(skip_len), "", read, msg, text);
 
       const auto& skip_strings = g_transformer != nullptr ? g_transformer->get_initial_skip_definitions() : temp_vec;
       for (size_t i = 0; i < skip_len; i++)
@@ -383,7 +383,7 @@ void save_load_header(
       if (read)
       {
         uint32_t len;
-        size_t ret = model_file.bin_read_fixed((char*)&len, sizeof(len), "");
+        size_t ret = model_file.bin_read_fixed(reinterpret_cast<char*>(&len), sizeof(len), "");
         if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t)) THROW("bad model format!");
         resize_buf_if_needed(buff2, buf2_size, len);
         bytes_read_write += model_file.bin_read_fixed(buff2, len, "") + ret;
@@ -421,7 +421,7 @@ void save_load_header(
 
         msg << "options:" << serialized_keep_options << "\n";
 
-        uint32_t len = (uint32_t)serialized_keep_options.length();
+        uint32_t len = static_cast<uint32_t>(serialized_keep_options.length());
         if (len > 0) safe_memcpy(buff2, buf2_size, serialized_keep_options.c_str(), len + 1);
         *(buff2 + len) = 0;
         bytes_read_write += bin_text_read_write(model_file, buff2, len + 1,  // len+1 to write a \0
@@ -433,12 +433,12 @@ void save_load_header(
       {
         uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
             ? model_file.hash()
-            : (uint32_t)uniform_hash(model_file.buffer_start(), bytes_read_write, 0);
+            : static_cast<uint32_t>(uniform_hash(model_file.buffer_start(), bytes_read_write, 0));
 
         uint32_t check_sum_saved = check_sum;
 
         msg << "Checksum: " << check_sum << "\n";
-        bin_text_read_write(model_file, (char*)&check_sum, sizeof(check_sum), "", read, msg, text);
+        bin_text_read_write(model_file, reinterpret_cast<char*>(&check_sum), sizeof(check_sum), "", read, msg, text);
 
         if (check_sum_saved != check_sum) THROW("Checksum is inconsistent, file is possibly corrupted.");
       }

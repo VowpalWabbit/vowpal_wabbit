@@ -1,9 +1,18 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
+#include "feature_group.h"
+#include "global_data.h"
+#include "hash.h"
+#include "vw.h"
+
 // Decision Service JSON header information - required to construct final label
 struct DecisionServiceInteraction
 {
   std::string eventId;
+  std::string timestamp;
   std::vector<unsigned> actions;
   std::vector<float> probabilities;
   float probabilityOfDrop = 0.f;

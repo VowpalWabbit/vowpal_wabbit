@@ -18,8 +18,8 @@ inline char* run_len_decode(char* p, uint64_t& i)
 {
   // read an int 7 bits at a time.
   size_t count = 0;
-  while (*p & 128) i = i | ((uint64_t)(*(p++) & 127) << 7 * count++);
-  i = i | ((uint64_t)(*(p++)) << 7 * count);
+  while (*p & 128) i = i | (static_cast<uint64_t>(*(p++) & 127) << 7 * count++);
+  i = i | (static_cast<uint64_t>(*(p++)) << 7 * count);
   return p;
 }
 
@@ -42,7 +42,7 @@ size_t read_cached_tag(io_buf& cache, example* ae)
   char* c;
   size_t tag_size;
   if (cache.buf_read(c, sizeof(tag_size)) < sizeof(tag_size)) return 0;
-  tag_size = *(size_t*)c;
+  tag_size = *reinterpret_cast<size_t*>(c);
   c += sizeof(tag_size);
   cache.set(c);
   if (cache.buf_read(c, tag_size) < tag_size) return 0;
@@ -75,7 +75,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
   // is newline example or not
   unsigned char newline_indicator = 0;
   if (input->buf_read(c, sizeof(newline_indicator)) < sizeof(newline_indicator)) return 0;
-  newline_indicator = *(unsigned char*)c;
+  newline_indicator = *reinterpret_cast<unsigned char*>(c);
   if (newline_indicator == newline_example) { ae->is_newline = true; }
   else
   {
@@ -86,7 +86,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
   // read indices
   unsigned char num_indices = 0;
   if (input->buf_read(c, sizeof(num_indices)) < sizeof(num_indices)) return 0;
-  num_indices = *(unsigned char*)c;
+  num_indices = *reinterpret_cast<unsigned char*>(c);
   c += sizeof(num_indices);
 
   all->example_parser->input->set(c);
@@ -100,12 +100,12 @@ int read_cached_features(vw* all, v_array<example*>& examples)
       return 0;
     }
 
-    index = *(unsigned char*)c;
+    index = *reinterpret_cast<unsigned char*>(c);
     c += sizeof(index);
 
-    ae->indices.push_back((size_t)index);
+    ae->indices.push_back(static_cast<size_t>(index));
     features& ours = ae->feature_space[index];
-    size_t storage = *(size_t*)c;
+    size_t storage = *reinterpret_cast<size_t*>(c);
     c += sizeof(size_t);
     all->example_parser->input->set(c);
     total += storage;
@@ -128,7 +128,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
         v = -1.;
       else if (i & general)
       {
-        v = ((one_float*)c)->f;
+        v = (reinterpret_cast<one_float*>(c))->f;
         c += sizeof(float);
       }
       uint64_t diff = i >> 2;
@@ -141,7 +141,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     all->example_parser->input->set(c);
   }
 
-  return (int)total;
+  return static_cast<int>(total);
 }
 
 inline uint64_t ZigZagEncode(int64_t n)
@@ -174,7 +174,7 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
   c += sizeof(size_t);
 
   uint64_t last = 0;
-  for (features::iterator& f : fs)
+  for (const auto& f : fs)
   {
     feature_index fi = f.index() & mask;
     int64_t s_diff = (fi - last);
@@ -194,14 +194,14 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
   }
 
   cache.set(c);
-  *(size_t*)storage_size_loc = c - storage_size_loc - sizeof(size_t);
+  *reinterpret_cast<size_t*>(storage_size_loc) = c - storage_size_loc - sizeof(size_t);
 }
 
 void cache_tag(io_buf& cache, const v_array<char>& tag)
 {
   char* c;
   cache.buf_write(c, sizeof(size_t) + tag.size());
-  *(size_t*)c = tag.size();
+  *reinterpret_cast<size_t*>(c) = tag.size();
   c += sizeof(size_t);
   memcpy(c, tag.begin(), tag.size());
   c += tag.size();
@@ -217,7 +217,7 @@ void cache_features(io_buf& cache, example* ae, uint64_t mask)
   {
     output_byte(cache, non_newline_example);
   }
-  output_byte(cache, (unsigned char)ae->indices.size());
+  output_byte(cache, static_cast<unsigned char>(ae->indices.size()));
 
   for (namespace_index ns : ae->indices) output_features(cache, ns, ae->feature_space[ns], mask);
 }

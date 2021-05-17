@@ -46,47 +46,31 @@ void sort_and_filter_duplicate_interactions(
  *  Feature combinations generation
  */
 
-// function estimates how many new features will be generated for example and ther sum(value^2).
-void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, float& new_features_value);
+// function estimates how many new features will be generated for example and their sum(value^2).
+void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
+    const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value);
 
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*)>
-inline void generate_interactions(vw& all, example_predict& ec, R& dat)
+inline void generate_interactions(vw& all, example_predict& ec, R& dat, size_t& num_interacted_features)
 {
   if (all.weights.sparse)
     generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(
-        *ec.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
+        *ec.interactions, all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features);
   else
     generate_interactions<R, S, T, audit, audit_func, dense_parameters>(
-        *ec.interactions, all.permutations, ec, dat, all.weights.dense_weights);
+        *ec.interactions, all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features);
 }
 
 // this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
 template <class R, class S, void (*T)(R&, float, S)>
-inline void generate_interactions(vw& all, example_predict& ec, R& dat)
+inline void generate_interactions(vw& all, example_predict& ec, R& dat, size_t& num_interacted_features)
 {
   if (all.weights.sparse)
     generate_interactions<R, S, T, sparse_parameters>(
-        all.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
+        all.interactions, all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features);
   else
     generate_interactions<R, S, T, dense_parameters>(
-        all.interactions, all.permutations, ec, dat, all.weights.dense_weights);
-}
-
-// C(n,k) = n!/(k!(n-k)!)
-
-inline int64_t choose(int64_t n, int64_t k)
-{
-  if (k > n) return 0;
-  if (k < 0) return 0;
-  if (k == n) return 1;
-  if (k == 0 && n != 0) return 1;
-  int64_t r = 1;
-  for (int64_t d = 1; d <= k; ++d)
-  {
-    r *= n--;
-    r /= d;
-  }
-  return r;
+        all.interactions, all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features);
 }
 
 }  // namespace INTERACTIONS

@@ -137,9 +137,9 @@ inline std::string strerror_to_string(int error_number)
 #    endif
 #  else
   // Passing "" for the locale means use the default system locale
-  locale_t locale = newlocale(LC_ALL_MASK, "", static_cast<locale_t>(0));
+  locale_t locale = newlocale(LC_ALL_MASK, "", static_cast<locale_t>(nullptr));
 
-  if (locale == static_cast<locale_t>(0))
+  if (locale == static_cast<locale_t>(nullptr))
   { return "Failed to create locale when getting error message for errno: " + std::to_string(error_number); }
 
   // Even if error_number is unknown, will return a "Unknown error nnn" message.

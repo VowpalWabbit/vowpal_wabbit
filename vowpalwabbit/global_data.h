@@ -45,6 +45,8 @@
 #include "hashstring.h"
 #include "decision_scores.h"
 #include "feature_group.h"
+#include "rand_state.h"
+#include "allreduce.h"
 
 #include "options.h"
 #include "version.h"
@@ -73,21 +75,6 @@ enum AllReduceType
 };
 
 class AllReduce;
-
-struct rand_state
-{
-private:
-  uint64_t random_state;
-
-public:
-  constexpr rand_state() : random_state(0) {}
-  rand_state(uint64_t initial) : random_state(initial) {}
-  constexpr uint64_t get_current_state() const noexcept { return random_state; }
-  float get_and_update_random() { return merand48(random_state); }
-  float get_and_update_gaussian() { return merand48_boxmuller(random_state); }
-  float get_random() const { return merand48_noadvance(random_state); }
-  void set_random_state(uint64_t initial) noexcept { random_state = initial; }
-};
 
 struct vw_logger
 {
@@ -284,7 +271,7 @@ public:
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
 
-  size_t length() { return ((size_t)1) << num_bits; };
+  size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
   std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
   std::vector<std::string> enabled_reductions;

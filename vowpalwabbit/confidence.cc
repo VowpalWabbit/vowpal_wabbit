@@ -60,7 +60,7 @@ void confidence_print_result(VW::io::writer* f, float res, float confidence, v_a
     // avoid serializing the stringstream multiple times
     auto ss_string(ss.str());
     ssize_t len = ss_string.size();
-    ssize_t t = f->write(ss_string.c_str(), (unsigned int)len);
+    ssize_t t = f->write(ss_string.c_str(), static_cast<unsigned int>(len));
     if (t != len)
     {
       logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
@@ -72,7 +72,7 @@ void output_and_account_confidence_example(vw& all, example& ec)
 {
   label_data& ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only) all.sd->weighted_labels += ld.label * ec.weight;
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 

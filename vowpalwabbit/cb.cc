@@ -48,7 +48,7 @@ void parse_label(parser* p, shared_data*, CB::label& ld, std::vector<VW::string_
     if (p->parse_name.empty() || p->parse_name.size() > 3) { THROW("malformed cost specification: " << word); }
 
     f.partial_prediction = 0.;
-    f.action = (uint32_t)hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0);
+    f.action = static_cast<uint32_t>(hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0));
     f.cost = FLT_MAX;
 
     if (p->parse_name.size() > 1) f.cost = float_of_string(p->parse_name[1]);
@@ -112,11 +112,21 @@ bool ec_is_example_header(example const& ec)  // example headers just have "shar
   return false;
 }
 
-void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores)
+std::string known_cost_to_str(CB::cb_class* known_cost)
+{
+  if (known_cost == nullptr) return " known";
+
+  std::stringstream label_string;
+  label_string.precision(2);
+  label_string << known_cost->action << ":" << known_cost->cost << ":" << known_cost->probability;
+  return label_string.str();
+}
+
+void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, CB::cb_class* known_cost)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {
-    size_t num_features = ec.num_features;
+    size_t num_features = ec.get_num_features();
 
     size_t pred = ec.pred.multiclass;
     if (ec_seq != nullptr)
@@ -124,13 +134,13 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
       num_features = 0;
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
       for (size_t i = 0; i < (*ec_seq).size(); i++)
-        if (!CB::ec_is_example_header(*(*ec_seq)[i])) num_features += (*ec_seq)[i]->num_features;
+        if (!CB::ec_is_example_header(*(*ec_seq)[i])) num_features += (*ec_seq)[i]->get_num_features();
     }
     std::string label_buf;
     if (is_test)
       label_buf = " unknown";
     else
-      label_buf = " known";
+      label_buf = known_cost_to_str(known_cost);
 
     if (action_scores)
     {
@@ -144,8 +154,8 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
           num_features, all.progress_add, all.progress_arg);
     }
     else
-      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, (uint32_t)pred,
-          num_features, all.progress_add, all.progress_arg);
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf,
+          static_cast<uint32_t>(pred), num_features, all.progress_add, all.progress_arg);
   }
 }
 }  // namespace CB
@@ -159,7 +169,7 @@ size_t read_cached_label(shared_data* sd, CB_EVAL::label& ld, io_buf& cache)
   char* c;
   size_t total = sizeof(uint32_t);
   if (cache.buf_read(c, total) < total) return 0;
-  ld.action = *(uint32_t*)c;
+  ld.action = *reinterpret_cast<uint32_t*>(c);
 
   return total + CB::read_cached_label(sd, ld.event, cache);
 }
@@ -168,7 +178,7 @@ void cache_label(CB_EVAL::label& ld, io_buf& cache)
 {
   char* c;
   cache.buf_write(c, sizeof(uint32_t));
-  *(uint32_t*)c = ld.action;
+  *reinterpret_cast<uint32_t*>(c) = ld.action;
 
   CB::cache_label(ld.event, cache);
 }
@@ -187,7 +197,7 @@ void parse_label(parser* p, shared_data* sd, CB_EVAL::label& ld, std::vector<VW:
 {
   if (words.size() < 2) THROW("Evaluation can not happen without an action and an exploration");
 
-  ld.action = (uint32_t)hashstring(words[0].begin(), words[0].length(), 0);
+  ld.action = static_cast<uint32_t>(hashstring(words[0].begin(), words[0].length(), 0));
 
   // Removing the first element of a vector is not efficient at all, every element must be copied/moved.
   const auto stashed_first_token = std::move(words[0]);
