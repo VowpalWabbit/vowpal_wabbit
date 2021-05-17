@@ -302,9 +302,11 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
     epsilon_decay = true;
   }
 
+  bool with_metrics = options.was_supplied("extra_metrics");
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
-  auto data = scoped_calloc_or_throw<explore_type>(cover_size, psi, nounif, epsilon, epsilon_decay, first_only,
-      as_multiline(all.cost_sensitive), all.scorer, cb_type_enum, all.model_file_ver);
+  auto data = scoped_calloc_or_throw<explore_type>(with_metrics, cover_size, psi, nounif, epsilon, epsilon_decay,
+      first_only, as_multiline(all.cost_sensitive), all.scorer, cb_type_enum, all.model_file_ver);
 
   VW::LEARNER::learner<explore_type, multi_ex>& l = init_learner(data, base, explore_type::learn, explore_type::predict,
       problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-cover", true);
