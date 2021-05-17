@@ -327,6 +327,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                .default_value(10.f)
                .help("Sets SquareCB greediness parameter to gamma=[gamma_scale]*[num examples]^1/2"))
       .add(make_option("gamma_exponent", gamma_exponent)
+               .keep()
                .default_value(.5f)
                .help("Exponent on [num examples] in SquareCB greediness parameter gamma."))
       .add(make_option("elim", elim)
@@ -364,9 +365,11 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
+  bool with_metrics = options.was_supplied("extra_metrics");
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
   auto data = scoped_calloc_or_throw<explore_type>(
-      gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver);
+      with_metrics, gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver);
   VW::LEARNER::learner<explore_type, multi_ex>& l =
       VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
           prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-squarecb");

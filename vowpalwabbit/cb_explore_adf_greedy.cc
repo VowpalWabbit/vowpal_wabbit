@@ -115,8 +115,10 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
+  bool with_metrics = options.was_supplied("extra_metrics");
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
-  auto data = scoped_calloc_or_throw<explore_type>(epsilon, first_only);
+  auto data = scoped_calloc_or_throw<explore_type>(with_metrics, epsilon, first_only);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
