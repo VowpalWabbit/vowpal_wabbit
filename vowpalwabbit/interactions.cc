@@ -338,7 +338,7 @@ std::vector<std::vector<namespace_index>> generate_combinations_with_repetition(
         // Increment the next index
         indices[i + 1] += 1;
         // Decrement all past indices
-        for (int k = i; k >= 0; --k) { indices[k] = indices[i + 1]; }
+        for (int k = i; k >= 0; --k) { indices[static_cast<size_t>(k)] = indices[i + 1]; }
       }
     }
 
