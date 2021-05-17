@@ -2343,11 +2343,11 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/metrics_ccb_noevent.stderr
     test-sets/ref/metrics_ccb_noevent.json
 
-# Test 319: first save_load, save model
+# Test 320: first save_load, save model
 {VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --first 130 -f models/first_ld.model --save_resume
     train-sets/ref/first_save.stderr
 
-# Test 320: first save_load, load model
+# Test 321: first save_load, load model
 {VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA -i models/first_ld.model -t
     train-sets/ref/first_load.stderr
 
