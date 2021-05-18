@@ -6,6 +6,7 @@
 
 #include "v_array.h"
 #include "future_compat.h"
+#include "namespace_info.h"
 
 #include <utility>
 #include <memory>
@@ -287,6 +288,7 @@ struct features
   v_array<feature_value> values;               // Always needed.
   v_array<feature_index> indicies;             // Optional for sparse data.
   std::vector<audit_strings_ptr> space_names;  // Optional for audit mode.
+  VW::namespace_info ns_info;
 
   float sum_feat_sq = 0.f;
 
