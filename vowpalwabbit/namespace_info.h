@@ -36,7 +36,7 @@ namespace_info make_namespace_info(VW::string_view namespace_name, uint64_t hash
   // Mask out bottom 8 bits
   hash_value = hash_value & (~static_cast<uint64_t>(0xFF));
   // Insert the index bits
-  hash_value = hash_value & static_cast<uint64_t>(index);
+  hash_value = hash_value | static_cast<uint64_t>(index);
   return namespace_info{hash_value};
 }
 }  // namespace VW
