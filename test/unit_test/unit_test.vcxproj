@@ -46,6 +46,7 @@
     <ClCompile Include="main.cc" />
     <ClCompile Include="math_test.cc" />
     <ClCompile Include="numeric_cast_tests.cc" />
+    <ClCompile Include="namespace_test.cc" />
     <ClCompile Include="random_test.cc" />
     <ClCompile Include="parse_args_test.cc" />
     <ClCompile Include="vw_versions_test.cc" />
