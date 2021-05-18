@@ -146,6 +146,7 @@ set(vw_all_headers
   mwt.h
   numeric_casts.h
   named_labels.h
+  namespace_info.h
   network.h
   kskip_ngram_transformer.h
   nn.h
