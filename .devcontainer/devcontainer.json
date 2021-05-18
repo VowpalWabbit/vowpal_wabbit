@@ -1,27 +1,17 @@
-// For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.131.0/containers/codespaces-linux
+// For format details, see https://aka.ms/vscode-remote/devcontainer.json
 {
-	"name": "Codespaces",
-	"image": "vowpalwabbit/all-dev-ubuntu1604:latest",
-	//"remoteUser": "codespace",
-	"workspaceMount": "source=${localWorkspaceFolder},target=/home/codespace/workspace,type=bind,consistency=cached",
-	"workspaceFolder": "/home/codespace/workspace",
-	"runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined", "--privileged" ],
+  "name": "dev_env",
+  "image": "vowpalwabbit/ubuntu2004-dev:latest",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/workspace,type=bind,consistency=cached",
+  "workspaceFolder": "/home/workspace",
+  "runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined", "--privileged" ],
 
-	// Add the IDs of extensions you want installed when the container is created.
-	"extensions": [
-		"ms-vsonline.vsonline",
-		"GitHub.vscode-pull-request-github",
-		"MS-vsliveshare.vsliveshare",
-		"VisualStudioExptTeam.vscodeintellicode"
-	]
-
-	// Set *default* container specific settings.json values on container create.
-	// "settings": {},
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "uname -a"
+  // Add the IDs of extensions you want installed when the container is created.
+  "extensions": [
+    "GitHub.vscode-pull-request-github",
+    "ms-vscode.cmake-tools",
+    "ms-vscode.cpptools",
+    // CMake file syntax highlighting
+    "twxs.cmake"
+  ]
 }
