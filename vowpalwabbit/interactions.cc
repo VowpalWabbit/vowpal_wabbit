@@ -223,8 +223,8 @@ std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interaction
     for (auto jt = it; jt != new_example_indices.end(); ++jt)
     {
       auto idx2 = *jt;
-      interactions.emplace(idx1, idx2);
-      interactions.emplace(idx2, idx2);
+      interactions.insert({idx1, idx2});
+      interactions.insert({idx2, idx2});
       if (leave_duplicate_interactions) { interactions.insert({idx2, idx1}); }
     }
   }
