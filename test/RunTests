@@ -2351,4 +2351,12 @@ train-sets/ref/slates_simple_w_interactions.stderr
 {VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA -i models/first_ld.model -t
     train-sets/ref/first_load.stderr
 
+# Test 322: regcb save_load, save model
+{VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --regcb -f models/regcb_ld.model --save_resume --mellowness .001
+    train-sets/ref/regcb_save.stderr
+
+# Test 323: regcb save_load, load model
+{VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --regcb -i models/regcb_ld.model -t
+    train-sets/ref/regcb_load.stderr
+
 # Do not delete this line or the empty line above it
