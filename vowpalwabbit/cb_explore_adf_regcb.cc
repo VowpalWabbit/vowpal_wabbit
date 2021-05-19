@@ -12,6 +12,9 @@
 #include "explore.h"
 #include "action_score.h"
 #include "cb.h"
+#include "vw_versions.h"
+#include "version.h"
+
 #include <cmath>
 #include <vector>
 #include <algorithm>
@@ -42,17 +45,21 @@ private:
   std::vector<float> _min_costs;
   std::vector<float> _max_costs;
 
+  VW::version_struct _model_file_version;
+
   // for backing up cb example data when computing sensitivities
   std::vector<ACTION_SCORE::action_scores> _ex_as;
   std::vector<v_array<CB::cb_class>> _ex_costs;
 
 public:
-  cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost);
+  cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost,
+      VW::version_struct model_file_version);
   ~cb_explore_adf_regcb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void save_load(io_buf& io, bool read, bool text);
 
 private:
   template <bool is_learn>
@@ -63,8 +70,14 @@ private:
 };
 
 cb_explore_adf_regcb::cb_explore_adf_regcb(
-    bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost)
-    : _regcbopt(regcbopt), _c0(c0), _first_only(first_only), _min_cb_cost(min_cb_cost), _max_cb_cost(max_cb_cost)
+    bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost, VW::version_struct model_file_version)
+    : _counter(0)
+    , _regcbopt(regcbopt)
+    , _c0(c0)
+    , _first_only(first_only)
+    , _min_cb_cost(min_cb_cost)
+    , _max_cb_cost(max_cb_cost)
+    , _model_file_version(model_file_version)
 {
 }
 
@@ -222,6 +235,17 @@ void cb_explore_adf_regcb::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   }
 }
 
+void cb_explore_adf_regcb::save_load(io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+  if (!read || _model_file_version >= VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME)
+  {
+    std::stringstream msg;
+    if (!read) { msg << "cb squarecb adf storing example counter:  = " << _counter << "\n"; }
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), "", read, msg, text);
+  }
+}
+
 VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
@@ -268,7 +292,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
-  auto data = scoped_calloc_or_throw<explore_type>(regcbopt, c0, first_only, min_cb_cost, max_cb_cost);
+  auto data = scoped_calloc_or_throw<explore_type>(regcbopt, c0, first_only, min_cb_cost, max_cb_cost, all.model_file_ver);
   LEARNER::learner<explore_type, multi_ex>& l =
       VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
           prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-regcb");
@@ -276,6 +300,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   l.set_finish_example(explore_type::finish_multiline_example);
   l.set_print_example(explore_type::print_multiline_example);
   l.set_persist_metrics(explore_type::persist_metrics);
+  l.set_save_load(explore_type::save_load);
   return make_base(l);
 }
 
