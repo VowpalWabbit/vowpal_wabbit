@@ -81,8 +81,7 @@ VW::LEARNER::base_learner* generate_interactions_setup(options_i& options, vw& a
   }
 
   // If there are no wildcards, then no expansion is required.
-  // ccb_explore_adf adds a wildcard post setup and so this reduction must be turned on.
-  if (!interactions_spec_contains_wildcards && !options.was_supplied("ccb_explore_adf")) return nullptr;
+  if (!interactions_spec_contains_wildcards) { return nullptr; }
 
   using learn_pred_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, example&);
   using multipredict_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, example&,
