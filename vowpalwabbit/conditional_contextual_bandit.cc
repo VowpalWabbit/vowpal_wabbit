@@ -455,11 +455,6 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       data.inter_gen.update_interactions_if_new_namespace_seen<INTERACTIONS::generate_combinations_with_repetition, false>(*data.original_interactions, ex->indices);
     }
   }
-  data.generated_interactions = data.inter_gen.generated_interactions;
-  // Since CCB must interact its own namespaces this operation must always be done to ensure : is expanded.
-  data.shared->interactions = &data.generated_interactions;
-  for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
-
 
   // this is temporary only so we can get some logging of what's going on
   try
@@ -475,9 +470,14 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     {
       if (should_augment_with_slot_info)
       {
+        data.generated_interactions = data.inter_gen.generated_interactions;
         // Namespace crossing for slot features.
         calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
       }
+      // Since CCB must interact its own namespaces this operation must always be done to ensure : is expanded.
+      data.shared->interactions = &data.generated_interactions;
+      for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
+
 
       // shared, action, action, slot
       data.include_list.clear();
