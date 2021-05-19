@@ -6,7 +6,7 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 using no cache
-Reading datafile = train-sets/squarecb_load.dat
+Reading datafile = train-sets/cb_load.dat
 num sources = 1
 Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_squarecb, shared_feature_merger
 average  since         example        example  current  current  current

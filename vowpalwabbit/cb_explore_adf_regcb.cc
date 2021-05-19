@@ -238,7 +238,7 @@ void cb_explore_adf_regcb::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
 void cb_explore_adf_regcb::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME)
+  if (!read || _model_file_version >= VERSION_FILE_WITH_REG_CB_SAVE_RESUME)
   {
     std::stringstream msg;
     if (!read) { msg << "cb squarecb adf storing example counter:  = " << _counter << "\n"; }
@@ -291,8 +291,10 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
+  bool with_metrics = options.was_supplied("extra_metrics");
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
-  auto data = scoped_calloc_or_throw<explore_type>(regcbopt, c0, first_only, min_cb_cost, max_cb_cost, all.model_file_ver);
+  auto data = scoped_calloc_or_throw<explore_type>(with_metrics, regcbopt, c0, first_only, min_cb_cost, max_cb_cost, all.model_file_ver);
   LEARNER::learner<explore_type, multi_ex>& l =
       VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
           prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-regcb");
