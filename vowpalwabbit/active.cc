@@ -147,6 +147,7 @@ base_learner* active_setup(options_i& options, vw& all)
   new_options.add(make_option("active", active_option).keep().necessary().help("enable active learning"))
       .add(make_option("simulation", simulation).help("active learning simulation mode"))
       .add(make_option("mellowness", data->active_c0)
+               .keep()
                .default_value(8.f)
                .help("active learning mellowness parameter c_0. Default 8"));
 
