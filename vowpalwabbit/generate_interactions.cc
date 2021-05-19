@@ -83,6 +83,9 @@ VW::LEARNER::base_learner* generate_interactions_setup(options_i& options, vw& a
   // If there are no wildcards, then no expansion is required.
   if (!interactions_spec_contains_wildcards) { return nullptr; }
 
+  // CCB handles it's own interaction expansion and so is explicitly excluded.
+  if (options.was_supplied("ccb_explore_adf")) { return nullptr; }
+
   using learn_pred_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, example&);
   using multipredict_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, example&,
       size_t, size_t, polyprediction*, bool);
