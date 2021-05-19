@@ -59,9 +59,7 @@ void predict(mf& data, single_learner& base, example& ec)
   ec.indices.push_back(0);
 
   auto* saved_interactions = ec.interactions;
-  auto restore_guard = VW::scope_exit([saved_interactions, &ec] {
-    ec.interactions = saved_interactions;
-  });
+  auto restore_guard = VW::scope_exit([saved_interactions, &ec] { ec.interactions = saved_interactions; });
 
   std::vector<std::vector<namespace_index>> empty_interactions;
   ec.interactions = &empty_interactions;

@@ -264,8 +264,8 @@ void remove_slot_features(example* shared, example* slot)
 }
 
 // Generates quadratics between each namespace and the slot id as well as appends slot id to every existing interaction.
-void calculate_and_insert_interactions(
-    example* shared, const std::vector<example*>& actions, std::vector<std::vector<namespace_index>>& generated_interactions)
+void calculate_and_insert_interactions(example* shared, const std::vector<example*>& actions,
+    std::vector<std::vector<namespace_index>>& generated_interactions)
 {
   std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 
@@ -446,13 +446,17 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   for (auto* ex : examples)
   {
-    if( data.leave_duplicate_interactions)
+    if (data.leave_duplicate_interactions)
     {
-      data.inter_gen.update_interactions_if_new_namespace_seen<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(*data.original_interactions, ex->indices);
+      data.inter_gen.update_interactions_if_new_namespace_seen<
+          INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
+          *data.original_interactions, ex->indices);
     }
     else
     {
-      data.inter_gen.update_interactions_if_new_namespace_seen<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(*data.original_interactions, ex->indices);
+      data.inter_gen.update_interactions_if_new_namespace_seen<
+          INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+          *data.original_interactions, ex->indices);
     }
   }
 
@@ -477,7 +481,6 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       // Since CCB must interact its own namespaces this operation must always be done to ensure : is expanded.
       data.shared->interactions = &data.generated_interactions;
       for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
-
 
       // shared, action, action, slot
       data.include_list.clear();
@@ -678,9 +681,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
                    "EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."))
       .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"))
       .add(make_option("leave_duplicate_interactions", data->leave_duplicate_interactions)
-                      .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
-                            "duplicate: '-q ab -q ba' and a lot more in '-q ::'."));
-
+               .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
+                     "duplicate: '-q ab -q ba' and a lot more in '-q ::'."));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   data->all_slots_loss_report = all_slots_loss_report;

@@ -807,16 +807,15 @@ void parse_feature_tweaks(
     }
     if (!all.logger.quiet) *(all.trace_message) << endl;
 
-     bool contains_wildcard_cubic =
-          std::find_if(cubics.begin(), cubics.end(), [](const std::string& interaction) {
-            return interaction.find(':') != std::string::npos;
-          }) != cubics.end();
-           if (contains_wildcard_cubic)
-      {
-        *(all.trace_message) << "\n"
-                             << "WARNING: any duplicate namespace interactions will be removed\n"
-                             << "You can use --leave_duplicate_interactions to disable this behaviour.";
-      }
+    bool contains_wildcard_cubic = std::find_if(cubics.begin(), cubics.end(), [](const std::string& interaction) {
+      return interaction.find(':') != std::string::npos;
+    }) != cubics.end();
+    if (contains_wildcard_cubic)
+    {
+      *(all.trace_message) << "\n"
+                           << "WARNING: any duplicate namespace interactions will be removed\n"
+                           << "You can use --leave_duplicate_interactions to disable this behaviour.";
+    }
   }
 
   if (options.was_supplied("interactions"))
