@@ -223,8 +223,8 @@ std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interaction
     for (auto jt = it; jt != new_example_indices.end(); ++jt)
     {
       auto idx2 = *jt;
-      interactions.insert({idx1, idx2});
-      interactions.insert({idx2, idx2});
+      interactions.emplace(idx1, idx2);
+      interactions.emplace(idx2, idx2);
       if (leave_duplicate_interactions) { interactions.insert({idx2, idx1}); }
     }
   }
@@ -318,11 +318,12 @@ std::vector<namespace_index> indices_to_values_ignore_last_index(
   return result;
 }
 
-std::vector<std::vector<namespace_index>> generate_combinations_with_repetition(
+std::vector<std::vector<namespace_index>> generate_namespace_combinations_with_repetition(
     const std::set<namespace_index>& namespaces, size_t num_to_pick)
 {
   std::vector<std::vector<namespace_index>> result;
   // This computation involves factorials and so can only be done with relatively small inputs.
+  // Factorial 22 would result in 64 bit overflow.
   if ((namespaces.size() + num_to_pick) <= 21)
   { result.reserve(VW::math::number_of_combinations_with_repetition(namespaces.size(), num_to_pick)); }
 
@@ -351,7 +352,7 @@ std::vector<std::vector<namespace_index>> generate_combinations_with_repetition(
   return result;
 }
 
-std::vector<std::vector<namespace_index>> generate_permutations_with_repetition(
+std::vector<std::vector<namespace_index>> generate_namespace_permutations_with_repetition(
     const std::set<namespace_index>& namespaces, size_t num_to_pick)
 {
   std::vector<std::vector<namespace_index>> result;
@@ -380,7 +381,7 @@ std::vector<std::vector<namespace_index>> generate_permutations_with_repetition(
         one_based_chosen_indices[next_index - 1] = 1;
       }
 
-      result.push_back(indices_to_values_one_based(one_based_chosen_indices, namespaces));
+      result.emplace_back(indices_to_values_one_based(one_based_chosen_indices, namespaces));
     }
   }
 

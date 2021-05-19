@@ -11,6 +11,7 @@
 
 #include "reductions.h"
 #include "gd.h"
+#include "scope_exit.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -58,6 +59,10 @@ void predict(mf& data, single_learner& base, example& ec)
   ec.indices.push_back(0);
 
   auto* saved_interactions = ec.interactions;
+  auto restore_guard = VW::scope_exit([saved_interactions, &ec] {
+    ec.interactions = saved_interactions;
+  });
+
   std::vector<std::vector<namespace_index>> empty_interactions;
   ec.interactions = &empty_interactions;
 
@@ -97,7 +102,6 @@ void predict(mf& data, single_learner& base, example& ec)
   // finalize prediction
   ec.partial_prediction = prediction;
   ec.pred.scalar = GD::finalize_prediction(data.all->sd, data.all->logger, ec.partial_prediction);
-  ec.interactions = saved_interactions;
 }
 
 void learn(mf& data, single_learner& base, example& ec)

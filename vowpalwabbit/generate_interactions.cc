@@ -96,17 +96,17 @@ VW::LEARNER::base_learner* generate_interactions_setup(options_i& options, vw& a
 
   if (leave_duplicate_interactions)
   {
-    learn_func = transform_single_ex<true, INTERACTIONS::generate_permutations_with_repetition, true>;
-    pred_func = transform_single_ex<false, INTERACTIONS::generate_permutations_with_repetition, true>;
-    update_func = update<INTERACTIONS::generate_permutations_with_repetition, true>;
-    multipredict_func = multipredict<INTERACTIONS::generate_permutations_with_repetition, true>;
+    learn_func = transform_single_ex<true, INTERACTIONS::generate_namespace_permutations_with_repetition, true>;
+    pred_func = transform_single_ex<false, INTERACTIONS::generate_namespace_permutations_with_repetition, true>;
+    update_func = update<INTERACTIONS::generate_namespace_permutations_with_repetition, true>;
+    multipredict_func = multipredict<INTERACTIONS::generate_namespace_permutations_with_repetition, true>;
   }
   else
   {
-    learn_func = transform_single_ex<true, INTERACTIONS::generate_combinations_with_repetition, false>;
-    pred_func = transform_single_ex<false, INTERACTIONS::generate_combinations_with_repetition, false>;
-    update_func = update<INTERACTIONS::generate_combinations_with_repetition, false>;
-    multipredict_func = multipredict<INTERACTIONS::generate_combinations_with_repetition, false>;
+    learn_func = transform_single_ex<true, INTERACTIONS::generate_namespace_combinations_with_repetition, false>;
+    pred_func = transform_single_ex<false, INTERACTIONS::generate_namespace_combinations_with_repetition, false>;
+    update_func = update<INTERACTIONS::generate_namespace_combinations_with_repetition, false>;
+    multipredict_func = multipredict<INTERACTIONS::generate_namespace_combinations_with_repetition, false>;
   }
 
   auto data = VW::make_unique<INTERACTIONS::interactions_generator>();

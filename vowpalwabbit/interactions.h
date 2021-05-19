@@ -43,9 +43,9 @@ inline bool contains_wildcard(const std::vector<namespace_index>& interaction)
 void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
     const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value);
 
-std::vector<std::vector<namespace_index>> generate_combinations_with_repetition(
+std::vector<std::vector<namespace_index>> generate_namespace_combinations_with_repetition(
     const std::set<namespace_index>& namespaces, size_t num_to_pick);
-std::vector<std::vector<namespace_index>> generate_permutations_with_repetition(
+std::vector<std::vector<namespace_index>> generate_namespace_permutations_with_repetition(
     const std::set<namespace_index>& namespaces, size_t num_to_pick);
 using generate_func_t = std::vector<std::vector<namespace_index>>(
     const std::set<namespace_index>& namespaces, size_t num_to_pick);
@@ -88,6 +88,7 @@ std::vector<std::vector<namespace_index>> compile_interaction(
   return result;
 }
 
+// Compiling an interaction means to expand out wildcards (:) for each index present
 template <generate_func_t generate_func, bool leave_duplicate_interactions>
 std::vector<std::vector<namespace_index>> compile_interactions(
     const std::vector<std::vector<namespace_index>>& interactions, const std::set<namespace_index>& indices)

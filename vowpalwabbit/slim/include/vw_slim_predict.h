@@ -424,7 +424,7 @@ public:
     {
       // permutations is not supported by slim so we can just use combinations!
       _generate_interactions
-          .update_interactions_if_new_namespace_seen<INTERACTIONS::generate_combinations_with_repetition, false>(
+          .update_interactions_if_new_namespace_seen<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
               _interactions, ex.indices);
       score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions,
           /* permutations */ false, ex);

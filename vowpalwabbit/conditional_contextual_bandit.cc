@@ -448,11 +448,11 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   {
     if( data.leave_duplicate_interactions)
     {
-      data.inter_gen.update_interactions_if_new_namespace_seen<INTERACTIONS::generate_permutations_with_repetition, true>(*data.original_interactions, ex->indices);
+      data.inter_gen.update_interactions_if_new_namespace_seen<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(*data.original_interactions, ex->indices);
     }
     else
     {
-      data.inter_gen.update_interactions_if_new_namespace_seen<INTERACTIONS::generate_combinations_with_repetition, false>(*data.original_interactions, ex->indices);
+      data.inter_gen.update_interactions_if_new_namespace_seen<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(*data.original_interactions, ex->indices);
     }
   }
 
