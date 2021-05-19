@@ -1716,7 +1716,8 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   if (result.IsError())
   {
     BaseState<audit>* current_state = handler.current_state();
-    logger::errlog_warn("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(), GetParseError_En(result.Code()), handler.error().str(), (current_state ? current_state->name : "null"));
+    logger::errlog_warn("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
+        GetParseError_En(result.Code()), handler.error().str(), (current_state ? current_state->name : "null"));
     return false;
   }
 
@@ -1734,7 +1735,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
 
     DecisionServiceInteraction interaction;
     bool result = VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
-          reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
+        reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 
     if (!result)
     {
