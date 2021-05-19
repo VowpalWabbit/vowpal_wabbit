@@ -29,8 +29,6 @@ struct metrics_data
   std::string out_file;
   size_t learn_count = 0;
   size_t predict_count = 0;
-  size_t predicted_first_option = 0;
-  size_t predicted_not_first = 0;
 };
 
 void list_to_json_file(dsjson_metrics* ds_metrics, std::string filename, metric_sink& metrics)
@@ -99,30 +97,6 @@ void output_metrics(vw& all)
   }
 }
 
-void count_post_predict(metrics_data& data, prediction_type_t pred_type, example& ec)
-{
-  if (pred_type == prediction_type_t::multiclass)
-  {
-    if (ec.pred.multiclass == 1) { data.predicted_first_option++; }
-    else
-    {
-      data.predicted_not_first++;
-    }
-  }
-}
-
-void count_post_predict(metrics_data& data, prediction_type_t pred_type, multi_ex& ec)
-{
-  if (pred_type == prediction_type_t::action_probs)
-  {
-    if (ec[0]->pred.a_s[0].action == 0) { data.predicted_first_option++; }
-    else
-    {
-      data.predicted_not_first++;
-    }
-  }
-}
-
 template <bool is_learn, typename T, typename E>
 void predict_or_learn(metrics_data& data, T& base, E& ec)
 {
@@ -136,16 +110,12 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
     data.predict_count++;
     base.predict(ec);
   }
-
-  if (!is_learn || base.learn_returns_prediction) { count_post_predict(data, base.pred_type, ec); }
 }
 
 void persist(metrics_data& data, metric_sink& metrics)
 {
   metrics.int_metrics_list.emplace_back("total_predict_calls", data.predict_count);
   metrics.int_metrics_list.emplace_back("total_learn_calls", data.learn_count);
-  metrics.int_metrics_list.emplace_back("predicted_baseline_first", data.predicted_first_option);
-  metrics.int_metrics_list.emplace_back("predicted_not_first", data.predicted_not_first);
 }
 
 VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
