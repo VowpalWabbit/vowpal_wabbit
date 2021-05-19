@@ -151,7 +151,7 @@ inline void cb_explore_adf_base<ExploreType>::learn(
       data._metrics->_metric_labeled++;
       data._metrics->_metric_sum_cost += data._known_cost.cost;
       if (data._known_cost.action == 0)
-      { 
+      {
         data._metrics->label_action_first_option++;
         data._metrics->_metric_sum_cost_first += data._known_cost.cost;
       }
