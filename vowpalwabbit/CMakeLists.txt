@@ -116,6 +116,7 @@ set(vw_all_headers
   gd_predict.h
   gd.h
   gen_cs_example.h
+  generate_interactions.h
   get_pmf.h
   global_data.h
   guard.h
@@ -280,6 +281,7 @@ set(vw_all_sources
   gd_mf.cc
   gd.cc
   gen_cs_example.cc
+  generate_interactions.cc
   get_pmf.cc
   global_data.cc
   hashstring.cc
