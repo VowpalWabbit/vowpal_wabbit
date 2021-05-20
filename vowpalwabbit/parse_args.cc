@@ -366,6 +366,7 @@ void parse_diagnostics(options_i& options, vw& all)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
       .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
+      .add(make_option("limit_output", all.logger.upper_limit).help("Avoid chatty output. Limit total printed lines."))
       .add(make_option("dry_run", skip_driver)
                .help("Parse arguments and print corresponding metadata. Will not execute driver."))
       .add(make_option("help", help)
@@ -375,6 +376,8 @@ void parse_diagnostics(options_i& options, vw& all)
   options.add_and_parse(diagnostic_group);
 
   if(all.logger.quiet) logger::log_set_level(logger::log_level::off);
+
+  if (options.was_supplied("limit_output")) logger::set_max_output(all.logger.upper_limit);
 
   // pass all.logger.quiet around
   if (all.all_reduce) all.all_reduce->quiet = all.logger.quiet;
@@ -1994,6 +1997,7 @@ void finish(vw& all, bool delete_all)
   }
 
   metrics::output_metrics(all);
+  logger::log_summary();
 
   if (delete_all) delete &all;
 
