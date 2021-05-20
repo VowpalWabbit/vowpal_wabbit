@@ -29,6 +29,8 @@ VW_WARNING_DISABLE_CLASS_MEMACCESS
 #include <rapidjson/error/en.h>
 VW_WARNING_STATE_POP
 
+#include "io/logger.h"
+
 #if (_MANAGED == 1) || (_M_CEE == 1)
 #  pragma managed(pop)
 #endif
@@ -41,7 +43,6 @@ VW_WARNING_STATE_POP
 #include "json_utils.h"
 #include "parse_slates_example_json.h"
 #include "vw_string_view.h"
-#include "io/logger.h"
 #include <algorithm>
 #include <vector>
 #include <limits>
