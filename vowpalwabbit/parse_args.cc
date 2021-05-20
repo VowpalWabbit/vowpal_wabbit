@@ -781,7 +781,7 @@ void parse_feature_tweaks(
     {
       bool contains_wildcard_quadratic =
           std::find_if(quadratics.begin(), quadratics.end(), [](const std::string& interaction) {
-            return interaction.find(':') != std::string::npos;
+            return interaction.find(wildcard_namespace) != std::string::npos;
           }) != quadratics.end();
       if (contains_wildcard_quadratic)
       {
@@ -808,7 +808,7 @@ void parse_feature_tweaks(
     if (!all.logger.quiet) *(all.trace_message) << endl;
 
     bool contains_wildcard_cubic = std::find_if(cubics.begin(), cubics.end(), [](const std::string& interaction) {
-      return interaction.find(':') != std::string::npos;
+      return interaction.find(wildcard_namespace) != std::string::npos;
     }) != cubics.end();
     if (contains_wildcard_cubic)
     {
