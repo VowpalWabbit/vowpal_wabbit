@@ -18,6 +18,7 @@ constexpr float probability_tolerance = 1e-5f;
 constexpr uint32_t FNV_prime = 16777619;
 
 constexpr unsigned char default_namespace = 32;
+constexpr unsigned char wildcard_namespace = 58;  // :
 constexpr unsigned char wap_ldf_namespace = 126;
 constexpr unsigned char history_namespace = 127;
 constexpr unsigned char constant_namespace = 128;
