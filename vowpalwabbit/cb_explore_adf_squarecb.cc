@@ -14,6 +14,7 @@
 #include "cb.h"
 #include "vw_versions.h"
 #include "version.h"
+#include "label_parser.h"
 
 #include <cmath>
 #include <vector>
@@ -30,6 +31,8 @@ with the VW learner as the base algorithm.
 // are the probability with which each action should be replaced to the top of the list.
 
 #define B_SEARCH_MAX_ITER 20
+
+using namespace VW::LEARNER;
 
 namespace VW
 {
@@ -66,15 +69,15 @@ public:
   ~cb_explore_adf_squarecb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
   void save_load(io_buf& io, bool read, bool text);
 
 private:
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(multi_learner& base, multi_ex& examples);
 
-  void get_cost_ranges(float delta, VW::LEARNER::multi_learner& base, multi_ex& examples, bool min_only);
+  void get_cost_ranges(float delta, multi_learner& base, multi_ex& examples, bool min_only);
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };
 
@@ -130,7 +133,7 @@ float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens
 
 // TODO: Same as cb_explore_adf_regcb.cc
 void cb_explore_adf_squarecb::get_cost_ranges(
-    float delta, VW::LEARNER::multi_learner& base, multi_ex& examples, bool min_only)
+    float delta, multi_learner& base, multi_ex& examples, bool min_only)
 {
   const size_t num_actions = examples[0]->pred.a_s.size();
   _min_costs.resize(num_actions);
@@ -191,7 +194,7 @@ void cb_explore_adf_squarecb::get_cost_ranges(
 }
 
 template <bool is_learn>
-void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_squarecb::predict_or_learn_impl(multi_learner& base, multi_ex& examples)
 {
   if (is_learn)
   {
@@ -201,11 +204,11 @@ void cb_explore_adf_squarecb::predict_or_learn_impl(VW::LEARNER::multi_learner& 
       if (ld.costs.size() == 1) ld.costs[0].probability = 1.f;  // no importance weighting
     }
 
-    VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
+    multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
     ++_counter;
   }
   else
-    VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+    multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
@@ -298,7 +301,7 @@ void cb_explore_adf_squarecb::save_load(io_buf& io, bool read, bool text)
   }
 }
 
-VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
+base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
@@ -362,23 +365,25 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   // Set explore_type
   size_t problem_multiplier = 1;
 
-  VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
-  auto data = scoped_calloc_or_throw<explore_type>(
+  auto data = VW::make_unique<explore_type>(
       with_metrics, gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver);
-  VW::LEARNER::learner<explore_type, multi_ex>& l =
-      VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
-          prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-squarecb");
-
-  l.set_finish_example(explore_type::finish_multiline_example);
-  l.set_print_example(explore_type::print_multiline_example);
-  l.set_persist_metrics(explore_type::persist_metrics);
-  l.set_save_load(explore_type::save_load);
-  return make_base(l);
+  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+      all.get_setupfn_name(setup) + "-squarecb")
+          .set_params_per_weight(problem_multiplier)
+          .set_prediction_type(prediction_type_t::action_probs)
+          .set_label_type(label_type_t::cb)
+          .set_finish_example(explore_type::finish_multiline_example)
+          .set_print_example(explore_type::print_multiline_example)
+          .set_persist_metrics(explore_type::persist_metrics)
+          .set_save_load(explore_type::save_load)
+          .build();
+  return make_base(*l);
 }
 
 }  // namespace squarecb
