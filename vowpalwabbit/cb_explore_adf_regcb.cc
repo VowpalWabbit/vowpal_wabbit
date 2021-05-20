@@ -109,8 +109,7 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
   return l;
 }
 
-void cb_explore_adf_regcb::get_cost_ranges(
-    float delta, multi_learner& base, multi_ex& examples, bool min_only)
+void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, multi_ex& examples, bool min_only)
 {
   const size_t num_actions = examples[0]->pred.a_s.size();
   _min_costs.resize(num_actions);
