@@ -54,6 +54,7 @@ public:
   using value_type = audit_features_iterator<feature_value_type_t, feature_index_type_t, audit_type_t>;
   using pointer = value_type*;
   using reference = value_type&;
+  using const_reference = const value_type&;
 
   audit_features_iterator(
       feature_value_type_t* begin_values, feature_index_type_t* begin_indices, audit_type_t* begin_audit)
@@ -76,7 +77,7 @@ public:
   inline const audit_type_t* audit() const { return _begin_audit; }
 
   inline reference operator*() { return *this; }
-  inline reference operator*() const { return *this; }
+  inline const_reference operator*() const { return *this; }
 
   // Required for forward_iterator
   audit_features_iterator& operator++()
@@ -182,6 +183,7 @@ public:
   using value_type = features_iterator<feature_value_type_t, feature_index_type_t>;
   using pointer = value_type*;
   using reference = value_type&;
+  using const_reference = const value_type&;
 
   features_iterator(feature_value_type_t* begin_values, feature_index_type_t* begin_indices)
       : _begin_values(begin_values), _begin_indices(begin_indices)
@@ -200,7 +202,7 @@ public:
   inline const feature_index_type_t& index() const { return *_begin_indices; }
 
   inline reference operator*() { return *this; }
-  inline reference operator*() const { return *this; }
+  inline const_reference operator*() const { return *this; }
 
   features_iterator& operator++()
   {
