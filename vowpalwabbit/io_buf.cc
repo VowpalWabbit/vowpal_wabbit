@@ -90,13 +90,13 @@ void io_buf::buf_write(char*& pointer, size_t n)
   }
   else  // Time to dump the file
   {
-    if (head != _buffer._begin)
-      flush();
-    else  // Array is short, so increase size.
-    {
+    // if (head != _buffer._begin)
+    //   flush();
+    // else  // Array is short, so increase size.
+    // {
       _buffer.realloc(2 * _buffer.capacity());
       head = _buffer._begin;
-    }
+    // }
     buf_write(pointer, n);
   }
 }
