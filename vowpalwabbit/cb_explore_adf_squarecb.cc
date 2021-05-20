@@ -132,8 +132,7 @@ float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens
 }
 
 // TODO: Same as cb_explore_adf_regcb.cc
-void cb_explore_adf_squarecb::get_cost_ranges(
-    float delta, multi_learner& base, multi_ex& examples, bool min_only)
+void cb_explore_adf_squarecb::get_cost_ranges(float delta, multi_learner& base, multi_ex& examples, bool min_only)
 {
   const size_t num_actions = examples[0]->pred.a_s.size();
   _min_costs.resize(num_actions);
@@ -373,16 +372,16 @@ base_learner* setup(VW::config::options_i& options, vw& all)
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
   auto data = VW::make_unique<explore_type>(
       with_metrics, gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver);
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
-      all.get_setupfn_name(setup) + "-squarecb")
-          .set_params_per_weight(problem_multiplier)
-          .set_prediction_type(prediction_type_t::action_probs)
-          .set_label_type(label_type_t::cb)
-          .set_finish_example(explore_type::finish_multiline_example)
-          .set_print_example(explore_type::print_multiline_example)
-          .set_persist_metrics(explore_type::persist_metrics)
-          .set_save_load(explore_type::save_load)
-          .build();
+  auto* l = make_reduction_learner(
+      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup) + "-squarecb")
+                .set_params_per_weight(problem_multiplier)
+                .set_prediction_type(prediction_type_t::action_probs)
+                .set_label_type(label_type_t::cb)
+                .set_finish_example(explore_type::finish_multiline_example)
+                .set_print_example(explore_type::print_multiline_example)
+                .set_persist_metrics(explore_type::persist_metrics)
+                .set_save_load(explore_type::save_load)
+                .build();
   return make_base(*l);
 }
 
