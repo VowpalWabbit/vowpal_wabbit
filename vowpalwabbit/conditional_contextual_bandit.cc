@@ -18,6 +18,7 @@
 #include "version.h"
 #include "debug_log.h"
 #include "shared_data.h"
+#include "interactions.h"
 
 #include "io/logger.h"
 
@@ -51,8 +52,9 @@ struct ccb
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label;
   std::vector<bool> exclude_list, include_list;
-  namespace_interactions generated_interactions;
-  namespace_interactions* original_interactions;
+  INTERACTIONS::interactions_generator inter_gen;
+  std::vector<std::vector<namespace_index>> generated_interactions;
+  std::vector<std::vector<namespace_index>>* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label = 0;
 
@@ -65,6 +67,7 @@ struct ccb
 
   size_t base_learner_stride_shift = 0;
   bool all_slots_loss_report = false;
+  bool leave_duplicate_interactions = false;
 
   VW::v_array_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
@@ -261,33 +264,33 @@ void remove_slot_features(example* shared, example* slot)
 }
 
 // Generates quadratics between each namespace and the slot id as well as appends slot id to every existing interaction.
-void calculate_and_insert_interactions(
-    example* shared, const std::vector<example*>& actions, namespace_interactions& generated_interactions)
+void calculate_and_insert_interactions(example* shared, const std::vector<example*>& actions,
+    std::vector<std::vector<namespace_index>>& generated_interactions)
 {
   std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
 
-  auto original_size = generated_interactions.interactions.size();
+  auto original_size = generated_interactions.size();
 
   // add ccb_slot_namespace to original printable interactions
-  generated_interactions.interactions.push_back({ccb_slot_namespace, ccb_slot_namespace});
+  generated_interactions.push_back({ccb_slot_namespace, ccb_slot_namespace});
 
   unsigned char prev_found = 0;
   for (size_t i = 0; i < original_size; i++)
   {
-    if (generated_interactions.interactions[i].size() > 0 && prev_found != generated_interactions.interactions[i][0])
+    if (generated_interactions[i].size() > 0 && prev_found != generated_interactions[i][0])
     {
-      prev_found = generated_interactions.interactions[i][0];
-      generated_interactions.interactions.push_back({generated_interactions.interactions[i][0], ccb_slot_namespace});
+      prev_found = generated_interactions[i][0];
+      generated_interactions.push_back({generated_interactions[i][0], ccb_slot_namespace});
     }
   }
 
-  original_size = generated_interactions.interactions.size();
+  original_size = generated_interactions.size();
 
   for (size_t i = 0; i < original_size; i++)
   {
-    auto interaction_copy = generated_interactions.interactions[i];
+    auto interaction_copy = generated_interactions[i];
     interaction_copy.push_back(static_cast<namespace_index>(ccb_id_namespace));
-    generated_interactions.interactions.push_back(interaction_copy);
+    generated_interactions.push_back(interaction_copy);
   }
 
   for (const auto& action : actions)
@@ -298,7 +301,7 @@ void calculate_and_insert_interactions(
           !found_namespaces[action_index - INTERACTIONS::printable_start])
       {
         found_namespaces[action_index - INTERACTIONS::printable_start] = true;
-        generated_interactions.interactions.push_back({action_index, ccb_id_namespace});
+        generated_interactions.push_back({action_index, ccb_id_namespace});
       }
     }
   }
@@ -309,7 +312,7 @@ void calculate_and_insert_interactions(
         !found_namespaces[shared_index - INTERACTIONS::printable_start])
     {
       found_namespaces[shared_index - INTERACTIONS::printable_start] = true;
-      generated_interactions.interactions.push_back({shared_index, ccb_id_namespace});
+      generated_interactions.push_back({shared_index, ccb_id_namespace});
     }
   }
 }
@@ -441,6 +444,22 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   create_cb_labels(data);
   auto delete_cb_labels_guard = VW::scope_exit([&data, &examples] { delete_cb_labels(data); });
 
+  for (auto* ex : examples)
+  {
+    if (data.leave_duplicate_interactions)
+    {
+      data.inter_gen.update_interactions_if_new_namespace_seen<
+          INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
+          *data.original_interactions, ex->indices);
+    }
+    else
+    {
+      data.inter_gen.update_interactions_if_new_namespace_seen<
+          INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+          *data.original_interactions, ex->indices);
+    }
+  }
+
   // this is temporary only so we can get some logging of what's going on
   try
   {
@@ -455,18 +474,13 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     {
       if (should_augment_with_slot_info)
       {
+        data.generated_interactions = data.inter_gen.generated_interactions;
         // Namespace crossing for slot features.
-        data.generated_interactions.clear();
-        {
-          // lock while copying interactions since the parsing thread might be adding more interactions
-          // this should only cause contention when using -q ::
-          std::unique_lock<std::mutex> lock(data.original_interactions->mut);
-          data.generated_interactions.append(*data.original_interactions);
-        }
         calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
-        data.shared->interactions = &data.generated_interactions;
-        for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
       }
+      // Since CCB must interact its own namespaces this operation must always be done to ensure : is expanded.
+      data.shared->interactions = &data.generated_interactions;
+      for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
 
       // shared, action, action, slot
       data.include_list.clear();
@@ -515,11 +529,9 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         data.action_score_pool.acquire_object(*(decision_scores.end() - 1));
       }
 
-      if (should_augment_with_slot_info)
-      {
-        data.shared->interactions = data.original_interactions;
-        for (auto* ex : data.actions) { ex->interactions = data.original_interactions; }
-      }
+      data.shared->interactions = data.original_interactions;
+      for (auto* ex : data.actions) { ex->interactions = data.original_interactions; }
+
       remove_slot_features(data.shared, slot);
 
       if (should_augment_with_slot_info)
@@ -667,7 +679,10 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
                .necessary()
                .help(
                    "EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."))
-      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"));
+      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"))
+      .add(make_option("leave_duplicate_interactions", data->leave_duplicate_interactions)
+               .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
+                     "duplicate: '-q ab -q ba' and a lot more in '-q ::'."));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   data->all_slots_loss_report = all_slots_loss_report;
