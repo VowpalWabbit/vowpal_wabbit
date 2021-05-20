@@ -16,10 +16,11 @@ loss     last          counter         weight    label  predict features
 -0.533937 -0.974000           16           16.0      1:0        1       35
 -0.278719 -0.023500           32           32.0  1:-0.42        1       35
 [warning] JSON parser error at 43: Missing a comma or '}' after an object member.. Handler:  State: DecisionService
+-0.463219 -0.647719           64           64.0      1:0        1       35
 
 finished run
-number of examples = 58
-weighted example sum = 58.000000
+number of examples = 67
+weighted example sum = 67.000000
 weighted label sum = 0.000000
-average loss = -0.377517
-total feature number = 2107
+average loss = -0.500567
+total feature number = 2422
