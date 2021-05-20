@@ -1721,10 +1721,10 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
     if (all.example_parser->strict_parse)
     {
       THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
-                              << ". "
-                                  "Handler: "
-                              << handler.error().str()
-                              << "State: " << (current_state ? current_state->name : "null"));
+                                    << ". "
+                                       "Handler: "
+                                    << handler.error().str()
+                                    << "State: " << (current_state ? current_state->name : "null"));
     }
     else
     {
