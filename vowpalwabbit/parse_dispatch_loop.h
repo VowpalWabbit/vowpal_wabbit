@@ -44,14 +44,10 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       }
       // To make sure that in the end(when it is the last pass), the thread doesn't enter this block if the end_pass example is already taken care of by some other thread.
       // If this condition is not used, then this block can be executed more than once for the same pass (if the end_pass thread completes it's job and releases the lock, the current thread could have acquired the lock)
-      else if(!all.example_parser->done_with_end_pass)
-      { 
-        std::unique_lock<std::mutex> lck(all.example_parser->end_pass_mutex, std::try_to_lock);
-        bool gotLock = lck.owns_lock();
-        
-        if (gotLock)
-        {
-        all.example_parser->done_with_end_pass.store(false);
+      else if(all.example_parser->current_pass_index != all.example_parser->next_pass_index && !all.example_parser->last_pass_complete)
+      {
+        // At this point, the current and next pass index become same. Which means the parser threads cannot enter this block.
+        all.example_parser->current_pass_index++;
 
         reset_source(all, all.num_bits);
 
@@ -74,25 +70,15 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         }
 
         dispatch(all, examples);  // must be called before lock_done or race condition exists.
-        if (all.passes_complete >= all.numpasses && all.max_examples >= example_number) lock_done(*all.example_parser);
+        if (all.passes_complete >= all.numpasses && all.max_examples >= example_number) {
+          all.example_parser->last_pass_complete.store(true);
+          lock_done(*all.example_parser);
+        }
         example_number = 0;
 
         // To notify the other parser threads that they can continue their job.
-        all.example_parser->done_with_end_pass.store(true);
+        all.example_parser->next_pass_index++;
         all.example_parser->can_end_pass_parser.notify_all();
-        }
-        else
-        {
-          // We should not dispatch the end_pass examplee here, this example would not have been added in the ready_parsed_example queue.
-          VW::finish_example(all, *example_ptr);
-
-          // Stop other parser threads from executing till the pass has ended.
-          std::mutex mut;
-          std::unique_lock<std::mutex> lock(mut);
-          while(all.example_parser->done_with_end_pass == false) {
-            all.example_parser->can_end_pass_parser.wait(lock);
-          }
-        }
 
       }
 
@@ -102,7 +88,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         // Stop other parser threads from executing till the pass has ended.
         std::mutex mut;
         std::unique_lock<std::mutex> lock(mut);
-        while(all.example_parser->done_with_end_pass == false) {
+        while(all.example_parser->current_pass_index != all.example_parser->next_pass_index && !all.example_parser->last_pass_complete) {
           all.example_parser->can_end_pass_parser.wait(lock);
         }
       }

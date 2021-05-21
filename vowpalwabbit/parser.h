@@ -46,6 +46,8 @@ struct parser
     this->input = VW::make_unique<io_buf>();
     this->output = VW::make_unique<io_buf>();
     this->lbl_parser = simple_label_parser;
+    this->current_pass_index.store(0);
+    this->next_pass_index.store(1);
   }
 
   // delete copy constructor
@@ -97,7 +99,7 @@ struct parser
   //for cv notify and wait
   std::mutex example_cv_mutex;
   // To only allow one of the threads to enter the end pass state.
-  std::mutex end_pass_mutex;
+  std::atomic<bool> last_pass_complete{false};
 
   bool done = false;
 
@@ -122,7 +124,9 @@ struct parser
   // for passes
   std::condition_variable can_end_pass;
 
-  std::atomic<bool> done_with_end_pass{false};
+  std::atomic<int> current_pass_index;
+  std::atomic<int> next_pass_index;
+
   // for multiple parser threads, in the else block of parse_dispatch_loop. 
   std::condition_variable can_end_pass_parser;
 
