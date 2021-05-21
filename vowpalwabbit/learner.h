@@ -974,7 +974,8 @@ VW_WARNING_STATE_POP
 template <class DataT, class ExampleT, class BaseLearnerT>
 reduction_learner_builder<DataT, ExampleT, BaseLearnerT> make_reduction_learner(std::unique_ptr<DataT>&& data,
     BaseLearnerT* base, void (*learn_fn)(DataT&, BaseLearnerT&, ExampleT&),
-    void (*predict_fn)(DataT&, BaseLearnerT&, ExampleT&), const std::string& name, bool learn_returns_prediction = false)
+    void (*predict_fn)(DataT&, BaseLearnerT&, ExampleT&), const std::string& name,
+    bool learn_returns_prediction = false)
 {
   auto builder = reduction_learner_builder<DataT, ExampleT, BaseLearnerT>(std::move(data), base, name);
   builder.set_learn(learn_fn);
