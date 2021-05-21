@@ -166,51 +166,98 @@ int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
 
 int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::string_view>&, std::vector<VW::string_view>&) {
 
-  std::lock_guard<std::mutex> lck((*all).example_parser->parser_mutex);
-
   // this needs to outlive the string_views pointing to it
   std::vector<char> line;
   size_t num_chars;
-  size_t num_chars_initial;
 
-  // a line is popped off of the io queue in read_features
-  num_chars_initial = read_cached_feature(all, line, num_chars);
+  std::vector<char> *io_lines_next_item;
 
-  if(line.size() == 0) {
-    VW::finish_example(*all, *examples.back());
-    return 0;
+  {
+    std::lock_guard<std::mutex> lck((*all).example_parser->parser_mutex);
+    
+    io_lines_next_item = all->example_parser->io_lines.pop();
+
+    if(io_lines_next_item != nullptr) {
+      (*all).example_parser->ready_parsed_examples.push(examples[0]);
+    } else {
+      return 0;
+    }
+
   }
 
- // convert to io_buf -> parse, using create_buffer_view.
+  // only get here if io_lines_next_item != nullptr
+  line = std::move(*io_lines_next_item);
+  delete io_lines_next_item;
+
+  num_chars = line.size();
+
+  // If it is the end pass example extracted at the end of io_lines queue.
+  if(num_chars < 1)
+  {
+    examples[0]->is_newline = true;
+    return (int)num_chars;
+  }
+
+  // all cache reading performed on stripped line.
+  // char* stripped_line = std::move(line.data());
+
+   // convert to io_buf -> parse, using create_buffer_view.
   io_buf buf;
   if(line.size() > 0) {
     buf.add_file(VW::io::create_buffer_view(line.data(), line.size()));
   }
 
-  example *ae = examples.back();//&VW::get_unused_example(all);
+  int new_num_read = read_cached_features_single_example(all, examples[0], &buf);
 
-  int new_num_read = read_cached_features_single_example(all, ae, &buf);
+  return num_chars;
 
-  char *buffer = nullptr;
 
-  // Get the amount left to read in the input file
-  size_t remaining_bytes = buf.buf_read(buffer, num_chars_initial);
-  auto *unread_input = new std::vector<char>();
-  unread_input->resize(remaining_bytes);
 
-  memcpy(unread_input->data(), buffer, remaining_bytes);
+//   std::lock_guard<std::mutex> lck((*all).example_parser->parser_mutex);
 
-  all->example_parser->io_lines.push(unread_input);
+//   // this needs to outlive the string_views pointing to it
+//   std::vector<char> line;
+//   size_t num_chars;
+//   size_t num_chars_initial;
 
-  if(new_num_read == 0){
-    VW::finish_example(*all, *examples.back());
-    return 0;
-  }
+//   // a line is popped off of the io queue in read_features
+//   num_chars_initial = read_cached_feature(all, line, num_chars);
 
-  //examples.push_back(ae);
-  all->example_parser->ready_parsed_examples.push(ae);
+//   if(line.size() == 0) {
+//     VW::finish_example(*all, *examples.back());
+//     return 0;
+//   }
 
-  return new_num_read;
+//  // convert to io_buf -> parse, using create_buffer_view.
+//   io_buf buf;
+//   if(line.size() > 0) {
+//     buf.add_file(VW::io::create_buffer_view(line.data(), line.size()));
+//   }
+
+//   example *ae = examples.back();//&VW::get_unused_example(all);
+
+//   int new_num_read = read_cached_features_single_example(all, ae, &buf);
+
+//   char *buffer = nullptr;
+
+//   // Get the amount left to read in the input file
+//   size_t remaining_bytes = buf.buf_read(buffer, num_chars_initial);
+//   auto *unread_input = new std::vector<char>();
+//   unread_input->resize(remaining_bytes);
+
+//   memcpy(unread_input->data(), buffer, remaining_bytes);
+
+//   all->example_parser->io_lines.push(unread_input);
+
+//   if(new_num_read == 0){
+//     VW::finish_example(*all, *examples.back());
+//     return 0;
+//   }
+
+//   //examples.push_back(ae);
+//   all->example_parser->ready_parsed_examples.push(ae);
+
+//   return new_num_read;
 
 }
 
