@@ -405,7 +405,8 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // Even though the interactions reduction caches things when we move into CCB
   // mode a new namespace is added (ccb_id_namespace) and so we can be confident
   // that the cache will be invalidated.
-  if (!previously_should_augment_with_slot_info && should_augment_with_slot_info) { insert_ccb_interactions(data.all->interactions); }
+  if (!previously_should_augment_with_slot_info && should_augment_with_slot_info)
+  { insert_ccb_interactions(data.all->interactions); }
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
