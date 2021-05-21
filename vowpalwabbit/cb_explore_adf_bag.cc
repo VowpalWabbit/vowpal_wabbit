@@ -191,13 +191,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .build();
   return make_base(*l);
-  /*VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(data, base, explore_type::learn,
-      explore_type::predict, problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-bag");
 
-  l.set_finish_example(finish_bag_example);
-  l.set_print_example(print_bag_example);
-  l.set_persist_metrics(explore_type::persist_metrics);
-  return make_base(l);*/
 }
 
 }  // namespace bag
