@@ -17,6 +17,7 @@
 #include <cmath>
 #include <cfloat>
 #include "scope_exit.h"
+#include "label_parser.h"
 
 // Random Network Distillation style exploration.  Basically predicts
 // something whose true expectation is zero and uses the MSE(prediction
