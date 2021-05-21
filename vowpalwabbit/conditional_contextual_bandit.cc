@@ -18,7 +18,6 @@
 #include "version.h"
 #include "debug_log.h"
 #include "shared_data.h"
-#include "interactions.h"
 
 #include "io/logger.h"
 
@@ -44,6 +43,26 @@ void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
   array = v_init<T>();
 }
 
+// CCB adds the following interactions:
+//   1. Every existing interaction + ccb_id_namespace
+//   2. Every existing interaction + ccb_slot_namespace
+//   3. wildcard_namespace + ccb_id_namespace
+//   4. wildcard_namespace + ccb_slot_namespace
+void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interactions_to_add_to)
+{
+  std::vector<std::vector<namespace_index>> new_interactions;
+  for (const auto& inter : interactions_to_add_to)
+  {
+    new_interactions.push_back(inter);
+    new_interactions.back().push_back(static_cast<namespace_index>(ccb_id_namespace));
+    new_interactions.push_back(inter);
+    new_interactions.back().push_back(static_cast<namespace_index>(ccb_slot_namespace));
+  }
+  std::copy(new_interactions.begin(), new_interactions.end(), std::back_inserter(interactions_to_add_to));
+  interactions_to_add_to.push_back({wildcard_namespace, ccb_id_namespace});
+  interactions_to_add_to.push_back({wildcard_namespace, ccb_slot_namespace});
+}
+
 struct ccb
 {
   vw* all = nullptr;
@@ -52,9 +71,6 @@ struct ccb
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label;
   std::vector<bool> exclude_list, include_list;
-  INTERACTIONS::interactions_generator inter_gen;
-  std::vector<std::vector<namespace_index>> generated_interactions;
-  std::vector<std::vector<namespace_index>>* original_interactions;
   std::vector<CCB::label> stored_labels;
   size_t action_with_label = 0;
 
@@ -67,7 +83,6 @@ struct ccb
 
   size_t base_learner_stride_shift = 0;
   bool all_slots_loss_report = false;
-  bool leave_duplicate_interactions = false;
 
   VW::v_array_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
@@ -263,60 +278,6 @@ void remove_slot_features(example* shared, example* slot)
   }
 }
 
-// Generates quadratics between each namespace and the slot id as well as appends slot id to every existing interaction.
-void calculate_and_insert_interactions(example* shared, const std::vector<example*>& actions,
-    std::vector<std::vector<namespace_index>>& generated_interactions)
-{
-  std::bitset<INTERACTIONS::printable_ns_size> found_namespaces;
-
-  auto original_size = generated_interactions.size();
-
-  // add ccb_slot_namespace to original printable interactions
-  generated_interactions.push_back({ccb_slot_namespace, ccb_slot_namespace});
-
-  unsigned char prev_found = 0;
-  for (size_t i = 0; i < original_size; i++)
-  {
-    if (generated_interactions[i].size() > 0 && prev_found != generated_interactions[i][0])
-    {
-      prev_found = generated_interactions[i][0];
-      generated_interactions.push_back({generated_interactions[i][0], ccb_slot_namespace});
-    }
-  }
-
-  original_size = generated_interactions.size();
-
-  for (size_t i = 0; i < original_size; i++)
-  {
-    auto interaction_copy = generated_interactions[i];
-    interaction_copy.push_back(static_cast<namespace_index>(ccb_id_namespace));
-    generated_interactions.push_back(interaction_copy);
-  }
-
-  for (const auto& action : actions)
-  {
-    for (const auto& action_index : action->indices)
-    {
-      if (INTERACTIONS::is_printable_namespace(action_index) &&
-          !found_namespaces[action_index - INTERACTIONS::printable_start])
-      {
-        found_namespaces[action_index - INTERACTIONS::printable_start] = true;
-        generated_interactions.push_back({action_index, ccb_id_namespace});
-      }
-    }
-  }
-
-  for (const auto& shared_index : shared->indices)
-  {
-    if (INTERACTIONS::is_printable_namespace(shared_index) &&
-        !found_namespaces[shared_index - INTERACTIONS::printable_start])
-    {
-      found_namespaces[shared_index - INTERACTIONS::printable_start] = true;
-      generated_interactions.push_back({shared_index, ccb_id_namespace});
-    }
-  }
-}
-
 // build a cb example from the ccb example
 template <bool is_learn>
 void build_cb_example(multi_ex& cb_ex, example* slot, const CCB::label& ccb_label, ccb& data)
@@ -426,6 +387,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     }
   }
 
+  auto previously_should_augment_with_slot_info = data.has_seen_multi_slot_example;
   data.has_seen_multi_slot_example = data.has_seen_multi_slot_example || data.slots.size() > 1;
 
   // If we have not seen more than one slot, we need to check if the user has supplied slot features.
@@ -440,25 +402,14 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   }
   const bool should_augment_with_slot_info = data.has_seen_multi_slot_example;
 
+  // Even though the interactions reduction caches things when we move into CCB
+  // mode a new namespace is added (ccb_id_namespace) and so we can be confident
+  // that the cache will be invalidated.
+  if (!previously_should_augment_with_slot_info && should_augment_with_slot_info) { insert_ccb_interactions(data.all->interactions); }
+
   // This will overwrite the labels with CB.
   create_cb_labels(data);
   auto delete_cb_labels_guard = VW::scope_exit([&data, &examples] { delete_cb_labels(data); });
-
-  for (auto* ex : examples)
-  {
-    if (data.leave_duplicate_interactions)
-    {
-      data.inter_gen.update_interactions_if_new_namespace_seen<
-          INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
-          *data.original_interactions, ex->indices);
-    }
-    else
-    {
-      data.inter_gen.update_interactions_if_new_namespace_seen<
-          INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
-          *data.original_interactions, ex->indices);
-    }
-  }
 
   // this is temporary only so we can get some logging of what's going on
   try
@@ -472,16 +423,6 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     size_t slot_id = 0;
     for (example* slot : data.slots)
     {
-      if (should_augment_with_slot_info)
-      {
-        data.generated_interactions = data.inter_gen.generated_interactions;
-        // Namespace crossing for slot features.
-        calculate_and_insert_interactions(data.shared, data.actions, data.generated_interactions);
-      }
-      // Since CCB must interact its own namespaces this operation must always be done to ensure : is expanded.
-      data.shared->interactions = &data.generated_interactions;
-      for (auto* ex : data.actions) { ex->interactions = &data.generated_interactions; }
-
       // shared, action, action, slot
       data.include_list.clear();
       assert(1 /* shared */ + data.actions.size() + slot_id < data.stored_labels.size());
@@ -528,9 +469,6 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
         decision_scores.push_back(v_array<ACTION_SCORE::action_score>());
         data.action_score_pool.acquire_object(*(decision_scores.end() - 1));
       }
-
-      data.shared->interactions = data.original_interactions;
-      for (auto* ex : data.actions) { ex->interactions = data.original_interactions; }
 
       remove_slot_features(data.shared, slot);
 
@@ -662,6 +600,8 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
     bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&sm.has_seen_multi_slot_example),
         sizeof(sm.has_seen_multi_slot_example), "", read, msg, text);
   }
+
+  if (read && sm.has_seen_multi_slot_example) { insert_ccb_interactions(sm.all->interactions); }
 }
 
 base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
@@ -679,10 +619,7 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
                .necessary()
                .help(
                    "EXPERIMENTAL: Do Conditional Contextual Bandit learning with multiline action dependent features."))
-      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"))
-      .add(make_option("leave_duplicate_interactions", data->leave_duplicate_interactions)
-               .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
-                     "duplicate: '-q ab -q ba' and a lot more in '-q ::'."));
+      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   data->all_slots_loss_report = all_slots_loss_report;
@@ -707,7 +644,6 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 
   // Extract from lower level reductions
   data->shared = nullptr;
-  data->original_interactions = &all.interactions;
   data->all = &all;
   data->model_file_version = all.model_file_ver;
 

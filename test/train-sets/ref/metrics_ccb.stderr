@@ -6,19 +6,19 @@ using no cache
 Reading datafile = train-sets/ccb_data.json
 WARNING: Old string feature value behavior is deprecated in JSON/DSJSON and will be removed in a future version. Use `--chain_hash` to use new behavior and silence this warning.
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf, extra_metrics
+Enabled reductions: gd, generate_interactions, scorer, csoaa_ldf, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf, extra_metrics
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.000000 0.000000            1            1.0  3:0,0:0      3,0       46
--0.300000 -0.600000            2            2.0 1:-0.6,3:-0.4      1,3       46
--0.162500 -0.025000            4            4.0  2:0,0:0      2,0       46
--0.093875 -0.025250            8            8.0  2:-0.42        2       35
--0.533937 -0.974000           16           16.0      1:0        1       35
--0.278719 -0.023500           32           32.0  1:-0.42        1       35
+0.000000 0.000000            1            1.0  3:0,0:0      3,0       52
+-0.300000 -0.600000            2            2.0 1:-0.6,3:-0.4      1,3       52
+-0.162500 -0.025000            4            4.0  2:0,0:0      2,0       52
+-0.093875 -0.025250            8            8.0  2:-0.42        2       39
+-0.533937 -0.974000           16           16.0      1:0        1       39
+-0.278719 -0.023500           32           32.0  1:-0.42        1       39
 
 finished run
 number of examples = 59
 weighted example sum = 59.000000
 weighted label sum = 0.000000
 average loss = -0.371966
-total feature number = 2142
+total feature number = 2392
