@@ -311,8 +311,7 @@ base_learner* setup(VW::config::options_i& options, vw& all)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .build();
-  return make_base(*l);  
-
+  return make_base(*l);
 }
 }  // namespace rnd
 }  // namespace cb_explore_adf
