@@ -91,7 +91,7 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
 
           // ensure results as big as order_of_inter and empty.
           results.resize_but_with_stl_behavior(order_of_inter);
-          std::fill(results.begin(), results.end(), 0);
+          std::fill(results.begin(), results.end(), 0.f);
 
           // recurrent value calculations
           for (size_t i = 0; i < fs.size(); ++i)
