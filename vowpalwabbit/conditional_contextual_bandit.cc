@@ -50,7 +50,9 @@ void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
 //   4. wildcard_namespace + ccb_slot_namespace
 void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interactions_to_add_to)
 {
+  const auto reserve_size = interactions_to_add_to.size() * 2;
   std::vector<std::vector<namespace_index>> new_interactions;
+  new_interactions.reserve(reserve_size);
   for (const auto& inter : interactions_to_add_to)
   {
     new_interactions.push_back(inter);
@@ -58,7 +60,8 @@ void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interact
     new_interactions.push_back(inter);
     new_interactions.back().push_back(static_cast<namespace_index>(ccb_slot_namespace));
   }
-  std::copy(new_interactions.begin(), new_interactions.end(), std::back_inserter(interactions_to_add_to));
+  interactions_to_add_to.reserve(interactions_to_add_to.size() + new_interactions.size() + 2);
+  std::move(new_interactions.begin(), new_interactions.end(), std::back_inserter(interactions_to_add_to));
   interactions_to_add_to.push_back({wildcard_namespace, ccb_id_namespace});
   interactions_to_add_to.push_back({wildcard_namespace, ccb_slot_namespace});
 }
