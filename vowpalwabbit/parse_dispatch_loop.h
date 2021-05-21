@@ -84,7 +84,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         else
         {
           // We should not dispatch the end_pass examplee here, this example would not have been added in the ready_parsed_example queue.
-
+          VW::finish_example(all, *example_ptr);
 
           // Stop other parser threads from executing till the pass has ended.
           std::mutex mut;
@@ -94,6 +94,17 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
           }
         }
 
+      }
+
+      else{
+        VW::finish_example(all, *example_ptr);
+
+        // Stop other parser threads from executing till the pass has ended.
+        std::mutex mut;
+        std::unique_lock<std::mutex> lock(mut);
+        while(all.example_parser->done_with_end_pass == false) {
+          all.example_parser->can_end_pass_parser.wait(lock);
+        }
       }
 
       examples.clear();
