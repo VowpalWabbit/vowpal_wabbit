@@ -309,7 +309,8 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   auto data = VW::make_unique<explore_type>(with_metrics, cover_size, psi, nounif, epsilon, epsilon_decay, first_only,
       as_multiline(all.cost_sensitive), all.scorer, cb_type_enum, all.model_file_ver);
   auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup) + "-cover", true)
+      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup) + "-cover")
+                .set_learn_returns_prediction(true)
                 .set_params_per_weight(problem_multiplier)
                 .set_prediction_type(prediction_type_t::action_probs)
                 .set_label_type(label_type_t::cb)
