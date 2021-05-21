@@ -43,10 +43,9 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
       {
         num_features_in_inter *= feature_spaces[ns].size();
         sum_feat_sq_in_inter *= feature_spaces[ns].sum_feat_sq;
-        if (num_features_in_inter == 0) break;
+        // If there are no features, then we don't want to accumulate the default value of 1.0, so we zero out here.
+        if (num_features_in_inter == 0) { sum_feat_sq_in_inter = 0; }
       }
-
-      if (num_features_in_inter == 0) continue;
 
       new_features_cnt += num_features_in_inter;
       new_features_value += sum_feat_sq_in_inter;
@@ -72,7 +71,9 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
         else  // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
         {
           // let's find out real length of this block
-          size_t order_of_inter = 2;  // alredy compared ns == ns+1
+
+          // already compared ns == ns+1
+          size_t order_of_inter = 2;
 
           for (auto ns_end = ns + 2; ns_end < inter.end(); ++ns_end)
             if (*ns == *ns_end) ++order_of_inter;
@@ -89,8 +90,8 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
           // let's calculate sum of their squared value for whole block
 
           // ensure results as big as order_of_inter and empty.
-          for (size_t i = 0; i < results.size(); ++i) results[i] = 0.;
-          while (results.size() < order_of_inter) results.push_back(0.);
+          results.resize_but_with_stl_behavior(order_of_inter);
+          std::fill(results.begin(), results.end(), 0);
 
           // recurrent value calculations
           for (size_t i = 0; i < fs.size(); ++i)
