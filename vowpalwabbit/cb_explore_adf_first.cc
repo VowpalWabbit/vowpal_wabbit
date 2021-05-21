@@ -19,6 +19,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace VW::LEARNER;
+
 namespace VW
 {
 namespace cb_explore_adf
@@ -38,13 +40,13 @@ public:
   ~cb_explore_adf_first() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
   void save_load(io_buf& io, bool read, bool text);
 
 private:
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(multi_learner& base, multi_ex& examples);
 };
 
 cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version)
@@ -53,13 +55,13 @@ cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::versio
 }
 
 template <bool is_learn>
-void cb_explore_adf_first::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, multi_ex& examples)
 {
   // Explore tau times, then act according to optimal.
   if (is_learn)
-    VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
+    multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
   else
-    VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+    multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
   v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
@@ -90,7 +92,7 @@ void cb_explore_adf_first::save_load(io_buf& io, bool read, bool text)
   }
 }
 
-VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
+base_learner* setup(config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
@@ -112,26 +114,28 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
 
   size_t problem_multiplier = 1;
 
-  VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_first>;
-  auto data = scoped_calloc_or_throw<explore_type>(with_metrics, tau, epsilon, all.model_file_ver);
+  auto data = VW::make_unique<explore_type>(with_metrics, tau, epsilon, all.model_file_ver);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
-
-  VW::LEARNER::learner<explore_type, multi_ex>& l =
-      VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
-          prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-first");
-
-  l.set_finish_example(explore_type::finish_multiline_example);
-  l.set_print_example(explore_type::print_multiline_example);
-  l.set_persist_metrics(explore_type::persist_metrics);
-  l.set_save_load(explore_type::save_load);
-  return make_base(l);
+  auto* l = make_reduction_learner(
+      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup) + "-first")
+                .set_params_per_weight(problem_multiplier)
+                .set_prediction_type(prediction_type_t::action_probs)
+                .set_label_type(label_type_t::cb)
+                .set_finish_example(explore_type::finish_multiline_example)
+                .set_print_example(explore_type::print_multiline_example)
+                .set_persist_metrics(explore_type::persist_metrics)
+                .set_save_load(explore_type::save_load)
+                .build();
+  return make_base(*l);
 }
+
 }  // namespace first
 }  // namespace cb_explore_adf
 }  // namespace VW
