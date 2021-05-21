@@ -101,7 +101,6 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .build();
   return make_base(*l);
-
 }
 }  // namespace softmax
 }  // namespace cb_explore_adf
