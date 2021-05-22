@@ -689,18 +689,23 @@ void setup_example(vw& all, example* ae)
   {
     size_t cached_example_size = 0;
     char* c;
+
+    io_buf* output = all.example_parser->output.get();
+    
     // Allocate space for example size in buffer.
-    (*(all.example_parser->output)).buf_write(c, sizeof(size_t)); 
+    (*(output)).buf_write(c, sizeof(size_t)); 
 
     // write in the example.
-    all.example_parser->lbl_parser.cache_label(&ae->l, ae->_reduction_features, *(all.example_parser->output));
-    cache_features(*(all.example_parser->output), ae, all.parse_mask);
+    all.example_parser->lbl_parser.cache_label(&ae->l, ae->_reduction_features, *(output));
+    cache_features(*(output), ae, all.parse_mask);
 
     char* head;
-    (*(all.example_parser->output)).buf_write(head, 0);
+    (*(output)).buf_write(head, 0);
     cached_example_size = head - c - sizeof(size_t);
     // Write the size of the example to the allocated space in the beginning.
     memcpy(c, &cached_example_size, sizeof(cached_example_size));
+    
+    all.example_parser->output->flush();
   }
 
   ae->partial_prediction = 0.;
