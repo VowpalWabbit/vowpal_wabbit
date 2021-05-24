@@ -132,14 +132,19 @@ public:
 
     if (prev_count != all_seen_namespaces.size())
     {
-      // Generating interactions for the constant namespace doesn't really make sense since it will essentially just be
-      // another copy of each feature itself. To prevent these getting generated we remove it from the set temporarily
-      // then add it back after.
-      auto constant_namespace_it = all_seen_namespaces.find(constant_namespace);
-      if (constant_namespace_it != all_seen_namespaces.end()) { all_seen_namespaces.erase(constant_namespace_it); }
+      // We do not generate interactions for non-printable namespaces as
+      // generally they are used for implementation details and special behavior
+      // and not user inputted features.
+      std::set<namespace_index> indices_to_interact;
+      for (auto ns_index : all_seen_namespaces)
+      {
+        if(is_printable_namespace(ns_index))
+        {
+          indices_to_interact.insert(ns_index);
+        }
+      }
       generated_interactions =
-          compile_interactions<generate_func, leave_duplicate_interactions>(interactions, all_seen_namespaces);
-      all_seen_namespaces.insert(constant_namespace);
+          compile_interactions<generate_func, leave_duplicate_interactions>(interactions, indices_to_interact);
     }
   }
 };
