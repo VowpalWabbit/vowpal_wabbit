@@ -60,6 +60,8 @@ void list_to_json_file(dsjson_metrics* ds_metrics, std::string filename, metric_
       writer.Int64(ds_metrics->NumberOfSkippedEvents);
       writer.Key("number_events_zero_actions");
       writer.Int64(ds_metrics->NumberOfEventsZeroActions);
+      writer.Key("line_parse_error");
+      writer.Int64(ds_metrics->LineParseError);
       writer.Key("first_event_id");
       writer.String(ds_metrics->FirstEventId.c_str());
       writer.Key("first_event_time");
