@@ -14,6 +14,7 @@
 #include "cb_explore_adf_common.h"
 #include "vw_versions.h"
 #include "version.h"
+#include "label_parser.h"
 
 #include <vector>
 #include <algorithm>
