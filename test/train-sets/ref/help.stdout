@@ -398,14 +398,9 @@ Continuous Action Contextual Bandit using Zeroth-Order Optimization:
   --policy arg (=linear, ) Policy/Model to Learn
   --radius arg (=0.1, )    Exploration Radius
 EXPERIMENTAL: Conditional Contextual Bandit Exploration with ADF:
-  --ccb_explore_adf               EXPERIMENTAL: Do Conditional Contextual 
-                                  Bandit learning with multiline action 
-                                  dependent features.
-  --all_slots_loss                Report average loss from all slots
-  --leave_duplicate_interactions  Don't remove interactions with duplicate 
-                                  combinations of namespaces. For ex. this is a
-                                  duplicate: '-q ab -q ba' and a lot more in 
-                                  '-q ::'.
+  --ccb_explore_adf     EXPERIMENTAL: Do Conditional Contextual Bandit learning
+                        with multiline action dependent features.
+  --all_slots_loss      Report average loss from all slots
 importance weight classes:
   --classweight arg     importance weight multiplier for class
 Confidence:
