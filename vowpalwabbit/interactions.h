@@ -140,8 +140,12 @@ public:
       {
         if (is_printable_namespace(ns_index)) { indices_to_interact.insert(ns_index); }
       }
-      generated_interactions =
-          compile_interactions<generate_func, leave_duplicate_interactions>(interactions, indices_to_interact);
+      generated_interactions.clear();
+      if (indices_to_interact.size() > 0)
+      {
+        generated_interactions =
+            compile_interactions<generate_func, leave_duplicate_interactions>(interactions, indices_to_interact);
+      }
     }
   }
 };
