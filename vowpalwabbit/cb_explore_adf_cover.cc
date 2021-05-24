@@ -68,7 +68,8 @@ private:
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
     bool first_only, VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, size_t cb_type,
     VW::version_struct model_file_version)
-    : _cover_size(cover_size)
+    : _counter(0)
+    , _cover_size(cover_size)
     , _psi(psi)
     , _nounif(nounif)
     , _epsilon(epsilon)
