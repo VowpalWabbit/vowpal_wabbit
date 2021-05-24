@@ -138,10 +138,7 @@ public:
       std::set<namespace_index> indices_to_interact;
       for (auto ns_index : all_seen_namespaces)
       {
-        if(is_printable_namespace(ns_index))
-        {
-          indices_to_interact.insert(ns_index);
-        }
+        if (is_printable_namespace(ns_index)) { indices_to_interact.insert(ns_index); }
       }
       generated_interactions =
           compile_interactions<generate_func, leave_duplicate_interactions>(interactions, indices_to_interact);
