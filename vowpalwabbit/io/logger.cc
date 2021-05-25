@@ -50,7 +50,7 @@ void log_summary()
   if (detail::max_limit != SIZE_MAX && detail::log_count > detail::max_limit)
   {
     logger::errlog_critical(
-        "Ommitted some log lines. Re-run without --limit_output N for full log. Total {}", detail::log_count);
+        "Omitted some log lines. Re-run without --limit_output N for full log. Total log lines: {}", detail::log_count);
   }
 }
 }
