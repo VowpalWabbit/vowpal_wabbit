@@ -24,4 +24,4 @@ weighted example sum = 68.000000
 weighted label sum = 0.000000
 average loss = -0.572868
 total feature number = 2471
-[critical] Ommitted some log lines. Re-run without --limit_output N for full log. Total 3
+[critical] Omitted some log lines. Re-run without --limit_output N for full log. Total log lines: 3
