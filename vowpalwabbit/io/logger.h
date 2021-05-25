@@ -106,7 +106,7 @@ namespace logger
     void errlog_info(const FormatString &fmt, Args&&...args)
   {
     detail::log_count++;
-    if (detail::log_count <= detail::max_limit) detail::_stderr_logger->info(fmt, std::forward<Args>(args)...);
+    if (detail::log_count <= detail::max_limit) { detail::_stderr_logger->info(fmt, std::forward<Args>(args)...); }
   }
 
   template<typename FormatString, typename... Args>
