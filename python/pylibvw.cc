@@ -277,14 +277,8 @@ py::dict get_learner_metrics(vw_ptr all)
     VW::metric_sink metrics;
     all->l->persist_metrics(metrics);
 
-    for (const auto& m : metrics.int_metrics_list)
-    {
-      dictionary[m.first] = m.second;
-    }
-    for (const auto& m : metrics.float_metrics_list)
-    {
-      dictionary[m.first] = m.second;
-    }
+    for (const auto& m : metrics.int_metrics_list) { dictionary[m.first] = m.second; }
+    for (const auto& m : metrics.float_metrics_list) { dictionary[m.first] = m.second; }
   }
 
   return dictionary;
@@ -1151,7 +1145,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("__init__", py::make_constructor(my_initialize_with_log))
       //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
       .def("run_parser", &my_run_parser, "parse external data file")
-      .def("get_learner_metrics", &get_learner_metrics, "get current learner stack metrics. returns empty dict if --extra_metrics was not supplied.")
+      .def("get_learner_metrics", &get_learner_metrics,
+          "get current learner stack metrics. returns empty dict if --extra_metrics was not supplied.")
       .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
       .def("save", &my_save, "save model to filename")
       .def("learn", &my_learn, "given a pyvw example, learn (and predict) on that example")
