@@ -21,6 +21,7 @@
 #include "reductions_fwd.h"
 #include "vw_math.h"
 #include "shared_data.h"
+#include "metric_sink.h"
 
 namespace VW
 {
@@ -63,6 +64,16 @@ inline size_t fill_tied(const v_array<ACTION_SCORE::action_score>& preds)
   return ret;
 }
 
+struct cb_explore_metrics
+{
+  size_t _metric_labeled;
+  size_t _metric_predict_in_learn;
+  float _metric_sum_cost;
+  float _metric_sum_cost_first;
+  size_t label_action_first_option;
+  size_t label_action_not_first;
+};
+
 // Object
 template <typename ExploreType>
 // data common to all cb_explore_adf reductions
@@ -74,13 +85,14 @@ private:
   CB::label _action_label;
   CB::label _empty_label;
   ACTION_SCORE::action_scores _saved_pred;
-  size_t _metric_labeled;
-  size_t _metric_predict_in_learn;
+  std::unique_ptr<cb_explore_metrics> _metrics;
 
 public:
   template <typename... Args>
-  cb_explore_adf_base(Args&&... args) : explore(std::forward<Args>(args)...)
+  cb_explore_adf_base(bool with_metrics, Args&&... args) : explore(std::forward<Args>(args)...)
   {
+    if (with_metrics) _metrics = VW::make_unique<cb_explore_metrics>();
+
     _saved_pred = v_init<ACTION_SCORE::action_score>();
   }
 
@@ -89,8 +101,7 @@ public:
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void print_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
-  static void persist_metrics(
-      cb_explore_adf_base<ExploreType>& data, std::vector<std::tuple<std::string, size_t>>& metrics);
+  static void persist_metrics(cb_explore_adf_base<ExploreType>& data, metric_sink& metrics);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
@@ -135,12 +146,25 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     data._known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
-    data._metric_labeled++;
+    if (data._metrics)
+    {
+      data._metrics->_metric_labeled++;
+      data._metrics->_metric_sum_cost += data._known_cost.cost;
+      if (data._known_cost.action == 0)
+      {
+        data._metrics->label_action_first_option++;
+        data._metrics->_metric_sum_cost_first += data._known_cost.cost;
+      }
+      else
+      {
+        data._metrics->label_action_not_first++;
+      }
+    }
   }
   else
   {
     predict(data, base, examples);
-    data._metric_predict_in_learn++;
+    if (data._metrics) data._metrics->_metric_predict_in_learn++;
   }
 }
 
@@ -236,10 +260,17 @@ inline void cb_explore_adf_base<ExploreType>::save_load(
 
 template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::persist_metrics(
-    cb_explore_adf_base<ExploreType>& data, std::vector<std::tuple<std::string, size_t>>& metrics)
+    cb_explore_adf_base<ExploreType>& data, metric_sink& metrics)
 {
-  metrics.emplace_back("cbea_labeled_ex", data._metric_labeled);
-  metrics.emplace_back("cbea_predict_in_learn", data._metric_predict_in_learn);
+  if (data._metrics)
+  {
+    metrics.int_metrics_list.emplace_back("cbea_labeled_ex", data._metrics->_metric_labeled);
+    metrics.int_metrics_list.emplace_back("cbea_predict_in_learn", data._metrics->_metric_predict_in_learn);
+    metrics.float_metrics_list.emplace_back("cbea_sum_cost", data._metrics->_metric_sum_cost);
+    metrics.float_metrics_list.emplace_back("cbea_sum_cost_baseline", data._metrics->_metric_sum_cost_first);
+    metrics.int_metrics_list.emplace_back("cbea_label_first_action", data._metrics->label_action_first_option);
+    metrics.int_metrics_list.emplace_back("cbea_label_not_first", data._metrics->label_action_not_first);
+  }
 }
 
 }  // namespace cb_explore_adf

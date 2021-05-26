@@ -464,6 +464,11 @@ Gradient Descent options:
   --sparse_l2 arg (=0, ) use per feature normalized updates
   --l1_state arg (=0, )  use per feature normalized updates
   --l2_state arg (=1, )  use per feature normalized updates
+Generate interactions:
+  --leave_duplicate_interactions  Don't remove interactions with duplicate 
+                                  combinations of namespaces. For ex. this is a
+                                  duplicate: '-q ab -q ba' and a lot more in 
+                                  '-q ::'.
 Continuous actions - convert to pmf:
   --get_pmf             Convert a single multiclass prediction to a pmf
 Interact via elementwise multiplication:

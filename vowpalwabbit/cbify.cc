@@ -108,7 +108,7 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
 }
 
 void cbify_adf_data::init_adf_data(
-    const std::size_t num_actions, std::size_t increment, namespace_interactions& interactions)
+    const std::size_t num_actions, std::size_t increment, std::vector<std::vector<namespace_index>>& interactions)
 {
   this->num_actions = num_actions;
   this->increment = increment;

@@ -17,6 +17,7 @@
 #include <cmath>
 #include <cfloat>
 #include "scope_exit.h"
+#include "label_parser.h"
 
 // Random Network Distillation style exploration.  Basically predicts
 // something whose true expectation is zero and uses the MSE(prediction
@@ -27,6 +28,8 @@
 // the Fisher information matrix quadratic form of linucb.  So essentially
 // this is a randomized algorithm for approximating the linucb bonus.
 // Hopefully it works well when the expected reward is realizable.  YMMV.
+
+using namespace VW::LEARNER;
 
 namespace VW
 {
@@ -51,7 +54,7 @@ private:
   CB::cb_class save_class;
 
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(multi_learner& base, multi_ex& examples);
 
   float get_initial_prediction(example*);
   void get_initial_predictions(multi_ex&, uint32_t);
@@ -67,7 +70,7 @@ private:
   template <bool>
   void restore_labels(multi_ex&);
   template <bool>
-  void base_learn_or_predict(VW::LEARNER::multi_learner&, multi_ex&, uint32_t);
+  void base_learn_or_predict(multi_learner&, multi_ex&, uint32_t);
 
 public:
   cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, vw* _all)
@@ -82,8 +85,8 @@ public:
   ~cb_explore_adf_rnd() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(multi_learner& base, multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 };
 
 void cb_explore_adf_rnd::zero_bonuses(multi_ex& examples) { bonuses.assign(examples.size(), 0.f); }
@@ -168,9 +171,9 @@ void cb_explore_adf_rnd::get_initial_predictions(multi_ex& examples, uint32_t id
   {
     auto* ec = examples[i];
 
-    VW::LEARNER::increment_offset(*ec, increment, id);
+    increment_offset(*ec, increment, id);
     initials.push_back(get_initial_prediction(ec));
-    VW::LEARNER::decrement_offset(*ec, increment, id);
+    decrement_offset(*ec, increment, id);
   }
 }
 
@@ -210,7 +213,7 @@ void cb_explore_adf_rnd::restore_labels(multi_ex& examples)
 }
 
 template <bool is_learn>
-void cb_explore_adf_rnd::base_learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples, uint32_t id)
+void cb_explore_adf_rnd::base_learn_or_predict(multi_learner& base, multi_ex& examples, uint32_t id)
 {
   if (is_learn) { base.learn(examples, id); }
   else
@@ -220,7 +223,7 @@ void cb_explore_adf_rnd::base_learn_or_predict(VW::LEARNER::multi_learner& base,
 }
 
 template <bool is_learn>
-void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, multi_ex& examples)
 {
   save_labels<is_learn>(examples);
 
@@ -249,7 +252,7 @@ void cb_explore_adf_rnd::predict_or_learn_impl(VW::LEARNER::multi_learner& base,
   exploration::enforce_minimum_probability(epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
-VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
+base_learner* setup(VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
@@ -289,22 +292,26 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
 
   size_t problem_multiplier = 1 + numrnd;
 
-  VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
+  bool with_metrics = options.was_supplied("extra_metrics");
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;
-  auto data = scoped_calloc_or_throw<explore_type>(
-      epsilon, alpha, invlambda, numrnd, base->increment * problem_multiplier, &all);
+  auto data = VW::make_unique<explore_type>(
+      with_metrics, epsilon, alpha, invlambda, numrnd, base->increment * problem_multiplier, &all);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
-
-  VW::LEARNER::learner<explore_type, multi_ex>& l = VW::LEARNER::init_learner(data, base, explore_type::learn,
-      explore_type::predict, problem_multiplier, prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-rnd");
-
-  l.set_finish_example(explore_type::finish_multiline_example);
-  l.set_print_example(explore_type::print_multiline_example);
-  l.set_persist_metrics(explore_type::persist_metrics);
-  return make_base(l);
+  auto* l = make_reduction_learner(
+      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup) + "-rnd")
+                .set_params_per_weight(problem_multiplier)
+                .set_prediction_type(prediction_type_t::action_probs)
+                .set_label_type(label_type_t::cb)
+                .set_finish_example(explore_type::finish_multiline_example)
+                .set_print_example(explore_type::print_multiline_example)
+                .set_persist_metrics(explore_type::persist_metrics)
+                .build();
+  return make_base(*l);
 }
 }  // namespace rnd
 }  // namespace cb_explore_adf

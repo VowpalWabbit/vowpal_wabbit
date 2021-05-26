@@ -188,6 +188,7 @@
     <ClInclude Include="gd.h" />
     <ClInclude Include="gd_predict.h" />
     <ClInclude Include="gen_cs_example.h" />
+    <ClInclude Include="generate_interactions.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="guard.h" />
     <ClInclude Include="interact.h" />
@@ -207,6 +208,7 @@
     <ClInclude Include="memory_tree.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="metrics.h" />
+    <ClInclude Include="metric_sink.h" />
     <ClInclude Include="mf.h" />
     <ClInclude Include="multiclass.h" />
     <ClInclude Include="multilabel_oaa.h" />
@@ -347,6 +349,7 @@
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="gd.cc" />
     <ClCompile Include="gen_cs_example.cc" />
+    <ClCompile Include="generate_interactions.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="interact.cc" />
     <ClCompile Include="interactions.cc" />

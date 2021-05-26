@@ -29,6 +29,8 @@ VW_WARNING_DISABLE_CLASS_MEMACCESS
 #include <rapidjson/error/en.h>
 VW_WARNING_STATE_POP
 
+#include "io/logger.h"
+
 #if (_MANAGED == 1) || (_M_CEE == 1)
 #  pragma managed(pop)
 #endif
@@ -50,6 +52,8 @@ VW_WARNING_STATE_POP
 #ifndef _WIN32
 #  define _stricmp strcasecmp
 #endif
+
+namespace logger = VW::io::logger;
 
 using namespace rapidjson;
 
@@ -1382,6 +1386,12 @@ public:
       ctx.string_state.return_state = this;
       return &ctx.string_state;
     }
+    else if (length == 9 && !strcmp(str, "Timestamp"))
+    {
+      ctx.string_state.output_string = &data->timestamp;
+      ctx.string_state.return_state = this;
+      return &ctx.string_state;
+    }
     else if (length > 0 && str[0] == '_')
     {
       // match _label*
@@ -1672,15 +1682,17 @@ inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
   }
 }
 
+// returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
-void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
+bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
     example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
     parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
     apply_pdrop(all, data->probabilityOfDrop, examples);
-    return;
+    // not necessarily true for now
+    return true;
   }
 
   std::vector<char> line_vec;
@@ -1702,15 +1714,27 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 
   apply_pdrop(all, data->probabilityOfDrop, examples);
 
-  if (!result.IsError()) return;
+  if (result.IsError())
+  {
+    BaseState<audit>* current_state = handler.current_state();
 
-  BaseState<audit>* current_state = handler.current_state();
+    if (all.example_parser->strict_parse)
+    {
+      THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
+                                    << ". "
+                                       "Handler: "
+                                    << handler.error().str()
+                                    << "State: " << (current_state ? current_state->name : "null"));
+    }
+    else
+    {
+      logger::errlog_warn("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
+          GetParseError_En(result.Code()), handler.error().str(), (current_state ? current_state->name : "null"));
+      return false;
+    }
+  }
 
-  THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
-                                << ". "
-                                   "Handler: "
-                                << handler.error().str()
-                                << "State: " << (current_state ? current_state->name : "null"));
+  return true;
 }  // namespace VW
 }  // namespace VW
 
@@ -1723,14 +1747,42 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     if (line[0] != '{') { return false; }
 
     DecisionServiceInteraction interaction;
-    VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
+    bool result = VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
         reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
+
+    if (!result)
+    {
+      VW::return_multiple_example(*all, examples);
+      examples.push_back(&VW::get_unused_example(all));
+      if (all->example_parser->metrics) all->example_parser->metrics->LineParseError++;
+      return false;
+    }
+
+    if (all->example_parser->metrics)
+    {
+      if (!interaction.eventId.empty())
+      {
+        if (all->example_parser->metrics->FirstEventId.empty())
+          all->example_parser->metrics->FirstEventId = std::move(interaction.eventId);
+        else
+          all->example_parser->metrics->LastEventId = std::move(interaction.eventId);
+      }
+
+      if (!interaction.timestamp.empty())
+      {
+        if (all->example_parser->metrics->FirstEventTime.empty())
+          all->example_parser->metrics->FirstEventTime = std::move(interaction.timestamp);
+        else
+          all->example_parser->metrics->LastEventTime = std::move(interaction.timestamp);
+      }
+    }
 
     // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
     // stop suppressing "skipLearn" interactions. Also, not sure if this is the right logic
     // for counterfactual. (@marco)
     if (interaction.skipLearn)
     {
+      if (all->example_parser->metrics) all->example_parser->metrics->NumberOfSkippedEvents++;
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
       return false;
@@ -1739,6 +1791,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     // let's ask to continue reading data until we find a line with actions provided
     if (interaction.actions.size() == 0 && all->l->is_multiline)
     {
+      if (all->example_parser->metrics) all->example_parser->metrics->NumberOfEventsZeroActions++;
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
       return false;
