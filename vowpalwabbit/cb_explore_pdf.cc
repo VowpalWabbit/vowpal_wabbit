@@ -131,8 +131,8 @@ LEARNER::base_learner* cb_explore_pdf_setup(config::options_i& options, vw& all)
   p_reduction->max_value = max;
   p_reduction->first_only = first_only;
 
-  auto* l = make_reduction_learner(
-      std::move(p_reduction), as_singleline(p_base),  predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(cb_explore_pdf_setup))
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, all.get_setupfn_name(cb_explore_pdf_setup))
                 .set_prediction_type(prediction_type_t::pdf)
                 .set_label_type(label_type_t::cb)
                 .build();
