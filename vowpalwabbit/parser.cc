@@ -623,6 +623,14 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
 void lock_done(parser& p)
 {
+  p.last_pass_complete.store(true);
+
+  // // lock_done() can be called by the learner thread when the examples have reached the maximum pass allowed.
+  // // So, in such a condition, an un-timely end of the program is triggered.
+  // // That is why, we release the io_thread in such un-timely situations.
+  // p.done_with_io.store(true);
+  // p.can_end_pass.notify_one();
+
   p.done = true;
   // in case get_example() is waiting for a fresh example, wake so it can realize there are no more.
   p.ready_parsed_examples.set_done();

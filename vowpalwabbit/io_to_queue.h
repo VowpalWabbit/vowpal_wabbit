@@ -32,10 +32,6 @@ inline void io_lines_toqueue(vw& all){
       all.example_parser->can_end_pass.wait(lock);
     }
 
-    if (counter_of_number_passes != num_passes_to_complete && num_passes_to_complete > 1) {
-      reset_source(all, all.num_bits);
-    }
-
   }
 
   all.example_parser->io_lines.set_done();

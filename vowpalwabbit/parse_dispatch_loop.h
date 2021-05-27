@@ -50,18 +50,8 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         all.example_parser->current_pass_index++;
 
         reset_source(all, all.num_bits);
-
-        // to call reset source in io thread
-        all.example_parser->done_with_io.store(true);
-        all.example_parser->can_end_pass.notify_one();
-
         all.do_reset_source = false;
         all.passes_complete++;
-
-        // setup an end_pass example
-        all.example_parser->lbl_parser.default_label(&examples[0]->l);
-        examples[0]->end_pass = true;
-        all.example_parser->in_pass_counter = 0;
 
         if (all.passes_complete == all.numpasses && example_number == all.pass_length)
         {
@@ -69,12 +59,19 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
           all.pass_length = all.pass_length * 2 + 1;
         }
 
+        // setup an end_pass example
+        all.example_parser->lbl_parser.default_label(&examples[0]->l);
+        examples[0]->end_pass = true;
+        all.example_parser->in_pass_counter = 0;
         dispatch(all, examples);  // must be called before lock_done or race condition exists.
-        if (all.passes_complete >= all.numpasses && all.max_examples >= example_number) {
-          all.example_parser->last_pass_complete.store(true);
-          lock_done(*all.example_parser);
-        }
+        
+        if (all.passes_complete >= all.numpasses && all.max_examples >= example_number) lock_done(*all.example_parser);
         example_number = 0;
+
+        // to call reset source in io thread
+        all.example_parser->done_with_io.store(true);
+        all.example_parser->can_end_pass.notify_one();
+
 
         // To notify the other parser threads that they can continue their job.
         all.example_parser->next_pass_index++;
