@@ -341,6 +341,7 @@ struct features
   void truncate_to(const audit_iterator& pos);
   void truncate_to(const iterator& pos);
   void truncate_to(size_t i);
+  void push_back(const features& other);
   void push_back(feature_value v, feature_index i);
   bool sort(uint64_t parse_mask);
   void deep_copy_from(const features& src);
