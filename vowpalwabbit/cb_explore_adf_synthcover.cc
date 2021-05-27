@@ -14,6 +14,8 @@
 #include "explore.h"
 #include "vw_versions.h"
 #include "version.h"
+#include "label_parser.h"
+
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -209,18 +211,19 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;
-  auto data = scoped_calloc_or_throw<explore_type>(
+  auto data = VW::make_unique<explore_type>(
       with_metrics, epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
-
-  VW::LEARNER::learner<explore_type, multi_ex>& l =
-      VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
-          prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-synthcover");
-
-  l.set_finish_example(explore_type::finish_multiline_example);
-  l.set_print_example(explore_type::print_multiline_example);
-  l.set_save_load(explore_type::save_load);
-  l.set_persist_metrics(explore_type::persist_metrics);
-  return make_base(l);
+  auto* l = make_reduction_learner(
+      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup) + "-synthcover")
+                .set_params_per_weight(problem_multiplier)
+                .set_prediction_type(prediction_type_t::action_probs)
+                .set_label_type(label_type_t::cb)
+                .set_finish_example(explore_type::finish_multiline_example)
+                .set_print_example(explore_type::print_multiline_example)
+                .set_save_load(explore_type::save_load)
+                .set_persist_metrics(explore_type::persist_metrics)
+                .build();
+  return make_base(*l);
 }
 
 }  // namespace synthcover
