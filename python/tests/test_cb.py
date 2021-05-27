@@ -67,6 +67,9 @@ def helper_getting_started_example(which_cb):
         assert isinstance(choice, int), "choice should be int"
         assert choice == 3, "predicted action should be 3 instead of " + str(choice)
 
+    # test that metrics is empty since "--extra_metrics filename" was not supplied
+    assert(len(vw.get_learner_metrics()) == 0)
+
     vw.finish()
 
     output = vw.get_log()

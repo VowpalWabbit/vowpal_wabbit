@@ -40,6 +40,8 @@ struct cb_to_cs_adf
   COST_SENSITIVE::label pred_scores;
   CB::cb_class known_cost;
   VW::LEARNER::single_learner* scorer;
+
+  cb_to_cs_adf() : cb_type(0), action_sum(0), event_sum(0), mtr_example(0), scorer(nullptr) {}
 };
 
 float safe_probability(float prob);
