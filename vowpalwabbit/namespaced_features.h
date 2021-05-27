@@ -8,39 +8,12 @@
 #include <vector>
 #include <unordered_map>
 
-#include "vw_types.h"
 #include "feature_group.h"
 
-template <typename IteratorT, typename dummy = void>
-class generic_range
-{
-};
+#include "generic_range.h"
 
-template <typename IteratorT>
-class generic_range<IteratorT, typename std::enable_if<std::is_const<IteratorT>::value>::type>
-{
-  IteratorT _begin;
-  IteratorT _end;
+typedef unsigned char namespace_index;
 
-public:
-  generic_range(IteratorT begin, IteratorT end) : _begin(begin), _end(end) {}
-  typename std::enable_if<!std::is_const<IteratorT>::value>::type begin() { return _begin; }
-  typename std::enable_if<!std::is_const<IteratorT>::value>::type end() { return _end; }
-  IteratorT begin() const { return _begin; }
-  IteratorT end() const { return _end; }
-};
-
-template <typename IteratorT>
-class generic_range<IteratorT, typename std::enable_if<!std::is_const<IteratorT>::value>::type>
-{
-  IteratorT _begin;
-  IteratorT _end;
-
-public:
-  generic_range(IteratorT begin, IteratorT end) : _begin(begin), _end(end) {}
-  IteratorT begin() { return _begin; }
-  IteratorT end() { return _end; }
-};
 
 namespace VW
 {
