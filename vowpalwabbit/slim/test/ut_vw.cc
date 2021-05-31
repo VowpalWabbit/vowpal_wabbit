@@ -88,6 +88,7 @@ test_data get_test_data(const char* model_filename)
   TEST_DATA(model_filename, cb_data_6);
   TEST_DATA(model_filename, cb_data_7);
   TEST_DATA(model_filename, cb_data_8);
+  TEST_DATA(model_filename, cats);
 
   return td;
 }
@@ -745,4 +746,26 @@ TEST(ColdStartModel, action_set_not_reordered)
   EXPECT_GT(pdfs[0], 0.8);
   EXPECT_GT(pdfs[0], pdfs[1]);
   EXPECT_THAT(rankings, ElementsAre(0, 1, 2, 3, 4));
+}
+
+
+TEST(NewTest, CATS)
+{
+  vw_predict<dense_parameters> vw;
+  test_data td = get_test_data("cats");
+  ASSERT_EQ(0, vw.load((const char*)td.model, td.model_len));
+
+  example ex[1];
+  // 1:1.0 |b 0:1
+  example_predict_builder b0(&ex[0], " ");
+  b0.push_feature_string("room=Living_Room", 1.f);
+  b0.push_feature_string("time_of_day=morning", 1.f);
+
+  float score;
+
+  ASSERT_EQ(S_VW_PREDICT_OK, vw.predict_cats(&ex[0], score));
+
+  // compare output
+  std::vector<float> output = {score};
+  EXPECT_THAT(output, Pointwise(FloatNearPointwise(1e-5f), {11.5896}));
 }

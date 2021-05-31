@@ -13,6 +13,33 @@
 #include "gd_predict.h"
 #include "model_parser.h"
 #include "opts.h"
+#include "cats_tree.h"
+#include "learner_no_throw.h"
+#include "binary.h"
+
+// forward declarations
+namespace GD
+{
+struct gd;
+}  // namespace GD
+
+namespace VW
+{
+namespace cats_tree
+{
+struct cats_tree;
+void init(uint32_t num_actions, uint32_t bandwidth);
+// what I will call from here with control
+void predict(cats_tree& ot, VW::LEARNER::single_learner& base, example& ec);
+}  // namespace cats_tree
+namespace binary
+{
+template <bool is_learn>
+void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec);
+}
+}  // namespace VW
+
+void VW::cats_tree::learn(VW::cats_tree::cats_tree& tree, VW::LEARNER::single_learner& base, example& ec) {}
 
 namespace vw_slim
 {
@@ -214,19 +241,28 @@ public:
   ~stride_shift_guard();
 };
 
+template <typename W>
+struct predict_info
+{
+  std::unique_ptr<W> _weights;
+  namespace_interactions _interactions;
+  std::array<bool, NUM_NAMESPACES> _ignore_linear;
+};
+
 /**
  * @brief Vowpal Wabbit slim predictor. Supports: regression, multi-class classification and contextual bandits.
  */
 template <typename W>
 class vw_predict
 {
-  std::unique_ptr<W> _weights;
   std::string _id;
   std::string _version;
   std::string _command_line_arguments;
-  namespace_interactions _interactions;
-  std::array<bool, NUM_NAMESPACES> _ignore_linear;
   bool _no_constant;
+  int _cats;
+  float _bandwidth;
+  float _min_value;
+  float _max_value;
 
   vw_predict_exploration _exploration;
   float _minimum_epsilon;
@@ -238,8 +274,23 @@ class vw_predict
   uint32_t _stride_shift;
   bool _model_loaded;
 
+  std::unique_ptr<VW::cats_tree::cats_tree> _cats_tree;  // data
+  VW::LEARNER::learner<VW::cats_tree::cats_tree, example>* _cats_learner;
+  std::unique_ptr<predict_info<W>> _predict_info;
+
 public:
   vw_predict() : _model_loaded(false) {}
+
+  static void predict_gd(predict_info<W>& vw_slim, VW::LEARNER::base_learner&, example& ec)
+  {
+    ec.pred.scalar = GD::inline_predict<W>(
+        *vw_slim._weights, false, vw_slim._ignore_linear, vw_slim._interactions, /* permutations */ false, ec);
+  }
+
+  static void learn_gd(predict_info<W>& vw_slim, VW::LEARNER::base_learner&, example& ec)
+  {
+    std::cout << "hey" << std::endl;
+  }
 
   /**
    * @brief Reads the Vowpal Wabbit model from the supplied buffer (produced using vw -f <modelname>)
@@ -254,8 +305,10 @@ public:
 
     _model_loaded = false;
 
+    _predict_info = VW::make_unique<predict_info<W>>();
+
     // required for inline_predict
-    _ignore_linear.fill(false);
+    _predict_info->_ignore_linear.fill(false);
 
     model_parser mp(model, length);
 
@@ -291,30 +344,32 @@ public:
     if (find_opt_int(_command_line_arguments, "--hash_seed", hash_seed) && hash_seed)
       return E_VW_PREDICT_ERR_HASH_SEED_NOT_SUPPORTED;
 
-    _interactions.clear();
-    find_opt(_command_line_arguments, "-q", _interactions.interactions);
-    find_opt(_command_line_arguments, "--quadratic", _interactions.interactions);
-    find_opt(_command_line_arguments, "--cubic", _interactions.interactions);
-    find_opt(_command_line_arguments, "--interactions", _interactions.interactions);
+    _predict_info->_interactions.clear();
+    find_opt(_command_line_arguments, "-q", _predict_info->_interactions.interactions);
+    find_opt(_command_line_arguments, "--quadratic", _predict_info->_interactions.interactions);
+    find_opt(_command_line_arguments, "--cubic", _predict_info->_interactions.interactions);
+    find_opt(_command_line_arguments, "--interactions", _predict_info->_interactions.interactions);
 
-    if (_interactions.interactions.size() == 1 && _interactions.interactions[0].size() == 2 &&
-        _interactions.interactions[0][0] == ':' && _interactions.interactions[0][1] == ':')
+    if (_predict_info->_interactions.interactions.size() == 1 &&
+        _predict_info->_interactions.interactions[0].size() == 2 &&
+        _predict_info->_interactions.interactions[0][0] == ':' &&
+        _predict_info->_interactions.interactions[0][1] == ':')
     {
-      _interactions.interactions.clear();
-      _interactions.quadratics_wildcard_expansion = true;
+      _predict_info->_interactions.interactions.clear();
+      _predict_info->_interactions.quadratics_wildcard_expansion = true;
     }
     else
     {
       // VW performs the following transformation as a side-effect of looking for duplicates.
       // This affects how interaction hashes are generated.
       std::vector<std::vector<namespace_index>> vec_sorted;
-      for (auto& interaction : _interactions.interactions)
+      for (auto& interaction : _predict_info->_interactions.interactions)
       {
         std::vector<namespace_index> sorted_i(interaction);
         std::sort(std::begin(sorted_i), std::end(sorted_i));
         vec_sorted.push_back(sorted_i);
       }
-      _interactions.interactions = vec_sorted;
+      _predict_info->_interactions.interactions = vec_sorted;
     }
 
     // TODO: take --cb_type dr into account
@@ -347,6 +402,18 @@ public:
         return E_VW_PREDICT_ERR_CB_EXPLORATION_MISSING;
     }
 
+    if (_command_line_arguments.find("--cats") != std::string::npos)
+    {
+      find_opt_int(_command_line_arguments, "--cats", _cats);
+      find_opt_float(_command_line_arguments, "--bandwidth", _bandwidth);
+      find_opt_float(_command_line_arguments, "--min_value", _min_value);
+      find_opt_float(_command_line_arguments, "--max_value", _max_value);
+
+      _cats_tree = VW::make_unique<VW::cats_tree::cats_tree>();
+      if (!_cats_tree->init(_cats, _bandwidth)) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+      num_weights = _cats_tree->learner_count();
+    }
+
     // VW style check_sum validation
     uint32_t check_sum_computed = mp.checksum();
 
@@ -375,7 +442,38 @@ public:
     uint64_t weight_length = (uint64_t)1 << _num_bits;
     _stride_shift = (uint32_t)ceil_log_2(num_weights);
 
-    RETURN_ON_FAIL(mp.read_weights<W>(_weights, _num_bits, _stride_shift));
+    RETURN_ON_FAIL(mp.read_weights<W>(_predict_info->_weights, _num_bits, _stride_shift));
+
+    if (_cats_tree != nullptr)
+    {
+      // cats_tree -> binary -> gd
+      // create gd
+      auto* ret = VW::LEARNER::make_base_learner(
+          std::move(_predict_info), learn_gd, predict_gd, "setup::gd", prediction_type_t::scalar, label_type_t::simple)
+                      .set_params_per_weight(1)
+                      .build();
+
+      bool success;
+      auto* gd = VW::LEARNER::as_singleline_no_throw(VW::LEARNER::make_base(*ret), success);
+      if (!success) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+      // create binary learner
+
+      auto* binary_reduction = VW::LEARNER::make_no_data_reduction_learner(
+          gd, VW::binary::predict_or_learn<true>, VW::binary::predict_or_learn<false>, "setup::binary")
+                                   .set_learn_returns_prediction(true)
+                                   .build();
+
+      auto* base = VW::LEARNER::as_singleline_no_throw(VW::LEARNER::make_base(*binary_reduction), success);
+      if (!success) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+
+      auto lc = _cats_tree->learner_count();
+      _cats_learner = VW::LEARNER::make_reduction_learner(
+          std::move(_cats_tree), base, VW::cats_tree::learn, VW::cats_tree::predict, "VW::cats::setup")
+                          .set_params_per_weight(_stride_shift)
+                          .set_prediction_type(prediction_type_t::multiclass)
+                          .set_label_type(label_type_t::simple)
+                          .build();
+    }
 
     // TODO: check that permutations is not enabled (or parse it)
 
@@ -423,7 +521,32 @@ public:
       ns_copy_guard->feature_push_back(1.f, (constant << _stride_shift) + ex.ft_offset);
     }
 
-    score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, /* permutations */ false, ex);
+    score = GD::inline_predict<W>(*_predict_info->_weights, false, _predict_info->_ignore_linear,
+        _predict_info->_interactions, /* permutations */ false, ex);
+
+    return S_VW_PREDICT_OK;
+  }
+
+  int predict_cats(example* ex, float& score)
+  {
+    if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
+
+    std::unique_ptr<namespace_copy_guard> ns_copy_guard;
+
+    if (!_no_constant)
+    {
+      ex->indices.push_back(constant_namespace);
+      ex->feature_space[constant_namespace].push_back(1, constant);
+      ns_copy_guard = std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*ex, constant_namespace));
+      ns_copy_guard->feature_push_back(1.f, (constant << _stride_shift) + ex->ft_offset);
+    }
+
+    // apply manual stride shifts
+    std::vector<std::unique_ptr<stride_shift_guard>> stride_shift_guards;
+    stride_shift_guards.push_back(VW::make_unique<stride_shift_guard>(*ex, _stride_shift));
+
+    _cats_learner->predict(*ex);
+    score = ex->pred.multiclass;
 
     return S_VW_PREDICT_OK;
   }
