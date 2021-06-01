@@ -39,7 +39,7 @@ void features::truncate_to(size_t i)
   if (space_names.size() > i) { space_names.erase(space_names.begin() + i, space_names.end()); }
 }
 
-void features::push_back(const features& other)
+void features::concat(const features& other)
 {
   if (other.empty()) { return; }
 
