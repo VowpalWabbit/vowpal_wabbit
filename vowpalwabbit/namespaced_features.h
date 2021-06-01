@@ -80,13 +80,15 @@ public:
   {
 #ifndef VW_NOEXCEPT
     if (_indices == nullptr) { THROW("Invalid iterator"); }
-#endif return _namespace_indices[*_indices];
+#endif
+    return _namespace_indices[*_indices];
   }
   HashT hash()
   {
 #ifndef VW_NOEXCEPT
     if (_indices == nullptr) { THROW("Invalid iterator"); }
-#endif return _namespace_hashes[*_indices];
+#endif
+    return _namespace_hashes[*_indices];
   }
 
   friend difference_type operator-(const indexed_iterator_t& lhs, const indexed_iterator_t& rhs)
