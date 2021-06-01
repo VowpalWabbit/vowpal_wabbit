@@ -34,12 +34,9 @@ inline void foreach_feature(WeightsT& weights, const features& fs, DataT& dat, u
 // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
 template <class DataT, void (*FuncT)(DataT&, float, float), class WeightsT>
 inline void foreach_feature(
-    WeightsT& weights, const features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
+    const WeightsT& weights, const features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
 {
-  for (const auto& f : fs)
-  {
-     FuncT(dat, mult * f.value(), weights[(f.index() + offset)]); 
-  }
+  for (const auto& f : fs) { FuncT(dat, mult * f.value(), weights[(f.index() + offset)]); }
 }
 
 template <class DataT>
@@ -65,7 +62,6 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::arr
     namespace_interactions& interactions, bool permutations, example_predict& ec, DataT& dat,
     size_t& num_interacted_features)
 {
-  // here
   uint64_t offset = ec.ft_offset;
   if (ignore_some_linear)
     for (example_predict::iterator i = ec.begin(); i != ec.end(); ++i)

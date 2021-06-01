@@ -76,7 +76,7 @@ public:
   inline const audit_type_t* audit() const { return _begin_audit; }
 
   inline reference operator*() { return *this; }
-  inline reference operator*() const { return *this; }
+  inline const reference operator*() const { return *this; }
 
   // Required for forward_iterator
   audit_features_iterator& operator++()
@@ -200,7 +200,7 @@ public:
   inline const feature_index_type_t& index() const { return *_begin_indices; }
 
   inline reference operator*() { return *this; }
-  inline reference operator*() const { return *this; }
+  inline const reference operator*() const { return *this; }
 
   features_iterator& operator++()
   {
