@@ -66,12 +66,19 @@ inline size_t fill_tied(const v_array<ACTION_SCORE::action_score>& preds)
 
 struct cb_explore_metrics
 {
-  size_t _metric_labeled;
-  size_t _metric_predict_in_learn;
-  float _metric_sum_cost;
-  float _metric_sum_cost_first;
+  size_t metric_labeled;
+  size_t metric_predict_in_learn;
+  float metric_sum_cost;
+  float metric_sum_cost_first;
   size_t label_action_first_option;
   size_t label_action_not_first;
+
+  size_t count_non_zero_cost;
+  size_t sum_features_per_event;
+  size_t sum_features_per_example;
+  size_t sum_ns_per_event;
+  size_t sum_ns_per_example;
+  size_t sum_actions_per_event;
 };
 
 // Object
@@ -148,23 +155,25 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     data.explore.learn(base, examples);
     if (data._metrics)
     {
-      data._metrics->_metric_labeled++;
-      data._metrics->_metric_sum_cost += data._known_cost.cost;
+      data._metrics->metric_labeled++;
+      data._metrics->metric_sum_cost += data._known_cost.cost;
       if (data._known_cost.action == 0)
       {
         data._metrics->label_action_first_option++;
-        data._metrics->_metric_sum_cost_first += data._known_cost.cost;
+        data._metrics->metric_sum_cost_first += data._known_cost.cost;
       }
       else
       {
         data._metrics->label_action_not_first++;
       }
+
+      if (data._known_cost.cost != 0) { data._metrics->count_non_zero_cost++; }
     }
   }
   else
   {
     predict(data, base, examples);
-    if (data._metrics) data._metrics->_metric_predict_in_learn++;
+    if (data._metrics) data._metrics->metric_predict_in_learn++;
   }
 }
 
@@ -181,6 +190,8 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   const auto& preds = ec.pred.a_s;
 
   for (const auto& example : ec_seq) { num_features += example->get_num_features(); }
+
+  if (_metrics) _metrics->sum_features_per_event += num_features;
 
   bool labeled_example = true;
   if (_known_cost.probability > 0)
@@ -264,10 +275,10 @@ inline void cb_explore_adf_base<ExploreType>::persist_metrics(
 {
   if (data._metrics)
   {
-    metrics.int_metrics_list.emplace_back("cbea_labeled_ex", data._metrics->_metric_labeled);
-    metrics.int_metrics_list.emplace_back("cbea_predict_in_learn", data._metrics->_metric_predict_in_learn);
-    metrics.float_metrics_list.emplace_back("cbea_sum_cost", data._metrics->_metric_sum_cost);
-    metrics.float_metrics_list.emplace_back("cbea_sum_cost_baseline", data._metrics->_metric_sum_cost_first);
+    metrics.int_metrics_list.emplace_back("cbea_labeled_ex", data._metrics->metric_labeled);
+    metrics.int_metrics_list.emplace_back("cbea_predict_in_learn", data._metrics->metric_predict_in_learn);
+    metrics.float_metrics_list.emplace_back("cbea_sum_cost", data._metrics->metric_sum_cost);
+    metrics.float_metrics_list.emplace_back("cbea_sum_cost_baseline", data._metrics->metric_sum_cost_first);
     metrics.int_metrics_list.emplace_back("cbea_label_first_action", data._metrics->label_action_first_option);
     metrics.int_metrics_list.emplace_back("cbea_label_not_first", data._metrics->label_action_not_first);
   }
