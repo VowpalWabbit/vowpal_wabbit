@@ -70,6 +70,8 @@ struct ccb_explore_metrics
 {
   float metric_sum_cost = 0;
   float metric_sum_cost_first = 0;
+  size_t label_action_first_option = 0;
+  size_t label_action_not_first = 0;
 };
 
 struct ccb
@@ -569,7 +571,15 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
         {
           c._metrics->metric_sum_cost += outcome->cost;
 
-          if (outcome->probabilities[TOP_ACTION_INDEX].action == 0) c._metrics->metric_sum_cost_first += outcome->cost;
+          if (outcome->probabilities[TOP_ACTION_INDEX].action == 0)
+          {
+            c._metrics->label_action_first_option++;
+            c._metrics->metric_sum_cost_first += outcome->cost;
+          }
+          else
+          {
+            c._metrics->label_action_not_first++;
+          }
         }
       }
     }
@@ -629,6 +639,8 @@ void persist(ccb& data, metric_sink& metrics)
   {
     metrics.float_metrics_list.emplace_back("ccb_sum_cost", data._metrics->metric_sum_cost);
     metrics.float_metrics_list.emplace_back("ccb_sum_cost_first", data._metrics->metric_sum_cost_first);
+    metrics.int_metrics_list.emplace_back("ccb_label_first_action", data._metrics->label_action_first_option);
+    metrics.int_metrics_list.emplace_back("ccb_label_not_first", data._metrics->label_action_not_first);
   }
 }
 
