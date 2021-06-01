@@ -52,7 +52,7 @@ void features::push_back(const features& other)
   //  - empty() && !other.audit -> push val, idx
 
   if (!empty() && (space_names.empty() != other.space_names.empty()))
-  { THROW("Cannot merge two feature groups if one has audit info and the other does not."); }
+  { THROW_OR_RETURN_VOID("Cannot merge two feature groups if one has audit info and the other does not."); }
   values.insert(values.end(), other.values.begin(), other.values.end());
   indicies.insert(indicies.end(), other.indicies.begin(), other.indicies.end());
 

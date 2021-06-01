@@ -64,13 +64,17 @@ features& namespaced_features::get_or_create_feature_group(uint64_t hash, namesp
 const features& namespaced_features::operator[](uint64_t hash) const
 {
   auto* existing_group = get_feature_group(hash);
+#ifndef VW_NOEXCEPT
   if (existing_group == nullptr) { THROW("No group found for hash: " << hash); }
+#endif
   return *existing_group;
 }
 features& namespaced_features::operator[](uint64_t hash)
 {
   auto* existing_group = get_feature_group(hash);
+#ifndef VW_NOEXCEPT
   if (existing_group == nullptr) { THROW("No group found for hash: " << hash); }
+#endif
   return *existing_group;
 }
 
