@@ -16,6 +16,12 @@
 #include "cats_tree.h"
 #include "learner_no_throw.h"
 #include "binary.h"
+#include "get_pmf.h"
+#include "pmf_to_pdf.h"
+#include "cb_explore_pdf.h"
+#include "cats_pdf.h"
+#include "sample_pdf.h"
+#include "cats.h"
 
 // forward declarations
 namespace GD
@@ -40,6 +46,27 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec);
 }  // namespace VW
 
 void VW::cats_tree::learn(VW::cats_tree::cats_tree& tree, VW::LEARNER::single_learner& base, example& ec) {}
+void VW::continuous_action::learn(VW::continuous_action::get_pmf& reduction, VW::LEARNER::single_learner&, example& ec)
+{
+}
+void VW::pmf_to_pdf::learn(VW::pmf_to_pdf::reduction& data, VW::LEARNER::single_learner&, example& ec) {}
+void VW::continuous_action::learn(
+    VW::continuous_action::cb_explore_pdf& reduction, VW::LEARNER::single_learner&, example& ec)
+{
+}
+void VW::continuous_action::cats_pdf::learn(
+    VW::continuous_action::cats_pdf::cats_pdf& reduction, VW::LEARNER::single_learner&, example& ec)
+{
+}
+void VW::continuous_action::learn(
+    VW::continuous_action::sample_pdf& reduction, VW::LEARNER::single_learner&, example& ec)
+{
+}
+
+void VW::continuous_action::cats::learn(
+    VW::continuous_action::cats::cats& reduction, VW::LEARNER::single_learner&, example& ec)
+{
+}
 
 namespace vw_slim
 {
@@ -273,9 +300,9 @@ class vw_predict
 
   uint32_t _stride_shift;
   bool _model_loaded;
+  uint64_t random_seed = 0;
 
-  std::unique_ptr<VW::cats_tree::cats_tree> _cats_tree;  // data
-  VW::LEARNER::learner<VW::cats_tree::cats_tree, example>* _cats_learner;
+  VW::LEARNER::learner<VW::continuous_action::cats::cats, example>* _cats_learner;
   std::unique_ptr<predict_info<W>> _predict_info;
 
 public:
@@ -344,6 +371,8 @@ public:
     if (find_opt_int(_command_line_arguments, "--hash_seed", hash_seed) && hash_seed)
       return E_VW_PREDICT_ERR_HASH_SEED_NOT_SUPPORTED;
 
+    find_opt_uint64_t(_command_line_arguments, "--random_seed", random_seed);
+
     _predict_info->_interactions.clear();
     find_opt(_command_line_arguments, "-q", _predict_info->_interactions.interactions);
     find_opt(_command_line_arguments, "--quadratic", _predict_info->_interactions.interactions);
@@ -402,16 +431,24 @@ public:
         return E_VW_PREDICT_ERR_CB_EXPLORATION_MISSING;
     }
 
+    std::unique_ptr<VW::pmf_to_pdf::reduction> pmf_to_pdf = nullptr;
+    std::unique_ptr<VW::cats_tree::cats_tree> cats_tree = nullptr;
     if (_command_line_arguments.find("--cats") != std::string::npos)
     {
       find_opt_int(_command_line_arguments, "--cats", _cats);
       find_opt_float(_command_line_arguments, "--bandwidth", _bandwidth);
       find_opt_float(_command_line_arguments, "--min_value", _min_value);
       find_opt_float(_command_line_arguments, "--max_value", _max_value);
+      if (!find_opt_float(_command_line_arguments, "--epsilon", _epsilon))
+      {
+        _epsilon = 0.05f;
+      }
 
-      _cats_tree = VW::make_unique<VW::cats_tree::cats_tree>();
-      if (!_cats_tree->init(_cats, _bandwidth)) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
-      num_weights = _cats_tree->learner_count();
+      pmf_to_pdf = VW::make_unique<VW::pmf_to_pdf::reduction>();
+      pmf_to_pdf->init(_cats, _bandwidth, _min_value, _max_value, /* first_only*/ false, /*bandwidth supplied*/ true);
+      cats_tree = VW::make_unique<VW::cats_tree::cats_tree>();
+      if (!cats_tree->init(_cats, pmf_to_pdf->tree_bandwidth)) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+      num_weights = cats_tree->learner_count();
     }
 
     // VW style check_sum validation
@@ -444,7 +481,8 @@ public:
 
     RETURN_ON_FAIL(mp.read_weights<W>(_predict_info->_weights, _num_bits, _stride_shift));
 
-    if (_cats_tree != nullptr)
+    // TODO return error if activated but these are not initialized
+    if (pmf_to_pdf != nullptr && cats_tree != nullptr)
     {
       // cats_tree -> binary -> gd
       // create gd
@@ -466,12 +504,88 @@ public:
       auto* base = VW::LEARNER::as_singleline_no_throw(VW::LEARNER::make_base(*binary_reduction), success);
       if (!success) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
 
-      auto lc = _cats_tree->learner_count();
-      _cats_learner = VW::LEARNER::make_reduction_learner(
-          std::move(_cats_tree), base, VW::cats_tree::learn, VW::cats_tree::predict, "VW::cats::setup")
-                          .set_params_per_weight(_stride_shift)
-                          .set_prediction_type(prediction_type_t::multiclass)
-                          .set_label_type(label_type_t::simple)
+      auto lc = cats_tree->learner_count();
+      auto* cats_learner = VW::LEARNER::make_reduction_learner(
+          std::move(cats_tree), base, VW::cats_tree::learn, VW::cats_tree::predict, "VW::cats::setup")
+                               .set_params_per_weight((uint32_t)ceil_log_2(lc))  // depth of tree
+                               .set_prediction_type(prediction_type_t::multiclass)
+                               .set_label_type(label_type_t::simple)
+                               .build();
+
+      auto p_reduction = VW::make_unique<VW::continuous_action::get_pmf>();
+      auto* c_base = VW::LEARNER::as_singleline_no_throw(VW::LEARNER::make_base(*cats_learner), success);
+      if (!success) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+      p_reduction->init(c_base, 0.0f);
+
+      auto* get_pmf_red = VW::LEARNER::make_reduction_learner<VW::continuous_action::get_pmf, example>(
+          std::move(p_reduction), c_base, VW::continuous_action::learn, VW::continuous_action::predict, "setup_get_pmf")
+                              .set_params_per_weight(1)
+                              .set_prediction_type(prediction_type_t::pdf)
+                              .build();
+
+      auto p_base = VW::LEARNER::as_singleline_no_throw(VW::LEARNER::make_base(*get_pmf_red), success);
+      if (!success) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+      pmf_to_pdf->_p_base = p_base;
+
+      auto get_pmf_to_pdf_red = VW::LEARNER::make_reduction_learner(
+          std::move(pmf_to_pdf), p_base, VW::pmf_to_pdf::learn, VW::pmf_to_pdf::predict, "setup_pmf_to_pdf")
+                                    .set_params_per_weight(1)
+                                    .set_prediction_type(prediction_type_t::pdf)
+                                    .build();
+
+      auto pmftopdf_base = VW::LEARNER::as_singleline_no_throw(VW::LEARNER::make_base(*get_pmf_to_pdf_red), success);
+      if (!success) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+
+      auto cb_explore_pdf = VW::make_unique<VW::continuous_action::cb_explore_pdf>();
+      cb_explore_pdf->init(pmftopdf_base);
+      cb_explore_pdf->epsilon = _epsilon;
+      cb_explore_pdf->min_value = _min_value;
+      cb_explore_pdf->max_value = _max_value;
+      cb_explore_pdf->first_only = false;
+
+      auto* cb_explore_pdf_learner =
+          VW::LEARNER::make_reduction_learner<VW::continuous_action::cb_explore_pdf, example>(std::move(cb_explore_pdf),
+              pmftopdf_base, VW::continuous_action::learn, VW::continuous_action::predict, "setup_cb_explore_pdf")
+              .set_params_per_weight(1)
+              .set_prediction_type(prediction_type_t::pdf)
+              .build();
+
+      auto* cb_explore_pdf_learner_base =
+          VW::LEARNER::as_singleline_no_throw(VW::LEARNER::make_base(*cb_explore_pdf_learner), success);
+      if (!success) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+      auto cats_pdf = VW::make_unique<VW::continuous_action::cats_pdf::cats_pdf>(
+          cb_explore_pdf_learner_base, /*always predict*/ true);
+
+      auto* cats_pdf_learner = VW::LEARNER::make_reduction_learner(std::move(cats_pdf), cb_explore_pdf_learner_base,
+          VW::continuous_action::cats_pdf::learn, VW::continuous_action::cats_pdf::predict, "setup_cats_pdf")
+                                   .set_params_per_weight(1)
+                                   .set_prediction_type(prediction_type_t::pdf)
+                                   .set_learn_returns_prediction(true)
+                                   .build();
+
+      auto* cats_pdf_learner_base =
+          VW::LEARNER::as_singleline_no_throw(VW::LEARNER::make_base(*cats_pdf_learner), success);
+      if (!success) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+
+      auto sample_pdf = VW::make_unique<VW::continuous_action::sample_pdf>();
+      sample_pdf->init(cats_pdf_learner_base, &random_seed);
+
+      auto* sample_pdf_learner =
+          VW::LEARNER::make_reduction_learner<VW::continuous_action::sample_pdf, example>(std::move(sample_pdf),
+              cats_pdf_learner_base, VW::continuous_action::learn, VW::continuous_action::predict, "setup_sample_pdf")
+              .set_params_per_weight(1)
+              .set_prediction_type(prediction_type_t::action_pdf_value)
+              .build();
+
+      auto* sample_pdf_learner_base = VW::LEARNER::as_singleline_no_throw(VW::LEARNER::make_base(*sample_pdf_learner), success);
+      if (!success) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
+      auto cats = VW::make_unique<VW::continuous_action::cats::cats>(
+          sample_pdf_learner_base, _cats, _bandwidth, _min_value, _max_value, /*bandwidth was supplied*/ true);
+
+      _cats_learner = VW::LEARNER::make_reduction_learner(std::move(cats), sample_pdf_learner_base,
+          VW::continuous_action::cats::learn, VW::continuous_action::cats::predict, "setup_cats")
+                          .set_params_per_weight(1)
+                          .set_prediction_type(prediction_type_t::action_pdf_value)
                           .build();
     }
 
@@ -527,7 +641,7 @@ public:
     return S_VW_PREDICT_OK;
   }
 
-  int predict_cats(example* ex, float& score)
+  int predict_cats(example* ex, float& action, float& pdf_value)
   {
     if (!_model_loaded) return E_VW_PREDICT_ERR_NO_MODEL_LOADED;
 
@@ -546,7 +660,8 @@ public:
     stride_shift_guards.push_back(VW::make_unique<stride_shift_guard>(*ex, _stride_shift));
 
     _cats_learner->predict(*ex);
-    score = ex->pred.multiclass;
+    action = ex->pred.pdf_value.action;
+    pdf_value = ex->pred.pdf_value.pdf_value;
 
     return S_VW_PREDICT_OK;
   }

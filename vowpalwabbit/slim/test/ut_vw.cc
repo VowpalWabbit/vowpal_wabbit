@@ -761,11 +761,15 @@ TEST(NewTest, CATS)
   b0.push_feature_string("room=Living_Room", 1.f);
   b0.push_feature_string("time_of_day=morning", 1.f);
 
-  float score;
+  float action;
+  float pdf_value;
 
-  ASSERT_EQ(S_VW_PREDICT_OK, vw.predict_cats(&ex[0], score));
+  ASSERT_EQ(S_VW_PREDICT_OK, vw.predict_cats(&ex[0], action, pdf_value));
 
   // compare output
-  std::vector<float> output = {score};
-  EXPECT_THAT(output, Pointwise(FloatNearPointwise(1e-5f), {11.5896}));
+  std::vector<float> output_a = {action};
+  std::vector<float> output_p = {pdf_value};
+  
+  EXPECT_THAT(output_a, Pointwise(FloatNearPointwise(1e-5f), {0.0150219}));
+  EXPECT_THAT(output_p, Pointwise(FloatNearPointwise(1e-5f), {0.0005}));
 }

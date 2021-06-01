@@ -199,26 +199,19 @@ base_learner* setup(options_i& options, vw& all)
     options.replace("link", "glf1");
   }
 
-  // auto tree = VW::make_unique<cats_tree>();
-  auto tree = scoped_calloc_or_throw<cats_tree>();
+  auto tree = VW::make_unique<cats_tree>();
   tree->init(num_actions, bandwidth);
   tree->set_trace_message(all.trace_message.get(), all.logger.quiet);
 
-  base_learner* base = setup_base(options, all);
-
-  learner<cats_tree, example>& l = init_learner(tree, as_singleline(base), learn, predict, tree->learner_count(),
-      prediction_type_t::multiclass, all.get_setupfn_name(setup));
-
-  return make_base(l);
-  // auto* base = as_singleline(setup_base(options, all));
-  
-  // auto* l = VW::LEARNER::make_reduction_learner(std::move(tree), base, learn,
-  //     predict, all.get_setupfn_name(setup))
-  //               .set_params_per_weight(tree->learner_count())
-  //               .set_prediction_type(prediction_type_t::multiclass)
-  //               .set_label_type(label_type_t::simple)
-  //               .build();
-  // return make_base(*l);
+  auto* base = as_singleline(setup_base(options, all));
+  auto lc = tree->learner_count();
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(tree), base, learn,
+      predict, all.get_setupfn_name(setup))
+                .set_params_per_weight(lc)
+                .set_prediction_type(prediction_type_t::multiclass)
+                .set_label_type(label_type_t::simple)
+                .build();
+  return make_base(*l);
 }
 
 }  // namespace cats_tree
