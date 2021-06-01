@@ -130,9 +130,7 @@ namespaced_features::indexed_iterator namespaced_features::namespace_index_begin
 {
   auto it = _legacy_indices_to_index_mapping.find(ns_index);
   if (it == _legacy_indices_to_index_mapping.end())
-  {
-    return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
-  }
+  { return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()}; }
   return {it->second.data(), _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
 }
 
@@ -140,9 +138,7 @@ namespaced_features::indexed_iterator namespaced_features::namespace_index_end(n
 {
   auto it = _legacy_indices_to_index_mapping.find(ns_index);
   if (it == _legacy_indices_to_index_mapping.end())
-  {
-    return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
-  }
+  { return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()}; }
   return {it->second.data() + it->second.size(), _feature_groups.data(), _namespace_indices.data(),
       _namespace_hashes.data()};
 }
@@ -151,9 +147,7 @@ namespaced_features::const_indexed_iterator namespaced_features::namespace_index
 {
   auto it = _legacy_indices_to_index_mapping.find(ns_index);
   if (it == _legacy_indices_to_index_mapping.end())
-  {
-    return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
-  }
+  { return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()}; }
   return {it->second.data(), _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
 }
 
@@ -161,9 +155,7 @@ namespaced_features::const_indexed_iterator namespaced_features::namespace_index
 {
   auto it = _legacy_indices_to_index_mapping.find(ns_index);
   if (it == _legacy_indices_to_index_mapping.end())
-  {
-    return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
-  }
+  { return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()}; }
   return {it->second.data() + it->second.size(), _feature_groups.data(), _namespace_indices.data(),
       _namespace_hashes.data()};
 }

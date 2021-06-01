@@ -41,9 +41,7 @@ void features::truncate_to(size_t i)
 
 void features::push_back(const features& other)
 {
-  if(other.empty()) {
-    return;
-  }
+  if (other.empty()) { return; }
 
   // Conditions to check:
   //  - !empty() && audit && other.audit -> push val, idx, audit
@@ -54,18 +52,13 @@ void features::push_back(const features& other)
   //  - empty() && !other.audit -> push val, idx
 
   if (!empty() && (space_names.empty() != other.space_names.empty()))
-  {
-    THROW("Cannot merge two feature groups if one has audit info and the other does not.");
-  }
+  { THROW("Cannot merge two feature groups if one has audit info and the other does not."); }
   values.insert(values.end(), other.values.begin(), other.values.end());
   indicies.insert(indicies.end(), other.indicies.begin(), other.indicies.end());
 
   if (!other.space_names.empty())
-  {
-    space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end());
-  }
+  { space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end()); }
 }
-
 
 void features::push_back(feature_value v, feature_index i)
 {
