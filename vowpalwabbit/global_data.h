@@ -79,6 +79,7 @@ class AllReduce;
 struct vw_logger
 {
   bool quiet;
+  size_t upper_limit;
 
   vw_logger() : quiet(false) {}
 

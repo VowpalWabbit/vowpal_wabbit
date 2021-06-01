@@ -95,6 +95,8 @@ void output_metrics(vw& all)
     if (all.external_parser) { all.external_parser->persist_metrics(list_metrics.int_metrics_list); }
 #endif
 
+    list_metrics.int_metrics_list.emplace_back("total_log_calls", logger::get_log_count());
+
     list_to_json_file(all.example_parser->metrics.get(), filename, list_metrics);
   }
 }
