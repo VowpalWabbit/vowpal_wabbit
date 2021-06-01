@@ -54,6 +54,8 @@ class indexed_iterator_t
   HashT* _namespace_hashes;
 
 public:
+  using difference_type = std::ptrdiff_t;
+
   indexed_iterator_t(IndicesT* indices, FeaturesT* feature_groups, IndexT* namespace_indices, HashT* namespace_hashes)
       : _indices(indices)
       , _feature_groups(feature_groups)
@@ -81,6 +83,11 @@ public:
   {
     if (_indices == nullptr) { THROW("Invalid iterator"); }
     return _namespace_hashes[*_indices];
+  }
+
+  friend difference_type operator-(const indexed_iterator_t& lhs, const indexed_iterator_t& rhs)
+  {
+    return lhs._indices - rhs._indices;
   }
 
   bool operator==(const indexed_iterator_t& rhs) { return _indices == rhs._indices; }
