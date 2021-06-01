@@ -568,6 +568,8 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
         if (c._metrics)
         {
           c._metrics->metric_sum_cost += outcome->cost;
+
+          if (outcome->probabilities[TOP_ACTION_INDEX].action == 0) c._metrics->metric_sum_cost_first += outcome->cost;
         }
       }
     }
