@@ -112,7 +112,8 @@ struct namespaced_features
   // Returns nullptr if not found.
   const features* get_feature_group(uint64_t hash) const;
 
-  const std::vector<namespace_index>& get_indices() const;
+  // TODO - don't generate this per call.
+  std::vector<namespace_index> get_indices() const;
 
   // Returns empty range if not found
   std::pair<indexed_iterator, indexed_iterator> get_namespace_index_groups(namespace_index index);

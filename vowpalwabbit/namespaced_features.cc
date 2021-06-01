@@ -23,7 +23,14 @@ const features* namespaced_features::get_feature_group(uint64_t hash) const
   return &_feature_groups[it->second];
 }
 
-const std::vector<namespace_index>& namespaced_features::get_indices() const { return _namespace_indices; }
+std::vector<namespace_index> namespaced_features::get_indices() const
+{
+  auto indices_copy = _namespace_indices;
+  std::sort(indices_copy.begin(), indices_copy.end());
+  auto last = std::unique(indices_copy.begin(), indices_copy.end());
+  indices_copy.erase(last, indices_copy.end());
+  return indices_copy;
+}
 
 std::pair<namespaced_features::indexed_iterator, namespaced_features::indexed_iterator>
 namespaced_features::get_namespace_index_groups(namespace_index ns_index)
@@ -79,7 +86,7 @@ void namespaced_features::remove_feature_group(uint64_t hash)
 
   for (auto& kv : _legacy_indices_to_index_mapping)
   {
-    auto index_vec = kv.second;
+    auto& index_vec = kv.second;
     // Remove this index from ns_index mappings if it exists
     auto it = std::find(index_vec.begin(), index_vec.end(), existing_index);
     if (it != index_vec.end()) { index_vec.erase(it); }
@@ -89,6 +96,21 @@ void namespaced_features::remove_feature_group(uint64_t hash)
     {
       if (idx > existing_index) { idx -= 1; }
     }
+  }
+
+  // If any groups are left empty, remove them.
+  for (auto it = _legacy_indices_to_index_mapping.begin(); it != _legacy_indices_to_index_mapping.end();)
+  {
+    if (it->second.empty()) { it = _legacy_indices_to_index_mapping.erase(it); }
+    else
+    {
+      ++it;
+    }
+  }
+
+  for (auto& kv : _hash_to_index_mapping)
+  {
+    if (kv.second > existing_index) { kv.second -= 1; }
   }
 }
 
@@ -108,7 +130,9 @@ namespaced_features::indexed_iterator namespaced_features::namespace_index_begin
 {
   auto it = _legacy_indices_to_index_mapping.find(ns_index);
   if (it == _legacy_indices_to_index_mapping.end())
-  { return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()}; }
+  {
+    return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
+  }
   return {it->second.data(), _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
 }
 
@@ -116,7 +140,9 @@ namespaced_features::indexed_iterator namespaced_features::namespace_index_end(n
 {
   auto it = _legacy_indices_to_index_mapping.find(ns_index);
   if (it == _legacy_indices_to_index_mapping.end())
-  { return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()}; }
+  {
+    return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
+  }
   return {it->second.data() + it->second.size(), _feature_groups.data(), _namespace_indices.data(),
       _namespace_hashes.data()};
 }
@@ -125,7 +151,9 @@ namespaced_features::const_indexed_iterator namespaced_features::namespace_index
 {
   auto it = _legacy_indices_to_index_mapping.find(ns_index);
   if (it == _legacy_indices_to_index_mapping.end())
-  { return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()}; }
+  {
+    return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
+  }
   return {it->second.data(), _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
 }
 
@@ -133,7 +161,9 @@ namespaced_features::const_indexed_iterator namespaced_features::namespace_index
 {
   auto it = _legacy_indices_to_index_mapping.find(ns_index);
   if (it == _legacy_indices_to_index_mapping.end())
-  { return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()}; }
+  {
+    return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
+  }
   return {it->second.data() + it->second.size(), _feature_groups.data(), _namespace_indices.data(),
       _namespace_hashes.data()};
 }
