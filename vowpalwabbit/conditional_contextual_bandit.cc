@@ -68,8 +68,8 @@ void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interact
 
 struct ccb_explore_metrics
 {
-  size_t _metric_foo;
-  size_t _metric_bar;
+  float metric_sum_cost = 0;
+  float metric_sum_cost_first = 0;
 };
 
 struct ccb
@@ -564,6 +564,11 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
         float l = CB_ALGS::get_cost_estimate(
             outcome->probabilities[TOP_ACTION_INDEX], outcome->cost, preds[i][TOP_ACTION_INDEX].action);
         loss += l * preds[i][TOP_ACTION_INDEX].score;
+
+        if (c._metrics)
+        {
+          c._metrics->metric_sum_cost += outcome->cost;
+        }
       }
     }
   }
@@ -620,8 +625,8 @@ void persist(ccb& data, metric_sink& metrics)
 {
   if (data._metrics)
   {
-    metrics.int_metrics_list.emplace_back("ccb_foo", data._metrics->_metric_foo);
-    metrics.int_metrics_list.emplace_back("ccb_bar", data._metrics->_metric_bar);
+    metrics.float_metrics_list.emplace_back("ccb_sum_cost", data._metrics->metric_sum_cost);
+    metrics.float_metrics_list.emplace_back("ccb_sum_cost_first", data._metrics->metric_sum_cost_first);
   }
 }
 
