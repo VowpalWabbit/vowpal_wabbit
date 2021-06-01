@@ -281,6 +281,8 @@ inline void cb_explore_adf_base<ExploreType>::persist_metrics(
     metrics.float_metrics_list.emplace_back("cbea_sum_cost_baseline", data._metrics->metric_sum_cost_first);
     metrics.int_metrics_list.emplace_back("cbea_label_first_action", data._metrics->label_action_first_option);
     metrics.int_metrics_list.emplace_back("cbea_label_not_first", data._metrics->label_action_not_first);
+    // metrics.int_metrics_list.emplace_back("cbea_non_zero_cost", data._metrics->count_non_zero_cost);
+    // metrics.int_metrics_list.emplace_back("cbea_sum_total_features", data._metrics->sum_features_per_event);
   }
 }
 
