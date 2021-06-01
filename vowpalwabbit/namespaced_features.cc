@@ -80,6 +80,7 @@ features& namespaced_features::operator[](uint64_t hash)
 
 void namespaced_features::remove_feature_group(uint64_t hash)
 {
+  if (_hash_to_index_mapping.count(hash) == 0) { return; }
   auto existing_index = _hash_to_index_mapping[hash];
 
   // Remove item from each vector at this index.

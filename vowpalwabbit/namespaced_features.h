@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include <unordered_map>
+#include <cassert>
 
 #include "feature_group.h"
 #include "generic_range.h"
@@ -15,6 +16,8 @@ typedef unsigned char namespace_index;
 
 namespace VW
 {
+
+/// Insertion or removal will result in this value in invalidated.
 template <typename FeaturesT, typename IndexT, typename HashT>
 class iterator_t
 {
@@ -45,6 +48,7 @@ public:
   bool operator!=(const iterator_t& rhs) { return _index != rhs._index; }
 };
 
+/// Insertion or removal will result in this value in invalidated.
 template <typename IndicesT, typename FeaturesT, typename IndexT, typename HashT>
 class indexed_iterator_t
 {
@@ -93,6 +97,7 @@ public:
 
   friend difference_type operator-(const indexed_iterator_t& lhs, const indexed_iterator_t& rhs)
   {
+    assert(lhs._indices >= rhs._indices);
     return lhs._indices - rhs._indices;
   }
 
@@ -183,7 +188,7 @@ features& namespaced_features::merge_feature_group(FeaturesT&& ftrs, uint64_t ha
   }
   else
   {
-    existing_group->push_back(std::forward<FeaturesT>(ftrs));
+    existing_group->concat(std::forward<FeaturesT>(ftrs));
     auto existing_index = _hash_to_index_mapping[hash];
     // Should we ensure that this doesnt already exist under a DIFFERENT namespace_index?
     // However, his shouldn't be possible as ns_index depends on hash.
