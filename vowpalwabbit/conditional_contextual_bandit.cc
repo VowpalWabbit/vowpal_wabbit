@@ -66,6 +66,12 @@ void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interact
   interactions_to_add_to.push_back({wildcard_namespace, ccb_slot_namespace});
 }
 
+struct ccb_explore_metrics
+{
+  size_t _metric_foo;
+  size_t _metric_bar;
+};
+
 struct ccb
 {
   vw* all = nullptr;
@@ -97,6 +103,8 @@ struct ccb
   // Introduction has_seen_multi_slot_example was breaking change in terms of model format.
   // This flag is required for loading cb models (which do not have has_seen_multi_slot_example flag) into ccb reduction
   bool is_ccb_input_model = false;
+
+  std::unique_ptr<ccb_explore_metrics> _metrics;
 };
 
 namespace CCB
@@ -608,6 +616,15 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
   if (read && sm.has_seen_multi_slot_example) { insert_ccb_interactions(sm.all->interactions); }
 }
 
+void persist(ccb& data, metric_sink& metrics)
+{
+  if (data._metrics)
+  {
+    metrics.int_metrics_list.emplace_back("ccb_foo", data._metrics->_metric_foo);
+    metrics.int_metrics_list.emplace_back("ccb_bar", data._metrics->_metric_bar);
+  }
+}
+
 base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
 {
   auto data = VW::make_unique<ccb>();
@@ -654,6 +671,8 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   data->id_namespace_str.append("_id");
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
+  if (options.was_supplied("extra_metrics")) data->_metrics = VW::make_unique<ccb_explore_metrics>();
+
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       all.get_setupfn_name(ccb_explore_adf_setup))
                 .set_learn_returns_prediction(true)
@@ -662,6 +681,9 @@ base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
                 .set_finish_example(finish_multiline_example)
                 .set_save_load(save_load)
                 .build();
+
+  l->set_persist_metrics(persist);
+
   return make_base(*l);
 }
 
