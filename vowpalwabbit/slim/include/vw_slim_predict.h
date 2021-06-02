@@ -309,12 +309,23 @@ class vw_predict
   std::unique_ptr<predict_info<W>> _predict_info;
 
 public:
-  vw_predict() : _model_loaded(false), _contains_wildcard(false) {}
+  vw_predict() : _model_loaded(false) {}
 
   static void predict_gd(predict_info<W>& vw_slim, VW::LEARNER::base_learner&, example& ec)
   {
-    ec.pred.scalar = GD::inline_predict<W>(
-        *vw_slim._weights, false, vw_slim._ignore_linear, vw_slim._interactions, /* permutations */ false, ec);
+    if (vw_slim._contains_wildcard)
+    {
+      vw_slim._generate_interactions.template update_interactions_if_new_namespace_seen<
+          INTERACTIONS::generate_namespace_combinations_with_repetition, false>(vw_slim._interactions, ec.indices);
+      ec.pred.scalar = GD::inline_predict<W>(*vw_slim._weights, false, vw_slim._ignore_linear,
+          vw_slim._generate_interactions.generated_interactions,
+          /* permutations */ false, ec);
+    }
+    else
+    {
+      ec.pred.scalar = GD::inline_predict<W>(
+          *vw_slim._weights, false, vw_slim._ignore_linear, vw_slim._interactions, /* permutations */ false, ec);
+    }
   }
 
   static void learn_gd(predict_info<W>& vw_slim, VW::LEARNER::base_learner&, example& ec)
@@ -336,6 +347,7 @@ public:
     _model_loaded = false;
 
     _predict_info = VW::make_unique<predict_info<W>>();
+    _predict_info->_contains_wildcard = false;
 
     // required for inline_predict
     _predict_info->_ignore_linear.fill(false);
@@ -629,10 +641,10 @@ public:
       ns_copy_guard->feature_push_back(1.f, (constant << _stride_shift) + ex.ft_offset);
     }
 
-    if (_contains_wildcard)
+    if (_predict_info->_contains_wildcard)
     {
       // permutations is not supported by slim so we can just use combinations!
-      _predict_info->_generate_interactions.update_interactions_if_new_namespace_seen<
+      _predict_info->_generate_interactions.template update_interactions_if_new_namespace_seen<
           INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
           _predict_info->_interactions, ex.indices);
       score = GD::inline_predict<W>(*_predict_info->_weights, false, _predict_info->_ignore_linear,
