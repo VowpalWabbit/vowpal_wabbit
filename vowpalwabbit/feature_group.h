@@ -6,6 +6,7 @@
 
 #include "v_array.h"
 #include "future_compat.h"
+#include "generic_range.h"
 
 #include <utility>
 #include <memory>
@@ -54,6 +55,7 @@ public:
   using value_type = audit_features_iterator<feature_value_type_t, feature_index_type_t, audit_type_t>;
   using pointer = value_type*;
   using reference = value_type&;
+  using const_reference = const value_type&;
 
   audit_features_iterator(
       feature_value_type_t* begin_values, feature_index_type_t* begin_indices, audit_type_t* begin_audit)
@@ -76,7 +78,7 @@ public:
   inline const audit_type_t* audit() const { return _begin_audit; }
 
   inline reference operator*() { return *this; }
-  inline const reference operator*() const { return *this; }
+  inline const_reference operator*() const { return *this; }
 
   // Required for forward_iterator
   audit_features_iterator& operator++()
@@ -182,6 +184,7 @@ public:
   using value_type = features_iterator<feature_value_type_t, feature_index_type_t>;
   using pointer = value_type*;
   using reference = value_type&;
+  using const_reference = const value_type&;
 
   features_iterator(feature_value_type_t* begin_values, feature_index_type_t* begin_indices)
       : _begin_values(begin_values), _begin_indices(begin_indices)
@@ -200,7 +203,7 @@ public:
   inline const feature_index_type_t& index() const { return *_begin_indices; }
 
   inline reference operator*() { return *this; }
-  inline const reference operator*() const { return *this; }
+  inline const_reference operator*() const { return *this; }
 
   features_iterator& operator++()
   {
@@ -290,35 +293,6 @@ struct features
 
   float sum_feat_sq = 0.f;
 
-  class features_audit_range
-  {
-  private:
-    features* _outer;
-
-  public:
-    explicit features_audit_range(features* outer) : _outer(outer) {}
-
-    inline audit_iterator begin() { return _outer->audit_begin(); }
-    inline const_audit_iterator begin() const { return _outer->audit_cbegin(); }
-    inline audit_iterator end() { return _outer->audit_end(); }
-    inline const_audit_iterator end() const { return _outer->audit_cend(); }
-
-    inline const_audit_iterator cbegin() const { return _outer->audit_cbegin(); }
-    inline const_audit_iterator cend() const { return _outer->audit_cend(); }
-  };
-
-  class const_features_audit_range
-  {
-  private:
-    const features* _outer;
-
-  public:
-    explicit const_features_audit_range(const features* outer) : _outer(outer) {}
-
-    inline const_audit_iterator cbegin() const { return _outer->audit_cbegin(); }
-    inline const_audit_iterator cend() const { return _outer->audit_cend(); }
-  };
-
   features() = default;
   ~features() = default;
   features(const features&) = delete;
@@ -346,8 +320,8 @@ struct features
   inline const_iterator cbegin() const { return {values.cbegin(), indicies.cbegin()}; }
   inline const_iterator cend() const { return {values.cend(), indicies.cend()}; }
 
-  inline features_audit_range audit_range() { return features_audit_range{this}; }
-  inline const_features_audit_range audit_range() const { return const_features_audit_range{this}; }
+  inline VW::generic_range<audit_iterator> audit_range() { return {audit_begin(), audit_end()}; }
+  inline VW::generic_range<const_audit_iterator> audit_range() const { return {audit_cbegin(), audit_cend()}; }
 
   inline audit_iterator audit_begin() { return {values.begin(), indicies.begin(), space_names.data()}; }
   inline const_audit_iterator audit_begin() const { return {values.begin(), indicies.begin(), space_names.data()}; }

@@ -12,6 +12,7 @@
 #include "explore.h"
 #include "gd_predict.h"
 #include "model_parser.h"
+#include "interactions.h"
 #include "opts.h"
 #include "cats_tree.h"
 #include "learner_no_throw.h"
@@ -272,7 +273,9 @@ template <typename W>
 struct predict_info
 {
   std::unique_ptr<W> _weights;
-  namespace_interactions _interactions;
+  std::vector<std::vector<namespace_index>> _interactions;
+  INTERACTIONS::interactions_generator _generate_interactions;
+  bool _contains_wildcard;
   std::array<bool, NUM_NAMESPACES> _ignore_linear;
 };
 
@@ -306,7 +309,7 @@ class vw_predict
   std::unique_ptr<predict_info<W>> _predict_info;
 
 public:
-  vw_predict() : _model_loaded(false) {}
+  vw_predict() : _model_loaded(false), _contains_wildcard(false) {}
 
   static void predict_gd(predict_info<W>& vw_slim, VW::LEARNER::base_learner&, example& ec)
   {
@@ -374,31 +377,24 @@ public:
     find_opt_uint64_t(_command_line_arguments, "--random_seed", random_seed);
 
     _predict_info->_interactions.clear();
-    find_opt(_command_line_arguments, "-q", _predict_info->_interactions.interactions);
-    find_opt(_command_line_arguments, "--quadratic", _predict_info->_interactions.interactions);
-    find_opt(_command_line_arguments, "--cubic", _predict_info->_interactions.interactions);
-    find_opt(_command_line_arguments, "--interactions", _predict_info->_interactions.interactions);
+    find_opt(_command_line_arguments, "-q", _predict_info->_interactions);
+    find_opt(_command_line_arguments, "--quadratic", _predict_info->_interactions);
+    find_opt(_command_line_arguments, "--cubic", _predict_info->_interactions);
+    find_opt(_command_line_arguments, "--interactions", _predict_info->_interactions);
 
-    if (_predict_info->_interactions.interactions.size() == 1 &&
-        _predict_info->_interactions.interactions[0].size() == 2 &&
-        _predict_info->_interactions.interactions[0][0] == ':' &&
-        _predict_info->_interactions.interactions[0][1] == ':')
+    // VW performs the following transformation as a side-effect of looking for duplicates.
+    // This affects how interaction hashes are generated.
+    std::vector<std::vector<namespace_index>> vec_sorted;
+    for (auto& interaction : _predict_info->_interactions)
+    { std::sort(std::begin(interaction), std::end(interaction)); }
+
+    for (const auto& inter : _predict_info->_interactions)
     {
-      _predict_info->_interactions.interactions.clear();
-      _predict_info->_interactions.quadratics_wildcard_expansion = true;
-    }
-    else
-    {
-      // VW performs the following transformation as a side-effect of looking for duplicates.
-      // This affects how interaction hashes are generated.
-      std::vector<std::vector<namespace_index>> vec_sorted;
-      for (auto& interaction : _predict_info->_interactions.interactions)
+      if (INTERACTIONS::contains_wildcard(inter))
       {
-        std::vector<namespace_index> sorted_i(interaction);
-        std::sort(std::begin(sorted_i), std::end(sorted_i));
-        vec_sorted.push_back(sorted_i);
+        _predict_info->_contains_wildcard = true;
+        break;
       }
-      _predict_info->_interactions.interactions = vec_sorted;
     }
 
     // TODO: take --cb_type dr into account
@@ -439,10 +435,7 @@ public:
       find_opt_float(_command_line_arguments, "--bandwidth", _bandwidth);
       find_opt_float(_command_line_arguments, "--min_value", _min_value);
       find_opt_float(_command_line_arguments, "--max_value", _max_value);
-      if (!find_opt_float(_command_line_arguments, "--epsilon", _epsilon))
-      {
-        _epsilon = 0.05f;
-      }
+      if (!find_opt_float(_command_line_arguments, "--epsilon", _epsilon)) { _epsilon = 0.05f; }
 
       pmf_to_pdf = VW::make_unique<VW::pmf_to_pdf::reduction>();
       pmf_to_pdf->init(_cats, _bandwidth, _min_value, _max_value, /* first_only*/ false, /*bandwidth supplied*/ true);
@@ -577,7 +570,8 @@ public:
               .set_prediction_type(prediction_type_t::action_pdf_value)
               .build();
 
-      auto* sample_pdf_learner_base = VW::LEARNER::as_singleline_no_throw(VW::LEARNER::make_base(*sample_pdf_learner), success);
+      auto* sample_pdf_learner_base =
+          VW::LEARNER::as_singleline_no_throw(VW::LEARNER::make_base(*sample_pdf_learner), success);
       if (!success) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
       auto cats = VW::make_unique<VW::continuous_action::cats::cats>(
           sample_pdf_learner_base, _cats, _bandwidth, _min_value, _max_value, /*bandwidth was supplied*/ true);
@@ -635,9 +629,21 @@ public:
       ns_copy_guard->feature_push_back(1.f, (constant << _stride_shift) + ex.ft_offset);
     }
 
-    score = GD::inline_predict<W>(*_predict_info->_weights, false, _predict_info->_ignore_linear,
-        _predict_info->_interactions, /* permutations */ false, ex);
-
+    if (_contains_wildcard)
+    {
+      // permutations is not supported by slim so we can just use combinations!
+      _predict_info->_generate_interactions.update_interactions_if_new_namespace_seen<
+          INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+          _predict_info->_interactions, ex.indices);
+      score = GD::inline_predict<W>(*_predict_info->_weights, false, _predict_info->_ignore_linear,
+          _predict_info->_generate_interactions.generated_interactions,
+          /* permutations */ false, ex);
+    }
+    else
+    {
+      score = GD::inline_predict<W>(*_predict_info->_weights, false, _predict_info->_ignore_linear,
+          _predict_info->_interactions, /* permutations */ false, ex);
+    }
     return S_VW_PREDICT_OK;
   }
 
@@ -649,8 +655,6 @@ public:
 
     if (!_no_constant)
     {
-      ex->indices.push_back(constant_namespace);
-      ex->feature_space[constant_namespace].push_back(1, constant);
       ns_copy_guard = std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*ex, constant_namespace));
       ns_copy_guard->feature_push_back(1.f, (constant << _stride_shift) + ex->ft_offset);
     }
