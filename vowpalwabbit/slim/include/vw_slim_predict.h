@@ -489,6 +489,8 @@ public:
     // TODO return error if activated but these are not initialized
     if (pmf_to_pdf != nullptr && cats_tree != nullptr)
     {
+      // TODO plug in interactions reduction and maybe metrics (or maybe figure out how to use setup functions)
+
       // cats_tree -> binary -> gd
       // create gd
       auto* ret = VW::LEARNER::make_base_learner(
