@@ -133,7 +133,7 @@ inline void cb_explore_adf_base<ExploreType>::predict(
   {
     // predict path, restore label
     label_example->l.cb = std::move(data._action_label);
-    data._empty_label.costs.delete_v();
+    data._empty_label.costs.clear();
     data._empty_label.weight = 1.f;
   }
 }
