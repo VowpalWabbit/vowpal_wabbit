@@ -72,13 +72,12 @@ struct cb_explore_metrics
   float metric_sum_cost_first;
   size_t label_action_first_option;
   size_t label_action_not_first;
-
   size_t count_non_zero_cost;
-  size_t sum_features_per_event;
-  size_t sum_features_per_example;
-  size_t sum_ns_per_event;
-  size_t sum_ns_per_example;
+  size_t sum_features;
   size_t sum_actions;
+  size_t min_actions = SIZE_MAX;
+  size_t max_actions = 0;
+  size_t sum_namespaces;
 };
 
 // Object
@@ -170,6 +169,8 @@ inline void cb_explore_adf_base<ExploreType>::learn(
       if (data._known_cost.cost != 0) { data._metrics->count_non_zero_cost++; }
 
       data._metrics->sum_actions += examples.size();
+      data._metrics->max_actions = std::max(data._metrics->max_actions, examples.size());
+      data._metrics->min_actions = std::min(data._metrics->min_actions, examples.size());
     }
   }
   else
@@ -185,15 +186,24 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   if (ec_seq.size() <= 0) return;
 
   size_t num_features = 0;
+  size_t num_namespaces = 0;
 
   float loss = 0.;
 
   auto& ec = *ec_seq[0];
   const auto& preds = ec.pred.a_s;
 
-  for (const auto& example : ec_seq) { num_features += example->get_num_features(); }
+  for (const auto& example : ec_seq)
+  {
+    num_features += example->get_num_features();
+    num_namespaces += example->indices.size();
+  }
 
-  if (_metrics) _metrics->sum_features_per_event += num_features;
+  if (_metrics)
+  {
+    _metrics->sum_features += num_features;
+    _metrics->sum_namespaces += num_namespaces;
+  }
 
   bool labeled_example = true;
   if (_known_cost.probability > 0)
@@ -284,8 +294,13 @@ inline void cb_explore_adf_base<ExploreType>::persist_metrics(
     metrics.int_metrics_list.emplace_back("cbea_label_first_action", data._metrics->label_action_first_option);
     metrics.int_metrics_list.emplace_back("cbea_label_not_first", data._metrics->label_action_not_first);
     // metrics.int_metrics_list.emplace_back("cbea_non_zero_cost", data._metrics->count_non_zero_cost);
-    // metrics.int_metrics_list.emplace_back("cbea_sum_total_features", data._metrics->sum_features_per_event);
+    // if (data._metrics->metric_labeled) metrics.float_metrics_list.emplace_back("cbea_avg_feat_per_event", data._metrics->sum_features / data._metrics->metric_labeled);
+    // if (data._metrics->sum_actions) metrics.float_metrics_list.emplace_back("cbea_avg_feat_per_action", data._metrics->sum_features / data._metrics->sum_actions);
     // if (data._metrics->metric_labeled) metrics.float_metrics_list.emplace_back("cbea_avg_actions_per_event", data._metrics->sum_actions / data._metrics->metric_labeled);
+    // if (data._metrics->min_actions != SIZE_MAX) metrics.int_metrics_list.emplace_back("cbea_min_actions", data._metrics->min_actions);
+    // if (data._metrics->max_actions) metrics.int_metrics_list.emplace_back("cbea_max_actions", data._metrics->max_actions);
+    // if (data._metrics->metric_labeled) metrics.float_metrics_list.emplace_back("cbea_avg_ns_per_event", data._metrics->sum_namespaces / data._metrics->metric_labeled);
+    // if (data._metrics->sum_actions) metrics.float_metrics_list.emplace_back("cbea_avg_ns_per_action", data._metrics->sum_namespaces / data._metrics->sum_actions);
   }
 }
 
