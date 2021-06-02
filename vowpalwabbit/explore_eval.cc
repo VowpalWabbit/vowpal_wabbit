@@ -135,7 +135,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
   if (label_example != nullptr)  // restore label
   {
     label_example->l.cb = std::move(data.action_label);
-    data.empty_label.costs.delete_v();
+    data.empty_label.costs.clear();
     data.empty_label.weight = 1.f;
   }
 
