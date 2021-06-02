@@ -78,7 +78,7 @@ struct cb_explore_metrics
   size_t sum_features_per_example;
   size_t sum_ns_per_event;
   size_t sum_ns_per_example;
-  size_t sum_actions_per_event;
+  size_t sum_actions;
 };
 
 // Object
@@ -168,6 +168,8 @@ inline void cb_explore_adf_base<ExploreType>::learn(
       }
 
       if (data._known_cost.cost != 0) { data._metrics->count_non_zero_cost++; }
+
+      data._metrics->sum_actions += examples.size();
     }
   }
   else
@@ -283,6 +285,7 @@ inline void cb_explore_adf_base<ExploreType>::persist_metrics(
     metrics.int_metrics_list.emplace_back("cbea_label_not_first", data._metrics->label_action_not_first);
     // metrics.int_metrics_list.emplace_back("cbea_non_zero_cost", data._metrics->count_non_zero_cost);
     // metrics.int_metrics_list.emplace_back("cbea_sum_total_features", data._metrics->sum_features_per_event);
+    // if (data._metrics->metric_labeled) metrics.float_metrics_list.emplace_back("cbea_avg_actions_per_event", data._metrics->sum_actions / data._metrics->metric_labeled);
   }
 }
 
