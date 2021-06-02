@@ -298,19 +298,19 @@ inline void cb_explore_adf_base<ExploreType>::persist_metrics(
     if (data._metrics->metric_labeled)
     {
       metrics.float_metrics_list.emplace_back(
-          "cbea_avg_feat_per_event", data._metrics->sum_features / data._metrics->metric_labeled);
+          "cbea_avg_feat_per_event", static_cast<float>(data._metrics->sum_features / data._metrics->metric_labeled));
       metrics.float_metrics_list.emplace_back(
-          "cbea_avg_actions_per_event", data._metrics->sum_actions / data._metrics->metric_labeled);
+          "cbea_avg_actions_per_event", static_cast<float>(data._metrics->sum_actions / data._metrics->metric_labeled));
       metrics.float_metrics_list.emplace_back(
-          "cbea_avg_ns_per_event", data._metrics->sum_namespaces / data._metrics->metric_labeled);
+          "cbea_avg_ns_per_event", static_cast<float>(data._metrics->sum_namespaces / data._metrics->metric_labeled));
     }
 
     if (data._metrics->sum_actions)
     {
       metrics.float_metrics_list.emplace_back(
-          "cbea_avg_feat_per_action", data._metrics->sum_features / data._metrics->sum_actions);
+          "cbea_avg_feat_per_action", static_cast<float>(data._metrics->sum_features / data._metrics->sum_actions));
       metrics.float_metrics_list.emplace_back(
-          "cbea_avg_ns_per_action", data._metrics->sum_namespaces / data._metrics->sum_actions);
+          "cbea_avg_ns_per_action", static_cast<float>(data._metrics->sum_namespaces / data._metrics->sum_actions));
     }
 
     if (data._metrics->min_actions != SIZE_MAX)
