@@ -88,7 +88,7 @@ void persist(sfm_data& data, metric_sink& metrics)
 {
   if (data._metrics)
   {
-    // metrics.int_metrics_list.emplace_back("sfm_count_learn_example_with_shared", data._metrics->count_learn_example_with_shared);
+    metrics.int_metrics_list.emplace_back("sfm_count_learn_example_with_shared", data._metrics->count_learn_example_with_shared);
   }
 }
 

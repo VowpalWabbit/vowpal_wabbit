@@ -293,14 +293,14 @@ inline void cb_explore_adf_base<ExploreType>::persist_metrics(
     metrics.float_metrics_list.emplace_back("cbea_sum_cost_baseline", data._metrics->metric_sum_cost_first);
     metrics.int_metrics_list.emplace_back("cbea_label_first_action", data._metrics->label_action_first_option);
     metrics.int_metrics_list.emplace_back("cbea_label_not_first", data._metrics->label_action_not_first);
-    // metrics.int_metrics_list.emplace_back("cbea_non_zero_cost", data._metrics->count_non_zero_cost);
-    // if (data._metrics->metric_labeled) metrics.float_metrics_list.emplace_back("cbea_avg_feat_per_event", data._metrics->sum_features / data._metrics->metric_labeled);
-    // if (data._metrics->sum_actions) metrics.float_metrics_list.emplace_back("cbea_avg_feat_per_action", data._metrics->sum_features / data._metrics->sum_actions);
-    // if (data._metrics->metric_labeled) metrics.float_metrics_list.emplace_back("cbea_avg_actions_per_event", data._metrics->sum_actions / data._metrics->metric_labeled);
-    // if (data._metrics->min_actions != SIZE_MAX) metrics.int_metrics_list.emplace_back("cbea_min_actions", data._metrics->min_actions);
-    // if (data._metrics->max_actions) metrics.int_metrics_list.emplace_back("cbea_max_actions", data._metrics->max_actions);
-    // if (data._metrics->metric_labeled) metrics.float_metrics_list.emplace_back("cbea_avg_ns_per_event", data._metrics->sum_namespaces / data._metrics->metric_labeled);
-    // if (data._metrics->sum_actions) metrics.float_metrics_list.emplace_back("cbea_avg_ns_per_action", data._metrics->sum_namespaces / data._metrics->sum_actions);
+    metrics.int_metrics_list.emplace_back("cbea_non_zero_cost", data._metrics->count_non_zero_cost);
+    if (data._metrics->metric_labeled) metrics.float_metrics_list.emplace_back("cbea_avg_feat_per_event", data._metrics->sum_features / data._metrics->metric_labeled);
+    if (data._metrics->sum_actions) metrics.float_metrics_list.emplace_back("cbea_avg_feat_per_action", data._metrics->sum_features / data._metrics->sum_actions);
+    if (data._metrics->metric_labeled) metrics.float_metrics_list.emplace_back("cbea_avg_actions_per_event", data._metrics->sum_actions / data._metrics->metric_labeled);
+    if (data._metrics->min_actions != SIZE_MAX) metrics.int_metrics_list.emplace_back("cbea_min_actions", data._metrics->min_actions);
+    if (data._metrics->max_actions) metrics.int_metrics_list.emplace_back("cbea_max_actions", data._metrics->max_actions);
+    if (data._metrics->metric_labeled) metrics.float_metrics_list.emplace_back("cbea_avg_ns_per_event", data._metrics->sum_namespaces / data._metrics->metric_labeled);
+    if (data._metrics->sum_actions) metrics.float_metrics_list.emplace_back("cbea_avg_ns_per_action", data._metrics->sum_namespaces / data._metrics->sum_actions);
   }
 }
 
