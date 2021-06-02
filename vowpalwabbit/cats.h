@@ -32,7 +32,7 @@ struct cats
 
   cats(VW::LEARNER::single_learner* p_base, uint32_t num_actions_, float bandwidth_, float min_value_, float max_value_,
       bool bandwidth_was_supplied)
-      : _base(p_base), num_actions(num_actions_), bandwidth(bandwidth_), min_value(min_value_), max_value(max_value_)
+      : num_actions(num_actions_), bandwidth(bandwidth_), min_value(min_value_), max_value(max_value_), _base(p_base)
   {
     if (!bandwidth_was_supplied)
     {
