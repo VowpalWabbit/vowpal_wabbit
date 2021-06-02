@@ -132,8 +132,9 @@ inline void cb_explore_adf_base<ExploreType>::predict(
   if (label_example != nullptr)
   {
     // predict path, restore label
-    data._empty_label = std::move(label_example->l.cb);
     label_example->l.cb = std::move(data._action_label);
+    data._empty_label.costs.delete_v();
+    data._empty_label.weight = 1.f;
   }
 }
 
