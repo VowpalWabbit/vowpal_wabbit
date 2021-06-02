@@ -256,12 +256,9 @@ class SimpleLabel(object):
         pandas.Series
             The SimpleLabel string representation.
         """
-        label_col = self.label.get_col(df)
+        out = self.label.get_col(df)
         if self.weight is not None:
-            weight_col = self.weight.get_col(df)
-            out = label_col + " " + weight_col
-        else:
-            out = label_col
+            out += " " + self.weight.get_col(df)
         return out
 
 
@@ -301,12 +298,9 @@ class MulticlassLabel(object):
         pandas.Series
             The MulticlassLabel string representation.
         """
-        label_col = self.label.get_col(df)
+        out = self.label.get_col(df)
         if self.weight is not None:
-            weight_col = self.weight.get_col(df)
-            out = label_col + " " + weight_col
-        else:
-            out = label_col
+            out += " " + self.weight.get_col(df)
         return out
 
 
