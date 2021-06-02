@@ -30,12 +30,18 @@ bool use_reduction(config::options_i& options)
   return false;
 }
 
+struct sfm_metrics
+{
+  size_t count_learn_example_with_shared = 0;
+};
+
 struct sfm_data
 {
+  std::unique_ptr<sfm_metrics> _metrics;
 };
 
 template <bool is_learn>
-void predict_or_learn(sfm_data&, VW::LEARNER::multi_learner& base, multi_ex& ec_seq)
+void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0) THROW("cb_adf: At least one action must be provided for an example to be valid.");
 
@@ -68,6 +74,22 @@ void predict_or_learn(sfm_data&, VW::LEARNER::multi_learner& base, multi_ex& ec_
     base.learn(ec_seq);
   else
     base.predict(ec_seq);
+
+  if (data._metrics)
+  {
+    if (is_learn && has_example_header)
+    {
+      data._metrics->count_learn_example_with_shared++;
+    }
+  }
+}
+
+void persist(sfm_data& data, metric_sink& metrics)
+{
+  if (data._metrics)
+  {
+    // metrics.int_metrics_list.emplace_back("sfm_count_learn_example_with_shared", data._metrics->count_learn_example_with_shared);
+  }
 }
 
 VW::LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, vw& all)
@@ -76,10 +98,14 @@ VW::LEARNER::base_learner* shared_feature_merger_setup(config::options_i& option
 
   auto data = scoped_calloc_or_throw<sfm_data>();
 
+  if (options.was_supplied("extra_metrics")) data->_metrics = VW::make_unique<sfm_metrics>();
+
   auto* base = VW::LEARNER::as_multiline(setup_base(options, all));
 
   auto& learner = VW::LEARNER::init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>,
       all.get_setupfn_name(shared_feature_merger_setup), base->learn_returns_prediction);
+
+  learner.set_persist_metrics(persist);
 
   // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
   //       shared example in a finish_example function. However, its too expensive to perform the full operation.
