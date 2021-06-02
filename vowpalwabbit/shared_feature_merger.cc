@@ -77,10 +77,7 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, multi_ex
 
   if (data._metrics)
   {
-    if (is_learn && has_example_header)
-    {
-      data._metrics->count_learn_example_with_shared++;
-    }
+    if (is_learn && has_example_header) { data._metrics->count_learn_example_with_shared++; }
   }
 }
 
@@ -88,7 +85,8 @@ void persist(sfm_data& data, metric_sink& metrics)
 {
   if (data._metrics)
   {
-    metrics.int_metrics_list.emplace_back("sfm_count_learn_example_with_shared", data._metrics->count_learn_example_with_shared);
+    metrics.int_metrics_list.emplace_back(
+        "sfm_count_learn_example_with_shared", data._metrics->count_learn_example_with_shared);
   }
 }
 
