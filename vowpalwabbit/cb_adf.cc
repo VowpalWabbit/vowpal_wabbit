@@ -92,7 +92,12 @@ public:
 
   cb_adf(
       shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
-      : _sd(sd), _model_file_ver(model_file_ver), _offset(0), _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p)
+      : _sd(sd)
+      , _model_file_ver(model_file_ver)
+      , _offset(0)
+      , _no_predict(no_predict)
+      , _rank_all(rank_all)
+      , _clip_p(clip_p)
   {
     _gen_cs.cb_type = cb_type;
   }
@@ -551,8 +556,7 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   cb_adf* bare = ld.get();
   bool lrp = ld->learn_returns_prediction();
-  auto* l = make_reduction_learner(
-      std::move(ld), base, learn, predict,  all.get_setupfn_name(cb_adf_setup))
+  auto* l = make_reduction_learner(std::move(ld), base, learn, predict, all.get_setupfn_name(cb_adf_setup))
                 .set_learn_returns_prediction(lrp)
                 .set_params_per_weight(problem_multiplier)
                 .set_prediction_type(prediction_type_t::action_probs)
