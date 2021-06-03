@@ -225,20 +225,24 @@ class SimpleLabel(object):
     """The simple label type for the constructor of DFtoVW."""
 
     label = AttributeDescriptor("label", expected_type=(int, float))
+    weight = AttributeDescriptor("weight", expected_type=(int, float))
 
-    def __init__(self, label):
+    def __init__(self, label, weight=None):
         """Initialize a SimpleLabel instance.
 
         Parameters
         ----------
         label : str
             The column name with the label.
+        weight : str
+            The column name with the weight.
 
         Returns
         -------
         self : SimpleLabel
         """
         self.label = label
+        self.weight = weight
 
     def process(self, df):
         """Returns the SimpleLabel string representation.
@@ -253,7 +257,10 @@ class SimpleLabel(object):
         pandas.Series
             The SimpleLabel string representation.
         """
-        return self.label.get_col(df)
+        out = self.label.get_col(df)
+        if self.weight is not None:
+            out += " " + self.weight.get_col(df)
+        return out
 
 
 class MulticlassLabel(object):
@@ -292,12 +299,9 @@ class MulticlassLabel(object):
         pandas.Series
             The MulticlassLabel string representation.
         """
-        label_col = self.label.get_col(df)
+        out = self.label.get_col(df)
         if self.weight is not None:
-            weight_col = self.weight.get_col(df)
-            out = label_col + " " + weight_col
-        else:
-            out = label_col
+            out += " " + self.weight.get_col(df)
         return out
 
 
