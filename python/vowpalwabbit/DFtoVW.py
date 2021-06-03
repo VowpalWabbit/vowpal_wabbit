@@ -236,6 +236,7 @@ class SimpleLabel(object):
             The column name with the label.
         weight : str
             The column name with the weight.
+
         Returns
         -------
         self : SimpleLabel
