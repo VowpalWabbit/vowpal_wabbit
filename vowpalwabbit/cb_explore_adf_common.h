@@ -129,8 +129,8 @@ inline void cb_explore_adf_base<ExploreType>::predict(
   if (label_example != nullptr)
   {
     // predict path, replace the label example with an empty one
-    data._action_label = label_example->l.cb;
-    label_example->l.cb = data._empty_label;
+    data._action_label = std::move(label_example->l.cb);
+    label_example->l.cb = std::move(data._empty_label);
   }
 
   data.explore.predict(base, examples);
@@ -138,7 +138,9 @@ inline void cb_explore_adf_base<ExploreType>::predict(
   if (label_example != nullptr)
   {
     // predict path, restore label
-    label_example->l.cb = data._action_label;
+    label_example->l.cb = std::move(data._action_label);
+    data._empty_label.costs.clear();
+    data._empty_label.weight = 1.f;
   }
 }
 
