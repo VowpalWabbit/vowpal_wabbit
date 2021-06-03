@@ -66,18 +66,18 @@ inline size_t fill_tied(const v_array<ACTION_SCORE::action_score>& preds)
 
 struct cb_explore_metrics
 {
-  size_t metric_labeled;
-  size_t metric_predict_in_learn;
-  float metric_sum_cost;
-  float metric_sum_cost_first;
-  size_t label_action_first_option;
-  size_t label_action_not_first;
-  size_t count_non_zero_cost;
-  size_t sum_features;
-  size_t sum_actions;
+  size_t metric_labeled = 0;
+  size_t metric_predict_in_learn = 0;
+  float metric_sum_cost = 0.0;
+  float metric_sum_cost_first = 0.0;
+  size_t label_action_first_option = 0;
+  size_t label_action_not_first = 0;
+  size_t count_non_zero_cost = 0;
+  size_t sum_features = 0;
+  size_t sum_actions = 0;
   size_t min_actions = SIZE_MAX;
   size_t max_actions = 0;
-  size_t sum_namespaces;
+  size_t sum_namespaces = 0;
 };
 
 // Object
