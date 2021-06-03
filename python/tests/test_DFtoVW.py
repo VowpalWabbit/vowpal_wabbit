@@ -126,6 +126,17 @@ def test_multiple_named_namespaces_multiple_features_multiple_lines():
     ]
 
 
+def test_multiple_lines_with_weight():
+    df = pd.DataFrame({
+        "y": [1, 2, -1],
+        "w": [2.5, 1.2, 3.75],
+        "x": ["a", "b", "c"]
+    })
+    conv = DFtoVW(df=df, label=SimpleLabel(label="y", weight="w"), features=Feature("x"))
+    lines_list = conv.convert_df()
+    assert lines_list == ['1 2.5 | x=a', '2 1.2 | x=b', '-1 3.75 | x=c']
+
+
 # Exception tests for SimpleLabel
 def test_absent_col_error():
     with pytest.raises(ValueError) as value_error:
@@ -159,6 +170,14 @@ def test_wrong_feature_type_error():
     with pytest.raises(TypeError) as type_error:
         DFtoVW(df=df, label=SimpleLabel("y"), features="x")
     expected = "Argument 'features' should be a Feature or a list of Feature."
+    assert expected == str(type_error.value)
+
+
+def test_wrong_weight_type_error():
+    df = pd.DataFrame({"y": [1], "x": [2], "w": ["a"]})
+    with pytest.raises(TypeError) as type_error:
+        DFtoVW(df=df, label=SimpleLabel(label="y", weight="w"), features=Feature("x"))
+    expected = "In argument 'weight' of 'SimpleLabel', column 'w' should be either of the following type(s): 'int', 'float'."
     assert expected == str(type_error.value)
 
 
