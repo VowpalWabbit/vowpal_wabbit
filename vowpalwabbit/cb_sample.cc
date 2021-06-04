@@ -121,9 +121,9 @@ base_learner *cb_sample_setup(options_i &options, vw &all)
   auto data = VW::make_unique<cb_sample_data>(all.get_random_state());
 
   auto* l = make_reduction_learner(std::move(data), as_multiline(setup_base(options, all)), learn_or_predict<true>, learn_or_predict<false>, all.get_setupfn_name(cb_sample_setup))
-                .set_learn_returns_status(true)
+                .set_learn_returns_prediction(true)
                 .set_prediction_type(prediction_type_t::action_probs)
                 .set_label_type(label_type_t::cb)
-                .build()
-  return make_base(*l)
+                .build();
+  return make_base(*l);
 }
