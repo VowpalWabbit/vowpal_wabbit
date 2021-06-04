@@ -119,8 +119,7 @@ struct action_repr
   {
     if (_repr != nullptr)
     {
-      repr = new features();
-      repr->deep_copy_from(*_repr);
+      repr = new features(*_repr);
     }
   }
   action_repr(action _a) : a(_a), repr(nullptr) {}

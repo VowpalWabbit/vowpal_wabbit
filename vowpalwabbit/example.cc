@@ -83,8 +83,7 @@ void copy_example_metadata(example* dst, const example* src)
     dst->passthrough = nullptr;
   else
   {
-    dst->passthrough = new features;
-    dst->passthrough->deep_copy_from(*src->passthrough);
+    dst->passthrough = new features(*src->passthrough);
   }
   dst->loss = src->loss;
   dst->weight = src->weight;
@@ -101,7 +100,7 @@ void copy_example_data(example* dst, const example* src)
 
   // copy feature data
   dst->indices = src->indices;
-  for (namespace_index c : src->indices) dst->feature_space[c].deep_copy_from(src->feature_space[c]);
+  for (namespace_index c : src->indices) dst->feature_space[c] = src->feature_space[c];
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->total_sum_feat_sq_calculated = src->total_sum_feat_sq_calculated;
