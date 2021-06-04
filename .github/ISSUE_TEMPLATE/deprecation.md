@@ -28,6 +28,7 @@ What is the value we'll derive from removing it? A deprecation must be necessary
 - Maintenance burden
 - Incompatible with new feature
 - Better alternative readily available
+- Other, please describe
 -->
 
 #### User impact and mitigation
