@@ -281,9 +281,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     VW::read_line(all, ec, d);
     // now we just need to grab stuff from the default namespace of ec!
     if (ec->feature_space[def].size() == 0) { continue; }
-    std::unique_ptr<features> arr(new features);
-    arr->deep_copy_from(ec->feature_space[def]);
-    map->emplace(word, std::move(arr));
+    map->emplace(word, VW::make_unique<features>(ec->feature_space[def]));
 
     // clear up ec
     ec->tag.clear();
