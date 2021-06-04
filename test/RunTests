@@ -2359,11 +2359,27 @@ train-sets/ref/slates_simple_w_interactions.stderr
 {VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --regcb -i models/regcb_ld.model -t
     train-sets/ref/regcb_load.stderr
 
-# Test 324: test extra_metrics with djson ccb
+# Test 324: test dsjson with some errors
 # Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error
 # Line 57 of ccb_data_parse_error.json has a missing quote on purpose
 {VW} -d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread
     train-sets/ref/metrics_ccb_parse_error.stderr
+    test-sets/ref/metrics_ccb_parse_error.json
+
+# Test 325: test dsjson with some errors and limit output
+# Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error
+# Line 57 of ccb_data_parse_error.json has a missing quote on purpose
+# shares same metric file as test 324
+{VW} -d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --limit_output 1
+    train-sets/ref/metrics_ccb_parse_error_limit.stderr
+    test-sets/ref/metrics_ccb_parse_error.json
+
+# Test 326: test dsjson with some errors with quiet
+# Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error
+# Line 57 of ccb_data_parse_error.json has a missing quote on purpose
+# shares same metric file as test 324
+{VW} -d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --quiet
+    train-sets/ref/metrics_ccb_parse_error_quiet.stderr
     test-sets/ref/metrics_ccb_parse_error.json
 
 # Do not delete this line or the empty line above it

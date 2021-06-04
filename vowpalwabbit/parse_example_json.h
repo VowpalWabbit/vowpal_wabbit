@@ -1728,7 +1728,7 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
     }
     else
     {
-      logger::errlog_warn("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
+      logger::errlog_error("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
           GetParseError_En(result.Code()), handler.error().str(), (current_state ? current_state->name : "null"));
       return false;
     }
