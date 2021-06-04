@@ -117,10 +117,7 @@ struct action_repr
   action_repr() = default;
   action_repr(action _a, features* _repr) : a(_a)
   {
-    if (_repr != nullptr)
-    {
-      repr = new features(*_repr);
-    }
+    if (_repr != nullptr) { repr = new features(*_repr); }
   }
   action_repr(action _a) : a(_a), repr(nullptr) {}
 };
