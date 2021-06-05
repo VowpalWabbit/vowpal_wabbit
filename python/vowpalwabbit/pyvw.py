@@ -501,6 +501,25 @@ class vw(pylibvw.vw):
         """
         return pylibvw.vw.get_weight(self, index, offset)
 
+    def get_weight_from_name(self, name, namespace=""):
+        """Get the weight based on the feature name and the namespace name.
+
+        Parameters
+        ----------
+        name : str
+            The name of the feature
+        namespace : str, by default is ""
+            The namespace of the feature
+
+        Returns
+        -------
+        weight : float
+            Weight for the given feature and namespace name
+        """
+        space_hash = self.hash_space(namespace)
+        feat_hash = self.hash_feature(name, space_hash)
+        return self.get_weight(feat_hash)
+
     def learn(self, ec):
         """Perform an online update
 
