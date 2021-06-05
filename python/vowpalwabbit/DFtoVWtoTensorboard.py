@@ -1,6 +1,25 @@
 from vowpalwabbit import pyvw
-from datetime import datetime
 import tensorboardX as tx
+
+
+class VWtoTensorboard:
+	"""The object of this class would be passed as a callback to DFtoVWtoTensorboard fit method to ensure writing of logs for Tensorboard"""
+
+	def __init__(self, logdir):
+		"""Construct a VWtoTensorboard object
+
+		Parameters
+		----------
+
+		logdir : str
+					A string specifying the log directory for Tensorboard logs
+
+		Returns
+		-------
+
+		self : VWtoTensorboard
+		"""
+		self.logdir = logdir
 
 
 class DFtoVWtoTensorboard:
@@ -109,7 +128,7 @@ class DFtoVWtoTensorboard:
 
 
 	#------------------------------------------------------------------------------------------------		
-	def fit(self, df, tensorboard=True):
+	def fit(self, df, vw_to_tensorboard=None):
 		"""Learns on the relevant examples and can also log metrics for tensorboard visualization
 
 		Parameters
@@ -117,19 +136,18 @@ class DFtoVWtoTensorboard:
 
 		df           : Pandas Dataframe object
 						This is used for vw to learn from the corresponding examples of the records in this Pandas Dataframe object
-		tensorboard  : boolean
-						Default value is True, this parameter is used to control the logging of metrics for Tensorboard visualization
-						If value is True : metrics are logged for Tensorboard visualization
-						If value is False : metrics are not logged for Tensorboard visualization
+		vw_to_tensorboard  : VWtoTensorboard object 
+								Default value is None, this parameter is used to control the logging of metrics for Tensorboard visualization
+								If value is VWtoTensorboard object : metrics are logged for Tensorboard visualization
+								If value is None : metrics are not logged for Tensorboard visualization
 
 		Returns
 		-------
 
 		None
 		"""
-		if tensorboard:
-			logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")  # logs directory
-			file_writer = tx.SummaryWriter(logdir + "/iris")   # creating file writer
+		if isinstance(vw_to_tensorboard, VWtoTensorboard):
+			file_writer = tx.SummaryWriter(vw_to_tensorboard.logdir)   # creating file writer
 		
 		sum_loss = 0.
 		weighted_examples = 0.
@@ -138,7 +156,7 @@ class DFtoVWtoTensorboard:
 			example = self.vw.parse(vw_format)       # parse the string format, it returns an example object
 			self.vw.learn(example)                  # learn on example
 
-			label = pyvw.get_label(example, self.vw.get_label_type())    
+			label = pyvw.get_label(example, self.vw.get_label_type())
 			prediction = pyvw.get_prediction(example, self.vw.get_prediction_type())
 			num_features = example.get_feature_number()    
 
@@ -155,7 +173,7 @@ class DFtoVWtoTensorboard:
 		
 			self._print_metrics(average_loss, since_last, label, prediction, num_features)
 
-			if tensorboard:
+			if isinstance(vw_to_tensorboard, VWtoTensorboard):
 				file_writer.add_scalar('average_loss', average_loss, iteration)  # logging average_loss on each iteration
 				file_writer.add_scalar('since_last', since_last, iteration)   # logging since_last on each iteration
 			#     file_writer.add_scalar('label' , label, iteration)
