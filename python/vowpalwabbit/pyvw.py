@@ -501,7 +501,7 @@ class vw(pylibvw.vw):
         """
         return pylibvw.vw.get_weight(self, index, offset)
 
-    def get_weight_from_name(self, feature_name, namespace_name=""):
+    def get_weight_from_name(self, feature_name, namespace_name=" "):
         """Get the weight based on the feature name and the namespace name.
 
         Parameters
