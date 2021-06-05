@@ -208,6 +208,45 @@ class SearchTask:
         return self._output
 
 
+def get_label(example, label_type):
+    """Similar to pyvw.get_prediction implementation this method gets the label for current example
+
+    Parameters
+    ----------
+
+    example    : example object
+                    Methods of this example object are used to get the appropiate label
+    label_type : integer
+                    This is the integer for representing a specific type of label in vw
+                    - 0: lDEFAULT
+                    - 1: lBINARY
+                    - 2: lMULTICLASS
+                    - 3: lCOST_SENSITIVE
+                    - 4: lCONTEXTUAL_BANDIT
+                    - 5: lMAX
+                    - 6: lCONDITIONAL_CONTEXTUAL_BANDIT
+                    - 7: lSLATES
+                    - 8: lCONTINUOUS
+
+    Returns
+    -------
+
+    label  : integer
+                Actual label of the current example object according to label type
+    """
+    switch_label_type = {
+        pylibvw.vw.lDefault: None,
+        pylibvw.vw.lBinary: example.get_simplelabel_label,
+        pylibvw.vw.lMulticlass: example.get_multiclass_label,
+        pylibvw.vw.lCostSensitive: example.get_costsensitive_class,
+        pylibvw.vw.lContextualBandit: example.get_cbandits_class,
+#         pylibvw.vw.lConditionalContextualBandit: None,
+#         pylibvw.vw.lSlates: None,
+#         pylibvw.vw.lContinuous: None
+    }
+    return switch_label_type[label_type]()  
+
+
 def get_prediction(ec, prediction_type):
     """Get specified type of prediction from example
 

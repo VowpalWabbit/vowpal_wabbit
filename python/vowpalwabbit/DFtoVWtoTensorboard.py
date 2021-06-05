@@ -24,7 +24,6 @@ class DFtoVWtoTensorboard:
 
 		self : DFtoVWtoTensorboard
 		"""
-		self.df_to_vw = df_to_vw
 		self.vw = vw
 		self.vw_formatted_data = df_to_vw.convert_df()
 
@@ -110,46 +109,6 @@ class DFtoVWtoTensorboard:
 
 
 	#------------------------------------------------------------------------------------------------		
-	def get_label(self, example, label_type):
-		"""Similar to pyvw.get_prediction implementation this method gets the label for current example
-
-		Parameters
-		----------
-
-		example    : example object
-						Methods of this example object are used to get the appropiate label
-		label_type : integer
-						This is the integer for representing a specific type of label in vw
-						- 0: lDEFAULT
-						- 1: lBINARY
-						- 2: lMULTICLASS
-						- 3: lCOST_SENSITIVE
-						- 4: lCONTEXTUAL_BANDIT
-						- 5: lMAX
-						- 6: lCONDITIONAL_CONTEXTUAL_BANDIT
-						- 7: lSLATES
-						- 8: lCONTINUOUS
-
-		Returns
-		-------
-
-		label  : integer
-					Actual label of the current example object
-		"""
-		switch_label_type = {
-			pyvw.vw.lDefault: None,
-			pyvw.vw.lBinary: example.get_simplelabel_label,
-			pyvw.vw.lMulticlass: example.get_multiclass_label,
-			pyvw.vw.lCostSensitive: example.get_costsensitive_class,
-			pyvw.vw.lContextualBandit: example.get_cbandits_class,
-	#         pyvw.vw.lConditionalContextualBandit: None,
-	#         pyvw.vw.lSlates: None,
-	#         pyvw.vw.lContinuous: None
-		}
-		return switch_label_type[label_type]()	
-
-
-	#------------------------------------------------------------------------------------------------		
 	def fit(self, df, tensorboard=True):
 		"""Learns on the relevant examples and can also log metrics for tensorboard visualization
 
@@ -175,12 +134,11 @@ class DFtoVWtoTensorboard:
 		sum_loss = 0.
 		weighted_examples = 0.
 
-		for ind, iteration in zip(df.index, range(len(df))):
-			vw_format = self.vw_formatted_data[ind]   # get the string format of specific example
+		for iteration, vw_format in enumerate(self.vw_formatted_data):
 			example = self.vw.parse(vw_format)       # parse the string format, it returns an example object
 			self.vw.learn(example)                  # learn on example
 
-			label = self.get_label(example, self.vw.get_label_type())    
+			label = pyvw.get_label(example, self.vw.get_label_type())    
 			prediction = pyvw.get_prediction(example, self.vw.get_prediction_type())
 			num_features = example.get_feature_number()    
 
@@ -189,7 +147,7 @@ class DFtoVWtoTensorboard:
 			sum_loss_since_last = self.vw.get_sum_loss() - sum_loss  # vw.get_sum_loss() return current sum loss, sum_loss variable right now holds sum loss of previous iteration
 			weighted_examples_since_last = self.vw.get_weighted_examples() - weighted_examples  # vw.get_weighted_examples() return current weighted examples(sum),  weighted_examples variable right now holds weighted examples of previous iteration		        
 		
-			sum_loss= self.vw.get_sum_loss()  # Now sum_loss no longer hold previous iteration's sum_loss
+			sum_loss = self.vw.get_sum_loss()  # Now sum_loss no longer hold previous iteration's sum_loss
 			weighted_examples = self.vw.get_weighted_examples()  # Now weighted_examples no longer hold previous iteration's weighted examples
 		
 			average_loss = self._calculate_average_loss(sum_loss, weighted_examples)
