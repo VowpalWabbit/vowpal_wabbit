@@ -128,14 +128,12 @@ class DFtoVWtoTensorboard:
 
 
 	#------------------------------------------------------------------------------------------------		
-	def fit(self, df, vw_to_tensorboard=None):
+	def fit(self, vw_to_tensorboard=None):
 		"""Learns on the relevant examples and can also log metrics for tensorboard visualization
 
 		Parameters
 		----------
 
-		df           : Pandas Dataframe object
-						This is used for vw to learn from the corresponding examples of the records in this Pandas Dataframe object
 		vw_to_tensorboard  : VWtoTensorboard object 
 								Default value is None, this parameter is used to control the logging of metrics for Tensorboard visualization
 								If value is VWtoTensorboard object : metrics are logged for Tensorboard visualization
