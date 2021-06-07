@@ -181,7 +181,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
       }
     }
   }
-  ec.l.cb = saved_label;
+  ec.l.cb = std::move(saved_label);
   return (cur_node.id - _binary_tree.internal_node_count() + 1);  // 1 to k
 }
 
