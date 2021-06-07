@@ -295,8 +295,8 @@ struct features
 
   features() = default;
   ~features() = default;
-  features(const features&) = delete;
-  features& operator=(const features&) = delete;
+  features(const features&) = default;
+  features& operator=(const features&) = default;
 
   // custom move operators required since we need to leave the old value in
   // a null state to prevent freeing of shallow copied v_arrays
@@ -344,5 +344,7 @@ struct features
   void concat(const features& other);
   void push_back(feature_value v, feature_index i);
   bool sort(uint64_t parse_mask);
+
+  VW_DEPRECATED("deep_copy_from is deprecated. Use the copy constructor directly.")
   void deep_copy_from(const features& src);
 };

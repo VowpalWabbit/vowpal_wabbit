@@ -114,6 +114,13 @@ struct namespaced_features
   using const_indexed_iterator =
       indexed_iterator_t<const size_t, const features, const namespace_index, const uint64_t>;
 
+  namespaced_features() = default;
+  ~namespaced_features() = default;
+  namespaced_features(const namespaced_features&) = default;
+  namespaced_features& operator=(const namespaced_features&) = default;
+  namespaced_features(namespaced_features&& other) = default;
+  namespaced_features& operator=(namespaced_features&& other) = default;
+
   inline size_t size() const { return _feature_groups.size(); }
   inline bool empty() const { return _feature_groups.empty(); }
 
