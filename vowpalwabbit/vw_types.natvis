@@ -10,7 +10,7 @@
   <Type Name="v_array&lt;*&gt;">
     <Expand>
       <Item Name="size">_end - _begin</Item>
-      <Item Name="capacity">end_array - _begin</Item>
+      <Item Name="capacity">_end_array - _begin</Item>
       <ArrayItems>
         <Size>_end - _begin</Size>
         <ValuePointer>_begin</ValuePointer>
