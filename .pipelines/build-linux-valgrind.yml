@@ -1,5 +1,41 @@
+trigger:
+  branches:
+    include:
+    - master
+    - 'releases/**'
+  paths:
+    include:
+    - .pipelines/build-linux-valgrind.yml
+    - .scripts/linux/**
+    - cluster/**
+    - cmake/**
+    - cs/**
+    - explore/**
+    - ext_libs/**
+    - library/**
+    - test/**
+    - vowpalwabbit/**
+    - CMakeLists.txt
+    - version.txt
+
 pr:
-- master
+  branches:
+    include:
+    - '*'
+  paths:
+    include:
+    - .pipelines/build-linux-valgrind.yml
+    - .scripts/linux/**
+    - cluster/**
+    - cmake/**
+    - cs/**
+    - explore/**
+    - ext_libs/**
+    - library/**
+    - test/**
+    - vowpalwabbit/**
+    - CMakeLists.txt
+    - version.txt
 
 pool:
   vmImage: 'ubuntu-16.04'
