@@ -2,6 +2,7 @@ trigger:
   branches:
     include:
     - master
+    - releases/**
   paths:
     include:
     - .pipelines/build-linux-valgrind.yml
@@ -20,7 +21,7 @@ trigger:
 pr:
   branches:
     include:
-    - master
+    - '*'
   paths:
     include:
     - .pipelines/build-linux-valgrind.yml

@@ -1,7 +1,8 @@
 trigger:
   branches:
     include:
-    - '*'
+    - master
+    - releases/**
   paths:
     include:
     - .pipelines/build-windows-nuget.yml

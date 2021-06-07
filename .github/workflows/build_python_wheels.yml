@@ -4,11 +4,10 @@ on:
   push:
     branches:
       - master
-      - 'releases/**'
+      - releases/**
   pull_request:
     branches:
-      - master
-
+      - '*'
 
 jobs:
   build:

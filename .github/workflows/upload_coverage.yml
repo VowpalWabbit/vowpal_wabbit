@@ -1,13 +1,13 @@
 name: Coverage
+
 on:
   push:
     branches:
       - master
-      - 'releases/**'
+      - releases/**
   pull_request:
     branches:
-      - master
-
+      - '*'
 jobs:
   upload:
     container:
