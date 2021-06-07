@@ -26,7 +26,7 @@ if(NOT WIN32)
 
   add_test(
     NAME save_resume_test
-    COMMAND python save_resume_test.py --verbose_on_fail --vw ${CMAKE_CURRENT_BINARY_DIR}/../vowpalwabbit/vw
+    COMMAND python3 save_resume_test.py --verbose_on_fail --vw ${CMAKE_CURRENT_BINARY_DIR}/../vowpalwabbit/vw
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
@@ -47,7 +47,7 @@ if(NOT WIN32)
   #Fix: Use scenario 2 but have done raise the examples_available flag to unblock the learning thread.
   add_test(
     NAME test_race_condition
-    COMMAND  python repeat.py 1024 ${CMAKE_CURRENT_BINARY_DIR}/../vowpalwabbit/vw train-sets/rcv1_small.dat --holdout_after 100
+    COMMAND  python3 repeat.py 1024 ${CMAKE_CURRENT_BINARY_DIR}/../vowpalwabbit/vw train-sets/rcv1_small.dat --holdout_after 100
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 endif()
