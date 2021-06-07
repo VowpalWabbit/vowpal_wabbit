@@ -1,5 +1,9 @@
-pr:
+trigger:
 - master
+- 'releases/**'
+
+pr:
+- '*'
 
 pool:
   vmImage: 'ubuntu-16.04'
