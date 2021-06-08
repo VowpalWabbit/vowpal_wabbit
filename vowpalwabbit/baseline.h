@@ -6,7 +6,7 @@
 
 #include "reductions_fwd.h"
 
-VW::LEARNER::base_learner* baseline_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* baseline_setup(setup_base_fn setup_base_fn, VW::config::options_i& options, vw& all);
 
 namespace BASELINE
 {

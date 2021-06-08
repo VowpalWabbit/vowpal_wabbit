@@ -183,7 +183,7 @@ float sensitivity(baseline& data, base_learner& base, example& ec)
   return baseline_sens + sens;
 }
 
-base_learner* baseline_setup(options_i& options, vw& all)
+base_learner* baseline_setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<baseline>();
   bool baseline_option = false;
@@ -214,7 +214,7 @@ base_learner* baseline_setup(options_i& options, vw& all)
   auto loss_function_type = all.loss->getType();
   if (loss_function_type != "logistic") data->lr_scaling = true;
 
-  auto base = as_singleline(setup_base(options, all));
+  auto base = as_singleline(setup_base_fn(options, all));
 
   learner<baseline, example>& l =
       init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(baseline_setup));

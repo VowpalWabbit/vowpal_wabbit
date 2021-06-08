@@ -159,7 +159,7 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-LEARNER::base_learner* setup(config::options_i& options, vw& all)
+LEARNER::base_learner* setup(setup_base_fn setup_base_fn, config::options_i& options, vw& all)
 {
   option_group_definition new_options("Continuous action tree with smoothing with full pdf");
   int num_actions = 0;
@@ -179,7 +179,7 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   if (!options.was_supplied("get_pmf")) options.insert("get_pmf", "");
   options.insert("cats_tree", std::to_string(num_actions));
 
-  LEARNER::base_learner* p_base = setup_base(options, all);
+  LEARNER::base_learner* p_base = setup_base_fn(options, all);
   bool always_predict = all.final_prediction_sink.size() > 0;
   auto p_reduction = scoped_calloc_or_throw<cats_pdf>(as_singleline(p_base), always_predict);
 

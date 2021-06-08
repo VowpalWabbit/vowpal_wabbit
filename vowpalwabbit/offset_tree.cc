@@ -249,7 +249,7 @@ void learn(offset_tree& tree, single_learner& base, example& ec)
   copy_to_action_scores(saved_scores, ec.pred.a_s);
 }
 
-base_learner* setup(VW::config::options_i& options, vw& all)
+base_learner* setup(setup_base_fn setup_base_fn, VW::config::options_i& options, vw& all)
 {
   option_group_definition new_options("Offset tree Options");
   uint32_t num_actions;
@@ -266,7 +266,7 @@ base_learner* setup(VW::config::options_i& options, vw& all)
   auto otree = scoped_calloc_or_throw<offset_tree>(num_actions);
   otree->init();
 
-  base_learner* base = setup_base(options, all);
+  base_learner* base = setup_base_fn(options, all);
 
   learner<offset_tree, example>& l = init_learner(otree, as_singleline(base), learn, predict, otree->learner_count(),
       prediction_type_t::action_probs, all.get_setupfn_name(setup));

@@ -73,7 +73,7 @@ void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
 
     Related files: cb_algs.cc, cb_explore.cc, cbify.cc
 */
-VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* cb_to_cb_adf_setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   bool compat_old_cb = false;
   bool force_legacy = false;
@@ -133,7 +133,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   {
     options.insert("cb_explore_adf", "");
     // no need to register custom predict/learn, cbify will take care of that
-    return setup_base(options, all);
+    return setup_base_fn(options, all);
   }
 
   // user specified "cb_explore" but we're not using an old model file
@@ -152,7 +152,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   data->explore_mode = override_cb_explore;
   data->weights = &(all.weights);
 
-  multi_learner* base = as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(setup_base_fn(options, all));
 
   learner<cb_to_cb_adf, example>* l;
 

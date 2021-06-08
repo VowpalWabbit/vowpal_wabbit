@@ -60,7 +60,7 @@ void finish_example(vw& all, multi_oaa&, example& ec)
   VW::finish_example(all, ec);
 }
 
-VW::LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* multilabel_oaa_setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<multi_oaa>();
   option_group_definition new_options("Multilabel One Against All");
@@ -69,7 +69,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  VW::LEARNER::learner<multi_oaa, example>& l = VW::LEARNER::init_learner(data, as_singleline(setup_base(options, all)),
+  VW::LEARNER::learner<multi_oaa, example>& l = VW::LEARNER::init_learner(data, as_singleline(setup_base_fn(options, all)),
       predict_or_learn<true>, predict_or_learn<false>, data->k, prediction_type_t::multilabels,
       all.get_setupfn_name(multilabel_oaa_setup), true);
   l.set_finish_example(finish_example);

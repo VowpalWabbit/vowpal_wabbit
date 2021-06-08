@@ -131,7 +131,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 
 void finish_example(vw& all, csoaa&, example& ec) { COST_SENSITIVE::finish_example(all, ec); }
 
-base_learner* csoaa_setup(options_i& options, vw& all)
+base_learner* csoaa_setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   auto c = scoped_calloc_or_throw<csoaa>();
   option_group_definition new_options("Cost Sensitive One Against All");
@@ -143,7 +143,7 @@ base_learner* csoaa_setup(options_i& options, vw& all)
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
 
   learner<csoaa, example>& l = init_learner(
-      c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>, predict_or_learn<false>, c->num_classes,
+      c, as_singleline(setup_base_fn(*all.options, all)), predict_or_learn<true>, predict_or_learn<false>, c->num_classes,
       prediction_type_t::multiclass, all.get_setupfn_name(csoaa_setup), true /*csoaa.learn calls gd.learn. nothing to be
                                                                                 gained by calling csoaa.predict first*/
   );
@@ -817,7 +817,7 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
   return ret;
 }
 
-base_learner* csldf_setup(options_i& options, vw& all)
+base_learner* csldf_setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   auto ld = scoped_calloc_or_throw<ldf>();
 
@@ -899,7 +899,7 @@ base_learner* csldf_setup(options_i& options, vw& all)
   ld->label_features.reserve(256);
 
   ld->read_example_this_loop = 0;
-  single_learner* pbase = as_singleline(setup_base(*all.options, all));
+  single_learner* pbase = as_singleline(setup_base_fn(*all.options, all));
   learner<ldf, multi_ex>* pl = nullptr;
 
   std::string name = all.get_setupfn_name(csldf_setup);

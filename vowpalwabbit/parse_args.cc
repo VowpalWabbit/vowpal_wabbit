@@ -1237,7 +1237,7 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
 
   // 'hacky' way of keeping track of the option group created by the setup_func about to be created
   options.tint(setup_func_name);
-  auto base = setup_func(options, all);
+  auto base = setup_func(&setup_base, options, all);
   options.reset_tint();
 
   // returning nullptr means that setup_func (any reduction) was not 'enabled' but
@@ -1268,7 +1268,7 @@ void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
     if (allowlist.count(setup_fn)) { all.reduction_stack.push_back(std::make_tuple(allowlist[setup_fn], setup_fn)); }
     else
     {
-      auto base = setup_fn(name_extractor, dummy_all);
+      auto base = setup_fn(&setup_base, name_extractor, dummy_all);
 
       if (base == nullptr)
         all.reduction_stack.push_back(std::make_tuple(name_extractor.generated_name, setup_fn));

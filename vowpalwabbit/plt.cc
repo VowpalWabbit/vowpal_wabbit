@@ -322,7 +322,7 @@ void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
 
 using namespace plt_ns;
 
-base_learner* plt_setup(options_i& options, vw& all)
+base_learner* plt_setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   auto tree = scoped_calloc_or_throw<plt>();
   option_group_definition new_options("Probabilistic Label Tree ");
@@ -369,10 +369,10 @@ base_learner* plt_setup(options_i& options, vw& all)
 
   learner<plt, example>* l;
   if (tree->top_k > 0)
-    l = &init_learner(tree, as_singleline(setup_base(options, all)), learn, predict<false>, tree->t,
+    l = &init_learner(tree, as_singleline(setup_base_fn(options, all)), learn, predict<false>, tree->t,
         prediction_type_t::multilabels, all.get_setupfn_name(plt_setup) + "-top_k", true);
   else
-    l = &init_learner(tree, as_singleline(setup_base(options, all)), learn, predict<true>, tree->t,
+    l = &init_learner(tree, as_singleline(setup_base_fn(options, all)), learn, predict<true>, tree->t,
         prediction_type_t::multilabels, all.get_setupfn_name(plt_setup), true);
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;

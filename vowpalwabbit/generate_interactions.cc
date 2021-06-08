@@ -61,7 +61,7 @@ inline void multipredict(INTERACTIONS::interactions_generator& data, VW::LEARNER
   ec.interactions = saved_interactions;
 }
 
-VW::LEARNER::base_learner* generate_interactions_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* generate_interactions_setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   bool leave_duplicate_interactions;
   option_group_definition new_options("Generate interactions");
@@ -108,7 +108,7 @@ VW::LEARNER::base_learner* generate_interactions_setup(options_i& options, vw& a
   }
 
   auto data = VW::make_unique<INTERACTIONS::interactions_generator>();
-  auto* base = as_singleline(setup_base(options, all));
+  auto* base = as_singleline(setup_base_fn(options, all));
   auto* l = VW::LEARNER::make_reduction_learner(
       std::move(data), base, learn_func, pred_func, all.get_setupfn_name(generate_interactions_setup))
                 .set_learn_returns_prediction(base->learn_returns_prediction)

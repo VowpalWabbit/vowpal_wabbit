@@ -486,7 +486,7 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 
 using namespace recall_tree_ns;
 
-base_learner* recall_tree_setup(options_i& options, vw& all)
+base_learner* recall_tree_setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   auto tree = scoped_calloc_or_throw<recall_tree>();
   option_group_definition new_options("Recall Tree");
@@ -520,7 +520,7 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
                                           : "n/a testonly")
                          << std::endl;
 
-  learner<recall_tree, example>& l = init_multiclass_learner(tree, as_singleline(setup_base(options, all)), learn,
+  learner<recall_tree, example>& l = init_multiclass_learner(tree, as_singleline(setup_base_fn(options, all)), learn,
       predict, all.example_parser, tree->max_routers + tree->k, all.get_setupfn_name(recall_tree_setup));
   all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   l.set_save_load(save_load_tree);

@@ -221,7 +221,7 @@ void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
   }
 }
 
-VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(setup_base_fn setup_base_fn, config::options_i& options, vw& all)
 {
   using config::make_option;
 
@@ -289,7 +289,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   // Cover is using doubly robust without the cooperation of the base reduction
   if (cb_type_enum == CB_TYPE_MTR) { problem_multiplier *= 2; }
 
-  VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(setup_base(options, all));
+  VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(setup_base_fn(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool epsilon_decay;

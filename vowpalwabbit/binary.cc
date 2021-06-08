@@ -49,7 +49,7 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
   }
 }
 
-VW::LEARNER::base_learner* binary_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* binary_setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   bool binary = false;
   option_group_definition new_options("Binary loss");
@@ -58,7 +58,7 @@ VW::LEARNER::base_learner* binary_setup(options_i& options, vw& all)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  VW::LEARNER::learner<char, example>& ret = VW::LEARNER::init_learner(as_singleline(setup_base(options, all)),
+  VW::LEARNER::learner<char, example>& ret = VW::LEARNER::init_learner(as_singleline(setup_base_fn(options, all)),
       predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(binary_setup), true);
   return make_base(ret);
 }

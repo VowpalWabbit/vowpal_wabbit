@@ -232,7 +232,7 @@ void learn_or_predict(slates_data& data, VW::LEARNER::multi_learner& base, multi
   }
 }
 
-VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* slates_setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   auto data = VW::make_unique<slates_data>();
   bool slates_option = false;
@@ -247,7 +247,7 @@ VW::LEARNER::base_learner* slates_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
-  auto* base = as_multiline(setup_base(options, all));
+  auto* base = as_multiline(setup_base_fn(options, all));
   all.example_parser->lbl_parser = slates_label_parser;
   auto* l = VW::LEARNER::make_reduction_learner(
       std::move(data), base, learn_or_predict<true>, learn_or_predict<false>, all.get_setupfn_name(slates_setup))

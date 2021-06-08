@@ -335,7 +335,7 @@ void learn(cats_tree& tree, single_learner& base, example& ec)
   VW_DBG(ec) << "tree_c: after tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
 }
 
-base_learner* setup(options_i& options, vw& all)
+base_learner* setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   option_group_definition new_options("CATS Tree Options");
   uint32_t num_actions;  // = K = 2^D
@@ -364,7 +364,7 @@ base_learner* setup(options_i& options, vw& all)
   tree->init(num_actions, bandwidth);
   tree->set_trace_message(all.trace_message.get(), all.logger.quiet);
 
-  base_learner* base = setup_base(options, all);
+  base_learner* base = setup_base_fn(options, all);
 
   learner<cats_tree, example>& l = init_learner(tree, as_singleline(base), learn, predict, tree->learner_count(),
       prediction_type_t::multiclass, all.get_setupfn_name(setup));

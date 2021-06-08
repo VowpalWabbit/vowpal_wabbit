@@ -28,4 +28,5 @@ namespace config
 {
 struct options_i;
 }  // namespace config
+typedef VW::LEARNER::base_learner* (*setup_base_fn)(VW::config::options_i&, vw&);
 }  // namespace VW

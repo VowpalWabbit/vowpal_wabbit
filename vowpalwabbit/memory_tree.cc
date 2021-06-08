@@ -1218,7 +1218,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
 //////////////////////////////End of Save & Load///////////////////////////////
 }  // namespace memory_tree_ns
 
-base_learner* memory_tree_setup(options_i& options, vw& all)
+base_learner* memory_tree_setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   using namespace memory_tree_ns;
   auto tree = scoped_calloc_or_throw<memory_tree>();
@@ -1274,7 +1274,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   if (tree->oas == false)
   {
     num_learners = tree->max_nodes + 1;
-    learner<memory_tree, example>& l = init_multiclass_learner(tree, as_singleline(setup_base(options, all)), learn,
+    learner<memory_tree, example>& l = init_multiclass_learner(tree, as_singleline(setup_base_fn(options, all)), learn,
         predict, all.example_parser, num_learners, all.get_setupfn_name(memory_tree_setup));
     all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
     // srand(time(0));
@@ -1286,7 +1286,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   else
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
-    learner<memory_tree, example>& l = init_learner(tree, as_singleline(setup_base(options, all)), learn, predict,
+    learner<memory_tree, example>& l = init_learner(tree, as_singleline(setup_base_fn(options, all)), learn, predict,
         num_learners, prediction_type_t::multilabels, all.get_setupfn_name(memory_tree_setup));
 
     l.set_end_pass(end_pass);

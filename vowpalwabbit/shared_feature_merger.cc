@@ -90,7 +90,7 @@ void persist(sfm_data& data, metric_sink& metrics)
   }
 }
 
-VW::LEARNER::base_learner* shared_feature_merger_setup(config::options_i& options, vw& all)
+VW::LEARNER::base_learner* shared_feature_merger_setup(setup_base_fn setup_base_fn, config::options_i& options, vw& all)
 {
   if (!use_reduction(options)) return nullptr;
 
@@ -98,7 +98,7 @@ VW::LEARNER::base_learner* shared_feature_merger_setup(config::options_i& option
 
   if (options.was_supplied("extra_metrics")) data->_metrics = VW::make_unique<sfm_metrics>();
 
-  auto* base = VW::LEARNER::as_multiline(setup_base(options, all));
+  auto* base = VW::LEARNER::as_multiline(setup_base_fn(options, all));
 
   auto& learner = VW::LEARNER::init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>,
       all.get_setupfn_name(shared_feature_merger_setup), base->learn_returns_prediction);

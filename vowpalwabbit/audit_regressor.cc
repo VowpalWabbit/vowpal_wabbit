@@ -239,7 +239,7 @@ void init_driver(audit_regressor_data& dat)
   }
 }
 
-VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* audit_regressor_setup(VW::setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   std::string out_file;
 
@@ -265,7 +265,7 @@ VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   dat->out_file->add_file(VW::io::open_file_writer(out_file));
 
   VW::LEARNER::learner<audit_regressor_data, example>& ret =
-      VW::LEARNER::init_learner(dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1,
+      VW::LEARNER::init_learner(dat, as_singleline(setup_base_fn(options, all)), audit_regressor, audit_regressor, 1,
           all.get_setupfn_name(audit_regressor_setup), true /*audit.learn does not predict or learn.
                                                                nothing to be gained by calling
                                                                predict() before learn()*/

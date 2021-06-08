@@ -408,7 +408,7 @@ void finish_example(vw& all, nn&, example& ec)
   return_simple_example(all, nullptr, ec);
 }
 
-base_learner* nn_setup(options_i& options, vw& all)
+base_learner* nn_setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   auto n = scoped_calloc_or_throw<nn>();
   bool meanfield = false;
@@ -454,7 +454,7 @@ base_learner* nn_setup(options_i& options, vw& all)
   n->hidden_units_pred = calloc_or_throw<polyprediction>(n->k);
   n->hiddenbias_pred = calloc_or_throw<polyprediction>(n->k);
 
-  auto base = as_singleline(setup_base(options, all));
+  auto base = as_singleline(setup_base_fn(options, all));
   n->increment = base->increment;  // Indexing of output layer is odd.
   nn& nv = *n.get();
   learner<nn, example>& l = init_learner(n, base, predict_or_learn_multi<true, true>,

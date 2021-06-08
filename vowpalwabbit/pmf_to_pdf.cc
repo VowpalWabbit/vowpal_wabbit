@@ -238,7 +238,7 @@ void finish_example(vw& all, reduction& c, example& ec)
   VW::finish_example(all, ec);
 }
 
-base_learner* setup(options_i& options, vw& all)
+base_learner* setup(setup_base_fn setup_base_fn, options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<pmf_to_pdf::reduction>();
 
@@ -299,7 +299,7 @@ base_learner* setup(options_i& options, vw& all)
 
   options.replace("tree_bandwidth", std::to_string(data->tree_bandwidth));
 
-  auto p_base = as_singleline(setup_base(options, all));
+  auto p_base = as_singleline(setup_base_fn(options, all));
   data->_p_base = p_base;
 
   learner<pmf_to_pdf::reduction, example>& l =
