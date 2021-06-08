@@ -28,9 +28,14 @@ const std::set<namespace_index>& namespaced_features::get_indices() const { retu
 namespace_index namespaced_features::get_index_for_hash(uint64_t hash) const
 {
   auto it = _hash_to_index_mapping.find(hash);
-#ifndef VW_NOEXCEPT
-  if (it == _hash_to_index_mapping.end()) { THROW("No index found for hash: " << hash); }
+  if (it == _hash_to_index_mapping.end())
+  {
+#ifdef VW_NOEXCEPT
+    return {};
+#else
+    THROW("No index found for hash: " << hash);
 #endif
+  }
   return _namespace_indices[it->second];
 }
 
@@ -65,22 +70,25 @@ features& namespaced_features::get_or_create_feature_group(uint64_t hash, namesp
   return *existing_group;
 }
 
+// This operation is only allowed in code that allows exceptions.
+// get_feature_group should be used instead for noexcept code
+#ifndef VW_NOEXCEPT
 const features& namespaced_features::operator[](uint64_t hash) const
 {
   auto* existing_group = get_feature_group(hash);
-#ifndef VW_NOEXCEPT
   if (existing_group == nullptr) { THROW("No group found for hash: " << hash); }
-#endif
   return *existing_group;
 }
+#endif
+
+#ifndef VW_NOEXCEPT
 features& namespaced_features::operator[](uint64_t hash)
 {
   auto* existing_group = get_feature_group(hash);
-#ifndef VW_NOEXCEPT
   if (existing_group == nullptr) { THROW("No group found for hash: " << hash); }
-#endif
   return *existing_group;
 }
+#endif
 
 void namespaced_features::remove_feature_group(uint64_t hash)
 {
