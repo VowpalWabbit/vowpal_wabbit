@@ -146,8 +146,11 @@ struct namespaced_features
   // Creating new feature groups will invalidate any pointers or references held.
   features& get_or_create_feature_group(uint64_t hash, namespace_index ns_index);
 
+#ifndef VW_NOEXCEPT
+  // These will throw if the hash does not exist
   const features& operator[](uint64_t hash) const;
   features& operator[](uint64_t hash);
+#endif
 
   // Removing a feature group will invalidate any pointers or references held.
   void remove_feature_group(uint64_t hash);
