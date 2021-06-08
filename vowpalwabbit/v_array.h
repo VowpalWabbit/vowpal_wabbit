@@ -158,7 +158,6 @@ public:
   {
     if (this == &other) return *this;
 
-    delete_v_array();
     copy_into_this(other);
     return *this;
   }

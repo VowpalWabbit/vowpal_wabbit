@@ -1,39 +1,9 @@
 trigger:
-  branches:
-    include:
-    - master
-    - 'releases/**'
-  paths:
-    include:
-    - .pipelines/build-windows-nuget.yml
-    # Windows scripts in the root of that folder
-    - .scripts/*
-    - cluster/**
-    - cmake/**
-    - explore/**
-    - ext_libs/**
-    - test/**
-    - vowpalwabbit/**
-    - CMakeLists.txt
-    - version.txt
+- master
+- 'releases/**'
 
 pr:
-  branches:
-    include:
-    - '*'
-  paths:
-    include:
-    - .pipelines/build-windows-nuget.yml
-    # Windows scripts in the root of that folder
-    - .scripts/*
-    - cluster/**
-    - cmake/**
-    - explore/**
-    - ext_libs/**
-    - test/**
-    - vowpalwabbit/**
-    - CMakeLists.txt
-    - version.txt
+- '*'
 
 resources:
 - repo: self
