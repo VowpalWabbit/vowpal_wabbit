@@ -57,7 +57,6 @@ public:
   VW::string_view _line;
   size_t _read_idx;
   float _cur_channel_v;
-  bool _new_index;
   size_t _anon;
   uint64_t _channel_hash;
   VW::string_view _base;
@@ -209,7 +208,7 @@ public:
       }
 
       if (_v == 0) return;  // dont add 0 valued features to list of features
-      features& fs = _ae->feature_space[_index];
+      features& fs = _ae->feature_space.get_or_create_feature_group(_channel_hash, _index);
       fs.push_back(_v, word_hash);
 
       if (audit)
@@ -228,8 +227,7 @@ public:
 
       if (((*_affix_features)[_index] > 0) && (!feature_name.empty()))
       {
-        features& affix_fs = _ae->feature_space[affix_namespace];
-        if (affix_fs.size() == 0) _ae->indices.push_back(affix_namespace);
+        features& affix_fs = _ae->feature_space.get_or_create_feature_group(affix_namespace, affix_namespace);
         uint64_t affix = (*_affix_features)[_index];
 
         while (affix > 0)
@@ -264,8 +262,7 @@ public:
       }
       if ((*_spelling_features)[_index])
       {
-        features& spell_fs = _ae->feature_space[spelling_namespace];
-        if (spell_fs.size() == 0) _ae->indices.push_back(spelling_namespace);
+        features& spell_fs = _ae->feature_space.get_or_create_feature_group(spelling_namespace, spelling_namespace);
         // v_array<char> spelling;
         _spelling.clear();
         for (char c : feature_name)
@@ -312,7 +309,8 @@ public:
           if ((feats_it != map->end()) && (feats_it->second->values.size() > 0))
           {
             const auto& feats = feats_it->second;
-            features& dict_fs = _ae->feature_space[dictionary_namespace];
+            features& dict_fs =
+                _ae->feature_space.get_or_create_feature_group(dictionary_namespace, dictionary_namespace);
             if (dict_fs.size() == 0) _ae->indices.push_back(dictionary_namespace);
             dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
             dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
@@ -376,7 +374,6 @@ public:
       // NameSpaceInfo --> 'String' NameSpaceInfoValue
       _index = (unsigned char)(_line[_read_idx]);
       if (_redefine_some) _index = (*_redefine)[_index];  // redefine _index
-      if (_ae->feature_space[_index].size() == 0) _new_index = true;
       VW::string_view name = read_name();
       if (audit) { _base = name; }
       _channel_hash = _p->hasher(name.begin(), name.length(), this->_hash_seed);
@@ -403,14 +400,12 @@ public:
   {
     _cur_channel_v = 1.0;
     _index = 0;
-    _new_index = false;
     _anon = 0;
     if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
         _line[_read_idx] == '\r')
     {
       // NameSpace --> ListFeatures
       _index = static_cast<unsigned char>(' ');
-      if (_ae->feature_space[_index].size() == 0) _new_index = true;
       if (audit)
       {
         // TODO: c++17 allows VW::string_view literals, eg: " "sv
@@ -432,7 +427,6 @@ public:
       parserWarning(
           "malformed example! '|',String,space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
     }
-    if (_new_index && _ae->feature_space[_index].size() > 0) _ae->indices.push_back(_index);
   }
 
   inline FORCE_INLINE void listNameSpace()
