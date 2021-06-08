@@ -402,14 +402,16 @@ VW::LEARNER::base_learner* boosting_setup(setup_base_fn setup_base_fn, options_i
         predict_or_learn<false>, data->N, all.get_setupfn_name(boosting_setup));
   else if (data->alg == "logistic")
   {
-    l = &init_learner<boosting, example>(data, as_singleline(setup_base_fn(options, all)), predict_or_learn_logistic<true>,
-        predict_or_learn_logistic<false>, data->N, all.get_setupfn_name(boosting_setup) + "-logistic");
+    l = &init_learner<boosting, example>(data, as_singleline(setup_base_fn(options, all)),
+        predict_or_learn_logistic<true>, predict_or_learn_logistic<false>, data->N,
+        all.get_setupfn_name(boosting_setup) + "-logistic");
     l->set_save_load(save_load);
   }
   else if (data->alg == "adaptive")
   {
-    l = &init_learner<boosting, example>(data, as_singleline(setup_base_fn(options, all)), predict_or_learn_adaptive<true>,
-        predict_or_learn_adaptive<false>, data->N, all.get_setupfn_name(boosting_setup) + "-adaptive");
+    l = &init_learner<boosting, example>(data, as_singleline(setup_base_fn(options, all)),
+        predict_or_learn_adaptive<true>, predict_or_learn_adaptive<false>, data->N,
+        all.get_setupfn_name(boosting_setup) + "-adaptive");
     l->set_save_load(save_load_sampling);
   }
   else
