@@ -48,56 +48,6 @@ class DFtoVWtoTensorboard:
 
 
 	#------------------------------------------------------------------------------------------------		
-	def _calculate_average_loss(self, sum_loss, weighted_examples):
-		"""Calculate average loss
-
-		Parameters
-		----------
-
-		sum_loss			: float
-								This is the sum loss which is used to calculate average_loss
-		weighted_examples   : float
-								This is the weighted_example which is used to calculate average_loss
-
-		Returns
-		-------
-
-		average_loss      : float
-								average_loss calculated by sum_loss and weigted_examples or if ZeroDivisionError is encountered then 0. is returned 
-		""" 
-		try:
-			return sum_loss / weighted_examples
-
-		except ZeroDivisionError:
-			return 0.
-
-
-	#------------------------------------------------------------------------------------------------		
-	def _calculate_since_last(self, sum_loss_since_last, weighted_examples_since_last):
-		"""Calculate since last 
-
-		Parameters
-		----------
-
-		sum_loss_since_last          : float
-										This is the difference between current iteration's sum_loss and previous iteration's sum_loss which is used to calculate since_last
-		weighted_examples_since_last : float
-										This is the difference between current iteration's weighted_examples and previous iteration's weighted_examples which is used to calculate since_last
-
-		Returns
-		-------
-
-		since_last      : float
-							since_last calculated using sum_loss_since_last and weighted_examples_since_last or if ZeroDivisionError is encountered then 0. is returned 
-		""" 
-		try:
-			return sum_loss_since_last / weighted_examples_since_last
-
-		except ZeroDivisionError:
-			return 0.
-
-
-	#------------------------------------------------------------------------------------------------		
 	def _print_metrics(self, average_loss, since_last, label, prediction, num_features):
 		"""This method prints metrics
 
@@ -128,16 +78,20 @@ class DFtoVWtoTensorboard:
 
 
 	#------------------------------------------------------------------------------------------------		
-	def fit(self, vw_to_tensorboard=None):
+	def fit(self, print_metrics=False, vw_to_tensorboard=None):
 		"""Learns on the relevant examples and can also log metrics for tensorboard visualization
 
 		Parameters
 		----------
 
+		print_metrics      : boolean
+								Default value is False, this parameter is used to control the printing of metrics computed
+								If value is True then metrics are computed and printed
+								If value is False then metrics are not computed and not printed
 		vw_to_tensorboard  : VWtoTensorboard object 
 								Default value is None, this parameter is used to control the logging of metrics for Tensorboard visualization
-								If value is VWtoTensorboard object : metrics are logged for Tensorboard visualization
-								If value is None : metrics are not logged for Tensorboard visualization
+								If value is VWtoTensorboard object : metrics are computed and logged for Tensorboard visualization
+								If value is None : metrics are not computed and not logged for Tensorboard visualization
 
 		Returns
 		-------
@@ -147,36 +101,35 @@ class DFtoVWtoTensorboard:
 		if isinstance(vw_to_tensorboard, VWtoTensorboard):
 			file_writer = tx.SummaryWriter(vw_to_tensorboard.logdir)   # creating file writer
 		
-		sum_loss = 0.
-		weighted_examples = 0.
+		if (print_metrics or vw_to_tensorboard):
+			sum_loss = 0.
+			weighted_examples = 0.
 
 		for iteration, vw_format in enumerate(self.vw_formatted_data):
 			example = self.vw.parse(vw_format)       # parse the string format, it returns an example object
 			self.vw.learn(example)                  # learn on example
 
-			label = pyvw.get_label(example, self.vw.get_label_type())
-			prediction = pyvw.get_prediction(example, self.vw.get_prediction_type())
-			num_features = example.get_feature_number()    
+			if (print_metrics or vw_to_tensorboard):
+				label = pyvw.get_label(example, self.vw.get_label_type())
+				prediction = pyvw.get_prediction(example, self.vw.get_prediction_type())
+				num_features = example.get_feature_number()
 
 			self.vw.finish_example(example)  # Any use of vw object should be done after this and use of example before this 
 
-			sum_loss_since_last = self.vw.get_sum_loss() - sum_loss  # vw.get_sum_loss() return current sum loss, sum_loss variable right now holds sum loss of previous iteration
-			weighted_examples_since_last = self.vw.get_weighted_examples() - weighted_examples  # vw.get_weighted_examples() return current weighted examples(sum),  weighted_examples variable right now holds weighted examples of previous iteration		        
-		
-			sum_loss = self.vw.get_sum_loss()  # Now sum_loss no longer hold previous iteration's sum_loss
-			weighted_examples = self.vw.get_weighted_examples()  # Now weighted_examples no longer hold previous iteration's weighted examples
-		
-			average_loss = self._calculate_average_loss(sum_loss, weighted_examples)
-			since_last = self._calculate_since_last(sum_loss_since_last, weighted_examples_since_last)
-		
-			self._print_metrics(average_loss, since_last, label, prediction, num_features)
+			if (print_metrics or vw_to_tensorboard):
+				sum_loss_since_last = self.vw.get_sum_loss() - sum_loss  # vw.get_sum_loss() return current sum loss, sum_loss variable right now holds sum loss of previous iteration
+				weighted_examples_since_last = self.vw.get_weighted_examples() - weighted_examples  # vw.get_weighted_examples() return current weighted examples(sum),  weighted_examples variable right now holds weighted examples of previous iteration		        
+
+				sum_loss = self.vw.get_sum_loss()  # Now sum_loss no longer hold previous iteration's sum_loss
+				weighted_examples = self.vw.get_weighted_examples()  # Now weighted_examples no longer hold previous iteration's weighted examples
+
+				average_loss = (sum_loss / weighted_examples) if weighted_examples != 0  else 0.0
+				since_last = (sum_loss_since_last / weighted_examples_since_last) if weighted_examples_since_last != 0  else 0.0
+
+			if print_metrics:
+				self._print_metrics(average_loss, since_last, label, prediction, num_features)
 
 			if isinstance(vw_to_tensorboard, VWtoTensorboard):
 				file_writer.add_scalar('average_loss', average_loss, iteration)  # logging average_loss on each iteration
 				file_writer.add_scalar('since_last', since_last, iteration)   # logging since_last on each iteration
-			#     file_writer.add_scalar('label' , label, iteration)
-			#     file_writer.add_scalar('prediction', prediction, iteration)
-			#     file_writer.add_histogram('label-prediction', [label, prediction], iteration)
-			#     file_writer.add_histogram('label', label, iteration)
-			#     file_writer.add_histogram('prediction', prediction, iteration)
-				file_writer.add_scalar('num_features', num_features, iteration)
+				file_writer.add_scalar('num_features', num_features, iteration)  # logging num_features on each iteration
