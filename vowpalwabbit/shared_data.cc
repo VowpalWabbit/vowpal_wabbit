@@ -163,9 +163,9 @@ void shared_data::update(bool test_example, bool labeled_example, float loss, fl
     weighted_holdout_examples += weight;  // test weight seen
     weighted_holdout_examples_since_last_dump += weight;
     weighted_holdout_examples_since_last_pass += weight;
-    holdout_sum_loss += loss * weight;
-    holdout_sum_loss_since_last_dump += loss * weight;
-    holdout_sum_loss_since_last_pass += loss * weight;  // since last pass
+    holdout_sum_loss += loss;
+    holdout_sum_loss_since_last_dump += loss;
+    holdout_sum_loss_since_last_pass += loss;  // since last pass
   }
   else
   {
@@ -173,8 +173,8 @@ void shared_data::update(bool test_example, bool labeled_example, float loss, fl
       weighted_labeled_examples += weight;
     else
       weighted_unlabeled_examples += weight;
-    sum_loss += loss * weight;
-    sum_loss_since_last_dump += loss * weight;
+    sum_loss += loss;
+    sum_loss_since_last_dump += loss;
     total_features += num_features;
     example_number++;
   }
