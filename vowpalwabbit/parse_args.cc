@@ -285,7 +285,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
 
     // clear up ec
     ec->tag.clear();
-    ec->indices.clear();
+    ec->feature_space.clear();
     for (size_t i = 0; i < 256; i++) { ec->feature_space[i].clear(); }
   } while ((rc != EOF) && (nread > 0));
   free(buffer);

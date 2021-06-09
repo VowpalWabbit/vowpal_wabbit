@@ -28,11 +28,20 @@ typedef unsigned char namespace_index;
 #  include <mutex>
 #endif
 
+struct indices_proxy_obj
+{
+  VW::namespaced_features* feature_space;
+
+  std::set<namespace_index>::iterator begin() { return feature_space->get_indices().begin(); }
+  std::set<namespace_index>::iterator end() { return feature_space->get_indices().end(); }
+  size_t size() { return feature_space->get_indices().size(); }
+};
+
 struct example_predict
 {
   using iterator = VW::namespaced_features::iterator;
 
-  example_predict() = default;
+  example_predict() { indices.feature_space = &feature_space; }
   ~example_predict() = default;
   example_predict(const example_predict&) = delete;
   example_predict& operator=(const example_predict&) = delete;
@@ -44,8 +53,10 @@ struct example_predict
   /// If feature_space is modified this iterator is invalidated.
   iterator end() { return feature_space.end(); }
 
+  indices_proxy_obj indices;
   VW::namespaced_features feature_space;
-  uint64_t ft_offset = 0;                              // An offset for all feature values.
+
+  uint64_t ft_offset = 0;  // An offset for all feature values.
 
   // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
   // vector is an interaction and each char is a namespace.

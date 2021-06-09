@@ -595,26 +595,39 @@ void print_update(search_private& priv)
   all.sd->update_dump_interval(all.progress_add, all.progress_arg);
 }
 
-void add_new_feature(search_private& priv, float val, uint64_t idx)
+struct add_new_feature_data
 {
-  uint64_t mask = priv.all->weights.mask();
-  size_t ss = priv.all->weights.stride_shift();
+  parameters* weights;
+  example* target_ex;
+  float val_multiplier;
+  uint64_t idx_base;
+  namespace_index target_namespace_index;
+  bool audit;
+  std::string namespace_name;
+  std::string audit_string_suffix;
+};
+
+void add_new_feature(add_new_feature_data& data, float val, uint64_t idx)
+{
+  uint64_t mask = data.weights->mask();
+  size_t ss = data.weights->stride_shift();
 
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
-  features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
-  fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
+  features& fs = data.target_ex->feature_space.get_or_create_feature_group(
+      data.target_namespace_index, data.target_namespace_index);
+  fs.push_back(val * data.val_multiplier, ((data.idx_base + idx2) << ss));
   cdbg << "adding: " << fs.indicies.back() << ':' << fs.values.back() << endl;
-  if (priv.all->audit)
+  if (data.audit)
   {
     std::stringstream temp;
-    temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
-    fs.space_names.push_back(audit_strings_ptr(new audit_strings(*priv.dat_new_feature_feature_space, temp.str())));
+    temp << "fid=" << ((idx & mask) >> ss) << "_" << data.audit_string_suffix;
+    fs.space_names.push_back(audit_strings_ptr(new audit_strings(data.namespace_name, temp.str())));
   }
 }
 
 void del_features_in_top_namespace(search_private& /* priv */, example& ec, size_t ns)
 {
-  if ((ec.indices.size() == 0) || (ec.indices.back() != ns))
+  if (ec.feature_space.get_indices().count(ns) == 0)
   {
     return;
     // if (ec.indices.size() == 0)
@@ -624,10 +637,9 @@ void del_features_in_top_namespace(search_private& /* priv */, example& ec, size
     //(size_t)ec.indices.last()); }
   }
   features& fs = ec.feature_space[ns];
-  ec.indices.pop_back();
   ec.num_features -= fs.size();
   ec.reset_total_sum_feat_sq();
-  fs.clear();
+  ec.feature_space.remove_feature_group(ns);
 }
 
 void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
@@ -643,26 +655,26 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
       int32_t offset = priv.neighbor_features[n_id] >> 24;
       size_t ns = priv.neighbor_features[n_id] & 0xFF;
 
-      priv.dat_new_feature_ec = &me;
-      priv.dat_new_feature_value = 1.;
-      priv.dat_new_feature_idx = priv.neighbor_features[n_id] * 13748127;
-      priv.dat_new_feature_namespace = neighbor_namespace;
+      std::stringstream ss;
       if (priv.all->audit)
       {
-        priv.dat_new_feature_feature_space = &neighbor_feature_space;
-        priv.dat_new_feature_audit_ss.str("");
-        priv.dat_new_feature_audit_ss << '@' << ((offset > 0) ? '+' : '-') << static_cast<char>(abs(offset) + '0');
-        if (ns != ' ') priv.dat_new_feature_audit_ss << static_cast<char>(ns);
+        ss << '@' << ((offset > 0) ? '+' : '-') << static_cast<char>(abs(offset) + '0');
+        if (ns != ' ') ss << static_cast<char>(ns);
       }
 
+      auto foreach_data = add_new_feature_data{&priv.all->weights, &me, 1.f, priv.neighbor_features[n_id] * 13748127,
+          neighbor_namespace, priv.all->audit, priv.all->audit ? neighbor_feature_space : "",
+          priv.all->audit ? ss.str() : ""};
+
       if ((offset < 0) && (n < static_cast<uint64_t>(-offset)))  // add <s> feature
-        add_new_feature(priv, 1., static_cast<uint64_t>(925871901) << stride_shift);
+        add_new_feature(foreach_data, 1., static_cast<uint64_t>(925871901) << stride_shift);
       else if (n + offset >= ec_seq.size())  // add </s> feature
-        add_new_feature(priv, 1., static_cast<uint64_t>(3824917) << stride_shift);
+        add_new_feature(foreach_data, 1., static_cast<uint64_t>(3824917) << stride_shift);
       else  // this is actually a neighbor
       {
         example& other = *ec_seq[n + offset];
-        GD::foreach_feature<search_private, add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
+        GD::foreach_feature<add_new_feature_data, add_new_feature>(
+            priv.all, other.feature_space[ns], foreach_data, me.ft_offset);
       }
     }
 
@@ -670,7 +682,6 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
     size_t sz = fs.size();
     if ((sz > 0) && (fs.sum_feat_sq > 0.))
     {
-      me.indices.push_back(neighbor_namespace);
       me.reset_total_sum_feat_sq();
       me.num_features += sz;
     }
@@ -797,27 +808,26 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
       uint64_t name = condition_on_names[i + n];
       fid = fid * 328901 + 71933 * ((condition_on_actions[i + n].a + 349101) * (name + 38490137));
 
-      priv.dat_new_feature_ec = &ec;
-      priv.dat_new_feature_idx = fid * quadratic_constant;
-      priv.dat_new_feature_namespace = conditioning_namespace;
-      priv.dat_new_feature_value = priv.acset.feature_value;
-
+      std::stringstream ss;
       if (priv.all->audit)
       {
-        if (n > 0) priv.dat_new_feature_audit_ss << ',';
+        if (n > 0) ss << ',';
         if ((33 <= name) && (name <= 126))
-          priv.dat_new_feature_audit_ss << name;
+          ss << name;
         else
-          priv.dat_new_feature_audit_ss << '#' << static_cast<int>(name);
-        priv.dat_new_feature_audit_ss << '=' << condition_on_actions[i + n].a;
+          ss << '#' << static_cast<int>(name);
+        ss << '=' << condition_on_actions[i + n].a;
       }
+
+      auto foreach_data = add_new_feature_data{&priv.all->weights, &ec, priv.acset.feature_value,
+          fid * quadratic_constant, conditioning_namespace, priv.all->audit, "", priv.all->audit ? ss.str() : ""};
 
       // add the single bias feature
       if (n < priv.acset.max_bias_ngram_length)
-        add_new_feature(priv, 1., static_cast<uint64_t>(4398201) << priv.all->weights.stride_shift());
+        add_new_feature(foreach_data, 1., static_cast<uint64_t>(4398201) << priv.all->weights.stride_shift());
       // add the quadratic features
       if (n < priv.acset.max_quad_ngram_length)
-        GD::foreach_feature<search_private, uint64_t, add_new_feature>(*priv.all, ec, priv);
+        GD::foreach_feature<add_new_feature_data, uint64_t, add_new_feature>(*priv.all, ec, foreach_data);
     }
   }
 
@@ -833,38 +843,29 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
         if ((fs.values[k] > 1e-10) || (fs.values[k] < -1e-10))
         {
           uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indicies[k]);
-          if (priv.all->audit)
-          {
-            priv.dat_new_feature_audit_ss.str("");
-            priv.dat_new_feature_audit_ss.clear();
-            priv.dat_new_feature_audit_ss << "passthrough_repr_" << i << '_' << k;
-          }
+          std::stringstream ss;
+          if (priv.all->audit) { ss << "passthrough_repr_" << i << '_' << k; }
 
-          priv.dat_new_feature_ec = &ec;
-          priv.dat_new_feature_idx = fid;
-          priv.dat_new_feature_namespace = conditioning_namespace;
-          priv.dat_new_feature_value = fs.values[k];
-          add_new_feature(priv, 1., static_cast<uint64_t>(4398201) << priv.all->weights.stride_shift());
+          auto foreach_data = add_new_feature_data{&priv.all->weights, &ec, fs.values[k], fid, conditioning_namespace,
+              priv.all->audit, "", priv.all->audit ? ss.str() : ""};
+
+          add_new_feature(foreach_data, 1., static_cast<uint64_t>(4398201) << priv.all->weights.stride_shift());
         }
     }
     cdbg << "END adding passthrough features" << endl;
   }
 
-  features& con_fs = ec.feature_space[conditioning_namespace];
-  if ((con_fs.size() > 0) && (con_fs.sum_feat_sq > 0.))
+  features* con_fs = ec.feature_space.get_feature_group(conditioning_namespace);
+  if (con_fs != nullptr)
   {
-    ec.indices.push_back(conditioning_namespace);
     ec.reset_total_sum_feat_sq();
-    ec.num_features += con_fs.size();
+    ec.num_features += con_fs->size();
   }
-  else
-    con_fs.clear();
 }
 
 void del_example_conditioning(search_private& priv, example& ec)
 {
-  if ((ec.indices.size() > 0) && (ec.indices.back() == conditioning_namespace))
-    del_features_in_top_namespace(priv, ec, conditioning_namespace);
+  del_features_in_top_namespace(priv, ec, conditioning_namespace);
 }
 
 inline size_t cs_get_costs_size(bool isCB, polylabel& ld) { return isCB ? ld.cb.costs.size() : ld.cs.costs.size(); }
@@ -2036,8 +2037,8 @@ void verify_active_csoaa(
       if (err > threshold)
       {
         logger::errlog_error("verify_active_csoaa failed: truth {0}:{1}, known[{2}]={3}, error={4} vs threshold {5}",
-                             wc.class_index /*0*/, wc.x/*1*/, i/*2*/, known[i].first.partial_prediction/*3*/,
-                             err/*4*/, threshold/*5*/);
+            wc.class_index /*0*/, wc.x /*1*/, i /*2*/, known[i].first.partial_prediction /*3*/, err /*4*/,
+            threshold /*5*/);
       }
     }
     i++;
@@ -2480,13 +2481,9 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
   while ((rd = fscanf_s(f, "%d:%d", &from, &to)) > 0)
   {
     if ((from < 0) || (from > static_cast<int>(A)))
-    {
-      logger::errlog_warn("warning: ignoring transition from {0} because it's out of the range [0,{1}]", from, A);
-    }
+    { logger::errlog_warn("warning: ignoring transition from {0} because it's out of the range [0,{1}]", from, A); }
     if ((to < 0) || (to > static_cast<int>(A)))
-    {
-      logger::errlog_warn("warning: ignoring transition to {0} because it's out of the range [0,{1}]", to, A);
-    }
+    { logger::errlog_warn("warning: ignoring transition to {0} because it's out of the range [0,{1}]", to, A); }
     bg[from * (A + 1) + to] = true;
     count++;
   }
@@ -2722,8 +2719,9 @@ base_learner* setup(options_i& options, vw& all)
     priv.total_number_of_policies = tmp_number_of_policies;
     if (priv.current_policy >
         0)  // we loaded a file but total number of policies didn't match what is needed for training
-      logger::errlog_warn("warning: you're attempting to train more classifiers than was allocated initially. "
-                          "Likely to cause bad performance.");
+      logger::errlog_warn(
+          "warning: you're attempting to train more classifiers than was allocated initially. "
+          "Likely to cause bad performance.");
   }
 
   // current policy currently points to a new policy we would train
@@ -2945,8 +2943,7 @@ void search::set_options(uint32_t opts)
 
   if (this->priv->use_action_costs && (this->priv->rollout_method != NO_ROLLOUT))
     logger::errlog_warn(
-      "warning: task is designed to use rollout costs, but this only works when --search_rollout none is specified"
-    );
+        "warning: task is designed to use rollout costs, but this only works when --search_rollout none is specified");
 }
 
 void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
@@ -2990,14 +2987,7 @@ void search::set_force_oracle(bool force) { this->priv->force_oracle = force; }
 
 // predictor implementation
 predictor::predictor(search& sch, ptag my_tag)
-    : is_ldf(false)
-    , my_tag(my_tag)
-    , ec(nullptr)
-    , ec_cnt(0)
-    , ec_alloced(false)
-    , weight(1.)
-    , learner_id(0)
-    , sch(sch)
+    : is_ldf(false), my_tag(my_tag), ec(nullptr), ec_cnt(0), ec_alloced(false), weight(1.), learner_id(0), sch(sch)
 {
   oracle_actions = v_init<action>();
   condition_on_tags = v_init<ptag>();
@@ -3018,10 +3008,7 @@ void predictor::free_ec()
   }
 }
 
-predictor::~predictor()
-{
-  free_ec();
-}
+predictor::~predictor() { free_ec(); }
 
 predictor& predictor::reset()
 {

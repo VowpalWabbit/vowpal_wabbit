@@ -79,9 +79,9 @@ void init_global(baseline& data)
 {
   if (!data.global_only) return;
   // use a separate global constant
-  data.ec->indices.push_back(constant_namespace);
+  auto& constant_ns = data.ec->feature_space.get_or_create_feature_group(constant_namespace, constant_namespace);
   // different index from constant to avoid conflicts
-  data.ec->feature_space[constant_namespace].push_back(
+  constant_ns.push_back(
       1, ((constant - 17) * data.all->wpp) << data.all->weights.stride_shift());
   data.ec->reset_total_sum_feat_sq();
   data.ec->num_features++;

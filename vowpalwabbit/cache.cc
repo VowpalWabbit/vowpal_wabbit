@@ -84,9 +84,9 @@ int read_cached_features(vw* all, v_array<example*>& examples)
   c += sizeof(newline_indicator);
   all->example_parser->input->set(c);
   // read indices
-  unsigned char num_indices = 0;
-  if (input->buf_read(c, sizeof(num_indices)) < sizeof(num_indices)) return 0;
-  num_indices = *reinterpret_cast<unsigned char*>(c);
+  uint64_t num_indices = 0;
+  if (input->buf_read(c, sizeof(num_indices)) < sizeof(num_indices)){ return 0; }
+  num_indices = *reinterpret_cast<uint64_t*>(c);
   c += sizeof(num_indices);
 
   all->example_parser->input->set(c);
@@ -94,7 +94,8 @@ int read_cached_features(vw* all, v_array<example*>& examples)
   {
     size_t temp;
     unsigned char index = 0;
-    if ((temp = input->buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
+    uint64_t ns_hash = 0;
+    if ((temp = input->buf_read(c, sizeof(index) + sizeof(ns_hash) + sizeof(size_t))) < sizeof(index) + sizeof(ns_hash) + sizeof(size_t))
     {
       *(all->trace_message) << "truncated example! " << temp << " " << char_size + sizeof(size_t) << std::endl;
       return 0;
@@ -102,9 +103,10 @@ int read_cached_features(vw* all, v_array<example*>& examples)
 
     index = *reinterpret_cast<unsigned char*>(c);
     c += sizeof(index);
+    ns_hash = *reinterpret_cast<uint64_t*>(c);
+    c += sizeof(ns_hash);
 
-    ae->indices.push_back(static_cast<size_t>(index));
-    features& ours = ae->feature_space[index];
+    features& ours = ae->feature_space.get_or_create_feature_group(index, ns_hash);
     size_t storage = *reinterpret_cast<size_t*>(c);
     c += sizeof(size_t);
     all->example_parser->input->set(c);
@@ -159,16 +161,23 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask)
+void output_features(io_buf& cache, unsigned char index, uint64_t ns_hash, const features& fs, uint64_t mask)
 {
   char* c;
   size_t storage = fs.size() * int_size;
   for (feature_value f : fs.values)
-    if (f != 1. && f != -1.) storage += sizeof(feature_value);
+  {
+    if (f != 1. && f != -1.)
+    {
+      storage += sizeof(feature_value);
+    }
+  }
 
-  cache.buf_write(c, sizeof(index) + storage + sizeof(size_t));
+  cache.buf_write(c, sizeof(index) + sizeof(ns_hash) + storage + sizeof(size_t));
   *reinterpret_cast<unsigned char*>(c) = index;
   c += sizeof(index);
+  *reinterpret_cast<uint64_t*>(c) = ns_hash;
+  c += sizeof(ns_hash);
 
   char* storage_size_loc = c;
   c += sizeof(size_t);
@@ -208,7 +217,7 @@ void cache_tag(io_buf& cache, const v_array<char>& tag)
   cache.set(c);
 }
 
-void cache_features(io_buf& cache, example* ae, uint64_t mask)
+void cache_features(io_buf& cache, const example* ae, uint64_t mask)
 {
   cache_tag(cache, ae->tag);
 
@@ -217,9 +226,11 @@ void cache_features(io_buf& cache, example* ae, uint64_t mask)
   {
     output_byte(cache, non_newline_example);
   }
-  output_byte(cache, static_cast<unsigned char>(ae->indices.size()));
-
-  for (namespace_index ns : ae->indices) output_features(cache, ns, ae->feature_space[ns], mask);
+  output_byte(cache, static_cast<uint64_t>(ae->feature_space.size()));
+  for (auto it = ae->feature_space.begin(); it != ae->feature_space.end(); ++it)
+  {
+    output_features(cache, it.index(), it.hash(), *it, mask);
+  }
 }
 
 uint32_t VW::convert(size_t number)

@@ -324,7 +324,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
     else  // lots of edges
       GD::foreach_feature<task_data, uint64_t, add_edge_features_group_fn>(sch.get_vw_pointer_unsafe(), edge, D);
   }
-  ec[n]->indices.push_back(neighbor_namespace);
+  ec[n]->feature_space.get_or_create_feature_group(neighbor_namespace, neighbor_namespace);
   ec[n]->reset_total_sum_feat_sq();
   ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
 
@@ -334,6 +334,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
     if (i.size() != 2) continue;
     int i0 = static_cast<int>(i[0]);
     int i1 = static_cast<int>(i[1]);
+    // TODO: Make sure this calculation is still correct
     if ((i0 == static_cast<int>(neighbor_namespace)) || (i1 == static_cast<int>(neighbor_namespace)))
     {
       ec[n]->num_features += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size();
@@ -343,10 +344,9 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
 
 void del_edge_features(task_data& /*D*/, uint32_t n, multi_ex& ec)
 {
-  ec[n]->indices.pop_back();
   features& fs = ec[n]->feature_space[neighbor_namespace];
   ec[n]->num_features -= fs.size();
-  fs.clear();
+  ec[n]->feature_space.remove_feature_group(neighbor_namespace);
 }
 
 #define IDX(i, j) ((i) * (D.K + 1) + j)

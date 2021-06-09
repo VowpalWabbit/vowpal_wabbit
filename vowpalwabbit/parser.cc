@@ -103,10 +103,7 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
   std::vector<char> t(v_length);
   buf->read_file(filepointer, t.data(), v_length);
   VW::version_struct v_tmp(t.data());
-  if (v_tmp != VW::version)
-  {
-    return 0;
-  }
+  if (v_tmp != VW::version) { return 0; }
 
   char temp;
   if (buf->read_file(filepointer, &temp, 1) < 1) THROW("failed to read");
@@ -642,15 +639,17 @@ void end_pass_example(vw& all, example* ae)
   all.example_parser->in_pass_counter = 0;
 }
 
-void feature_limit(vw& all, example* ex)
+void feature_limit(const vw& all, example* ex)
 {
-  for (namespace_index index : ex->indices)
-    if (all.limit[index] < ex->feature_space[index].size())
+  for (auto it = ex->feature_space.begin(); it != ex->feature_space.end(); ++it)
+  {
+    if (all.limit[it.index()] < (*it).size())
     {
-      features& fs = ex->feature_space[index];
+      features& fs = *it;
       fs.sort(all.parse_mask);
-      unique_features(fs, all.limit[index]);
+      unique_features(fs, all.limit[it.index()]);
     }
+  }
 }
 
 namespace VW
@@ -707,18 +706,12 @@ void setup_example(vw& all, example* ae)
 
   if (all.ignore_some)
   {
-    for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
+    std::vector<uint64_t> hashes_to_remove;
+    for (auto it = ae->feature_space.begin(); it != ae->feature_space.end(); ++it)
     {
-      if (all.ignore[*i])
-      {
-        // Delete namespace
-        ae->feature_space[*i].clear();
-        i = ae->indices.erase(i);
-        // Offset the increment for this iteration so that is processes this index again which is actually the next
-        // item.
-        i--;
-      }
+      if (all.ignore[it.index()]) { hashes_to_remove.push_back(it.hash()); }
     }
+    for (auto hash : hashes_to_remove) { ae->feature_space.remove_feature_group(hash); }
   }
 
   if (all.skip_gram_transformer != nullptr) { all.skip_gram_transformer->generate_grams(ae); }
@@ -734,10 +727,7 @@ void setup_example(vw& all, example* ae)
     for (features& fs : *ae)
       for (auto& j : fs.indicies) j *= multiplier;
   ae->num_features = 0;
-  for (const features& fs : *ae)
-  {
-    ae->num_features += fs.size();
-  }
+  for (const features& fs : *ae) { ae->num_features += fs.size(); }
 
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
@@ -772,11 +762,10 @@ example* read_example(vw& all, std::string example_line)
 
 void add_constant_feature(vw& vw, example* ec)
 {
-  ec->indices.push_back(constant_namespace);
-  ec->feature_space[constant_namespace].push_back(1, constant);
+  auto& fs = ec->feature_space.get_or_create_feature_group(constant_namespace, constant_namespace);
+  fs.push_back(1, constant);
   ec->num_features++;
-  if (vw.audit || vw.hash_inv)
-    ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
+  if (vw.audit || vw.hash_inv) { fs.space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant"))); }
 }
 
 void add_label(example* ec, float label, float weight, float base)
@@ -797,9 +786,8 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
   for (size_t i = 0; i < len; i++)
   {
     unsigned char index = features[i].name;
-    ret->indices.push_back(index);
-    for (size_t j = 0; j < features[i].len; j++)
-      ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index);
+    auto& fs = ret->feature_space.get_or_create_feature_group(index, index);
+    for (size_t j = 0; j < features[i].len; j++) { fs.push_back(features[i].fs[j].x, features[i].fs[j].weight_index); }
   }
 
   setup_example(all, ret);
@@ -809,29 +797,36 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
 
 primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
 {
-  len = ec->indices.size();
+  const auto& indices = ec->feature_space.get_indices();
+  len = indices.size();
   primitive_feature_space* fs_ptr = new primitive_feature_space[len];
 
-  size_t fs_count = 0;
+  size_t index_counter = 0;
 
-  for (size_t idx = 0; idx < len; ++idx)
+  for (auto index : indices)
   {
-    namespace_index i = ec->indices[idx];
-    fs_ptr[fs_count].name = i;
-    fs_ptr[fs_count].len = ec->feature_space[i].size();
-    fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
+    size_t number_of_features = 0;
+    for (auto& fs : ec->feature_space.namespace_index_range(index)) { number_of_features += fs.size(); }
+    fs_ptr[index_counter].name = index;
+    fs_ptr[index_counter].len = number_of_features;
+    fs_ptr[index_counter].fs = new feature[number_of_features];
 
     uint32_t stride_shift = all.weights.stride_shift();
 
-    auto& f = ec->feature_space[i];
-    for (size_t f_count = 0; f_count < fs_ptr[fs_count].len; f_count++)
+    size_t feature_counter = 0;
+    for(auto& fs : ec->feature_space.namespace_index_range(index))
     {
-      feature t = {f.values[f_count], f.indicies[f_count]};
-      t.weight_index >>= stride_shift;
-      fs_ptr[fs_count].fs[f_count] = t;
+      for (auto it = fs.begin(); it != fs.end(); ++it)
+      {
+        feature t = {it.value(), it.index()};
+        t.weight_index >>= stride_shift;
+        fs_ptr[index_counter].fs[feature_counter] = t;
+        feature_counter++;
+      }
     }
-    fs_count++;
+    index_counter++;
   }
+
   return fs_ptr;
 }
 
@@ -853,7 +848,7 @@ void empty_example(vw& /*all*/, example& ec)
 {
   for (features& fs : ec) fs.clear();
 
-  ec.indices.clear();
+  ec.feature_space.clear();
   ec.tag.clear();
   ec.sorted = false;
   ec.end_pass = false;

@@ -400,7 +400,10 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;
 
-  if (poly.synth_ec.indices.size() == 0) poly.synth_ec.indices.push_back(tree_atomics);
+  if (poly.synth_ec.feature_space.get_feature_group(tree_atomics) == nullptr)
+  {
+    poly.synth_ec.feature_space.get_or_create_feature_group(tree_atomics,tree_atomics);
+  }
 }
 
 void synthetic_decycle(stagewise_poly &poly)

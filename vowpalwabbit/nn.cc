@@ -86,10 +86,9 @@ void finish_setup(nn& n, vw& all)
   // TODO: output_layer audit
 
   n.output_layer.interactions = &all.interactions;
-  n.output_layer.indices.push_back(nn_output_namespace);
   uint64_t nn_index = nn_constant << all.weights.stride_shift();
 
-  features& fs = n.output_layer.feature_space[nn_output_namespace];
+  features& fs = n.output_layer.feature_space.get_or_create_feature_group(nn_output_namespace, nn_output_namespace);
   for (unsigned int i = 0; i < n.k; ++i)
   {
     fs.push_back(1., nn_index);
@@ -113,22 +112,24 @@ void finish_setup(nn& n, vw& all)
 
   // TODO: not correct if --noconstant
   n.hiddenbias.interactions = &all.interactions;
-  n.hiddenbias.indices.push_back(constant_namespace);
-  n.hiddenbias.feature_space[constant_namespace].push_back(1, constant);
+  auto& constant_fs = n.hiddenbias.feature_space.get_or_create_feature_group(constant_namespace, constant_namespace);
+  constant_fs.push_back(1, constant);
   if (all.audit || all.hash_inv)
-    n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
-        audit_strings_ptr(new audit_strings("", "HiddenBias")));
+  {
+    constant_fs.space_names.push_back(audit_strings_ptr(new audit_strings("", "HiddenBias")));
+  }
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
 
   n.outputweight.interactions = &all.interactions;
-  n.outputweight.indices.push_back(nn_output_namespace);
+  auto& outputweight_output_fs = n.outputweight.feature_space.get_or_create_feature_group(nn_output_namespace, nn_output_namespace);
+
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
-  n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indicies[0]);
+  outputweight_output_fs.push_back(outfs.values[0], outfs.indicies[0]);
   if (all.audit || all.hash_inv)
-    n.outputweight.feature_space[nn_output_namespace].space_names.push_back(
+    outputweight_output_fs.space_names.push_back(
         audit_strings_ptr(new audit_strings("", "OutputWeight")));
-  n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
+  outputweight_output_fs.values[0] = 1;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
   n.outputweight._reduction_features.template get<simple_label_reduction_features>().initial = 0.f;
@@ -266,7 +267,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       // TODO: this is not correct if there is something in the
       // nn_output_namespace but at least it will not leak memory
       // in that case
-      ec.indices.push_back(nn_output_namespace);
+      ec.feature_space.get_or_create_feature_group(nn_output_namespace, nn_output_namespace);
 
       /*
        * Features shuffling:
@@ -288,7 +289,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       n.output_layer.loss = ec.loss;
       ec.feature_space[nn_output_namespace].sum_feat_sq = 0;
       std::swap(ec.feature_space[nn_output_namespace], save_nn_output_namespace);
-      ec.indices.pop_back();
+      ec.feature_space.remove_feature_group(nn_output_namespace);
     }
     else
     {

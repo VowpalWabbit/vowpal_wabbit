@@ -311,7 +311,6 @@ public:
             const auto& feats = feats_it->second;
             features& dict_fs =
                 _ae->feature_space.get_or_create_feature_group(dictionary_namespace, dictionary_namespace);
-            if (dict_fs.size() == 0) _ae->indices.push_back(dictionary_namespace);
             dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
             dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
             dict_fs.sum_feat_sq += feats->sum_feat_sq;
