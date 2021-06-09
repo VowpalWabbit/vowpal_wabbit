@@ -2401,4 +2401,27 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/cb_simple_pdrop.stderr
     train-sets/ref/cb_simple_pdrop_invert_hash.txt
 
+# Test 329: simple cb dsjson with pdrop=1 (unsupported)
+{VW} -d train-sets/cb_simple_pdrop1.json --dsjson --cb_explore_adf
+    train-sets/ref/cb_simple_pdrop1.stderr
+
+# Test 330: simple ccb dsjson
+# Required for having side-by-side comparison with the same one with pdrop from 331
+{VW} -d train-sets/ccb_simple.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_invert_hash.txt && \
+        tail -n +2 ccb_simple_invert_hash.txt > ccb_simple_invert_hash.txt.new && \
+            rm ccb_simple_invert_hash.txt && \
+                mv ccb_simple_invert_hash.txt.new ccb_simple_invert_hash.txt
+    train-sets/ref/ccb_simple.stderr
+    train-sets/ref/ccb_simple_invert_hash.txt
+
+# Test 331: simple ccb dsjson with pdrop
+# Required for having side-by-side comparison with the same one without pdrop from 330
+# TODO: update stderr when reported metrics pdrop issue is fixed
+{VW} -d train-sets/ccb_simple_pdrop.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_pdrop_invert_hash.txt && \
+        tail -n +2 ccb_simple_pdrop_invert_hash.txt > ccb_simple_pdrop_invert_hash.txt.new && \
+            rm ccb_simple_pdrop_invert_hash.txt && \
+                mv ccb_simple_pdrop_invert_hash.txt.new ccb_simple_pdrop_invert_hash.txt
+    train-sets/ref/ccb_simple_pdrop.stderr
+    train-sets/ref/ccb_simple_pdrop_invert_hash.txt
+
 # Do not delete this line or the empty line above it
