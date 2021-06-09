@@ -91,7 +91,7 @@ void drain_examples(vw& all)
   if (all.early_terminate)
   {  // drain any extra examples from parser.
     example* ec = nullptr;
-    while ((ec = VW::get_example(all.example_parser)) != nullptr) VW::finish_example(all, *ec);
+    while ((ec = VW::get_example(all)) != nullptr) VW::finish_example(all, *ec);
   }
   all.l->end_examples();
 }
@@ -217,7 +217,7 @@ class ready_examples_queue
 public:
   ready_examples_queue(vw& master) : _master(master) {}
 
-  example* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser) : nullptr; }
+  example* pop() { return !_master.early_terminate ? VW::get_example(_master) : nullptr; }
 
 private:
   vw& _master;

@@ -15,7 +15,7 @@ inline void io_lines_toqueue(vw& all){
  
   int counter_of_number_passes = 0;
   while(counter_of_number_passes++ < num_passes_to_complete) {
-
+    std::cout << "IO Pass: " << counter_of_number_passes << std::endl;
     //  zeset done_with_io (set when we are done adding to io) to false at beginning of new pass
     all.example_parser->done_with_io.store(false);
 
@@ -26,12 +26,6 @@ inline void io_lines_toqueue(vw& all){
     while(!should_finish)
     {   
       should_finish = all.example_parser->input_file_reader(all, line);
-    }
-
-    if (counter_of_number_passes  >= num_passes_to_complete) {
-      all.example_parser->io_complete.store(true);
-      all.example_parser->io_lines.set_done();
-      return;
     }
 
     while(all.example_parser->done_with_io == false) {

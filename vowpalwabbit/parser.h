@@ -96,8 +96,6 @@ struct parser
   std::condition_variable example_parsed;
   //for cv notify and wait
   std::mutex example_cv_mutex;
-  // To only allow one of the threads to enter the end pass state.
-  std::atomic<bool> last_pass_complete{false};
 
   bool done = false;
 
@@ -118,17 +116,8 @@ struct parser
 
   VW::ptr_queue<std::vector<char>> io_lines;
   std::atomic<bool> done_with_io{false};
-  std::atomic<bool> done_with_end_pass{false};
-
   // for passes
   std::condition_variable can_end_pass;
-
-  std::atomic<bool> io_complete {false};
-  std::atomic_flag last_end_pass_parser {false};
-  
-
-  // for multiple parser threads, in the else block of parse_dispatch_loop. 
-  std::condition_variable can_end_pass_parser;
 
 };
 

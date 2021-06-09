@@ -21,7 +21,7 @@
 
 namespace logger = VW::io::logger;
 
-size_t read_features(vw *all, std::vector<char>& line, size_t&, v_array<example*>& examples)
+int read_features(vw *all, std::vector<char>& line, size_t&, v_array<example*>& examples)
 {
   std::vector<char> *io_lines_next_item;
 
@@ -33,7 +33,7 @@ size_t read_features(vw *all, std::vector<char>& line, size_t&, v_array<example*
     if(io_lines_next_item != nullptr) {
       (*all).example_parser->ready_parsed_examples.push(examples[0]);
     } else {
-      return 0;
+      return -1;
     }
 
   }
@@ -69,9 +69,14 @@ int read_features_string(vw* all, v_array<example*>& examples, std::vector<VW::s
   std::vector<char> line;
   size_t num_chars;
   size_t num_chars_initial;
+  int temp;
 
   // a line is popped off of the io queue in read_features
-  num_chars_initial = read_features(all, line, num_chars, examples);
+  temp = read_features(all, line, num_chars, examples);
+  if(temp == -1)
+    return -1;
+  else
+    num_chars_initial = temp;
 
   char *stripped_line = std::move(line.data());
   num_chars = strip_features_string(stripped_line, num_chars_initial);

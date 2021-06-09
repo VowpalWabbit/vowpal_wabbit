@@ -118,7 +118,7 @@ void parse_example_label(vw& all, example& ec, std::string label);
 void setup_examples(vw& all, v_array<example*>& examples);
 void setup_example(vw& all, example* ae);
 example* new_unused_example(vw& all);
-example* get_example(parser* pf);
+example* get_example(vw& pf);
 float get_topic_prediction(example* ec, size_t i);  // i=0 to max topic -1
 float get_label(example* ec);
 float get_importance(example* ec);

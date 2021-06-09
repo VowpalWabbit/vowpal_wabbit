@@ -623,7 +623,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
 void lock_done(parser& p)
 {
-  p.last_pass_complete.store(true);
+  // p.last_pass_complete.store(true);
 
   // // lock_done() can be called by the learner thread when the examples have reached the maximum pass allowed.
   // // So, in such a condition, an un-timely end of the program is triggered.
@@ -632,10 +632,14 @@ void lock_done(parser& p)
   // p.can_end_pass.notify_one();
 
   // To notify the other parser threads that they can continue their job.
-  p.done_with_end_pass.store(true);
-  p.can_end_pass_parser.notify_all();
-
+  // p.done_with_end_pass.store(true);
+  // p.can_end_pass_parser.notify_all();
+  std::cout << "LOCK DONE!!" << std::endl;
   p.done = true;
+      // to call reset source in io thread
+    p.done_with_io.store(true);
+    p.can_end_pass.notify_one();
+  p.io_lines.set_done();
   // in case get_example() is waiting for a fresh example, wake so it can realize there are no more.
   p.ready_parsed_examples.set_done();
   // set ready_parsed = true so that the CV in get_example() is not waiting, since there is nothing else to wait for
@@ -644,6 +648,7 @@ void lock_done(parser& p)
 
 void set_done(vw& all)
 {
+  std::cout << "SET DONE!" << std::endl;
   all.early_terminate = true;
   lock_done(*all.example_parser);
 }
@@ -966,11 +971,12 @@ void main_parse_loop(vw* all) { parse_dispatch(*all, thread_dispatch); }
 
 namespace VW
 {
-example* get_example(parser* p) { 
+example* get_example(vw& all) { 
 
-  example* ex = p->ready_parsed_examples.pop();
+  example* ex = all.example_parser->ready_parsed_examples.pop();
 
   if (ex == nullptr) {
+    std::cout << "NULL POINTER ENCOUNTERED" << std::endl;
     return ex;
   }
 
@@ -979,6 +985,29 @@ example* get_example(parser* p) {
     while(ex != nullptr && !*(ex->ex_lock.done_parsing)) {
       ex->ex_lock.example_parsed->wait(lock);
     }
+  }
+
+  // After parsing the example, if it is end_pass, we execute the end pass sequence
+  if (ex->end_pass){
+    reset_source(all, all.num_bits);
+    // all.do_reset_source = false;
+    all.passes_complete++;
+    std::cout << "ENCOUNTERED END PASS EXAMPLE: " << all.passes_complete << std::endl;
+
+    // if (all.passes_complete == all.numpasses && example_number == all.pass_length)
+    // {
+    //   all.passes_complete = 0;
+    //   all.pass_length = all.pass_length * 2 + 1;
+    // }
+
+
+    
+    if (all.passes_complete >= all.numpasses) lock_done(*all.example_parser);
+    // example_number = 0;
+
+    // to call reset source in io thread
+    all.example_parser->done_with_io.store(true);
+    all.example_parser->can_end_pass.notify_one();
   }
 
   return ex;

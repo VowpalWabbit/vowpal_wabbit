@@ -180,7 +180,7 @@ int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::s
     if(io_lines_next_item != nullptr) {
       (*all).example_parser->ready_parsed_examples.push(examples[0]);
     } else {
-      return 0;
+      return -1;
     }
 
   }
