@@ -44,10 +44,9 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       }
       // To make sure that in the end(when it is the last pass), the thread doesn't enter this block if the end_pass example is already taken care of by some other thread.
       // If this condition is not used, then this block can be executed more than once for the same pass (if the end_pass thread completes it's job and releases the lock, the current thread could have acquired the lock)
-      else if(all.example_parser->current_pass_index != all.example_parser->next_pass_index && !all.example_parser->last_pass_complete)
+      else if(!all.example_parser->io_complete || !all.example_parser->last_end_pass_parser.test_and_set() )
       {
-        // At this point, the current and next pass index become same. Which means the parser threads cannot enter this block.
-        all.example_parser->current_pass_index++;
+        std::cout << "ENTERED INTO END PASS" << std::endl;
 
         reset_source(all, all.num_bits);
         all.do_reset_source = false;
@@ -72,11 +71,6 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         all.example_parser->done_with_io.store(true);
         all.example_parser->can_end_pass.notify_one();
 
-
-        // To notify the other parser threads that they can continue their job.
-        all.example_parser->next_pass_index++;
-        all.example_parser->can_end_pass_parser.notify_all();
-
       }
 
       else{
@@ -85,7 +79,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         // Stop other parser threads from executing till the pass has ended.
         std::mutex mut;
         std::unique_lock<std::mutex> lock(mut);
-        while(all.example_parser->current_pass_index != all.example_parser->next_pass_index && !all.example_parser->last_pass_complete) {
+        while(!all.example_parser->done_with_end_pass) {
           all.example_parser->can_end_pass_parser.wait(lock);
         }
       }

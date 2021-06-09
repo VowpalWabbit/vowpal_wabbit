@@ -28,14 +28,17 @@ inline void io_lines_toqueue(vw& all){
       should_finish = all.example_parser->input_file_reader(all, line);
     }
 
+    if (counter_of_number_passes  >= num_passes_to_complete) {
+      all.example_parser->io_complete.store(true);
+      all.example_parser->io_lines.set_done();
+      return;
+    }
+
     while(all.example_parser->done_with_io == false) {
       all.example_parser->can_end_pass.wait(lock);
     }
 
   }
-
-  all.example_parser->io_lines.set_done();
-
  
 }
  

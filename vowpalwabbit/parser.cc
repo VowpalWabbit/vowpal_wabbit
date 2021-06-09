@@ -631,6 +631,10 @@ void lock_done(parser& p)
   // p.done_with_io.store(true);
   // p.can_end_pass.notify_one();
 
+  // To notify the other parser threads that they can continue their job.
+  p.done_with_end_pass.store(true);
+  p.can_end_pass_parser.notify_all();
+
   p.done = true;
   // in case get_example() is waiting for a fresh example, wake so it can realize there are no more.
   p.ready_parsed_examples.set_done();

@@ -46,8 +46,6 @@ struct parser
     this->input = VW::make_unique<io_buf>();
     this->output = VW::make_unique<io_buf>();
     this->lbl_parser = simple_label_parser;
-    this->current_pass_index.store(0);
-    this->next_pass_index.store(1);
   }
 
   // delete copy constructor
@@ -120,12 +118,14 @@ struct parser
 
   VW::ptr_queue<std::vector<char>> io_lines;
   std::atomic<bool> done_with_io{false};
+  std::atomic<bool> done_with_end_pass{false};
 
   // for passes
   std::condition_variable can_end_pass;
 
-  std::atomic<int> current_pass_index;
-  std::atomic<int> next_pass_index;
+  std::atomic<bool> io_complete {false};
+  std::atomic_flag last_end_pass_parser {false};
+  
 
   // for multiple parser threads, in the else block of parse_dispatch_loop. 
   std::condition_variable can_end_pass_parser;
