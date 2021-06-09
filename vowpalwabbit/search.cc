@@ -662,7 +662,7 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
         if (ns != ' ') ss << static_cast<char>(ns);
       }
 
-      auto foreach_data = add_new_feature_data{&priv.all->weights, &me, 1.f, priv.neighbor_features[n_id] * 13748127,
+      auto foreach_data = add_new_feature_data{&priv.all->weights, &me, 1.f, static_cast<uint64_t>(priv.neighbor_features[n_id]) * 13748127,
           neighbor_namespace, priv.all->audit, priv.all->audit ? neighbor_feature_space : "",
           priv.all->audit ? ss.str() : ""};
 
