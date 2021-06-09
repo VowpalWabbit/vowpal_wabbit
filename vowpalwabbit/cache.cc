@@ -72,8 +72,7 @@ int VW::read_example_from_cache(
     io_buf& input, example* ae, const label_parser& lbl_parser, bool sorted_cache, shared_data* shared_dat)
 {
   ae->sorted = sorted_cache;
-  size_t total =
-      lbl_parser.read_cached_label(shared_dat, &ae->l, ae->_reduction_features, input);
+  size_t total = lbl_parser.read_cached_label(shared_dat, &ae->l, ae->_reduction_features, input);
   if (total == 0) { return 0; }
   if (read_cached_tag(input, ae) == 0) { return 0; }
   char* c;
@@ -129,7 +128,7 @@ int VW::read_example_from_cache(
       feature_index i = 0;
       c = run_len_decode(c, i);
       feature_value v = 1.f;
-      if (i & neg_1){ v = -1.; }
+      if (i & neg_1) { v = -1.; }
       else if (i & general)
       {
         v = (reinterpret_cast<one_float*>(c))->f;
@@ -150,7 +149,8 @@ int VW::read_example_from_cache(
 
 int read_cached_features(vw* all, v_array<example*>& examples)
 {
-  return VW::read_example_from_cache(*all->example_parser->input, examples[0], all->example_parser->lbl_parser, all->example_parser->sorted_cache, all->example_parser->_shared_data);
+  return VW::read_example_from_cache(*all->example_parser->input, examples[0], all->example_parser->lbl_parser,
+      all->example_parser->sorted_cache, all->example_parser->_shared_data);
 }
 
 inline uint64_t ZigZagEncode(int64_t n)
