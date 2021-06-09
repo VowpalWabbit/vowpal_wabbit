@@ -2391,8 +2391,8 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/cb_simple.stderr
     train-sets/ref/cb_simple_invert_hash.txt
 
-# Test 328: simple cb dsjson
-# Required for having side-by-side comparison with the same one with pdrop from 328
+# Test 328: simple cb dsjson with pdrop
+# Required for having side-by-side comparison with the same one without pdrop from 327
 # TODO: update stderr when reported metrics pdrop issue is fixed
 {VW} -d train-sets/cb_simple_pdrop.json --dsjson --cb_explore_adf --invert_hash cb_simple_pdrop_invert_hash.txt && \
         tail -n +2 cb_simple_pdrop_invert_hash.txt > cb_simple_pdrop_invert_hash.txt.new && \
