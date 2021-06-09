@@ -271,7 +271,7 @@ public:
   uint64_t dat_new_feature_idx;
   example* dat_new_feature_ec;
   std::stringstream dat_new_feature_audit_ss;
-  size_t dat_new_feature_namespace;
+  features dat_new_feature_namespace;
   std::string* dat_new_feature_feature_space;
   float dat_new_feature_value;
 
@@ -601,8 +601,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   size_t ss = priv.all->weights.stride_shift();
 
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
-  features& fs = priv.dat_new_feature_ec->feature_space.get_or_create_feature_group(
-      priv.dat_new_feature_namespace, priv.dat_new_feature_namespace);
+  features& fs = priv.dat_new_feature_namespace;
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
   cdbg << "adding: " << fs.indicies.back() << ':' << fs.values.back() << endl;
   if (priv.all->audit)
@@ -646,7 +645,6 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
       priv.dat_new_feature_ec = &me;
       priv.dat_new_feature_value = 1.;
       priv.dat_new_feature_idx = priv.neighbor_features[n_id] * 13748127;
-      priv.dat_new_feature_namespace = neighbor_namespace;
       if (priv.all->audit)
       {
         priv.dat_new_feature_feature_space = &neighbor_feature_space;
@@ -666,11 +664,13 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
       }
     }
 
-    features* fs = me.feature_space.get_feature_group(neighbor_namespace);
-    if (fs != nullptr)
+    if (!priv.dat_new_feature_namespace.empty())
     {
-      size_t sz = fs->size();
-      if ((sz > 0) && (fs->sum_feat_sq > 0.))
+      me.feature_space.merge_feature_group(std::move(priv.dat_new_feature_namespace), neighbor_namespace, neighbor_namespace);
+      priv.dat_new_feature_namespace = features{};
+      auto& fs = me.feature_space[neighbor_namespace];
+      size_t sz = fs.size();
+      if ((sz > 0) && (fs.sum_feat_sq > 0.))
       {
         me.reset_total_sum_feat_sq();
         me.num_features += sz;
@@ -799,7 +799,6 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
       priv.dat_new_feature_ec = &ec;
       priv.dat_new_feature_idx = fid * quadratic_constant;
-      priv.dat_new_feature_namespace = conditioning_namespace;
       priv.dat_new_feature_value = priv.acset.feature_value;
 
       if (priv.all->audit)
@@ -842,7 +841,6 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
           priv.dat_new_feature_ec = &ec;
           priv.dat_new_feature_idx = fid;
-          priv.dat_new_feature_namespace = conditioning_namespace;
           priv.dat_new_feature_value = fs.values[k];
           add_new_feature(priv, 1., static_cast<uint64_t>(4398201) << priv.all->weights.stride_shift());
         }
@@ -850,11 +848,14 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
     cdbg << "END adding passthrough features" << endl;
   }
 
-  features* con_fs = ec.feature_space.get_feature_group(conditioning_namespace);
-  if (con_fs != nullptr)
+  if (!priv.dat_new_feature_namespace.empty())
   {
+    ec.feature_space.merge_feature_group(
+        std::move(priv.dat_new_feature_namespace), conditioning_namespace, conditioning_namespace);
+    priv.dat_new_feature_namespace = features{};
+    auto& con_fs = ec.feature_space[conditioning_namespace];
     ec.reset_total_sum_feat_sq();
-    ec.num_features += con_fs->size();
+    ec.num_features += con_fs.size();
   }
 }
 
