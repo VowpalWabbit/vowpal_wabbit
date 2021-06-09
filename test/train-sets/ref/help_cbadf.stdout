@@ -42,6 +42,7 @@ Diagnostic options:
                         https://vowpalwabbit.org.
 Randomization options:
   --random_seed arg     seed random number generator
+  --test_temp           enable test parse reduction
 Feature options:
   --hash arg                      how to hash the features. Available options: 
                                   strings, all

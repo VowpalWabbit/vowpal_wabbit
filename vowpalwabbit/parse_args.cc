@@ -16,6 +16,7 @@
 #include "vw.h"
 #include "interactions.h"
 
+#include "instantiate_learner.h"
 #include "sender.h"
 #include "nn.h"
 #include "gd.h"
@@ -1281,7 +1282,7 @@ void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
   all.build_setupfn_name_dict();
 }
 
-void parse_reductions(options_i& options, vw& all)
+void parse_reductions(vw& all)
 {
   std::vector<reduction_setup_fn> reductions;
 
@@ -1376,7 +1377,6 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(VW::metrics::metrics_setup);
 
   register_reductions(all, reductions);
-  all.l = setup_base(options, all);
 }
 
 ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t num_bytes)
@@ -1610,8 +1610,10 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model,
 void parse_modules(
     options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
+  bool test_mctest;
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
+  rand_options.add(make_option("test_temp", test_mctest).help("enable test parse reduction"));
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
 
@@ -1623,7 +1625,18 @@ void parse_modules(
 
   parse_output_preds(options, all);
 
-  parse_reductions(options, all);
+  // register the fn pointers of all available ones
+  parse_reductions(all);
+
+  if (!options.was_supplied("test_temp"))
+  {
+    // actually run the setup fns
+    all.l = setup_base(options, all);
+  }
+  else
+  {
+    test_mctest::instantiate_learner(options, all);
+  }
 
   if (!all.logger.quiet)
   {

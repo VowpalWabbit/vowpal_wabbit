@@ -855,22 +855,22 @@ exit $ErrorCount;
 __DATA__
 
 # Test 1:
-{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat \
+{VW} --test_temp -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat \
     -f models/0001_1.model -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off
         train-sets/ref/0001.stderr
 
 # Test 2: checking predictions as well
-{VW} -k -t -d train-sets/0001.dat -i models/0001_1.model -p 0001.predict --invariant
+{VW} --test_temp -k -t -d train-sets/0001.dat -i models/0001_1.model -p 0001.predict --invariant
     test-sets/ref/0001.stderr
     pred-sets/ref/0001.predict
 
 # Test 3: without -d, training only
-{VW} -k -d train-sets/0002.dat -f models/0002.model --invariant
+{VW} --test_temp -k -d train-sets/0002.dat -f models/0002.model --invariant
     train-sets/ref/0002.stderr
 
 # Test 4: same, with -d
-{VW} -k -d train-sets/0002.dat -f models/0002.model --invariant
+{VW} --test_temp -k -d train-sets/0002.dat -f models/0002.model --invariant
     train-sets/ref/0002.stdout
     train-sets/ref/0002.stderr
 

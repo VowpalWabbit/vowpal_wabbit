@@ -123,6 +123,7 @@ set(vw_all_headers
   hashstring.h
   interact.h
   interactions_predict.h
+  instantiate_learner.h
   interactions.h
   io_buf.h
   json_utils.h
