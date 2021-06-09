@@ -6,6 +6,7 @@
 #include "unique_sort.h"
 #include "global_data.h"
 #include "vw.h"
+#include "io/logger.h"
 
 constexpr size_t int_size = 11;
 constexpr size_t char_size = 2;
@@ -61,20 +62,24 @@ __attribute__((packed))
 #endif
 ;
 
-int read_cached_features(vw* all, v_array<example*>& examples)
+void VW::write_example_to_cache(io_buf& output, const example* ae, const label_parser& lbl_parser, uint64_t parse_mask)
 {
-  example* ae = examples[0];
-  ae->sorted = all->example_parser->sorted_cache;
-  io_buf* input = all->example_parser->input.get();
+  lbl_parser.cache_label(&ae->l, ae->_reduction_features, output);
+  cache_features(output, ae, parse_mask);
+}
 
-  size_t total = all->example_parser->lbl_parser.read_cached_label(
-      all->example_parser->_shared_data, &ae->l, ae->_reduction_features, *input);
-  if (total == 0) return 0;
-  if (read_cached_tag(*input, ae) == 0) return 0;
+int VW::read_example_from_cache(
+    io_buf& input, example* ae, const label_parser& lbl_parser, bool sorted_cache, shared_data* shared_dat)
+{
+  ae->sorted = sorted_cache;
+  size_t total =
+      lbl_parser.read_cached_label(shared_dat, &ae->l, ae->_reduction_features, input);
+  if (total == 0) { return 0; }
+  if (read_cached_tag(input, ae) == 0) { return 0; }
   char* c;
   // is newline example or not
   unsigned char newline_indicator = 0;
-  if (input->buf_read(c, sizeof(newline_indicator)) < sizeof(newline_indicator)) return 0;
+  if (input.buf_read(c, sizeof(newline_indicator)) < sizeof(newline_indicator)) { return 0; }
   newline_indicator = *reinterpret_cast<unsigned char*>(c);
   if (newline_indicator == newline_example) { ae->is_newline = true; }
   else
@@ -82,21 +87,21 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     ae->is_newline = false;
   }
   c += sizeof(newline_indicator);
-  all->example_parser->input->set(c);
+  input.set(c);
   // read indices
   unsigned char num_indices = 0;
-  if (input->buf_read(c, sizeof(num_indices)) < sizeof(num_indices)) return 0;
+  if (input.buf_read(c, sizeof(num_indices)) < sizeof(num_indices)) { return 0; }
   num_indices = *reinterpret_cast<unsigned char*>(c);
   c += sizeof(num_indices);
 
-  all->example_parser->input->set(c);
+  input.set(c);
   for (; num_indices > 0; num_indices--)
   {
     size_t temp;
     unsigned char index = 0;
-    if ((temp = input->buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
+    if ((temp = input.buf_read(c, sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
     {
-      *(all->trace_message) << "truncated example! " << temp << " " << char_size + sizeof(size_t) << std::endl;
+      VW::io::logger::errlog_error("truncated example! {} {} ", temp, char_size + sizeof(size_t));
       return 0;
     }
 
@@ -107,11 +112,11 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     features& ours = ae->feature_space[index];
     size_t storage = *reinterpret_cast<size_t*>(c);
     c += sizeof(size_t);
-    all->example_parser->input->set(c);
+    input.set(c);
     total += storage;
-    if (input->buf_read(c, storage) < storage)
+    if (input.buf_read(c, storage) < storage)
     {
-      *(all->trace_message) << "truncated example! wanted: " << storage << " bytes" << std::endl;
+      VW::io::logger::errlog_error("truncated example! wanted: {} bytes ", storage);
       return 0;
     }
 
@@ -124,8 +129,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
       feature_index i = 0;
       c = run_len_decode(c, i);
       feature_value v = 1.f;
-      if (i & neg_1)
-        v = -1.;
+      if (i & neg_1){ v = -1.; }
       else if (i & general)
       {
         v = (reinterpret_cast<one_float*>(c))->f;
@@ -133,15 +137,20 @@ int read_cached_features(vw* all, v_array<example*>& examples)
       }
       uint64_t diff = i >> 2;
       int64_t s_diff = ZigZagDecode(diff);
-      if (s_diff < 0) ae->sorted = false;
+      if (s_diff < 0) { ae->sorted = false; }
       i = last + s_diff;
       last = i;
       ours.push_back(v, i);
     }
-    all->example_parser->input->set(c);
+    input.set(c);
   }
 
   return static_cast<int>(total);
+}
+
+int read_cached_features(vw* all, v_array<example*>& examples)
+{
+  return VW::read_example_from_cache(*all->example_parser->input, examples[0], all->example_parser->lbl_parser, all->example_parser->sorted_cache, all->example_parser->_shared_data);
 }
 
 inline uint64_t ZigZagEncode(int64_t n)
@@ -159,7 +168,7 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask)
+void output_features(io_buf& cache, unsigned char index, const features& fs, uint64_t mask)
 {
   char* c;
   size_t storage = fs.size() * int_size;
@@ -208,7 +217,7 @@ void cache_tag(io_buf& cache, const v_array<char>& tag)
   cache.set(c);
 }
 
-void cache_features(io_buf& cache, example* ae, uint64_t mask)
+void cache_features(io_buf& cache, const example* ae, uint64_t mask)
 {
   cache_tag(cache, ae->tag);
 
@@ -220,10 +229,4 @@ void cache_features(io_buf& cache, example* ae, uint64_t mask)
   output_byte(cache, static_cast<unsigned char>(ae->indices.size()));
 
   for (namespace_index ns : ae->indices) output_features(cache, ns, ae->feature_space[ns], mask);
-}
-
-uint32_t VW::convert(size_t number)
-{
-  if (number > UINT32_MAX) { THROW("size_t value is out of bounds of uint32_t.") }
-  return static_cast<uint32_t>(number);
 }

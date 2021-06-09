@@ -67,7 +67,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
 
 float weight(label&) { return 1.; }
 
-char* bufcache_label(label& ld, char* c)
+char* bufcache_label(const label& ld, char* c)
 {
   *reinterpret_cast<size_t*>(c) = ld.costs.size();
   c += sizeof(size_t);
@@ -79,7 +79,7 @@ char* bufcache_label(label& ld, char* c)
   return c;
 }
 
-void cache_label(label& ld, io_buf& cache)
+void cache_label(const label& ld, io_buf& cache)
 {
   char* c;
   cache.buf_write(c, sizeof(size_t) + sizeof(wclass) * ld.costs.size());
@@ -174,7 +174,7 @@ label_parser cs_label = {
     parse_label(p, sd, v->cs, words, red_features);
   },
   // cache_label
-  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->cs, cache); },
+  [](const polylabel* v, const reduction_features&, io_buf& cache) { cache_label(v->cs, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->cs, cache); },
   // get_weight

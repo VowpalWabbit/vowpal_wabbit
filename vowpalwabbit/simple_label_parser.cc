@@ -49,7 +49,7 @@ float get_weight(label_data&, const reduction_features& red_features)
   return simple_red_features.weight;
 }
 
-char* bufcache_simple_label(label_data& ld, simple_label_reduction_features& red_features, char* c)
+char* bufcache_simple_label(const label_data& ld, const simple_label_reduction_features& red_features, char* c)
 {
   memcpy(c, &ld.label, sizeof(ld.label));
   c += sizeof(ld.label);
@@ -60,7 +60,7 @@ char* bufcache_simple_label(label_data& ld, simple_label_reduction_features& red
   return c;
 }
 
-void cache_simple_label(label_data& ld, reduction_features& red_features, io_buf& cache)
+void cache_simple_label(const label_data& ld, const reduction_features& red_features, io_buf& cache)
 {
   auto& simple_red_features = red_features.template get<simple_label_reduction_features>();
   char* c;
@@ -109,7 +109,7 @@ label_parser simple_label_parser = {
     parse_simple_label(p, sd, v->simple, words, red_features);
   },
   // cache_label
-  [](polylabel* v, reduction_features& red_features, io_buf& cache) { cache_simple_label(v->simple, red_features, cache); },
+  [](const polylabel* v, const reduction_features& red_features, io_buf& cache) { cache_simple_label(v->simple, red_features, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features& red_features, io_buf& cache) { return read_cached_simple_label(sd, v->simple, red_features, cache); },
    // get_weight
