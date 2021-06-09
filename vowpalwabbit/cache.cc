@@ -14,6 +14,35 @@ constexpr size_t general = 2;
 constexpr unsigned char newline_example = '1';
 constexpr unsigned char non_newline_example = '0';
 
+template <typename T>
+void write_value(io_buf& cache, const T& value)
+{
+  char* c;
+  cache.buf_write(c, sizeof(T));
+  *reinterpret_cast<T*>(c) = value;
+  c += sizeof(T);
+  cache.set(c);
+}
+
+template <typename T>
+T read_value(io_buf& cache, const char* debug_name = nullptr)
+{
+  char* c;
+  T value;
+  if (cache.buf_read(c, sizeof(T)) < sizeof(T))
+  {
+    if (debug_name != nullptr) { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
+    else
+    {
+      THROW("Failed to read cache value with size: " << sizeof(T));
+    }
+  }
+  value = *reinterpret_cast<T*>(c);
+  c += sizeof(T);
+  cache.set(c);
+  return value;
+}
+
 inline char* run_len_decode(char* p, uint64_t& i)
 {
   // read an int 7 bits at a time.
@@ -84,12 +113,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
   c += sizeof(newline_indicator);
   all->example_parser->input->set(c);
   // read indices
-  uint64_t num_indices = 0;
-  if (input->buf_read(c, sizeof(num_indices)) < sizeof(num_indices)){ return 0; }
-  num_indices = *reinterpret_cast<uint64_t*>(c);
-  c += sizeof(num_indices);
-
-  all->example_parser->input->set(c);
+  uint64_t num_indices = read_value<uint64_t>(*input, "num_indices");
   for (; num_indices > 0; num_indices--)
   {
     size_t temp;
@@ -226,7 +250,9 @@ void cache_features(io_buf& cache, const example* ae, uint64_t mask)
   {
     output_byte(cache, non_newline_example);
   }
-  output_byte(cache, static_cast<uint64_t>(ae->feature_space.size()));
+
+  write_value<uint64_t>(cache, static_cast<uint64_t>(ae->feature_space.size()));
+
   for (auto it = ae->feature_space.begin(); it != ae->feature_space.end(); ++it)
   {
     output_features(cache, it.index(), it.hash(), *it, mask);
