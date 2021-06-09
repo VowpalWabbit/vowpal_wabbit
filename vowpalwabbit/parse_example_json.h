@@ -1666,20 +1666,28 @@ void read_line_json(vw& all, v_array<example*>& examples, char* line, example_fa
   read_line_json_s<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context, dedup_examples);
 }
 
-inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
+inline bool apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
 {
+  if (pdrop == 1.)
+  {
+    logger::errlog_error("JSON parser error: examples with pdrop==1 are not supported");
+    return false;
+  }
+  // Event with certain pdrop had (1-pdrop) as probability to survive,
+  // so it is one of (1 / (1-pdrop)) events that we should learn on, and weight should be updated accordingly.
   if (all.example_parser->lbl_parser.label_type == label_type_t::cb)
   {
-    for (auto& e : examples) { e->l.cb.weight = 1 - pdrop; }
+    for (auto& e : examples) { e->l.cb.weight /= 1 - pdrop; }
   }
   else if (all.example_parser->lbl_parser.label_type == label_type_t::ccb)
   {
-    for (auto& e : examples) { e->l.conditional_contextual_bandit.weight = 1 - pdrop; }
+    for (auto& e : examples) { e->l.conditional_contextual_bandit.weight /= 1 - pdrop; }
   }
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
     // TODO
   }
+  return true;
 }
 
 // returns true if succesfully parsed, returns false if not and logs warning
@@ -1690,9 +1698,7 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
     parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
-    apply_pdrop(all, data->probabilityOfDrop, examples);
-    // not necessarily true for now
-    return true;
+    return apply_pdrop(all, data->probabilityOfDrop, examples);
   }
 
   std::vector<char> line_vec;
@@ -1711,8 +1717,6 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
-
-  apply_pdrop(all, data->probabilityOfDrop, examples);
 
   if (result.IsError())
   {
@@ -1734,7 +1738,7 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
     }
   }
 
-  return true;
+  return apply_pdrop(all, data->probabilityOfDrop, examples);
 }  // namespace VW
 }  // namespace VW
 
