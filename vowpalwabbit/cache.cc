@@ -75,25 +75,17 @@ int VW::read_example_from_cache(
   size_t total = lbl_parser.read_cached_label(shared_dat, &ae->l, ae->_reduction_features, input);
   if (total == 0) { return 0; }
   if (read_cached_tag(input, ae) == 0) { return 0; }
-  char* c;
-  // is newline example or not
-  unsigned char newline_indicator = 0;
-  if (input.buf_read(c, sizeof(newline_indicator)) < sizeof(newline_indicator)) { return 0; }
-  newline_indicator = *reinterpret_cast<unsigned char*>(c);
+  unsigned char newline_indicator = input.read_value<unsigned char>("newline_indicator");
   if (newline_indicator == newline_example) { ae->is_newline = true; }
   else
   {
     ae->is_newline = false;
   }
-  c += sizeof(newline_indicator);
-  input.set(c);
-  // read indices
-  unsigned char num_indices = 0;
-  if (input.buf_read(c, sizeof(num_indices)) < sizeof(num_indices)) { return 0; }
-  num_indices = *reinterpret_cast<unsigned char*>(c);
-  c += sizeof(num_indices);
 
-  input.set(c);
+  // read indices
+  unsigned char num_indices = input.read_value<unsigned char>("num_indices");
+
+  char* c;
   for (; num_indices > 0; num_indices--)
   {
     size_t temp;
@@ -221,12 +213,7 @@ void cache_features(io_buf& cache, const example* ae, uint64_t mask)
 {
   cache_tag(cache, ae->tag);
 
-  if (ae->is_newline) { output_byte(cache, newline_example); }
-  else
-  {
-    output_byte(cache, non_newline_example);
-  }
-  output_byte(cache, static_cast<unsigned char>(ae->indices.size()));
-
+  cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
+  cache.write_value<unsigned char>(static_cast<unsigned char>(ae->indices.size()));
   for (namespace_index ns : ae->indices) output_features(cache, ns, ae->feature_space[ns], mask);
 }

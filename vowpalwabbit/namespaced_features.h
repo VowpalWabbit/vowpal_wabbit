@@ -8,6 +8,7 @@
 #include <vector>
 #include <unordered_map>
 #include <cassert>
+#include <set>
 
 #include "feature_group.h"
 #include "generic_range.h"
@@ -129,36 +130,41 @@ struct namespaced_features
   // Returns nullptr if not found.
   const features* get_feature_group(uint64_t hash) const;
 
-  // TODO - don't generate this per call.
-  std::vector<namespace_index> get_indices() const;
+  const std::set<namespace_index>& get_indices() const;
+  namespace_index get_index_for_hash(uint64_t hash) const;
 
   // Returns empty range if not found
-  std::pair<indexed_iterator, indexed_iterator> get_namespace_index_groups(namespace_index index);
+  std::pair<indexed_iterator, indexed_iterator> get_namespace_index_groups(namespace_index ns_index);
   // Returns empty range if not found
-  std::pair<const_indexed_iterator, const_indexed_iterator> get_namespace_index_groups(namespace_index index) const;
+  std::pair<const_indexed_iterator, const_indexed_iterator> get_namespace_index_groups(namespace_index ns_index) const;
 
   // If a feature group already exists in this "slot" it will be merged
   template <typename FeaturesT>
-  features& merge_feature_group(FeaturesT&& ftrs, uint64_t hash, namespace_index index);
+  features& merge_feature_group(FeaturesT&& ftrs, uint64_t hash, namespace_index ns_index);
 
   // If no feature group already exists a default one will be created.
   // Creating new feature groups will invalidate any pointers or references held.
-  features& get_or_create_feature_group(uint64_t hash, namespace_index index);
+  features& get_or_create_feature_group(uint64_t hash, namespace_index ns_index);
 
+#ifndef VW_NOEXCEPT
+  // These will throw if the hash does not exist
   const features& operator[](uint64_t hash) const;
   features& operator[](uint64_t hash);
+#endif
 
   // Removing a feature group will invalidate any pointers or references held.
   void remove_feature_group(uint64_t hash);
 
-  generic_range<indexed_iterator> namespace_index_range(namespace_index index);
-  generic_range<const_indexed_iterator> namespace_index_range(namespace_index index) const;
-  indexed_iterator namespace_index_begin(namespace_index index);
-  indexed_iterator namespace_index_end(namespace_index index);
-  const_indexed_iterator namespace_index_begin(namespace_index index) const;
-  const_indexed_iterator namespace_index_end(namespace_index index) const;
-  const_indexed_iterator namespace_index_cbegin(namespace_index index) const;
-  const_indexed_iterator namespace_index_cend(namespace_index index) const;
+  void clear();
+
+  generic_range<indexed_iterator> namespace_index_range(namespace_index ns_index);
+  generic_range<const_indexed_iterator> namespace_index_range(namespace_index ns_index) const;
+  indexed_iterator namespace_index_begin(namespace_index ns_index);
+  indexed_iterator namespace_index_end(namespace_index ns_index);
+  const_indexed_iterator namespace_index_begin(namespace_index ns_index) const;
+  const_indexed_iterator namespace_index_end(namespace_index ns_index) const;
+  const_indexed_iterator namespace_index_cbegin(namespace_index ns_index) const;
+  const_indexed_iterator namespace_index_cend(namespace_index ns_index) const;
 
   iterator begin();
   iterator end();
@@ -169,11 +175,14 @@ struct namespaced_features
 
 private:
   std::vector<features> _feature_groups;
+  // Can have duplicate values.
   std::vector<namespace_index> _namespace_indices;
+  // Should never have duplicate values.
   std::vector<uint64_t> _namespace_hashes;
 
   std::unordered_map<namespace_index, std::vector<size_t>> _legacy_indices_to_index_mapping;
   std::unordered_map<uint64_t, size_t> _hash_to_index_mapping;
+  std::set<namespace_index> _contained_indices;
 };
 
 // If a feature group already exists in this "slot" it will be merged
@@ -190,6 +199,8 @@ features& namespaced_features::merge_feature_group(FeaturesT&& ftrs, uint64_t ha
     auto new_index = _feature_groups.size() - 1;
     _hash_to_index_mapping[hash] = new_index;
     _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
+    // If size is 1, that means this is the first time the ns_index is added and we should add it to the set.
+    if (_legacy_indices_to_index_mapping[ns_index].size() == 1) { _contained_indices.insert(ns_index); }
     existing_group = &_feature_groups.back();
   }
   else
@@ -198,9 +209,9 @@ features& namespaced_features::merge_feature_group(FeaturesT&& ftrs, uint64_t ha
     auto existing_index = _hash_to_index_mapping[hash];
     // Should we ensure that this doesnt already exist under a DIFFERENT namespace_index?
     // However, his shouldn't be possible as ns_index depends on hash.
-    auto& indices_list = _legacy_indices_to_index_mapping[ns_index];
-    if (std::find(indices_list.begin(), indices_list.end(), ns_index) == indices_list.end())
-    { indices_list.push_back(existing_index); }
+    auto& ns_indices_list = _legacy_indices_to_index_mapping[ns_index];
+    if (std::find(ns_indices_list.begin(), ns_indices_list.end(), ns_index) == ns_indices_list.end())
+    { ns_indices_list.push_back(existing_index); }
   }
   return *existing_group;
 }
