@@ -676,10 +676,7 @@ void setup_example(vw& all, example* ae)
   if (all.example_parser->sort_features && ae->sorted == false) unique_sort_features(all.parse_mask, ae);
 
   if (all.example_parser->write_cache)
-  {
-    all.example_parser->lbl_parser.cache_label(&ae->l, ae->_reduction_features, *(all.example_parser->output));
-    cache_features(*(all.example_parser->output), ae, all.parse_mask);
-  }
+  { VW::write_example_to_cache(*all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask); }
 
   ae->partial_prediction = 0.;
   ae->num_features = 0;

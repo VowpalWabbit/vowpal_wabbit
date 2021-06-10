@@ -6,6 +6,7 @@
 #include "unique_sort.h"
 #include "global_data.h"
 #include "vw.h"
+#include "io/logger.h"
 
 constexpr size_t int_size = 11;
 constexpr size_t char_size = 2;
@@ -13,35 +14,6 @@ constexpr size_t neg_1 = 1;
 constexpr size_t general = 2;
 constexpr unsigned char newline_example = '1';
 constexpr unsigned char non_newline_example = '0';
-
-template <typename T>
-void write_value(io_buf& cache, const T& value)
-{
-  char* c;
-  cache.buf_write(c, sizeof(T));
-  *reinterpret_cast<T*>(c) = value;
-  c += sizeof(T);
-  cache.set(c);
-}
-
-template <typename T>
-T read_value(io_buf& cache, const char* debug_name = nullptr)
-{
-  char* c;
-  T value;
-  if (cache.buf_read(c, sizeof(T)) < sizeof(T))
-  {
-    if (debug_name != nullptr) { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
-    else
-    {
-      THROW("Failed to read cache value with size: " << sizeof(T));
-    }
-  }
-  value = *reinterpret_cast<T*>(c);
-  c += sizeof(T);
-  cache.set(c);
-  return value;
-}
 
 inline char* run_len_decode(char* p, uint64_t& i)
 {
@@ -90,30 +62,30 @@ __attribute__((packed))
 #endif
 ;
 
-int read_cached_features(vw* all, v_array<example*>& examples)
+void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_parser, uint64_t parse_mask)
 {
-  example* ae = examples[0];
-  ae->sorted = all->example_parser->sorted_cache;
-  io_buf* input = all->example_parser->input.get();
+  lbl_parser.cache_label(&ae->l, ae->_reduction_features, output);
+  cache_features(output, ae, parse_mask);
+}
 
-  size_t total = all->example_parser->lbl_parser.read_cached_label(
-      all->example_parser->_shared_data, &ae->l, ae->_reduction_features, *input);
-  if (total == 0) return 0;
-  if (read_cached_tag(*input, ae) == 0) return 0;
-  char* c;
-  // is newline example or not
-  unsigned char newline_indicator = 0;
-  if (input->buf_read(c, sizeof(newline_indicator)) < sizeof(newline_indicator)) return 0;
-  newline_indicator = *reinterpret_cast<unsigned char*>(c);
+int VW::read_example_from_cache(
+    io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache, shared_data* shared_dat)
+{
+  ae->sorted = sorted_cache;
+  size_t total = lbl_parser.read_cached_label(shared_dat, &ae->l, ae->_reduction_features, input);
+  if (total == 0) { return 0; }
+  if (read_cached_tag(input, ae) == 0) { return 0; }
+  unsigned char newline_indicator = input.read_value<unsigned char>("newline_indicator");
   if (newline_indicator == newline_example) { ae->is_newline = true; }
   else
   {
     ae->is_newline = false;
   }
-  c += sizeof(newline_indicator);
-  all->example_parser->input->set(c);
+
   // read indices
-  uint64_t num_indices = read_value<uint64_t>(*input, "num_indices");
+  unsigned char num_indices = input.read_value<unsigned char>("num_indices");
+
+  char* c;
   for (; num_indices > 0; num_indices--)
   {
     size_t temp;
@@ -121,7 +93,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     uint64_t ns_hash = 0;
     if ((temp = input->buf_read(c, sizeof(index) + sizeof(ns_hash) + sizeof(size_t))) < sizeof(index) + sizeof(ns_hash) + sizeof(size_t))
     {
-      *(all->trace_message) << "truncated example! " << temp << " " << char_size + sizeof(size_t) << std::endl;
+      VW::io::logger::errlog_error("truncated example! {} {} ", temp, char_size + sizeof(size_t));
       return 0;
     }
 
@@ -133,11 +105,11 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     features& ours = ae->feature_space.get_or_create_feature_group(index, ns_hash);
     size_t storage = *reinterpret_cast<size_t*>(c);
     c += sizeof(size_t);
-    all->example_parser->input->set(c);
+    input.set(c);
     total += storage;
-    if (input->buf_read(c, storage) < storage)
+    if (input.buf_read(c, storage) < storage)
     {
-      *(all->trace_message) << "truncated example! wanted: " << storage << " bytes" << std::endl;
+      VW::io::logger::errlog_error("truncated example! wanted: {} bytes ", storage);
       return 0;
     }
 
@@ -164,10 +136,16 @@ int read_cached_features(vw* all, v_array<example*>& examples)
       last = i;
       ours.push_back(v, i);
     }
-    all->example_parser->input->set(c);
+    input.set(c);
   }
 
   return static_cast<int>(total);
+}
+
+int read_cached_features(vw* all, v_array<example*>& examples)
+{
+  return VW::read_example_from_cache(*all->example_parser->input, examples[0], all->example_parser->lbl_parser,
+      all->example_parser->sorted_cache, all->example_parser->_shared_data);
 }
 
 inline uint64_t ZigZagEncode(int64_t n)
@@ -244,15 +222,8 @@ void cache_tag(io_buf& cache, const v_array<char>& tag)
 void cache_features(io_buf& cache, const example* ae, uint64_t mask)
 {
   cache_tag(cache, ae->tag);
-
-  if (ae->is_newline) { output_byte(cache, newline_example); }
-  else
-  {
-    output_byte(cache, non_newline_example);
-  }
-
-  write_value<uint64_t>(cache, static_cast<uint64_t>(ae->feature_space.size()));
-
+  cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
+  cache.write_value<unsigned char>(static_cast<unsigned char>(ae->indices.size()));
   for (auto it = ae->feature_space.begin(); it != ae->feature_space.end(); ++it)
   {
     output_features(cache, it.index(), it.hash(), *it, mask);
