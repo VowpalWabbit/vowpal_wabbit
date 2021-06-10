@@ -17,6 +17,7 @@
 #include "slates_label.h"
 #include "simple_label_parser.h"
 #include "shared_data.h"
+#include "reduction_stack.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
