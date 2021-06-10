@@ -412,12 +412,6 @@ public:
 
     return false;
   }
-
-  friend bool operator==(const v_array<T>& lhs, const v_array<T>& rhs)
-  {
-    if (lhs.size() != rhs.size()) { return false; }
-    return std::equal(lhs.begin(), lhs.end(), rhs.begin());
-  }
 };
 
 template <class T>
