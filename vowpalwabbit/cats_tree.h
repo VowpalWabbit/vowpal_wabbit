@@ -153,6 +153,8 @@ struct node_cost
 {
   uint32_t node_id;
   float cost;
+  node_cost() : node_id(0), cost(0.f) {}
+  node_cost(uint32_t node_id, float cost) : node_id(node_id), cost(cost) {}
 };
 
 struct cats_tree
@@ -206,7 +208,7 @@ private:
   uint64_t app_seed = uniform_hash("vw", 2, 0);
   std::string tree_stats_to_string() { return _binary_tree.tree_stats_to_string(); }
   min_depth_binary_tree _binary_tree;
-  float _cost_star;
+  float _cost_star = 0.f;
   node_cost _a;
   node_cost _b;
   std::ostream* _trace_stream = nullptr;

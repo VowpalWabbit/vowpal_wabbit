@@ -1,8 +1,12 @@
-pool:
-  vmImage: 'macOS-10.14'
+trigger:
+- master
+- 'releases/**'
 
 pr:
-- master
+- '*'
+
+pool:
+  vmImage: 'macOS-10.14'
 
 steps:
 - bash: .scripts/macos/restore.sh $(Build.SourcesDirectory)

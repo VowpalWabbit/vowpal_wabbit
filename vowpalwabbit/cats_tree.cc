@@ -14,7 +14,7 @@
 #include "explore_internal.h"
 #include "hash.h"
 #include "guard.h"
-#include "options.h"
+#include "label_parser.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -203,13 +203,12 @@ base_learner* setup(options_i& options, vw& all)
   tree->init(num_actions, bandwidth);
   tree->set_trace_message(all.trace_message.get(), all.logger.quiet);
 
-  auto* base = as_singleline(setup_base(options, all));
-  auto lc = tree->learner_count();
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(tree), base, learn,
-      predict, all.get_setupfn_name(setup))
-                .set_params_per_weight(lc)
+  base_learner* base = setup_base(options, all);
+  int32_t params_per_weight = tree->learner_count();
+  auto* l = make_reduction_learner(std::move(tree), as_singleline(base), learn, predict, all.get_setupfn_name(setup))
+                .set_params_per_weight(params_per_weight)
                 .set_prediction_type(prediction_type_t::multiclass)
-                .set_label_type(label_type_t::simple)
+                .set_label_type(label_type_t::cb)
                 .build();
   return make_base(*l);
 }

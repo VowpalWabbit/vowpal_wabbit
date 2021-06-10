@@ -189,7 +189,7 @@ public:
   size_t unflushed_bytes_count() { return head - _buffer._begin; }
 
   void flush();
-  
+
   bool close_file()
   {
     if (!input_files.empty())
@@ -210,6 +210,36 @@ public:
   void close_files()
   {
     while (close_file()) {}
+  }
+
+  template <typename T>
+  void write_value(const T& value)
+  {
+    char* c;
+    buf_write(c, sizeof(T));
+    *reinterpret_cast<T*>(c) = value;
+    c += sizeof(T);
+    set(c);
+  }
+
+  template <typename T>
+  T read_value(const char* debug_name = nullptr)
+  {
+    char* c;
+    T value;
+    if (buf_read(c, sizeof(T)) < sizeof(T))
+    {
+      if (debug_name != nullptr)
+      { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
+      else
+      {
+        THROW("Failed to read cache value with size: " << sizeof(T));
+      }
+    }
+    value = *reinterpret_cast<T*>(c);
+    c += sizeof(T);
+    set(c);
+    return value;
   }
 
   void buf_write(char*& pointer, size_t n);
