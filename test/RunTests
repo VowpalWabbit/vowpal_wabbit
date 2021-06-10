@@ -2424,4 +2424,9 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/ccb_simple_pdrop.stderr
     train-sets/ref/ccb_simple_pdrop_invert_hash.txt
 
+# Test 332: test cb_dro with softmax and cb_explore_adf
+{VW} --cb_dro --cb_explore_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_dro_explore_adf_sm.predict --cb_type sm
+    train-sets/ref/cb_dro_explore_adf_sm.stderr
+    pred-sets/ref/cb_dro_explore_adf_sm.predict
+
 # Do not delete this line or the empty line above it
