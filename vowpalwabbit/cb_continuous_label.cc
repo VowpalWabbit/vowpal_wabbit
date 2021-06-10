@@ -21,7 +21,7 @@ namespace CB
 {
 template <>
 char* bufcache_label_additional_fields<VW::cb_continuous::continuous_label>(
-    const VW::cb_continuous::continuous_label&, char* c)
+    VW::cb_continuous::continuous_label&, char* c)
 {
   return c;
 }
@@ -134,7 +134,7 @@ label_parser the_label_parser = {
     parse_label(p, sd, v->cb_cont, words, red_features);
   },
   // cache_label
-  [](const polylabel* v, const reduction_features&, io_buf& cache) { CB::cache_label<continuous_label, continuous_label_elm>(v->cb_cont, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { CB::cache_label<continuous_label, continuous_label_elm>(v->cb_cont, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return CB::read_cached_label<continuous_label, continuous_label_elm>(sd, v->cb_cont, cache); },
   // get_weight

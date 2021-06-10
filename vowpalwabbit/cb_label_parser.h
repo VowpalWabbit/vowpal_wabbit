@@ -51,7 +51,7 @@ size_t read_cached_label(shared_data*, LabelT& ld, io_buf& cache)
 }
 
 template <typename LabelT>
-char* bufcache_label_additional_fields(const LabelT& ld, char* c)
+char* bufcache_label_additional_fields(LabelT& ld, char* c)
 {
   memcpy(c, &ld.weight, sizeof(ld.weight));
   c += sizeof(ld.weight);
@@ -59,7 +59,7 @@ char* bufcache_label_additional_fields(const LabelT& ld, char* c)
 }
 
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-char* bufcache_label(const LabelT& ld, char* c)
+char* bufcache_label(LabelT& ld, char* c)
 {
   *reinterpret_cast<size_t*>(c) = ld.costs.size();
   c += sizeof(size_t);
@@ -72,7 +72,7 @@ char* bufcache_label(const LabelT& ld, char* c)
 }
 
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-void cache_label(const LabelT& ld, io_buf& cache)
+void cache_label(LabelT& ld, io_buf& cache)
 {
   char* c;
   cache.buf_write(c, sizeof(size_t) + sizeof(LabelElmT) * ld.costs.size());

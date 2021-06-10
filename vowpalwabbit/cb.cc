@@ -93,7 +93,7 @@ label_parser cb_label = {
     CB::parse_label(p, sd, v->cb, words, red_features);
   },
   // cache_label
-  [](const polylabel* v, const reduction_features&, io_buf& cache) { CB::cache_label(v->cb, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { CB::cache_label(v->cb, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return CB::read_cached_label(sd, v->cb, cache); },
    // get_weight
@@ -174,7 +174,7 @@ size_t read_cached_label(shared_data* sd, CB_EVAL::label& ld, io_buf& cache)
   return total + CB::read_cached_label(sd, ld.event, cache);
 }
 
-void cache_label(const CB_EVAL::label& ld, io_buf& cache)
+void cache_label(CB_EVAL::label& ld, io_buf& cache)
 {
   char* c;
   cache.buf_write(c, sizeof(uint32_t));
@@ -215,7 +215,7 @@ label_parser cb_eval = {
     CB_EVAL::parse_label(p, sd, v->cb_eval, words, red_features);
   },
   // cache_label
-  [](const polylabel* v, const reduction_features&, io_buf& cache) { CB_EVAL::cache_label(v->cb_eval, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { CB_EVAL::cache_label(v->cb_eval, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return CB_EVAL::read_cached_label(sd, v->cb_eval, cache); },
   // get_weight

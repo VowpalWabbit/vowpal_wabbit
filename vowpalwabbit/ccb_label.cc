@@ -18,7 +18,6 @@
 #include "vw_string_view.h"
 #include "parse_primitives.h"
 #include "reduction_features.h"
-#include "numeric_casts.h"
 
 #include "io/logger.h"
 
@@ -111,7 +110,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
 
 float ccb_weight(CCB::label& ld) { return ld.weight; }
 
-void cache_label(const label& ld, io_buf& cache)
+void cache_label(label& ld, io_buf& cache)
 {
   char* c;
   size_t size = sizeof(uint8_t)  // type
@@ -136,8 +135,7 @@ void cache_label(const label& ld, io_buf& cache)
     *reinterpret_cast<float*>(c) = ld.outcome->cost;
     c += sizeof(ld.outcome->cost);
 
-    *reinterpret_cast<uint32_t*>(c) = VW::cast_to_smaller_type<uint32_t>(ld.outcome->probabilities.size());
-
+    *reinterpret_cast<uint32_t*>(c) = convert(ld.outcome->probabilities.size());
     c += sizeof(uint32_t);
 
     for (const auto& score : ld.outcome->probabilities)
@@ -147,7 +145,7 @@ void cache_label(const label& ld, io_buf& cache)
     }
   }
 
-  *reinterpret_cast<uint32_t*>(c) = VW::cast_to_smaller_type<uint32_t>(ld.explicit_included_actions.size());
+  *reinterpret_cast<uint32_t*>(c) = convert(ld.explicit_included_actions.size());
   c += sizeof(uint32_t);
 
   for (const auto& included_action : ld.explicit_included_actions)
@@ -303,7 +301,7 @@ label_parser ccb_label_parser = {
     parse_label(p, sd, v->conditional_contextual_bandit, words, red_features);
   },
   // cache_label
-  [](const polylabel* v, const ::reduction_features&, io_buf& cache) { cache_label(v->conditional_contextual_bandit, cache); },
+  [](polylabel* v, ::reduction_features&, io_buf& cache) { cache_label(v->conditional_contextual_bandit, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, ::reduction_features&, io_buf& cache) { return read_cached_label(sd, v->conditional_contextual_bandit, cache); },
   // get_weight

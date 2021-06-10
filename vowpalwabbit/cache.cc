@@ -62,14 +62,14 @@ __attribute__((packed))
 #endif
 ;
 
-void VW::write_example_to_cache(io_buf& output, const example* ae, const label_parser& lbl_parser, uint64_t parse_mask)
+void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_parser, uint64_t parse_mask)
 {
   lbl_parser.cache_label(&ae->l, ae->_reduction_features, output);
   cache_features(output, ae, parse_mask);
 }
 
 int VW::read_example_from_cache(
-    io_buf& input, example* ae, const label_parser& lbl_parser, bool sorted_cache, shared_data* shared_dat)
+    io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache, shared_data* shared_dat)
 {
   ae->sorted = sorted_cache;
   size_t total = lbl_parser.read_cached_label(shared_dat, &ae->l, ae->_reduction_features, input);
@@ -120,7 +120,8 @@ int VW::read_example_from_cache(
       feature_index i = 0;
       c = run_len_decode(c, i);
       feature_value v = 1.f;
-      if (i & neg_1) { v = -1.; }
+      if (i & neg_1)
+        v = -1.;
       else if (i & general)
       {
         v = (reinterpret_cast<one_float*>(c))->f;
@@ -128,7 +129,7 @@ int VW::read_example_from_cache(
       }
       uint64_t diff = i >> 2;
       int64_t s_diff = ZigZagDecode(diff);
-      if (s_diff < 0) { ae->sorted = false; }
+      if (s_diff < 0) ae->sorted = false;
       i = last + s_diff;
       last = i;
       ours.push_back(v, i);
@@ -160,7 +161,7 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void output_features(io_buf& cache, unsigned char index, const features& fs, uint64_t mask)
+void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask)
 {
   char* c;
   size_t storage = fs.size() * int_size;
@@ -209,11 +210,17 @@ void cache_tag(io_buf& cache, const v_array<char>& tag)
   cache.set(c);
 }
 
-void cache_features(io_buf& cache, const example* ae, uint64_t mask)
+void cache_features(io_buf& cache, example* ae, uint64_t mask)
 {
   cache_tag(cache, ae->tag);
 
   cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
   cache.write_value<unsigned char>(static_cast<unsigned char>(ae->indices.size()));
   for (namespace_index ns : ae->indices) output_features(cache, ns, ae->feature_space[ns], mask);
+}
+
+uint32_t VW::convert(size_t number)
+{
+  if (number > UINT32_MAX) { THROW("size_t value is out of bounds of uint32_t.") }
+  return static_cast<uint32_t>(number);
 }

@@ -48,7 +48,7 @@ size_t read_cached_label(shared_data*, MULTILABEL::labels& ld, io_buf& cache)
 
 float weight(MULTILABEL::labels&) { return 1.; }
 
-char* bufcache_label(const labels& ld, char* c)
+char* bufcache_label(labels& ld, char* c)
 {
   *reinterpret_cast<size_t*>(c) = ld.label_v.size();
   c += sizeof(size_t);
@@ -60,7 +60,7 @@ char* bufcache_label(const labels& ld, char* c)
   return c;
 }
 
-void cache_label(const MULTILABEL::labels& ld, io_buf& cache)
+void cache_label(MULTILABEL::labels& ld, io_buf& cache)
 {
   char* c;
   cache.buf_write(c, sizeof(size_t) + sizeof(uint32_t) * ld.label_v.size());
@@ -101,7 +101,7 @@ label_parser multilabel = {
     parse_label(p, sd, v->multilabels, words, red_features);
   },
   // cache_label
-  [](const polylabel* v, const reduction_features&, io_buf& cache) { cache_label(v->multilabels, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->multilabels, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->multilabels, cache); },
   // get_weight

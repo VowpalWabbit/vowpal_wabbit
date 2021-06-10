@@ -10,7 +10,6 @@
 #include "constant.h"
 #include "vw_math.h"
 #include "parse_primitives.h"
-#include "numeric_casts.h"
 #include <numeric>
 
 namespace VW
@@ -56,7 +55,7 @@ size_t read_cached_label(shared_data* /*sd*/, slates::label& ld, io_buf& cache)
   return read_count;
 }
 
-void cache_label(const slates::label& ld, io_buf& cache)
+void cache_label(slates::label& ld, io_buf& cache)
 {
   char* c;
   size_t size = sizeof(ld.type) + sizeof(ld.weight) + sizeof(ld.labeled) + sizeof(ld.cost) + sizeof(ld.slot_id) +
@@ -68,8 +67,8 @@ void cache_label(const slates::label& ld, io_buf& cache)
   WRITE_CACHED_VALUE(ld.weight, float);
   WRITE_CACHED_VALUE(ld.labeled, bool);
   WRITE_CACHED_VALUE(ld.cost, float);
-  WRITE_CACHED_VALUE(ld.slot_id, uint32_t);
-  WRITE_CACHED_VALUE(VW::cast_to_smaller_type<uint32_t>(ld.probabilities.size()), uint32_t);
+  WRITE_CACHED_VALUE(VW::convert(ld.slot_id), uint32_t);
+  WRITE_CACHED_VALUE(VW::convert(ld.probabilities.size()), uint32_t);
   for (const auto& score : ld.probabilities) { WRITE_CACHED_VALUE(score, ACTION_SCORE::action_score); }
 }
 
@@ -178,7 +177,7 @@ label_parser slates_label_parser = {
     parse_label(p, sd, v->slates, words, red_features);
   },
   // cache_label
-  [](const polylabel* v, const reduction_features&, io_buf& cache) { cache_label(v->slates, cache); },
+  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->slates, cache); },
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->slates, cache); },
   // get_weight
