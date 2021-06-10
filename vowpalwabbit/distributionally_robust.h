@@ -26,7 +26,10 @@ public:
     double n;
 
     Duals() : unbounded(false), kappa(0.f), gamma(0.f), beta(0.f), n(0.f) {}
-    Duals(bool unbounded, double kappa, double gamma, double beta, double n) : unbounded(unbounded), kappa(kappa), gamma(gamma), beta(beta), n(n) {}
+    Duals(bool unbounded, double kappa, double gamma, double beta, double n)
+        : unbounded(unbounded), kappa(kappa), gamma(gamma), beta(beta), n(n)
+    {
+    }
     double qfunc(double w, double r) { return unbounded ? 1 : -(gamma + (beta + r) * w) / ((n + 1) * kappa); }
   };
 
