@@ -31,7 +31,7 @@ struct options_i;
 
 struct setup_base_fn
 {
-  virtual VW::LEARNER::base_learner* operator() (VW::config::options_i&, vw&) = 0;
+  virtual VW::LEARNER::base_learner* operator()(VW::config::options_i&, vw&) = 0;
 
   virtual ~setup_base_fn() = default;
 };

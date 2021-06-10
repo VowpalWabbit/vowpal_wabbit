@@ -1,6 +1,6 @@
 #include "reduction_stack.h"
 
-#include "global_data.h" // to get vw struct
+#include "global_data.h"  // to get vw struct
 #include "cached_learner.h"
 #include "learner.h"
 #include "options.h"
@@ -83,7 +83,8 @@
 #include "sample_pdf.h"
 #include "kskip_ngram_transformer.h"
 
-void register_reductions(std::vector<reduction_setup_fn>& reductions, std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
+void register_reductions(std::vector<reduction_setup_fn>& reductions,
+    std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
 {
   VW::cached_learner null_ptr_learner;
 
@@ -209,84 +210,82 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   register_reductions(reductions, reduction_stack);
 }
 
-
 // TODO: to be deleted; just to test refactor
 // instantiate from the bottom (gd) up, the reverse from setup_base()
 // this way we can call to any reduction setup and
 // re-use previously instantiated learners (via VW::cached_learner), with some caveats
 void instantiate_learner(VW::config::options_i& options, vw& all)
 {
-    VW::cached_learner nullptr_learner;
-    VW::cached_learner gd_wrap(GD::setup(nullptr_learner, options, all));
-    VW::cached_learner scorer_wrap(scorer_setup(gd_wrap, options, all));
+  VW::cached_learner nullptr_learner;
+  VW::cached_learner gd_wrap(GD::setup(nullptr_learner, options, all));
+  VW::cached_learner scorer_wrap(scorer_setup(gd_wrap, options, all));
 
-    // set to top level reduction
-    all.l = scorer_wrap(options, all);
+  // set to top level reduction
+  all.l = scorer_wrap(options, all);
 
-    // be good citizen and update enabled reductions
-    // doesnt work anymore, enabled_reductions moved to status_quo instance
-    // if (gd_wrap) all.enabled_reductions.push_back("gd");
-    // if (scorer_wrap) all.enabled_reductions.push_back("scorer");
+  // be good citizen and update enabled reductions
+  // doesnt work anymore, enabled_reductions moved to status_quo instance
+  // if (gd_wrap) all.enabled_reductions.push_back("gd");
+  // if (scorer_wrap) all.enabled_reductions.push_back("scorer");
 
-    return;
+  return;
 }
-
 
 namespace VW
 {
-  status_quo::status_quo(vw& all)
-  {
-      // push all reduction functions into the stack
-      prepare_reductions(reduction_stack);
-      // populate setup_fn -> name map to be used to lookup names in setup_base
-      all.build_setupfn_name_dict(reduction_stack);
-  }
-
-  void status_quo::print_enabled_reductions(vw& all)
-  {
-    *(all.trace_message) << "Enabled reductions: ";
-
-    if (!enabled_reductions.empty())
-    {
-        const char* const delim = ", ";
-        std::ostringstream imploded;
-        std::copy(enabled_reductions.begin(), enabled_reductions.end() - 1,
-            std::ostream_iterator<std::string>(imploded, delim));
-
-        *(all.trace_message) << imploded.str() << enabled_reductions.back();
-    }
-
-    *(all.trace_message) << std::endl;
-  }
-
-  // this function consumes all the reduction_stack until it's able to construct a base_learner
-  // same signature/code as the old setup_base(...) from parse_args.cc
-  VW::LEARNER::base_learner* status_quo::operator() (VW::config::options_i& options, vw& all)
-  {
-    if (!reduction_stack.empty())
-    {
-        auto func_map = reduction_stack.back();
-        reduction_setup_fn setup_func = std::get<1>(func_map);
-        std::string setup_func_name = std::get<0>(func_map);
-        reduction_stack.pop_back();
-
-        // 'hacky' way of keeping track of the option group created by the setup_func about to be created
-        options.tint(setup_func_name);
-        auto base = setup_func(*this, options, all);
-        options.reset_tint();
-
-        // returning nullptr means that setup_func (any reduction) was not 'enabled' but
-        // only added their respective command args and did not add itself into the
-        // chain of learners, therefore we call into setup_base again
-        if (base == nullptr) { return this->operator()(options, all); }
-        else
-        {
-            enabled_reductions.push_back(setup_func_name);
-            reduction_stack.clear();
-            return base;
-        }
-    }
-
-    return nullptr;
-  }
+status_quo::status_quo(vw& all)
+{
+  // push all reduction functions into the stack
+  prepare_reductions(reduction_stack);
+  // populate setup_fn -> name map to be used to lookup names in setup_base
+  all.build_setupfn_name_dict(reduction_stack);
 }
+
+void status_quo::print_enabled_reductions(vw& all)
+{
+  *(all.trace_message) << "Enabled reductions: ";
+
+  if (!enabled_reductions.empty())
+  {
+    const char* const delim = ", ";
+    std::ostringstream imploded;
+    std::copy(
+        enabled_reductions.begin(), enabled_reductions.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
+
+    *(all.trace_message) << imploded.str() << enabled_reductions.back();
+  }
+
+  *(all.trace_message) << std::endl;
+}
+
+// this function consumes all the reduction_stack until it's able to construct a base_learner
+// same signature/code as the old setup_base(...) from parse_args.cc
+VW::LEARNER::base_learner* status_quo::operator()(VW::config::options_i& options, vw& all)
+{
+  if (!reduction_stack.empty())
+  {
+    auto func_map = reduction_stack.back();
+    reduction_setup_fn setup_func = std::get<1>(func_map);
+    std::string setup_func_name = std::get<0>(func_map);
+    reduction_stack.pop_back();
+
+    // 'hacky' way of keeping track of the option group created by the setup_func about to be created
+    options.tint(setup_func_name);
+    auto base = setup_func(*this, options, all);
+    options.reset_tint();
+
+    // returning nullptr means that setup_func (any reduction) was not 'enabled' but
+    // only added their respective command args and did not add itself into the
+    // chain of learners, therefore we call into setup_base again
+    if (base == nullptr) { return this->operator()(options, all); }
+    else
+    {
+      enabled_reductions.push_back(setup_func_name);
+      reduction_stack.clear();
+      return base;
+    }
+  }
+
+  return nullptr;
+}
+}  // namespace VW

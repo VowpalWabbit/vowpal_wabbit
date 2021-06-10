@@ -1576,10 +1576,7 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
     // upon direct query for help -- spit it out to stdout;
     if (all.options->get_typed_option<bool>("help").value())
     {
-      if (all.learner_builder)
-      {
-        cout << all.options->help(all.learner_builder->enabled_reductions);
-      }
+      if (all.learner_builder) { cout << all.options->help(all.learner_builder->enabled_reductions); }
       else
       {
         cout << all.options->help({});
@@ -1587,14 +1584,10 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
       exit(0);
     }
 
-
     // output list of enabled reductions
     if (!all.logger.quiet && !all.options->was_supplied("audit_regressor"))
     {
-      if (all.learner_builder)
-      {
-        all.learner_builder->print_enabled_reductions(all);
-      }
+      if (all.learner_builder) { all.learner_builder->print_enabled_reductions(all); }
       else
       {
         *(all.trace_message) << "Enabled reductions: gd, scorer" << std::endl;
