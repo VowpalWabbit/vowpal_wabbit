@@ -83,7 +83,7 @@ int VW::read_example_from_cache(
   }
 
   // read indices
-  unsigned char num_indices = input.read_value<unsigned char>("num_indices");
+  auto num_indices = input.read_value<uint64_t>("num_indices");
 
   char* c;
   for (; num_indices > 0; num_indices--)
@@ -91,7 +91,7 @@ int VW::read_example_from_cache(
     size_t temp;
     unsigned char index = 0;
     uint64_t ns_hash = 0;
-    if ((temp = input->buf_read(c, sizeof(index) + sizeof(ns_hash) + sizeof(size_t))) < sizeof(index) + sizeof(ns_hash) + sizeof(size_t))
+    if ((temp = input.buf_read(c, sizeof(index) + sizeof(ns_hash) + sizeof(size_t))) < sizeof(index) + sizeof(ns_hash) + sizeof(size_t))
     {
       VW::io::logger::errlog_error("truncated example! {} {} ", temp, char_size + sizeof(size_t));
       return 0;
@@ -102,7 +102,7 @@ int VW::read_example_from_cache(
     ns_hash = *reinterpret_cast<uint64_t*>(c);
     c += sizeof(ns_hash);
 
-    features& ours = ae->feature_space.get_or_create_feature_group(index, ns_hash);
+    features& ours = ae->feature_space.get_or_create_feature_group(ns_hash, index);
     size_t storage = *reinterpret_cast<size_t*>(c);
     c += sizeof(size_t);
     input.set(c);
@@ -223,7 +223,7 @@ void cache_features(io_buf& cache, const example* ae, uint64_t mask)
 {
   cache_tag(cache, ae->tag);
   cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
-  cache.write_value<unsigned char>(static_cast<unsigned char>(ae->indices.size()));
+  cache.write_value<uint64_t>(static_cast<uint64_t>(ae->feature_space.size()));
   for (auto it = ae->feature_space.begin(); it != ae->feature_space.end(); ++it)
   {
     output_features(cache, it.index(), it.hash(), *it, mask);

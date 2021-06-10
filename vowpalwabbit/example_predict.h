@@ -34,7 +34,7 @@ struct indices_proxy_obj
 
   std::set<namespace_index>::iterator begin() { return feature_space->get_indices().begin(); }
   std::set<namespace_index>::iterator end() { return feature_space->get_indices().end(); }
-  size_t size() { return feature_space->get_indices().size(); }
+  size_t size() const { return feature_space->get_indices().size(); }
 };
 
 struct example_predict
