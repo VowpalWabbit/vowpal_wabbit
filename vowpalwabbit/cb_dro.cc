@@ -3,6 +3,7 @@
 #include "distributionally_robust.h"
 #include "explore.h"
 #include "rand48.h"
+#include "label_parser.h"
 
 #include "io/logger.h"
 
