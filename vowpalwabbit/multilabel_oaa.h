@@ -6,4 +6,4 @@
 #include "reductions_fwd.h"
 
 VW::LEARNER::base_learner* multilabel_oaa_setup(
-    VW::setup_base_fn setup_base_fn, VW::config::options_i& options, vw& all);
+    VW::setup_base_fn& setup_base_fn, VW::config::options_i& options, vw& all);

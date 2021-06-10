@@ -160,7 +160,7 @@ void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool te
   }
 }
 
-VW::LEARNER::base_learner* setup(setup_base_fn setup_base_fn, VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::setup_base_fn& setup_base_fn, VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
