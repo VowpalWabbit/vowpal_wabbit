@@ -102,6 +102,7 @@ struct parser_options;
 
 namespace VW
 {
+struct status_quo;
 namespace parsers
 {
 namespace flatbuffer
@@ -275,8 +276,7 @@ public:
 
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
-  std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
-  std::vector<std::string> enabled_reductions;
+  std::unique_ptr<VW::status_quo> learner_builder;
 
   // Prediction output
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
@@ -335,7 +335,7 @@ public:
   vw& operator=(const vw&&) = delete;
 
   std::string get_setupfn_name(reduction_setup_fn setup);
-  void build_setupfn_name_dict();
+  void build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>&);
 
 private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;

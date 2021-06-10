@@ -28,5 +28,13 @@ namespace config
 {
 struct options_i;
 }  // namespace config
-typedef VW::LEARNER::base_learner* (*setup_base_fn)(VW::config::options_i&, vw&);
+
+struct setup_base_fn
+{
+  virtual VW::LEARNER::base_learner* operator() (VW::config::options_i&, vw&) = 0;
+
+  virtual ~setup_base_fn() = default;
+};
+
+// typedef VW::LEARNER::base_learner* (*setup_base_fn)(VW::config::options_i&, vw&);
 }  // namespace VW
