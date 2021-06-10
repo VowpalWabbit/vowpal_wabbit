@@ -62,13 +62,13 @@ __attribute__((packed))
 #endif
 ;
 
-void VW::write_example_to_cache(io_buf& output, const example* ae, const label_parser& lbl_parser, uint64_t parse_mask)
+FORCE_INLINE void VW::write_example_to_cache(io_buf& output, const example* ae, const label_parser& lbl_parser, uint64_t parse_mask)
 {
   lbl_parser.cache_label(&ae->l, ae->_reduction_features, output);
   cache_features(output, ae, parse_mask);
 }
 
-int VW::read_example_from_cache(
+FORCE_INLINE int VW::read_example_from_cache(
     io_buf& input, example* ae, const label_parser& lbl_parser, bool sorted_cache, shared_data* shared_dat)
 {
   ae->sorted = sorted_cache;
@@ -139,7 +139,7 @@ int VW::read_example_from_cache(
   return static_cast<int>(total);
 }
 
-int read_cached_features(vw* all, v_array<example*>& examples)
+FORCE_INLINE int read_cached_features(vw* all, v_array<example*>& examples)
 {
   return VW::read_example_from_cache(*all->example_parser->input, examples[0], all->example_parser->lbl_parser,
       all->example_parser->sorted_cache, all->example_parser->_shared_data);
@@ -151,7 +151,7 @@ inline uint64_t ZigZagEncode(int64_t n)
   return ret;
 }
 
-void output_byte(io_buf& cache, unsigned char s)
+FORCE_INLINE void output_byte(io_buf& cache, unsigned char s)
 {
   char* c;
 
@@ -160,7 +160,7 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void output_features(io_buf& cache, unsigned char index, const features& fs, uint64_t mask)
+FORCE_INLINE void output_features(io_buf& cache, unsigned char index, const features& fs, uint64_t mask)
 {
   char* c;
   size_t storage = fs.size() * int_size;
@@ -198,7 +198,7 @@ void output_features(io_buf& cache, unsigned char index, const features& fs, uin
   *reinterpret_cast<size_t*>(storage_size_loc) = c - storage_size_loc - sizeof(size_t);
 }
 
-void cache_tag(io_buf& cache, const v_array<char>& tag)
+FORCE_INLINE void cache_tag(io_buf& cache, const v_array<char>& tag)
 {
   char* c;
   cache.buf_write(c, sizeof(size_t) + tag.size());
@@ -209,7 +209,7 @@ void cache_tag(io_buf& cache, const v_array<char>& tag)
   cache.set(c);
 }
 
-void cache_features(io_buf& cache, const example* ae, uint64_t mask)
+FORCE_INLINE void cache_features(io_buf& cache, const example* ae, uint64_t mask)
 {
   cache_tag(cache, ae->tag);
 
