@@ -1,4 +1,5 @@
 name: Linux / C++ - VW Slim
+
 on:
   push:
     branches:
@@ -6,7 +7,7 @@ on:
       - 'releases/**'
   pull_request:
     branches:
-      - master
+      - '*'
 
 jobs:
   check:
