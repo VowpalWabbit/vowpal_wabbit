@@ -1625,7 +1625,7 @@ void parse_modules(
 
   parse_reductions(options, all);
 
-  if (!all.logger.quiet)
+  if (!options.was_supplied("help") && !all.logger.quiet)
   {
     *(all.trace_message) << "Num weight bits = " << all.num_bits << endl;
     *(all.trace_message) << "learning rate = " << all.eta << endl;
