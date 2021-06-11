@@ -17,7 +17,7 @@
     "l contributors. All rights reserved")]
 [assembly: System.Runtime.InteropServices.ComVisible(false)]
 [assembly: System.CLSCompliant(false)]
-[assembly: System.Reflection.AssemblyVersion("8.10.1")]
-[assembly: System.Reflection.AssemblyFileVersion("8.10.1")]
+[assembly: System.Reflection.AssemblyVersion("8.10.2")]
+[assembly: System.Reflection.AssemblyFileVersion("8.10.2")]
 
 
