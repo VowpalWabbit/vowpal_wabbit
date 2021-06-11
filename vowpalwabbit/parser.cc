@@ -795,6 +795,10 @@ void setup_example(vw& all, example* ae)
   ae->num_features += new_features_cnt;
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
 
+  // all.example_parser->incrementer_mutex.lock();
+  all.example_parser->end_parsed_examples ++;
+  // all.example_parser->incrementer_mutex.unlock();
+
 }
 
 }  // namespace VW
@@ -963,7 +967,6 @@ void finish_example(vw& all, example& ec)
 
 void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
-  all.example_parser->end_parsed_examples += examples.size();
   notify_examples_cv(examples[0]);
 }
 
@@ -986,12 +989,21 @@ example* get_example(vw& all) {
       ex->ex_lock.example_parsed->wait(lock);
     }
   }
+  // After parsing the example, we set it up, if the example is not end pass.
+  if (!ex->end_pass){
+    VW::setup_example(all, ex);
+  }
 
-  // After parsing the example, if it is end_pass, we execute the end pass sequence
-  if (ex->end_pass){
+  // if it is end_pass, we execute the end pass sequence
+  else{
     reset_source(all, all.num_bits);
     // all.do_reset_source = false;
     all.passes_complete++;
+
+    // setup an end_pass example
+    all.example_parser->lbl_parser.default_label(&ex->l);
+    all.example_parser->in_pass_counter = 0;
+
     std::cout << "ENCOUNTERED END PASS EXAMPLE: " << all.passes_complete << std::endl;
 
     // if (all.passes_complete == all.numpasses && example_number == all.pass_length)

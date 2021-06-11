@@ -28,23 +28,19 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
   {
     while (!all.example_parser->done)
     {
-
       example* example_ptr = &VW::get_unused_example(&all);
       examples.push_back(example_ptr);
 
       // if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number)
       // {
+      // all.example_parser->test_mutex.lock();
         int num_chars_read = all.example_parser->reader(&all, examples, words_localcpy, parse_name_localcpy);
         if(num_chars_read > 0){
-          VW::setup_examples(all, examples);
           // example_number += examples.size();
           dispatch(all, examples);
         }
         else if(num_chars_read == 0){
-          // setup an end_pass example
-          all.example_parser->lbl_parser.default_label(&examples[0]->l);
           examples[0]->end_pass = true;
-          all.example_parser->in_pass_counter = 0;
           dispatch(all, examples);
         }
         else if(num_chars_read == -1)
