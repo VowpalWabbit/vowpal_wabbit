@@ -210,27 +210,6 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   register_reductions(reductions, reduction_stack);
 }
 
-// TODO: to be deleted; just to test refactor
-// instantiate from the bottom (gd) up, the reverse from setup_base()
-// this way we can call to any reduction setup and
-// re-use previously instantiated learners (via VW::cached_learner), with some caveats
-void instantiate_learner(VW::config::options_i& options, vw& all)
-{
-  VW::cached_learner nullptr_learner;
-  VW::cached_learner gd_wrap(GD::setup(nullptr_learner, options, all));
-  VW::cached_learner scorer_wrap(scorer_setup(gd_wrap, options, all));
-
-  // set to top level reduction
-  all.l = scorer_wrap(options, all);
-
-  // be good citizen and update enabled reductions
-  // doesnt work anymore, enabled_reductions moved to status_quo instance
-  // if (gd_wrap) all.enabled_reductions.push_back("gd");
-  // if (scorer_wrap) all.enabled_reductions.push_back("scorer");
-
-  return;
-}
-
 namespace VW
 {
 status_quo::status_quo(vw& all)

@@ -6,9 +6,6 @@ struct vw;
 
 typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::setup_base_fn&, VW::config::options_i&, vw&);
 
-// TODO: to be deleted; just to test refactor
-void instantiate_learner(VW::config::options_i& options, vw& all);
-
 namespace VW
 {
 struct status_quo : public setup_base_fn

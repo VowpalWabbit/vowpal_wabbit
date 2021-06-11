@@ -1387,10 +1387,8 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model,
 void parse_modules(
     options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
-  bool test_mctest;
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
-  rand_options.add(make_option("test_temp", test_mctest).help("enable test parse reduction"));
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
 
@@ -1402,20 +1400,10 @@ void parse_modules(
 
   parse_output_preds(options, all);
 
-  if (!options.was_supplied("test_temp"))
-  {
-    // create reduction stack builder instance
-    // copy from setup_base(...) from parse_args.cc
-    all.learner_builder = VW::make_unique<VW::status_quo>(all);
-    // kick-off reduction setup functions
-    all.l = all.learner_builder->operator()(options, all);
-  }
-  else
-  {
-    // TODO: delete
-    // alternate construction for testing
-    instantiate_learner(options, all);
-  }
+  // create reduction stack builder instance
+  all.learner_builder = VW::make_unique<VW::status_quo>(all);
+  // kick-off reduction setup functions
+  all.l = all.learner_builder->operator()(options, all);
 
   if (!all.logger.quiet)
   {
@@ -1585,12 +1573,11 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
     }
 
     // output list of enabled reductions
-    if (!all.logger.quiet && !all.options->was_supplied("audit_regressor"))
+    if (all.learner_builder)
     {
-      if (all.learner_builder) { all.learner_builder->print_enabled_reductions(all); }
-      else
+      if (!all.logger.quiet && !all.options->was_supplied("audit_regressor"))
       {
-        *(all.trace_message) << "Enabled reductions: gd, scorer" << std::endl;
+        all.learner_builder->print_enabled_reductions(all);
       }
     }
 
