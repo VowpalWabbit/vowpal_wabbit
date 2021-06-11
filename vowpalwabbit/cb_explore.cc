@@ -361,6 +361,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   data->cbcs.cb_type = CB_TYPE_DR;
+  data->model_file_version = all.model_file_ver;
 
   single_learner* base = as_singleline(setup_base(options, all));
   data->cbcs.scorer = all.scorer;
@@ -382,7 +383,6 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
     for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(COST_SENSITIVE::wclass{}); }
     data->cover_probs.resize_but_with_stl_behavior(num_actions);
     data->preds.reserve(data->cover_size);
-    data->model_file_version = all.model_file_ver;
     l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1,
         prediction_type_t::action_probs, all.get_setupfn_name(cb_explore_setup) + "-cover");
   }
