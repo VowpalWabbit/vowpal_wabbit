@@ -625,20 +625,17 @@ void lock_done(parser& p)
 {
   // p.last_pass_complete.store(true);
 
-  // // lock_done() can be called by the learner thread when the examples have reached the maximum pass allowed.
-  // // So, in such a condition, an un-timely end of the program is triggered.
-  // // That is why, we release the io_thread in such un-timely situations.
-  // p.done_with_io.store(true);
-  // p.can_end_pass.notify_one();
-
   // To notify the other parser threads that they can continue their job.
   // p.done_with_end_pass.store(true);
   // p.can_end_pass_parser.notify_all();
-  std::cout << "LOCK DONE!!" << std::endl;
   p.done = true;
-      // to call reset source in io thread
-    p.done_with_io.store(true);
-    p.can_end_pass.notify_one();
+
+  // lock_done() can be called by the learner thread when the examples have reached the maximum pass allowed.
+  // So, in such a condition, an un-timely end of the program is triggered.
+  // That is why, we release the io_thread in such un-timely situations.
+  p.done_with_io.store(true);
+  p.can_end_pass.notify_one();
+
   p.io_lines.set_done();
   // in case get_example() is waiting for a fresh example, wake so it can realize there are no more.
   p.ready_parsed_examples.set_done();
@@ -648,7 +645,6 @@ void lock_done(parser& p)
 
 void set_done(vw& all)
 {
-  std::cout << "SET DONE!" << std::endl;
   all.early_terminate = true;
   lock_done(*all.example_parser);
 }
@@ -979,7 +975,6 @@ example* get_example(vw& all) {
   example* ex = all.example_parser->ready_parsed_examples.pop();
 
   if (ex == nullptr) {
-    std::cout << "NULL POINTER ENCOUNTERED" << std::endl;
     return ex;
   }
 
@@ -1003,8 +998,6 @@ example* get_example(vw& all) {
     // setup an end_pass example
     all.example_parser->lbl_parser.default_label(&ex->l);
     all.example_parser->in_pass_counter = 0;
-
-    std::cout << "ENCOUNTERED END PASS EXAMPLE: " << all.passes_complete << std::endl;
 
     // if (all.passes_complete == all.numpasses && example_number == all.pass_length)
     // {

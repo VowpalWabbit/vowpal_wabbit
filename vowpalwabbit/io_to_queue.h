@@ -15,16 +15,12 @@ inline void io_lines_toqueue(vw& all){
  
   int counter_of_number_passes = 0;
   while(counter_of_number_passes++ < num_passes_to_complete) {
-    std::cout << "IO Pass: " << counter_of_number_passes << std::endl;
-    //  zeset done_with_io (set when we are done adding to io) to false at beginning of new pass
     all.example_parser->done_with_io.store(false);
 
     char* line = nullptr;
-
     bool should_finish = false;
 
-    while(!should_finish)
-    {   
+    while(!should_finish){
       should_finish = all.example_parser->input_file_reader(all, line);
     }
 
