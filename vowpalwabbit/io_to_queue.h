@@ -10,12 +10,8 @@ inline void io_lines_toqueue(vw& all){
 
   std::mutex mut;
   std::unique_lock<std::mutex> lock(mut);
-  
-  int num_passes_to_complete = all.numpasses;
- 
-  int counter_of_number_passes = 0;
-  while(counter_of_number_passes++ < num_passes_to_complete) {
-    all.example_parser->done_with_io.store(false);
+   
+  while(!all.example_parser->done) {
 
     char* line = nullptr;
     bool should_finish = false;
@@ -24,12 +20,13 @@ inline void io_lines_toqueue(vw& all){
       should_finish = all.example_parser->input_file_reader(all, line);
     }
 
-    while(all.example_parser->done_with_io == false) {
+    while(!all.example_parser->done_with_io) {
       all.example_parser->can_end_pass.wait(lock);
     }
+    all.example_parser->done_with_io.store(false);
 
   }
- 
+
 }
  
 
