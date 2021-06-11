@@ -7,4 +7,4 @@
 #include "reductions_fwd.h"
 
 VW::LEARNER::base_learner* audit_regressor_setup(
-    VW::setup_base_fn& setup_base_fn, VW::config::options_i& options, vw& all);
+    VW::setup_base_fn& setup_base, VW::config::options_i& options, vw& all);

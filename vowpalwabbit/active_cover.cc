@@ -206,7 +206,7 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
   }
 }
 
-base_learner* active_cover_setup(VW::setup_base_fn& setup_base_fn, options_i& options, vw& all)
+base_learner* active_cover_setup(VW::setup_base_fn& setup_base, options_i& options, vw& all)
 {
   auto data = VW::make_unique<active_cover>();
   option_group_definition new_options("Active Learning with Cover");
@@ -240,7 +240,7 @@ base_learner* active_cover_setup(VW::setup_base_fn& setup_base_fn, options_i& op
 
   if (options.was_supplied("active")) THROW("error: you can't use --active_cover and --active at the same time");
 
-  auto* base = as_singleline(setup_base_fn(options, all));
+  auto* base = as_singleline(setup_base(options, all));
 
   data->lambda_n = new float[data->cover_size];
   data->lambda_d = new float[data->cover_size];

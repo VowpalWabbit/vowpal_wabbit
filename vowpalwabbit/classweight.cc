@@ -78,7 +78,7 @@ void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base,
 
 using namespace CLASSWEIGHTS;
 
-VW::LEARNER::base_learner* classweight_setup(VW::setup_base_fn& setup_base_fn, options_i& options, vw& all)
+VW::LEARNER::base_learner* classweight_setup(VW::setup_base_fn& setup_base, options_i& options, vw& all)
 {
   std::vector<std::string> classweight_array;
   auto cweights = scoped_calloc_or_throw<classweights>();
@@ -92,7 +92,7 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_fn& setup_base_fn, o
 
   if (!all.logger.quiet) *(all.trace_message) << "parsed " << cweights->weights.size() << " class weights" << std::endl;
 
-  VW::LEARNER::single_learner* base = as_singleline(setup_base_fn(options, all));
+  VW::LEARNER::single_learner* base = as_singleline(setup_base(options, all));
 
   VW::LEARNER::learner<classweights, example>* ret;
   if (base->pred_type == prediction_type_t::scalar)

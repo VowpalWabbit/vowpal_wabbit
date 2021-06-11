@@ -66,7 +66,7 @@ inline float glf1(float in) { return 2.f / (1.f + correctedExp(-in)) - 1.f; }
 
 inline float id(float in) { return in; }
 
-VW::LEARNER::base_learner* scorer_setup(VW::setup_base_fn& setup_base_fn, options_i& options, vw& all)
+VW::LEARNER::base_learner* scorer_setup(VW::setup_base_fn& setup_base, options_i& options, vw& all)
 {
   auto s = scoped_calloc_or_throw<scorer>();
   std::string link;
@@ -81,7 +81,7 @@ VW::LEARNER::base_learner* scorer_setup(VW::setup_base_fn& setup_base_fn, option
 
   s->all = &all;
 
-  auto base = as_singleline(setup_base_fn(options, all));
+  auto base = as_singleline(setup_base(options, all));
   VW::LEARNER::learner<scorer, example>* l;
   void (*multipredict_f)(scorer&, VW::LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool) =
       multipredict<id>;

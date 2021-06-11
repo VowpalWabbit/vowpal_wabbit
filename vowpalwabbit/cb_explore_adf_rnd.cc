@@ -252,7 +252,7 @@ void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, multi_ex& ex
   exploration::enforce_minimum_probability(epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
-base_learner* setup(VW::setup_base_fn& setup_base_fn, VW::config::options_i& options, vw& all)
+base_learner* setup(VW::setup_base_fn& setup_base, VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
@@ -292,7 +292,7 @@ base_learner* setup(VW::setup_base_fn& setup_base_fn, VW::config::options_i& opt
 
   size_t problem_multiplier = 1 + numrnd;
 
-  multi_learner* base = as_multiline(setup_base_fn(options, all));
+  multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");

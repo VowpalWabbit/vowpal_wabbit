@@ -654,7 +654,7 @@ void finish_multiline_example(vw& all, cbify&, multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
-base_learner* cbify_setup(VW::setup_base_fn& setup_base_fn, options_i& options, vw& all)
+base_learner* cbify_setup(VW::setup_base_fn& setup_base, options_i& options, vw& all)
 {
   uint32_t num_actions = 0;
   uint32_t cb_continuous_num_actions = 0;
@@ -755,7 +755,7 @@ base_learner* cbify_setup(VW::setup_base_fn& setup_base_fn, options_i& options, 
 
   if (data->use_adf)
   {
-    multi_learner* base = as_multiline(setup_base_fn(options, all));
+    multi_learner* base = as_multiline(setup_base(options, all));
 
     if (data->use_adf) { data->adf_data.init_adf_data(num_actions, base->increment, all.interactions); }
 
@@ -774,7 +774,7 @@ base_learner* cbify_setup(VW::setup_base_fn& setup_base_fn, options_i& options, 
   }
   else
   {
-    single_learner* base = as_singleline(setup_base_fn(options, all));
+    single_learner* base = as_singleline(setup_base(options, all));
     if (use_reg)
     {
       all.example_parser->lbl_parser = simple_label_parser;
@@ -809,7 +809,7 @@ base_learner* cbify_setup(VW::setup_base_fn& setup_base_fn, options_i& options, 
   return make_base(*l);
 }
 
-base_learner* cbifyldf_setup(VW::setup_base_fn& setup_base_fn, options_i& options, vw& all)
+base_learner* cbifyldf_setup(VW::setup_base_fn& setup_base, options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cbify>();
   bool cbify_ldf_option = false;
@@ -840,7 +840,7 @@ base_learner* cbifyldf_setup(VW::setup_base_fn& setup_base_fn, options_i& option
     options.insert("lr_multiplier", ss.str());
   }
 
-  multi_learner* base = as_multiline(setup_base_fn(options, all));
+  multi_learner* base = as_multiline(setup_base(options, all));
   learner<cbify, multi_ex>& l = init_learner(data, base, do_actual_learning_ldf, do_actual_predict_ldf, 1,
       prediction_type_t::multiclass, all.get_setupfn_name(cbifyldf_setup));
 

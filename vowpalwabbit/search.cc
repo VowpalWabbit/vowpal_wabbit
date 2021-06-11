@@ -2560,7 +2560,7 @@ void parse_neighbor_features(VW::string_view nf_strview, search& sch)
   }
 }
 
-base_learner* setup(VW::setup_base_fn& setup_base_fn, options_i& options, vw& all)
+base_learner* setup(VW::setup_base_fn& setup_base, options_i& options, vw& all)
 {
   free_ptr<search> sch = scoped_calloc_or_throw<search>();
   search_private& priv = *sch->priv;
@@ -2791,7 +2791,7 @@ base_learner* setup(VW::setup_base_fn& setup_base_fn, options_i& options, vw& al
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
-  base_learner* base = setup_base_fn(*all.options, all);
+  base_learner* base = setup_base(*all.options, all);
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   all.example_parser->lbl_parser = MC::mc_label;

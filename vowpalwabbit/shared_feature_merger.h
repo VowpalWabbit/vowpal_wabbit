@@ -13,7 +13,7 @@ namespace VW
 namespace shared_feature_merger
 {
 VW::LEARNER::base_learner* shared_feature_merger_setup(
-    VW::setup_base_fn& setup_base_fn, config::options_i& options, vw& all);
+    VW::setup_base_fn& setup_base, config::options_i& options, vw& all);
 
 }  // namespace shared_feature_merger
 }  // namespace VW

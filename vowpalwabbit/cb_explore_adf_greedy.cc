@@ -77,7 +77,7 @@ void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& ba
   update_example_prediction(examples);
 }
 
-VW::LEARNER::base_learner* setup(VW::setup_base_fn& setup_base_fn, VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::setup_base_fn& setup_base, VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
@@ -113,7 +113,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_fn& setup_base_fn, VW::config::o
 
   if (!options.was_supplied("epsilon")) epsilon = 0.05f;
 
-  VW::LEARNER::multi_learner* base = as_multiline(setup_base_fn(options, all));
+  VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");

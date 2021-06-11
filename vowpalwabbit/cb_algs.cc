@@ -144,7 +144,7 @@ void eval_finish_example(vw& all, cb& c, example& ec)
 }
 }  // namespace CB_ALGS
 using namespace CB_ALGS;
-base_learner* cb_algs_setup(VW::setup_base_fn& setup_base_fn, options_i& options, vw& all)
+base_learner* cb_algs_setup(VW::setup_base_fn& setup_base, options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb>();
   std::string type_string = "dr";
@@ -203,7 +203,7 @@ base_learner* cb_algs_setup(VW::setup_base_fn& setup_base_fn, options_i& options
     options.insert("csoaa", ss.str());
   }
 
-  auto base = as_singleline(setup_base_fn(options, all));
+  auto base = as_singleline(setup_base(options, all));
   if (eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
   else
   {

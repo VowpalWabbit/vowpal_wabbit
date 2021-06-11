@@ -521,7 +521,7 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   data.cumu_var = 0.f;
 }
 
-base_learner* warm_cb_setup(VW::setup_base_fn& setup_base_fn, options_i& options, vw& all)
+base_learner* warm_cb_setup(VW::setup_base_fn& setup_base, options_i& options, vw& all)
 {
   uint32_t num_actions = 0;
   auto data = scoped_calloc_or_throw<warm_cb>();
@@ -595,7 +595,7 @@ base_learner* warm_cb_setup(VW::setup_base_fn& setup_base_fn, options_i& options
 
   learner<warm_cb, example>* l;
 
-  multi_learner* base = as_multiline(setup_base_fn(options, all));
+  multi_learner* base = as_multiline(setup_base(options, all));
   // Note: the current version of warm start CB can only support epsilon-greedy exploration
   // We need to wait for the epsilon value to be passed from the base
   // cb_explore learner, if there is one

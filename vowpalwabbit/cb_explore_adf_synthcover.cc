@@ -160,7 +160,7 @@ void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool te
   }
 }
 
-VW::LEARNER::base_learner* setup(VW::setup_base_fn& setup_base_fn, VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::setup_base_fn& setup_base, VW::config::options_i& options, vw& all)
 {
   using config::make_option;
   bool cb_explore_adf_option = false;
@@ -205,7 +205,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_fn& setup_base_fn, VW::config::o
   }
 
   size_t problem_multiplier = 1;
-  VW::LEARNER::multi_learner* base = as_multiline(setup_base_fn(options, all));
+  VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");

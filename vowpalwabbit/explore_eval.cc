@@ -184,7 +184,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
 
 using namespace EXPLORE_EVAL;
 
-base_learner* explore_eval_setup(VW::setup_base_fn& setup_base_fn, options_i& options, vw& all)
+base_learner* explore_eval_setup(VW::setup_base_fn& setup_base, options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<explore_eval>();
   bool explore_eval_option = false;
@@ -209,7 +209,7 @@ base_learner* explore_eval_setup(VW::setup_base_fn& setup_base_fn, options_i& op
 
   if (!options.was_supplied("cb_explore_adf")) options.insert("cb_explore_adf", "");
 
-  multi_learner* base = as_multiline(setup_base_fn(options, all));
+  multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
   learner<explore_eval, multi_ex>& l = init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1,
