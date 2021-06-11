@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats)
   BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].cost, 0.657567, FLOAT_TOL);
   BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].action, 185.121, FLOAT_TOL);
 
-  auto& space_names = examples[0]->feature_space[' '].space_names;
+  auto& space_names = (*examples[0]->feature_space.namespace_index_begin(' ')).space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
   for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
 
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats_no_label)
   BOOST_CHECK_EQUAL(examples.size(), 1);
   BOOST_CHECK_EQUAL(examples[0]->l.cb_cont.costs.size(), 0);
 
-  auto& space_names = examples[0]->feature_space[' '].space_names;
+  auto& space_names = (*examples[0]->feature_space.namespace_index_begin(' ')).space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
   for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i]->second, features[i]); }
 
