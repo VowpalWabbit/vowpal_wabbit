@@ -25,18 +25,18 @@ int read_features(vw *all, std::vector<char>& line, size_t&, v_array<example*>& 
 {
   std::vector<char> *io_lines_next_item;
 
-  {
-    std::lock_guard<std::mutex> lck((*all).example_parser->parser_mutex);
+  // {
+  //   std::lock_guard<std::mutex> lck((*all).example_parser->parser_mutex);
     
-    io_lines_next_item = all->example_parser->io_lines.pop();
+  //   io_lines_next_item = all->example_parser->io_lines.pop();
 
-    if(io_lines_next_item != nullptr) {
-      (*all).example_parser->ready_parsed_examples.push(examples[0]);
-    } else {
-      return -1;
-    }
+  //   if(io_lines_next_item != nullptr) {
+  //     (*all).example_parser->ready_parsed_examples.push(examples[0]);
+  //   } else {
+  //     return -1;
+  //   }
 
-  }
+  // }
 
   // only get here if io_lines_next_item != nullptr
   line = std::move(*io_lines_next_item);
@@ -63,22 +63,20 @@ size_t strip_features_string(char*& line, size_t num_chars_init){
   return num_chars;
 }
 
-int read_features_string(vw* all, v_array<example*>& examples, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name)
+int read_features_string(vw* all, v_array<example*>& examples, std::vector<char> *io_lines_next_item)
 {
+  // for substring_to_example. need to remove this.
+  std::vector<VW::string_view> words;
+  std::vector<VW::string_view> parse_name;
+
   // this needs to outlive the string_views pointing to it
-  std::vector<char> line;
   size_t num_chars;
-  size_t num_chars_initial;
-  int temp;
+  size_t num_chars_initial = (*io_lines_next_item).size();
 
   // a line is popped off of the io queue in read_features
-  temp = read_features(all, line, num_chars, examples);
-  if(temp == -1)
-    return -1;
-  else
-    num_chars_initial = temp;
+  // num_chars_initial = read_features(all, line, num_chars, examples);
 
-  char *stripped_line = std::move(line.data());
+  char *stripped_line = std::move((*io_lines_next_item).data());
   num_chars = strip_features_string(stripped_line, num_chars_initial);
   if (num_chars < 1)
   {

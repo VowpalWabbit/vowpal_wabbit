@@ -25,7 +25,7 @@ void read_lines(vw* all, const char* line, size_t len,
 
 }  // namespace VW
 
-int read_features_string(vw* all, v_array<example*>& examples, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name);
+int read_features_string(vw* all, v_array<example*>& examples, std::vector<char> *io_lines_next_item);
 int read_features(vw *all, std::vector<char>& line, size_t& num_chars, v_array<example*>& examples);
 size_t strip_features_string(char*& line, size_t num_chars_init);
 

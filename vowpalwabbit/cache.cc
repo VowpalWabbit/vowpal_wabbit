@@ -164,30 +164,14 @@ int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
   return (int)total;
 }
 
-int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::string_view>&, std::vector<VW::string_view>&) {
+int read_cached_features(vw* all, v_array<example*>& examples, std::vector<char> *io_lines_next_item) {
 
   // this needs to outlive the string_views pointing to it
   std::vector<char> line;
   size_t num_chars;
 
-  std::vector<char> *io_lines_next_item;
-
-  {
-    std::lock_guard<std::mutex> lck((*all).example_parser->parser_mutex);
-    
-    io_lines_next_item = all->example_parser->io_lines.pop();
-
-    if(io_lines_next_item != nullptr) {
-      (*all).example_parser->ready_parsed_examples.push(examples[0]);
-    } else {
-      return -1;
-    }
-
-  }
-
   // only get here if io_lines_next_item != nullptr
   line = std::move(*io_lines_next_item);
-  delete io_lines_next_item;
 
   num_chars = line.size();
 

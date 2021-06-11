@@ -20,10 +20,6 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
   v_array<example*> examples;
   size_t example_number = 0;  // for variable-size batch learning algorithms
 
-  // for substring_to_example
-  std::vector<VW::string_view> words_localcpy;
-  std::vector<VW::string_view> parse_name_localcpy;
-
   try
   {
     while (!all.example_parser->done)
@@ -31,17 +27,42 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       example* example_ptr = &VW::get_unused_example(&all);
       examples.push_back(example_ptr);
 
-      int num_chars_read = all.example_parser->reader(&all, examples, words_localcpy, parse_name_localcpy);
-      if(num_chars_read > 0){
-        dispatch(all, examples);
+      bool is_null_pointer = false;
+
+      // This logic should be outside the reader, as:
+      // 1. it is common to all types of parsers.
+      // 2. the type of parser might change when the thread is waiting for a pop of io_lines.
+      std::vector<char> *io_lines_next_item;
+      {
+        std::lock_guard<std::mutex> lck(all.example_parser->parser_mutex);
+        
+        io_lines_next_item = all.example_parser->io_lines.pop();
+
+        if(io_lines_next_item != nullptr) {
+          all.example_parser->ready_parsed_examples.push(examples[0]);
+        }
+        else{
+          is_null_pointer = true;
+        }
       }
-      else if(num_chars_read == 0){
-        examples[0]->end_pass = true;
-        dispatch(all, examples);
-      }
-      else if(num_chars_read == -1)
+
+
+      if(is_null_pointer)
         VW::finish_example(all, *example_ptr);
-  
+
+      else{
+        int num_chars_read = all.example_parser->reader(&all, examples, io_lines_next_item);
+        if(num_chars_read > 0){
+          dispatch(all, examples);
+        }
+        else if(num_chars_read == 0){
+          examples[0]->end_pass = true;
+          dispatch(all, examples);
+        }
+      }     
+      delete io_lines_next_item;
+
+
       examples.clear();
     }
 
