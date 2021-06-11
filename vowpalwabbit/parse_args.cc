@@ -1578,9 +1578,7 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
     if (all.learner_builder)
     {
       if (!all.logger.quiet && !all.options->was_supplied("audit_regressor"))
-      {
-        all.learner_builder->print_enabled_reductions(all);
-      }
+      { all.learner_builder->print_enabled_reductions(all); }
     }
 
     if (!all.options->get_typed_option<bool>("dry_run").value())
