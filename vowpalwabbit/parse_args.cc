@@ -612,6 +612,105 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
   return res;
 }
 
+void process_quadratics(vw& all, std::vector<std::vector<namespace_index>>& decoded_interactions,
+    std::vector<std::string>& quadratics, bool leave_duplicate_interactions)
+{
+  if (!all.logger.quiet) *(all.trace_message) << "creating quadratic features for pairs: ";
+
+  for (auto& i : quadratics)
+  {
+    if (i.size() != 2) { THROW("error, quadratic features must involve two sets.)") }
+    auto encoded = spoof_hex_encoded_namespaces(i);
+    decoded_interactions.emplace_back(encoded.begin(), encoded.end());
+    if (!all.logger.quiet) *(all.trace_message) << i << " ";
+  }
+
+  if (!all.logger.quiet && !leave_duplicate_interactions)
+  {
+    bool contains_wildcard_quadratic =
+        std::find_if(quadratics.begin(), quadratics.end(), [](const std::string& interaction) {
+          return interaction.find(wildcard_namespace) != std::string::npos;
+        }) != quadratics.end();
+    if (contains_wildcard_quadratic)
+    {
+      *(all.trace_message) << "\n"
+                           << "WARNING: any duplicate namespace interactions will be removed\n"
+                           << "You can use --leave_duplicate_interactions to disable this behaviour.";
+    }
+  }
+
+  if (!all.logger.quiet) *(all.trace_message) << endl;
+}
+
+void process_cubic(
+    vw& all, std::vector<std::vector<namespace_index>>& decoded_interactions, std::vector<std::string>& cubics)
+{
+  if (!all.logger.quiet) *(all.trace_message) << "creating cubic features for triples: ";
+  for (const auto& i : cubics)
+  {
+    if (i.size() != 3) { THROW("error, cubic features must involve three sets.") }
+    auto encoded = spoof_hex_encoded_namespaces(i);
+    decoded_interactions.emplace_back(encoded.begin(), encoded.end());
+    if (!all.logger.quiet) *(all.trace_message) << i << " ";
+  }
+  if (!all.logger.quiet) *(all.trace_message) << endl;
+
+  bool contains_wildcard_cubic = std::find_if(cubics.begin(), cubics.end(), [](const std::string& interaction) {
+    return interaction.find(wildcard_namespace) != std::string::npos;
+  }) != cubics.end();
+  if (contains_wildcard_cubic)
+  {
+    *(all.trace_message) << "\n"
+                         << "WARNING: any duplicate namespace interactions will be removed\n"
+                         << "You can use --leave_duplicate_interactions to disable this behaviour.";
+  }
+}
+
+void process_interactions(
+    vw& all, std::vector<std::vector<namespace_index>>& decoded_interactions, std::vector<std::string>& interactions)
+{
+  if (!all.logger.quiet) *(all.trace_message) << "creating features for following interactions: ";
+
+  for (const auto& i : interactions)
+  {
+    if (i.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
+    auto encoded = spoof_hex_encoded_namespaces(i);
+    decoded_interactions.emplace_back(encoded.begin(), encoded.end());
+    if (!all.logger.quiet) *(all.trace_message) << i << " ";
+  }
+  if (!all.logger.quiet) *(all.trace_message) << endl;
+}
+
+void decoded_interactions_sort(
+    vw& all, std::vector<std::vector<namespace_index>>& decoded_interactions, bool leave_duplicate_interactions)
+{
+  if (decoded_interactions.size() > 0)
+  {
+    // Sorts the overall list
+    std::sort(decoded_interactions.begin(), decoded_interactions.end(), INTERACTIONS::sort_interactions_comparator);
+
+    size_t removed_cnt = 0;
+    size_t sorted_cnt = 0;
+    // Sorts individual interactions
+    INTERACTIONS::sort_and_filter_duplicate_interactions(
+        decoded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
+
+    if (removed_cnt > 0 && !all.logger.quiet)
+    {
+      *(all.trace_message) << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.'
+                           << endl
+                           << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+    }
+
+    if (sorted_cnt > 0 && !all.logger.quiet)
+    {
+      *(all.trace_message) << "WARNING: some interactions contain duplicate characters and their characters order has "
+                              "been changed. Interactions affected: "
+                           << sorted_cnt << '.' << endl;
+    }
+  }
+}
+
 void parse_feature_tweaks(
     options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
@@ -767,97 +866,15 @@ void parse_feature_tweaks(
   }
 
   if (options.was_supplied("quadratic"))
-  {
-    if (!all.logger.quiet) *(all.trace_message) << "creating quadratic features for pairs: ";
+  { process_quadratics(all, decoded_interactions, quadratics, leave_duplicate_interactions); }
 
-    for (auto& i : quadratics)
-    {
-      if (i.size() != 2) { THROW("error, quadratic features must involve two sets.)") }
-      auto encoded = spoof_hex_encoded_namespaces(i);
-      decoded_interactions.emplace_back(encoded.begin(), encoded.end());
-      if (!all.logger.quiet) *(all.trace_message) << i << " ";
-    }
+  if (options.was_supplied("cubic")) { process_cubic(all, decoded_interactions, cubics); }
 
-    if (!all.logger.quiet && !options.was_supplied("leave_duplicate_interactions"))
-    {
-      bool contains_wildcard_quadratic =
-          std::find_if(quadratics.begin(), quadratics.end(), [](const std::string& interaction) {
-            return interaction.find(wildcard_namespace) != std::string::npos;
-          }) != quadratics.end();
-      if (contains_wildcard_quadratic)
-      {
-        *(all.trace_message) << "\n"
-                             << "WARNING: any duplicate namespace interactions will be removed\n"
-                             << "You can use --leave_duplicate_interactions to disable this behaviour.";
-      }
-    }
-
-
-    if (!all.logger.quiet) *(all.trace_message) << endl;
-  }
-
-  if (options.was_supplied("cubic"))
-  {
-    if (!all.logger.quiet) *(all.trace_message) << "creating cubic features for triples: ";
-    for (const auto& i : cubics)
-    {
-      if (i.size() != 3) { THROW("error, cubic features must involve three sets.") }
-      auto encoded = spoof_hex_encoded_namespaces(i);
-      decoded_interactions.emplace_back(encoded.begin(), encoded.end());
-      if (!all.logger.quiet) *(all.trace_message) << i << " ";
-    }
-    if (!all.logger.quiet) *(all.trace_message) << endl;
-
-    bool contains_wildcard_cubic = std::find_if(cubics.begin(), cubics.end(), [](const std::string& interaction) {
-      return interaction.find(wildcard_namespace) != std::string::npos;
-    }) != cubics.end();
-    if (contains_wildcard_cubic)
-    {
-      *(all.trace_message) << "\n"
-                           << "WARNING: any duplicate namespace interactions will be removed\n"
-                           << "You can use --leave_duplicate_interactions to disable this behaviour.";
-    }
-  }
-
-  if (options.was_supplied("interactions"))
-  {
-    if (!all.logger.quiet) *(all.trace_message) << "creating features for following interactions: ";
-
-    for (const auto& i : interactions)
-    {
-      if (i.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
-      auto encoded = spoof_hex_encoded_namespaces(i);
-      decoded_interactions.emplace_back(encoded.begin(), encoded.end());
-      if (!all.logger.quiet) *(all.trace_message) << i << " ";
-    }
-    if (!all.logger.quiet) *(all.trace_message) << endl;
-  }
+  if (options.was_supplied("interactions")) { process_interactions(all, decoded_interactions, interactions); }
 
   if (decoded_interactions.size() > 0)
   {
-    // Sorts the overall list
-    std::sort(decoded_interactions.begin(), decoded_interactions.end(), INTERACTIONS::sort_interactions_comparator);
-
-    size_t removed_cnt = 0;
-    size_t sorted_cnt = 0;
-    // Sorts individual interactions
-    INTERACTIONS::sort_and_filter_duplicate_interactions(
-        decoded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
-
-    if (removed_cnt > 0 && !all.logger.quiet)
-    {
-      *(all.trace_message) << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.'
-                           << endl
-                           << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
-    }
-
-    if (sorted_cnt > 0 && !all.logger.quiet)
-    {
-      *(all.trace_message) << "WARNING: some interactions contain duplicate characters and their characters order has "
-                              "been changed. Interactions affected: "
-                           << sorted_cnt << '.' << endl;
-    }
-
+    decoded_interactions_sort(all, decoded_interactions, leave_duplicate_interactions);
     all.interactions = std::move(decoded_interactions);
   }
 
