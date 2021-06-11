@@ -2191,11 +2191,11 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/cmt_test_model.stderr
 
 # Test 286: regression test for #3062
-{VW} -d train-sets/issue3062.txt --cb_explore 2 --cb_force_legacy --save_resume -f issue3062.model
+{VW} -d train-sets/issue3062.txt --cb_explore 2 --save_resume -f issue3062.model
     train-sets/ref/issue3062train.stderr
 
 # Test 287: regression test for #3062
-{VW} -d train-sets/issue3062.txt -t --cb_explore 2 --cb_force_legacy --save_resume -i issue3062.model
+{VW} -d train-sets/issue3062.txt -t --cb_explore 2 --save_resume -i issue3062.model
     train-sets/ref/issue3062test.stderr
 
 # Do not delete this line or the empty line above it
