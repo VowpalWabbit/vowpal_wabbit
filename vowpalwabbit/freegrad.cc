@@ -29,9 +29,10 @@ struct freegrad_update_data
   float update;
   float predict;
   float squared_norm_prediction; 
+  float squared_norm_grad;
   float squared_norm_clipped_grad;
   float sum_normalized_grad_norms;
-  float maximum_gradient_norm;
+  float maximum_clipped_gradient_norm;
   int num_features;
 };
 
@@ -51,27 +52,42 @@ struct freegrad
 };
 
 
+template <bool audit>
+void predict(freegrad& b, single_learner&, example& ec)
+{
+  size_t num_features_from_interactions = 0;
+  ec.partial_prediction = GD::inline_predict(*b.all, ec, num_features_from_interactions);
+  ec.num_features_from_interactions = num_features_from_interactions;
+  ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+  if (audit) GD::print_audit_features(*(b.all), ec);
+}
+
+
 void inner_freegrad_predict(freegrad_update_data& d, float x, float& wref)
 {
   float* w = &wref;
   float h1 = w[H1]; // will be set to the value of the first non-zero gradient w.r.t. the scalar feature x
   float ht = w[HT]; // maximum absolute value of the gradient w.r.t. scalar feature x 
-  float w_pred  = 0.0;   // weight for the feature x
+  float w_pred  = 1;   // weight for the feature x
   float G  = w[Gsum];  // sum of gradients w.r.t. scalar feature x
   float absG = std::fabs(G); 
   float V  = w[Vsum]; // sum of squared gradients w.r.t. scalar feature x
   float prev_s  = w[prev_S]+1;
+  float epsilon = d.FG->epsilon;
     
   // Only predict a non-zero w_pred if a non-zero gradient has been observed
   if (h1 > 0) {
+      // (TODO) reedit this
       // freegrad update Equation 9 in paper http://proceedings.mlr.press/v125/mhammedi20a/mhammedi20a.pdf
-      w_pred = - G * (2 * V + ht * absG) * pow(h1,2)/(2*pow(V + ht * absG,2) * sqrtf(V)) * exp(pow(absG,2)/(2 * V + 2 * ht * absG));
+      w_pred = 1; // - G * epsilon * (2 * V + ht * absG) * pow(h1,2)/(2*pow(V + ht * absG,2) * sqrtf(V)) * exp(pow(absG,2)/(2 * V + 2 * ht * absG));
+      // (TODO...)
       // Scaling for linear models (Line 7 of Alg. 2 in the paper)
-      w_pred /= (h1 * prev_s);     
+    //  w_pred /= (h1 * prev_s);     
   }
   d.squared_norm_prediction += pow(w_pred,2);
   // This is the unprojected predict
   d.predict += w_pred * x;
+  d.predict = 0;
   d.num_features += 1;
 }
 
@@ -83,11 +99,12 @@ void freegrad_predict(freegrad& FG, single_learner&, example& ec)
   FG.data.squared_norm_prediction = 0.;
   size_t num_features_from_interactions = 0.;
   FG.total_weight += ec.weight;
-  float norm_w_pred = sqrtf(FG.data.squared_norm_prediction);
+  float norm_w_pred;
   float projection_radius;
     
   // Compute the unprojected predict
   GD::foreach_feature<freegrad_update_data, inner_freegrad_predict>(*FG.all, ec, FG.data, num_features_from_interactions);
+  norm_w_pred =  sqrtf(FG.data.squared_norm_prediction);
     
   if (FG.project){
       // Set the project radius either to the user-specified value, or adaptively  
@@ -99,8 +116,8 @@ void freegrad_predict(freegrad& FG, single_learner&, example& ec)
       if (norm_w_pred > projection_radius)
            FG.data.predict *= projection_radius / norm_w_pred;
   }
-    
-  ec.partial_prediction = FG.data.predict * FG.epsilon / FG.data.num_features;
+  // (TODO) maybe change the dimension here
+  ec.partial_prediction = 0; //FG.data.predict; // / FG.data.num_features;
     
   ec.num_features_from_interactions = num_features_from_interactions;
   ec.pred.scalar = GD::finalize_prediction(FG.all->sd, FG.all->logger, ec.partial_prediction);
@@ -108,17 +125,24 @@ void freegrad_predict(freegrad& FG, single_learner&, example& ec)
 
 
 // The following function is computing the tilted gradient of lemma 2 in pap, in case of projects
-void freegrad_clipped_gradient_norm(freegrad_update_data& d, float x, float& wref) {
-  float* w = &wref;
-  float gradient = d.update * x;
-  float clipped_gradient = gradient;
-  float fabs_g = std::fabs(gradient);
+// void freegrad_clipped_gradient_norm(freegrad_update_data& d, float x, float& wref) {
+//   float* w = &wref;
+//   float gradient = d.update * x;
+//   float clipped_gradient = gradient;
+//   float fabs_g = std::fabs(gradient);
     
-  // Perform gradient clipping if necessary
-  if (fabs_g > w[HT]) 
-      clipped_gradient = gradient * w[HT]/fabs_g;
+//   // Perform gradient clipping if necessary
+//   if (fabs_g > w[HT]) 
+//       clipped_gradient = gradient * w[HT]/fabs_g;
 
-  d.squared_norm_clipped_grad += pow(clipped_gradient,2);
+//   d.squared_norm_clipped_grad += pow(clipped_gradient,2);
+// }
+
+
+// The following function is computing the tilted gradient of lemma 2 in pap, in case of projects
+void gradient_norm(freegrad_update_data& d, float x, float& wref) {
+  float gradient = d.update * x;
+  d.squared_norm_grad += pow(gradient,2);
 }
 
 
@@ -127,10 +151,11 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   float gradient = d.update * x;
   float fabs_g = std::fabs(gradient);
   float clipped_gradient = gradient;
-  float norm_clipped_grad = sqrtf(d.squared_norm_clipped_grad);
+  float norm_grad = sqrtf(d.squared_norm_grad);
   float norm_w_pred =sqrtf(d.squared_norm_prediction); 
   float projection_radius;
   float tilde_gradient;
+  float fabs_tilde_g;
  
   float h1 = w[H1]; // will be set to the value of the first non-zero gradient w.r.t. the scalar feature x
   float ht = w[HT]; // maximum absolute value of the gradient w.r.t. scalar feature x 
@@ -139,71 +164,85 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   float absG = std::fabs(G); 
   float V  = w[Vsum]; // sum of squared gradients w.r.t. scalar feature x
   float prev_s  = w[prev_S]+1;
+  float epsilon = d.FG->epsilon;
   
   // Computing the freegrad prediction again (Eq.(9) and Line 7 of Alg. 2 in paper)
-  if (h1>0) 
-      w_pred = - G * (2 * V + ht * absG) * pow(h1,2)/(2*pow(V + ht * absG,2) * sqrtf(V)) * exp(pow(absG,2)/(2 * V + 2 * ht * absG))/(h1 * prev_s);
+  w_pred = - G * (2 * V + ht * absG) * epsilon * h1/(2*pow(V + ht * absG,2) * sqrtf(V)) * exp(pow(absG,2)/(2 * V + 2 * ht * absG))/prev_s;
+      
+  // Set the project radius either to the user-specified value, or adaptively  
+  if (d.FG->adaptiveradius)
+      projection_radius=sqrtf(d.sum_normalized_grad_norms); 
+  else
+      projection_radius=d.FG->radius;
+
+  // Compute the tilted gradient
+  if (d.FG->project && norm_w_pred > projection_radius)
+      tilde_gradient = (gradient + norm_grad * w_pred/norm_w_pred)/2;
+  else
+      tilde_gradient = clipped_gradient/2;
+  
+  if (tilde_gradient==0) // Only do something if a non-zero gradient has been observed 
+      return;
+    
+  clipped_gradient = tilde_gradient;
+  fabs_tilde_g = std::fabs(tilde_gradient);
     
   // Updating the hint sequence
-  if (fabs_g > ht) {
+  if (h1 == 0){
+      w[H1] = fabs_tilde_g;
+      w[HT] = fabs_tilde_g;
+      w[Vsum] += pow(fabs_tilde_g,2);
+  }
+  else if (fabs_tilde_g > ht) {
       // Perform gradient clipping if necessary
-      clipped_gradient = gradient * ht / fabs_g;
-      if (h1 == 0)
-          w[H1] = fabs_g; 
-      w[HT] = fabs_g;
-  }      
-   
-  if (w[H1]>0){ // Only do something if a non-zero gradient has been observed    
-      // Set the project radius either to the user-specified value, or adaptively  
-      if (d.FG->adaptiveradius)
-          projection_radius=sqrtf(d.sum_normalized_grad_norms); 
-      else
-          projection_radius=d.FG->radius;
-      
-      // Compute the tilted gradient
-      if (norm_w_pred > projection_radius)
-          tilde_gradient = (clipped_gradient + norm_clipped_grad * w_pred/norm_w_pred)/2;
-      else
-          tilde_gradient = clipped_gradient/2;
-      
-      // Check if restarts are enabled and whether the condition is satisfied
-      // (TODO) check if this is the correct thresholding
-      if (d.FG->restart && w[HT]/w[H1]>2+w[S]) {
-          // Do a restart, but keep the lastest hint info
-          w[H1] = w[HT];
-          w[Gsum] = tilde_gradient;
-          w[Vsum] = pow(tilde_gradient,2);
-          w[prev_S]= w[S] + 1; // The restart condition necessarily implies that fabs_g/w[HT]=1
-      }
-      else {
-          // Updating the gradient information
-          w[Gsum] += tilde_gradient;
-          w[Vsum] += pow(tilde_gradient,2);
-      }
-      w[S] += fabs_g/w[HT];
-  }  
+      clipped_gradient *= ht / fabs_tilde_g;
+      w[HT] = fabs_tilde_g;
+  }
+  d.squared_norm_clipped_grad += pow(clipped_gradient,2);
+
+  // Check if restarts are enabled and whether the condition is satisfied
+  // (TODO) check if this is the correct thresholding
+  if (d.FG->restart && w[HT]/w[H1]>w[S]+2) {
+      // Do a restart, but keep the lastest hint info
+      w[H1] = w[HT];
+      w[Gsum] = clipped_gradient;
+      w[Vsum] = pow(clipped_gradient,2);
+      // TODO check this
+      w[prev_S]= w[S]; // The restart condition necessarily implies that fabs_g/w[HT]=1
+  }
+  else {
+      // Updating the gradient information
+      w[Gsum] += clipped_gradient;
+      w[Vsum] += pow(clipped_gradient,2);
+  }
+  if (ht>0)
+      w[S] += std::fabs(clipped_gradient)/ht;
 }
 
 
 void freegrad_update_after_prediction(freegrad& FG, example& ec)
 {
-    float grad_norm;
+    float clipped_grad_norm;
+    FG.data.squared_norm_grad = 0;
     FG.data.squared_norm_clipped_grad = 0;
     
     // Partial derivative of loss
     FG.data.update = FG.all->loss->first_derivative(FG.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
     
-    // Precomputations before update
-    GD::foreach_feature<freegrad_update_data, freegrad_clipped_gradient_norm>(*FG.all, ec, FG.data);
-    // Update the maximum gradient norm value
-    grad_norm = sqrtf(FG.data.squared_norm_clipped_grad);
-    if (grad_norm > FG.data.maximum_gradient_norm)
-        FG.data.maximum_gradient_norm = grad_norm;
-  
-    FG.data.sum_normalized_grad_norms += grad_norm/FG.data.maximum_gradient_norm;
+    // Compute gradient norm
+    GD::foreach_feature<freegrad_update_data, gradient_norm>(*FG.all, ec, FG.data);
     
     // Performing the update
     GD::foreach_feature<freegrad_update_data, inner_freegrad_update_after_prediction>(*FG.all, ec, FG.data);
+    
+    // Update the maximum gradient norm value
+    clipped_grad_norm = sqrtf(FG.data.squared_norm_clipped_grad);
+    if (clipped_grad_norm > FG.data.maximum_clipped_gradient_norm)
+        FG.data.maximum_clipped_gradient_norm = clipped_grad_norm;
+  
+    // TODO double check this
+    if (FG.data.maximum_clipped_gradient_norm >0)
+        FG.data.sum_normalized_grad_norms += clipped_grad_norm/FG.data.maximum_clipped_gradient_norm;
 }
 
 
@@ -262,10 +301,12 @@ base_learner* freegrad_setup(options_i& options, vw& all)
   float radius; 
 
   option_group_definition new_options("FreeGrad options");
-  new_options.add(make_option("FreeGrad", FreeGrad).keep().necessary().help("Diagonal FreeGrad Algorithm")).add(make_option("restart", restart).help("Use the FreeRange restarts"))
+  new_options.add(make_option("FreeGrad", FreeGrad).keep().help("Diagonal FreeGrad Algorithm")).add(make_option("restart", restart).help("Use the FreeRange restarts"))
       .add(make_option("project", project).help("Project the outputs to adapt to both the lipschitz and comparator norm")).add(make_option("radius", radius).help("Radius of the l2-ball for the projection. If not supplied, an adaptive radius will be used.")).add(make_option("epsilon", FG->epsilon).default_value(1.f).help("Initial wealth"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+  options.add_and_parse(new_options);
+
+  if (!FreeGrad) { return nullptr; }
 
   if (options.was_supplied("radius")){
       FG->radius = radius;
@@ -274,7 +315,7 @@ base_learner* freegrad_setup(options_i& options, vw& all)
     
   // Defaults
   FG->data.sum_normalized_grad_norms = 1.;
-  FG->data.maximum_gradient_norm = 0.;
+  FG->data.maximum_clipped_gradient_norm = 0.;
   FG->data.FG = FG.get();
 
   FG->all = &all;
@@ -311,12 +352,12 @@ base_learner* freegrad_setup(options_i& options, vw& all)
   }
   
   learner<freegrad, example>* l;
-  // if (all.audit || all.hash_inv)
-  //  l = &init_learner(FG, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift(),
-  //      all.get_setupfn_name(freegrad_setup) + "-" + algorithm_name + "-audit");
-  // else
-  //  l = &init_learner(FG, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift(),
-  //      all.get_setupfn_name(freegrad_setup) + "-" + algorithm_name, learn_returns_prediction);
+  if (all.audit || all.hash_inv)
+    l = &init_learner(FG, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift(),
+        all.get_setupfn_name(freegrad_setup) + "-" + algorithm_name + "-audit");
+  else
+    l = &init_learner(FG, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift(),
+        all.get_setupfn_name(freegrad_setup) + "-" + algorithm_name, learn_returns_prediction);
     
   // (TODO) Check what the multipredict is about and set_and_pass
   // l->set_sensitivity(sensitivity);
