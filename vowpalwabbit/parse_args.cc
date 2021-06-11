@@ -301,6 +301,8 @@ void parse_diagnostics(options_i& options, vw& all)
 
   options.add_and_parse(diagnostic_group);
 
+  if (help) { all.logger.quiet = true; }
+
   if(all.logger.quiet) logger::log_set_level(logger::log_level::off);
 
   if (options.was_supplied("limit_output")) logger::set_max_output(all.logger.upper_limit);
