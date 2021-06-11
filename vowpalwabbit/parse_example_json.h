@@ -1639,6 +1639,7 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
+  for (auto* ex : examples) { remove_empty_namespaces(ex->feature_space); }
   if (!result.IsError()) return;
 
   BaseState<audit>* current_state = handler.current_state();
@@ -1711,6 +1712,8 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
 
+  for (auto* ex : examples) { remove_empty_namespaces(ex->feature_space); }
+
   if (result.IsError())
   {
     BaseState<audit>* current_state = handler.current_state();
@@ -1746,6 +1749,8 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     DecisionServiceInteraction interaction;
     bool result = VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
         reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
+
+    for (auto* ex : examples) { remove_empty_namespaces(ex->feature_space); }
 
     if (!result)
     {

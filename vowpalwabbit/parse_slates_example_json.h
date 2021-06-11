@@ -216,6 +216,8 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
       assert(namespaces.size() == 0);
     }
   }
+
+  for (auto* ex : examples) { remove_empty_namespaces(ex->feature_space); }
 }
 
 template <bool audit>

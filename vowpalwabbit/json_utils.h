@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "feature_group.h"
+#include "namespaced_features.h"
 #include "global_data.h"
 #include "hash.h"
 #include "vw.h"
@@ -57,6 +58,16 @@ struct Namespace
     if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, ss.str())));
   }
 };
+
+inline void remove_empty_namespaces(VW::namespaced_features& feature_space)
+{
+  std::vector<uint64_t> hashes_to_remove;
+  for (auto it = feature_space.begin(); it != feature_space.end(); ++it)
+  {
+    if ((*it).empty()) { hashes_to_remove.push_back(it.hash()); }
+  }
+  for (auto hash : hashes_to_remove) { feature_space.remove_feature_group(hash); }
+}
 
 template <bool audit>
 void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespaces, vw& all)
