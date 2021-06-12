@@ -20,7 +20,7 @@ class VWtoTensorboard:
 		self : VWtoTensorboard
 		"""
 		self.file_writer = tx.SummaryWriter(logdir)   # creating file writer
-		self.iteration = 0   # This would value of current iteration 
+		self.iteration = 0   # This would keep value of current iteration 
 
 	def emit_learning_metrics(self, average_loss, since_last):
 		"""This method for now logs the metrics given as arguments for Tensorboard visualization
@@ -77,9 +77,9 @@ class DFtoVWtoTensorboard:
 		----------
 
 		vw_to_tensorboard  : VWtoTensorboard object 
-						Default value is None, this parameter is used to control the logging of metrics for Tensorboard visualization
-						If value is VWtoTensorboard object : metrics are computed and logged for Tensorboard visualization
-						If value is None : metrics are not computed and not logged for Tensorboard visualization
+					Default value is None, this parameter is used to control the logging of metrics for Tensorboard visualization
+					If value is VWtoTensorboard object : metrics are computed and logged for Tensorboard visualization
+					If value is None : metrics are not computed and not logged for Tensorboard visualization
 
 		Returns
 		-------

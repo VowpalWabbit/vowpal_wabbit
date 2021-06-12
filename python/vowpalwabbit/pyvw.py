@@ -590,8 +590,8 @@ class vw(pylibvw.vw):
             if new_example is False:  # As according to this method's logic self.finish_example(ec) is only called  if new_example==True  thats why  if new_example==False then self.finish_example(ec) has not been called
                 raise RuntimeError("finish_example on current example has not been called, metrics may not be computed correctly")
 
-            sum_loss_since_last = super().get_sum_loss() - sum_loss  # vw.get_sum_loss() return current sum loss, sum_loss variable right now holds sum loss of previous iteration
-            weighted_examples_since_last = super().get_weighted_examples() - weighted_examples  # vw.get_weighted_examples() return current weighted examples(sum),  weighted_examples variable right now holds weighted examples of previous iteration             
+            sum_loss_since_last = super().get_sum_loss() - sum_loss  # .get_sum_loss() return current sum loss, sum_loss variable right now holds sum loss of previous iteration
+            weighted_examples_since_last = super().get_weighted_examples() - weighted_examples  # .get_weighted_examples() return current weighted examples(sum),  weighted_examples variable right now holds weighted examples of previous iteration             
             sum_loss = super().get_sum_loss()  # Now sum_loss no longer hold previous iteration's sum_loss
             weighted_examples = super().get_weighted_examples()  # Now weighted_examples no longer hold previous iteration's weighted examples
 
