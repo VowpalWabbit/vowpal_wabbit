@@ -540,7 +540,7 @@ class vw(pylibvw.vw):
         """
         return pylibvw.vw.get_weight(self, index, offset)
 
-    def learn(self, ec):
+    def learn(self, ec, vw_to_tensorboard=None):
         """Perform an online update
 
         Parameters
@@ -548,7 +548,15 @@ class vw(pylibvw.vw):
 
         ec : example/str/list
             examples on which the model gets updated
+
+        vw_to_tensorboard : VWtoTensorboard object
+                           This object is used to calculate metrics and then log them for Tensorboard visualization
         """
+        from vowpalwabbit.DFtoVWtoTensorboard import VWtoTensorboard
+        if isinstance(vw_to_tensorboard, VWtoTensorboard):
+            sum_loss = super().get_sum_loss()
+            weighted_examples = super().get_weighted_examples()
+
         # If a string was given, parse it before passing to learner.
         new_example = False
         if isinstance(ec, str):
@@ -577,6 +585,20 @@ class vw(pylibvw.vw):
 
         if new_example:
             self.finish_example(ec)
+
+        if isinstance(vw_to_tensorboard, VWtoTensorboard):
+            if new_example is False:  # As according to this method's logic self.finish_example(ec) is only called  if new_example==True  thats why  if new_example==False then self.finish_example(ec) has not been called
+                raise RuntimeError("finish_example on current example has not been called, metrics may not be computed correctly")
+
+            sum_loss_since_last = super().get_sum_loss() - sum_loss  # vw.get_sum_loss() return current sum loss, sum_loss variable right now holds sum loss of previous iteration
+            weighted_examples_since_last = super().get_weighted_examples() - weighted_examples  # vw.get_weighted_examples() return current weighted examples(sum),  weighted_examples variable right now holds weighted examples of previous iteration             
+            sum_loss = super().get_sum_loss()  # Now sum_loss no longer hold previous iteration's sum_loss
+            weighted_examples = super().get_weighted_examples()  # Now weighted_examples no longer hold previous iteration's weighted examples
+
+            average_loss = (sum_loss / weighted_examples) if weighted_examples != 0  else 0.0
+            since_last = (sum_loss_since_last / weighted_examples_since_last) if weighted_examples_since_last != 0  else 0.0
+
+            vw_to_tensorboard.emit_learning_metrics(average_loss, since_last)
 
     def predict(self, ec, prediction_type=None):
         """Just make a prediction on the example

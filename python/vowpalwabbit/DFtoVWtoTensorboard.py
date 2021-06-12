@@ -12,14 +12,36 @@ class VWtoTensorboard:
 		----------
 
 		logdir : str
-					A string specifying the log directory for Tensorboard logs
+			A string specifying the log directory for Tensorboard logs
 
 		Returns
 		-------
 
 		self : VWtoTensorboard
 		"""
-		self.logdir = logdir
+		self.file_writer = tx.SummaryWriter(logdir)   # creating file writer
+		self.iteration = 0   # This would value of current iteration 
+
+	def emit_learning_metrics(self, average_loss, since_last):
+		"""This method for now logs the metrics given as arguments for Tensorboard visualization
+
+		Parameters
+		----------
+
+		average_loss : float
+				This is the average_loss value to be logged for Tensorboard
+		since_last   : float
+				This is the since_last value to be logged for Tensorboard
+
+		Returns
+		-------
+
+		None
+		"""
+		self.file_writer.add_scalar('average_loss', average_loss, self.iteration)  # logging average_loss on each iteration
+		self.file_writer.add_scalar('since_last', since_last, self.iteration)   # logging since_last on each iteration
+		self.iteration += 1  # Now increment this as this value for metrics logging of next iteration
+
 
 
 class DFtoVWtoTensorboard:
@@ -34,102 +56,37 @@ class DFtoVWtoTensorboard:
 		----------
 
 		df_to_vw : A DFtoVW object
-					This would be used to construct examples 
+				This would be used to construct examples 
 		vw		 : A vowpalwabbit object
- 					This would be used for learning using the algorithm specified in the object, and also to compute a few metrics
+ 				This would be used for learning using the algorithm specified in the object, and also to compute a few metrics
 
 		Returns
 		-------
 
 		self : DFtoVWtoTensorboard
 		"""
-		self.vw = vw
+		self.vw = vw  # As this needs to be remembered
 		self.vw_formatted_data = df_to_vw.convert_df()
 
 
 	#------------------------------------------------------------------------------------------------		
-	def _print_metrics(self, average_loss, since_last, label, prediction, num_features):
-		"""This method prints metrics
-
-		Parameters
-		----------
-
-		average_loss : float
-						This is the average_loss value
-		since_last   : float
-						This is the since_last value
-		label        : integer
-						This is the actual label of current example
-		prediction   : integer
-						This is the predicted label of current example
-		num_features : integer
-						This is the num_features value
-
-		Returns
-		-------
-
-		None
-		"""
-		print( 'average_loss:{:.6f}'.format(average_loss) , end='\t')
-		print('since_last:{:.6f}'.format(since_last), end='\t')
-		print('label:', label, end='\t')    
-		print('prediction:', prediction, end='\t')    
-		print('num_features:', num_features) 
-
-
-	#------------------------------------------------------------------------------------------------		
-	def fit(self, print_metrics=False, vw_to_tensorboard=None):
+	def fit(self, vw_to_tensorboard=None):
 		"""Learns on the relevant examples and can also log metrics for tensorboard visualization
 
 		Parameters
 		----------
 
-		print_metrics      : boolean
-								Default value is False, this parameter is used to control the printing of metrics computed
-								If value is True then metrics are computed and printed
-								If value is False then metrics are not computed and not printed
 		vw_to_tensorboard  : VWtoTensorboard object 
-								Default value is None, this parameter is used to control the logging of metrics for Tensorboard visualization
-								If value is VWtoTensorboard object : metrics are computed and logged for Tensorboard visualization
-								If value is None : metrics are not computed and not logged for Tensorboard visualization
+						Default value is None, this parameter is used to control the logging of metrics for Tensorboard visualization
+						If value is VWtoTensorboard object : metrics are computed and logged for Tensorboard visualization
+						If value is None : metrics are not computed and not logged for Tensorboard visualization
 
 		Returns
 		-------
 
 		None
 		"""
-		if isinstance(vw_to_tensorboard, VWtoTensorboard):
-			file_writer = tx.SummaryWriter(vw_to_tensorboard.logdir)   # creating file writer
-		
-		if (print_metrics or vw_to_tensorboard):
-			sum_loss = 0.
-			weighted_examples = 0.
-
 		for iteration, vw_format in enumerate(self.vw_formatted_data):
 			example = self.vw.parse(vw_format)       # parse the string format, it returns an example object
-			self.vw.learn(example)                  # learn on example
+			self.vw.learn(example, vw_to_tensorboard)         # learn on example
 
-			if (print_metrics or vw_to_tensorboard):
-				label = pyvw.get_label(example, self.vw.get_label_type())
-				prediction = pyvw.get_prediction(example, self.vw.get_prediction_type())
-				num_features = example.get_feature_number()
-
-			self.vw.finish_example(example)  # Any use of vw object should be done after this and use of example before this 
-
-			if (print_metrics or vw_to_tensorboard):
-				sum_loss_since_last = self.vw.get_sum_loss() - sum_loss  # vw.get_sum_loss() return current sum loss, sum_loss variable right now holds sum loss of previous iteration
-				weighted_examples_since_last = self.vw.get_weighted_examples() - weighted_examples  # vw.get_weighted_examples() return current weighted examples(sum),  weighted_examples variable right now holds weighted examples of previous iteration		        
-
-				sum_loss = self.vw.get_sum_loss()  # Now sum_loss no longer hold previous iteration's sum_loss
-				weighted_examples = self.vw.get_weighted_examples()  # Now weighted_examples no longer hold previous iteration's weighted examples
-
-				average_loss = (sum_loss / weighted_examples) if weighted_examples != 0  else 0.0
-				since_last = (sum_loss_since_last / weighted_examples_since_last) if weighted_examples_since_last != 0  else 0.0
-
-			if print_metrics:
-				self._print_metrics(average_loss, since_last, label, prediction, num_features)
-
-			if isinstance(vw_to_tensorboard, VWtoTensorboard):
-				file_writer.add_scalar('average_loss', average_loss, iteration)  # logging average_loss on each iteration
-				file_writer.add_scalar('since_last', since_last, iteration)   # logging since_last on each iteration
-				file_writer.add_scalar('num_features', num_features, iteration)  # logging num_features on each iteration
