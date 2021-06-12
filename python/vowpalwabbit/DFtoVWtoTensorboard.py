@@ -40,7 +40,7 @@ class VWtoTensorboard:
 		"""
 		self.file_writer.add_scalar('average_loss', average_loss, self.iteration)  # logging average_loss on each iteration
 		self.file_writer.add_scalar('since_last', since_last, self.iteration)   # logging since_last on each iteration
-		self.iteration += 1  # Now increment this as this value for metrics logging of next iteration
+		self.iteration += 1  # Now increment this as the incremented value is for next iteration
 
 
 
