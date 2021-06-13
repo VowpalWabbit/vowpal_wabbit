@@ -1,4 +1,3 @@
-from vowpalwabbit import pyvw
 import tensorboardX as tx
 
 
@@ -87,6 +86,5 @@ class DFtoVWtoTensorboard:
 		None
 		"""
 		for iteration, vw_format in enumerate(self.vw_formatted_data):
-			example = self.vw.parse(vw_format)       # parse the string format, it returns an example object
-			self.vw.learn(example, vw_to_tensorboard)         # learn on example
+			self.vw.learn(vw_format, vw_to_tensorboard)         # learn on example
 
