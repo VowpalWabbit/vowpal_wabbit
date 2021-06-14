@@ -77,11 +77,11 @@ void inner_freegrad_predict(freegrad_update_data& d, float x, float& wref)
   // Only predict a non-zero w_pred if a non-zero gradient has been observed
   if (h1 > 0) {
       // freegrad update Equation 9 in paper http://proceedings.mlr.press/v125/mhammedi20a/mhammedi20a.pdf
-    w_pred  = -G * epsilon * (2 * V + ht * absG) * pow(h1,2)/(2*pow(V + ht * absG,2) * sqrtf(V)) * exp(pow(absG,2)/(2 * V + 2 * ht * absG));
+    w_pred  = -G * epsilon * (2. * V + ht * absG) * pow(h1,2.f)/(2.*pow(V + ht * absG,2.f) * sqrtf(V)) * exp(pow(absG,2.f)/(2. * V + 2. * ht * absG));
      // Scaling for linear models (Line 7 of Alg. 2 in the paper)
     w_pred /= (h1 * prev_s);     
   }
-  d.squared_norm_prediction += pow(w_pred,2);
+  d.squared_norm_prediction += pow(w_pred,2.f);
   // This is the unprojected predict
   d.predict +=  w_pred * x;
 }
@@ -133,7 +133,7 @@ void gradient_dot_w(freegrad_update_data& d, float x, float& wref) {
     
   // Only predict a non-zero w_pred if a non-zero gradient has been observed
   if (h1>0)
-    w_pred =  -G * epsilon * (2 * V + ht * absG) * h1/(2*pow(V + ht * absG,2) * sqrtf(V))* exp(pow(absG,2)/(2 * V + 2 * ht * absG))/prev_s;
+    w_pred =  -G * epsilon * (2. * V + ht * absG) * h1/(2*pow(V + ht * absG,2.f) * sqrtf(V))* exp(pow(absG,2.f)/(2. * V + 2. * ht * absG))/prev_s;
 
   d.grad_dot_w += gradient * w_pred;
 }
@@ -161,7 +161,7 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   
   // Computing the freegrad prediction again (Eq.(9) and Line 7 of Alg. 2 in paper)
   if (h1>0)
-    w_pred =  -G * epsilon * (2 * V + ht * absG) * h1/(2*pow(V + ht * absG,2) * sqrtf(V))* exp(pow(absG,2)/(2 * V + 2 * ht * absG))/prev_s;
+    w_pred =  -G * epsilon * (2. * V + ht * absG) * h1/(2.*pow(V + ht * absG,2.f) * sqrtf(V))* exp(pow(absG,2.f)/(2 * V + 2. * ht * absG))/prev_s;
       
   // Set the project radius either to the user-specified value, or adaptively  
   if (d.FG->adaptiveradius)
@@ -173,7 +173,7 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   // Cutkosky's varying constrains' reduction in 
   // Alg. 1 in http://proceedings.mlr.press/v119/cutkosky20a/cutkosky20a.pdf with sphere sets
   if (d.FG->project && norm_w_pred > projection_radius && g_dot_w < 0) 
-    tilde_gradient = gradient - g_dot_w * w_pred/pow(norm_w_pred,2);
+    tilde_gradient = gradient - g_dot_w * w_pred/pow(norm_w_pred,2.f);
   else
     tilde_gradient = gradient;
     
@@ -187,27 +187,27 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   if (h1 == 0){
     w[H1] = fabs_tilde_g;
     w[HT] = fabs_tilde_g;
-    w[Vsum] += pow(fabs_tilde_g,2);
+    w[Vsum] += pow(fabs_tilde_g,2.f);
   }
   else if (fabs_tilde_g > ht) {
     // Perform gradient clipping if necessary
     clipped_gradient *= ht / fabs_tilde_g;
     w[HT] = fabs_tilde_g;
   }
-  d.squared_norm_clipped_grad += pow(clipped_gradient,2);
+  d.squared_norm_clipped_grad += pow(clipped_gradient,2.f);
 
   // Check if restarts are enabled and whether the condition is satisfied
   if (d.FG->restart && w[HT]/w[H1]>w[S]+2) {
       // Do a restart, but keep the lastest hint info
       w[H1] = w[HT];
       w[Gsum] = clipped_gradient;
-      w[Vsum] = pow(clipped_gradient,2);
+      w[Vsum] = pow(clipped_gradient,2.f);
       w[prev_S]= w[S]; // The restart condition necessarily implies that fabs_g/w[HT]=1
   }
   else {
       // Updating the gradient information
       w[Gsum] += clipped_gradient;
-      w[Vsum] += pow(clipped_gradient,2);
+      w[Vsum] += pow(clipped_gradient,2.f);
   }
   if (ht>0)
       w[S] += std::fabs(clipped_gradient)/ht;
