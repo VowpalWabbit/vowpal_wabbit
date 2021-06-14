@@ -124,18 +124,19 @@ LEARNER::base_learner* cb_explore_pdf_setup(config::options_i& options, vw& all)
     THROW("error: min and max values must be supplied with cb_explore_pdf");
 
   LEARNER::base_learner* p_base = setup_base(options, all);
-  auto p_reduction = scoped_calloc_or_throw<cb_explore_pdf>();
+  auto p_reduction = VW::make_unique<cb_explore_pdf>();
   p_reduction->init(as_singleline(p_base));
   p_reduction->epsilon = epsilon;
   p_reduction->min_value = min;
   p_reduction->max_value = max;
   p_reduction->first_only = first_only;
 
-  LEARNER::learner<cb_explore_pdf, example>& l =
-      init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, 1,
-          prediction_type_t::pdf, all.get_setupfn_name(cb_explore_pdf_setup));
-
-  return make_base(l);
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, all.get_setupfn_name(cb_explore_pdf_setup))
+                .set_prediction_type(prediction_type_t::pdf)
+                .set_label_type(label_type_t::cb)
+                .build();
+  return make_base(*l);
 }
 }  // namespace continuous_action
 }  // namespace VW

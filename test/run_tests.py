@@ -596,7 +596,9 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
         #todo: 300 understand why is it failing
         # test 189, 312, 316, 318 and 319 depend on dsjson parser behaviour
         # they can be enabled if we ignore diffing the --extra_metrics
-        if str(test_id) in ('300', '189', '312', '316', '318', '319'):
+        # (324-326) deals with corrupted data, so cannot be translated to fb
+        # pdrop is not supported in fb, so 327-331 are excluded
+        if str(test_id) in ('300', '189', '312', '316', '318', '319', '324', '325', '326', '327', '328', '329', '330', '331'):
             continue
 
         # test id is being used as an index here, not necessarily a contract

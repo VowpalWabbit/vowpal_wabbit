@@ -79,6 +79,7 @@ class AllReduce;
 struct vw_logger
 {
   bool quiet;
+  size_t upper_limit;
 
   vw_logger() : quiet(false) {}
 
@@ -218,7 +219,7 @@ public:
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  namespace_interactions interactions;
+  std::vector<std::vector<namespace_index>> interactions;
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;

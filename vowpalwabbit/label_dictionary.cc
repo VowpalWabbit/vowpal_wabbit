@@ -86,9 +86,7 @@ void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size
 void set_label_features(label_feature_map& lfm, size_t lab, features& fs)
 {
   if (lfm.find(lab) == lfm.end()) return;
-  features tmp_features;
-  tmp_features.deep_copy_from(fs);
-  lfm.emplace(lab, std::move(tmp_features));
+  lfm.emplace(lab, fs);
 }
 
 }  // namespace LabelDict

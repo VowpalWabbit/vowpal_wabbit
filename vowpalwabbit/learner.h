@@ -858,6 +858,21 @@ struct common_learner_builder
     _learner->finish_example_fd.finish_example_f = (end_fptr_type)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
+
+  FluentBuilderT& set_print_example(void (*fn_ptr)(vw& all, DataT&, ExampleT&))
+  {
+    _learner->finish_example_fd.data = _learner->learn_fd.data;
+    _learner->finish_example_fd.print_example_f = (end_fptr_type)(fn_ptr);
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_persist_metrics(void (*fn_ptr)(DataT&, metric_sink&))
+  {
+    _learner->persist_metrics_fd.save_metric_f = (save_metric_data::fn)fn_ptr;
+    _learner->persist_metrics_fd.data = _learner->learn_fd.data;
+    _learner->persist_metrics_fd.base = _learner->learn_fd.base;
+    return *static_cast<FluentBuilderT*>(this);
+  }
 };
 
 template <class DataT, class ExampleT, class BaseLearnerT>
@@ -881,8 +896,9 @@ struct reduction_learner_builder
     this->_learner->finisher_fd.func = static_cast<func_data::fn>(noop);
 
     set_params_per_weight(1);
+    this->set_learn_returns_prediction(false);
 
-    this->_learner->pred_type = base->pred_type;
+    set_prediction_type(base->pred_type);
     // TODO add label type as something learner knows about itself, this will enable more type checking and better
     // description of the learner. this->_learner.label_type = label_type;
   }

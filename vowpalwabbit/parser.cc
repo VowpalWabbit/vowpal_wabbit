@@ -677,10 +677,7 @@ void setup_example(vw& all, example* ae)
   if (all.example_parser->sort_features && ae->sorted == false) unique_sort_features(all.parse_mask, ae);
 
   if (all.example_parser->write_cache)
-  {
-    all.example_parser->lbl_parser.cache_label(&ae->l, ae->_reduction_features, *(all.example_parser->output));
-    cache_features(*(all.example_parser->output), ae, all.parse_mask);
-  }
+  { VW::write_example_to_cache(*all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask); }
 
   ae->partial_prediction = 0.;
   ae->num_features = 0;
@@ -737,17 +734,6 @@ void setup_example(vw& all, example* ae)
   for (const features& fs : *ae)
   {
     ae->num_features += fs.size();
-  }
-
-  if (all.interactions.quadratics_wildcard_expansion)
-  {
-    // lock while adding interactions since reductions might also be adding their own interactions
-    std::unique_lock<std::mutex> lock(all.interactions.mut);
-    for (auto& ns : ae->indices)
-    {
-      if (ns < constant_namespace) { all.interactions.all_seen_namespaces.insert(ns); }
-    }
-    INTERACTIONS::expand_quadratics_wildcard_interactions(all.interactions);
   }
 
   // Set the interactions for this example to the global set.
