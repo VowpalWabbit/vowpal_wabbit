@@ -2437,4 +2437,8 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/cb_dro_explore_adf_sm.stderr
     pred-sets/ref/cb_dro_explore_adf_sm.predict
 
+# Test 335: test --baseline
+{VW} -d train-sets/0001.dat --baseline
+    train-sets/ref/baseline_test.stderr
+
 # Do not delete this line or the empty line above it
