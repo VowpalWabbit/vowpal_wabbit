@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "baseline.h"
+
 #include <cfloat>
 #include <cerrno>
 
@@ -15,43 +17,24 @@ using namespace VW::config;
 namespace
 {
 const float max_multiplier = 1000.f;
-const size_t baseline_enabled_idx = 1357;  // feature index for enabling baseline
 }  // namespace
 
 namespace BASELINE
 {
 void set_baseline_enabled(example* ec)
 {
-  auto& fs = ec->feature_space.get_or_create_feature_group(message_namespace, message_namespace);
-  for (auto& f : fs)
-  {
-    if (f.index() == baseline_enabled_idx)
-    {
-      f.value() = 1;
-      return;
-    }
-  }
-  // if not found, push new feature
-  fs.push_back(1, baseline_enabled_idx);
+  auto& fs = ec->feature_space.get_or_create_feature_group(baseline_enabled_message_namespace, baseline_enabled_message_namespace);
 }
 
 void reset_baseline_disabled(example* ec)
 {
-  ec->feature_space.remove_feature_group(message_namespace);
+  ec->feature_space.remove_feature_group(baseline_enabled_message_namespace);
 }
 
 bool baseline_enabled(example* ec)
 {
   auto* fs = ec->feature_space.get_feature_group(message_namespace);
-  if (fs != nullptr)
-  {
-    for (auto& f : *fs)
-    {
-      if (f.index() == baseline_enabled_idx) return f.value() == 1;
-    }
-  }
-
-  return false;
+  return fs != nullptr;
 }
 }  // namespace BASELINE
 
