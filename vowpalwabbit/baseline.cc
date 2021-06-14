@@ -23,19 +23,13 @@ namespace BASELINE
 {
 void set_baseline_enabled(example* ec)
 {
-  if (!baseline_enabled(ec))
-  {
-    ec->indices.push_back(baseline_enabled_message_namespace);
-  }
+  if (!baseline_enabled(ec)) { ec->indices.push_back(baseline_enabled_message_namespace); }
 }
 
 void reset_baseline_disabled(example* ec)
 {
   auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
-  if (it != ec->indices.end())
-  {
-    ec->indices.erase(it);
-  }
+  if (it != ec->indices.end()) { ec->indices.erase(it); }
 }
 
 bool baseline_enabled(example* ec)
