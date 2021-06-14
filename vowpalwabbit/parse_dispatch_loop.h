@@ -52,6 +52,8 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 
       else{
         int num_chars_read = all.example_parser->reader(&all, examples, io_lines_next_item);
+        for (size_t i = 1; i < examples.size(); i++) all.example_parser->ready_parsed_examples.push(examples[i]);
+
         if(num_chars_read > 0){
           dispatch(all, examples);
         }

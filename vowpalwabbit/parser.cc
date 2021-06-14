@@ -684,6 +684,7 @@ example& get_unused_example(vw* all)
 void setup_examples(vw& all, v_array<example*>& examples)
 {
   for (example* ae : examples) setup_example(all, ae);
+  all.example_parser->end_parsed_examples += examples.size();
 }
 
 void setup_example(vw& all, example* ae)
@@ -790,10 +791,6 @@ void setup_example(vw& all, example* ae)
   INTERACTIONS::eval_count_of_generated_ft(all, *ae, new_features_cnt, new_features_sum_feat_sq);
   ae->num_features += new_features_cnt;
   ae->total_sum_feat_sq += new_features_sum_feat_sq;
-
-  // all.example_parser->incrementer_mutex.lock();
-  all.example_parser->end_parsed_examples ++;
-  // all.example_parser->incrementer_mutex.unlock();
 
 }
 
@@ -963,7 +960,7 @@ void finish_example(vw& all, example& ec)
 
 void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
-  notify_examples_cv(examples[0]);
+  for (auto example : examples) { notify_examples_cv(example); }
 }
 
 void main_parse_loop(vw* all) { parse_dispatch(*all, thread_dispatch); }
