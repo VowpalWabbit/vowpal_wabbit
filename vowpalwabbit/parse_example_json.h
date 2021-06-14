@@ -1790,15 +1790,14 @@ int read_features_json(vw* all, v_array<example*>& examples, std::vector<char> *
   {
     reread = false;
 
-    std::vector<char> line;
     size_t num_chars;
-    size_t num_chars_initial = read_features(all, line, num_chars, examples);
+    size_t num_chars_initial = (*io_lines_next_item).size();
     if (num_chars_initial < 1) return (int)num_chars_initial;
 
     // Ensure there is a null terminator. is this needed?
-    line.push_back('\0'); 
+    (*io_lines_next_item).push_back('\0'); 
 
-    char *stripped_line = line.data();
+    char *stripped_line = std::move((*io_lines_next_item).data());
     num_chars = strip_features_string(stripped_line, num_chars_initial);
 
     if(num_chars < 1)
