@@ -278,14 +278,13 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     *d = '|';  // set up for parser::read_line
     VW::read_line(all, ec, d);
     // now we just need to grab stuff from the default namespace of ec!
-    if (ec->feature_space.get_feature_group(default_namespace) == nullptr) {
+    if (ec->feature_space.get_feature_group(DEFAULT_NAMESPACE_HASH) == nullptr) {
       continue; }
-    map->emplace(word, VW::make_unique<features>(ec->feature_space[default_namespace]));
+    map->emplace(word, VW::make_unique<features>(ec->feature_space[DEFAULT_NAMESPACE_HASH]));
 
     // clear up ec
     ec->tag.clear();
     ec->feature_space.clear();
-    for (size_t i = 0; i < 256; i++) { ec->feature_space[i].clear(); }
   } while ((rc != EOF) && (nread > 0));
   free(buffer);
   VW::dealloc_examples(ec, 1);
