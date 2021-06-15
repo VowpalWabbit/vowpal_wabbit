@@ -38,8 +38,6 @@ struct mwt
   uint32_t num_classes;
   bool learn;
 
-  v_array<namespace_index> indices;  // excluded namespaces
-  // features feature_space[256];
   std::unordered_map<uint64_t, features> feature_space;
   vw* all;
 };
@@ -86,13 +84,13 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   VW_WARNING_DISABLE_CPP_17_LANG_EXT
   if VW_STD17_CONSTEXPR (exclude || learn)
   {
-    c.indices.clear();
     uint32_t stride_shift = c.all->weights.stride_shift();
     uint64_t weight_mask = c.all->weights.mask();
     for (auto it = ec.begin(); it != ec.end(); ++it)
     {
-      if(c.namespaces[it.index()]){
+      if(c.namespaces[it.index()]) {
         c.feature_space.insert({it.hash(), features{}});
+        c.feature_space[it.hash()].clear();
         if (learn)
         {
           auto& feats = c.feature_space[it.hash()];
