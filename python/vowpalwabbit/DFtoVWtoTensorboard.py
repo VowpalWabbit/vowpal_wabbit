@@ -48,14 +48,14 @@ class DFtoVWtoTensorboard:
 	print metrics (average_loss, since_last, label, prediction, num_features) and also provides support 
 	to log these metrics for Tensorboard Visualization"""
 
-	def __init__(self, df_to_vw, vw):
+	def __init__(self, vw_formatted_data, vw):
 		"""Construct a DFtoVWtoTensorboard object
 
 		Parameters
 		----------
 
-		df_to_vw : A DFtoVW object
-				This would be used to construct examples 
+		vw_formatted_data : A DFtoVW object
+				This would be the list of examples provided either by DFtoVW.convert_df or a user making custom examples
 		vw		 : A vowpalwabbit object
  				This would be used for learning using the algorithm specified in the object, and also to compute a few metrics
 
@@ -65,7 +65,7 @@ class DFtoVWtoTensorboard:
 		self : DFtoVWtoTensorboard
 		"""
 		self.vw = vw  # As this needs to be remembered
-		self.vw_formatted_data = df_to_vw.convert_df()
+		self.vw_formatted_data = vw_formatted_data
 
 
 	#------------------------------------------------------------------------------------------------		
