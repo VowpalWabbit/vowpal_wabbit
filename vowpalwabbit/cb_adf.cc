@@ -12,6 +12,7 @@
 #include "explore.h"
 #include "cb_adf.h"
 #include "shared_data.h"
+#include "label_parser.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_adf
@@ -91,7 +92,12 @@ public:
 
   cb_adf(
       shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
-      : _sd(sd), _model_file_ver(model_file_ver), _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p)
+      : _sd(sd)
+      , _model_file_ver(model_file_ver)
+      , _offset(0)
+      , _no_predict(no_predict)
+      , _rank_all(rank_all)
+      , _clip_p(clip_p)
   {
     _gen_cs.cb_type = cb_type;
   }
@@ -543,21 +549,24 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
-  auto ld = scoped_calloc_or_throw<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict);
+  auto ld = VW::make_unique<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict);
 
   auto base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
   cb_adf* bare = ld.get();
-
-  learner<cb_adf, multi_ex>& l = init_learner(ld, base, learn, predict, problem_multiplier,
-      prediction_type_t::action_scores, all.get_setupfn_name(cb_adf_setup), ld->learn_returns_prediction());
-
-  l.set_finish_example(CB_ADF::finish_multiline_example);
-  l.set_print_example(CB_ADF::update_and_output);
+  bool lrp = ld->learn_returns_prediction();
+  auto* l = make_reduction_learner(std::move(ld), base, learn, predict, all.get_setupfn_name(cb_adf_setup))
+                .set_learn_returns_prediction(lrp)
+                .set_params_per_weight(problem_multiplier)
+                .set_prediction_type(prediction_type_t::action_scores)
+                .set_label_type(label_type_t::cb)
+                .set_finish_example(CB_ADF::finish_multiline_example)
+                .set_print_example(CB_ADF::update_and_output)
+                .set_save_load(CB_ADF::save_load)
+                .build();
 
   bare->set_scorer(all.scorer);
 
-  l.set_save_load(CB_ADF::save_load);
-  return make_base(l);
+  return make_base(*l);
 }

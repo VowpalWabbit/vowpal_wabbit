@@ -1,4 +1,5 @@
 add_executable(vw-unit-test.out
+  cache_test.cc
   cats_test.cc
   cats_tree_tests.cc
   cats_user_provided_pdf.cc
@@ -21,6 +22,7 @@ add_executable(vw-unit-test.out
   main.cc
   math_test.cc
   multiclass_label_parser_test.cc
+  namespaced_features_test.cc
   numeric_cast_tests.cc
   object_pool_test.cc
   offset_tree_tests.cc

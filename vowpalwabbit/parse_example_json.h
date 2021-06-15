@@ -29,6 +29,8 @@ VW_WARNING_DISABLE_CLASS_MEMACCESS
 #include <rapidjson/error/en.h>
 VW_WARNING_STATE_POP
 
+#include "io/logger.h"
+
 #if (_MANAGED == 1) || (_M_CEE == 1)
 #  pragma managed(pop)
 #endif
@@ -50,6 +52,8 @@ VW_WARNING_STATE_POP
 #ifndef _WIN32
 #  define _stricmp strcasecmp
 #endif
+
+namespace logger = VW::io::logger;
 
 using namespace rapidjson;
 
@@ -1204,7 +1208,7 @@ public:
     auto* stored_ex = (*ctx.dedup_examples)[i];
 
     new_ex->indices = stored_ex->indices;
-    for (auto& ns : new_ex->indices) { new_ex->feature_space[ns].deep_copy_from(stored_ex->feature_space[ns]); }
+    for (auto& ns : new_ex->indices) { new_ex->feature_space[ns] = stored_ex->feature_space[ns]; }
     new_ex->ft_offset = stored_ex->ft_offset;
     return return_state;
   }
@@ -1662,31 +1666,39 @@ void read_line_json(vw& all, v_array<example*>& examples, char* line, example_fa
   read_line_json_s<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context, dedup_examples);
 }
 
-inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
+inline bool apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
 {
+  if (pdrop == 1.)
+  {
+    logger::errlog_error("JSON parser error: examples with pdrop==1 are not supported");
+    return false;
+  }
+  // Event with certain pdrop had (1-pdrop) as probability to survive,
+  // so it is one of (1 / (1-pdrop)) events that we should learn on, and weight should be updated accordingly.
   if (all.example_parser->lbl_parser.label_type == label_type_t::cb)
   {
-    for (auto& e : examples) { e->l.cb.weight = 1 - pdrop; }
+    for (auto& e : examples) { e->l.cb.weight /= 1 - pdrop; }
   }
   else if (all.example_parser->lbl_parser.label_type == label_type_t::ccb)
   {
-    for (auto& e : examples) { e->l.conditional_contextual_bandit.weight = 1 - pdrop; }
+    for (auto& e : examples) { e->l.conditional_contextual_bandit.weight /= 1 - pdrop; }
   }
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
     // TODO
   }
+  return true;
 }
 
+// returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
-void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
+bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
     example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
     parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
-    apply_pdrop(all, data->probabilityOfDrop, examples);
-    return;
+    return apply_pdrop(all, data->probabilityOfDrop, examples);
   }
 
   std::vector<char> line_vec;
@@ -1706,17 +1718,27 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
 
-  apply_pdrop(all, data->probabilityOfDrop, examples);
+  if (result.IsError())
+  {
+    BaseState<audit>* current_state = handler.current_state();
 
-  if (!result.IsError()) return;
+    if (all.example_parser->strict_parse)
+    {
+      THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
+                                    << ". "
+                                       "Handler: "
+                                    << handler.error().str()
+                                    << "State: " << (current_state ? current_state->name : "null"));
+    }
+    else
+    {
+      logger::errlog_error("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
+          GetParseError_En(result.Code()), handler.error().str(), (current_state ? current_state->name : "null"));
+      return false;
+    }
+  }
 
-  BaseState<audit>* current_state = handler.current_state();
-
-  THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
-                                << ". "
-                                   "Handler: "
-                                << handler.error().str()
-                                << "State: " << (current_state ? current_state->name : "null"));
+  return apply_pdrop(all, data->probabilityOfDrop, examples);
 }  // namespace VW
 }  // namespace VW
 
@@ -1729,8 +1751,16 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     if (line[0] != '{') { return false; }
 
     DecisionServiceInteraction interaction;
-    VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
+    bool result = VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
         reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
+
+    if (!result)
+    {
+      VW::return_multiple_example(*all, examples);
+      examples.push_back(&VW::get_unused_example(all));
+      if (all->example_parser->metrics) all->example_parser->metrics->LineParseError++;
+      return false;
+    }
 
     if (all->example_parser->metrics)
     {

@@ -35,6 +35,7 @@ Diagnostic options:
   -P [ --progress ] arg Progress update frequency. int: additive, float: 
                         multiplicative
   --quiet               Don't output disgnostics and progress updates
+  --limit_output arg    Avoid chatty output. Limit total printed lines.
   --dry_run             Parse arguments and print corresponding metadata. Will 
                         not execute driver.
   -h [ --help ]         More information on vowpal wabbit can be found here 

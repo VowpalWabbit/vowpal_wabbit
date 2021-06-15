@@ -32,7 +32,7 @@ ccb shared |User b
 ccb action |Action d |action d |Baction d |baction d |Caction d |caction d |Daction d |daction d |Ection d |e d |F d |f d |G d |g d |H d |h d |I g |i g |J d |j d |L d |l d |M d |m d |N d |n d |O d |o d |P d |p d
 ccb action |Action e
 ccb action |Action f
-ccb action |1 ff |2 ff |3 ff |4 ff |5 ff |6 ff |7 ff |8 ff |9 ff |0 ff |! ff |£ ff |% ff |& ff |( ff |) ff |$ ff |~ff
+ccb action |1 ff |2 ff |3 ff |4 ff |5 ff |6 ff |7 ff |8 ff |9 ff |0 ff |! ff |% ff |& ff |( ff |) ff |$ ff |~ff
 ccb action |1 ff
 ccb slot 3:0:0.2 |Slot h
 ccb slot 4:0:0.25 |Slot i

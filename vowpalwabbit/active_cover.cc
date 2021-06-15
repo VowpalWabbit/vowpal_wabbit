@@ -216,6 +216,7 @@ base_learner* active_cover_setup(options_i& options, vw& all)
       .add(
           make_option("active_cover", active_cover_option).keep().necessary().help("enable active learning with cover"))
       .add(make_option("mellowness", data->active_c0)
+               .keep()
                .default_value(8.f)
                .help("active learning mellowness parameter c_0. Default 8."))
       .add(make_option("alpha", data->alpha)
