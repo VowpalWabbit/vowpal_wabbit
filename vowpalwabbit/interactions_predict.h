@@ -128,15 +128,22 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 
     if (len == 2)  // special case of pairs
     {
+      size_t ns0_i = 0;
       for (const auto& first : ec.feature_space.namespace_index_range(ns[0]))
       {
+        ns0_i++;
         if (first.nonempty())
         {
+          size_t ns1_i = 0;
           for (const auto& second : ec.feature_space.namespace_index_range(ns[1]))
           {
+            ns1_i++;
             if (second.nonempty())
             {
               const bool same_namespace = (!permutations && (ns[0] == ns[1]));
+
+              // When there is more than one feature group of the same index, we should not process permutations. For example we skip x2*x1 but do process x1*x2.
+              if (same_namespace && (ns1_i < ns0_i)) { continue; }
 
               for (size_t i = 0; i < first.indicies.size(); ++i)
               {
@@ -161,20 +168,37 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     }
     else if (len == 3)  // special case for triples
     {
+      size_t ns0_i = 0;
       for (const auto& first : ec.feature_space.namespace_index_range(ns[0]))
       {
+        ns0_i++;
         if (first.nonempty())
         {
+          size_t ns1_i = 0;
           for (const auto& second : ec.feature_space.namespace_index_range(ns[1]))
           {
+            ns1_i++;
             if (second.nonempty())
             {
+              size_t ns2_i = 0;
               for (const auto& third : ec.feature_space.namespace_index_range(ns[2]))
               {
+                ns2_i++;
+
                 if (third.nonempty())
                 {  // don't compare 1 and 3 as interaction is sorted
                   const bool same_namespace1 = (!permutations && (ns[0] == ns[1]));
                   const bool same_namespace2 = (!permutations && (ns[1] == ns[2]));
+
+                  // We check it for skipping self interaction.
+                  const bool same_namespace3 = (!permutations && (ns[1] == ns[2]));
+
+                  // When there is more than one feature group of the same index, we should not process permutations.
+                  // For example we skip x2*x1 but do process x1*x2.
+                  // TODO - ensure this cubic version works
+                  if (same_namespace1 && (ns0_i < ns1_i)) { continue; }
+                  if (same_namespace2 && (ns1_i < ns2_i)) { continue; }
+                  if (same_namespace3 && (ns1_i < ns2_i)) { continue; }
 
                   for (size_t i = 0; i < first.indicies.size(); ++i)
                   {
