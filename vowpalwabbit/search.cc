@@ -660,7 +660,9 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
       else  // this is actually a neighbor
       {
         example& other = *ec_seq[n + offset];
-        GD::foreach_feature<search_private, add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
+        for (auto& feat_group : other.feature_space.namespace_index_range(ns)) {
+          GD::foreach_feature<search_private, add_new_feature>(priv.all, feat_group, priv, me.ft_offset);
+        }
       }
     }
 
