@@ -238,8 +238,6 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   map->max_load_factor(0.25);
   example* ec = VW::alloc_examples(1);
 
-  size_t def = static_cast<size_t>(' ');
-
   ssize_t size = 2048, pos, nread;
   char rc;
   char* buffer = calloc_or_throw<char>(size);
@@ -280,8 +278,9 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     *d = '|';  // set up for parser::read_line
     VW::read_line(all, ec, d);
     // now we just need to grab stuff from the default namespace of ec!
-    if (ec->feature_space[def].size() == 0) { continue; }
-    map->emplace(word, VW::make_unique<features>(ec->feature_space[def]));
+    if (ec->feature_space.get_feature_group(default_namespace) == nullptr) {
+      continue; }
+    map->emplace(word, VW::make_unique<features>(ec->feature_space[default_namespace]));
 
     // clear up ec
     ec->tag.clear();
