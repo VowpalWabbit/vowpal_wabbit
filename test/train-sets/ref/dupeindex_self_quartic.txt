@@ -1,0 +1,1 @@
+train-sets/ref/dupeindex_self_quadratic.stderr
