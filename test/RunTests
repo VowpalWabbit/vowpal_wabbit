@@ -2442,15 +2442,15 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/baseline_test.stderr
 
 # Test 336:
-{VW} -d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aa --quiet  --invert_hash dupeindex_self_quadratic.txt
+{VW} -d train-sets/dupeindex_self.dat --sort_features --noconstant --ignore_linear a --interactions aa --quiet  --invert_hash dupeindex_self_quadratic.txt
     train-sets/ref/dupeindex_self_quadratic.txt
 
 # Test 337:
-{VW} -d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaa --quiet --invert_hash dupeindex_self_cubic.txt
+{VW} -d train-sets/dupeindex_self.dat --sort_features --noconstant --ignore_linear a --interactions aaa --quiet --invert_hash dupeindex_self_cubic.txt
     train-sets/ref/dupeindex_self_cubic.txt
 
 # Test 338:
-{VW} -d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaaa --quiet --invert_hash dupeindex_self_quartic.txt
+{VW} -d train-sets/dupeindex_self.dat --sort_features --noconstant --ignore_linear a --interactions aaaa --quiet --invert_hash dupeindex_self_quartic.txt
     train-sets/ref/dupeindex_self_quartic.txt
 
 # Do not delete this line or the empty line above it
