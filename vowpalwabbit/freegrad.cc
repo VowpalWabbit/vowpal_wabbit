@@ -100,14 +100,12 @@ void freegrad_predict(freegrad& FG, single_learner&, example& ec)
   GD::foreach_feature<freegrad_update_data, inner_freegrad_predict>(*FG.all, ec, FG.data, num_features_from_interactions);
   norm_w_pred =  sqrtf(FG.data.squared_norm_prediction);
   
-  if (FG.adaptiveradius)
-    projection_radius=FG.epsilon * sqrtf(FG.data.sum_normalized_grad_norms);
-  else
-    projection_radius=FG.radius;
-
   if (FG.project){
     // Set the project radius either to the user-specified value, or adaptively  
-    
+    if (FG.adaptiveradius)
+      projection_radius=FG.epsilon * sqrtf(FG.data.sum_normalized_grad_norms);
+    else
+      projection_radius=FG.radius;
     // Compute the projected predict if applicable
     if (norm_w_pred > projection_radius)
       FG.data.predict *= projection_radius / norm_w_pred;
@@ -133,7 +131,7 @@ void gradient_dot_w(freegrad_update_data& d, float x, float& wref) {
     
   // Only predict a non-zero w_pred if a non-zero gradient has been observed
   if (h1>0)
-    w_pred =  -G * epsilon * (2. * V + ht * absG) * h1/(2*pow(V + ht * absG,2.f) * sqrtf(V))* exp(pow(absG,2.f)/(2. * V + 2. * ht * absG))/prev_s;
+    w_pred =  -G * epsilon * (2. * V + ht * absG) * h1/(2.*pow(V + ht * absG,2.f) * sqrtf(V))* exp(pow(absG,2.f)/(2 * V + 2. * ht * absG))/prev_s;
 
   d.grad_dot_w += gradient * w_pred;
 }
@@ -292,7 +290,7 @@ base_learner* freegrad_setup(options_i& options, vw& all)
   float radius; 
 
   option_group_definition new_options("FreeGrad options");
-  new_options.add(make_option("FreeGrad", FreeGrad).keep().help("Diagonal FreeGrad Algorithm")).add(make_option("restart", restart).help("Use the FreeRange restarts"))
+  new_options.add(make_option("freegrad", FreeGrad).keep().help("Diagonal FreeGrad Algorithm")).add(make_option("restart", restart).help("Use the FreeRange restarts"))
       .add(make_option("project", project).help("Project the outputs to adapt to both the lipschitz and comparator norm")).add(make_option("radius", radius).help("Radius of the l2-ball for the projection. If not supplied, an adaptive radius will be used.")).add(make_option("epsilon", FG->epsilon).default_value(1.f).help("Initial wealth"));
 
   options.add_and_parse(new_options);
