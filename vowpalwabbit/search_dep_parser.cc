@@ -129,17 +129,21 @@ void finish(Search::search &sch)
 void inline add_feature(
     example &ex, uint64_t idx, unsigned char ns, uint64_t mask, uint64_t multiplier, bool /* audit */ = false)
 {
-  ex.feature_space[static_cast<int>(ns)].push_back(1.0f, (idx * multiplier) & mask);
+  ex.feature_space.get_or_create_feature_group(ns, ns).push_back(1.0f, (idx * multiplier) & mask);
 }
 
 void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier,
     uint64_t offset, bool /* audit */ = false)
 {
   features &tgt_fs = ex.feature_space[tgt_ns];
-  for (namespace_index ns : src.indices)
-    if (ns != constant_namespace)  // ignore constant_namespace
-      for (feature_index i : src.feature_space[ns].indicies)
-        tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
+  for (auto it = src.feature_space.begin(); it != src.feature_space.end(); ++it)
+  {
+    if (it.index() == constant_namespace) { continue; }
+
+    for (feature_index i : src.feature_space[it.hash()].indicies) {
+      tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
+    }
+  }
 }
 
 void inline reset_ex(example *ex)
