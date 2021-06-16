@@ -186,10 +186,9 @@ class namespace_copy_guard
 {
   example_predict& _ex;
   uint64_t _ns;
-  bool _remove_ns;
 
 public:
-  namespace_copy_guard(example_predict& ex, uint64_t ns);
+  namespace_copy_guard(example_predict& ex, uint64_t ns, unsigned const char index);
   ~namespace_copy_guard();
 
   void feature_push_back(feature_value v, feature_index idx);
@@ -416,7 +415,7 @@ public:
     if (!_no_constant)
     {
       // add constant feature
-      ns_copy_guard = std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(ex, constant_namespace));
+      ns_copy_guard = std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(ex, constant_namespace, constant_namespace));
       ns_copy_guard->feature_push_back(1.f, (constant << _stride_shift) + ex.ft_offset);
     }
 
@@ -454,7 +453,7 @@ public:
       for (auto it = shared.feature_space.begin(); it != shared.feature_space.end(); ++it)
       {
         // insert namespace
-        auto ns_copy_guard = std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*action, it.hash()));
+        auto ns_copy_guard = std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*action, it.hash(), it.index()));
 
         // copy features
         for (auto fs : *shared.feature_space.get_feature_group(it.hash()))

@@ -20,6 +20,7 @@ example_predict_builder::example_predict_builder(
 {
   _feature_index_bit_mask = ((uint64_t)1 << feature_index_num_bits) - 1;
   add_namespace(namespace_idx);
+  _ex->feature_space.get_or_create_feature_group(_namespace_hash, _namespace_idx);
 }
 
 void example_predict_builder::add_namespace(namespace_index feature_group)
@@ -36,6 +37,7 @@ void example_predict_builder::push_feature_string(char* feature_name, feature_va
 
 void example_predict_builder::push_feature(feature_index feature_idx, feature_value value)
 {
-  _ex->feature_space.get_feature_group(_namespace_hash)->push_back(value, _namespace_hash + feature_idx);
+  auto* fs = _ex->feature_space.get_feature_group(_namespace_hash);
+  fs->push_back(value, _namespace_hash + feature_idx);
 }
 };  // namespace vw_slim

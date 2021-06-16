@@ -41,7 +41,7 @@ inline bool contains_wildcard(const std::vector<namespace_index>& interaction)
 
 // function estimates how many new features will be generated for example and their sum(value^2).
 void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
-    const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value);
+    const VW::namespaced_features& feature_spaces, size_t& new_features_cnt, float& new_features_value);
 
 std::vector<std::vector<namespace_index>> generate_namespace_combinations_with_repetition(
     const std::set<namespace_index>& namespaces, size_t num_to_pick);
@@ -125,7 +125,7 @@ public:
 
   template <generate_func_t generate_func, bool leave_duplicate_interactions>
   void update_interactions_if_new_namespace_seen(const std::vector<std::vector<namespace_index>>& interactions,
-      const v_array<namespace_index>& new_example_indices)
+      const std::set<namespace_index>& new_example_indices)
   {
     auto prev_count = all_seen_namespaces.size();
     all_seen_namespaces.insert(new_example_indices.begin(), new_example_indices.end());
