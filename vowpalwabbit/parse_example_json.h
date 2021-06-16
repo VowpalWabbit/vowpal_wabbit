@@ -1782,7 +1782,7 @@ void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<
 }
 
 template <bool audit>
-int read_features_json(vw* all, v_array<example*>& examples, std::vector<char> *io_lines_next_item)
+int read_features_json(vw* all, v_array<example*>& examples, std::vector<VW::string_view>&, std::vector<VW::string_view>&, std::vector<char> *io_lines_next_item)
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;

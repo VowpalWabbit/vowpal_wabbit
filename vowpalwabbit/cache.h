@@ -12,7 +12,7 @@
 char* run_len_decode(char* p, size_t& i);
 char* run_len_encode(char* p, size_t i);
 
-int read_cached_features(vw* all, v_array<example*>& examples, std::vector<char> *io_lines_next_item);
+int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::string_view>&, std::vector<VW::string_view>&, std::vector<char> *io_lines_next_item);
 void cache_tag(io_buf& cache, const v_array<char>& tag);
 void cache_features(io_buf& cache, example* ae, uint64_t mask);
 void output_byte(io_buf& cache, unsigned char s);

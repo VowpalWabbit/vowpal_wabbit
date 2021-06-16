@@ -20,6 +20,11 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
   v_array<example*> examples;
   size_t example_number = 0;  // for variable-size batch learning algorithms
 
+  // we need to allow reuse of vectors, instead of deleting and recreating them for each example.
+  // used in substring_to_example.
+  std::vector<VW::string_view> words_localcpy;
+  std::vector<VW::string_view> parse_name_localcpy;
+
   try
   {
     while (!all.example_parser->done)
@@ -51,7 +56,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         VW::finish_example(all, *example_ptr);
 
       else{
-        int num_chars_read = all.example_parser->reader(&all, examples, io_lines_next_item);
+        int num_chars_read = all.example_parser->reader(&all, examples, words_localcpy, parse_name_localcpy, io_lines_next_item);
         for (size_t i = 1; i < examples.size(); i++) all.example_parser->ready_parsed_examples.push(examples[i]);
 
         if(num_chars_read > 0){
