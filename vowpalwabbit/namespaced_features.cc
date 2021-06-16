@@ -158,6 +158,42 @@ generic_range<namespaced_features::const_indexed_iterator> namespaced_features::
   return {namespace_index_begin(ns_index), namespace_index_end(ns_index)};
 }
 
+VW::chained_proxy_iterator<namespaced_features::indexed_iterator, features::audit_iterator>
+namespaced_features::namespace_index_begin_proxy(namespace_index ns_index)
+{
+  return {namespace_index_begin(ns_index), namespace_index_end(ns_index)};
+}
+
+VW::chained_proxy_iterator<namespaced_features::indexed_iterator, features::audit_iterator>
+namespaced_features::namespace_index_end_proxy(namespace_index ns_index)
+{
+  return {namespace_index_end(ns_index)};
+}
+
+VW::chained_proxy_iterator<namespaced_features::const_indexed_iterator, features::const_audit_iterator>
+namespaced_features::namespace_index_begin_proxy(namespace_index ns_index) const
+{
+  return {namespace_index_begin(ns_index), namespace_index_end(ns_index)};
+}
+
+VW::chained_proxy_iterator<namespaced_features::const_indexed_iterator, features::const_audit_iterator>
+namespaced_features::namespace_index_end_proxy(namespace_index ns_index) const
+{
+  return {namespace_index_begin(ns_index), namespace_index_end(ns_index)};
+}
+
+VW::chained_proxy_iterator<namespaced_features::const_indexed_iterator, features::const_audit_iterator>
+namespaced_features::namespace_index_cbegin_proxy(namespace_index ns_index) const
+{
+  return {namespace_index_begin(ns_index), namespace_index_end(ns_index)};
+}
+
+VW::chained_proxy_iterator<namespaced_features::const_indexed_iterator, features::const_audit_iterator>
+namespaced_features::namespace_index_cend_proxy(namespace_index ns_index) const
+{
+  return {namespace_index_begin(ns_index), namespace_index_end(ns_index)};
+}
+
 namespaced_features::indexed_iterator namespaced_features::namespace_index_begin(namespace_index ns_index)
 {
   auto it = _legacy_indices_to_index_mapping.find(ns_index);

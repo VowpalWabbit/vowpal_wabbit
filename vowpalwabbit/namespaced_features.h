@@ -12,6 +12,7 @@
 
 #include "feature_group.h"
 #include "generic_range.h"
+#include "chained_proxy_iterator.h"
 
 typedef unsigned char namespace_index;
 
@@ -95,14 +96,27 @@ public:
     return _namespace_hashes[*_indices];
   }
 
+  friend bool operator<(const indexed_iterator_t& lhs, const indexed_iterator_t& rhs)
+  {
+    return lhs._indices < rhs._indices;
+  }
+
+  friend bool operator>(const indexed_iterator_t& lhs, const indexed_iterator_t& rhs)
+  {
+    return lhs._indices > rhs._indices;
+  }
+
+  friend bool operator<=(const indexed_iterator_t& lhs, const indexed_iterator_t& rhs) { return !(lhs > rhs); }
+  friend bool operator>=(const indexed_iterator_t& lhs, const indexed_iterator_t& rhs) { return !(lhs < rhs); }
+
   friend difference_type operator-(const indexed_iterator_t& lhs, const indexed_iterator_t& rhs)
   {
     assert(lhs._indices >= rhs._indices);
     return lhs._indices - rhs._indices;
   }
 
-  bool operator==(const indexed_iterator_t& rhs) { return _indices == rhs._indices; }
-  bool operator!=(const indexed_iterator_t& rhs) { return _indices != rhs._indices; }
+  bool operator==(const indexed_iterator_t& rhs) const { return _indices == rhs._indices; }
+  bool operator!=(const indexed_iterator_t& rhs) const { return _indices != rhs._indices; }
 };
 
 /// namespace_index - 1 byte namespace identifier. Either the first character of the namespace or a reserved namespace
@@ -133,6 +147,7 @@ struct namespaced_features
   const std::set<namespace_index>& get_indices() const;
   namespace_index get_index_for_hash(uint64_t hash) const;
 
+  // The following are experimental and may be superseded with namespace_index_begin_proxy
   // Returns empty range if not found
   std::pair<indexed_iterator, indexed_iterator> get_namespace_index_groups(namespace_index ns_index);
   // Returns empty range if not found
@@ -157,6 +172,21 @@ struct namespaced_features
 
   void clear();
 
+  // Experimental, hence the cumbersome names.
+  VW::chained_proxy_iterator<indexed_iterator, features::audit_iterator> namespace_index_begin_proxy(
+      namespace_index ns_index);
+  VW::chained_proxy_iterator<indexed_iterator, features::audit_iterator> namespace_index_end_proxy(
+      namespace_index ns_index);
+  VW::chained_proxy_iterator<const_indexed_iterator, features::const_audit_iterator> namespace_index_begin_proxy(
+      namespace_index ns_index) const;
+  VW::chained_proxy_iterator<const_indexed_iterator, features::const_audit_iterator> namespace_index_end_proxy(
+      namespace_index ns_index) const;
+  VW::chained_proxy_iterator<const_indexed_iterator, features::const_audit_iterator> namespace_index_cbegin_proxy(
+      namespace_index ns_index) const;
+  VW::chained_proxy_iterator<const_indexed_iterator, features::const_audit_iterator> namespace_index_cend_proxy(
+      namespace_index ns_index) const;
+
+  // All of the following are experimental and may be superseded with the above proxies.
   generic_range<indexed_iterator> namespace_index_range(namespace_index ns_index);
   generic_range<const_indexed_iterator> namespace_index_range(namespace_index ns_index) const;
   indexed_iterator namespace_index_begin(namespace_index ns_index);

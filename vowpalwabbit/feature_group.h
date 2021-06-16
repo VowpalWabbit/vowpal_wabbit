@@ -57,6 +57,8 @@ public:
   using reference = value_type&;
   using const_reference = const value_type&;
 
+  audit_features_iterator() : _begin_values(nullptr), _begin_indices(nullptr), _begin_audit(nullptr) {}
+
   audit_features_iterator(
       feature_value_type_t* begin_values, feature_index_type_t* begin_indices, audit_type_t* begin_audit)
       : _begin_values(begin_values), _begin_indices(begin_indices), _begin_audit(begin_audit)
@@ -185,6 +187,8 @@ public:
   using pointer = value_type*;
   using reference = value_type&;
   using const_reference = const value_type&;
+
+  features_iterator() : _begin_values(nullptr), _begin_indices(nullptr) {}
 
   features_iterator(feature_value_type_t* begin_values, feature_index_type_t* begin_indices)
       : _begin_values(begin_values), _begin_indices(begin_indices)
