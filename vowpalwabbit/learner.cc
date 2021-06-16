@@ -90,8 +90,13 @@ void drain_examples(vw& all)
 {
   if (all.early_terminate)
   {  // drain any extra examples from parser.
-    example* ec = nullptr;
-    while ((ec = VW::get_example(all)) != nullptr) VW::finish_example(all, *ec);
+    example_vector* ev = nullptr;
+    while ((ev = VW::get_example(all)) != nullptr){
+      for (auto ex: ev->ev)
+        VW::finish_example(all, *ex);
+      VW::finish_example_vector(all, *ev);
+    }
+    
   }
   all.l->end_examples();
 }
@@ -215,12 +220,32 @@ private:
 class ready_examples_queue
 {
 public:
-  ready_examples_queue(vw& master) : _master(master) {}
+  ready_examples_queue(vw& master) : _master(master), _index(0) {}
 
-  example* pop() { return !_master.early_terminate ? VW::get_example(_master) : nullptr; }
+  example* pop() {
+    if(_master.early_terminate) return nullptr;
+
+    if(_ev->ev.size() == 0) {
+      _ev = VW::get_example(_master);
+      _index = 0;
+    }
+
+    example* ex = _ev->ev[_index++];
+
+    work_on_example(_master, ex);
+
+    if(_index >= _ev->ev.size())
+    {
+      VW::finish_example_vector(_master, *_ev);
+    }
+
+    return ex;
+  }
 
 private:
   vw& _master;
+  example_vector* _ev;
+  size_t _index;
 };
 
 class custom_examples_queue

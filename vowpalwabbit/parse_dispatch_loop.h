@@ -12,12 +12,12 @@
 
 #include "io/logger.h"
 
-using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
+using dispatch_fptr = std::function<void(vw&, example_vector*)>;
 struct io_state;
 
 inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 {
-  v_array<example*> examples;
+  
   size_t example_number = 0;  // for variable-size batch learning algorithms
 
   // we need to allow reuse of vectors, instead of deleting and recreating them for each example.
@@ -30,7 +30,8 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     while (!all.example_parser->done)
     {
       example* example_ptr = &VW::get_unused_example(&all);
-      examples.push_back(example_ptr);
+      example_vector* examples = &VW::get_unused_example_vector(&all);
+      (*examples).push_back(example_ptr);
 
       bool is_null_pointer = false;
 
@@ -44,7 +45,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         io_lines_next_item = all.example_parser->io_lines.pop();
 
         if(io_lines_next_item != nullptr) {
-          all.example_parser->ready_parsed_examples.push(examples[0]);
+          all.example_parser->ready_parsed_examples.push(examples);
         }
         else{
           is_null_pointer = true;
@@ -52,25 +53,25 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       }
 
 
-      if(is_null_pointer)
+      if(is_null_pointer) {
         VW::finish_example(all, *example_ptr);
+        VW::finish_example_vector(all, *examples);
+      }
 
       else{
-        int num_chars_read = all.example_parser->reader(&all, examples, words_localcpy, parse_name_localcpy, io_lines_next_item);
-        for (size_t i = 1; i < examples.size(); i++) all.example_parser->ready_parsed_examples.push(examples[i]);
+        int num_chars_read = all.example_parser->reader(&all, examples->ev, words_localcpy, parse_name_localcpy, io_lines_next_item);
 
         if(num_chars_read > 0){
           dispatch(all, examples);
         }
         else if(num_chars_read == 0){
-          examples[0]->end_pass = true;
+          example_ptr->end_pass = true;
           dispatch(all, examples);
         }
       }     
       delete io_lines_next_item;
 
 
-      examples.clear();
     }
 
   }

@@ -158,10 +158,34 @@ struct example : public example_predict  // core example datatype.
   //     them. " "Standalone examples are by definition always in use.")
   bool in_use = true;
 
-  // This object is only used because atomic signaling is not available in C++11
-  example_lock ex_lock;
+  // // This object is only used because atomic signaling is not available in C++11
+  // example_lock ex_lock;
 };
 VW_WARNING_STATE_POP
+
+struct example_vector  // core example datatype.
+{
+  example_vector() = default;
+  ~example_vector();
+
+  example_vector(const example_vector&) = delete;
+  example_vector& operator=(const example_vector&) = delete;
+  example_vector(example_vector&& other) = default;
+  example_vector& operator=(example_vector&& other) = default;
+
+  v_array<example*> ev;
+
+  void push_back(example* ex){
+    ev.push_back(ex);
+  }
+
+  size_t size(){
+    return ev.size();
+  }
+
+  // This object is only used because atomic signaling is not available in C++11
+  example_lock ev_lock;
+};
 
 struct vw;
 

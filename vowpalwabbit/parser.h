@@ -34,6 +34,7 @@ struct parser
 {
   parser(size_t ring_size, bool strict_parse_, int num_parse_threads)
       : example_pool{ring_size}
+      , example_vector_pool{ring_size}
       , ready_parsed_examples{ring_size}
       , ring_size{ring_size}
       , begin_parsed_examples(0)
@@ -56,7 +57,8 @@ struct parser
   std::vector<VW::string_view> words;
 
   VW::object_pool<example> example_pool;
-  VW::ptr_queue<example> ready_parsed_examples;
+  VW::object_pool<example_vector> example_vector_pool;
+  VW::ptr_queue<example_vector> ready_parsed_examples;
 
   std::unique_ptr<io_buf> input;  // Input source(s)
   /// reader consumes the input io_buf in the vw object and is generally for file based parsing
@@ -139,4 +141,4 @@ void set_compressed(parser* par);
 
 void free_parser(vw& all);
 
-void notify_examples_cv(vw& all, example *& ex);
+void notify_examples_cv(example_vector *& ev);

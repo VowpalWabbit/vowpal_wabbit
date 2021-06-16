@@ -681,6 +681,16 @@ example& get_unused_example(vw* all)
   return *ex;
 }
 
+example_vector& get_unused_example_vector(vw* all)
+{
+  parser* p = all->example_parser;
+  auto ex_vector = p->example_vector_pool.get_object();
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
+  VW_WARNING_STATE_POP
+  return *ex_vector;
+}
+
 void setup_examples(vw& all, v_array<example*>& examples)
 {
   for (example* ae : examples) setup_example(all, ae);
@@ -796,14 +806,14 @@ void setup_example(vw& all, example* ae)
 
 }  // namespace VW
 
-void notify_examples_cv(example *& ex)
+void notify_examples_cv(example_vector *& ev)
 {
 
-  std::unique_lock<std::mutex> lock(*(ex->ex_lock.example_cv_mutex));
+  std::unique_lock<std::mutex> lock(*(ev->ev_lock.example_cv_mutex));
 
-  ex->ex_lock.done_parsing->store(true); 
+  ev->ev_lock.done_parsing->store(true); 
   
-  ex->ex_lock.example_parsed->notify_one();
+  ev->ev_lock.example_parsed->notify_one();
 
 }
 
@@ -921,10 +931,6 @@ void empty_example(vw& /*all*/, example& ec)
   ec.end_pass = false;
   ec.is_newline = false;
   ec._reduction_features.clear();
-  {
-    std::unique_lock<std::mutex> lock(*(ec.ex_lock.example_cv_mutex));
-    *(ec.ex_lock.done_parsing) = false;
-  }
 }
 
 void clean_example(vw& all, example& ec, bool rewind)
@@ -956,31 +962,47 @@ void finish_example(vw& all, example& ec)
     all.example_parser->output_done.notify_one();
   }
 }
+
+void finish_example_vector(vw& all, example_vector& ev)
+{
+  ev.ev.clear();
+  {
+    std::unique_lock<std::mutex> lock(*(ev.ev_lock.example_cv_mutex));
+    *(ev.ev_lock.done_parsing) = false;
+  }
+  all.example_parser->example_vector_pool.return_object(&ev);
+}
 }  // namespace VW
 
-void thread_dispatch(vw& all, const v_array<example*>& examples)
+void thread_dispatch(vw& all, example_vector* examples)
 {
-  for (auto example : examples) { notify_examples_cv(example); }
+  notify_examples_cv(examples);
 }
 
 void main_parse_loop(vw* all) { parse_dispatch(*all, thread_dispatch); }
 
 namespace VW
 {
-example* get_example(vw& all) { 
+example_vector* get_example(vw& all) { 
 
-  example* ex = all.example_parser->ready_parsed_examples.pop();
+  example_vector* ev = all.example_parser->ready_parsed_examples.pop();
 
-  if (ex == nullptr) {
-    return ex;
+  if (ev == nullptr) {
+    return ev;
   }
 
   {
-    std::unique_lock<std::mutex> lock(*(ex->ex_lock.example_cv_mutex));
-    while(ex != nullptr && !*(ex->ex_lock.done_parsing)) {
-      ex->ex_lock.example_parsed->wait(lock);
+    std::unique_lock<std::mutex> lock(*(ev->ev_lock.example_cv_mutex));
+    while(ev != nullptr && !*(ev->ev_lock.done_parsing)) {
+      ev->ev_lock.example_parsed->wait(lock);
     }
   }
+
+  return ev;
+
+}
+
+void work_on_example(vw& all, example* ex) {
   // After parsing the example, we set it up, if the example is not end pass.
   if (!ex->end_pass){
     VW::setup_example(all, ex);
@@ -1011,9 +1033,6 @@ example* get_example(vw& all) {
     all.example_parser->done_with_io.store(true);
     all.example_parser->can_end_pass.notify_one();
   }
-
-  return ex;
-
 }
 
 float get_topic_prediction(example* ec, size_t i) { return ec->pred.scalars[i]; }
@@ -1102,9 +1121,11 @@ void free_parser(vw& all)
 
   while (all.example_parser->ready_parsed_examples.size() > 0)
   {
-    auto* current = all.example_parser->ready_parsed_examples.pop();
+    example_vector* current = all.example_parser->ready_parsed_examples.pop();
     // this function also handles examples that were not from the pool.
-    VW::finish_example(all, *current);
+    for (auto ex: current->ev)
+      VW::finish_example(all, *ex);
+    VW::finish_example_vector(all, *current);
   }
 
   // There should be no examples in flight at this point.
