@@ -173,16 +173,16 @@ struct namespaced_features
   void clear();
 
   // Experimental, hence the cumbersome names.
-  VW::chained_proxy_iterator<indexed_iterator, features::iterator> namespace_index_begin_proxy(
+  VW::chained_proxy_iterator<indexed_iterator, features::audit_iterator> namespace_index_begin_proxy(
       namespace_index ns_index);
-  VW::chained_proxy_iterator<indexed_iterator, features::iterator> namespace_index_end_proxy(namespace_index ns_index);
-  VW::chained_proxy_iterator<const_indexed_iterator, features::const_iterator> namespace_index_begin_proxy(
+  VW::chained_proxy_iterator<indexed_iterator, features::audit_iterator> namespace_index_end_proxy(namespace_index ns_index);
+  VW::chained_proxy_iterator<const_indexed_iterator, features::const_audit_iterator> namespace_index_begin_proxy(
       namespace_index ns_index) const;
-  VW::chained_proxy_iterator<const_indexed_iterator, features::const_iterator> namespace_index_end_proxy(
+  VW::chained_proxy_iterator<const_indexed_iterator, features::const_audit_iterator> namespace_index_end_proxy(
       namespace_index ns_index) const;
-  VW::chained_proxy_iterator<const_indexed_iterator, features::const_iterator> namespace_index_cbegin_proxy(
+  VW::chained_proxy_iterator<const_indexed_iterator, features::const_audit_iterator> namespace_index_cbegin_proxy(
       namespace_index ns_index) const;
-  VW::chained_proxy_iterator<const_indexed_iterator, features::const_iterator> namespace_index_cend_proxy(
+  VW::chained_proxy_iterator<const_indexed_iterator, features::const_audit_iterator> namespace_index_cend_proxy(
       namespace_index ns_index) const;
 
   // All of the following are experimental and may be superseded with the above proxies.
