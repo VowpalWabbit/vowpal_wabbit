@@ -186,10 +186,7 @@ public:
   using reference = value_type&;
   using const_reference = const value_type&;
 
-  features_iterator()
-      : _begin_values(nullptr), _begin_indices(nullptr)
-  {
-  }
+  features_iterator() : _begin_values(nullptr), _begin_indices(nullptr) {}
 
   features_iterator(feature_value_type_t* begin_values, feature_index_type_t* begin_indices)
       : _begin_values(begin_values), _begin_indices(begin_indices)

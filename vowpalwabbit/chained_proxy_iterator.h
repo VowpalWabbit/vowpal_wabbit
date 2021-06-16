@@ -27,16 +27,10 @@ public:
   chained_proxy_iterator(InnerIterator outer_current, InnerIterator outer_end)
       : _outer_current(outer_current), _outer_end(outer_end)
   {
-    if (_outer_current != _outer_end)
-    {
-      _current = (*_outer_current).begin();
-    }
+    if (_outer_current != _outer_end) { _current = (*_outer_current).begin(); }
   }
 
-  chained_proxy_iterator(InnerIterator outer_end)
-      : _outer_current(outer_end), _outer_end(outer_end), _current{}
-  {
-  }
+  chained_proxy_iterator(InnerIterator outer_end) : _outer_current(outer_end), _outer_end(outer_end), _current{} {}
 
   chained_proxy_iterator(const chained_proxy_iterator&) = default;
   chained_proxy_iterator& operator=(const chained_proxy_iterator&) = default;
@@ -60,10 +54,7 @@ public:
   // TODO jump full feature groups.
   chained_proxy_iterator& operator+=(difference_type diff)
   {
-    for (size_t i = 0; i < diff; i++)
-    {
-      operator++();
-    }
+    for (size_t i = 0; i < diff; i++) { operator++(); }
     return *this;
   }
 
@@ -71,7 +62,7 @@ public:
   {
     assert(lhs._outer_current >= rhs._outer_current);
     size_t accumulator = 0;
-    while(lhs._outer_current != rhs._outer_current)
+    while (lhs._outer_current != rhs._outer_current)
     {
       accumulator += std::distance((*(rhs._outer_current)).begin(), (*(rhs._outer_current)).end());
       ++rhs._outer_current;
@@ -84,11 +75,9 @@ public:
   friend bool operator==(const chained_proxy_iterator& lhs, const chained_proxy_iterator& rhs)
   {
     // end() case:
-    // Do not check the inner iterator as that will be invalid. If the rhs is the same as the lhs and lhs is the end of the inner
-    if(lhs._outer_current == lhs._outer_end)
-    {
-      return lhs._outer_current == rhs._outer_current;
-    }
+    // Do not check the inner iterator as that will be invalid. If the rhs is the same as the lhs and lhs is the end of
+    // the inner
+    if (lhs._outer_current == lhs._outer_end) { return lhs._outer_current == rhs._outer_current; }
 
     // normal case:
     return (lhs._outer_current == rhs._outer_current) && (lhs._current == rhs._current);
