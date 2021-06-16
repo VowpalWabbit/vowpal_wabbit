@@ -397,10 +397,12 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.end_pass = ec.end_pass;
   poly.synth_ec.sorted = ec.sorted;
 
-  poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;
 
-  if (poly.synth_ec.indices.size() == 0) poly.synth_ec.indices.push_back(tree_atomics);
+  // Ensure the feature group exists and it is empty.
+  auto& tree_atomics_feature_group =
+      poly.synth_ec.feature_space.get_or_create_feature_group(tree_atomics, tree_atomics);
+  tree_atomics_feature_group.clear();
 }
 
 void synthetic_decycle(stagewise_poly &poly)

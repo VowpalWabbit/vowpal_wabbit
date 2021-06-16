@@ -1207,8 +1207,9 @@ public:
 
     auto* stored_ex = (*ctx.dedup_examples)[i];
 
-    new_ex->indices = stored_ex->indices;
-    for (auto& ns : new_ex->indices) { new_ex->feature_space[ns] = stored_ex->feature_space[ns]; }
+    for (auto it = stored_ex->feature_space.cbegin(); it != stored_ex->feature_space.cend(); ++it)
+    { new_ex->feature_space.merge_feature_group(*it, it.hash(), it.index()); }
+
     new_ex->ft_offset = stored_ex->ft_offset;
     return return_state;
   }
@@ -1524,9 +1525,8 @@ public:
     Namespace<audit> n;
     n.feature_group = ns[0];
     n.namespace_hash = VW::hash_space_cstr(*all, ns);
-    n.ftrs = ex->feature_space.data() + ns[0];
+    n.ftrs = &ex->feature_space.get_or_create_feature_group(n.namespace_hash, ns[0]);
     n.feature_count = 0;
-
     n.name = ns;
 
     namespace_path.push_back(n);
@@ -1536,13 +1536,6 @@ public:
   BaseState<audit>* PopNamespace()
   {
     auto& ns = CurrentNamespace();
-    if (ns.feature_count > 0)
-    {
-      auto feature_group = ns.feature_group;
-      // Do not insert feature_group if it already exists.
-      if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
-      { ex->indices.push_back(feature_group); }
-    }
 
     auto return_state = return_path.back();
     namespace_path.pop_back();
@@ -1646,6 +1639,7 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
+  for (auto* ex : examples) { remove_empty_namespaces(ex->feature_space); }
   if (!result.IsError()) return;
 
   BaseState<audit>* current_state = handler.current_state();
@@ -1666,20 +1660,28 @@ void read_line_json(vw& all, v_array<example*>& examples, char* line, example_fa
   read_line_json_s<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context, dedup_examples);
 }
 
-inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
+inline bool apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
 {
+  if (pdrop == 1.)
+  {
+    logger::errlog_error("JSON parser error: examples with pdrop==1 are not supported");
+    return false;
+  }
+  // Event with certain pdrop had (1-pdrop) as probability to survive,
+  // so it is one of (1 / (1-pdrop)) events that we should learn on, and weight should be updated accordingly.
   if (all.example_parser->lbl_parser.label_type == label_type_t::cb)
   {
-    for (auto& e : examples) { e->l.cb.weight = 1 - pdrop; }
+    for (auto& e : examples) { e->l.cb.weight /= 1 - pdrop; }
   }
   else if (all.example_parser->lbl_parser.label_type == label_type_t::ccb)
   {
-    for (auto& e : examples) { e->l.conditional_contextual_bandit.weight = 1 - pdrop; }
+    for (auto& e : examples) { e->l.conditional_contextual_bandit.weight /= 1 - pdrop; }
   }
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
     // TODO
   }
+  return true;
 }
 
 // returns true if succesfully parsed, returns false if not and logs warning
@@ -1690,9 +1692,7 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
     parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
-    apply_pdrop(all, data->probabilityOfDrop, examples);
-    // not necessarily true for now
-    return true;
+    return apply_pdrop(all, data->probabilityOfDrop, examples);
   }
 
   std::vector<char> line_vec;
@@ -1712,7 +1712,7 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
 
-  apply_pdrop(all, data->probabilityOfDrop, examples);
+  for (auto* ex : examples) { remove_empty_namespaces(ex->feature_space); }
 
   if (result.IsError())
   {
@@ -1734,7 +1734,7 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
     }
   }
 
-  return true;
+  return apply_pdrop(all, data->probabilityOfDrop, examples);
 }  // namespace VW
 }  // namespace VW
 
@@ -1749,6 +1749,8 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     DecisionServiceInteraction interaction;
     bool result = VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
         reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
+
+    for (auto* ex : examples) { remove_empty_namespaces(ex->feature_space); }
 
     if (!result)
     {

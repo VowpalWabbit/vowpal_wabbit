@@ -92,6 +92,14 @@ struct pred_offset
 
 void offset_add(pred_offset& res, const float fx, float& fw) { res.p += (&fw)[res.offset] * fx; }
 
+template <typename RangeT>
+size_t count_features(RangeT range)
+{
+  size_t count = 0;
+  for (const auto& feat_group : range) { count += feat_group.size(); }
+  return count;
+}
+
 template <class T>
 float mf_predict(gdmf& d, example& ec, T& weights)
 {
@@ -103,12 +111,17 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   for (const auto& i : d.all->interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
-    const auto interacted_count =
-        ec.feature_space[static_cast<int>(i[0])].size() * ec.feature_space[static_cast<int>(i[1])].size();
-    ec.num_features -= interacted_count;
-    ec.num_features += ec.feature_space[static_cast<int>(i[0])].size() * d.rank;
-    ec.num_features += ec.feature_space[static_cast<int>(i[1])].size() * d.rank;
-    ec.num_features_from_interactions += interacted_count;
+    for (const auto& first_ns_features : ec.feature_space.namespace_index_range(i[0]))
+    {
+      for (const auto& second_ns_features : ec.feature_space.namespace_index_range(i[1]))
+      {
+        const auto interacted_count = first_ns_features.size() * second_ns_features.size();
+        ec.num_features -= interacted_count;
+        ec.num_features += first_ns_features.size() * d.rank;
+        ec.num_features += second_ns_features.size() * d.rank;
+        ec.num_features_from_interactions += interacted_count;
+      }
+    }
   }
 
   // clear stored predictions
@@ -128,8 +141,9 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   for (const auto& i : d.all->interactions)
   {
     // The check for non-pair interactions is done in the previous loop
-
-    if (ec.feature_space[static_cast<int>(i[0])].size() > 0 && ec.feature_space[static_cast<int>(i[1])].size() > 0)
+    const auto left_size = count_features(ec.feature_space.namespace_index_range(i[0]));
+    const auto right_size = count_features(ec.feature_space.namespace_index_range(i[1]));
+    if (left_size > 0 && right_size > 0)
     {
       for (uint64_t k = 1; k <= d.rank; k++)
       {
@@ -137,13 +151,19 @@ float mf_predict(gdmf& d, example& ec, T& weights)
         // l^k is from index+1 to index+d.rank
         // float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         pred_offset x_dot_l = {0., k};
-        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[0])], x_dot_l);
+        for (const auto& first_ns_features : ec.feature_space.namespace_index_range(i[0]))
+        {
+          GD::foreach_feature<pred_offset, offset_add, T>(weights, first_ns_features, x_dot_l);
+        }
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         // float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(),
         // k+d.rank);
         pred_offset x_dot_r = {0., k + d.rank};
-        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[1])], x_dot_r);
+        for (const auto& second_ns_features : ec.feature_space.namespace_index_range(i[1]))
+        {
+          GD::foreach_feature<pred_offset, offset_add, T>(weights, second_ns_features, x_dot_r);
+        }
 
         prediction += x_dot_l.p * x_dot_r.p;
 
@@ -206,7 +226,9 @@ void mf_train(gdmf& d, example& ec, T& weights)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
-    if (ec.feature_space[static_cast<int>(i[0])].size() > 0 && ec.feature_space[static_cast<int>(i[1])].size() > 0)
+    const auto left_size = count_features(ec.feature_space.namespace_index_range(i[0]));
+    const auto right_size = count_features(ec.feature_space.namespace_index_range(i[1]));
+    if (left_size > 0 && right_size > 0)
     {
       // update l^k weights
       for (size_t k = 1; k <= d.rank; k++)
@@ -214,7 +236,10 @@ void mf_train(gdmf& d, example& ec, T& weights)
         // r^k \cdot x_r
         float r_dot_x = d.scalars[2 * k];
         // l^k <- l^k + update * (r^k \cdot x_r) * x_l
-        sd_offset_update<T>(weights, ec.feature_space[static_cast<int>(i[0])], k, update * r_dot_x, regularization);
+        for (auto& first_ns_features : ec.feature_space.namespace_index_range(i[0]))
+        {
+          sd_offset_update<T>(weights, first_ns_features, k, update * r_dot_x, regularization);
+        }
       }
       // update r^k weights
       for (size_t k = 1; k <= d.rank; k++)
@@ -222,8 +247,10 @@ void mf_train(gdmf& d, example& ec, T& weights)
         // l^k \cdot x_l
         float l_dot_x = d.scalars[2 * k - 1];
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
-        sd_offset_update<T>(
-            weights, ec.feature_space[static_cast<int>(i[1])], k + d.rank, update * l_dot_x, regularization);
+        for (auto& second_ns_features : ec.feature_space.namespace_index_range(i[1]))
+        {
+          sd_offset_update<T>(weights, second_ns_features, k + d.rank, update * l_dot_x, regularization);
+        }
       }
     }
   }

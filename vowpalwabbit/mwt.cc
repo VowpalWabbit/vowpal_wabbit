@@ -38,8 +38,7 @@ struct mwt
   uint32_t num_classes;
   bool learn;
 
-  v_array<namespace_index> indices;  // excluded namespaces
-  features feature_space[256];
+  std::unordered_map<uint64_t, features> feature_space;
   vw* all;
 };
 
@@ -68,8 +67,12 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   {
     c.total++;
     // For each nonzero feature in observed namespaces, check it's value.
-    for (unsigned char ns : ec.indices)
-      if (c.namespaces[ns]) GD::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c);
+    for (auto it = ec.begin(); it != ec.end(); ++it)
+    {
+      if(c.namespaces[it.index()]){
+        GD::foreach_feature<mwt, value_policy>(c.all, *it, c);
+      }
+    }
     for (uint64_t policy : c.policies)
     {
       c.evals[policy].cost += get_cost_estimate(c.optional_observation.second, c.evals[policy].action);
@@ -81,25 +84,26 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   VW_WARNING_DISABLE_CPP_17_LANG_EXT
   if VW_STD17_CONSTEXPR (exclude || learn)
   {
-    c.indices.clear();
     uint32_t stride_shift = c.all->weights.stride_shift();
     uint64_t weight_mask = c.all->weights.mask();
-    for (unsigned char ns : ec.indices)
-      if (c.namespaces[ns])
-      {
-        c.indices.push_back(ns);
+    for (auto it = ec.begin(); it != ec.end(); ++it)
+    {
+      if(c.namespaces[it.index()]) {
+        c.feature_space.insert({it.hash(), features{}});
+        c.feature_space[it.hash()].clear();
         if (learn)
         {
-          c.feature_space[ns].clear();
-          for (features::iterator& f : ec.feature_space[ns])
+          auto& feats = c.feature_space[it.hash()];
+          for (features::iterator& f : *it)
           {
             uint64_t new_index =
                 ((f.index() & weight_mask) >> stride_shift) * c.num_classes + static_cast<uint64_t>(f.value());
-            c.feature_space[ns].push_back(1, new_index << stride_shift);
+            feats.push_back(1, new_index << stride_shift);
           }
         }
-        std::swap(c.feature_space[ns], ec.feature_space[ns]);
+         std::swap(c.feature_space[it.hash()], *it);
       }
+    }
   }
   VW_WARNING_STATE_POP
 
@@ -117,12 +121,12 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_CPP_17_LANG_EXT
   if VW_STD17_CONSTEXPR (exclude || learn)
-    while (!c.indices.empty())
+  {
+    for (auto& kv : c.feature_space)
     {
-      unsigned char ns = c.indices.back();
-      c.indices.pop_back();
-      std::swap(c.feature_space[ns], ec.feature_space[ns]);
+      std::swap(kv.second, ec.feature_space[kv.first]);
     }
+  }
   VW_WARNING_STATE_POP
 
   // modify the predictions to use a vector with a score for each evaluated feature.

@@ -75,9 +75,12 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   options.add_and_parse(new_options);
 
   data->ex = VW::alloc_examples(1);
-  data->ex->indices.push_back(val_namespace);
-  for (size_t i = 1; i < 14; i++) data->ex->indices.push_back(static_cast<unsigned char>(i) + 'A');
-  data->ex->indices.push_back(constant_namespace);
+  data->ex->feature_space.get_or_create_feature_group(val_namespace, val_namespace);
+  for (size_t i = 1; i < 14; i++) {
+    auto current_index = static_cast<unsigned char>(i) + 'A';
+    data->ex->feature_space.get_or_create_feature_group(current_index, current_index);
+  }
+  data->ex->feature_space.get_or_create_feature_group(constant_namespace, val_namespace);
   data->ex->interactions = &sch.get_vw_pointer_unsafe().interactions;
 
   if (data->one_learner)
@@ -126,17 +129,21 @@ void finish(Search::search &sch)
 void inline add_feature(
     example &ex, uint64_t idx, unsigned char ns, uint64_t mask, uint64_t multiplier, bool /* audit */ = false)
 {
-  ex.feature_space[static_cast<int>(ns)].push_back(1.0f, (idx * multiplier) & mask);
+  ex.feature_space.get_or_create_feature_group(ns, ns).push_back(1.0f, (idx * multiplier) & mask);
 }
 
 void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier,
     uint64_t offset, bool /* audit */ = false)
 {
   features &tgt_fs = ex.feature_space[tgt_ns];
-  for (namespace_index ns : src.indices)
-    if (ns != constant_namespace)  // ignore constant_namespace
-      for (feature_index i : src.feature_space[ns].indicies)
-        tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
+  for (auto it = src.feature_space.begin(); it != src.feature_space.end(); ++it)
+  {
+    if (it.index() == constant_namespace) { continue; }
+
+    for (feature_index i : src.feature_space[it.hash()].indicies) {
+      tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
+    }
+  }
 }
 
 void inline reset_ex(example *ex)

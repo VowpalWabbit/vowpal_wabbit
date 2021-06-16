@@ -99,8 +99,7 @@ void copy_example_data(example* dst, const example* src)
   copy_example_metadata(dst, src);
 
   // copy feature data
-  dst->indices = src->indices;
-  for (namespace_index c : src->indices) dst->feature_space[c] = src->feature_space[c];
+  dst->feature_space = src->feature_space;
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->total_sum_feat_sq_calculated = src->total_sum_feat_sq_calculated;
@@ -133,16 +132,33 @@ void copy_example_data_with_label(example* dst, const example* src)
 
 void move_feature_namespace(example* dst, example* src, namespace_index c)
 {
-  if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end()) return;  // index not present in src
-  if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end()) dst->indices.push_back(c);
+  auto range_begin = src->feature_space.namespace_index_begin(c);
+  auto range_end = src->feature_space.namespace_index_end(c);
 
-  auto& fdst = dst->feature_space[c];
-  auto& fsrc = src->feature_space[c];
+  // Check if the range is empty.
+  if(range_begin == range_end)
+  {
+    return;
+  }
 
-  src->num_features -= fsrc.size();
+  const auto range_size = range_end- range_begin;
+  std::vector<uint64_t> hashes_to_remove;
+  hashes_to_remove.reserve(range_size);
+
+  for (auto it = range_begin; it != range_end; ++it)
+  {
+    src->num_features -= (*it).size();
+    dst->num_features += (*it).size();
+    dst->feature_space.merge_feature_group(std::move(*it), it.hash(), it.index());
+    hashes_to_remove.push_back(it.hash());
+  }
+
+  for (auto hash : hashes_to_remove)
+  {
+    src->feature_space.remove_feature_group(hash);
+  }
+
   src->reset_total_sum_feat_sq();
-  std::swap(fdst, fsrc);
-  dst->num_features += fdst.size();
   dst->reset_total_sum_feat_sq();
 }
 
