@@ -46,7 +46,7 @@ public:
     if (_current == (*_outer_current).end())
     {
       ++_outer_current;
-      _current = (*_outer_current).begin();
+      if (_outer_current != _outer_end) { _current = (*_outer_current).begin(); }
     }
     return *this;
   }
