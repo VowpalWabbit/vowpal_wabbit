@@ -108,7 +108,7 @@ struct min_depth_binary_tree
       _initialized = true;
       _depth = depth;
     }
-    catch (std::bad_alloc& e)
+    catch (std::bad_alloc&)
     {
       return false;
     }

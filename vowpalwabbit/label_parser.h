@@ -4,7 +4,10 @@
 
 #pragma once
 
-#include "vw_string_view.h"
+namespace VW
+{
+  using string_view = std::string;
+}
 
 #include <vector>
 
