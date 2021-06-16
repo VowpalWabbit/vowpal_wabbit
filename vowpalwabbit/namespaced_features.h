@@ -175,7 +175,8 @@ struct namespaced_features
   // Experimental, hence the cumbersome names.
   VW::chained_proxy_iterator<indexed_iterator, features::audit_iterator> namespace_index_begin_proxy(
       namespace_index ns_index);
-  VW::chained_proxy_iterator<indexed_iterator, features::audit_iterator> namespace_index_end_proxy(namespace_index ns_index);
+  VW::chained_proxy_iterator<indexed_iterator, features::audit_iterator> namespace_index_end_proxy(
+      namespace_index ns_index);
   VW::chained_proxy_iterator<const_indexed_iterator, features::const_audit_iterator> namespace_index_begin_proxy(
       namespace_index ns_index) const;
   VW::chained_proxy_iterator<const_indexed_iterator, features::const_audit_iterator> namespace_index_end_proxy(

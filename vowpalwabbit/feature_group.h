@@ -57,10 +57,7 @@ public:
   using reference = value_type&;
   using const_reference = const value_type&;
 
-  audit_features_iterator()
-      : _begin_values(nullptr), _begin_indices(nullptr), _begin_audit(nullptr)
-  {
-  }
+  audit_features_iterator() : _begin_values(nullptr), _begin_indices(nullptr), _begin_audit(nullptr) {}
 
   audit_features_iterator(
       feature_value_type_t* begin_values, feature_index_type_t* begin_indices, audit_type_t* begin_audit)
