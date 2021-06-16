@@ -1403,7 +1403,7 @@ void parse_modules(
   parse_output_preds(options, all);
 
   // create reduction stack builder instance
-  all.learner_builder = VW::make_unique<VW::status_quo>(all);
+  all.learner_builder = VW::make_unique<VW::default_reduction_stack_setup>(all);
   // kick-off reduction setup functions
   all.l = all.learner_builder->operator()(options, all);
 

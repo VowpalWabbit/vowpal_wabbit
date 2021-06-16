@@ -212,7 +212,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
 
 namespace VW
 {
-status_quo::status_quo(vw& all)
+default_reduction_stack_setup::default_reduction_stack_setup(vw& all)
 {
   // push all reduction functions into the stack
   prepare_reductions(reduction_stack);
@@ -220,7 +220,7 @@ status_quo::status_quo(vw& all)
   all.build_setupfn_name_dict(reduction_stack);
 }
 
-void status_quo::print_enabled_reductions(vw& all)
+void default_reduction_stack_setup::print_enabled_reductions(vw& all)
 {
   *(all.trace_message) << "Enabled reductions: ";
 
@@ -239,7 +239,7 @@ void status_quo::print_enabled_reductions(vw& all)
 
 // this function consumes all the reduction_stack until it's able to construct a base_learner
 // same signature/code as the old setup_base(...) from parse_args.cc
-VW::LEARNER::base_learner* status_quo::operator()(VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* default_reduction_stack_setup::operator()(VW::config::options_i& options, vw& all)
 {
   if (!reduction_stack.empty())
   {

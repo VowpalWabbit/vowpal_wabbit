@@ -102,7 +102,7 @@ struct parser_options;
 
 namespace VW
 {
-struct status_quo;
+struct default_reduction_stack_setup;
 namespace parsers
 {
 namespace flatbuffer
@@ -276,7 +276,7 @@ public:
 
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
-  std::unique_ptr<VW::status_quo> learner_builder;
+  std::unique_ptr<VW::default_reduction_stack_setup> learner_builder;
 
   // Prediction output
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
