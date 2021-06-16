@@ -39,14 +39,14 @@ feature_offset_guard::~feature_offset_guard() { _ex.ft_offset = _old_ft_offset; 
 stride_shift_guard::stride_shift_guard(example_predict& ex, uint64_t shift) : _ex(ex), _shift(shift)
 {
   if (_shift > 0)
-    for (auto fs : _ex.feature_space)
+    for (auto& fs : _ex.feature_space)
       for (auto& f : fs) f.index() <<= _shift;
 }
 
 stride_shift_guard::~stride_shift_guard()
 {
   if (_shift > 0)
-    for (auto fs : _ex.feature_space)
+    for (auto& fs : _ex.feature_space)
       for (auto& f : fs) f.index() >>= _shift;
 }
 
