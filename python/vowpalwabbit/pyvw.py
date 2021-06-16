@@ -4,6 +4,8 @@
 from __future__ import division
 import pylibvw
 import warnings
+from vowpalwabbit.DFtoVWtoTensorboard import VWtoTensorboard
+
 
 # baked in con py boost https://wiki.python.org/moin/boost.python/FAQ#The_constructors_of_some_classes_I_am_trying_to_wrap_are_private_because_instances_must_be_created_by_using_a_factory._Is_it_possible_to_wrap_such_classes.3F
 class VWOption:
@@ -552,7 +554,6 @@ class vw(pylibvw.vw):
         vw_to_tensorboard : VWtoTensorboard object
                            This object is used to calculate metrics and then log them for Tensorboard visualization
         """
-        from vowpalwabbit.DFtoVWtoTensorboard import VWtoTensorboard
         if isinstance(vw_to_tensorboard, VWtoTensorboard):
             sum_loss = super().get_sum_loss()
             weighted_examples = super().get_weighted_examples()
