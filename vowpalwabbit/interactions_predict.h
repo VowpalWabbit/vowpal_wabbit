@@ -178,10 +178,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
               const uint64_t halfhash1 = FNV_prime * static_cast<uint64_t>(first.indicies[i]);
               float first_ft_value = first.values[i];
               size_t j = 0;
-              if (same_namespace1)
-              {
-                j = i;
-              }
+              if (same_namespace1) { j = i; }
 
               for (; j < second.indicies.size(); ++j)
               {  // f3 x k*(f2 x k*f1)
@@ -277,7 +274,8 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 
           if (next_data->self_interaction)
           {
-            // if next namespace is same, we should start with loop_idx to avoid feature interaction with features already interacted.
+            // if next namespace is same, we should start with loop_idx to avoid feature interaction with features
+            // already interacted.
             next_data->loop_idx = cur_data->loop_idx;
           }
           else
