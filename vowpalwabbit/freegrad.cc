@@ -21,7 +21,6 @@ namespace logger = VW::io::logger;
 #define H1   3  // maximum absolute value of features
 #define HT   4  // maximum gradient
 #define S    5  // sum of radios \sum_s |x_s|/h_s  
-#define prev_S    6  // sum of radios \sum_s |x_s|/h_s of the previous epoch
 
 struct freegrad_update_data
 {
@@ -71,16 +70,13 @@ void inner_freegrad_predict(freegrad_update_data& d, float x, float& wref)
   float G  = w[Gsum];  // sum of gradients w.r.t. scalar feature x
   float absG = std::fabs(G); 
   float V  = w[Vsum]; // sum of squared gradients w.r.t. scalar feature x
-  float prev_s  = w[prev_S]+1;
   float epsilon = d.FG->epsilon;
     
   // Only predict a non-zero w_pred if a non-zero gradient has been observed
-  if (h1 > 0) {
-      // freegrad update Equation 9 in paper http://proceedings.mlr.press/v125/mhammedi20a/mhammedi20a.pdf
-    w_pred  = -G * epsilon * (2. * V + ht * absG) * pow(h1,2.f)/(2.*pow(V + ht * absG,2.f) * sqrtf(V)) * exp(pow(absG,2.f)/(2. * V + 2. * ht * absG));
-     // Scaling for linear models (Line 7 of Alg. 2 in the paper)
-    w_pred /= (h1 * prev_s);     
-  }
+  // freegrad update Equation 9 in paper http://proceedings.mlr.press/v125/mhammedi20a/mhammedi20a.pdf
+  if (h1 > 0) 
+    w_pred  = -G * epsilon * (2. * V + ht * absG) * pow(h1, 2.f)/(2.*pow(V + ht * absG,2.f) * sqrtf(V)) * exp(pow(absG,2.f)/(2. * V + 2. * ht * absG));
+
   d.squared_norm_prediction += pow(w_pred,2.f);
   // This is the unprojected predict
   d.predict +=  w_pred * x;
@@ -125,13 +121,12 @@ void gradient_dot_w(freegrad_update_data& d, float x, float& wref) {
   float G  = w[Gsum];  // sum of gradients w.r.t. scalar feature x
   float absG = std::fabs(G); 
   float V  = w[Vsum]; // sum of squared gradients w.r.t. scalar feature x
-  float prev_s  = w[prev_S]+1;
   float epsilon = d.FG->epsilon;
   float gradient = d.update * x;
     
   // Only predict a non-zero w_pred if a non-zero gradient has been observed
   if (h1>0)
-    w_pred =  -G * epsilon * (2. * V + ht * absG) * h1/(2.*pow(V + ht * absG,2.f) * sqrtf(V))* exp(pow(absG,2.f)/(2 * V + 2. * ht * absG))/prev_s;
+    w_pred =  -G * epsilon * (2. * V + ht * absG) * pow(h1,2.f)/(2.*pow(V + ht * absG,2.f) * sqrtf(V))* exp(pow(absG,2.f)/(2 * V + 2. * ht * absG));
 
   d.grad_dot_w += gradient * w_pred;
 }
@@ -154,12 +149,11 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   float G  = w[Gsum];  // sum of gradients w.r.t. scalar feature x
   float absG = std::fabs(G); 
   float V  = w[Vsum]; // sum of squared gradients w.r.t. scalar feature x
-  float prev_s  = w[prev_S]+1;
   float epsilon = d.FG->epsilon;
   
   // Computing the freegrad prediction again (Eq.(9) and Line 7 of Alg. 2 in paper)
   if (h1>0)
-    w[W] =  -G * epsilon * (2. * V + ht * absG) * h1/(2.*pow(V + ht * absG,2.f) * sqrtf(V))* exp(pow(absG,2.f)/(2 * V + 2. * ht * absG))/prev_s;
+    w[W] =  -G * epsilon * (2. * V + ht * absG) * pow(h1, 2.f)/(2.*pow(V + ht * absG,2.f) * sqrtf(V))* exp(pow(absG,2.f)/(2 * V + 2. * ht * absG));
       
   // Set the project radius either to the user-specified value, or adaptively  
   if (d.FG->adaptiveradius)
@@ -171,7 +165,7 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   // Cutkosky's varying constrains' reduction in 
   // Alg. 1 in http://proceedings.mlr.press/v119/cutkosky20a/cutkosky20a.pdf with sphere sets
   if (d.FG->project && norm_w_pred > projection_radius && g_dot_w < 0) 
-    tilde_gradient = gradient - g_dot_w * w[W]/pow(norm_w_pred,2.f);
+    tilde_gradient = gradient - (g_dot_w * w[W]) / pow(norm_w_pred,2.f);
   else
     tilde_gradient = gradient;
     
@@ -199,13 +193,12 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
       // Do a restart, but keep the lastest hint info
       w[H1] = w[HT];
       w[Gsum] = clipped_gradient;
-      w[Vsum] = pow(clipped_gradient,2.f);
-      w[prev_S]= w[S]; // The restart condition necessarily implies that fabs_g/w[HT]=1
+      w[Vsum] = pow(clipped_gradient, 2.f);
   }
   else {
       // Updating the gradient information
       w[Gsum] += clipped_gradient;
-      w[Vsum] += pow(clipped_gradient,2.f);
+      w[Vsum] += pow(clipped_gradient, 2.f);
   }
   if (ht>0)
       w[S] += std::fabs(clipped_gradient)/ht;
@@ -326,7 +319,7 @@ base_learner* freegrad_setup(options_i& options, vw& all)
     learn_ptr = learn_freegrad<false>;
     
   all.weights.stride_shift(3);  // NOTE: for more parameter storage
-  FG->freegrad_size = 7;
+  FG->freegrad_size = 6;
   bool learn_returns_prediction = true;
 
   if (!all.logger.quiet)
