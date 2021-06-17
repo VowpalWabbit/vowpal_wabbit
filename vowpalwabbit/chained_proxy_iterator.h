@@ -9,6 +9,7 @@ namespace VW
 {
 // This is a bit non-idiomatic but this class's value type is the iterator itself in order to expose
 // any custom fields that the inner iterator type may expose.
+// This isn't exactly generic either since it uses audit_begin() directly
 template <typename InnerIterator, typename IteratorT>
 struct chained_proxy_iterator
 {
