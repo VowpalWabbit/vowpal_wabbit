@@ -17,14 +17,14 @@ namespace VW
 namespace io
 {
   /*
-  // TODO: this be an object thats passed around, not stand-alone functions 
+  // TODO: this be an object thats passed around, not stand-alone functions
 struct logger {
 private:
   std::shared_ptr<spdlog::logger> _internal_logger;
 public:
   vw_logger()
   : _internal_logger(spdlog::default_logger()) {}
-  
+
   template<typename FormatString, typename... Args>
     void log_info(const FormatString &fmt, Args&&...args)
   {
@@ -65,6 +65,8 @@ namespace logger
   namespace detail
   {
   extern std::shared_ptr<spdlog::logger> _stderr_logger;
+  extern std::shared_ptr<spdlog::logger> _default_logger;
+
   extern size_t max_limit;
   extern size_t log_count;
   }  // namespace detail
@@ -74,21 +76,21 @@ namespace logger
     void log_info(const FormatString &fmt, Args&&...args)
   {
     detail::log_count++;
-    if (detail::log_count <= detail::max_limit) spdlog::default_logger_raw()->info(fmt, std::forward<Args>(args)...);
+    if (detail::log_count <= detail::max_limit) detail::_default_logger->info(fmt, std::forward<Args>(args)...);
   }
 
   template<typename FormatString, typename... Args>
     void log_warn(const FormatString &fmt, Args&&...args)
   {
     detail::log_count++;
-    if (detail::log_count <= detail::max_limit) spdlog::default_logger_raw()->warn(fmt, std::forward<Args>(args)...);
+    if (detail::log_count <= detail::max_limit) detail::_default_logger->warn(fmt, std::forward<Args>(args)...);
   }
-  
+
   template<typename FormatString, typename... Args>
     void log_error(const FormatString &fmt, Args&&...args)
   {
     detail::log_count++;
-    if (detail::log_count <= detail::max_limit) spdlog::default_logger_raw()->error(fmt, std::forward<Args>(args)...);
+    if (detail::log_count <= detail::max_limit) detail::_default_logger->error(fmt, std::forward<Args>(args)...);
   }
 
   template<typename FormatString, typename... Args>
@@ -96,7 +98,7 @@ namespace logger
   {
     detail::log_count++;
     // we ignore max_limit with critical log
-    spdlog::default_logger_raw()->critical(fmt, std::forward<Args>(args)...);
+    detail::_default_logger->critical(fmt, std::forward<Args>(args)...);
   }
 
 
@@ -115,7 +117,7 @@ namespace logger
     detail::log_count++;
     if (detail::log_count <= detail::max_limit) { detail::_stderr_logger->warn(fmt, std::forward<Args>(args)...); }
   }
-  
+
   template<typename FormatString, typename... Args>
     void errlog_error(const FormatString &fmt, Args&&...args)
   {
