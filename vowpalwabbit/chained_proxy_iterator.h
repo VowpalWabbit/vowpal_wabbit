@@ -61,14 +61,18 @@ public:
   {
     assert(lhs._outer_current >= rhs._outer_current);
     size_t accumulator = 0;
-    while (lhs._outer_current != rhs._outer_current)
+    while (lhs != rhs) {
+      accumulator++;
+      ++rhs;
+    }
+ /*   while (lhs._outer_current != rhs._outer_current)
     {
       accumulator += std::distance((*(rhs._outer_current)).audit_begin(), (*(rhs._outer_current)).audit_end());
       ++rhs._outer_current;
       rhs._current = (*rhs._outer_current).audit_begin();
     }
 
-    accumulator += std::distance(rhs._current, lhs._current);
+    accumulator += std::distance(rhs._current, lhs._current);*/
     return accumulator;
   }
 
