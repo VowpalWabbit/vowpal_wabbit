@@ -13,13 +13,14 @@ namespace logger
 {
 // FIXME: the get() call returns a shared_ptr. Keep a copy here to avoid unnecessary shared_ptr copies
 // This can go away once we move to an object-based logger
-namespace detail{
-  std::shared_ptr<spdlog::logger> _stderr_logger = spdlog::stderr_logger_mt("vowpal-stderr");
-  std::shared_ptr<spdlog::logger> _default_logger = spdlog::stdout_logger_mt("vowpal-default");
-  const constexpr char* default_pattern = "[%l] %v";
-  size_t max_limit;
-  size_t log_count;
-}
+namespace detail
+{
+std::shared_ptr<spdlog::logger> _stderr_logger = spdlog::stderr_logger_mt("vowpal-stderr");
+std::shared_ptr<spdlog::logger> _default_logger = spdlog::stdout_logger_mt("vowpal-default");
+const constexpr char* default_pattern = "[%l] %v";
+size_t max_limit;
+size_t log_count;
+}  // namespace detail
 
 void log_set_level(log_level lvl)
 {
@@ -58,6 +59,6 @@ void log_summary()
         "Omitted some log lines. Re-run without --limit_output N for full log. Total log lines: {}", detail::log_count);
   }
 }
-}
-}
-}
+}  // namespace logger
+}  // namespace io
+}  // namespace VW
