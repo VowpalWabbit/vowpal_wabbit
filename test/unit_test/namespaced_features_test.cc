@@ -113,6 +113,28 @@ BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_difference_test)
   BOOST_REQUIRE_EQUAL(it - feature_groups.namespace_index_begin_proxy('a'), 7);
 }
 
+BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_difference_end_test)
+{
+  VW::namespaced_features feature_groups;
+  auto& fs1 = feature_groups.get_or_create_feature_group(123, 'a');
+  fs1.push_back(1.0, 1);
+  fs1.push_back(1.0, 2);
+  fs1.push_back(1.0, 3);
+  fs1.push_back(1.0, 4);
+
+  auto it = feature_groups.namespace_index_begin_proxy('a');
+  auto it_end = feature_groups.namespace_index_end_proxy('a');
+  BOOST_REQUIRE_EQUAL(it_end - it, 4);
+  ++it;
+  BOOST_REQUIRE_EQUAL(it_end - it, 3);
+  ++it;
+  BOOST_REQUIRE_EQUAL(it_end - it, 2);
+  ++it;
+  BOOST_REQUIRE_EQUAL(it_end - it, 1);
+  ++it;
+  BOOST_REQUIRE_EQUAL(it_end - it, 0);
+}
+
 BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_advance_test)
 {
   VW::namespaced_features feature_groups;
