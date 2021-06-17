@@ -217,6 +217,10 @@ set(vw_all_headers
   vwdll.h
   vwvis.h
   warm_cb.h
+  generic_range.h
+  active_multiclass_prediction.h
+  debug_log.h
+  rand_state.h
 )
 
 if(BUILD_FLATBUFFERS)
