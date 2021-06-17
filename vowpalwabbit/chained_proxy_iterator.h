@@ -24,13 +24,9 @@ public:
   using reference = value_type&;
   using const_reference = const value_type&;
 
-  chained_proxy_iterator(InnerIterator outer_current, InnerIterator outer_end)
-      : _outer_current(outer_current), _outer_end(outer_end)
-  {
-    if (_outer_current != _outer_end) { _current = (*_outer_current).audit_begin(); }
-  }
-
-  chained_proxy_iterator(InnerIterator outer_end) : _outer_current(outer_end), _outer_end(outer_end), _current{} {}
+  chained_proxy_iterator(InnerIterator outer_current, InnerIterator outer_end, IteratorT current)
+      : _outer_current(outer_current), _outer_end(outer_end), _current(current)
+  {}
 
   chained_proxy_iterator(const chained_proxy_iterator&) = default;
   chained_proxy_iterator& operator=(const chained_proxy_iterator&) = default;
@@ -43,10 +39,11 @@ public:
   chained_proxy_iterator& operator++()
   {
     ++_current;
-    if (_current == (*_outer_current).audit_end())
+    // TODO: don't rely on audit_end
+    if (_current == (*_outer_current).audit_end() && (_outer_current != _outer_end))
     {
       ++_outer_current;
-      if (_outer_current != _outer_end) { _current = (*_outer_current).audit_begin(); }
+      _current = (*_outer_current).audit_begin();
     }
     return *this;
   }
@@ -68,18 +65,13 @@ public:
       ++rhs._outer_current;
       rhs._current = (*rhs._outer_current).audit_begin();
     }
+
     accumulator += std::distance(rhs._current, lhs._current);
     return accumulator;
   }
 
   friend bool operator==(const chained_proxy_iterator& lhs, const chained_proxy_iterator& rhs)
   {
-    // end() case:
-    // Do not check the inner iterator as that will be invalid. If the rhs is the same as the lhs and lhs is the end of
-    // the inner
-    if (lhs._outer_current == lhs._outer_end) { return lhs._outer_current == rhs._outer_current; }
-
-    // normal case:
     return (lhs._outer_current == rhs._outer_current) && (lhs._current == rhs._current);
   }
 
