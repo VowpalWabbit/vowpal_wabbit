@@ -126,13 +126,13 @@ BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_difference_end_test)
   auto it_end = feature_groups.namespace_index_end_proxy('a');
   BOOST_REQUIRE_EQUAL(it_end - it, 4);
   ++it;
-  BOOST_REQUIRE_EQUAL(it_end - it , 3);
+  BOOST_REQUIRE_EQUAL(it_end - it, 3);
   ++it;
-  BOOST_REQUIRE_EQUAL(it_end - it , 2);
+  BOOST_REQUIRE_EQUAL(it_end - it, 2);
   ++it;
-  BOOST_REQUIRE_EQUAL(it_end - it , 1);
+  BOOST_REQUIRE_EQUAL(it_end - it, 1);
   ++it;
-  BOOST_REQUIRE_EQUAL(it_end - it , 0);
+  BOOST_REQUIRE_EQUAL(it_end - it, 0);
 }
 
 BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_advance_test)

@@ -230,11 +230,10 @@ namespaced_features::namespace_index_end_proxy(namespace_index ns_index) const
   }
   else
   {
-  --end_it;
+    --end_it;
     inner_it = (*end_it).audit_cend();
   }
   return {end_it, end_it, inner_it};
-
 }
 
 VW::chained_proxy_iterator<namespaced_features::const_indexed_iterator, features::const_audit_iterator>
@@ -263,7 +262,7 @@ namespaced_features::namespace_index_cend_proxy(namespace_index ns_index) const
 {
   auto begin_it = namespace_index_cbegin(ns_index);
   auto end_it = namespace_index_cend(ns_index);
-    features::const_audit_iterator inner_it;
+  features::const_audit_iterator inner_it;
   if (begin_it == end_it)
   {
     --end_it;
@@ -271,7 +270,7 @@ namespaced_features::namespace_index_cend_proxy(namespace_index ns_index) const
   }
   else
   {
-  --end_it;
+    --end_it;
     inner_it = (*end_it).audit_cend();
   }
   return {end_it, end_it, inner_it};

@@ -27,7 +27,8 @@ public:
 
   chained_proxy_iterator(InnerIterator outer_current, InnerIterator outer_end, IteratorT current)
       : _outer_current(outer_current), _outer_end(outer_end), _current(current)
-  {}
+  {
+  }
 
   chained_proxy_iterator(const chained_proxy_iterator&) = default;
   chained_proxy_iterator& operator=(const chained_proxy_iterator&) = default;
