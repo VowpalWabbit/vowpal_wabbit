@@ -81,6 +81,12 @@ public:
     return *this;
   }
 
+  indexed_iterator_t& operator--()
+  {
+    if (_indices != nullptr) { --_indices; }
+    return *this;
+  }
+
   IndexT index()
   {
 #ifndef VW_NOEXCEPT
