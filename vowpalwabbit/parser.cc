@@ -762,10 +762,7 @@ example* read_example(vw& all, const char* example_line)
   return ret;
 }
 
-example* read_example(vw& all, const std::string& example_line)
-{
-  return read_example(all, example_line.c_str());
-}
+example* read_example(vw& all, const std::string& example_line) { return read_example(all, example_line.c_str()); }
 
 void add_constant_feature(vw& vw, example* ec)
 {

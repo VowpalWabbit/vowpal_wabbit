@@ -136,9 +136,8 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
     {
       assert(!namespaces.empty());
       float number = get_number(value);
-      namespaces.back().AddFeature(number,
-          VW::hash_feature_cstr(all, key_namespace, namespaces.back().namespace_hash),
-          key_namespace);
+      namespaces.back().AddFeature(
+          number, VW::hash_feature_cstr(all, key_namespace, namespaces.back().namespace_hash), key_namespace);
     }
     break;
     default:
