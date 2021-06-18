@@ -26,6 +26,7 @@ struct freegrad_update_data
 {
   struct freegrad* FG;
   float update;
+  float ec_weight;
   float predict;
   float squared_norm_prediction; 
   float grad_dot_w;
@@ -135,12 +136,12 @@ void gradient_dot_w(freegrad_update_data& d, float x, float& wref) {
 void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, float& wref) {
   float* w = &wref;
   float gradient = d.update * x;
+  float tilde_gradient = gradient;
+  float clipped_gradient;
   float fabs_g = std::fabs(gradient);
-  float clipped_gradient = gradient;
   float g_dot_w = d.grad_dot_w;
   float norm_w_pred =sqrtf(d.squared_norm_prediction); 
   float projection_radius;
-  float tilde_gradient;
   float fabs_tilde_g;
  
   float h1 = w[H1]; // will be set to the value of the first non-zero gradient w.r.t. the scalar feature x
@@ -154,20 +155,20 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   // Computing the freegrad prediction again (Eq.(9) and Line 7 of Alg. 2 in paper)
   if (h1>0)
     w[W] =  -G * epsilon * (2. * V + ht * absG) * pow(h1, 2.f)/(2.*pow(V + ht * absG,2.f) * sqrtf(V))* exp(pow(absG,2.f)/(2 * V + 2. * ht * absG));
-      
-  // Set the project radius either to the user-specified value, or adaptively  
-  if (d.FG->adaptiveradius)
-    projection_radius=d.FG->epsilon * sqrtf(d.sum_normalized_grad_norms); 
-  else
-    projection_radius=d.FG->radius;
 
   // Compute the tilted gradient: 
   // Cutkosky's varying constrains' reduction in 
   // Alg. 1 in http://proceedings.mlr.press/v119/cutkosky20a/cutkosky20a.pdf with sphere sets
-  if (d.FG->project && norm_w_pred > projection_radius && g_dot_w < 0) 
-    tilde_gradient = gradient - (g_dot_w * w[W]) / pow(norm_w_pred,2.f);
-  else
-    tilde_gradient = gradient;
+  if (d.FG->project){ 
+    // Set the project radius either to the user-specified value, or adaptively  
+    if (d.FG->adaptiveradius)
+      projection_radius=d.FG->epsilon * sqrtf(d.sum_normalized_grad_norms); 
+    else
+      projection_radius=d.FG->radius;
+    
+    if(norm_w_pred > projection_radius && g_dot_w < 0) 
+      tilde_gradient = gradient - (g_dot_w * w[W]) / pow(norm_w_pred,2.f);
+  }
     
   if (tilde_gradient==0) // Only do something if a non-zero gradient has been observed 
     return;
@@ -179,7 +180,7 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   if (h1 == 0){
     w[H1] = fabs_tilde_g;
     w[HT] = fabs_tilde_g;
-    w[Vsum] += pow(fabs_tilde_g,2.f);
+    w[Vsum] += d.ec_weight * pow(fabs_tilde_g,2.f);
   }
   else if (fabs_tilde_g > ht) {
     // Perform gradient clipping if necessary
@@ -192,16 +193,16 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   if (d.FG->restart && w[HT]/w[H1]>w[S]+2) {
       // Do a restart, but keep the lastest hint info
       w[H1] = w[HT];
-      w[Gsum] = clipped_gradient;
-      w[Vsum] = pow(clipped_gradient, 2.f);
+      w[Gsum] = clipped_gradient + (d.ec_weight - 1) * tilde_gradient;
+      w[Vsum] = pow(clipped_gradient, 2.f) + (d.ec_weight - 1) *  pow(tilde_gradient, 2.f);
   }
   else {
       // Updating the gradient information
-      w[Gsum] += clipped_gradient;
-      w[Vsum] += pow(clipped_gradient, 2.f);
+      w[Gsum] += clipped_gradient + (d.ec_weight - 1) * tilde_gradient;
+      w[Vsum] += pow(clipped_gradient, 2.f) + (d.ec_weight - 1) *  pow(tilde_gradient, 2.f);
   }
   if (ht>0)
-      w[S] += std::fabs(clipped_gradient)/ht;
+      w[S] += std::fabs(clipped_gradient)/ht + (d.ec_weight - 1) * std::fabs(tilde_gradient)/w[HT];
 }
 
 
@@ -210,9 +211,10 @@ void freegrad_update_after_prediction(freegrad& FG, example& ec)
     float clipped_grad_norm;
     FG.data.grad_dot_w = 0.;
     FG.data.squared_norm_clipped_grad = 0.;
+    FG.data.ec_weight = (float) ec.weight;
     
-    // Partial derivative of loss
-    FG.data.update = FG.all->loss->first_derivative(FG.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+    // Partial derivative of loss (Note that the weight of the examples ec is not accounted for at this stage. This is done in inner_freegrad_update_after_prediction)
+    FG.data.update = FG.all->loss->first_derivative(FG.all->sd, ec.pred.scalar, ec.l.simple.label);
     
     // Compute gradient norm
     GD::foreach_feature<freegrad_update_data, gradient_dot_w>(*FG.all, ec, FG.data);
@@ -226,7 +228,7 @@ void freegrad_update_after_prediction(freegrad& FG, example& ec)
         FG.data.maximum_clipped_gradient_norm = clipped_grad_norm;
   
     if (FG.data.maximum_clipped_gradient_norm >0)
-      FG.data.sum_normalized_grad_norms +=  clipped_grad_norm/FG.data.maximum_clipped_gradient_norm;
+      FG.data.sum_normalized_grad_norms += FG.data.ec_weight * clipped_grad_norm/FG.data.maximum_clipped_gradient_norm;
 }
 
 
