@@ -681,7 +681,7 @@ example& get_unused_example(vw* all)
   return *ex;
 }
 
-example_vector& get_unused_example_vector(vw* all)
+v_array<example*>& get_unused_example_vector(vw* all)
 {
   parser* p = all->example_parser;
   auto ex_vector = p->example_vector_pool.get_object();
@@ -803,14 +803,14 @@ void setup_example(vw& all, example* ae)
 
 }  // namespace VW
 
-void notify_examples_cv(example_vector *& ev)
+void notify_examples_cv(example *& ex)
 {
 
-  std::unique_lock<std::mutex> lock(*(ev->ev_lock.example_cv_mutex));
+  std::unique_lock<std::mutex> lock(*(ex->ex_lock.example_cv_mutex));
 
-  ev->ev_lock.done_parsing->store(true); 
+  ex->ex_lock.done_parsing->store(true); 
   
-  ev->ev_lock.example_parsed->notify_one();
+  ex->ex_lock.example_parsed->notify_one();
 
 }
 
@@ -928,6 +928,10 @@ void empty_example(vw& /*all*/, example& ec)
   ec.end_pass = false;
   ec.is_newline = false;
   ec._reduction_features.clear();
+  {
+    std::unique_lock<std::mutex> lock(*(ec.ex_lock.example_cv_mutex));
+    *(ec.ex_lock.done_parsing) = false;
+  }
 }
 
 void clean_example(vw& all, example& ec, bool rewind)
@@ -960,38 +964,36 @@ void finish_example(vw& all, example& ec)
   }
 }
 
-void finish_example_vector(vw& all, example_vector& ev)
+void finish_example_vector(vw& all, v_array<example*>& ev)
 {
-  ev.ev.clear();
-  {
-    std::unique_lock<std::mutex> lock(*(ev.ev_lock.example_cv_mutex));
-    *(ev.ev_lock.done_parsing) = false;
-  }
+  ev.clear();
   all.example_parser->example_vector_pool.return_object(&ev);
 }
 }  // namespace VW
 
-void thread_dispatch(vw& all, example_vector* examples)
+void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
-  notify_examples_cv(examples);
+  for (auto example : examples) notify_examples_cv(example);
 }
 
 void main_parse_loop(vw* all) { parse_dispatch(*all, thread_dispatch); }
 
 namespace VW
 {
-example_vector* get_example(vw& all) { 
+v_array<example*>* get_example(parser* p) { 
 
-  example_vector* ev = all.example_parser->ready_parsed_examples.pop();
+  v_array<example*>* ev = p->ready_parsed_examples.pop();
 
   if (ev == nullptr) {
     return ev;
   }
 
+  // Frankly, we can take any example in the vector of examples. If one of them is parsed, we can rest assured that all are.
+  example* ex = (*ev)[0];
   {
-    std::unique_lock<std::mutex> lock(*(ev->ev_lock.example_cv_mutex));
-    while(ev != nullptr && !*(ev->ev_lock.done_parsing)) {
-      ev->ev_lock.example_parsed->wait(lock);
+    std::unique_lock<std::mutex> lock(*(ex->ex_lock.example_cv_mutex));
+    while(ev != nullptr && !*(ex->ex_lock.done_parsing)) {
+      ex->ex_lock.example_parsed->wait(lock);
     }
   }
 
@@ -1118,9 +1120,9 @@ void free_parser(vw& all)
 
   while (all.example_parser->ready_parsed_examples.size() > 0)
   {
-    example_vector* current = all.example_parser->ready_parsed_examples.pop();
+    auto* current = all.example_parser->ready_parsed_examples.pop();
     // this function also handles examples that were not from the pool.
-    for (auto ex: current->ev)
+    for (auto ex: *current)
       VW::finish_example(all, *ex);
     VW::finish_example_vector(all, *current);
   }

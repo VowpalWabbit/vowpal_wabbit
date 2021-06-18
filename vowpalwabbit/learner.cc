@@ -90,9 +90,9 @@ void drain_examples(vw& all)
 {
   if (all.early_terminate)
   {  // drain any extra examples from parser.
-    example_vector* ev = nullptr;
-    while ((ev = VW::get_example(all)) != nullptr){
-      for (auto ex: ev->ev)
+    v_array<example*>* ev = nullptr;
+    while ((ev = VW::get_example(all.example_parser)) != nullptr){
+      for (auto ex: *ev)
         VW::finish_example(all, *ex);
       VW::finish_example_vector(all, *ev);
     }
@@ -220,23 +220,23 @@ private:
 class ready_examples_queue
 {
 public:
-  ready_examples_queue(vw& master) : _master(master), _index(0) {}
+  ready_examples_queue(vw& master) : _master(master), _index(-1) {_ev = new v_array<example*>;}
 
   example* pop() {
     if(_master.early_terminate) return nullptr;
 
-    if(_ev->ev.size() == 0) {
-      _ev = VW::get_example(_master);
+    if(_index == -1) {
       _index = 0;
+      if ((_ev = VW::get_example(_master.example_parser)) == nullptr) return nullptr;
     }
-
-    example* ex = _ev->ev[_index++];
+    example* ex = (*_ev)[_index++];
 
     work_on_example(_master, ex);
 
-    if(_index >= _ev->ev.size())
+    if(_index >= _ev->size())
     {
       VW::finish_example_vector(_master, *_ev);
+      _index = -1;
     }
 
     return ex;
@@ -244,8 +244,8 @@ public:
 
 private:
   vw& _master;
-  example_vector* _ev;
-  size_t _index;
+  v_array<example*>* _ev;
+  int _index;
 };
 
 class custom_examples_queue
@@ -310,7 +310,7 @@ void generic_driver_onethread(vw& all)
     custom_examples_queue examples_queue(examples);
     process_examples(examples_queue, handler);
   };
-  parse_dispatch(all, multi_ex_fptr);
+  // parse_dispatch(all, multi_ex_fptr);
   all.l->end_examples();
 }
 

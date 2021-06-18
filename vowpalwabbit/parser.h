@@ -57,8 +57,8 @@ struct parser
   std::vector<VW::string_view> words;
 
   VW::object_pool<example> example_pool;
-  VW::object_pool<example_vector> example_vector_pool;
-  VW::ptr_queue<example_vector> ready_parsed_examples;
+  VW::object_pool<v_array<example*>> example_vector_pool;
+  VW::ptr_queue<v_array<example*>> ready_parsed_examples;
 
   std::unique_ptr<io_buf> input;  // Input source(s)
   /// reader consumes the input io_buf in the vw object and is generally for file based parsing
@@ -141,4 +141,4 @@ void set_compressed(parser* par);
 
 void free_parser(vw& all);
 
-void notify_examples_cv(example_vector *& ev);
+void notify_examples_cv(example *& ex);
