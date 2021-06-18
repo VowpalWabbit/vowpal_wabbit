@@ -10,6 +10,16 @@ namespace VW
 // This is a bit non-idiomatic but this class's value type is the iterator itself in order to expose
 // any custom fields that the inner iterator type may expose.
 // This isn't exactly generic either since it uses audit_begin() directly
+//
+// Structure of begin and end iterators:
+// Begin:
+//    [a, b] , [c, d]
+//    ^begin_outer
+//     ^begin_inner
+// End:
+//    [a, b] , [c, d, past_end_of_list_end_iterator]
+//             ^end_outer
+//                    ^end_inner
 template <typename InnerIterator, typename IteratorT>
 struct chained_proxy_iterator
 {
