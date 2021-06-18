@@ -7,6 +7,7 @@ import platform
 import sys
 from codecs import open
 from distutils.command.clean import clean as _clean
+from distutils.sysconfig import get_python_inc
 from setuptools import setup, Extension, find_packages, Distribution as _distribution
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.sdist import sdist as _sdist
@@ -26,7 +27,8 @@ class Distribution(_distribution):
     global_options += [
         ('enable-boost-cmake', None, 'Enable boost-cmake'),
         ('cmake-options=', None, 'Additional semicolon-separated cmake setup options list'),
-        ('debug', None, 'Debug build'),
+        ('cmake-generator=', None, 'CMake generator to use'),
+        ('debug', None, 'Debug build')
     ]
 
     if system == 'Windows':
@@ -38,8 +40,10 @@ class Distribution(_distribution):
         self.vcpkg_root = None
         self.enable_boost_cmake = None
         self.cmake_options = None
+        self.cmake_generator = None
         self.debug = False
         _distribution.__init__(self, attrs)
+
 
 class CMakeExtension(Extension):
     def __init__(self, name):
@@ -110,22 +114,24 @@ class BuildPyLibVWBindingsModule(_build_ext):
         # If we are being installed in a conda environment then use the dependencies from there.
         if 'CONDA_PREFIX' in os.environ:
             cmake_args.append('-DCMAKE_PREFIX_PATH={}'.format(os.environ['CONDA_PREFIX']))
-            if version_info[0] == 2 or (version_info[0] == 3 and int(version_info[1]) > 7):
-                cmake_args.append('-DPython_INCLUDE_DIR={}/include/python{v[0]}.{v[1]}/'.format(os.environ['CONDA_PREFIX'], v=version_info))
-            else:
-                cmake_args.append('-DPython_INCLUDE_DIR={}/include/python{v[0]}.{v[1]}m/'.format(os.environ['CONDA_PREFIX'], v=version_info))
+            cmake_args.append('-DPython_INCLUDE_DIR={}'.format(get_python_inc()))
 
         # example of build args
         build_args = [
             '--config', config
         ]
 
+        cmake_generator = self.distribution.cmake_generator
+
         if system == 'Windows':
             cmake_args += [
                 '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=' + str(lib_output_dir),
-                '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=' + str(lib_output_dir),
-                '-G', "Visual Studio 15 2017 Win64"
+                '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=' + str(lib_output_dir)
             ]
+
+            if cmake_generator is None:
+                cmake_generator = "Visual Studio 15 2017 Win64"
+
             build_args += [
                 '--target', 'pylibvw'
             ]
@@ -150,6 +156,13 @@ class BuildPyLibVWBindingsModule(_build_ext):
                 # Build the pylibvw target
                 "pylibvw"
             ]
+
+        if cmake_generator is not None:
+            cmake_args += ['-G', cmake_generator]
+
+            if (cmake_generator == "Visual Studio 16 2019"):
+                # The VS2019 generator now uses the -A option to select the toolchain's architecture
+                cmake_args += ['-Ax64'] 
 
         os.chdir(str(self.build_temp))
         self.spawn(['cmake'] + cmake_args + [str(here)])
