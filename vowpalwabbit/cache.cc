@@ -73,18 +73,6 @@ size_t read_cached_feature(vw *all, std::vector<char>& line, size_t&)
   return line.size();
 }
 
-
-void notify_examples_cache(vw& all, example *ex)
-{
-
-  if (ex && ex != nullptr) {
-    ex->ex_lock.done_parsing->store(true);
-  
-    all.example_parser->example_parsed.notify_one();
-  }
-
-}
-
 int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
 {
   size_t total = all->example_parser->lbl_parser.read_cached_label(
@@ -186,46 +174,6 @@ int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::s
 
 }
 
-/*
-// Alternate implementation without pushing back remaining binary input to the io lines queue.
-// This will be more efficient than the implementation above, but does not mirror the process in parse_dispatch_loop and other function calls 
-// for parsing input, which is a reason why we use the implementation above.
-int read_cached_features(vw* all, v_array<example*>& examples, v_array<VW::string_view>&, v_array<VW::string_view>&) {
-  std::lock_guard<std::mutex> lck((*all).example_parser->parser_mutex);
-  // this needs to outlive the string_views pointing to it
-  std::vector<char> line;
-  size_t num_chars;
-  size_t num_chars_initial;
-  //a line is popped off of the io queue in read_features
-  num_chars_initial = read_cached_feature(all, line, num_chars);
- //convert to io_buf -> parse, using create_buffer_view.
-  io_buf buf;
-  if(line.size() > 0) {
-    buf.add_file(VW::io::create_buffer_view(line.data(), line.size()));
-  }
-  int total_num_read = 0;
-  std::atomic<bool> should_read(true);
-  while (should_read) {
-    while (examples.size() > 0) {
-      examples.pop();
-    }
-    example *ae = &VW::get_unused_example(all);
-    int new_num_read = read_cached_features_single_example(all, ae, &buf);
-    total_num_read += new_num_read;
-    if(new_num_read == 0) {
-      should_read = false;
-    } else {
-      examples.push_back(ae);
-       if (examples.size() > 0) {
-          (*all).example_parser->ready_parsed_examples.push(ae);
-      }   
-      VW::setup_examples(*all, examples);
-      notify_examples_cache(*all, ae);
-    }
-  }
-  all->example_parser->done = true; 
-  return total_num_read;
-}*/
 
 inline uint64_t ZigZagEncode(int64_t n)
 {

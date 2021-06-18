@@ -38,7 +38,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       // This logic should be outside the reader, as:
       // 1. it is common to all types of parsers.
       // 2. the type of parser might change when the thread is waiting for a pop of io_lines.
-      std::vector<char> *io_lines_next_item;
+      std::vector<char> *io_lines_next_item = nullptr;
       {
         std::lock_guard<std::mutex> lck(all.example_parser->parser_mutex);
         
@@ -47,13 +47,10 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         if(io_lines_next_item != nullptr) {
           all.example_parser->ready_parsed_examples.push(examples);
         }
-        else{
-          is_null_pointer = true;
-        }
       }
 
 
-      if(is_null_pointer) {
+      if(io_lines_next_item == nullptr) {
         VW::finish_example(all, *example_ptr);
         VW::finish_example_vector(all, *examples);
       }

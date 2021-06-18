@@ -21,31 +21,6 @@
 
 namespace logger = VW::io::logger;
 
-int read_features(vw *all, std::vector<char>& line, size_t&, v_array<example*>& examples)
-{
-  std::vector<char> *io_lines_next_item;
-
-  // {
-  //   std::lock_guard<std::mutex> lck((*all).example_parser->parser_mutex);
-    
-  //   io_lines_next_item = all->example_parser->io_lines.pop();
-
-  //   if(io_lines_next_item != nullptr) {
-  //     (*all).example_parser->ready_parsed_examples.push(examples[0]);
-  //   } else {
-  //     return -1;
-  //   }
-
-  // }
-
-  // only get here if io_lines_next_item != nullptr
-  line = std::move(*io_lines_next_item);
-  delete io_lines_next_item;
-
-  return line.size();
-
-}
-
 size_t strip_features_string(char*& line, size_t num_chars_init){
 
   if (num_chars_init < 1) return num_chars_init;
@@ -68,9 +43,6 @@ int read_features_string(vw* all, v_array<example*>& examples, std::vector<VW::s
   // this needs to outlive the string_views pointing to it
   size_t num_chars;
   size_t num_chars_initial = (*io_lines_next_item).size();
-
-  // a line is popped off of the io queue in read_features
-  // num_chars_initial = read_features(all, line, num_chars, examples);
 
   char *stripped_line = std::move((*io_lines_next_item).data());
   num_chars = strip_features_string(stripped_line, num_chars_initial);

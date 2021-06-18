@@ -685,9 +685,6 @@ example_vector& get_unused_example_vector(vw* all)
 {
   parser* p = all->example_parser;
   auto ex_vector = p->example_vector_pool.get_object();
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  VW_WARNING_STATE_POP
   return *ex_vector;
 }
 
