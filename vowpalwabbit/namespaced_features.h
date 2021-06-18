@@ -179,6 +179,7 @@ struct namespaced_features
   void clear();
 
   // Experimental, hence the cumbersome names.
+  // These iterators allow you to iterate over an entire namespace index as if it were a single feature group.
   VW::chained_proxy_iterator<indexed_iterator, features::audit_iterator> namespace_index_begin_proxy(
       namespace_index ns_index);
   VW::chained_proxy_iterator<indexed_iterator, features::audit_iterator> namespace_index_end_proxy(

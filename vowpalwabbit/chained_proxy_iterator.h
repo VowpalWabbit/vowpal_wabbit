@@ -61,18 +61,20 @@ public:
   {
     assert(lhs._outer_current >= rhs._outer_current);
     size_t accumulator = 0;
-    while (lhs != rhs) {
+    while (lhs != rhs)
+    {
       accumulator++;
       ++rhs;
     }
- /*   while (lhs._outer_current != rhs._outer_current)
-    {
-      accumulator += std::distance((*(rhs._outer_current)).audit_begin(), (*(rhs._outer_current)).audit_end());
-      ++rhs._outer_current;
-      rhs._current = (*rhs._outer_current).audit_begin();
-    }
-
-    accumulator += std::distance(rhs._current, lhs._current);*/
+    // TODO: bring back the more efficient skip implementation.
+    // Note this has a bug if any of the inner feature groups is empty it produces the incorrect count in the final
+    // accumulate step. while (lhs._outer_current != rhs._outer_current)
+    // {
+    //   accumulator += std::distance((*(rhs._outer_current)).audit_begin(), (*(rhs._outer_current)).audit_end());
+    //   ++rhs._outer_current;
+    //   rhs._current = (*rhs._outer_current).audit_begin();
+    // }
+    // accumulator += std::distance(rhs._current, lhs._current);
     return accumulator;
   }
 
