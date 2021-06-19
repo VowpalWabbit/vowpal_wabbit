@@ -155,7 +155,7 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   // Computing the freegrad prediction again (Eq.(9) and Line 7 of Alg. 2 in paper)
   if (h1>0)
     w[W] =  -G * epsilon * (2. * V + ht * absG) * pow(h1, 2.f)/(2.*pow(V + ht * absG,2.f) * sqrtf(V))* exp(pow(absG,2.f)/(2 * V + 2. * ht * absG));
-
+  
   // Compute the tilted gradient: 
   // Cutkosky's varying constrains' reduction in 
   // Alg. 1 in http://proceedings.mlr.press/v119/cutkosky20a/cutkosky20a.pdf with sphere sets
@@ -180,7 +180,7 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   if (h1 == 0){
     w[H1] = fabs_tilde_g;
     w[HT] = fabs_tilde_g;
-    w[Vsum] += d.ec_weight * pow(fabs_tilde_g,2.f);
+    w[Vsum] += pow(fabs_tilde_g,2.f);
   }
   else if (fabs_tilde_g > ht) {
     // Perform gradient clipping if necessary
@@ -193,16 +193,16 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   if (d.FG->restart && w[HT]/w[H1]>w[S]+2) {
       // Do a restart, but keep the lastest hint info
       w[H1] = w[HT];
-      w[Gsum] = clipped_gradient + (d.ec_weight - 1) * tilde_gradient;
-      w[Vsum] = pow(clipped_gradient, 2.f) + (d.ec_weight - 1) *  pow(tilde_gradient, 2.f);
+      w[Gsum] = clipped_gradient;
+      w[Vsum] = pow(clipped_gradient, 2.f);
   }
   else {
       // Updating the gradient information
-      w[Gsum] += clipped_gradient + (d.ec_weight - 1) * tilde_gradient;
-      w[Vsum] += pow(clipped_gradient, 2.f) + (d.ec_weight - 1) *  pow(tilde_gradient, 2.f);
+      w[Gsum] += clipped_gradient;
+      w[Vsum] += pow(clipped_gradient, 2.f);
   }
   if (ht>0)
-      w[S] += std::fabs(clipped_gradient)/ht + (d.ec_weight - 1) * std::fabs(tilde_gradient)/w[HT];
+      w[S] += std::fabs(clipped_gradient)/ht;
 }
 
 
@@ -213,22 +213,32 @@ void freegrad_update_after_prediction(freegrad& FG, example& ec)
     FG.data.squared_norm_clipped_grad = 0.;
     FG.data.ec_weight = (float) ec.weight;
     
+    float res_weight = FG.data.ec_weight;
+    while (res_weight > 0) {
     // Partial derivative of loss (Note that the weight of the examples ec is not accounted for at this stage. This is done in inner_freegrad_update_after_prediction)
-    FG.data.update = FG.all->loss->first_derivative(FG.all->sd, ec.pred.scalar, ec.l.simple.label);
+      FG.data.update = FG.all->loss->first_derivative(FG.all->sd, ec.pred.scalar, ec.l.simple.label) * std::min(1.f, res_weight);
+      
+      // Compute gradient norm
+      GD::foreach_feature<freegrad_update_data, gradient_dot_w>(*FG.all, ec, FG.data);
+      
+      // Performing the update
+      GD::foreach_feature<freegrad_update_data, inner_freegrad_update_after_prediction>(*FG.all, ec, FG.data);
+      
+      // Recompute the predict TODO remove
+      FG.data.predict = 0.;
+      FG.data.squared_norm_prediction = 0.;
+      GD::foreach_feature<freegrad_update_data, inner_freegrad_predict>(*FG.all, ec, FG.data);
+      ec.pred.scalar = FG.data.predict;
+
+      // Update the maximum gradient norm value
+      clipped_grad_norm = sqrtf(FG.data.squared_norm_clipped_grad);
+      if (clipped_grad_norm > FG.data.maximum_clipped_gradient_norm)
+          FG.data.maximum_clipped_gradient_norm = clipped_grad_norm;
     
-    // Compute gradient norm
-    GD::foreach_feature<freegrad_update_data, gradient_dot_w>(*FG.all, ec, FG.data);
-    
-    // Performing the update
-    GD::foreach_feature<freegrad_update_data, inner_freegrad_update_after_prediction>(*FG.all, ec, FG.data);
-    
-    // Update the maximum gradient norm value
-    clipped_grad_norm = sqrtf(FG.data.squared_norm_clipped_grad);
-    if (clipped_grad_norm > FG.data.maximum_clipped_gradient_norm)
-        FG.data.maximum_clipped_gradient_norm = clipped_grad_norm;
-  
-    if (FG.data.maximum_clipped_gradient_norm >0)
-      FG.data.sum_normalized_grad_norms += FG.data.ec_weight * clipped_grad_norm/FG.data.maximum_clipped_gradient_norm;
+      if (FG.data.maximum_clipped_gradient_norm >0)
+        FG.data.sum_normalized_grad_norms += clipped_grad_norm/FG.data.maximum_clipped_gradient_norm;
+      res_weight -= 1;  
+    }
 }
 
 
