@@ -49,12 +49,12 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
 {
   auto& vw = *VW::initialize("--slates --quiet");
   multi_ex examples;
-  examples.push_back(VW::read_example(vw, std::string("slates shared 0.8 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates action 0 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates action 1 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates action 1 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates slot 0:0.8 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates slot 1:0.6 | ignore_me")));
+  examples.push_back(VW::read_example(vw, "slates shared 0.8 | ignore_me"));
+  examples.push_back(VW::read_example(vw, "slates action 0 | ignore_me"));
+  examples.push_back(VW::read_example(vw, "slates action 1 | ignore_me"));
+  examples.push_back(VW::read_example(vw, "slates action 1 | ignore_me"));
+  examples.push_back(VW::read_example(vw, "slates slot 0:0.8 | ignore_me"));
+  examples.push_back(VW::read_example(vw, "slates slot 1:0.6 | ignore_me"));
 
   auto mock_learn_or_pred = [](multi_ex& examples)
   {
