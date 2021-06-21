@@ -667,15 +667,15 @@ public:
 
     std::unique_ptr<namespace_copy_guard> ns_copy_guard;
 
+    // apply manual stride shifts
+    std::vector<std::unique_ptr<stride_shift_guard>> stride_shift_guards;
+    stride_shift_guards.push_back(VW::make_unique<stride_shift_guard>(*ex, _stride_shift));
+
     if (!_no_constant)
     {
       ns_copy_guard = std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*ex, constant_namespace));
       ns_copy_guard->feature_push_back(1.f, (constant << _stride_shift) + ex->ft_offset);
     }
-
-    // apply manual stride shifts
-    std::vector<std::unique_ptr<stride_shift_guard>> stride_shift_guards;
-    stride_shift_guards.push_back(VW::make_unique<stride_shift_guard>(*ex, _stride_shift));
 
     _cats_learner->predict(*ex);
     action = ex->pred.pdf_value.action;

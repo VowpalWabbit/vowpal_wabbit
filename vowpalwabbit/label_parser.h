@@ -4,11 +4,7 @@
 
 #pragma once
 
-namespace VW
-{
-  using string_view = std::string;
-}
-
+#include "vw_string_view.h"
 #include <vector>
 
 struct parser;
