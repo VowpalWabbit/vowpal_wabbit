@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from vowpalwabbit import pyvw
 
 # the label for each word is its parent, or -1 for root
@@ -40,8 +38,8 @@ class CovingtonDepParser(pyvw.SearchTask):
 
                 # construct an example
                 dir = 'l' if m < n else 'r'
-                ex = self.vw.example({'a': [wordN, dir + '_' + wordN], 
-                                      'b': [wordM, dir + '_' + wordN], 
+                ex = self.vw.example({'a': [wordN, dir + '_' + wordN],
+                                      'b': [wordM, dir + '_' + wordN],
                                       'p': [wordN + '_' + wordM, dir + '_' + wordN + '_' + wordM],
                                       'd': [ str(m-n <= d) + '<=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] +
                                            [ str(m-n >= d) + '>=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] })
@@ -125,13 +123,11 @@ print('testing non-LDF')
 print(task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] ))
 print('should have printed [ 1 2 -1 4 2 ]')
 
-# BUG: There is a bug in LDF mode which causes this to fail. Currently under investigation.
-# demo the ldf version:
-#print('training LDF')
-#vw = pyvw.vw("--search 0 --csoaa_ldf m --search_task hook --ring_size 1024 --quiet")
-#task = vw.init_search_task(CovingtonDepParserLDF)
-#for p in range(100): # do two passes over the training data
-#    task.learn(my_dataset)
-#print('testing LDF')
-#print(task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] ))
-#print('should have printed [ 1 2 -1 4 2 ]')
+print('training LDF')
+vw = pyvw.vw("--search 0 --csoaa_ldf m --search_task hook --ring_size 1024 --quiet")
+task = vw.init_search_task(CovingtonDepParserLDF)
+for p in range(100): # do two passes over the training data
+   task.learn(my_dataset)
+print('testing LDF')
+print(task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] ))
+print('should have printed [ 1 2 -1 4 2 ]')

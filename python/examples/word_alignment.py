@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from vowpalwabbit import pyvw
 
 # the dataset is triples of E, A, F where A[i] = list of words E_i

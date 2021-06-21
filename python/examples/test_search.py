@@ -1,8 +1,5 @@
-from __future__ import print_function
-
 import sys
 from vowpalwabbit import pyvw
-
 
 class SequenceLabeler(pyvw.SearchTask):
     def __init__(self, vw, sch, num_actions):
