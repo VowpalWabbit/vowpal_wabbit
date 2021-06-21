@@ -147,16 +147,23 @@ class single_example_handler
 public:
   single_example_handler(const context_type& context) : _context(context) {}
 
-  void on_example(example* ec)
+  void on_example(v_array<example*>* ev)
   {
-    if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
-      _context.template process<example, learn_ex>(*ec);
-    else if (ec->end_pass)
-      _context.template process<example, end_pass>(*ec);
-    else if (is_save_cmd(ec))
-      _context.template process<example, save>(*ec);
-    else
-      _context.template process<example, learn_ex>(*ec);
+    for (example* ec : *ev)
+    {
+      work_on_example(_context.get_master(), ec);
+
+      if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
+        _context.template process<example, learn_ex>(*ec);
+      else if (ec->end_pass)
+        _context.template process<example, end_pass>(*ec);
+      else if (is_save_cmd(ec))
+        _context.template process<example, save>(*ec);
+      else
+        _context.template process<example, learn_ex>(*ec);
+    }
+    
+    VW::finish_example_vector(_context.get_master(), *ev);
   }
 
 private:
@@ -201,13 +208,20 @@ public:
     if (!ec_seq.empty()) { _context.template process<multi_ex, learn_multi_ex>(ec_seq); }
   }
 
-  void on_example(example* ec)
+  void on_example(v_array<example*>* ev)
   {
-    if (try_complete_multi_ex(ec))
+    for (example* ec : *ev)
     {
-      _context.template process<multi_ex, learn_multi_ex>(ec_seq);
-      ec_seq.clear();
+      work_on_example(_context.get_master(), ec);
+      
+      if (try_complete_multi_ex(ec))
+      {
+        _context.template process<multi_ex, learn_multi_ex>(ec_seq);
+        ec_seq.clear();
+      }
     }
+    
+    VW::finish_example_vector(_context.get_master(), *ev);
   }
 
 private:
@@ -220,32 +234,12 @@ private:
 class ready_examples_queue
 {
 public:
-  ready_examples_queue(vw& master) : _master(master), _index(-1) {_ev = new v_array<example*>;}
+  ready_examples_queue(vw& master) : _master(master){}
 
-  example* pop() {
-    if(_master.early_terminate) return nullptr;
-
-    if(_index == -1) {
-      _index = 0;
-      if ((_ev = VW::get_example(_master.example_parser)) == nullptr) return nullptr;
-    }
-    example* ex = (*_ev)[_index++];
-
-    work_on_example(_master, ex);
-
-    if(_index >= _ev->size())
-    {
-      VW::finish_example_vector(_master, *_ev);
-      _index = -1;
-    }
-
-    return ex;
-  }
+  v_array<example*>* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser) : nullptr; }
 
 private:
   vw& _master;
-  v_array<example*>* _ev;
-  int _index;
 };
 
 class custom_examples_queue
@@ -263,9 +257,9 @@ private:
 template <typename queue_type, typename handler_type>
 void process_examples(queue_type& examples, handler_type& handler)
 {
-  example* ec;
+  v_array<example*>* ev;
 
-  while ((ec = examples.pop()) != nullptr) handler.on_example(ec);
+  while ((ev = examples.pop()) != nullptr) handler.on_example(ev);
 }
 
 template <typename context_type>
@@ -307,8 +301,8 @@ void generic_driver_onethread(vw& all)
   handler_type handler(context);
   auto multi_ex_fptr = [&handler](vw& all, v_array<example*> examples) {
     all.example_parser->end_parsed_examples += examples.size();  // divergence: lock & signal
-    custom_examples_queue examples_queue(examples);
-    process_examples(examples_queue, handler);
+    // custom_examples_queue examples_queue(examples);
+    // process_examples(examples_queue, handler);
   };
   // parse_dispatch(all, multi_ex_fptr);
   all.l->end_examples();

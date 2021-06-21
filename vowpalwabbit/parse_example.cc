@@ -44,7 +44,7 @@ int read_features_string(vw* all, v_array<example*>& examples, std::vector<VW::s
   size_t num_chars;
   size_t num_chars_initial = (*io_lines_next_item).size();
 
-  char *stripped_line = std::move((*io_lines_next_item).data());
+  char *stripped_line = (*io_lines_next_item).data();
   num_chars = strip_features_string(stripped_line, num_chars_initial);
   if (num_chars < 1)
   {
