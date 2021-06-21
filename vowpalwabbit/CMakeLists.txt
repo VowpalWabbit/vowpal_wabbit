@@ -84,6 +84,7 @@ set(vw_all_headers
   cb_to_cb_adf.h
   ccb_label.h
   ccb_reduction_features.h
+  chained_proxy_iterator.h
   continuous_actions_reduction_features.h
   classweight.h
   compat.h
@@ -216,6 +217,10 @@ set(vw_all_headers
   vwdll.h
   vwvis.h
   warm_cb.h
+  generic_range.h
+  active_multiclass_prediction.h
+  debug_log.h
+  rand_state.h
 )
 
 if(BUILD_FLATBUFFERS)
