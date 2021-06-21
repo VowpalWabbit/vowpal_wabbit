@@ -10,6 +10,8 @@
 #endif
 
 #include "memory.h"
+#include <bitset>
+#include <unordered_map>
 
 typedef float weight;
 
@@ -86,6 +88,32 @@ public:
 
   inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
   inline weight& operator[](size_t i) { return _begin[i & _weight_mask]; }
+
+  // Definitions for aggregated learning
+  std::unordered_map<uint64_t, std::bitset<32>> feature_bit_vector;
+  struct tag_hash_info
+  {
+    uint64_t tag_hash;
+    bool is_set=false;
+  };
+
+  void set_tag(uint64_t tag_hash)
+  {
+      tag_hash_info tag_info;
+      tag_info.tag_hash=tag_hash;
+      tag_info.is_set=true;
+  }
+  
+  void turn_on_bit(uint64_t feature_index) // how does offset work in dense?
+  {
+    tag_hash_info tag_info;
+    if(feature_index % stride() == 0 && tag_info.is_set) // how does offset work in dense?
+    {
+      feature_bit_vector[feature_index][tag_info.tag_hash]=1;
+    }
+  }
+
+  bool is_activated(size_t index){return feature_bit_vector[index].count()>=10;}
 
   void shallow_copy(const dense_parameters& input)
   {
