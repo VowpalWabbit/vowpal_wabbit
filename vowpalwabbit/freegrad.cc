@@ -41,6 +41,7 @@ struct freegrad
   float epsilon;
   bool restart;
   bool project;
+  // TODO remove this 
   bool noweightinvariance;
   bool adaptiveradius;
   float radius;
