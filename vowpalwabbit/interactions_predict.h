@@ -228,6 +228,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 
 #endif
     {
+      state_data.clear();
       bool must_skip_interaction = false;
       // preparing state data
       for (auto n : ns)
@@ -320,7 +321,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
           }
           else
           {
-            cur_data->current_it = ec.feature_space.namespace_index_cbegin_proxy(cur_data->ns_idx);
+            next_data->current_it = ec.feature_space.namespace_index_cbegin_proxy(next_data->ns_idx);
           }
 
           if (audit) audit_func(dat, (*cur_data->current_it).audit()->get());
