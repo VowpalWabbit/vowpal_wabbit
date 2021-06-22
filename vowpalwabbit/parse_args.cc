@@ -1262,8 +1262,7 @@ void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
       {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"},
       {red_python_setup, "custom_python_reduction"}, {red_python_multiline_setup, "custom_python_multi_reduction"},
-      {red_python_base_setup, "custom_python_base_reduction"},
-      {generate_interactions_setup, "generate_interactions"}};
+      {red_python_base_setup, "custom_python_base_reduction"}, {generate_interactions_setup, "generate_interactions"}};
 
   auto name_extractor = options_name_extractor();
   vw dummy_all;
