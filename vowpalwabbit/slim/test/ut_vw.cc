@@ -422,7 +422,8 @@ TEST(VowpalWabbitSlim, multiclass_data_5)
   ASSERT_EQ(S_VW_PREDICT_OK, vw.predict(shared, ex, 8, out_scores));
 
   // 0:0.551784,3:0.551784,4:0.560359,7:0.560359,1:0.575381,5:0.592531,2:0.598978,6:0.624703
-  std::vector<float> preds_expected = {0.551784f, 0.575380862f, 0.598977983f, 0.5517838f, 0.560358882f, 0.592531085f, 0.624703348f, 0.560358882f};
+  std::vector<float> preds_expected = {
+      0.551784f, 0.575380862f, 0.598977983f, 0.5517838f, 0.560358882f, 0.592531085f, 0.624703348f, 0.560358882f};
 
   // compare output
   EXPECT_THAT(out_scores, Pointwise(FloatNearPointwise(1e-5f), preds_expected));

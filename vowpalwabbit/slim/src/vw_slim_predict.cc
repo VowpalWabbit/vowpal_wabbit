@@ -13,15 +13,13 @@ uint64_t ceil_log_2(uint64_t v)
     return 1 + ceil_log_2(v >> 1);
 }
 
-namespace_copy_guard::namespace_copy_guard(example_predict& ex, uint64_t ns, unsigned const char index) : _ex(ex), _ns(ns)
+namespace_copy_guard::namespace_copy_guard(example_predict& ex, uint64_t ns, unsigned const char index)
+    : _ex(ex), _ns(ns)
 {
   _ex.feature_space.get_or_create_feature_group(_ns, index);
 }
 
-namespace_copy_guard::~namespace_copy_guard()
-{
-  _ex.feature_space.remove_feature_group(_ns);
-}
+namespace_copy_guard::~namespace_copy_guard() { _ex.feature_space.remove_feature_group(_ns); }
 
 void namespace_copy_guard::feature_push_back(feature_value v, feature_index idx)
 {
