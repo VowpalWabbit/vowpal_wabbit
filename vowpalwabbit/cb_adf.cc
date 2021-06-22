@@ -12,6 +12,7 @@
 #include "explore.h"
 #include "cb_adf.h"
 #include "shared_data.h"
+#include "label_parser.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::cb_adf
@@ -91,7 +92,12 @@ public:
 
   cb_adf(
       shared_data* sd, size_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
-      : _sd(sd), _model_file_ver(model_file_ver), _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p)
+      : _sd(sd)
+      , _model_file_ver(model_file_ver)
+      , _offset(0)
+      , _no_predict(no_predict)
+      , _rank_all(rank_all)
+      , _clip_p(clip_p)
   {
     _gen_cs.cb_type = cb_type;
   }
@@ -194,7 +200,7 @@ void cb_adf::learn_SM(multi_learner& base, multi_ex& examples)
   {
     uint32_t current_action = action_score.action;
     _backup_weights.push_back(examples[current_action]->weight);
-    _backup_nf.push_back((uint32_t)examples[current_action]->num_features);
+    _backup_nf.push_back(static_cast<uint32_t>(examples[current_action]->num_features));
 
     if (current_action == chosen_action)
       examples[current_action]->weight *= example_weight * (1.0f - action_score.score);
@@ -242,10 +248,11 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   // We must go through the cost sensitive classifier layer to get
   // proper feature handling.
   gen_cs_example_mtr(_gen_cs, examples, _cs_labels);
-  uint32_t nf = (uint32_t)examples[_gen_cs.mtr_example]->num_features;
+  uint32_t nf = static_cast<uint32_t>(examples[_gen_cs.mtr_example]->num_features);
   float old_weight = examples[_gen_cs.mtr_example]->weight;
   const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
-  examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p * ((float)_gen_cs.event_sum / (float)_gen_cs.action_sum);
+  examples[_gen_cs.mtr_example]->weight *=
+      1.f / clipped_p * (static_cast<float>(_gen_cs.event_sum) / static_cast<float>(_gen_cs.action_sum));
 
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are
@@ -345,7 +352,7 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
   size_t num_features = 0;
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (const auto& example : *ec_seq) num_features += example->num_features;
+  for (const auto& example : *ec_seq) num_features += example->get_num_features();
 
   float loss = 0.;
 
@@ -368,7 +375,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (auto& sink : all.final_prediction_sink) { all.print_by_ref(sink.get(), (float)action, 0, ec.tag); }
+  for (auto& sink : all.final_prediction_sink) { all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -542,21 +549,24 @@ base_learner* cb_adf_setup(options_i& options, vw& all)
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
-  auto ld = scoped_calloc_or_throw<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict);
+  auto ld = VW::make_unique<cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict);
 
   auto base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
   cb_adf* bare = ld.get();
-
-  learner<cb_adf, multi_ex>& l = init_learner(ld, base, learn, predict, problem_multiplier,
-      prediction_type_t::action_scores, all.get_setupfn_name(cb_adf_setup), ld->learn_returns_prediction());
-
-  l.set_finish_example(CB_ADF::finish_multiline_example);
-  l.set_print_example(CB_ADF::update_and_output);
+  bool lrp = ld->learn_returns_prediction();
+  auto* l = make_reduction_learner(std::move(ld), base, learn, predict, all.get_setupfn_name(cb_adf_setup))
+                .set_learn_returns_prediction(lrp)
+                .set_params_per_weight(problem_multiplier)
+                .set_prediction_type(prediction_type_t::action_scores)
+                .set_label_type(label_type_t::cb)
+                .set_finish_example(CB_ADF::finish_multiline_example)
+                .set_print_example(CB_ADF::update_and_output)
+                .set_save_load(CB_ADF::save_load)
+                .build();
 
   bare->set_scorer(all.scorer);
 
-  l.set_save_load(CB_ADF::save_load);
-  return make_base(l);
+  return make_base(*l);
 }

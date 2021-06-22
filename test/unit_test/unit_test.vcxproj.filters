@@ -15,6 +15,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="cache_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="cb_explore_adf_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -52,6 +55,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="initialize_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interactions_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="io_adapter_test.cc">

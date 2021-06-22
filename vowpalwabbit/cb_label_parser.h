@@ -6,6 +6,8 @@
 #include "cb.h"
 
 #include "io/logger.h"
+#include "io_buf.h"
+#include "cb_continuous_label.h"
 #include <cfloat>
 
 namespace CB
@@ -21,7 +23,7 @@ char* bufread_label_additional_fields(LabelT& ld, char* c)
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
 char* bufread_label(LabelT& ld, char* c, io_buf& cache)
 {
-  size_t num = *(size_t*)c;
+  size_t num = *reinterpret_cast<size_t*>(c);
   ld.costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(LabelElmT) * num;
@@ -59,7 +61,7 @@ char* bufcache_label_additional_fields(LabelT& ld, char* c)
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
 char* bufcache_label(LabelT& ld, char* c)
 {
-  *(size_t*)c = ld.costs.size();
+  *reinterpret_cast<size_t*>(c) = ld.costs.size();
   c += sizeof(size_t);
   for (size_t i = 0; i < ld.costs.size(); i++)
   {

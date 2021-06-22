@@ -87,6 +87,40 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p_duplicates)
   }
 }
 
+BOOST_AUTO_TEST_CASE(parse_dsjson_pdrop_float)
+{
+  const std::string json_text = R"(
+{
+  "pdrop": 0.1
+}
+  )";
+  auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  DecisionServiceInteraction interaction;
+
+  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+
+  BOOST_CHECK_CLOSE(0.1f, interaction.probabilityOfDrop, FLOAT_TOL);
+}
+
+BOOST_AUTO_TEST_CASE(parse_dsjson_pdrop_uint)
+{
+  const std::string json_text = R"(
+{
+  "pdrop": 0
+}
+  )";
+  auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  DecisionServiceInteraction interaction;
+
+  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+
+  BOOST_CHECK_CLOSE(0.0f, interaction.probabilityOfDrop, FLOAT_TOL);
+}
+
 // TODO: Make unit test dig out and verify features.
 BOOST_AUTO_TEST_CASE(parse_dsjson_cb)
 {

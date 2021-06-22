@@ -1729,8 +1729,9 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     pred-sets/ref/cb_adf_sm.predict
 
 # Test 189: test dsjson parser correctly processes checkpoint and dangling observation lines
-{VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -P 1
+{VW} -d train-sets/b1848_dsjson_parser_regression.txt --dsjson --chain_hash --cb_explore_adf -P 1 --extra_metrics metrics_skip.json
     train-sets/ref/b1848_dsjson_parser_regression.stderr
+    test-sets/ref/metrics_skip.json
 
 # Test 190: one-against-all with subsampling
 {VW} -k --oaa 10 --oaa_subsample 5 -c --passes 10 -d train-sets/multiclass --holdout_off
@@ -2314,5 +2315,142 @@ train-sets/ref/slates_simple_w_interactions.stderr
 {VW}  -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dr --ngram 2 --skips 4 -b 24 -l 0.25 --extra_metrics metrics_2.json
     train-sets/ref/rcv1_raw_cb_dr_metrics.stderr
     test-sets/ref/metrics_2.json
+
+# Test 314: squarecb save_load, save model
+{VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -f models/sqcb_ld.model --save_resume
+    train-sets/ref/squarecb_save.stderr
+
+# Test 315: squarecb save_load, load model
+{VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -i models/sqcb_ld.model -t
+    train-sets/ref/squarecb_load.stderr
+
+# Test 316: test extra_metrics with djson timestamps
+{VW} -d train-sets/dsjson_cb.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT --extra_metrics metrics_time.json
+    train-sets/ref/metrics_time.stderr
+    test-sets/ref/metrics_time.json
+
+# Test 317: bfgs preconditioner overflowing test
+{VW} -c -k -d train-sets/rcv1_small.dat --bfgs --passes 12 -f models/bfgs_precon.model --save_resume
+    train-sets/ref/bfgs_train.stderr
+
+# Test 318: test extra_metrics with djson ccb
+{VW} -d train-sets/ccb_data.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb.json
+    train-sets/ref/metrics_ccb.stderr
+    test-sets/ref/metrics_ccb.json
+
+# Test 319: test extra_metrics with djson ccb, without event_id
+{VW} -d train-sets/ccb_data_noevent.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_noevent.json
+    train-sets/ref/metrics_ccb_noevent.stderr
+    test-sets/ref/metrics_ccb_noevent.json
+
+# Test 320: first save_load, save model
+{VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --first 130 -f models/first_ld.model --save_resume
+    train-sets/ref/first_save.stderr
+
+# Test 321: first save_load, load model
+{VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA -i models/first_ld.model -t
+    train-sets/ref/first_load.stderr
+
+# Test 322: regcb save_load, save model
+{VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --regcb -f models/regcb_ld.model --save_resume --mellowness .001
+    train-sets/ref/regcb_save.stderr
+
+# Test 323: regcb save_load, load model
+{VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --regcb -i models/regcb_ld.model -t
+    train-sets/ref/regcb_load.stderr
+
+# Test 324: test dsjson with some errors
+# Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error
+# Line 57 of ccb_data_parse_error.json has a missing quote on purpose
+{VW} -d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread
+    train-sets/ref/metrics_ccb_parse_error.stderr
+    test-sets/ref/metrics_ccb_parse_error.json
+
+# Test 325: test dsjson with some errors and limit output
+# Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error
+# Line 57 of ccb_data_parse_error.json has a missing quote on purpose
+# shares same metric file as test 324
+{VW} -d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --limit_output 1
+    train-sets/ref/metrics_ccb_parse_error_limit.stderr
+    test-sets/ref/metrics_ccb_parse_error.json
+
+# Test 326: test dsjson with some errors with quiet
+# Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error
+# Line 57 of ccb_data_parse_error.json has a missing quote on purpose
+# shares same metric file as test 324
+{VW} -d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --quiet
+    train-sets/ref/metrics_ccb_parse_error_quiet.stderr
+    test-sets/ref/metrics_ccb_parse_error.json
+
+# Test 327: simple cb dsjson
+# Required for having side-by-side comparison with the same one with pdrop from 328
+{VW} -d train-sets/cb_simple.json --dsjson --cb_explore_adf --invert_hash cb_simple_invert_hash.txt && \
+        tail -n +2 cb_simple_invert_hash.txt > cb_simple_invert_hash.txt.new && \
+            rm cb_simple_invert_hash.txt && \
+                mv cb_simple_invert_hash.txt.new cb_simple_invert_hash.txt
+    train-sets/ref/cb_simple.stderr
+    train-sets/ref/cb_simple_invert_hash.txt
+
+# Test 328: simple cb dsjson with pdrop
+# Required for having side-by-side comparison with the same one without pdrop from 327
+# TODO: update stderr when reported metrics pdrop issue is fixed
+{VW} -d train-sets/cb_simple_pdrop.json --dsjson --cb_explore_adf --invert_hash cb_simple_pdrop_invert_hash.txt && \
+        tail -n +2 cb_simple_pdrop_invert_hash.txt > cb_simple_pdrop_invert_hash.txt.new && \
+            rm cb_simple_pdrop_invert_hash.txt && \
+                mv cb_simple_pdrop_invert_hash.txt.new cb_simple_pdrop_invert_hash.txt
+    train-sets/ref/cb_simple_pdrop.stderr
+    train-sets/ref/cb_simple_pdrop_invert_hash.txt
+
+# Test 329: simple cb dsjson with pdrop=1 (unsupported)
+{VW} -d train-sets/cb_simple_pdrop1.json --dsjson --cb_explore_adf
+    train-sets/ref/cb_simple_pdrop1.stderr
+
+# Test 330: simple ccb dsjson
+# Required for having side-by-side comparison with the same one with pdrop from 331
+{VW} -d train-sets/ccb_simple.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_invert_hash.txt && \
+        tail -n +2 ccb_simple_invert_hash.txt > ccb_simple_invert_hash.txt.new && \
+            rm ccb_simple_invert_hash.txt && \
+                mv ccb_simple_invert_hash.txt.new ccb_simple_invert_hash.txt
+    train-sets/ref/ccb_simple.stderr
+    train-sets/ref/ccb_simple_invert_hash.txt
+
+# Test 331: simple ccb dsjson with pdrop
+# Required for having side-by-side comparison with the same one without pdrop from 330
+# TODO: update stderr when reported metrics pdrop issue is fixed
+{VW} -d train-sets/ccb_simple_pdrop.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_pdrop_invert_hash.txt && \
+        tail -n +2 ccb_simple_pdrop_invert_hash.txt > ccb_simple_pdrop_invert_hash.txt.new && \
+            rm ccb_simple_pdrop_invert_hash.txt && \
+                mv ccb_simple_pdrop_invert_hash.txt.new ccb_simple_pdrop_invert_hash.txt
+    train-sets/ref/ccb_simple_pdrop.stderr
+    train-sets/ref/ccb_simple_pdrop_invert_hash.txt
+
+# Test 332: regression test for #3062
+{VW} -d train-sets/issue3062.txt --cb_explore 2 --cb_force_legacy --save_resume -f issue3062.model
+    train-sets/ref/issue3062train.stderr
+
+# Test 333: regression test for #3062
+{VW} -d train-sets/issue3062.txt -t --cb_explore 2 --cb_force_legacy --save_resume -i issue3062.model
+    train-sets/ref/issue3062test.stderr
+
+# Test 334: test cb_dro with softmax and cb_explore_adf
+{VW} --cb_dro --cb_explore_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_dro_explore_adf_sm.predict --cb_type sm
+    train-sets/ref/cb_dro_explore_adf_sm.stderr
+    pred-sets/ref/cb_dro_explore_adf_sm.predict
+
+# Test 335: test --baseline
+{VW} -d train-sets/0001.dat --baseline
+    train-sets/ref/baseline_test.stderr
+
+# Test 336:
+{VW} -d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aa --quiet  --invert_hash dupeindex_self_quadratic.txt
+    train-sets/ref/dupeindex_self_quadratic.txt
+
+# Test 337:
+{VW} -d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaa --quiet --invert_hash dupeindex_self_cubic.txt
+    train-sets/ref/dupeindex_self_cubic.txt
+
+# Test 338:
+{VW} -d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaaa --quiet --invert_hash dupeindex_self_quartic.txt
+    train-sets/ref/dupeindex_self_quartic.txt
 
 # Do not delete this line or the empty line above it

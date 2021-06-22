@@ -84,6 +84,7 @@ set(vw_all_headers
   cb_to_cb_adf.h
   ccb_label.h
   ccb_reduction_features.h
+  chained_proxy_iterator.h
   continuous_actions_reduction_features.h
   classweight.h
   compat.h
@@ -104,7 +105,6 @@ set(vw_all_headers
   error_constants.h
   error_data.h
   error_reporting.h
-  errors_data.h
   example_predict.h
   example.h
   explore_eval.h
@@ -117,6 +117,7 @@ set(vw_all_headers
   gd_predict.h
   gd.h
   gen_cs_example.h
+  generate_interactions.h
   get_pmf.h
   global_data.h
   guard.h
@@ -139,11 +140,13 @@ set(vw_all_headers
   memory_tree.h
   memory.h
   metrics.h
+  metric_sink.h
   mf.h
   multiclass.h
   multilabel_oaa.h
   multilabel.h
   mwt.h
+  namespaced_features.h
   numeric_casts.h
   named_labels.h
   network.h
@@ -215,6 +218,10 @@ set(vw_all_headers
   vwvis.h
   warm_cb.h
   red_python.h
+  generic_range.h
+  active_multiclass_prediction.h
+  debug_log.h
+  rand_state.h
 )
 
 if(BUILD_FLATBUFFERS)
@@ -281,6 +288,7 @@ set(vw_all_sources
   gd_mf.cc
   gd.cc
   gen_cs_example.cc
+  generate_interactions.cc
   get_pmf.cc
   global_data.cc
   hashstring.cc
@@ -303,6 +311,7 @@ set(vw_all_sources
   multilabel_oaa.cc
   multilabel.cc
   mwt.cc
+  namespaced_features.cc
   named_labels.cc
   network.cc
   kskip_ngram_transformer.cc
@@ -362,6 +371,10 @@ endif()
 
 if(BUILD_EXTERNAL_PARSER)
   set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
+endif()
+
+if (vw_BUILD_NET_FRAMEWORK)
+set(vw_all_sources ${vw_all_sources} spanning_tree.cc)
 endif()
 
 add_library(vw STATIC ${vw_all_sources} ${vw_all_headers})

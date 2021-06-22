@@ -63,7 +63,7 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
   ACTION_SCORE::action_scores preds = (*ec_seq)[0]->pred.a_s;
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
-    if (!CB::ec_is_example_header(*(*ec_seq)[i])) num_features += (*ec_seq)[i]->num_features;
+    if (!CB::ec_is_example_header(*(*ec_seq)[i])) num_features += (*ec_seq)[i]->get_num_features();
 
   bool labeled_example = true;
   if (c.known_cost.probability > 0)
@@ -127,13 +127,17 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
 
   if (label_example != nullptr)  // extract label
   {
-    data.action_label = label_example->l.cb;
-    label_example->l.cb = data.empty_label;
+    data.action_label = std::move(label_example->l.cb);
+    label_example->l.cb = std::move(data.empty_label);
   }
   multiline_learn_or_predict<false>(base, ec_seq, data.offset);
 
   if (label_example != nullptr)  // restore label
-    label_example->l.cb = data.action_label;
+  {
+    label_example->l.cb = std::move(data.action_label);
+    data.empty_label.costs.clear();
+    data.empty_label.weight = 1.f;
+  }
 
   data.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);
   if (label_example != nullptr && is_learn)

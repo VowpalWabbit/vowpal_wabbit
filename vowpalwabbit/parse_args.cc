@@ -43,6 +43,7 @@
 #include "cb_explore_adf_rnd.h"
 #include "cb_explore_adf_softmax.h"
 #include "slates.h"
+#include "generate_interactions.h"
 #include "mwt.h"
 #include "confidence.h"
 #include "scorer.h"
@@ -218,7 +219,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   {
     if (all.loaded_dictionaries[id].file_hash == fd_hash)
     {
-      all.namespace_dictionaries[(size_t)ns].push_back(all.loaded_dictionaries[id].dict);
+      all.namespace_dictionaries[static_cast<size_t>(ns)].push_back(all.loaded_dictionaries[id].dict);
       return;
     }
   }
@@ -238,7 +239,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   map->max_load_factor(0.25);
   example* ec = VW::alloc_examples(1);
 
-  size_t def = (size_t)' ';
+  size_t def = static_cast<size_t>(' ');
 
   ssize_t size = 2048, pos, nread;
   char rc;
@@ -253,7 +254,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
       if (pos >= size - 1)
       {
         size *= 2;
-        const auto new_buffer = (char*)(realloc(buffer, size));
+        const auto new_buffer = static_cast<char*>(realloc(buffer, size));
         if (new_buffer == nullptr)
         {
           free(buffer);
@@ -281,9 +282,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     VW::read_line(all, ec, d);
     // now we just need to grab stuff from the default namespace of ec!
     if (ec->feature_space[def].size() == 0) { continue; }
-    std::unique_ptr<features> arr(new features);
-    arr->deep_copy_from(ec->feature_space[def]);
-    map->emplace(word, std::move(arr));
+    map->emplace(word, VW::make_unique<features>(ec->feature_space[def]));
 
     // clear up ec
     ec->tag.clear();
@@ -297,7 +296,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     *(all.trace_message) << "dictionary " << s << " contains " << map->size() << " item"
                          << (map->size() == 1 ? "" : "s") << endl;
 
-  all.namespace_dictionaries[(size_t)ns].push_back(map);
+  all.namespace_dictionaries[static_cast<size_t>(ns)].push_back(map);
   dictionary_info info = {s.to_string(), fd_hash, map};
   all.loaded_dictionaries.push_back(info);
 }
@@ -325,12 +324,12 @@ void parse_affix_argument(vw& all, std::string str)
       }
       if ((q[0] < '1') || (q[0] > '7')) THROW("malformed affix argument (length must be 1..7): " << p);
 
-      uint16_t len = (uint16_t)(q[0] - '0');
-      uint16_t ns = (uint16_t)' ';  // default namespace
+      uint16_t len = static_cast<uint16_t>(q[0] - '0');
+      uint16_t ns = static_cast<uint16_t>(' ');  // default namespace
       if (q[1] != 0)
       {
         if (valid_ns(q[1]))
-          ns = (uint16_t)q[1];
+          ns = static_cast<uint16_t>(q[1]);
         else
           THROW("malformed affix argument (invalid namespace): " << p);
 
@@ -366,6 +365,7 @@ void parse_diagnostics(options_i& options, vw& all)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
       .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
+      .add(make_option("limit_output", all.logger.upper_limit).help("Avoid chatty output. Limit total printed lines."))
       .add(make_option("dry_run", skip_driver)
                .help("Parse arguments and print corresponding metadata. Will not execute driver."))
       .add(make_option("help", help)
@@ -374,7 +374,11 @@ void parse_diagnostics(options_i& options, vw& all)
 
   options.add_and_parse(diagnostic_group);
 
+  if (help) { all.logger.quiet = true; }
+
   if(all.logger.quiet) logger::log_set_level(logger::log_level::off);
+
+  if (options.was_supplied("limit_output")) logger::set_max_output(all.logger.upper_limit);
 
   // pass all.logger.quiet around
   if (all.all_reduce) all.all_reduce->quiet = all.logger.quiet;
@@ -388,7 +392,7 @@ void parse_diagnostics(options_i& options, vw& all)
 
   if (options.was_supplied("progress") && !all.logger.quiet)
   {
-    all.progress_arg = (float)::atof(progress_arg.c_str());
+    all.progress_arg = static_cast<float>(::atof(progress_arg.c_str()));
     // --progress interval is dual: either integer or floating-point
     if (progress_arg.find_first_of(".") == std::string::npos)
     {
@@ -480,7 +484,7 @@ input_options parse_source(vw& all, options_i& options)
   {
     all.daemon = true;
     // allow each child to process up to 1e5 connections
-    all.numpasses = (size_t)1e5;
+    all.numpasses = static_cast<size_t>(1e5);
   }
 
   // Add an implicit cache file based on the data filename.
@@ -535,7 +539,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
   if (vw1.permutations != vw2.permutations) return "permutations";
 
-  if (vw1.interactions.interactions.size() != vw2.interactions.interactions.size()) return "interactions size";
+  if (vw1.interactions.size() != vw2.interactions.size()) return "interactions size";
 
   if (vw1.ignore_some != vw2.ignore_some) return "ignore_some";
 
@@ -559,8 +563,8 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
-  for (auto i = std::begin(vw1.interactions.interactions), j = std::begin(vw2.interactions.interactions);
-       i != std::end(vw1.interactions.interactions); ++i, ++j)
+  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
+       ++i, ++j)
     if (*i != *j) return "interaction mismatch";
 
   return nullptr;
@@ -696,9 +700,9 @@ void parse_feature_tweaks(
     {
       spelling_ns[id] = spoof_hex_encoded_namespaces(spelling_ns[id]);
       if (spelling_ns[id][0] == '_')
-        all.spelling_features[(unsigned char)' '] = true;
+        all.spelling_features[static_cast<unsigned char>(' ')] = true;
       else
-        all.spelling_features[(size_t)spelling_ns[id][0]] = true;
+        all.spelling_features[static_cast<size_t>(spelling_ns[id][0])] = true;
     }
   }
 
@@ -749,9 +753,9 @@ void parse_feature_tweaks(
   }
 
   // prepare namespace interactions
-  std::vector<std::vector<namespace_index>> expanded_interactions;
+  std::vector<std::vector<namespace_index>> decoded_interactions;
 
-  if ( ( (!all.interactions.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
+  if ( ( (!all.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
        ||
        interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
@@ -762,7 +766,7 @@ void parse_feature_tweaks(
         << endl;
 
     // in case arrays were already filled in with values from old model file - reset them
-    if (!all.interactions.interactions.empty()) all.interactions.interactions.clear();
+    if (!all.interactions.empty()) { all.interactions.clear(); }
   }
 
   if (options.was_supplied("quadratic"))
@@ -771,36 +775,26 @@ void parse_feature_tweaks(
 
     for (auto& i : quadratics)
     {
-      i = spoof_hex_encoded_namespaces(i);
+      if (i.size() != 2) { THROW("error, quadratic features must involve two sets.)") }
+      auto encoded = spoof_hex_encoded_namespaces(i);
+      decoded_interactions.emplace_back(encoded.begin(), encoded.end());
       if (!all.logger.quiet) *(all.trace_message) << i << " ";
     }
 
-    std::vector<std::vector<namespace_index>> new_quadratics;
-    for (const auto& i : quadratics)
+    if (!all.logger.quiet && !options.was_supplied("leave_duplicate_interactions"))
     {
-      if (i[0] == ':' && i[1] == ':') { all.interactions.quadratics_wildcard_expansion = true; }
-      else
+      bool contains_wildcard_quadratic =
+          std::find_if(quadratics.begin(), quadratics.end(), [](const std::string& interaction) {
+            return interaction.find(wildcard_namespace) != std::string::npos;
+          }) != quadratics.end();
+      if (contains_wildcard_quadratic)
       {
-        new_quadratics.emplace_back(i.begin(), i.end());
-      }
-    }
-
-    if (all.interactions.quadratics_wildcard_expansion)
-    {
-      if (options.was_supplied("leave_duplicate_interactions"))
-      { all.interactions.leave_duplicate_interactions = true; }
-      else if (!all.logger.quiet)
-      {
-        *(all.trace_message) << endl
-                             << "WARNING: any duplicate namespace interactions will be removed" << endl
+        *(all.trace_message) << "\n"
+                             << "WARNING: any duplicate namespace interactions will be removed\n"
                              << "You can use --leave_duplicate_interactions to disable this behaviour.";
       }
     }
 
-    std::sort(new_quadratics.begin(), new_quadratics.end(), INTERACTIONS::sort_interactions_comparator);
-
-    expanded_interactions =
-        INTERACTIONS::expand_interactions(new_quadratics, 2, "error, quadratic features must involve two sets.");
 
     if (!all.logger.quiet) *(all.trace_message) << endl;
   }
@@ -808,51 +802,50 @@ void parse_feature_tweaks(
   if (options.was_supplied("cubic"))
   {
     if (!all.logger.quiet) *(all.trace_message) << "creating cubic features for triples: ";
-    for (auto i = cubics.begin(); i != cubics.end(); ++i)
+    for (const auto& i : cubics)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
-      if (!all.logger.quiet) *(all.trace_message) << *i << " ";
+      if (i.size() != 3) { THROW("error, cubic features must involve three sets.") }
+      auto encoded = spoof_hex_encoded_namespaces(i);
+      decoded_interactions.emplace_back(encoded.begin(), encoded.end());
+      if (!all.logger.quiet) *(all.trace_message) << i << " ";
     }
-
-    std::vector<std::vector<namespace_index>> new_cubics;
-    for (const auto& i : cubics) { new_cubics.emplace_back(i.begin(), i.end()); }
-
-    std::sort(new_cubics.begin(), new_cubics.end(), INTERACTIONS::sort_interactions_comparator);
-
-    std::vector<std::vector<namespace_index>> exp_cubic =
-        INTERACTIONS::expand_interactions(new_cubics, 3, "error, cubic features must involve three sets.");
-    expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
-
     if (!all.logger.quiet) *(all.trace_message) << endl;
+
+    bool contains_wildcard_cubic = std::find_if(cubics.begin(), cubics.end(), [](const std::string& interaction) {
+      return interaction.find(wildcard_namespace) != std::string::npos;
+    }) != cubics.end();
+    if (contains_wildcard_cubic)
+    {
+      *(all.trace_message) << "\n"
+                           << "WARNING: any duplicate namespace interactions will be removed\n"
+                           << "You can use --leave_duplicate_interactions to disable this behaviour.";
+    }
   }
 
   if (options.was_supplied("interactions"))
   {
     if (!all.logger.quiet) *(all.trace_message) << "creating features for following interactions: ";
 
-    for (auto i = interactions.begin(); i != interactions.end(); ++i)
+    for (const auto& i : interactions)
     {
-      *i = spoof_hex_encoded_namespaces(*i);
-      if (!all.logger.quiet) *(all.trace_message) << *i << " ";
+      if (i.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
+      auto encoded = spoof_hex_encoded_namespaces(i);
+      decoded_interactions.emplace_back(encoded.begin(), encoded.end());
+      if (!all.logger.quiet) *(all.trace_message) << i << " ";
     }
-
-    std::vector<std::vector<namespace_index>> new_interactions;
-    for (const auto& i : interactions) { new_interactions.emplace_back(i.begin(), i.end()); }
-
-    std::sort(new_interactions.begin(), new_interactions.end(), INTERACTIONS::sort_interactions_comparator);
-
-    std::vector<std::vector<namespace_index>> exp_inter = INTERACTIONS::expand_interactions(new_interactions, 0, "");
-    expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
-
     if (!all.logger.quiet) *(all.trace_message) << endl;
   }
 
-  if (expanded_interactions.size() > 0)
+  if (decoded_interactions.size() > 0)
   {
-    size_t removed_cnt;
-    size_t sorted_cnt;
+    // Sorts the overall list
+    std::sort(decoded_interactions.begin(), decoded_interactions.end(), INTERACTIONS::sort_interactions_comparator);
+
+    size_t removed_cnt = 0;
+    size_t sorted_cnt = 0;
+    // Sorts individual interactions
     INTERACTIONS::sort_and_filter_duplicate_interactions(
-        expanded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
+        decoded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
     if (removed_cnt > 0 && !all.logger.quiet)
     {
@@ -868,13 +861,7 @@ void parse_feature_tweaks(
                            << sorted_cnt << '.' << endl;
     }
 
-    if (all.interactions.interactions.size() > 0)
-    {
-      // should be empty, but just in case...
-      all.interactions.interactions.clear();
-    }
-
-    all.interactions.interactions = expanded_interactions;
+    all.interactions = std::move(decoded_interactions);
   }
 
   for (size_t i = 0; i < 256; i++)
@@ -892,7 +879,7 @@ void parse_feature_tweaks(
     for (auto& i : ignores)
     {
       i = spoof_hex_encoded_namespaces(i);
-      for (auto j : i) all.ignore[(size_t)(unsigned char)j] = true;
+      for (auto j : i) all.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = true;
     }
 
     if (!all.logger.quiet)
@@ -912,7 +899,7 @@ void parse_feature_tweaks(
     for (auto& i : ignore_linears)
     {
       i = spoof_hex_encoded_namespaces(i);
-      for (auto j : i) all.ignore_linear[(size_t)(unsigned char)j] = true;
+      for (auto j : i) all.ignore_linear[static_cast<size_t>(static_cast<unsigned char>(j))] = true;
     }
 
     if (!all.logger.quiet)
@@ -934,7 +921,7 @@ void parse_feature_tweaks(
     for (auto& i : keeps)
     {
       i = spoof_hex_encoded_namespaces(i);
-      for (const auto& j : i) all.ignore[(size_t)(unsigned char)j] = false;
+      for (const auto& j : i) all.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = false;
     }
 
     if (!all.logger.quiet)
@@ -953,7 +940,7 @@ void parse_feature_tweaks(
   if (options.was_supplied("redefine"))
   {
     // initail values: i-th namespace is redefined to i itself
-    for (size_t i = 0; i < 256; i++) all.redefine[i] = (unsigned char)i;
+    for (size_t i = 0; i < 256; i++) all.redefine[i] = static_cast<unsigned char>(i);
 
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
@@ -993,7 +980,7 @@ void parse_feature_tweaks(
       // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
 
       if (operator_pos == arg_len)  // S is empty, default namespace shall be used
-        all.redefine[(int)' '] = new_namespace;
+        all.redefine[static_cast<int>(' ')] = new_namespace;
       else
         for (size_t i = operator_pos; i < arg_len; i++)
         {
@@ -1275,7 +1262,8 @@ void register_reductions(vw& all, std::vector<reduction_setup_fn>& reductions)
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
       {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"},
       {red_python_setup, "custom_python_reduction"}, {red_python_multiline_setup, "custom_python_multi_reduction"},
-      {red_python_base_setup, "custom_python_base_reduction"}};
+      {red_python_base_setup, "custom_python_base_reduction"},
+      {generate_interactions_setup, "generate_interactions"}};
 
   auto name_extractor = options_name_extractor();
   vw dummy_all;
@@ -1321,6 +1309,10 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(OjaNewton_setup);
   // reductions.push_back(VW_CNTK::setup);
 
+  reductions.push_back(mf_setup);
+
+  reductions.push_back(generate_interactions_setup);
+
   // Score Users
   reductions.push_back(baseline_setup);
   reductions.push_back(ExpReplay::expreplay_setup<'b', simple_label_parser>);
@@ -1328,7 +1320,6 @@ void parse_reductions(options_i& options, vw& all)
   reductions.push_back(active_cover_setup);
   reductions.push_back(confidence_setup);
   reductions.push_back(nn_setup);
-  reductions.push_back(mf_setup);
   reductions.push_back(marginal_setup);
   reductions.push_back(autolink_setup);
   reductions.push_back(lrq_setup);
@@ -1498,7 +1489,7 @@ vw& parse_args(vw& all, std::unique_ptr<options_i, options_deleter_type> options
 
     parse_diagnostics(*all.options.get(), all);
 
-    all.initial_t = (float)all.sd->t;
+    all.initial_t = static_cast<float>(all.sd->t);
     return all;
   }
   catch (...)
@@ -1669,7 +1660,7 @@ void parse_sources(options_i& options, vw& all, io_buf& model, bool skipModelLoa
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
   size_t params_per_problem = all.l->increment;
-  while (params_per_problem > ((uint64_t)1 << i)) i++;
+  while (params_per_problem > (static_cast<uint64_t>(1) << i)) i++;
   all.wpp = (1 << i) >> all.weights.stride_shift();
 }
 
@@ -1749,7 +1740,7 @@ char** to_argv(std::string const& s, int& argc)
     // argv[i][len] = '\0';
   }
 
-  argc = (int)foo.size() + 1;
+  argc = static_cast<int>(foo.size()) + 1;
   return argv;
 }
 
@@ -1949,18 +1940,18 @@ void sync_stats(vw& all)
 {
   if (all.all_reduce != nullptr)
   {
-    float loss = (float)all.sd->sum_loss;
-    all.sd->sum_loss = (double)accumulate_scalar(all, loss);
-    float weighted_labeled_examples = (float)all.sd->weighted_labeled_examples;
-    all.sd->weighted_labeled_examples = (double)accumulate_scalar(all, weighted_labeled_examples);
-    float weighted_labels = (float)all.sd->weighted_labels;
-    all.sd->weighted_labels = (double)accumulate_scalar(all, weighted_labels);
-    float weighted_unlabeled_examples = (float)all.sd->weighted_unlabeled_examples;
-    all.sd->weighted_unlabeled_examples = (double)accumulate_scalar(all, weighted_unlabeled_examples);
-    float example_number = (float)all.sd->example_number;
-    all.sd->example_number = (uint64_t)accumulate_scalar(all, example_number);
-    float total_features = (float)all.sd->total_features;
-    all.sd->total_features = (uint64_t)accumulate_scalar(all, total_features);
+    float loss = static_cast<float>(all.sd->sum_loss);
+    all.sd->sum_loss = static_cast<double>(accumulate_scalar(all, loss));
+    float weighted_labeled_examples = static_cast<float>(all.sd->weighted_labeled_examples);
+    all.sd->weighted_labeled_examples = static_cast<double>(accumulate_scalar(all, weighted_labeled_examples));
+    float weighted_labels = static_cast<float>(all.sd->weighted_labels);
+    all.sd->weighted_labels = static_cast<double>(accumulate_scalar(all, weighted_labels));
+    float weighted_unlabeled_examples = static_cast<float>(all.sd->weighted_unlabeled_examples);
+    all.sd->weighted_unlabeled_examples = static_cast<double>(accumulate_scalar(all, weighted_unlabeled_examples));
+    float example_number = static_cast<float>(all.sd->example_number);
+    all.sd->example_number = static_cast<uint64_t>(accumulate_scalar(all, example_number));
+    float total_features = static_cast<float>(all.sd->total_features);
+    all.sd->total_features = static_cast<uint64_t>(accumulate_scalar(all, total_features));
   }
 }
 
@@ -2033,6 +2024,7 @@ void finish(vw& all, bool delete_all)
   }
 
   metrics::output_metrics(all);
+  logger::log_summary();
 
   if (delete_all) delete &all;
 

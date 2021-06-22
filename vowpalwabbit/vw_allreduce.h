@@ -4,8 +4,10 @@
 
 #pragma once
 
-#include "vw.h"
+#include <cstddef>
+
 #include "allreduce.h"
+#include "global_data.h"
 
 template <class T, void (*f)(T&, const T&)>
 void all_reduce(vw& all, T* buffer, const size_t n)

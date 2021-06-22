@@ -29,11 +29,9 @@ struct metrics_data
   std::string out_file;
   size_t learn_count = 0;
   size_t predict_count = 0;
-  size_t predicted_first_option = 0;
-  size_t predicted_not_first = 0;
 };
 
-void list_to_json_file(std::string filename, std::vector<std::tuple<std::string, size_t>>& metrics)
+void list_to_json_file(dsjson_metrics* ds_metrics, std::string filename, metric_sink& metrics)
 {
   FILE* fp;
 
@@ -44,11 +42,36 @@ void list_to_json_file(std::string filename, std::vector<std::tuple<std::string,
     Writer<FileWriteStream> writer(os);
 
     writer.StartObject();
-    for (std::tuple<std::string, size_t> m : metrics)
+    for (const auto& m : metrics.int_metrics_list)
     {
-      writer.Key(std::get<0>(m).c_str());
-      writer.Int64(static_cast<int32_t>(std::get<1>(m)));
+      writer.Key(m.first.c_str());
+      writer.Uint64(m.second);
     }
+    for (const auto& m : metrics.float_metrics_list)
+    {
+      writer.Key(m.first.c_str());
+      writer.Double(static_cast<double>(m.second));
+    }
+
+    // ds_metrics is nullptr when --dsjson is disabled
+    if (ds_metrics)
+    {
+      writer.Key("number_skipped_events");
+      writer.Int64(ds_metrics->NumberOfSkippedEvents);
+      writer.Key("number_events_zero_actions");
+      writer.Int64(ds_metrics->NumberOfEventsZeroActions);
+      writer.Key("line_parse_error");
+      writer.Int64(ds_metrics->LineParseError);
+      writer.Key("first_event_id");
+      writer.String(ds_metrics->FirstEventId.c_str());
+      writer.Key("first_event_time");
+      writer.String(ds_metrics->FirstEventTime.c_str());
+      writer.Key("last_event_id");
+      writer.String(ds_metrics->LastEventId.c_str());
+      writer.Key("last_event_time");
+      writer.String(ds_metrics->LastEventTime.c_str());
+    }
+
     writer.EndObject();
 
     fclose(fp);
@@ -64,43 +87,17 @@ void output_metrics(vw& all)
   if (all.options->was_supplied("extra_metrics"))
   {
     std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
-    std::vector<std::tuple<std::string, size_t>> list_metrics;
+    metric_sink list_metrics;
 
     all.l->persist_metrics(list_metrics);
 
 #ifdef BUILD_EXTERNAL_PARSER
-    if (all.external_parser)
-    {
-      all.external_parser->persist_metrics(list_metrics);
-      // fetch metrics of parser
-    }
+    if (all.external_parser) { all.external_parser->persist_metrics(list_metrics.int_metrics_list); }
 #endif
 
-    list_to_json_file(filename, list_metrics);
-  }
-}
+    list_metrics.int_metrics_list.emplace_back("total_log_calls", logger::get_log_count());
 
-void count_post_predict(metrics_data& data, prediction_type_t pred_type, example& ec)
-{
-  if (pred_type == prediction_type_t::multiclass)
-  {
-    if (ec.pred.multiclass == 1) { data.predicted_first_option++; }
-    else
-    {
-      data.predicted_not_first++;
-    }
-  }
-}
-
-void count_post_predict(metrics_data& data, prediction_type_t pred_type, multi_ex& ec)
-{
-  if (pred_type == prediction_type_t::action_probs)
-  {
-    if (ec[0]->pred.a_s[0].action == 0) { data.predicted_first_option++; }
-    else
-    {
-      data.predicted_not_first++;
-    }
+    list_to_json_file(all.example_parser->metrics.get(), filename, list_metrics);
   }
 }
 
@@ -117,16 +114,12 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
     data.predict_count++;
     base.predict(ec);
   }
-
-  if (!is_learn || base.learn_returns_prediction) { count_post_predict(data, base.pred_type, ec); }
 }
 
-void persist(metrics_data& data, std::vector<std::tuple<std::string, size_t>>& metrics)
+void persist(metrics_data& data, metric_sink& metrics)
 {
-  metrics.emplace_back("total_predict_calls", data.predict_count);
-  metrics.emplace_back("total_learn_calls", data.learn_count);
-  metrics.emplace_back("predicted_baseline_first", data.predicted_first_option);
-  metrics.emplace_back("predicted_not_first", data.predicted_not_first);
+  metrics.int_metrics_list.emplace_back("total_predict_calls", data.predict_count);
+  metrics.int_metrics_list.emplace_back("total_learn_calls", data.learn_count);
 }
 
 VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)

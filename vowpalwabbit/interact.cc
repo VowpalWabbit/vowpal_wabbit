@@ -18,7 +18,6 @@ struct interact
   features feat_store;
   vw* all;
   float n1_feat_sq;
-  float total_sum_feat_sq;
   size_t num_features;
 };
 
@@ -31,13 +30,13 @@ bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, inte
   {
     // Anchor feature must be a number instead of text so that the relative offsets functions correctly but I don't
     // think we are able to test for this here.
-    *(all.trace_message) << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
+    *(all.trace_message) << "Namespace '" << static_cast<char>(in.n1) << "' misses anchor feature with value 1";
     return false;
   }
 
   if (f_src2.values[0] != 1)
   {
-    *(all.trace_message) << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
+    *(all.trace_message) << "Namespace '" << static_cast<char>(in.n2) << "' misses anchor feature with value 1";
     return false;
   }
 
@@ -61,8 +60,8 @@ void multiply(features& f_dest, features& f_src2, interact& in)
   for (size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();)
   {
     // calculating the relative offset from the namespace offset used to match features
-    uint64_t cur_id1 = (uint64_t)(((f_src1.indicies[i1] & weight_mask) - base_id1) & weight_mask);
-    uint64_t cur_id2 = (uint64_t)(((f_src2.indicies[i2] & weight_mask) - base_id2) & weight_mask);
+    uint64_t cur_id1 = static_cast<uint64_t>(((f_src1.indicies[i1] & weight_mask) - base_id1) & weight_mask);
+    uint64_t cur_id2 = static_cast<uint64_t>(((f_src2.indicies[i2] & weight_mask) - base_id2) & weight_mask);
 
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
@@ -109,16 +108,13 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   }
 
   in.num_features = ec.num_features;
-  in.total_sum_feat_sq = ec.total_sum_feat_sq;
-  ec.total_sum_feat_sq -= f1.sum_feat_sq;
-  ec.total_sum_feat_sq -= f2.sum_feat_sq;
   ec.num_features -= f1.size();
   ec.num_features -= f2.size();
 
-  in.feat_store.deep_copy_from(f1);
+  in.feat_store = f1;
 
   multiply(f1, f2, in);
-  ec.total_sum_feat_sq += f1.sum_feat_sq;
+  ec.reset_total_sum_feat_sq();
   ec.num_features += f1.size();
 
   // remove 2nd namespace
@@ -139,8 +135,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   // re-insert namespace into the right position
   if (n2_i < indices_original_size) { ec.indices.insert(ec.indices.begin() + n2_i, in.n2); }
 
-  f1.deep_copy_from(in.feat_store);
-  ec.total_sum_feat_sq = in.total_sum_feat_sq;
+  f1 = in.feat_store;
   ec.num_features = in.num_features;
 }
 
@@ -163,8 +158,8 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 
   auto data = scoped_calloc_or_throw<interact>();
 
-  data->n1 = (unsigned char)s[0];
-  data->n2 = (unsigned char)s[1];
+  data->n1 = static_cast<unsigned char>(s[0]);
+  data->n2 = static_cast<unsigned char>(s[1]);
   logger::errlog_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
   data->all = &all;
 

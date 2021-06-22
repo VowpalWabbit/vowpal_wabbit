@@ -16,6 +16,7 @@
 #include "vw.h"
 #include "v_array.h"
 #include "future_compat.h"
+#include "example.h"
 
 #include "io/logger.h"
 
@@ -115,7 +116,7 @@ void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool o
     else
     {
       diag_kronecker_prod_fs_test(ec1.feature_space[c1], ec2.feature_space[c2], ec.feature_space[c1],
-          ec.total_sum_feat_sq, ec1.total_sum_feat_sq, ec2.total_sum_feat_sq);
+          ec.total_sum_feat_sq, ec1.get_total_sum_feat_sq(), ec2.get_total_sum_feat_sq());
       idx1++;
       idx2++;
     }
@@ -230,8 +231,8 @@ struct memory_tree
   ~memory_tree()
   {
     // nodes.delete_v();
-    for (auto* ex : examples) { VW::dealloc_examples(ex, 1); }
-    if (kprod_ec) { VW::dealloc_examples(kprod_ec, 1); }
+    for (auto* ex : examples) { ::VW::dealloc_examples(ex, 1); }
+    if (kprod_ec) { ::VW::dealloc_examples(kprod_ec, 1); }
   }
 };
 
@@ -239,8 +240,8 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
 {
   float dotprod = 0;
 
-  features& fs_1 = (features&)fec1->fs;
-  features& fs_2 = (features&)fec2->fs;
+  features& fs_1 = const_cast<features&>(fec1->fs);
+  features& fs_2 = const_cast<features&>(fec2->fs);
   if (fs_2.indicies.size() == 0) return 0.f;
 
   for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
@@ -293,7 +294,7 @@ void init_tree(memory_tree& b)
   b.nodes[0].internal = -1;  // mark the root as leaf
   b.nodes[0].base_router = (b.routers_used++);
 
-  b.kprod_ec = VW::alloc_examples(1);  // allocate space for kronecker product example
+  b.kprod_ec = ::VW::alloc_examples(1);  // allocate space for kronecker product example
 
   b.total_num_queries = 0;
   b.max_routers = b.max_nodes;
@@ -397,8 +398,8 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
   float prediction = ec.pred.scalar;
   // float imp_weight = 1.f; //no importance weight.
 
-  float weighted_value =
-      (float)((1. - b.alpha) * log(b.nodes[cn].nl / (b.nodes[cn].nr + 1e-1)) / log(2.) + b.alpha * prediction);
+  float weighted_value = static_cast<float>(
+      (1. - b.alpha) * log(b.nodes[cn].nl / (b.nodes[cn].nr + 1e-1)) / log(2.) + b.alpha * prediction);
   float route_label = weighted_value < 0.f ? -1.f : 1.f;
 
   // ec.l.simple = {route_label, imp_weight, 0.f};
@@ -433,11 +434,11 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
 {
   // create two children
   b.nodes[cn].internal = 1;  // swith to internal node.
-  uint32_t left_child = (uint32_t)b.nodes.size();
+  uint32_t left_child = static_cast<uint32_t>(b.nodes.size());
   b.nodes.push_back(node());
   b.nodes[left_child].internal = -1;  // left leaf
   b.nodes[left_child].base_router = (b.routers_used++);
-  uint32_t right_child = (uint32_t)b.nodes.size();
+  uint32_t right_child = static_cast<uint32_t>(b.nodes.size());
   b.nodes.push_back(node());
   b.nodes[right_child].internal = -1;  // right leaf
   b.nodes[right_child].base_router = (b.routers_used++);
@@ -512,7 +513,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
   b.nodes[cn].nr = std::max(double(b.nodes[right_child].examples_index.size()), 0.001);  // avoid to set nr to zero
 
   if (std::max(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
-  { b.max_ex_in_leaf = (size_t)std::max(b.nodes[cn].nl, b.nodes[cn].nr); }
+  { b.max_ex_in_leaf = static_cast<size_t>(std::max(b.nodes[cn].nl, b.nodes[cn].nr)); }
 }
 
 int compare_label(const void* a, const void* b) { return *(uint32_t*)a - *(uint32_t*)b; }
@@ -548,7 +549,7 @@ inline uint32_t over_lap(v_array<uint32_t>& array_1, v_array<uint32_t>& array_2)
 inline uint32_t hamming_loss(v_array<uint32_t>& array_1, v_array<uint32_t>& array_2)
 {
   uint32_t overlap = over_lap(array_1, array_2);
-  return (uint32_t)(array_1.size() + array_2.size() - 2 * overlap);
+  return static_cast<uint32_t>(array_1.size() + array_2.size() - 2 * overlap);
 }
 
 void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, v_array<uint32_t>& leaf_labs)
@@ -636,7 +637,7 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, ex
       if (score > max_score)
       {
         max_score = score;
-        max_pos = (int64_t)loc;
+        max_pos = static_cast<int64_t>(loc);
       }
     }
     return max_pos;
@@ -648,15 +649,15 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, ex
 // for any two examples, use number of overlap labels to indicate the similarity between these two examples.
 float get_overlap_from_two_examples(example& ec1, example& ec2)
 {
-  return (float)over_lap(ec1.l.multilabels.label_v, ec2.l.multilabels.label_v);
+  return static_cast<float>(over_lap(ec1.l.multilabels.label_v, ec2.l.multilabels.label_v));
 }
 
 // we use F1 score as the reward signal
 float F1_score_for_two_examples(example& ec1, example& ec2)
 {
   float num_overlaps = get_overlap_from_two_examples(ec1, ec2);
-  float v1 = (float)(num_overlaps / (1e-7 + ec1.l.multilabels.label_v.size() * 1.));
-  float v2 = (float)(num_overlaps / (1e-7 + ec2.l.multilabels.label_v.size() * 1.));
+  float v1 = static_cast<float>(num_overlaps / (1e-7 + ec1.l.multilabels.label_v.size() * 1.));
+  float v2 = static_cast<float>(num_overlaps / (1e-7 + ec2.l.multilabels.label_v.size() * 1.));
   if (num_overlaps == 0.f)
     return 0.f;
   else
@@ -728,7 +729,7 @@ void predict(memory_tree& b, single_learner& base, example& ec)
       b.F1_score += reward;
     }
     v_array<uint32_t> selected_labs = v_init<uint32_t>();
-    ec.loss = (float)compute_hamming_loss_via_oas(b, base, cn, ec, selected_labs);
+    ec.loss = static_cast<float>(compute_hamming_loss_via_oas(b, base, cn, ec, selected_labs));
     b.hamming_loss += ec.loss;
   }
 }
@@ -891,7 +892,8 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
   if (path_to_leaf.size() > 1)
   {
     // uint32_t random_pos = merand48(b._random_state->get_current_state())*(path_to_leaf.size()-1);
-    uint32_t random_pos = (uint32_t)(b._random_state->get_and_update_random() * (path_to_leaf.size()));  // include leaf
+    uint32_t random_pos =
+        static_cast<uint32_t>(b._random_state->get_and_update_random() * (path_to_leaf.size()));  // include leaf
     uint64_t cn = path_to_leaf[random_pos];
 
     if (b.nodes[cn].internal != -1)
@@ -903,14 +905,14 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
       if (coin == -1.f)
       {  // go left
         float reward_left_subtree = return_reward_from_node(b, base, b.nodes[cn].left, ec, weight);
-        objective = (float)((1. - b.alpha) * log(b.nodes[cn].nl / b.nodes[cn].nr) +
+        objective = static_cast<float>((1. - b.alpha) * log(b.nodes[cn].nl / b.nodes[cn].nr) +
             b.alpha * (-reward_left_subtree / (1. - prob_right)) / 2.);
       }
       else
       {  // go right:
         float reward_right_subtree = return_reward_from_node(b, base, b.nodes[cn].right, ec, weight);
-        objective = (float)((1. - b.alpha) * log(b.nodes[cn].nl / b.nodes[cn].nr) +
-            b.alpha * (reward_right_subtree / prob_right) / 2.);
+        objective = static_cast<float>(
+            (1. - b.alpha) * log(b.nodes[cn].nl / b.nodes[cn].nr) + b.alpha * (reward_right_subtree / prob_right) / 2.);
       }
 
       float ec_input_weight = ec.weight;
@@ -928,7 +930,7 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
         preds = ec.pred.multilabels;
       }
 
-      ec.weight = fabs(objective);
+      ec.weight = std::fabs(objective);
       if (ec.weight >= 100.f)  // crop the weight, otherwise sometimes cause NAN outputs.
         ec.weight = 100.f;
       else if (ec.weight < .01f)
@@ -1046,15 +1048,16 @@ void learn(memory_tree& b, single_learner& base, example& ec)
       copy_example_data(new_ec, &ec, b.oas);
       b.examples.push_back(new_ec);
       if (b.online == true)
-        update_rew(b, base, (uint32_t)(b.examples.size() - 1), *b.examples[b.examples.size() - 1]);  // query and learn
+        update_rew(b, base, static_cast<uint32_t>(b.examples.size() - 1),
+            *b.examples[b.examples.size() - 1]);  // query and learn
 
-      insert_example(b, base, (uint32_t)(b.examples.size() - 1));  // unsupervised learning.
+      insert_example(b, base, static_cast<uint32_t>(b.examples.size() - 1));  // unsupervised learning.
       for (uint32_t i = 0; i < b.dream_repeats; i++) experience_replay(b, base);
     }
     else
     {  // starting from the current pass, we just learn using reinforcement signal, no insertion needed:
       size_t ec_id = (b.iter) % b.examples.size();
-      update_rew(b, base, (uint32_t)ec_id, *b.examples[ec_id]);  // no insertion will happen in this call
+      update_rew(b, base, static_cast<uint32_t>(ec_id), *b.examples[ec_id]);  // no insertion will happen in this call
       for (uint32_t i = 0; i < b.dream_repeats; i++) experience_replay(b, base);
     }
     b.construct_time += float(clock() - begin) / CLOCKS_PER_SEC;
@@ -1252,7 +1255,7 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
   tree->current_pass = 0;
   tree->final_pass = all.numpasses;
 
-  tree->max_leaf_examples = (size_t)(tree->leaf_example_multiplier * (log(tree->max_nodes) / log(2)));
+  tree->max_leaf_examples = static_cast<size_t>(tree->leaf_example_multiplier * (log(tree->max_nodes) / log(2)));
 
   init_tree(*tree);
 

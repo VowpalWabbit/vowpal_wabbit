@@ -447,6 +447,22 @@ void my_run_parser(vw_ptr all)
   VW::end_parser(*all);
 }
 
+py::dict get_learner_metrics(vw_ptr all)
+{
+  py::dict dictionary;
+
+  if (all->options->was_supplied("extra_metrics"))
+  {
+    VW::metric_sink metrics;
+    all->l->persist_metrics(metrics);
+
+    for (const auto& m : metrics.int_metrics_list) { dictionary[m.first] = m.second; }
+    for (const auto& m : metrics.float_metrics_list) { dictionary[m.first] = m.second; }
+  }
+
+  return dictionary;
+}
+
 void my_finish(vw_ptr all)
 {
   VW::finish(*all, false);  // don't delete all because python will do that for us!
@@ -724,7 +740,7 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
 {  // warning: assumes namespace exists!
   ec->feature_space[ns].push_back(v, fid);
   ec->num_features++;
-  ec->total_sum_feat_sq += v * v;
+  ec->reset_total_sum_feat_sq();
 }
 
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
@@ -732,7 +748,6 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
   char ns_str[2] = {(char)ns, 0};
   uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0;
-  float sum_sq = 0.;
   for (ssize_t i = 0; i < len(a); i++)
   {
     feature f = {1., 0};
@@ -784,12 +799,11 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       {
         ec->feature_space[ns].push_back(f.x, f.weight_index);
         count++;
-        sum_sq += f.x * f.x;
       }
     }
   }
   ec->num_features += count;
-  ec->total_sum_feat_sq += sum_sq;
+  ec->reset_total_sum_feat_sq();
 }
 
 void ex_push_namespace(example_ptr ec, unsigned char ns) { ec->indices.push_back(ns); }
@@ -835,14 +849,14 @@ bool ex_pop_feature(example_ptr ec, unsigned char ns)
   if (ec->feature_space[ns].space_names.size() > 0) ec->feature_space[ns].space_names.pop_back();
   ec->num_features--;
   ec->feature_space[ns].sum_feat_sq -= val * val;
-  ec->total_sum_feat_sq -= val * val;
+  ec->reset_total_sum_feat_sq();
   return true;
 }
 
 void ex_erase_namespace(example_ptr ec, unsigned char ns)
 {
   ec->num_features -= ec->feature_space[ns].size();
-  ec->total_sum_feat_sq -= ec->feature_space[ns].sum_feat_sq;
+  ec->reset_total_sum_feat_sq();
   ec->feature_space[ns].sum_feat_sq = 0.;
   ec->feature_space[ns].clear();
 }
@@ -863,7 +877,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   vw& all = *vwP;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
-  ae->total_sum_feat_sq = 0;
+  ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
 
   if (all.ignore_some) { THROW("error: cannot unsetup example when some namespaces are ignored!"); }
@@ -1029,13 +1043,13 @@ py::tuple examples_get_cb_label_from_adf(ExList examples)
 // example_counter is being overriden by lableType!
 size_t get_example_counter(example_ptr ec) { return ec->example_counter; }
 uint64_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
-size_t get_num_features(example_ptr ec) { return ec->num_features; }
+size_t get_num_features(example_ptr ec) { return ec->get_num_features(); }
 float get_partial_prediction(example_ptr ec) { return ec->partial_prediction; }
 void set_partial_prediction(example_ptr ec, float value) { ec->partial_prediction = value; }
 float get_updated_prediction(example_ptr ec) { return ec->updated_prediction; }
 float get_loss(example_ptr ec) { return ec->loss; }
 void set_loss(example_ptr ec, float fl) { ec->loss = fl; }
-float get_total_sum_feat_sq(example_ptr ec) { return ec->total_sum_feat_sq; }
+float get_total_sum_feat_sq(example_ptr ec) { return ec->get_total_sum_feat_sq(); }
 
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
@@ -1336,6 +1350,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("__init__", py::make_constructor(my_initialize_with_pyred))
       //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
       .def("run_parser", &my_run_parser, "parse external data file")
+      .def("get_learner_metrics", &get_learner_metrics,
+          "get current learner stack metrics. returns empty dict if --extra_metrics was not supplied.")
       .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
       .def("save", &my_save, "save model to filename")
       .def("learn", &my_learn, "given a pyvw example, learn (and predict) on that example")

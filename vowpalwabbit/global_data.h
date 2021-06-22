@@ -46,6 +46,8 @@
 #include "hashstring.h"
 #include "decision_scores.h"
 #include "feature_group.h"
+#include "rand_state.h"
+#include "allreduce.h"
 
 #include "options.h"
 #include "version.h"
@@ -75,24 +77,10 @@ enum AllReduceType
 
 class AllReduce;
 
-struct rand_state
-{
-private:
-  uint64_t random_state;
-
-public:
-  constexpr rand_state() : random_state(0) {}
-  rand_state(uint64_t initial) : random_state(initial) {}
-  constexpr uint64_t get_current_state() const noexcept { return random_state; }
-  float get_and_update_random() { return merand48(random_state); }
-  float get_and_update_gaussian() { return merand48_boxmuller(random_state); }
-  float get_random() const { return merand48_noadvance(random_state); }
-  void set_random_state(uint64_t initial) noexcept { random_state = initial; }
-};
-
 struct vw_logger
 {
   bool quiet;
+  size_t upper_limit;
 
   vw_logger() : quiet(false) {}
 
@@ -234,7 +222,7 @@ public:
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  namespace_interactions interactions;
+  std::vector<std::vector<namespace_index>> interactions;
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
@@ -287,7 +275,7 @@ public:
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
 
-  size_t length() { return ((size_t)1) << num_bits; };
+  size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
   std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
   std::vector<std::string> enabled_reductions;

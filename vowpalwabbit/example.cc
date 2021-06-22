@@ -7,6 +7,20 @@
 #include "example.h"
 #include "gd.h"
 #include "simple_label_parser.h"
+#include "interactions.h"
+
+float calculate_total_sum_features_squared(bool permutations, example& ec)
+{
+  float sum_features_squared = 0.f;
+  for (const features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
+
+  size_t ignored_interacted_feature_count = 0;
+  float calculated_sum_features_squared = 0.f;
+  INTERACTIONS::eval_count_of_generated_ft(permutations, *ec.interactions, ec.feature_space,
+      ignored_interacted_feature_count, calculated_sum_features_squared);
+  sum_features_squared += calculated_sum_features_squared;
+  return sum_features_squared;
+}
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
@@ -22,7 +36,7 @@ VW_WARNING_STATE_POP
 
 float collision_cleanup(features& fs)
 {
-  uint64_t last_index = (uint64_t)-1;
+  uint64_t last_index = static_cast<uint64_t>(-1);
   float sum_sq = 0.f;
   features::iterator pos = fs.begin();
   for (features::iterator& f : fs)
@@ -69,8 +83,7 @@ void copy_example_metadata(example* dst, const example* src)
     dst->passthrough = nullptr;
   else
   {
-    dst->passthrough = new features;
-    dst->passthrough->deep_copy_from(*src->passthrough);
+    dst->passthrough = new features(*src->passthrough);
   }
   dst->loss = src->loss;
   dst->weight = src->weight;
@@ -87,9 +100,11 @@ void copy_example_data(example* dst, const example* src)
 
   // copy feature data
   dst->indices = src->indices;
-  for (namespace_index c : src->indices) dst->feature_space[c].deep_copy_from(src->feature_space[c]);
+  for (namespace_index c : src->indices) dst->feature_space[c] = src->feature_space[c];
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
+  dst->total_sum_feat_sq_calculated = src->total_sum_feat_sq_calculated;
+  dst->use_permutations = src->use_permutations;
   dst->interactions = src->interactions;
   dst->_debug_current_reduction_depth = src->_debug_current_reduction_depth;
 }
@@ -125,10 +140,10 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
   auto& fsrc = src->feature_space[c];
 
   src->num_features -= fsrc.size();
-  src->total_sum_feat_sq -= fsrc.sum_feat_sq;
+  src->reset_total_sum_feat_sq();
   std::swap(fdst, fsrc);
   dst->num_features += fdst.size();
-  dst->total_sum_feat_sq += fdst.sum_feat_sq;
+  dst->reset_total_sum_feat_sq();
 }
 
 }  // namespace VW
@@ -142,7 +157,7 @@ struct features_and_source
 
 void vec_store(features_and_source& p, float fx, uint64_t fi)
 {
-  p.feature_map.push_back(feature(fx, (uint64_t)(fi >> p.stride_shift) & p.mask));
+  p.feature_map.push_back(feature(fx, (fi >> p.stride_shift) & p.mask));
 }
 
 namespace VW
@@ -151,7 +166,7 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 {
   features_and_source fs;
   fs.stride_shift = all.weights.stride_shift();
-  fs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
+  fs.mask = all.weights.mask() >> all.weights.stride_shift();
   fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
@@ -171,7 +186,7 @@ struct full_features_and_source
 
 void vec_ffs_store(full_features_and_source& p, float fx, uint64_t fi)
 {
-  p.fs.push_back(fx, (uint64_t)(fi >> p.stride_shift) & p.mask);
+  p.fs.push_back(fx, (fi >> p.stride_shift) & p.mask);
 }
 
 flat_example* flatten_example(vw& all, example* ec)
@@ -194,9 +209,9 @@ flat_example* flatten_example(vw& all, example* ec)
   full_features_and_source ffs;
   ffs.stride_shift = all.weights.stride_shift();
   if (all.weights.not_null())  // TODO:temporary fix. all.weights is not initialized at this point in some cases.
-    ffs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
+    ffs.mask = all.weights.mask() >> all.weights.stride_shift();
   else
-    ffs.mask = (uint64_t)LONG_MAX >> all.weights.stride_shift();
+    ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift();
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   std::swap(fec.fs, ffs.fs);

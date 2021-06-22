@@ -157,7 +157,10 @@ public:
 
   // You can definitely call read directly on the reader object. This function hasn't been changed yet to reduce churn
   // in the refactor.
-  static ssize_t read_file(VW::io::reader* f, void* buf, size_t nbytes) { return f->read((char*)buf, nbytes); }
+  static ssize_t read_file(VW::io::reader* f, void* buf, size_t nbytes)
+  {
+    return f->read(static_cast<char*>(buf), nbytes);
+  }
 
   ssize_t fill(VW::io::reader* f)
   {
@@ -186,7 +189,7 @@ public:
   size_t unflushed_bytes_count() { return head - _buffer._begin; }
 
   void flush();
-  
+
   bool close_file()
   {
     if (!input_files.empty())
@@ -209,6 +212,36 @@ public:
     while (close_file()) {}
   }
 
+  template <typename T>
+  void write_value(const T& value)
+  {
+    char* c;
+    buf_write(c, sizeof(T));
+    *reinterpret_cast<T*>(c) = value;
+    c += sizeof(T);
+    set(c);
+  }
+
+  template <typename T>
+  T read_value(const char* debug_name = nullptr)
+  {
+    char* c;
+    T value;
+    if (buf_read(c, sizeof(T)) < sizeof(T))
+    {
+      if (debug_name != nullptr)
+      { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
+      else
+      {
+        THROW("Failed to read cache value with size: " << sizeof(T));
+      }
+    }
+    value = *reinterpret_cast<T*>(c);
+    c += sizeof(T);
+    set(c);
+    return value;
+  }
+
   void buf_write(char*& pointer, size_t n);
   size_t buf_read(char*& pointer, size_t n);
 
@@ -223,7 +256,7 @@ public:
       len = buf_read(p, len);
 
       // compute hash for check-sum
-      if (_verify_hash) { _hash = (uint32_t)uniform_hash(p, len, _hash); }
+      if (_verify_hash) { _hash = static_cast<uint32_t>(uniform_hash(p, len, _hash)); }
 
       if (*read_message == '\0') { memcpy(data, p, len); }
       else if (memcmp(data, p, len) != 0)
@@ -243,7 +276,7 @@ public:
       memcpy(p, data, len);
 
       // compute hash for check-sum
-      if (_verify_hash) { _hash = (uint32_t)uniform_hash(p, len, _hash); }
+      if (_verify_hash) { _hash = static_cast<uint32_t>(uniform_hash(p, len, _hash)); }
     }
     return len;
   }
@@ -258,7 +291,7 @@ public:
 inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_message)
 {
   uint32_t obj_len;
-  size_t ret = i.bin_read_fixed((char*)&obj_len, sizeof(obj_len), "");
+  size_t ret = i.bin_read_fixed(reinterpret_cast<char*>(&obj_len), sizeof(obj_len), "");
   if (obj_len > len || ret < sizeof(uint32_t)) THROW("bad model format!");
 
   ret += i.bin_read_fixed(data, obj_len, read_message);
@@ -268,7 +301,7 @@ inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_messa
 
 inline size_t bin_write(io_buf& o, const char* data, uint32_t len)
 {
-  o.bin_write_fixed((char*)&len, sizeof(len));
+  o.bin_write_fixed(reinterpret_cast<char*>(&len), sizeof(len));
   o.bin_write_fixed(data, len);
   return (len + sizeof(len));
 }
@@ -281,7 +314,7 @@ inline size_t bin_text_write(io_buf& io, char* data, size_t len, std::stringstre
     msg.str("");
     return temp;
   }
-  return bin_write(io, data, (uint32_t)len);
+  return bin_write(io, data, static_cast<uint32_t>(len));
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)

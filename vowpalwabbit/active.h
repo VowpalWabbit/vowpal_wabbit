@@ -6,8 +6,7 @@
 
 #include <memory>
 #include "reductions_fwd.h"
-
-struct rand_state;
+#include "rand_state.h"
 
 struct active
 {

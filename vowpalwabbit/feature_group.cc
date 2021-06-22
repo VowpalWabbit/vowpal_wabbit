@@ -27,14 +27,9 @@ void features::clear()
   space_names.clear();
 }
 
-void features::truncate_to(const features_value_iterator& pos)
-{
-  auto i = pos._begin - values.begin();
-  values.resize_but_with_stl_behavior(i);
-  if (indicies.end() != indicies.begin()) { indicies.resize_but_with_stl_behavior(i); }
+void features::truncate_to(const iterator& pos) { truncate_to(std::distance(begin(), pos)); }
 
-  if (space_names.begin() != space_names.end()) { space_names.erase(space_names.begin() + i, space_names.end()); }
-}
+void features::truncate_to(const audit_iterator& pos) { truncate_to(std::distance(audit_begin(), pos)); }
 
 void features::truncate_to(size_t i)
 {
@@ -42,6 +37,27 @@ void features::truncate_to(size_t i)
   if (indicies.end() != indicies.begin()) { indicies.resize_but_with_stl_behavior(i); }
 
   if (space_names.size() > i) { space_names.erase(space_names.begin() + i, space_names.end()); }
+}
+
+void features::concat(const features& other)
+{
+  if (other.empty()) { return; }
+
+  // Conditions to check:
+  //  - !empty() && audit && other.audit -> push val, idx, audit
+  //  - !empty() && audit && !other.audit -> fail
+  //  - !empty() && !audit && other.audit -> fail
+  //  - !empty() && !audit && !other.audit -> push val, idx
+  //  - empty() && other.audit -> push val, idx, audit
+  //  - empty() && !other.audit -> push val, idx
+
+  if (!empty() && (space_names.empty() != other.space_names.empty()))
+  { THROW_OR_RETURN_VOID("Cannot merge two feature groups if one has audit info and the other does not."); }
+  values.insert(values.end(), other.values.begin(), other.values.end());
+  indicies.insert(indicies.end(), other.indicies.begin(), other.indicies.end());
+
+  if (!other.space_names.empty())
+  { space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end()); }
 }
 
 void features::push_back(feature_value v, feature_index i)

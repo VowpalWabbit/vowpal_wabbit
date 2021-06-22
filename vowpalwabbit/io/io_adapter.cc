@@ -232,7 +232,7 @@ ssize_t socket_adapter::read(char* buffer, size_t num_bytes)
 #ifdef _WIN32
   return recv(_socket_fd, buffer, (int)(num_bytes), 0);
 #else
-  return ::read(_socket_fd, buffer, (unsigned int)num_bytes);
+  return ::read(_socket_fd, buffer, static_cast<unsigned int>(num_bytes));
 #endif
 }
 
@@ -241,7 +241,7 @@ ssize_t socket_adapter::write(const char* buffer, size_t num_bytes)
 #ifdef _WIN32
   return send(_socket_fd, buffer, (int)(num_bytes), 0);
 #else
-  return ::write(_socket_fd, buffer, (unsigned int)num_bytes);
+  return ::write(_socket_fd, buffer, static_cast<unsigned int>(num_bytes));
 #endif
 }
 
@@ -314,7 +314,7 @@ ssize_t file_adapter::read(char* buffer, size_t num_bytes)
 #ifdef _WIN32
   return ::_read(_file_descriptor, buffer, (unsigned int)num_bytes);
 #else
-  return ::read(_file_descriptor, buffer, (unsigned int)num_bytes);
+  return ::read(_file_descriptor, buffer, static_cast<unsigned int>(num_bytes));
 #endif
 }
 
@@ -324,7 +324,7 @@ ssize_t file_adapter::write(const char* buffer, size_t num_bytes)
 #ifdef _WIN32
   return ::_write(_file_descriptor, buffer, (unsigned int)num_bytes);
 #else
-  return ::write(_file_descriptor, buffer, (unsigned int)num_bytes);
+  return ::write(_file_descriptor, buffer, static_cast<unsigned int>(num_bytes));
 #endif
 }
 
@@ -372,16 +372,16 @@ ssize_t gzip_file_adapter::read(char* buffer, size_t num_bytes)
 {
   assert(_mode == file_mode::read);
 
-  auto num_read = gzread(_gz_file, buffer, (unsigned int)num_bytes);
-  return (num_read > 0) ? (size_t)num_read : 0;
+  auto num_read = gzread(_gz_file, buffer, static_cast<unsigned int>(num_bytes));
+  return (num_read > 0) ? static_cast<size_t>(num_read) : 0;
 }
 
 ssize_t gzip_file_adapter::write(const char* buffer, size_t num_bytes)
 {
   assert(_mode == file_mode::write);
 
-  auto num_written = gzwrite(_gz_file, buffer, (unsigned int)num_bytes);
-  return (num_written > 0) ? (size_t)num_written : 0;
+  auto num_written = gzwrite(_gz_file, buffer, static_cast<unsigned int>(num_bytes));
+  return (num_written > 0) ? static_cast<size_t>(num_written) : 0;
 }
 
 void gzip_file_adapter::reset() { gzseek(_gz_file, 0, SEEK_SET); }
@@ -409,14 +409,14 @@ gzip_stdio_adapter::~gzip_stdio_adapter()
 
 ssize_t gzip_stdio_adapter::read(char* buffer, size_t num_bytes)
 {
-  auto num_read = gzread(_gz_stdin, buffer, (unsigned int)num_bytes);
-  return (num_read > 0) ? (size_t)num_read : 0;
+  auto num_read = gzread(_gz_stdin, buffer, static_cast<unsigned int>(num_bytes));
+  return (num_read > 0) ? static_cast<size_t>(num_read) : 0;
 }
 
 ssize_t gzip_stdio_adapter::write(const char* buffer, size_t num_bytes)
 {
-  auto num_written = gzwrite(_gz_stdout, buffer, (unsigned int)num_bytes);
-  return (num_written > 0) ? (size_t)num_written : 0;
+  auto num_written = gzwrite(_gz_stdout, buffer, static_cast<unsigned int>(num_bytes));
+  return (num_written > 0) ? static_cast<size_t>(num_written) : 0;
 }
 
 //

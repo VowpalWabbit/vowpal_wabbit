@@ -21,6 +21,7 @@
 #include "reductions_fwd.h"
 #include "vw_math.h"
 #include "shared_data.h"
+#include "metric_sink.h"
 
 namespace VW
 {
@@ -63,6 +64,22 @@ inline size_t fill_tied(const v_array<ACTION_SCORE::action_score>& preds)
   return ret;
 }
 
+struct cb_explore_metrics
+{
+  size_t metric_labeled = 0;
+  size_t metric_predict_in_learn = 0;
+  float metric_sum_cost = 0.0;
+  float metric_sum_cost_first = 0.0;
+  size_t label_action_first_option = 0;
+  size_t label_action_not_first = 0;
+  size_t count_non_zero_cost = 0;
+  size_t sum_features = 0;
+  size_t sum_actions = 0;
+  size_t min_actions = SIZE_MAX;
+  size_t max_actions = 0;
+  size_t sum_namespaces = 0;
+};
+
 // Object
 template <typename ExploreType>
 // data common to all cb_explore_adf reductions
@@ -74,13 +91,14 @@ private:
   CB::label _action_label;
   CB::label _empty_label;
   ACTION_SCORE::action_scores _saved_pred;
-  size_t _metric_labeled;
-  size_t _metric_predict_in_learn;
+  std::unique_ptr<cb_explore_metrics> _metrics;
 
 public:
   template <typename... Args>
-  cb_explore_adf_base(Args&&... args) : explore(std::forward<Args>(args)...)
+  cb_explore_adf_base(bool with_metrics, Args&&... args) : explore(std::forward<Args>(args)...)
   {
+    if (with_metrics) _metrics = VW::make_unique<cb_explore_metrics>();
+
     _saved_pred = v_init<ACTION_SCORE::action_score>();
   }
 
@@ -89,8 +107,7 @@ public:
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void print_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
-  static void persist_metrics(
-      cb_explore_adf_base<ExploreType>& data, std::vector<std::tuple<std::string, size_t>>& metrics);
+  static void persist_metrics(cb_explore_adf_base<ExploreType>& data, metric_sink& metrics);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
@@ -112,8 +129,8 @@ inline void cb_explore_adf_base<ExploreType>::predict(
   if (label_example != nullptr)
   {
     // predict path, replace the label example with an empty one
-    data._action_label = label_example->l.cb;
-    label_example->l.cb = data._empty_label;
+    data._action_label = std::move(label_example->l.cb);
+    label_example->l.cb = std::move(data._empty_label);
   }
 
   data.explore.predict(base, examples);
@@ -121,7 +138,9 @@ inline void cb_explore_adf_base<ExploreType>::predict(
   if (label_example != nullptr)
   {
     // predict path, restore label
-    label_example->l.cb = data._action_label;
+    label_example->l.cb = std::move(data._action_label);
+    data._empty_label.costs.clear();
+    data._empty_label.weight = 1.f;
   }
 }
 
@@ -135,12 +154,31 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     data._known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
-    data._metric_labeled++;
+    if (data._metrics)
+    {
+      data._metrics->metric_labeled++;
+      data._metrics->metric_sum_cost += data._known_cost.cost;
+      if (data._known_cost.action == 0)
+      {
+        data._metrics->label_action_first_option++;
+        data._metrics->metric_sum_cost_first += data._known_cost.cost;
+      }
+      else
+      {
+        data._metrics->label_action_not_first++;
+      }
+
+      if (data._known_cost.cost != 0) { data._metrics->count_non_zero_cost++; }
+
+      data._metrics->sum_actions += examples.size();
+      data._metrics->max_actions = std::max(data._metrics->max_actions, examples.size());
+      data._metrics->min_actions = std::min(data._metrics->min_actions, examples.size());
+    }
   }
   else
   {
     predict(data, base, examples);
-    data._metric_predict_in_learn++;
+    if (data._metrics) data._metrics->metric_predict_in_learn++;
   }
 }
 
@@ -150,13 +188,24 @@ void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
   if (ec_seq.size() <= 0) return;
 
   size_t num_features = 0;
+  size_t num_namespaces = 0;
 
   float loss = 0.;
 
   auto& ec = *ec_seq[0];
   const auto& preds = ec.pred.a_s;
 
-  for (const auto& example : ec_seq) { num_features += example->num_features; }
+  for (const auto& example : ec_seq)
+  {
+    num_features += example->get_num_features();
+    num_namespaces += example->indices.size();
+  }
+
+  if (_metrics)
+  {
+    _metrics->sum_features += num_features;
+    _metrics->sum_namespaces += num_namespaces;
+  }
 
   bool labeled_example = true;
   if (_known_cost.probability > 0)
@@ -236,10 +285,42 @@ inline void cb_explore_adf_base<ExploreType>::save_load(
 
 template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::persist_metrics(
-    cb_explore_adf_base<ExploreType>& data, std::vector<std::tuple<std::string, size_t>>& metrics)
+    cb_explore_adf_base<ExploreType>& data, metric_sink& metrics)
 {
-  metrics.emplace_back("cbea_labeled_ex", data._metric_labeled);
-  metrics.emplace_back("cbea_predict_in_learn", data._metric_predict_in_learn);
+  if (data._metrics)
+  {
+    metrics.int_metrics_list.emplace_back("cbea_labeled_ex", data._metrics->metric_labeled);
+    metrics.int_metrics_list.emplace_back("cbea_predict_in_learn", data._metrics->metric_predict_in_learn);
+    metrics.float_metrics_list.emplace_back("cbea_sum_cost", data._metrics->metric_sum_cost);
+    metrics.float_metrics_list.emplace_back("cbea_sum_cost_baseline", data._metrics->metric_sum_cost_first);
+    metrics.int_metrics_list.emplace_back("cbea_label_first_action", data._metrics->label_action_first_option);
+    metrics.int_metrics_list.emplace_back("cbea_label_not_first", data._metrics->label_action_not_first);
+    metrics.int_metrics_list.emplace_back("cbea_non_zero_cost", data._metrics->count_non_zero_cost);
+
+    if (data._metrics->metric_labeled)
+    {
+      metrics.float_metrics_list.emplace_back(
+          "cbea_avg_feat_per_event", static_cast<float>(data._metrics->sum_features / data._metrics->metric_labeled));
+      metrics.float_metrics_list.emplace_back(
+          "cbea_avg_actions_per_event", static_cast<float>(data._metrics->sum_actions / data._metrics->metric_labeled));
+      metrics.float_metrics_list.emplace_back(
+          "cbea_avg_ns_per_event", static_cast<float>(data._metrics->sum_namespaces / data._metrics->metric_labeled));
+    }
+
+    if (data._metrics->sum_actions)
+    {
+      metrics.float_metrics_list.emplace_back(
+          "cbea_avg_feat_per_action", static_cast<float>(data._metrics->sum_features / data._metrics->sum_actions));
+      metrics.float_metrics_list.emplace_back(
+          "cbea_avg_ns_per_action", static_cast<float>(data._metrics->sum_namespaces / data._metrics->sum_actions));
+    }
+
+    if (data._metrics->min_actions != SIZE_MAX)
+    { metrics.int_metrics_list.emplace_back("cbea_min_actions", data._metrics->min_actions); }
+
+    if (data._metrics->max_actions)
+    { metrics.int_metrics_list.emplace_back("cbea_max_actions", data._metrics->max_actions); }
+  }
 }
 
 }  // namespace cb_explore_adf

@@ -31,7 +31,7 @@ public:
       if (label == sd->min_label)
         return 0.;
       else
-        return (float)((label - sd->min_label) * (label - sd->min_label) +
+        return static_cast<float>((label - sd->min_label) * (label - sd->min_label) +
             2. * (label - sd->min_label) * (sd->min_label - prediction));
     else if (label == sd->max_label)
       return 0.;
@@ -202,7 +202,7 @@ public:
     double r = x >= 1. ? x - log(w) - w : 0.2 * x + 0.65 - w;             // residual
     double t = 1. + w;
     double u = 2. * t * (t + 2. * r / 3.);                          // magic
-    return (float)(w * (1. + r / t * (u - r) / (u - 2. * r)) - x);  // more magic
+    return static_cast<float>(w * (1. + r / t * (u - r) / (u - 2. * r)) - x);  // more magic
   }
 
   float getRevertingWeight(shared_data*, float prediction, float eta_t)

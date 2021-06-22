@@ -1,9 +1,18 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
+#include "feature_group.h"
+#include "global_data.h"
+#include "hash.h"
+#include "vw.h"
+
 // Decision Service JSON header information - required to construct final label
 struct DecisionServiceInteraction
 {
   std::string eventId;
+  std::string timestamp;
   std::vector<unsigned> actions;
   std::vector<float> probabilities;
   float probabilityOfDrop = 0.f;
@@ -32,7 +41,7 @@ struct Namespace
 
   void AddFeature(vw* all, const char* str)
   {
-    ftrs->push_back(1., VW::hash_feature_cstr(*all, const_cast<char*>(str), namespace_hash));
+    ftrs->push_back(1., VW::hash_feature_cstr(*all, str, namespace_hash));
     feature_count++;
 
     if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, str)));

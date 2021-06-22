@@ -41,13 +41,13 @@ int read_features_string(vw* all, v_array<example*>& examples)
   if (num_chars_initial < 1)
   {
     examples[0]->is_newline = true;
-    return (int)num_chars_initial;
+    return static_cast<int>(num_chars_initial);
   }
 
   VW::string_view example(line, num_chars);
   substring_to_example(all, examples[0], example);
 
-  return (int)num_chars_initial;
+  return static_cast<int>(num_chars_initial);
 }
 
 template <bool audit>
@@ -253,7 +253,7 @@ public:
             v_array<char> affix_v = v_init<char>();
             if (_index != ' ') affix_v.push_back(_index);
             affix_v.push_back(is_prefix ? '+' : '-');
-            affix_v.push_back('0' + (char)len);
+            affix_v.push_back('0' + static_cast<char>(len));
             affix_v.push_back('=');
             affix_v.insert(affix_v.end(), affix_name.begin(), affix_name.end());
             affix_v.push_back('\0');
@@ -409,7 +409,7 @@ public:
         _line[_read_idx] == '\r')
     {
       // NameSpace --> ListFeatures
-      _index = (unsigned char)' ';
+      _index = static_cast<unsigned char>(' ');
       if (_ae->feature_space[_index].size() == 0) _new_index = true;
       if (audit)
       {
@@ -527,7 +527,7 @@ void read_line(vw& all, example* ex, VW::string_view line)
   substring_to_example(&all, ex, line);
 }
 
-void read_line(vw& all, example* ex, char* line) { return read_line(all, ex, VW::string_view(line)); }
+void read_line(vw& all, example* ex, const char* line) { return read_line(all, ex, VW::string_view(line)); }
 
 void read_lines(vw* all, const char* line, size_t /*len*/, v_array<example*>& examples)
 {

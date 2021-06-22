@@ -30,6 +30,7 @@
 
 struct vw;
 struct input_options;
+struct dsjson_metrics;
 struct parser
 {
   parser(size_t ring_size, bool strict_parse_)
@@ -101,6 +102,18 @@ struct parser
 
   bool strict_parse;
   std::exception_ptr exc_ptr;
+  std::unique_ptr<dsjson_metrics> metrics = nullptr;
+};
+
+struct dsjson_metrics
+{
+  size_t NumberOfSkippedEvents = 0;
+  size_t NumberOfEventsZeroActions = 0;
+  size_t LineParseError = 0;
+  std::string FirstEventId;
+  std::string FirstEventTime;
+  std::string LastEventId;
+  std::string LastEventTime;
 };
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);

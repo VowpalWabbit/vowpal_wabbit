@@ -14,6 +14,8 @@
 #include "explore.h"
 #include "vw_versions.h"
 #include "version.h"
+#include "label_parser.h"
+
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -89,7 +91,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   }
 
   ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)examples.size();
+  uint32_t num_actions = static_cast<uint32_t>(examples.size());
   if (num_actions == 0)
   {
     preds.clear();
@@ -151,10 +153,10 @@ void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool te
   {
     std::stringstream msg;
     if (!read) msg << "_min_cost " << _min_cost << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&_min_cost, sizeof(_min_cost), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_min_cost), sizeof(_min_cost), "", read, msg, text);
 
     if (!read) msg << "_max_cost " << _max_cost << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&_max_cost, sizeof(_max_cost), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_max_cost), sizeof(_max_cost), "", read, msg, text);
   }
 }
 
@@ -206,19 +208,22 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
   all.example_parser->lbl_parser = CB::cb_label;
 
+  bool with_metrics = options.was_supplied("extra_metrics");
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;
-  auto data =
-      scoped_calloc_or_throw<explore_type>(epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
-
-  VW::LEARNER::learner<explore_type, multi_ex>& l =
-      VW::LEARNER::init_learner(data, base, explore_type::learn, explore_type::predict, problem_multiplier,
-          prediction_type_t::action_probs, all.get_setupfn_name(setup) + "-synthcover");
-
-  l.set_finish_example(explore_type::finish_multiline_example);
-  l.set_print_example(explore_type::print_multiline_example);
-  l.set_save_load(explore_type::save_load);
-  l.set_persist_metrics(explore_type::persist_metrics);
-  return make_base(l);
+  auto data = VW::make_unique<explore_type>(
+      with_metrics, epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
+  auto* l = make_reduction_learner(
+      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup) + "-synthcover")
+                .set_params_per_weight(problem_multiplier)
+                .set_prediction_type(prediction_type_t::action_probs)
+                .set_label_type(label_type_t::cb)
+                .set_finish_example(explore_type::finish_multiline_example)
+                .set_print_example(explore_type::print_multiline_example)
+                .set_save_load(explore_type::save_load)
+                .set_persist_metrics(explore_type::persist_metrics)
+                .build();
+  return make_base(*l);
 }
 
 }  // namespace synthcover

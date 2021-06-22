@@ -1,4 +1,5 @@
 add_executable(vw-unit-test.out
+  cache_test.cc
   cats_test.cc
   cats_tree_tests.cc
   cats_user_provided_pdf.cc
@@ -15,11 +16,13 @@ add_executable(vw-unit-test.out
   explore_test.cc
   guard_test.cc
   initialize_test.cc
+  interactions_test.cc
   io_adapter_test.cc
   json_parser_test.cc
   main.cc
   math_test.cc
   multiclass_label_parser_test.cc
+  namespaced_features_test.cc
   numeric_cast_tests.cc
   object_pool_test.cc
   offset_tree_tests.cc
@@ -73,6 +76,6 @@ endif()
 
 add_test(
   NAME vw_unit_test
-  COMMAND ./vw-unit-test.out
+  COMMAND $<TARGET_FILE:vw-unit-test.out>
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )

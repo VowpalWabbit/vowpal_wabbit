@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "baseline.h"
+
 #include <cfloat>
 #include <cerrno>
 
@@ -15,47 +17,25 @@ using namespace VW::config;
 namespace
 {
 const float max_multiplier = 1000.f;
-const size_t baseline_enabled_idx = 1357;  // feature index for enabling baseline
 }  // namespace
 
 namespace BASELINE
 {
 void set_baseline_enabled(example* ec)
 {
-  auto& fs = ec->feature_space[message_namespace];
-  for (auto& f : fs)
-  {
-    if (f.index() == baseline_enabled_idx)
-    {
-      f.value() = 1;
-      return;
-    }
-  }
-  // if not found, push new feature
-  fs.push_back(1, baseline_enabled_idx);
+  if (!baseline_enabled(ec)) { ec->indices.push_back(baseline_enabled_message_namespace); }
 }
 
 void reset_baseline_disabled(example* ec)
 {
-  auto& fs = ec->feature_space[message_namespace];
-  for (auto& f : fs)
-  {
-    if (f.index() == baseline_enabled_idx)
-    {
-      f.value() = 0;
-      return;
-    }
-  }
+  auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
+  if (it != ec->indices.end()) { ec->indices.erase(it); }
 }
 
 bool baseline_enabled(example* ec)
 {
-  auto& fs = ec->feature_space[message_namespace];
-  for (auto& f : fs)
-  {
-    if (f.index() == baseline_enabled_idx) return f.value() == 1;
-  }
-  return false;
+  auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
+  return it != ec->indices.end();
 }
 }  // namespace BASELINE
 
@@ -83,7 +63,7 @@ void init_global(baseline& data)
   // different index from constant to avoid conflicts
   data.ec->feature_space[constant_namespace].push_back(
       1, ((constant - 17) * data.all->wpp) << data.all->weights.stride_shift());
-  data.ec->total_sum_feat_sq++;
+  data.ec->reset_total_sum_feat_sq();
   data.ec->num_features++;
 }
 

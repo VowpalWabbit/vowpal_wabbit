@@ -223,7 +223,7 @@ float direction_magnitude(vw& /* all */, T& weights)
   for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
     ret += ((double)(&(*iter))[W_DIR]) * (&(*iter))[W_DIR];
 
-  return (float)ret;
+  return static_cast<float>(ret);
 }
 
 float direction_magnitude(vw& all)
@@ -282,11 +282,11 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
       mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
       y = (&(*w))[W_GT] - mem[(MEM_GT + origin) % b.mem_stride];
       g_Hy += ((double)(&(*w))[W_GT]) * ((&(*w))[W_COND]) * y;
-      g_Hg +=
-          ((double)mem[(MEM_GT + origin) % b.mem_stride]) * ((&(*w))[W_COND]) * mem[(MEM_GT + origin) % b.mem_stride];
+      g_Hg += (static_cast<double>(mem[(MEM_GT + origin) % b.mem_stride])) * ((&(*w))[W_COND]) *
+          mem[(MEM_GT + origin) % b.mem_stride];
     }
 
-    float beta = (float)(g_Hy / g_Hg);
+    float beta = static_cast<float>(g_Hy / g_Hg);
 
     if (beta < 0.f || std::isnan(beta)) beta = 0.f;
 
@@ -319,16 +319,16 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     mem1[(MEM_YT + origin) % b.mem_stride] = (&(*w))[W_GT] - mem1[(MEM_GT + origin) % b.mem_stride];
     mem1[(MEM_ST + origin) % b.mem_stride] = (&(*w))[W_XT] - mem1[(MEM_XT + origin) % b.mem_stride];
     (&(*w))[W_DIR] = (&(*w))[W_GT];
-    y_s += ((double)mem1[(MEM_YT + origin) % b.mem_stride]) * mem1[(MEM_ST + origin) % b.mem_stride];
-    y_Hy +=
-        ((double)mem1[(MEM_YT + origin) % b.mem_stride]) * mem1[(MEM_YT + origin) % b.mem_stride] * ((&(*w))[W_COND]);
-    s_q += ((double)mem1[(MEM_ST + origin) % b.mem_stride]) * ((&(*w))[W_GT]);
+    y_s += (static_cast<double>(mem1[(MEM_YT + origin) % b.mem_stride])) * mem1[(MEM_ST + origin) % b.mem_stride];
+    y_Hy += (static_cast<double>(mem1[(MEM_YT + origin) % b.mem_stride])) * mem1[(MEM_YT + origin) % b.mem_stride] *
+        ((&(*w))[W_COND]);
+    s_q += (static_cast<double>(mem1[(MEM_ST + origin) % b.mem_stride])) * ((&(*w))[W_GT]);
   }
 
   if (y_s <= 0. || y_Hy <= 0.) throw curv_ex;
   rho[0] = 1 / y_s;
 
-  float gamma = (float)(y_s / y_Hy);
+  float gamma = static_cast<float>(y_s / y_Hy);
 
   for (int j = 0; j < lastj; j++)
   {
@@ -337,8 +337,8 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
     {
       mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
-      (&(*w))[W_DIR] -= (float)alpha[j] * mem[(2 * j + MEM_YT + origin) % b.mem_stride];
-      s_q += ((double)mem[(2 * j + 2 + MEM_ST + origin) % b.mem_stride]) * ((&(*w))[W_DIR]);
+      (&(*w))[W_DIR] -= static_cast<float>(alpha[j]) * mem[(2 * j + MEM_YT + origin) % b.mem_stride];
+      s_q += (static_cast<double>(mem[(2 * j + 2 + MEM_ST + origin) % b.mem_stride])) * ((&(*w))[W_DIR]);
     }
   }
 
@@ -348,9 +348,9 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
   {
     mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
-    (&(*w))[W_DIR] -= (float)alpha[lastj] * mem[(2 * lastj + MEM_YT + origin) % b.mem_stride];
+    (&(*w))[W_DIR] -= static_cast<float>(alpha[lastj]) * mem[(2 * lastj + MEM_YT + origin) % b.mem_stride];
     (&(*w))[W_DIR] *= gamma * ((&(*w))[W_COND]);
-    y_r += ((double)mem[(2 * lastj + MEM_YT + origin) % b.mem_stride]) * ((&(*w))[W_DIR]);
+    y_r += (static_cast<double>(mem[(2 * lastj + MEM_YT + origin) % b.mem_stride])) * ((&(*w))[W_DIR]);
   }
 
   double coef_j;
@@ -362,8 +362,8 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
     {
       mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
-      (&(*w))[W_DIR] += (float)coef_j * mem[(2 * j + MEM_ST + origin) % b.mem_stride];
-      y_r += ((double)mem[(2 * j - 2 + MEM_YT + origin) % b.mem_stride]) * ((&(*w))[W_DIR]);
+      (&(*w))[W_DIR] += static_cast<float>(coef_j) * mem[(2 * j + MEM_ST + origin) % b.mem_stride];
+      y_r += (static_cast<double>(mem[(2 * j - 2 + MEM_YT + origin) % b.mem_stride])) * ((&(*w))[W_DIR]);
     }
   }
 
@@ -371,7 +371,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
   {
     mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
-    (&(*w))[W_DIR] = -(&(*w))[W_DIR] - (float)coef_j * mem[(MEM_ST + origin) % b.mem_stride];
+    (&(*w))[W_DIR] = -(&(*w))[W_DIR] - static_cast<float>(coef_j) * mem[(MEM_ST + origin) % b.mem_stride];
   }
 
   /*********************
@@ -411,7 +411,7 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
   {
     float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
-    g0_d += ((double)mem1[(MEM_GT + origin) % b.mem_stride]) * ((&(*w))[W_DIR]);
+    g0_d += (static_cast<double>(mem1[(MEM_GT + origin) % b.mem_stride])) * ((&(*w))[W_DIR]);
     g1_d += ((double)(&(*w))[W_GT]) * (&(*w))[W_DIR];
     g1_Hg1 += ((double)(&(*w))[W_GT]) * (&(*w))[W_GT] * ((&(*w))[W_COND]);
     g1_g1 += ((double)(&(*w))[W_GT]) * (&(*w))[W_GT];
@@ -512,7 +512,7 @@ void finalize_preconditioner(vw& /* all */, bfgs& b, float regularization, T& we
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
   {
-    if (std::isinf(*w) || *w > max_precond) (&(*w))[W_COND] = max_precond;
+    if (std::isinf((&(*w))[W_COND]) || (&(*w))[W_COND] > max_precond) (&(*w))[W_COND] = max_precond;
   }
 }
 void finalize_preconditioner(vw& all, bfgs& b, float regularization)
@@ -594,7 +594,7 @@ double derivative_in_direction(vw& /* all */, bfgs& b, float* mem, int& origin, 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
   {
     float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
-    ret += ((double)mem1[(MEM_GT + origin) % b.mem_stride]) * (&(*w))[W_DIR];
+    ret += (static_cast<double>(mem1[(MEM_GT + origin) % b.mem_stride])) * (&(*w))[W_DIR];
   }
   return ret;
 }
@@ -635,19 +635,20 @@ int process_pass(vw& all, bfgs& b)
     if (all.all_reduce != nullptr)
     {
       accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
-      float temp = (float)b.importance_weight_sum;
+      float temp = static_cast<float>(b.importance_weight_sum);
       b.importance_weight_sum = accumulate_scalar(all, temp);
     }
     // finalize_preconditioner(all, b, all.l2_lambda);
     if (all.all_reduce != nullptr)
     {
-      float temp = (float)b.loss_sum;
+      float temp = static_cast<float>(b.loss_sum);
       b.loss_sum = accumulate_scalar(all, temp);  // Accumulate loss_sums
       accumulate(all, all.weights, 1);            // Accumulate gradients from all nodes
     }
     if (all.l2_lambda > 0.) b.loss_sum += add_regularization(all, b, all.l2_lambda);
     if (!all.logger.quiet)
-      fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)b.current_pass + 1, b.loss_sum / b.importance_weight_sum);
+      fprintf(stderr, "%2lu %-10.5f\t", static_cast<long unsigned int>(b.current_pass) + 1,
+          b.loss_sum / b.importance_weight_sum);
 
     b.previous_loss_sum = b.loss_sum;
     b.loss_sum = 0.;
@@ -678,7 +679,7 @@ int process_pass(vw& all, bfgs& b)
   {
     if (all.all_reduce != nullptr)
     {
-      float t = (float)b.loss_sum;
+      float t = static_cast<float>(b.loss_sum);
       b.loss_sum = accumulate_scalar(all, t);  // Accumulate loss_sums
       accumulate(all, all.weights, 1);         // Accumulate gradients from all nodes
     }
@@ -689,15 +690,16 @@ int process_pass(vw& all, bfgs& b)
       {
         if (all.sd->holdout_sum_loss_since_last_pass == 0. && all.sd->weighted_holdout_examples_since_last_pass == 0.)
         {
-          fprintf(stderr, "%2lu ", (long unsigned int)b.current_pass + 1);
+          fprintf(stderr, "%2lu ", static_cast<long unsigned int>(b.current_pass) + 1);
           fprintf(stderr, "h unknown    ");
         }
         else
-          fprintf(stderr, "%2lu h%-10.5f\t", (long unsigned int)b.current_pass + 1,
+          fprintf(stderr, "%2lu h%-10.5f\t", static_cast<long unsigned int>(b.current_pass) + 1,
               all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass);
       }
       else
-        fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)b.current_pass + 1, b.loss_sum / b.importance_weight_sum);
+        fprintf(stderr, "%2lu %-10.5f\t", static_cast<long unsigned int>(b.current_pass) + 1,
+            b.loss_sum / b.importance_weight_sum);
     }
     double wolfe1;
     double new_step = wolfe_eval(
@@ -706,7 +708,7 @@ int process_pass(vw& all, bfgs& b)
     /********************************************************************/
     /* B0) DERIVATIVE ZERO: MINIMUM FOUND *******************************/
     /********************************************************************/
-    if (std::isnan((float)wolfe1))
+    if (std::isnan(static_cast<float>(wolfe1)))
     {
       fprintf(stderr, "\n");
       fprintf(stdout, "Derivative 0 detected.\n");
@@ -722,11 +724,11 @@ int process_pass(vw& all, bfgs& b)
       b.t_end_global = std::chrono::system_clock::now();
       b.net_time = static_cast<double>(
           std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-      float ratio = (b.step_size == 0.f) ? 0.f : (float)new_step / (float)b.step_size;
+      float ratio = (b.step_size == 0.f) ? 0.f : static_cast<float>(new_step) / b.step_size;
       if (!all.logger.quiet) fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step);
       b.predictions.clear();
-      update_weight(all, (float)(-b.step_size + new_step));
-      b.step_size = (float)new_step;
+      update_weight(all, static_cast<float>(-b.step_size + new_step));
+      b.step_size = static_cast<float>(new_step);
       zero_derivative(all);
       b.loss_sum = 0.;
     }
@@ -738,12 +740,12 @@ int process_pass(vw& all, bfgs& b)
     else
     {
       double rel_decrease = (b.previous_loss_sum - b.loss_sum) / b.previous_loss_sum;
-      if (!std::isnan((float)rel_decrease) && b.backstep_on && fabs(rel_decrease) < b.rel_threshold)
+      if (!std::isnan(static_cast<float>(rel_decrease)) && b.backstep_on && fabs(rel_decrease) < b.rel_threshold)
       {
         fprintf(stdout,
             "\nTermination condition reached in pass %ld: decrease in loss less than %.3f%%.\n"
             "If you want to optimize further, decrease termination threshold.\n",
-            (long int)b.current_pass + 1, b.rel_threshold * 100.0);
+            static_cast<long int>(b.current_pass) + 1, b.rel_threshold * 100.0);
         status = LEARN_CONV;
       }
       b.previous_loss_sum = b.loss_sum;
@@ -787,11 +789,11 @@ int process_pass(vw& all, bfgs& b)
   {
     if (all.all_reduce != nullptr)
     {
-      float t = (float)b.curvature;
+      float t = static_cast<float>(b.curvature);
       b.curvature = accumulate_scalar(all, t);  // Accumulate curvatures
     }
     if (all.l2_lambda > 0.) b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda);
-    float dd = (float)derivative_in_direction(all, b, b.mem, b.origin);
+    float dd = static_cast<float>(derivative_in_direction(all, b, b.mem, b.origin));
     if (b.curvature == 0. && dd != 0.)
     {
       fprintf(stdout, "%s", curv_message);
@@ -805,7 +807,7 @@ int process_pass(vw& all, bfgs& b)
       status = LEARN_CONV;
     }
     else
-      b.step_size = -dd / (float)b.curvature;
+      b.step_size = -dd / static_cast<float>(b.curvature);
 
     float d_mag = direction_magnitude(all);
 
@@ -863,7 +865,7 @@ void process_example(vw& all, bfgs& b, example& ec)
     ec.partial_prediction = b.predictions[b.example_number];
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
     float sd = all.loss->second_derivative(all.sd, b.predictions[b.example_number++], ld.label);
-    b.curvature += ((double)d_dot_x) * d_dot_x * sd * ec.weight;
+    b.curvature += (static_cast<double>(d_dot_x)) * d_dot_x * sd * ec.weight;
   }
   ec.updated_prediction = ec.pred.scalar;
 
@@ -962,12 +964,12 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
     if (read)
     {
       c++;
-      brw = model_file.bin_read_fixed((char*)&i, sizeof(i), "");
+      brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i), "");
       if (brw > 0)
       {
         assert(i < length);
         v = &(b.regularizers[i]);
-        brw += model_file.bin_read_fixed((char*)v, sizeof(*v), "");
+        brw += model_file.bin_read_fixed(reinterpret_cast<char*>(v), sizeof(*v), "");
       }
     }
     else  // write binary or text
@@ -978,10 +980,10 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
         c++;
         std::stringstream msg;
         msg << i;
-        brw = bin_text_write_fixed(model_file, (char*)&i, sizeof(i), msg, text);
+        brw = bin_text_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), msg, text);
 
         msg << ":" << *v << "\n";
-        brw += bin_text_write_fixed(model_file, (char*)v, sizeof(*v), msg, text);
+        brw += bin_text_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), msg, text);
       }
     }
     if (!read) i++;
@@ -1016,7 +1018,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     if (!all->logger.quiet)
       std::cerr << "m = " << m << std::endl
                 << "Allocated "
-                << ((long unsigned int)all->length() *
+                << (static_cast<long unsigned int>(all->length()) *
                            (sizeof(float) * (b.mem_stride) + (sizeof(weight) << stride_shift)) >>
                        20)
                 << "M for weights and mem" << std::endl;
@@ -1044,7 +1046,8 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
   {
     std::stringstream msg;
     msg << ":" << reg_vector << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&reg_vector, sizeof(reg_vector), "", read, msg, text);
+    bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&reg_vector), sizeof(reg_vector), "", read, msg, text);
 
     if (reg_vector)
       save_load_regularizer(*all, b, model_file, read, text);

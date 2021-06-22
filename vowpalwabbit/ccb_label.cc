@@ -49,13 +49,13 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
 
   size_t next_read_size = sizeof(ld.type);
   if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0;
-  ld.type = *(CCB::example_type*)read_ptr;
+  ld.type = *reinterpret_cast<CCB::example_type*>(read_ptr);
   read_count += sizeof(ld.type);
 
   bool is_outcome_present;
   next_read_size = sizeof(bool);
   if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
-  is_outcome_present = *(bool*)read_ptr;
+  is_outcome_present = *reinterpret_cast<bool*>(read_ptr);
   read_count += sizeof(is_outcome_present);
 
   if (is_outcome_present)
@@ -65,13 +65,13 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
 
     next_read_size = sizeof(ld.outcome->cost);
     if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0;
-    ld.outcome->cost = *(float*)read_ptr;
+    ld.outcome->cost = *reinterpret_cast<float*>(read_ptr);
     read_count += sizeof(ld.outcome->cost);
 
     uint32_t size_probs;
     next_read_size = sizeof(size_probs);
     if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
-    size_probs = *(uint32_t*)read_ptr;
+    size_probs = *reinterpret_cast<uint32_t*>(read_ptr);
     read_count += sizeof(size_probs);
 
     for (uint32_t i = 0; i < size_probs; i++)
@@ -79,7 +79,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
       ACTION_SCORE::action_score a_s;
       next_read_size = sizeof(a_s);
       if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
-      a_s = *(ACTION_SCORE::action_score*)read_ptr;
+      a_s = *reinterpret_cast<ACTION_SCORE::action_score*>(read_ptr);
       read_count += sizeof(a_s);
 
       ld.outcome->probabilities.push_back(a_s);
@@ -89,7 +89,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
   uint32_t size_includes;
   next_read_size = sizeof(size_includes);
   if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
-  size_includes = *(uint32_t*)read_ptr;
+  size_includes = *reinterpret_cast<uint32_t*>(read_ptr);
   read_count += sizeof(size_includes);
 
   for (uint32_t i = 0; i < size_includes; i++)
@@ -97,14 +97,14 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
     uint32_t include;
     next_read_size = sizeof(include);
     if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
-    include = *(uint32_t*)read_ptr;
+    include = *reinterpret_cast<uint32_t*>(read_ptr);
     read_count += sizeof(include);
     ld.explicit_included_actions.push_back(include);
   }
 
   next_read_size = sizeof(ld.weight);
   if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0;
-  ld.weight = *(float*)read_ptr;
+  ld.weight = *reinterpret_cast<float*>(read_ptr);
   return read_count;
 }
 
@@ -124,37 +124,37 @@ void cache_label(label& ld, io_buf& cache)
 
   cache.buf_write(c, size);
 
-  *(uint8_t*)c = static_cast<uint8_t>(ld.type);
+  *reinterpret_cast<uint8_t*>(c) = static_cast<uint8_t>(ld.type);
   c += sizeof(ld.type);
 
-  *(bool*)c = ld.outcome != nullptr;
+  *reinterpret_cast<bool*>(c) = ld.outcome != nullptr;
   c += sizeof(bool);
 
   if (ld.outcome != nullptr)
   {
-    *(float*)c = ld.outcome->cost;
+    *reinterpret_cast<float*>(c) = ld.outcome->cost;
     c += sizeof(ld.outcome->cost);
 
-    *(uint32_t*)c = convert(ld.outcome->probabilities.size());
+    *reinterpret_cast<uint32_t*>(c) = convert(ld.outcome->probabilities.size());
     c += sizeof(uint32_t);
 
     for (const auto& score : ld.outcome->probabilities)
     {
-      *(ACTION_SCORE::action_score*)c = score;
+      *reinterpret_cast<ACTION_SCORE::action_score*>(c) = score;
       c += sizeof(ACTION_SCORE::action_score);
     }
   }
 
-  *(uint32_t*)c = convert(ld.explicit_included_actions.size());
+  *reinterpret_cast<uint32_t*>(c) = convert(ld.explicit_included_actions.size());
   c += sizeof(uint32_t);
 
   for (const auto& included_action : ld.explicit_included_actions)
   {
-    *(uint32_t*)c = included_action;
+    *reinterpret_cast<uint32_t*>(c) = included_action;
     c += sizeof(included_action);
   }
 
-  *(float*)c = ld.weight;
+  *reinterpret_cast<float*>(c) = ld.weight;
   c += sizeof(ld.weight);
 }
 

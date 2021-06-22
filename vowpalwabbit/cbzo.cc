@@ -244,13 +244,13 @@ bool is_labeled(example& ec) { return (!ec.l.cb_cont.costs.empty() && ec.l.cb_co
 void report_progress(vw& all, example& ec)
 {
   const auto& costs = ec.l.cb_cont.costs;
-  all.sd->update(ec.test_only, is_labeled(ec), costs.empty() ? 0.0f : costs[0].cost, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, is_labeled(ec), costs.empty() ? 0.0f : costs[0].cost, ec.weight, ec.get_num_features());
   all.sd->weighted_labels += ec.weight;
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-        ec.test_only ? "unknown" : to_string(costs[0]), get_pred_repr(ec), ec.num_features, all.progress_add,
+        ec.test_only ? "unknown" : to_string(costs[0]), get_pred_repr(ec), ec.get_num_features(), all.progress_add,
         all.progress_arg);
   }
 }
