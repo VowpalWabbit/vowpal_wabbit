@@ -103,7 +103,7 @@ def test_with_interaction():
     num_iterations = 3000
     ctr = run_simulation(vw, num_iterations, users, times_of_day, actions, get_cost)
 
-    assert(ctr[-1] >= 0.70)
+    assert(ctr[-1] >= 0.65)
 
 def test_without_interaction():
     vw = pyvw.vw("--cb_explore_adf --quiet --epsilon 0.2")
