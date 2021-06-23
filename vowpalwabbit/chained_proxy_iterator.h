@@ -64,8 +64,8 @@ public:
   // UB if diff < 0
   chained_proxy_iterator& operator+=(difference_type diff)
   {
-    assert(diff >= 0)
-    for (size_t i = 0; i < diff; i++) { operator++(); }
+    assert(diff >= 0);
+    for (size_t i = 0; i < static_cast<size_t>(diff); i++) { operator++(); }
     return *this;
   }
 
