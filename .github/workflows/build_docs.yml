@@ -63,7 +63,7 @@ jobs:
   upload:
     needs: [cpp, python]
     runs-on: ubuntu-latest
-    # The upload step should only be run on the main repository and only for pushes or releases (not pull requests)
+    # The upload step should only be run on the main repository and only for pushes or releases (not pull requests).
     if: ${{ github.repository == 'VowpalWabbit/vowpal_wabbit' && (github.event_name == 'push' || github.event_name == 'release') }}
     steps:
       - name: Set folder name to latest if push
