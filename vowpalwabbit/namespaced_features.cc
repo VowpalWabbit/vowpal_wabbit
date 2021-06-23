@@ -224,7 +224,6 @@ namespaced_features::namespace_index_begin_proxy(namespace_index ns_index) const
 VW::chained_proxy_iterator<namespaced_features::const_indexed_iterator, features::const_audit_iterator>
 namespaced_features::namespace_index_end_proxy(namespace_index ns_index) const
 {
-  // The end iterator points to the end element of the final feature group.
   auto begin_it = namespace_index_cbegin(ns_index);
   auto end_it = namespace_index_cend(ns_index);
   features::const_audit_iterator inner_it;
