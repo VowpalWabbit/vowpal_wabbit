@@ -23,7 +23,7 @@ namespace BASELINE
 {
 void set_baseline_enabled(example* ec)
 {
-  auto& fs = ec->feature_space.get_or_create_feature_group(baseline_enabled_message_namespace, baseline_enabled_message_namespace);
+  ec->feature_space.get_or_create_feature_group(baseline_enabled_message_namespace, baseline_enabled_message_namespace);
 }
 
 void reset_baseline_disabled(example* ec)
