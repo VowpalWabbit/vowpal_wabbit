@@ -274,5 +274,5 @@ Note what happens if we try to run `--eval` with an estimator we know is biased,
 
 ## More to explore
 
-- Explore more Vowpal Wabbit [Tutorials](/tutorials.html).
-- Browse [examples on the GitHub wiki](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Examples){:target="blank"}.
+- Explore more Vowpal Wabbit [Tutorials](https://vowpalwabbit.org/tutorials.html)
+- Browse [examples on the GitHub wiki](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Examples)

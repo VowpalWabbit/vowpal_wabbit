@@ -19,7 +19,6 @@ project = u'VowpalWabbit'
 copyright = u'2021, John langford et al'
 author = u'John langford et al'
 
-
 # Read version automatically from vowpalwabbit.__version__--------------------
 
 version = vowpalwabbit.__version__
@@ -44,8 +43,8 @@ extensions = [
 
 jupyter_execute_notebooks = "cache"
 thebe_config = {
-    "repository_url": "https://github.com/jackgerrits/vowpal_wabbit",
-    "repository_branch": "nbtest",
+    "repository_url": "https://github.com/VowpalWabbit/vowpal_wabbit",
+    "repository_branch": "master",
     "selector": ".cell",
 }
 show_navbar_depth = 2
@@ -54,10 +53,13 @@ html_theme_options = {
     "use_edit_page_button": True
 }
 
+myst_heading_anchors = 2
+numpydoc_show_class_members = False
+
 html_context = {
-    "github_user": "jackgerrits",
+    "github_user": "VowpalWabbit",
     "github_repo": "vowpal_wabbit",
-    "github_version": "nbtest",
+    "github_version": "master",
     "doc_path": "python/docs/source",
 }
 
@@ -138,8 +140,8 @@ html_sidebars = { '**': ['search-field.html', 'nav-toc-override.html'] }
 intersphinx_mapping = {'https://docs.python.org/': None}
 
 binder_url_config = {
-    "branch": "nbtest",
-    "repo_url": "https://github.com/jackgerrits/vowpal_wabbit",
+    "branch": "master",
+    "repo_url": "https://github.com/VowpalWabbit/vowpal_wabbit",
     "path_to_docs": "python/docs/source"
 }
 
@@ -163,7 +165,6 @@ def add_binder_url_for_page(
     if org is None and repo is None:
         # Skip the rest because the repo_url isn't right
         return
-
 
     branch = binder_url_config["branch"]
 

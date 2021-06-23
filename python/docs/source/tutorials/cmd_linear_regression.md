@@ -2,14 +2,12 @@
 
 This tutorial demonstrates how to approach a regression problem with Vowpal Wabbit. It features an overview of a linear regression problem using a Vowpal Wabbit workflow tutorial with examples, introduces unique Vowpal Wabbit features, and explains how to structure input and understand the results.
 
-<div class="prerequisites" markdown="1">
-**Prerequisites**
+```{admonition} Prerequisites
+To install Vowpal Wabbit, and for more information on building Vowpal Wabbit from source or using a package manager, see [Get Started](https://vowpalwabbit.org/start.html).
 
-To install Vowpal Wabbit, and for more information on building Vowpal Wabbit from source or using a package manager, see [Get Started](../start.html).
 
->**Note:** See [Command Line Tutorial](cmd_first_steps.html) for Vowpal Wabbit command line basics and a quick introduction to training and testing your model. See [Python Tutorial](python_first_steps.html) to explore the basics for using Python to pass some data to Vowpal Wabbit to learn a model and get a prediction.
-
-</div>
+**Note:** See [Command Line Tutorial](cmd_first_steps.md) for Vowpal Wabbit command line basics and a quick introduction to training and testing your model. See [Python Tutorial](python_first_steps.md) to explore the basics for using Python to pass some data to Vowpal Wabbit to learn a model and get a prediction.
+```
 
 ## Create a dataset
 
@@ -63,7 +61,7 @@ vw house_dataset
 ```
 
 **Output:**
-<div class="output" markdown="1">
+```text
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
@@ -84,7 +82,7 @@ average loss = 0.750000
 best constant = 0.500000
 best constant's loss = 0.250000
 total feature number = 15
-</div>
+```
 
 ## Vowpal Wabbit output
 
@@ -199,7 +197,7 @@ loss     last          counter         weight    label  predict features
 0.666667 1.000000            2            3.0   1.0000   0.0000        5
 ```
 
-- The `average loss` output computes the [progressive validation](http://hunch.net/~jl/projects/prediction_bounds/progressive_validation/coltfinal.pdf){:target="blank"} loss. The critical thing to understand here is that progressive validation loss deviates like a test set, and hence is a reliable indicator of success on the first pass over any data-set.
+- The `average loss` output computes the [progressive validation](http://hunch.net/~jl/projects/prediction_bounds/progressive_validation/coltfinal.pdf) loss. The critical thing to understand here is that progressive validation loss deviates like a test set, and hence is a reliable indicator of success on the first pass over any data-set.
 - The `since last` output is the progressive validation loss since the last printout.
 - The `example counter` output tells you which example is printed. In this case, it's example `2`.
 - The `example weight` output tells you the sum of the importance weights of examples seen so far. In this case it's `3.0`, because the second example has an importance weight of `2.0`.
@@ -275,11 +273,11 @@ vw house_dataset -p /dev/stdout --quiet
 
 **Output:**
 
-<div class="output" markdown="1">
+```text
 0.000000
 0.000000 second_house
 1.000000 third_house
-</div>
+```
 
 - The first line `0.000000` refers to the first example which has an empty tag.
 - The second line `0.000000 second_house` refers to the second example. Notice that the tag appears here. The primary use of the tag is mapping predictions to the corresponding examples.
@@ -296,7 +294,7 @@ vw -i house.model -t house_dataset -p /dev/stdout --quiet
 ```
 
 **Output:**
-<div class="output" markdown="1">
+```text
 0.000000
 1.000000 second_house
 0.000000 third_house
@@ -317,14 +315,14 @@ vw house_dataset --audit --quiet
 ```
 
 **Output:**
-<div class="output" markdown="1">
+```text
 0
   price:229902:0.23:0@0  sqft:162853:0.25:0@0  age:165201:0.05:0@0  2006:2006:1:0@0  Constant:116060:1:0@0
 0 second_house
   price:229902:0.18:0@0  sqft:162853:0.15:0@0  age:165201:0.35:0@0  1976:1976:1:0@0  Constant:116060:1:0@0
 1 third_house
   price:229902:0.53:0.882655@0.2592  age:165201:0.87:0.453833@0.98  sqft:162853:0.32:1.05905@0.18  Constant:116060:1:0.15882@8  1924:1924:1:0@0
-</div>
+```
 
 Every example uses two lines:
 
@@ -373,7 +371,7 @@ We can even start feature names with a digit. For example:
 
 This tutorial only describes a fraction of Vowpal Wabbit’s capabilities. To explore more about other Vowpal Wabbit features and performance — loss functions, optimizers, and representations — including ridiculously fast active learning with clusters of thousands of machines, see the following resources:
 
-- To learn how to approach a contextual bandits problem using Vowpal Wabbit — including how to  work with different contextual bandits approaches, how to format data, and understand the results — see the [Contextual Bandit Reinforcement Learning Tutorial](contextual_bandits.html).
-- For more on the contextual bandits approach to reinforcement learning, including a content personalization scenario, see the [Contextual Bandit Simulation Tutorial](cb_simulation.html).
-- Explore more Vowpal Wabbit [Tutorials](../tutorials.html).
-- Browse [examples on the GitHub wiki](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Examples){:target="blank"}.
+- To learn how to approach a contextual bandits problem using Vowpal Wabbit — including how to  work with different contextual bandits approaches, how to format data, and understand the results — see the [Contextual Bandit Reinforcement Learning Tutorial](python_Contextual_bandits_and_Vowpal_Wabbit.ipynb).
+- For more on the contextual bandits approach to reinforcement learning, including a content personalization scenario, see the [Contextual Bandit Simulation Tutorial](python_Contextual_bandits_and_Vowpal_Wabbit.ipynb).
+- Explore more Vowpal Wabbit [Tutorials](https://vowpalwabbit.org/tutorials.html).
+- Browse [examples on the GitHub wiki](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Examples).

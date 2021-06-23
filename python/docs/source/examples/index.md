@@ -14,6 +14,4 @@ search_covington
 search_sequence_ldf
 search_sequence
 search_speech_tagger
-search_word_alignment
-search_xor
 ```

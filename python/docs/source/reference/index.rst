@@ -5,6 +5,7 @@ API Reference
    vowpalwabbit.pyvw
    vowpalwabbit.sklearn
    vowpalwabbit.DFtoVW
+   vowpalwabbit.pyvw.pylibvw
 
 
 Usage

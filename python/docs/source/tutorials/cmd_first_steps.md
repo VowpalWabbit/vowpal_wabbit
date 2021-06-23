@@ -2,13 +2,11 @@
 
 This tutorial introduces Vowpal Wabbit command line basics with a quick introduction to training and testing your model with Vowpal Wabbit. We explore passing some data to Vowpal Wabbit to learn a model and get a prediction.
 
-For more advanced Vowpal Wabbit tutorials, including how to format data and understand results, see [Tutorials](../tutorials.html).
+For more advanced Vowpal Wabbit tutorials, including how to format data and understand results, see [Tutorials](https://vowpalwabbit.org/tutorials.html).
 
-<div class="prerequisites" markdown="1">
-**Prerequisites**
-
-To install Vowpal Wabbit see [Get Started](../start.html).
-</div>
+```{admonition} Prerequisites
+To install Vowpal Wabbit see [Get Started](https://vowpalwabbit.org/start.html).
+```
 
 ## Training scenario and dataset
 
@@ -22,7 +20,7 @@ First, create a file `train.txt` and copy the following dataset:
 0 | price:.53 sqft:.32 age:.87 1924
 ```
 
->**Note:** If the format of this sample dataset looks unfamiliar and you want more details see the Vowpal Wabbit [Linear Regression Tutorial](getting_started.html#create-a-dataset) for information on input format and feature hashing techniques.
+>**Note:** If the format of this sample dataset looks unfamiliar and you want more details see the Vowpal Wabbit [Linear Regression Tutorial](cmd_linear_regression.md#create-a-dataset) for information on input format and feature hashing techniques.
 
 ## Train a model
 
@@ -37,11 +35,11 @@ This tells Vowpal Wabbit to:
 - Use the `-d` **data** file `train.txt`.
 - Write the `-f` **final** model to `model.vw`.
 
-With Vowpal Wabbit, the output includes more than a few statistics and statuses. The [Linear Regression Tutorial](getting_started.html#vowpal-wabbit-diagnostic-header) and [Contextual Bandit Reinforcement Learning Tutorial](contextual_bandits.html) covers this format in more detail:
+With Vowpal Wabbit, the output includes more than a few statistics and statuses. The [Linear Regression Tutorial](cmd_linear_regression.md#vowpal-wabbit-diagnostic-header) and [Contextual Bandit Reinforcement Learning Tutorial](python_Contextual_bandits_and_Vowpal_Wabbit.ipynb) covers this format in more detail:
 
 Output:
 
-<div class="output" markdown="1">
+```text
 final_regressor = model.vw
 Num weight bits = 18
 learning rate = 0.5
@@ -63,7 +61,7 @@ average loss = 0.666667
 best constant = 0.333333
 best constant's loss = 0.222222
 total feature number = 15
-</div>
+```
 
 ## Test a model
 
@@ -86,7 +84,7 @@ This tells Vowpal Wabbit to:
 
 Output:
 
-<div class="output" markdown="1">
+```text
 predictions = predictions.txt
 Num weight bits = 18
 learning rate = 0.5
@@ -104,20 +102,20 @@ number of examples = 1
 weighted example sum = 1.000000
 weighted label sum = 0.000000
 average loss = n.a.
-</div>
+```
 
 `cat predictions.txt` shows:
 
-<div class="output" markdown="1">
+```
 0
-</div>
+```
 
 ### Vowpal Wabbit results
 The model predicted a value of **0**. This result means our house will not need a new roof in the next 10 years (based on just three examples we used in our training dataset).
 
 ## More to explore
 
-- See the Vowpal Wabbit Python Tutorial for a quick introduction to the basics of training and testing your model.
-- To learn more about how to approach a contextual bandits problem using Vowpal Wabbit — including how to  work with different contextual bandits approaches, how to format data, and understand the results — see the [Contextual Bandit Reinforcement Learning Tutorial](contextual_bandits.html).
-- For more on the contextual bandits approach to reinforcement learning, including a content personalization scenario, see the [Contextual Bandit Simulation Tutorial](cb_simulation.html).
-- See the [Linear Regression Tutorial](getting_started.html) for a different look at the roof replacement problem and learn more about Vowpal Wabbit's format and understanding the results.
+- See [Python tutorial](python_first_steps.ipynb) for a quick introduction to the basics of training and testing your model.
+- To learn more about how to approach a contextual bandits problem using  tVowpal Wabbit — including how to  work with different contextual bandits approaches, how to format data, and understand the results — see the [Contextual Bandit Reinforcement Learning Tutorial](python_Contextual_bandits_and_Vowpal_Wabbit.ipynb).
+- For more on the contextual bandits approach to reinforcement learning, including a content personalization scenario, see the [Contextual Bandit Simulation Tutorial](python_Simulating_a_news_personalization_scenario_using_Contextual_Bandits.ipynb).
+- See the [Linear Regression Tutorial](cmd_linear_regression.md) for a different look at the roof replacement problem and learn more about Vowpal Wabbit's format and understanding the results.
