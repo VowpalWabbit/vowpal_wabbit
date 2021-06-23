@@ -190,8 +190,7 @@ public:
   {
     if (ensure_ns_exists(to_ns)) return;
     features& fs = other.feature_space[current_seed];
-    for (size_t i = 0; i < fs.size(); i++)
-      ec->feature_space[current_seed].push_back(fs.values[i], fs.indicies[i]);
+    for (size_t i = 0; i < fs.size(); i++) ec->feature_space[current_seed].push_back(fs.values[i], fs.indicies[i]);
     ec->reset_total_sum_feat_sq();
     ec->num_features += fs.size();
     example_changed_since_prediction = true;
