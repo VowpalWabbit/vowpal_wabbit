@@ -155,7 +155,7 @@ public:
     }
     else
     {
-      if (ns_exists[current_seed])
+      if (ns_exists[static_cast<int>(current_ns)])
       {
         ec->reset_total_sum_feat_sq();
         ec->feature_space[current_seed].clear();
