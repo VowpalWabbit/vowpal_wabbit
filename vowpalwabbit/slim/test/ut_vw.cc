@@ -127,10 +127,10 @@ void run_predict_in_memory(
     // 1 |0 0:1 |a 0:2
     example_predict_builder b00(&ex[0], (namespace_index)0);
     b00.push_feature(0, 1.f);
-    example_predict_builder b0a(&ex[0], (char*)"a");
+    example_predict_builder b0a(&ex[0], "a");
     b0a.push_feature(0, 2.f);
     // 0 |c 0:3
-    example_predict_builder b1(&ex[1], (char*)"c");
+    example_predict_builder b1(&ex[1], "c");
     b1.push_feature(0, 3.f);
 
     for (auto& e : ex)
@@ -143,14 +143,14 @@ void run_predict_in_memory(
   {
     safe_example_predict ex[2];
     // 1 |a 0:1 |b 2:2
-    example_predict_builder b0a(&ex[0], (char*)"a");
+    example_predict_builder b0a(&ex[0], "a");
     b0a.push_feature(0, 1.f);
-    example_predict_builder b0b(&ex[0], (char*)"b");
+    example_predict_builder b0b(&ex[0], "b");
     b0b.push_feature(2, 2.f);
     // 0 |a 0:1 |b 2:4
-    example_predict_builder b1a(&ex[1], (char*)"a");
+    example_predict_builder b1a(&ex[1], "a");
     b1a.push_feature(0, 1.f);
-    example_predict_builder b1b(&ex[1], (char*)"b");
+    example_predict_builder b1b(&ex[1], "b");
     b1b.push_feature(2, 4.f);
 
     for (auto& e : ex)
@@ -163,22 +163,22 @@ void run_predict_in_memory(
   {
     safe_example_predict ex[2];
     // 1 |a 0:1 |b 2:2 |c 3:3 |d 4:4
-    example_predict_builder b0a(&ex[0], (char*)"a");
+    example_predict_builder b0a(&ex[0], "a");
     b0a.push_feature(0, 1.f);
-    example_predict_builder b0b(&ex[0], (char*)"b");
+    example_predict_builder b0b(&ex[0], "b");
     b0b.push_feature(2, 2.f);
-    example_predict_builder b0c(&ex[0], (char*)"c");
+    example_predict_builder b0c(&ex[0], "c");
     b0c.push_feature(3, 3.f);
-    example_predict_builder b0d(&ex[0], (char*)"d");
+    example_predict_builder b0d(&ex[0], "d");
     b0d.push_feature(4, 4.f);
     // 0 |a 0:1 |b 2:4 |c 3:1 |d 1:2
-    example_predict_builder b1a(&ex[1], (char*)"a");
+    example_predict_builder b1a(&ex[1], "a");
     b1a.push_feature(0, 1.f);
-    example_predict_builder b1b(&ex[1], (char*)"b");
+    example_predict_builder b1b(&ex[1], "b");
     b1b.push_feature(2, 4.f);
-    example_predict_builder b1c(&ex[1], (char*)"c");
+    example_predict_builder b1c(&ex[1], "c");
     b1c.push_feature(3, 1.f);
-    example_predict_builder b1d(&ex[1], (char*)"d");
+    example_predict_builder b1d(&ex[1], "d");
     b1d.push_feature(1, 2.f);
 
     for (auto& e : ex)
@@ -191,15 +191,15 @@ void run_predict_in_memory(
   {
     safe_example_predict ex[2];
     // 1 |a x:1 |b y:2
-    example_predict_builder b0a(&ex[0], (char*)"a");
-    b0a.push_feature_string((char*)"x", 1.f);
-    example_predict_builder b0b(&ex[0], (char*)"b");
-    b0b.push_feature_string((char*)"y", 2.f);
+    example_predict_builder b0a(&ex[0], "a");
+    b0a.push_feature_string("x", 1.f);
+    example_predict_builder b0b(&ex[0], "b");
+    b0b.push_feature_string("y", 2.f);
     // 0 |a x:1 |5 y:4
-    example_predict_builder b1a(&ex[1], (char*)"a");
-    b1a.push_feature_string((char*)"x", 1.f);
+    example_predict_builder b1a(&ex[1], "a");
+    b1a.push_feature_string("x", 1.f);
     example_predict_builder b1b(&ex[1], 5);
-    b1b.push_feature_string((char*)"y", 4.f);
+    b1b.push_feature_string("y", 4.f);
 
     for (auto& e : ex)
     {
@@ -354,19 +354,19 @@ TEST(VowpalWabbitSlim, multiclass_data_4)
 
   safe_example_predict shared;
   // shared |a 0:1 5:12
-  example_predict_builder bs(&shared, (char*)"a");
+  example_predict_builder bs(&shared, "a");
   bs.push_feature(0, 1.f);
   bs.push_feature(5, 12.f);
 
   safe_example_predict ex[3];
   // 1:1.0 |b 0:1
-  example_predict_builder b0(&ex[0], (char*)"b");
+  example_predict_builder b0(&ex[0], "b");
   b0.push_feature(0, 1.f);
   // 2:0.3 |b 0:2
-  example_predict_builder b1(&ex[1], (char*)"b");
+  example_predict_builder b1(&ex[1], "b");
   b1.push_feature(0, 2.f);
   // 3:0.1 |b 0:3
-  example_predict_builder b2(&ex[2], (char*)"b");
+  example_predict_builder b2(&ex[2], "b");
   b2.push_feature(0, 3.f);
 
   ASSERT_EQ(S_VW_PREDICT_OK, vw.predict(shared, ex, 3, out_scores));
@@ -388,13 +388,13 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
 
   // we have loaded the model and can push the features
   safe_example_predict features;
-  vw_slim::example_predict_builder bOa(&features, (char*)"64");
+  vw_slim::example_predict_builder bOa(&features, "64");
   bOa.push_feature(static_cast<int>(call_type), 1.f);
-  vw_slim::example_predict_builder bOb(&features, (char*)"16");
+  vw_slim::example_predict_builder bOb(&features, "16");
   bOb.push_feature(static_cast<int>(modality), 1.f);
-  vw_slim::example_predict_builder bOc(&features, (char*)"32");
+  vw_slim::example_predict_builder bOc(&features, "32");
   bOc.push_feature(static_cast<int>(network_type), 1.f);
-  vw_slim::example_predict_builder bOd(&features, (char*)"48");
+  vw_slim::example_predict_builder bOd(&features, "48");
   bOd.push_feature(static_cast<int>(platform), 1.f);
 
   // push actions
@@ -402,7 +402,7 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
   safe_example_predict actions[min_delay_actions];
   for (int i = 0; i < min_delay_actions; i++)
   {
-    vw_slim::example_predict_builder bOe(&actions[i], (char*)"80");
+    vw_slim::example_predict_builder bOe(&actions[i], "80");
     bOe.push_feature(i, 1.f);
   }
 
@@ -517,18 +517,18 @@ void generate_cb_data_5(safe_example_predict& shared, safe_example_predict* ex)
   ex[2].clear();
 
   // shared |a 0:1 5:12
-  example_predict_builder bs(&shared, (char*)"a");
+  example_predict_builder bs(&shared, "a");
   bs.push_feature(0, 1.f);
   bs.push_feature(5, 12.f);
 
   //  |b 0:1
-  example_predict_builder b0(&ex[0], (char*)"b");
+  example_predict_builder b0(&ex[0], "b");
   b0.push_feature(0, 1.f);
   //  |b 0:2
-  example_predict_builder b1(&ex[1], (char*)"b");
+  example_predict_builder b1(&ex[1], "b");
   b1.push_feature(0, 2.f);
   //  |b 0:3
-  example_predict_builder b2(&ex[2], (char*)"b");
+  example_predict_builder b2(&ex[2], "b");
   b2.push_feature(0, 3.f);
 }
 
