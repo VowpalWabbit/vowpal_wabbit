@@ -26,7 +26,6 @@ struct freegrad_update_data
 {
   struct freegrad* FG;
   float update;
-  float ec_weight;
   float predict;
   float squared_norm_prediction; 
   float grad_dot_w;
@@ -213,24 +212,16 @@ void freegrad_update_after_prediction(freegrad& FG, example& ec)
     float clipped_grad_norm;
     FG.data.grad_dot_w = 0.;
     FG.data.squared_norm_clipped_grad = 0.;
-    FG.data.ec_weight = (float) ec.weight;
     
-    float res_weight = FG.data.ec_weight;
     // TODO check this
     if (FG.noweightinvariance){
-      FG.data.update = FG.all->loss->first_derivative(FG.all->sd, ec.pred.scalar, ec.l.simple.label) * res_weight;
+      FG.data.update = FG.all->loss->first_derivative(FG.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
       
       // Compute gradient norm
       GD::foreach_feature<freegrad_update_data, gradient_dot_w>(*FG.all, ec, FG.data);
       
       // Performing the update
       GD::foreach_feature<freegrad_update_data, inner_freegrad_update_after_prediction>(*FG.all, ec, FG.data);
-      
-      // Recompute the predict TODO remove
-      FG.data.predict = 0.;
-      FG.data.squared_norm_prediction = 0.;
-      GD::foreach_feature<freegrad_update_data, inner_freegrad_predict>(*FG.all, ec, FG.data);
-      ec.pred.scalar = FG.data.predict;
 
       // Update the maximum gradient norm value
       clipped_grad_norm = sqrtf(FG.data.squared_norm_clipped_grad);
@@ -241,7 +232,8 @@ void freegrad_update_after_prediction(freegrad& FG, example& ec)
         FG.data.sum_normalized_grad_norms += clipped_grad_norm/FG.data.maximum_clipped_gradient_norm;
     }
     else {
-      while (res_weight > 0) {
+      float res_weight = (float) ec.weight;
+      while (true) {
       // Partial derivative of loss (Note that the weight of the examples ec is not accounted for at this stage. This is done in inner_freegrad_update_after_prediction)
         FG.data.update = FG.all->loss->first_derivative(FG.all->sd, ec.pred.scalar, ec.l.simple.label) * std::min(1.f, res_weight);
         
@@ -250,12 +242,6 @@ void freegrad_update_after_prediction(freegrad& FG, example& ec)
         
         // Performing the update
         GD::foreach_feature<freegrad_update_data, inner_freegrad_update_after_prediction>(*FG.all, ec, FG.data);
-        
-        // Recompute the predict TODO remove
-        FG.data.predict = 0.;
-        FG.data.squared_norm_prediction = 0.;
-        GD::foreach_feature<freegrad_update_data, inner_freegrad_predict>(*FG.all, ec, FG.data);
-        ec.pred.scalar = FG.data.predict;
 
         // Update the maximum gradient norm value
         clipped_grad_norm = sqrtf(FG.data.squared_norm_clipped_grad);
@@ -265,6 +251,15 @@ void freegrad_update_after_prediction(freegrad& FG, example& ec)
         if (FG.data.maximum_clipped_gradient_norm >0)
           FG.data.sum_normalized_grad_norms += clipped_grad_norm/FG.data.maximum_clipped_gradient_norm;
         res_weight -= 1;  
+        if (res_weight > 0){
+          // Recompute the predict TODO remove
+          FG.data.predict = 0.;
+          FG.data.squared_norm_prediction = 0.;
+          GD::foreach_feature<freegrad_update_data, inner_freegrad_predict>(*FG.all, ec, FG.data);
+          ec.pred.scalar = FG.data.predict;
+        }
+        else
+          break;
       }
     }
 }
@@ -320,13 +315,12 @@ base_learner* freegrad_setup(options_i& options, vw& all)
   bool restart = false;
   bool project = false;
   bool adaptiveradius = true;
-  bool noweightinvariance = false;
   float radius; 
 
   option_group_definition new_options("FreeGrad options");
   // TODO remove the noweightinvariance option
   new_options.add(make_option("freegrad", FreeGrad).keep().help("Diagonal FreeGrad Algorithm")).add(make_option("restart", restart).help("Use the FreeRange restarts"))
-      .add(make_option("project", project).help("Project the outputs to adapt to both the lipschitz and comparator norm")).add(make_option("noweightinvariance", noweightinvariance).help("Project the outputs to adapt to both the lipschitz and comparator norm")).add(make_option("radius", radius).help("Radius of the l2-ball for the projection. If not supplied, an adaptive radius will be used.")).add(make_option("fepsilon", FG->epsilon).default_value(1.f).help("Initial wealth"));
+      .add(make_option("project", project).help("Project the outputs to adapt to both the lipschitz and comparator norm")).add(make_option("noweightinvariance", FG->noweightinvariance).help("No (importance) weight invariance")).add(make_option("fepsilon", FG->epsilon).default_value(1.f).help("Initial wealth"));
 
   options.add_and_parse(new_options);
 
@@ -345,8 +339,6 @@ base_learner* freegrad_setup(options_i& options, vw& all)
   FG->all = &all;
   FG->restart = restart;
   FG->project = project;
-  // TODO remove this
-  FG->noweightinvariance = noweightinvariance;
   FG->adaptiveradius = adaptiveradius;
   FG->no_win_counter = 0;
   FG->all->normalized_sum_norm_x = 0;
