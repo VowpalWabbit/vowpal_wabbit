@@ -10,6 +10,16 @@ namespace VW
 // This is a bit non-idiomatic but this class's value type is the iterator itself in order to expose
 // any custom fields that the inner iterator type may expose.
 // This isn't exactly generic either since it uses audit_begin() directly
+//
+// Structure of begin and end iterators:
+// Begin:
+//    [a, b] , [c, d]
+//    ^begin_outer
+//     ^begin_inner
+// End:
+//    [a, b] , [c, d, past_end_of_list_end_iterator]
+//             ^end_outer
+//                    ^end_inner
 template <typename InnerIterator, typename IteratorT>
 struct chained_proxy_iterator
 {
@@ -61,18 +71,20 @@ public:
   {
     assert(lhs._outer_current >= rhs._outer_current);
     size_t accumulator = 0;
-    while (lhs != rhs) {
+    while (lhs != rhs)
+    {
       accumulator++;
       ++rhs;
     }
- /*   while (lhs._outer_current != rhs._outer_current)
-    {
-      accumulator += std::distance((*(rhs._outer_current)).audit_begin(), (*(rhs._outer_current)).audit_end());
-      ++rhs._outer_current;
-      rhs._current = (*rhs._outer_current).audit_begin();
-    }
-
-    accumulator += std::distance(rhs._current, lhs._current);*/
+    // TODO: bring back the more efficient skip implementation.
+    // Note this has a bug if any of the inner feature groups is empty it produces the incorrect count in the final
+    // accumulate step. while (lhs._outer_current != rhs._outer_current)
+    // {
+    //   accumulator += std::distance((*(rhs._outer_current)).audit_begin(), (*(rhs._outer_current)).audit_end());
+    //   ++rhs._outer_current;
+    //   rhs._current = (*rhs._outer_current).audit_begin();
+    // }
+    // accumulator += std::distance(rhs._current, lhs._current);
     return accumulator;
   }
 

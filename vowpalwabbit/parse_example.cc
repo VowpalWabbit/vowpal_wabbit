@@ -520,7 +520,7 @@ void read_line(vw& all, example* ex, VW::string_view line)
   substring_to_example(&all, ex, line);
 }
 
-void read_line(vw& all, example* ex, char* line) { return read_line(all, ex, VW::string_view(line)); }
+void read_line(vw& all, example* ex, const char* line) { return read_line(all, ex, VW::string_view(line)); }
 
 void read_lines(vw* all, const char* line, size_t /*len*/, v_array<example*>& examples)
 {

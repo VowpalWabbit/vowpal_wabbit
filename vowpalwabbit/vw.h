@@ -91,8 +91,8 @@ struct primitive_feature_space  // just a helper definition.
 
 /* The simplest of two ways to create an example.  An example_line is the literal line in a VW-format datafile.
  */
-example* read_example(vw& all, char* example_line);
-example* read_example(vw& all, std::string example_line);
+example* read_example(vw& all, const char* example_line);
+example* read_example(vw& all, const std::string& example_line);
 
 // The more complex way to create an example.
 
@@ -192,7 +192,7 @@ inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std:
   return getHasher(h)(s.data(), s.length(), u) & parse_mark;
 }
 
-inline uint64_t hash_feature_cstr(vw& all, char* fstr, uint64_t u)
+inline uint64_t hash_feature_cstr(vw& all, const char* fstr, uint64_t u)
 {
   return all.example_parser->hasher(fstr, strlen(fstr), u) & all.parse_mask;
 }

@@ -164,6 +164,8 @@ namespaced_features::namespace_index_begin_proxy(namespace_index ns_index)
   auto begin_it = namespace_index_begin(ns_index);
   auto end_it = namespace_index_end(ns_index);
   features::audit_iterator inner_it;
+  // If the range is empty we must default construct the inner iterator as dereferencing an end pointer (What begin_it
+  // is here) is not valid.
   if (begin_it == end_it)
   {
     --end_it;
@@ -174,6 +176,9 @@ namespaced_features::namespace_index_begin_proxy(namespace_index ns_index)
     --end_it;
     inner_it = (*begin_it).audit_begin();
   }
+  // end_it always points to the last valid outer iterator instead of the actual end iterator of the outer collection.
+  // This is because the end chained_proxy_iterator points to the end iterator of the last valid item of the outer
+  // collection.
   return {begin_it, end_it, inner_it};
 }
 

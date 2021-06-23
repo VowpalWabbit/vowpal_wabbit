@@ -13,34 +13,40 @@ namespace logger
 {
 // FIXME: the get() call returns a shared_ptr. Keep a copy here to avoid unnecessary shared_ptr copies
 // This can go away once we move to an object-based logger
-namespace detail{
-  std::shared_ptr<spdlog::logger> _stderr_logger = spdlog::stderr_logger_st("stderr");
-  const constexpr char* default_pattern = "[%l] %v";
-  size_t max_limit;
-  size_t log_count;
-}
+namespace detail
+{
+std::shared_ptr<spdlog::logger> _stderr_logger = spdlog::stderr_logger_mt("vowpal-stderr");
+std::shared_ptr<spdlog::logger> _default_logger = spdlog::stdout_logger_mt("vowpal-default");
+const constexpr char* default_pattern = "[%l] %v";
+size_t max_limit;
+size_t log_count;
+}  // namespace detail
 
 void log_set_level(log_level lvl)
 {
-  spdlog::set_level(static_cast<spdlog::level::level_enum>(lvl));
+  detail::_stderr_logger->set_level(static_cast<spdlog::level::level_enum>(lvl));
+  detail::_default_logger->set_level(static_cast<spdlog::level::level_enum>(lvl));
 }
 
 void set_max_output(size_t max) { detail::max_limit = max; }
 
 pattern_guard::pattern_guard(const std::string& pattern)
 {
-  spdlog::set_pattern(pattern);
+  detail::_stderr_logger->set_pattern(pattern);
+  detail::_default_logger->set_pattern(pattern);
 }
 
 pattern_guard::~pattern_guard()
 {
-  spdlog::set_pattern(detail::default_pattern);
+  detail::_stderr_logger->set_pattern(detail::default_pattern);
+  detail::_default_logger->set_pattern(detail::default_pattern);
 }
 
 void initialize_logger()
 {
   detail::max_limit = SIZE_MAX;
-  spdlog::set_pattern(detail::default_pattern);
+  detail::_stderr_logger->set_pattern(detail::default_pattern);
+  detail::_default_logger->set_pattern(detail::default_pattern);
 }
 
 size_t get_log_count() { return detail::log_count; }
@@ -53,6 +59,6 @@ void log_summary()
         "Omitted some log lines. Re-run without --limit_output N for full log. Total log lines: {}", detail::log_count);
   }
 }
-}
-}
-}
+}  // namespace logger
+}  // namespace io
+}  // namespace VW
