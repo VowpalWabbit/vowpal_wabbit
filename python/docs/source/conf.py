@@ -8,36 +8,15 @@
 
 # -- Path setup --------------------------------------------------------------
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
 import os
 import sys
 import vowpalwabbit
-
-sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../../'))
-
-
-
-#   Interactive online version:
-#   <span style="white-space: nowrap;"><a href="https://mybinder.org/v2/gh/spatialaudio/nbsphinx/{{ env.config.release|e }}?filepath={{ docname|e }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>.</span>
-# nbsphinx_prolog = r"""
-# {% set docname = 'doc/' + env.doc2path(env.docname, base=None) %}
-
-# .. raw:: html
-
-#     <div class="admonition note">
-#       This page was generated from
-#       <a class="reference external" href="https://github.com/VowpalWabbit/vowpalwabbit/blob/master/python/examples/{{ docname|basename|e }}">{{ docname|basename|e }}</a>.
-#     </div>
-# """
+from pathlib import Path
 
 # -- Project information -----------------------------------------------------
 
 project = u'VowpalWabbit'
-copyright = u'2019, John langford et al'
+copyright = u'2021, John langford et al'
 author = u'John langford et al'
 
 
@@ -48,10 +27,6 @@ version = vowpalwabbit.__version__
 release = version
 
 # -- General configuration ---------------------------------------------------
-
-# If your documentation needs a minimal Sphinx version, state it here.
-#
-# needs_sphinx = '1.0'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -71,24 +46,19 @@ jupyter_execute_notebooks = "cache"
 thebe_config = {
     "repository_url": "https://github.com/jackgerrits/vowpal_wabbit",
     "repository_branch": "nbtest",
+    "selector": ".cell",
 }
 show_navbar_depth = 2
 
 html_theme_options = {
-    "path_to_docs": "python/docs/source",
-    "repository_url": "https://github.com/jackgerrits/vowpal_wabbit",
-    "repository_branch": "nbtest",
-    "launch_buttons": {
-        "binderhub_url": "https://mybinder.org",
-        "notebook_interface": "jupyterlab",
-        "thebe": True,
-    },
-    "use_repository_button": True,
-    "use_edit_page_button": True,
-    "home_page_in_toc": True,
-    "use_issues_button": True,
-    "use_download_button": False,
-    "use_fullscreen_button": False,
+    "use_edit_page_button": True
+}
+
+html_context = {
+    "github_user": "jackgerrits",
+    "github_repo": "vowpal_wabbit",
+    "github_version": "nbtest",
+    "doc_path": "python/docs/source",
 }
 
 # This helps to document __init__
@@ -98,16 +68,16 @@ def skip(app, what, name, obj, would_skip, options):
     return would_skip
 
 def setup(app):
+    app.add_config_value("binder_url_config", {}, "html")
     app.connect("autodoc-skip-member", skip)
+    app.connect("html-page-context", add_binder_url_for_page)
 
-# Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
 
 # The master toctree document.
 master_doc = 'index'
@@ -133,7 +103,7 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_book_theme'
+html_theme = 'pydata_sphinx_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -146,9 +116,11 @@ html_theme = 'sphinx_book_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+html_css_files = [
+    'custom.css',
+]
 
-
-html_sidebars = { '**': ['globaltoc.html', 'sourcelink.html', 'searchbox.html'] }
+html_sidebars = { '**': ['search-field.html', 'nav-toc-override.html'] }
 
 
 # Custom sidebar templates, must be a dictionary that maps document names
@@ -164,3 +136,61 @@ html_sidebars = { '**': ['globaltoc.html', 'sourcelink.html', 'searchbox.html'] 
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
+
+binder_url_config = {
+    "branch": "nbtest",
+    "repo_url": "https://github.com/jackgerrits/vowpal_wabbit",
+    "path_to_docs": "python/docs/source"
+}
+
+def add_binder_url_for_page(
+    app,
+    pagename: str,
+    templatename: str,
+    context,
+    doctree,
+):
+
+    # First decide if we'll insert any links
+    path = app.env.doc2path(pagename)
+    extension = Path(path).suffix
+    binder_url_config = app.config["binder_url_config"]
+
+    repo_url = binder_url_config["repo_url"]
+
+    # Parse the repo parts from the URL
+    org, repo = _split_repo_url(repo_url)
+    if org is None and repo is None:
+        # Skip the rest because the repo_url isn't right
+        return
+
+
+    branch = binder_url_config["branch"]
+
+    # Check if we have a non-ipynb file, but an ipynb of same name exists
+    # If so, we'll use the ipynb extension instead of the text extension
+    if extension != ".ipynb" and Path(path).with_suffix(".ipynb").exists():
+        extension = ".ipynb"
+    elif extension != ".ipynb":
+        return
+
+    # Construct a path to the file relative to the repository root
+    book_relpath = binder_url_config["path_to_docs"]
+    if book_relpath != "":
+        book_relpath += "/"
+    path_rel_repo = f"{book_relpath}{pagename}{extension}"
+
+    url = (
+        f"https://mybinder.org/v2/gh/{org}/{repo}/{branch}?"
+        f"filepath={path_rel_repo}"
+    )
+    context["binder_url"] = url
+
+def _split_repo_url(url):
+    """Split a repository URL into an org / repo combination."""
+    if "github.com/" in url:
+        end = url.split("github.com/")[-1]
+        org, repo = end.split("/")[:2]
+    else:
+        raise ValueError(f"Currently Binder/JupyterHub repositories must be on GitHub, got {url}")
+    return org, repo

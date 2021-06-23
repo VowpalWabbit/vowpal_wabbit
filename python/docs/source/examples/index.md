@@ -3,7 +3,17 @@
 A sample chapter, there's no content here, just a placeholder to demo the navbar.
 
 ```{toctree}
+:maxdepth: 1
+
+basics
+contextual_bandit
 mini_vw
-VW_in_Python
-Contextual_Bandit_Example_with_VW_Python_Wrapper
+poisson_regression
+predict
+search_covington
+search_sequence_ldf
+search_sequence
+search_speech_tagger
+search_word_alignment
+search_xor
 ```
