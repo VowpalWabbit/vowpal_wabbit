@@ -89,31 +89,33 @@ public:
   inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
   inline weight& operator[](size_t i) { return _begin[i & _weight_mask]; }
 
-  // Definitions for aggregated learning
-  std::unordered_map<uint64_t, std::bitset<32>> feature_bit_vector;
-  struct tag_hash_info
+  std::unordered_map<uint64_t, std::bitset<32>> feature_bit_vector; // define the 32-bitset for each feature
+  struct tag_hash_info_dense // define struct to store the information of the tag hash
   {
     uint64_t tag_hash;
     bool is_set=false;
   };
 
-  void set_tag(uint64_t tag_hash)
+  tag_hash_info_dense tag_info_dense;
+
+  void set_tag(uint64_t tag_hash) // function to store the tag hash for a feature and set it to true
   {
-      tag_hash_info tag_info;
-      tag_info.tag_hash=tag_hash;
-      tag_info.is_set=true;
+      
+    tag_info_dense.tag_hash=tag_hash;
+    tag_info_dense.is_set=true;
   }
   
-  void turn_on_bit(uint64_t feature_index) // how does offset work in dense?
+  void turn_on_bit(uint64_t feature_index) // function to lookup a bit for a feature in the 32-bitset using the 5-bit tag hash and set it to 1.
   {
-    tag_hash_info tag_info;
-    if(feature_index % stride() == 0 && tag_info.is_set) // how does offset work in dense?
+    if(feature_index % stride() == 0 && tag_info_dense.is_set)
     {
-      feature_bit_vector[feature_index][tag_info.tag_hash]=1;
+      feature_bit_vector[feature_index][tag_info_dense.tag_hash]=1;
     }
   }
 
-  bool is_activated(size_t index){return feature_bit_vector[index].count()>=10;}
+  void unset_tag(){ tag_info_dense.is_set=false;} // function to set the tag to false after an example is trained on
+
+  bool is_activated(size_t index){return feature_bit_vector[index].count()>=10;} // function to check if the number of bits set to 1 are greater than a threshold for a feature
 
   void shallow_copy(const dense_parameters& input)
   {

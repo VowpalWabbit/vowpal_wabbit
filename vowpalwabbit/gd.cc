@@ -776,7 +776,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
     } while (brw > 0);
   else  // write
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
-      if (*v != 0.)
+      if (*v != 0. && weights.is_activated(v.index())) // checks for a non zero weight value and if the number of bits set to 1 for a feature greater than the threshold
       {
         i = v.index() >> weights.stride_shift();
         std::stringstream msg;

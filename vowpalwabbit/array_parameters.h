@@ -8,7 +8,6 @@
 #include <cstddef>
 #include <functional>
 #include <bitset>
-#include <unordered_map>
 
 #ifndef _WIN32
 #  define NOMINMAX
@@ -42,7 +41,7 @@ public:
   typedef T& reference;
 
   sparse_iterator(weight_map::iterator& iter, uint32_t stride) : _iter(iter), _stride(stride) {}
-  
+
   sparse_iterator& operator=(const sparse_iterator& other) = default;
   sparse_iterator(const sparse_iterator& other) = default;
   sparse_iterator& operator=(sparse_iterator&& other) = default;
@@ -109,31 +108,32 @@ public:
 
   bool not_null() { return (_weight_mask > 0 && !_map.empty()); }
 
-  //Definitions for aggregated learning
-  std::unordered_map<uint64_t, std::bitset<32>> feature_bit_vector_sparse;
-  struct tag_hash_info_sparse
+  std::unordered_map<uint64_t, std::bitset<32>> feature_bit_vector_sparse; // define the 32-bitset for each feature
+  struct tag_hash_info_sparse // define struct to store the information of the tag hash
   {
     uint64_t tag_hash;
     bool is_set=false;
   };
 
-  void set_tag(uint64_t tag_hash)
+  tag_hash_info_sparse tag_info_sparse;
+
+  void set_tag(uint64_t tag_hash) // function to store the tag hash for a feature and set it to true
   {
-      tag_hash_info_sparse tag_info;
-      tag_info.tag_hash=tag_hash;
-      tag_info.is_set=true;
+    tag_info_sparse.tag_hash=tag_hash;
+    tag_info_sparse.is_set=true;
   }
   
-  void turn_on_bit(uint64_t feature_index)
+  void turn_on_bit(uint64_t feature_index) // function to lookup a bit for a feature in the 32-bitset using the 5-bit tag hash and set it to 1.
   {
-    tag_hash_info_sparse tag_info_sparse;
     if(feature_index % stride() == 0 && tag_info_sparse.is_set) 
     {
       feature_bit_vector_sparse[feature_index][tag_info_sparse.tag_hash]=1;
     }
   }
 
-  bool is_activated(size_t index){return feature_bit_vector_sparse[index].count()>=10;}
+  void unset_tag(){ tag_info_sparse.is_set=false;} // function to set the tag to false after an example is trained on
+
+  bool is_activated(size_t index){return feature_bit_vector_sparse[index].count()>=10;} // function to check if the number of bits set to 1 are greater than a threshold for a feature 
 
   sparse_parameters(const sparse_parameters& other) = delete;
   sparse_parameters& operator=(const sparse_parameters& other) = delete;
