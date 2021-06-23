@@ -45,7 +45,9 @@ private:
     example* new_ec = VW::new_unused_example(*vw_par_ref);
     vw_par_ref->example_parser->lbl_parser.default_label(&new_ec->l);
     new_ec->tag.clear();
-    new_ec->feature_space.clear();
+    new_ec->indices.clear();
+    for (auto& i : new_ec->feature_space) i.clear();
+
     new_ec->ft_offset = 0;
     new_ec->num_features = 0;
     new_ec->partial_prediction = 0.;
@@ -129,9 +131,7 @@ public:
   {
     if (vw_ref->ignore_some && vw_ref->ignore[static_cast<int>(c)]) return true;
     if (ns_exists[static_cast<int>(c)]) return false;
-    std::string s(1, c);
-    fid hash = static_cast<fid>(VW::hash_space(*vw_ref, s));
-    ec->feature_space.get_or_create_feature_group(hash, c);
+    ec->indices.push_back(static_cast<size_t>(c));
     ns_exists[static_cast<int>(c)] = true;
     return false;
   }
@@ -139,34 +139,35 @@ public:
   void addns(char c)
   {
     if (ensure_ns_exists(c)) return;
+
+    ec->feature_space[static_cast<int>(c)].clear();
     past_seeds.push_back(current_seed);
     current_ns = c;
     str[0] = c;
     current_seed = static_cast<fid>(VW::hash_space(*vw_ref, str));
-    ec->feature_space[current_seed].clear();
   }
 
   void remns()
   {
-    if (ec->feature_space.empty())
+    if (ec->indices.empty())
     {
       current_seed = 0;
       current_ns = 0;
     }
     else
     {
-      if (ns_exists[current_seed])
+      if (ns_exists[static_cast<int>(current_ns)])
       {
         ec->reset_total_sum_feat_sq();
-        ec->feature_space[current_seed].clear();
-        ec->num_features -= ec->feature_space[current_seed].size();
+        ec->feature_space[static_cast<int>(current_ns)].clear();
+        ec->num_features -= ec->feature_space[static_cast<int>(current_ns)].size();
 
         ns_exists[static_cast<int>(current_ns)] = false;
       }
 
-      ec->feature_space.remove_feature_group(current_seed);
       current_seed = past_seeds.back();
       past_seeds.pop_back();
+      ec->indices.pop_back();
       example_changed_since_prediction = true;
     }
   }
@@ -176,7 +177,7 @@ public:
     if (to_ns == 0) return 0;
     if (ensure_ns_exists(to_ns)) return 0;
 
-    ec->feature_space[current_seed].push_back(v, fint << vw_ref->weights.stride_shift());
+    ec->feature_space[static_cast<int>(to_ns)].push_back(v, fint << vw_ref->weights.stride_shift());
     ec->reset_total_sum_feat_sq();
     ec->num_features++;
     example_changed_since_prediction = true;
@@ -189,8 +190,9 @@ public:
   void add_other_example_ns(example& other, char other_ns, char to_ns)
   {
     if (ensure_ns_exists(to_ns)) return;
-    features& fs = other.feature_space[current_seed];
-    for (size_t i = 0; i < fs.size(); i++) ec->feature_space[current_seed].push_back(fs.values[i], fs.indicies[i]);
+    features& fs = other.feature_space[static_cast<int>(other_ns)];
+    for (size_t i = 0; i < fs.size(); i++)
+      ec->feature_space[static_cast<int>(to_ns)].push_back(fs.values[i], fs.indicies[i]);
     ec->reset_total_sum_feat_sq();
     ec->num_features += fs.size();
     example_changed_since_prediction = true;
