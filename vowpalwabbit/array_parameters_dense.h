@@ -54,6 +54,15 @@ private:
   uint32_t _stride_shift;
   bool _seeded;  // whether the instance is sharing model state with others
 
+  std::unordered_map<uint64_t, std::bitset<32>> _feature_bit_vector; // define the 32-bitset for each feature
+  struct _tag_hash_info // define struct to store the information of the tag hash
+  {
+    uint64_t tag_hash;
+    bool is_set=false;
+  };
+
+  _tag_hash_info _tag_info;
+
 public:
   typedef dense_iterator<weight> iterator;
   typedef dense_iterator<const weight> const_iterator;
@@ -89,33 +98,23 @@ public:
   inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
   inline weight& operator[](size_t i) { return _begin[i & _weight_mask]; }
 
-  std::unordered_map<uint64_t, std::bitset<32>> feature_bit_vector; // define the 32-bitset for each feature
-  struct tag_hash_info_dense // define struct to store the information of the tag hash
-  {
-    uint64_t tag_hash;
-    bool is_set=false;
-  };
-
-  tag_hash_info_dense tag_info_dense;
-
   void set_tag(uint64_t tag_hash) // function to store the tag hash for a feature and set it to true
   {
-      
-    tag_info_dense.tag_hash=tag_hash;
-    tag_info_dense.is_set=true;
+    _tag_info.tag_hash=tag_hash;
+    _tag_info.is_set=true;
   }
   
   void turn_on_bit(uint64_t feature_index) // function to lookup a bit for a feature in the 32-bitset using the 5-bit tag hash and set it to 1.
   {
-    if(feature_index % stride() == 0 && tag_info_dense.is_set)
+    if(_tag_info.is_set)
     {
-      feature_bit_vector[feature_index][tag_info_dense.tag_hash]=1;
+      _feature_bit_vector[feature_index][_tag_info.tag_hash]=1;
     }
   }
 
-  void unset_tag(){ tag_info_dense.is_set=false;} // function to set the tag to false after an example is trained on
+  void unset_tag(){ _tag_info.is_set=false;} // function to set the tag to false after an example is trained on
 
-  bool is_activated(size_t index){return feature_bit_vector[index].count()>=10;} // function to check if the number of bits set to 1 are greater than a threshold for a feature
+  bool is_activated(size_t index){return _feature_bit_vector[index].count()>=10;} // function to check if the number of bits set to 1 are greater than a threshold for a feature
 
   void shallow_copy(const dense_parameters& input)
   {
