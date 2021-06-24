@@ -49,19 +49,17 @@ public:
 class dense_parameters
 {
 private:
-  weight* _begin;
-  uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
-  uint32_t _stride_shift;
-  bool _seeded;  // whether the instance is sharing model state with others
-
-  std::unordered_map<uint64_t, std::bitset<32>> _feature_bit_vector; // define the 32-bitset for each feature
-  struct _tag_hash_info // define struct to store the information of the tag hash
+  struct tag_hash_info // define struct to store the information of the tag hash
   {
     uint64_t tag_hash;
     bool is_set=false;
   };
-
-  _tag_hash_info _tag_info;
+  weight* _begin;
+  uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
+  uint32_t _stride_shift;
+  bool _seeded;  // whether the instance is sharing model state with others
+  std::unordered_map<uint64_t, std::bitset<32>> _feature_bit_vector; // define the 32-bitset for each feature
+  tag_hash_info _tag_info;
 
 public:
   typedef dense_iterator<weight> iterator;
@@ -114,7 +112,7 @@ public:
 
   void unset_tag(){ _tag_info.is_set=false;} // function to set the tag to false after an example is trained on
 
-  bool is_activated(size_t index){return _feature_bit_vector[index].count()>=10;} // function to check if the number of bits set to 1 are greater than a threshold for a feature
+  bool is_activated(uint64_t index){return _feature_bit_vector[index].count()>=10;} // function to check if the number of bits set to 1 are greater than a threshold for a feature
 
   void shallow_copy(const dense_parameters& input)
   {

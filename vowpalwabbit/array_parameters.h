@@ -64,6 +64,11 @@ public:
 class sparse_parameters
 {
 private:
+  struct tag_hash_info // define struct to store the information of the tag hash
+  {
+    uint64_t tag_hash;
+    bool is_set=false;
+  };
   // This must be mutable because the const operator[] must be able to intialize default weights to return.
   mutable weight_map _map;
   uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
@@ -71,6 +76,8 @@ private:
   bool _seeded;  // whether the instance is sharing model state with others
   bool _delete;
   std::function<void(weight*, uint64_t)> _default_func;
+  std::unordered_map<uint64_t, std::bitset<32>> _feature_bit_vector; // define the 32-bitset for each feature
+  tag_hash_info _tag_info;
 
   // It is marked const so it can be used from both const and non const operator[]
   // The map itself is mutable to facilitate this
@@ -86,15 +93,6 @@ private:
     }
     return iter->second;
   }
-
-  std::unordered_map<uint64_t, std::bitset<32>> _feature_bit_vector; // define the 32-bitset for each feature
-  struct _tag_hash_info // define struct to store the information of the tag hash
-  {
-    uint64_t tag_hash;
-    bool is_set=false;
-  };
-  
-  _tag_hash_info _tag_info;
 
 public:
   typedef sparse_iterator<weight> iterator;
@@ -133,7 +131,7 @@ public:
 
   void unset_tag(){ _tag_info.is_set=false;} // function to set the tag to false after an example is trained on
 
-  bool is_activated(size_t index){return _feature_bit_vector[index].count()>=10;} // function to check if the number of bits set to 1 are greater than a threshold for a feature 
+  bool is_activated(uint64_t index){return _feature_bit_vector[index].count()>=10;} // function to check if the number of bits set to 1 are greater than a threshold for a feature 
 
   sparse_parameters(const sparse_parameters& other) = delete;
   sparse_parameters& operator=(const sparse_parameters& other) = delete;
