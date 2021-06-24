@@ -19,7 +19,7 @@ void add_example_namespace(
 }
 
 void del_example_namespace(
-    example& ec, namespace_index ns_index, uint64_t ns_hash, const features& source_feature_group)
+    example& ec, namespace_index /*ns_index*/, uint64_t ns_hash, const features& source_feature_group)
 {
   // print_update is called after this del_example_namespace,
   // so we need to keep the ec.num_features correct,
