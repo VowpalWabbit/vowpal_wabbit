@@ -355,19 +355,19 @@ TEST(VowpalWabbitSlim, multiclass_data_4)
 
   safe_example_predict shared;
   // shared |a 0:1 5:12
-  example_predict_builder bs(&shared, "a");
+  example_predict_builder bs(&shared, (char*)"a");
   bs.push_feature(0, 1.f);
   bs.push_feature(5, 12.f);
 
   safe_example_predict ex[3];
   // 1:1.0 |b 0:1
-  example_predict_builder b0(&ex[0], "b");
+  example_predict_builder b0(&ex[0], (char*)"b");
   b0.push_feature(0, 1.f);
   // 2:0.3 |b 0:2
-  example_predict_builder b1(&ex[1], "b");
+  example_predict_builder b1(&ex[1], (char*)"b");
   b1.push_feature(0, 2.f);
   // 3:0.1 |b 0:3
-  example_predict_builder b2(&ex[2], "b");
+  example_predict_builder b2(&ex[2], (char*)"b");
   b2.push_feature(0, 3.f);
 
   ASSERT_EQ(S_VW_PREDICT_OK, vw.predict(shared, ex, 3, out_scores));
@@ -389,34 +389,34 @@ TEST(VowpalWabbitSlim, multiclass_data_5)
 
   safe_example_predict shared;
   // shared |aa 0:1 5:12
-  example_predict_builder bs(&shared, (char*)"aa");
+  example_predict_builder bs(&shared, "aa");
   bs.push_feature(0, 1.f);
   bs.push_feature(5, 12.f);
 
   safe_example_predict ex[8];
   // 1:1.0 |ab 0:1
-  example_predict_builder b0(&ex[0], (char*)"ab");
+  example_predict_builder b0(&ex[0], "ab");
   b0.push_feature(0, 1.f);
   // 2:0.3 |ab 0:2
-  example_predict_builder b1(&ex[1], (char*)"ab");
+  example_predict_builder b1(&ex[1], "ab");
   b1.push_feature(0, 2.f);
   // 3:0.1 |ab 0:3
-  example_predict_builder b2(&ex[2], (char*)"ab");
+  example_predict_builder b2(&ex[2], "ab");
   b2.push_feature(0, 3.f);
   // 1:1.0 |ab 0:1
-  example_predict_builder b3(&ex[3], (char*)"ab");
+  example_predict_builder b3(&ex[3], "ab");
   b3.push_feature(0, 1.f);
   // 1:0.7 |ac 0:1
-  example_predict_builder b4(&ex[4], (char*)"ac");
+  example_predict_builder b4(&ex[4], "ac");
   b4.push_feature(0, 1.f);
   // 2:1.0 |ac 0:2
-  example_predict_builder b5(&ex[5], (char*)"ac");
+  example_predict_builder b5(&ex[5], "ac");
   b5.push_feature(0, 2.f);
   // 3:0.4 |ac 0:3
-  example_predict_builder b6(&ex[6], (char*)"ac");
+  example_predict_builder b6(&ex[6], "ac");
   b6.push_feature(0, 3.f);
   // 1:0.7 |ac 0:1
-  example_predict_builder b7(&ex[7], (char*)"ac");
+  example_predict_builder b7(&ex[7], "ac");
   b7.push_feature(0, 1.f);
 
   ASSERT_EQ(S_VW_PREDICT_OK, vw.predict(shared, ex, 8, out_scores));
