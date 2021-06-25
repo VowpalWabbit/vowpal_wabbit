@@ -28,4 +28,4 @@ jobs:
           ${{ matrix.config.base_path }}bin/python setup.py install
           ${{ matrix.config.base_path }}bin/pip install -r requirements.txt
           ${{ matrix.config.base_path }}bin/pip install pytype
-          ${{ matrix.config.base_path }}bin/python -m pytype ./python/vowpalwabbit/
+          ${{ matrix.config.base_path }}bin/python -m pytype ./python/vowpalwabbit/ --verbosity=2
