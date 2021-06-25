@@ -71,7 +71,7 @@ jobs:
       - name: Run type checking
         shell: bash
         run: |
-          python -m pytype ./python/vowpalwabbit/
+          python -m pytype ./python/vowpalwabbit/  --verbosity=2
       - name: Run unit tests
         shell: bash
         run: |
