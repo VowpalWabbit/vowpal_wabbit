@@ -22,6 +22,10 @@ jobs:
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v1
+      - name: add to path
+        shell: bash
+        run: |
+          echo "${{ matrix.config.base_path }}bin" >> $GITHUB_PATH
       - name: Build + check
         shell: bash
         run: |
