@@ -451,7 +451,9 @@ void push_many(v_array<T>& v, const T* src, size_t num)
 }
 
 template <class T>
-VW_DEPRECATED("calloc_reserve is no longer supported. You should use appropriate constructors instead. This will be removed in VW 9.0.")
+VW_DEPRECATED(
+    "calloc_reserve is no longer supported. You should use appropriate constructors instead. This will be removed in "
+    "VW 9.0.")
 void calloc_reserve(v_array<T>& v, size_t length)
 {
   v.clear();

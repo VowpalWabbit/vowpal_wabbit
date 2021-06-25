@@ -59,7 +59,9 @@ vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skipM
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
 
-VW_DEPRECATED("By value version is deprecated, pass std::string by const ref instead using `to_argv`. This will be removed in VW 9.0.")
+VW_DEPRECATED(
+    "By value version is deprecated, pass std::string by const ref instead using `to_argv`. This will be removed in VW "
+    "9.0.")
 char** get_argv_from_string(std::string s, int& argc);
 
 // The argv array from both of these functions must be freed.
@@ -144,7 +146,8 @@ void finish_example(vw& all, example& ec);
 void finish_example(vw& all, multi_ex& ec);
 void empty_example(vw& all, example& ec);
 
-VW_DEPRECATED("label size or copy_label are no longer used, please use the other overload. This will be removed in VW 9.0.")
+VW_DEPRECATED(
+    "label size or copy_label are no longer used, please use the other overload. This will be removed in VW 9.0.")
 void copy_example_data(bool audit, example*, example*, size_t, void (*copy_label)(polylabel*, polylabel*));
 VW_DEPRECATED("copy_label is no longer required. Use copy_example_data_with_label")
 void copy_example_data(bool audit, example*, example*, void (*copy_label)(polylabel*, polylabel*));
