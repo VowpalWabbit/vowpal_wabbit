@@ -60,7 +60,7 @@ jobs:
         shell: bash
         run: |
           pip install -r requirements.txt
-          pip install pytest pytype
+          pip install pytest
       - name: Install wheel
         shell: bash
         run: |
@@ -68,10 +68,6 @@ jobs:
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           pip install ${wheel_file}
-      - name: Run type checking
-        shell: bash
-        run: |
-          python -m pytype ./python/vowpalwabbit/
       - name: Run unit tests
         shell: bash
         run: |
