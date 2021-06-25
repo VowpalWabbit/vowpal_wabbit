@@ -104,7 +104,7 @@ def test_with_interaction():
     random.seed(10)
     ctr = run_simulation(vw, num_iterations, users, times_of_day, actions, get_cost)
 
-    assert(pytest.approx(ctr[-1], abs=1e-2) == 0.783)
+    assert(ctr[-1] >= 0.70)
 
 def test_without_interaction():
     vw = pyvw.vw("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5")
@@ -112,4 +112,5 @@ def test_without_interaction():
     random.seed(10)
     ctr = run_simulation(vw, num_iterations, users, times_of_day, actions, get_cost)
 
-    assert(pytest.approx(ctr[-1], abs=1e-2) == 0.419)
+    assert(ctr[-1] <= 0.49)
+    assert(ctr[-1] >= 0.38)
