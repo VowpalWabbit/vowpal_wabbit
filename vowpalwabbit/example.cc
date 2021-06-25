@@ -24,6 +24,11 @@ float calculate_total_sum_features_squared(bool permutations, example& ec)
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
+example::example()
+{
+  in_use = true;
+}
+
 example::~example()
 {
   if (passthrough)
