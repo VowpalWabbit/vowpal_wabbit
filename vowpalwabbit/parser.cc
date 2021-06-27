@@ -751,7 +751,7 @@ example* new_unused_example(vw& all)
   ec->example_counter = static_cast<size_t>(all.example_parser->begin_parsed_examples.load());
   return ec;
 }
-example* read_example(vw& all, char* example_line)
+example* read_example(vw& all, const char* example_line)
 {
   example* ret = &get_unused_example(&all);
 
@@ -762,10 +762,7 @@ example* read_example(vw& all, char* example_line)
   return ret;
 }
 
-example* read_example(vw& all, std::string example_line)
-{
-  return read_example(all, const_cast<char*>(example_line.c_str()));
-}
+example* read_example(vw& all, const std::string& example_line) { return read_example(all, example_line.c_str()); }
 
 void add_constant_feature(vw& vw, example* ec)
 {

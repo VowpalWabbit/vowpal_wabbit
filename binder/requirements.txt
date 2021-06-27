@@ -1,0 +1,6 @@
+numpy>=1.6.1
+scipy>=0.9
+scikit-learn>=0.17
+pandas>=0.24.2
+matplotlib>=3.4.0
+vowpalwabbit
