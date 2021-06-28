@@ -103,11 +103,11 @@ def test_feature_with_nan():
     df = pd.DataFrame({
         "y": [-1, 1, 1],
         "x1": [1, 2, None],
-        "x2": [1., None, 2.]
+        "x2": [3, None, 2]
     })
     conv = DFtoVW(df=df, features=[Feature("x1"), Feature("x2")], label=SimpleLabel("y"))
     lines = conv.convert_df()
-    assert lines == ['-1 | x1:1.0 x2:1.0', '1 | x1:2.0 ', '1 |  x2:2.0']
+    assert lines == ['-1 | x1:1.0 x2:3.0', '1 | x1:2.0 ', '1 |  x2:2.0']
 
 
 def test_multiple_named_namespaces():
