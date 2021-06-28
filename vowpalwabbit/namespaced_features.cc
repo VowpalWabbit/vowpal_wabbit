@@ -25,6 +25,8 @@ const features* namespaced_features::get_feature_group(uint64_t hash) const
 
 const std::set<namespace_index>& namespaced_features::get_indices() const { return _contained_indices; }
 
+const namespace_index& namespaced_features::get_last_index() const { return _namespace_indices.back(); }
+
 namespace_index namespaced_features::get_index_for_hash(uint64_t hash) const
 {
   auto it = _hash_to_index_mapping.find(hash);

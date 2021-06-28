@@ -151,6 +151,7 @@ struct namespaced_features
   const features* get_feature_group(uint64_t hash) const;
 
   const std::set<namespace_index>& get_indices() const;
+  const namespace_index& get_last_index() const;
   namespace_index get_index_for_hash(uint64_t hash) const;
 
   // The following are experimental and may be superseded with namespace_index_begin_proxy
