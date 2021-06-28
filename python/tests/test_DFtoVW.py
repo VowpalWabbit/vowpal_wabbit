@@ -99,6 +99,17 @@ def test_dirty_colname_feature():
     assert first_line == "1 | my_first_feature=x white_space_at_the_end:2"
 
 
+def test_feature_with_nan():
+    df = pd.DataFrame({
+        "y": [-1, 1, 1],
+        "x1": [1, 2, 3],
+        "x2": [1., None, 2.]
+    })
+    conv = DFtoVW(df=df, features=[Feature("x1"), Feature("x2")], label=SimpleLabel("y"))
+    lines = conv.convert_df()
+    assert lines == ['-1 | x1:1 x2:1.0', '1 | x1:2 ', '1 | x1:3 x2:2.0']
+
+
 def test_multiple_named_namespaces():
     df = pd.DataFrame({"y": [1], "a": [2], "b": [3]})
     conv = DFtoVW(
