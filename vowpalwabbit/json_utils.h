@@ -42,7 +42,7 @@ struct Namespace
 
   void AddFeature(vw* all, const char* str)
   {
-    ftrs->push_back(1., VW::hash_feature_cstr(*all, const_cast<char*>(str), namespace_hash));
+    ftrs->push_back(1., VW::hash_feature_cstr(*all, str, namespace_hash));
     feature_count++;
 
     if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, str)));

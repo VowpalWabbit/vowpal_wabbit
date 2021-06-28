@@ -126,13 +126,15 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   ec.num_features = in.feat_store.size();
 
   std::vector<uint64_t> hashes_removed;
+  std::vector<namespace_index> index_removed;
   std::vector<features> removed_features;
 
-  auto remove_index = [&hashes_removed, &removed_features, &ec](namespace_index index) {
+  auto remove_index = [&hashes_removed, &removed_features, &index_removed, & ec](namespace_index index) {
     auto feat_range1 = ec.feature_space.get_namespace_index_groups(index);
     for (auto it = feat_range1.first; it != feat_range1.second; ++it)
     {
       hashes_removed.push_back(it.hash());
+      index_removed.push_back(it.index());
       removed_features.emplace_back(std::move(*it));
     }
     for (auto hash : hashes_removed) { ec.feature_space.remove_feature_group(hash); }
@@ -153,7 +155,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   // re-insert namespace into the right position
   for (size_t i = 0; i < hashes_removed.size(); i++)
   {
-    ec.feature_space.merge_feature_group(std::move(removed_features[i]), hashes_removed[i], in.n2);
+    ec.feature_space.merge_feature_group(std::move(removed_features[i]), hashes_removed[i], index_removed[i]);
   }
 
   ec.num_features = in.num_features;

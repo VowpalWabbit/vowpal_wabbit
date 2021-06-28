@@ -256,7 +256,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
         // let's go throw the list and calculate number of features to skip in namespaces which
         // repeated more than once to generate only simple combinations of features
 
-        size_t margin = 0;  // number of features to ignore if namespace has been seen before
+        // size_t margin = 0;  // number of features to ignore if namespace has been seen before
 
         // iterate list backward as margin grows in this order
 
@@ -296,7 +296,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
       // beware: micro-optimization.
       /* start & end are always point to features in last namespace of interaction.
       for 'all.permutations == true' they are constant.*/
-      size_t start_i = 0;
+      // size_t start_i = 0;
 
       feature_gen_data* cur_data = fgd;
       // end of micro-optimization block

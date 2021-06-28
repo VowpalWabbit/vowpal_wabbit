@@ -31,7 +31,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer_coll
   auto label = get_label(builder, label_type);
 
   fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, "hello", 2.23f, constant));
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts));
+  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts, constant_namespace));
   examples.push_back(VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label));
 
   auto eg_collection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(builder, &examples);
@@ -47,7 +47,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer(
   auto label = get_label(builder, label_type);
 
   fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, "hello", 2.23f, constant));
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts));
+  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts, constant_namespace));
   auto example = VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label);
 
   return CreateExampleRoot(builder, VW::parsers::flatbuffer::ExampleType_Example, example.Union());
@@ -85,8 +85,9 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_standalone_example)
   const auto& red_features = examples[0]->_reduction_features.template get<simple_label_reduction_features>();
   BOOST_CHECK_CLOSE(red_features.weight, 1.f, FLOAT_TOL);
 
-  BOOST_CHECK_EQUAL(examples[0]->indices[0], constant_namespace);
-  BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
+  auto* constant_feat_group = examples[0]->feature_space.get_feature_group(constant_namespace);
+  BOOST_CHECK(constant_feat_group != nullptr);
+  BOOST_CHECK_CLOSE(constant_feat_group->values[0], 2.23f, FLOAT_TOL);
 
   VW::finish_example(*all, *examples[0]);
   VW::finish(*all);
@@ -125,8 +126,9 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
   const auto& red_features = examples[0]->_reduction_features.template get<simple_label_reduction_features>();
   BOOST_CHECK_CLOSE(red_features.weight, 1.f, FLOAT_TOL);
 
-  BOOST_CHECK_EQUAL(examples[0]->indices[0], constant_namespace);
-  BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
+  auto* constant_feat_group = examples[0]->feature_space.get_feature_group(constant_namespace);
+  BOOST_CHECK(constant_feat_group != nullptr);
+  BOOST_CHECK_CLOSE(constant_feat_group->values[0], 2.23f, FLOAT_TOL);
 
   VW::finish_example(*all, *examples[0]);
   VW::finish(*all);

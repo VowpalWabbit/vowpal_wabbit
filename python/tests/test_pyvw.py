@@ -376,6 +376,19 @@ def test_example_features():
     ex.push_namespace(ns2)
     assert ex.pop_namespace()
 
+
+def test_get_weight_name():
+    model = vw(quiet=True)
+    model.learn("1 | a a b c |ns x")
+    assert model.get_weight_from_name("a") != 0.
+    assert model.get_weight_from_name("b") != 0.
+    assert model.get_weight_from_name("b") == model.get_weight_from_name("c")
+    assert model.get_weight_from_name("a") != model.get_weight_from_name("b")
+    assert model.get_weight_from_name("x") == 0.
+    assert model.get_weight_from_name("x", "ns") != 0.
+    assert model.get_weight_from_name("x", "ns") == model.get_weight_from_name("b")
+
+
 def test_runparser_cmd_string():
     vw = pyvw.vw("--data ./test/train-sets/rcv1_small.dat")
     assert vw.parser_ran == True, "vw should set parser_ran to true if --data present"

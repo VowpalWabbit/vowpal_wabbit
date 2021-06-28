@@ -12,7 +12,7 @@ features* namespaced_features::get_feature_group(uint64_t hash)
   auto it = _hash_to_index_mapping.find(hash);
   if (it == _hash_to_index_mapping.end()) { return nullptr; }
 
-  return &_feature_groups[it->second];
+  return _feature_groups[it->second];
 }
 
 const features* namespaced_features::get_feature_group(uint64_t hash) const
@@ -20,7 +20,7 @@ const features* namespaced_features::get_feature_group(uint64_t hash) const
   auto it = _hash_to_index_mapping.find(hash);
   if (it == _hash_to_index_mapping.end()) { return nullptr; }
 
-  return &_feature_groups[it->second];
+  return _feature_groups[it->second];
 }
 
 const std::set<namespace_index>& namespaced_features::get_indices() const { return _contained_indices; }
@@ -58,7 +58,8 @@ features& namespaced_features::get_or_create_feature_group(uint64_t hash, namesp
   auto* existing_group = get_feature_group(hash);
   if (existing_group == nullptr)
   {
-    _feature_groups.emplace_back();
+    auto* new_group = _saved_feature_groups.get_object();
+    _feature_groups.push_back(new_group);
     _namespace_indices.push_back(ns_index);
     _namespace_hashes.push_back(hash);
     auto new_index = _feature_groups.size() - 1;
@@ -66,7 +67,7 @@ features& namespaced_features::get_or_create_feature_group(uint64_t hash, namesp
     _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
     // If size is 1, that means this is the first time the ns_index is added and we should add it to the set.
     if (_legacy_indices_to_index_mapping[ns_index].size() == 1) { _contained_indices.insert(ns_index); }
-    existing_group = &_feature_groups.back();
+    existing_group = _feature_groups.back();
   }
 
   return *existing_group;
@@ -96,6 +97,10 @@ void namespaced_features::remove_feature_group(uint64_t hash)
 {
   if (_hash_to_index_mapping.count(hash) == 0) { return; }
   auto existing_index = _hash_to_index_mapping[hash];
+
+  auto* ptr_to_remove = _feature_groups[existing_index];
+  ptr_to_remove->clear();
+  _saved_feature_groups.return_object(ptr_to_remove);
 
   // Remove item from each vector at this index.
   _feature_groups.erase(_feature_groups.begin() + existing_index);
@@ -140,6 +145,11 @@ void namespaced_features::remove_feature_group(uint64_t hash)
 
 void namespaced_features::clear()
 {
+  for (auto* ptr : _feature_groups)
+  {
+    ptr->clear();
+    _saved_feature_groups.return_object(ptr);
+  }
   _feature_groups.clear();
   _namespace_indices.clear();
   _namespace_hashes.clear();
@@ -166,6 +176,8 @@ namespaced_features::namespace_index_begin_proxy(namespace_index ns_index)
   auto begin_it = namespace_index_begin(ns_index);
   auto end_it = namespace_index_end(ns_index);
   features::audit_iterator inner_it;
+  // If the range is empty we must default construct the inner iterator as dereferencing an end pointer (What begin_it
+  // is here) is not valid.
   if (begin_it == end_it)
   {
     --end_it;
@@ -176,6 +188,9 @@ namespaced_features::namespace_index_begin_proxy(namespace_index ns_index)
     --end_it;
     inner_it = (*begin_it).audit_begin();
   }
+  // end_it always points to the last valid outer iterator instead of the actual end iterator of the outer collection.
+  // This is because the end chained_proxy_iterator points to the end iterator of the last valid item of the outer
+  // collection.
   return {begin_it, end_it, inner_it};
 }
 
@@ -221,7 +236,6 @@ namespaced_features::namespace_index_begin_proxy(namespace_index ns_index) const
 VW::chained_proxy_iterator<namespaced_features::const_indexed_iterator, features::const_audit_iterator>
 namespaced_features::namespace_index_end_proxy(namespace_index ns_index) const
 {
-  // The end iterator points to the end element of the final feature group.
   auto begin_it = namespace_index_cbegin(ns_index);
   auto end_it = namespace_index_cend(ns_index);
   features::const_audit_iterator inner_it;
@@ -299,16 +313,16 @@ namespaced_features::const_indexed_iterator namespaced_features::namespace_index
 {
   auto it = _legacy_indices_to_index_mapping.find(ns_index);
   if (it == _legacy_indices_to_index_mapping.end())
-  { return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()}; }
-  return {it->second.data(), _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
+  { return {nullptr, const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(), _namespace_hashes.data()}; }
+  return {it->second.data(), const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(), _namespace_hashes.data()};
 }
 
 namespaced_features::const_indexed_iterator namespaced_features::namespace_index_end(namespace_index ns_index) const
 {
   auto it = _legacy_indices_to_index_mapping.find(ns_index);
   if (it == _legacy_indices_to_index_mapping.end())
-  { return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()}; }
-  return {it->second.data() + it->second.size(), _feature_groups.data(), _namespace_indices.data(),
+  { return {nullptr, const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(), _namespace_hashes.data()}; }
+  return {it->second.data() + it->second.size(), const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(),
       _namespace_hashes.data()};
 }
 
@@ -332,17 +346,17 @@ namespaced_features::iterator namespaced_features::end()
 }
 namespaced_features::const_iterator namespaced_features::begin() const
 {
-  return {0, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
+  return {0, const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(), _namespace_hashes.data()};
 }
 namespaced_features::const_iterator namespaced_features::end() const
 {
-  return {_feature_groups.size(), _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
+  return {_feature_groups.size(), const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(), _namespace_hashes.data()};
 }
 namespaced_features::const_iterator namespaced_features::cbegin() const
 {
-  return {0, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
+  return {0, const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(), _namespace_hashes.data()};
 }
 namespaced_features::const_iterator namespaced_features::cend() const
 {
-  return {_feature_groups.size(), _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
+  return {_feature_groups.size(), const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(), _namespace_hashes.data()};
 }

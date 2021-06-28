@@ -1044,7 +1044,7 @@ public:
   BaseState<audit>* Float(Context<audit>& ctx, float f) override
   {
     auto& ns = ctx.CurrentNamespace();
-    ns.AddFeature(f, VW::hash_feature_cstr(*ctx.all, const_cast<char*>(ctx.key), ns.namespace_hash), ctx.key);
+    ns.AddFeature(f, VW::hash_feature_cstr(*ctx.all, ctx.key, ns.namespace_hash), ctx.key);
 
     return this;
   }
