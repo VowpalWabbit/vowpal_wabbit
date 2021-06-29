@@ -186,7 +186,7 @@ struct namespaced_features
   const features* get_feature_group(uint64_t hash) const;
 
   // Wil contains duplicates if there exists more than one feature group per index.
-  const std::set<namespace_index>& get_indices() const;
+  const std::vector<namespace_index>& get_indices() const;
   const uint64_t& get_last_hash() const;
 
   namespace_index get_index_for_hash(uint64_t hash) const;
