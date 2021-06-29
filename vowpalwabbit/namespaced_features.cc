@@ -25,7 +25,7 @@ const features* namespaced_features::get_feature_group(uint64_t hash) const
   return _feature_groups[existing_index];
 }
 
-const std::set<namespace_index>& namespaced_features::get_indices() const { return _contained_indices; }
+const std::vector<namespace_index>& namespaced_features::get_indices() const { return _namespace_indices; }
 
 namespace_index namespaced_features::get_index_for_hash(uint64_t hash) const
 {
@@ -65,8 +65,6 @@ features& namespaced_features::get_or_create_feature_group(uint64_t hash, namesp
     _namespace_hashes.push_back(hash);
     auto new_index = _feature_groups.size() - 1;
     _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
-    // If size is 1, that means this is the first time the ns_index is added and we should add it to the set.
-    if (_legacy_indices_to_index_mapping[ns_index].size() == 1) { _contained_indices.insert(ns_index); }
     existing_group = _feature_groups.back();
   }
 
@@ -136,7 +134,6 @@ void namespaced_features::clear()
   _namespace_indices.clear();
   _namespace_hashes.clear();
   for (auto& item : _legacy_indices_to_index_mapping) { item.second.clear(); }
-  _contained_indices.clear();
 }
 
 generic_range<namespaced_features::indexed_iterator> namespaced_features::namespace_index_range(

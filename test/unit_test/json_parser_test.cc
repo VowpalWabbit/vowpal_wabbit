@@ -10,6 +10,14 @@
 #include <vector>
 #include "conditional_contextual_bandit.h"
 #include "vw.h"
+
+template<typename T>
+bool contains(const std::vector<T>& vec, T item)
+{
+  auto it = std::find(vec.begin(), vec.end(), item);
+  return it != vec.end();
+}
+
 // TODO: Make unit test dig out and verify features.
 BOOST_AUTO_TEST_CASE(parse_json_simple)
 {
@@ -450,10 +458,10 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
 
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.get_indices().count('T'), 1);
+  BOOST_CHECK(contains(examples[1]->feature_space.get_indices(), 'T'));
   BOOST_CHECK_EQUAL(examples[1]->feature_space[VW::hash_space(*vw, "TAction")].space_names[0]->first, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.get_indices().count('T'), 1);
+  BOOST_CHECK(contains(examples[2]->feature_space.get_indices(), 'T'));
   BOOST_CHECK_EQUAL(examples[2]->feature_space[VW::hash_space(*vw, "TAction")].space_names[0]->first, "TAction");
 
   // check features
@@ -583,10 +591,10 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
 
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.get_indices().count('T'), 1);
+  BOOST_CHECK(contains(examples[1]->feature_space.get_indices(), 'T'));
   BOOST_CHECK_EQUAL(examples[1]->feature_space[VW::hash_space(*vw, "TAction")].space_names[0]->first, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.get_indices().count('T'), 1);
+  BOOST_CHECK(contains(examples[2]->feature_space.get_indices(), 'T'));
   BOOST_CHECK_EQUAL(examples[2]->feature_space[VW::hash_space(*vw, "TAction")].space_names[0]->first, "TAction");
 
   // check features
@@ -749,10 +757,10 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
 
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.get_indices().count('T'), 1);
+  BOOST_CHECK(contains(examples[1]->feature_space.get_indices(), 'T'));
   BOOST_CHECK_EQUAL(examples[1]->feature_space[VW::hash_space(*vw, "TAction")].space_names[0]->first, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.get_indices().count('T'), 1);
+  BOOST_CHECK(contains(examples[2]->feature_space.get_indices(), 'T'));
   BOOST_CHECK_EQUAL(examples[2]->feature_space[VW::hash_space(*vw, "TAction")].space_names[0]->first, "TAction");
 
   // check features

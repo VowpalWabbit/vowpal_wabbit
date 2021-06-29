@@ -32,8 +32,9 @@ struct indices_proxy_obj
 {
   VW::namespaced_features* feature_space;
 
-  std::set<namespace_index>::iterator begin() { return feature_space->get_indices().begin(); }
-  std::set<namespace_index>::iterator end() { return feature_space->get_indices().end(); }
+  std::vector<namespace_index>::const_iterator begin() { return feature_space->get_indices().begin(); }
+  std::vector<namespace_index>::const_iterator end() { return feature_space->get_indices().end(); }
+  // TODO this needs to be fixed to be resilient to duplicated indices
   size_t size() const { return feature_space->get_indices().size(); }
 };
 

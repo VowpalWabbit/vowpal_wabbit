@@ -26,15 +26,15 @@ BOOST_AUTO_TEST_CASE(namespaced_features_test)
   BOOST_REQUIRE_THROW(feature_groups[1], VW::vw_exception);
   BOOST_REQUIRE_NO_THROW(feature_groups[123]);
 
-  check_collections_exact(feature_groups.get_indices(), std::set<namespace_index>{'a'});
+  check_collections_exact(feature_groups.get_indices(), std::vector<namespace_index>{'a', 'a'});
 
   feature_groups.remove_feature_group(123);
   begin_end = feature_groups.get_namespace_index_groups('a');
   BOOST_CHECK(begin_end.second - begin_end.first == 1);
 
-  check_collections_exact(feature_groups.get_indices(), std::set<namespace_index>{'a'});
+  check_collections_exact(feature_groups.get_indices(), std::vector<namespace_index>{'a'});
   feature_groups.remove_feature_group(1234);
-  check_collections_exact(feature_groups.get_indices(), std::set<namespace_index>{});
+  check_collections_exact(feature_groups.get_indices(), std::vector<namespace_index>{});
 }
 
 BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_test)

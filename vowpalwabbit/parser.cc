@@ -791,7 +791,7 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
 
 primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
 {
-  const auto& indices = ec->feature_space.get_indices();
+  std::set<namespace_index> indices(ec->feature_space.get_indices().begin(), ec->feature_space.get_indices().end());
   len = indices.size();
   primitive_feature_space* fs_ptr = new primitive_feature_space[len];
 

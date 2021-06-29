@@ -153,7 +153,6 @@ struct namespaced_features
     _namespace_indices = other._namespace_indices;
     _namespace_hashes = other._namespace_hashes;
     _legacy_indices_to_index_mapping = other._legacy_indices_to_index_mapping;
-    _contained_indices = other._contained_indices;
   }
   namespaced_features& operator=(const namespaced_features& other)
   {
@@ -173,7 +172,6 @@ struct namespaced_features
     _namespace_indices = other._namespace_indices;
     _namespace_hashes = other._namespace_hashes;
     _legacy_indices_to_index_mapping = other._legacy_indices_to_index_mapping;
-    _contained_indices = other._contained_indices;
     return *this;
   }
   namespaced_features(namespaced_features&& other) = default;
@@ -187,7 +185,8 @@ struct namespaced_features
   // Returns nullptr if not found.
   const features* get_feature_group(uint64_t hash) const;
 
-  const std::set<namespace_index>& get_indices() const;
+  // Wil contains duplicates if there exists more than one feature group per index.
+  const std::vector<namespace_index>& get_indices() const;
   namespace_index get_index_for_hash(uint64_t hash) const;
 
   // The following are experimental and may be superseded with namespace_index_begin_proxy
@@ -255,7 +254,6 @@ private:
   std::vector<uint64_t> _namespace_hashes;
 
   std::unordered_map<namespace_index, std::vector<size_t>> _legacy_indices_to_index_mapping;
-  std::set<namespace_index> _contained_indices;
   VW::no_lock_object_pool<features> _saved_feature_groups{0, 1};
 };
 
@@ -275,8 +273,6 @@ features& namespaced_features::merge_feature_group(FeaturesT&& ftrs, uint64_t ha
     _namespace_hashes.push_back(hash);
     auto new_index = _feature_groups.size() - 1;
     _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
-    // If size is 1, that means this is the first time the ns_index is added and we should add it to the set.
-    if (_legacy_indices_to_index_mapping[ns_index].size() == 1) { _contained_indices.insert(ns_index); }
     existing_group = _feature_groups.back();
   }
   else
