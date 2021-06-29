@@ -125,7 +125,7 @@ public:
 
   template <generate_func_t generate_func, bool leave_duplicate_interactions>
   void update_interactions_if_new_namespace_seen(const std::vector<std::vector<namespace_index>>& interactions,
-      const std::set<namespace_index>& new_example_indices)
+      const std::vector<namespace_index>& new_example_indices)
   {
     auto prev_count = all_seen_namespaces.size();
     all_seen_namespaces.insert(new_example_indices.begin(), new_example_indices.end());
