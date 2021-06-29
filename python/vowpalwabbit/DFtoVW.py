@@ -445,7 +445,7 @@ class Feature(object):
         else:
             sep = ":" if self.value.is_number(df) else "="
 
-        out = self.name + sep + value_col
+        out = value_col.where(value_col == "", self.name + sep + value_col)
         return out
 
 
