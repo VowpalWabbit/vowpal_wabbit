@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <cassert>
 #include <set>
+#include <map>
 
 #include "feature_group.h"
 #include "generic_range.h"
@@ -23,31 +24,31 @@ namespace VW
 template <typename FeaturesT, typename IndexT, typename HashT>
 class iterator_t
 {
-  size_t _index;
   FeaturesT** _feature_groups;
   IndexT* _namespace_indices;
   HashT* _namespace_hashes;
 
 public:
-  iterator_t(size_t index, FeaturesT** feature_groups, IndexT* namespace_indices, HashT* namespace_hashes)
-      : _index(index)
-      , _feature_groups(feature_groups)
+  iterator_t(FeaturesT** feature_groups, IndexT* namespace_indices, HashT* namespace_hashes)
+      : _feature_groups(feature_groups)
       , _namespace_indices(namespace_indices)
       , _namespace_hashes(namespace_hashes)
   {
   }
-  FeaturesT& operator*() { return *_feature_groups[_index]; }
+  FeaturesT& operator*() { return **_feature_groups; }
   iterator_t& operator++()
   {
-    ++_index;
+    _feature_groups++;
+    _namespace_indices++;
+    _namespace_hashes++;
     return *this;
   }
 
-  IndexT index() { return _namespace_indices[_index]; }
-  HashT hash() { return _namespace_hashes[_index]; }
+  IndexT index() { return *_namespace_indices; }
+  HashT hash() { return *_namespace_hashes; }
 
-  bool operator==(const iterator_t& rhs) { return _index == rhs._index; }
-  bool operator!=(const iterator_t& rhs) { return _index != rhs._index; }
+  bool operator==(const iterator_t& rhs) { return _feature_groups == rhs._feature_groups; }
+  bool operator!=(const iterator_t& rhs) { return _feature_groups != rhs._feature_groups; }
 };
 
 /// Insertion or removal will result in this value in invalidated.
@@ -152,7 +153,6 @@ struct namespaced_features
     _namespace_indices = other._namespace_indices;
     _namespace_hashes = other._namespace_hashes;
     _legacy_indices_to_index_mapping = other._legacy_indices_to_index_mapping;
-    _hash_to_index_mapping = other._hash_to_index_mapping;
     _contained_indices = other._contained_indices;
   }
   namespaced_features& operator=(const namespaced_features& other)
@@ -173,7 +173,6 @@ struct namespaced_features
     _namespace_indices = other._namespace_indices;
     _namespace_hashes = other._namespace_hashes;
     _legacy_indices_to_index_mapping = other._legacy_indices_to_index_mapping;
-    _hash_to_index_mapping = other._hash_to_index_mapping;
     _contained_indices = other._contained_indices;
     return *this;
   }
@@ -256,7 +255,6 @@ private:
   std::vector<uint64_t> _namespace_hashes;
 
   std::unordered_map<namespace_index, std::vector<size_t>> _legacy_indices_to_index_mapping;
-  std::unordered_map<uint64_t, size_t> _hash_to_index_mapping;
   std::set<namespace_index> _contained_indices;
   VW::no_lock_object_pool<features> _saved_feature_groups{0, 1};
 };
@@ -276,7 +274,6 @@ features& namespaced_features::merge_feature_group(FeaturesT&& ftrs, uint64_t ha
     _namespace_indices.push_back(ns_index);
     _namespace_hashes.push_back(hash);
     auto new_index = _feature_groups.size() - 1;
-    _hash_to_index_mapping[hash] = new_index;
     _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
     // If size is 1, that means this is the first time the ns_index is added and we should add it to the set.
     if (_legacy_indices_to_index_mapping[ns_index].size() == 1) { _contained_indices.insert(ns_index); }
@@ -285,7 +282,8 @@ features& namespaced_features::merge_feature_group(FeaturesT&& ftrs, uint64_t ha
   else
   {
     existing_group->concat(std::forward<FeaturesT>(ftrs));
-    auto existing_index = _hash_to_index_mapping[hash];
+    auto it = std::find(_namespace_hashes.begin(), _namespace_hashes.end(), hash);
+    auto existing_index = std::distance(_namespace_hashes.begin(), it);
     // Should we ensure that this doesnt already exist under a DIFFERENT namespace_index?
     // However, his shouldn't be possible as ns_index depends on hash.
     auto& ns_indices_list = _legacy_indices_to_index_mapping[ns_index];
