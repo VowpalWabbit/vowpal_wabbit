@@ -18,37 +18,38 @@
 
 typedef unsigned char namespace_index;
 
+
+
 namespace VW
 {
+struct namespaced_features;
+
 /// Insertion or removal will result in this value in invalidated.
-template <typename FeaturesT, typename IndexT, typename HashT>
+template <typename FeaturesT, typename IndexT, typename HashT, typename NamespaceFeaturesT>
 class iterator_t
 {
-  FeaturesT** _feature_groups;
-  IndexT* _namespace_indices;
-  HashT* _namespace_hashes;
+  size_t _index;
+  NamespaceFeaturesT* _ns_features;
 
 public:
-  iterator_t(FeaturesT** feature_groups, IndexT* namespace_indices, HashT* namespace_hashes)
-      : _feature_groups(feature_groups)
-      , _namespace_indices(namespace_indices)
-      , _namespace_hashes(namespace_hashes)
+  iterator_t(size_t index, NamespaceFeaturesT* ns_features)
+      : _index(index)
+      , _ns_features(ns_features)
   {
   }
-  FeaturesT& operator*() { return **_feature_groups; }
+
+  FeaturesT& operator*() { return *_ns_features->_feature_groups[_index]; }
   iterator_t& operator++()
   {
-    _feature_groups++;
-    _namespace_indices++;
-    _namespace_hashes++;
+    _index++;
     return *this;
   }
 
-  IndexT index() { return *_namespace_indices; }
-  HashT hash() { return *_namespace_hashes; }
+  IndexT index() { return _ns_features->_namespace_indices[_index]; }
+  HashT hash() { return _ns_features->_namespace_hashes[_index]; }
 
-  bool operator==(const iterator_t& rhs) { return _feature_groups == rhs._feature_groups; }
-  bool operator!=(const iterator_t& rhs) { return _feature_groups != rhs._feature_groups; }
+  bool operator==(const iterator_t& rhs) { return _index == rhs._index; }
+  bool operator!=(const iterator_t& rhs) { return _index != rhs._index; }
 };
 
 /// Insertion or removal will result in this value in invalidated.
@@ -131,11 +132,13 @@ public:
 /// identifier namespace_hash - 8 byte hash
 struct namespaced_features
 {
-  using iterator = iterator_t<features, namespace_index, uint64_t>;
-  using const_iterator = iterator_t<const features, const namespace_index, const uint64_t>;
+  using iterator = iterator_t<features, namespace_index, uint64_t, namespaced_features>;
+  using const_iterator = iterator_t<const features, const namespace_index, const uint64_t, const namespaced_features>;
   using indexed_iterator = indexed_iterator_t<size_t, features, namespace_index, uint64_t>;
   using const_indexed_iterator =
       indexed_iterator_t<const size_t, const features, const namespace_index, const uint64_t>;
+
+  template <typename A, typename B, typename C, typename D> friend class iterator_t;
 
   namespaced_features() = default;
   ~namespaced_features()

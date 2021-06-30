@@ -327,27 +327,25 @@ namespaced_features::const_indexed_iterator namespaced_features::namespace_index
 
 namespaced_features::iterator namespaced_features::begin()
 {
-  return {_feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
+  return {0, this};
 }
 namespaced_features::iterator namespaced_features::end()
 {
-  return {_feature_groups.data() + _feature_groups.size(), _namespace_indices.data(), _namespace_hashes.data()};
+  return {_feature_groups.size(), this};
 }
 namespaced_features::const_iterator namespaced_features::begin() const
 {
-  return {const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(), _namespace_hashes.data()};
+  return {0, this};
 }
 namespaced_features::const_iterator namespaced_features::end() const
 {
-  return {const_cast<const features**>(_feature_groups.data()) + _feature_groups.size(), _namespace_indices.data(),
-      _namespace_hashes.data()};
+  return {_feature_groups.size(), this};
 }
 namespaced_features::const_iterator namespaced_features::cbegin() const
 {
-  return {const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(), _namespace_hashes.data()};
+  return {0, this};
 }
 namespaced_features::const_iterator namespaced_features::cend() const
 {
-  return {const_cast<const features**>(_feature_groups.data()) + _feature_groups.size(), _namespace_indices.data(),
-      _namespace_hashes.data()};
+  return {_feature_groups.size(), this};
 }
