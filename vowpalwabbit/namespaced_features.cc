@@ -324,28 +324,3 @@ namespaced_features::const_indexed_iterator namespaced_features::namespace_index
 {
   return namespace_index_end(ns_index);
 }
-
-namespaced_features::iterator namespaced_features::begin()
-{
-  return {0, this};
-}
-namespaced_features::iterator namespaced_features::end()
-{
-  return {_feature_groups.size(), this};
-}
-namespaced_features::const_iterator namespaced_features::begin() const
-{
-  return {0, this};
-}
-namespaced_features::const_iterator namespaced_features::end() const
-{
-  return {_feature_groups.size(), this};
-}
-namespaced_features::const_iterator namespaced_features::cbegin() const
-{
-  return {0, this};
-}
-namespaced_features::const_iterator namespaced_features::cend() const
-{
-  return {_feature_groups.size(), this};
-}

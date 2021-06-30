@@ -242,12 +242,32 @@ struct namespaced_features
   const_indexed_iterator namespace_index_cbegin(namespace_index ns_index) const;
   const_indexed_iterator namespace_index_cend(namespace_index ns_index) const;
 
-  iterator begin();
-  iterator end();
-  const_iterator begin() const;
-  const_iterator end() const;
-  const_iterator cbegin() const;
-  const_iterator cend() const;
+
+inline iterator begin()
+{
+  return {0, this};
+}
+inline iterator end()
+{
+  return {_feature_groups.size(), this};
+}
+inline const_iterator begin() const
+{
+  return {0, this};
+}
+inline const_iterator end() const
+{
+  return {_feature_groups.size(), this};
+}
+inline const_iterator cbegin() const
+{
+  return {0, this};
+}
+inline const_iterator cend() const
+{
+  return {_feature_groups.size(), this};
+}
+
 
 private:
   std::vector<features*> _feature_groups;
