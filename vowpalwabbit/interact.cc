@@ -51,7 +51,7 @@ bool contains_valid_namespaces(example& ex, namespace_index n1, namespace_index 
 }
 
 using multiply_iterator_t =
-    VW::chained_feature_proxy_iterator;
+    VW::chained_proxy_iterator<VW::namespaced_features::indexed_iterator, features::audit_iterator>;
 void multiply(features& f_dest, multiply_iterator_t f_src1_begin, multiply_iterator_t f_src1_end,
     multiply_iterator_t f_src2_begin, multiply_iterator_t f_src2_end, uint64_t weight_mask)
 {

@@ -184,7 +184,7 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
 
         auto* stored_ex = (*dedup_examples)[dedup_id];
 
-        for (auto it = stored_ex->feature_space.begin(); it != stored_ex->feature_space.end(); ++it)
+        for (auto it = stored_ex->feature_space.cbegin(); it != stored_ex->feature_space.cend(); ++it)
         {
           ex->feature_space.merge_feature_group(*it, it.hash(), it.index());
         }

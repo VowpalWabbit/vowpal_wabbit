@@ -219,12 +219,11 @@ void cache_tag(io_buf& cache, const v_array<char>& tag)
   cache.set(c);
 }
 
-void cache_features(io_buf& cache, example* ae, uint64_t mask)
+void cache_features(io_buf& cache, const example* ae, uint64_t mask)
 {
   cache_tag(cache, ae->tag);
   cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
   cache.write_value<uint64_t>(static_cast<uint64_t>(ae->feature_space.size()));
-
   for (auto it = ae->feature_space.begin(); it != ae->feature_space.end(); ++it)
   {
     output_features(cache, it.index(), it.hash(), *it, mask);

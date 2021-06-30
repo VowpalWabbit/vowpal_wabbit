@@ -24,7 +24,7 @@ namespace INTERACTIONS
 
 // returns number of new features that will be generated for example and sum of their squared values
 void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
-    VW::namespaced_features& feature_spaces, size_t& new_features_cnt, float& new_features_value)
+    const VW::namespaced_features& feature_spaces, size_t& new_features_cnt, float& new_features_value)
 {
   new_features_cnt = 0;
   new_features_value = 0.;
@@ -41,7 +41,7 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
 
       for (namespace_index ns : inter)
       {
-        for (auto& feat_group : feature_spaces.namespace_index_range(ns))
+        for (const auto& feat_group : feature_spaces.namespace_index_range(ns))
         {
           num_features_in_inter *= feat_group.size();
           sum_feat_sq_in_inter *= feat_group.sum_feat_sq;
@@ -63,7 +63,7 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
 
       for (auto ns = inter.begin(); ns != inter.end(); ++ns)
       {
-        for (auto& fs : feature_spaces.namespace_index_range(*ns))
+        for (const auto& fs : feature_spaces.namespace_index_range(*ns))
         {
           if ((ns == inter.end() - 1) || (*ns != *(ns + 1)))  // neighbour namespaces are different
           {
