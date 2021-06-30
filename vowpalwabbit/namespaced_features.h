@@ -119,9 +119,7 @@ public:
   }
   FeaturesT& operator*()
   {
-#ifndef VW_NOEXCEPT
-    if (_indices == nullptr) { THROW("Invalid iterator"); }
-#endif
+    assert(_indices != nullptr);
     return _feature_groups[*_indices];
   }
   indexed_iterator_t& operator++()
@@ -138,16 +136,12 @@ public:
 
   IndexT index()
   {
-#ifndef VW_NOEXCEPT
-    if (_indices == nullptr) { THROW("Invalid iterator"); }
-#endif
+    assert(_indices != nullptr);
     return _namespace_indices[*_indices];
   }
   HashT hash()
   {
-#ifndef VW_NOEXCEPT
-    if (_indices == nullptr) { THROW("Invalid iterator"); }
-#endif
+    assert(_indices != nullptr);
     return _namespace_hashes[*_indices];
   }
 
@@ -270,13 +264,13 @@ struct namespaced_features
   inline const features& operator[](uint64_t hash) const
   {
     auto* existing_group = get_feature_group(hash);
-    if (existing_group == nullptr) { THROW("No group found for hash: " << hash); }
+    assert(existing_group != nullptr);
     return *existing_group;
   }
   inline features& operator[](uint64_t hash)
   {
     auto* existing_group = get_feature_group(hash);
-    if (existing_group == nullptr) { THROW("No group found for hash: " << hash); }
+    assert(existing_group != nullptr);
     return *existing_group;
   }
 #endif
