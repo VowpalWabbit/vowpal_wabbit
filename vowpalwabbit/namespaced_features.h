@@ -38,15 +38,15 @@ public:
   {
   }
 
-  FeaturesT& operator*() { return *_ns_features->_feature_groups[_index]; }
-  iterator_t& operator++()
+  inline FeaturesT& operator*() { return *_ns_features->_feature_groups[_index]; }
+  inline iterator_t& operator++()
   {
     _index++;
     return *this;
   }
 
-  IndexT index() { return _ns_features->_namespace_indices[_index]; }
-  HashT hash() { return _ns_features->_namespace_hashes[_index]; }
+  inline IndexT index() { return _ns_features->_namespace_indices[_index]; }
+  inline HashT hash() { return _ns_features->_namespace_hashes[_index]; }
 
   bool operator==(const iterator_t& rhs) { return _index == rhs._index; }
   bool operator!=(const iterator_t& rhs) { return _index != rhs._index; }
@@ -184,9 +184,23 @@ struct namespaced_features
   inline bool empty() const { return _feature_groups.empty(); }
 
   // Returns nullptr if not found.
-  features* get_feature_group(uint64_t hash);
+  inline features* get_feature_group(uint64_t hash)
+  {
+    auto it = std::find(_namespace_hashes.begin(), _namespace_hashes.end(), hash);
+    if (it == _namespace_hashes.end()) { return nullptr; }
+    auto existing_index = std::distance(_namespace_hashes.begin(), it);
+
+    return _feature_groups[existing_index];
+  }
   // Returns nullptr if not found.
-  const features* get_feature_group(uint64_t hash) const;
+  inline const features* get_feature_group(uint64_t hash) const
+  {
+    auto it = std::find(_namespace_hashes.begin(), _namespace_hashes.end(), hash);
+    if (it == _namespace_hashes.end()) { return nullptr; }
+    auto existing_index = std::distance(_namespace_hashes.begin(), it);
+
+    return _feature_groups[existing_index];
+  }
 
   // Wil contains duplicates if there exists more than one feature group per index.
   const std::vector<namespace_index>& get_indices() const;
@@ -204,12 +218,39 @@ struct namespaced_features
 
   // If no feature group already exists a default one will be created.
   // Creating new feature groups will invalidate any pointers or references held.
-  features& get_or_create_feature_group(uint64_t hash, namespace_index ns_index);
+  inline features& get_or_create_feature_group(uint64_t hash, namespace_index ns_index)
+  {
+    auto* existing_group = get_feature_group(hash);
+    if (existing_group == nullptr)
+    {
+      auto* new_group = _saved_feature_groups.get_object();
+      _feature_groups.push_back(new_group);
+      _namespace_indices.push_back(ns_index);
+      _namespace_hashes.push_back(hash);
+      auto new_index = _feature_groups.size() - 1;
+      _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
+      existing_group = _feature_groups.back();
+    }
 
+    return *existing_group;
+  }
+
+  // This operation is only allowed in code that allows exceptions.
+  // get_feature_group should be used instead for noexcept code
 #ifndef VW_NOEXCEPT
   // These will throw if the hash does not exist
-  const features& operator[](uint64_t hash) const;
-  features& operator[](uint64_t hash);
+  inline const features& operator[](uint64_t hash) const
+  {
+    auto* existing_group = get_feature_group(hash);
+    if (existing_group == nullptr) { THROW("No group found for hash: " << hash); }
+    return *existing_group;
+  }
+  inline features& operator[](uint64_t hash)
+  {
+    auto* existing_group = get_feature_group(hash);
+    if (existing_group == nullptr) { THROW("No group found for hash: " << hash); }
+    return *existing_group;
+  }
 #endif
 
   // Removing a feature group will invalidate any pointers or references held.

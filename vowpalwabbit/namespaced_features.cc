@@ -7,24 +7,6 @@
 
 using namespace VW;
 
-features* namespaced_features::get_feature_group(uint64_t hash)
-{
-  auto it = std::find(_namespace_hashes.begin(), _namespace_hashes.end(), hash);
-  if (it == _namespace_hashes.end()) { return nullptr; }
-  auto existing_index = std::distance(_namespace_hashes.begin(), it);
-
-  return _feature_groups[existing_index];
-}
-
-const features* namespaced_features::get_feature_group(uint64_t hash) const
-{
-  auto it = std::find(_namespace_hashes.begin(), _namespace_hashes.end(), hash);
-  if (it == _namespace_hashes.end()) { return nullptr; }
-  auto existing_index = std::distance(_namespace_hashes.begin(), it);
-
-  return _feature_groups[existing_index];
-}
-
 const std::vector<namespace_index>& namespaced_features::get_indices() const { return _namespace_indices; }
 
 namespace_index namespaced_features::get_index_for_hash(uint64_t hash) const
@@ -54,44 +36,6 @@ namespaced_features::get_namespace_index_groups(namespace_index ns_index) const
   return std::make_pair(namespace_index_begin(ns_index), namespace_index_end(ns_index));
 }
 
-features& namespaced_features::get_or_create_feature_group(uint64_t hash, namespace_index ns_index)
-{
-  auto* existing_group = get_feature_group(hash);
-  if (existing_group == nullptr)
-  {
-    auto* new_group = _saved_feature_groups.get_object();
-    _feature_groups.push_back(new_group);
-    _namespace_indices.push_back(ns_index);
-    _namespace_hashes.push_back(hash);
-    auto new_index = _feature_groups.size() - 1;
-    _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
-    existing_group = _feature_groups.back();
-  }
-
-  return *existing_group;
-}
-
-
-
-// This operation is only allowed in code that allows exceptions.
-// get_feature_group should be used instead for noexcept code
-#ifndef VW_NOEXCEPT
-const features& namespaced_features::operator[](uint64_t hash) const
-{
-  auto* existing_group = get_feature_group(hash);
-  if (existing_group == nullptr) { THROW("No group found for hash: " << hash); }
-  return *existing_group;
-}
-#endif
-
-#ifndef VW_NOEXCEPT
-features& namespaced_features::operator[](uint64_t hash)
-{
-  auto* existing_group = get_feature_group(hash);
-  if (existing_group == nullptr) { THROW("No group found for hash: " << hash); }
-  return *existing_group;
-}
-#endif
 
 void namespaced_features::remove_feature_group(uint64_t hash)
 {
