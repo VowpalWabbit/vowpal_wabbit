@@ -80,6 +80,6 @@ public:
   void clear();
 };
 
-std::string features_to_string(const example_predict& ec);
+std::string features_to_string(example_predict& ec);
 std::string depth_indent_string(const example_predict& ec);
 std::string depth_indent_string(int32_t stack_depth);

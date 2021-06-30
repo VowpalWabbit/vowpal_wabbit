@@ -35,7 +35,7 @@ void del_example_namespace(
   if (del_target->empty()) { ec.feature_space.remove_feature_group(ns_hash); }
 }
 
-void add_example_namespaces_from_example(example& target, const example& source)
+void add_example_namespaces_from_example(example& target, example& source)
 {
   for (auto it = source.feature_space.begin(); it != source.feature_space.end(); ++it)
   {
@@ -44,7 +44,7 @@ void add_example_namespaces_from_example(example& target, const example& source)
   }
 }
 
-void del_example_namespaces_from_example(example& target, const example& source)
+void del_example_namespaces_from_example(example& target, example& source)
 {
   for (auto it = source.feature_space.begin(); it != source.feature_space.end(); ++it)
   {
