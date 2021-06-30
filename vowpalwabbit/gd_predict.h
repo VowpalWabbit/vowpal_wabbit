@@ -66,16 +66,20 @@ inline FORCE_INLINE void foreach_feature(WeightsT& weights, bool ignore_some_lin
 {
   uint64_t offset = ec.ft_offset;
   if (ignore_some_linear)
-    for (example_predict::iterator i = ec.begin(); i != ec.end(); ++i)
+    for (auto i = ec.feature_space.quick_begin(); i != ec.feature_space.quick_end(); ++i)
     {
       if (!ignore_linear[i.index()])
       {
-        features& f = *i;
-        foreach_feature<DataT, FuncT, WeightsT>(weights, f, dat, offset);
+        foreach_feature<DataT, FuncT, WeightsT>(weights, *i, dat, offset);
       }
     }
   else
-    for (features& f : ec) foreach_feature<DataT, FuncT, WeightsT>(weights, f, dat, offset);
+  {
+    for (auto i = ec.feature_space.quickest_begin(); i != ec.feature_space.quickest_end(); ++i)
+    {
+      foreach_feature<DataT, FuncT, WeightsT>(weights, *i, dat, offset);
+    }
+  }
 
   generate_interactions<DataT, WeightOrIndexT, FuncT, WeightsT>(
       interactions, permutations, ec, dat, weights, num_interacted_features);

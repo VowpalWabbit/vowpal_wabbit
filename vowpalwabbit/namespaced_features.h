@@ -24,6 +24,52 @@ namespace VW
 {
 struct namespaced_features;
 
+class quick_iterator_t
+{
+  features** _features;
+  namespace_index* _indices;
+
+public:
+  quick_iterator_t(features** in_features, namespace_index* indices)
+      : _features(in_features), _indices(indices)
+  {
+  }
+
+  inline features& operator*() { return **_features; }
+  inline namespace_index index() { return *_indices; }
+  inline quick_iterator_t& operator++()
+  {
+    _features++;
+    _indices++;
+    return *this;
+  }
+
+  bool operator==(const quick_iterator_t& rhs) { return _features == rhs._features; }
+  bool operator!=(const quick_iterator_t& rhs) { return _features != rhs._features; }
+};
+
+
+class quickest_iterator_t
+{
+  features** _features;
+
+public:
+  quickest_iterator_t(features** in_features)
+      : _features(in_features)
+  {
+  }
+
+  inline features& operator*() { return **_features; }
+  inline quickest_iterator_t& operator++()
+  {
+    _features++;
+    return *this;
+  }
+
+  bool operator==(const quickest_iterator_t& rhs) { return _features == rhs._features; }
+  bool operator!=(const quickest_iterator_t& rhs) { return _features != rhs._features; }
+};
+
 /// Insertion or removal will result in this value in invalidated.
 template <typename FeaturesT, typename IndexT, typename HashT, typename NamespaceFeaturesT>
 class iterator_t
@@ -283,6 +329,23 @@ struct namespaced_features
   const_indexed_iterator namespace_index_cbegin(namespace_index ns_index) const;
   const_indexed_iterator namespace_index_cend(namespace_index ns_index) const;
 
+  inline quick_iterator_t quick_begin()
+{
+  return {_feature_groups.data(), _namespace_indices.data()};
+}
+inline quick_iterator_t quick_end()
+{
+  return {_feature_groups.data() + _feature_groups.size(), _namespace_indices.data()};
+}
+
+  inline quickest_iterator_t quickest_begin()
+{
+  return {_feature_groups.data()};
+}
+inline quickest_iterator_t quickest_end()
+{
+  return {_feature_groups.data() + _feature_groups.size()};
+}
 
 inline iterator begin()
 {
