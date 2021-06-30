@@ -106,7 +106,7 @@ public:
   {
     if(_tag_info.is_set)
     {
-      _feature_bit_vector[feature_index][_tag_info.tag_hash]=1;
+      _feature_bit_vector[feature_index & _weight_mask][_tag_info.tag_hash]=1;
     }
   }
 
