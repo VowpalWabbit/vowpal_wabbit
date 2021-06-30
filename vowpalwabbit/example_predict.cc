@@ -19,7 +19,7 @@ void safe_example_predict::clear()
   feature_space.clear();
 }
 
-std::string features_to_string(const example_predict& ec)
+std::string features_to_string(example_predict& ec)
 {
   std::stringstream strstream;
   strstream << "[off=" << ec.ft_offset << "]";

@@ -50,9 +50,9 @@ struct example_predict
   example_predict& operator=(example_predict&& other) = default;
 
   /// If feature_space is modified this iterator is invalidated.
-  iterator begin() { return feature_space.begin(); }
+  inline iterator begin() { return feature_space.begin(); }
   /// If feature_space is modified this iterator is invalidated.
-  iterator end() { return feature_space.end(); }
+  inline iterator end() { return feature_space.end(); }
 
   indices_proxy_obj indices;
   VW::namespaced_features feature_space;
@@ -80,6 +80,6 @@ public:
   void clear();
 };
 
-std::string features_to_string(const example_predict& ec);
+std::string features_to_string(example_predict& ec);
 std::string depth_indent_string(const example_predict& ec);
 std::string depth_indent_string(int32_t stack_depth);
