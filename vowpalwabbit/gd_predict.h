@@ -81,8 +81,10 @@ inline FORCE_INLINE void foreach_feature(WeightsT& weights, bool ignore_some_lin
     }
   }
 
-  generate_interactions<DataT, WeightOrIndexT, FuncT, WeightsT>(
-      interactions, permutations, ec, dat, weights, num_interacted_features);
+  if (!interactions.empty()) {
+    generate_interactions<DataT, WeightOrIndexT, FuncT, WeightsT>(
+        interactions, permutations, ec, dat, weights, num_interacted_features);
+  }
 }
 
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), class WeightsT>
