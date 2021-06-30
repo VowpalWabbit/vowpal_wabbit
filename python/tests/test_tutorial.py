@@ -99,16 +99,18 @@ def run_simulation(vw, num_iterations, users, times_of_day, actions, cost_functi
     return ctr
 
 def test_with_interaction():
-    vw = pyvw.vw("--cb_explore_adf -q UA --quiet --epsilon 0.2")
+    vw = pyvw.vw("--cb_explore_adf -q UA --quiet --epsilon 0.2 --random_seed 5")
     num_iterations = 3000
+    random.seed(10)
     ctr = run_simulation(vw, num_iterations, users, times_of_day, actions, get_cost)
 
-    assert(ctr[-1] >= 0.65)
+    assert(ctr[-1] >= 0.70)
 
 def test_without_interaction():
-    vw = pyvw.vw("--cb_explore_adf --quiet --epsilon 0.2")
+    vw = pyvw.vw("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5")
     num_iterations = 3000
+    random.seed(10)
     ctr = run_simulation(vw, num_iterations, users, times_of_day, actions, get_cost)
 
-    assert(ctr[-1] < 0.50)
-    assert(ctr[-1] >= 0.35)
+    assert(ctr[-1] <= 0.49)
+    assert(ctr[-1] >= 0.38)

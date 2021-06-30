@@ -445,7 +445,7 @@ class Feature(object):
         else:
             sep = ":" if self.value.is_number(df) else "="
 
-        out = self.name + sep + value_col
+        out = value_col.where(value_col == "", self.name + sep + value_col)
         return out
 
 
@@ -915,6 +915,7 @@ class DFtoVW:
         missing_cols = {}
         df_colnames = set(self.df.columns)
 
+        # pytype: disable=attribute-error
         try:
             label_columns = self.label.columns
         except AttributeError:
@@ -929,6 +930,7 @@ class DFtoVW:
             pass
         else:
             missing_cols["tag"] = tag_columns - df_colnames
+        # pytype: enable=attribute-error
 
         all_features = [feature for namespace in self.namespaces for feature in namespace.features]
         missing_features_cols = set()
