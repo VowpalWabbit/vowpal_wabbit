@@ -69,10 +69,10 @@ void namespaced_features::remove_feature_group(uint64_t hash)
 
 void namespaced_features::clear()
 {
-  for (auto* ptr : _feature_groups)
+  for (auto& feat_group : _feature_groups)
   {
-    ptr->clear();
-    _saved_feature_groups.return_object(ptr);
+    feat_group.clear();
+    _saved_feature_groups.reclaim_object(std::move(feat_group));
   }
   _feature_groups.clear();
   _namespace_indices.clear();
