@@ -44,6 +44,14 @@ public:
     return *this;
   }
 
+  iterator_t& operator+=(int i)
+  {
+    _feature_groups += i;
+    _namespace_indices += i;
+    _namespace_hashes += i;
+    return *this;
+  }
+
   IndexT index() { return *_namespace_indices; }
   HashT hash() { return *_namespace_hashes; }
 
