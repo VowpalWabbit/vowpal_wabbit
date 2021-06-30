@@ -69,7 +69,16 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
     c.total++;
     // For each nonzero feature in observed namespaces, check it's value.
     for (unsigned char ns : ec.indices)
-      if (c.namespaces[ns]) GD::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c);
+    {
+      if (c.all->weights.sparse)
+      {
+        if (c.namespaces[ns]) GD::foreach_feature<mwt, value_policy, sparse_parameters>(c.all->weights.sparse_weights, ec.feature_space[ns], c);
+      }
+      else
+      {
+        if (c.namespaces[ns]) GD::foreach_feature<mwt, value_policy, dense_parameters>(c.all->weights.dense_weights, ec.feature_space[ns], c);
+      }
+    }
     for (uint64_t policy : c.policies)
     {
       c.evals[policy].cost += get_cost_estimate(c.optional_observation.second, c.evals[policy].action);
