@@ -26,16 +26,16 @@ struct namespaced_features;
 
 class quick_iterator_t
 {
-  features** _features;
+  features* _features;
   namespace_index* _indices;
 
 public:
-  quick_iterator_t(features** in_features, namespace_index* indices)
+  quick_iterator_t(features* in_features, namespace_index* indices)
       : _features(in_features), _indices(indices)
   {
   }
 
-  inline features& operator*() { return **_features; }
+  inline features& operator*() { return *_features; }
   inline namespace_index index() { return *_indices; }
   inline quick_iterator_t& operator++()
   {
@@ -51,15 +51,15 @@ public:
 
 class quickest_iterator_t
 {
-  features** _features;
+  features* _features;
 
 public:
-  quickest_iterator_t(features** in_features)
+  quickest_iterator_t(features* in_features)
       : _features(in_features)
   {
   }
 
-  inline features& operator*() { return **_features; }
+  inline features& operator*() { return *_features; }
   inline quickest_iterator_t& operator++()
   {
     _features++;
@@ -84,7 +84,7 @@ public:
   {
   }
 
-  inline FeaturesT& operator*() { return *_ns_features->_feature_groups[_index]; }
+  inline FeaturesT& operator*() { return _ns_features->_feature_groups[_index]; }
   inline iterator_t& operator++()
   {
     _index++;
@@ -103,14 +103,14 @@ template <typename IndicesT, typename FeaturesT, typename IndexT, typename HashT
 class indexed_iterator_t
 {
   IndicesT* _indices;
-  FeaturesT** _feature_groups;
+  FeaturesT* _feature_groups;
   IndexT* _namespace_indices;
   HashT* _namespace_hashes;
 
 public:
   using difference_type = std::ptrdiff_t;
 
-  indexed_iterator_t(IndicesT* indices, FeaturesT** feature_groups, IndexT* namespace_indices, HashT* namespace_hashes)
+  indexed_iterator_t(IndicesT* indices, FeaturesT* feature_groups, IndexT* namespace_indices, HashT* namespace_hashes)
       : _indices(indices)
       , _feature_groups(feature_groups)
       , _namespace_indices(namespace_indices)
@@ -122,7 +122,7 @@ public:
 #ifndef VW_NOEXCEPT
     if (_indices == nullptr) { THROW("Invalid iterator"); }
 #endif
-    return *_feature_groups[*_indices];
+    return _feature_groups[*_indices];
   }
   indexed_iterator_t& operator++()
   {
@@ -187,37 +187,19 @@ struct namespaced_features
   template <typename A, typename B, typename C, typename D> friend class iterator_t;
 
   namespaced_features() = default;
-  ~namespaced_features()
-  {
-    for (auto* ftrs : _feature_groups) { _saved_feature_groups.return_object(ftrs); }
-  }
+  ~namespaced_features() = default;
+
+  // For copies we deep copy the features but not the pool
   namespaced_features(const namespaced_features& other)
   {
-    for (const auto* ftrs : other._feature_groups)
-    {
-      auto* new_group = _saved_feature_groups.get_object();
-      new (new_group) features(*ftrs);
-      _feature_groups.push_back(new_group);
-    }
+    _feature_groups = other._feature_groups;
     _namespace_indices = other._namespace_indices;
     _namespace_hashes = other._namespace_hashes;
     _legacy_indices_to_index_mapping = other._legacy_indices_to_index_mapping;
   }
   namespaced_features& operator=(const namespaced_features& other)
   {
-    for (auto* ptr_to_remove : _feature_groups)
-    {
-      ptr_to_remove->clear();
-      _saved_feature_groups.return_object(ptr_to_remove);
-    }
-    _feature_groups.clear();
-
-    for (const auto* ftrs : other._feature_groups)
-    {
-      auto* new_group = _saved_feature_groups.get_object();
-      new (new_group) features(*ftrs);
-      _feature_groups.push_back(new_group);
-    }
+    _feature_groups = other._feature_groups;
     _namespace_indices = other._namespace_indices;
     _namespace_hashes = other._namespace_hashes;
     _legacy_indices_to_index_mapping = other._legacy_indices_to_index_mapping;
@@ -236,7 +218,7 @@ struct namespaced_features
     if (it == _namespace_hashes.end()) { return nullptr; }
     auto existing_index = std::distance(_namespace_hashes.begin(), it);
 
-    return _feature_groups[existing_index];
+    return &_feature_groups[existing_index];
   }
   // Returns nullptr if not found.
   inline const features* get_feature_group(uint64_t hash) const
@@ -245,7 +227,7 @@ struct namespaced_features
     if (it == _namespace_hashes.end()) { return nullptr; }
     auto existing_index = std::distance(_namespace_hashes.begin(), it);
 
-    return _feature_groups[existing_index];
+    return &_feature_groups[existing_index];
   }
 
   // Wil contains duplicates if there exists more than one feature group per index.
@@ -269,13 +251,13 @@ struct namespaced_features
     auto* existing_group = get_feature_group(hash);
     if (existing_group == nullptr)
     {
-      auto* new_group = _saved_feature_groups.get_object();
-      _feature_groups.push_back(new_group);
+      _feature_groups.push_back(features{});
+      _saved_feature_groups.acquire_object(_feature_groups.back());
       _namespace_indices.push_back(ns_index);
       _namespace_hashes.push_back(hash);
       auto new_index = _feature_groups.size() - 1;
       _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
-      existing_group = _feature_groups.back();
+      existing_group = &_feature_groups.back();
     }
 
     return *existing_group;
@@ -374,14 +356,14 @@ inline const_iterator cend() const
 
 
 private:
-  std::vector<features*> _feature_groups;
+  std::vector<features> _feature_groups;
   // Can have duplicate values.
   std::vector<namespace_index> _namespace_indices;
   // Should never have duplicate values.
   std::vector<uint64_t> _namespace_hashes;
 
   std::unordered_map<namespace_index, std::vector<size_t>> _legacy_indices_to_index_mapping;
-  VW::no_lock_object_pool<features> _saved_feature_groups{0, 1};
+  VW::moved_object_pool<features> _saved_feature_groups;
 };
 
 // If a feature group already exists in this "slot" it will be merged
@@ -392,15 +374,12 @@ features& namespaced_features::merge_feature_group(FeaturesT&& ftrs, uint64_t ha
   auto* existing_group = get_feature_group(hash);
   if (existing_group == nullptr)
   {
-    auto* new_group = _saved_feature_groups.get_object();
-    // This throws away any old buffers...
-    new (new_group) features(std::forward<FeaturesT>(ftrs));
-    _feature_groups.push_back(new_group);
+    _feature_groups.emplace_back(std::forward<FeaturesT>(ftrs));
     _namespace_indices.push_back(ns_index);
     _namespace_hashes.push_back(hash);
     auto new_index = _feature_groups.size() - 1;
     _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
-    existing_group = _feature_groups.back();
+    existing_group = &_feature_groups.back();
   }
   else
   {

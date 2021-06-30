@@ -43,9 +43,9 @@ void namespaced_features::remove_feature_group(uint64_t hash)
   if (it == _namespace_hashes.end()) { return; }
   auto existing_index = std::distance(_namespace_hashes.begin(), it);
 
-  auto* ptr_to_remove = _feature_groups[existing_index];
-  ptr_to_remove->clear();
-  _saved_feature_groups.return_object(ptr_to_remove);
+  auto& obj_to_remove = _feature_groups[existing_index];
+  obj_to_remove.clear();
+  _saved_feature_groups.reclaim_object(std::move(obj_to_remove));
 
   // Remove item from each vector at this index.
   _feature_groups.erase(_feature_groups.begin() + existing_index);
@@ -240,10 +240,10 @@ namespaced_features::const_indexed_iterator namespaced_features::namespace_index
   auto it = _legacy_indices_to_index_mapping.find(ns_index);
   if (it == _legacy_indices_to_index_mapping.end() || (*it).second.size() == 0 )
   {
-    return {nullptr, const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(),
+    return {nullptr, const_cast<const features*>(_feature_groups.data()), _namespace_indices.data(),
         _namespace_hashes.data()};
   }
-  return {it->second.data(), const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(),
+  return {it->second.data(), const_cast<const features*>(_feature_groups.data()), _namespace_indices.data(),
       _namespace_hashes.data()};
 }
 
@@ -252,10 +252,10 @@ namespaced_features::const_indexed_iterator namespaced_features::namespace_index
   auto it = _legacy_indices_to_index_mapping.find(ns_index);
   if (it == _legacy_indices_to_index_mapping.end() || (*it).second.size() == 0)
   {
-    return {nullptr, const_cast<const features**>(_feature_groups.data()), _namespace_indices.data(),
+    return {nullptr, const_cast<const features*>(_feature_groups.data()), _namespace_indices.data(),
         _namespace_hashes.data()};
   }
-  return {it->second.data() + it->second.size(), const_cast<const features**>(_feature_groups.data()),
+  return {it->second.data() + it->second.size(), const_cast<const features*>(_feature_groups.data()),
       _namespace_indices.data(), _namespace_hashes.data()};
 }
 
