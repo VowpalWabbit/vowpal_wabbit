@@ -44,19 +44,8 @@ public:
     return *this;
   }
 
-  iterator_t& operator+=(int i)
-  {
-    _feature_groups += i;
-    _namespace_indices += i;
-    _namespace_hashes += i;
-    return *this;
-  }
-
-  IndexT index() { return *_namespace_indices; }
-  HashT hash() { return *_namespace_hashes; }
-
-  bool operator==(const iterator_t& rhs) { return _feature_groups == rhs._feature_groups; }
-  bool operator!=(const iterator_t& rhs) { return _feature_groups != rhs._feature_groups; }
+  bool operator==(const quick_iterator_t& rhs) { return _features == rhs._features; }
+  bool operator!=(const quick_iterator_t& rhs) { return _features != rhs._features; }
 };
 
 
@@ -99,6 +88,12 @@ public:
   inline iterator_t& operator++()
   {
     _index++;
+    return *this;
+  }
+
+  inline iterator_t& operator+=(int i)
+  {
+    _index += i;
     return *this;
   }
 
