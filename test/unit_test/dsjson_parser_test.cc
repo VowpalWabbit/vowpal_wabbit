@@ -827,7 +827,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates_dom_parser)
 
   auto found = slates_ex.feature_space.get_indices();
   std::sort(found.begin(), found.end());
-  std::vector<namespace_index>{'a', 'd', 'c', 'b', 32} ;
+  std::vector<namespace_index> expected{'a', 'd', 'c', 'b', 32};
   std::sort(expected.begin(), expected.end());
   check_collections_exact(found, expected);
 
