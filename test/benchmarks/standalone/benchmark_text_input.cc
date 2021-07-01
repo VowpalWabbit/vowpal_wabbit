@@ -37,7 +37,6 @@ static void benchmark_learn_simple(benchmark::State& state, std::string example_
   auto vw = VW::initialize("--quiet", nullptr, false, nullptr, nullptr);
 
   auto* example = VW::read_example(*vw, example_string);
-  VW::setup_example(*vw, example);
 
   for (auto _ : state)
   {
@@ -55,7 +54,6 @@ static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
   examples.push_back(VW::read_example(*vw, get_x_string_fts(feature_count)));
   examples.push_back(VW::read_example(*vw, get_x_string_fts_no_label(feature_count)));
   examples.push_back(VW::read_example(*vw, get_x_string_fts_no_label(feature_count)));
-  for (auto* example : examples) { VW::setup_example(*vw, example); }
 
   for (auto _ : state)
   {
@@ -79,7 +77,6 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
   examples.push_back(VW::read_example(*vw, std::string("ccb slot 0:0:0.2 |Slot h")));
   examples.push_back(VW::read_example(*vw, std::string("ccb slot 1:0:0.25 |Slot i")));
   examples.push_back(VW::read_example(*vw, std::string("ccb slot 2:0:0.333333 |Slot j")));
-  for (auto* example : examples) { VW::setup_example(*vw, example); }
 
   for (auto _ : state)
   {
