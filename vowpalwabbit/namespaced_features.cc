@@ -7,20 +7,12 @@
 
 using namespace VW;
 
-std::vector<namespace_index> namespaced_features::get_indices() const
-{
-  std::vector<namespace_index> indices;
-  for (auto it : _legacy_indices_to_hash_mapping)
-  {
-    if (!it.second.empty()) { indices.push_back(it.first); }
-  }
-  return indices;
-}
+const std::vector<namespace_index>& namespaced_features::get_indices() const { return _namespace_indices; }
 
 namespace_index namespaced_features::get_index_for_hash(uint64_t hash) const
 {
-  auto it = _feature_groups.find(hash);
-  if (it == _feature_groups.end())
+  auto it = std::find(_namespace_hashes.begin(), _namespace_hashes.end(), hash);
+  if (it == _namespace_hashes.end())
   {
 #ifdef VW_NOEXCEPT
     return {};
@@ -28,8 +20,8 @@ namespace_index namespaced_features::get_index_for_hash(uint64_t hash) const
     THROW("No index found for hash: " << hash);
 #endif
   }
-
-  return it->second._index;
+  auto existing_index = std::distance(_namespace_hashes.begin(), it);
+  return _namespace_indices[existing_index];
 }
 
 std::pair<namespaced_features::indexed_iterator, namespaced_features::indexed_iterator>
@@ -44,32 +36,39 @@ namespaced_features::get_namespace_index_groups(namespace_index ns_index) const
   return std::make_pair(namespace_index_begin(ns_index), namespace_index_end(ns_index));
 }
 
+
 void namespaced_features::remove_feature_group(uint64_t hash)
 {
-  auto it = _feature_groups.find(hash);
-  if (it == _feature_groups.end()) { return; }
-  auto& feat_group_to_remove = it->second._features;
-  feat_group_to_remove.clear();
-  _saved_feature_groups.reclaim_object(std::move(feat_group_to_remove));
-  _feature_groups.erase(it);
-  for (auto& kv : _legacy_indices_to_hash_mapping)
+  auto it = std::find(_namespace_hashes.begin(), _namespace_hashes.end(), hash);
+  if (it == _namespace_hashes.end()) { return; }
+  auto existing_index = std::distance(_namespace_hashes.begin(), it);
+
+  // Remove item from each vector at this index.
+  _feature_groups.erase(_feature_groups.begin() + existing_index);
+  _namespace_indices.erase(_namespace_indices.begin() + existing_index);
+  _namespace_hashes.erase(_namespace_hashes.begin() + existing_index);
+
+  for (auto& kv : _legacy_indices_to_index_mapping)
   {
-    auto& hash_vec = kv.second;
-    // Remove this hash from ns_index mappings if it exists
-    auto it = std::find(hash_vec.begin(), hash_vec.end(), hash);
-    if (it != hash_vec.end()) { hash_vec.erase(it); }
+    auto& index_vec = kv.second;
+    // Remove this index from ns_index mappings if it exists
+    auto it = std::find(index_vec.begin(), index_vec.end(), existing_index);
+    if (it != index_vec.end()) { index_vec.erase(it); }
+
+    // Shift down any index that came after this one.
+    for (auto& idx : index_vec)
+    {
+      if (idx > existing_index) { idx -= 1; }
+    }
   }
 }
 
 void namespaced_features::clear()
 {
-  for (auto& feat_group : _feature_groups)
-  {
-    feat_group.second.clear();
-    _saved_feature_groups.reclaim_object(std::move(feat_group.second));
-  }
   _feature_groups.clear();
-  for (auto& item : _legacy_indices_to_hash_mapping) { item.second.clear(); }
+  _namespace_indices.clear();
+  _namespace_hashes.clear();
+  for (auto& item : _legacy_indices_to_index_mapping) { item.second.clear(); }
 }
 
 generic_range<namespaced_features::indexed_iterator> namespaced_features::namespace_index_range(
@@ -208,42 +207,47 @@ namespaced_features::namespace_index_cend_proxy(namespace_index ns_index) const
 
 namespaced_features::indexed_iterator namespaced_features::namespace_index_begin(namespace_index ns_index)
 {
-  auto it = _legacy_indices_to_hash_mapping.find(ns_index);
-  if (it == _legacy_indices_to_hash_mapping.end() || (*it).second.size() == 0)
+  auto it = _legacy_indices_to_index_mapping.find(ns_index);
+  if (it == _legacy_indices_to_index_mapping.end() || (*it).second.size() == 0)
   {
-    return {&_feature_groups, _empty_vector_to_be_used_for_empty_iterators.begin()};
+    return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
   }
-  return {&_feature_groups, it->second.begin()};
+  return {it->second.data(), _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
 }
 
 namespaced_features::indexed_iterator namespaced_features::namespace_index_end(namespace_index ns_index)
 {
-  auto it = _legacy_indices_to_hash_mapping.find(ns_index);
-  if (it == _legacy_indices_to_hash_mapping.end() || (*it).second.size() == 0)
+  auto it = _legacy_indices_to_index_mapping.find(ns_index);
+  if (it == _legacy_indices_to_index_mapping.end() || (*it).second.size() == 0)
   {
-    return {&_feature_groups, _empty_vector_to_be_used_for_empty_iterators.end()};
+    return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
   }
-  return {&_feature_groups, it->second.end()};
+  return {it->second.data() + it->second.size(), _feature_groups.data(), _namespace_indices.data(),
+      _namespace_hashes.data()};
 }
 
 namespaced_features::const_indexed_iterator namespaced_features::namespace_index_begin(namespace_index ns_index) const
 {
-  auto it = _legacy_indices_to_hash_mapping.find(ns_index);
-  if (it == _legacy_indices_to_hash_mapping.end() || (*it).second.size() == 0)
+  auto it = _legacy_indices_to_index_mapping.find(ns_index);
+  if (it == _legacy_indices_to_index_mapping.end() || (*it).second.size() == 0 )
   {
-    return {&_feature_groups, _empty_vector_to_be_used_for_empty_iterators.begin()};
+    return {nullptr, const_cast<const features*>(_feature_groups.data()), _namespace_indices.data(),
+        _namespace_hashes.data()};
   }
-  return {&_feature_groups, it->second.begin()};
+  return {it->second.data(), const_cast<const features*>(_feature_groups.data()), _namespace_indices.data(),
+      _namespace_hashes.data()};
 }
 
 namespaced_features::const_indexed_iterator namespaced_features::namespace_index_end(namespace_index ns_index) const
 {
-  auto it = _legacy_indices_to_hash_mapping.find(ns_index);
-  if (it == _legacy_indices_to_hash_mapping.end() || (*it).second.size() == 0)
+  auto it = _legacy_indices_to_index_mapping.find(ns_index);
+  if (it == _legacy_indices_to_index_mapping.end() || (*it).second.size() == 0)
   {
-    return {&_feature_groups, _empty_vector_to_be_used_for_empty_iterators.end()};
+    return {nullptr, const_cast<const features*>(_feature_groups.data()), _namespace_indices.data(),
+        _namespace_hashes.data()};
   }
-  return {&_feature_groups, it->second.end()};
+  return {it->second.data() + it->second.size(), const_cast<const features*>(_feature_groups.data()),
+      _namespace_indices.data(), _namespace_hashes.data()};
 }
 
 namespaced_features::const_indexed_iterator namespaced_features::namespace_index_cbegin(namespace_index ns_index) const
