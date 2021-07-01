@@ -18,6 +18,8 @@ namespace INTERACTIONS
 {
 VW::LEARNER::base_learner* generate_interactions_setup(VW::config::options_i& options, vw& all);
 
+// feature_self_interactions = false is now deprecated (as of 8.11) and will be removed in VW version 9.0
+// See deprecation issue for details: https://github.com/VowpalWabbit/vowpal_wabbit/issues/3084
 constexpr bool feature_self_interactions = true;
 // must return logical expression
 /*old: ft_value != 1.0 && feature_self_interactions_for_value_other_than_1*/

@@ -188,23 +188,8 @@ struct namespaced_features
 
   namespaced_features() = default;
   ~namespaced_features() = default;
-
-  // For copies we deep copy the features but not the pool
-  namespaced_features(const namespaced_features& other)
-  {
-    _feature_groups = other._feature_groups;
-    _namespace_indices = other._namespace_indices;
-    _namespace_hashes = other._namespace_hashes;
-    _legacy_indices_to_index_mapping = other._legacy_indices_to_index_mapping;
-  }
-  namespaced_features& operator=(const namespaced_features& other)
-  {
-    _feature_groups = other._feature_groups;
-    _namespace_indices = other._namespace_indices;
-    _namespace_hashes = other._namespace_hashes;
-    _legacy_indices_to_index_mapping = other._legacy_indices_to_index_mapping;
-    return *this;
-  }
+  namespaced_features(const namespaced_features& other) = default;
+  namespaced_features& operator=(const namespaced_features& other) = default;
   namespaced_features(namespaced_features&& other) = default;
   namespaced_features& operator=(namespaced_features&& other) = default;
 
@@ -254,7 +239,6 @@ struct namespaced_features
     if (existing_group == nullptr)
     {
       _feature_groups.push_back(features{});
-      _saved_feature_groups.acquire_object(_feature_groups.back());
       _namespace_indices.push_back(ns_index);
       _namespace_hashes.push_back(hash);
       auto new_index = _feature_groups.size() - 1;
@@ -365,7 +349,6 @@ private:
   std::vector<uint64_t> _namespace_hashes;
 
   std::unordered_map<namespace_index, std::vector<size_t>> _legacy_indices_to_index_mapping;
-  VW::moved_object_pool<features> _saved_feature_groups;
 };
 
 // If a feature group already exists in this "slot" it will be merged
