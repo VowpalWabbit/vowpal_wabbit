@@ -172,7 +172,7 @@ public:
     (--_end)->~T();
   }
 
-  VW_DEPRECATED("v_array::pop() is deprecated. Use pop_back()")
+  VW_DEPRECATED("v_array::pop() is deprecated. Use pop_back(). This will be removed in VW 9.0.")
   T pop()
   {
     T ret = back();
@@ -180,15 +180,15 @@ public:
     return ret;
   }
 
-  VW_DEPRECATED("v_array::last() is deprecated. Use back()")
+  VW_DEPRECATED("v_array::last() is deprecated. Use back(). This will be removed in VW 9.0.")
   T last() const { return *(_end - 1); }
 
   bool empty() const { return _begin == _end; }
 
-  VW_DEPRECATED("v_array::decr() is deprecated. Use pop_back()")
+  VW_DEPRECATED("v_array::decr() is deprecated. Use pop_back(). This will be removed in VW 9.0.")
   void decr() { _end--; }
 
-  VW_DEPRECATED("v_array::incr() is deprecated. Use push_back()")
+  VW_DEPRECATED("v_array::incr() is deprecated. Use push_back(). This will be removed in VW 9.0.")
   void incr()
   {
     if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
@@ -201,7 +201,7 @@ public:
   // maintain the original (deprecated) interface for compatibility. To be removed in VW 10
   VW_DEPRECATED(
       "v_array::resize() is deprecated. Use reserve() instead. For standard resize behavior, use "
-      "resize_but_with_stl_behavior()")
+      "resize_but_with_stl_behavior(). This will be removed in VW 9.0.")
   void resize(size_t length) { reserve_nocheck(length); }
 
   // change the number of elements in the vector
@@ -421,14 +421,14 @@ inline v_array<T> v_init()
 }
 
 template <class T>
-VW_DEPRECATED("Use v_array's copy constructor or assignment directly instead")
+VW_DEPRECATED("Use v_array's copy constructor or assignment directly instead. This will be removed in VW 9.0.")
 void copy_array(v_array<T>& dst, const v_array<T>& src)
 {
   dst = src;
 }
 
 template <class T>
-VW_DEPRECATED("Use v_array's copy constructor or assignment directly instead")
+VW_DEPRECATED("Use v_array's copy constructor or assignment directly instead. This will be removed in VW 9.0.")
 void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src)
 {
   dst.clear();
@@ -436,7 +436,7 @@ void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src)
 }
 
 template <class T>
-VW_DEPRECATED("Use v_array's copy constructor directly instead")
+VW_DEPRECATED("Use v_array's copy constructor directly instead. This will be removed in VW 9.0.")
 void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(const T&))
 {
   dst.clear();
@@ -444,14 +444,16 @@ void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(const T&)
 }
 
 template <class T>
-VW_DEPRECATED("Use v_array::insert instead")
+VW_DEPRECATED("Use v_array::insert instead. This will be removed in VW 9.0.")
 void push_many(v_array<T>& v, const T* src, size_t num)
 {
   v.insert(v.end(), src, src + num);
 }
 
 template <class T>
-VW_DEPRECATED("calloc_reserve is no longer supported. You should use appropriate constructors instead.")
+VW_DEPRECATED(
+    "calloc_reserve is no longer supported. You should use appropriate constructors instead. This will be removed in "
+    "VW 9.0.")
 void calloc_reserve(v_array<T>& v, size_t length)
 {
   v.clear();
@@ -489,7 +491,7 @@ VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 
 template <class T>
-VW_DEPRECATED("pop is deprecated and will be removed in a future version.")
+VW_DEPRECATED("pop is deprecated and will be removed in a future version. This will be removed in VW 9.0.")
 v_array<T> pop(v_array<v_array<T> >& stack)
 {
   if (stack.size() > 0)
@@ -500,10 +502,10 @@ v_array<T> pop(v_array<v_array<T> >& stack)
   return v_array<T>();
 }
 
-VW_DEPRECATED("v_string is deprecated and will be removed in a future version.")
+VW_DEPRECATED("v_string is deprecated and will be removed in a future version. This will be removed in VW 9.0.")
 typedef v_array<unsigned char> v_string;
 
-VW_DEPRECATED("string2v_string is deprecated and will be removed in a future version.")
+VW_DEPRECATED("string2v_string is deprecated and will be removed in a future version. This will be removed in VW 9.0.")
 inline v_string string2v_string(const std::string& s)
 {
   v_string res;
@@ -511,7 +513,7 @@ inline v_string string2v_string(const std::string& s)
   return res;
 }
 
-VW_DEPRECATED("v_string2string is deprecated and will be removed in a future version.")
+VW_DEPRECATED("v_string2string is deprecated and will be removed in a future version. This will be removed in VW 9.0.")
 inline std::string v_string2string(const v_string& v_s)
 {
   std::string res;
