@@ -43,10 +43,6 @@ void namespaced_features::remove_feature_group(uint64_t hash)
   if (it == _namespace_hashes.end()) { return; }
   auto existing_index = std::distance(_namespace_hashes.begin(), it);
 
-  auto& obj_to_remove = _feature_groups[existing_index];
-  obj_to_remove.clear();
-  _saved_feature_groups.reclaim_object(std::move(obj_to_remove));
-
   // Remove item from each vector at this index.
   _feature_groups.erase(_feature_groups.begin() + existing_index);
   _namespace_indices.erase(_namespace_indices.begin() + existing_index);
@@ -69,11 +65,6 @@ void namespaced_features::remove_feature_group(uint64_t hash)
 
 void namespaced_features::clear()
 {
-  for (auto& feat_group : _feature_groups)
-  {
-    feat_group.clear();
-    _saved_feature_groups.reclaim_object(std::move(feat_group));
-  }
   _feature_groups.clear();
   _namespace_indices.clear();
   _namespace_hashes.clear();
