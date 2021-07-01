@@ -9,6 +9,7 @@ add_executable(vw-unit-test.out
   chain_hashing.cc
   chain_hashing.cc
   continuous_actions_parser_test.cc
+  distributionally_robust_test.cc
   dsjson_parser_test.cc
   error_test.cc
   example_header_test.cc
