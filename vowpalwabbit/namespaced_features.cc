@@ -158,6 +158,128 @@ generic_range<namespaced_features::const_indexed_iterator> namespaced_features::
   return {namespace_index_begin(ns_index), namespace_index_end(ns_index)};
 }
 
+VW::chained_proxy_iterator<namespaced_features::indexed_iterator, features::audit_iterator>
+namespaced_features::namespace_index_begin_proxy(namespace_index ns_index)
+{
+  auto begin_it = namespace_index_begin(ns_index);
+  auto end_it = namespace_index_end(ns_index);
+  features::audit_iterator inner_it;
+  // If the range is empty we must default construct the inner iterator as dereferencing an end pointer (What begin_it
+  // is here) is not valid.
+  if (begin_it == end_it)
+  {
+    --end_it;
+    inner_it = features::audit_iterator{};
+  }
+  else
+  {
+    --end_it;
+    inner_it = (*begin_it).audit_begin();
+  }
+  // end_it always points to the last valid outer iterator instead of the actual end iterator of the outer collection.
+  // This is because the end chained_proxy_iterator points to the end iterator of the last valid item of the outer
+  // collection.
+  return {begin_it, end_it, inner_it};
+}
+
+VW::chained_proxy_iterator<namespaced_features::indexed_iterator, features::audit_iterator>
+namespaced_features::namespace_index_end_proxy(namespace_index ns_index)
+{
+  auto begin_it = namespace_index_begin(ns_index);
+  auto end_it = namespace_index_end(ns_index);
+  features::audit_iterator inner_it;
+  if (begin_it == end_it)
+  {
+    --end_it;
+    inner_it = features::audit_iterator{};
+  }
+  else
+  {
+    --end_it;
+    inner_it = (*end_it).audit_end();
+  }
+
+  return {end_it, end_it, inner_it};
+}
+
+VW::chained_proxy_iterator<namespaced_features::const_indexed_iterator, features::const_audit_iterator>
+namespaced_features::namespace_index_begin_proxy(namespace_index ns_index) const
+{
+  auto begin_it = namespace_index_cbegin(ns_index);
+  auto end_it = namespace_index_cend(ns_index);
+  features::const_audit_iterator inner_it;
+  if (begin_it == end_it)
+  {
+    --end_it;
+    inner_it = features::const_audit_iterator{};
+  }
+  else
+  {
+    --end_it;
+    inner_it = (*begin_it).audit_cbegin();
+  }
+  return {begin_it, end_it, inner_it};
+}
+
+VW::chained_proxy_iterator<namespaced_features::const_indexed_iterator, features::const_audit_iterator>
+namespaced_features::namespace_index_end_proxy(namespace_index ns_index) const
+{
+  auto begin_it = namespace_index_cbegin(ns_index);
+  auto end_it = namespace_index_cend(ns_index);
+  features::const_audit_iterator inner_it;
+  if (begin_it == end_it)
+  {
+    --end_it;
+    inner_it = features::const_audit_iterator{};
+  }
+  else
+  {
+    --end_it;
+    inner_it = (*end_it).audit_cend();
+  }
+  return {end_it, end_it, inner_it};
+}
+
+VW::chained_proxy_iterator<namespaced_features::const_indexed_iterator, features::const_audit_iterator>
+namespaced_features::namespace_index_cbegin_proxy(namespace_index ns_index) const
+{
+  auto begin_it = namespace_index_cbegin(ns_index);
+  auto end_it = namespace_index_cend(ns_index);
+
+  features::const_audit_iterator inner_it;
+  if (begin_it == end_it)
+  {
+    --end_it;
+    inner_it = features::const_audit_iterator{};
+  }
+  else
+  {
+    --end_it;
+    inner_it = (*begin_it).audit_cbegin();
+  }
+
+  return {begin_it, end_it, inner_it};
+}
+
+VW::chained_proxy_iterator<namespaced_features::const_indexed_iterator, features::const_audit_iterator>
+namespaced_features::namespace_index_cend_proxy(namespace_index ns_index) const
+{
+  auto begin_it = namespace_index_cbegin(ns_index);
+  auto end_it = namespace_index_cend(ns_index);
+  features::const_audit_iterator inner_it;
+  if (begin_it == end_it)
+  {
+    --end_it;
+    inner_it = features::const_audit_iterator{};
+  }
+  else
+  {
+    --end_it;
+    inner_it = (*end_it).audit_cend();
+  }
+  return {end_it, end_it, inner_it};
+}
+
 namespaced_features::indexed_iterator namespaced_features::namespace_index_begin(namespace_index ns_index)
 {
   auto it = _legacy_indices_to_index_mapping.find(ns_index);

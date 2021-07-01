@@ -37,7 +37,6 @@ static void benchmark_learn_simple(benchmark::State& state, std::string example_
   auto vw = VW::initialize("--quiet", nullptr, false, nullptr, nullptr);
 
   auto* example = VW::read_example(*vw, example_string);
-  VW::setup_example(*vw, example);
 
   for (auto _ : state)
   {
@@ -47,15 +46,14 @@ static void benchmark_learn_simple(benchmark::State& state, std::string example_
   vw->finish_example(*example);
 }
 
-static void benchmark_cb_adf_learn(benchmark::State& state)
+static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
 {
-  auto vw = VW::initialize("--cb_explore_adf --epsilon 0.1 --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--cb_explore_adf --epsilon 0.1 --quiet -q ::", nullptr, false, nullptr, nullptr);
   multi_ex examples;
   examples.push_back(VW::read_example(*vw, std::string("shared | s_1 s_2")));
-  examples.push_back(VW::read_example(*vw, std::string("0:1.0:0.5 | a_1 b_1 c_1")));
-  examples.push_back(VW::read_example(*vw, std::string("| a_2 b_2 c_2")));
-  examples.push_back(VW::read_example(*vw, std::string("| a_3 b_3 c_3")));
-  for (auto* example : examples) { VW::setup_example(*vw, example); }
+  examples.push_back(VW::read_example(*vw, get_x_string_fts(feature_count)));
+  examples.push_back(VW::read_example(*vw, get_x_string_fts_no_label(feature_count)));
+  examples.push_back(VW::read_example(*vw, get_x_string_fts_no_label(feature_count)));
 
   for (auto _ : state)
   {
@@ -79,7 +77,6 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
   examples.push_back(VW::read_example(*vw, std::string("ccb slot 0:0:0.2 |Slot h")));
   examples.push_back(VW::read_example(*vw, std::string("ccb slot 1:0:0.25 |Slot i")));
   examples.push_back(VW::read_example(*vw, std::string("ccb slot 2:0:0.333333 |Slot j")));
-  for (auto* example : examples) { VW::setup_example(*vw, example); }
 
   for (auto _ : state)
   {
@@ -100,4 +97,5 @@ BENCHMARK_CAPTURE(benchmark_learn_simple, 1_feature, "1 | a");
 BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, few_features, "a");
 BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, many_features, "a b c d e f g h i j k l m n o p q r s t u v w x y z");
 
-BENCHMARK(benchmark_cb_adf_learn);
+BENCHMARK_CAPTURE(benchmark_cb_adf_learn, few_features, 2);
+BENCHMARK_CAPTURE(benchmark_cb_adf_learn, many_features, 120);
