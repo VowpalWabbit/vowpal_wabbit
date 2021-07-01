@@ -48,17 +48,19 @@ void namespaced_features::remove_feature_group(uint64_t hash)
   _namespace_indices.erase(_namespace_indices.begin() + existing_index);
   _namespace_hashes.erase(_namespace_hashes.begin() + existing_index);
 
-  for (auto& kv : _legacy_indices_to_index_mapping)
+  for (auto& index_vec : _legacy_indices_to_index_mapping)
   {
-    auto& index_vec = kv.second;
-    // Remove this index from ns_index mappings if it exists
-    auto it = std::find(index_vec.begin(), index_vec.end(), existing_index);
-    if (it != index_vec.end()) { index_vec.erase(it); }
-
-    // Shift down any index that came after this one.
-    for (auto& idx : index_vec)
+    if (!index_vec.empty())
     {
-      if (idx > existing_index) { idx -= 1; }
+      // Remove this index from ns_index mappings if it exists
+      auto it = std::find(index_vec.begin(), index_vec.end(), existing_index);
+      if (it != index_vec.end()) { index_vec.erase(it); }
+
+      // Shift down any index that came after this one.
+      for (auto& idx : index_vec)
+      {
+        if (idx > existing_index) { idx -= 1; }
+      }
     }
   }
 }
@@ -68,7 +70,7 @@ void namespaced_features::clear()
   _feature_groups.clear();
   _namespace_indices.clear();
   _namespace_hashes.clear();
-  for (auto& item : _legacy_indices_to_index_mapping) { item.second.clear(); }
+  for (auto& index_vec : _legacy_indices_to_index_mapping) { index_vec.clear(); }
 }
 
 generic_range<namespaced_features::indexed_iterator> namespaced_features::namespace_index_range(
@@ -207,46 +209,28 @@ namespaced_features::namespace_index_cend_proxy(namespace_index ns_index) const
 
 namespaced_features::indexed_iterator namespaced_features::namespace_index_begin(namespace_index ns_index)
 {
-  auto it = _legacy_indices_to_index_mapping.find(ns_index);
-  if (it == _legacy_indices_to_index_mapping.end() || (*it).second.size() == 0)
-  {
-    return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
-  }
-  return {it->second.data(), _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
+  auto& index_vec = _legacy_indices_to_index_mapping[ns_index];
+  return {index_vec.begin(), _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
 }
 
 namespaced_features::indexed_iterator namespaced_features::namespace_index_end(namespace_index ns_index)
 {
-  auto it = _legacy_indices_to_index_mapping.find(ns_index);
-  if (it == _legacy_indices_to_index_mapping.end() || (*it).second.size() == 0)
-  {
-    return {nullptr, _feature_groups.data(), _namespace_indices.data(), _namespace_hashes.data()};
-  }
-  return {it->second.data() + it->second.size(), _feature_groups.data(), _namespace_indices.data(),
+  auto index_vec = _legacy_indices_to_index_mapping[ns_index];
+  return {index_vec.end(), _feature_groups.data(), _namespace_indices.data(),
       _namespace_hashes.data()};
 }
 
 namespaced_features::const_indexed_iterator namespaced_features::namespace_index_begin(namespace_index ns_index) const
 {
-  auto it = _legacy_indices_to_index_mapping.find(ns_index);
-  if (it == _legacy_indices_to_index_mapping.end() || (*it).second.size() == 0 )
-  {
-    return {nullptr, const_cast<const features*>(_feature_groups.data()), _namespace_indices.data(),
-        _namespace_hashes.data()};
-  }
-  return {it->second.data(), const_cast<const features*>(_feature_groups.data()), _namespace_indices.data(),
+  auto index_vec = _legacy_indices_to_index_mapping[ns_index];
+  return {index_vec.begin(), const_cast<const features*>(_feature_groups.data()), _namespace_indices.data(),
       _namespace_hashes.data()};
 }
 
 namespaced_features::const_indexed_iterator namespaced_features::namespace_index_end(namespace_index ns_index) const
 {
-  auto it = _legacy_indices_to_index_mapping.find(ns_index);
-  if (it == _legacy_indices_to_index_mapping.end() || (*it).second.size() == 0)
-  {
-    return {nullptr, const_cast<const features*>(_feature_groups.data()), _namespace_indices.data(),
-        _namespace_hashes.data()};
-  }
-  return {it->second.data() + it->second.size(), const_cast<const features*>(_feature_groups.data()),
+  auto index_vec = _legacy_indices_to_index_mapping[ns_index];
+  return {index_vec.end(), const_cast<const features*>(_feature_groups.data()),
       _namespace_indices.data(), _namespace_hashes.data()};
 }
 

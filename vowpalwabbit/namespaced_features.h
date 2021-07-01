@@ -99,10 +99,10 @@ public:
 };
 
 /// Insertion or removal will result in this value in invalidated.
-template <typename IndicesT, typename FeaturesT, typename IndexT, typename HashT>
+template <typename IndiceItT, typename FeaturesT, typename IndexT, typename HashT>
 class indexed_iterator_t
 {
-  IndicesT* _indices;
+  IndiceItT _indices_it;
   FeaturesT* _feature_groups;
   IndexT* _namespace_indices;
   HashT* _namespace_hashes;
@@ -110,8 +110,8 @@ class indexed_iterator_t
 public:
   using difference_type = std::ptrdiff_t;
 
-  indexed_iterator_t(IndicesT* indices, FeaturesT* feature_groups, IndexT* namespace_indices, HashT* namespace_hashes)
-      : _indices(indices)
+  indexed_iterator_t(IndiceItT indices, FeaturesT* feature_groups, IndexT* namespace_indices, HashT* namespace_hashes)
+      : _indices_it(std::move(indices))
       , _feature_groups(feature_groups)
       , _namespace_indices(namespace_indices)
       , _namespace_hashes(namespace_hashes)
@@ -119,40 +119,37 @@ public:
   }
   FeaturesT& operator*()
   {
-    assert(_indices != nullptr);
-    return _feature_groups[*_indices];
+    return _feature_groups[*_indices_it];
   }
   indexed_iterator_t& operator++()
   {
-    if (_indices != nullptr) { ++_indices; }
+    _indices_it++;
     return *this;
   }
 
   indexed_iterator_t& operator--()
   {
-    if (_indices != nullptr) { --_indices; }
+    --_indices_it++;
     return *this;
   }
 
   IndexT index()
   {
-    assert(_indices != nullptr);
-    return _namespace_indices[*_indices];
+    return _namespace_indices[*_indices_it];
   }
   HashT hash()
   {
-    assert(_indices != nullptr);
-    return _namespace_hashes[*_indices];
+    return _namespace_hashes[*_indices_it];
   }
 
   friend bool operator<(const indexed_iterator_t& lhs, const indexed_iterator_t& rhs)
   {
-    return lhs._indices < rhs._indices;
+    return lhs._indices_it < rhs._indices_it;
   }
 
   friend bool operator>(const indexed_iterator_t& lhs, const indexed_iterator_t& rhs)
   {
-    return lhs._indices > rhs._indices;
+    return lhs._indices_it > rhs._indices_it;
   }
 
   friend bool operator<=(const indexed_iterator_t& lhs, const indexed_iterator_t& rhs) { return !(lhs > rhs); }
@@ -160,12 +157,12 @@ public:
 
   friend difference_type operator-(const indexed_iterator_t& lhs, const indexed_iterator_t& rhs)
   {
-    assert(lhs._indices >= rhs._indices);
-    return lhs._indices - rhs._indices;
+    assert(lhs._indices_it >= rhs._indices_it);
+    return lhs._indices_it - rhs._indices_it;
   }
 
-  bool operator==(const indexed_iterator_t& rhs) const { return _indices == rhs._indices; }
-  bool operator!=(const indexed_iterator_t& rhs) const { return _indices != rhs._indices; }
+  bool operator==(const indexed_iterator_t& rhs) const { return _indices_it == rhs._indices_it; }
+  bool operator!=(const indexed_iterator_t& rhs) const { return _indices_it != rhs._indices_it; }
 };
 
 /// namespace_index - 1 byte namespace identifier. Either the first character of the namespace or a reserved namespace
@@ -174,9 +171,9 @@ struct namespaced_features
 {
   using iterator = iterator_t<features, namespace_index, uint64_t, namespaced_features>;
   using const_iterator = iterator_t<const features, const namespace_index, const uint64_t, const namespaced_features>;
-  using indexed_iterator = indexed_iterator_t<size_t, features, namespace_index, uint64_t>;
+  using indexed_iterator = indexed_iterator_t<std::vector<size_t>::iterator, features, namespace_index, uint64_t>;
   using const_indexed_iterator =
-      indexed_iterator_t<const size_t, const features, const namespace_index, const uint64_t>;
+      indexed_iterator_t<std::vector<size_t>::const_iterator, const features, const namespace_index, const uint64_t>;
 
   template <typename A, typename B, typename C, typename D> friend class iterator_t;
 
@@ -340,7 +337,7 @@ private:
   // Should never have duplicate values.
   std::vector<uint64_t> _namespace_hashes;
 
-  std::unordered_map<namespace_index, std::vector<size_t>> _legacy_indices_to_index_mapping;
+  std::array<std::vector<size_t>, 256> _legacy_indices_to_index_mapping;
 };
 
 // If a feature group already exists in this "slot" it will be merged
