@@ -23,14 +23,6 @@ list(GET VW_VERSION_LIST 2 VW_VERSION_PATCH)
 # Set this to on so that tooling can make use of the outputted compile commands (such as clang-tidy)
 set(CMAKE_EXPORT_COMPILE_COMMANDS On)
 
-if(MSVC)
-  # Do nothing as the default compile flags for MSVC are okay.
-else()
-  # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
-  # is O2 and Release is O3, override that here:
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
-endif()
-
 set(DEFAULT_BUILD_TYPE "Release")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
@@ -53,6 +45,14 @@ set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
 option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
 include(DetectCXXStandard)
+
+if(MSVC)
+  # Do nothing as the default compile flags for MSVC are okay.
+else()
+  # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
+  # is O2 and Release is O3, override that here:
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
+endif()
 
 # Grab git commitish into variable
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
