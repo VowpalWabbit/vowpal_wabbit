@@ -2455,6 +2455,6 @@ train-sets/ref/slates_simple_w_interactions.stderr
 
 # Test 339: csoaa_ldf with shared features
 {VW} -d train-sets/cs_shared.ldf --csoaa_ldf m
-    train-sets/ref/cs_shared.ldf
+    train-sets/ref/cs_shared_ldf.stderr
 
 # Do not delete this line or the empty line above it
