@@ -50,16 +50,14 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, multi_ex
   multi_ex::value_type shared_example = nullptr;
 
   bool has_example_header = false;
-  switch (label_type)
+  if (label_type == label_type_t::cb) { has_example_header = CB::ec_is_example_header(*ec_seq[0]); }
+  else if (label_type == label_type_t::ccb)
   {
-    case label_type_t::cb:
-      has_example_header = CB::ec_is_example_header(*ec_seq[0]);
-      break;
-    case label_type_t::ccb:
-      has_example_header = CCB::ec_is_example_header(*ec_seq[0]);
-      break;
-    case label_type_t::cs:
-      has_example_header = COST_SENSITIVE::ec_is_example_header(*ec_seq[0]);
+    has_example_header = CCB::ec_is_example_header(*ec_seq[0]);
+  }
+  else if (label_type == label_type_t::cs)
+  {
+    has_example_header = COST_SENSITIVE::ec_is_example_header(*ec_seq[0]);
   }
 
   if (has_example_header)
