@@ -49,10 +49,7 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, multi_ex
 
   bool has_example_header = false;
   // TODO: Use label type from base when available -- currently hacky method to find label type
-  if (ec_seq[0]->l.cb.costs.size() > 0)
-  {
-    has_example_header = CB::ec_is_example_header(*ec_seq[0]);
-  }
+  if (ec_seq[0]->l.cb.costs.size() > 0) { has_example_header = CB::ec_is_example_header(*ec_seq[0]); }
   else if (ec_seq[0]->l.cs.costs.size() > 0)
   {
     has_example_header = COST_SENSITIVE::ec_is_example_header(*ec_seq[0]);

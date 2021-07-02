@@ -72,10 +72,7 @@ inline bool example_is_newline_not_header(example& ec, vw& all)
 {
   // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
   bool is_header = false;
-  if (all.example_parser->lbl_parser.label_type == label_type_t::ccb)
-  {
-    is_header = CCB::ec_is_example_header(ec);
-  }
+  if (all.example_parser->lbl_parser.label_type == label_type_t::ccb) { is_header = CCB::ec_is_example_header(ec); }
   else if (all.example_parser->lbl_parser.label_type == label_type_t::cs)
   {
     is_header = COST_SENSITIVE::ec_is_example_header(ec);
