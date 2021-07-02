@@ -47,7 +47,21 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, multi_ex
 
   multi_ex::value_type shared_example = nullptr;
 
-  const bool has_example_header = CB::ec_is_example_header(*ec_seq[0]);
+  bool has_example_header = false;
+  // TODO: Use label type from base when available -- currently hacky method to find label type
+  if (ec_seq[0]->l.cb.costs.size() > 0)
+  {
+    has_example_header = CB::ec_is_example_header(*ec_seq[0]);
+  }
+  else if (ec_seq[0]->l.cs.costs.size() > 0)
+  {
+    has_example_header = COST_SENSITIVE::ec_is_example_header(*ec_seq[0]);
+  }
+  else if (ec_seq[0]->l.conditional_contextual_bandit.type != CCB::unset)
+  {
+    has_example_header = CCB::ec_is_example_header(*ec_seq[0]);
+  }
+
   if (has_example_header)
   {
     shared_example = ec_seq[0];
