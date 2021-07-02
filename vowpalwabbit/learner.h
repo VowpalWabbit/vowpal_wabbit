@@ -194,7 +194,8 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
   debug_decrement_depth(ec_seq);
 }
 
-inline const bool ec_is_example_header(example const& ec, label_type_t label_type) {
+inline const bool ec_is_example_header(example const& ec, label_type_t label_type)
+{
   if (label_type == label_type_t::cb) { return CB::ec_is_example_header(ec); }
   else if (label_type == label_type_t::ccb)
   {
