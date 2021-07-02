@@ -8,15 +8,13 @@ license as described in the file LICENSE.
 
 #include <algorithm>
 #include <limits>
+#include <tuple>
 #include "vw_exception.h"
 
 namespace VW
 {
 namespace distributionally_robust
 {
-class ChiSquared
-{
-public:
   struct Duals
   {
     bool unbounded;
@@ -33,6 +31,11 @@ public:
     double qfunc(double w, double r) { return unbounded ? 1 : -(gamma + (beta + r) * w) / ((n + 1) * kappa); }
   };
 
+  typedef std::pair<double, Duals> ScoredDual;
+
+// https://en.wikipedia.org/wiki/Divergence_(statistics)
+class ChiSquared
+{
 private:
   double alpha;
   double tau;
@@ -51,7 +54,7 @@ private:
   double delta;
 
   bool duals_stale;
-  Duals duals;
+  ScoredDual duals;
 
 public:
   // alpha: confidence level
@@ -112,10 +115,10 @@ public:
   {
     if (duals_stale) { recompute_duals(); }
 
-    return duals.qfunc(w, r);
+    return duals.second.qfunc(w, r);
   }
 
-  Duals recompute_duals();
+  ScoredDual recompute_duals();
   static double chisq_onedof_isf(double alpha);
   const double& effn() { return n; }
 };
