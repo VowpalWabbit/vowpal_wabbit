@@ -21,7 +21,7 @@ namespace shared_feature_merger
 static const std::vector<std::string> option_strings = {
     "csoaa_ldf", "wap_ldf", "cb_adf", "explore_eval", "cbify_ldf", "cb_explore_adf", "warm_cb"};
 
-label_type_t label_type;
+label_type_t label_type = label_type_t::cb;
 
 bool use_reduction(config::options_i& options)
 {
