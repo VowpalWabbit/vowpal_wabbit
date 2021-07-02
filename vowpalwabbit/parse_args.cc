@@ -375,11 +375,12 @@ void parse_diagnostics(options_i& options, vw& all)
 
   if (help) { all.logger.quiet = true; }
 
-  if(all.logger.quiet)
+  if (all.logger.quiet)
   {
     logger::log_set_level(logger::log_level::off);
-    // This is valid: https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer
-    // This results in the ostream not outputting anything.
+    // This is valid:
+    // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
+    // results in the ostream not outputting anything.
     all.trace_message = VW::make_unique<std::ostream>(nullptr);
   }
 
