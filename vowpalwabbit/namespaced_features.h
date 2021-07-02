@@ -111,7 +111,7 @@ public:
   using difference_type = std::ptrdiff_t;
 
   indexed_iterator_t(IndiceItT indices, FeaturesT* feature_groups, IndexT* namespace_indices, HashT* namespace_hashes)
-      : _indices_it(std::move(indices))
+      : _indices_it(indices)
       , _feature_groups(feature_groups)
       , _namespace_indices(namespace_indices)
       , _namespace_hashes(namespace_hashes)
@@ -129,7 +129,7 @@ public:
 
   indexed_iterator_t& operator--()
   {
-    --_indices_it++;
+    --_indices_it;
     return *this;
   }
 

@@ -176,7 +176,6 @@ namespaced_features::namespace_index_cbegin_proxy(namespace_index ns_index) cons
   features::const_audit_iterator inner_it;
   if (begin_it == end_it)
   {
-    --end_it;
     inner_it = features::const_audit_iterator{};
   }
   else
@@ -196,7 +195,6 @@ namespaced_features::namespace_index_cend_proxy(namespace_index ns_index) const
   features::const_audit_iterator inner_it;
   if (begin_it == end_it)
   {
-    --end_it;
     inner_it = features::const_audit_iterator{};
   }
   else
@@ -215,21 +213,21 @@ namespaced_features::indexed_iterator namespaced_features::namespace_index_begin
 
 namespaced_features::indexed_iterator namespaced_features::namespace_index_end(namespace_index ns_index)
 {
-  auto index_vec = _legacy_indices_to_index_mapping[ns_index];
+  auto& index_vec = _legacy_indices_to_index_mapping[ns_index];
   return {index_vec.end(), _feature_groups.data(), _namespace_indices.data(),
       _namespace_hashes.data()};
 }
 
 namespaced_features::const_indexed_iterator namespaced_features::namespace_index_begin(namespace_index ns_index) const
 {
-  auto index_vec = _legacy_indices_to_index_mapping[ns_index];
+  auto& index_vec = _legacy_indices_to_index_mapping[ns_index];
   return {index_vec.begin(), const_cast<const features*>(_feature_groups.data()), _namespace_indices.data(),
       _namespace_hashes.data()};
 }
 
 namespaced_features::const_indexed_iterator namespaced_features::namespace_index_end(namespace_index ns_index) const
 {
-  auto index_vec = _legacy_indices_to_index_mapping[ns_index];
+  auto& index_vec = _legacy_indices_to_index_mapping[ns_index];
   return {index_vec.end(), const_cast<const features*>(_feature_groups.data()),
       _namespace_indices.data(), _namespace_hashes.data()};
 }

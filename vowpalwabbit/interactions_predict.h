@@ -116,7 +116,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
   //    const uint64_t stride_shift = all.stride_shift; // it seems we don't need stride shift in FTRL-like hash
 
   // statedata for generic non-recursive iteration
-  v_array<feature_gen_data> state_data;
+  std::vector<feature_gen_data> state_data;
 
   for (const auto& ns : interactions)
   {  // current list of namespaces to interact.
@@ -248,9 +248,9 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
       // if any of interacting namespace has 0 features - whole interaction is skipped
       if (must_skip_interaction) continue;  // no_data_to_interact
 
-      auto fgd = state_data.begin();     // always equal to first ns
-      auto fgd2 = state_data.end() - 1;  // always equal to last ns
-      if (!permutations)                 // adjust state_data for simple combinations
+      auto fgd = state_data.data();                             // always equal to first ns
+      auto fgd2 = state_data.data() + (state_data.size() - 1);  // always equal to last ns
+      if (!permutations)                                   // adjust state_data for simple combinations
       {  // if permutations mode is disabeled then namespaces in ns are already sorted and thus grouped
         // (in fact, currently they are sorted even for enabled permutations mode)
         // let's go throw the list and calculate number of features to skip in namespaces which
@@ -260,7 +260,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 
         // iterate list backward as margin grows in this order
 
-        for (fgd = state_data.end() - 1; fgd > state_data.begin(); --fgd)
+        for (fgd = state_data.data() + (state_data.size() - 1); fgd > state_data.data(); --fgd)
         {
           fgd2 = fgd - 1;
           fgd->self_interaction =
@@ -290,8 +290,8 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
         if (must_skip_interaction) continue;  // impossible_without_permutations
       }                                       // end of state_data adjustment
 
-      fgd = state_data.begin();     // always equal to first ns
-      fgd2 = state_data.end() - 1;  // always equal to last ns
+      fgd = state_data.data();     // always equal to first ns
+      fgd2 = state_data.data() + (state_data.size() - 1);  // always equal to last ns
 
       // beware: micro-optimization.
       /* start & end are always point to features in last namespace of interaction.
