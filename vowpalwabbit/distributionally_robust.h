@@ -33,95 +33,95 @@ namespace distributionally_robust
 
   typedef std::pair<double, Duals> ScoredDual;
 
-// https://en.wikipedia.org/wiki/Divergence_(statistics)
-class ChiSquared
-{
-private:
-  double alpha;
-  double tau;
-  double wmin;
-  double wmax;
-  double rmin;
-  double rmax;
-
-  double n;
-  double sumw;
-  double sumwsq;
-  double sumwr;
-  double sumwsqr;
-  double sumwsqrsq;
-
-  double delta;
-
-  bool duals_stale;
-  ScoredDual duals;
-
-public:
-  // alpha: confidence level
-  // tau: count decay time constant
-  explicit ChiSquared(double _alpha, double _tau, double _wmin = 0,
-      double _wmax = std::numeric_limits<double>::infinity(), double _rmin = 0, double _rmax = 1)
-      : alpha(_alpha)
-      , tau(_tau)
-      , wmin(_wmin)
-      , wmax(_wmax)
-      , rmin(_rmin)
-      , rmax(_rmax)
-      , n(0)
-      , sumw(0)
-      , sumwsq(0)
-      , sumwr(0)
-      , sumwsqr(0)
-      , sumwsqrsq(0)
-      , delta(chisq_onedof_isf(alpha))
-      , duals_stale(true)
+  // https://en.wikipedia.org/wiki/Divergence_(statistics)
+  class ChiSquared
   {
-  }
+  private:
+    double alpha;
+    double tau;
+    double wmin;
+    double wmax;
+    double rmin;
+    double rmax;
 
-  bool isValid()
-  {
-    if (alpha > 1 || alpha <= 0) return false;
-    if (tau > 1 || tau <= 0) return false;
-    if (wmin >= wmax || wmin >= 1 || wmax <= 1) return false;
-    if (rmin > rmax) return false;
+    double n;
+    double sumw;
+    double sumwsq;
+    double sumwr;
+    double sumwsqr;
+    double sumwsqrsq;
 
-    return true;
-  }
+    double delta;
 
-  ChiSquared& update(double w, double r)
-  {
-    if (w >= 0)
+    bool duals_stale;
+    ScoredDual duals;
+
+  public:
+    // alpha: confidence level
+    // tau: count decay time constant
+    explicit ChiSquared(double _alpha, double _tau, double _wmin = 0,
+        double _wmax = std::numeric_limits<double>::infinity(), double _rmin = 0, double _rmax = 1)
+        : alpha(_alpha)
+        , tau(_tau)
+        , wmin(_wmin)
+        , wmax(_wmax)
+        , rmin(_rmin)
+        , rmax(_rmax)
+        , n(0)
+        , sumw(0)
+        , sumwsq(0)
+        , sumwr(0)
+        , sumwsqr(0)
+        , sumwsqrsq(0)
+        , delta(chisq_onedof_isf(alpha))
+        , duals_stale(true)
     {
-      n = tau * n + 1;
-      sumw = tau * sumw + w;
-      sumwsq = tau * sumwsq + w * w;
-      sumwr = tau * sumwr + w * r;
-      sumwsqr = tau * sumwsqr + w * w * r;
-      sumwsqrsq = tau * sumwsqrsq + w * w * r * r;
-
-      rmin = std::min(rmin, r);
-      rmax = std::max(rmax, r);
-
-      wmin = std::min(wmin, w);
-      wmax = std::max(wmax, w);
-
-      duals_stale = true;
     }
 
-    return *this;
-  }
+    bool isValid()
+    {
+      if (alpha > 1 || alpha <= 0) return false;
+      if (tau > 1 || tau <= 0) return false;
+      if (wmin >= wmax || wmin >= 1 || wmax <= 1) return false;
+      if (rmin > rmax) return false;
 
-  double qlb(double w, double r)
-  {
-    if (duals_stale) { recompute_duals(); }
+      return true;
+    }
 
-    return duals.second.qfunc(w, r);
-  }
+    ChiSquared& update(double w, double r)
+    {
+      if (w >= 0)
+      {
+        n = tau * n + 1;
+        sumw = tau * sumw + w;
+        sumwsq = tau * sumwsq + w * w;
+        sumwr = tau * sumwr + w * r;
+        sumwsqr = tau * sumwsqr + w * w * r;
+        sumwsqrsq = tau * sumwsqrsq + w * w * r * r;
 
-  ScoredDual recompute_duals();
-  static double chisq_onedof_isf(double alpha);
-  const double& effn() { return n; }
-};
+        rmin = std::min(rmin, r);
+        rmax = std::max(rmax, r);
+
+        wmin = std::min(wmin, w);
+        wmax = std::max(wmax, w);
+
+        duals_stale = true;
+      }
+
+      return *this;
+    }
+
+    double qlb(double w, double r)
+    {
+      if (duals_stale) { recompute_duals(); }
+
+      return duals.second.qfunc(w, r);
+    }
+
+    ScoredDual recompute_duals();
+    static double chisq_onedof_isf(double alpha);
+    const double& effn() { return n; }
+  };
 
 }  // namespace distributionally_robust
 }  // namespace VW
