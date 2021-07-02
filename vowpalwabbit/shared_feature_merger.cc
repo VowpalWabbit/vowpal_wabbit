@@ -21,6 +21,8 @@ namespace shared_feature_merger
 static const std::vector<std::string> option_strings = {
     "csoaa_ldf", "wap_ldf", "cb_adf", "explore_eval", "cbify_ldf", "cb_explore_adf", "warm_cb"};
 
+static label_type_t label_type;
+
 bool use_reduction(config::options_i& options)
 {
   for (const auto& opt : option_strings)
@@ -48,15 +50,15 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, multi_ex
   multi_ex::value_type shared_example = nullptr;
 
   bool has_example_header = false;
-  // TODO: Use label type from base when available -- currently hacky method to find label type
-  if (ec_seq[0]->l.cb.costs.size() > 0) { has_example_header = CB::ec_is_example_header(*ec_seq[0]); }
-  else if (ec_seq[0]->l.cs.costs.size() > 0)
-  {
-    has_example_header = COST_SENSITIVE::ec_is_example_header(*ec_seq[0]);
-  }
-  else if (ec_seq[0]->l.conditional_contextual_bandit.type != CCB::unset)
-  {
-    has_example_header = CCB::ec_is_example_header(*ec_seq[0]);
+  switch(label_type) {
+    case label_type_t::cb :
+      has_example_header = CB::ec_is_example_header(*ec_seq[0]);
+      break;
+    case label_type_t::ccb :
+      has_example_header = CCB::ec_is_example_header(*ec_seq[0]);
+      break;
+    case label_type_t::cs :
+      has_example_header = COST_SENSITIVE::ec_is_example_header(*ec_seq[0]);
   }
 
   if (has_example_header)
@@ -105,6 +107,7 @@ VW::LEARNER::base_learner* shared_feature_merger_setup(config::options_i& option
 {
   if (!use_reduction(options)) return nullptr;
 
+
   auto data = scoped_calloc_or_throw<sfm_data>();
 
   if (options.was_supplied("extra_metrics")) data->_metrics = VW::make_unique<sfm_metrics>();
@@ -115,6 +118,8 @@ VW::LEARNER::base_learner* shared_feature_merger_setup(config::options_i& option
       all.get_setupfn_name(shared_feature_merger_setup), base->learn_returns_prediction);
 
   learner.set_persist_metrics(persist);
+
+  label_type = all.example_parser->lbl_parser.label_type;
 
   // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
   //       shared example in a finish_example function. However, its too expensive to perform the full operation.
