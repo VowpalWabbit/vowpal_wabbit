@@ -32,10 +32,10 @@ struct indices_proxy_obj
 {
   VW::namespaced_features* feature_space;
 
-  std::vector<namespace_index>::const_iterator begin() { return feature_space->get_indices().begin(); }
-  std::vector<namespace_index>::const_iterator end() { return feature_space->get_indices().end(); }
+  VW::namespaced_features::ns_index_iterator begin() { return feature_space->index_begin(); }
+  VW::namespaced_features::ns_index_iterator end() { return feature_space->index_end(); }
   // TODO this needs to be fixed to be resilient to duplicated indices
-  size_t size() const { return feature_space->get_indices().size(); }
+  size_t size() const { return end() - begin(); }
 };
 
 struct example_predict

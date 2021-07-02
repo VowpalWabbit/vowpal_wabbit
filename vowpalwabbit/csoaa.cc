@@ -180,8 +180,9 @@ bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or jus
 {
   if (ec.feature_space.empty()) return false;
   // Based on how this was written before it looks like the label definition example should contain a single namespace of l
-  const auto& indices = ec.feature_space.get_indices();
-  if (indices.size() != 1 || *indices.begin() != 'l') return false;
+  auto indices_begin = ec.feature_space.index_begin();
+  auto indices_end = ec.feature_space.index_end();
+  if ((indices_end - indices_begin) != 1 || *indices_begin != 'l') return false;
   const auto& costs = ec.l.cs.costs;
   for (auto const& cost : costs)
     if ((cost.class_index != 0) || (cost.x <= 0.)) return false;

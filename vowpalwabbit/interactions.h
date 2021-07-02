@@ -125,12 +125,12 @@ private:
 public:
   std::vector<std::vector<namespace_index>> generated_interactions;
 
-  template <generate_func_t generate_func, bool leave_duplicate_interactions>
+  template <generate_func_t generate_func, bool leave_duplicate_interactions, typename IndexIteratorT>
   void update_interactions_if_new_namespace_seen(const std::vector<std::vector<namespace_index>>& interactions,
-      const std::vector<namespace_index>& new_example_indices)
+      IndexIteratorT new_example_indices_begin, IndexIteratorT new_example_indices_end)
   {
     auto prev_count = all_seen_namespaces.size();
-    all_seen_namespaces.insert(new_example_indices.begin(), new_example_indices.end());
+    all_seen_namespaces.insert(new_example_indices_begin, new_example_indices_end);
 
     if (prev_count != all_seen_namespaces.size())
     {
