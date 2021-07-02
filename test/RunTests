@@ -2453,4 +2453,8 @@ train-sets/ref/slates_simple_w_interactions.stderr
 {VW} -d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaaa --quiet --invert_hash dupeindex_self_quartic.txt
     train-sets/ref/dupeindex_self_quartic.txt
 
+# Test 339: csoaa_ldf with shared features
+{VW} -d train-sets/cs_shared.ldf --csoaa_ldf m
+    train-sets/ref/cs_shared.ldf
+
 # Do not delete this line or the empty line above it
