@@ -70,8 +70,9 @@ struct example_predict
 
 // make sure we have an exception safe version of example_predict
 
-class VW_DEPRECATED("example_predict is now RAII based. That class can be used instead.") safe_example_predict
-    : public example_predict
+class VW_DEPRECATED(
+    "example_predict is now RAII based. That class can be used instead. This will be removed in VW 9.0.")
+    safe_example_predict : public example_predict
 {
 public:
   safe_example_predict();
