@@ -162,9 +162,9 @@ namespace
 {
 inline bool is_aligned16(void *ptr)
 {
-#if BOOST_VERSION >= 105600
+#    if BOOST_VERSION >= 105600
   return boost::alignment::is_aligned(16, ptr);
-#else
+#    else
   return ((reinterpret_cast<uintptr_t>(ptr) & 0x0f) == 0);
 #endif
 }
