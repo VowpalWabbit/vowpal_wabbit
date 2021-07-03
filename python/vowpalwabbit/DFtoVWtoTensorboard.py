@@ -1,5 +1,7 @@
 import tensorboardX as tx
-
+from tensorboardX.proto.graph_pb2 import GraphDef
+from tensorboardX.proto.node_def_pb2 import NodeDef
+from tensorboardX.proto import event_pb2
 
 class VWtoTensorboard:
 	"""The object of this class would be passed as a callback to DFtoVWtoTensorboard fit method to ensure writing of logs for Tensorboard"""
@@ -18,7 +20,7 @@ class VWtoTensorboard:
 
 		self : VWtoTensorboard
 		"""
-		self.file_writer = tx.SummaryWriter(logdir)   # creating file writer
+		self.file_writer = tx.SummaryWriter(logdir, flush_secs=30)   # creating file writer
 		self.iteration = 0   # This would keep value of current iteration 
 
 	def emit_learning_metrics(self, average_loss, since_last):
@@ -41,6 +43,32 @@ class VWtoTensorboard:
 		self.file_writer.add_scalar('since_last', since_last, self.iteration)   # logging since_last on each iteration
 		self.iteration += 1  # Now increment this as the incremented value is for next iteration
 
+	def draw_reductions_graph(self, vw):
+		"""This method draws vw model's reductions as graph for Tensorboard visualization
+
+		Parameters
+		----------
+
+		vw    : A vowpalwabbit object
+				This would be used to get the enabled reductions for making a graph
+
+		Returns
+		-------
+
+		None
+		"""
+		nodes = []
+		reductions = vw.get_enabled_reductions()
+
+		for ind, layer in enumerate(reductions):
+			if ind == 0:
+				nodes.append(NodeDef(name=layer, op='op'))   # First node does not have any input edge
+			else:
+				nodes.append(NodeDef(name=layer, op='op', input=[reductions[ind-1]]))
+
+		g = GraphDef(node=nodes)
+		event = event_pb2.Event(graph_def=g.SerializeToString())
+		self.file_writer._get_file_writer().add_event(event)
 
 
 class DFtoVWtoTensorboard:
