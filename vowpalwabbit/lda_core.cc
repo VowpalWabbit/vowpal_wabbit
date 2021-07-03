@@ -98,18 +98,6 @@ struct lda
 
 // #define VW_NO_INLINE_SIMD
 
-namespace
-{
-inline bool is_aligned16(void *ptr)
-{
-#if BOOST_VERSION >= 105600
-  return boost::alignment::is_aligned(16, ptr);
-#else
-  return ((reinterpret_cast<uintptr_t>(ptr) & 0x0f) == 0);
-#endif
-}
-}  // namespace
-
 namespace ldamath
 {
 inline float fastlog2(float x)
@@ -169,6 +157,18 @@ inline float fastdigamma(float x)
 #if !defined(VW_NO_INLINE_SIMD)
 
 #  if defined(__SSE2__) || defined(__SSE3__) || defined(__SSE4_1__)
+
+namespace
+{
+inline bool is_aligned16(void *ptr)
+{
+#if BOOST_VERSION >= 105600
+  return boost::alignment::is_aligned(16, ptr);
+#else
+  return ((reinterpret_cast<uintptr_t>(ptr) & 0x0f) == 0);
+#endif
+}
+}  // namespace
 
 // Include headers for the various SSE versions:
 #    if defined(__SSE2__)
