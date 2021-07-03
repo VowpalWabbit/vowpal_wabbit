@@ -56,14 +56,23 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: wheel_${{ matrix.config.version }}
-      - name: Test wheel
+      - name: Install dependencies
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Install wheel
         shell: bash
         run: |
           export wheel_files=(wheel_${{ matrix.config.version }}/*)
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
-          pip install -r requirements.txt
-          pip install pytest
           pip install ${wheel_file}
+      - name: Run unit tests
+        shell: bash
+        run: |
           python -m pytest ./python/tests/
+      - name: Run doctest
+        shell: bash
+        run: |
           python ./python/tests/run_doctest.py
