@@ -31,7 +31,7 @@ namespace distributionally_robust
     double qfunc(double w, double r) { return unbounded ? 1 : -(gamma + (beta + r) * w) / ((n + 1) * kappa); }
   };
 
-  typedef std::pair<double, Duals> ScoredDual;
+  using ScoredDual = std::pair<double, Duals>;
 
   // https://en.wikipedia.org/wiki/Divergence_(statistics)
   class ChiSquared
