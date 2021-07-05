@@ -57,6 +57,8 @@ public:
   using reference = value_type&;
   using const_reference = const value_type&;
 
+  audit_features_iterator() : _begin_values(nullptr), _begin_indices(nullptr), _begin_audit(nullptr) {}
+
   audit_features_iterator(
       feature_value_type_t* begin_values, feature_index_type_t* begin_indices, audit_type_t* begin_audit)
       : _begin_values(begin_values), _begin_indices(begin_indices), _begin_audit(begin_audit)
@@ -186,6 +188,8 @@ public:
   using reference = value_type&;
   using const_reference = const value_type&;
 
+  features_iterator() : _begin_values(nullptr), _begin_indices(nullptr) {}
+
   features_iterator(feature_value_type_t* begin_values, feature_index_type_t* begin_indices)
       : _begin_values(begin_values), _begin_indices(begin_indices)
   {
@@ -308,7 +312,7 @@ struct features
   inline bool empty() const { return values.empty(); }
   inline bool nonempty() const { return !empty(); }
 
-  VW_DEPRECATED("Freeing space names is handled directly by truncation or removal.")
+  VW_DEPRECATED("Freeing space names is handled directly by truncation or removal. This will be removed in VW 9.0.")
   void free_space_names(size_t i);
 
   // default iterator for values & features
@@ -345,6 +349,6 @@ struct features
   void push_back(feature_value v, feature_index i);
   bool sort(uint64_t parse_mask);
 
-  VW_DEPRECATED("deep_copy_from is deprecated. Use the copy constructor directly.")
+  VW_DEPRECATED("deep_copy_from is deprecated. Use the copy constructor directly. This will be removed in VW 9.0.")
   void deep_copy_from(const features& src);
 };
