@@ -309,7 +309,7 @@ void finish_example(vw& all, multi_ex& ec_seq)
   for (example* ecc : ec_seq) VW::finish_example(all, *ecc);
 }
 
-void return_multiple_example(vw& all, v_array<example*>& examples)
+void return_multiple_example(vw& all, std::vector<example*>& examples)
 {
   for (auto ec : examples) { clean_example(all, *ec, true); }
   examples.clear();

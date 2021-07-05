@@ -202,7 +202,7 @@ typedef std::vector<example*> multi_ex;
 
 namespace VW
 {
-void return_multiple_example(vw& all, v_array<example*>& examples);
+void return_multiple_example(vw& all, std::vector<example*>& examples);
 
 typedef example& (*example_factory_t)(void*);
 

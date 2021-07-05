@@ -152,7 +152,7 @@ int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
   return (int)total;
 }
 
-int read_cached_features(vw* all, v_array<example*>& examples, std::vector<VW::string_view>&, std::vector<VW::string_view>&, std::vector<char> *io_lines_next_item) {
+int read_cached_features(vw* all, std::vector<example*>& examples, std::vector<VW::string_view>&, std::vector<VW::string_view>&, std::vector<char> *io_lines_next_item) {
 
   // this needs to outlive the string_views pointing to it
   std::vector<char> line;

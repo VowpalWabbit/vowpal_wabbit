@@ -12,7 +12,7 @@
 
 #include "io/logger.h"
 
-using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
+using dispatch_fptr = std::function<void(vw&, const std::vector<example*>&)>;
 struct io_state;
 
 inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
@@ -30,7 +30,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     while (!all.example_parser->done)
     {
       example* example_ptr = &VW::get_unused_example(&all);
-      v_array<example*>* examples = &VW::get_unused_example_vector(&all);
+      std::vector<example*>* examples = &VW::get_unused_example_vector(&all);
       (*examples).push_back(example_ptr);
 
       bool is_null_pointer = false;

@@ -90,7 +90,7 @@ void drain_examples(vw& all)
 {
   if (all.early_terminate)
   {  // drain any extra examples from parser.
-    v_array<example*>* ev = nullptr;
+    std::vector<example*>* ev = nullptr;
     while ((ev = VW::get_example(all.example_parser)) != nullptr){
       for (auto ex: *ev)
         VW::finish_example(all, *ex);
@@ -147,7 +147,7 @@ class single_example_handler
 public:
   single_example_handler(const context_type& context) : _context(context) {}
 
-  void on_example(v_array<example*>* ev)
+  void on_example(std::vector<example*>* ev)
   {
     for (example* ec : *ev)
     {
@@ -208,7 +208,7 @@ public:
     if (!ec_seq.empty()) { _context.template process<multi_ex, learn_multi_ex>(ec_seq); }
   }
 
-  void on_example(v_array<example*>* ev)
+  void on_example(std::vector<example*>* ev)
   {
     for (example* ec : *ev)
     {
@@ -236,7 +236,7 @@ class ready_examples_queue
 public:
   ready_examples_queue(vw& master) : _master(master){}
 
-  v_array<example*>* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser) : nullptr; }
+  std::vector<example*>* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser) : nullptr; }
 
 private:
   vw& _master;
@@ -245,19 +245,19 @@ private:
 class custom_examples_queue
 {
 public:
-  custom_examples_queue(v_array<example*> examples) : _examples(examples) {}
+  custom_examples_queue(std::vector<example*> examples) : _examples(examples) {}
 
   example* pop() { return _index < _examples.size() ? _examples[_index++] : nullptr; }
 
 private:
-  v_array<example*> _examples;
+  std::vector<example*> _examples;
   size_t _index{0};
 };
 
 template <typename queue_type, typename handler_type>
 void process_examples(queue_type& examples, handler_type& handler)
 {
-  v_array<example*>* ev;
+  std::vector<example*>* ev;
 
   while ((ev = examples.pop()) != nullptr) handler.on_example(ev);
 }
@@ -299,7 +299,7 @@ void generic_driver_onethread(vw& all)
 {
   single_instance_context context(all);
   handler_type handler(context);
-  auto multi_ex_fptr = [&handler](vw& all, v_array<example*> examples) {
+  auto multi_ex_fptr = [&handler](vw& all, std::vector<example*> examples) {
     all.example_parser->end_parsed_examples += examples.size();  // divergence: lock & signal
     // custom_examples_queue examples_queue(examples);
     // process_examples(examples_queue, handler);

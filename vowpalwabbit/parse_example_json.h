@@ -1441,7 +1441,7 @@ public:
 
   std::unordered_map<uint64_t, example*>* dedup_examples = nullptr;
 
-  v_array<example*>* examples;
+  std::vector<example*>* examples;
   example* ex;
   rapidjson::InsituStringStream* stream;
   const char* stream_end;
@@ -1553,7 +1553,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 {
   Context<audit> ctx;
 
-  void init(vw* all, v_array<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
+  void init(vw* all, std::vector<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
       VW::example_factory_t example_factory, void* example_factory_context,
       std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
   {
@@ -1611,7 +1611,7 @@ struct json_parser
 namespace VW
 {
 template <bool audit>
-void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory,
+void read_line_json(vw& all, std::vector<example*>& examples, char* line, example_factory_t example_factory,
     void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
@@ -1643,7 +1643,7 @@ void read_line_json(vw& all, v_array<example*>& examples, char* line, example_fa
   // "Line: '"<< line_copy << "'");
 }
 
-inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
+inline void apply_pdrop(vw& all, float pdrop, std::vector<example*>& examples)
 {
   if (all.example_parser->lbl_parser.label_type == label_type_t::cb)
   {
@@ -1660,7 +1660,7 @@ inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
 }
 
 template <bool audit>
-void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
+void read_line_decision_service_json(vw& all, std::vector<example*>& examples, char* line, size_t length, bool copy_line,
     example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
@@ -1702,7 +1702,7 @@ void read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 }  // namespace VW
 
 template <bool audit>
-bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
+bool parse_line_json(vw* all, char* line, size_t num_chars, std::vector<example*>& examples)
 {
   if (all->example_parser->decision_service_json)
   {
@@ -1738,7 +1738,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
   return true;
 }
 
-inline void append_empty_newline_example_for_driver(vw* all, v_array<example*>& examples)
+inline void append_empty_newline_example_for_driver(vw* all, std::vector<example*>& examples)
 {
   // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
   // since the communication between the parsing thread the main learner expects examples to be requested in order (as
@@ -1762,7 +1762,7 @@ inline void append_empty_newline_example_for_driver(vw* all, v_array<example*>& 
 
 // This is used by the python parser
 template <bool audit>
-void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<example*>& examples)
+void line_to_examples_json(vw* all, const char* line, size_t num_chars, std::vector<example*>& examples)
 {
   // The JSON reader does insitu parsing and therefore modifies the input
   // string, so we make a copy since this function cannot modify the input
@@ -1782,7 +1782,7 @@ void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<
 }
 
 template <bool audit>
-int read_features_json(vw* all, v_array<example*>& examples, std::vector<VW::string_view>&, std::vector<VW::string_view>&, std::vector<char> *io_lines_next_item)
+int read_features_json(vw* all, std::vector<example*>& examples, std::vector<VW::string_view>&, std::vector<VW::string_view>&, std::vector<char> *io_lines_next_item)
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;

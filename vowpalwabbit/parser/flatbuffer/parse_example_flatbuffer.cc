@@ -19,7 +19,7 @@ namespace parsers
 {
 namespace flatbuffer
 {
-int flatbuffer_to_examples(vw* all, v_array<example*>& examples)
+int flatbuffer_to_examples(vw* all, std::vector<example*>& examples)
 {
   return static_cast<int>(all->flat_converter->parse_examples(all, examples));
 }
@@ -51,7 +51,7 @@ bool parser::parse(vw* all, uint8_t* buffer_pointer)
   return true;
 }
 
-void parser::process_collection_item(vw* all, v_array<example*>& examples)
+void parser::process_collection_item(vw* all, std::vector<example*>& examples)
 {
   // new example/multi example object to process from collection
   if (_data->example_obj_as_ExampleCollection()->is_multiline())
@@ -80,7 +80,7 @@ void parser::process_collection_item(vw* all, v_array<example*>& examples)
   }
 }
 
-bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffer_pointer)
+bool parser::parse_examples(vw* all, std::vector<example*>& examples, uint8_t* buffer_pointer)
 {
   if (_active_multi_ex)
   {

@@ -16,14 +16,14 @@ namespace parsers
 {
 namespace flatbuffer
 {
-int flatbuffer_to_examples(vw* all, v_array<example*>& examples);
+int flatbuffer_to_examples(vw* all, std::vector<example*>& examples);
 
 class parser
 {
 public:
   parser() = default;
   const VW::parsers::flatbuffer::ExampleRoot* data();
-  bool parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffer_pointer = nullptr);
+  bool parse_examples(vw* all, std::vector<example*>& examples, uint8_t* buffer_pointer = nullptr);
 
 private:
   const VW::parsers::flatbuffer::ExampleRoot* _data;
@@ -38,7 +38,7 @@ private:
   uint64_t _c_hash = 0;
 
   bool parse(vw* all, uint8_t* buffer_pointer = nullptr);
-  void process_collection_item(vw* all, v_array<example*>& examples);
+  void process_collection_item(vw* all, std::vector<example*>& examples);
   void parse_example(vw* all, example* ae, const Example* eg);
   void parse_multi_example(vw* all, example* ae, const MultiExample* eg);
   void parse_namespaces(vw* all, example* ae, const Namespace* ns);

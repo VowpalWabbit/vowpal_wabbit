@@ -19,13 +19,13 @@ void substring_to_example(vw* all, example* ae, VW::string_view& example, std::v
 namespace VW
 {
 example& get_unused_example(vw* all);
-v_array<example*>& get_unused_example_vector(vw* all);
+std::vector<example*>& get_unused_example_vector(vw* all);
 void read_line(vw& all, example* ex, char* line);  // read example from the line.
 void read_lines(vw* all, const char* line, size_t len,
-    v_array<example*>& examples);  // read examples from the new line separated strings.
+    std::vector<example*>& examples);  // read examples from the new line separated strings.
 
 }  // namespace VW
 
-int read_features_string(vw* all, v_array<example*>& examples, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name, std::vector<char> *io_lines_next_item);
+int read_features_string(vw* all, std::vector<example*>& examples, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name, std::vector<char> *io_lines_next_item);
 size_t strip_features_string(char*& line, size_t num_chars_init);
 

@@ -57,14 +57,14 @@ struct parser
   std::vector<VW::string_view> words;
 
   VW::object_pool<example> example_pool;
-  VW::object_pool<v_array<example*>> example_vector_pool;
-  VW::ptr_queue<v_array<example*>> ready_parsed_examples;
+  VW::object_pool<std::vector<example*>> example_vector_pool;
+  VW::ptr_queue<std::vector<example*>> ready_parsed_examples;
 
   std::unique_ptr<io_buf> input;  // Input source(s)
   /// reader consumes the input io_buf in the vw object and is generally for file based parsing
-  int (*reader)(vw*, v_array<example*>& examples, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name, std::vector<char>* io_lines_next_item);
+  int (*reader)(vw*, std::vector<example*>& examples, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name, std::vector<char>* io_lines_next_item);
   /// text_reader consumes the char* input and is for text based parsing
-  void (*text_reader)(vw*, const char*, size_t, v_array<example*>&);
+  void (*text_reader)(vw*, const char*, size_t, std::vector<example*>&);
 
   bool (*input_file_reader)(vw& vw, char*& line);
 

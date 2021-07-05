@@ -169,7 +169,7 @@ int main(int argc, char** argv)
     DecisionServiceInteraction interaction;
     for (const auto& line : lines)
     {
-      v_array<example*> examples = v_init<example*>();
+      std::vector<example*> examples;
       examples.push_back(&VW::get_unused_example(vw));
       VW::read_line_decision_service_json<false>(*vw, examples, const_cast<char*>(line.data()), line.length(), false,
           (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &interaction);
@@ -181,7 +181,7 @@ int main(int argc, char** argv)
       }
       // TODO - finish_example should support a v_array as input.
       VW::finish_example(*vw, result);
-      examples.delete_v();
+      examples.clear();
     }
   }
   const auto end = std::chrono::high_resolution_clock::now();

@@ -681,14 +681,14 @@ example& get_unused_example(vw* all)
   return *ex;
 }
 
-v_array<example*>& get_unused_example_vector(vw* all)
+std::vector<example*>& get_unused_example_vector(vw* all)
 {
   parser* p = all->example_parser;
   auto ex_vector = p->example_vector_pool.get_object();
   return *ex_vector;
 }
 
-void setup_examples(vw& all, v_array<example*>& examples)
+void setup_examples(vw& all, std::vector<example*>& examples)
 {
   for (example* ae : examples) setup_example(all, ae);
   all.example_parser->end_parsed_examples += examples.size();
@@ -964,14 +964,14 @@ void finish_example(vw& all, example& ec)
   }
 }
 
-void finish_example_vector(vw& all, v_array<example*>& ev)
+void finish_example_vector(vw& all, std::vector<example*>& ev)
 {
   ev.clear();
   all.example_parser->example_vector_pool.return_object(&ev);
 }
 }  // namespace VW
 
-void thread_dispatch(vw& all, const v_array<example*>& examples)
+void thread_dispatch(vw& all, const std::vector<example*>& examples)
 {
   for (auto example : examples) notify_examples_cv(example);
 }
@@ -980,9 +980,9 @@ void main_parse_loop(vw* all) { parse_dispatch(*all, thread_dispatch); }
 
 namespace VW
 {
-v_array<example*>* get_example(parser* p) { 
+std::vector<example*>* get_example(parser* p) { 
 
-  v_array<example*>* ev = p->ready_parsed_examples.pop();
+  std::vector<example*>* ev = p->ready_parsed_examples.pop();
 
   if (ev == nullptr) {
     return ev;
