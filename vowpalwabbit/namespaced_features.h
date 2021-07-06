@@ -80,13 +80,17 @@ class index_iterator_t
 
 public:
   using difference_type = std::ptrdiff_t;
+  using value_type = namespace_index;
+  using pointer = value_type*;
+  using reference = value_type&;
+  using iterator_category = std::forward_iterator_tag;
 
   index_iterator_t(FeatureGroupIteratorT feature_group_iterator)
       : _feature_group_iterator(feature_group_iterator)
   {
   }
 
-  inline namespace_index operator*() { return _feature_group_iterator->_index; }
+  inline value_type operator*() { return _feature_group_iterator->_index; }
   inline index_iterator_t& operator++()
   {
     _feature_group_iterator++;
