@@ -57,9 +57,8 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
     }
 
     new_ld.weight = ec.l.cb.weight;
-    new_ld.costs.emplace_back(ec.l.cb.costs[index_with_cost].cost,
-      ec.l.cb.costs[index_with_cost].action - 1,
-      ec.l.cb.costs[index_with_cost].probability);
+    new_ld.costs.emplace_back(ec.l.cb.costs[index_with_cost].cost, ec.l.cb.costs[index_with_cost].action - 1,
+        ec.l.cb.costs[index_with_cost].probability);
   }
 
   if (!is_test_label && chosen_action < data.adf_data.num_actions)
