@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <vw.h>
 // ezexample is deprecated and will be removed in VW 9.0.
+// Details: https://github.com/VowpalWabbit/vowpal_wabbit/issues/3091
 #include <ezexample.h>
 #include "future_compat.h"
 

@@ -3,6 +3,7 @@
 #include "../vowpalwabbit/vw.h"
 
 // ezexample is deprecated and will be removed in VW 9.0.
+// Details: https://github.com/VowpalWabbit/vowpal_wabbit/issues/3091
 #include "../vowpalwabbit/ezexample.h"
 
 VW_WARNING_STATE_PUSH
