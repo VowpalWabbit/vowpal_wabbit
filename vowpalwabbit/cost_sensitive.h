@@ -25,7 +25,7 @@ struct wclass
       : x(x), class_index(class_index), partial_prediction(partial_prediction), wap_value(wap_value)
   {
   }
-  wclass() : x(0), class_index(0.f), partial_prediction(0.f), wap_value(0.f) {}
+  wclass() : x(0.f), class_index(0), partial_prediction(0.f), wap_value(0.f) {}
 
   bool operator==(wclass j) { return class_index == j.class_index; }
 };
