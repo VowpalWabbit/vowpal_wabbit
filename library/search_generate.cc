@@ -253,10 +253,7 @@ public:
       ex.indices.push_back('l');
       fs_l.push_back(static_cast<float>(N), VW::hash_feature(vw_obj, "in", ns_hash_l));
       fs_l.push_back(static_cast<float>(m), VW::hash_feature(vw_obj, "out", ns_hash_l));
-      if (N != m)
-      {
-        fs_l.push_back(static_cast<float>(N-m), VW::hash_feature(vw_obj, "diff", ns_hash_l));
-      }
+      if (N != m) { fs_l.push_back(static_cast<float>(N-m), VW::hash_feature(vw_obj, "diff", ns_hash_l)); }
 
       // suffixes thus far
       auto ns_hash_s = VW::hash_space(vw_obj, "s");
@@ -273,10 +270,7 @@ public:
       auto ns_hash_c = VW::hash_space(vw_obj, "c");
       auto& fs_c = ex.feature_space['c'];
       ex.indices.push_back('c');
-      for (char c : out)
-      {
-        fs_c.push_back(1.f, VW::hash_feature(vw_obj, "c=" + std::string(1,c), ns_hash_c));
-      }
+      for (char c : out) { fs_c.push_back(1.f, VW::hash_feature(vw_obj, "c=" + std::string(1,c), ns_hash_c)); }
       fs_c.push_back(1.f, VW::hash_feature(vw_obj, "c=$", ns_hash_c));
 
       // words thus far
@@ -307,24 +301,15 @@ public:
         char best_char = '~'; float best_count = 0.;
         for (auto xx : next)
         {
-          if (xx.cw > 0.)
-          {
-            fs_d.push_back(xx.cw, VW::hash_feature(vw_obj, "c=" + std::string(1,xx.c), ns_hash_d));
-          }
-          if (xx.sw > 0.)
-          {
-            fs_d.push_back(xx.sw, VW::hash_feature(vw_obj, "mc=" + xx.s, ns_hash_d));
-          }
+          if (xx.cw > 0.) { fs_d.push_back(xx.cw, VW::hash_feature(vw_obj, "c=" + std::string(1,xx.c), ns_hash_d)); }
+          if (xx.sw > 0.) { fs_d.push_back(xx.sw, VW::hash_feature(vw_obj, "mc=" + xx.s, ns_hash_d)); }
           if (xx.sw > best_count)
           {
             best_count = xx.sw;
             best_char = xx.c;
           }
         }
-        if (best_count > 0.)
-        {
-          fs_d.push_back(best_count, VW::hash_feature(vw_obj, "best=" + std::string(1,best_char), ns_hash_d));
-        }
+        if (best_count > 0.) { fs_d.push_back(best_count, VW::hash_feature(vw_obj, "best=" + std::string(1,best_char), ns_hash_d)); }
       }
 
       // input
@@ -362,10 +347,7 @@ public:
       */
       VW::setup_example(vw_obj, &ex);
       std::vector<std::pair<action,float> > all = ied.all_next();
-      char c = action2char( Search::predictor(sch, m)
-                            .set_input(ex)
-                            .set_allowed(all)
-                            .predict() );
+      char c = action2char(Search::predictor(sch, m).set_input(ex).set_allowed(all).predict());
 
       VW::finish_example(vw_obj, ex);
 
