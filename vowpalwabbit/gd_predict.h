@@ -75,7 +75,7 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::arr
     }
   else
   {
-    for (auto i = ec.feature_space.begin(); i != ec.feature_space.bnd(); ++i)
+    for (auto i = ec.feature_space.begin(); i != ec.feature_space.end(); ++i)
     {
       foreach_feature<DataT, FuncT, WeightsT>(weights, *i, dat, offset);
     }

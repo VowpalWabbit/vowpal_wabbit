@@ -79,20 +79,28 @@ class index_iterator_t
   FeatureGroupIteratorT _feature_group_iterator;
 
 public:
-  iterator_t(FeatureGroupIteratorT feature_group_iterator)
+  using difference_type = std::ptrdiff_t;
+
+  index_iterator_t(FeatureGroupIteratorT feature_group_iterator)
       : _feature_group_iterator(feature_group_iterator)
   {
   }
 
   inline namespace_index operator*() { return _feature_group_iterator->_index; }
-  inline iterator_t& operator++()
+  inline index_iterator_t& operator++()
   {
     _feature_group_iterator++;
     return *this;
   }
 
-  bool operator==(const iterator_t& rhs) { return _feature_group_iterator == rhs._feature_group_iterator; }
-  bool operator!=(const iterator_t& rhs) { return _feature_group_iterator != rhs._feature_group_iterator; }
+    friend difference_type operator-(const index_iterator_t& lhs, const index_iterator_t& rhs)
+  {
+      return lhs._feature_group_iterator - rhs._feature_group_iterator;
+  }
+
+
+  bool operator==(const index_iterator_t& rhs) { return _feature_group_iterator == rhs._feature_group_iterator; }
+  bool operator!=(const index_iterator_t& rhs) { return _feature_group_iterator != rhs._feature_group_iterator; }
 };
 
 /// Insertion or removal will result in this value in invalidated.
@@ -171,8 +179,8 @@ struct namespaced_features
   using const_indexed_iterator =
       indexed_iterator_t<std::vector<size_t>::const_iterator, std::vector<details::namespaced_feature_group>::const_iterator, const features>;
 
-  using ns_index_iterator = iterator_t<std::vector<details::namespaced_feature_group>::iterator>;
-  using const_ns_index_iterator = iterator_t<std::vector<details::namespaced_feature_group>::const_iterator>;
+  using ns_index_iterator = index_iterator_t<std::vector<details::namespaced_feature_group>::iterator>;
+  using const_ns_index_iterator = index_iterator_t<std::vector<details::namespaced_feature_group>::const_iterator>;
 
   namespaced_features() = default;
   ~namespaced_features() = default;
@@ -345,7 +353,7 @@ features& namespaced_features::merge_feature_group(FeaturesT&& ftrs, uint64_t ha
     _feature_groups.emplace_back(std::forward<FeaturesT>(ftrs), hash, ns_index);
     auto new_index = _feature_groups.size() - 1;
     _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
-    return _feature_groups.back();
+    return _feature_groups.back()._features;
   }
 
   existing_group->concat(std::forward<FeaturesT>(ftrs));
