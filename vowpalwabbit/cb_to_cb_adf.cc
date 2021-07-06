@@ -31,7 +31,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
   CB::label new_ld;
   bool is_test_label = CB::is_test_label(ec.l.cb);
 
-  uint32_t chosen_action;
+  uint32_t chosen_action = 0;
   uint32_t index_with_cost = 0;
 
   if (!is_test_label)
