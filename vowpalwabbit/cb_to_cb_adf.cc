@@ -27,23 +27,52 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 {
   data.adf_data.copy_example_to_adf(*data.weights, ec);
 
-  CB::label ld;
+  CB::label backup_ld;
+  CB::label new_ld;
   bool is_test_label = CB::is_test_label(ec.l.cb);
 
   uint32_t chosen_action;
-  if (!is_test_label) chosen_action = ec.l.cb.costs[0].action - 1;
+  uint32_t index_with_cost = 0;
+
+  if (!is_test_label)
+  {
+    // cb.costs can be more than one in --cb
+    // we need to keep the observed cost one only
+    if (ec.l.cb.costs.size() > 1)
+    {
+      for (auto c : ec.l.cb.costs)
+      {
+        if (c.has_observed_cost())
+        {
+          chosen_action = c.action - 1;
+          break;
+        }
+        index_with_cost++;
+      }
+    }
+    else
+    {
+      chosen_action = ec.l.cb.costs[0].action - 1;
+      index_with_cost = 0;
+    }
+
+    new_ld.weight = ec.l.cb.weight;
+    new_ld.costs.emplace_back(ec.l.cb.costs[index_with_cost].cost,
+      ec.l.cb.costs[index_with_cost].action - 1,
+      ec.l.cb.costs[index_with_cost].probability);
+  }
 
   if (!is_test_label && chosen_action < data.adf_data.num_actions)
   {
-    ld = std::move(data.adf_data.ecs[chosen_action]->l.cb);
-    data.adf_data.ecs[chosen_action]->l.cb = std::move(ec.l.cb);
+    backup_ld = std::move(data.adf_data.ecs[chosen_action]->l.cb);
+    data.adf_data.ecs[chosen_action]->l.cb = std::move(new_ld);
   }
 
-  auto restore_guard = VW::scope_exit([&ld, &data, &ec, &chosen_action, &is_test_label] {
+  auto restore_guard = VW::scope_exit([&backup_ld, &data, &ec, &chosen_action, &is_test_label, &new_ld] {
     if (!is_test_label && chosen_action < data.adf_data.num_actions)
     {
-      ec.l.cb = std::move(data.adf_data.ecs[chosen_action]->l.cb);
-      data.adf_data.ecs[chosen_action]->l.cb = std::move(ld);
+      new_ld = std::move(data.adf_data.ecs[chosen_action]->l.cb);
+      data.adf_data.ecs[chosen_action]->l.cb = std::move(backup_ld);
     }
   });
 
