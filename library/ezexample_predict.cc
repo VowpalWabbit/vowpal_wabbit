@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include "../vowpalwabbit/parser.h"
 #include "../vowpalwabbit/vw.h"
+
+// ezexample is deprecated and will be removed in VW 9.0.
 #include "../vowpalwabbit/ezexample.h"
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 int main(int argc, char *argv[])
 { std::string init_string = "-t -q st --noconstant --ldf_override s --no_stdin -i ";
   if (argc > 1)
@@ -49,3 +53,5 @@ int main(int argc, char *argv[])
   // AND FINISH UP
   VW::finish(*vw);
 }
+
+VW_WARNING_STATE_POP
