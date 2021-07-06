@@ -866,6 +866,10 @@ class VWClassifier(VW, LinearClassifierMixin):
 class VWRegressor(VW, RegressorMixin):
     """Vowpal Wabbit Regressor model """
 
+    def __init__(self, **kwargs):
+        kwargs["convert_labels"] = False
+        super(VWRegressor, self).__init__(**kwargs)
+
     def _more_tags(self):
         return dict(poor_score=True)
 
