@@ -50,7 +50,7 @@ public:
       fs_w.push_back(1.f, VW::hash_feature(vw_obj, input_example[i].word, ns_hash_w));
       VW::setup_example(vw_obj, &ex);
       action p =
-          Search::predictor(sch, i+1).set_input(ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
+          Search::predictor(sch, i + 1).set_input(ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
       output.push_back(p);
       VW::finish_example(vw_obj, ex);
     }
