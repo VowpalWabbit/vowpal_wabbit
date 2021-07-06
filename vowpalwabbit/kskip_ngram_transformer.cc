@@ -78,7 +78,7 @@ void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NU
 void VW::kskip_ngram_transformer::generate_grams(example* ex)
 {
   // In order to have the same behavior as before we need to flatten the indice feature groups.
-  std::set<namespace_index> indices(ex->feature_space.get_indices().begin(), ex->feature_space.get_indices().end());
+  std::set<namespace_index> indices(ex->feature_space.index_begin(), ex->feature_space.index_end());
   for (namespace_index index : indices)
   {
     auto range = ex->feature_space.namespace_index_range(index);

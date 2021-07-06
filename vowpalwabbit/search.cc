@@ -614,8 +614,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
 
 void del_features_in_top_namespace(search_private& /* priv */, example& ec, size_t ns)
 {
-  const auto& indices = ec.feature_space.get_indices();
-  if (std::find(indices.begin(), indices.end(), ns) == indices.end())
+  if (std::find( ec.feature_space.index_begin(),  ec.feature_space.index_end(), ns) ==  ec.feature_space.index_end())
   {
     return;
     // if (ec.indices.size() == 0)
