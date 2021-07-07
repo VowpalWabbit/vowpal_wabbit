@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include "../vowpalwabbit/parser.h"
 #include "../vowpalwabbit/vw.h"
+
+// ezexample is deprecated and will be removed in VW 9.0.
+// Details: https://github.com/VowpalWabbit/vowpal_wabbit/issues/3091
 #include "../vowpalwabbit/ezexample.h"
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 void run(vw*vw)
 { ezexample ex(vw, true);   // we're doing csoaa_ldf so we need multiline examples
 
@@ -56,6 +61,8 @@ void run(vw*vw)
   // push it through VW for training
   ex.finish();
 }
+
+VW_WARNING_STATE_POP
 
 int main(int argc, char *argv[])
 { // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS WILL STORE A MODEL TO train.ezw
