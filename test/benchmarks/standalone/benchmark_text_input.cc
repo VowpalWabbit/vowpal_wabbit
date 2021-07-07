@@ -21,7 +21,7 @@ static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
 
   auto es = const_cast<char*>(example_string.c_str());
   auto vw = VW::initialize("--cb 2 --quiet");
-  auto examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(vw));
   for (auto _ : state)
   {
@@ -29,7 +29,6 @@ static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
     VW::empty_example(*vw, *examples[0]);
     benchmark::ClobberMemory();
   }
-  examples.delete_v();
 }
 
 static void benchmark_learn_simple(benchmark::State& state, std::string example_string)

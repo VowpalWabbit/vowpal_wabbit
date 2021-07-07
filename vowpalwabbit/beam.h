@@ -293,7 +293,6 @@ public:
   ~beam()
   {
     assert(A.size() == 0);
-    A.delete_v();
   }
 
   beam_element<T> *begin() { return A.begin; }
