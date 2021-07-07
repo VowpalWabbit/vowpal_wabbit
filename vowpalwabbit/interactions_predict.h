@@ -140,8 +140,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
           for (size_t i = 0; i < first.indicies.size(); ++i)
           {
             feature_index halfhash = FNV_prime * static_cast<uint64_t>(first.indicies[i]);
-            if (audit)
-            { audit_func(dat, i < first.space_names.size() ? &first.space_names[i] : &EMPTY_AUDIT_STRINGS); }
+            if (audit) { audit_func(dat, i < first.space_names.size() ? &first.space_names[i] : &EMPTY_AUDIT_STRINGS); }
             // next index differs for permutations and simple combinations
             feature_value ft_value = first.values[i];
             auto begin = second.audit_cbegin();
@@ -183,9 +182,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
               for (; j < second.indicies.size(); ++j)
               {  // f3 x k*(f2 x k*f1)
                 if (audit)
-                {
-                  audit_func(dat, j < second.space_names.size() ? &second.space_names[j] : &EMPTY_AUDIT_STRINGS);
-                }
+                { audit_func(dat, j < second.space_names.size() ? &second.space_names[j] : &EMPTY_AUDIT_STRINGS); }
                 feature_index halfhash = FNV_prime * (halfhash1 ^ static_cast<uint64_t>(second.indicies[j]));
                 feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);
 
