@@ -97,7 +97,7 @@ void finish_setup(nn& n, vw& all)
     {
       std::stringstream ss;
       ss << "OutputLayer" << i;
-      fs.space_names.push_back(audit_strings_ptr(new audit_strings("", ss.str())));
+      fs.space_names.push_back(audit_strings("", ss.str()));
     }
     nn_index += static_cast<uint64_t>(n.increment);
   }
@@ -107,7 +107,7 @@ void finish_setup(nn& n, vw& all)
   {
     fs.push_back(1., nn_index);
     if (all.audit || all.hash_inv)
-      fs.space_names.push_back(audit_strings_ptr(new audit_strings("", "OutputLayerConst")));
+      fs.space_names.push_back(audit_strings("", "OutputLayerConst"));
     ++n.output_layer.num_features;
   }
 
@@ -117,7 +117,7 @@ void finish_setup(nn& n, vw& all)
   n.hiddenbias.feature_space[constant_namespace].push_back(1, constant);
   if (all.audit || all.hash_inv)
     n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
-        audit_strings_ptr(new audit_strings("", "HiddenBias")));
+        audit_strings("", "HiddenBias"));
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
 
@@ -127,7 +127,7 @@ void finish_setup(nn& n, vw& all)
   n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indicies[0]);
   if (all.audit || all.hash_inv)
     n.outputweight.feature_space[nn_output_namespace].space_names.push_back(
-        audit_strings_ptr(new audit_strings("", "OutputWeight")));
+        audit_strings("", "OutputWeight"));
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
