@@ -21,6 +21,8 @@ namespace shared_feature_merger
 static const std::vector<std::string> option_strings = {
     "csoaa_ldf", "wap_ldf", "cb_adf", "explore_eval", "cbify_ldf", "cb_explore_adf", "warm_cb"};
 
+label_type_t label_type = label_type_t::cb;
+
 bool use_reduction(config::options_i& options)
 {
   for (const auto& opt : option_strings)
@@ -47,7 +49,8 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, multi_ex
 
   multi_ex::value_type shared_example = nullptr;
 
-  const bool has_example_header = CB::ec_is_example_header(*ec_seq[0]);
+  const bool has_example_header = VW::LEARNER::ec_is_example_header(*ec_seq[0], label_type);
+
   if (has_example_header)
   {
     shared_example = ec_seq[0];
@@ -104,6 +107,8 @@ VW::LEARNER::base_learner* shared_feature_merger_setup(config::options_i& option
       all.get_setupfn_name(shared_feature_merger_setup), base->learn_returns_prediction);
 
   learner.set_persist_metrics(persist);
+
+  label_type = all.example_parser->lbl_parser.label_type;
 
   // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
   //       shared example in a finish_example function. However, its too expensive to perform the full operation.

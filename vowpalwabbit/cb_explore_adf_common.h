@@ -102,8 +102,6 @@ public:
     _saved_pred = v_init<ACTION_SCORE::action_score>();
   }
 
-  ~cb_explore_adf_base() { _saved_pred.delete_v(); }
-
   static void finish_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void print_multiline_example(vw& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
   static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);

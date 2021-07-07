@@ -4,11 +4,13 @@
 #endif
 
 #include <boost/test/unit_test.hpp>
+#include <boost/test/test_tools.hpp>
 
 #include "distributionally_robust.h"
 #include "memory.h"
+#include "test_common.h"
 
-BOOST_AUTO_TEST_CASE(distributionally_robust_inverse_chisq, *boost::unit_test::tolerance(1e-5))
+BOOST_AUTO_TEST_CASE(distributionally_robust_inverse_chisq)
 {
   // Table[{ alpha, InverseCDF[ChiSquareDistribution[1], 1 - alpha] }, { alpha, 0.001, 0.501, 0.05 }]
 
@@ -20,11 +22,11 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_inverse_chisq, *boost::unit_test::t
   {
     double v = VW::distributionally_robust::ChiSquared::chisq_onedof_isf(pt.first);
 
-    BOOST_TEST(v == pt.second);
+    BOOST_CHECK_CLOSE(v, pt.second, 0.001);
   }
 }
 
-BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals, *boost::unit_test::tolerance(1e-5))
+BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals)
 {
   // to generate this data:
   //
@@ -53,11 +55,11 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals, *boost::unit_test:
   {
     auto d = onlinechisq->recompute_duals();
 
-    BOOST_TEST(d.unbounded == true);
-    BOOST_TEST(d.kappa == 0);
-    BOOST_TEST(d.gamma == 0);
-    BOOST_TEST(d.beta == 0);
-    BOOST_TEST(d.n == 0);
+    BOOST_CHECK_EQUAL(d.unbounded, true);
+    BOOST_CHECK_EQUAL(d.kappa, 0);
+    BOOST_CHECK_EQUAL(d.gamma, 0);
+    BOOST_CHECK_EQUAL(d.beta, 0);
+    BOOST_CHECK_EQUAL(d.n, 0);
   }
 
   for (int i = 0; i < std::extent<decltype(data)>::value; ++i)
@@ -65,15 +67,15 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals, *boost::unit_test:
     onlinechisq->update(data[i].first, data[i].second);
     auto d = onlinechisq->recompute_duals();
 
-    BOOST_TEST(duals[i].unbounded == d.unbounded);
-    BOOST_TEST(duals[i].kappa == d.kappa);
-    BOOST_TEST(duals[i].gamma == d.gamma);
-    BOOST_TEST(duals[i].beta == d.beta);
-    BOOST_TEST(duals[i].n == d.n);
+    BOOST_CHECK_EQUAL(duals[i].unbounded, d.unbounded);
+    BOOST_CHECK_CLOSE(duals[i].kappa, d.kappa, 0.001);
+    BOOST_CHECK_CLOSE(duals[i].gamma, d.gamma, 0.001);
+    BOOST_CHECK_CLOSE(duals[i].beta, d.beta, 0.001);
+    BOOST_CHECK_EQUAL(duals[i].n, d.n);
   }
 }
 
-BOOST_AUTO_TEST_CASE(distributionally_robust_qlb, *boost::unit_test::tolerance(2e-5))
+BOOST_AUTO_TEST_CASE(distributionally_robust_qlb)
 {
   // to generate this data:
   //
@@ -96,6 +98,6 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_qlb, *boost::unit_test::tolerance(2
     onlinechisq->update(data[i].first, data[i].second);
     auto v = onlinechisq->qlb(data[i].first, data[i].second);
 
-    BOOST_TEST(qlbs[i] == v);
+    BOOST_CHECK_CLOSE(qlbs[i], v, 0.01);
   }
 }

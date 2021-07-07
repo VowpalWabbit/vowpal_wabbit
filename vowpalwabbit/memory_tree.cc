@@ -158,11 +158,6 @@ struct node
     nr = 0.001;
     // examples_index = v_init<uint32_t>();
   }
-
-  ~node()
-  {
-    // examples_index.delete_v();
-  }
 };
 
 // memory_tree
@@ -230,7 +225,6 @@ struct memory_tree
 
   ~memory_tree()
   {
-    // nodes.delete_v();
     for (auto* ex : examples) { ::VW::dealloc_examples(ex, 1); }
     if (kprod_ec) { ::VW::dealloc_examples(kprod_ec, 1); }
   }
@@ -267,8 +261,6 @@ float normalized_linear_prod(memory_tree& b, example* ec1, example* ec2)
   flat_example* fec2 = flatten_sort_example(*b.all, ec2);
   float norm_sqrt = std::pow(fec1->total_sum_feat_sq * fec2->total_sum_feat_sq, 0.5f);
   float linear_prod = linear_kernel(fec1, fec2);
-  // fec1->fs.delete_v();
-  // fec2->fs.delete_v();
   free_flatten_example(fec1);
   free_flatten_example(fec2);
   return linear_prod / norm_sqrt;
@@ -588,7 +580,7 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
 inline uint32_t compute_hamming_loss_via_oas(
     memory_tree& b, single_learner& base, const uint64_t cn, example& ec, v_array<uint32_t>& selected_labs)
 {
-  selected_labs.delete_v();
+  selected_labs.clear();
   v_array<uint32_t> leaf_labs = v_init<uint32_t>();
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels stored in the leaf.
   MULTILABEL::labels multilabels = ec.l.multilabels;
@@ -886,7 +878,7 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
 // we roll in, then stop at a random step, do exploration. //no real insertion happens in the function.
 void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, example& ec)
 {
-  v_array<uint64_t> path_to_leaf = v_init<uint64_t>();
+  v_array<uint64_t> path_to_leaf;
   route_to_leaf(b, base, ec_array_index, 0, path_to_leaf, false);  // no insertion happens here.
 
   if (path_to_leaf.size() > 1)
@@ -958,7 +950,6 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
       if (b.oas == true) train_one_against_some_at_leaf(b, base, cn, ec);
     }
   }
-  path_to_leaf.delete_v();
 }
 
 // using reward signals
@@ -1009,9 +1000,8 @@ void experience_replay(memory_tree& b, single_learner& base)
     {
       if (b.dream_at_update == false)
       {
-        v_array<uint64_t> tmp_path = v_init<uint64_t>();
+        v_array<uint64_t> tmp_path;
         route_to_leaf(b, base, ec_id, 0, tmp_path, true);
-        tmp_path.delete_v();
       }
       else
       {
@@ -1121,7 +1111,7 @@ void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, 
   writeitvar(ec->indices.size(), "namespaces", namespace_size);
   if (read)
   {
-    ec->indices.delete_v();
+    ec->indices.clear();
     for (uint32_t i = 0; i < namespace_size; i++) { ec->indices.push_back('\0'); }
   }
   for (uint32_t i = 0; i < namespace_size; i++) writeit(ec->indices[i], "namespace_index");

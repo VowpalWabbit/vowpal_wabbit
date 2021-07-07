@@ -143,7 +143,6 @@ void svm_example::init_svm_example(flat_example* fec)
 
 svm_example::~svm_example()
 {
-  krow.delete_v();
   // free flatten example contents
   // flat_example* fec = &calloc_or_throw<flat_example>();
   //*fec = ex;
