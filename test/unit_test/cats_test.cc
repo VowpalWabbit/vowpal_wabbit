@@ -21,7 +21,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_zero_for_bad_prediction)
   data->bandwidth = 3;
 
   VW::cb_continuous::continuous_label cont_label;
-  cont_label.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   float action = 10.0f;
   float cost = 1.0f;
   float pdf_value = 0.166666672f;
@@ -43,7 +42,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_not_zero_for_bad_prediction_and_large_b)
   data->bandwidth = 30;
 
   VW::cb_continuous::continuous_label cont_label;
-  cont_label.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   float action = 10.0f;
   float cost = 1.0f;
   float pdf_value = 0.166666672f;
@@ -74,7 +72,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_not_clos
   // unit_range = continuous_range / num_action = 33 / 4 = 8.25
 
   VW::cb_continuous::continuous_label cont_label;
-  cont_label.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   float action = 17.0f;
   float cost = 1.0f;
   float pdf_value = 0.125f;
@@ -105,7 +102,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_close_to
   // unit_range = continuous_range / num_action = 33 / 4 = 8.25
 
   VW::cb_continuous::continuous_label cont_label;
-  cont_label.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   float action = 33.0f;
   float cost = 1.0f;
   float pdf_value = 0.125f;
@@ -139,7 +135,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_with_default_bandwidth)
   // unit_range = continuous_range / num_action = 32 / 8 = 4
 
   VW::cb_continuous::continuous_label cont_label;
-  cont_label.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   float action = 32.0f;
   float cost = 1.0f;
   float pdf_value = 0.25f;

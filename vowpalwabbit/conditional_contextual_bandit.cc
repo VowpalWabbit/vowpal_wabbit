@@ -40,7 +40,7 @@ void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
 {
   array.clear();
   pool.reclaim_object(std::move(array));
-  array = v_init<T>();
+  array = v_array<T>();
 }
 
 // CCB adds the following interactions:
@@ -188,7 +188,7 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   data.exclude_list[original_index_of_chosen_action] = true;
 
   decision_scores.emplace_back(std::move(pred));
-  data.shared->pred.a_s = v_init<ACTION_SCORE::action_score>();
+  data.shared->pred.a_s = v_array<ACTION_SCORE::action_score>();
 }
 
 void clear_pred_and_label(ccb& data)

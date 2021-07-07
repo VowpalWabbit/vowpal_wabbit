@@ -100,7 +100,7 @@ struct scored_action
   action a;  // the action
   float s;   // the predicted cost of this action
   // v_array<feature> repr;
-  scored_action(action _a = static_cast<action>(-1), float _s = 0) : a(_a), s(_s) {}  // , repr(v_init<feature>()) {}
+  scored_action(action _a = static_cast<action>(-1), float _s = 0) : a(_a), s(_s) {}
   // scored_action(action _a, float _s, v_array<feature>& _repr) : a(_a), s(_s), repr(_repr) {}
   // scored_action() { a = (action)-1; s = 0.; }
 };
@@ -1100,7 +1100,6 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   if (need_memo_foreach_action(priv) && (priv.state == INIT_TRAIN))
   {
     v_array<action_cache>* this_cache = new v_array<action_cache>();
-    *this_cache = v_init<action_cache>();
     // TODO we don't really need to construct this polylabel
     polylabel l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost);
     size_t K = cs_get_costs_size(priv.cb_learner, l);
@@ -1164,7 +1163,6 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     if (need_memo_foreach_action(priv) && (override_action == static_cast<action>(-1)))
     {
       this_cache = new v_array<action_cache>();
-      *this_cache = v_init<action_cache>();
     }
     for (size_t k = 0; k < K; k++)
     {
@@ -1280,7 +1278,6 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
   if (need_partial_predictions)
   {
     this_cache = new v_array<action_cache>();
-    *this_cache = v_init<action_cache>();
   }
 
   for (action a = static_cast<uint32_t>(start_K); a < ec_cnt; a++)
@@ -2690,15 +2687,15 @@ base_learner* setup(options_i& options, vw& all)
   {
     priv.cb_learner = true;
     CB::cb_label.default_label(priv.allowed_actions_cache);
-    priv.learn_losses.cb.costs = v_init<CB::cb_class>();
-    priv.gte_label.cb.costs = v_init<CB::cb_class>();
+    priv.learn_losses.cb.costs.clear();
+    priv.gte_label.cb.costs.clear();
   }
   else
   {
     priv.cb_learner = false;
     CS::cs_label.default_label(priv.allowed_actions_cache);
-    priv.learn_losses.cs.costs = v_init<CS::wclass>();
-    priv.gte_label.cs.costs = v_init<CS::wclass>();
+    priv.learn_losses.cs.costs.clear();
+    priv.gte_label.cs.costs.clear();
   }
 
   ensure_param(priv.beta, 0.0, 1.0, 0.5, "warning: search_beta must be in (0,1); resetting to 0.5");
@@ -2998,13 +2995,7 @@ predictor::predictor(search& sch, ptag my_tag)
     , weight(1.)
     , learner_id(0)
     , sch(sch)
-{
-  oracle_actions = v_init<action>();
-  condition_on_tags = v_init<ptag>();
-  condition_on_names = v_init<char>();
-  allowed_actions = v_init<action>();
-  allowed_actions_cost = v_init<float>();
-}
+{}
 
 void predictor::free_ec()
 {
