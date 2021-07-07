@@ -174,7 +174,14 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
 {
   auto& preds = b.nodes[current].preds;
   node_pred val_to_insert(label);
-  auto inserted_it = preds.insert(std::upper_bound(preds.begin(), preds.end(), val_to_insert), val_to_insert);
+  auto found_it = std::upper_bound(preds.begin(), preds.end(), val_to_insert);
+  bool should_insert = true;
+  if (found_it != preds.begin())
+  {
+    found_it--;
+    should_insert = *found_it != val_to_insert;
+  }
+  auto inserted_it = preds.insert(found_it, val_to_insert);
   class_index = static_cast<uint32_t>(std::distance(preds.begin(), inserted_it));
   b.nodes[current].preds[class_index].label_count++;
 
