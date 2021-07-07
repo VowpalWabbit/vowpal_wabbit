@@ -179,7 +179,7 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
   if (found_it != preds.begin())
   {
     found_it--;
-    should_insert = *found_it != val_to_insert;
+    should_insert = !(*found_it == val_to_insert);
   }
   auto inserted_it = preds.insert(found_it, val_to_insert);
   class_index = static_cast<uint32_t>(std::distance(preds.begin(), inserted_it));
