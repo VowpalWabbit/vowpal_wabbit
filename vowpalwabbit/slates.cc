@@ -193,7 +193,7 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
   // Calculate the estimate for this example based on the pseudo inverse estimator.
   const auto& predictions = ec_seq[0]->pred.decision_scores;
   if (is_labelled) { loss = get_estimate(label_probs, cost, predictions); }
-  label_probs.delete_v();
+  label_probs.clear();
 
   bool holdout_example = is_labelled;
   if (holdout_example != false)
@@ -215,7 +215,7 @@ void finish_multiline_example(vw& all, slates_data& data, multi_ex& ec_seq)
   {
     output_example(all, data, ec_seq);
     CB_ADF::global_print_newline(all.final_prediction_sink);
-    for (auto& action_scores : ec_seq[0]->pred.decision_scores) { action_scores.delete_v(); }
+    for (auto& action_scores : ec_seq[0]->pred.decision_scores) { action_scores.clear(); }
     ec_seq[0]->pred.decision_scores.clear();
   }
 

@@ -32,8 +32,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_zero_for_bad_prediction)
   auto loss = data->get_loss(cont_label, predicted_action);
 
   BOOST_CHECK_EQUAL(loss, 0.0f);
-
-  cont_label.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(cats_test_get_loss_not_zero_for_bad_prediction_and_large_b)
@@ -62,8 +60,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_not_zero_for_bad_prediction_and_large_b)
   auto loss = data->get_loss(cont_label, predicted_action);
 
   BOOST_CHECK_CLOSE(loss, 0.1875, FLOAT_TOL);
-
-  cont_label.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_not_close_to_range_edges)
@@ -95,8 +91,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_not_clos
   auto loss = data->get_loss(cont_label, predicted_action);
 
   BOOST_CHECK_EQUAL(loss, 1.0f);
-
-  cont_label.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_close_to_range_edges)
@@ -128,8 +122,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_close_to
   auto loss = data->get_loss(cont_label, predicted_action);
 
   BOOST_CHECK_CLOSE(loss, 1.0f, FLOAT_TOL);
-
-  cont_label.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(cats_test_get_loss_with_default_bandwidth)
@@ -164,6 +156,4 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_with_default_bandwidth)
   auto loss = data->get_loss(cont_label, predicted_action);
 
   BOOST_CHECK_EQUAL(loss, 1.0f);
-
-  cont_label.costs.delete_v();
 }
