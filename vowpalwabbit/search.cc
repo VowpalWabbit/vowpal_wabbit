@@ -2995,7 +2995,8 @@ predictor::predictor(search& sch, ptag my_tag)
     , weight(1.)
     , learner_id(0)
     , sch(sch)
-{}
+{
+}
 
 void predictor::free_ec()
 {
