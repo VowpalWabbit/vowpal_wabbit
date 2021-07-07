@@ -12,9 +12,8 @@ git clone https://github.com/google/benchmark.git
 git clone https://github.com/google/googletest.git benchmark/googletest
 cd benchmark/googletest
 git checkout release-1.11.0
-cd ..
 # Go to the library root directory
-cd benchmark
+cd ..
 # Make a build directory to place the build output.
 cmake -E make_directory "build"
 # Generate build system files with cmake.
