@@ -102,12 +102,6 @@ void reduction::transform_prediction(example& ec)
   }
 }
 
-reduction::~reduction()
-{
-  temp_lbl_cb.costs.delete_v();
-  temp_pred_a_s.delete_v();
-}
-
 void reduction::predict(example& ec)
 {
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
