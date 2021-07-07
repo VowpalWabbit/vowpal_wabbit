@@ -571,9 +571,7 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
   {
     ec.l.simple.label = -1.f;
     if (std::find(multilabels.label_v.begin(), multilabels.label_v.end(), leaf_labs[i]) != multilabels.label_v.end())
-    {
-      ec.l.simple.label = 1.f;
-    }
+    { ec.l.simple.label = 1.f; }
     base.learn(ec, b.max_routers + 1 + leaf_labs[i]);
   }
   ec.pred.multilabels = preds;
