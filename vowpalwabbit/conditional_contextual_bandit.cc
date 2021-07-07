@@ -40,7 +40,7 @@ void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
 {
   array.clear();
   pool.reclaim_object(std::move(array));
-  array = v_array<T>();
+  array.clear();
 }
 
 // CCB adds the following interactions:
@@ -155,12 +155,12 @@ void create_cb_labels(ccb& data)
 void delete_cb_labels(ccb& data)
 {
   return_v_array(std::move(data.shared->l.cb.costs), data.cb_label_pool);
-  data.shared->l.cb.costs = v_array<CB::cb_class>();
+  data.shared->l.cb.costs.clear();
 
   for (example* action : data.actions)
   {
     return_v_array(std::move(action->l.cb.costs), data.cb_label_pool);
-    action->l.cb.costs = v_array<CB::cb_class>();
+    action->l.cb.costs.clear();
   }
 }
 
@@ -188,7 +188,7 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   data.exclude_list[original_index_of_chosen_action] = true;
 
   decision_scores.emplace_back(std::move(pred));
-  data.shared->pred.a_s = v_array<ACTION_SCORE::action_score>();
+  data.shared->pred.a_s.clear();
 }
 
 void clear_pred_and_label(ccb& data)
