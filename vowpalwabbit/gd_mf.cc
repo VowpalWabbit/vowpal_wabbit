@@ -60,9 +60,8 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
         for (const auto& f1 : ec.feature_space[static_cast<unsigned char>(i[0])].audit_range())
           for (const auto& f2 : ec.feature_space[static_cast<unsigned char>(i[1])].audit_range())
           {
-            std::cout << '\t' << f1.audit()->first << k << '^' << f1.audit()->second << ':'
-                      << ((f1.index() + k) & mask) << "(" << ((f1.index() + offset + k) & mask) << ")" << ':'
-                      << f1.value();
+            std::cout << '\t' << f1.audit()->first << k << '^' << f1.audit()->second << ':' << ((f1.index() + k) & mask)
+                      << "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
             std::cout << ':' << (&weights[f1.index()])[offset + k];
 
             std::cout << ':' << f2.audit()->first << k << '^' << f2.audit()->second << ':'
