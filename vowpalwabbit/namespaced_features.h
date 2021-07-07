@@ -246,8 +246,8 @@ struct namespaced_features
     auto* existing_group = get_feature_group(hash);
     if (existing_group == nullptr)
     {
-      _feature_groups.emplace_back(details::namespaced_feature_group{hash, ns_index});
-      _saved_feature_groups.acquire_object(_feature_groups.back()._features);
+      _feature_groups.emplace_back(details::namespaced_feature_group{_saved_feature_groups.take_back(), hash, ns_index});
+      _saved_feature_groups.pop_back();
       auto new_index = _feature_groups.size() - 1;
       _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
       return _feature_groups.back()._features;

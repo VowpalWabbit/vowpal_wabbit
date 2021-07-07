@@ -108,6 +108,21 @@ struct moved_object_pool
     m_pool.pop();
   }
 
+  T&& take_back()
+  {
+    if (m_pool.empty())
+    {
+      m_pool.push(T{});
+    }
+    return std::move(m_pool.top());
+  }
+
+  void pop_back()
+  {
+    assert(!m_pool.empty());
+    m_pool.pop();
+  }
+
   bool empty() const { return m_pool.empty(); }
 
   size_t size() const { return m_pool.size(); }
