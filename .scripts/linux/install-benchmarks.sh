@@ -10,6 +10,9 @@ cd $REPO_DIR
 git clone https://github.com/google/benchmark.git
 # Benchmark requires Google Test as a dependency. Add the source tree as a subdirectory.
 git clone https://github.com/google/googletest.git benchmark/googletest
+cd benchmark/googletest
+git checkout release-1.11.0
+cd ..
 # Go to the library root directory
 cd benchmark
 # Make a build directory to place the build output.
