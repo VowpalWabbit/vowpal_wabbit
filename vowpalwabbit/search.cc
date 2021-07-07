@@ -2644,14 +2644,14 @@ base_learner* setup(options_i& options, vw& all)
   if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;
-    CB::cb_label.default_label(priv.allowed_actions_cache);
+    CB::cb_label.default_label(&priv.allowed_actions_cache);
     priv.learn_losses.cb.costs.clear();
     priv.gte_label.cb.costs.clear();
   }
   else
   {
     priv.cb_learner = false;
-    CS::cs_label.default_label(priv.allowed_actions_cache);
+    CS::cs_label.default_label(&priv.allowed_actions_cache);
     priv.learn_losses.cs.costs.clear();
     priv.gte_label.cs.costs.clear();
   }
