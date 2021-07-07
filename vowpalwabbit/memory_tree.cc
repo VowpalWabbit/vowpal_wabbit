@@ -554,7 +554,7 @@ void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, v_array<uint32_
     uint32_t loc = b.nodes[cn].examples_index[i];
     for (uint32_t lab : b.examples[loc]->l.multilabels.label_v)
     {  // scan through each label:
-      if (v_array_contains(leaf_labs, lab) == false) leaf_labs.push_back(lab);
+      if (std::find(leaf_labs.begin(), leaf_labs.end(), lab) == leaf_labs.end()) { leaf_labs.push_back(lab); }
     }
   }
 }
@@ -570,7 +570,10 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
   for (size_t i = 0; i < leaf_labs.size(); i++)
   {
     ec.l.simple.label = -1.f;
-    if (v_array_contains(multilabels.label_v, leaf_labs[i])) ec.l.simple.label = 1.f;
+    if (std::find(multilabels.label_v.begin(), multilabels.label_v.end(), leaf_labs[i]) != multilabels.label_v.end())
+    {
+      ec.l.simple.label = 1.f;
+    }
     base.learn(ec, b.max_routers + 1 + leaf_labs[i]);
   }
   ec.pred.multilabels = preds;
