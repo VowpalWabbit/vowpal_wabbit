@@ -64,7 +64,7 @@ struct polyprediction
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
   VW::decision_scores_t decision_scores;
-  uint32_t multiclass;
+  uint32_t multiclass = 0;
   MULTILABEL::labels multilabels;
   float prob = 0.f;                                          // for --probabilities --csoaa_ldf=mc
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
