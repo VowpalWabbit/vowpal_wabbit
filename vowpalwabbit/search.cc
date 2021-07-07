@@ -210,7 +210,7 @@ public:
   action learn_oracle_action;                // store an oracle action for debugging purposes
   features last_action_repr;
 
-  polylabel* allowed_actions_cache;
+  polylabel allowed_actions_cache;
 
   size_t loss_declared_cnt;                 // how many times did run declare any loss (implicitly or explicitly)?
   v_array<scored_action> train_trajectory;  // the training trajectory
@@ -234,9 +234,9 @@ public:
 
   // various strings for different search states
   bool should_produce_string;
-  std::stringstream* pred_string;
-  std::stringstream* truth_string;
-  std::stringstream* bad_string_stream;
+  std::unique_ptr<std::stringstream> pred_string;
+  std::unique_ptr<std::stringstream> truth_string;
+  std::unique_ptr<std::stringstream> bad_string_stream;
 
   // parameters controlling interpolation
   float beta;   // interpolation rate
@@ -276,8 +276,7 @@ public:
   float dat_new_feature_value;
 
   // to reduce memory allocation
-  std::string rawOutputString;
-  std::stringstream* rawOutputStringStream;
+  std::unique_ptr<std::stringstream> rawOutputStringStream;
   CS::label ldf_test_label;
   v_array<action_repr> condition_on_actions;
   v_array<size_t> timesteps;
@@ -306,43 +305,8 @@ public:
   {
     if (all)
     {
-      delete truth_string;
-      delete pred_string;
-      delete bad_string_stream;
-      neighbor_features.delete_v();
-      timesteps.delete_v();
-      if (cb_learner)
-        learn_losses.cb.costs.delete_v();
-      else
-        learn_losses.cs.costs.delete_v();
-      if (cb_learner)
-        gte_label.cb.costs.delete_v();
-      else
-        gte_label.cs.costs.delete_v();
-
-      condition_on_actions.delete_v();
-      learn_allowed_actions.delete_v();
-      ldf_test_label.costs.delete_v();
-
-      if (cb_learner)
-        allowed_actions_cache->cb.costs.delete_v();
-      else
-        allowed_actions_cache->cs.costs.delete_v();
-
-      train_trajectory.delete_v();
-
       for (auto& ar : ptag_to_action) delete ar.repr;
-      ptag_to_action.delete_v();
       clear_memo_foreach_action(*this);
-      memo_foreach_action.delete_v();
-
-      learn_condition_on_names.delete_v();
-      learn_condition_on.delete_v();
-
-      learn_condition_on_act.delete_v();
-
-      free(allowed_actions_cache);
-      delete rawOutputStringStream;
     }
   }
 };
@@ -921,7 +885,7 @@ polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const acti
     size_t allowed_actions_cnt, const float* allowed_actions_cost)
 {
   bool isCB = priv.cb_learner;
-  polylabel& ld = *priv.allowed_actions_cache;
+  polylabel& ld = priv.allowed_actions_cache;
   uint32_t num_costs = static_cast<uint32_t>(cs_get_costs_size(isCB, ld));
 
   if (priv.is_ldf)  // LDF version easier
@@ -2392,9 +2356,9 @@ void search_initialize(vw* all, search& sch)
   priv.state = INITIALIZE;
   priv.mix_per_roll_policy = -2;
 
-  priv.pred_string = new std::stringstream();
-  priv.truth_string = new std::stringstream();
-  priv.bad_string_stream = new std::stringstream();
+  priv.pred_string = VW::make_unique<std::stringstream>();
+  priv.truth_string = VW::make_unique<std::stringstream>();
+  priv.bad_string_stream = VW::make_unique<std::stringstream>();
   priv.bad_string_stream->clear(priv.bad_string_stream->badbit);
 
   priv.rollout_method = MIX_PER_ROLL;
@@ -2410,8 +2374,6 @@ void search_initialize(vw* all, search& sch)
   priv.acset.feature_value = 1.;
 
   scored_action sa(static_cast<action>(-1), 0.);
-  // unnecessary if priv has a proper constructor
-  new (&priv.cache_hash_map) search_private::cache_map();
 
   sch.task_data = nullptr;
 
@@ -2420,10 +2382,7 @@ void search_initialize(vw* all, search& sch)
 
   CS::default_label(priv.empty_cs_label);
 
-  new (&priv.rawOutputString) std::string();
-  priv.rawOutputStringStream = new std::stringstream(priv.rawOutputString);
-  new (&priv.test_action_sequence) std::vector<action>();
-  new (&priv.dat_new_feature_audit_ss) std::stringstream();
+  priv.rawOutputStringStream = VW::make_unique<std::stringstream>();
 }
 
 void ensure_param(float& v, float lo, float hi, float def, const char* str)
@@ -2685,18 +2644,17 @@ base_learner* setup(options_i& options, vw& all)
     THROW("error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'");
 
   // check if the base learner is contextual bandit, in which case, we dont rollout all actions.
-  priv.allowed_actions_cache = &calloc_or_throw<polylabel>();
   if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;
-    CB::cb_label.default_label(priv.allowed_actions_cache);
+    CB::cb_label.default_label(&priv.allowed_actions_cache);
     priv.learn_losses.cb.costs = v_init<CB::cb_class>();
     priv.gte_label.cb.costs = v_init<CB::cb_class>();
   }
   else
   {
     priv.cb_learner = false;
-    CS::cs_label.default_label(priv.allowed_actions_cache);
+    CS::cs_label.default_label(&priv.allowed_actions_cache);
     priv.learn_losses.cs.costs = v_init<CS::wclass>();
     priv.gte_label.cs.costs = v_init<CS::wclass>();
   }
