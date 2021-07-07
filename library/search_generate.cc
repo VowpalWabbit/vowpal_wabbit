@@ -310,7 +310,7 @@ public:
           }
         }
         if (best_count > 0.)
-        { fs_d.push_back(best_count, VW::hash_feature(vw_obj, "best=" + std::string(1,best_char), ns_hash_d)); }
+        { fs_d.push_back(best_count, VW::hash_feature(vw_obj, "best=" + std::string(1, best_char), ns_hash_d)); }
       }
 
       // input
