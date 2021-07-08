@@ -250,7 +250,7 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
   {
     auto current_index_str = "index" + std::to_string(id);
     shared->feature_space[ccb_id_namespace].space_names.push_back(
-        std::make_shared<audit_strings>(data.id_namespace_str, current_index_str));
+        audit_strings(data.id_namespace_str, current_index_str));
   }
 }
 
