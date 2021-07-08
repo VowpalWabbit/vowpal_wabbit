@@ -28,14 +28,14 @@ void add_grams(
       destination_group.push_back(1., new_index);
       if (!destination_group.space_names.empty())
       {
-        std::string feature_name(destination_group.space_names[i].get()->second);
+        std::string feature_name(destination_group.space_names[i].second);
         for (size_t n = 1; n < gram_mask.size(); n++)
         {
           feature_name += std::string("^");
-          feature_name += std::string(destination_group.space_names[i + gram_mask[n]].get()->second);
+          feature_name += std::string(destination_group.space_names[i + gram_mask[n]].second);
         }
         destination_group.space_names.push_back(
-            std::make_shared<audit_strings>(destination_group.space_names[i].get()->first, feature_name));
+            audit_strings(destination_group.space_names[i].first, feature_name));
       }
     }
   }

@@ -96,8 +96,6 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 void finish(Search::search& sch)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
-  my_task_data->y_allowed_entity.delete_v();
-  my_task_data->y_allowed_relation.delete_v();
   if (my_task_data->search_order == 3) { VW::dealloc_examples(my_task_data->ldf_entity, NUM_LDF_ENTITY_EXAMPLES); }
   delete my_task_data;
 }  // if we had task data, we'd want to free it here
@@ -280,7 +278,6 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
     }
   }
   sch.loss(loss);
-  constrained_relation_labels.delete_v();
   return prediction;
 }
 
@@ -406,7 +403,6 @@ void run(Search::search& sch, multi_ex& ec)
   {
     if (sch.output().good()) sch.output() << predictions[i] << ' ';
   }
-  predictions.delete_v();
 }
 // this is totally bogus for the example -- you'd never actually do this!
 void update_example_indicies(bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)

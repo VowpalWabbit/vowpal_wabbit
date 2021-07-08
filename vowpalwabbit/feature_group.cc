@@ -76,7 +76,7 @@ bool features::sort(uint64_t parse_mask)
     std::vector<feature_slice> slice;
     slice.reserve(indicies.size());
     for (size_t i = 0; i < indicies.size(); i++)
-    { slice.push_back({values[i], indicies[i] & parse_mask, *space_names[i]}); }
+    { slice.push_back({values[i], indicies[i] & parse_mask, space_names[i]}); }
     // The comparator should return true if the first element is less than the second.
     std::sort(slice.begin(), slice.end(), [](const feature_slice& first, const feature_slice& second) {
       return (first.weight_index < second.weight_index) ||
@@ -87,7 +87,7 @@ bool features::sort(uint64_t parse_mask)
     {
       values[i] = slice[i].x;
       indicies[i] = slice[i].weight_index;
-      *space_names[i] = slice[i].space_name;
+      space_names[i] = slice[i].space_name;
     }
   }
   else

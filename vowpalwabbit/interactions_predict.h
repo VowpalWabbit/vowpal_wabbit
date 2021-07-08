@@ -85,7 +85,7 @@ inline void inner_kernel(DataT& dat, FeatureIteratorT& begin, FeatureIteratorT& 
   {
     for (; begin != end; ++begin)
     {
-      audit_func(dat, (*begin).audit() == nullptr ? &EMPTY_AUDIT_STRINGS : (*begin).audit()->get());
+      audit_func(dat, (*begin).audit() == nullptr ? &EMPTY_AUDIT_STRINGS : (*begin).audit());
       call_FuncT<DataT, FuncT>(
           dat, weights, INTERACTION_VALUE(ft_value, (*begin).value()), ((*begin).index() ^ halfhash) + offset);
       audit_func(dat, nullptr);
@@ -158,7 +158,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                 feature_index halfhash = FNV_prime * static_cast<uint64_t>(first.indicies[i]);
                 if (audit)
                 {
-                  audit_func(dat, i < first.space_names.size() ? first.space_names[i].get() : &EMPTY_AUDIT_STRINGS);
+                  audit_func(dat, i < first.space_names.size() ? &first.space_names[i] : &EMPTY_AUDIT_STRINGS);
                 }
                 // next index differs for permutations and simple combinations
                 feature_value ft_value = first.values[i];
@@ -199,11 +199,12 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
               if (audit)
               {
                 audit_func(
-                    dat, (*first_begin).audit() != nullptr ? (*first_begin).audit()->get() : &EMPTY_AUDIT_STRINGS);
+                    dat, (*first_begin).audit() != nullptr ? (*first_begin).audit() : &EMPTY_AUDIT_STRINGS);
               }
               const uint64_t halfhash1 = FNV_prime * (*first_begin).index();
               float first_ft_value = (*first_begin).value();
               auto inner_second_begin = second_begin;
+
               size_t j = 0;
               if (same_namespace1)  // next index differs for permutations and simple combinations
               {
@@ -217,7 +218,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                 if (audit)
                 {
                   audit_func(
-                      dat, (*inner_second_begin).audit() != nullptr ? (*inner_second_begin).audit()->get() : &EMPTY_AUDIT_STRINGS);
+                      dat, (*inner_second_begin).audit() != nullptr ? (*inner_second_begin).audit() : &EMPTY_AUDIT_STRINGS);
                 }
                 feature_index halfhash = FNV_prime * (halfhash1 ^ (*inner_second_begin).index());
                 feature_value ft_value = INTERACTION_VALUE(first_ft_value, (*inner_second_begin).value());
@@ -338,8 +339,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
             next_data->current_it = ec.feature_space.namespace_index_cbegin_proxy(next_data->ns_idx);
           }
 
-          if (audit) audit_func(dat, (*cur_data->current_it).audit()->get());
-
+          if (audit) audit_func(dat, (*cur_data->current_it).audit());
           if (cur_data == fgd)  // first namespace
           {
             next_data->hash = FNV_prime * (*cur_data->current_it).index();
