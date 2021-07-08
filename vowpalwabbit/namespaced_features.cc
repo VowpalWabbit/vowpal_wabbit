@@ -103,7 +103,6 @@ namespaced_features::namespace_index_begin_proxy(namespace_index ns_index)
   // is here) is not valid.
   if (begin_it == end_it)
   {
-    --end_it;
     inner_it = features::audit_iterator{};
   }
   else
@@ -125,7 +124,6 @@ namespaced_features::namespace_index_end_proxy(namespace_index ns_index)
   features::audit_iterator inner_it;
   if (begin_it == end_it)
   {
-    --end_it;
     inner_it = features::audit_iterator{};
   }
   else

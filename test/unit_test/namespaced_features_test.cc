@@ -15,26 +15,25 @@ BOOST_AUTO_TEST_CASE(namespaced_features_test)
   BOOST_CHECK(feature_groups.empty());
 
   auto begin_end = feature_groups.get_namespace_index_groups('a');
-  BOOST_CHECK(begin_end.second - begin_end.first == 0);
+  BOOST_CHECK((begin_end.second - begin_end.first) == 0);
 
   feature_groups.get_or_create_feature_group(123, 'a');
   feature_groups.get_or_create_feature_group(1234, 'a');
 
   begin_end = feature_groups.get_namespace_index_groups('a');
-  BOOST_CHECK(begin_end.second - begin_end.first == 2);
+  BOOST_CHECK((begin_end.second - begin_end.first) == 2);
 
-  BOOST_REQUIRE_THROW(feature_groups[1], VW::vw_exception);
   BOOST_REQUIRE_NO_THROW(feature_groups[123]);
 
-  BOOST_CHECK(*feature_groups.index_begin(), 'a');
+  BOOST_CHECK(*feature_groups.index_begin() == 'a');
 
   feature_groups.remove_feature_group(123);
   begin_end = feature_groups.get_namespace_index_groups('a');
   BOOST_CHECK(begin_end.second - begin_end.first == 1);
 
-  BOOST_CHECK(*feature_groups.index_begin(), 'a');
+  BOOST_CHECK(*feature_groups.index_begin() == 'a');
   feature_groups.remove_feature_group(1234);
-  BOOST_CHECK(feature_groups.index_begin(), feature_groups.index_end());
+  BOOST_CHECK(feature_groups.index_begin() == feature_groups.index_end());
 }
 
 BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_test)
@@ -164,6 +163,29 @@ BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_difference_end_test)
   BOOST_REQUIRE_EQUAL(it_end - it, 0);
 }
 
+BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_difference_empty_group_test)
+{
+  VW::namespaced_features feature_groups;
+  auto& fs1 = feature_groups.get_or_create_feature_group(123, 'a');
+  fs1.push_back(1.0, 1);
+  fs1.push_back(1.0, 2);
+  fs1.push_back(1.0, 3);
+  fs1.push_back(1.0, 4);
+  auto& fs2 = feature_groups.get_or_create_feature_group(1234, 'a');
+
+  auto it = feature_groups.namespace_index_begin_proxy('a');
+  auto it_end = feature_groups.namespace_index_end_proxy('a');
+  BOOST_REQUIRE_EQUAL(it_end - it, 4);
+  ++it;
+  BOOST_REQUIRE_EQUAL(it_end - it, 3);
+  ++it;
+  BOOST_REQUIRE_EQUAL(it_end - it, 2);
+  ++it;
+  BOOST_REQUIRE_EQUAL(it_end - it, 1);
+  ++it;
+  BOOST_REQUIRE_EQUAL(it_end - it, 0);
+}
+
 BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_advance_test)
 {
   VW::namespaced_features feature_groups;
@@ -185,4 +207,33 @@ BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_advance_test)
   BOOST_REQUIRE_EQUAL((*it).index(), 5);
   it += 3;
   BOOST_REQUIRE_EQUAL((*it).index(), 8);
+}
+
+BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_advance_to_end_test)
+{
+  VW::namespaced_features feature_groups;
+  auto& fs1 = feature_groups.get_or_create_feature_group(123, 'a');
+  fs1.push_back(1.0, 1);
+  fs1.push_back(1.0, 2);
+
+  auto it = feature_groups.namespace_index_begin_proxy('a');
+  it += 2;
+  BOOST_REQUIRE(it == feature_groups.namespace_index_end_proxy('a'));
+}
+
+BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_advance_to_end_two_groups_test)
+{
+  VW::namespaced_features feature_groups;
+  auto& fs1 = feature_groups.get_or_create_feature_group(123, 'a');
+  fs1.push_back(1.0, 1);
+  fs1.push_back(1.0, 2);
+  auto& fs2 = feature_groups.get_or_create_feature_group(1234, 'a');
+  fs2.push_back(1.0, 3);
+  fs2.push_back(1.0, 4);
+  fs2.push_back(1.0, 5);
+  fs2.push_back(1.0, 6);
+
+  auto it = feature_groups.namespace_index_begin_proxy('a');
+  it += 6;
+  BOOST_REQUIRE(it == feature_groups.namespace_index_end_proxy('a'));
 }

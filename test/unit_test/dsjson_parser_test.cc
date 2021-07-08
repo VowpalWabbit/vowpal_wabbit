@@ -823,7 +823,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates_dom_parser)
   auto slates_examples = parse_dsjson(*slates_vw, json_text);
 
   BOOST_CHECK_EQUAL(slates_examples.size(), 1);
-  const auto& slates_ex = *slates_examples[0];
+  auto& slates_ex = *slates_examples[0];
 
   std::set<namespace_index> found{slates_ex.feature_space.index_begin(), slates_ex.feature_space.index_end()};
   std::set<namespace_index> expected{'a', 'd', 'c', 'b', 32};

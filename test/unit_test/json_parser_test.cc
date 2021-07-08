@@ -11,7 +11,7 @@
 #include "conditional_contextual_bandit.h"
 #include "vw.h"
 
-template<typename It>
+template<typename It, typename T>
 bool contains(It begin_it, It end_it, T item)
 {
   auto it = std::find(begin_it, end_it, item);
