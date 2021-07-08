@@ -63,14 +63,14 @@ void slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& e
     else if (slates_label.type == slates::example_type::slot)
     {
       ccb_label.type = CCB::example_type::slot;
-      ccb_label.explicit_included_actions = v_init<uint32_t>();
+      ccb_label.explicit_included_actions.clear();
       for (const auto index : slot_action_pools[slot_index]) { ccb_label.explicit_included_actions.push_back(index); }
 
       if (global_cost_found)
       {
         ccb_label.outcome = new CCB::conditional_contextual_bandit_outcome();
         ccb_label.outcome->cost = global_cost;
-        ccb_label.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
+        ccb_label.outcome->probabilities.clear();
 
         for (const auto& action_score : slates_label.probabilities)
         {
@@ -171,7 +171,7 @@ void output_example(vw& all, slates_data& /*c*/, multi_ex& ec_seq)
   float loss = 0.;
   bool is_labelled = ec_seq[SHARED_EX_INDEX]->l.slates.labeled;
   float cost = is_labelled ? ec_seq[SHARED_EX_INDEX]->l.slates.cost : 0.f;
-  auto label_probs = v_init<ACTION_SCORE::action_score>();
+  v_array<ACTION_SCORE::action_score> label_probs;
 
   for (auto* ec : ec_seq)
   {

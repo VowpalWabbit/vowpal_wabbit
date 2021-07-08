@@ -239,7 +239,7 @@ public:
 
     auto& vw_obj = sch.get_vw_pointer_unsafe();
 
-    v_array<action> ref = v_init<action>();
+    v_array<action> ref;
     int N = (int)in.in.length();
     out = "^";
    std::vector<nextstr> next;
