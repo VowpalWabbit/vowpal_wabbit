@@ -53,8 +53,9 @@ void namespaced_features::remove_feature_group(uint64_t hash)
 
   _feature_groups.erase(it);
 
-  for (auto& index_vec : _legacy_indices_to_index_mapping)
+  for (auto idx_it = _legacy_indices_existing.begin(); idx_it != _legacy_indices_existing.end();)
   {
+    auto& index_vec = _legacy_indices_to_index_mapping[*idx_it];
     if (!index_vec.empty())
     {
       // Remove this index from ns_index mappings if it exists
@@ -65,6 +66,12 @@ void namespaced_features::remove_feature_group(uint64_t hash)
       for (auto& idx : index_vec)
       {
         if (idx > existing_index) { idx -= 1; }
+      }
+
+      if (index_vec.empty()) { idx_it = _legacy_indices_existing.erase(idx_it); }
+      else
+      {
+        ++idx_it;
       }
     }
   }
@@ -78,7 +85,11 @@ void namespaced_features::clear()
     _saved_feature_groups.reclaim_object(std::move(namespaced_feat_group._features));
   }
   _feature_groups.clear();
-  for (auto& index_vec : _legacy_indices_to_index_mapping) { index_vec.clear(); }
+  for (auto idx : _legacy_indices_existing)
+  {
+    _legacy_indices_to_index_mapping[idx].clear();
+  }
+  _legacy_indices_existing.clear();
 }
 
 generic_range<namespaced_features::indexed_iterator> namespaced_features::namespace_index_range(

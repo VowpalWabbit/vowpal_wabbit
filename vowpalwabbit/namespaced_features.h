@@ -246,10 +246,12 @@ struct namespaced_features
     auto* existing_group = get_feature_group(hash);
     if (existing_group == nullptr)
     {
-      _feature_groups.emplace_back(details::namespaced_feature_group{_saved_feature_groups.take_back(), hash, ns_index});
+      _feature_groups.emplace_back(_saved_feature_groups.take_back(), hash, ns_index);
       _saved_feature_groups.pop_back();
       auto new_index = _feature_groups.size() - 1;
-      _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
+      auto& idx_vec = _legacy_indices_to_index_mapping[ns_index];
+      idx_vec.push_back(new_index);
+      if (idx_vec.size() == 1) { _legacy_indices_existing.push_back(ns_index); }
       return _feature_groups.back()._features;
     }
 
@@ -343,6 +345,7 @@ struct namespaced_features
 private:
   std::vector<details::namespaced_feature_group> _feature_groups;
   std::array<std::vector<size_t>, 256> _legacy_indices_to_index_mapping;
+  std::vector<namespace_index> _legacy_indices_existing;
   VW::moved_object_pool<features> _saved_feature_groups;
 };
 
@@ -356,7 +359,9 @@ features& namespaced_features::merge_feature_group(FeaturesT&& ftrs, uint64_t ha
   {
     _feature_groups.emplace_back(std::forward<FeaturesT>(ftrs), hash, ns_index);
     auto new_index = _feature_groups.size() - 1;
-    _legacy_indices_to_index_mapping[ns_index].push_back(new_index);
+    auto& idx_vec = _legacy_indices_to_index_mapping[ns_index];
+    idx_vec.push_back(new_index);
+    if (idx_vec.size() == 1) { _legacy_indices_existing.push_back(ns_index); }
     return _feature_groups.back()._features;
   }
 
