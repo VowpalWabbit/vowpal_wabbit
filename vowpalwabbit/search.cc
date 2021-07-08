@@ -316,7 +316,6 @@ void clear_memo_foreach_action(search_private& priv)
   for (size_t i = 0; i < priv.memo_foreach_action.size(); i++)
     if (priv.memo_foreach_action[i])
     {
-      priv.memo_foreach_action[i]->delete_v();
       delete priv.memo_foreach_action[i];
     }
   priv.memo_foreach_action.clear();
@@ -1296,7 +1295,6 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
       priv.memo_foreach_action.push_back(this_cache);
     else
     {
-      this_cache->delete_v();
       delete this_cache;
     }
   }
@@ -1933,7 +1931,6 @@ struct final_item
 
 void free_final_item(final_item* p)
 {
-  p->prefix->delete_v();
   delete p->prefix;
   delete p;
 }
