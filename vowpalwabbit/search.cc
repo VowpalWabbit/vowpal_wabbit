@@ -1915,7 +1915,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
     while ((timesteps.size() < static_cast<size_t>(priv.subsample_timesteps)) && (timesteps.size() < priv.T))
     {
       size_t t = static_cast<size_t>(priv._random_state->get_and_update_random() * static_cast<float>(priv.T));
-      if (!v_array_contains(timesteps, t)) timesteps.push_back(t);
+      if (std::find(timesteps.begin(), timesteps.end(), t) == timesteps.end()) { timesteps.push_back(t); }
     }
     std::sort(timesteps.begin(), timesteps.end(), cmp_size_t);
   }

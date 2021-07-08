@@ -352,6 +352,7 @@ public:
     new (_end++) T(std::forward<Args>(args)...);
   }
 
+  VW_DEPRECATED("Use std::lower_bound instead. This will be removed in VW 9.0.")
   size_t find_sorted(const T& ele) const  // index of the smallest element >= ele, return true if element is in the
                                           // array
   {
@@ -377,12 +378,15 @@ public:
     else  // size = 1, ele = 1, _begin[0] = 0
       return b;
   }
+
+  VW_DEPRECATED("Use insert and std::upper_bound instead. This will be removed in VW 9.0.")
   size_t unique_add_sorted(const T& new_ele)
   {
     size_t index = 0;
     size_t size = _end - _begin;
     size_t to_move;
-
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     if (!contain_sorted(new_ele, index))
     {
       if (_end == _end_array) { reserve_nocheck(2 * capacity() + 3); }
@@ -399,12 +403,18 @@ public:
 
       _end++;
     }
+    VW_WARNING_STATE_POP
 
     return index;
   }
+
+  VW_DEPRECATED("Use std::lower_bound instead. This will be removed in VW 9.0.")
   bool contain_sorted(const T& ele, size_t& index)
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     index = find_sorted(ele);
+    VW_WARNING_STATE_POP
 
     if (index == this->size()) return false;
 
@@ -463,6 +473,7 @@ void calloc_reserve(v_array<T>& v, size_t length)
 }
 
 template <class T>
+VW_DEPRECATED("Use std::find instead. This will be removed in VW 9.0.")
 bool v_array_contains(const v_array<T>& A, T x)
 {
   for (auto e = A.cbegin(); e != A.cend(); ++e)
