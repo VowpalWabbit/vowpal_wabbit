@@ -93,13 +93,13 @@ void default_label(LabelT& ld)
 }
 
 template <typename LabelElmT = cb_class>
-float get_probability(LabelElmT& elm)
+float get_probability(const LabelElmT& elm)
 {
   return elm.probability;
 }
 
 template <>
-inline float get_probability(VW::cb_continuous::continuous_label_elm& elm)
+inline float get_probability(const VW::cb_continuous::continuous_label_elm& elm)
 {
   return elm.pdf_value;
 }
