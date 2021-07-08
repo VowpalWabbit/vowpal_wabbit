@@ -759,7 +759,7 @@ void add_constant_feature(vw& vw, example* ec)
   auto& fs = ec->feature_space.get_or_create_feature_group(constant_namespace, constant_namespace);
   fs.push_back(1, constant);
   ec->num_features++;
-  if (vw.audit || vw.hash_inv) { fs.space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant"))); }
+  if (vw.audit || vw.hash_inv) { fs.space_names.push_back(audit_strings("", "Constant")); }
 }
 
 void add_label(example* ec, float label, float weight, float base)
