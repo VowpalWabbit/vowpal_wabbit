@@ -64,13 +64,13 @@ class Test:
             self.vw_command = " ".join(self.vw_command.split()[1:])
 
             # check what input files this command needs
-            input_file_flags = ["-d", "-i", "--dictionary", "--feature_mask"]
+            input_file_flags = ["-d", "-i", "--dictionary", "--feature_mask", "--cache_file"]
             files = []
             for flag in input_file_flags:
                 next_files = Parser.get_values_of_vwarg(self.vw_command, flag)
 
                 # some cleanup only when its dictionary
-                if flag is "--dictionary":
+                if flag == "--dictionary":
                     next_files = [f.split(":")[-1]  for f in next_files]
                     dpath = Parser.get_values_of_vwarg(self.vw_command, "--dictionary_path")
                     if dpath:
@@ -83,6 +83,7 @@ class Test:
 
             # get output files and register as creator of files
             files = Parser.get_values_of_vwarg(self.vw_command, "-f")
+            files += Parser.get_values_of_vwarg(self.vw_command, "--cache_file")
             for f in files:
                 Test.register_output(int(self.id), f)
 
@@ -93,6 +94,13 @@ class Test:
             for f in files:
                 if "model-sets" not in f:
                     depends_on.append(Test.filename_to_test_id(f))
+
+            files = Parser.get_values_of_vwarg(self.vw_command, "--cache_file")
+            for f in files:
+                parent_test = Test.filename_to_test_id(f)
+                if str(parent_test) != self.id:
+                    depends_on.append(parent_test)
+
             if depends_on:
                 self.depends_on = depends_on
         
