@@ -307,7 +307,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			auto ex = GetOrCreateNativeExample();
 			state->examples->Add(ex);
 
-			v_array<example*> examples = v_init<example*>();
+			v_array<example*> examples;
 			example* native_example = ex->m_example;
 			examples.push_back(native_example);
 
@@ -376,7 +376,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			  auto ex = GetOrCreateNativeExample();
 			  state->examples->Add(ex);
 
-			  v_array<example*> examples = v_init<example*>();
+			  v_array<example*> examples;
 			  example* native_example = ex->m_example;
 			  examples.push_back(native_example);
 

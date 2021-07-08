@@ -156,7 +156,6 @@ struct node
     right = 0;
     nl = 0.001;  // initilze to 1, as we need to do nl/nr.
     nr = 0.001;
-    // examples_index = v_init<uint32_t>();
   }
 };
 
@@ -209,8 +208,6 @@ struct memory_tree
 
   memory_tree()
   {
-    // nodes = v_init<node>();
-    examples = v_init<example*>();
     alpha = 0.5;
     routers_used = 0;
     iter = 0;
@@ -369,9 +366,7 @@ float train_node(memory_tree& b, single_learner& base, example& ec, const uint64
   MULTICLASS::label_t mc{0, 0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
-  multilabels.label_v = v_init<uint32_t>();
   MULTILABEL::labels preds;
-  preds.label_v = v_init<uint32_t>();
   if (b.oas == false)
   {
     mc = ec.l.multi;
@@ -457,9 +452,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
     MULTICLASS::label_t mc{0, 0};
     uint32_t save_multi_pred = 0;
     MULTILABEL::labels multilabels;
-    multilabels.label_v = v_init<uint32_t>();
     MULTILABEL::labels preds;
-    preds.label_v = v_init<uint32_t>();
     if (b.oas == false)
     {
       mc = b.examples[ec_pos]->l.multi;
@@ -561,7 +554,7 @@ void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, v_array<uint32_
 
 inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base, const uint64_t cn, example& ec)
 {
-  v_array<uint32_t> leaf_labs = v_init<uint32_t>();
+  v_array<uint32_t> leaf_labs;
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels from the leaf.
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
@@ -582,7 +575,7 @@ inline uint32_t compute_hamming_loss_via_oas(
     memory_tree& b, single_learner& base, const uint64_t cn, example& ec, v_array<uint32_t>& selected_labs)
 {
   selected_labs.clear();
-  v_array<uint32_t> leaf_labs = v_init<uint32_t>();
+  v_array<uint32_t> leaf_labs;
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels stored in the leaf.
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
@@ -662,9 +655,7 @@ void predict(memory_tree& b, single_learner& base, example& ec)
   MULTICLASS::label_t mc{0, 0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
-  multilabels.label_v = v_init<uint32_t>();
   MULTILABEL::labels preds;
-  preds.label_v = v_init<uint32_t>();
   if (b.oas == false)
   {
     mc = ec.l.multi;
@@ -721,7 +712,7 @@ void predict(memory_tree& b, single_learner& base, example& ec)
       reward = F1_score_for_two_examples(ec, *b.examples[closest_ec]);
       b.F1_score += reward;
     }
-    v_array<uint32_t> selected_labs = v_init<uint32_t>();
+    v_array<uint32_t> selected_labs;
     ec.loss = static_cast<float>(compute_hamming_loss_via_oas(b, base, cn, ec, selected_labs));
     b.hamming_loss += ec.loss;
   }
@@ -732,9 +723,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
   MULTICLASS::label_t mc{0, 0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
-  multilabels.label_v = v_init<uint32_t>();
   MULTILABEL::labels preds;
-  preds.label_v = v_init<uint32_t>();
   if (b.oas == false)
   {
     mc = ec.l.multi;
@@ -828,9 +817,7 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
   MULTICLASS::label_t mc{0, 0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
-  multilabels.label_v = v_init<uint32_t>();
   MULTILABEL::labels preds;
-  preds.label_v = v_init<uint32_t>();
   if (b.oas == false)
   {
     mc = ec.l.multi;
@@ -912,9 +899,7 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
 
       MULTICLASS::label_t mc{0, 0};
       MULTILABEL::labels multilabels;
-      multilabels.label_v = v_init<uint32_t>();
       MULTILABEL::labels preds;
-      preds.label_v = v_init<uint32_t>();
       if (b.oas == false)
         mc = ec.l.multi;
       else
@@ -1125,8 +1110,8 @@ void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, 
     if (read)
     {
       fs->clear();
-      fs->values = v_init<feature_value>();
-      fs->indicies = v_init<feature_index>();
+      fs->values.clear();
+      fs->indicies.clear();
       for (uint32_t f_i = 0; f_i < feat_size; f_i++) { fs->push_back(0, 0); }
     }
     for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs->values[f_i], "value");

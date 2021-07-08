@@ -425,6 +425,7 @@ public:
 };
 
 template <class T>
+VW_DEPRECATED("Use v_array's constructor directly instead. This will be removed in VW 9.0.")
 inline v_array<T> v_init()
 {
   return v_array<T>();

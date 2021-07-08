@@ -658,8 +658,8 @@ static inline float find_cw(lda &l, float *u_for_w, float *v)
 namespace
 {
 // Effectively, these are static and not visible outside the compilation unit.
-v_array<float> new_gamma = v_init<float>();
-v_array<float> old_gamma = v_init<float>();
+v_array<float> new_gamma;
+v_array<float> old_gamma;
 }  // namespace
 
 // Returns an estimate of the part of the variational bound that

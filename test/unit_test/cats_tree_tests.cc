@@ -515,7 +515,6 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   VW::cats_tree::cats_tree tree;
   tree.init(num_leaves, bandwidth);
   example ec;
-  ec.l.cb.costs = v_init<CB::cb_class>();
   auto ret_val = tree.predict(*as_singleline(test_base), ec);
   BOOST_CHECK_EQUAL(ret_val, expected_action);
   delete test_base;

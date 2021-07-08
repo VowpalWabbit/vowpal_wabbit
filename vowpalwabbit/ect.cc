@@ -95,7 +95,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
   if (max_label == 1) return 0;
 
   std::vector<v_array<uint32_t>> tournaments;
-  v_array<uint32_t> t = v_init<uint32_t>();
+  v_array<uint32_t> t;
 
   for (uint32_t i = 0; i < max_label; i++)
   {
@@ -121,7 +121,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
     for (size_t i = 0; i < tournaments.size(); i++)
     {
-      v_array<uint32_t> empty = v_init<uint32_t>();
+      v_array<uint32_t> empty;
       new_tournaments.push_back(empty);
     }
 
