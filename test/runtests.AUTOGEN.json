@@ -412,8 +412,7 @@
       "stderr": "train-sets/ref/topk-train.stderr"
     },
     "input_files": [
-      "train-sets/topk.vw",
-      "topk-train.cache"
+      "train-sets/topk.vw"
     ]
   },
   {
@@ -1873,8 +1872,7 @@
       "stderr": "train-sets/ref/ignore_linear.stderr"
     },
     "input_files": [
-      "train-sets/0154.dat",
-      "ignore_linear.cache"
+      "train-sets/0154.dat"
     ]
   },
   {
@@ -4060,8 +4058,7 @@
       "stderr": "train-sets/ref/cb_adf_mtr_cache.stderr"
     },
     "input_files": [
-      "train-sets/cb_test.ldf",
-      "models/cb_test_cache.ldf.cache_no_del"
+      "train-sets/cb_test.ldf"
     ]
   },
   {
@@ -4074,6 +4071,9 @@
     "input_files": [
       "train-sets/cb_test.ldf",
       "models/cb_test_cache.ldf.cache_no_del"
+    ],
+    "depends_on": [
+      342
     ]
   }
 ]

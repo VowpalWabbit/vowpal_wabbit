@@ -6,9 +6,16 @@ class Test:
     unique_id = set()
 
     @staticmethod
-    def register_output(idnum, filename):
+    def register_output(idnum, filename, overwrite=True):
+        if not overwrite and Test.has_output(filename):
+            return
+
         Test.output[filename] = idnum
     
+    @staticmethod
+    def has_output(filename):
+        return filename in Test.output
+
     @staticmethod
     def filename_to_test_id(filename):
         return Test.output[filename]
@@ -83,9 +90,13 @@ class Test:
 
             # get output files and register as creator of files
             files = Parser.get_values_of_vwarg(self.vw_command, "-f")
-            files += Parser.get_values_of_vwarg(self.vw_command, "--cache_file")
             for f in files:
                 Test.register_output(int(self.id), f)
+            
+            files = Parser.get_values_of_vwarg(self.vw_command, "--cache_file")
+            for f in files:
+                # treat cache_file differently because it is both an input and output
+                Test.register_output(int(self.id), f, overwrite=False)
 
             # check who produces the input files of this test
             files = Parser.get_values_of_vwarg(self.vw_command, "-i")
@@ -97,9 +108,15 @@ class Test:
 
             files = Parser.get_values_of_vwarg(self.vw_command, "--cache_file")
             for f in files:
+                # If the file has not been registered as an output
+                if not Test.has_output(f):
+                    continue
+
                 parent_test = Test.filename_to_test_id(f)
                 if str(parent_test) != self.id:
                     depends_on.append(parent_test)
+                else:
+                    self.input_files.remove(f)
 
             if depends_on:
                 self.depends_on = depends_on
