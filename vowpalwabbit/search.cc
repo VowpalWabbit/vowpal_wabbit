@@ -100,7 +100,7 @@ struct scored_action
   action a;  // the action
   float s;   // the predicted cost of this action
   // v_array<feature> repr;
-  scored_action(action _a = static_cast<action>(-1), float _s = 0) : a(_a), s(_s) {}  // , repr(v_init<feature>()) {}
+  scored_action(action _a = static_cast<action>(-1), float _s = 0) : a(_a), s(_s) {}
   // scored_action(action _a, float _s, v_array<feature>& _repr) : a(_a), s(_s), repr(_repr) {}
   // scored_action() { a = (action)-1; s = 0.; }
 };
@@ -210,7 +210,7 @@ public:
   action learn_oracle_action;                // store an oracle action for debugging purposes
   features last_action_repr;
 
-  polylabel* allowed_actions_cache;
+  polylabel allowed_actions_cache;
 
   size_t loss_declared_cnt;                 // how many times did run declare any loss (implicitly or explicitly)?
   v_array<scored_action> train_trajectory;  // the training trajectory
@@ -234,9 +234,9 @@ public:
 
   // various strings for different search states
   bool should_produce_string;
-  std::stringstream* pred_string;
-  std::stringstream* truth_string;
-  std::stringstream* bad_string_stream;
+  std::unique_ptr<std::stringstream> pred_string;
+  std::unique_ptr<std::stringstream> truth_string;
+  std::unique_ptr<std::stringstream> bad_string_stream;
 
   // parameters controlling interpolation
   float beta;   // interpolation rate
@@ -276,8 +276,7 @@ public:
   float dat_new_feature_value;
 
   // to reduce memory allocation
-  std::string rawOutputString;
-  std::stringstream* rawOutputStringStream;
+  std::unique_ptr<std::stringstream> rawOutputStringStream;
   CS::label ldf_test_label;
   v_array<action_repr> condition_on_actions;
   v_array<size_t> timesteps;
@@ -306,43 +305,8 @@ public:
   {
     if (all)
     {
-      delete truth_string;
-      delete pred_string;
-      delete bad_string_stream;
-      neighbor_features.delete_v();
-      timesteps.delete_v();
-      if (cb_learner)
-        learn_losses.cb.costs.delete_v();
-      else
-        learn_losses.cs.costs.delete_v();
-      if (cb_learner)
-        gte_label.cb.costs.delete_v();
-      else
-        gte_label.cs.costs.delete_v();
-
-      condition_on_actions.delete_v();
-      learn_allowed_actions.delete_v();
-      ldf_test_label.costs.delete_v();
-
-      if (cb_learner)
-        allowed_actions_cache->cb.costs.delete_v();
-      else
-        allowed_actions_cache->cs.costs.delete_v();
-
-      train_trajectory.delete_v();
-
       for (auto& ar : ptag_to_action) delete ar.repr;
-      ptag_to_action.delete_v();
       clear_memo_foreach_action(*this);
-      memo_foreach_action.delete_v();
-
-      learn_condition_on_names.delete_v();
-      learn_condition_on.delete_v();
-
-      learn_condition_on_act.delete_v();
-
-      free(allowed_actions_cache);
-      delete rawOutputStringStream;
     }
   }
 };
@@ -920,7 +884,7 @@ polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const acti
     size_t allowed_actions_cnt, const float* allowed_actions_cost)
 {
   bool isCB = priv.cb_learner;
-  polylabel& ld = *priv.allowed_actions_cache;
+  polylabel& ld = priv.allowed_actions_cache;
   uint32_t num_costs = static_cast<uint32_t>(cs_get_costs_size(isCB, ld));
 
   if (priv.is_ldf)  // LDF version easier
@@ -1099,7 +1063,6 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   if (need_memo_foreach_action(priv) && (priv.state == INIT_TRAIN))
   {
     v_array<action_cache>* this_cache = new v_array<action_cache>();
-    *this_cache = v_init<action_cache>();
     // TODO we don't really need to construct this polylabel
     polylabel l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost);
     size_t K = cs_get_costs_size(priv.cb_learner, l);
@@ -1163,7 +1126,6 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     if (need_memo_foreach_action(priv) && (override_action == static_cast<action>(-1)))
     {
       this_cache = new v_array<action_cache>();
-      *this_cache = v_init<action_cache>();
     }
     for (size_t k = 0; k < K; k++)
     {
@@ -1279,7 +1241,6 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
   if (need_partial_predictions)
   {
     this_cache = new v_array<action_cache>();
-    *this_cache = v_init<action_cache>();
   }
 
   for (action a = static_cast<uint32_t>(start_K); a < ec_cnt; a++)
@@ -1953,7 +1914,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
     while ((timesteps.size() < static_cast<size_t>(priv.subsample_timesteps)) && (timesteps.size() < priv.T))
     {
       size_t t = static_cast<size_t>(priv._random_state->get_and_update_random() * static_cast<float>(priv.T));
-      if (!v_array_contains(timesteps, t)) timesteps.push_back(t);
+      if (std::find(timesteps.begin(), timesteps.end(), t) == timesteps.end()) { timesteps.push_back(t); }
     }
     std::sort(timesteps.begin(), timesteps.end(), cmp_size_t);
   }
@@ -2391,9 +2352,9 @@ void search_initialize(vw* all, search& sch)
   priv.state = INITIALIZE;
   priv.mix_per_roll_policy = -2;
 
-  priv.pred_string = new std::stringstream();
-  priv.truth_string = new std::stringstream();
-  priv.bad_string_stream = new std::stringstream();
+  priv.pred_string = VW::make_unique<std::stringstream>();
+  priv.truth_string = VW::make_unique<std::stringstream>();
+  priv.bad_string_stream = VW::make_unique<std::stringstream>();
   priv.bad_string_stream->clear(priv.bad_string_stream->badbit);
 
   priv.rollout_method = MIX_PER_ROLL;
@@ -2409,8 +2370,6 @@ void search_initialize(vw* all, search& sch)
   priv.acset.feature_value = 1.;
 
   scored_action sa(static_cast<action>(-1), 0.);
-  // unnecessary if priv has a proper constructor
-  new (&priv.cache_hash_map) search_private::cache_map();
 
   sch.task_data = nullptr;
 
@@ -2419,10 +2378,7 @@ void search_initialize(vw* all, search& sch)
 
   CS::default_label(priv.empty_cs_label);
 
-  new (&priv.rawOutputString) std::string();
-  priv.rawOutputStringStream = new std::stringstream(priv.rawOutputString);
-  new (&priv.test_action_sequence) std::vector<action>();
-  new (&priv.dat_new_feature_audit_ss) std::stringstream();
+  priv.rawOutputStringStream = VW::make_unique<std::stringstream>();
 }
 
 void ensure_param(float& v, float lo, float hi, float def, const char* str)
@@ -2684,20 +2640,19 @@ base_learner* setup(options_i& options, vw& all)
     THROW("error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'");
 
   // check if the base learner is contextual bandit, in which case, we dont rollout all actions.
-  priv.allowed_actions_cache = &calloc_or_throw<polylabel>();
   if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;
-    CB::cb_label.default_label(priv.allowed_actions_cache);
-    priv.learn_losses.cb.costs = v_init<CB::cb_class>();
-    priv.gte_label.cb.costs = v_init<CB::cb_class>();
+    CB::cb_label.default_label(&priv.allowed_actions_cache);
+    priv.learn_losses.cb.costs.clear();
+    priv.gte_label.cb.costs.clear();
   }
   else
   {
     priv.cb_learner = false;
-    CS::cs_label.default_label(priv.allowed_actions_cache);
-    priv.learn_losses.cs.costs = v_init<CS::wclass>();
-    priv.gte_label.cs.costs = v_init<CS::wclass>();
+    CS::cs_label.default_label(&priv.allowed_actions_cache);
+    priv.learn_losses.cs.costs.clear();
+    priv.gte_label.cs.costs.clear();
   }
 
   ensure_param(priv.beta, 0.0, 1.0, 0.5, "warning: search_beta must be in (0,1); resetting to 0.5");
@@ -2998,11 +2953,6 @@ predictor::predictor(search& sch, ptag my_tag)
     , learner_id(0)
     , sch(sch)
 {
-  oracle_actions = v_init<action>();
-  condition_on_tags = v_init<ptag>();
-  condition_on_names = v_init<char>();
-  allowed_actions = v_init<action>();
-  allowed_actions_cost = v_init<float>();
 }
 
 void predictor::free_ec()

@@ -8,9 +8,14 @@
 #include "vw.h"
 #include "interactions.h"
 
+VW_DEPRECATED(
+    "fid is deprecated and will be removed in 9.0. See issue:"
+    "https://github.com/VowpalWabbit/vowpal_wabbit/issues/3091")
 typedef uint32_t fid;
 
-struct vw_namespace
+struct VW_DEPRECATED(
+    "vw_namespace is deprecated and will be removed in 9.0. See issue:"
+    "https://github.com/VowpalWabbit/vowpal_wabbit/issues/3091") vw_namespace
 {
   char namespace_letter;
 
@@ -18,7 +23,11 @@ public:
   vw_namespace(const char c) : namespace_letter(c) {}
 };
 
-class ezexample
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+class VW_DEPRECATED(
+    "ezexample is deprecated and will be removed in 9.0. See issue:"
+    "https://github.com/VowpalWabbit/vowpal_wabbit/issues/3091") ezexample
 {
 private:
   vw* vw_ref;
@@ -91,7 +100,6 @@ public:
   ezexample(vw* this_vw, bool multiline = false, vw* this_vw_parser = nullptr)
   {
     setup_new_ezexample(this_vw, multiline, this_vw_parser);
-    example_copies = v_init<example*>();
     ec = get_new_example();
     we_create_ec = true;
 
@@ -402,3 +410,4 @@ public:
 
   inline float operator()() { return predict(); }
 };
+VW_WARNING_STATE_POP

@@ -1,6 +1,9 @@
 #include <cstdio>
 #include <vw.h>
+// ezexample is deprecated and will be removed in VW 9.0.
+// Details: https://github.com/VowpalWabbit/vowpal_wabbit/issues/3091
 #include <ezexample.h>
+#include "future_compat.h"
 
 #include <thread>
 
@@ -8,6 +11,9 @@ int runcount = 100;
 
 using std::cerr;
 using std::endl;
+
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 
 class Worker
 {
@@ -146,3 +152,4 @@ int main(int argc, char *argv[])
   // AND FINISH UP
   VW::finish(*vw);
 }
+VW_WARNING_STATE_POP

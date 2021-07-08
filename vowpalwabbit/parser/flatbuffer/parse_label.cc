@@ -67,7 +67,7 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
       l->conditional_contextual_bandit.type = CCB::example_type::slot;
       auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
       ccb_outcome.cost = label->outcome()->cost();
-      ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
+      ccb_outcome.probabilities.clear();
 
       for (auto const& as : *(label->outcome()->probabilities()))
         ccb_outcome.probabilities.push_back({as->action(), as->score()});
@@ -147,7 +147,7 @@ void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
   else if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_slot)
   {
     l->slates.labeled = label->labeled();
-    l->slates.probabilities = v_init<ACTION_SCORE::action_score>();
+    l->slates.probabilities.clear();
     l->slates.type = VW::slates::slot;
 
     for (auto const& as : *(label->probabilities())) l->slates.probabilities.push_back({as->action(), as->score()});

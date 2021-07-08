@@ -78,7 +78,6 @@ struct stagewise_poly
     std::cout << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
 #endif  // DEBUG
 
-    // synth_ec.feature_space[tree_atomics].delete_v();
     free(sd);
     free(depthsbits);
   }

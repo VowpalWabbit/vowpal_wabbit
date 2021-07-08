@@ -99,7 +99,6 @@ public:
     best_cost = FLT_MAX;
     prune_if_gt = FLT_MAX;
     best_cost_data = nullptr;
-    A = v_init<beam_element<T>>();
     if (beam_size <= BEAM_CONSTANT_SIZE)
       A.resize(beam_size, true);
     else
@@ -293,7 +292,6 @@ public:
   ~beam()
   {
     assert(A.size() == 0);
-    A.delete_v();
   }
 
   beam_element<T> *begin() { return A.begin; }
