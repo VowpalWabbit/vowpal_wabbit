@@ -4053,7 +4053,7 @@
   {
     "id": 342,
     "desc": "check cb_adf with cache (part1 - no cache, but generate one)",
-    "vw_command": "--cb_adf -k --cache_file models/cb_test_cache.ldf.cache_no_del -d train-sets/cb_test.ldf",
+    "vw_command": "--cb_adf -k --cache_file models/cb_test_cache.ldf.cache -d train-sets/cb_test.ldf",
     "diff_files": {
       "stderr": "train-sets/ref/cb_adf_mtr_cache.stderr"
     },
@@ -4064,13 +4064,13 @@
   {
     "id": 343,
     "desc": "check cb_adf with cache (part2 - run with cache)",
-    "vw_command": "--cb_adf --cache_file models/cb_test_cache.ldf.cache_no_del -d train-sets/cb_test.ldf",
+    "vw_command": "--cb_adf --cache_file models/cb_test_cache.ldf.cache -d train-sets/cb_test.ldf",
     "diff_files": {
       "stderr": "train-sets/ref/cb_adf_mtr_cache_2.stderr"
     },
     "input_files": [
       "train-sets/cb_test.ldf",
-      "models/cb_test_cache.ldf.cache_no_del"
+      "models/cb_test_cache.ldf.cache"
     ],
     "depends_on": [
       342
