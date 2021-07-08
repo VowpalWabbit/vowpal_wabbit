@@ -272,7 +272,7 @@ void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& example
     for (size_t i = 0; i < examples.size(); ++i)
     {
       prepped_cs_labels[i] = std::move(examples[i]->l.cs);
-      examples[i]->l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+      examples[i]->l.cs.costs.clear();
       examples[i]->l.cb = std::move(cb_labels[i]);
       examples[i]->ft_offset = saved_offset;
     }
