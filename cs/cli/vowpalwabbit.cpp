@@ -327,7 +327,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			VW::setup_examples(*m_vw, examples);
 
 			// delete native array of pointers, keep examples
-			examples.delete_v();
+			examples.clear();
 
 			header->EventId = gcnew String(interaction.eventId.c_str());
 			header->Actions = gcnew cli::array<int>((int)interaction.actions.size());
