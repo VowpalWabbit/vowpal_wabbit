@@ -20,7 +20,8 @@ namespace logger = VW::io::logger;
 namespace CB
 {
 template <>
-size_t read_cached_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label&, io_buf&)
+size_t read_cached_label_additional_fields<VW::cb_continuous::continuous_label>(
+    VW::cb_continuous::continuous_label&, io_buf&)
 {
   return 0;
 }
