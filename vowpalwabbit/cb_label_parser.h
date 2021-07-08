@@ -5,6 +5,7 @@
 #pragma once
 #include "cb.h"
 
+#include "future_compat.h"
 #include "io/logger.h"
 #include "io_buf.h"
 #include "cb_continuous_label.h"
@@ -12,16 +13,8 @@
 
 namespace CB
 {
-template <typename LabelT = CB::label>
-char* bufread_label_additional_fields(LabelT& ld, char* c)
-{
-  memcpy(&ld.weight, c, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  return c;
-}
-
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-char* bufread_label(LabelT& ld, char* c, io_buf& cache)
+char* bufread_label_elements(LabelT& ld, char* c, io_buf& cache)
 {
   size_t num = *reinterpret_cast<size_t*>(c);
   ld.costs.clear();
@@ -35,7 +28,14 @@ char* bufread_label(LabelT& ld, char* c, io_buf& cache)
     ld.costs.push_back(temp);
   }
 
-  return bufread_label_additional_fields(ld, c);
+  return c;
+}
+
+template <typename LabelT = CB::label>
+size_t read_cached_label_additional_fields(LabelT& ld, io_buf& cache)
+{
+  ld.weight = cache.read_value<float>("weight");
+  return sizeof(float);
 }
 
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
@@ -45,21 +45,16 @@ size_t read_cached_label(shared_data*, LabelT& ld, io_buf& cache)
   char* c;
   size_t total = sizeof(size_t);
   if (cache.buf_read(c, total) < total) return 0;
-  bufread_label<LabelT, LabelElmT>(ld, c, cache);
+  c = bufread_label_elements<LabelT, LabelElmT>(ld, c, cache);
+  cache.set(c);
+
+  total += read_cached_label_additional_fields<LabelT>(ld, cache);
 
   return total;
 }
 
-template <typename LabelT>
-char* bufcache_label_additional_fields(LabelT& ld, char* c)
-{
-  memcpy(c, &ld.weight, sizeof(ld.weight));
-  c += sizeof(ld.weight);
-  return c;
-}
-
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-char* bufcache_label(LabelT& ld, char* c)
+char* bufcache_label_elements(LabelT& ld, char* c)
 {
   *reinterpret_cast<size_t*>(c) = ld.costs.size();
   c += sizeof(size_t);
@@ -68,7 +63,14 @@ char* bufcache_label(LabelT& ld, char* c)
     *(LabelElmT*)c = ld.costs[i];
     c += sizeof(LabelElmT);
   }
-  return bufcache_label_additional_fields(ld, c);
+
+  return c;
+}
+
+template <typename LabelT = CB::label>
+void cache_label_additional_fields(LabelT& ld, io_buf& cache)
+{
+  cache.write_value(ld.weight);
 }
 
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
@@ -76,7 +78,10 @@ void cache_label(LabelT& ld, io_buf& cache)
 {
   char* c;
   cache.buf_write(c, sizeof(size_t) + sizeof(LabelElmT) * ld.costs.size());
-  bufcache_label<LabelT, LabelElmT>(ld, c);
+  c = bufcache_label_elements<LabelT, LabelElmT>(ld, c);
+  cache.set(c);
+
+  cache_label_additional_fields<LabelT>(ld, cache);
 }
 
 template <typename LabelT>
