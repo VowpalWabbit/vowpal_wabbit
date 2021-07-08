@@ -102,7 +102,6 @@ public:
   ezexample(vw* this_vw, bool multiline = false, vw* this_vw_parser = nullptr)
   {
     setup_new_ezexample(this_vw, multiline, this_vw_parser);
-    example_copies = v_init<example*>();
     ec = get_new_example();
     we_create_ec = true;
 

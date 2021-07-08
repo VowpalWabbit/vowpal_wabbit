@@ -250,7 +250,7 @@ public:
           affix_fs.push_back(_v, word_hash);
           if (audit)
           {
-            v_array<char> affix_v = v_init<char>();
+            v_array<char> affix_v;
             if (_index != ' ') affix_v.push_back(_index);
             affix_v.push_back(is_prefix ? '+' : '-');
             affix_v.push_back('0' + static_cast<char>(len));
@@ -290,7 +290,7 @@ public:
         spell_fs.push_back(_v, word_hash);
         if (audit)
         {
-          v_array<char> spelling_v = v_init<char>();
+          v_array<char> spelling_v;
           if (_index != ' ')
           {
             spelling_v.push_back(_index);
@@ -451,7 +451,6 @@ public:
 
   TC_parser(VW::string_view line, vw& all, example* ae) : _line(line)
   {
-    _spelling = v_init<char>();
     if (!_line.empty())
     {
       this->_read_idx = 0;
