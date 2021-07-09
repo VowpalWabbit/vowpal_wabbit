@@ -108,6 +108,8 @@ public:
   template <typename T>
   py::object* value_to_pyobject(VW::config::typed_option<T>& opt)
   {
+    T not_supplied{};
+
     if (m_opt.was_supplied(opt.m_name))
     {
       if (opt.default_value_supplied())
@@ -115,7 +117,7 @@ public:
             opt.m_allow_override, opt.value(), true, opt.default_value(), true));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.value(), true, py::object(), false));
+            opt.m_allow_override, opt.value(), true, not_supplied, false));
     }
     else
     {
@@ -124,7 +126,7 @@ public:
             opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, py::object(), false, py::object(), false));
+            opt.m_allow_override, py::object(), false, not_supplied, false));
     }
   }
 
