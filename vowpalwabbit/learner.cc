@@ -45,13 +45,12 @@ void learn_multi_ex(multi_ex& ec_seq, vw& all)
   as_multiline(all.l)->finish_example(all, ec_seq);
 }
 
-template <bool finish_example=true>
 void end_pass(example& ec, vw& all)
 {
   all.current_pass++;
   all.l->end_pass();
 
-  if VW_STD17_CONSTEXPR (finish_example) { VW::finish_example(all, ec); }
+  VW::finish_example(all, ec);
 }
 
 void save(example& ec, vw& all)
