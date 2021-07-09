@@ -73,40 +73,6 @@ public:
   bool operator!=(const iterator_t& rhs) { return _feature_group_iterator != rhs._feature_group_iterator; }
 };
 
-template <typename FeatureGroupIteratorT>
-class index_iterator_t
-{
-  FeatureGroupIteratorT _feature_group_iterator;
-
-public:
-  using difference_type = std::ptrdiff_t;
-  using value_type = namespace_index;
-  using pointer = value_type*;
-  using reference = value_type&;
-  using iterator_category = std::forward_iterator_tag;
-
-  index_iterator_t(FeatureGroupIteratorT feature_group_iterator)
-      : _feature_group_iterator(feature_group_iterator)
-  {
-  }
-
-  inline value_type operator*() { return _feature_group_iterator->_index; }
-  inline index_iterator_t& operator++()
-  {
-    _feature_group_iterator++;
-    return *this;
-  }
-
-    friend difference_type operator-(const index_iterator_t& lhs, const index_iterator_t& rhs)
-  {
-      return lhs._feature_group_iterator - rhs._feature_group_iterator;
-  }
-
-
-  bool operator==(const index_iterator_t& rhs) { return _feature_group_iterator == rhs._feature_group_iterator; }
-  bool operator!=(const index_iterator_t& rhs) { return _feature_group_iterator != rhs._feature_group_iterator; }
-};
-
 /// Insertion or removal will result in this value in invalidated.
 template <typename IndexItT, typename FeatureGroupIteratorT, typename FeaturesT>
 class indexed_iterator_t
@@ -183,8 +149,8 @@ struct namespaced_features
   using const_indexed_iterator =
       indexed_iterator_t<std::vector<size_t>::const_iterator, std::vector<details::namespaced_feature_group>::const_iterator, const features>;
 
-  using ns_index_iterator = index_iterator_t<std::vector<details::namespaced_feature_group>::iterator>;
-  using const_ns_index_iterator = index_iterator_t<std::vector<details::namespaced_feature_group>::const_iterator>;
+  using ns_index_iterator = std::vector<namespace_index>::iterator;
+  using const_ns_index_iterator = std::vector<namespace_index>::const_iterator;
 
   namespaced_features() = default;
   ~namespaced_features() = default;
@@ -309,12 +275,12 @@ struct namespaced_features
   // Wil contains duplicates if there exists more than one feature group per index.
   inline ns_index_iterator index_begin()
   {
-    return {_feature_groups.begin()};
+    return _legacy_indices_existing.begin();
   }
 
   inline ns_index_iterator index_end()
   {
-    return {_feature_groups.end()};
+    return _legacy_indices_existing.end();
   }
 
   inline iterator begin()
