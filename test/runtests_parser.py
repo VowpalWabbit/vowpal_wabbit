@@ -108,10 +108,6 @@ class Test:
 
             files = Parser.get_values_of_vwarg(self.vw_command, "--cache_file")
             for f in files:
-                # If the file has not been registered as an output
-                if not Test.has_output(f):
-                    continue
-
                 parent_test = Test.filename_to_test_id(f)
                 if str(parent_test) != self.id:
                     depends_on.append(parent_test)
