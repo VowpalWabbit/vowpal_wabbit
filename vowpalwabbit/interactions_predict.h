@@ -131,16 +131,17 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     if (len == 2)  // special case of pairs
     {
       size_t ns0_i = 0;
-      auto first_range = ec.feature_space.namespace_index_range(ns[0]);
-      for (auto first_it = first_range.begin(); first_it != first_range.end(); ++first_it)
+      auto first_end = ec.feature_space.namespace_index_end(ns[0]);
+      for (auto first_it = ec.feature_space.namespace_index_begin(ns[0]); first_it != first_end; ++first_it)
       {
         const auto& first = *first_it;
         ns0_i++;
         if (first.nonempty())
         {
           size_t ns1_i = 0;
-          auto second_range = ec.feature_space.namespace_index_range(ns[1]);
-          for (auto second_it = second_range.begin(); second_it != second_range.end(); ++second_it)
+          auto second_end = ec.feature_space.namespace_index_end(ns[1]);
+          for (auto second_it = ec.feature_space.namespace_index_begin(ns[1]); second_it != second_end;
+               ++second_it)
           {
             const auto& second = *second_it;
             ns1_i++;
