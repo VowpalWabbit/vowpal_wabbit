@@ -108,7 +108,7 @@ public:
   template <typename T>
   py::object* value_to_pyobject(VW::config::typed_option<T>& opt)
   {
-    T not_supplied;
+    T not_supplied{};
 
     if (m_opt.was_supplied(opt.m_name))
     {
