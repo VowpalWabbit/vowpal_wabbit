@@ -95,7 +95,7 @@ public:
   inline value_type operator*() { return _feature_group_iterator->_index; }
   inline index_iterator_t& operator++()
   {
-    _feature_group_iterator++;
+    _feature_group_iterator += _feature_group_iterator->_next_non_removed_distance;
     return *this;
   }
 
