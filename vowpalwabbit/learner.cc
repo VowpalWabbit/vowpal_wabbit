@@ -45,12 +45,13 @@ void learn_multi_ex(multi_ex& ec_seq, vw& all)
   as_multiline(all.l)->finish_example(all, ec_seq);
 }
 
+template <bool finish_example=true>
 void end_pass(example& ec, vw& all)
 {
   all.current_pass++;
   all.l->end_pass();
 
-  VW::finish_example(all, ec);
+  if VW_STD17_CONSTEXPR (finish_example) { VW::finish_example(all, ec); }
 }
 
 void save(example& ec, vw& all)
@@ -161,20 +162,28 @@ private:
     auto& master = _context.get_master();
     const bool is_test_ec = master.example_parser->lbl_parser.test_label(&ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
-    if (!is_newline) { ec_seq.push_back(ec); }
-    else
+
+    // In the case of end-of-pass example, we need to treat it as an indicator of
+    // multi_ex completion, but we should not call finish_example on it, until after
+    // doing learning on the multi_ex, otherwise we lose track of it being an end-
+    // of-pass example, and cannot chain to end_pass()
+    if (!is_newline && !ec->end_pass) { ec_seq.push_back(ec); }
+    else if (!ec->end_pass)
     {
       VW::finish_example(master, *ec);
     }
-    return is_newline;
+
+    return is_newline || ec->end_pass;
   }
 
   bool try_complete_multi_ex(example* ec)
   {
     if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
       return complete_multi_ex(ec);
-    else if (ec->end_pass)
-      _context.template process<example, end_pass>(*ec);
+    // Explicitly do not process the end-of-pass examples here: It needs to be done
+    // after learning on the collected multi_ex
+    // else if (ec->end_pass)
+    //   _context.template process<example, end_pass>(*ec);
     else if (is_save_cmd(ec))
       _context.template process<example, save>(*ec);
     else
@@ -196,6 +205,13 @@ public:
     {
       _context.template process<multi_ex, learn_multi_ex>(ec_seq);
       ec_seq.clear();
+    }
+
+    // Send out the end-of-pass notification after doing learning
+    if (ec->end_pass)
+    {
+      // TODO: Should it be an error to have an in-flight multi_ex during end_pass?
+      _context.template process<example, end_pass>(*ec);
     }
   }
 
