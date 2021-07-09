@@ -840,8 +840,6 @@ void parse_example_label(vw& all, example& ec, std::string label)
 
 void empty_example(vw& /*all*/, example& ec)
 {
-  for (features& fs : ec) fs.clear();
-
   ec.feature_space.clear();
   ec.tag.clear();
   ec.sorted = false;
