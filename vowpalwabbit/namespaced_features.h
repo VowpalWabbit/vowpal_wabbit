@@ -71,6 +71,8 @@ public:
   inline namespace_index index() { return _feature_group_iterator->_index; }
   inline uint64_t hash() { return _feature_group_iterator->_hash; }
 
+  FeatureGroupIteratorT extract_iterator() { return _feature_group_iterator; }
+
   bool operator==(const iterator_t& rhs) { return _feature_group_iterator == rhs._feature_group_iterator; }
   bool operator!=(const iterator_t& rhs) { return _feature_group_iterator != rhs._feature_group_iterator; }
 };
@@ -178,18 +180,14 @@ struct namespaced_features
   // Returns nullptr if not found.
   inline features* get_feature_group(uint64_t hash)
   {
-    auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(), [hash](const details::namespaced_feature_group& group) { return group._hash == hash && group._is_removed == false;
-    });
+    auto it = get_feature_space_internal(hash);
     if (it == _feature_groups.end()) { return nullptr; }
     return &it->_features;
   }
   // Returns nullptr if not found.
   inline const features* get_feature_group(uint64_t hash) const
   {
-    auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(),
-        [hash](const details::namespaced_feature_group& group) {
-          return group._hash == hash && group._is_removed == false;
-    });
+    auto it = get_feature_space_internal(hash);
     if (it == _feature_groups.end()) { return nullptr; }
     return &it->_features;
   }
@@ -211,13 +209,31 @@ struct namespaced_features
     auto* existing_group = get_feature_group(hash);
     if (existing_group == nullptr)
     {
-      _feature_groups.emplace_back(_saved_feature_groups.take_back(), hash, ns_index);
-      _saved_feature_groups.pop_back();
-      auto new_index = _feature_groups.size() - 1;
+      auto new_it = get_first_dead();
+      size_t new_index = 0;
+      if (new_it != _feature_groups.end()) {
+        new_index = std::distance(_feature_groups.begin(), new_it);
+        if (new_index != 0)
+        {
+          auto prev = new_it - 1;
+          new_it->_next_non_removed_distance = prev->_next_non_removed_distance - 1;
+          prev->_next_non_removed_distance = 1;
+        }
+        new_it->_features.clear();
+        new_it->_hash = hash;
+        new_it->_index = ns_index;
+        new_it->_is_removed = false;
+      }
+      else
+      {
+        _feature_groups.emplace_back(hash, ns_index);
+        new_index = _feature_groups.size() - 1;
+        new_it = _feature_groups.end() - 1;
+      }
       auto& idx_vec = _legacy_indices_to_index_mapping[ns_index];
       idx_vec.push_back(new_index);
       if (idx_vec.size() == 1) { _legacy_indices_existing.push_back(ns_index); }
-      return _feature_groups.back()._features;
+      return new_it->_features;
     }
 
     return *existing_group;
@@ -316,6 +332,31 @@ private:
     return current;
   }
 
+  std::vector<details::namespaced_feature_group>::iterator get_feature_space_internal(uint64_t hash) {
+    auto current = begin();
+    for (; current != end(); ++current)
+    {
+      if (current.hash() == hash) { break; }
+    }
+    return current.extract_iterator();
+  }
+
+  std::vector<details::namespaced_feature_group>::iterator get_first_dead()
+  {
+    return std::find_if(_feature_groups.begin(), _feature_groups.end(),
+        [](const details::namespaced_feature_group& group) { return group._is_removed; });
+  }
+
+  std::vector<details::namespaced_feature_group>::const_iterator get_feature_space_internal(uint64_t hash) const
+  {
+    auto current = cbegin();
+    for (; current != cend(); ++current)
+    {
+      if (current.hash() == hash) { break; }
+    }
+    return current.extract_iterator();
+  }
+
   std::vector<details::namespaced_feature_group> _feature_groups;
   std::array<std::vector<size_t>, 256> _legacy_indices_to_index_mapping;
   std::vector<namespace_index> _legacy_indices_existing;
@@ -330,22 +371,39 @@ features& namespaced_features::merge_feature_group(FeaturesT&& ftrs, uint64_t ha
   auto* existing_group = get_feature_group(hash);
   if (existing_group == nullptr)
   {
-    _feature_groups.emplace_back(std::forward<FeaturesT>(ftrs), hash, ns_index);
-    auto new_index = _feature_groups.size() - 1;
+    auto new_it = get_first_dead();
+    size_t new_index = 0;
+    if (new_it != _feature_groups.end())
+    {
+      new_index = std::distance(_feature_groups.begin(), new_it);
+      if (new_index != 0)
+      {
+        auto prev = new_it - 1;
+        new_it->_next_non_removed_distance = prev->_next_non_removed_distance - 1;
+        prev->_next_non_removed_distance = 1;
+      }
+      new_it->_features = std::forward<FeaturesT>(ftrs);
+      new_it->_hash = hash;
+      new_it->_index = ns_index;
+      new_it->_is_removed = false;
+    }
+    else
+    {
+      _feature_groups.emplace_back(hash, ns_index);
+      new_index = _feature_groups.size() - 1;
+      new_it = _feature_groups.end() - 1;
+    }
     auto& idx_vec = _legacy_indices_to_index_mapping[ns_index];
     idx_vec.push_back(new_index);
     if (idx_vec.size() == 1) { _legacy_indices_existing.push_back(ns_index); }
-    return _feature_groups.back()._features;
+    return new_it->_features;
   }
 
   existing_group->concat(std::forward<FeaturesT>(ftrs));
   // Should we ensure that this doesnt already exist under a DIFFERENT namespace_index?
   // However, his shouldn't be possible as ns_index depends on hash.
 
-  auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(),
-      [hash](const details::namespaced_feature_group& group) {
-        return group._hash == hash == hash && group._is_removed == false;
-  });
+  auto it = get_feature_space_internal(hash);
   assert(it != _feature_groups.end());
   auto group_index = std::distance(_feature_groups.begin(), it);
   auto& ns_indices_list = _legacy_indices_to_index_mapping[ns_index];

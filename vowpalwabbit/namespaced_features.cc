@@ -22,15 +22,12 @@ namespaced_features::get_namespace_index_groups(namespace_index ns_index) const
 
 void namespaced_features::remove_feature_group(uint64_t hash)
 {
-  auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(),
-      [hash](const details::namespaced_feature_group& group) {
-        return group._hash == hash && group._is_removed == false;
-  });
+  auto it = get_feature_space_internal(hash);
   if (it == _feature_groups.end()) { return; }
-
   auto existing_index = std::distance(_feature_groups.begin(), it);
 
   it->_is_removed = true;
+  it->_next_non_removed_distance = 1;
   auto prev = it;
   while (prev != _feature_groups.begin() && prev->_is_removed == true) { prev--; }
 
@@ -64,12 +61,9 @@ void namespaced_features::clear()
 {
   for (auto& namespaced_feat_group : _feature_groups)
   {
-    namespaced_feat_group._is_removed = false;
+    namespaced_feat_group._is_removed = true;
     namespaced_feat_group._next_non_removed_distance = 1;
-    namespaced_feat_group._features.clear();
-    _saved_feature_groups.reclaim_object(std::move(namespaced_feat_group._features));
   }
-  _feature_groups.clear();
   for (auto idx : _legacy_indices_existing)
   {
     _legacy_indices_to_index_mapping[idx].clear();
