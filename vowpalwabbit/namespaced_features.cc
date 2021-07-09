@@ -226,25 +226,25 @@ namespaced_features::namespace_index_cend_proxy(namespace_index ns_index) const
 namespaced_features::indexed_iterator namespaced_features::namespace_index_begin(namespace_index ns_index)
 {
   auto& index_vec = _legacy_indices_to_index_mapping[ns_index];
-  return {index_vec.begin(), begin_non_removed()};
+  return {index_vec.begin(), _feature_groups.begin()};
 }
 
 namespaced_features::indexed_iterator namespaced_features::namespace_index_end(namespace_index ns_index)
 {
   auto& index_vec = _legacy_indices_to_index_mapping[ns_index];
-  return {index_vec.end(), begin_non_removed()};
+  return {index_vec.end(), _feature_groups.begin()};
 }
 
 namespaced_features::const_indexed_iterator namespaced_features::namespace_index_begin(namespace_index ns_index) const
 {
   auto& index_vec = _legacy_indices_to_index_mapping[ns_index];
-  return {index_vec.cbegin(), begin_non_removed()};
+  return {index_vec.cbegin(), _feature_groups.begin()};
 }
 
 namespaced_features::const_indexed_iterator namespaced_features::namespace_index_end(namespace_index ns_index) const
 {
   auto& index_vec = _legacy_indices_to_index_mapping[ns_index];
-  return {index_vec.cend(), begin_non_removed()};
+  return {index_vec.cend(), _feature_groups.begin()};
 }
 
 namespaced_features::const_indexed_iterator namespaced_features::namespace_index_cbegin(namespace_index ns_index) const
