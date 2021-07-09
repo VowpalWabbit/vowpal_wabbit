@@ -31,8 +31,6 @@ namespace details
     features _features;
     uint64_t _hash;
     namespace_index _index;
-    bool _is_removed = false;
-    size_t _next_non_removed_distance = 1;
 
     namespaced_feature_group(uint64_t hash, namespace_index index) : _hash(hash), _index(index) {}
 
@@ -64,14 +62,12 @@ public:
   inline FeaturesT& operator*() { return _feature_group_iterator->_features; }
   inline iterator_t& operator++()
   {
-    _feature_group_iterator += _feature_group_iterator->_next_non_removed_distance;
+    _feature_group_iterator++;
     return *this;
   }
 
   inline namespace_index index() { return _feature_group_iterator->_index; }
   inline uint64_t hash() { return _feature_group_iterator->_hash; }
-
-  FeatureGroupIteratorT extract_iterator() { return _feature_group_iterator; }
 
   bool operator==(const iterator_t& rhs) { return _feature_group_iterator == rhs._feature_group_iterator; }
   bool operator!=(const iterator_t& rhs) { return _feature_group_iterator != rhs._feature_group_iterator; }
@@ -97,7 +93,7 @@ public:
   inline value_type operator*() { return _feature_group_iterator->_index; }
   inline index_iterator_t& operator++()
   {
-    _feature_group_iterator += _feature_group_iterator->_next_non_removed_distance;
+    _feature_group_iterator++;
     return *this;
   }
 
@@ -214,17 +210,24 @@ struct namespaced_features
   // Returns nullptr if not found.
   inline features* get_feature_group(uint64_t hash)
   {
-    auto it = get_feature_space_internal(hash);
+    auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(), [hash](const details::namespaced_feature_group& group) {
+      return group._hash == hash;
+    });
     if (it == _feature_groups.end()) { return nullptr; }
     return &it->_features;
   }
   // Returns nullptr if not found.
   inline const features* get_feature_group(uint64_t hash) const
   {
-    auto it = get_feature_space_internal(hash);
+    auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(),
+        [hash](const details::namespaced_feature_group& group) {
+      return group._hash == hash;
+    });
     if (it == _feature_groups.end()) { return nullptr; }
     return &it->_features;
   }
+
+  namespace_index get_index_for_hash(uint64_t hash) const;
 
   // The following are experimental and may be superseded with namespace_index_begin_proxy
   // Returns empty range if not found
@@ -243,31 +246,13 @@ struct namespaced_features
     auto* existing_group = get_feature_group(hash);
     if (existing_group == nullptr)
     {
-      auto new_it = get_first_dead();
-      size_t new_index = 0;
-      if (new_it != _feature_groups.end()) {
-        new_index = std::distance(_feature_groups.begin(), new_it);
-        if (new_index != 0)
-        {
-          auto prev = new_it - 1;
-          new_it->_next_non_removed_distance = prev->_next_non_removed_distance - 1;
-          prev->_next_non_removed_distance = 1;
-        }
-        new_it->_features.clear();
-        new_it->_hash = hash;
-        new_it->_index = ns_index;
-        new_it->_is_removed = false;
-      }
-      else
-      {
-        _feature_groups.emplace_back(hash, ns_index);
-        new_index = _feature_groups.size() - 1;
-        new_it = _feature_groups.end() - 1;
-      }
+      _feature_groups.emplace_back(_saved_feature_groups.take_back(), hash, ns_index);
+      _saved_feature_groups.pop_back();
+      auto new_index = _feature_groups.size() - 1;
       auto& idx_vec = _legacy_indices_to_index_mapping[ns_index];
       idx_vec.push_back(new_index);
       if (idx_vec.size() == 1) { _legacy_indices_existing.push_back(ns_index); }
-      return new_it->_features;
+      return _feature_groups.back()._features;
     }
 
     return *existing_group;
@@ -323,7 +308,8 @@ struct namespaced_features
 
   // Wil contains duplicates if there exists more than one feature group per index.
   inline ns_index_iterator index_begin()
-  { return {begin_non_removed()};
+  {
+    return {_feature_groups.begin()};
   }
 
   inline ns_index_iterator index_end()
@@ -332,21 +318,24 @@ struct namespaced_features
   }
 
   inline iterator begin()
-  { return {begin_non_removed()};
+  {
+    return {_feature_groups.begin()};
   }
   inline iterator end()
   {
     return {_feature_groups.end()};
   }
   inline const_iterator begin() const
-  { return {begin_non_removed()};
+  {
+    return {_feature_groups.cbegin()};
   }
   inline const_iterator end() const
   {
     return {_feature_groups.cend()};
   }
   inline const_iterator cbegin() const
-  { return {begin_non_removed()};
+  {
+    return {_feature_groups.cbegin()};
   }
   inline const_iterator cend() const
   {
@@ -354,45 +343,6 @@ struct namespaced_features
   }
 
 private:
-  std::vector<details::namespaced_feature_group>::iterator begin_non_removed()
-  {
-    auto current = _feature_groups.begin();
-    while (current != _feature_groups.end() && current->_is_removed == true) { current++; }
-    return current;
-  }
-
-  std::vector<details::namespaced_feature_group>::const_iterator begin_non_removed() const
-  {
-    auto current = _feature_groups.begin();
-    while (current != _feature_groups.end() && current->_is_removed == true) { current++; }
-    return current;
-  }
-
-  std::vector<details::namespaced_feature_group>::iterator get_feature_space_internal(uint64_t hash) {
-    auto current = begin();
-    for (; current != end(); ++current)
-    {
-      if (current.hash() == hash) { break; }
-    }
-    return current.extract_iterator();
-  }
-
-  std::vector<details::namespaced_feature_group>::iterator get_first_dead()
-  {
-    return std::find_if(_feature_groups.begin(), _feature_groups.end(),
-        [](const details::namespaced_feature_group& group) { return group._is_removed; });
-  }
-
-  std::vector<details::namespaced_feature_group>::const_iterator get_feature_space_internal(uint64_t hash) const
-  {
-    auto current = cbegin();
-    for (; current != cend(); ++current)
-    {
-      if (current.hash() == hash) { break; }
-    }
-    return current.extract_iterator();
-  }
-
   std::vector<details::namespaced_feature_group> _feature_groups;
   std::array<std::vector<size_t>, 256> _legacy_indices_to_index_mapping;
   std::vector<namespace_index> _legacy_indices_existing;
@@ -407,39 +357,22 @@ features& namespaced_features::merge_feature_group(FeaturesT&& ftrs, uint64_t ha
   auto* existing_group = get_feature_group(hash);
   if (existing_group == nullptr)
   {
-    auto new_it = get_first_dead();
-    size_t new_index = 0;
-    if (new_it != _feature_groups.end())
-    {
-      new_index = std::distance(_feature_groups.begin(), new_it);
-      if (new_index != 0)
-      {
-        auto prev = new_it - 1;
-        new_it->_next_non_removed_distance = prev->_next_non_removed_distance - 1;
-        prev->_next_non_removed_distance = 1;
-      }
-      new_it->_features = std::forward<FeaturesT>(ftrs);
-      new_it->_hash = hash;
-      new_it->_index = ns_index;
-      new_it->_is_removed = false;
-    }
-    else
-    {
-      _feature_groups.emplace_back(hash, ns_index);
-      new_index = _feature_groups.size() - 1;
-      new_it = _feature_groups.end() - 1;
-    }
+    _feature_groups.emplace_back(std::forward<FeaturesT>(ftrs), hash, ns_index);
+    auto new_index = _feature_groups.size() - 1;
     auto& idx_vec = _legacy_indices_to_index_mapping[ns_index];
     idx_vec.push_back(new_index);
     if (idx_vec.size() == 1) { _legacy_indices_existing.push_back(ns_index); }
-    return new_it->_features;
+    return _feature_groups.back()._features;
   }
 
   existing_group->concat(std::forward<FeaturesT>(ftrs));
   // Should we ensure that this doesnt already exist under a DIFFERENT namespace_index?
   // However, his shouldn't be possible as ns_index depends on hash.
 
-  auto it = get_feature_space_internal(hash);
+  auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(),
+      [hash](const details::namespaced_feature_group& group) {
+    return group._hash == hash;
+  });
   assert(it != _feature_groups.end());
   auto group_index = std::distance(_feature_groups.begin(), it);
   auto& ns_indices_list = _legacy_indices_to_index_mapping[ns_index];
