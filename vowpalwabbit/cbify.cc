@@ -254,7 +254,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, exa
 
   data.a_s = std::move(ec.pred.a_s);
   data.a_s.clear();
-  ec.l.cb.costs = v_init<CB::cb_class>();
+  ec.l.cb.costs.clear();
 
   ec.l.simple = regression_label;
   ec.pred.scalar = converted_action;
@@ -329,7 +329,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, example& ec)
     }
   }
 
-  ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
+  ec.l.cb_cont.costs.clear();
   ec.l.simple = regression_label;  // restore the regression label
   ec.pred.scalar = cb_cont_lbl.action;
 }
@@ -502,7 +502,7 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, multi_ex& ec_seq)
       ec.pred.multiclass = cl.action;
     else
       ec.pred.multiclass = 0;
-    ec.l.cb.costs = v_init<CB::cb_class>();
+    ec.l.cb.costs.clear();
   }
 }
 
@@ -698,7 +698,6 @@ base_learner* cbify_setup(VW::setup_base_fn& setup_base, options_i& options, vw&
   data->regression_data.num_actions = num_actions;
   data->use_adf = options.was_supplied("cb_explore_adf");
   data->app_seed = uniform_hash("vw", 2, 0);
-  data->a_s = v_init<action_score>();
   data->all = &all;
 
   if (use_reg)

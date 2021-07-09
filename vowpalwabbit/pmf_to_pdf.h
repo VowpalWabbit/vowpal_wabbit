@@ -18,7 +18,6 @@ struct reduction
   void predict(example& ec);
   void learn(example& ec);
 
-  ~reduction();
   std::vector<float> pdf_lim;
   uint32_t num_actions;
   uint32_t tree_bandwidth;

@@ -106,7 +106,6 @@ inline node init_node()
 
   node.parent = 0;
   node.min_count = 0;
-  node.preds = v_init<node_pred>();
   init_leaf(node);
 
   return node;
@@ -172,7 +171,11 @@ void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
 
 bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t label)
 {
-  class_index = static_cast<uint32_t>(b.nodes[current].preds.unique_add_sorted(node_pred(label)));
+  auto& preds = b.nodes[current].preds;
+  node_pred val_to_insert(label);
+  auto found_it = std::lower_bound(preds.begin(), preds.end(), val_to_insert);
+  if (found_it == preds.end() || !(*found_it == val_to_insert)) { found_it = preds.insert(found_it, val_to_insert); }
+  class_index = static_cast<uint32_t>(std::distance(preds.begin(), found_it));
   b.nodes[current].preds[class_index].label_count++;
 
   if (b.nodes[current].preds[class_index].label_count > b.nodes[current].max_count)

@@ -585,9 +585,9 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
 
   all.sd->total_features += ec.get_num_features();
 
-  float loss = 0.;
+  float loss = 0.f;
 
-  uint32_t predicted_class;
+  uint32_t predicted_class = 0;
   if (data.is_probabilities)
   {
     // predicted_K was already computed in do_actual_learning(),

@@ -40,7 +40,7 @@ void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
 {
   array.clear();
   pool.reclaim_object(std::move(array));
-  array = v_init<T>();
+  array.clear();
 }
 
 // CCB adds the following interactions:
@@ -155,12 +155,12 @@ void create_cb_labels(ccb& data)
 void delete_cb_labels(ccb& data)
 {
   return_v_array(std::move(data.shared->l.cb.costs), data.cb_label_pool);
-  data.shared->l.cb.costs = v_array<CB::cb_class>();
+  data.shared->l.cb.costs.clear();
 
   for (example* action : data.actions)
   {
     return_v_array(std::move(action->l.cb.costs), data.cb_label_pool);
-    action->l.cb.costs = v_array<CB::cb_class>();
+    action->l.cb.costs.clear();
   }
 }
 
@@ -188,7 +188,7 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   data.exclude_list[original_index_of_chosen_action] = true;
 
   decision_scores.emplace_back(std::move(pred));
-  data.shared->pred.a_s = v_init<ACTION_SCORE::action_score>();
+  data.shared->pred.a_s.clear();
 }
 
 void clear_pred_and_label(ccb& data)
@@ -250,7 +250,7 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
   {
     auto current_index_str = "index" + std::to_string(id);
     shared->feature_space[ccb_id_namespace].space_names.push_back(
-        std::make_shared<audit_strings>(data.id_namespace_str, current_index_str));
+        audit_strings(data.id_namespace_str, current_index_str));
   }
 }
 
@@ -352,7 +352,7 @@ std::string ccb_decision_to_string(const ccb& data)
   outstrm << "] ";
 
   outstrm << "excl [";
-  for (const auto& excl : data.exclude_list) outstrm << excl << ",";
+  for (auto excl : data.exclude_list) outstrm << excl << ",";
   outstrm << "] ";
 
   return outstrm.str();
@@ -413,7 +413,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
-  auto delete_cb_labels_guard = VW::scope_exit([&data, &examples] { delete_cb_labels(data); });
+  auto delete_cb_labels_guard = VW::scope_exit([&data] { delete_cb_labels(data); });
 
   // this is temporary only so we can get some logging of what's going on
   try

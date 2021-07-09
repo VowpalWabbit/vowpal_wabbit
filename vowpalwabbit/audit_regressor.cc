@@ -81,7 +81,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
     features& fs = ec.feature_space[*i];
     for (size_t j = 0; j < fs.size(); ++j)
     {
-      tempstream << '\t' << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':'
+      tempstream << '\t' << fs.space_names[j].first << '^' << fs.space_names[j].second << ':'
                  << ((fs.indicies[j] >> weights.stride_shift()) & all.parse_mask);
       for (size_t k = 0; k < all.lda; k++)
       {
@@ -118,7 +118,7 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
         if (fs.space_names.size() > 0)
           for (size_t j = 0; j < fs.size(); ++j)
           {
-            audit_regressor_interaction(rd, fs.space_names[j].get());
+            audit_regressor_interaction(rd, &fs.space_names[j]);
             audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indicies[j]) + ec.ft_offset);
             audit_regressor_interaction(rd, nullptr);
           }

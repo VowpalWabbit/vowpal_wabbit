@@ -189,7 +189,7 @@ void parser::parse_features(vw* all, features& fs, const Feature* feature, const
     uint64_t word_hash = all->example_parser->hasher(feature->name()->c_str(), feature->name()->size(), _c_hash);
     fs.push_back(feature->value(), word_hash);
     if ((all->audit || all->hash_inv) && ns != nullptr)
-    { fs.space_names.push_back(std::make_shared<audit_strings>(ns->c_str(), feature->name()->c_str())); }
+    { fs.space_names.push_back(audit_strings(ns->c_str(), feature->name()->c_str())); }
   }
   else
   {

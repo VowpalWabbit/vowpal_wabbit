@@ -169,7 +169,6 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len)
   features_and_source fs;
   fs.stride_shift = all.weights.stride_shift();
   fs.mask = all.weights.mask() >> all.weights.stride_shift();
-  fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
   feature_map_len = fs.feature_map.size();
