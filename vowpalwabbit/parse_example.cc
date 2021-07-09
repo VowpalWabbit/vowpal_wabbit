@@ -218,11 +218,11 @@ public:
         {
           std::stringstream ss;
           ss << feature_name << "^" << string_feature_value;
-          fs.space_names.push_back(audit_strings_ptr(new audit_strings(_base.to_string(), ss.str())));
+          fs.space_names.push_back(audit_strings(_base.to_string(), ss.str()));
         }
         else
         {
-          fs.space_names.push_back(audit_strings_ptr(new audit_strings(_base.to_string(), feature_name.to_string())));
+          fs.space_names.push_back(audit_strings(_base.to_string(), feature_name.to_string()));
         }
       }
 
@@ -250,14 +250,14 @@ public:
           affix_fs.push_back(_v, word_hash);
           if (audit)
           {
-            v_array<char> affix_v = v_init<char>();
+            v_array<char> affix_v;
             if (_index != ' ') affix_v.push_back(_index);
             affix_v.push_back(is_prefix ? '+' : '-');
             affix_v.push_back('0' + static_cast<char>(len));
             affix_v.push_back('=');
             affix_v.insert(affix_v.end(), affix_name.begin(), affix_name.end());
             affix_v.push_back('\0');
-            affix_fs.space_names.push_back(audit_strings_ptr(new audit_strings("affix", affix_v.begin())));
+            affix_fs.space_names.push_back(audit_strings("affix", affix_v.begin()));
           }
           affix >>= 4;
         }
@@ -290,7 +290,7 @@ public:
         spell_fs.push_back(_v, word_hash);
         if (audit)
         {
-          v_array<char> spelling_v = v_init<char>();
+          v_array<char> spelling_v;
           if (_index != ' ')
           {
             spelling_v.push_back(_index);
@@ -298,7 +298,7 @@ public:
           }
           spelling_v.insert(spelling_v.end(), spelling_strview.begin(), spelling_strview.end());
           spelling_v.push_back('\0');
-          spell_fs.space_names.push_back(audit_strings_ptr(new audit_strings("spelling", spelling_v.begin())));
+          spell_fs.space_names.push_back(audit_strings("spelling", spelling_v.begin()));
         }
       }
       if ((*_namespace_dictionaries)[_index].size() > 0)
@@ -324,7 +324,7 @@ public:
                 ss << _index << '_';
                 ss << feature_name;
                 ss << '=' << id;
-                dict_fs.space_names.push_back(audit_strings_ptr(new audit_strings("dictionary", ss.str())));
+                dict_fs.space_names.push_back(audit_strings("dictionary", ss.str()));
               }
           }
         }
@@ -451,7 +451,6 @@ public:
 
   TC_parser(VW::string_view line, vw& all, example* ae) : _line(line)
   {
-    _spelling = v_init<char>();
     if (!_line.empty())
     {
       this->_read_idx = 0;

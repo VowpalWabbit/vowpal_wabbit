@@ -514,7 +514,7 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
 
 py::list my_parse(vw_ptr& all, char* str)
 {
-  v_array<example*> examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(all.get()));
   all->example_parser->text_reader(all.get(), str, strlen(str), examples);
 
@@ -526,8 +526,6 @@ py::list my_parse(vw_ptr& all, char* str)
     // returned to the pool using finish_example.
     example_collection.append(boost::shared_ptr<example>(ex, dont_delete_me));
   }
-  examples.clear();
-  examples.delete_v();
   return example_collection;
 }
 
