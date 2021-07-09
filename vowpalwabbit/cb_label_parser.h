@@ -29,7 +29,7 @@ size_t read_cached_label(shared_data*, LabelT& ld, io_buf& cache)
   //
   // size_t num_costs = cache.read_value<size_t>("ld.costs.size()");
   //
-  // Unfortunately, it seems like for newline examples (e.g. terminal 
+  // Unfortunately, it seems like for newline examples (e.g. terminal
   // example) what happens is that the cache ends, and the label parser
   // is expected to silently do nothing.
   // Previously we would just return 0 here if we could not read anything.
@@ -39,13 +39,10 @@ size_t read_cached_label(shared_data*, LabelT& ld, io_buf& cache)
   c += sizeof(size_t);
   cache.set(c);
 
-  for (size_t i = 0; i < num_costs; i++)
-  {
-    ld.costs.push_back(cache.read_value<LabelElmT>("ld.costs[i]"));
-  }
+  for (size_t i = 0; i < num_costs; i++) { ld.costs.push_back(cache.read_value<LabelElmT>("ld.costs[i]")); }
 
-  size_t total = sizeof(size_t) + num_costs * sizeof(LabelElmT)
-    + read_cached_label_additional_fields<LabelT>(ld, cache);
+  size_t total = 
+    sizeof(size_t) + num_costs * sizeof(LabelElmT) + read_cached_label_additional_fields<LabelT>(ld, cache);
 
   return total;
 }
