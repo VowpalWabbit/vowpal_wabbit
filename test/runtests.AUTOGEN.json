@@ -4075,5 +4075,38 @@
     "depends_on": [
       342
     ]
+  },
+  {
+    "id": 344,
+    "desc": "check cb_adf with multiple passes",
+    "vw_command": "--cb_adf -c --passes 2 -d train-sets/cb_adf_multipass_crash_1.data --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_adf_multipass_crash_1.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_adf_multipass_crash_1.data"
+    ]
+  },
+  {
+    "id": 345,
+    "desc": "check cb with multiple passes",
+    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_multi_cost_multipass.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_multi_cost.dat"
+    ]
+  },
+  {
+    "id": 346,
+    "desc": "check legacy mode cb with multiple passes",
+    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 -c --passes 2 --holdout_off --cb_force_legacy",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_multi_cost_multipass_legacy.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_multi_cost.dat"
+    ]
   }
 ]
