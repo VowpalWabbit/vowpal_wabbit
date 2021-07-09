@@ -41,7 +41,7 @@ size_t read_cached_label(shared_data*, LabelT& ld, io_buf& cache)
 
   for (size_t i = 0; i < num_costs; i++) { ld.costs.push_back(cache.read_value<LabelElmT>("ld.costs[i]")); }
 
-  size_t total = 
+  size_t total =
       sizeof(size_t) + num_costs * sizeof(LabelElmT) + read_cached_label_additional_fields<LabelT>(ld, cache);
 
   return total;
