@@ -172,7 +172,9 @@ private:
       VW::finish_example(master, *ec);
     }
 
-    return is_newline || ec->end_pass;
+    // A terminating example can occur when there have been no featureful examples 
+    // collected. In this case, do not trigger a learn.
+    return (is_newline || ec->end_pass) && !ec_seq.empty();
   }
 
   bool try_complete_multi_ex(example* ec)
