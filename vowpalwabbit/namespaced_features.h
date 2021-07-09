@@ -212,8 +212,7 @@ struct namespaced_features
   // Returns nullptr if not found.
   inline features* get_feature_group(uint64_t hash)
   {
-    auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(), [hash](const details::namespaced_feature_group& group) {
-      return group._hash == hash;
+    auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(), [hash](const details::namespaced_feature_group& group) { return group._hash == hash && group._is_removed == false;
     });
     if (it == _feature_groups.end()) { return nullptr; }
     return &it->_features;
@@ -223,13 +222,11 @@ struct namespaced_features
   {
     auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(),
         [hash](const details::namespaced_feature_group& group) {
-      return group._hash == hash;
+          return group._hash == hash && group._is_removed == false;
     });
     if (it == _feature_groups.end()) { return nullptr; }
     return &it->_features;
   }
-
-  namespace_index get_index_for_hash(uint64_t hash) const;
 
   // The following are experimental and may be superseded with namespace_index_begin_proxy
   // Returns empty range if not found
@@ -383,7 +380,7 @@ features& namespaced_features::merge_feature_group(FeaturesT&& ftrs, uint64_t ha
 
   auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(),
       [hash](const details::namespaced_feature_group& group) {
-    return group._hash == hash;
+        return group._hash == hash == hash && group._is_removed == false;
   });
   assert(it != _feature_groups.end());
   auto group_index = std::distance(_feature_groups.begin(), it);

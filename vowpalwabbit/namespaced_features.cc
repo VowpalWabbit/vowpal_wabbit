@@ -7,24 +7,6 @@
 
 using namespace VW;
 
-namespace_index namespaced_features::get_index_for_hash(uint64_t hash) const
-{
-  auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(),
-      [hash](const details::namespaced_feature_group& group) {
-    return group._hash == hash;
-  });
-
-  if (it == _feature_groups.end())
-  {
-#ifdef VW_NOEXCEPT
-    return {};
-#else
-    THROW("No index found for hash: " << hash);
-#endif
-  }
-  return it->_index;
-}
-
 std::pair<namespaced_features::indexed_iterator, namespaced_features::indexed_iterator>
 namespaced_features::get_namespace_index_groups(namespace_index ns_index)
 {
@@ -42,7 +24,7 @@ void namespaced_features::remove_feature_group(uint64_t hash)
 {
   auto it = std::find_if(_feature_groups.begin(), _feature_groups.end(),
       [hash](const details::namespaced_feature_group& group) {
-    return group._hash == hash;
+        return group._hash == hash && group._is_removed == false;
   });
   if (it == _feature_groups.end()) { return; }
 
