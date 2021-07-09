@@ -31,6 +31,8 @@ namespace details
     features _features;
     uint64_t _hash;
     namespace_index _index;
+    bool is_removed = false;
+    size_t next_non_removed_distance = 1;
 
     namespaced_feature_group(uint64_t hash, namespace_index index) : _hash(hash), _index(index) {}
 
@@ -62,7 +64,7 @@ public:
   inline FeaturesT& operator*() { return _feature_group_iterator->_features; }
   inline iterator_t& operator++()
   {
-    _feature_group_iterator++;
+    _feature_group_iterator += _feature_group_iterator->next_non_removed_distance;    
     return *this;
   }
 
@@ -308,8 +310,7 @@ struct namespaced_features
 
   // Wil contains duplicates if there exists more than one feature group per index.
   inline ns_index_iterator index_begin()
-  {
-    return {_feature_groups.begin()};
+  { return {begin_non_removed()};
   }
 
   inline ns_index_iterator index_end()
@@ -318,24 +319,21 @@ struct namespaced_features
   }
 
   inline iterator begin()
-  {
-    return {_feature_groups.begin()};
+  { return {begin_non_removed()};
   }
   inline iterator end()
   {
     return {_feature_groups.end()};
   }
   inline const_iterator begin() const
-  {
-    return {_feature_groups.cbegin()};
+  { return {begin_non_removed()};
   }
   inline const_iterator end() const
   {
     return {_feature_groups.cend()};
   }
   inline const_iterator cbegin() const
-  {
-    return {_feature_groups.cbegin()};
+  { return {begin_non_removed()};
   }
   inline const_iterator cend() const
   {
@@ -343,6 +341,20 @@ struct namespaced_features
   }
 
 private:
+  std::vector<details::namespaced_feature_group>::iterator begin_non_removed()
+  {
+    auto current = _feature_groups.begin();
+    while (current != _feature_groups.end() && current->is_removed == true) { current++; }
+    return current;
+  }
+
+  std::vector<details::namespaced_feature_group>::const_iterator begin_non_removed() const
+  {
+    auto current = _feature_groups.begin();
+    while (current != _feature_groups.end() && current->is_removed == true) { current++; }
+    return current;
+  }
+
   std::vector<details::namespaced_feature_group> _feature_groups;
   std::array<std::vector<size_t>, 256> _legacy_indices_to_index_mapping;
   std::vector<namespace_index> _legacy_indices_existing;
