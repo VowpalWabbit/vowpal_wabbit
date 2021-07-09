@@ -31,8 +31,8 @@ namespace details
     features _features;
     uint64_t _hash;
     namespace_index _index;
-    bool is_removed = false;
-    size_t next_non_removed_distance = 1;
+    bool _is_removed = false;
+    size_t _next_non_removed_distance = 1;
 
     namespaced_feature_group(uint64_t hash, namespace_index index) : _hash(hash), _index(index) {}
 
@@ -64,7 +64,7 @@ public:
   inline FeaturesT& operator*() { return _feature_group_iterator->_features; }
   inline iterator_t& operator++()
   {
-    _feature_group_iterator += _feature_group_iterator->next_non_removed_distance;    
+    _feature_group_iterator += _feature_group_iterator->_next_non_removed_distance;
     return *this;
   }
 
@@ -344,14 +344,14 @@ private:
   std::vector<details::namespaced_feature_group>::iterator begin_non_removed()
   {
     auto current = _feature_groups.begin();
-    while (current != _feature_groups.end() && current->is_removed == true) { current++; }
+    while (current != _feature_groups.end() && current->_is_removed == true) { current++; }
     return current;
   }
 
   std::vector<details::namespaced_feature_group>::const_iterator begin_non_removed() const
   {
     auto current = _feature_groups.begin();
-    while (current != _feature_groups.end() && current->is_removed == true) { current++; }
+    while (current != _feature_groups.end() && current->_is_removed == true) { current++; }
     return current;
   }
 

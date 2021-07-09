@@ -48,16 +48,16 @@ void namespaced_features::remove_feature_group(uint64_t hash)
 
   auto existing_index = std::distance(_feature_groups.begin(), it);
 
-  it->is_removed = true;
+  it->_is_removed = true;
   auto prev = it;
-  while (prev != _feature_groups.begin() && prev->is_removed == true) { prev--; }
+  while (prev != _feature_groups.begin() && prev->_is_removed == true) { prev--; }
 
   if (prev != it)
   {
-    prev->next_non_removed_distance += it->next_non_removed_distance;
-    prev->next_non_removed_distance =
-        std::min(prev->next_non_removed_distance, static_cast<size_t>(std::distance(prev, _feature_groups.end())));
-    assert((std::distance(_feature_groups.begin(), prev) + prev->next_non_removed_distance) <= _feature_groups.size());
+    prev->_next_non_removed_distance += it->_next_non_removed_distance;
+    prev->_next_non_removed_distance =
+        std::min(prev->_next_non_removed_distance, static_cast<size_t>(std::distance(prev, _feature_groups.end())));
+    assert((std::distance(_feature_groups.begin(), prev) + prev->_next_non_removed_distance) <= _feature_groups.size());
   }
 
   for (auto idx_it = _legacy_indices_existing.begin(); idx_it != _legacy_indices_existing.end();)
@@ -82,8 +82,8 @@ void namespaced_features::clear()
 {
   for (auto& namespaced_feat_group : _feature_groups)
   {
-    namespaced_feat_group.is_removed = false;
-    namespaced_feat_group.next_non_removed_distance = 1;
+    namespaced_feat_group._is_removed = false;
+    namespaced_feat_group._next_non_removed_distance = 1;
     namespaced_feat_group._features.clear();
     _saved_feature_groups.reclaim_object(std::move(namespaced_feat_group._features));
   }
