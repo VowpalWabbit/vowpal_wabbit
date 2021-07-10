@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <cassert>
 #include <set>
+#include <list>
 #include <map>
 
 #include "feature_group.h"

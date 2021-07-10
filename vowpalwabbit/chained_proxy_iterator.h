@@ -88,7 +88,7 @@ public:
   // end - begin
   friend difference_type operator-(const chained_proxy_iterator& lhs, chained_proxy_iterator rhs)
   {
-    assert(lhs._outer_current >= rhs._outer_current);
+    // assert(lhs._outer_current >= rhs._outer_current);
     size_t accumulator = 0;
     while (lhs._outer_current != rhs._outer_current)
     {
