@@ -66,22 +66,26 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::arr
 {
   uint64_t offset = ec.ft_offset;
   if (ignore_some_linear)
-    for (auto i = ec.feature_space.begin(); i != ec.feature_space.end(); ++i)
-    {
-      if (!ignore_linear[i.index()])
-      {
-        foreach_feature<DataT, FuncT, WeightsT>(weights, *i, dat, offset);
-      }
-    }
-  else
   {
-    for (auto i = ec.feature_space.begin(); i != ec.feature_space.end(); ++i)
+    for (auto& bucket : ec)
     {
-      foreach_feature<DataT, FuncT, WeightsT>(weights, *i, dat, offset);
+      for (auto& fs : bucket)
+      {
+        if (!ignore_linear[fs._index]) { foreach_feature<DataT, FuncT, WeightsT>(weights, fs, dat, offset); }
+      }
     }
   }
 
-  if (!interactions.empty()) {
+  else
+  {
+    for (auto& bucket : ec)
+    {
+      for (auto& fs : bucket) { foreach_feature<DataT, FuncT, WeightsT>(weights, fs, dat, offset); }
+    }
+  }
+
+  if (!interactions.empty())
+  {
     generate_interactions<DataT, WeightOrIndexT, FuncT, WeightsT>(
         interactions, permutations, ec, dat, weights, num_interacted_features);
   }

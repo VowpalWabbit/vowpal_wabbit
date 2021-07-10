@@ -19,6 +19,8 @@
 using feature_value = float;
 using feature_index = uint64_t;
 using audit_strings = std::pair<std::string, std::string>;
+using namespace_index = unsigned char;
+
 
 struct features;
 struct features_value_index_audit_range;
@@ -294,6 +296,8 @@ struct features
   std::vector<audit_strings> space_names;      // Optional for audit mode.
 
   float sum_feat_sq = 0.f;
+  uint64_t _hash = 0;
+  namespace_index _index = 0;
 
   features() = default;
   ~features() = default;

@@ -406,7 +406,7 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
 
 void synthetic_decycle(stagewise_poly &poly)
 {
-  features &fs = poly.synth_ec.feature_space[tree_atomics];
+  features &fs = poly.synth_ec.feature_space.at(tree_atomics);
   for (size_t i = 0; i < fs.size(); ++i)
   {
     assert(cycle_get(poly, fs.indicies[i]));
@@ -451,7 +451,7 @@ void synthetic_create_rec(stagewise_poly &poly, float v, uint64_t findex)
 #endif  // DEBUG
 
     feature temp = {v * poly.synth_rec_f.x, wid_cur};
-    poly.synth_ec.feature_space[tree_atomics].push_back(temp.x, temp.weight_index);
+    poly.synth_ec.feature_space.at(tree_atomics).push_back(temp.x, temp.weight_index);
     poly.synth_ec.num_features++;
 
     if (parent_get(poly, temp.weight_index))

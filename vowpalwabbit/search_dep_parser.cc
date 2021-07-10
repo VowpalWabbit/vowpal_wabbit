@@ -133,22 +133,25 @@ void inline add_feature(
 void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier,
     uint64_t offset, bool /* audit */ = false)
 {
-  features &tgt_fs = ex.feature_space[tgt_ns];
-  for (auto it = src.feature_space.begin(); it != src.feature_space.end(); ++it)
-  {
-    if (it.index() == constant_namespace) { continue; }
+  features& tgt_fs = ex.feature_space.at(tgt_ns);
+  for (auto& bucket : src.feature_space) {
+    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    {
+      if (it->_index == constant_namespace) { continue; }
 
-    for (feature_index i : src.feature_space[it.hash()].indicies) {
-      tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
+    for (feature_index i : src.feature_space.at(it->_hash).indicies) {
+        tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
+    }
     }
   }
+  
 }
 
 void inline reset_ex(example& ex)
 {
   ex.num_features = 0;
   ex.reset_total_sum_feat_sq();
-  for (features& fs : ex) { fs.clear(); }
+  ex.feature_space.clear();
 }
 
 // arc-hybrid System.
@@ -316,10 +319,12 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
     add_feature(ex, temp[j] + additional_offset, val_namespace, mask, multiplier);
   }
   size_t count = 0;
-  for (features& fs : data->ex)
-  {
-    fs.sum_feat_sq = static_cast<float>(fs.size());
-    count += fs.size();
+  for (auto& bucket : data->ex) {
+    for (features& fs : bucket)
+    {
+      fs.sum_feat_sq = static_cast<float>(fs.size());
+      count += fs.size();
+    }
   }
 
   data->ex.num_features = count;

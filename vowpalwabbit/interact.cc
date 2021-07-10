@@ -51,7 +51,7 @@ bool contains_valid_namespaces(example& ex, namespace_index n1, namespace_index 
 }
 
 using multiply_iterator_t =
-    VW::chained_proxy_iterator<VW::namespaced_features::indexed_iterator, features::audit_iterator>;
+    VW::chained_proxy_iterator<VW::namespaced_features::bucket_iterator, features::audit_iterator>;
 void multiply(features& f_dest, multiply_iterator_t f_src1_begin, multiply_iterator_t f_src1_end,
     multiply_iterator_t f_src2_begin, multiply_iterator_t f_src2_end, uint64_t weight_mask)
 {
@@ -130,32 +130,35 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   std::vector<features> removed_features;
 
   auto remove_index = [&hashes_removed, &removed_features, &index_removed, & ec](namespace_index index) {
-    auto feat_range1 = ec.feature_space.get_namespace_index_groups(index);
-    for (auto it = feat_range1.first; it != feat_range1.second; ++it)
+    for (auto it = ec.feature_space.namespace_index_begin(index); it != ec.feature_space.namespace_index_end(index);
+         ++it)
     {
-      hashes_removed.push_back(it.hash());
-      index_removed.push_back(it.index());
+      hashes_removed.push_back(it->_hash);
+      index_removed.push_back(it->_index);
       removed_features.emplace_back(std::move(*it));
     }
-    for (auto hash : hashes_removed) { ec.feature_space.remove_feature_group(hash); }
+    for (size_t i = 0; i < hashes_removed.size(); i++)
+    {
+      ec.feature_space.remove_feature_group(index_removed[i], hashes_removed[i]);
+    }
   };
 
   remove_index(in.n1);
   remove_index(in.n2);
 
-  ec.feature_space.merge_feature_group(
-      std::move(in.feat_store), interact_reduction_namespace, interact_reduction_namespace);
+  ec.feature_space.get_or_create_feature_group(interact_reduction_namespace, interact_reduction_namespace) =
+      std::move(in.feat_store);
 
   base.predict(ec);
   if (is_learn) base.learn(ec);
 
-  in.feat_store = std::move(ec.feature_space[interact_reduction_namespace]);
-  ec.feature_space.remove_feature_group(interact_reduction_namespace);
+  in.feat_store = std::move(ec.feature_space.at(interact_reduction_namespace));
+  ec.feature_space.remove_feature_group(interact_reduction_namespace, interact_reduction_namespace);
 
   // re-insert namespace into the right position
   for (size_t i = 0; i < hashes_removed.size(); i++)
   {
-    ec.feature_space.merge_feature_group(std::move(removed_features[i]), hashes_removed[i], index_removed[i]);
+    ec.feature_space.get_or_create_feature_group(hashes_removed[i], index_removed[i]) = std::move(removed_features[i]);
   }
 
   ec.num_features = in.num_features;

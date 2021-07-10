@@ -53,13 +53,13 @@ struct feature_gen_data
   bool self_interaction = false;  // namespace interacting with itself
 
   namespace_index ns_idx;
-  VW::chained_proxy_iterator<VW::namespaced_features::const_indexed_iterator, features::const_audit_iterator>
+  VW::chained_proxy_iterator<VW::namespaced_features::bucket_iterator, features::audit_iterator>
       current_it;
-  VW::chained_proxy_iterator<VW::namespaced_features::const_indexed_iterator, features::const_audit_iterator> end_it;
+  VW::chained_proxy_iterator<VW::namespaced_features::bucket_iterator, features::audit_iterator> end_it;
 
   feature_gen_data(namespace_index ns_idx,
-      VW::chained_proxy_iterator<VW::namespaced_features::const_indexed_iterator, features::const_audit_iterator> begin,
-      VW::chained_proxy_iterator<VW::namespaced_features::const_indexed_iterator, features::const_audit_iterator> end)
+      VW::chained_proxy_iterator<VW::namespaced_features::bucket_iterator, features::audit_iterator> begin,
+      VW::chained_proxy_iterator<VW::namespaced_features::bucket_iterator, features::audit_iterator> end)
       : ns_idx(ns_idx), current_it(begin), end_it(end)
   {
   }
@@ -148,7 +148,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
             if (second.nonempty())
             {
               const bool same_namespace_index = (!permutations && (ns[0] == ns[1]));
-              const bool same_namespace_hash = (!permutations && (first_it.hash() == second_it.hash()));
+              const bool same_namespace_hash = (!permutations && (first._hash == second._hash));
 
               // When there is more than one feature group of the same index, we should not process permutations. For
               // example we skip x2*x1 but do process x1*x2.
@@ -205,14 +205,14 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                 if (third.nonempty())
                 {  // don't compare 1 and 3 as interaction is sorted
                   const bool same_namespace1 = (!permutations && (ns[0] == ns[1]));
-                  const bool same_namespace1_hash = (!permutations && (first_it.hash() == second_it.hash()));
+                  const bool same_namespace1_hash = (!permutations && (first._hash == second._hash));
 
                   const bool same_namespace2 = (!permutations && (ns[1] == ns[2]));
-                  const bool same_namespace2_hash = (!permutations && (second_it.hash() == third_it.hash()));
+                  const bool same_namespace2_hash = (!permutations && (second._hash == third._hash));
 
                   // We check it for skipping self interaction.
                   const bool same_namespace3 = (!permutations && (ns[0] == ns[2]));
-                  const bool same_namespace3_hash = (!permutations && (first_it.hash() == third_it.hash()));
+                  const bool same_namespace3_hash = (!permutations && (first._hash == third._hash));
 
                   // When there is more than one feature group of the same index, we should not process permutations.
                   // For example we skip x2*x1 but do process x1*x2.
@@ -262,8 +262,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
         }  // end if (data[fst] size > 0)
       }
     }
-    else  // generic case: quatriples, etc.
-
+    else
 #endif
     {
       state_data.clear();
@@ -271,8 +270,8 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
       // preparing state data
       for (auto n : ns)
       {
-        auto begin = ec.feature_space.namespace_index_cbegin_proxy(n);
-        auto end = ec.feature_space.namespace_index_cend_proxy(n);
+        auto begin = ec.feature_space.namespace_index_begin_proxy(n);
+        auto end = ec.feature_space.namespace_index_end_proxy(n);
 
         if (begin == end)
         {
@@ -280,7 +279,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
           break;
         }
         state_data.push_back(feature_gen_data{
-            n, ec.feature_space.namespace_index_cbegin_proxy(n), ec.feature_space.namespace_index_cend_proxy(n)});
+            n, ec.feature_space.namespace_index_begin_proxy(n), ec.feature_space.namespace_index_end_proxy(n)});
       }
 
       // if any of interacting namespace has 0 features - whole interaction is skipped
@@ -352,14 +351,14 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
             // unless feature has value x and x != x*x. E.g. x != 0 and x != 1. Features with x == 0 are already
             // filtered out in parce_args.cc::maybeFeature().
             auto current_offset =
-                cur_data->current_it - ec.feature_space.namespace_index_cbegin_proxy(cur_data->ns_idx);
+                cur_data->current_it - ec.feature_space.namespace_index_begin_proxy(cur_data->ns_idx);
             current_offset += PROCESS_SELF_INTERACTIONS((*cur_data->current_it).value()) ? 0 : 1;
-            next_data->current_it = ec.feature_space.namespace_index_cbegin_proxy(next_data->ns_idx);
+            next_data->current_it = ec.feature_space.namespace_index_begin_proxy(next_data->ns_idx);
             next_data->current_it += current_offset;
           }
           else
           {
-            next_data->current_it = ec.feature_space.namespace_index_cbegin_proxy(next_data->ns_idx);
+            next_data->current_it = ec.feature_space.namespace_index_begin_proxy(next_data->ns_idx);
           }
 
           if (audit) audit_func(dat, (*cur_data->current_it).audit());
@@ -382,15 +381,15 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
           // start value is not a constant in this case
           size_t start_i = 0;
           if (!permutations)
-          { start_i = fgd2->current_it - ec.feature_space.namespace_index_cbegin_proxy(fgd2->ns_idx); }
+          { start_i = fgd2->current_it - ec.feature_space.namespace_index_begin_proxy(fgd2->ns_idx); }
 
           feature_value ft_value = fgd2->x;
           feature_index halfhash = fgd2->hash;
 
-          auto begin = ec.feature_space.namespace_index_cbegin_proxy(cur_data->ns_idx);
+          auto begin = ec.feature_space.namespace_index_begin_proxy(cur_data->ns_idx);
           begin += start_i;
 
-          auto end = ec.feature_space.namespace_index_cend_proxy(cur_data->ns_idx);
+          auto end = ec.feature_space.namespace_index_end_proxy(cur_data->ns_idx);
 
           num_features += (end - begin);
           inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func, WeightsT>(

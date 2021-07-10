@@ -61,12 +61,15 @@ struct Namespace
 
 inline void remove_empty_namespaces(VW::namespaced_features& feature_space)
 {
-  std::vector<uint64_t> hashes_to_remove;
-  for (auto it = feature_space.begin(); it != feature_space.end(); ++it)
-  {
-    if ((*it).empty()) { hashes_to_remove.push_back(it.hash()); }
+  std::vector<std::pair<namespace_index,uint64_t>> hashes_to_remove;
+  for (auto& bucket : feature_space) {
+    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    {
+      if ((*it).empty()) { hashes_to_remove.emplace_back(it->_index, it->_hash); }
+    }
   }
-  for (auto hash : hashes_to_remove) { feature_space.remove_feature_group(hash); }
+ 
+  for (auto idx_hash : hashes_to_remove) { feature_space.remove_feature_group(idx_hash.first, idx_hash.second); }
 }
 
 template <bool audit>

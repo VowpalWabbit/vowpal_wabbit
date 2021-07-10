@@ -71,7 +71,7 @@ void VW::autolink::prepare_example(VW::LEARNER::single_learner& base, example& e
 void VW::autolink::reset_example(example& ec)
 {
   ec.reset_total_sum_feat_sq();
-  ec.feature_space.remove_feature_group(autolink_namespace);
+  ec.feature_space.remove_feature_group(autolink_namespace, autolink_namespace);
 }
 
 template <bool is_learn>

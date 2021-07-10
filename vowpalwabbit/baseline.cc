@@ -28,12 +28,13 @@ void set_baseline_enabled(example* ec)
 
 void reset_baseline_disabled(example* ec)
 {
-  ec->feature_space.remove_feature_group(baseline_enabled_message_namespace);
+  ec->feature_space.remove_feature_group(baseline_enabled_message_namespace, baseline_enabled_message_namespace);
 }
 
 bool baseline_enabled(example* ec)
 {
-  auto* fs = ec->feature_space.get_feature_group(baseline_enabled_message_namespace);
+  auto* fs =
+      ec->feature_space.get_feature_group(baseline_enabled_message_namespace, baseline_enabled_message_namespace);
   return fs != nullptr;
 }
 }  // namespace BASELINE

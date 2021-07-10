@@ -233,7 +233,7 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
 
 void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, example& ec)
 {
-  ec.feature_space.remove_feature_group(node_id_namespace);
+  ec.feature_space.remove_feature_group(node_id_namespace, node_id_namespace);
 }
 
 uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example& ec)

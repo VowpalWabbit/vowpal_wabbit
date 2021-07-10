@@ -248,7 +248,7 @@ void add_edge_features_group_fn(task_data& D, float fv, uint64_t fx)
   for (size_t k = 0; k < D.numN; k++)
   {
     if (D.neighbor_predictions[k] == 0.) continue;
-    node->feature_space[neighbor_namespace].push_back(
+    node->feature_space.at(neighbor_namespace).push_back(
         fv * D.neighbor_predictions[k], static_cast<uint64_t>((fx2 + 348919043 * k) * D.multiplier) & D.mask);
   }
 }
@@ -256,7 +256,7 @@ void add_edge_features_group_fn(task_data& D, float fv, uint64_t fx)
 void add_edge_features_single_fn(task_data& D, float fv, uint64_t fx)
 {
   example* node = D.cur_node;
-  features& fs = node->feature_space[neighbor_namespace];
+  features& fs = node->feature_space.at(neighbor_namespace);
   uint64_t fx2 = fx / D.multiplier;
   size_t k = static_cast<size_t>(D.neighbor_predictions[0]);
   fs.push_back(fv, static_cast<uint32_t>((fx2 + 348919043 * k) * D.multiplier) & D.mask);
@@ -326,7 +326,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
   }
   ec[n]->feature_space.get_or_create_feature_group(neighbor_namespace, neighbor_namespace);
   ec[n]->reset_total_sum_feat_sq();
-  ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
+  ec[n]->num_features += ec[n]->feature_space.at(neighbor_namespace).size();
 
   vw& all = sch.get_vw_pointer_unsafe();
   for (const auto& i : all.interactions)
@@ -337,16 +337,16 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
     // TODO: Make sure this calculation is still correct
     if ((i0 == static_cast<int>(neighbor_namespace)) || (i1 == static_cast<int>(neighbor_namespace)))
     {
-      ec[n]->num_features += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size();
+      ec[n]->num_features += ec[n]->feature_space.at(i0).size() * ec[n]->feature_space.at(i1).size();
     }
   }
 }
 
 void del_edge_features(task_data& /*D*/, uint32_t n, multi_ex& ec)
 {
-  features& fs = ec[n]->feature_space[neighbor_namespace];
+  features& fs = ec[n]->feature_space.at(neighbor_namespace);
   ec[n]->num_features -= fs.size();
-  ec[n]->feature_space.remove_feature_group(neighbor_namespace);
+  ec[n]->feature_space.remove_feature_group(neighbor_namespace, neighbor_namespace);
 }
 
 #define IDX(i, j) ((i) * (D.K + 1) + j)

@@ -67,12 +67,13 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   {
     c.total++;
     // For each nonzero feature in observed namespaces, check it's value.
-    for (auto it = ec.begin(); it != ec.end(); ++it)
-    {
-      if(c.namespaces[it.index()]){
-        GD::foreach_feature<mwt, value_policy>(c.all, *it, c);
+    for (auto& bucket : ec) {
+      for (auto it = bucket.begin(); it != bucket.end(); ++it)
+      {
+        if (c.namespaces[it->_index]) { GD::foreach_feature<mwt, value_policy>(c.all, *it, c); }
       }
     }
+   
     for (uint64_t policy : c.policies)
     {
       c.evals[policy].cost += get_cost_estimate(c.optional_observation.second, c.evals[policy].action);
@@ -86,24 +87,28 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   {
     uint32_t stride_shift = c.all->weights.stride_shift();
     uint64_t weight_mask = c.all->weights.mask();
-    for (auto it = ec.begin(); it != ec.end(); ++it)
-    {
-      if(c.namespaces[it.index()]) {
-        c.feature_space.insert({it.hash(), features{}});
-        c.feature_space[it.hash()].clear();
-        if (learn)
+    for (auto& bucket : ec) {
+      for (auto it = bucket.begin(); it != bucket.end(); ++it)
+      {
+        if (c.namespaces[it->_index])
         {
-          auto& feats = c.feature_space[it.hash()];
-          for (features::iterator& f : *it)
+          c.feature_space.insert({it->_hash, features{}});
+          c.feature_space.at(it->_hash).clear();
+          if (learn)
           {
-            uint64_t new_index =
-                ((f.index() & weight_mask) >> stride_shift) * c.num_classes + static_cast<uint64_t>(f.value());
-            feats.push_back(1, new_index << stride_shift);
+            auto& feats = c.feature_space.at(it->_hash);
+            for (features::iterator& f : *it)
+            {
+              uint64_t new_index =
+                  ((f.index() & weight_mask) >> stride_shift) * c.num_classes + static_cast<uint64_t>(f.value());
+              feats.push_back(1, new_index << stride_shift);
+            }
           }
+          std::swap(c.feature_space.at(it->_hash), *it);
         }
-         std::swap(c.feature_space[it.hash()], *it);
       }
     }
+  
   }
   VW_WARNING_STATE_POP
 
@@ -124,7 +129,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   {
     for (auto& kv : c.feature_space)
     {
-      std::swap(kv.second, ec.feature_space[kv.first]);
+      std::swap(kv.second, ec.feature_space.at(kv.first));
     }
   }
   VW_WARNING_STATE_POP

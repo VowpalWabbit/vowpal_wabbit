@@ -81,12 +81,13 @@ void VW::kskip_ngram_transformer::generate_grams(example* ex)
   std::set<namespace_index> indices(ex->feature_space.index_begin(), ex->feature_space.index_end());
   for (namespace_index index : indices)
   {
-    auto range = ex->feature_space.namespace_index_range(index);
-    features* destination_feature_group = &(*range.begin());
+    auto begin = ex->feature_space.namespace_index_begin(index);
+    auto end = ex->feature_space.namespace_index_end(index);
+    features* destination_feature_group = &(*begin);
     features* source_feature_group = nullptr;
     std::unique_ptr<features> generated_feature_group;
 
-    if (range.end() - range.begin() > 1)
+    if (std::distance(begin, end) > 1)
     {
       logger::errlog_warn(
           "Sentence based ngram concatenates feature groups that start with the same letter. This is deprecated "
@@ -94,11 +95,12 @@ void VW::kskip_ngram_transformer::generate_grams(example* ex)
           "character is the same.");
       generated_feature_group = VW::make_unique<features>();
       source_feature_group = generated_feature_group.get();
-      for (auto& feat_group : range) { generated_feature_group->concat(feat_group); }
+      for (; begin != end; begin++) { generated_feature_group->concat(*begin);
+      }
     }
     else
     {
-      source_feature_group = &(*range.begin());
+      source_feature_group = &(*begin);
     }
 
     size_t length = source_feature_group->size();

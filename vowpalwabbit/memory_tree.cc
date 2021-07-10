@@ -97,19 +97,23 @@ void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool o
 
   ec.total_sum_feat_sq = 0.0;  // sort namespaces.  pass indices array into sort...template (leave this to the end)
 
-  for (auto it = ec1.feature_space.begin(); it != ec1.feature_space.end(); ++it)
-  {
-    auto* ec2_equiv_feat_group = ec2.feature_space.get_feature_group(it.hash());
-    auto* dest_feat_group = ec.feature_space.get_feature_group(it.hash());
-
-    if (ec2_equiv_feat_group != nullptr)
+  for (auto& bucket : ec1.feature_space) {
+    for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
-      // Since this was copied into just above this should not be nullptr.
-      assert(dest_feat_group != nullptr);
-      diag_kronecker_prod_fs_test(*it, *ec2_equiv_feat_group, *dest_feat_group, ec.total_sum_feat_sq,
-          ec1.get_total_sum_feat_sq(), ec2.get_total_sum_feat_sq());
+      auto* ec2_equiv_feat_group = ec2.feature_space.get_feature_group(it->_index, it->_hash);
+      auto* dest_feat_group = ec.feature_space.get_feature_group(it->_hash);
+
+      if (ec2_equiv_feat_group != nullptr)
+      {
+        // Since this was copied into just above this should not be nullptr.
+        assert(dest_feat_group != nullptr);
+        diag_kronecker_prod_fs_test(*it, *ec2_equiv_feat_group, *dest_feat_group, ec.total_sum_feat_sq,
+            ec1.get_total_sum_feat_sq(), ec2.get_total_sum_feat_sq());
+      }
     }
   }
+
+ 
 }
 
 ////////////////////////////end of helper/////////////////////////
@@ -1095,28 +1099,32 @@ void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, 
   }
   else
   {
-    for (auto it = ec->feature_space.begin(); it != ec->feature_space.end(); ++it)
+    for (auto& bucket : ec->feature_space)
     {
-      auto value = it.index();
-      msg << "namespace_index = " << value << " ";
-      bin_text_write_fixed(model_file, (char*)&value, sizeof(value), msg, text);
+      for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+        auto value = it->_index;
+        msg << "namespace_index = " << value << " ";
+        bin_text_write_fixed(model_file, (char*)&value, sizeof(value), msg, text);
+      }
     }
   }
 
   // deal with features
-  for (auto it = ec->feature_space.begin(); it != ec->feature_space.end(); ++it)
+  for (auto& bucket : ec->feature_space)
   {
-    features& fs = *it;
-    writeitvar(fs.size(), "features_", feat_size);
-    if (read)
-    {
-      fs.clear();
-      fs.values.clear();
-      fs.indicies.clear();
-      for (uint32_t f_i = 0; f_i < feat_size; f_i++) { fs.push_back(0, 0); }
+    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      features& fs = *it;
+      writeitvar(fs.size(), "features_", feat_size);
+      if (read)
+      {
+        fs.clear();
+        fs.values.clear();
+        fs.indicies.clear();
+        for (uint32_t f_i = 0; f_i < feat_size; f_i++) { fs.push_back(0, 0); }
+      }
+      for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs.values[f_i], "value");
+      for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs.indicies[f_i], "index");
     }
-    for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs.values[f_i], "value");
-    for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs.indicies[f_i], "index");
   }
 }
 

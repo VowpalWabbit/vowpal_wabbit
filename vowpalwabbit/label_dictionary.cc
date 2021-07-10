@@ -19,37 +19,43 @@ void add_example_namespace(
 }
 
 void del_example_namespace(
-    example& ec, namespace_index /*ns_index*/, uint64_t ns_hash, const features& source_feature_group)
+    example& ec, namespace_index ns_index, uint64_t ns_hash, const features& source_feature_group)
 {
   // print_update is called after this del_example_namespace,
   // so we need to keep the ec.num_features correct,
   // so shared features are included in the reported number of "current features"
   // ec.num_features -= numf;
-  auto* del_target = ec.feature_space.get_feature_group(ns_hash);
+  auto* del_target = ec.feature_space.get_feature_group(ns_index, ns_hash);
   assert(del_target->size() >= source_feature_group.size());
   assert(del_target != nullptr);
   ec.reset_total_sum_feat_sq();
   ec.num_features -= source_feature_group.size();
   del_target->truncate_to(del_target->size() - source_feature_group.size());
   del_target->sum_feat_sq -= source_feature_group.sum_feat_sq;
-  if (del_target->empty()) { ec.feature_space.remove_feature_group(ns_hash); }
+  if (del_target->empty()) { ec.feature_space.remove_feature_group(ns_index, ns_hash); }
 }
 
 void add_example_namespaces_from_example(example& target, const example& source)
 {
-  for (auto it = source.feature_space.begin(); it != source.feature_space.end(); ++it)
+  for (auto& bucket : const_cast<example&>(source))
   {
-    if (it.index() == constant_namespace) continue;
-    add_example_namespace(target, it.index(), it.hash(), *it);
+    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    {
+      if (it->_index == constant_namespace) continue;
+      add_example_namespace(target, it->_index, it->_hash, *it);
+    }
   }
 }
 
 void del_example_namespaces_from_example(example& target, const example& source)
 {
-  for (auto it = source.feature_space.begin(); it != source.feature_space.end(); ++it)
+  for (auto& bucket : const_cast<example&>(source))
   {
-    if (it.index() == constant_namespace) continue;
-    del_example_namespace(target, it.index(), it.hash(), *it);
+    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    {
+      if (it->_index == constant_namespace) continue;
+      del_example_namespace(target, it->_index, it->_hash, *it);
+    }
   }
 }
 

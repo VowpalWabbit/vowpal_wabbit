@@ -219,7 +219,7 @@ void compute_wap_values(std::vector<COST_SENSITIVE::wclass*> costs)
 // This is faster and allows fast undo in unsubtract_example().
 void subtract_feature(example& ec, float feature_value_x, uint64_t weight_index)
 {
-  ec.feature_space[wap_ldf_namespace].push_back(-feature_value_x, weight_index);
+  ec.feature_space.at(wap_ldf_namespace).push_back(-feature_value_x, weight_index);
 }
 
 // Iterate over all features of ecsub including quadratic and cubic features and subtract them from ec.
@@ -240,7 +240,7 @@ void unsubtract_example(example* ec)
     return;
   }
 
-  auto* wap_fs = ec->feature_space.get_feature_group(wap_ldf_namespace);
+  auto* wap_fs = ec->feature_space.get_feature_group(wap_ldf_namespace, wap_ldf_namespace);
   if (wap_fs == nullptr)
   {
     logger::errlog_error(
@@ -251,7 +251,7 @@ void unsubtract_example(example* ec)
 
   ec->num_features -= wap_fs->size();
   ec->reset_total_sum_feat_sq();
-  ec->feature_space.remove_feature_group(wap_ldf_namespace);
+  ec->feature_space.remove_feature_group(wap_ldf_namespace, wap_ldf_namespace);
 }
 
 void make_single_prediction(ldf& data, single_learner& base, example& ec)
@@ -773,7 +773,7 @@ void inline process_label(ldf& data, example* ec)
   for (auto const& cost : costs)
   {
     const auto lab = static_cast<size_t>(cost.x);
-    LabelDict::set_label_features(data.label_features, lab, *ec->feature_space.begin());
+    LabelDict::set_label_features(data.label_features, lab, *(*ec->feature_space.begin()).begin());
   }
 }
 

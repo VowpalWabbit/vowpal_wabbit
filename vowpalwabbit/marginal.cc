@@ -65,63 +65,74 @@ void make_marginal(data& sm, example& ec)
   sm.net_feature_weight = 0.;
   sm.average_pred = 0.;
 
-  for (auto it = ec.feature_space.begin(); it != ec.feature_space.end(); ++it)
-  {
-    namespace_index n = it.index();
-    if (sm.id_features[n])
-    {
-      std::swap(sm.temporary_storage[it.hash()], (*it));
-      (*it).clear();
-      auto& current = sm.temporary_storage[it.hash()];
-      for (features::iterator j = current.begin(); j != current.end(); ++j)
-      {
-        float first_value = j.value();
-        uint64_t first_index = j.index() & mask;
-        if (++j == current.end())
-        {
-          logger::log_warn("warning: id feature namespace has {} features. Should be a multiple of 2", current.size());
-          break;
-        }
-        float second_value = j.value();
-        uint64_t second_index = j.index() & mask;
-        if (first_value != 1. || second_value != 1.)
-        {
-          logger::log_warn("warning: bad id features, must have value 1.");
-          continue;
-        }
-        uint64_t key = second_index + ec.ft_offset;
-        if (sm.marginals.find(key) == sm.marginals.end())  // need to initialize things.
-        {
-          sm.marginals.insert(std::make_pair(key, std::make_pair(sm.initial_numerator, sm.initial_denominator)));
-          if (sm.compete)
-          {
-            expert e = {0, 0, 1.};
-            sm.expert_state.insert(std::make_pair(key, std::make_pair(e, e)));
-          }
-        }
-        float marginal_pred = static_cast<float>(sm.marginals[key].first / sm.marginals[key].second);
-        (*it).push_back(marginal_pred, first_index);
-        if (!current.space_names.empty()) { (*it).space_names.push_back(current.space_names[2 * ((*it).size() - 1)]); }
 
-        if (sm.compete)  // compute the prediction from the marginals using the weights
+  for (auto& bucket : ec) {
+    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    {
+      namespace_index n = it->_index;
+      if (sm.id_features[n])
+      {
+        std::swap(sm.temporary_storage[it->_hash], (*it));
+        (*it).clear();
+        auto& current = sm.temporary_storage[it->_hash];
+        for (features::iterator j = current.begin(); j != current.end(); ++j)
         {
-          float weight = sm.expert_state[key].first.weight;
-          sm.average_pred += weight * marginal_pred;
-          sm.net_weight += weight;
-          sm.net_feature_weight += sm.expert_state[key].second.weight;
-          if (is_learn) sm.alg_loss += weight * all.loss->getLoss(all.sd, marginal_pred, label);
+          float first_value = j.value();
+          uint64_t first_index = j.index() & mask;
+          if (++j == current.end())
+          {
+            logger::log_warn(
+                "warning: id feature namespace has {} features. Should be a multiple of 2", current.size());
+            break;
+          }
+          float second_value = j.value();
+          uint64_t second_index = j.index() & mask;
+          if (first_value != 1. || second_value != 1.)
+          {
+            logger::log_warn("warning: bad id features, must have value 1.");
+            continue;
+          }
+          uint64_t key = second_index + ec.ft_offset;
+          if (sm.marginals.find(key) == sm.marginals.end())  // need to initialize things.
+          {
+            sm.marginals.insert(std::make_pair(key, std::make_pair(sm.initial_numerator, sm.initial_denominator)));
+            if (sm.compete)
+            {
+              expert e = {0, 0, 1.};
+              sm.expert_state.insert(std::make_pair(key, std::make_pair(e, e)));
+            }
+          }
+          float marginal_pred = static_cast<float>(sm.marginals[key].first / sm.marginals[key].second);
+          (*it).push_back(marginal_pred, first_index);
+          if (!current.space_names.empty())
+          {
+            (*it).space_names.push_back(current.space_names[2 * ((*it).size() - 1)]);
+          }
+
+          if (sm.compete)  // compute the prediction from the marginals using the weights
+          {
+            float weight = sm.expert_state[key].first.weight;
+            sm.average_pred += weight * marginal_pred;
+            sm.net_weight += weight;
+            sm.net_feature_weight += sm.expert_state[key].second.weight;
+            if (is_learn) sm.alg_loss += weight * all.loss->getLoss(all.sd, marginal_pred, label);
+          }
         }
       }
     }
   }
+
 }
 
 void undo_marginal(data& sm, example& ec)
 {
-  for (auto it = ec.feature_space.begin(); it != ec.feature_space.end(); ++it)
+  for (auto& bucket : ec)
   {
-    // TODO fix marginal to understand new namespaces
-    if (sm.id_features[it.index()]) { std::swap(sm.temporary_storage[it.hash()], (*it)); }
+    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    {
+      // TODO fix marginal to understand new namespaces
+      if (sm.id_features[it->_index]) { std::swap(sm.temporary_storage[it->_hash], (*it)); }
+    }
   }
 }
 
@@ -159,36 +170,39 @@ void update_marginal(data& sm, example& ec)
   float weight = ec.weight;
   if (sm.unweighted_marginals) { weight = 1.; }
 
-  for (auto it = ec.feature_space.begin(); it != ec.feature_space.end(); ++it)
-  {
-    if (sm.id_features[it.index()])
-      for (features::iterator j = sm.temporary_storage[it.hash()].begin(); j != sm.temporary_storage[it.hash()].end();
-           ++j)
-      {
-        if (++j == sm.temporary_storage[it.hash()].end()) break;
-
-        uint64_t second_index = j.index() & mask;
-        uint64_t key = second_index + ec.ft_offset;
-        marginal& m = sm.marginals[key];
-
-        if (sm.compete)  // now update weights, before updating marginals
+  for (auto& bucket : ec) {
+    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    {
+      if (sm.id_features[it->_index])
+        for (features::iterator j = sm.temporary_storage[it->_hash].begin(); j != sm.temporary_storage[it->_hash].end();
+             ++j)
         {
-          expert_pair& e = sm.expert_state[key];
-          float regret1 = sm.alg_loss - all.loss->getLoss(all.sd, static_cast<float>(m.first / m.second), label);
-          float regret2 = sm.alg_loss - all.loss->getLoss(all.sd, sm.feature_pred, label);
+          if (++j == sm.temporary_storage[it->_hash].end()) break;
 
-          e.first.regret += regret1 * weight;
-          e.first.abs_regret += regret1 * regret1 * weight;  // fabs(regret1);
-          e.first.weight = get_adanormalhedge_weights(e.first.regret, e.first.abs_regret);
-          e.second.regret += regret2 * weight;
-          e.second.abs_regret += regret2 * regret2 * weight;  // fabs(regret2);
-          e.second.weight = get_adanormalhedge_weights(e.second.regret, e.second.abs_regret);
+          uint64_t second_index = j.index() & mask;
+          uint64_t key = second_index + ec.ft_offset;
+          marginal& m = sm.marginals[key];
+
+          if (sm.compete)  // now update weights, before updating marginals
+          {
+            expert_pair& e = sm.expert_state[key];
+            float regret1 = sm.alg_loss - all.loss->getLoss(all.sd, static_cast<float>(m.first / m.second), label);
+            float regret2 = sm.alg_loss - all.loss->getLoss(all.sd, sm.feature_pred, label);
+
+            e.first.regret += regret1 * weight;
+            e.first.abs_regret += regret1 * regret1 * weight;  // fabs(regret1);
+            e.first.weight = get_adanormalhedge_weights(e.first.regret, e.first.abs_regret);
+            e.second.regret += regret2 * weight;
+            e.second.abs_regret += regret2 * regret2 * weight;  // fabs(regret2);
+            e.second.weight = get_adanormalhedge_weights(e.second.regret, e.second.abs_regret);
+          }
+
+          m.first = m.first * (1. - sm.decay) + ec.l.simple.label * weight;
+          m.second = m.second * (1. - sm.decay) + weight;
         }
-
-        m.first = m.first * (1. - sm.decay) + ec.l.simple.label * weight;
-        m.second = m.second * (1. - sm.decay) + weight;
-      }
+    }
   }
+ 
 }
 
 template <bool is_learn>

@@ -224,10 +224,12 @@ void cache_features(io_buf& cache, const example* ae, uint64_t mask)
   cache_tag(cache, ae->tag);
   cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
   cache.write_value<uint64_t>(static_cast<uint64_t>(ae->feature_space.size()));
-  for (auto it = ae->feature_space.begin(); it != ae->feature_space.end(); ++it)
+  for (auto& bucket : *const_cast<example*>(ae)) { for (auto it = bucket.begin(); it != bucket.end(); ++it)
   {
-    output_features(cache, it.index(), it.hash(), *it, mask);
-  }
+    output_features(cache, it->_index, it->_hash, *it, mask);
+  }}
+    
+ 
 }
 
 uint32_t VW::convert(size_t number)

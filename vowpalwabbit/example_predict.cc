@@ -23,16 +23,21 @@ std::string features_to_string(const example_predict& ec)
 {
   std::stringstream strstream;
   strstream << "[off=" << ec.ft_offset << "]";
-  for (auto& f : ec.feature_space)
+  // TODO dont const cast
+  for (auto& bucket : const_cast<example_predict&>(ec))
   {
-    auto ind_iter = f.indicies.cbegin();
-    auto val_iter = f.values.cbegin();
-    for (; ind_iter != f.indicies.cend(); ++ind_iter, ++val_iter)
+    for (auto& f : bucket)
     {
-      strstream << "[h=" << *ind_iter << ","
-                << "v=" << *val_iter << "]";
+      auto ind_iter = f.indicies.cbegin();
+      auto val_iter = f.values.cbegin();
+      for (; ind_iter != f.indicies.cend(); ++ind_iter, ++val_iter)
+      {
+        strstream << "[h=" << *ind_iter << ","
+                  << "v=" << *val_iter << "]";
+      }
     }
   }
+  
   return strstream.str();
 }
 

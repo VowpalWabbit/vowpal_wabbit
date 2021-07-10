@@ -76,19 +76,21 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
 
   std::ostringstream tempstream;
   parameters& weights = rd.all->weights;
-  for (const auto& feat_group : ec)
-  {
-    for (size_t j = 0; j < feat_group.size(); ++j)
+  for (auto& bucket : ec) {
+    for (const auto& feat_group : bucket)
     {
-      tempstream << '\t' << feat_group.space_names[j].first << '^' << feat_group.space_names[j].second
-                 << ':' << ((feat_group.indicies[j] >> weights.stride_shift()) & all.parse_mask);
-      for (size_t k = 0; k < all.lda; k++)
+      for (size_t j = 0; j < feat_group.size(); ++j)
       {
-        weight& w = weights[(feat_group.indicies[j] + k)];
-        tempstream << ':' << w;
-        w = 0.;
+        tempstream << '\t' << feat_group.space_names[j].first << '^' << feat_group.space_names[j].second << ':'
+                   << ((feat_group.indicies[j] >> weights.stride_shift()) & all.parse_mask);
+        for (size_t k = 0; k < all.lda; k++)
+        {
+          weight& w = weights[(feat_group.indicies[j] + k)];
+          tempstream << ':' << w;
+          w = 0.;
+        }
+        tempstream << std::endl;
       }
-      tempstream << std::endl;
     }
   }
 
@@ -111,41 +113,44 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
 
     while (rd.cur_class < rd.total_class_cnt)
     {
-      for (const auto& feat_group : ec)
+      for (const auto& bucket : ec)
       {
-        if (feat_group.space_names.size() > 0)
+        for (const auto& feat_group : bucket)
         {
-          for (size_t j = 0; j < feat_group.size(); ++j)
+          if (feat_group.space_names.size() > 0)
           {
-            audit_regressor_interaction(rd, &feat_group.space_names[j]);
-            audit_regressor_feature(
-                rd, feat_group.values[j], static_cast<uint32_t>(feat_group.indicies[j]) + ec.ft_offset);
-            audit_regressor_interaction(rd, nullptr);
+            for (size_t j = 0; j < feat_group.size(); ++j)
+            {
+              audit_regressor_interaction(rd, &feat_group.space_names[j]);
+              audit_regressor_feature(
+                  rd, feat_group.values[j], static_cast<uint32_t>(feat_group.indicies[j]) + ec.ft_offset);
+              audit_regressor_interaction(rd, nullptr);
+            }
+          }
+
+          else
+          {
+            for (size_t j = 0; j < feat_group.size(); ++j)
+            {
+              audit_regressor_feature(
+                  rd, feat_group.values[j], static_cast<uint32_t>(feat_group.indicies[j]) + ec.ft_offset);
+            }
           }
         }
 
+        size_t num_interacted_features = 0;
+        if (rd.all->weights.sparse)
+          INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
+              audit_regressor_interaction, sparse_parameters>(rd.all->interactions, rd.all->permutations, ec, rd,
+              rd.all->weights.sparse_weights, num_interacted_features);
         else
-        {
-          for (size_t j = 0; j < feat_group.size(); ++j)
-          {
-            audit_regressor_feature(
-                rd, feat_group.values[j], static_cast<uint32_t>(feat_group.indicies[j]) + ec.ft_offset);
-          }
-        }
+          INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
+              audit_regressor_interaction, dense_parameters>(rd.all->interactions, rd.all->permutations, ec, rd,
+              rd.all->weights.dense_weights, num_interacted_features);
+
+        ec.ft_offset += rd.increment;
+        ++rd.cur_class;
       }
-
-      size_t num_interacted_features = 0;
-      if (rd.all->weights.sparse)
-        INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
-            audit_regressor_interaction, sparse_parameters>(rd.all->interactions, rd.all->permutations, ec, rd,
-            rd.all->weights.sparse_weights, num_interacted_features);
-      else
-        INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
-            audit_regressor_interaction, dense_parameters>(
-            rd.all->interactions, rd.all->permutations, ec, rd, rd.all->weights.dense_weights, num_interacted_features);
-
-      ec.ft_offset += rd.increment;
-      ++rd.cur_class;
     }
 
     ec.ft_offset = old_offset;  // make sure example is not changed.

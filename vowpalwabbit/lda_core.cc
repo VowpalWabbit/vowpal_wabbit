@@ -679,13 +679,15 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
     old_gamma.push_back(0.f);
   }
   size_t num_words = 0;
-  for (features &fs : *ec) num_words += fs.size();
+  for (auto& bucket : *ec)
+  {
+    for (features& fs : bucket) { num_words += fs.size(); }
+  }
 
   float xc_w = 0;
   float score = 0;
   float doc_length = 0;
-  do
-  {
+  do {
     memcpy(v, new_gamma.begin(), sizeof(float) * l.topics);
     l.expdigammify(*l.all, v);
 
@@ -695,11 +697,13 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
     score = 0;
     size_t word_count = 0;
     doc_length = 0;
-    for (features &fs : *ec)
+    for (auto& bucket : *ec)
     {
-      for (features::iterator &f : fs)
+      for (features& fs : bucket)
       {
-        float *u_for_w = &(weights[f.index()]) + l.topics + 1;
+      for (features::iterator& f : fs)
+      {
+        float* u_for_w = &(weights[f.index()]) + l.topics + 1;
         float c_w = find_cw(l, u_for_w, v);
         xc_w = c_w * f.value();
         score += -f.value() * log(c_w);
@@ -709,6 +713,7 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
         doc_length += f.value();
       }
     }
+  }
     for (size_t k = 0; k < l.topics; k++) new_gamma[k] = new_gamma[k] * v[k] + l.lda_alpha;
   } while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
@@ -968,13 +973,16 @@ void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
   uint32_t num_ex = static_cast<uint32_t>(l.examples.size());
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
-  for (features &fs : ec)
+  for (auto& bucket : ec)
   {
-    for (features::iterator &f : fs)
+    for (features& fs : bucket)
     {
-      index_feature temp = {num_ex, feature(f.value(), f.index())};
-      l.sorted_features.push_back(temp);
-      l.doc_lengths[num_ex] += static_cast<int>(f.value());
+      for (features::iterator& f : fs)
+      {
+        index_feature temp = {num_ex, feature(f.value(), f.index())};
+        l.sorted_features.push_back(temp);
+        l.doc_lengths[num_ex] += static_cast<int>(f.value());
+      }
     }
   }
   if (++num_ex == l.minibatch) learn_batch(l);
@@ -988,13 +996,16 @@ void learn_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec)
     uint64_t stride_shift = l.all->weights.stride_shift();
     uint64_t weight_mask = l.all->weights.mask();
 
-    for (features &fs : ec)
+    for (auto& bucket : ec)
     {
-      for (features::iterator &f : fs)
+      for (auto& fs : bucket)
       {
-        uint64_t idx = (f.index() & weight_mask) >> stride_shift;
-        l.feature_counts[idx] += static_cast<uint32_t>(f.value());
-        l.feature_to_example_map[idx].push_back(ec.example_counter);
+        for (features::iterator& f : fs)
+        {
+          uint64_t idx = (f.index() & weight_mask) >> stride_shift;
+          l.feature_counts[idx] += static_cast<uint32_t>(f.value());
+          l.feature_to_example_map[idx].push_back(ec.example_counter);
+        }
       }
     }
   }

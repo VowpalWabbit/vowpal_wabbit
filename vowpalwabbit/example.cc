@@ -12,7 +12,9 @@
 float calculate_total_sum_features_squared(bool permutations, example& ec)
 {
   float sum_features_squared = 0.f;
-  for (const features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
+  for (auto& bucket : ec) {
+    for (const features& fs : bucket) { sum_features_squared += fs.sum_feat_sq; }
+  }
 
   size_t ignored_interacted_feature_count = 0;
   float calculated_sum_features_squared = 0.f;
@@ -143,21 +145,19 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
     return;
   }
 
-  const auto range_size = range_end- range_begin;
-  std::vector<uint64_t> hashes_to_remove;
+  const auto range_size = std::distance(range_begin, range_end);
+  std::vector<std::pair<namespace_index,uint64_t>> hashes_to_remove;
   hashes_to_remove.reserve(range_size);
 
   for (auto it = range_begin; it != range_end; ++it)
   {
     src->num_features -= (*it).size();
     dst->num_features += (*it).size();
-    dst->feature_space.merge_feature_group(std::move(*it), it.hash(), it.index());
-    hashes_to_remove.push_back(it.hash());
+    dst->feature_space.get_or_create_feature_group(it->_hash, it->_index) = std::move(*it);
+    hashes_to_remove.emplace_back(it->_index, it->_hash);
   }
 
-  for (auto hash : hashes_to_remove)
-  {
-    src->feature_space.remove_feature_group(hash);
+  for (auto idx_hash : hashes_to_remove) { src->feature_space.remove_feature_group(idx_hash.first, idx_hash.second);
   }
 
   src->reset_total_sum_feat_sq();

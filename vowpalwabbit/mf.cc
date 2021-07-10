@@ -67,16 +67,22 @@ void predict(mf& data, single_learner& base, example& ec)
     auto left_ns = static_cast<int>(i[0]);
     auto right_ns = static_cast<int>(i[1]);
 
-    auto left_feature_groups = all_features.namespace_index_range(left_ns);
-    auto right_feature_groups = all_features.namespace_index_range(right_ns);
+    auto left_feature_begin = all_features.namespace_index_begin(left_ns);
+    auto left_feature_end = all_features.namespace_index_end(left_ns);
+    auto right_feature_begin = all_features.namespace_index_begin(right_ns);
+    auto right_feature_end = all_features.namespace_index_end(right_ns);
 
-    if ((left_feature_groups.end() - left_feature_groups.begin()) > 0 &&
-        (right_feature_groups.end() - right_feature_groups.begin()) > 0)
+
+    if (std::distance(left_feature_begin, left_feature_end) > 0 &&
+        std::distance(right_feature_begin, right_feature_end) > 0)
     {
       for (size_t k = 1; k <= data.rank; k++)
       {
         // TODO: Work out a way to not have to make copies to make this work
-        for (auto& fs : left_feature_groups) { ec.feature_space.merge_feature_group(fs, left_ns, left_ns); }
+        for (; left_feature_begin != left_feature_end; ++left_feature_begin)
+        {
+          ec.feature_space.get_or_create_feature_group(left_ns, left_ns).concat(*left_feature_begin);
+        }
 
         // compute l^k * x_l using base learner
         base.predict(ec, k);
@@ -85,7 +91,10 @@ void predict(mf& data, single_learner& base, example& ec)
 
         // set example to right namespace only
         ec.feature_space.clear();
-        for (auto& fs : right_feature_groups) { ec.feature_space.merge_feature_group(fs, left_ns, left_ns); }
+        for (;right_feature_begin != right_feature_end; ++right_feature_begin)
+        {
+          ec.feature_space.get_or_create_feature_group(left_ns, left_ns).concat(*right_feature_begin);
+        }
 
         // compute r^k * x_r using base learner
         base.predict(ec, k + data.rank);
@@ -130,18 +139,23 @@ void learn(mf& data, single_learner& base, example& ec)
     int left_ns = static_cast<int>(i[0]);
     int right_ns = static_cast<int>(i[1]);
 
-    auto left_feature_groups = all_features.namespace_index_range(left_ns);
-    auto right_feature_groups = all_features.namespace_index_range(right_ns);
+    auto left_feature_begin = all_features.namespace_index_begin(left_ns);
+    auto left_feature_end = all_features.namespace_index_end(left_ns);
+    auto right_feature_begin = all_features.namespace_index_begin(right_ns);
+    auto right_feature_end = all_features.namespace_index_end(right_ns);
 
-    if ((left_feature_groups.end() - left_feature_groups.begin()) > 0 &&
-        (right_feature_groups.end() - right_feature_groups.begin()) > 0)
+    if (std::distance(left_feature_begin, left_feature_end) > 0 &&
+        std::distance(right_feature_begin, right_feature_end) > 0)
     {
       // TODO: Work out a way to not have to make copies to make this work
-      for (auto& fs : left_feature_groups) { ec.feature_space.merge_feature_group(fs, left_ns, left_ns); }
+      for (; left_feature_begin != left_feature_end; ++left_feature_begin)
+      {
+        ec.feature_space.get_or_create_feature_group(left_ns, left_ns).concat(*left_feature_begin);
+      }
 
       for (size_t k = 1; k <= data.rank; k++)
       {
-        features& fs = ec.feature_space[left_ns];
+        features& fs = ec.feature_space.at(left_ns);
         // multiply features in left namespace by r^k * x_r
         for (size_t j = 0; j < fs.size(); ++j) fs.values[j] *= data.sub_predictions[2 * k];
 
@@ -156,11 +170,14 @@ void learn(mf& data, single_learner& base, example& ec)
 
       // set example to right namespace only
       ec.feature_space.clear();
-      for (auto& fs : right_feature_groups) { ec.feature_space.merge_feature_group(fs, left_ns, left_ns); }
+      for (;right_feature_begin != right_feature_end; ++right_feature_begin)
+      {
+        ec.feature_space.get_or_create_feature_group(left_ns, left_ns).concat(*right_feature_begin);
+      }
 
       for (size_t k = 1; k <= data.rank; k++)
       {
-        features& fs = ec.feature_space[right_ns];
+        features& fs = ec.feature_space.at(right_ns);
         // multiply features in right namespace by l^k * x_l
         for (size_t j = 0; j < fs.size(); ++j) fs.values[j] *= data.sub_predictions[2 * k - 1];
 

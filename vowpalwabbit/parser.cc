@@ -641,13 +641,14 @@ void end_pass_example(vw& all, example* ae)
 
 void feature_limit(const vw& all, example* ex)
 {
-  for (auto it = ex->feature_space.begin(); it != ex->feature_space.end(); ++it)
+  for (auto& bucket : *ex)
   {
-    if (all.limit[it.index()] < (*it).size())
-    {
-      features& fs = *it;
-      fs.sort(all.parse_mask);
-      unique_features(fs, all.limit[it.index()]);
+    for (features& fs : bucket) {
+      if (all.limit[fs._index] < fs.size())
+      {
+        fs.sort(all.parse_mask);
+        unique_features(fs, all.limit[fs._index]);
+      }
     }
   }
 }
@@ -703,12 +704,14 @@ void setup_example(vw& all, example* ae)
 
   if (all.ignore_some)
   {
-    std::vector<uint64_t> hashes_to_remove;
-    for (auto it = ae->feature_space.begin(); it != ae->feature_space.end(); ++it)
+    std::vector<std::pair<namespace_index, uint64_t>> hashes_to_remove;
+    for (auto& bucket : *ae)
     {
-      if (all.ignore[it.index()]) { hashes_to_remove.push_back(it.hash()); }
+      for (features& fs : bucket) {
+        if (all.ignore[fs._index]) { hashes_to_remove.emplace_back(fs._index, fs._hash); }
+      }
     }
-    for (auto hash : hashes_to_remove) { ae->feature_space.remove_feature_group(hash); }
+    for (auto idx_hash : hashes_to_remove) { ae->feature_space.remove_feature_group(idx_hash.first, idx_hash.second); }
   }
 
   if (all.skip_gram_transformer != nullptr) { all.skip_gram_transformer->generate_grams(ae); }
@@ -721,10 +724,19 @@ void setup_example(vw& all, example* ae)
   uint64_t multiplier = static_cast<uint64_t>(all.wpp) << all.weights.stride_shift();
 
   if (multiplier != 1)  // make room for per-feature information.
-    for (features& fs : *ae)
-      for (auto& j : fs.indicies) j *= multiplier;
+  {
+    for (auto& bucket : *ae) {
+      for (features& fs : bucket) {
+        for (auto& j : fs.indicies) { j *= multiplier; }
+      }
+    }
+  }
+
   ae->num_features = 0;
-  for (const features& fs : *ae) { ae->num_features += fs.size(); }
+  for (auto& bucket : *ae)
+  {
+    for (features& fs : bucket) { ae->num_features += fs.size(); }
+  }
 
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
@@ -800,7 +812,12 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   for (auto index : indices)
   {
     size_t number_of_features = 0;
-    for (auto& fs : ec->feature_space.namespace_index_range(index)) { number_of_features += fs.size(); }
+    for (auto fs_it = ec->feature_space.namespace_index_begin(index);
+         fs_it != ec->feature_space.namespace_index_end(index); ++fs_it)
+    {
+      number_of_features += fs_it->size();
+    }
+
     fs_ptr[index_counter].name = index;
     fs_ptr[index_counter].len = number_of_features;
     fs_ptr[index_counter].fs = new feature[number_of_features];
@@ -808,9 +825,10 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
     uint32_t stride_shift = all.weights.stride_shift();
 
     size_t feature_counter = 0;
-    for(auto& fs : ec->feature_space.namespace_index_range(index))
+    for (auto fs_it = ec->feature_space.namespace_index_begin(index);
+         fs_it != ec->feature_space.namespace_index_end(index); ++fs_it)
     {
-      for (auto it = fs.begin(); it != fs.end(); ++it)
+      for (auto it = fs_it->begin(); it != fs_it->end(); ++it)
       {
         feature t = {it.value(), it.index()};
         t.weight_index >>= stride_shift;
