@@ -260,5 +260,6 @@ setup(
         'install_lib': InstallLib
     },
     # tox.ini handles additional test dependencies
-    tests_require=['tox']
+    tests_require=['tox'],
+    entry_points={'console_scripts': 'vw = vowpalwabbit:cli.main'},
 )
