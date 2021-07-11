@@ -61,10 +61,10 @@ void send_features(io_buf* b, example& ec, uint32_t mask)
   for (auto& bucket : ec.feature_space) {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
-      output_features(*b, it->_index, it->_hash, *it, mask);
+      output_features(*b, it->_index, it->_hash, it->_features, mask);
     }
   }
- 
+
   b->flush();
 }
 

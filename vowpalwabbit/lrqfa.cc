@@ -38,11 +38,11 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   for (auto& bucket : ec) {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
-      lrq.orig_size[it->_hash] = (*it).size();
+      lrq.orig_size[it->_hash] = it->_features.size();
     }
 
   }
- 
+
   size_t which = ec.example_counter;
   float first_prediction = 0;
   float first_loss = 0;
@@ -70,7 +70,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
         {
           for (unsigned int lfn = 0; lfn < lrq.orig_size[left_it->_hash]; ++lfn)
           {
-            features& fs = *left_it;
+            features& fs = left_it->_features;
             float lfx = fs.values[lfn];
             uint64_t lindex = fs.indicies[lfn];
             for (unsigned int n = 1; n <= k; ++n)
@@ -89,7 +89,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
               {
                 for (unsigned int rfn = 0; rfn < lrq.orig_size[right_it->_hash]; ++rfn)
                 {
-                  features& rfs = *right_it;
+                  features& rfs = right_it->_features;
                   //                    feature* rf = ec.atomics[right].begin + rfn;
                   // NB: ec.ft_offset added by base learner
                   float rfx = rfs.values[rfn];
@@ -143,7 +143,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
       auto right_end = ec.feature_space.namespace_index_end(right);
       for (auto right_it = right_begin; right_it != right_end; ++right_it)
       {
-        (*right_it).truncate_to(lrq.orig_size[right_it->_hash]);
+        right_it->_features.truncate_to(lrq.orig_size[right_it->_hash]);
       }
     }
   }

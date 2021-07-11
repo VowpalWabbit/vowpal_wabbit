@@ -11,12 +11,12 @@ void namespaced_features::remove_feature_group(namespace_index ns_index, uint64_
 {
   auto& bucket = _feature_groups[ns_index];
   auto it = std::find_if(bucket.begin(), bucket.end(),
-      [hash](const features& group) {
+      [hash](const details::namespaced_feature_group& group) {
     return group._hash == hash;
   });
   if (it == bucket.end()) { return; }
-  it->clear();
-  _saved_feature_groups.reclaim_object(std::move(*it));
+  it->_features.clear();
+  _saved_feature_groups.reclaim_object(std::move(it->_features));
   bucket.erase(it);
   if (bucket.empty()) {
 
@@ -33,8 +33,8 @@ void namespaced_features::clear()
   for (auto& ns_index : _legacy_indices_existing)
   {
     for (auto& namespaced_feat_group : _feature_groups[ns_index]) {
-      namespaced_feat_group.clear();
-      _saved_feature_groups.reclaim_object(std::move(namespaced_feat_group));
+      namespaced_feat_group._features.clear();
+      _saved_feature_groups.reclaim_object(std::move(namespaced_feat_group._features));
     }
   }
   _legacy_indices_existing.clear();
@@ -55,7 +55,7 @@ namespaced_features::namespace_index_begin_proxy(namespace_index ns_index)
   else
   {
     --end_it;
-    inner_it = (*begin_it).audit_begin();
+    inner_it = begin_it->_features.audit_begin();
   }
   // end_it always points to the last valid outer iterator instead of the actual end iterator of the outer collection.
   // This is because the end chained_proxy_iterator points to the end iterator of the last valid item of the outer
@@ -76,7 +76,7 @@ namespaced_features::namespace_index_end_proxy(namespace_index ns_index)
   else
   {
     --end_it;
-    inner_it = (*end_it).audit_end();
+    inner_it = end_it->_features.audit_end();
   }
 
   return {end_it, end_it, inner_it};

@@ -273,15 +273,15 @@ void print_lda_features(vw& all, example& ec)
   size_t count = 0;
   for (auto& bucket : ec)
   {
-    for (features& fs : bucket) {count += fs.size();}
+    for (auto& fs : bucket) {count += fs._features.size();}
   }
-  
+
   // TODO: Where should audit stuff output to?
   for (auto& bucket : ec)
   {
-    for (features& fs : bucket)
+    for (auto& fs : bucket)
     {
-      for (const auto& f : fs.audit_range())
+      for (const auto& f : fs._features.audit_range())
       {
         std::cout << '\t' << f.audit()->first << '^' << f.audit()->second << ':'
                   << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
@@ -302,10 +302,10 @@ void print_features(vw& all, example& ec)
 
     for (auto& bucket : ec)
     {
-        for (features& fs : bucket)
+        for (auto& fs : bucket)
         {
-          if (fs.space_names.size() > 0)
-            for (const auto& f : fs.audit_range())
+          if (fs._features.space_names.size() > 0)
+            for (const auto& f : fs._features.audit_range())
             {
               audit_interaction(dat, f.audit());
               audit_feature(dat, f.value(), f.index() + ec.ft_offset);
@@ -313,7 +313,7 @@ void print_features(vw& all, example& ec)
             }
           else
           {
-            for (const auto& f : fs) { audit_feature(dat, f.value(), f.index() + ec.ft_offset); }
+            for (const auto& f : fs._features) { audit_feature(dat, f.value(), f.index() + ec.ft_offset); }
           }
         }
     }

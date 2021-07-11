@@ -643,11 +643,11 @@ void feature_limit(const vw& all, example* ex)
 {
   for (auto& bucket : *ex)
   {
-    for (features& fs : bucket) {
-      if (all.limit[fs._index] < fs.size())
+    for (auto& fs : bucket) {
+      if (all.limit[fs._index] < fs._features.size())
       {
-        fs.sort(all.parse_mask);
-        unique_features(fs, all.limit[fs._index]);
+        fs._features.sort(all.parse_mask);
+        unique_features(fs._features, all.limit[fs._index]);
       }
     }
   }
@@ -707,7 +707,7 @@ void setup_example(vw& all, example* ae)
     std::vector<std::pair<namespace_index, uint64_t>> hashes_to_remove;
     for (auto& bucket : *ae)
     {
-      for (features& fs : bucket) {
+      for (auto& fs : bucket) {
         if (all.ignore[fs._index]) { hashes_to_remove.emplace_back(fs._index, fs._hash); }
       }
     }
@@ -726,8 +726,8 @@ void setup_example(vw& all, example* ae)
   if (multiplier != 1)  // make room for per-feature information.
   {
     for (auto& bucket : *ae) {
-      for (features& fs : bucket) {
-        for (auto& j : fs.indicies) { j *= multiplier; }
+      for (auto& fs : bucket) {
+        for (auto& j : fs._features.indicies) { j *= multiplier; }
       }
     }
   }
@@ -735,7 +735,7 @@ void setup_example(vw& all, example* ae)
   ae->num_features = 0;
   for (auto& bucket : *ae)
   {
-    for (features& fs : bucket) { ae->num_features += fs.size(); }
+    for (auto& fs : bucket) { ae->num_features += fs._features.size(); }
   }
 
   // Set the interactions for this example to the global set.
@@ -815,7 +815,7 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
     for (auto fs_it = ec->feature_space.namespace_index_begin(index);
          fs_it != ec->feature_space.namespace_index_end(index); ++fs_it)
     {
-      number_of_features += fs_it->size();
+      number_of_features += fs_it->_features.size();
     }
 
     fs_ptr[index_counter].name = index;
@@ -828,7 +828,7 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
     for (auto fs_it = ec->feature_space.namespace_index_begin(index);
          fs_it != ec->feature_space.namespace_index_end(index); ++fs_it)
     {
-      for (auto it = fs_it->begin(); it != fs_it->end(); ++it)
+      for (auto it = fs_it->_features.begin(); it != fs_it->_features.end(); ++it)
       {
         feature t = {it.value(), it.index()};
         t.weight_index >>= stride_shift;

@@ -23,9 +23,32 @@ typedef unsigned char namespace_index;
 
 namespace VW
 {
+  namespace details
+{
+  struct namespaced_feature_group
+  {
+    features _features;
+    uint64_t _hash;
+    namespace_index _index;
+
+    namespaced_feature_group(uint64_t hash, namespace_index index) : _hash(hash), _index(index) {}
+
+    template <typename FeaturesT>
+    namespaced_feature_group(FeaturesT&& inner_features, uint64_t hash, namespace_index index)
+        : _features(std::forward<FeaturesT>(inner_features)), _hash(hash), _index(index)
+    {
+    }
+
+    namespaced_feature_group(const namespaced_feature_group& other) = default;
+    namespaced_feature_group& operator=(const namespaced_feature_group& other) = default;
+    namespaced_feature_group(namespaced_feature_group&& other) = default;
+    namespaced_feature_group& operator=(namespaced_feature_group&& other) = default;
+  };
+}
+
 class indexed_iterator_t
 {
-  std::array<std::list<features>, 256>* _feature_group_buckets;
+  std::array<std::list<details::namespaced_feature_group>, 256>* _feature_group_buckets;
   std::vector<namespace_index>::iterator _indices_it;
 
 public:
@@ -33,13 +56,13 @@ public:
 
   indexed_iterator_t(
       std::vector<namespace_index>::iterator  indices,
-      std::array<std::list<features>, 256>* feature_groups)
+      std::array<std::list<details::namespaced_feature_group>, 256>* feature_groups)
       : _indices_it(indices)
       , _feature_group_buckets(feature_groups)
   {
   }
 
-  std::list<features>& operator*()
+  std::list<details::namespaced_feature_group>& operator*()
   {
     return (*_feature_group_buckets)[*_indices_it];
   }
@@ -84,8 +107,8 @@ public:
 struct namespaced_features
 {
   using iterator = indexed_iterator_t;
-  using bucket_iterator = std::list<features>::iterator;
-  using const_bucket_iterator = std::list<features>::const_iterator;
+  using bucket_iterator = std::list<details::namespaced_feature_group>::iterator;
+  using const_bucket_iterator = std::list<details::namespaced_feature_group>::const_iterator;
 
   using ns_index_iterator = std::vector<namespace_index>::iterator;
   using const_ns_index_iterator = std::vector<namespace_index>::const_iterator;
@@ -125,19 +148,19 @@ struct namespaced_features
   inline features* get_feature_group(namespace_index ns_index, uint64_t hash)
   {
     auto& bucket = _feature_groups[ns_index];
-    auto it = std::find_if(bucket.begin(), bucket.end(), [hash](const features& group) {
+    auto it = std::find_if(bucket.begin(), bucket.end(), [hash](const details::namespaced_feature_group& group) {
       return group._hash == hash;
     });
     if (it == bucket.end()) { return nullptr; }
-    return &(*it);
+    return &it->_features;
   }
   // Returns nullptr if not found.
   inline const features* get_feature_group(namespace_index ns_index, uint64_t hash) const
   {
     auto& bucket = _feature_groups[ns_index];
-    auto it = std::find_if(bucket.begin(), bucket.end(), [hash](const features& group) { return group._hash == hash; });
+    auto it = std::find_if(bucket.begin(), bucket.end(), [hash](const details::namespaced_feature_group& group) { return group._hash == hash; });
     if (it == bucket.end()) { return nullptr; }
-    return &(*it);
+    return &it->_features;
   }
 
   inline features& at(namespace_index ns_index) { return at(ns_index, ns_index);
@@ -168,13 +191,10 @@ struct namespaced_features
     auto* existing_group = get_feature_group(ns_index, hash);
     if (existing_group == nullptr)
     {
-      _feature_groups[ns_index].emplace_back(_saved_feature_groups.take_back());
+      _feature_groups[ns_index].emplace_back(_saved_feature_groups.take_back(), hash, ns_index);
       _saved_feature_groups.pop_back();
-      auto& current = _feature_groups[ns_index].back();
-      current._hash = hash;
-      current._index = ns_index;
       if (_feature_groups[ns_index].size() == 1) { _legacy_indices_existing.push_back(ns_index); }
-      return _feature_groups[ns_index].back();
+      return _feature_groups[ns_index].back()._features;
     }
 
     return *existing_group;
@@ -219,7 +239,7 @@ struct namespaced_features
   }
 
 private:
-  std::array<std::list<features>, 256> _feature_groups;
+  std::array<std::list<details::namespaced_feature_group>, 256> _feature_groups;
   std::vector<namespace_index> _legacy_indices_existing;
   VW::moved_object_pool<features> _saved_feature_groups;
 };

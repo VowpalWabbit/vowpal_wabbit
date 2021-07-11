@@ -167,9 +167,9 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     // offset indicies for given action
     for (auto& bucket : eca)
     {
-      for (features& fs : bucket)
+      for (auto& fs : bucket)
       {
-        for (feature_index& idx : fs.indicies)
+        for (feature_index& idx : fs._features.indicies)
         {
           idx = ((((idx >> ss) * 28904713) + 4832917 * static_cast<uint64_t>(a)) << ss) & mask;
         }

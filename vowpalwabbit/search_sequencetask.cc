@@ -405,9 +405,9 @@ void my_update_example_indicies(
   size_t ss = sch.get_stride_shift();
   for (auto& bucket : *ec)
   {
-    for (features& fs : bucket)
+    for (auto& fs : bucket)
     {
-      for (feature_index& idx : fs.indicies) idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
+      for (feature_index& idx : fs._features.indicies) idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
     }
   }
 }

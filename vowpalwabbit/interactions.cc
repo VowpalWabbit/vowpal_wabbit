@@ -44,8 +44,8 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
         for (auto fs_it = feature_spaces.namespace_index_begin(ns); fs_it != feature_spaces.namespace_index_end(ns);
              ++fs_it)
         {
-          num_features_in_inter *= fs_it->size();
-          sum_feat_sq_in_inter *= fs_it->sum_feat_sq;
+          num_features_in_inter *= fs_it->_features.size();
+          sum_feat_sq_in_inter *= fs_it->_features.sum_feat_sq;
           // If there are no features, then we don't want to accumulate the default value of 1.0, so we zero out here.
           if (num_features_in_inter == 0) { sum_feat_sq_in_inter = 0; }
         }
@@ -70,8 +70,8 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
           if ((ns == inter.end() - 1) || (*ns != *(ns + 1)))  // neighbour namespaces are different
           {
             // just multiply precomputed values
-            num_features_in_inter *= fs_it->size();
-            sum_feat_sq_in_inter *= fs_it->sum_feat_sq;
+            num_features_in_inter *= fs_it->_features.size();
+            sum_feat_sq_in_inter *= fs_it->_features.sum_feat_sq;
             if (num_features_in_inter == 0) break;  // one of namespaces has no features - go to next interaction
           }
           else  // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
@@ -97,9 +97,9 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
             std::fill(results.begin(), results.end(), 0.f);
 
             // recurrent value calculations
-            for (size_t i = 0; i < fs_it->size(); ++i)
+            for (size_t i = 0; i < fs_it->_features.size(); ++i)
             {
-              const float x = fs_it->values[i] * fs_it->values[i];
+              const float x = fs_it->_features.values[i] * fs_it->_features.values[i];
 
               if (!PROCESS_SELF_INTERACTIONS(fs.values[i]))
               {
@@ -124,7 +124,7 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
             // if number of features is less than  order of interaction then go to the next interaction
             // as you can't make simple combination of interaction 'aaa' if a contains < 3 features.
             // unless one of them has value != 1. and we are counting them.
-            const size_t ft_size = fs_it->size();
+            const size_t ft_size = fs_it->_features.size();
             if (cnt_ft_value_non_1 == 0 && ft_size < order_of_inter)
             {
               num_features_in_inter = 0;

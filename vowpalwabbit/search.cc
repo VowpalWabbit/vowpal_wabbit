@@ -624,7 +624,7 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
       {
         example& other = *ec_seq[n + offset];
         for (auto begin = other.feature_space.namespace_index_begin(ns); begin != other.feature_space.namespace_index_end(ns); ++begin) {
-          GD::foreach_feature<search_private, add_new_feature>(priv.all, *begin, priv, me.ft_offset);
+          GD::foreach_feature<search_private, add_new_feature>(priv.all, begin->_features, priv, me.ft_offset);
         }
       }
     }

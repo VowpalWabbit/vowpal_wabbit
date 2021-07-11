@@ -31,15 +31,15 @@ BOOST_AUTO_TEST_CASE(write_and_read_features_from_cache)
       vw.example_parser->_shared_data);
 
   BOOST_CHECK_EQUAL(dest_ex.indices.size(), 2);
-  BOOST_CHECK_EQUAL(dest_ex.feature_space[VW::hash_space(vw, "ns1")].size(), 3);
-  BOOST_CHECK_EQUAL(dest_ex.feature_space[VW::hash_space(vw, "ss2")].size(), 1);
+  BOOST_CHECK_EQUAL(dest_ex.feature_space.at('n', VW::hash_space(vw, "ns1")).size(), 3);
+  BOOST_CHECK_EQUAL(dest_ex.feature_space.at('s', VW::hash_space(vw, "ss2")).size(), 1);
 
   check_collections_with_float_tolerance(
-      src_ex.feature_space[VW::hash_space(vw, "ss2")].values, dest_ex.feature_space[VW::hash_space(vw, "ss2")].values, FLOAT_TOL);
-  check_collections_exact(src_ex.feature_space[VW::hash_space(vw, "ss2")].indicies, dest_ex.feature_space[VW::hash_space(vw, "ss2")].indicies);
+      src_ex.feature_space.at('s', VW::hash_space(vw, "ss2")).values, dest_ex.feature_space.at('s', VW::hash_space(vw, "ss2")).values, FLOAT_TOL);
+  check_collections_exact(src_ex.feature_space.at('s', VW::hash_space(vw, "ss2")).indicies, dest_ex.feature_space.at('s', VW::hash_space(vw, "ss2")).indicies);
   check_collections_with_float_tolerance(
-      src_ex.feature_space[VW::hash_space(vw, "ns1")].values, dest_ex.feature_space[VW::hash_space(vw, "ns1")].values, FLOAT_TOL);
-  check_collections_exact(src_ex.feature_space[VW::hash_space(vw, "ns1")].indicies, dest_ex.feature_space[VW::hash_space(vw, "ns1")].indicies);
+      src_ex.feature_space.at('n', VW::hash_space(vw, "ns1")).values, dest_ex.feature_space.at('n', VW::hash_space(vw, "ns1")).values, FLOAT_TOL);
+  check_collections_exact(src_ex.feature_space.at('n', VW::hash_space(vw, "ns1")).indicies, dest_ex.feature_space.at('n', VW::hash_space(vw, "ns1")).indicies);
 
   VW::finish(vw);
 }

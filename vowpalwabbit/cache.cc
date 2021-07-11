@@ -226,10 +226,10 @@ void cache_features(io_buf& cache, const example* ae, uint64_t mask)
   cache.write_value<uint64_t>(static_cast<uint64_t>(ae->feature_space.size()));
   for (auto& bucket : *const_cast<example*>(ae)) { for (auto it = bucket.begin(); it != bucket.end(); ++it)
   {
-    output_features(cache, it->_index, it->_hash, *it, mask);
+    output_features(cache, it->_index, it->_hash, it->_features, mask);
   }}
-    
- 
+
+
 }
 
 uint32_t VW::convert(size_t number)

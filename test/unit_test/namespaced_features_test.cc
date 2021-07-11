@@ -14,25 +14,28 @@ BOOST_AUTO_TEST_CASE(namespaced_features_test)
   VW::namespaced_features feature_groups;
   BOOST_CHECK(feature_groups.empty());
 
-  auto begin_end = feature_groups.get_namespace_index_groups('a');
-  BOOST_CHECK((begin_end.second - begin_end.first) == 0);
+  auto begin = feature_groups.namespace_index_begin('a');
+  auto end = feature_groups.namespace_index_end('a');
+  BOOST_CHECK(std::distance(begin, end) == 0);
 
   feature_groups.get_or_create_feature_group(123, 'a');
   feature_groups.get_or_create_feature_group(1234, 'a');
 
-  begin_end = feature_groups.get_namespace_index_groups('a');
-  BOOST_CHECK((begin_end.second - begin_end.first) == 2);
+  begin = feature_groups.namespace_index_begin('a');
+  end = feature_groups.namespace_index_end('a');
+  BOOST_CHECK(std::distance(begin, end) == 2);
 
-  BOOST_REQUIRE_NO_THROW(feature_groups[123]);
-
-  BOOST_CHECK(*feature_groups.index_begin() == 'a');
-
-  feature_groups.remove_feature_group(123);
-  begin_end = feature_groups.get_namespace_index_groups('a');
-  BOOST_CHECK(begin_end.second - begin_end.first == 1);
+  // BOOST_REQUIRE_NO_THROW(feature_groups[123]);
 
   BOOST_CHECK(*feature_groups.index_begin() == 'a');
-  feature_groups.remove_feature_group(1234);
+
+  feature_groups.remove_feature_group('a', 123);
+  begin = feature_groups.namespace_index_begin('a');
+  end = feature_groups.namespace_index_end('a');
+  BOOST_CHECK(std::distance(begin, end) == 1);
+
+  BOOST_CHECK(*feature_groups.index_begin() == 'a');
+  feature_groups.remove_feature_group('a', 1234);
   BOOST_CHECK(feature_groups.index_begin() == feature_groups.index_end());
 }
 

@@ -13,7 +13,7 @@ float calculate_total_sum_features_squared(bool permutations, example& ec)
 {
   float sum_features_squared = 0.f;
   for (auto& bucket : ec) {
-    for (const features& fs : bucket) { sum_features_squared += fs.sum_feat_sq; }
+    for (const auto& fs : bucket) { sum_features_squared += fs._features.sum_feat_sq; }
   }
 
   size_t ignored_interacted_feature_count = 0;
@@ -151,9 +151,9 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
 
   for (auto it = range_begin; it != range_end; ++it)
   {
-    src->num_features -= (*it).size();
-    dst->num_features += (*it).size();
-    dst->feature_space.get_or_create_feature_group(it->_hash, it->_index) = std::move(*it);
+    src->num_features -= it->_features.size();
+    dst->num_features += it->_features.size();
+    dst->feature_space.get_or_create_feature_group(it->_hash, it->_index) = std::move(it->_features);
     hashes_to_remove.emplace_back(it->_index, it->_hash);
   }
 

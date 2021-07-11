@@ -42,7 +42,7 @@ void add_example_namespaces_from_example(example& target, const example& source)
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       if (it->_index == constant_namespace) continue;
-      add_example_namespace(target, it->_index, it->_hash, *it);
+      add_example_namespace(target, it->_index, it->_hash, it->_features);
     }
   }
 }
@@ -54,7 +54,7 @@ void del_example_namespaces_from_example(example& target, const example& source)
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       if (it->_index == constant_namespace) continue;
-      del_example_namespace(target, it->_index, it->_hash, *it);
+      del_example_namespace(target, it->_index, it->_hash, it->_features);
     }
   }
 }

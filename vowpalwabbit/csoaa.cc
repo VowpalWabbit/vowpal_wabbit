@@ -773,7 +773,7 @@ void inline process_label(ldf& data, example* ec)
   for (auto const& cost : costs)
   {
     const auto lab = static_cast<size_t>(cost.x);
-    LabelDict::set_label_features(data.label_features, lab, *(*ec->feature_space.begin()).begin());
+    LabelDict::set_label_features(data.label_features, lab, (*ec->feature_space.begin()).begin()->_features);
   }
 }
 

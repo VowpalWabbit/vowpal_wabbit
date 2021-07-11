@@ -144,7 +144,7 @@ void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t 
     }
     }
   }
-  
+
 }
 
 void inline reset_ex(example& ex)
@@ -320,10 +320,10 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
   }
   size_t count = 0;
   for (auto& bucket : data->ex) {
-    for (features& fs : bucket)
+    for (auto& fs : bucket)
     {
-      fs.sum_feat_sq = static_cast<float>(fs.size());
-      count += fs.size();
+      fs._features.sum_feat_sq = static_cast<float>(fs._features.size());
+      count += fs._features.size();
     }
   }
 

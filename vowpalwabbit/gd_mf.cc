@@ -40,8 +40,8 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
   {
     for (auto& fs : bucket)
     {
-      bool audit = !fs.space_names.empty();
-      for (const auto& f : fs.audit_range())
+      bool audit = !fs._features.space_names.empty();
+      for (const auto& f : fs._features.audit_range())
       {
         std::cout << '\t';
         if (audit) std::cout << f.audit()->first << '^' << f.audit()->second << ':';
@@ -98,7 +98,7 @@ template <typename IteratorT>
 size_t count_features(IteratorT begin, IteratorT end)
 {
   size_t count = 0;
-  for(; begin != end; begin++) { count += begin->size(); }
+  for(; begin != end; begin++) { count += begin->_features.size(); }
   return count;
 }
 
@@ -120,10 +120,10 @@ float mf_predict(gdmf& d, example& ec, T& weights)
       for (auto second_ns_features = ec.feature_space.namespace_index_begin(i[1]);
            second_ns_features != ec.feature_space.namespace_index_end(i[1]); ++second_ns_features)
       {
-        const auto interacted_count = first_ns_features->size() * second_ns_features->size();
+        const auto interacted_count = first_ns_features->_features.size() * second_ns_features->_features.size();
         ec.num_features -= interacted_count;
-        ec.num_features += first_ns_features->size() * d.rank;
-        ec.num_features += second_ns_features->size() * d.rank;
+        ec.num_features += first_ns_features->_features.size() * d.rank;
+        ec.num_features += second_ns_features->_features.size() * d.rank;
         ec.num_features_from_interactions += interacted_count;
       }
     }
@@ -135,7 +135,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   float linear_prediction = 0.;
   // linear terms
   for (auto& bucket : ec) {
-    for (features& fs : bucket) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs, linear_prediction); }
+    for (auto& fs : bucket) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs._features, linear_prediction); }
 
   }
 
@@ -164,7 +164,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
              first_ns_features != ec.feature_space.namespace_index_end(i[0]); ++first_ns_features)
         {
 
-          GD::foreach_feature<pred_offset, offset_add, T>(weights, *first_ns_features, x_dot_l);
+          GD::foreach_feature<pred_offset, offset_add, T>(weights, first_ns_features->_features, x_dot_l);
         }
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
@@ -174,7 +174,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
         for (auto second_ns_features = ec.feature_space.namespace_index_begin(i[1]);
              second_ns_features != ec.feature_space.namespace_index_end(i[1]); ++second_ns_features)
         {
-          GD::foreach_feature<pred_offset, offset_add, T>(weights, *second_ns_features, x_dot_r);
+          GD::foreach_feature<pred_offset, offset_add, T>(weights, second_ns_features->_features, x_dot_r);
         }
 
         prediction += x_dot_l.p * x_dot_r.p;
@@ -233,7 +233,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
   // linear update
   for (auto& bucket : ec)
   {
-    for (features& fs : bucket) { sd_offset_update<T>(weights, fs, 0, update, regularization); }
+    for (auto& fs : bucket) { sd_offset_update<T>(weights, fs._features, 0, update, regularization); }
   }
 
   // quadratic update
@@ -255,7 +255,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
         // l^k <- l^k + update * (r^k \cdot x_r) * x_l
         for (auto first_ns_features_it = ec.feature_space.namespace_index_begin(i[0]);
              first_ns_features_it != ec.feature_space.namespace_index_end(i[0]); ++first_ns_features_it) {
-          sd_offset_update<T>(weights, *first_ns_features_it, k, update * r_dot_x, regularization);
+          sd_offset_update<T>(weights, first_ns_features_it->_features, k, update * r_dot_x, regularization);
         }
       }
       // update r^k weights
@@ -266,7 +266,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
         for (auto second_ns_features_it = ec.feature_space.namespace_index_begin(i[1]);
              second_ns_features_it != ec.feature_space.namespace_index_end(i[1]); ++second_ns_features_it) {
-          sd_offset_update<T>(weights, *second_ns_features_it, k + d.rank, update * l_dot_x, regularization);
+          sd_offset_update<T>(weights, second_ns_features_it->_features, k + d.rank, update * l_dot_x, regularization);
         }
       }
     }

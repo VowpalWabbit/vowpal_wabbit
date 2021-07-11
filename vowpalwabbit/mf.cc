@@ -81,7 +81,7 @@ void predict(mf& data, single_learner& base, example& ec)
         // TODO: Work out a way to not have to make copies to make this work
         for (; left_feature_begin != left_feature_end; ++left_feature_begin)
         {
-          ec.feature_space.get_or_create_feature_group(left_ns, left_ns).concat(*left_feature_begin);
+          ec.feature_space.get_or_create_feature_group(left_ns, left_ns).concat(left_feature_begin->_features);
         }
 
         // compute l^k * x_l using base learner
@@ -93,7 +93,7 @@ void predict(mf& data, single_learner& base, example& ec)
         ec.feature_space.clear();
         for (;right_feature_begin != right_feature_end; ++right_feature_begin)
         {
-          ec.feature_space.get_or_create_feature_group(left_ns, left_ns).concat(*right_feature_begin);
+          ec.feature_space.get_or_create_feature_group(left_ns, left_ns).concat(right_feature_begin->_features);
         }
 
         // compute r^k * x_r using base learner
@@ -150,7 +150,7 @@ void learn(mf& data, single_learner& base, example& ec)
       // TODO: Work out a way to not have to make copies to make this work
       for (; left_feature_begin != left_feature_end; ++left_feature_begin)
       {
-        ec.feature_space.get_or_create_feature_group(left_ns, left_ns).concat(*left_feature_begin);
+        ec.feature_space.get_or_create_feature_group(left_ns, left_ns).concat(left_feature_begin->_features);
       }
 
       for (size_t k = 1; k <= data.rank; k++)
@@ -172,7 +172,7 @@ void learn(mf& data, single_learner& base, example& ec)
       ec.feature_space.clear();
       for (;right_feature_begin != right_feature_end; ++right_feature_begin)
       {
-        ec.feature_space.get_or_create_feature_group(left_ns, left_ns).concat(*right_feature_begin);
+        ec.feature_space.get_or_create_feature_group(left_ns, left_ns).concat(right_feature_begin->_features);
       }
 
       for (size_t k = 1; k <= data.rank; k++)

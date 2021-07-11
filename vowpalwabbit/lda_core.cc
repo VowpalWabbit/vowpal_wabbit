@@ -681,7 +681,7 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
   size_t num_words = 0;
   for (auto& bucket : *ec)
   {
-    for (features& fs : bucket) { num_words += fs.size(); }
+    for (auto& fs : bucket) { num_words += fs._features.size(); }
   }
 
   float xc_w = 0;
@@ -699,9 +699,9 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
     doc_length = 0;
     for (auto& bucket : *ec)
     {
-      for (features& fs : bucket)
+      for (auto& fs : bucket)
       {
-      for (features::iterator& f : fs)
+      for (features::iterator& f : fs._features)
       {
         float* u_for_w = &(weights[f.index()]) + l.topics + 1;
         float c_w = find_cw(l, u_for_w, v);
@@ -975,9 +975,9 @@ void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
   l.doc_lengths.push_back(0);
   for (auto& bucket : ec)
   {
-    for (features& fs : bucket)
+    for (auto& fs : bucket)
     {
-      for (features::iterator& f : fs)
+      for (features::iterator& f : fs._features)
       {
         index_feature temp = {num_ex, feature(f.value(), f.index())};
         l.sorted_features.push_back(temp);
@@ -1000,7 +1000,7 @@ void learn_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec)
     {
       for (auto& fs : bucket)
       {
-        for (features::iterator& f : fs)
+        for (features::iterator& f : fs._features)
         {
           uint64_t idx = (f.index() & weight_mask) >> stride_shift;
           l.feature_counts[idx] += static_cast<uint32_t>(f.value());

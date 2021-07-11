@@ -409,9 +409,9 @@ void update_example_indicies(bool /* audit */, example* ec, uint64_t mult_amount
 {
   for (auto& bucket : *ec)
   {
-    for (features& fs : bucket)
+    for (auto& fs : bucket)
     {
-      for (feature_index& idx : fs.indicies) { idx = ((idx * mult_amount) + plus_amount); }
+      for (feature_index& idx : fs._features.indicies) { idx = ((idx * mult_amount) + plus_amount); }
     }
   }
 }

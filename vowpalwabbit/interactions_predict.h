@@ -136,7 +136,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
       {
         const auto& first = *first_it;
         ns0_i++;
-        if (first.nonempty())
+        if (first._features.nonempty())
         {
           size_t ns1_i = 0;
           auto second_end = ec.feature_space.namespace_index_end(ns[1]);
@@ -145,7 +145,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
           {
             const auto& second = *second_it;
             ns1_i++;
-            if (second.nonempty())
+            if (second._features.nonempty())
             {
               const bool same_namespace_index = (!permutations && (ns[0] == ns[1]));
               const bool same_namespace_hash = (!permutations && (first._hash == second._hash));
@@ -154,18 +154,18 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
               // example we skip x2*x1 but do process x1*x2.
               if (same_namespace_index && (ns1_i < ns0_i)) { continue; }
 
-              for (size_t i = 0; i < first.indicies.size(); ++i)
+              for (size_t i = 0; i < first._features.indicies.size(); ++i)
               {
-                feature_index halfhash = FNV_prime * static_cast<uint64_t>(first.indicies[i]);
+                feature_index halfhash = FNV_prime * static_cast<uint64_t>(first._features.indicies[i]);
                 if (audit)
                 {
-                  audit_func(dat, i < first.space_names.size() ? &first.space_names[i] : &EMPTY_AUDIT_STRINGS);
+                  audit_func(dat, i < first._features.space_names.size() ? &first._features.space_names[i] : &EMPTY_AUDIT_STRINGS);
                 }
                 // next index differs for permutations and simple combinations
-                feature_value ft_value = first.values[i];
-                auto begin = second.audit_cbegin();
+                feature_value ft_value = first._features.values[i];
+                auto begin = second._features.audit_cbegin();
                 if (same_namespace_hash) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1; }
-                auto end = second.audit_cend();
+                auto end = second._features.audit_cend();
                 num_features += std::distance(begin, end);
                 inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
                     dat, begin, end, offset, weights, ft_value, halfhash);
@@ -185,7 +185,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
       {
         const auto& first = *first_it;
         ns0_i++;
-        if (first.nonempty())
+        if (first._features.nonempty())
         {
           size_t ns1_i = 0;
           auto second_end = ec.feature_space.namespace_index_end(ns[1]);
@@ -193,7 +193,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
           {
             const auto& second = *second_it;
             ns1_i++;
-            if (second.nonempty())
+            if (second._features.nonempty())
             {
               size_t ns2_i = 0;
               auto third_end = ec.feature_space.namespace_index_end(ns[2]);
@@ -202,7 +202,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                 const auto& third = *third_it;
 
                 ns2_i++;
-                if (third.nonempty())
+                if (third._features.nonempty())
                 {  // don't compare 1 and 3 as interaction is sorted
                   const bool same_namespace1 = (!permutations && (ns[0] == ns[1]));
                   const bool same_namespace1_hash = (!permutations && (first._hash == second._hash));
@@ -221,32 +221,32 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                   if (same_namespace2 && (ns2_i < ns1_i)) { continue; }
                   if (same_namespace3 && (ns2_i < ns0_i)) { continue; }
 
-                  for (size_t i = 0; i < first.indicies.size(); ++i)
+                  for (size_t i = 0; i < first._features.indicies.size(); ++i)
                   {
                     if (audit)
                     {
-                      audit_func(dat, i < first.space_names.size() ? &first.space_names[i] : &EMPTY_AUDIT_STRINGS);
+                      audit_func(dat, i < first._features.space_names.size() ? &first._features.space_names[i] : &EMPTY_AUDIT_STRINGS);
                     }
-                    const uint64_t halfhash1 = FNV_prime * static_cast<uint64_t>(first.indicies[i]);
-                    float first_ft_value = first.values[i];
+                    const uint64_t halfhash1 = FNV_prime * static_cast<uint64_t>(first._features.indicies[i]);
+                    float first_ft_value = first._features.values[i];
                     size_t j = 0;
                     if (same_namespace1_hash)  // next index differs for permutations and simple combinations
                       j = (PROCESS_SELF_INTERACTIONS(first_ft_value)) ? i : i + 1;
 
-                    for (; j < second.indicies.size(); ++j)
+                    for (; j < second._features.indicies.size(); ++j)
                     {  // f3 x k*(f2 x k*f1)
                       if (audit)
                       {
                         audit_func(
-                            dat, j < second.space_names.size() ? &second.space_names[j] : &EMPTY_AUDIT_STRINGS);
+                            dat, j < second._features.space_names.size() ? &second._features.space_names[j] : &EMPTY_AUDIT_STRINGS);
                       }
-                      feature_index halfhash = FNV_prime * (halfhash1 ^ static_cast<uint64_t>(second.indicies[j]));
-                      feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);
+                      feature_index halfhash = FNV_prime * (halfhash1 ^ static_cast<uint64_t>(second._features.indicies[j]));
+                      feature_value ft_value = INTERACTION_VALUE(first_ft_value, second._features.values[j]);
 
-                      auto begin = third.audit_cbegin();
+                      auto begin = third._features.audit_cbegin();
                       // next index differs for permutations and simple combinations
                       if (same_namespace2_hash) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1; }
-                      auto end = third.audit_cend();
+                      auto end = third._features.audit_cend();
                       num_features += std::distance(begin, end);
                       inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
                           dat, begin, end, offset, weights, ft_value, halfhash);

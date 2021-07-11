@@ -65,10 +65,10 @@ inline void remove_empty_namespaces(VW::namespaced_features& feature_space)
   for (auto& bucket : feature_space) {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
-      if ((*it).empty()) { hashes_to_remove.emplace_back(it->_index, it->_hash); }
+      if ((*it)._features.empty()) { hashes_to_remove.emplace_back(it->_index, it->_hash); }
     }
   }
- 
+
   for (auto idx_hash : hashes_to_remove) { feature_space.remove_feature_group(idx_hash.first, idx_hash.second); }
 }
 

@@ -70,10 +70,10 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
     for (auto& bucket : ec) {
       for (auto it = bucket.begin(); it != bucket.end(); ++it)
       {
-        if (c.namespaces[it->_index]) { GD::foreach_feature<mwt, value_policy>(c.all, *it, c); }
+        if (c.namespaces[it->_index]) { GD::foreach_feature<mwt, value_policy>(c.all, it->_features, c); }
       }
     }
-   
+
     for (uint64_t policy : c.policies)
     {
       c.evals[policy].cost += get_cost_estimate(c.optional_observation.second, c.evals[policy].action);
@@ -97,18 +97,18 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
           if (learn)
           {
             auto& feats = c.feature_space.at(it->_hash);
-            for (features::iterator& f : *it)
+            for (features::iterator& f : it->_features)
             {
               uint64_t new_index =
                   ((f.index() & weight_mask) >> stride_shift) * c.num_classes + static_cast<uint64_t>(f.value());
               feats.push_back(1, new_index << stride_shift);
             }
           }
-          std::swap(c.feature_space.at(it->_hash), *it);
+          std::swap(c.feature_space.at(it->_hash), it->_features);
         }
       }
     }
-  
+
   }
   VW_WARNING_STATE_POP
 

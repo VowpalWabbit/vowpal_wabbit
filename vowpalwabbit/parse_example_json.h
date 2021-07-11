@@ -1210,7 +1210,7 @@ public:
     for (auto& bucket : *stored_ex) {
       for (auto it = bucket.begin(); it != bucket.end(); ++it)
       {
-        new_ex->feature_space.get_or_create_feature_group(it->_hash, it->_index).concat(*it);
+        new_ex->feature_space.get_or_create_feature_group(it->_hash, it->_index).concat(it->_features);
       }
 
     }
