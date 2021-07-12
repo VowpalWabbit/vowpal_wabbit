@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #include <cmath>
+#include <map>
 
 #include "vw.h"
 #include "reductions.h"
@@ -38,7 +39,7 @@ struct mwt
   uint32_t num_classes;
   bool learn;
 
-  std::unordered_map<uint64_t, features> feature_space;
+  std::map<std::pair<namespace_index,uint64_t>, features> feature_space;
   vw* all;
 };
 
@@ -92,11 +93,11 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
       {
         if (c.namespaces[it->_index])
         {
-          c.feature_space.insert({it->_hash, features{}});
-          c.feature_space.at(it->_hash).clear();
+          c.feature_space.insert({{it->_index, it->_hash}, features{}});
+          c.feature_space.at({it->_index, it->_hash}).clear();
           if (learn)
           {
-            auto& feats = c.feature_space.at(it->_hash);
+            auto& feats = c.feature_space.at({it->_index, it->_hash});
             for (features::iterator& f : it->_features)
             {
               uint64_t new_index =
@@ -104,7 +105,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
               feats.push_back(1, new_index << stride_shift);
             }
           }
-          std::swap(c.feature_space.at(it->_hash), it->_features);
+          std::swap(c.feature_space.at({it->_index, it->_hash}), it->_features);
         }
       }
     }
@@ -128,8 +129,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   if VW_STD17_CONSTEXPR (exclude || learn)
   {
     for (auto& kv : c.feature_space)
-    {
-      std::swap(kv.second, ec.feature_space.at(kv.first));
+    { std::swap(kv.second, ec.feature_space.at(kv.first.first, kv.first.second));
     }
   }
   VW_WARNING_STATE_POP
