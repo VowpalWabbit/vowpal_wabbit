@@ -316,6 +316,12 @@ void save_load_header(
         }
       }
 
+      if (!read || all.model_file_ver >= VERSION_FILE_WITH_RANDOM_SEED)
+      {
+        if (!read) { msg << "random_seed: " << all.random_seed << "\n"; }
+        bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(&all.random_seed), sizeof(all.random_seed), "", read, msg, text);
+      }
+
       msg << "lda:" << all.lda << "\n";
       bytes_read_write += bin_text_read_write_fixed_validated(
           model_file, reinterpret_cast<char*>(&all.lda), sizeof(all.lda), "", read, msg, text);

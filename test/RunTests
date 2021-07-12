@@ -2465,4 +2465,14 @@ train-sets/ref/slates_simple_w_interactions.stderr
 {VW} -d train-sets/cs_shared.ldf --csoaa_ldf m
     train-sets/ref/cs_shared_ldf.stderr
 
+# Test 342: cats save with predictions
+{VW} --cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -f models/cats_train.model -p cats_save.predict --save_resume
+    train-sets/ref/cats_save.stderr
+    pred-set/ref/cats_save.predict
+
+# Test 343: cats load with predictions
+{VW} --cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -i models/cats_train.model -p cats_load.predict --save_resume
+    train-sets/ref/cats_load.stderr
+    pred-set/ref/cats_load.predict
+
 # Do not delete this line or the empty line above it
