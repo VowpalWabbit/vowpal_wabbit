@@ -101,7 +101,7 @@ void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool o
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       auto* ec2_equiv_feat_group = ec2.feature_space.get_feature_group(it->_index, it->_hash);
-      auto* dest_feat_group = ec.feature_space.get_feature_group(it->_hash);
+      auto* dest_feat_group = ec.feature_space.get_feature_group(it->_index, it->_hash);
 
       if (ec2_equiv_feat_group != nullptr)
       {
