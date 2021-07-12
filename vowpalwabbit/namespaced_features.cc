@@ -16,8 +16,7 @@ void namespaced_features::remove_feature_group(namespace_index ns_index, uint64_
   });
   if (it == bucket.end()) { return; }
   it->_features.clear();
-  _saved_feature_groups.reclaim_object(std::move(it->_features));
-  bucket.erase(it);
+  _saved_feature_group_nodes.splice(_saved_feature_group_nodes.end(), _feature_groups[ns_index], it);
   if (bucket.empty()) {
 
     auto idx_it = std::find(_legacy_indices_existing.begin(), _legacy_indices_existing.end(), ns_index);
@@ -32,10 +31,11 @@ void namespaced_features::clear()
 
   for (auto& ns_index : _legacy_indices_existing)
   {
-    for (auto& namespaced_feat_group : _feature_groups[ns_index]) {
+    for (auto& namespaced_feat_group : _feature_groups[ns_index])
+    {
       namespaced_feat_group._features.clear();
-      _saved_feature_groups.reclaim_object(std::move(namespaced_feat_group._features));
     }
+    _saved_feature_group_nodes.splice(_saved_feature_group_nodes.end(), _feature_groups[ns_index]);
   }
   _legacy_indices_existing.clear();
 }

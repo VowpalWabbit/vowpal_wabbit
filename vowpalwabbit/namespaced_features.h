@@ -191,8 +191,18 @@ struct namespaced_features
     auto* existing_group = get_feature_group(ns_index, hash);
     if (existing_group == nullptr)
     {
-      _feature_groups[ns_index].emplace_back(_saved_feature_groups.take_back(), hash, ns_index);
-      _saved_feature_groups.pop_back();
+      if (!_saved_feature_group_nodes.empty())
+      {
+        _feature_groups[ns_index].splice(
+            _feature_groups[ns_index].end(), _saved_feature_group_nodes, _saved_feature_group_nodes.begin());
+        _feature_groups[ns_index].back()._hash = hash;
+        _feature_groups[ns_index].back()._index = ns_index;
+      }
+      else
+      {
+        _feature_groups[ns_index].emplace_back(features{}, hash, ns_index);
+      }
+
       if (_feature_groups[ns_index].size() == 1) { _legacy_indices_existing.push_back(ns_index); }
       return _feature_groups[ns_index].back()._features;
     }
@@ -241,7 +251,7 @@ struct namespaced_features
 private:
   std::array<std::list<details::namespaced_feature_group>, 256> _feature_groups;
   std::vector<namespace_index> _legacy_indices_existing;
-  VW::moved_object_pool<features> _saved_feature_groups;
+  std::list<details::namespaced_feature_group> _saved_feature_group_nodes;
 };
 
 }  // namespace VW
