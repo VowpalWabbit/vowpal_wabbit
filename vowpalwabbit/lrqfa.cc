@@ -85,7 +85,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
               }
 
               for (auto right_it = ec.feature_space.namespace_index_begin(right);
-                   left_it != ec.feature_space.namespace_index_end(right); ++left_it)
+                   right_it != ec.feature_space.namespace_index_end(right); ++right_it)
               {
                 for (unsigned int rfn = 0; rfn < lrq.orig_size[right_it->_hash]; ++rfn)
                 {
