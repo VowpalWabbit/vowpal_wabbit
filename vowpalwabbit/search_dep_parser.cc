@@ -133,19 +133,17 @@ void inline add_feature(
 void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier,
     uint64_t offset, bool /* audit */ = false)
 {
-  
   for (auto& bucket : src.feature_space) {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       if (it->_index == constant_namespace) { continue; }
-      features& tgt_fs = ex.feature_space.get_or_create_feature_group(tgt_ns, it->_hash);
+      features& tgt_fs = ex.feature_space.get_or_create_feature_group(tgt_ns, tgt_ns);
 
-      for (feature_index i : src.feature_space.at(it->_index, it->_hash).indicies) {
+      for (feature_index i : it->_features.indicies) {
           tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
       }
     }
   }
-
 }
 
 void inline reset_ex(example& ex)
