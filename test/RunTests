@@ -2465,12 +2465,32 @@ train-sets/ref/slates_simple_w_interactions.stderr
 {VW} -d train-sets/cs_shared.ldf --csoaa_ldf m
     train-sets/ref/cs_shared_ldf.stderr
 
-# Test 342: cats save with predictions
+# Test 342: check cb_adf with cache (part1 - no cache, but generate one)
+{VW} --cb_adf -k --cache_file models/cb_test_cache.ldf.cache -d train-sets/cb_test.ldf
+    train-sets/ref/cb_adf_mtr_cache.stderr
+
+# Test 343: check cb_adf with cache (part2 - run with cache)
+{VW} --cb_adf --cache_file models/cb_test_cache.ldf.cache -d train-sets/cb_test.ldf
+    train-sets/ref/cb_adf_mtr_cache_2.stderr
+
+# Test 344: check cb_adf with multiple passes
+{VW} --cb_adf -c --passes 2 -d train-sets/cb_adf_multipass_crash_1.data --holdout_off
+    train-sets/ref/cb_adf_multipass_crash_1.stderr
+
+# Test 345: check cb with multiple passes
+{VW} -d train-sets/cb_multi_cost.dat --cb 4 -k -c --passes 2 --holdout_off
+    train-sets/ref/cb_multi_cost_multipass.stderr
+
+# Test 346: check legacy mode cb with multiple passes
+{VW} -d train-sets/cb_multi_cost.dat --cb 4 -k -c --passes 2 --holdout_off --cb_force_legacy
+    train-sets/ref/cb_multi_cost_multipass_legacy.stderr
+
+# Test 347: cats save with predictions
 {VW} --cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -f models/cats_train.model -p cats_save.predict --save_resume
     train-sets/ref/cats_save.stderr
     pred-set/ref/cats_save.predict
 
-# Test 343: cats load with predictions
+# Test 348: cats load with predictions
 {VW} --cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -i models/cats_train.model -p cats_load.predict --save_resume
     train-sets/ref/cats_load.stderr
     pred-set/ref/cats_load.predict

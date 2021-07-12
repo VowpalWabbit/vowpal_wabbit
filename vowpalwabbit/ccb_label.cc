@@ -61,7 +61,6 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
   if (is_outcome_present)
   {
     ld.outcome = new CCB::conditional_contextual_bandit_outcome();
-    ld.outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
     next_read_size = sizeof(ld.outcome->cost);
     if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0;
@@ -208,7 +207,6 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view& outco
 
   if (split_colons.size() != 3) THROW("Malformed ccb label");
 
-  ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
   ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[2]));
 
   ccb_outcome.cost = float_of_string(split_colons[1]);

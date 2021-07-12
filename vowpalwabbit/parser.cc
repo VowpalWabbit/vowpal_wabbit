@@ -458,7 +458,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       // create children
       size_t num_children = all.num_children;
-      v_array<int> children = v_init<int>();
+      v_array<int> children;
       children.resize_but_with_stl_behavior(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
@@ -770,7 +770,7 @@ void add_constant_feature(vw& vw, example* ec)
   ec->feature_space[constant_namespace].push_back(1, constant);
   ec->num_features++;
   if (vw.audit || vw.hash_inv)
-    ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
+    ec->feature_space[constant_namespace].space_names.push_back(audit_strings("", "Constant"));
 }
 
 void add_label(example* ec, float label, float weight, float base)
