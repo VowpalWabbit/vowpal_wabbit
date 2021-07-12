@@ -278,9 +278,9 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     *d = '|';  // set up for parser::read_line
     VW::read_line(all, ec, d);
     // now we just need to grab stuff from the default namespace of ec!
-    if (ec->feature_space.get_feature_group(DEFAULT_NAMESPACE_HASH, DEFAULT_NAMESPACE_HASH) == nullptr) {
+    if (ec->feature_space.get_feature_group(default_namespace, DEFAULT_NAMESPACE_HASH) == nullptr) {
       continue; }
-    map->emplace(word, VW::make_unique<features>(ec->feature_space.at(DEFAULT_NAMESPACE_HASH)));
+    map->emplace(word, VW::make_unique<features>(ec->feature_space.at(default_namespace, DEFAULT_NAMESPACE_HASH)));
 
     // clear up ec
     ec->tag.clear();
