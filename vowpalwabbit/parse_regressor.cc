@@ -316,7 +316,7 @@ void save_load_header(
         }
       }
 
-      if (!read || all.model_file_ver >= VERSION_FILE_WITH_RANDOM_SEED)
+      if (all.model_file_ver >= VERSION_FILE_WITH_RANDOM_SEED)
       {
         if (!read) { msg << "random_seed: " << all.random_seed << "\n"; }
         bin_text_read_write_fixed_validated(
