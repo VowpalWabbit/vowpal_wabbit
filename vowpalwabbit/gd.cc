@@ -758,7 +758,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
           bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
         }
 
-        msg << ":" << it.index() << ":" << weight_value << "\n";
+        msg << ":" << weight_index << ":" << weight_value << "\n";
         bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
       }
     }
