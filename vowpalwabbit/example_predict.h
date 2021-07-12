@@ -36,7 +36,7 @@ struct indices_proxy_obj
   VW::namespaced_features::ns_index_iterator end() const { return feature_space->index_end(); }
   // TODO this needs to be fixed to be resilient to duplicated indices
   size_t size() const { return end() - begin(); }
-  bool empty() const { return begin() != end(); }
+  bool empty() const { return begin() == end(); }
 };
 
 struct example_predict
