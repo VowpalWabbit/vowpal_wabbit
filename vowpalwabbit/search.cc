@@ -666,14 +666,7 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
       else  // this is actually a neighbor
       {
         example& other = *ec_seq[n + offset];
-        if(priv.all->weights.sparse)
-        {
-          GD::foreach_feature<search_private, add_new_feature, sparse_parameters>(priv.all->weights.sparse_weights, other.feature_space[ns], priv, me.ft_offset);
-        }
-        else
-        {
-          GD::foreach_feature<search_private, add_new_feature, dense_parameters>(priv.all->weights.dense_weights, other.feature_space[ns], priv, me.ft_offset);
-        }
+        GD::foreach_feature<search_private, add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
       }
     }
 

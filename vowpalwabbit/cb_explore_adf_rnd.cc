@@ -154,10 +154,10 @@ inline void vec_add_with_norm(std::pair<float, float>& p, float fx, float fw)
 
 float cb_explore_adf_rnd::get_initial_prediction(example* ec)
 {
-  const LazyGaussian w; // defined as a const as its used in a prediction function and helps assist in calling the overloaded foreach_feature()
+  LazyGaussian w; // defined as a const as its used in a prediction function and helps assist in calling the overloaded foreach_feature()
 
   std::pair<float, float> dotwithnorm(0.f, 0.f);
-  GD::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, const LazyGaussian>(
+  GD::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, LazyGaussian>(
       w, all->ignore_some_linear, all->ignore_linear, all->interactions, all->permutations, *ec, dotwithnorm);
 
   return sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1e-12f, dotwithnorm.first));

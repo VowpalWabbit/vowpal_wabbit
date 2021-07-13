@@ -15,11 +15,10 @@ namespace GD
 {
 // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_index)
 template <class DataT, void (*FuncT)(DataT&, float feature_value, uint64_t feature_index), class WeightsT>
-void foreach_feature(WeightsT& weights, const features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
+void foreach_feature(WeightsT& /*weights*/, const features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
 {
   for (const auto& f : fs) 
   { 
-    weights.turn_on_bit(f.index() + offset); // set a bit in the bitset to 1 for the feature
     FuncT(dat, mult * f.value(), f.index() + offset); 
   }
 }
@@ -42,18 +41,6 @@ inline void foreach_feature(
     const WeightsT& weights, const features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
 {
   for (const auto& f : fs) { FuncT(dat, mult * f.value(), weights[(f.index() + offset)]);}
-}
-
-// iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
-template <class DataT, void (*FuncT)(DataT&, float, float), class WeightsT>
-inline void foreach_feature(
-    WeightsT& weights, const features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
-{
-  for (const auto& f : fs) 
-  { 
-    weights.turn_on_bit(f.index() + offset); // set a bit in the bitset to 1 for the feature
-    FuncT(dat, mult * f.value(), weights[(f.index() + offset)]);
-  }
 }
 
 template <class DataT>

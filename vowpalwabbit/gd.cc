@@ -670,7 +670,20 @@ void update(gd& g, base_learner&, example& ec)
   float update;
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
            g, ec)) != 0.)
-    train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+  {
+    if(g.all->weights.sparse)
+    {
+      g.all->weights.sparse_weights.set_tag(hashall(ec.tag.begin(),ec.tag.size(),g.all->hash_seed)%32); // find the 5-bit hash of the tag for sparse weights
+      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+      g.all->weights.sparse_weights.unset_tag(); // set the tag to false after the example has been trained on    
+    }
+    else
+    {
+      g.all->weights.dense_weights.set_tag(hashall(ec.tag.begin(),ec.tag.size(),g.all->hash_seed)%32); // find the 5-bit hash of the tag for dense weights
+      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+      g.all->weights.dense_weights.unset_tag(); // set the tag to false after the example has been trained on
+    }
+  }
 
   if (g.all->sd->contraction < 1e-9 || g.all->sd->gravity > 1e3)  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
@@ -734,7 +747,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
     for (auto it = weights.begin(); it != weights.end(); ++it)
     {
       const auto weight_value = *it;
-      if (*it != 0.f)
+      if (*it != 0.f && weights.is_activated(it.index())) //TODO : Check where else this condition is needed
       {
         const auto weight_index = it.index() >> weights.stride_shift();
 
