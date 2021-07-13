@@ -64,9 +64,11 @@ public:
   chained_proxy_iterator& operator+=(difference_type diff)
   {
     assert(diff >= 0);
-    while (true) {
+    while (true)
+    {
       auto current_group_distance_to_end = std::distance(_current, (*_outer_current).feats.audit_end());
-      if (diff > current_group_distance_to_end) {
+      if (diff > current_group_distance_to_end)
+      {
         diff -= current_group_distance_to_end;
         ++_outer_current;
         _current = (*_outer_current).feats.audit_begin();

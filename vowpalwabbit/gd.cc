@@ -273,7 +273,7 @@ void print_lda_features(vw& all, example& ec)
   size_t count = 0;
   for (auto& bucket : ec)
   {
-    for (auto& fs : bucket) {count += fs.feats.size();}
+    for (auto& fs : bucket) { count += fs.feats.size(); }
   }
 
   // TODO: Where should audit stuff output to?
@@ -302,19 +302,19 @@ void print_features(vw& all, example& ec)
 
     for (auto& bucket : ec)
     {
-        for (auto& fs : bucket)
-        {
-          if (fs.feats.space_names.size() > 0)
-            for (const auto& f : fs.feats.audit_range())
-            {
-              audit_interaction(dat, f.audit());
-              audit_feature(dat, f.value(), f.index() + ec.ft_offset);
-              audit_interaction(dat, nullptr);
-            }
-          else
+      for (auto& fs : bucket)
+      {
+        if (fs.feats.space_names.size() > 0)
+          for (const auto& f : fs.feats.audit_range())
           {
-            for (const auto& f : fs.feats) { audit_feature(dat, f.value(), f.index() + ec.ft_offset); }
+            audit_interaction(dat, f.audit());
+            audit_feature(dat, f.value(), f.index() + ec.ft_offset);
+            audit_interaction(dat, nullptr);
           }
+        else
+        {
+          for (const auto& f : fs.feats) { audit_feature(dat, f.value(), f.index() + ec.ft_offset); }
+        }
         }
     }
     size_t num_interacted_features = 0;

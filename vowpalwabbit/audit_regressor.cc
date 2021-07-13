@@ -76,13 +76,14 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
 
   std::ostringstream tempstream;
   parameters& weights = rd.all->weights;
-  for (auto& bucket : ec) {
+  for (auto& bucket : ec)
+  {
     for (const auto& feat_group : bucket)
     {
       for (size_t j = 0; j < feat_group.feats.size(); ++j)
       {
-        tempstream << '\t' << feat_group.feats.space_names[j].first << '^' << feat_group.feats.space_names[j].second << ':'
-                   << ((feat_group.feats.indicies[j] >> weights.stride_shift()) & all.parse_mask);
+        tempstream << '\t' << feat_group.feats.space_names[j].first << '^' << feat_group.feats.space_names[j].second
+                   << ':' << ((feat_group.feats.indicies[j] >> weights.stride_shift()) & all.parse_mask);
         for (size_t k = 0; k < all.lda; k++)
         {
           weight& w = weights[(feat_group.feats.indicies[j] + k)];
@@ -146,8 +147,8 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
             rd.all->weights.sparse_weights, num_interacted_features);
       else
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
-            audit_regressor_interaction, dense_parameters>(rd.all->interactions, rd.all->permutations, ec, rd,
-            rd.all->weights.dense_weights, num_interacted_features);
+            audit_regressor_interaction, dense_parameters>(
+            rd.all->interactions, rd.all->permutations, ec, rd, rd.all->weights.dense_weights, num_interacted_features);
 
       ec.ft_offset += rd.increment;
       ++rd.cur_class;

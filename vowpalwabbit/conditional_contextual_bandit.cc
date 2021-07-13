@@ -208,7 +208,8 @@ bool has_action(multi_ex& cb_ex) { return !cb_ex.empty(); }
 // Copy other slot namespaces to shared
 void inject_slot_features(example* shared, example* slot)
 {
-  for (auto& bucket : slot->feature_space) {
+  for (auto& bucket : slot->feature_space)
+  {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       // constant namespace should be ignored, as it already exists and we don't want to double it up.
@@ -216,16 +217,13 @@ void inject_slot_features(example* shared, example* slot)
 
       // slot default namespace has a special namespace in shared
       if (it->index == default_namespace)
-      {
-        LabelDict::add_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->feats);
-      }
+      { LabelDict::add_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->feats); }
       else
       {
         LabelDict::add_example_namespace(*shared, it->index, it->hash, it->feats);
       }
     }
   }
-
 }
 
 template <bool audit>
@@ -272,9 +270,7 @@ void remove_slot_features(example* shared, example* slot)
       if (it->index == constant_namespace) { continue; }
 
       if (it->index == default_namespace)  // slot default namespace has a special namespace in shared
-      {
-        LabelDict::del_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->feats);
-      }
+      { LabelDict::del_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->feats); }
       else
       {
         LabelDict::del_example_namespace(*shared, it->index, it->hash, it->feats);
@@ -401,8 +397,8 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   {
     // We decide that user defined features exist if there is at least one feature space which is not the constant
     // namespace.
-    const bool user_defined_slot_features_exist = !data.slots.empty() && !data.slots[0]->indices.empty() &&
-        *data.slots[0]->indices.begin() != constant_namespace;
+    const bool user_defined_slot_features_exist =
+        !data.slots.empty() && !data.slots[0]->indices.empty() && *data.slots[0]->indices.begin() != constant_namespace;
     data.has_seen_multi_slot_example = data.has_seen_multi_slot_example || user_defined_slot_features_exist;
   }
   const bool should_augment_with_slot_info = data.has_seen_multi_slot_example;

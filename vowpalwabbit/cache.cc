@@ -91,7 +91,8 @@ int VW::read_example_from_cache(
     size_t temp;
     unsigned char index = 0;
     uint64_t ns_hash = 0;
-    if ((temp = input.buf_read(c, sizeof(index) + sizeof(ns_hash) + sizeof(size_t))) < sizeof(index) + sizeof(ns_hash) + sizeof(size_t))
+    if ((temp = input.buf_read(c, sizeof(index) + sizeof(ns_hash) + sizeof(size_t))) <
+        sizeof(index) + sizeof(ns_hash) + sizeof(size_t))
     {
       VW::io::logger::errlog_error("truncated example! {} {} ", temp, char_size + sizeof(size_t));
       return 0;
@@ -169,10 +170,7 @@ void output_features(io_buf& cache, unsigned char index, uint64_t ns_hash, const
   size_t storage = fs.size() * int_size;
   for (feature_value f : fs.values)
   {
-    if (f != 1. && f != -1.)
-    {
-      storage += sizeof(feature_value);
-    }
+    if (f != 1. && f != -1.) { storage += sizeof(feature_value); }
   }
 
   cache.buf_write(c, sizeof(index) + sizeof(ns_hash) + storage + sizeof(size_t));
@@ -224,12 +222,11 @@ void cache_features(io_buf& cache, const example* ae, uint64_t mask)
   cache_tag(cache, ae->tag);
   cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
   cache.write_value<uint64_t>(static_cast<uint64_t>(ae->feature_space.size()));
-  for (auto& bucket : *const_cast<example*>(ae)) { for (auto it = bucket.begin(); it != bucket.end(); ++it)
+  for (auto& bucket : *const_cast<example*>(ae))
   {
-    output_features(cache, it->index, it->hash, it->feats, mask);
-  }}
-
-
+    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    { output_features(cache, it->index, it->hash, it->feats, mask); }
+  }
 }
 
 uint32_t VW::convert(size_t number)

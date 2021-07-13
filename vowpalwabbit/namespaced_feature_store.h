@@ -27,18 +27,12 @@ public:
   using difference_type = std::ptrdiff_t;
   using value_type = ListT;
 
-  indexed_iterator_t(
-      IndexItT indices,
-      ArrayT* feature_groups)
-      : _indices_it(indices)
-      , _feature_group_buckets(feature_groups)
+  indexed_iterator_t(IndexItT indices, ArrayT* feature_groups)
+      : _indices_it(indices), _feature_group_buckets(feature_groups)
   {
   }
 
-  value_type& operator*()
-  {
-    return (*_feature_group_buckets)[*_indices_it];
-  }
+  value_type& operator*() { return (*_feature_group_buckets)[*_indices_it]; }
 
   indexed_iterator_t& operator++()
   {
@@ -79,8 +73,10 @@ public:
 /// identifier namespace_hash - 8 byte hash
 struct namespaced_feature_store
 {
-  using iterator = indexed_iterator_t<std::array<std::list<namespaced_features>, 256>, std::vector<namespace_index>::iterator, std::list<namespaced_features>>;
-  using const_iterator = indexed_iterator_t<const std::array<std::list<namespaced_features>, 256>, std::vector<namespace_index>::const_iterator, const std::list<namespaced_features>>;
+  using iterator = indexed_iterator_t<std::array<std::list<namespaced_features>, 256>,
+      std::vector<namespace_index>::iterator, std::list<namespaced_features>>;
+  using const_iterator = indexed_iterator_t<const std::array<std::list<namespaced_features>, 256>,
+      std::vector<namespace_index>::const_iterator, const std::list<namespaced_features>>;
   using list_iterator = std::list<namespaced_features>::iterator;
   using const_list_iterator = std::list<namespaced_features>::const_iterator;
   using index_flat_iterator = VW::chained_proxy_iterator<list_iterator, features::audit_iterator>;
@@ -104,12 +100,10 @@ struct namespaced_feature_store
   namespaced_feature_store(namespaced_feature_store&& other) = default;
   namespaced_feature_store& operator=(namespaced_feature_store&& other) = default;
 
-  inline size_t size() const {
+  inline size_t size() const
+  {
     size_t accumulator = 0;
-    for (auto ns_index : _legacy_indices_existing)
-    {
-      accumulator += _feature_groups[ns_index].size();
-    }
+    for (auto ns_index : _legacy_indices_existing) { accumulator += _feature_groups[ns_index].size(); }
     return accumulator;
   }
   inline bool empty() const { return _legacy_indices_existing.empty(); }
@@ -118,9 +112,8 @@ struct namespaced_feature_store
   inline features* get_or_null(namespace_index ns_index, uint64_t hash)
   {
     auto& bucket = _feature_groups[ns_index];
-    auto it = std::find_if(bucket.begin(), bucket.end(), [hash](const namespaced_features& group) {
-      return group.hash == hash;
-    });
+    auto it = std::find_if(
+        bucket.begin(), bucket.end(), [hash](const namespaced_features& group) { return group.hash == hash; });
     if (it == bucket.end()) { return nullptr; }
     return &it->feats;
   }
@@ -129,7 +122,8 @@ struct namespaced_feature_store
   inline const features* get_or_null(namespace_index ns_index, uint64_t hash) const
   {
     auto& bucket = _feature_groups[ns_index];
-    auto it = std::find_if(bucket.begin(), bucket.end(), [hash](const namespaced_features& group) { return group.hash == hash; });
+    auto it = std::find_if(
+        bucket.begin(), bucket.end(), [hash](const namespaced_features& group) { return group.hash == hash; });
     if (it == bucket.end()) { return nullptr; }
     return &it->feats;
   }
@@ -153,17 +147,12 @@ struct namespaced_feature_store
   features& get_or_create(namespace_index ns_index, uint64_t hash);
 
   // UB if the list itself is modified.
-  inline std::list<namespaced_features>& get_list(namespace_index index)
-  {
-    return _feature_groups[index];
-  }
+  inline std::list<namespaced_features>& get_list(namespace_index index) { return _feature_groups[index]; }
 
-  inline const std::list<namespaced_features>& get_list(namespace_index index) const
-  {
-    return _feature_groups[index];
-  }
+  inline const std::list<namespaced_features>& get_list(namespace_index index) const { return _feature_groups[index]; }
 
-  /// Will invalidate any iterator to the removed namespaced_features. Use the overload which returns an iterator if removing while traversing a list.
+  /// Will invalidate any iterator to the removed namespaced_features. Use the overload which returns an iterator if
+  /// removing while traversing a list.
   void remove(namespace_index ns_index, uint64_t hash);
 
   void clear();
@@ -179,17 +168,11 @@ struct namespaced_feature_store
 
   // UB if the index or hash is modified.
   // UB if the list itself is modified.
-  inline iterator end()
-  {
-      return {_legacy_indices_existing.end(), &_feature_groups};
-  }
+  inline iterator end() { return {_legacy_indices_existing.end(), &_feature_groups}; }
 
   inline const_iterator begin() const { return {_legacy_indices_existing.begin(), &_feature_groups}; }
 
-  inline const_iterator end() const
-  {
-      return {_legacy_indices_existing.end(), &_feature_groups};
-  }
+  inline const_iterator end() const { return {_legacy_indices_existing.end(), &_feature_groups}; }
 
 private:
   std::array<std::list<namespaced_features>, 256> _feature_groups;
@@ -197,9 +180,8 @@ private:
   std::list<namespaced_features> _saved_feature_group_nodes;
 };
 
-
 // UB if the index or hash is modified.
- template <typename FuncT>
+template <typename FuncT>
 inline void foreach (namespaced_feature_store& store, FuncT func)
 {
   for (const auto& group_list : store)
@@ -228,9 +210,7 @@ inline void foreach (const namespaced_feature_store& store, FuncT func)
   for (const auto& group_list : store)
   {
     for (const auto& namespaced_feat_group : group_list)
-    {
-      func(namespaced_feat_group.index, namespaced_feat_group.hash, namespaced_feat_group.feats);
-    }
+    { func(namespaced_feat_group.index, namespaced_feat_group.hash, namespaced_feat_group.feats); }
   }
 }
 

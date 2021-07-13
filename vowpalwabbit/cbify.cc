@@ -155,7 +155,8 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     VW::copy_example_data(&eca, &ec);
 
     // offset indices for given action
-    for (auto& bucket : eca) {
+    for (auto& bucket : eca)
+    {
       for (auto& fs : bucket)
       {
         for (feature_index& idx : fs.feats.indicies)
@@ -167,7 +168,6 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
         }
       }
     }
-
 
     // avoid empty example by adding a tag (hacky)
     if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l)) { eca.tag.push_back('n'); }

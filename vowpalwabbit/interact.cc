@@ -119,9 +119,8 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   ec.num_features -= get_ns_size(ec, in.n2);
 
   in.feat_store.clear();
-  multiply(in.feat_store, ec.feature_space.index_flat_begin(in.n1),
-      ec.feature_space.index_flat_end(in.n1), ec.feature_space.index_flat_begin(in.n2),
-      ec.feature_space.index_flat_end(in.n2), in.all->weights.mask());
+  multiply(in.feat_store, ec.feature_space.index_flat_begin(in.n1), ec.feature_space.index_flat_end(in.n1),
+      ec.feature_space.index_flat_begin(in.n2), ec.feature_space.index_flat_end(in.n2), in.all->weights.mask());
   ec.reset_total_sum_feat_sq();
   ec.num_features = in.feat_store.size();
 
@@ -137,17 +136,13 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
       index_removed.push_back(group.index);
       removed_features.emplace_back(std::move(group.feats));
     }
-    for (size_t i = 0; i < hashes_removed.size(); i++)
-    {
-      ec.feature_space.remove(index_removed[i], hashes_removed[i]);
-    }
+    for (size_t i = 0; i < hashes_removed.size(); i++) { ec.feature_space.remove(index_removed[i], hashes_removed[i]); }
   };
 
   remove_index(in.n1);
   remove_index(in.n2);
 
-  ec.feature_space.get_or_create(interact_reduction_namespace, interact_reduction_namespace) =
-      std::move(in.feat_store);
+  ec.feature_space.get_or_create(interact_reduction_namespace, interact_reduction_namespace) = std::move(in.feat_store);
 
   base.predict(ec);
   if (is_learn) base.learn(ec);
@@ -157,9 +152,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
 
   // re-insert namespace into the right position
   for (size_t i = 0; i < hashes_removed.size(); i++)
-  {
-    ec.feature_space.get_or_create(index_removed[i], hashes_removed[i]) = std::move(removed_features[i]);
-  }
+  { ec.feature_space.get_or_create(index_removed[i], hashes_removed[i]) = std::move(removed_features[i]); }
 
   ec.num_features = in.num_features;
 }

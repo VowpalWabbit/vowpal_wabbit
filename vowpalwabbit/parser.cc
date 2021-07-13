@@ -643,7 +643,8 @@ void feature_limit(const vw& all, example* ex)
 {
   for (auto& bucket : *ex)
   {
-    for (auto& fs : bucket) {
+    for (auto& fs : bucket)
+    {
       if (all.limit[fs.index] < fs.feats.size())
       {
         fs.feats.sort(all.parse_mask);
@@ -707,7 +708,8 @@ void setup_example(vw& all, example* ae)
     std::vector<std::pair<namespace_index, uint64_t>> hashes_to_remove;
     for (auto& bucket : *ae)
     {
-      for (auto& fs : bucket) {
+      for (auto& fs : bucket)
+      {
         if (all.ignore[fs.index]) { hashes_to_remove.emplace_back(fs.index, fs.hash); }
       }
     }
@@ -724,8 +726,10 @@ void setup_example(vw& all, example* ae)
 
   if (multiplier != 1)  // make room for per-feature information.
   {
-    for (auto& bucket : *ae) {
-      for (auto& fs : bucket) {
+    for (auto& bucket : *ae)
+    {
+      for (auto& fs : bucket)
+      {
         for (auto& j : fs.feats.indicies) { j *= multiplier; }
       }
     }
@@ -813,9 +817,7 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
     size_t number_of_features = 0;
 
     for (const auto& feat_namespace : ec->feature_space.get_list(index))
-    {
-      number_of_features += feat_namespace.feats.size();
-    }
+    { number_of_features += feat_namespace.feats.size(); }
 
     fs_ptr[index_counter].name = index;
     fs_ptr[index_counter].len = number_of_features;

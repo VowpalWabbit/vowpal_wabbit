@@ -12,7 +12,8 @@
 float calculate_total_sum_features_squared(bool permutations, example& ec)
 {
   float sum_features_squared = 0.f;
-  for (auto& bucket : ec) {
+  for (auto& bucket : ec)
+  {
     for (const auto& fs : bucket) { sum_features_squared += fs.feats.sum_feat_sq; }
   }
 
@@ -139,12 +140,9 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
   auto& group_list = src->feature_space.get_list(c);
 
   // Check if the range is empty.
-  if(group_list.empty())
-  {
-    return;
-  }
+  if (group_list.empty()) { return; }
 
-  std::vector<std::pair<namespace_index,uint64_t>> hashes_to_remove;
+  std::vector<std::pair<namespace_index, uint64_t>> hashes_to_remove;
   hashes_to_remove.reserve(group_list.size());
 
   for (auto& ns_fs : group_list)

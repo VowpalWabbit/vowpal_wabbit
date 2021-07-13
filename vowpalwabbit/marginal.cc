@@ -65,8 +65,8 @@ void make_marginal(data& sm, example& ec)
   sm.net_feature_weight = 0.;
   sm.average_pred = 0.;
 
-
-  for (auto& bucket : ec) {
+  for (auto& bucket : ec)
+  {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       namespace_index n = it->index;
@@ -105,9 +105,7 @@ void make_marginal(data& sm, example& ec)
           float marginal_pred = static_cast<float>(sm.marginals[key].first / sm.marginals[key].second);
           it->feats.push_back(marginal_pred, first_index);
           if (!current.space_names.empty())
-          {
-            it->feats.space_names.push_back(current.space_names[2 * (it->feats.size() - 1)]);
-          }
+          { it->feats.space_names.push_back(current.space_names[2 * (it->feats.size() - 1)]); }
 
           if (sm.compete)  // compute the prediction from the marginals using the weights
           {
@@ -121,7 +119,6 @@ void make_marginal(data& sm, example& ec)
       }
     }
   }
-
 }
 
 void undo_marginal(data& sm, example& ec)
@@ -170,7 +167,8 @@ void update_marginal(data& sm, example& ec)
   float weight = ec.weight;
   if (sm.unweighted_marginals) { weight = 1.; }
 
-  for (auto& bucket : ec) {
+  for (auto& bucket : ec)
+  {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       if (sm.id_features[it->index])
@@ -202,7 +200,6 @@ void update_marginal(data& sm, example& ec)
         }
     }
   }
-
 }
 
 template <bool is_learn>

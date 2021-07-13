@@ -35,12 +35,9 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   vw& all = *lrq.all;
 
   lrq.orig_size.clear();
-  for (auto& bucket : ec) {
-    for (auto it = bucket.begin(); it != bucket.end(); ++it)
-    {
-      lrq.orig_size[it->hash] = it->feats.size();
-    }
-
+  for (auto& bucket : ec)
+  {
+    for (auto it = bucket.begin(); it != bucket.end(); ++it) { lrq.orig_size[it->hash] = it->feats.size(); }
   }
 
   size_t which = ec.example_counter;
@@ -136,12 +133,8 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 
     for (namespace_index right : lrq.field_name)
     {
-
-     for (auto& right_ns_fs : ec.feature_space.get_list(right))
-      {
-        right_ns_fs.feats.truncate_to(lrq.orig_size[right_ns_fs.hash]);
-      }
-
+      for (auto& right_ns_fs : ec.feature_space.get_list(right))
+      { right_ns_fs.feats.truncate_to(lrq.orig_size[right_ns_fs.hash]); }
     }
   }
 }

@@ -7,7 +7,7 @@
 
 using namespace VW;
 
-  // If no feature group already exists a default one will be created.
+// If no feature group already exists a default one will be created.
 // Creating new feature groups will invalidate any pointers or references held.
 features& namespaced_feature_store::get_or_create(namespace_index ns_index, uint64_t hash)
 {
@@ -33,14 +33,11 @@ features& namespaced_feature_store::get_or_create(namespace_index ns_index, uint
   return *existing_group;
 }
 
-void namespaced_feature_store::remove(
-    namespace_index ns_index, uint64_t hash)
+void namespaced_feature_store::remove(namespace_index ns_index, uint64_t hash)
 {
   auto& bucket = _feature_groups[ns_index];
-  auto it = std::find_if(bucket.begin(), bucket.end(),
-      [hash](const namespaced_features& group) {
-    return group.hash == hash;
-  });
+  auto it = std::find_if(
+      bucket.begin(), bucket.end(), [hash](const namespaced_features& group) { return group.hash == hash; });
   if (it == bucket.end()) { return; }
   it->feats.clear();
   _saved_feature_group_nodes.splice(_saved_feature_group_nodes.end(), _feature_groups[ns_index], it);
@@ -49,18 +46,13 @@ void namespaced_feature_store::remove(
     auto idx_it = std::find(_legacy_indices_existing.begin(), _legacy_indices_existing.end(), ns_index);
     if (idx_it != _legacy_indices_existing.end()) { _legacy_indices_existing.erase(idx_it); }
   }
-
 }
 
 void namespaced_feature_store::clear()
 {
-
   for (auto& ns_index : _legacy_indices_existing)
   {
-    for (auto& namespaced_feat_group : _feature_groups[ns_index])
-    {
-      namespaced_feat_group.feats.clear();
-    }
+    for (auto& namespaced_feat_group : _feature_groups[ns_index]) { namespaced_feat_group.feats.clear(); }
     _saved_feature_group_nodes.splice(_saved_feature_group_nodes.end(), _feature_groups[ns_index]);
   }
   _legacy_indices_existing.clear();
@@ -74,10 +66,7 @@ namespaced_feature_store::index_flat_begin(namespace_index ns_index)
   features::audit_iterator inner_it;
   // If the range is empty we must default construct the inner iterator as dereferencing an end pointer (What begin_it
   // is here) is not valid.
-  if (begin_it == end_it)
-  {
-    inner_it = features::audit_iterator{};
-  }
+  if (begin_it == end_it) { inner_it = features::audit_iterator{}; }
   else
   {
     --end_it;
@@ -95,10 +84,7 @@ namespaced_feature_store::index_flat_end(namespace_index ns_index)
   auto begin_it = _feature_groups[ns_index].begin();
   auto end_it = _feature_groups[ns_index].end();
   features::audit_iterator inner_it;
-  if (begin_it == end_it)
-  {
-    inner_it = features::audit_iterator{};
-  }
+  if (begin_it == end_it) { inner_it = features::audit_iterator{}; }
   else
   {
     --end_it;

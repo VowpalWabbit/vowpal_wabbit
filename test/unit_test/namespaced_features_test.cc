@@ -66,7 +66,6 @@ BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_test)
   BOOST_CHECK(it == feature_groups.index_flat_end('a'));
 }
 
-
 BOOST_AUTO_TEST_CASE(namespaced_features_proxy_iterator_loop_test)
 {
   VW::namespaced_feature_store feature_groups;

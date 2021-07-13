@@ -687,7 +687,8 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
   float xc_w = 0;
   float score = 0;
   float doc_length = 0;
-  do {
+  do
+  {
     memcpy(v, new_gamma.begin(), sizeof(float) * l.topics);
     l.expdigammify(*l.all, v);
 
@@ -701,19 +702,19 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
     {
       for (auto& fs : bucket)
       {
-      for (features::iterator& f : fs.feats)
-      {
-        float* u_for_w = &(weights[f.index()]) + l.topics + 1;
-        float c_w = find_cw(l, u_for_w, v);
-        xc_w = c_w * f.value();
-        score += -f.value() * log(c_w);
-        size_t max_k = l.topics;
-        for (size_t k = 0; k < max_k; k++, ++u_for_w) new_gamma[k] += xc_w * *u_for_w;
-        word_count++;
-        doc_length += f.value();
-      }
+        for (features::iterator& f : fs.feats)
+        {
+          float* u_for_w = &(weights[f.index()]) + l.topics + 1;
+          float c_w = find_cw(l, u_for_w, v);
+          xc_w = c_w * f.value();
+          score += -f.value() * log(c_w);
+          size_t max_k = l.topics;
+          for (size_t k = 0; k < max_k; k++, ++u_for_w) new_gamma[k] += xc_w * *u_for_w;
+          word_count++;
+          doc_length += f.value();
+        }
     }
-  }
+    }
     for (size_t k = 0; k < l.topics; k++) new_gamma[k] = new_gamma[k] * v[k] + l.lda_alpha;
   } while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 

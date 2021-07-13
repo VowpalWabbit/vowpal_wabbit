@@ -75,9 +75,7 @@ void predict(mf& data, single_learner& base, example& ec)
       for (size_t k = 1; k <= data.rank; k++)
       {
         // TODO: Work out a way to not have to make copies to make this work
-      for (const auto& ns_fs : left_ns_fs)
-      { ec.feature_space.get_or_create(left_ns, left_ns).concat(ns_fs.feats);
-      }
+        for (const auto& ns_fs : left_ns_fs) { ec.feature_space.get_or_create(left_ns, left_ns).concat(ns_fs.feats); }
 
         // compute l^k * x_l using base learner
         base.predict(ec, k);
@@ -86,9 +84,7 @@ void predict(mf& data, single_learner& base, example& ec)
 
         // set example to right namespace only
         ec.feature_space.clear();
-        for (const auto& ns_fs : right_ns_fs)         {
-          ec.feature_space.get_or_create(left_ns, left_ns).concat(ns_fs.feats);
-        }
+        for (const auto& ns_fs : right_ns_fs) { ec.feature_space.get_or_create(left_ns, left_ns).concat(ns_fs.feats); }
 
         // compute r^k * x_r using base learner
         base.predict(ec, k + data.rank);
@@ -139,9 +135,7 @@ void learn(mf& data, single_learner& base, example& ec)
     if (!left_ns_fs.empty() > 0 && !right_ns_fs.empty())
     {
       // TODO: Work out a way to not have to make copies to make this work
-      for (const auto& ns_fs : left_ns_fs)
-      { ec.feature_space.get_or_create(left_ns, left_ns).concat(ns_fs.feats);
-      }
+      for (const auto& ns_fs : left_ns_fs) { ec.feature_space.get_or_create(left_ns, left_ns).concat(ns_fs.feats); }
 
       for (size_t k = 1; k <= data.rank; k++)
       {
@@ -161,7 +155,6 @@ void learn(mf& data, single_learner& base, example& ec)
       // set example to right namespace only
       ec.feature_space.clear();
       for (const auto& ns_fs : right_ns_fs) { ec.feature_space.get_or_create(right_ns, right_ns).concat(ns_fs.feats); }
-
 
       for (size_t k = 1; k <= data.rank; k++)
       {

@@ -100,7 +100,7 @@ struct pred_offset
 void offset_add(pred_offset& res, const float fx, float& fw) { res.p += (&fw)[res.offset] * fx; }
 
 template <typename ContainerT>
-size_t count_features(const ContainerT&  list)
+size_t count_features(const ContainerT& list)
 {
   size_t count = 0;
   for (const auto& item : list) { count += item.feats.size(); }
@@ -137,9 +137,9 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   float linear_prediction = 0.;
   // linear terms
-  for (auto& bucket : ec) {
+  for (auto& bucket : ec)
+  {
     for (auto& fs : bucket) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs.feats, linear_prediction); }
-
   }
 
   // store constant + linear prediction
@@ -162,18 +162,14 @@ float mf_predict(gdmf& d, example& ec, T& weights)
         // float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         pred_offset x_dot_l = {0., k};
         for (auto& first_ns_features : ec.feature_space.get_list(i[0]))
-        {
-          GD::foreach_feature<pred_offset, offset_add, T>(weights, first_ns_features.feats, x_dot_l);
-        }
+        { GD::foreach_feature<pred_offset, offset_add, T>(weights, first_ns_features.feats, x_dot_l); }
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         // float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(),
         // k+d.rank);
         pred_offset x_dot_r = {0., k + d.rank};
         for (auto& second_ns_features : ec.feature_space.get_list(i[1]))
-        {
-          GD::foreach_feature<pred_offset, offset_add, T>(weights, second_ns_features.feats, x_dot_r);
-        }
+        { GD::foreach_feature<pred_offset, offset_add, T>(weights, second_ns_features.feats, x_dot_r); }
 
         prediction += x_dot_l.p * x_dot_r.p;
 
@@ -249,9 +245,8 @@ void mf_train(gdmf& d, example& ec, T& weights)
         // r^k \cdot x_r
         float r_dot_x = d.scalars[2 * k];
         // l^k <- l^k + update * (r^k \cdot x_r) * x_l
-        for (auto& first_ns_features : ec.feature_space.get_list(i[0])){
-          sd_offset_update<T>(weights, first_ns_features.feats, k, update * r_dot_x, regularization);
-        }
+        for (auto& first_ns_features : ec.feature_space.get_list(i[0]))
+        { sd_offset_update<T>(weights, first_ns_features.feats, k, update * r_dot_x, regularization); }
       }
       // update r^k weights
       for (size_t k = 1; k <= d.rank; k++)
@@ -259,9 +254,8 @@ void mf_train(gdmf& d, example& ec, T& weights)
         // l^k \cdot x_l
         float l_dot_x = d.scalars[2 * k - 1];
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
-        for (auto& second_ns_features : ec.feature_space.get_list(i[0])) {
-          sd_offset_update<T>(weights, second_ns_features.feats, k + d.rank, update * l_dot_x, regularization);
-        }
+        for (auto& second_ns_features : ec.feature_space.get_list(i[0]))
+        { sd_offset_update<T>(weights, second_ns_features.feats, k + d.rank, update * l_dot_x, regularization); }
       }
     }
   }

@@ -61,8 +61,9 @@ struct Namespace
 
 inline void remove_empty_namespaces(VW::namespaced_feature_store& feature_space)
 {
-  std::vector<std::pair<namespace_index,uint64_t>> hashes_to_remove;
-  for (const auto& group_list : feature_space) {
+  std::vector<std::pair<namespace_index, uint64_t>> hashes_to_remove;
+  for (const auto& group_list : feature_space)
+  {
     for (const auto& ns_fs : group_list)
     {
       if (ns_fs.feats.empty()) { hashes_to_remove.emplace_back(ns_fs.index, ns_fs.hash); }
@@ -83,7 +84,6 @@ void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespa
   n.name = ns;
   namespaces.push_back(std::move(n));
 }
-
 
 template <bool audit>
 void pop_ns(example* ex, std::vector<Namespace<audit>>& namespaces)

@@ -384,13 +384,15 @@ void to_flat::convert_txt_to_flat(vw& all)
             fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(
                 _builder, f.audit()->second.c_str(), f.value(), f.index()));
           }
-          namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), it.index(), &fts, it.hash());
+          namespace_offset =
+              VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), it.index(), &fts, it.hash());
         }
         else
         {
           for (features::iterator& f : *it)
           { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index())); }
-          namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, it.index(), &fts, it.hash());
+          namespace_offset =
+              VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, it.index(), &fts, it.hash());
         }
         _share_examples[refid] = namespace_offset;
       }

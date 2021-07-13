@@ -58,11 +58,10 @@ void send_features(io_buf* b, example& ec, uint32_t mask)
   // note: subtracting 1 b/c not sending constant
   output_byte(*b, static_cast<uint64_t>(ec.feature_space.size() - 1));
 
-  for (auto& bucket : ec.feature_space) {
+  for (auto& bucket : ec.feature_space)
+  {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
-    {
-      output_features(*b, it->index, it->hash, it->feats, mask);
-    }
+    { output_features(*b, it->index, it->hash, it->feats, mask); }
   }
 
   b->flush();

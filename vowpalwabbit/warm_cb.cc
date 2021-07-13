@@ -170,9 +170,7 @@ void copy_example_to_adf(warm_cb& data, example& ec)
       for (auto& fs : bucket)
       {
         for (feature_index& idx : fs.feats.indicies)
-        {
-          idx = ((((idx >> ss) * 28904713) + 4832917 * static_cast<uint64_t>(a)) << ss) & mask;
-        }
+        { idx = ((((idx >> ss) * 28904713) + 4832917 * static_cast<uint64_t>(a)) << ss) & mask; }
       }
     }
 

@@ -53,8 +53,7 @@ struct feature_gen_data
   bool self_interaction = false;  // namespace interacting with itself
 
   namespace_index ns_idx;
-  VW::chained_proxy_iterator<VW::namespaced_feature_store::list_iterator, features::audit_iterator>
-      current_it;
+  VW::chained_proxy_iterator<VW::namespaced_feature_store::list_iterator, features::audit_iterator> current_it;
   VW::chained_proxy_iterator<VW::namespaced_feature_store::list_iterator, features::audit_iterator> end_it;
 
   feature_gen_data(namespace_index ns_idx,
@@ -154,7 +153,8 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                 feature_index halfhash = FNV_prime * static_cast<uint64_t>(first.feats.indicies[i]);
                 if (audit)
                 {
-                  audit_func(dat, i < first.feats.space_names.size() ? &first.feats.space_names[i] : &EMPTY_AUDIT_STRINGS);
+                  audit_func(
+                      dat, i < first.feats.space_names.size() ? &first.feats.space_names[i] : &EMPTY_AUDIT_STRINGS);
                 }
                 // next index differs for permutations and simple combinations
                 feature_value ft_value = first.feats.values[i];
@@ -213,7 +213,8 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                   {
                     if (audit)
                     {
-                      audit_func(dat, i < first.feats.space_names.size() ? &first.feats.space_names[i] : &EMPTY_AUDIT_STRINGS);
+                      audit_func(
+                          dat, i < first.feats.space_names.size() ? &first.feats.space_names[i] : &EMPTY_AUDIT_STRINGS);
                     }
                     const uint64_t halfhash1 = FNV_prime * static_cast<uint64_t>(first.feats.indicies[i]);
                     float first_ft_value = first.feats.values[i];
@@ -225,10 +226,11 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                     {  // f3 x k*(f2 x k*f1)
                       if (audit)
                       {
-                        audit_func(
-                            dat, j < second.feats.space_names.size() ? &second.feats.space_names[j] : &EMPTY_AUDIT_STRINGS);
+                        audit_func(dat,
+                            j < second.feats.space_names.size() ? &second.feats.space_names[j] : &EMPTY_AUDIT_STRINGS);
                       }
-                      feature_index halfhash = FNV_prime * (halfhash1 ^ static_cast<uint64_t>(second.feats.indicies[j]));
+                      feature_index halfhash =
+                          FNV_prime * (halfhash1 ^ static_cast<uint64_t>(second.feats.indicies[j]));
                       feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.feats.values[j]);
 
                       auto begin = third.feats.audit_cbegin();
@@ -266,8 +268,8 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
           must_skip_interaction = true;
           break;
         }
-        state_data.push_back(feature_gen_data{
-            n, ec.feature_space.index_flat_begin(n), ec.feature_space.index_flat_end(n)});
+        state_data.push_back(
+            feature_gen_data{n, ec.feature_space.index_flat_begin(n), ec.feature_space.index_flat_end(n)});
       }
 
       // if any of interacting namespace has 0 features - whole interaction is skipped
@@ -275,7 +277,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 
       auto fgd = state_data.data();                             // always equal to first ns
       auto fgd2 = state_data.data() + (state_data.size() - 1);  // always equal to last ns
-      if (!permutations)                                   // adjust state_data for simple combinations
+      if (!permutations)                                        // adjust state_data for simple combinations
       {  // if permutations mode is disabeled then namespaces in ns are already sorted and thus grouped
         // (in fact, currently they are sorted even for enabled permutations mode)
         // let's go throw the list and calculate number of features to skip in namespaces which
@@ -315,7 +317,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
         if (must_skip_interaction) continue;  // impossible_without_permutations
       }                                       // end of state_data adjustment
 
-      fgd = state_data.data();     // always equal to first ns
+      fgd = state_data.data();                             // always equal to first ns
       fgd2 = state_data.data() + (state_data.size() - 1);  // always equal to last ns
 
       // beware: micro-optimization.
@@ -338,8 +340,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
           {  // if next namespace is same, we should start with loop_idx + 1 to avoid feature interaction with itself
             // unless feature has value x and x != x*x. E.g. x != 0 and x != 1. Features with x == 0 are already
             // filtered out in parce_args.cc::maybeFeature().
-            auto current_offset =
-                cur_data->current_it - ec.feature_space.index_flat_begin(cur_data->ns_idx);
+            auto current_offset = cur_data->current_it - ec.feature_space.index_flat_begin(cur_data->ns_idx);
             current_offset += PROCESS_SELF_INTERACTIONS((*cur_data->current_it).value()) ? 0 : 1;
             next_data->current_it = ec.feature_space.index_flat_begin(next_data->ns_idx);
             next_data->current_it += current_offset;
@@ -368,8 +369,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
           // last namespace - iterate its features and go back
           // start value is not a constant in this case
           size_t start_i = 0;
-          if (!permutations)
-          { start_i = fgd2->current_it - ec.feature_space.index_flat_begin(fgd2->ns_idx); }
+          if (!permutations) { start_i = fgd2->current_it - ec.feature_space.index_flat_begin(fgd2->ns_idx); }
 
           feature_value ft_value = fgd2->x;
           feature_index halfhash = fgd2->hash;

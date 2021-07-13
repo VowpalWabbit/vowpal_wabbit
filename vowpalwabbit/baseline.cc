@@ -33,8 +33,7 @@ void reset_baseline_disabled(example* ec)
 
 bool baseline_enabled(example* ec)
 {
-  auto* fs =
-      ec->feature_space.get_or_null(baseline_enabled_message_namespace, baseline_enabled_message_namespace);
+  auto* fs = ec->feature_space.get_or_null(baseline_enabled_message_namespace, baseline_enabled_message_namespace);
   return fs != nullptr;
 }
 }  // namespace BASELINE

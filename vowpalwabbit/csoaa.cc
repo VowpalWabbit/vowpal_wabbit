@@ -179,7 +179,8 @@ struct ldf
 bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or just "label:___"
 {
   if (ec.feature_space.empty()) return false;
-  // Based on how this was written before it looks like the label definition example should contain a single namespace of l
+  // Based on how this was written before it looks like the label definition example should contain a single namespace
+  // of l
   const auto& indices = ec.feature_space.indices();
   if (indices.size() != 1 || indices[0] != 'l') return false;
   const auto& costs = ec.l.cs.costs;

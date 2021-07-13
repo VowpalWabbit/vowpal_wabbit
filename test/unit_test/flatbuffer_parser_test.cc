@@ -31,7 +31,8 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer_coll
   auto label = get_label(builder, label_type);
 
   fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, "hello", 2.23f, constant));
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts, constant_namespace));
+  namespaces.push_back(
+      VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts, constant_namespace));
   examples.push_back(VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label));
 
   auto eg_collection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(builder, &examples);
@@ -47,7 +48,8 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer(
   auto label = get_label(builder, label_type);
 
   fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, "hello", 2.23f, constant));
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts, constant_namespace));
+  namespaces.push_back(
+      VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts, constant_namespace));
   auto example = VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label);
 
   return CreateExampleRoot(builder, VW::parsers::flatbuffer::ExampleType_Example, example.Union());

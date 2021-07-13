@@ -14,10 +14,7 @@ safe_example_predict::safe_example_predict()
 }
 
 VW_WARNING_STATE_POP
-void safe_example_predict::clear()
-{
-  feature_space.clear();
-}
+void safe_example_predict::clear() { feature_space.clear(); }
 
 std::string features_to_string(const example_predict& ec)
 {

@@ -110,9 +110,9 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
                 }
               }
 
-        for (auto& right_ns_fs : ec.feature_space.get_list(right))
+              for (auto& right_ns_fs : ec.feature_space.get_list(right))
               {
-          auto& right_fs = right_ns_fs.feats;
+                auto& right_fs = right_ns_fs.feats;
                 for (unsigned int rfn = 0; rfn < lrq.orig_size[right_ns_fs.hash]; ++rfn)
                 {
                   // NB: ec.ft_offset added by base learner
@@ -167,9 +167,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
       unsigned char right = i[(which + 1) % 2];
 
       for (auto& right_ns_fs : ec.feature_space.get_list(right))
-      {
-        right_ns_fs.feats.truncate_to(lrq.orig_size[right_ns_fs.hash]);
-      }
+      { right_ns_fs.feats.truncate_to(lrq.orig_size[right_ns_fs.hash]); }
     }
   }  // end for(max_iter)
 }

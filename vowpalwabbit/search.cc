@@ -625,17 +625,14 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
       {
         example& other = *ec_seq[n + offset];
         for (const auto& ns_fs : other.feature_space.get_list(ns))
-        {
-          GD::foreach_feature<search_private, add_new_feature>(priv.all, ns_fs.feats, priv, me.ft_offset);
-        }
+        { GD::foreach_feature<search_private, add_new_feature>(priv.all, ns_fs.feats, priv, me.ft_offset); }
       }
     }
 
     if (!priv.dat_new_feature_namespace.empty())
     {
       me.feature_space.get_or_create(neighbor_namespace, neighbor_namespace) =
-          std::move(priv.dat_new_feature_namespace)
-                                                                       ;
+          std::move(priv.dat_new_feature_namespace);
       priv.dat_new_feature_namespace = features{};
       auto& fs = me.feature_space.get(neighbor_namespace, neighbor_namespace);
       size_t sz = fs.size();

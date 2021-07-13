@@ -39,7 +39,7 @@ struct mwt
   uint32_t num_classes;
   bool learn;
 
-  std::map<std::pair<namespace_index,uint64_t>, features> feature_space;
+  std::map<std::pair<namespace_index, uint64_t>, features> feature_space;
   vw* all;
 };
 
@@ -68,7 +68,8 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   {
     c.total++;
     // For each nonzero feature in observed namespaces, check it's value.
-    for (auto& bucket : ec) {
+    for (auto& bucket : ec)
+    {
       for (auto it = bucket.begin(); it != bucket.end(); ++it)
       {
         if (c.namespaces[it->index]) { GD::foreach_feature<mwt, value_policy>(c.all, it->feats, c); }
@@ -88,7 +89,8 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   {
     uint32_t stride_shift = c.all->weights.stride_shift();
     uint64_t weight_mask = c.all->weights.mask();
-    for (auto& bucket : ec) {
+    for (auto& bucket : ec)
+    {
       for (auto it = bucket.begin(); it != bucket.end(); ++it)
       {
         if (c.namespaces[it->index])
@@ -109,7 +111,6 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
         }
       }
     }
-
   }
   VW_WARNING_STATE_POP
 
@@ -128,9 +129,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   VW_WARNING_DISABLE_CPP_17_LANG_EXT
   if VW_STD17_CONSTEXPR (exclude || learn)
   {
-    for (auto& kv : c.feature_space)
-    { std::swap(kv.second, ec.feature_space.get(kv.first.first, kv.first.second));
-    }
+    for (auto& kv : c.feature_space) { std::swap(kv.second, ec.feature_space.get(kv.first.first, kv.first.second)); }
   }
   VW_WARNING_STATE_POP
 

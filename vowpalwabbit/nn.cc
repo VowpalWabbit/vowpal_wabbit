@@ -113,10 +113,7 @@ void finish_setup(nn& n, vw& all)
   n.hiddenbias.interactions = &all.interactions;
   auto& constant_fs = n.hiddenbias.feature_space.get_or_create(constant_namespace, constant_namespace);
   constant_fs.push_back(1, constant);
-  if (all.audit || all.hash_inv)
-  {
-    constant_fs.space_names.push_back(audit_strings("", "HiddenBias"));
-  }
+  if (all.audit || all.hash_inv) { constant_fs.space_names.push_back(audit_strings("", "HiddenBias")); }
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
 
@@ -125,8 +122,7 @@ void finish_setup(nn& n, vw& all)
 
   features& outfs = n.output_layer.feature_space.get(nn_output_namespace, nn_output_namespace);
   outputweight_output_fs.push_back(outfs.values[0], outfs.indicies[0]);
-  if (all.audit || all.hash_inv)
-    outputweight_output_fs.space_names.push_back(audit_strings("", "OutputWeight"));
+  if (all.audit || all.hash_inv) outputweight_output_fs.space_names.push_back(audit_strings("", "OutputWeight"));
   outputweight_output_fs.values[0] = 1;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;

@@ -421,7 +421,9 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
   }
 }
 
-JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToNamespaceSparse(JNIEnv* env, jobject exampleObj, jchar ns, jint baseIndex, jintArray indices, jdoubleArray values){
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToNamespaceSparse(
+    JNIEnv* env, jobject exampleObj, jchar ns, jint baseIndex, jintArray indices, jdoubleArray values)
+{
   INIT_VARS
 
   try

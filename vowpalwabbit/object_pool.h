@@ -38,10 +38,7 @@ struct no_lock_object_pool
   ~no_lock_object_pool()
   {
     assert(m_pool.size() == size());
-    for(auto* ptr : m_allocated_objects)
-    {
-      delete ptr;
-    }
+    for (auto* ptr : m_allocated_objects) { delete ptr; }
   }
 
   void return_object(T* obj)
@@ -61,15 +58,9 @@ struct no_lock_object_pool
 
   bool empty() const { return m_pool.empty(); }
 
-  size_t size() const
-  {
-    return m_allocated_objects.size();
-  }
+  size_t size() const { return m_allocated_objects.size(); }
 
-  bool is_from_pool(T* obj) const
-  {
-    return m_allocated_objects.count(obj) > 0;
-  }
+  bool is_from_pool(T* obj) const { return m_allocated_objects.count(obj) > 0; }
 
 private:
   void new_chunk(size_t size)
@@ -110,10 +101,7 @@ struct moved_object_pool
 
   T&& take_back()
   {
-    if (m_pool.empty())
-    {
-      m_pool.push(T{});
-    }
+    if (m_pool.empty()) { m_pool.push(T{}); }
     return std::move(m_pool.top());
   }
 
@@ -135,10 +123,7 @@ template <typename T>
 struct object_pool
 {
   object_pool() = default;
-  object_pool(size_t initial_chunk_size, size_t chunk_size = 8)
-      : inner_pool(initial_chunk_size, chunk_size)
-  {
-  }
+  object_pool(size_t initial_chunk_size, size_t chunk_size = 8) : inner_pool(initial_chunk_size, chunk_size) {}
 
   void return_object(T* obj)
   {

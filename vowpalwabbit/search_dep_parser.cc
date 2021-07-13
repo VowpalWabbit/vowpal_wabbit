@@ -87,7 +87,8 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   options.add_and_parse(new_options);
 
   data->ex.feature_space.get_or_create(val_namespace, val_namespace);
-  for (size_t i = 1; i < 14; i++) {
+  for (size_t i = 1; i < 14; i++)
+  {
     auto current_index = static_cast<unsigned char>(i) + 'A';
     data->ex.feature_space.get_or_create(current_index, current_index);
   }
@@ -133,15 +134,15 @@ void inline add_feature(
 void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier,
     uint64_t offset, bool /* audit */ = false)
 {
-  for (auto& bucket : src.feature_space) {
+  for (auto& bucket : src.feature_space)
+  {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       if (it->index == constant_namespace) { continue; }
       features& tgt_fs = ex.feature_space.get_or_create(tgt_ns, tgt_ns);
 
-      for (feature_index i : it->feats.indicies) {
-          tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
-      }
+      for (feature_index i : it->feats.indicies)
+      { tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask); }
     }
   }
 }
@@ -318,7 +319,8 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
     add_feature(ex, temp[j] + additional_offset, val_namespace, mask, multiplier);
   }
   size_t count = 0;
-  for (auto& bucket : data->ex) {
+  for (auto& bucket : data->ex)
+  {
     for (auto& fs : bucket)
     {
       fs.feats.sum_feat_sq = static_cast<float>(fs.feats.size());

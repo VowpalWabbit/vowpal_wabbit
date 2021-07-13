@@ -11,7 +11,7 @@
 #include "conditional_contextual_bandit.h"
 #include "vw.h"
 
-template<typename It, typename T>
+template <typename It, typename T>
 bool contains(It begin_it, It end_it, T item)
 {
   auto it = std::find(begin_it, end_it, item);
@@ -459,10 +459,12 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
   BOOST_CHECK(contains(examples[1]->feature_space.indices().begin(), examples[1]->feature_space.indices().end(), 'T'));
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(
+      examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
   BOOST_CHECK(contains(examples[2]->feature_space.indices().begin(), examples[2]->feature_space.indices().end(), 'T'));
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(
+      examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
 
   // check features
   BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
@@ -592,10 +594,12 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
   BOOST_CHECK(contains(examples[1]->feature_space.indices().begin(), examples[1]->feature_space.indices().end(), 'T'));
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(
+      examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
   BOOST_CHECK(contains(examples[2]->feature_space.indices().begin(), examples[2]->feature_space.indices().end(), 'T'));
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(
+      examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
 
   // check features
   BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
@@ -758,10 +762,12 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
   BOOST_CHECK(contains(examples[1]->feature_space.indices().begin(), examples[1]->feature_space.indices().end(), 'T'));
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(
+      examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
   BOOST_CHECK(contains(examples[2]->feature_space.indices().begin(), examples[2]->feature_space.indices().end(), 'T'));
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
+  BOOST_CHECK_EQUAL(
+      examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
 
   // check features
   BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);

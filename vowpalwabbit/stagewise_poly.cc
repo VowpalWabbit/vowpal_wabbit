@@ -399,8 +399,7 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.num_features = 0;
 
   // Ensure the feature group exists and it is empty.
-  auto& tree_atomics_feature_group =
-      poly.synth_ec.feature_space.get_or_create(tree_atomics, tree_atomics);
+  auto& tree_atomics_feature_group = poly.synth_ec.feature_space.get_or_create(tree_atomics, tree_atomics);
   tree_atomics_feature_group.clear();
 }
 

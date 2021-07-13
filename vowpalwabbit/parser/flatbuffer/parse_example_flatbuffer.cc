@@ -166,10 +166,7 @@ void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
 
 namespace_index get_ns_index(const Namespace* ns)
 {
-   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_HASH))
-  {
-    return ns->hash();
-  }
+  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_HASH)) { return ns->hash(); }
   else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
     return static_cast<uint8_t>(ns->name()->c_str()[0]);
@@ -182,10 +179,7 @@ namespace_index get_ns_index(const Namespace* ns)
 
 uint64_t get_full_ns_hash(const vw* all, const Namespace* ns)
 {
-   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_FULL_HASH))
-  {
-    return ns->full_hash();
-  }
+  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_FULL_HASH)) { return ns->full_hash(); }
   else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
     return all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
@@ -194,11 +188,14 @@ uint64_t get_full_ns_hash(const vw* all, const Namespace* ns)
   {
     if (ns->hash() == 32)
     {
-      // Special case, default namespace corresponds to a hash of 0 AND flatbuffers will not serialize a value of 0. So this is surfaced as a missing VT_FULL_HASH field.
+      // Special case, default namespace corresponds to a hash of 0 AND flatbuffers will not serialize a value of 0. So
+      // this is surfaced as a missing VT_FULL_HASH field.
       return 0;
     }
 
-    VW::io::logger::errlog_warn("Flatbuffer file is missing full_hash field. Falling back to using the namespace index for the namespace hash. May result in unexpected behavior for interactions.");
+    VW::io::logger::errlog_warn(
+        "Flatbuffer file is missing full_hash field. Falling back to using the namespace index for the namespace hash. "
+        "May result in unexpected behavior for interactions.");
     return ns->hash();
   }
 }

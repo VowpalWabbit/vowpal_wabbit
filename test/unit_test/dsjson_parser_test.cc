@@ -854,11 +854,14 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates_dom_parser)
 
   check_collections_with_float_tolerance(slates_ex.feature_space.get_list(' ').front().feats.values,
       ccb_ex.feature_space.get_list(' ').front().feats.values, FLOAT_TOL);
-  check_collections_with_float_tolerance(slates_ex.feature_space.get('a', VW::hash_space(*slates_vw, "aNamespace")).values,
+  check_collections_with_float_tolerance(
+      slates_ex.feature_space.get('a', VW::hash_space(*slates_vw, "aNamespace")).values,
       ccb_ex.feature_space.get('a', VW::hash_space(*ccb_vw, "aNamespace")).values, FLOAT_TOL);
-  check_collections_with_float_tolerance(slates_ex.feature_space.get('b', VW::hash_space(*slates_vw, "bNamespace")).values,
+  check_collections_with_float_tolerance(
+      slates_ex.feature_space.get('b', VW::hash_space(*slates_vw, "bNamespace")).values,
       ccb_ex.feature_space.get('b', VW::hash_space(*ccb_vw, "bNamespace")).values, FLOAT_TOL);
-  check_collections_with_float_tolerance(slates_ex.feature_space.get('c', VW::hash_space(*slates_vw, "cNamespace")).values,
+  check_collections_with_float_tolerance(
+      slates_ex.feature_space.get('c', VW::hash_space(*slates_vw, "cNamespace")).values,
       ccb_ex.feature_space.get('c', VW::hash_space(*ccb_vw, "cNamespace")).values, FLOAT_TOL);
   check_collections_with_float_tolerance(slates_ex.feature_space.get('d', VW::hash_space(*slates_vw, "dArray")).values,
       ccb_ex.feature_space.get('d', VW::hash_space(*ccb_vw, "dArray")).values, FLOAT_TOL);

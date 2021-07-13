@@ -11,8 +11,8 @@
 
 namespace logger = VW::io::logger;
 
-void add_grams(
-    size_t ngram, size_t skip_gram, features& destination_group, features& source_group, size_t initial_length, std::vector<size_t>& gram_mask, size_t skips)
+void add_grams(size_t ngram, size_t skip_gram, features& destination_group, features& source_group,
+    size_t initial_length, std::vector<size_t>& gram_mask, size_t skips)
 {
   if (ngram == 0 && gram_mask.back() < initial_length)
   {
@@ -21,9 +21,7 @@ void add_grams(
     {
       uint64_t new_index = source_group.indicies[i];
       for (size_t n = 1; n < gram_mask.size(); n++)
-      {
-        new_index = new_index * quadratic_constant + source_group.indicies[i + gram_mask[n]];
-      }
+      { new_index = new_index * quadratic_constant + source_group.indicies[i + gram_mask[n]]; }
 
       destination_group.push_back(1., new_index);
       if (!destination_group.space_names.empty())
@@ -34,8 +32,7 @@ void add_grams(
           feature_name += std::string("^");
           feature_name += std::string(destination_group.space_names[i + gram_mask[n]].second);
         }
-        destination_group.space_names.push_back(
-            audit_strings(destination_group.space_names[i].first, feature_name));
+        destination_group.space_names.push_back(audit_strings(destination_group.space_names[i].first, feature_name));
       }
     }
   }
@@ -46,9 +43,7 @@ void add_grams(
     gram_mask.pop_back();
   }
   if (skip_gram > 0 && ngram > 0)
-  {
-    add_grams(ngram, skip_gram - 1, destination_group, source_group, initial_length, gram_mask, skips + 1);
-  }
+  { add_grams(ngram, skip_gram - 1, destination_group, source_group, initial_length, gram_mask, skips + 1); }
 }
 
 void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NUM_NAMESPACES>& dest,
@@ -92,8 +87,7 @@ void VW::kskip_ngram_transformer::generate_grams(example* ex)
           "character is the same.");
       generated_feature_group = VW::make_unique<features>();
       source_feature_group = generated_feature_group.get();
-      for (auto& ns_fs : feat_group_list) { generated_feature_group->concat(ns_fs.feats);
-      }
+      for (auto& ns_fs : feat_group_list) { generated_feature_group->concat(ns_fs.feats); }
     }
     else
     {

@@ -97,7 +97,8 @@ void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool o
 
   ec.total_sum_feat_sq = 0.0;  // sort namespaces.  pass indices array into sort...template (leave this to the end)
 
-  for (auto& bucket : ec1.feature_space) {
+  for (auto& bucket : ec1.feature_space)
+  {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       auto* ec2_equiv_feat_group = ec2.feature_space.get_or_null(it->index, it->hash);
@@ -112,8 +113,6 @@ void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool o
       }
     }
   }
-
-
 }
 
 ////////////////////////////end of helper/////////////////////////
@@ -1101,7 +1100,8 @@ void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, 
   {
     for (auto& bucket : ec->feature_space)
     {
-      for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      for (auto it = bucket.begin(); it != bucket.end(); ++it)
+      {
         auto value = it->index;
         msg << "namespace_index = " << value << " ";
         bin_text_write_fixed(model_file, (char*)&value, sizeof(value), msg, text);
@@ -1112,7 +1112,8 @@ void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, 
   // deal with features
   for (auto& bucket : ec->feature_space)
   {
-    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    {
       features& fs = it->feats;
       writeitvar(fs.size(), "features_", feat_size);
       if (read)
