@@ -34,7 +34,7 @@ struct sample_pdf
   int learn(example& ec, experimental::api_status* status);
   int predict(example& ec, experimental::api_status* status);
 
-  void init(single_learner* p_base, std::shared_ptr<rand_state>&& random_state);
+  void init(single_learner* p_base, std::shared_ptr<rand_state> random_state);
 
 private:
   std::shared_ptr<rand_state> _p_random_state;
@@ -63,18 +63,20 @@ int sample_pdf::predict(example& ec, experimental::api_status*)
     _base->predict(ec);
   }
 
-  const int ret_code = exploration::sample_pdf(_p_random_state, std::begin(_pred_pdf), std::end(_pred_pdf),
+  uint64_t seed = _p_random_state->get_current_state();
+  const int ret_code = exploration::sample_pdf(&seed, std::begin(_pred_pdf), std::end(_pred_pdf),
       ec.pred.pdf_value.action, ec.pred.pdf_value.pdf_value);
+  _p_random_state->get_and_update_random();
 
   if (ret_code != S_EXPLORATION_OK) return VW::experimental::error_code::sample_pdf_failed;
 
   return VW::experimental::error_code::success;
 }
 
-void sample_pdf::init(single_learner* p_base, std::shared_ptr<rand_state>&& random_state)
+void sample_pdf::init(single_learner* p_base, std::shared_ptr<rand_state> random_state)
 {
   _base = p_base;
-  _p_random_state = random_state;
+  _p_random_state = std::move(random_state);
   _pred_pdf.clear();
 }
 
