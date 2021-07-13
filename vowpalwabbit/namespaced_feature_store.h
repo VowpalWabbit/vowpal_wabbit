@@ -19,8 +19,8 @@ namespace VW
 template <typename ArrayT, typename IndexItT, typename ListT>
 class indexed_iterator_t
 {
-  ArrayT* _feature_group_buckets;
   IndexItT _indices_it;
+  ArrayT* _feature_group_lists;
 
 public:
   using iterator_category = std::bidirectional_iterator_tag;
@@ -28,11 +28,11 @@ public:
   using value_type = ListT;
 
   indexed_iterator_t(IndexItT indices, ArrayT* feature_groups)
-      : _indices_it(indices), _feature_group_buckets(feature_groups)
+      : _indices_it(indices), _feature_group_lists(feature_groups)
   {
   }
 
-  value_type& operator*() { return (*_feature_group_buckets)[*_indices_it]; }
+  value_type& operator*() { return (*_feature_group_lists)[*_indices_it]; }
 
   indexed_iterator_t& operator++()
   {
