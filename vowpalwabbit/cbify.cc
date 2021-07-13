@@ -158,7 +158,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     for (auto& bucket : eca) {
       for (auto& fs : bucket)
       {
-        for (feature_index& idx : fs._features.indicies)
+        for (feature_index& idx : fs.features.indicies)
         {
           auto rawidx = idx;
           rawidx -= rawidx & custom_index_mask;

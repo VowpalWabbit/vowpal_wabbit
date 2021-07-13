@@ -40,8 +40,8 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
   {
     for (auto& fs : bucket)
     {
-      bool audit = !fs._features.space_names.empty();
-      for (const auto& f : fs._features.audit_range())
+      bool audit = !fs.features.space_names.empty();
+      for (const auto& f : fs.features.audit_range())
       {
         std::cout << '\t';
         if (audit) std::cout << f.audit()->first << '^' << f.audit()->second << ':';
@@ -54,26 +54,31 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
-    if (ec.feature_space.at(static_cast<unsigned char>(i[0])).size() > 0 &&
-        ec.feature_space.at(static_cast<unsigned char>(i[1])).size() > 0)
+    /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
+    for (size_t k = 1; k <= d.rank; k++)
     {
-      /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
-      for (size_t k = 1; k <= d.rank; k++)
+      for (const auto ns0_feature_groups : ec.feature_space.get_list(i[0]))
       {
-        for (const auto& f1 : ec.feature_space.at(static_cast<unsigned char>(i[0])).audit_range())
-          for (const auto& f2 : ec.feature_space.at(static_cast<unsigned char>(i[1])).audit_range())
+        for (const auto ns1_feature_groups : ec.feature_space.get_list(i[1]))
+        {
+          for (const auto& f1 : ns0_feature_groups.features.audit_range())
           {
-            std::cout << '\t' << f1.audit()->first << k << '^' << f1.audit()->second << ':' << ((f1.index() + k) & mask)
-                      << "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
-            std::cout << ':' << (&weights[f1.index()])[offset + k];
+            for (const auto& f2 : ns1_feature_groups.features.audit_range())
+            {
+              std::cout << '\t' << f1.audit()->first << k << '^' << f1.audit()->second << ':'
+                        << ((f1.index() + k) & mask) << "(" << ((f1.index() + offset + k) & mask) << ")" << ':'
+                        << f1.value();
+              std::cout << ':' << (&weights[f1.index()])[offset + k];
 
-            std::cout << ':' << f2.audit()->first << k << '^' << f2.audit()->second << ':'
-                      << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
-                      << ':' << f2.value();
-            std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
+              std::cout << ':' << f2.audit()->first << k << '^' << f2.audit()->second << ':'
+                        << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask)
+                        << ")" << ':' << f2.value();
+              std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
 
-            std::cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
+              std::cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
+            }
           }
+        }
       }
     }
   }
@@ -94,11 +99,11 @@ struct pred_offset
 
 void offset_add(pred_offset& res, const float fx, float& fw) { res.p += (&fw)[res.offset] * fx; }
 
-template <typename IteratorT>
-size_t count_features(IteratorT begin, IteratorT end)
+template <typename ContainerT>
+size_t count_features(const ContainerT&  list)
 {
   size_t count = 0;
-  for(; begin != end; begin++) { count += begin->_features.size(); }
+  for (const auto& item : list) { count += item.features.size(); }
   return count;
 }
 
@@ -114,16 +119,14 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
-    for (auto first_ns_features = ec.feature_space.namespace_index_begin(i[0]);
-         first_ns_features != ec.feature_space.namespace_index_end(i[0]); ++first_ns_features)
+    for (const auto& first_ns_fs : ec.feature_space.get_list(i[0]))
     {
-      for (auto second_ns_features = ec.feature_space.namespace_index_begin(i[1]);
-           second_ns_features != ec.feature_space.namespace_index_end(i[1]); ++second_ns_features)
+      for (const auto& second_ns_fs : ec.feature_space.get_list(i[1]))
       {
-        const auto interacted_count = first_ns_features->_features.size() * second_ns_features->_features.size();
+        const auto interacted_count = first_ns_fs.features.size() * second_ns_fs.features.size();
         ec.num_features -= interacted_count;
-        ec.num_features += first_ns_features->_features.size() * d.rank;
-        ec.num_features += second_ns_features->_features.size() * d.rank;
+        ec.num_features += first_ns_fs.features.size() * d.rank;
+        ec.num_features += second_ns_fs.features.size() * d.rank;
         ec.num_features_from_interactions += interacted_count;
       }
     }
@@ -135,7 +138,7 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   float linear_prediction = 0.;
   // linear terms
   for (auto& bucket : ec) {
-    for (auto& fs : bucket) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs._features, linear_prediction); }
+    for (auto& fs : bucket) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs.features, linear_prediction); }
 
   }
 
@@ -148,10 +151,8 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   for (const auto& i : d.all->interactions)
   {
     // The check for non-pair interactions is done in the previous loop
-    const auto left_size =
-        count_features(ec.feature_space.namespace_index_begin(i[0]), ec.feature_space.namespace_index_end(i[0]));
-    const auto right_size =
-        count_features(ec.feature_space.namespace_index_begin(i[1]), ec.feature_space.namespace_index_end(i[1]));
+    const auto left_size = count_features(ec.feature_space.get_list(i[0]));
+    const auto right_size = count_features(ec.feature_space.get_list(i[1]));
     if (left_size > 0 && right_size > 0)
     {
       for (uint64_t k = 1; k <= d.rank; k++)
@@ -160,21 +161,18 @@ float mf_predict(gdmf& d, example& ec, T& weights)
         // l^k is from index+1 to index+d.rank
         // float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         pred_offset x_dot_l = {0., k};
-        for (auto first_ns_features = ec.feature_space.namespace_index_begin(i[0]);
-             first_ns_features != ec.feature_space.namespace_index_end(i[0]); ++first_ns_features)
+        for (auto& first_ns_features : ec.feature_space.get_list(i[0]))
         {
-
-          GD::foreach_feature<pred_offset, offset_add, T>(weights, first_ns_features->_features, x_dot_l);
+          GD::foreach_feature<pred_offset, offset_add, T>(weights, first_ns_features.features, x_dot_l);
         }
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         // float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(),
         // k+d.rank);
         pred_offset x_dot_r = {0., k + d.rank};
-        for (auto second_ns_features = ec.feature_space.namespace_index_begin(i[1]);
-             second_ns_features != ec.feature_space.namespace_index_end(i[1]); ++second_ns_features)
+        for (auto& second_ns_features : ec.feature_space.get_list(i[1]))
         {
-          GD::foreach_feature<pred_offset, offset_add, T>(weights, second_ns_features->_features, x_dot_r);
+          GD::foreach_feature<pred_offset, offset_add, T>(weights, second_ns_features.features, x_dot_r);
         }
 
         prediction += x_dot_l.p * x_dot_r.p;
@@ -233,7 +231,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
   // linear update
   for (auto& bucket : ec)
   {
-    for (auto& fs : bucket) { sd_offset_update<T>(weights, fs._features, 0, update, regularization); }
+    for (auto& fs : bucket) { sd_offset_update<T>(weights, fs.features, 0, update, regularization); }
   }
 
   // quadratic update
@@ -241,10 +239,8 @@ void mf_train(gdmf& d, example& ec, T& weights)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
-    const auto left_size =
-        count_features(ec.feature_space.namespace_index_begin(i[0]), ec.feature_space.namespace_index_end(i[0]));
-    const auto right_size =
-        count_features(ec.feature_space.namespace_index_begin(i[1]), ec.feature_space.namespace_index_end(i[1]));
+    const auto left_size = count_features(ec.feature_space.get_list(i[0]));
+    const auto right_size = count_features(ec.feature_space.get_list(i[1]));
     if (left_size > 0 && right_size > 0)
     {
       // update l^k weights
@@ -253,9 +249,8 @@ void mf_train(gdmf& d, example& ec, T& weights)
         // r^k \cdot x_r
         float r_dot_x = d.scalars[2 * k];
         // l^k <- l^k + update * (r^k \cdot x_r) * x_l
-        for (auto first_ns_features_it = ec.feature_space.namespace_index_begin(i[0]);
-             first_ns_features_it != ec.feature_space.namespace_index_end(i[0]); ++first_ns_features_it) {
-          sd_offset_update<T>(weights, first_ns_features_it->_features, k, update * r_dot_x, regularization);
+        for (auto& first_ns_features : ec.feature_space.get_list(i[0])){
+          sd_offset_update<T>(weights, first_ns_features.features, k, update * r_dot_x, regularization);
         }
       }
       // update r^k weights
@@ -264,9 +259,8 @@ void mf_train(gdmf& d, example& ec, T& weights)
         // l^k \cdot x_l
         float l_dot_x = d.scalars[2 * k - 1];
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
-        for (auto second_ns_features_it = ec.feature_space.namespace_index_begin(i[1]);
-             second_ns_features_it != ec.feature_space.namespace_index_end(i[1]); ++second_ns_features_it) {
-          sd_offset_update<T>(weights, second_ns_features_it->_features, k + d.rank, update * l_dot_x, regularization);
+        for (auto& second_ns_features : ec.feature_space.get_list(i[0])) {
+          sd_offset_update<T>(weights, second_ns_features.features, k + d.rank, update * l_dot_x, regularization);
         }
       }
     }

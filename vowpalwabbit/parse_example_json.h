@@ -1210,7 +1210,7 @@ public:
     for (auto& bucket : *stored_ex) {
       for (auto it = bucket.begin(); it != bucket.end(); ++it)
       {
-        new_ex->feature_space.get_or_create_feature_group(it->_hash, it->_index).concat(it->_features);
+        new_ex->feature_space.get_or_create(it->index, it->hash).concat(it->features);
       }
 
     }
@@ -1530,7 +1530,7 @@ public:
     Namespace<audit> n;
     n.feature_group = ns[0];
     n.namespace_hash = VW::hash_space_cstr(*all, ns);
-    n.ftrs = &ex->feature_space.get_or_create_feature_group(n.namespace_hash, ns[0]);
+    n.ftrs = &ex->feature_space.get_or_create(ns[0], n.namespace_hash);
     n.feature_count = 0;
     n.name = ns;
 

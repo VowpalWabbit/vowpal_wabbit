@@ -6,7 +6,7 @@ set(VW_SLIM_SOURCES
   ../../feature_group.cc
   ../../example_predict.cc
   ../../interactions.cc
-  ../../namespaced_features.cc
+  ../../namespaced_feature_store.cc
   )
 
 set(VW_SLIM_HEADERS

@@ -212,16 +212,16 @@ void inject_slot_features(example* shared, example* slot)
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       // constant namespace should be ignored, as it already exists and we don't want to double it up.
-      if (it->_index == constant_namespace) { continue; }
+      if (it->index == constant_namespace) { continue; }
 
       // slot default namespace has a special namespace in shared
-      if (it->_index == default_namespace)
+      if (it->index == default_namespace)
       {
-        LabelDict::add_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->_features);
+        LabelDict::add_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->features);
       }
       else
       {
-        LabelDict::add_example_namespace(*shared, it->_index, it->_hash, it->_features);
+        LabelDict::add_example_namespace(*shared, it->index, it->hash, it->features);
       }
     }
   }
@@ -249,7 +249,7 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
     index = data.slot_id_hashes[id];
   }
 
-  auto& feat_group = shared->feature_space.get_or_create_feature_group(ccb_id_namespace, ccb_id_namespace);
+  auto& feat_group = shared->feature_space.get_or_create(ccb_id_namespace, ccb_id_namespace);
   feat_group.clear();
   feat_group.push_back(1., index);
 
@@ -260,7 +260,7 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
   }
 }
 
-void remove_slot_id(example* shared) { shared->feature_space.remove_feature_group(ccb_id_namespace, ccb_id_namespace); }
+void remove_slot_id(example* shared) { shared->feature_space.remove(ccb_id_namespace, ccb_id_namespace); }
 
 void remove_slot_features(example* shared, example* slot)
 {
@@ -269,15 +269,15 @@ void remove_slot_features(example* shared, example* slot)
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       // constant namespace should be ignored, as it already exists and we don't want to double it up.
-      if (it->_index == constant_namespace) { continue; }
+      if (it->index == constant_namespace) { continue; }
 
-      if (it->_index == default_namespace)  // slot default namespace has a special namespace in shared
+      if (it->index == default_namespace)  // slot default namespace has a special namespace in shared
       {
-        LabelDict::del_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->_features);
+        LabelDict::del_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->features);
       }
       else
       {
-        LabelDict::del_example_namespace(*shared, it->_index, it->_hash, it->_features);
+        LabelDict::del_example_namespace(*shared, it->index, it->hash, it->features);
       }
     }
   }

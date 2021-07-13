@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "feature_group.h"
-#include "namespaced_features.h"
+#include "namespaced_feature_store.h"
 #include "global_data.h"
 #include "hash.h"
 #include "vw.h"
@@ -59,17 +59,17 @@ struct Namespace
   }
 };
 
-inline void remove_empty_namespaces(VW::namespaced_features& feature_space)
+inline void remove_empty_namespaces(VW::namespaced_feature_store& feature_space)
 {
   std::vector<std::pair<namespace_index,uint64_t>> hashes_to_remove;
-  for (auto& bucket : feature_space) {
-    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+  for (const auto& group_list : feature_space) {
+    for (const auto& ns_fs : group_list)
     {
-      if ((*it)._features.empty()) { hashes_to_remove.emplace_back(it->_index, it->_hash); }
+      if (ns_fs.features.empty()) { hashes_to_remove.emplace_back(ns_fs.index, ns_fs.hash); }
     }
   }
 
-  for (auto idx_hash : hashes_to_remove) { feature_space.remove_feature_group(idx_hash.first, idx_hash.second); }
+  for (auto idx_hash : hashes_to_remove) { feature_space.remove(idx_hash.first, idx_hash.second); }
 }
 
 template <bool audit>
@@ -78,7 +78,7 @@ void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespa
   Namespace<audit> n;
   n.feature_group = ns[0];
   n.namespace_hash = VW::hash_space_cstr(all, ns);
-  n.ftrs = &ex->feature_space.get_or_create_feature_group(n.namespace_hash, ns[0]);
+  n.ftrs = &ex->feature_space.get_or_create(ns[0], n.namespace_hash);
   n.feature_count = 0;
   n.name = ns;
   namespaces.push_back(std::move(n));

@@ -56,7 +56,7 @@ void VW::autolink::prepare_example(VW::LEARNER::single_learner& base, example& e
   float base_pred = ec.pred.scalar;
 
   // Add features of label.
-  features& fs = ec.feature_space.get_or_create_feature_group(autolink_namespace, autolink_namespace);
+  features& fs = ec.feature_space.get_or_create(autolink_namespace, autolink_namespace);
   for (size_t i = 0; i < _poly_degree; i++)
   {
     if (base_pred != 0.)
@@ -71,7 +71,7 @@ void VW::autolink::prepare_example(VW::LEARNER::single_learner& base, example& e
 void VW::autolink::reset_example(example& ec)
 {
   ec.reset_total_sum_feat_sq();
-  ec.feature_space.remove_feature_group(autolink_namespace, autolink_namespace);
+  ec.feature_space.remove(autolink_namespace, autolink_namespace);
 }
 
 template <bool is_learn>

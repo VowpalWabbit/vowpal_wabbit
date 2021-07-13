@@ -455,11 +455,11 @@ public:
       {
         // insert namespace
         auto ns_copy_guard =
-            std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*action, it->_hash, it->_index));
+            std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*action, it->hash, it->index));
 
         // copy features
-        for (auto fs : *shared.feature_space.get_feature_group(it->_hash))
-          ns_copy_guard->feature_push_back(fs.value(), fs->_index);
+        for (auto fs : *shared.feature_space.get_or_null(it->hash))
+          ns_copy_guard->feature_push_back(fs.value(), fs->index);
 
         // keep guard around
         ns_copy_guards.push_back(std::move(ns_copy_guard));

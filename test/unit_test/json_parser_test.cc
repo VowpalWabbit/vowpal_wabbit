@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats)
   BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].cost, 0.657567, FLOAT_TOL);
   BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].action, 185.121, FLOAT_TOL);
 
-  auto& space_names = (*examples[0]->feature_space.namespace_index_begin(' '))._features.space_names;
+  auto& space_names = examples[0]->feature_space.get_list(' ').front().features.space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
   for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
 
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats_no_label)
   BOOST_CHECK_EQUAL(examples.size(), 1);
   BOOST_CHECK_EQUAL(examples[0]->l.cb_cont.costs.size(), 0);
 
-  auto& space_names = (*examples[0]->feature_space.namespace_index_begin(' '))._features.space_names;
+  auto& space_names = examples[0]->feature_space.get_list(' ').front().features.space_names;
   BOOST_CHECK_EQUAL(features.size(), space_names.size());
   for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].second, features[i]); }
 
@@ -383,8 +383,8 @@ BOOST_AUTO_TEST_CASE(parse_json_slates_dom_parser)
   BOOST_CHECK_EQUAL(examples[4]->l.slates.slot_id, 1);
   BOOST_CHECK_EQUAL(examples[5]->l.slates.slot_id, 1);
 
-  BOOST_CHECK_EQUAL(*examples[0]->feature_space.index_begin(), 'G');
-  BOOST_CHECK_EQUAL(examples[0]->feature_space.at('G', VW::hash_space(*slates_vw, "GUser")).indicies.size(), 4);
+  BOOST_CHECK_EQUAL(examples[0]->feature_space.indices()[0], 'G');
+  BOOST_CHECK_EQUAL(examples[0]->feature_space.get('G', VW::hash_space(*slates_vw, "GUser")).indicies.size(), 4);
 
   VW::finish_example(*slates_vw, examples);
   VW::finish(*slates_vw);
@@ -458,17 +458,17 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
 
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
-  BOOST_CHECK(contains(examples[1]->feature_space.index_begin(), examples[1]->feature_space.index_end(), 'T'));
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
+  BOOST_CHECK(contains(examples[1]->feature_space.indices().begin(), examples[1]->feature_space.indices().end(), 'T'));
+  BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
-  BOOST_CHECK(contains(examples[2]->feature_space.index_begin(), examples[2]->feature_space.index_end(), 'T'));
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
+  BOOST_CHECK(contains(examples[2]->feature_space.indices().begin(), examples[2]->feature_space.indices().end(), 'T'));
+  BOOST_CHECK_EQUAL(examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
 
   // check features
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names[0].second, "a1^f1");
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names[0].second, "a2^f2");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
+  BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].second, "a1^f1");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
+  BOOST_CHECK_EQUAL(examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].second, "a2^f2");
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
   for (auto& dedup : dedup_examples) { VW::finish_example(*vw, *dedup.second); }
@@ -591,17 +591,17 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
 
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
-  BOOST_CHECK(contains(examples[1]->feature_space.index_begin(), examples[1]->feature_space.index_end(), 'T'));
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
+  BOOST_CHECK(contains(examples[1]->feature_space.indices().begin(), examples[1]->feature_space.indices().end(), 'T'));
+  BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
-  BOOST_CHECK(contains(examples[2]->feature_space.index_begin(), examples[2]->feature_space.index_end(), 'T'));
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
+  BOOST_CHECK(contains(examples[2]->feature_space.indices().begin(), examples[2]->feature_space.indices().end(), 'T'));
+  BOOST_CHECK_EQUAL(examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
 
   // check features
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names[0].second, "a1^f1");
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names[0].second, "a2^f2");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
+  BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].second, "a1^f1");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
+  BOOST_CHECK_EQUAL(examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].second, "a2^f2");
 
   // check ccb
 
@@ -757,17 +757,17 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
 
   // check namespaces
   BOOST_CHECK_EQUAL(examples[1]->indices.size(), 1);
-  BOOST_CHECK(contains(examples[1]->feature_space.index_begin(), examples[1]->feature_space.index_end(), 'T'));
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
+  BOOST_CHECK(contains(examples[1]->feature_space.indices().begin(), examples[1]->feature_space.indices().end(), 'T'));
+  BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
   BOOST_CHECK_EQUAL(examples[2]->indices.size(), 1);
-  BOOST_CHECK(contains(examples[2]->feature_space.index_begin(), examples[2]->feature_space.index_end(), 'T'));
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
+  BOOST_CHECK(contains(examples[2]->feature_space.indices().begin(), examples[2]->feature_space.indices().end(), 'T'));
+  BOOST_CHECK_EQUAL(examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].first, "TAction");
 
   // check features
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[1]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names[0].second, "a1^f1");
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
-  BOOST_CHECK_EQUAL(examples[2]->feature_space.at('T', VW::hash_space(*vw, "TAction")).space_names[0].second, "a2^f2");
+  BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
+  BOOST_CHECK_EQUAL(examples[1]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].second, "a1^f1");
+  BOOST_CHECK_EQUAL(examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names.size(), 1);
+  BOOST_CHECK_EQUAL(examples[2]->feature_space.get('T', VW::hash_space(*vw, "TAction")).space_names[0].second, "a2^f2");
 
   // check slates
   BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);

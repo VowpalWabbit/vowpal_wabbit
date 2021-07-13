@@ -69,12 +69,12 @@ void make_marginal(data& sm, example& ec)
   for (auto& bucket : ec) {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
-      namespace_index n = it->_index;
+      namespace_index n = it->index;
       if (sm.id_features[n])
       {
-        std::swap(sm.temporary_storage[it->_hash], it->_features);
-        it->_features.clear();
-        auto& current = sm.temporary_storage[it->_hash];
+        std::swap(sm.temporary_storage[it->hash], it->features);
+        it->features.clear();
+        auto& current = sm.temporary_storage[it->hash];
         for (features::iterator j = current.begin(); j != current.end(); ++j)
         {
           float first_value = j.value();
@@ -103,10 +103,10 @@ void make_marginal(data& sm, example& ec)
             }
           }
           float marginal_pred = static_cast<float>(sm.marginals[key].first / sm.marginals[key].second);
-          it->_features.push_back(marginal_pred, first_index);
+          it->features.push_back(marginal_pred, first_index);
           if (!current.space_names.empty())
           {
-            it->_features.space_names.push_back(current.space_names[2 * (it->_features.size() - 1)]);
+            it->features.space_names.push_back(current.space_names[2 * (it->features.size() - 1)]);
           }
 
           if (sm.compete)  // compute the prediction from the marginals using the weights
@@ -131,7 +131,7 @@ void undo_marginal(data& sm, example& ec)
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       // TODO fix marginal to understand new namespaces
-      if (sm.id_features[it->_index]) { std::swap(sm.temporary_storage[it->_hash], it->_features); }
+      if (sm.id_features[it->index]) { std::swap(sm.temporary_storage[it->hash], it->features); }
     }
   }
 }
@@ -173,11 +173,11 @@ void update_marginal(data& sm, example& ec)
   for (auto& bucket : ec) {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
-      if (sm.id_features[it->_index])
-        for (features::iterator j = sm.temporary_storage[it->_hash].begin(); j != sm.temporary_storage[it->_hash].end();
+      if (sm.id_features[it->index])
+        for (features::iterator j = sm.temporary_storage[it->hash].begin(); j != sm.temporary_storage[it->hash].end();
              ++j)
         {
-          if (++j == sm.temporary_storage[it->_hash].end()) break;
+          if (++j == sm.temporary_storage[it->hash].end()) break;
 
           uint64_t second_index = j.index() & mask;
           uint64_t key = second_index + ec.ft_offset;

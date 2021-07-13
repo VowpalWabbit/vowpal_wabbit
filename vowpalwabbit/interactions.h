@@ -43,7 +43,7 @@ inline bool contains_wildcard(const std::vector<namespace_index>& interaction)
 
 // function estimates how many new features will be generated for example and their sum(value^2).
 void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
-    const VW::namespaced_features& feature_spaces, size_t& new_features_cnt, float& new_features_value);
+    const VW::namespaced_feature_store& feature_spaces, size_t& new_features_cnt, float& new_features_value);
 
 std::vector<std::vector<namespace_index>> generate_namespace_combinations_with_repetition(
     const std::set<namespace_index>& namespaces, size_t num_to_pick);

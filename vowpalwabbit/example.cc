@@ -13,7 +13,7 @@ float calculate_total_sum_features_squared(bool permutations, example& ec)
 {
   float sum_features_squared = 0.f;
   for (auto& bucket : ec) {
-    for (const auto& fs : bucket) { sum_features_squared += fs._features.sum_feat_sq; }
+    for (const auto& fs : bucket) { sum_features_squared += fs.features.sum_feat_sq; }
   }
 
   size_t ignored_interacted_feature_count = 0;
@@ -136,29 +136,26 @@ void copy_example_data_with_label(example* dst, const example* src)
 
 void move_feature_namespace(example* dst, example* src, namespace_index c)
 {
-  auto range_begin = src->feature_space.namespace_index_begin(c);
-  auto range_end = src->feature_space.namespace_index_end(c);
+  auto& group_list = src->feature_space.get_list(c);
 
   // Check if the range is empty.
-  if(range_begin == range_end)
+  if(group_list.empty())
   {
     return;
   }
 
-  const auto range_size = std::distance(range_begin, range_end);
   std::vector<std::pair<namespace_index,uint64_t>> hashes_to_remove;
-  hashes_to_remove.reserve(range_size);
+  hashes_to_remove.reserve(group_list.size());
 
-  for (auto it = range_begin; it != range_end; ++it)
+  for (auto it = group_list.begin(); it != group_list.end();)
   {
-    src->num_features -= it->_features.size();
-    dst->num_features += it->_features.size();
-    dst->feature_space.get_or_create_feature_group(it->_hash, it->_index) = std::move(it->_features);
-    hashes_to_remove.emplace_back(it->_index, it->_hash);
+    src->num_features -= it->features.size();
+    dst->num_features += it->features.size();
+    dst->feature_space.get_or_create(it->index, it->hash) = std::move(it->features);
+    hashes_to_remove.emplace_back(it->index, it->hash);
   }
+  for (auto idx_hash : hashes_to_remove) { src->feature_space.remove(idx_hash.first, idx_hash.second); }
 
-  for (auto idx_hash : hashes_to_remove) { src->feature_space.remove_feature_group(idx_hash.first, idx_hash.second);
-  }
 
   src->reset_total_sum_feat_sq();
   dst->reset_total_sum_feat_sq();

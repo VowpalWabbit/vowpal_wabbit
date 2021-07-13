@@ -189,7 +189,7 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
         {
           for (auto it = bucket.begin(); it != bucket.end(); ++it)
           {
-            ex->feature_space.get_or_create_feature_group(it->_hash, it->_index).concat(it->_features);
+            ex->feature_space.get_or_create(it->index, it->hash).concat(it->features);
           }
         }
 

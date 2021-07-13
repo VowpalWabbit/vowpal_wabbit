@@ -23,8 +23,8 @@ struct interact
 
 size_t get_ns_size(example& ex, namespace_index ns)
 {
-  auto begin = ex.feature_space.namespace_index_begin_proxy(ns);
-  auto end = ex.feature_space.namespace_index_end_proxy(ns);
+  auto begin = ex.feature_space.index_flat_begin(ns);
+  auto end = ex.feature_space.index_flat_end(ns);
   return end - begin;
 }
 
@@ -33,7 +33,7 @@ bool contains_valid_namespaces(example& ex, namespace_index n1, namespace_index 
   // first feature must be 1 so we're sure that the anchor feature is present
   if (get_ns_size(ex, n1) == 0 || get_ns_size(ex, n2) == 0) return false;
 
-  if ((*ex.feature_space.namespace_index_begin_proxy(n1)).value() != 1)
+  if ((*ex.feature_space.index_flat_begin(n1)).value() != 1)
   {
     // Anchor feature must be a number instead of text so that the relative offsets functions correctly but I don't
     // think we are able to test for this here.
@@ -41,7 +41,7 @@ bool contains_valid_namespaces(example& ex, namespace_index n1, namespace_index 
     return false;
   }
 
-  if ((*ex.feature_space.namespace_index_begin_proxy(n2)).value() != 1)
+  if ((*ex.feature_space.index_flat_begin(n2)).value() != 1)
   {
     logger::log_error("Namespace '{}' misses anchor feature with value 1", static_cast<char>(n2));
     return false;
@@ -51,7 +51,7 @@ bool contains_valid_namespaces(example& ex, namespace_index n1, namespace_index 
 }
 
 using multiply_iterator_t =
-    VW::chained_proxy_iterator<VW::namespaced_features::bucket_iterator, features::audit_iterator>;
+    VW::chained_proxy_iterator<VW::namespaced_feature_store::list_iterator, features::audit_iterator>;
 void multiply(features& f_dest, multiply_iterator_t f_src1_begin, multiply_iterator_t f_src1_end,
     multiply_iterator_t f_src2_begin, multiply_iterator_t f_src2_end, uint64_t weight_mask)
 {
@@ -119,9 +119,9 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   ec.num_features -= get_ns_size(ec, in.n2);
 
   in.feat_store.clear();
-  multiply(in.feat_store, ec.feature_space.namespace_index_begin_proxy(in.n1),
-      ec.feature_space.namespace_index_end_proxy(in.n1), ec.feature_space.namespace_index_begin_proxy(in.n2),
-      ec.feature_space.namespace_index_end_proxy(in.n2), in.all->weights.mask());
+  multiply(in.feat_store, ec.feature_space.index_flat_begin(in.n1),
+      ec.feature_space.index_flat_end(in.n1), ec.feature_space.index_flat_begin(in.n2),
+      ec.feature_space.index_flat_end(in.n2), in.all->weights.mask());
   ec.reset_total_sum_feat_sq();
   ec.num_features = in.feat_store.size();
 
@@ -129,36 +129,36 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   std::vector<namespace_index> index_removed;
   std::vector<features> removed_features;
 
-  auto remove_index = [&hashes_removed, &removed_features, &index_removed, & ec](namespace_index index) {
-    for (auto it = ec.feature_space.namespace_index_begin(index); it != ec.feature_space.namespace_index_end(index);
-         ++it)
+  auto remove_index = [&hashes_removed, &removed_features, &index_removed, &ec](namespace_index index) {
+    auto& group_list = ec.feature_space.get_list(index);
+    for (auto& group : group_list)
     {
-      hashes_removed.push_back(it->_hash);
-      index_removed.push_back(it->_index);
-      removed_features.emplace_back(std::move(it->_features));
+      hashes_removed.push_back(group.hash);
+      index_removed.push_back(group.index);
+      removed_features.emplace_back(std::move(group.features));
     }
     for (size_t i = 0; i < hashes_removed.size(); i++)
     {
-      ec.feature_space.remove_feature_group(index_removed[i], hashes_removed[i]);
+      ec.feature_space.remove(index_removed[i], hashes_removed[i]);
     }
   };
 
   remove_index(in.n1);
   remove_index(in.n2);
 
-  ec.feature_space.get_or_create_feature_group(interact_reduction_namespace, interact_reduction_namespace) =
+  ec.feature_space.get_or_create(interact_reduction_namespace, interact_reduction_namespace) =
       std::move(in.feat_store);
 
   base.predict(ec);
   if (is_learn) base.learn(ec);
 
-  in.feat_store = std::move(ec.feature_space.at(interact_reduction_namespace));
-  ec.feature_space.remove_feature_group(interact_reduction_namespace, interact_reduction_namespace);
+  in.feat_store = std::move(ec.feature_space.get(interact_reduction_namespace, interact_reduction_namespace));
+  ec.feature_space.remove(interact_reduction_namespace, interact_reduction_namespace);
 
   // re-insert namespace into the right position
   for (size_t i = 0; i < hashes_removed.size(); i++)
   {
-    ec.feature_space.get_or_create_feature_group(hashes_removed[i], index_removed[i]) = std::move(removed_features[i]);
+    ec.feature_space.get_or_create(index_removed[i], hashes_removed[i]) = std::move(removed_features[i]);
   }
 
   ec.num_features = in.num_features;

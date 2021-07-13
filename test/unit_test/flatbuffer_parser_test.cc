@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_standalone_example)
   const auto& red_features = examples[0]->_reduction_features.template get<simple_label_reduction_features>();
   BOOST_CHECK_CLOSE(red_features.weight, 1.f, FLOAT_TOL);
 
-  auto* constant_feat_group = examples[0]->feature_space.get_feature_group(constant_namespace);
+  auto* constant_feat_group = examples[0]->feature_space.get_or_null(constant_namespace, constant_namespace);
   BOOST_CHECK(constant_feat_group != nullptr);
   BOOST_CHECK_CLOSE(constant_feat_group->values[0], 2.23f, FLOAT_TOL);
 
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
   const auto& red_features = examples[0]->_reduction_features.template get<simple_label_reduction_features>();
   BOOST_CHECK_CLOSE(red_features.weight, 1.f, FLOAT_TOL);
 
-  auto* constant_feat_group = examples[0]->feature_space.get_feature_group(constant_namespace);
+  auto* constant_feat_group = examples[0]->feature_space.get_or_null(constant_namespace, constant_namespace);
   BOOST_CHECK(constant_feat_group != nullptr);
   BOOST_CHECK_CLOSE(constant_feat_group->values[0], 2.23f, FLOAT_TOL);
 

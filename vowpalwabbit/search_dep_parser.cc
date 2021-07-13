@@ -86,12 +86,12 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
       make_option("old_style_labels", data->old_style_labels).keep().help("Use old hack of label information"));
   options.add_and_parse(new_options);
 
-  data->ex.feature_space.get_or_create_feature_group(val_namespace, val_namespace);
+  data->ex.feature_space.get_or_create(val_namespace, val_namespace);
   for (size_t i = 1; i < 14; i++) {
     auto current_index = static_cast<unsigned char>(i) + 'A';
-    data->ex.feature_space.get_or_create_feature_group(current_index, current_index);
+    data->ex.feature_space.get_or_create(current_index, current_index);
   }
-  data->ex.feature_space.get_or_create_feature_group(constant_namespace, val_namespace);
+  data->ex.feature_space.get_or_create(constant_namespace, val_namespace);
   data->ex.interactions = &sch.get_vw_pointer_unsafe().interactions;
 
   if (data->one_learner)
@@ -127,7 +127,7 @@ void finish(Search::search &sch)
 void inline add_feature(
     example &ex, uint64_t idx, unsigned char ns, uint64_t mask, uint64_t multiplier, bool /* audit */ = false)
 {
-  ex.feature_space.get_or_create_feature_group(ns, ns).push_back(1.0f, (idx * multiplier) & mask);
+  ex.feature_space.get_or_create(ns, ns).push_back(1.0f, (idx * multiplier) & mask);
 }
 
 void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier,
@@ -136,10 +136,10 @@ void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t 
   for (auto& bucket : src.feature_space) {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
-      if (it->_index == constant_namespace) { continue; }
-      features& tgt_fs = ex.feature_space.get_or_create_feature_group(tgt_ns, tgt_ns);
+      if (it->index == constant_namespace) { continue; }
+      features& tgt_fs = ex.feature_space.get_or_create(tgt_ns, tgt_ns);
 
-      for (feature_index i : it->_features.indicies) {
+      for (feature_index i : it->features.indicies) {
           tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
       }
     }
@@ -321,8 +321,8 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
   for (auto& bucket : data->ex) {
     for (auto& fs : bucket)
     {
-      fs._features.sum_feat_sq = static_cast<float>(fs._features.size());
-      count += fs._features.size();
+      fs.features.sum_feat_sq = static_cast<float>(fs.features.size());
+      count += fs.features.size();
     }
   }
 

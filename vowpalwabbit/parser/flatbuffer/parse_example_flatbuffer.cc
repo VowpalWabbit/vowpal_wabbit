@@ -209,7 +209,7 @@ void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
   uint64_t ns_hash = get_full_ns_hash(all, ns);
   _c_hash = ns_hash;
 
-  auto& fs = ae->feature_space.get_or_create_feature_group(ns_hash, ns_index);
+  auto& fs = ae->feature_space.get_or_create(ns_index, ns_hash);
 
   for (const auto& feature : *(ns->features()))
   { parse_features(all, fs, feature, (all->audit || all->hash_inv) ? ns->name() : nullptr); }

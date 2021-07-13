@@ -60,7 +60,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
   {
     for (auto& fs : bucket)
     {
-      if (lrq.lrindices[fs._index]) { lrq.orig_size[fs._hash] = fs._features.size(); }
+      if (lrq.lrindices[fs.index]) { lrq.orig_size[fs.hash] = fs.features.size(); }
     }
   }
 
@@ -87,11 +87,10 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
       unsigned char right = i[(which + 1) % 2];
       unsigned int k = atoi(i.c_str() + 2);
 
-      for (auto left_it = ec.feature_space.namespace_index_begin(left);
-           left_it != ec.feature_space.namespace_index_end(left); ++left_it)
+      for (const auto& left_ns_fs : ec.feature_space.get_list(left))
       {
-        features& left_fs = left_it->_features;
-        for (unsigned int lfn = 0; lfn < lrq.orig_size[left_it->_hash]; ++lfn)
+        const auto& left_fs = left_ns_fs.features;
+        for (unsigned int lfn = 0; lfn < lrq.orig_size[left_ns_fs.hash]; ++lfn)
         {
           float lfx = left_fs.values[lfn];
           uint64_t lindex = left_fs.indicies[lfn] + ec.ft_offset;
@@ -111,11 +110,10 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
                 }
               }
 
-              for (auto right_it = ec.feature_space.namespace_index_begin(right);
-                   right_it != ec.feature_space.namespace_index_end(right); ++right_it)
+        for (auto& right_ns_fs : ec.feature_space.get_list(right))
               {
-                features& right_fs = right_it->_features;
-                for (unsigned int rfn = 0; rfn < lrq.orig_size[right_it->_hash]; ++rfn)
+          auto& right_fs = right_ns_fs.features;
+                for (unsigned int rfn = 0; rfn < lrq.orig_size[right_ns_fs.hash]; ++rfn)
                 {
                   // NB: ec.ft_offset added by base learner
                   float rfx = right_fs.values[rfn];
@@ -164,14 +162,13 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
       ec.confidence = first_uncertainty;
     }
 
-    for (std::string const& i : lrq.lrpairs)
+    for (const std::string& i : lrq.lrpairs)
     {
       unsigned char right = i[(which + 1) % 2];
 
-      for (auto right_it = ec.feature_space.namespace_index_begin(right);
-           right_it != ec.feature_space.namespace_index_end(right); ++right_it)
+      for (auto& right_ns_fs : ec.feature_space.get_list(right))
       {
-        right_it->_features.truncate_to(lrq.orig_size[right_it->_hash]);
+        right_ns_fs.features.truncate_to(lrq.orig_size[right_ns_fs.hash]);
       }
     }
   }  // end for(max_iter)

@@ -10,7 +10,7 @@ typedef unsigned char namespace_index;
 #include "reduction_features.h"
 #include "feature_group.h"
 #include "v_array.h"
-#include "namespaced_features.h"
+#include "namespaced_feature_store.h"
 
 #include <vector>
 #include <set>
@@ -30,18 +30,18 @@ typedef unsigned char namespace_index;
 
 struct indices_proxy_obj
 {
-  VW::namespaced_features* feature_space;
+  VW::namespaced_feature_store* feature_space;
 
-  VW::namespaced_features::ns_index_iterator begin() const { return feature_space->index_begin(); }
-  VW::namespaced_features::ns_index_iterator end() const { return feature_space->index_end(); }
+  std::vector<namespace_index>::const_iterator begin() const { return feature_space->indices().begin(); }
+  std::vector<namespace_index>::const_iterator end() const { return feature_space->indices().end(); }
   // TODO this needs to be fixed to be resilient to duplicated indices
-  size_t size() const { return end() - begin(); }
-  bool empty() const { return begin() == end(); }
+  size_t size() const { return feature_space->indices().size(); }
+  bool empty() const { return feature_space->indices().empty(); }
 };
 
 struct example_predict
 {
-  using iterator = VW::namespaced_features::iterator;
+  using iterator = VW::namespaced_feature_store::iterator;
 
   example_predict() { indices.feature_space = &feature_space; }
   ~example_predict() = default;
@@ -56,7 +56,7 @@ struct example_predict
   inline iterator end() { return feature_space.end(); }
 
   indices_proxy_obj indices;
-  VW::namespaced_features feature_space;
+  VW::namespaced_feature_store feature_space;
 
   uint64_t ft_offset = 0;  // An offset for all feature values.
 

@@ -215,7 +215,7 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
   uint64_t mask = all->weights.mask();
   size_t ss = all->weights.stride_shift();
 
-  features& fs = ec.feature_space.get_or_create_feature_group(node_id_namespace, node_id_namespace);
+  features& fs = ec.feature_space.get_or_create(node_id_namespace, node_id_namespace);
 
   if (b.node_only) { fs.push_back(1., ((static_cast<uint64_t>(868771) * cn) << ss) & mask); }
   else
@@ -233,7 +233,7 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
 
 void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, example& ec)
 {
-  ec.feature_space.remove_feature_group(node_id_namespace, node_id_namespace);
+  ec.feature_space.remove(node_id_namespace, node_id_namespace);
 }
 
 uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, example& ec)

@@ -577,7 +577,8 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
 
 void del_features_in_top_namespace(search_private& /* priv */, example& ec, size_t ns)
 {
-  if (std::find( ec.feature_space.index_begin(),  ec.feature_space.index_end(), ns) ==  ec.feature_space.index_end())
+  if (std::find(ec.feature_space.indices().begin(), ec.feature_space.indices().end(), ns) ==
+      ec.feature_space.indices().end())
   {
     return;
     // if (ec.indices.size() == 0)
@@ -586,10 +587,10 @@ void del_features_in_top_namespace(search_private& /* priv */, example& ec, size
     //{ THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " <<
     //(size_t)ec.indices.last()); }
   }
-  features& fs = ec.feature_space.at(ns);
+  features& fs = ec.feature_space.get(ns, ns);
   ec.num_features -= fs.size();
   ec.reset_total_sum_feat_sq();
-  ec.feature_space.remove_feature_group(ns, ns);
+  ec.feature_space.remove(ns, ns);
 }
 
 void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
@@ -623,19 +624,20 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
       else  // this is actually a neighbor
       {
         example& other = *ec_seq[n + offset];
-        for (auto begin = other.feature_space.namespace_index_begin(ns); begin != other.feature_space.namespace_index_end(ns); ++begin) {
-          GD::foreach_feature<search_private, add_new_feature>(priv.all, begin->_features, priv, me.ft_offset);
+        for (const auto& ns_fs : other.feature_space.get_list(ns))
+        {
+          GD::foreach_feature<search_private, add_new_feature>(priv.all, ns_fs.features, priv, me.ft_offset);
         }
       }
     }
 
     if (!priv.dat_new_feature_namespace.empty())
     {
-      me.feature_space.get_or_create_feature_group(neighbor_namespace, neighbor_namespace) =
+      me.feature_space.get_or_create(neighbor_namespace, neighbor_namespace) =
           std::move(priv.dat_new_feature_namespace)
                                                                        ;
       priv.dat_new_feature_namespace = features{};
-      auto& fs = me.feature_space.at(neighbor_namespace);
+      auto& fs = me.feature_space.get(neighbor_namespace, neighbor_namespace);
       size_t sz = fs.size();
       if ((sz > 0) && (fs.sum_feat_sq > 0.))
       {
@@ -817,10 +819,10 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
   if (!priv.dat_new_feature_namespace.empty())
   {
-    ec.feature_space.get_or_create_feature_group(conditioning_namespace, conditioning_namespace) =
+    ec.feature_space.get_or_create(conditioning_namespace, conditioning_namespace) =
         std::move(priv.dat_new_feature_namespace);
     priv.dat_new_feature_namespace = features{};
-    auto& con_fs = ec.feature_space.at(conditioning_namespace);
+    auto& con_fs = ec.feature_space.get(conditioning_namespace, conditioning_namespace);
     ec.reset_total_sum_feat_sq();
     ec.num_features += con_fs.size();
   }

@@ -21,7 +21,6 @@ using feature_index = uint64_t;
 using audit_strings = std::pair<std::string, std::string>;
 using namespace_index = unsigned char;
 
-
 struct features;
 struct features_value_index_audit_range;
 
@@ -32,7 +31,7 @@ struct feature
   uint64_t weight_index;
 
   feature() = default;
-  feature(float _x, uint64_t _index) : x(_x), weight_index(_index) {}
+  feature(float _x, uint64_t index) : x(_x), weight_index(index) {}
 
   feature(const feature&) = default;
   feature& operator=(const feature&) = default;
@@ -296,8 +295,8 @@ struct features
   std::vector<audit_strings> space_names;      // Optional for audit mode.
 
   float sum_feat_sq = 0.f;
-  uint64_t _hash = 0;
-  namespace_index _index = 0;
+  uint64_t hash = 0;
+  namespace_index index = 0;
 
   features() = default;
   ~features() = default;
@@ -354,3 +353,21 @@ struct features
   VW_DEPRECATED("deep_copy_from is deprecated. Use the copy constructor directly. This will be removed in VW 9.0.")
   void deep_copy_from(const features& src);
 };
+
+
+namespace VW {
+  struct namespaced_features
+  {
+    features features;
+    uint64_t hash;
+    namespace_index index;
+
+    namespaced_features(uint64_t hash, namespace_index index) : hash(hash), index(index) {}
+
+    template <typename FeaturesT>
+    namespaced_features(FeaturesT&& inner_features, uint64_t hash, namespace_index index)
+        : features(std::forward<FeaturesT>(inner_features)), hash(hash), index(index)
+    {
+    }
+  };
+}

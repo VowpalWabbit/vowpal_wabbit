@@ -139,7 +139,7 @@ public:
     if (ns_exists[static_cast<int>(c)]) return false;
     std::string s(1, c);
     fid hash = static_cast<fid>(VW::hash_space(*vw_ref, s));
-    ec->feature_space.get_or_create_feature_group(hash, c);
+    ec->feature_space.get_or_create(c, hash);
     ns_exists[static_cast<int>(c)] = true;
     return false;
   }
@@ -172,7 +172,7 @@ public:
         ns_exists[static_cast<int>(current_ns)] = false;
       }
 
-      ec->feature_space.remove_feature_group(current_seed);
+      ec->feature_space.remove(current_seed);
       current_seed = past_seeds.back();
       past_seeds.pop_back();
       example_changed_since_prediction = true;
@@ -197,7 +197,7 @@ public:
   void add_other_example_ns(example& other, char other_ns, char to_ns)
   {
     if (ensure_ns_exists(to_ns)) return;
-    features& fs = other.feature_space.at(current_seed);
+    features& fs = other.feature_space.get(current_seed);
     for (size_t i = 0; i < fs.size(); i++) ec->feature_space[current_seed].push_back(fs.values[i], fs.indicies[i]);
     ec->reset_total_sum_feat_sq();
     ec->num_features += fs.size();

@@ -38,7 +38,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   for (auto& bucket : ec) {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
-      lrq.orig_size[it->_hash] = it->_features.size();
+      lrq.orig_size[it->hash] = it->features.size();
     }
 
   }
@@ -65,12 +65,11 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
         unsigned char right = ((which + 1) % 2) ? *i1 : *i2;
         unsigned int lfd_id = lrq.field_id[left];
         unsigned int rfd_id = lrq.field_id[right];
-        for (auto left_it = ec.feature_space.namespace_index_begin(left);
-             left_it != ec.feature_space.namespace_index_end(left); ++left_it)
+        for (const auto& left_ns_fs : ec.feature_space.get_list(left))
         {
-          for (unsigned int lfn = 0; lfn < lrq.orig_size[left_it->_hash]; ++lfn)
+          for (unsigned int lfn = 0; lfn < lrq.orig_size[left_ns_fs.hash]; ++lfn)
           {
-            features& fs = left_it->_features;
+            const auto& fs = left_ns_fs.features;
             float lfx = fs.values[lfn];
             uint64_t lindex = fs.indicies[lfn];
             for (unsigned int n = 1; n <= k; ++n)
@@ -84,12 +83,11 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
                 if (!example_is_test(ec) && *lw == 0) { *lw = cheesyrand(lwindex) * 0.5f / sqrtk; }
               }
 
-              for (auto right_it = ec.feature_space.namespace_index_begin(right);
-                   right_it != ec.feature_space.namespace_index_end(right); ++right_it)
+              for (auto& right_ns_fs : ec.feature_space.get_list(right))
               {
-                for (unsigned int rfn = 0; rfn < lrq.orig_size[right_it->_hash]; ++rfn)
+                for (unsigned int rfn = 0; rfn < lrq.orig_size[right_ns_fs.hash]; ++rfn)
                 {
-                  features& rfs = right_it->_features;
+                  auto& rfs = right_ns_fs.features;
                   //                    feature* rf = ec.atomics[right].begin + rfn;
                   // NB: ec.ft_offset added by base learner
                   float rfx = rfs.values[rfn];
@@ -136,15 +134,14 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
       ec.loss = first_loss;
     }
 
-    for (char i : lrq.field_name)
+    for (namespace_index right : lrq.field_name)
     {
-      namespace_index right = i;
-      auto right_begin = ec.feature_space.namespace_index_begin(right);
-      auto right_end = ec.feature_space.namespace_index_end(right);
-      for (auto right_it = right_begin; right_it != right_end; ++right_it)
+
+     for (auto& right_ns_fs : ec.feature_space.get_list(right))
       {
-        right_it->_features.truncate_to(lrq.orig_size[right_it->_hash]);
+        right_ns_fs.features.truncate_to(lrq.orig_size[right_ns_fs.hash]);
       }
+
     }
   }
 }

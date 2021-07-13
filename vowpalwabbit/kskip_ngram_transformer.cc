@@ -77,17 +77,14 @@ void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NU
 
 void VW::kskip_ngram_transformer::generate_grams(example* ex)
 {
-  // In order to have the same behavior as before we need to flatten the indice feature groups.
-  std::set<namespace_index> indices(ex->feature_space.index_begin(), ex->feature_space.index_end());
-  for (namespace_index index : indices)
+  for (namespace_index index : ex->feature_space.indices())
   {
-    auto begin = ex->feature_space.namespace_index_begin(index);
-    auto end = ex->feature_space.namespace_index_end(index);
-    features* destination_feature_group = &(begin->_features);
+    auto& feat_group_list = ex->feature_space.get_list(index);
+    features* destination_feature_group = &feat_group_list.front().features;
     features* source_feature_group = nullptr;
     std::unique_ptr<features> generated_feature_group;
 
-    if (std::distance(begin, end) > 1)
+    if (feat_group_list.size() > 1)
     {
       logger::errlog_warn(
           "Sentence based ngram concatenates feature groups that start with the same letter. This is deprecated "
@@ -95,12 +92,12 @@ void VW::kskip_ngram_transformer::generate_grams(example* ex)
           "character is the same.");
       generated_feature_group = VW::make_unique<features>();
       source_feature_group = generated_feature_group.get();
-      for (; begin != end; begin++) { generated_feature_group->concat(begin->_features);
+      for (auto& ns_fs : feat_group_list) { generated_feature_group->concat(ns_fs.features);
       }
     }
     else
     {
-      source_feature_group = &(begin->_features);
+      source_feature_group = &feat_group_list.front().features;
     }
 
     size_t length = source_feature_group->size();
