@@ -316,7 +316,6 @@ void clear_memo_foreach_action(search_private& priv)
   for (size_t i = 0; i < priv.memo_foreach_action.size(); i++)
     if (priv.memo_foreach_action[i])
     {
-      priv.memo_foreach_action[i]->delete_v();
       delete priv.memo_foreach_action[i];
     }
   priv.memo_foreach_action.clear();
@@ -572,7 +571,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   {
     std::stringstream temp;
     temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
-    fs.space_names.push_back(audit_strings_ptr(new audit_strings(*priv.dat_new_feature_feature_space, temp.str())));
+    fs.space_names.push_back(audit_strings(*priv.dat_new_feature_feature_space, temp.str()));
   }
 }
 
@@ -1296,7 +1295,6 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
       priv.memo_foreach_action.push_back(this_cache);
     else
     {
-      this_cache->delete_v();
       delete this_cache;
     }
   }
@@ -1933,7 +1931,6 @@ struct final_item
 
 void free_final_item(final_item* p)
 {
-  p->prefix->delete_v();
   delete p->prefix;
   delete p;
 }

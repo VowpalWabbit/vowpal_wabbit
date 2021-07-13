@@ -335,6 +335,7 @@ public:
     std::copy(first, last, begin() + idx);
   }
 
+  VW_DEPRECATED("Use destructor instead. This will be removed in VW 9.0.")
   void delete_v() { delete_v_array(); }
 
   void push_back(const T& new_ele)
