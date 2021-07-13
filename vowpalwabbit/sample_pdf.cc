@@ -34,7 +34,7 @@ struct sample_pdf
   int learn(example& ec, experimental::api_status* status);
   int predict(example& ec, experimental::api_status* status);
 
-  void init(single_learner* p_base, std::shared_ptr<rand_state> &&random_state);
+  void init(single_learner* p_base, std::shared_ptr<rand_state>&& random_state);
 
 private:
   std::shared_ptr<rand_state> _p_random_state;
@@ -71,7 +71,7 @@ int sample_pdf::predict(example& ec, experimental::api_status*)
   return VW::experimental::error_code::success;
 }
 
-void sample_pdf::init(single_learner* p_base, std::shared_ptr<rand_state> &&random_state)
+void sample_pdf::init(single_learner* p_base, std::shared_ptr<rand_state>&& random_state)
 {
   _base = p_base;
   _p_random_state = random_state;

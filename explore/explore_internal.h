@@ -341,8 +341,8 @@ namespace exploration
   // 2) Does not normalize the scores (unlike sample_after_normalization)
   // 3) Scores need not add up to one.
   template <typename It>
-  int sample_scores(
-      std::shared_ptr<rand_state> p_seed, It scores_first, It scores_last, uint32_t& chosen_index, std::random_access_iterator_tag)
+  int sample_scores(std::shared_ptr<rand_state> p_seed, It scores_first, It scores_last, uint32_t& chosen_index,
+      std::random_access_iterator_tag)
   {
     if (scores_first == scores_last || scores_last < scores_first) return E_EXPLORATION_BAD_RANGE;
     // Create a discrete_distribution based on the returned weights. This class handles the
