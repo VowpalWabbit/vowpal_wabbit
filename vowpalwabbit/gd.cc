@@ -747,7 +747,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
     for (auto it = weights.begin(); it != weights.end(); ++it)
     {
       const auto weight_value = *it;
-      if (*it != 0.f && weights.is_activated(it.index()))
+      if (*it != 0.f && weights.is_activated(it.index())) //TODO : Check where else this condition is needed
       {
         const auto weight_index = it.index() >> weights.stride_shift();
 
