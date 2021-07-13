@@ -71,7 +71,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
     for (auto& bucket : ec) {
       for (auto it = bucket.begin(); it != bucket.end(); ++it)
       {
-        if (c.namespaces[it->index]) { GD::foreach_feature<mwt, value_policy>(c.all, it->features, c); }
+        if (c.namespaces[it->index]) { GD::foreach_feature<mwt, value_policy>(c.all, it->feats, c); }
       }
     }
 
@@ -98,14 +98,14 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
           if (learn)
           {
             auto& feats = c.feature_space.at({it->index, it->hash});
-            for (features::iterator& f : it->features)
+            for (features::iterator& f : it->feats)
             {
               uint64_t new_index =
                   ((f.index() & weight_mask) >> stride_shift) * c.num_classes + static_cast<uint64_t>(f.value());
               feats.push_back(1, new_index << stride_shift);
             }
           }
-          std::swap(c.feature_space.at({it->index, it->hash}), it->features);
+          std::swap(c.feature_space.at({it->index, it->hash}), it->feats);
         }
       }
     }

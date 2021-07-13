@@ -13,7 +13,7 @@ float calculate_total_sum_features_squared(bool permutations, example& ec)
 {
   float sum_features_squared = 0.f;
   for (auto& bucket : ec) {
-    for (const auto& fs : bucket) { sum_features_squared += fs.features.sum_feat_sq; }
+    for (const auto& fs : bucket) { sum_features_squared += fs.feats.sum_feat_sq; }
   }
 
   size_t ignored_interacted_feature_count = 0;
@@ -147,15 +147,14 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
   std::vector<std::pair<namespace_index,uint64_t>> hashes_to_remove;
   hashes_to_remove.reserve(group_list.size());
 
-  for (auto it = group_list.begin(); it != group_list.end();)
+  for (auto& ns_fs : group_list)
   {
-    src->num_features -= it->features.size();
-    dst->num_features += it->features.size();
-    dst->feature_space.get_or_create(it->index, it->hash) = std::move(it->features);
-    hashes_to_remove.emplace_back(it->index, it->hash);
+    src->num_features -= ns_fs.feats.size();
+    dst->num_features += ns_fs.feats.size();
+    dst->feature_space.get_or_create(ns_fs.index, ns_fs.hash) = std::move(ns_fs.feats);
+    hashes_to_remove.emplace_back(ns_fs.index, ns_fs.hash);
   }
   for (auto idx_hash : hashes_to_remove) { src->feature_space.remove(idx_hash.first, idx_hash.second); }
-
 
   src->reset_total_sum_feat_sq();
   dst->reset_total_sum_feat_sq();

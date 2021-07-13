@@ -135,7 +135,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
     {
       hashes_removed.push_back(group.hash);
       index_removed.push_back(group.index);
-      removed_features.emplace_back(std::move(group.features));
+      removed_features.emplace_back(std::move(group.feats));
     }
     for (size_t i = 0; i < hashes_removed.size(); i++)
     {

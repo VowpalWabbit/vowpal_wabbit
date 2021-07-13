@@ -139,7 +139,7 @@ void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t 
       if (it->index == constant_namespace) { continue; }
       features& tgt_fs = ex.feature_space.get_or_create(tgt_ns, tgt_ns);
 
-      for (feature_index i : it->features.indicies) {
+      for (feature_index i : it->feats.indicies) {
           tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
       }
     }
@@ -321,8 +321,8 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
   for (auto& bucket : data->ex) {
     for (auto& fs : bucket)
     {
-      fs.features.sum_feat_sq = static_cast<float>(fs.features.size());
-      count += fs.features.size();
+      fs.feats.sum_feat_sq = static_cast<float>(fs.feats.size());
+      count += fs.feats.size();
     }
   }
 

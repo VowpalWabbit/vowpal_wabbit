@@ -72,8 +72,8 @@ void make_marginal(data& sm, example& ec)
       namespace_index n = it->index;
       if (sm.id_features[n])
       {
-        std::swap(sm.temporary_storage[it->hash], it->features);
-        it->features.clear();
+        std::swap(sm.temporary_storage[it->hash], it->feats);
+        it->feats.clear();
         auto& current = sm.temporary_storage[it->hash];
         for (features::iterator j = current.begin(); j != current.end(); ++j)
         {
@@ -103,10 +103,10 @@ void make_marginal(data& sm, example& ec)
             }
           }
           float marginal_pred = static_cast<float>(sm.marginals[key].first / sm.marginals[key].second);
-          it->features.push_back(marginal_pred, first_index);
+          it->feats.push_back(marginal_pred, first_index);
           if (!current.space_names.empty())
           {
-            it->features.space_names.push_back(current.space_names[2 * (it->features.size() - 1)]);
+            it->feats.space_names.push_back(current.space_names[2 * (it->feats.size() - 1)]);
           }
 
           if (sm.compete)  // compute the prediction from the marginals using the weights
@@ -131,7 +131,7 @@ void undo_marginal(data& sm, example& ec)
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
       // TODO fix marginal to understand new namespaces
-      if (sm.id_features[it->index]) { std::swap(sm.temporary_storage[it->hash], it->features); }
+      if (sm.id_features[it->index]) { std::swap(sm.temporary_storage[it->hash], it->feats); }
     }
   }
 }

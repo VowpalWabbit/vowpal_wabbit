@@ -32,7 +32,7 @@ void unique_sort_features(uint64_t parse_mask, example* ae)
   {
     for (auto& fs : bucket)
     {
-      if (fs.features.sort(parse_mask)) { unique_features(fs.features); }
+      if (fs.feats.sort(parse_mask)) { unique_features(fs.feats); }
     }
   }
 

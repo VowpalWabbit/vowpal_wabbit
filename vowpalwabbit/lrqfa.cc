@@ -38,7 +38,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   for (auto& bucket : ec) {
     for (auto it = bucket.begin(); it != bucket.end(); ++it)
     {
-      lrq.orig_size[it->hash] = it->features.size();
+      lrq.orig_size[it->hash] = it->feats.size();
     }
 
   }
@@ -69,7 +69,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
         {
           for (unsigned int lfn = 0; lfn < lrq.orig_size[left_ns_fs.hash]; ++lfn)
           {
-            const auto& fs = left_ns_fs.features;
+            const auto& fs = left_ns_fs.feats;
             float lfx = fs.values[lfn];
             uint64_t lindex = fs.indicies[lfn];
             for (unsigned int n = 1; n <= k; ++n)
@@ -87,7 +87,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
               {
                 for (unsigned int rfn = 0; rfn < lrq.orig_size[right_ns_fs.hash]; ++rfn)
                 {
-                  auto& rfs = right_ns_fs.features;
+                  auto& rfs = right_ns_fs.feats;
                   //                    feature* rf = ec.atomics[right].begin + rfn;
                   // NB: ec.ft_offset added by base learner
                   float rfx = rfs.values[rfn];
@@ -139,7 +139,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 
      for (auto& right_ns_fs : ec.feature_space.get_list(right))
       {
-        right_ns_fs.features.truncate_to(lrq.orig_size[right_ns_fs.hash]);
+        right_ns_fs.feats.truncate_to(lrq.orig_size[right_ns_fs.hash]);
       }
 
     }

@@ -341,7 +341,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
       for (auto& ns0_feat_group : ex->feature_space.get_list(i0)) {
         for (auto& ns1_feat_group : ex->feature_space.get_list(i1))
         {
-          ex->num_features += ns0_feat_group.features.size() * ns1_feat_group.features.size();
+          ex->num_features += ns0_feat_group.feats.size() * ns1_feat_group.feats.size();
         }
       }
     }

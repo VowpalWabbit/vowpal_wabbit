@@ -407,7 +407,7 @@ void my_update_example_indicies(
   {
     for (auto& fs : bucket)
     {
-      for (feature_index& idx : fs.features.indicies) idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
+      for (feature_index& idx : fs.feats.indicies) idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
     }
   }
 }

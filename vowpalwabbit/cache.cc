@@ -226,7 +226,7 @@ void cache_features(io_buf& cache, const example* ae, uint64_t mask)
   cache.write_value<uint64_t>(static_cast<uint64_t>(ae->feature_space.size()));
   for (auto& bucket : *const_cast<example*>(ae)) { for (auto it = bucket.begin(); it != bucket.end(); ++it)
   {
-    output_features(cache, it->index, it->hash, it->features, mask);
+    output_features(cache, it->index, it->hash, it->feats, mask);
   }}
 
 

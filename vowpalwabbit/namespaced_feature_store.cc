@@ -27,7 +27,7 @@ features& namespaced_feature_store::get_or_create(namespace_index ns_index, uint
     }
 
     if (_feature_groups[ns_index].size() == 1) { _legacy_indices_existing.push_back(ns_index); }
-    return _feature_groups[ns_index].back().features;
+    return _feature_groups[ns_index].back().feats;
   }
 
   return *existing_group;
@@ -42,7 +42,7 @@ void namespaced_feature_store::remove(
     return group.hash == hash;
   });
   if (it == bucket.end()) { return; }
-  it->features.clear();
+  it->feats.clear();
   _saved_feature_group_nodes.splice(_saved_feature_group_nodes.end(), _feature_groups[ns_index], it);
   if (bucket.empty())
   {
@@ -59,7 +59,7 @@ void namespaced_feature_store::clear()
   {
     for (auto& namespaced_feat_group : _feature_groups[ns_index])
     {
-      namespaced_feat_group.features.clear();
+      namespaced_feat_group.feats.clear();
     }
     _saved_feature_group_nodes.splice(_saved_feature_group_nodes.end(), _feature_groups[ns_index]);
   }
@@ -81,7 +81,7 @@ namespaced_feature_store::index_flat_begin(namespace_index ns_index)
   else
   {
     --end_it;
-    inner_it = begin_it->features.audit_begin();
+    inner_it = begin_it->feats.audit_begin();
   }
   // end_it always points to the last valid outer iterator instead of the actual end iterator of the outer collection.
   // This is because the end chained_proxy_iterator points to the end iterator of the last valid item of the outer
@@ -102,7 +102,7 @@ namespaced_feature_store::index_flat_end(namespace_index ns_index)
   else
   {
     --end_it;
-    inner_it = end_it->features.audit_end();
+    inner_it = end_it->feats.audit_end();
   }
 
   return {end_it, end_it, inner_it};

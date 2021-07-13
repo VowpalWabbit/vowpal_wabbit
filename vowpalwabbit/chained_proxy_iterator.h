@@ -52,10 +52,10 @@ public:
   {
     ++_current;
     // TODO: don't rely on audit_end
-    if (_current == (*_outer_current).features.audit_end() && (_outer_current != _outer_end))
+    if (_current == (*_outer_current).feats.audit_end() && (_outer_current != _outer_end))
     {
       ++_outer_current;
-      _current = (*_outer_current).features.audit_begin();
+      _current = (*_outer_current).feats.audit_begin();
     }
     return *this;
   }
@@ -65,11 +65,11 @@ public:
   {
     assert(diff >= 0);
     while (true) {
-      auto current_group_distance_to_end = std::distance(_current, (*_outer_current).features.audit_end());
+      auto current_group_distance_to_end = std::distance(_current, (*_outer_current).feats.audit_end());
       if (diff > current_group_distance_to_end) {
         diff -= current_group_distance_to_end;
         ++_outer_current;
-        _current = (*_outer_current).features.audit_begin();
+        _current = (*_outer_current).feats.audit_begin();
       }
       else
       {
@@ -78,7 +78,7 @@ public:
         if ((diff == current_group_distance_to_end) && (_outer_current != _outer_end))
         {
           ++_outer_current;
-          _current = (*_outer_current).features.audit_begin();
+          _current = (*_outer_current).feats.audit_begin();
         }
         return *this;
       }
@@ -92,9 +92,9 @@ public:
     size_t accumulator = 0;
     while (lhs._outer_current != rhs._outer_current)
     {
-      accumulator += std::distance(rhs._current, (*(rhs._outer_current)).features.audit_end());
+      accumulator += std::distance(rhs._current, (*(rhs._outer_current)).feats.audit_end());
       ++rhs._outer_current;
-      rhs._current = (*rhs._outer_current).features.audit_begin();
+      rhs._current = (*rhs._outer_current).feats.audit_begin();
     }
     accumulator += std::distance(rhs._current, lhs._current);
     return accumulator;

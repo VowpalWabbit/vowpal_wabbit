@@ -217,11 +217,11 @@ void inject_slot_features(example* shared, example* slot)
       // slot default namespace has a special namespace in shared
       if (it->index == default_namespace)
       {
-        LabelDict::add_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->features);
+        LabelDict::add_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->feats);
       }
       else
       {
-        LabelDict::add_example_namespace(*shared, it->index, it->hash, it->features);
+        LabelDict::add_example_namespace(*shared, it->index, it->hash, it->feats);
       }
     }
   }
@@ -273,11 +273,11 @@ void remove_slot_features(example* shared, example* slot)
 
       if (it->index == default_namespace)  // slot default namespace has a special namespace in shared
       {
-        LabelDict::del_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->features);
+        LabelDict::del_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->feats);
       }
       else
       {
-        LabelDict::del_example_namespace(*shared, it->index, it->hash, it->features);
+        LabelDict::del_example_namespace(*shared, it->index, it->hash, it->feats);
       }
     }
   }

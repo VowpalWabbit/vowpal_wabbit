@@ -644,10 +644,10 @@ void feature_limit(const vw& all, example* ex)
   for (auto& bucket : *ex)
   {
     for (auto& fs : bucket) {
-      if (all.limit[fs.index] < fs.features.size())
+      if (all.limit[fs.index] < fs.feats.size())
       {
-        fs.features.sort(all.parse_mask);
-        unique_features(fs.features, all.limit[fs.index]);
+        fs.feats.sort(all.parse_mask);
+        unique_features(fs.feats, all.limit[fs.index]);
       }
     }
   }
@@ -726,7 +726,7 @@ void setup_example(vw& all, example* ae)
   {
     for (auto& bucket : *ae) {
       for (auto& fs : bucket) {
-        for (auto& j : fs.features.indicies) { j *= multiplier; }
+        for (auto& j : fs.feats.indicies) { j *= multiplier; }
       }
     }
   }
@@ -734,7 +734,7 @@ void setup_example(vw& all, example* ae)
   ae->num_features = 0;
   for (auto& bucket : *ae)
   {
-    for (auto& fs : bucket) { ae->num_features += fs.features.size(); }
+    for (auto& fs : bucket) { ae->num_features += fs.feats.size(); }
   }
 
   // Set the interactions for this example to the global set.
@@ -814,7 +814,7 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
 
     for (const auto& feat_namespace : ec->feature_space.get_list(index))
     {
-      number_of_features += feat_namespace.features.size();
+      number_of_features += feat_namespace.feats.size();
     }
 
     fs_ptr[index_counter].name = index;
@@ -826,7 +826,7 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
     size_t feature_counter = 0;
     for (const auto& ns_fs : ec->feature_space.get_list(index))
     {
-      for (auto it = ns_fs.features.begin(); it != ns_fs.features.end(); ++it)
+      for (auto it = ns_fs.feats.begin(); it != ns_fs.feats.end(); ++it)
       {
         feature t = {it.value(), it.index()};
         t.weight_index >>= stride_shift;

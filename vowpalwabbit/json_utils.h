@@ -65,7 +65,7 @@ inline void remove_empty_namespaces(VW::namespaced_feature_store& feature_space)
   for (const auto& group_list : feature_space) {
     for (const auto& ns_fs : group_list)
     {
-      if (ns_fs.features.empty()) { hashes_to_remove.emplace_back(ns_fs.index, ns_fs.hash); }
+      if (ns_fs.feats.empty()) { hashes_to_remove.emplace_back(ns_fs.index, ns_fs.hash); }
     }
   }
 

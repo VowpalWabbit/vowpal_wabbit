@@ -16,23 +16,26 @@ typedef unsigned char namespace_index;
 
 namespace VW
 {
+template <typename ArrayT, typename IndexItT, typename ListT>
 class indexed_iterator_t
 {
-  std::array<std::list<namespaced_features>, 256>* _feature_group_buckets;
-  std::vector<namespace_index>::iterator _indices_it;
+  ArrayT* _feature_group_buckets;
+  IndexItT _indices_it;
 
 public:
+  using iterator_category = std::bidirectional_iterator_tag;
   using difference_type = std::ptrdiff_t;
+  using value_type = ListT;
 
   indexed_iterator_t(
-      std::vector<namespace_index>::iterator  indices,
-      std::array<std::list<namespaced_features>, 256>* feature_groups)
+      IndexItT indices,
+      ArrayT* feature_groups)
       : _indices_it(indices)
       , _feature_group_buckets(feature_groups)
   {
   }
 
-  std::list<namespaced_features>& operator*()
+  value_type& operator*()
   {
     return (*_feature_group_buckets)[*_indices_it];
   }
@@ -76,7 +79,8 @@ public:
 /// identifier namespace_hash - 8 byte hash
 struct namespaced_feature_store
 {
-  using iterator = indexed_iterator_t;
+  using iterator = indexed_iterator_t<std::array<std::list<namespaced_features>, 256>, std::vector<namespace_index>::iterator, std::list<namespaced_features>>;
+  using const_iterator = indexed_iterator_t<const std::array<std::list<namespaced_features>, 256>, std::vector<namespace_index>::const_iterator, const std::list<namespaced_features>>;
   using list_iterator = std::list<namespaced_features>::iterator;
   using const_list_iterator = std::list<namespaced_features>::const_iterator;
   using index_flat_iterator = VW::chained_proxy_iterator<list_iterator, features::audit_iterator>;
@@ -118,7 +122,7 @@ struct namespaced_feature_store
       return group.hash == hash;
     });
     if (it == bucket.end()) { return nullptr; }
-    return &it->features;
+    return &it->feats;
   }
 
   // Returns nullptr if not found.
@@ -127,7 +131,7 @@ struct namespaced_feature_store
     auto& bucket = _feature_groups[ns_index];
     auto it = std::find_if(bucket.begin(), bucket.end(), [hash](const namespaced_features& group) { return group.hash == hash; });
     if (it == bucket.end()) { return nullptr; }
-    return &it->features;
+    return &it->feats;
   }
 
   inline features& get(namespace_index ns_index, uint64_t hash)
@@ -180,6 +184,13 @@ struct namespaced_feature_store
       return {_legacy_indices_existing.end(), &_feature_groups};
   }
 
+  inline const_iterator begin() const { return {_legacy_indices_existing.begin(), &_feature_groups}; }
+
+  inline const_iterator end() const
+  {
+      return {_legacy_indices_existing.end(), &_feature_groups};
+  }
+
 private:
   std::array<std::list<namespaced_features>, 256> _feature_groups;
   std::vector<namespace_index> _legacy_indices_existing;
@@ -191,16 +202,16 @@ private:
  template <typename FuncT>
 inline void foreach (namespaced_feature_store& store, FuncT func)
 {
-  for (const auto& ns_index : _legacy_indices_existing)
+  for (const auto& group_list : store)
   {
-    for (auto& namespaced_feat_group : _feature_groups[ns_index])
+    for (auto& namespaced_feat_group : group_list)
     {
 #ifndef NDEBUG
       const auto prev_index = namespaced_feat_group.index;
       const auto prev_hash = namespaced_feat_group.hash;
 #endif
 
-      func(namespaced_feat_group.index, namespaced_feat_group.hash, namespaced_feat_group.features);
+      func(namespaced_feat_group.index, namespaced_feat_group.hash, namespaced_feat_group.feats);
 
       // Callers of this function should never change the index or hash values
 #ifndef NDEBUG
@@ -214,11 +225,11 @@ inline void foreach (namespaced_feature_store& store, FuncT func)
 template <typename FuncT>
 inline void foreach (const namespaced_feature_store& store, FuncT func)
 {
-  for (const auto& ns_index : _legacy_indices_existing)
+  for (const auto& group_list : store)
   {
-    for (const auto& namespaced_feat_group : _feature_groups[ns_index])
+    for (const auto& namespaced_feat_group : group_list)
     {
-      func(namespaced_feat_group.index, namespaced_feat_group.hash, namespaced_feat_group.features);
+      func(namespaced_feat_group.index, namespaced_feat_group.hash, namespaced_feat_group.feats);
     }
   }
 }

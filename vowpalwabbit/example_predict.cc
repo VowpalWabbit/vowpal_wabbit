@@ -28,9 +28,9 @@ std::string features_to_string(const example_predict& ec)
   {
     for (auto& f : bucket)
     {
-      auto ind_iter = f.features.indicies.cbegin();
-      auto val_iter = f.features.values.cbegin();
-      for (; ind_iter != f.features.indicies.cend(); ++ind_iter, ++val_iter)
+      auto ind_iter = f.feats.indicies.cbegin();
+      auto val_iter = f.feats.values.cbegin();
+      for (; ind_iter != f.feats.indicies.cend(); ++ind_iter, ++val_iter)
       {
         strstream << "[h=" << *ind_iter << ","
                   << "v=" << *val_iter << "]";

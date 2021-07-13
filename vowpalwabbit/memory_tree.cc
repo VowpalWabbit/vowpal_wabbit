@@ -107,7 +107,7 @@ void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, bool o
       {
         // Since this was copied into just above this should not be nullptr.
         assert(dest_feat_group != nullptr);
-        diag_kronecker_prod_fs_test(it->features, *ec2_equiv_feat_group, *dest_feat_group, ec.total_sum_feat_sq,
+        diag_kronecker_prod_fs_test(it->feats, *ec2_equiv_feat_group, *dest_feat_group, ec.total_sum_feat_sq,
             ec1.get_total_sum_feat_sq(), ec2.get_total_sum_feat_sq());
       }
     }
@@ -1113,7 +1113,7 @@ void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, 
   for (auto& bucket : ec->feature_space)
   {
     for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      features& fs = it->features;
+      features& fs = it->feats;
       writeitvar(fs.size(), "features_", feat_size);
       if (read)
       {

@@ -358,7 +358,7 @@ struct features
 namespace VW {
   struct namespaced_features
   {
-    features features;
+    features feats;
     uint64_t hash;
     namespace_index index;
 
@@ -366,7 +366,7 @@ namespace VW {
 
     template <typename FeaturesT>
     namespaced_features(FeaturesT&& inner_features, uint64_t hash, namespace_index index)
-        : features(std::forward<FeaturesT>(inner_features)), hash(hash), index(index)
+        : feats(std::forward<FeaturesT>(inner_features)), hash(hash), index(index)
     {
     }
   };

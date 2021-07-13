@@ -80,7 +80,7 @@ void VW::kskip_ngram_transformer::generate_grams(example* ex)
   for (namespace_index index : ex->feature_space.indices())
   {
     auto& feat_group_list = ex->feature_space.get_list(index);
-    features* destination_feature_group = &feat_group_list.front().features;
+    features* destination_feature_group = &feat_group_list.front().feats;
     features* source_feature_group = nullptr;
     std::unique_ptr<features> generated_feature_group;
 
@@ -92,12 +92,12 @@ void VW::kskip_ngram_transformer::generate_grams(example* ex)
           "character is the same.");
       generated_feature_group = VW::make_unique<features>();
       source_feature_group = generated_feature_group.get();
-      for (auto& ns_fs : feat_group_list) { generated_feature_group->concat(ns_fs.features);
+      for (auto& ns_fs : feat_group_list) { generated_feature_group->concat(ns_fs.feats);
       }
     }
     else
     {
-      source_feature_group = &feat_group_list.front().features;
+      source_feature_group = &feat_group_list.front().feats;
     }
 
     size_t length = source_feature_group->size();
