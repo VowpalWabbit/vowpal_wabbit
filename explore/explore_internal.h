@@ -4,6 +4,7 @@
 
 // get the error code defined in master
 #include "explore.h"
+#include "rand_state.h"
 
 #include <cstdint>
 #include <stdexcept>
@@ -341,7 +342,7 @@ namespace exploration
   // 3) Scores need not add up to one.
   template <typename It>
   int sample_scores(
-      uint64_t* p_seed, It scores_first, It scores_last, uint32_t& chosen_index, std::random_access_iterator_tag)
+      std::shared_ptr<rand_state> p_seed, It scores_first, It scores_last, uint32_t& chosen_index, std::random_access_iterator_tag)
   {
     if (scores_first == scores_last || scores_last < scores_first) return E_EXPLORATION_BAD_RANGE;
     // Create a discrete_distribution based on the returned weights. This class handles the
@@ -362,7 +363,7 @@ namespace exploration
       return S_EXPLORATION_OK;
     }
 
-    float draw = total * uniform_random_merand48_advance(*p_seed);
+    float draw = total * (p_seed->get_and_update_random());
     if (draw > total)  // make very sure that draw can not be greater than total.
       draw = total;
 
@@ -398,7 +399,7 @@ namespace exploration
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
    */
   template <typename It>
-  int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value,
+  int sample_pdf(std::shared_ptr<rand_state> p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value,
       std::random_access_iterator_tag)
   {
     if (std::distance(pdf_first, pdf_last) == 0) return E_EXPLORATION_BAD_PDF;
@@ -412,7 +413,7 @@ namespace exploration
     float draw = 0.f;
     do
     {
-      draw = edge_avoid_factor * total_pdf_mass * exploration::uniform_random_merand48_advance(*p_seed);
+      draw = edge_avoid_factor * total_pdf_mass * p_seed->get_and_update_random();
     } while (draw >= total_pdf_mass);
 
     float acc_mass = 0.f;
@@ -451,7 +452,7 @@ namespace exploration
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
    */
   template <typename It>
-  int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value)
+  int sample_pdf(std::shared_ptr<rand_state> p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value)
   {
     using pdf_category = typename std::iterator_traits<It>::iterator_category;
     return sample_pdf(p_seed, pdf_first, pdf_last, chosen_value, pdf_value, pdf_category());

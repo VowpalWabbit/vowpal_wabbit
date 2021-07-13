@@ -26,8 +26,8 @@ bool continuous_action_range_check(std::vector<pdf_seg> scores, float range_min,
 {
   float chosen_value;
   float pdf_value;
-  uint64_t seed = 7791;
-  auto scode = exploration::sample_pdf(&seed, begin(scores), end(scores), chosen_value, pdf_value);
+  std::shared_ptr<rand_state> seed = std::make_shared<rand_state>(7791);
+  auto scode = exploration::sample_pdf(seed, begin(scores), end(scores), chosen_value, pdf_value);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
   return ((range_min <= chosen_value) && (chosen_value <= range_max));
 }
@@ -51,13 +51,13 @@ BOOST_AUTO_TEST_CASE(new_sample_pdf)
   the_pdf.push_back({4.5f, 6.2f, 0.1f / 1.7f});
   const auto str_pdf = to_string(the_pdf);
   std::cout << str_pdf << std::endl;
-  uint64_t seed = 7791;
+  std::shared_ptr<rand_state> seed = std::make_shared<rand_state>(7791);
   float chosen_action = 0.f;
   float pdf_value = 0.f;
 
-  exploration::sample_pdf(&seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
+  exploration::sample_pdf(seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
   BOOST_CHECK(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.back().right && pdf_value > 0.f);
-  exploration::sample_pdf(&seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
+  exploration::sample_pdf(seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
   BOOST_CHECK(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.back().right && pdf_value > 0.f);
 }
 
@@ -97,13 +97,13 @@ BOOST_AUTO_TEST_CASE(sample_continuous_action_statistical)
   float pdf_value;
   constexpr float range_min = .0f;
   constexpr float range_max = 100.0f;
-  uint64_t random_seed = 7791;
+  std::shared_ptr<rand_state> random_seed = std::make_shared<rand_state>(7791);
   bins_calc bins({0.f, 10.f, 20.f, 30.f, 40.f, 100.f});
 
   constexpr uint32_t iterate_count = 100000;
   for (auto idx = 0; idx < iterate_count; idx++)
   {
-    const auto scode = exploration::sample_pdf(&random_seed, begin(scores), end(scores), chosen_value, pdf_value);
+    const auto scode = exploration::sample_pdf(random_seed, begin(scores), end(scores), chosen_value, pdf_value);
     BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
     BOOST_CHECK((range_min <= chosen_value) && (chosen_value <= range_max));
 
