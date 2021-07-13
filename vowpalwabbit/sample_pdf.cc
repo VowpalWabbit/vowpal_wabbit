@@ -64,8 +64,8 @@ int sample_pdf::predict(example& ec, experimental::api_status*)
   }
 
   uint64_t seed = _p_random_state->get_current_state();
-  const int ret_code = exploration::sample_pdf(&seed, std::begin(_pred_pdf), std::end(_pred_pdf),
-      ec.pred.pdf_value.action, ec.pred.pdf_value.pdf_value);
+  const int ret_code = exploration::sample_pdf(
+      &seed, std::begin(_pred_pdf), std::end(_pred_pdf), ec.pred.pdf_value.action, ec.pred.pdf_value.pdf_value);
   _p_random_state->get_and_update_random();
 
   if (ret_code != S_EXPLORATION_OK) return VW::experimental::error_code::sample_pdf_failed;
