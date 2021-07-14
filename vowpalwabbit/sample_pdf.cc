@@ -112,13 +112,16 @@ LEARNER::base_learner* sample_pdf_setup(VW::setup_base_fn& setup_base, options_i
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   LEARNER::base_learner* p_base = setup_base(options, all);
-  auto p_reduction = scoped_calloc_or_throw<sample_pdf>();
+  auto p_reduction = VW::make_unique<sample_pdf>();
   p_reduction->init(as_singleline(p_base), all.get_random_state());
 
-  LEARNER::learner<sample_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, all.get_setupfn_name(sample_pdf_setup));
+  // This learner will assume the label type from base, so should not call set_label_type
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, all.get_setupfn_name(sample_pdf_setup))
+                .set_prediction_type(prediction_type_t::action_pdf_value)
+                .build();
 
-  return make_base(l);
+  return VW::LEARNER::make_base(*l);
 }
 }  // namespace continuous_action
 }  // namespace VW

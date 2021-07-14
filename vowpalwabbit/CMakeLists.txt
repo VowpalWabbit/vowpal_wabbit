@@ -148,7 +148,7 @@ set(vw_all_headers
   multilabel_oaa.h
   multilabel.h
   mwt.h
-  namespaced_features.h
+  namespaced_feature_store.h
   numeric_casts.h
   named_labels.h
   network.h
@@ -313,7 +313,7 @@ set(vw_all_sources
   multilabel_oaa.cc
   multilabel.cc
   mwt.cc
-  namespaced_features.cc
+  namespaced_feature_store.cc
   named_labels.cc
   network.cc
   kskip_ngram_transformer.cc
