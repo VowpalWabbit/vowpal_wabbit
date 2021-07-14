@@ -36,19 +36,48 @@ jobs:
         with:
           name: cxx_docs
           path: doc/html/
-  python:
-
-
+  python-build:
     container:
       image: vowpalwabbit/manylinux2010-build:latest
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v1
       - run: echo "/opt/python/cp39-cp39/bin" >> $GITHUB_PATH
-      - run: sudo apt-get install unrar
-      - name: Install Python package
+      - name: Build wheel
+        shell: bash
         run: |
-          python setup.py install --user
+          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp39-cp39/include/python3.9/'" --verbose
+          auditwheel repair wheel_output/*whl -w audit_output/
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v1
+        with:
+          name: python_wheel
+          path: audit_output/
+  python-doc:
+    needs: python-build
+    container:
+      image: python:3.9
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: sudo apt-get install unrar
+      - name: Download Wheel
+        uses: actions/download-artifact@v1
+        with:
+          name: python_wheel
+      - name: Install dependencies
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Install wheel
+        shell: bash
+        run: |
+          export wheel_files=(python_wheel/*)
+          export wheel_file="${wheel_files[0]}"
+          echo Installing ${wheel_file}...
+          pip install ${wheel_file}
       - name: Build docs
         run: |
           pip install -r python/docs/build-requirements.txt
@@ -61,7 +90,7 @@ jobs:
           name: python_docs
           path: python/docs/build/
   upload:
-    needs: [cpp, python]
+    needs: [cpp, python-doc]
     runs-on: ubuntu-latest
     # The upload step should only be run on the main repository and only for pushes or releases (not pull requests).
     if: ${{ github.repository == 'VowpalWabbit/vowpal_wabbit' && (github.event_name == 'push' || github.event_name == 'release') }}
