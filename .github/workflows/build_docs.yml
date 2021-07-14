@@ -37,25 +37,24 @@ jobs:
           name: cxx_docs
           path: doc/html/
   python:
+
+
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
+      image: vowpalwabbit/manylinux2010-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+      - run: echo "/opt/python/cp39-cp39/bin" >> $GITHUB_PATH
+      - run: sudo apt-get install unrar
       - name: Install Python package
         run: |
-          /usr/local/miniconda/bin/activate test-python36
           python setup.py install --user
-          /usr/local/miniconda/bin/deactivate
       - name: Build docs
         run: |
-          /usr/local/miniconda/bin/activate test-python36
-          sudo apt-get install unrar
           pip install -r python/docs/build-requirements.txt
           pip install -r requirements.txt
           cd python/docs
           make html
-          /usr/local/miniconda/bin/deactivate
       - name: Upload built docs
         uses: actions/upload-artifact@v1
         with:
