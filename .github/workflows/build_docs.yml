@@ -61,9 +61,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - run: |
-          apt-get update
-          apt-get install unrar
       - name: Download Wheel
         uses: actions/download-artifact@v1
         with:
@@ -71,8 +68,8 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
+          pip install -r python/docs/build-requirements.txt
           pip install -r requirements.txt
-          pip install pytest
       - name: Install wheel
         shell: bash
         run: |
@@ -82,8 +79,6 @@ jobs:
           pip install ${wheel_file}
       - name: Build docs
         run: |
-          pip install -r python/docs/build-requirements.txt
-          pip install -r requirements.txt
           cd python/docs
           make html
       - name: Upload built docs
