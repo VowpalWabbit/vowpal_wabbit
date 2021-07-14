@@ -61,7 +61,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - run: apt-get install unrar
+      - run: |
+          apt-get update
+          apt-get install unrar
       - name: Download Wheel
         uses: actions/download-artifact@v1
         with:
