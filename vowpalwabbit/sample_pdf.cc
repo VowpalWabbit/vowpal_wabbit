@@ -115,10 +115,10 @@ LEARNER::base_learner* sample_pdf_setup(options_i& options, vw& all)
   auto p_reduction = VW::make_unique<sample_pdf>();
   p_reduction->init(as_singleline(p_base), all.get_random_state());
 
+  // This learner will assume the label type from base, so should not call set_label_type
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, all.get_setupfn_name(sample_pdf_setup))
                 .set_prediction_type(prediction_type_t::action_pdf_value)
-                .set_label_type(label_type_t::simple)
                 .build();
 
   return VW::LEARNER::make_base(*l);

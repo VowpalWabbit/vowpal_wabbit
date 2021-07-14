@@ -10,7 +10,7 @@
 struct rand_state
 {
 private:
-  uint64_t random_state = 0;
+  uint64_t random_state;
 
 public:
   constexpr rand_state() : random_state(0) {}
