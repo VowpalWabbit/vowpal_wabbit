@@ -41,38 +41,7 @@ extensions = [
     "myst_nb",
 ]
 
-jupyter_execute_notebooks = "cache"
-thebe_config = {
-    "repository_url": "https://github.com/VowpalWabbit/vowpal_wabbit",
-    "repository_branch": "master",
-    "selector": ".cell",
-}
-show_navbar_depth = 2
-
-html_theme_options = {
-    "use_edit_page_button": True
-}
-
-myst_heading_anchors = 2
 numpydoc_show_class_members = False
-
-html_context = {
-    "github_user": "VowpalWabbit",
-    "github_repo": "vowpal_wabbit",
-    "github_version": "master",
-    "doc_path": "python/docs/source",
-}
-
-# This helps to document __init__
-def skip(app, what, name, obj, would_skip, options):
-    if name == "__init__":
-        return False
-    return would_skip
-
-def setup(app):
-    app.add_config_value("binder_url_config", {}, "html")
-    app.connect("autodoc-skip-member", skip)
-    app.connect("html-page-context", add_binder_url_for_page)
 
 templates_path = ['_templates']
 
@@ -99,7 +68,6 @@ exclude_patterns = []
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
-
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -107,11 +75,30 @@ pygments_style = None
 #
 html_theme = 'pydata_sphinx_theme'
 
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#
-# html_theme_options = {}
+html_theme_options = {
+    "use_edit_page_button": True
+}
+
+jupyter_execute_notebooks = "cache"
+
+# This tutorial uses unrar so we can't execute it in the doc generation.
+execution_excludepatterns = ['DFtoVW_tutorial.ipynb']
+
+thebe_config = {
+    "repository_url": "https://github.com/VowpalWabbit/vowpal_wabbit",
+    "repository_branch": "master",
+    "selector": ".cell",
+}
+show_navbar_depth = 2
+
+myst_heading_anchors = 2
+
+html_context = {
+    "github_user": "VowpalWabbit",
+    "github_repo": "vowpal_wabbit",
+    "github_version": "master",
+    "doc_path": "python/docs/source",
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -124,16 +111,6 @@ html_css_files = [
 
 html_sidebars = { '**': ['search-field.html', 'nav-toc-override.html'] }
 
-
-# Custom sidebar templates, must be a dictionary that maps document names
-# to template names.
-#
-# The default sidebars (for documents that don't match any pattern) are
-# defined by theme itself.  Builtin themes are using these templates by
-# default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
-# 'searchbox.html']``.
-#
-# html_sidebars = {}
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
@@ -175,6 +152,10 @@ def add_binder_url_for_page(
     elif extension != ".ipynb":
         return
 
+    # If this is an excluded notebook, then skip it.
+    if Path(path).name in app.config["execution_excludepatterns"]:
+        return
+
     # Construct a path to the file relative to the repository root
     book_relpath = binder_url_config["path_to_docs"]
     if book_relpath != "":
@@ -195,3 +176,14 @@ def _split_repo_url(url):
     else:
         raise ValueError(f"Currently Binder/JupyterHub repositories must be on GitHub, got {url}")
     return org, repo
+
+# This helps to document __init__
+def skip(app, what, name, obj, would_skip, options):
+    if name == "__init__":
+        return False
+    return would_skip
+
+def setup(app):
+    app.add_config_value("binder_url_config", {}, "html")
+    app.connect("autodoc-skip-member", skip)
+    app.connect("html-page-context", add_binder_url_for_page)

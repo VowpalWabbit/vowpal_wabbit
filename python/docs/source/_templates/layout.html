@@ -1,7 +1,7 @@
 {% extends "!layout.html" %}
 
 {% block docs_body %}
-    {# If this is set then we are rendering a notebook and should inject the binder and thebe buttons#}
+    {# If this is set then we are rendering a notebook and should inject the binder and thebe buttons #}
     {% if binder_url %}
     <button title="Activate interactive cells" class="thebelab-button thebe-launch-button" onclick="initThebe()">
         Make live
@@ -15,6 +15,6 @@
 
 {% block docs_navbar %}
 <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
-I'm a header
+header placeholder
 </nav>
 {% endblock %}
