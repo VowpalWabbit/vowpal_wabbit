@@ -232,7 +232,7 @@ setup(
     python_requires='>=3.6',
     description='Vowpal Wabbit Python package',
     long_description=long_description,
-    url='https://github.com/JohnLangford/vowpal_wabbit',
+    url='https://github.com/VowpalWabbit/vowpal_wabbit',
     author='Scott Graham',
     author_email='scott.d.graham@gmail.com',
     license='BSD 3-Clause License',
