@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h> // for system
 #include "../vowpalwabbit/vw.h"
-#include "../vowpalwabbit/ezexample.h"
 #include "../vowpalwabbit/search_sequencetask.h"
 #include "libsearch.h"
 
@@ -30,24 +29,32 @@ public:
     //ptag currently uint32_t
     for (ptag i=0; i<input_example.size(); i++)
     { example* ex = VW::read_example(vw_obj, std::string("1 |w ") + input_example[i].word);
-      action p  = Search::predictor(sch, i+1).set_input(*ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
+      action p =
+          Search::predictor(sch, i + 1).set_input(*ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
       VW::finish_example(vw_obj, *ex);
       output.push_back(p);
     }
   }
 
-  // using ezexample
   void _run2(Search::search& sch, std::vector<wt> & input_example, std::vector<uint32_t> & output)
-  { output.clear();
+  {
+    auto& vw_obj = sch.get_vw_pointer_unsafe();
+    output.clear();
     //ptag currently uint32_t
     for (ptag i=0; i<input_example.size(); i++)
-    { ezexample ex(&vw_obj);
-      ex(vw_namespace('w'))(input_example[i].word);  // add the feature
-      action p  = Search::predictor(sch, i+1).set_input(*ex.get()).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
+    {
+      example ex;
+      auto ns_hash_w = VW::hash_space(vw_obj, "w");
+      auto& fs_w = ex.feature_space['w'];
+      ex.indices.push_back('w');
+      fs_w.push_back(1.f, VW::hash_feature(vw_obj, input_example[i].word, ns_hash_w));
+      VW::setup_example(vw_obj, &ex);
+      action p =
+          Search::predictor(sch, i + 1).set_input(ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
       output.push_back(p);
+      VW::finish_example(vw_obj, ex);
     }
   }
-
 };
 
 void run(vw& vw_obj)

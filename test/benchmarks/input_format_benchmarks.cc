@@ -47,7 +47,7 @@ static void bench_cache_io_buf(benchmark::State& state, ExtraArgs&&... extra_arg
   auto buffer = get_cache_buffer(example_string);
   auto vw = VW::initialize("--cb 2 --quiet");
 
-  auto examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(vw));
 
   vw->example_parser->input = VW::make_unique<io_buf>();
@@ -59,7 +59,6 @@ static void bench_cache_io_buf(benchmark::State& state, ExtraArgs&&... extra_arg
     VW::empty_example(*vw, *examples[0]);
     benchmark::ClobberMemory();
   }
-  examples.delete_v();
 }
 
 template <class... ExtraArgs>
@@ -73,7 +72,7 @@ static void bench_cache_io_buf_collections(benchmark::State& state, ExtraArgs&&.
   auto vw = VW::initialize("--cb 2 --quiet");
   vw->example_parser->input = VW::make_unique<io_buf>();
 
-  auto examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(vw));
 
   for (auto _ : state)
@@ -83,7 +82,6 @@ static void bench_cache_io_buf_collections(benchmark::State& state, ExtraArgs&&.
     while (read_cached_features(vw, examples)) { VW::empty_example(*vw, *examples[0]); }
     benchmark::ClobberMemory();
   }
-  examples.delete_v();
 }
 
 template <class... ExtraArgs>
@@ -93,7 +91,7 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
   auto example_string = res[0];
 
   auto vw = VW::initialize("--cb 2 --quiet");
-  auto examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(vw));
 
   vw->example_parser->input = VW::make_unique<io_buf>();
@@ -105,7 +103,6 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
     VW::empty_example(*vw, *examples[0]);
     benchmark::ClobberMemory();
   }
-  examples.delete_v();
 }
 
 static void benchmark_example_reuse(benchmark::State& state)
@@ -116,7 +113,7 @@ static void benchmark_example_reuse(benchmark::State& state)
 
   auto vw = VW::initialize("--quiet", nullptr, false, nullptr, nullptr);
 
-  auto examples = v_init<example*>();
+  v_array<example*> examples;
 
   vw->example_parser->input = VW::make_unique<io_buf>();
 
@@ -129,7 +126,6 @@ static void benchmark_example_reuse(benchmark::State& state)
     examples.clear();
     benchmark::ClobberMemory();
   }
-  examples.delete_v();
 }
 
 BENCHMARK_CAPTURE(bench_cache_io_buf, 120_string_fts, get_x_string_fts(120));

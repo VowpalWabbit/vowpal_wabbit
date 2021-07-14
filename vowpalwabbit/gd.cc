@@ -277,7 +277,7 @@ void print_lda_features(vw& all, example& ec)
   {
     for (const auto& f : fs.audit_range())
     {
-      std::cout << '\t' << f.audit()->get()->first << '^' << f.audit()->get()->second << ':'
+      std::cout << '\t' << f.audit()->first << '^' << f.audit()->second << ':'
                 << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
       for (size_t k = 0; k < all.lda; k++) std::cout << ':' << (&weights[f.index()])[k];
     }
@@ -298,7 +298,7 @@ void print_features(vw& all, example& ec)
       if (fs.space_names.size() > 0)
         for (const auto& f : fs.audit_range())
         {
-          audit_interaction(dat, f.audit()->get());
+          audit_interaction(dat, f.audit());
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
           audit_interaction(dat, nullptr);
         }

@@ -64,7 +64,7 @@ struct polyprediction
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
   VW::decision_scores_t decision_scores;
-  uint32_t multiclass;
+  uint32_t multiclass = 0;
   MULTILABEL::labels multilabels;
   float prob = 0.f;                                          // for --probabilities --csoaa_ldf=mc
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
@@ -78,7 +78,7 @@ VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 struct example : public example_predict  // core example datatype.
 {
-  example() = default;
+  example();
   ~example();
 
   example(const example&) = delete;
@@ -120,9 +120,9 @@ struct example : public example_predict  // core example datatype.
   // Deprecating a field can make deprecated warnings hard to track down through implicit usage in the constructor.
   // This is deprecated, but we won't mark it so we don't have those issues.
   // VW_DEPRECATED(
-  //     "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to
-  //     them. " "Standalone examples are by definition always in use.")
-  bool in_use = true;
+  //     "in_use has been removed, examples taken from the pool are assumed to be in use if there is a reference to"
+  //     "them. Standalone examples are by definition always in use. This will be removed in VW 9.0.")
+  bool in_use;
 
   size_t get_num_features() const noexcept { return num_features + num_features_from_interactions; }
 
