@@ -1,6 +1,5 @@
 #include <cmath>
 #include <list>
-#include <tuple>
 #include <type_traits>
 
 #include "distributionally_robust.h"
@@ -51,11 +50,11 @@ static bool isclose(double x, double y, double atol = 1e-8)
   return std::abs(x - y) <= (atol + rtol * std::abs(y));
 }
 
-ChiSquared::Duals ChiSquared::recompute_duals()
+ScoredDual ChiSquared::recompute_duals()
 {
   if (n <= 0)
   {
-    duals = {true, 0, 0, 0, 0};
+    duals = std::make_pair(rmin, Duals(true, 0, 0, 0, 0));
 
     return duals;
   }
@@ -78,7 +77,6 @@ ChiSquared::Duals ChiSquared::recompute_duals()
   double r = rmin;
   double sign = 1;
 
-  typedef std::pair<double, Duals> ScoredDual;
   std::list<ScoredDual> candidates;
 
   for (auto wfake : {wmin, wmax})
@@ -150,13 +148,13 @@ ChiSquared::Duals ChiSquared::recompute_duals()
     }
   }
 
-  if (candidates.empty()) { duals = {true, 0, 0, 0, n}; }
+  if (candidates.empty()) { duals = std::make_pair(rmin, Duals(true, 0, 0, 0, n)); }
   else
   {
     auto it = std::min_element(candidates.begin(), candidates.end(),
         [](const ScoredDual& x, const ScoredDual& y) { return std::get<0>(x) < std::get<0>(y); });
 
-    duals = std::get<1>(*it);
+    duals = *it;
   }
 
   return duals;

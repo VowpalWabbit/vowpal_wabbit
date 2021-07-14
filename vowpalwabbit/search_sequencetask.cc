@@ -180,8 +180,6 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 void finish(Search::search& sch)
 {
   task_data* D = sch.get_task_data<task_data>();
-  D->allowed_actions.delete_v();
-  D->only_two_allowed.delete_v();
   delete D;
 }
 
