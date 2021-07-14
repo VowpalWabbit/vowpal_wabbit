@@ -177,6 +177,9 @@ struct namespaced_feature_store
 private:
   std::array<std::list<namespaced_features>, 256> _feature_groups;
   std::vector<namespace_index> _legacy_indices_existing;
+  
+  // This list is used as an object pool for list nodes from _feature_groups. It allows us to avoid the new/delete cost for 
+  // linked list nodes as they are removed and readded.
   std::list<namespaced_features> _saved_feature_group_nodes;
 };
 
