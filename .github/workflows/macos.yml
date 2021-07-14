@@ -1,0 +1,22 @@
+name: MacOS / C++
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  check:
+    runs-on: macos-10.15
+    steps:
+      - uses: actions/checkout@v2
+      - name: Restore dependencies
+        run: ./.scripts/macos/restore.sh ${{ github.workspace }}
+      - name: Build
+        run: ./.scripts/macos/build.sh ${{ github.workspace }}
+      - name: Run tests
+        run: ./.scripts/macos/test.sh ${{ github.workspace }}
