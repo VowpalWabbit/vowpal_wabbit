@@ -185,10 +185,12 @@ uint64_t ceil_log_2(uint64_t v);
 class namespace_copy_guard
 {
   example_predict& _ex;
-  uint64_t _ns;
+  features* _features;
+  uint64_t _ns_hash;
+  unsigned char _ns_index;
 
 public:
-  namespace_copy_guard(example_predict& ex, uint64_t ns, unsigned const char index);
+  namespace_copy_guard(example_predict& ex, unsigned char ns_index, uint64_t ns_hash);
   ~namespace_copy_guard();
 
   void feature_push_back(feature_value v, feature_index idx);
@@ -455,7 +457,7 @@ public:
       {
         // insert namespace
         auto ns_copy_guard =
-            std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*action, it->hash, it->index));
+            std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*action, it->index, it->hash));
 
         // copy features
         for (auto fs : *shared.feature_space.get_or_null(it->hash))

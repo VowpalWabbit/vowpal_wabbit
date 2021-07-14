@@ -32,12 +32,12 @@ void example_predict_builder::push_feature_string(const char* feature_name, feat
 {
   feature_index feature_hash =
       _feature_index_bit_mask & hashstring(feature_name, strlen(feature_name), _namespace_hash);
-  _ex->feature_space.get_or_null(_namespace_hash)->push_back(value, feature_hash);
+  _ex->feature_space.get_or_null(_namespace_idx, _namespace_hash)->push_back(value, feature_hash);
 }
 
 void example_predict_builder::push_feature(feature_index feature_idx, feature_value value)
 {
-  auto* fs = _ex->feature_space.get_or_null(_namespace_hash);
+  auto* fs = _ex->feature_space.get_or_null(_namespace_idx, _namespace_hash);
   fs->push_back(value, _namespace_hash + feature_idx);
 }
 };  // namespace vw_slim
