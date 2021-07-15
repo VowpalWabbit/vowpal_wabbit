@@ -98,7 +98,7 @@ void predict_or_learn(sample_pdf& reduction, single_learner&, example& ec)
 // END sample_pdf reduction and reduction methods
 ////////////////////////////////////////////////////
 
-LEARNER::base_learner* sample_pdf_setup(VW::setup_base_fn& setup_base, options_i& options, vw& all)
+LEARNER::base_learner* sample_pdf_setup(VW::setup_base_fn& setup_base)
 {
   option_group_definition new_options("Continuous actions - sample pdf");
   bool invoked = false;
