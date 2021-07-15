@@ -16,11 +16,13 @@ typedef unsigned char namespace_index;
 
 namespace VW
 {
+// indexed_iterator_t allows you to use a list if indices to index into another collection.
+// The iterator will return an item per index.
 template <typename ArrayT, typename IndexItT, typename ListT>
 class indexed_iterator_t
 {
-  ArrayT* _feature_group_buckets;
   IndexItT _indices_it;
+  ArrayT* _feature_group_lists;
 
 public:
   using iterator_category = std::bidirectional_iterator_tag;
@@ -28,11 +30,11 @@ public:
   using value_type = ListT;
 
   indexed_iterator_t(IndexItT indices, ArrayT* feature_groups)
-      : _indices_it(indices), _feature_group_buckets(feature_groups)
+      : _indices_it(indices), _feature_group_lists(feature_groups)
   {
   }
 
-  value_type& operator*() { return (*_feature_group_buckets)[*_indices_it]; }
+  value_type& operator*() { return (*_feature_group_lists)[*_indices_it]; }
 
   indexed_iterator_t& operator++()
   {
@@ -106,6 +108,7 @@ struct namespaced_feature_store
     for (auto ns_index : _legacy_indices_existing) { accumulator += _feature_groups[ns_index].size(); }
     return accumulator;
   }
+
   inline bool empty() const { return _legacy_indices_existing.empty(); }
 
   // Returns nullptr if not found.
@@ -177,6 +180,9 @@ struct namespaced_feature_store
 private:
   std::array<std::list<namespaced_features>, 256> _feature_groups;
   std::vector<namespace_index> _legacy_indices_existing;
+
+  // This list is used as an object pool for list nodes from _feature_groups. It allows us to avoid the new/delete cost
+  // for linked list nodes as they are removed and readded.
   std::list<namespaced_features> _saved_feature_group_nodes;
 };
 

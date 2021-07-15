@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals)
       {2.0112308644799395, 0.4596272470443479}, {0.9190821536272645, 0.4352012556681023},
       {1.2312500617045903, 0.40365563207132593}};
 
-  VW::distributionally_robust::ChiSquared::Duals duals[] = {{true, 0, 0, 0, 1},
+  VW::distributionally_robust::Duals duals[] = {{true, 0, 0, 0, 1},
       {false, 0.186284935714629, -0.5242563567278763, 0, 1.999},
       {false, 0.24176630719751424, -0.3939735949427358, -0.1283677781597634, 2.997001},
       {false, 0.2789701026811336, -0.5061803928309371, -0.11471449055314126, 3.994003999},
@@ -50,11 +50,16 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals)
       {false, 0.5602916549924593, -0.9880343238436395, 0, 8.964083874125915},
       {false, 0.5684515391242324, -1.0040272155608332, 0, 9.95511979025179}};
 
+  float l_bound[] = {0, 0.09662899139580064, 0.04094541671274077, 0.12209962713632538, 0.1418901366388003,
+      0.14012602622199424, 0.10155119256007322, 0.1846416198342555, 0.20562281337616062, 0.23301703596172654};
+
   auto onlinechisq = VW::make_unique<VW::distributionally_robust::ChiSquared>(0.05, 0.999);
 
   {
-    auto d = onlinechisq->recompute_duals();
+    auto sd = onlinechisq->recompute_duals();
+    auto d = sd.second;
 
+    BOOST_CHECK_EQUAL(0, sd.first);
     BOOST_CHECK_EQUAL(d.unbounded, true);
     BOOST_CHECK_EQUAL(d.kappa, 0);
     BOOST_CHECK_EQUAL(d.gamma, 0);
@@ -65,8 +70,10 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals)
   for (int i = 0; i < std::extent<decltype(data)>::value; ++i)
   {
     onlinechisq->update(data[i].first, data[i].second);
-    auto d = onlinechisq->recompute_duals();
+    auto sd = onlinechisq->recompute_duals();
+    auto d = sd.second;
 
+    BOOST_CHECK_CLOSE(l_bound[i], sd.first, 0.001);
     BOOST_CHECK_EQUAL(duals[i].unbounded, d.unbounded);
     BOOST_CHECK_CLOSE(duals[i].kappa, d.kappa, 0.001);
     BOOST_CHECK_CLOSE(duals[i].gamma, d.gamma, 0.001);

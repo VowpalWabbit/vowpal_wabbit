@@ -64,27 +64,22 @@ public:
   chained_proxy_iterator& operator+=(difference_type diff)
   {
     assert(diff >= 0);
-    while (true)
+    auto current_group_distance_to_end = std::distance(_current, (*_outer_current).feats.audit_end());
+    while (diff > current_group_distance_to_end)
     {
-      auto current_group_distance_to_end = std::distance(_current, (*_outer_current).feats.audit_end());
-      if (diff > current_group_distance_to_end)
-      {
-        diff -= current_group_distance_to_end;
-        ++_outer_current;
-        _current = (*_outer_current).feats.audit_begin();
-      }
-      else
-      {
-        _current += diff;
-
-        if ((diff == current_group_distance_to_end) && (_outer_current != _outer_end))
-        {
-          ++_outer_current;
-          _current = (*_outer_current).feats.audit_begin();
-        }
-        return *this;
-      }
+      diff -= current_group_distance_to_end;
+      ++_outer_current;
+      _current = (*_outer_current).feats.audit_begin();
+      current_group_distance_to_end = std::distance(_current, (*_outer_current).feats.audit_end());
     }
+
+    _current += diff;
+    if ((diff == current_group_distance_to_end) && (_outer_current != _outer_end))
+    {
+      ++_outer_current;
+      _current = (*_outer_current).feats.audit_begin();
+    }
+    return *this;aster
   }
 
   // end - begin
