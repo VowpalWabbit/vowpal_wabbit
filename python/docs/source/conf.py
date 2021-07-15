@@ -101,10 +101,11 @@ html_context = {
     "doc_path": "python/docs/source",
 }
 
+# These suffixes are needed otherwise it chops off DFtoVW etc thinking it is a suffix
 redirects = {
-    "vowpalwabbit.DFtoVW": "reference/vowpalwabbit.DFtoVW.html",
-    "vowpalwabbit.pyvw": "reference/vowpalwabbit.pyvw.html",
-    "vowpalwabbit.sklearn": "reference/vowpalwabbit.sklearn.html",
+    "vowpalwabbit.DFtoVW.rst": "reference/vowpalwabbit.DFtoVW.html",
+    "vowpalwabbit.pyvw.rst": "reference/vowpalwabbit.pyvw.html",
+    "vowpalwabbit.sklearn.rst": "reference/vowpalwabbit.sklearn.html",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
