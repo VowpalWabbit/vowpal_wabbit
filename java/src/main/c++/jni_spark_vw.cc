@@ -410,8 +410,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
     int mask = (1 << all->num_bits) - 1;
 
     // pre-allocate
-    features->values.resize(features->values.end() - features->values.begin() + size);
-    features->indicies.resize(features->indicies.end() - features->indicies.begin() + size);
+    features->values.reserve(features.values.capacity() + size);
+    features->indicies.reserve(features.indicies.capacity() + size);
 
     double* values_itr = values0;
     double* values_end = values0 + size;
@@ -452,8 +452,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
     int mask = (1 << all->num_bits) - 1;
 
     // pre-allocate
-    features->values.resize(features->values.end() - features->values.begin() + size);
-    features->indicies.resize(features->indicies.end() - features->indicies.begin() + size);
+    features->values.reserve(features.values.capacity() + size);
+    features->indicies.reserve(features.indicies.capacity() + size);
 
     int* indices_itr = indices0;
     int* indices_end = indices0 + size;
