@@ -50,6 +50,91 @@ int read_features_string(vw* all, v_array<example*>& examples)
   return static_cast<int>(num_chars_initial);
 }
 
+class feature_group_helper
+{
+public:
+  feature_group_helper(
+      example* current_example,
+      bool redefine_char_flag,
+      std::array<unsigned char,NUM_NAMESPACES>* redefine_char_map,
+      hash_func_t hash_fn
+  ):
+    _feature_group_char(0),
+    _hash(0),
+    _p_current_feature_group(nullptr),
+    _p_affix_feature_group(nullptr),
+    _p_spelling_feature_group(nullptr),
+    _p_dictionary_feature_group(nullptr),
+    _current_example(current_example),
+    _redefine_char_flag(redefine_char_flag),
+    _redefine_char_map(redefine_char_map),
+    _hash_function(hash_fn)
+  {}
+  inline unsigned char feature_group_char() const
+  {
+    return _feature_group_char;
+  }
+  inline uint64_t feature_group_hash() const
+  {
+    return _hash;
+  }
+  inline features& get_current_feature_group()
+  {
+    return get_feature_group(_p_current_feature_group,feature_group_char());
+  }
+  inline features& get_affix_feature_group()
+  {
+    return get_feature_group(_p_affix_feature_group,affix_namespace);
+  }
+  inline features& get_spelling_feature_group()
+  {
+    return get_feature_group(_p_spelling_feature_group,spelling_namespace);
+  }
+  inline features& get_dictionary_feature_group()
+  {
+    return get_feature_group(_p_dictionary_feature_group,dictionary_namespace);
+  }
+  inline void set_current(const VW::string_view& fg_name)
+  {
+    auto namespace_char = static_cast<unsigned char>(fg_name[0]);
+    if (_redefine_char_flag) namespace_char = (*_redefine_char_map)[namespace_char];  // redefine feature_group_char
+    _feature_group_char = namespace_char;
+    _hash = _hash_function(fg_name.begin(), fg_name.length(), _hash_seed);
+    _p_current_feature_group = nullptr;  // reset cached feature group
+  }
+  inline void set_current_to_default()
+  {
+    _feature_group_char = ' ';
+    _hash = this->_hash_seed == 0 ? 0 : uniform_hash("", 0, this->_hash_seed);
+    _p_current_feature_group = nullptr;  // reset cached feature group
+  }
+
+private:
+  inline features& get_feature_group(features*& p_features_ref, unsigned char namespace_char)
+  {
+    if(p_features_ref == nullptr)
+    {
+      p_features_ref = & _current_example->feature_space[namespace_char];
+
+      if(p_features_ref->empty())
+        _current_example->indices.emplace_back(namespace_char);
+    }
+    return {*p_features_ref};    
+  }
+
+  unsigned char _feature_group_char;
+  int64_t _hash;
+  features* _p_current_feature_group;
+  features* _p_affix_feature_group;
+  features* _p_spelling_feature_group;
+  features* _p_dictionary_feature_group;
+  example* _current_example;
+  bool _redefine_char_flag;
+  std::array<unsigned char, NUM_NAMESPACES>* _redefine_char_map;
+  hash_func_t _hash_function;
+  uint32_t _hash_seed{};
+};
+
 template <bool audit>
 class TC_parser
 {
@@ -57,22 +142,17 @@ public:
   VW::string_view _line;
   size_t _read_idx;
   float _cur_channel_v;
-  bool _new_index;
   size_t _anon;
-  uint64_t _channel_hash;
   VW::string_view _base;
-  unsigned char _index;
   float _v;
-  bool _redefine_some;
-  std::array<unsigned char, NUM_NAMESPACES>* _redefine;
   parser* _p;
-  example* _ae;
   std::array<uint64_t, NUM_NAMESPACES>* _affix_features;
   std::array<bool, NUM_NAMESPACES>* _spelling_features;
   v_array<char> _spelling;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
+  feature_group_helper _feature_group_helper;
 
   ~TC_parser() {}
 
@@ -194,22 +274,22 @@ public:
       {
         // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
         word_hash = (_p->hasher(string_feature_value.begin(), string_feature_value.length(),
-                         _p->hasher(feature_name.begin(), feature_name.length(), _channel_hash)) &
+                         _p->hasher(feature_name.begin(), feature_name.length(), _feature_group_helper.feature_group_hash())) &
             _parse_mask);
       }
       // Case where string:float
       else if (!feature_name.empty())
       {
-        word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _channel_hash) & _parse_mask);
+        word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _feature_group_helper.feature_group_hash()) & _parse_mask);
       }
       // Case where :float
       else
       {
-        word_hash = _channel_hash + _anon++;
+        word_hash = _feature_group_helper.feature_group_hash() + _anon++;
       }
 
       if (_v == 0) return;  // dont add 0 valued features to list of features
-      features& fs = _ae->feature_space[_index];
+      features& fs = _feature_group_helper.get_current_feature_group();
       fs.push_back(_v, word_hash);
 
       if (audit)
@@ -226,11 +306,10 @@ public:
         }
       }
 
-      if (((*_affix_features)[_index] > 0) && (!feature_name.empty()))
+      if (((*_affix_features)[_feature_group_helper.feature_group_char()] > 0) && (!feature_name.empty()))
       {
-        features& affix_fs = _ae->feature_space[affix_namespace];
-        if (affix_fs.size() == 0) _ae->indices.push_back(affix_namespace);
-        uint64_t affix = (*_affix_features)[_index];
+        features& affix_fs = _feature_group_helper.get_affix_feature_group();
+        uint64_t affix = (*_affix_features)[_feature_group_helper.feature_group_char()];
 
         while (affix > 0)
         {
@@ -245,13 +324,13 @@ public:
               affix_name.remove_prefix(affix_name.size() - len);
           }
 
-          word_hash = _p->hasher(affix_name.begin(), affix_name.length(), (uint64_t)_channel_hash) *
+          word_hash = _p->hasher(affix_name.begin(), affix_name.length(), _feature_group_helper.feature_group_hash()) *
               (affix_constant + (affix & 0xF) * quadratic_constant);
           affix_fs.push_back(_v, word_hash);
           if (audit)
           {
             v_array<char> affix_v;
-            if (_index != ' ') affix_v.push_back(_index);
+            if (_feature_group_helper.feature_group_char() != ' ') affix_v.push_back(_feature_group_helper.feature_group_char());
             affix_v.push_back(is_prefix ? '+' : '-');
             affix_v.push_back('0' + static_cast<char>(len));
             affix_v.push_back('=');
@@ -262,11 +341,9 @@ public:
           affix >>= 4;
         }
       }
-      if ((*_spelling_features)[_index])
+      if ((*_spelling_features)[_feature_group_helper.feature_group_char()])
       {
-        features& spell_fs = _ae->feature_space[spelling_namespace];
-        if (spell_fs.size() == 0) _ae->indices.push_back(spelling_namespace);
-        // v_array<char> spelling;
+        features& spell_fs = _feature_group_helper.get_spelling_feature_group();
         _spelling.clear();
         for (char c : feature_name)
         {
@@ -286,14 +363,14 @@ public:
         }
 
         VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
-        word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
+        word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), _feature_group_helper.feature_group_hash());
         spell_fs.push_back(_v, word_hash);
         if (audit)
         {
           v_array<char> spelling_v;
-          if (_index != ' ')
+          if (_feature_group_helper.feature_group_char() != ' ')
           {
-            spelling_v.push_back(_index);
+            spelling_v.push_back(_feature_group_helper.feature_group_char());
             spelling_v.push_back('_');
           }
           spelling_v.insert(spelling_v.end(), spelling_strview.begin(), spelling_strview.end());
@@ -301,19 +378,18 @@ public:
           spell_fs.space_names.push_back(audit_strings("spelling", spelling_v.begin()));
         }
       }
-      if ((*_namespace_dictionaries)[_index].size() > 0)
+      if ((*_namespace_dictionaries)[_feature_group_helper.feature_group_char()].size() > 0)
       {
         // Heterogeneous lookup not yet implemented in std
         // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0919r0.html
         const std::string feature_name_str(feature_name);
-        for (const auto& map : (*_namespace_dictionaries)[_index])
+        for (const auto& map : (*_namespace_dictionaries)[_feature_group_helper.feature_group_char()])
         {
           const auto& feats_it = map->find(feature_name_str);
           if ((feats_it != map->end()) && (feats_it->second->values.size() > 0))
           {
             const auto& feats = feats_it->second;
-            features& dict_fs = _ae->feature_space[dictionary_namespace];
-            if (dict_fs.size() == 0) _ae->indices.push_back(dictionary_namespace);
+            features& dict_fs = _feature_group_helper.get_dictionary_feature_group();
             dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
             dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
             dict_fs.sum_feat_sq += feats->sum_feat_sq;
@@ -321,7 +397,7 @@ public:
               for (const auto& id : feats->indicies)
               {
                 std::stringstream ss;
-                ss << _index << '_';
+                ss << _feature_group_helper.feature_group_char() << '_';
                 ss << feature_name;
                 ss << '=' << id;
                 dict_fs.space_names.push_back(audit_strings("dictionary", ss.str()));
@@ -374,12 +450,9 @@ public:
     else
     {
       // NameSpaceInfo --> 'String' NameSpaceInfoValue
-      _index = (unsigned char)(_line[_read_idx]);
-      if (_redefine_some) _index = (*_redefine)[_index];  // redefine _index
-      if (_ae->feature_space[_index].size() == 0) _new_index = true;
-      VW::string_view name = read_name();
+      const VW::string_view name = read_name();
+      _feature_group_helper.set_current(name);
       if (audit) { _base = name; }
-      _channel_hash = _p->hasher(name.begin(), name.length(), this->_hash_seed);
       nameSpaceInfoValue();
     }
   }
@@ -402,22 +475,18 @@ public:
   inline FORCE_INLINE void nameSpace()
   {
     _cur_channel_v = 1.0;
-    _index = 0;
-    _new_index = false;
     _anon = 0;
     if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
         _line[_read_idx] == '\r')
     {
       // NameSpace --> ListFeatures
-      _index = static_cast<unsigned char>(' ');
-      if (_ae->feature_space[_index].size() == 0) _new_index = true;
+      _feature_group_helper.set_current_to_default();
       if (audit)
       {
         // TODO: c++17 allows VW::string_view literals, eg: " "sv
         static const char* space = " ";
         _base = space;
       }
-      _channel_hash = this->_hash_seed == 0 ? 0 : uniform_hash("", 0, this->_hash_seed);
       listFeatures();
     }
     else if (_line[_read_idx] != ':')
@@ -432,7 +501,6 @@ public:
       parserWarning(
           "malformed example! '|',String,space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
     }
-    if (_new_index && _ae->feature_space[_index].size() > 0) _ae->indices.push_back(_index);
   }
 
   inline FORCE_INLINE void listNameSpace()
@@ -449,15 +517,14 @@ public:
     }
   }
 
-  TC_parser(VW::string_view line, vw& all, example* ae) : _line(line)
+  TC_parser(VW::string_view line, vw& all, example* ae)
+    : _line(line),
+    _feature_group_helper(ae, all.redefine_some, &all.redefine, all.example_parser->hasher)
   {
     if (!_line.empty())
     {
       this->_read_idx = 0;
       this->_p = all.example_parser;
-      this->_redefine_some = all.redefine_some;
-      this->_redefine = &all.redefine;
-      this->_ae = ae;
       this->_affix_features = &all.affix_features;
       this->_spelling_features = &all.spelling_features;
       this->_namespace_dictionaries = &all.namespace_dictionaries;
