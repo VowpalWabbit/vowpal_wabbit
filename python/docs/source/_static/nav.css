@@ -71,3 +71,8 @@
 .navbar_container .external_links .github_link:hover svg path {
   fill: white;
 }
+
+.navbar_container a.active {
+  color: white;
+  border-bottom: 1px solid;
+}
