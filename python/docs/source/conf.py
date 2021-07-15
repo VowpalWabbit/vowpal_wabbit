@@ -39,6 +39,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx_thebe',
     "myst_nb",
+    'sphinx_reredirects',
 ]
 
 numpydoc_show_class_members = False
@@ -98,6 +99,12 @@ html_context = {
     "github_repo": "vowpal_wabbit",
     "github_version": "master",
     "doc_path": "python/docs/source",
+}
+
+redirects = {
+    "vowpalwabbit.DFtoVW": "reference/vowpalwabbit.DFtoVW.html",
+    "vowpalwabbit.pyvw": "reference/vowpalwabbit.pyvw.html",
+    "vowpalwabbit.sklearn": "reference/vowpalwabbit.sklearn.html",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
