@@ -16,6 +16,8 @@ typedef unsigned char namespace_index;
 
 namespace VW
 {
+// indexed_iterator_t allows you to use a list if indices to index into another collection.
+// The iterator will return an item per index.
 template <typename ArrayT, typename IndexItT, typename ListT>
 class indexed_iterator_t
 {
