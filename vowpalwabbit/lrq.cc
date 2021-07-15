@@ -56,9 +56,9 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
   // Remember original features
 
   lrq.orig_size.clear();
-  for (auto& bucket : ec)
+  for (auto& group_list : ec)
   {
-    for (auto& fs : bucket)
+    for (auto& fs : group_list)
     {
       if (lrq.lrindices[fs.index]) { lrq.orig_size[fs.hash] = fs.feats.size(); }
     }

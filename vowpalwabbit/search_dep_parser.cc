@@ -319,9 +319,9 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
     add_feature(ex, temp[j] + additional_offset, val_namespace, mask, multiplier);
   }
   size_t count = 0;
-  for (auto& bucket : data->ex)
+  for (auto& group_list : data->ex)
   {
-    for (auto& fs : bucket)
+    for (auto& fs : group_list)
     {
       fs.feats.sum_feat_sq = static_cast<float>(fs.feats.size());
       count += fs.feats.size();

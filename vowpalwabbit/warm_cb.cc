@@ -165,9 +165,9 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     VW::copy_example_data(&eca, &ec);
 
     // offset indicies for given action
-    for (auto& bucket : eca)
+    for (auto& group_list : eca)
     {
-      for (auto& fs : bucket)
+      for (auto& fs : group_list)
       {
         for (feature_index& idx : fs.feats.indicies)
         { idx = ((((idx >> ss) * 28904713) + 4832917 * static_cast<uint64_t>(a)) << ss) & mask; }

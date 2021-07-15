@@ -36,9 +36,9 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
   vw& all = *d.all;
   parameters& weights = all.weights;
   uint64_t mask = weights.mask();
-  for (auto& bucket : ec)
+  for (const auto& group_list : ec)
   {
-    for (auto& fs : bucket)
+    for (const auto& fs : group_list)
     {
       bool audit = !fs.feats.space_names.empty();
       for (const auto& f : fs.feats.audit_range())
@@ -137,9 +137,9 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 
   float linear_prediction = 0.;
   // linear terms
-  for (auto& bucket : ec)
+  for (auto& group_list : ec)
   {
-    for (auto& fs : bucket) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs.feats, linear_prediction); }
+    for (auto& fs : group_list) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs.feats, linear_prediction); }
   }
 
   // store constant + linear prediction
@@ -225,9 +225,9 @@ void mf_train(gdmf& d, example& ec, T& weights)
   float regularization = eta_t * all.l2_lambda;
 
   // linear update
-  for (auto& bucket : ec)
+  for (auto& group_list : ec)
   {
-    for (auto& fs : bucket) { sd_offset_update<T>(weights, fs.feats, 0, update, regularization); }
+    for (auto& fs : group_list) { sd_offset_update<T>(weights, fs.feats, 0, update, regularization); }
   }
 
   // quadratic update

@@ -155,9 +155,9 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     VW::copy_example_data(&eca, &ec);
 
     // offset indices for given action
-    for (auto& bucket : eca)
+    for (auto& group_list : eca)
     {
-      for (auto& fs : bucket)
+      for (auto& fs : group_list)
       {
         for (feature_index& idx : fs.feats.indicies)
         {

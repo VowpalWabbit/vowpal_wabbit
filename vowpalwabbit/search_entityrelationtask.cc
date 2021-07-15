@@ -407,9 +407,9 @@ void run(Search::search& sch, multi_ex& ec)
 // this is totally bogus for the example -- you'd never actually do this!
 void update_example_indicies(bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 {
-  for (auto& bucket : *ec)
+  for (auto& group_list : *ec)
   {
-    for (auto& fs : bucket)
+    for (auto& fs : group_list)
     {
       for (feature_index& idx : fs.feats.indicies) { idx = ((idx * mult_amount) + plus_amount); }
     }

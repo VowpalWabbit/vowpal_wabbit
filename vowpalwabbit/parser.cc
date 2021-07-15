@@ -641,9 +641,9 @@ void end_pass_example(vw& all, example* ae)
 
 void feature_limit(const vw& all, example* ex)
 {
-  for (auto& bucket : *ex)
+  for (auto& group_list : *ex)
   {
-    for (auto& fs : bucket)
+    for (auto& fs : group_list)
     {
       if (all.limit[fs.index] < fs.feats.size())
       {
@@ -706,9 +706,9 @@ void setup_example(vw& all, example* ae)
   if (all.ignore_some)
   {
     std::vector<std::pair<namespace_index, uint64_t>> hashes_to_remove;
-    for (auto& bucket : *ae)
+    for (auto& group_list : *ae)
     {
-      for (auto& fs : bucket)
+      for (auto& fs : group_list)
       {
         if (all.ignore[fs.index]) { hashes_to_remove.emplace_back(fs.index, fs.hash); }
       }
@@ -726,9 +726,9 @@ void setup_example(vw& all, example* ae)
 
   if (multiplier != 1)  // make room for per-feature information.
   {
-    for (auto& bucket : *ae)
+    for (auto& group_list : *ae)
     {
-      for (auto& fs : bucket)
+      for (auto& fs : group_list)
       {
         for (auto& j : fs.feats.indicies) { j *= multiplier; }
       }
@@ -736,9 +736,9 @@ void setup_example(vw& all, example* ae)
   }
 
   ae->num_features = 0;
-  for (auto& bucket : *ae)
+  for (auto& group_list : *ae)
   {
-    for (auto& fs : bucket) { ae->num_features += fs.feats.size(); }
+    for (auto& fs : group_list) { ae->num_features += fs.feats.size(); }
   }
 
   // Set the interactions for this example to the global set.

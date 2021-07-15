@@ -12,9 +12,9 @@
 float calculate_total_sum_features_squared(bool permutations, example& ec)
 {
   float sum_features_squared = 0.f;
-  for (auto& bucket : ec)
+  for (const auto& group_list : ec)
   {
-    for (const auto& fs : bucket) { sum_features_squared += fs.feats.sum_feat_sq; }
+    for (const auto& fs : group_list) { sum_features_squared += fs.feats.sum_feat_sq; }
   }
 
   size_t ignored_interacted_feature_count = 0;

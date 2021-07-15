@@ -271,15 +271,15 @@ void print_lda_features(vw& all, example& ec)
   parameters& weights = all.weights;
   uint32_t stride_shift = weights.stride_shift();
   size_t count = 0;
-  for (auto& bucket : ec)
+  for (auto& group_list : ec)
   {
-    for (auto& fs : bucket) { count += fs.feats.size(); }
+    for (auto& fs : group_list) { count += fs.feats.size(); }
   }
 
   // TODO: Where should audit stuff output to?
-  for (auto& bucket : ec)
+  for (auto& group_list : ec)
   {
-    for (auto& fs : bucket)
+    for (auto& fs : group_list)
     {
       for (const auto& f : fs.feats.audit_range())
       {
@@ -300,9 +300,9 @@ void print_features(vw& all, example& ec)
   {
     audit_results dat(all, ec.ft_offset);
 
-    for (auto& bucket : ec)
+    for (auto& group_list : ec)
     {
-      for (auto& fs : bucket)
+      for (auto& fs : group_list)
       {
         if (fs.feats.space_names.size() > 0)
           for (const auto& f : fs.feats.audit_range())

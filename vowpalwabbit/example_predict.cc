@@ -20,10 +20,9 @@ std::string features_to_string(const example_predict& ec)
 {
   std::stringstream strstream;
   strstream << "[off=" << ec.ft_offset << "]";
-  // TODO dont const cast
-  for (auto& bucket : const_cast<example_predict&>(ec))
+  for (const auto& group_list : ec)
   {
-    for (auto& f : bucket)
+    for (const auto& f : group_list)
     {
       auto ind_iter = f.feats.indicies.cbegin();
       auto val_iter = f.feats.values.cbegin();

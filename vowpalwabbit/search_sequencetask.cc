@@ -403,9 +403,9 @@ void my_update_example_indicies(
     Search::search& sch, bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 {
   size_t ss = sch.get_stride_shift();
-  for (auto& bucket : *ec)
+  for (auto& group_list : *ec)
   {
-    for (auto& fs : bucket)
+    for (auto& fs : group_list)
     {
       for (feature_index& idx : fs.feats.indicies) idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
     }

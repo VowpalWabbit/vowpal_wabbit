@@ -76,9 +76,9 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
 
   std::ostringstream tempstream;
   parameters& weights = rd.all->weights;
-  for (auto& bucket : ec)
+  for (auto& group_list : ec)
   {
-    for (const auto& feat_group : bucket)
+    for (const auto& feat_group : group_list)
     {
       for (size_t j = 0; j < feat_group.feats.size(); ++j)
       {
@@ -114,9 +114,9 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
 
     while (rd.cur_class < rd.total_class_cnt)
     {
-      for (const auto& bucket : ec)
+      for (const auto& group_list : ec)
       {
-        for (const auto& feat_group : bucket)
+        for (const auto& feat_group : group_list)
         {
           if (feat_group.feats.space_names.size() > 0)
           {

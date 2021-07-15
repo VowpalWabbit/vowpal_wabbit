@@ -679,9 +679,9 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
     old_gamma.push_back(0.f);
   }
   size_t num_words = 0;
-  for (auto& bucket : *ec)
+  for (const auto& group_list : *ec)
   {
-    for (auto& fs : bucket) { num_words += fs.feats.size(); }
+    for (const auto& fs : group_list) { num_words += fs.feats.size(); }
   }
 
   float xc_w = 0;
@@ -698,9 +698,9 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
     score = 0;
     size_t word_count = 0;
     doc_length = 0;
-    for (auto& bucket : *ec)
+    for (auto& group_list : *ec)
     {
-      for (auto& fs : bucket)
+      for (auto& fs : group_list)
       {
         for (features::iterator& f : fs.feats)
         {
@@ -974,9 +974,9 @@ void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
   uint32_t num_ex = static_cast<uint32_t>(l.examples.size());
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
-  for (auto& bucket : ec)
+  for (auto& group_list : ec)
   {
-    for (auto& fs : bucket)
+    for (auto& fs : group_list)
     {
       for (features::iterator& f : fs.feats)
       {
@@ -997,9 +997,9 @@ void learn_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec)
     uint64_t stride_shift = l.all->weights.stride_shift();
     uint64_t weight_mask = l.all->weights.mask();
 
-    for (auto& bucket : ec)
+    for (auto& group_list : ec)
     {
-      for (auto& fs : bucket)
+      for (auto& fs : group_list)
       {
         for (features::iterator& f : fs.feats)
         {
