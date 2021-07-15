@@ -21,7 +21,7 @@ size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
   line = nullptr;
   size_t num_chars_initial = all->example_parser->input->readto(line, '\n');
-  if (num_chars_initial < 1) return num_chars_initial;
+  if (num_chars_initial < 1) { return num_chars_initial; }
   num_chars = num_chars_initial;
   if (line[0] == '\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf')
   {
@@ -78,32 +78,34 @@ public:
   {
     return _hash;
   }
-  inline features& get_current_feature_group()
+  inline features& get_current_fg()
   {
     return get_feature_group(_p_current_feature_group,feature_group_char());
   }
-  inline features& get_affix_feature_group()
+  inline features& get_affix_fg()
   {
     return get_feature_group(_p_affix_feature_group,affix_namespace);
   }
-  inline features& get_spelling_feature_group()
+  inline features& get_spelling_fg()
   {
     return get_feature_group(_p_spelling_feature_group,spelling_namespace);
   }
-  inline features& get_dictionary_feature_group()
+  inline features& get_dictionary_fg()
   {
     return get_feature_group(_p_dictionary_feature_group,dictionary_namespace);
   }
-  inline void set_current(const VW::string_view& fg_name)
+  inline void set_current_fg(const VW::string_view& fg_name)
   {
-    auto namespace_char = static_cast<unsigned char>(fg_name[0]);
+    _feature_group_name = fg_name;
+    auto namespace_char = static_cast<unsigned char>(_feature_group_name[0]);
     if (_redefine_char_flag) namespace_char = (*_redefine_char_map)[namespace_char];  // redefine feature_group_char
     _feature_group_char = namespace_char;
-    _hash = _hash_function(fg_name.begin(), fg_name.length(), _hash_seed);
+    _hash = _hash_function(_feature_group_name.begin(), _feature_group_name.length(), _hash_seed);
     _p_current_feature_group = nullptr;  // reset cached feature group
   }
-  inline void set_current_to_default()
+  inline void set_current_fg()
   {
+    _feature_group_name = "";
     _feature_group_char = ' ';
     _hash = this->_hash_seed == 0 ? 0 : uniform_hash("", 0, this->_hash_seed);
     _p_current_feature_group = nullptr;  // reset cached feature group
@@ -132,7 +134,8 @@ private:
   bool _redefine_char_flag;
   std::array<unsigned char, NUM_NAMESPACES>* _redefine_char_map;
   hash_func_t _hash_function;
-  uint32_t _hash_seed{};
+  uint32_t _hash_seed;
+  VW::string_view _feature_group_name;
 };
 
 template <bool audit>
@@ -143,13 +146,11 @@ public:
   size_t _read_idx;
   float _cur_channel_v;
   size_t _anon;
-  VW::string_view _base;
   float _v;
   parser* _p;
   std::array<uint64_t, NUM_NAMESPACES>* _affix_features;
   std::array<bool, NUM_NAMESPACES>* _spelling_features;
   v_array<char> _spelling;
-  uint32_t _hash_seed;
   uint64_t _parse_mask;
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
   feature_group_helper _feature_group_helper;
@@ -289,7 +290,7 @@ public:
       }
 
       if (_v == 0) return;  // dont add 0 valued features to list of features
-      features& fs = _feature_group_helper.get_current_feature_group();
+      features& fs = _feature_group_helper.get_current_fg();
       fs.push_back(_v, word_hash);
 
       if (audit)
@@ -308,7 +309,7 @@ public:
 
       if (((*_affix_features)[_feature_group_helper.feature_group_char()] > 0) && (!feature_name.empty()))
       {
-        features& affix_fs = _feature_group_helper.get_affix_feature_group();
+        features& affix_fs = _feature_group_helper.get_affix_fg();
         uint64_t affix = (*_affix_features)[_feature_group_helper.feature_group_char()];
 
         while (affix > 0)
@@ -343,7 +344,7 @@ public:
       }
       if ((*_spelling_features)[_feature_group_helper.feature_group_char()])
       {
-        features& spell_fs = _feature_group_helper.get_spelling_feature_group();
+        features& spell_fs = _feature_group_helper.get_spelling_fg();
         _spelling.clear();
         for (char c : feature_name)
         {
@@ -389,7 +390,7 @@ public:
           if ((feats_it != map->end()) && (feats_it->second->values.size() > 0))
           {
             const auto& feats = feats_it->second;
-            features& dict_fs = _feature_group_helper.get_dictionary_feature_group();
+            features& dict_fs = _feature_group_helper.get_dictionary_fg();
             dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
             dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
             dict_fs.sum_feat_sq += feats->sum_feat_sq;
@@ -451,7 +452,7 @@ public:
     {
       // NameSpaceInfo --> 'String' NameSpaceInfoValue
       const VW::string_view name = read_name();
-      _feature_group_helper.set_current(name);
+      _feature_group_helper.set_current_fg(name);
       if (audit) { _base = name; }
       nameSpaceInfoValue();
     }
@@ -480,7 +481,7 @@ public:
         _line[_read_idx] == '\r')
     {
       // NameSpace --> ListFeatures
-      _feature_group_helper.set_current_to_default();
+      _feature_group_helper.set_current_fg();
       if (audit)
       {
         // TODO: c++17 allows VW::string_view literals, eg: " "sv
@@ -528,7 +529,6 @@ public:
       this->_affix_features = &all.affix_features;
       this->_spelling_features = &all.spelling_features;
       this->_namespace_dictionaries = &all.namespace_dictionaries;
-      this->_hash_seed = all.hash_seed;
       this->_parse_mask = all.parse_mask;
       listNameSpace();
     }
