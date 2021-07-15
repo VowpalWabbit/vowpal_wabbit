@@ -106,6 +106,7 @@ struct namespaced_feature_store
     for (auto ns_index : _legacy_indices_existing) { accumulator += _feature_groups[ns_index].size(); }
     return accumulator;
   }
+
   inline bool empty() const { return _legacy_indices_existing.empty(); }
 
   // Returns nullptr if not found.
