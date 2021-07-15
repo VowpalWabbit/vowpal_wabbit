@@ -79,7 +79,7 @@ public:
       ++_outer_current;
       _current = (*_outer_current).feats.audit_begin();
     }
-    return *this;aster
+    return *this;
   }
 
   // end - begin
