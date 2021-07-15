@@ -176,9 +176,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
               float first_ft_value = first.values[i];
               size_t j = 0;
               if (same_namespace1)  // next index differs for permutations and simple combinations
-              {
-                j = i;
-              }
+              { j = i; }
 
               for (; j < second.indicies.size(); ++j)
               {  // f3 x k*(f2 x k*f1)
