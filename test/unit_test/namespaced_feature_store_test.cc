@@ -201,6 +201,8 @@ BOOST_AUTO_TEST_CASE(namespaced_feature_store_proxy_iterator_advance_test)
   BOOST_REQUIRE_EQUAL((*it).index(), 5);
   it += 3;
   BOOST_REQUIRE_EQUAL((*it).index(), 8);
+  it += 1;
+  BOOST_REQUIRE(it == feature_groups.index_flat_end('a'));
 }
 
 BOOST_AUTO_TEST_CASE(namespaced_feature_store_proxy_iterator_advance_to_end_test)
