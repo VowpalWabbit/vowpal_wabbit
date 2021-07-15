@@ -107,6 +107,7 @@ html_static_path = ['_static']
 
 html_css_files = [
     'custom.css',
+    'nav.css'
 ]
 
 html_sidebars = { '**': ['search-field.html', 'nav-toc-override.html'] }

@@ -1,0 +1,73 @@
+:root {
+  --gray-10: #ebebeb;
+}
+
+.navbar_container {
+  background: rgba(42, 59, 147, 0.95);
+  font-size: 1.125rem;
+  line-height: 1.33;
+  top: -240px;
+  transition: top 0.5s ease;
+}
+
+.navbar_container .logo svg path{
+  fill: white;
+}
+
+.navbar_container a {
+  display: inline-block;
+  color: var(--gray-10);
+  padding-bottom: 4px;
+}
+
+.navbar_container a.active {
+  color: white;
+  border-bottom: 1px solid;
+}
+
+.navbar_container a:hover {
+  text-decoration: none;
+  color: white;
+}
+
+.navbar_container .nav_wrapper {
+  display: flex;
+  justify-content: space-between;
+  height: 4rem;
+  align-items: center;
+}
+
+.navbar_container .nav {
+  display: flex;
+  align-items: center;
+}
+
+.navbar_container .nav a {
+  margin: 0 1rem;
+}
+
+.navbar_container .external_links {
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  margin-left: 1rem;
+  padding-left: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.navbar_container .external_links .github_link {
+  display: flex;
+  align-items: center;
+}
+
+.navbar_container .external_links .github_link svg {
+  margin-right: 0.5rem;
+}
+
+.navbar_container .external_links .github_link svg path {
+  fill: var(--gray-10);
+}
+
+
+.navbar_container .external_links .github_link:hover svg path {
+  fill: white;
+}
