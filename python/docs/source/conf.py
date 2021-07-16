@@ -19,9 +19,12 @@ project = u'VowpalWabbit'
 copyright = u'2021, John langford et al'
 author = u'John langford et al'
 
-# Read version automatically from vowpalwabbit.__version__--------------------
-
-version = vowpalwabbit.__version__
+# Read version automatically from vowpalwabbit.__version__ or use env var
+override_package_version = os.getenv("VW_SPHINX_VERSION_OVERRIDE")
+if override_package_version != None:
+    version = override_package_version
+else:
+    version = vowpalwabbit.__version__
 
 release = version
 
