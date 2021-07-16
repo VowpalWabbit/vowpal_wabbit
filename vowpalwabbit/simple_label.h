@@ -10,7 +10,7 @@ struct vw;
 
 struct label_data
 {
-  float label = FLT_MAX;
+  float label;
 
   label_data();
   label_data(float label);
