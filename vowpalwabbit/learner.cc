@@ -149,19 +149,18 @@ public:
 
   void on_example(std::vector<example*>* ev)
   {
-    for (example* ec : *ev)
-    {
-      work_on_example(_context.get_master(), ec);
+    // ev is guaranteed to have exactly one element always.
+    example* ec = (*ev)[0];
 
-      if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
-        _context.template process<example, learn_ex>(*ec);
-      else if (ec->end_pass)
-        _context.template process<example, end_pass>(*ec);
-      else if (is_save_cmd(ec))
-        _context.template process<example, save>(*ec);
-      else
-        _context.template process<example, learn_ex>(*ec);
-    }
+    work_on_example(_context.get_master(), ec);
+    if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
+      _context.template process<example, learn_ex>(*ec);
+    else if (ec->end_pass)
+      _context.template process<example, end_pass>(*ec);
+    else if (is_save_cmd(ec))
+      _context.template process<example, save>(*ec);
+    else
+      _context.template process<example, learn_ex>(*ec);
     
     VW::finish_example_vector(_context.get_master(), *ev);
   }
@@ -179,16 +178,16 @@ private:
     auto& master = _context.get_master();
     const bool is_test_ec = master.example_parser->lbl_parser.test_label(&ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
-    if (!is_newline) { ec_seq.push_back(ec); }
-    else
+    if (is_newline)
     {
       VW::finish_example(master, *ec);
     }
     return is_newline;
   }
 
-  bool try_complete_multi_ex(example* ec)
+  bool try_complete_multi_ex(std::vector<example*> ev)
   {
+    example* ec = ev.back();
     if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
       return complete_multi_ex(ec);
     else if (ec->end_pass)
@@ -203,30 +202,23 @@ private:
 public:
   multi_example_handler(const context_type context) : _context(context) {}
 
-  ~multi_example_handler()
-  {
-    if (!ec_seq.empty()) { _context.template process<multi_ex, learn_multi_ex>(ec_seq); }
-  }
-
   void on_example(std::vector<example*>* ev)
   {
     for (example* ec : *ev)
     {
       work_on_example(_context.get_master(), ec);
-      
-      if (try_complete_multi_ex(ec))
-      {
-        _context.template process<multi_ex, learn_multi_ex>(ec_seq);
-        ec_seq.clear();
-      }
+    }
+
+    if (try_complete_multi_ex(*ev))
+    {
+      _context.template process<multi_ex, learn_multi_ex>(*ev);
+      VW::finish_example_vector(_context.get_master(), *ev);
     }
     
-    VW::finish_example_vector(_context.get_master(), *ev);
   }
 
 private:
   context_type _context;
-  multi_ex ec_seq;
 };
 
 // ready_examples_queue / custom_examples_queue - adapters for connecting example handler to parser produce-consume loop

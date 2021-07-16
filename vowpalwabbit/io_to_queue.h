@@ -59,8 +59,7 @@ inline bool read_input_file_binary(vw& all, char *&line) {
   // Return true if no examples found in file.
   if((*input).buf_read(line, sizeof(example_length_bytes)) < sizeof(example_length_bytes)) {
     // The end of io_lines should contain a null pointer.
-    std::vector<char> *byte_array = new std::vector<char>();
-    all.example_parser->io_lines.push(std::move(byte_array));
+    all.example_parser->io_lines.push(new std::vector<char>());
     return true;
   }
   // read the example size.

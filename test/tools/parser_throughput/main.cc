@@ -181,7 +181,6 @@ int main(int argc, char** argv)
       }
       // TODO - finish_example should support a v_array as input.
       VW::finish_example(*vw, result);
-      examples.clear();
     }
   }
   const auto end = std::chrono::high_resolution_clock::now();
