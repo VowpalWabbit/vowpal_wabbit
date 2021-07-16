@@ -50,12 +50,8 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       }
 
 
-      if(io_lines_next_item == nullptr) {
-        VW::finish_example(all, *example_ptr);
-        VW::finish_example_vector(all, *examples);
-      }
-
-      else{
+      if(io_lines_next_item != nullptr)
+      {
         int num_chars_read = all.example_parser->reader(&all, *examples, words_localcpy, parse_name_localcpy, io_lines_next_item);
 
         if(num_chars_read > 0){
@@ -65,10 +61,15 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
           example_ptr->end_pass = true;
           dispatch(all, *examples);
         }
+      }
+
+      // happens when the parsing is complete on all passes.
+      else
+      {
+        VW::finish_example(all, *example_ptr);
+        VW::finish_example_vector(all, *examples);
       }     
       delete io_lines_next_item;
-
-
     }
 
   }

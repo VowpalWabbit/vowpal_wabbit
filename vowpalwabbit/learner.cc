@@ -204,17 +204,12 @@ public:
 
   void on_example(std::vector<example*>* ev)
   {
-    for (example* ec : *ev)
-    {
-      work_on_example(_context.get_master(), ec);
-    }
-
+    for (example* ec : *ev) work_on_example(_context.get_master(), ec);
     if (try_complete_multi_ex(*ev))
     {
       _context.template process<multi_ex, learn_multi_ex>(*ev);
-      VW::finish_example_vector(_context.get_master(), *ev);
     }
-    
+    VW::finish_example_vector(_context.get_master(), *ev);
   }
 
 private:
@@ -239,7 +234,7 @@ class custom_examples_queue
 public:
   custom_examples_queue(std::vector<example*> examples) : _examples(examples) {}
 
-  example* pop() { return _index < _examples.size() ? _examples[_index++] : nullptr; }
+  std::vector<example*>* pop() { return _examples.size() ? &_examples : nullptr; }
 
 private:
   std::vector<example*> _examples;
@@ -293,10 +288,10 @@ void generic_driver_onethread(vw& all)
   handler_type handler(context);
   auto multi_ex_fptr = [&handler](vw& all, std::vector<example*> examples) {
     all.example_parser->end_parsed_examples += examples.size();  // divergence: lock & signal
-    // custom_examples_queue examples_queue(examples);
-    // process_examples(examples_queue, handler);
+    custom_examples_queue examples_queue(examples);
+    process_examples(examples_queue, handler);
   };
-  // parse_dispatch(all, multi_ex_fptr);
+  parse_dispatch(all, multi_ex_fptr);
   all.l->end_examples();
 }
 

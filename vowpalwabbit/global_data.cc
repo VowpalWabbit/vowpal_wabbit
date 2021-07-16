@@ -336,6 +336,7 @@ vw::vw() : options(nullptr, nullptr)
   audit = false;
 
   pass_length = std::numeric_limits<size_t>::max();
+  example_number = 0;
   passes_complete = 0;
 
   save_per_pass = false;

@@ -227,6 +227,7 @@ public:
   int reg_mode;
 
   size_t pass_length;
+  size_t example_number; // for variable-size batch learning algorithms
   size_t numpasses;
   size_t passes_complete;
   uint64_t parse_mask;  // 1 << num_bits -1

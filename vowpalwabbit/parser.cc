@@ -1017,16 +1017,16 @@ void work_on_example(vw& all, example* ex) {
     all.example_parser->lbl_parser.default_label(&ex->l);
     all.example_parser->in_pass_counter = 0;
 
-    // if (all.passes_complete == all.numpasses && example_number == all.pass_length)
-    // {
-    //   all.passes_complete = 0;
-    //   all.pass_length = all.pass_length * 2 + 1;
-    // }
+    if (all.passes_complete == all.numpasses && all.example_number == all.pass_length)
+    {
+      all.passes_complete = 0;
+      all.pass_length = all.pass_length * 2 + 1;
+    }
 
 
     
-    if (all.passes_complete >= all.numpasses) lock_done(*all.example_parser);
-    // example_number = 0;
+    if (all.passes_complete >= all.numpasses && all.max_examples >= all.example_number) lock_done(*all.example_parser);
+    all.example_number = 0;
 
     // to call reset source in io thread
     all.example_parser->done_with_io.store(true);
