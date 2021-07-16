@@ -107,6 +107,7 @@ html_static_path = ['_static']
 
 html_css_files = [
     'custom.css',
+    'nav.css'
 ]
 
 html_sidebars = { '**': ['search-field.html', 'nav-toc-override.html'] }
@@ -115,6 +116,8 @@ html_sidebars = { '**': ['search-field.html', 'nav-toc-override.html'] }
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
+
+html_favicon = 'favicon.png'
 
 binder_url_config = {
     "branch": "master",
