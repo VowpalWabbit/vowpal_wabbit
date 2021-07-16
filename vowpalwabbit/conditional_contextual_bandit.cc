@@ -588,6 +588,8 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
   for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_v_array(std::move(a_s), data.action_score_pool); }
   ec_seq[0]->pred.decision_scores.clear();
 
+  for (auto* ex : ec_seq) { ex->l.conditional_contextual_bandit.reset_to_default(); }
+
   VW::finish_example(all, ec_seq);
 }
 

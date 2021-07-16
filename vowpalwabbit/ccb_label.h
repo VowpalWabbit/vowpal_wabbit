@@ -29,13 +29,13 @@ struct conditional_contextual_bandit_outcome
 // ccb_label.cc will need a major revamp before that can happen
 struct label
 {
-  example_type type = CCB::example_type::unset;
+  example_type type;
   // Outcome may be unset.
   conditional_contextual_bandit_outcome* outcome = nullptr;
   v_array<uint32_t> explicit_included_actions;
-  float weight = 0.f;
+  float weight;
 
-  label() = default;
+  label() { reset_to_default(); }
 
   label(label&& other) noexcept
   {
@@ -100,6 +100,20 @@ struct label
       delete outcome;
       outcome = nullptr;
     }
+  }
+
+  void reset_to_default()
+  {
+    // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
+    if (outcome != nullptr)
+    {
+      delete outcome;
+      outcome = nullptr;
+    }
+
+    explicit_included_actions.clear();
+    type = example_type::unset;
+    weight = 1.f;
   }
 };
 

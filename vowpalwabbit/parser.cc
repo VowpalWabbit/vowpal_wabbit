@@ -852,8 +852,17 @@ void empty_example(vw& /*all*/, example& ec)
   ec.sorted = false;
   ec.end_pass = false;
   ec.is_newline = false;
+  ec.test_only = false;
   ec._reduction_features.clear();
   ec.num_features_from_interactions = 0;
+  ec.reset_total_sum_feat_sq();
+  ec.interactions = nullptr;
+  ec.partial_prediction = 0.;
+  ec.updated_prediction = 0.;
+  ec.num_features = 0;
+  ec.loss = 0.;
+  ec.example_counter = 0;
+  ec._debug_current_reduction_depth = 0;
 }
 
 void clean_example(vw& all, example& ec, bool rewind)

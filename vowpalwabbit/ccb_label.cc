@@ -157,19 +157,7 @@ void cache_label(label& ld, io_buf& cache)
   c += sizeof(ld.weight);
 }
 
-void default_label(label& ld)
-{
-  // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
-  if (ld.outcome != nullptr)
-  {
-    delete ld.outcome;
-    ld.outcome = nullptr;
-  }
-
-  ld.explicit_included_actions.clear();
-  ld.type = example_type::unset;
-  ld.weight = 1.0;
-}
+void default_label(label& ld) { ld.reset_to_default(); }
 
 bool test_label(CCB::label& ld) { return ld.outcome == nullptr; }
 
