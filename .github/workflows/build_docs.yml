@@ -61,6 +61,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+      - name: If this is a push build then set version to latest
+        if: ${{ github.event_name == 'push' }}
+        run: echo "VW_SPHINX_VERSION_OVERRIDE=latest" >> $GITHUB_ENV
       - name: Download Wheel
         uses: actions/download-artifact@v1
         with:
