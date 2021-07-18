@@ -2,7 +2,7 @@
 name: Propose Deprecation
 about: Propose a feature to be deprecated and removed
 title: ''
-labels: 'deprecation'
+labels: 'Deprecation'
 assignees: ''
 
 ---

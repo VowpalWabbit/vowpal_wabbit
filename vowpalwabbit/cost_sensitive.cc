@@ -33,7 +33,7 @@ void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v
       if (std::isnan(v)) THROW("error NaN value for: " << name[0]);
       break;
     default:
-      logger::errlog_error("example with a wierd name. What is '{}'?", s);
+      logger::errlog_error("example with a weird name. What is '{}'?", s);
   }
 }
 

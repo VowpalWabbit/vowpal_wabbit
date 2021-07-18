@@ -9,6 +9,7 @@ add_executable(vw-unit-test.out
   chain_hashing.cc
   chain_hashing.cc
   continuous_actions_parser_test.cc
+  distributionally_robust_test.cc
   dsjson_parser_test.cc
   error_test.cc
   example_header_test.cc
@@ -22,7 +23,7 @@ add_executable(vw-unit-test.out
   main.cc
   math_test.cc
   multiclass_label_parser_test.cc
-  namespaced_features_test.cc
+  namespaced_feature_store_test.cc
   numeric_cast_tests.cc
   object_pool_test.cc
   offset_tree_tests.cc
