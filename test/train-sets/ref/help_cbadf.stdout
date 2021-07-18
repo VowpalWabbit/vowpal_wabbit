@@ -178,16 +178,6 @@ Gradient Descent options:
   --sparse_l2 arg (=0, ) use per feature normalized updates
   --l1_state arg (=0, )  use per feature normalized updates
   --l2_state arg (=1, )  use per feature normalized updates
-scorer options:
-  --link arg (=identity, ) Specify the link function: identity, logistic, glf1 
-                           or poisson
-Cost Sensitive One Against All with Label Dependent Features:
-  --csoaa_ldf arg       Use one-against-all multiclass learning with label 
-                        dependent features.
-  --ldf_override arg    Override singleline or multiline from csoaa_ldf or 
-                        wap_ldf, eg if stored in file
-  --csoaa_rank          Return actions sorted by score order
-  --probabilities       predict probabilites of all classes
 Contextual Bandit with Action Dependent Features:
   --cb_adf              Do Contextual Bandit learning with multiline action 
                         dependent features.

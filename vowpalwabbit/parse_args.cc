@@ -1255,7 +1255,6 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
   if (base == nullptr) { return setup_base(options, all); }
   else
   {
-    all.enabled_reductions.push_back(setup_func_name);
     return base;
   }
 }
@@ -1749,17 +1748,17 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-void print_enabled_reductions(vw& all)
+void print_enabled_reductions(vw& all, std::vector<std::string>& enabled_reductions)
 {
   // output list of enabled reductions
-  if (!all.logger.quiet && !all.options->was_supplied("audit_regressor") && !all.enabled_reductions.empty())
+  if (!all.logger.quiet && !all.options->was_supplied("audit_regressor") && !enabled_reductions.empty())
   {
     const char* const delim = ", ";
     std::ostringstream imploded;
-    std::copy(all.enabled_reductions.begin(), all.enabled_reductions.end() - 1,
+    std::copy(enabled_reductions.begin(), enabled_reductions.end() - 1,
         std::ostream_iterator<std::string>(imploded, delim));
 
-    *(all.trace_message) << "Enabled reductions: " << imploded.str() << all.enabled_reductions.back() << std::endl;
+    *(all.trace_message) << "Enabled reductions: " << imploded.str() << enabled_reductions.back() << std::endl;
   }
 }
 
@@ -1804,14 +1803,17 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
 
     all.options->check_unregistered();
 
+    std::vector<std::string> enabled_reductions;
+    all.l->get_enabled_reductions(enabled_reductions);
+
     // upon direct query for help -- spit it out to stdout;
     if (all.options->get_typed_option<bool>("help").value())
     {
-      cout << all.options->help(all.enabled_reductions);
+      cout << all.options->help(enabled_reductions);
       exit(0);
     }
 
-    print_enabled_reductions(all);
+    print_enabled_reductions(all, enabled_reductions);
 
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {
