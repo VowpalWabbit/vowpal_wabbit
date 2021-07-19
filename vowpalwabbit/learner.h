@@ -543,9 +543,7 @@ public:
 
   void get_enabled_reductions(std::vector<std::string>& enabled_reductions)
   {
-    if (learn_fd.base){
-      learn_fd.base->get_enabled_reductions(enabled_reductions);
-    }
+    if (learn_fd.base) { learn_fd.base->get_enabled_reductions(enabled_reductions); }
     enabled_reductions.push_back(name);
   }
 

@@ -180,10 +180,7 @@ std::string options_boost_po::help(const std::vector<std::string>& enabled_reduc
     for (auto reduction : enabled_reductions)
     {
       auto it = m_help_stringstream.find(reduction);
-      if (it != m_help_stringstream.end())
-      {
-        help << it->second.rdbuf(); 
-      }
+      if (it != m_help_stringstream.end()) { help << it->second.rdbuf(); }
       else
       {
         // some reductions register with a longer name,
@@ -193,10 +190,7 @@ std::string options_boost_po::help(const std::vector<std::string>& enabled_reduc
         if (pos != std::string::npos)
         {
           auto it = m_help_stringstream.find(reduction.substr(0, pos));
-          if (it != m_help_stringstream.end())
-          {
-            help << it->second.rdbuf(); 
-          }
+          if (it != m_help_stringstream.end()) { help << it->second.rdbuf(); }
         }
       }
     }

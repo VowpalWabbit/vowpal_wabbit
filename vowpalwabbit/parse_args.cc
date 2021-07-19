@@ -1755,8 +1755,8 @@ void print_enabled_reductions(vw& all, std::vector<std::string>& enabled_reducti
   {
     const char* const delim = ", ";
     std::ostringstream imploded;
-    std::copy(enabled_reductions.begin(), enabled_reductions.end() - 1,
-        std::ostream_iterator<std::string>(imploded, delim));
+    std::copy(
+        enabled_reductions.begin(), enabled_reductions.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
 
     *(all.trace_message) << "Enabled reductions: " << imploded.str() << enabled_reductions.back() << std::endl;
   }
