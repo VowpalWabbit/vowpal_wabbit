@@ -1529,6 +1529,20 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
+void print_enabled_reductions(vw& all, std::vector<std::string>& enabled_reductions)
+{
+  // output list of enabled reductions
+  if (!all.logger.quiet && !all.options->was_supplied("audit_regressor") && !enabled_reductions.empty())
+  {
+    const char* const delim = ", ";
+    std::ostringstream imploded;
+    std::copy(
+        enabled_reductions.begin(), enabled_reductions.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
+
+    *(all.trace_message) << "Enabled reductions: " << imploded.str() << enabled_reductions.back() << std::endl;
+  }
+}
+
 vw* initialize(
     config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
@@ -1570,23 +1584,17 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
 
     all.options->check_unregistered();
 
+    std::vector<std::string> enabled_reductions;
+    if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
+
     // upon direct query for help -- spit it out to stdout;
     if (all.options->get_typed_option<bool>("help").value())
     {
-      if (all.learner_builder) { cout << all.options->help(all.learner_builder->enabled_reductions); }
-      else
-      {
-        cout << all.options->help({});
-      }
+      cout << all.options->help(enabled_reductions);
       exit(0);
     }
 
-    // output list of enabled reductions
-    if (all.learner_builder)
-    {
-      if (!all.logger.quiet && !all.options->was_supplied("audit_regressor"))
-      { all.learner_builder->print_enabled_reductions(all); }
-    }
+    print_enabled_reductions(all, enabled_reductions);
 
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {

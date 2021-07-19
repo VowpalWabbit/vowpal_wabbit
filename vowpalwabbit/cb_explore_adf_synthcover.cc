@@ -213,7 +213,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_fn& setup_base, VW::config::opti
   auto data = VW::make_unique<explore_type>(
       with_metrics, epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
   auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup) + "-synthcover")
+      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
                 .set_prediction_type(prediction_type_t::action_probs)
                 .set_label_type(label_type_t::cb)

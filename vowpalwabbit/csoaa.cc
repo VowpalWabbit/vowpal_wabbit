@@ -905,11 +905,11 @@ base_learner* csldf_setup(VW::setup_base_fn& setup_base, options_i& options, vw&
   std::string name = all.get_setupfn_name(csldf_setup);
   if (ld->rank)
     pl = &init_learner(
-        ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type_t::action_scores, name + "-ldf_rank");
+        ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type_t::action_scores, name + "-rank");
   else if (ld->is_probabilities)
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::prob, name + "-ldf_prob");
+    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::prob, name + "-prob");
   else
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::multiclass, name + "-ldf");
+    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::multiclass, name);
 
   pl->set_finish_example(finish_multiline_example);
   pl->set_end_pass(end_pass);

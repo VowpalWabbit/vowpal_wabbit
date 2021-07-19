@@ -301,15 +301,10 @@ search_ptr get_search_ptr(vw_ptr all)
 
 py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
 {
-  if (all->learner_builder)
-  {
-    auto opt_manager = OptionManager(*all->options, all->learner_builder->enabled_reductions, py_class);
-    return opt_manager.get_vw_option_pyobjects(enabled_only);
-  }
-  else
-  {
-    return py::object();
-  }
+  std::vector<std::string> enabled_reductions;
+  if (all->l) all->l->get_enabled_reductions(enabled_reductions);
+  auto opt_manager = OptionManager(*all->options, enabled_reductions, py_class);
+  return opt_manager.get_vw_option_pyobjects(enabled_only);
 }
 
 void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*all, *ec); }
@@ -329,14 +324,12 @@ std::string get_arguments(vw_ptr all)
 
 py::list get_enabled_reductions(vw_ptr all)
 {
-  py::list enabled_reductions;
+  py::list py_enabled_reductions;
+  std::vector<std::string> enabled_reductions;
+  if (all->l) all->l->get_enabled_reductions(enabled_reductions);
+  for (auto ex : enabled_reductions) { py_enabled_reductions.append(ex); }
 
-  if (all->learner_builder)
-  {
-    for (auto ex : all->learner_builder->enabled_reductions) { enabled_reductions.append(ex); }
-  }
-
-  return enabled_reductions;
+  return py_enabled_reductions;
 }
 
 predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
