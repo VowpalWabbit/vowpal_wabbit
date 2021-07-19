@@ -14,11 +14,7 @@ inline void io_lines_toqueue(vw& all){
   while(!all.example_parser->done) {
 
     char* line = nullptr;
-    bool should_finish = false;
-
-    while(!should_finish){
-      should_finish = all.example_parser->input_file_reader(all, line);
-    }
+    while(!all.example_parser->input_file_reader(all, line)){}
 
     while(!all.example_parser->done_with_io) {
       all.example_parser->can_end_pass.wait(lock);

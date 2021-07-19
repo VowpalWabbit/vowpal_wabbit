@@ -15,75 +15,74 @@
 using dispatch_fptr = std::function<void(vw&, const std::vector<example*>&)>;
 struct io_state;
 
+inline void capture_io_lines_items(vw& all, std::vector<char>*& io_lines_next_item, std::vector<example*>*& examples)
+{
+  // This logic should be outside the reader, as:
+  // 1. it is common to all types of parsers.
+  // 2. the type of parser might change when the thread is waiting for a pop of io_lines.
+  std::lock_guard<std::mutex> lck(all.example_parser->parser_mutex);
+  
+  io_lines_next_item = all.example_parser->io_lines.pop();
+
+  if(io_lines_next_item != nullptr) {
+    all.example_parser->ready_parsed_examples.push(examples);
+  }
+}
+
+inline void run_parser(vw& all, std::vector<VW::string_view>& words_localcpy, std::vector<VW::string_view>& parse_name_localcpy, dispatch_fptr& dispatch)
+{
+  example* example_ptr = &VW::get_unused_example(&all);
+  std::vector<example*>* examples = &VW::get_unused_example_vector(&all);
+  (*examples).push_back(example_ptr);
+
+  std::vector<char> *io_lines_next_item = nullptr;
+  capture_io_lines_items(all, io_lines_next_item, examples);
+
+  if(io_lines_next_item != nullptr)
+  {
+    int num_chars_read = all.example_parser->reader(&all, *examples, words_localcpy, parse_name_localcpy, io_lines_next_item);
+
+    if(num_chars_read > 0){
+      dispatch(all, *examples);
+    }
+    else if(num_chars_read == 0){
+      example_ptr->end_pass = true;
+      dispatch(all, *examples);
+    }
+  }
+  else // happens when parsing is complete on all passes.
+  {
+    VW::finish_example(all, *example_ptr);
+    VW::finish_example_vector(all, *examples);
+  }
+  delete io_lines_next_item;
+}
+
 inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 {
-  
-  size_t example_number = 0;  // for variable-size batch learning algorithms
-
-  // we need to allow reuse of vectors, instead of deleting and recreating them for each example.
-  // used in substring_to_example.
-  std::vector<VW::string_view> words_localcpy;
-  std::vector<VW::string_view> parse_name_localcpy;
-
   try
   {
+    // we need to allow reuse of vectors, instead of deleting and recreating them for each example.
+    // used in substring_to_example.
+    std::vector<VW::string_view> words_localcpy;
+    std::vector<VW::string_view> parse_name_localcpy;
     while (!all.example_parser->done)
     {
-      example* example_ptr = &VW::get_unused_example(&all);
-      std::vector<example*>* examples = &VW::get_unused_example_vector(&all);
-      (*examples).push_back(example_ptr);
-
-      bool is_null_pointer = false;
-
-      // This logic should be outside the reader, as:
-      // 1. it is common to all types of parsers.
-      // 2. the type of parser might change when the thread is waiting for a pop of io_lines.
-      std::vector<char> *io_lines_next_item = nullptr;
-      {
-        std::lock_guard<std::mutex> lck(all.example_parser->parser_mutex);
-        
-        io_lines_next_item = all.example_parser->io_lines.pop();
-
-        if(io_lines_next_item != nullptr) {
-          all.example_parser->ready_parsed_examples.push(examples);
-        }
-      }
-
-
-      if(io_lines_next_item != nullptr)
-      {
-        int num_chars_read = all.example_parser->reader(&all, *examples, words_localcpy, parse_name_localcpy, io_lines_next_item);
-
-        if(num_chars_read > 0){
-          dispatch(all, *examples);
-        }
-        else if(num_chars_read == 0){
-          example_ptr->end_pass = true;
-          dispatch(all, *examples);
-        }
-      }
-
-      // happens when the parsing is complete on all passes.
-      else
-      {
-        VW::finish_example(all, *example_ptr);
-        VW::finish_example_vector(all, *examples);
-      }     
-      delete io_lines_next_item;
+      run_parser(all, words_localcpy, parse_name_localcpy, dispatch);
     }
 
   }
   
   catch (VW::vw_exception& e)
   {
-    VW::io::logger::errlog_error("vw example #{0}({1}:{2}): {3}", example_number, e.Filename(), e.LineNumber(), e.what());
+    VW::io::logger::errlog_error("vw example #{0}({1}:{2}): {3}", all.example_number, e.Filename(), e.LineNumber(), e.what());
 
     // Stash the exception so it can be thrown on the main thread.
     all.example_parser->exc_ptr = std::current_exception();
   }
   catch (std::exception& e)
   {
-    VW::io::logger::errlog_error("vw: example #{0}{1}", example_number, e.what());
+    VW::io::logger::errlog_error("vw: example #{0}{1}", all.example_number, e.what());
 
     // Stash the exception so it can be thrown on the main thread.
     all.example_parser->exc_ptr = std::current_exception();
