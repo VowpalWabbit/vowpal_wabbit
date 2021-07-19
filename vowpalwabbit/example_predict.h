@@ -42,7 +42,6 @@ struct indices_proxy_obj
 struct example_predict
 {
   using iterator = VW::namespaced_feature_store::iterator;
-  using const_iterator = VW::namespaced_feature_store::const_iterator;
 
   example_predict() { indices.feature_space = &feature_space; }
   ~example_predict() = default;
@@ -55,10 +54,6 @@ struct example_predict
   inline iterator begin() { return feature_space.begin(); }
   /// If feature_space is modified this iterator is invalidated.
   inline iterator end() { return feature_space.end(); }
-  /// If feature_space is modified this iterator is invalidated.
-  inline const_iterator begin() const { return feature_space.begin(); }
-  /// If feature_space is modified this iterator is invalidated.
-  inline const_iterator end() const { return feature_space.end(); }
 
   indices_proxy_obj indices;
   VW::namespaced_feature_store feature_space;

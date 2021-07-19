@@ -14,8 +14,18 @@ features& namespaced_feature_store::get_or_create(namespace_index ns_index, uint
   auto* existing_group = get_or_null(ns_index, hash);
   if (existing_group == nullptr)
   {
-    _feature_groups[ns_index].emplace_back(_saved_feature_groups.take_back(), hash, ns_index);
-    _saved_feature_groups.pop_back();
+    if (!_saved_feature_group_nodes.empty())
+    {
+      _feature_groups[ns_index].splice(
+          _feature_groups[ns_index].end(), _saved_feature_group_nodes, _saved_feature_group_nodes.begin());
+      _feature_groups[ns_index].back().hash = hash;
+      _feature_groups[ns_index].back().index = ns_index;
+    }
+    else
+    {
+      _feature_groups[ns_index].emplace_back(features{}, hash, ns_index);
+    }
+
     if (_feature_groups[ns_index].size() == 1) { _legacy_indices_existing.push_back(ns_index); }
     return _feature_groups[ns_index].back().feats;
   }
@@ -30,8 +40,7 @@ void namespaced_feature_store::remove(namespace_index ns_index, uint64_t hash)
       bucket.begin(), bucket.end(), [hash](const namespaced_features& group) { return group.hash == hash; });
   if (it == bucket.end()) { return; }
   it->feats.clear();
-  _saved_feature_groups.reclaim_object(std::move(it->feats));
-  bucket.erase(it);
+  _saved_feature_group_nodes.splice(_saved_feature_group_nodes.end(), _feature_groups[ns_index], it);
   if (bucket.empty())
   {
     auto idx_it = std::find(_legacy_indices_existing.begin(), _legacy_indices_existing.end(), ns_index);
@@ -43,12 +52,8 @@ void namespaced_feature_store::clear()
 {
   for (auto& ns_index : _legacy_indices_existing)
   {
-    for (auto& namespaced_feat_group : _feature_groups[ns_index])
-    {
-      namespaced_feat_group.feats.clear();
-      _saved_feature_groups.reclaim_object(std::move(namespaced_feat_group.feats));
-    }
-    _feature_groups[ns_index].clear();
+    for (auto& namespaced_feat_group : _feature_groups[ns_index]) { namespaced_feat_group.feats.clear(); }
+    _saved_feature_group_nodes.splice(_saved_feature_group_nodes.end(), _feature_groups[ns_index]);
   }
   _legacy_indices_existing.clear();
 }
