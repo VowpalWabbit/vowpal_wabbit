@@ -62,10 +62,11 @@ public:
   feature_group_helper(
       example* current_example, bool redefine_char_flag,
       char_map* redefine_char_map,  affix_map* affix_features, bool_map* spelling_features, dictionaries_map* namespace_dictionaries_map,
-      hash_func_t hash_fn
+      uint32_t hash_seed, hash_func_t hash_fn
 ):
     _feature_group_char(0),
     _hash(0),
+    _hash_seed(hash_seed),
     _p_current_feature_group(nullptr),
     _p_affix_feature_group(nullptr),
     _p_spelling_feature_group(nullptr),
@@ -120,6 +121,9 @@ public:
     _feature_group_char = ' ';
     _hash = this->_hash_seed == 0 ? 0 : uniform_hash("", 0, this->_hash_seed);
     _p_current_feature_group = nullptr;  // reset cached feature group
+    _affix = (*_affix_features)[_feature_group_char];
+    _spelling = (*_spelling_features)[_feature_group_char];
+    _namespace_dictionaries = &(*_namespace_dictionaries_map)[feature_group_char()];
   }
   inline const VW::string_view& get_fg_name() const
   {
@@ -152,6 +156,7 @@ private:
 
   unsigned char _feature_group_char;
   int64_t _hash;
+  uint32_t _hash_seed;
   features* _p_current_feature_group;
   features* _p_affix_feature_group;
   features* _p_spelling_feature_group;
@@ -159,7 +164,6 @@ private:
   example* _current_example;
   bool _redefine_char_flag;
   hash_func_t _hash_function;
-  uint32_t _hash_seed;
   VW::string_view _feature_group_name;
   uint64_t _affix;
   bool _spelling;
@@ -542,7 +546,7 @@ public:
 
   TC_parser(VW::string_view line, vw& all, example* ae)
     : _line(line),
-    _feature_group_helper(ae, all.redefine_some, &all.redefine, &all.affix_features, &all.spelling_features, &all.namespace_dictionaries, all.example_parser->hasher)
+    _feature_group_helper(ae, all.redefine_some, &all.redefine, &all.affix_features, &all.spelling_features, &all.namespace_dictionaries, all.hash_seed, all.example_parser->hasher)
   {
     if (!_line.empty())
     {
