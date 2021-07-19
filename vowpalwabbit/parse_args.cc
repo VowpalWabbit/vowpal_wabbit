@@ -1410,9 +1410,14 @@ void parse_modules(
   parse_output_preds(options, all);
 
   // create reduction stack builder instance
-  all.learner_builder = VW::make_unique<VW::default_reduction_stack_setup>(all);
+  auto learner_builder = VW::make_unique<VW::default_reduction_stack_setup>(all);
   // kick-off reduction setup functions
-  all.l = all.learner_builder->operator()(options, all);
+  all.l = learner_builder->operator()(options, all);
+
+  // explicit destroy of learner_builder state
+  // avoids misuse of this interface:
+  learner_builder.reset();
+  assert(learner_builder == nullptr);
 
   if (!all.logger.quiet)
   {

@@ -10,10 +10,6 @@ namespace VW
 {
 struct default_reduction_stack_setup : public setup_base_fn
 {
-  std::vector<std::string> enabled_reductions;
-
-  void print_enabled_reductions(vw& all);
-
   default_reduction_stack_setup(vw& all);
 
   // this function consumes all the reduction_stack until it's able to construct a base_learner

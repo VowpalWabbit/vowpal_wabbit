@@ -220,23 +220,6 @@ default_reduction_stack_setup::default_reduction_stack_setup(vw& all)
   all.build_setupfn_name_dict(reduction_stack);
 }
 
-void default_reduction_stack_setup::print_enabled_reductions(vw& all)
-{
-  *(all.trace_message) << "Enabled reductions: ";
-
-  if (!enabled_reductions.empty())
-  {
-    const char* const delim = ", ";
-    std::ostringstream imploded;
-    std::copy(
-        enabled_reductions.begin(), enabled_reductions.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
-
-    *(all.trace_message) << imploded.str() << enabled_reductions.back();
-  }
-
-  *(all.trace_message) << std::endl;
-}
-
 // this function consumes all the reduction_stack until it's able to construct a base_learner
 // same signature/code as the old setup_base(...) from parse_args.cc
 VW::LEARNER::base_learner* default_reduction_stack_setup::operator()(VW::config::options_i& options, vw& all)
@@ -259,7 +242,6 @@ VW::LEARNER::base_learner* default_reduction_stack_setup::operator()(VW::config:
     if (base == nullptr) { return this->operator()(options, all); }
     else
     {
-      enabled_reductions.push_back(setup_func_name);
       reduction_stack.clear();
       return base;
     }

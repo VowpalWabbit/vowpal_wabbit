@@ -356,7 +356,6 @@ vw::vw() : options(nullptr, nullptr)
   // Set by the '--progress <arg>' option and affect sd->dump_interval
   progress_add = false;  // default is multiplicative progress dumps
   progress_arg = 2.0;    // next update progress dump multiplier
-  learner_builder = nullptr;
 }
 VW_WARNING_STATE_POP
 
