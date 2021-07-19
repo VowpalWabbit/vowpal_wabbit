@@ -34,10 +34,10 @@ struct sample_pdf
   int learn(example& ec, experimental::api_status* status);
   int predict(example& ec, experimental::api_status* status);
 
-  void init(single_learner* p_base, uint64_t* p_random_seed);
+  void init(single_learner* p_base, std::shared_ptr<rand_state> random_state);
 
 private:
-  uint64_t* _p_random_state;
+  std::shared_ptr<rand_state> _p_random_state;
   continuous_actions::probability_density_function _pred_pdf;
   single_learner* _base = nullptr;
 };
@@ -63,18 +63,20 @@ int sample_pdf::predict(example& ec, experimental::api_status*)
     _base->predict(ec);
   }
 
-  const int ret_code = exploration::sample_pdf(_p_random_state, std::begin(_pred_pdf), std::end(_pred_pdf),
-      ec.pred.pdf_value.action, ec.pred.pdf_value.pdf_value);
+  uint64_t seed = _p_random_state->get_current_state();
+  const int ret_code = exploration::sample_pdf(
+      &seed, std::begin(_pred_pdf), std::end(_pred_pdf), ec.pred.pdf_value.action, ec.pred.pdf_value.pdf_value);
+  _p_random_state->get_and_update_random();
 
   if (ret_code != S_EXPLORATION_OK) return VW::experimental::error_code::sample_pdf_failed;
 
   return VW::experimental::error_code::success;
 }
 
-void sample_pdf::init(single_learner* p_base, uint64_t* p_random_seed)
+void sample_pdf::init(single_learner* p_base, std::shared_ptr<rand_state> random_state)
 {
   _base = p_base;
-  _p_random_state = p_random_seed;
+  _p_random_state = std::move(random_state);
   _pred_pdf.clear();
 }
 
@@ -110,13 +112,16 @@ LEARNER::base_learner* sample_pdf_setup(options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   LEARNER::base_learner* p_base = setup_base(options, all);
-  auto p_reduction = scoped_calloc_or_throw<sample_pdf>();
-  p_reduction->init(as_singleline(p_base), &all.random_seed);
+  auto p_reduction = VW::make_unique<sample_pdf>();
+  p_reduction->init(as_singleline(p_base), all.get_random_state());
 
-  LEARNER::learner<sample_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, all.get_setupfn_name(sample_pdf_setup));
+  // This learner will assume the label type from base, so should not call set_label_type
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, all.get_setupfn_name(sample_pdf_setup))
+                .set_prediction_type(prediction_type_t::action_pdf_value)
+                .build();
 
-  return make_base(l);
+  return VW::LEARNER::make_base(*l);
 }
 }  // namespace continuous_action
 }  // namespace VW

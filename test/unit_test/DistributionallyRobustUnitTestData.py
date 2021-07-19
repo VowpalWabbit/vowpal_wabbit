@@ -152,6 +152,7 @@ class OnlineDRO:
         ws = numpy.random.RandomState(seed=42).exponential(size=10)
         rs = numpy.random.RandomState(seed=2112).random_sample(size=10)
         duals = []
+        bounds = []
         
         print(list(zip(ws, rs)))
         
@@ -161,9 +162,11 @@ class OnlineDRO:
             if ocrl.duals[1][0] is None:
                 duals.append( ( True, 0, 0, 0, 0 ) )
             else:               
+                bounds.append(ocrl.duals[0][0])
                 duals.append( ( False, ocrl.duals[1][0]['kappastar'], 
                                ocrl.duals[1][0]['gammastar'], ocrl.duals[1][0]['betastar'], ocrl.n ) )
             
+        print(pformat(bounds))
         print(pformat(duals))
         
     def qlb_test():
