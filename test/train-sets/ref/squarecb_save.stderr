@@ -1,4 +1,4 @@
-creating quadratic features for pairs: UA
+creating quadratic features for pairs: UA 
 final_regressor = models/sqcb_ld.model
 Num weight bits = 18
 learning rate = 0.5
@@ -7,7 +7,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/cb_load.dat
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb_explore_adf_squarecb, shared_feature_merger
+Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_squarecb, shared_feature_merger
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0 4:0:0.14        0:0...       28
@@ -16,7 +16,7 @@ loss     last          counter         weight    label  predict features
 0.000000 0.000000            8            8.0 3:0:0.14        0:0...       28
 0.000000 0.000000           16           16.0 3:0:0.14        0:0...       28
 0.000000 0.000000           32           32.0 3:0:0.14        0:0...       28
-0.127206 0.254412           64           64.0 0:0:0.77        0:-0.259809...       28
+0.127219 0.254438           64           64.0 0:0:0.77        0:-0.259838...       28
 
 finished run
 number of examples = 113

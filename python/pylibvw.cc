@@ -300,7 +300,9 @@ search_ptr get_search_ptr(vw_ptr all)
 
 py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
 {
-  auto opt_manager = OptionManager(*all->options, all->enabled_reductions, py_class);
+  std::vector<std::string> enabled_reductions;
+  if (all->l) all->l->get_enabled_reductions(enabled_reductions);
+  auto opt_manager = OptionManager(*all->options, enabled_reductions, py_class);
   return opt_manager.get_vw_option_pyobjects(enabled_only);
 }
 
@@ -321,10 +323,12 @@ std::string get_arguments(vw_ptr all)
 
 py::list get_enabled_reductions(vw_ptr all)
 {
-  py::list enabled_reductions;
-  for (auto ex : all->enabled_reductions) { enabled_reductions.append(ex); }
+  py::list py_enabled_reductions;
+  std::vector<std::string> enabled_reductions;
+  if (all->l) all->l->get_enabled_reductions(enabled_reductions);
+  for (auto ex : enabled_reductions) { py_enabled_reductions.append(ex); }
 
-  return enabled_reductions;
+  return py_enabled_reductions;
 }
 
 predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
