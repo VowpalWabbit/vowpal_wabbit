@@ -130,7 +130,7 @@ bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
       case example_type::slot:
         data.slots.push_back(ex);
         break;
-      case unset:
+      default:
         logger::log_error("ccb_adf_explore: badly formatted example - invalid example type");
         return false;
     }
