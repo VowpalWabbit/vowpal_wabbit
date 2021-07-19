@@ -53,12 +53,17 @@ int read_features_string(vw* all, v_array<example*>& examples)
 class feature_group_helper
 {
 public:
+  using char_map = std::array<unsigned char,NUM_NAMESPACES>;
+  using affix_map = std::array<uint64_t, NUM_NAMESPACES>;
+  using bool_map = std::array<bool, NUM_NAMESPACES>;
+  using namespace_dictionaries = std::vector<std::shared_ptr<feature_dict>>;
+  using dictionaries_map = std::array<namespace_dictionaries, NUM_NAMESPACES>;
+
   feature_group_helper(
-      example* current_example,
-      bool redefine_char_flag,
-      std::array<unsigned char,NUM_NAMESPACES>* redefine_char_map,
+      example* current_example, bool redefine_char_flag,
+      char_map* redefine_char_map,  affix_map* affix_features, bool_map* spelling_features, dictionaries_map* namespace_dictionaries_map,
       hash_func_t hash_fn
-  ):
+):
     _feature_group_char(0),
     _hash(0),
     _p_current_feature_group(nullptr),
@@ -68,6 +73,9 @@ public:
     _current_example(current_example),
     _redefine_char_flag(redefine_char_flag),
     _redefine_char_map(redefine_char_map),
+    _namespace_dictionaries_map(namespace_dictionaries_map),
+    _affix_features(affix_features),
+    _spelling_features(spelling_features),
     _hash_function(hash_fn)
   {}
   inline unsigned char feature_group_char() const
@@ -102,14 +110,32 @@ public:
     _feature_group_char = namespace_char;
     _hash = _hash_function(_feature_group_name.begin(), _feature_group_name.length(), _hash_seed);
     _p_current_feature_group = nullptr;  // reset cached feature group
+    _affix = (*_affix_features)[_feature_group_char];
+    _spelling = (*_spelling_features)[_feature_group_char];
+    _namespace_dictionaries = &(*_namespace_dictionaries_map)[feature_group_char()];
   }
   inline void set_current_fg()
   {
-    _feature_group_name = "";
+    _feature_group_name = " ";
     _feature_group_char = ' ';
     _hash = this->_hash_seed == 0 ? 0 : uniform_hash("", 0, this->_hash_seed);
     _p_current_feature_group = nullptr;  // reset cached feature group
   }
+  inline const VW::string_view& get_fg_name() const
+  {
+    return _feature_group_name;
+  }
+  inline uint64_t get_affix_features() const{
+    return _affix;
+  }
+  inline const bool is_spelling_feature_group() const 
+  {
+    return _spelling;
+  }
+  inline const bool dictionary_exists() const {
+    return !_namespace_dictionaries->empty();
+  }
+  inline const namespace_dictionaries* get_dictionary() const { return _namespace_dictionaries; }
 
 private:
   inline features& get_feature_group(features*& p_features_ref, unsigned char namespace_char)
@@ -132,10 +158,16 @@ private:
   features* _p_dictionary_feature_group;
   example* _current_example;
   bool _redefine_char_flag;
-  std::array<unsigned char, NUM_NAMESPACES>* _redefine_char_map;
   hash_func_t _hash_function;
   uint32_t _hash_seed;
   VW::string_view _feature_group_name;
+  uint64_t _affix;
+  bool _spelling;
+  namespace_dictionaries* _namespace_dictionaries;
+  char_map* _redefine_char_map;
+  affix_map* _affix_features;
+  bool_map* _spelling_features;
+  dictionaries_map* _namespace_dictionaries_map;
 };
 
 template <bool audit>
@@ -148,11 +180,8 @@ public:
   size_t _anon;
   float _v;
   parser* _p;
-  std::array<uint64_t, NUM_NAMESPACES>* _affix_features;
-  std::array<bool, NUM_NAMESPACES>* _spelling_features;
   v_array<char> _spelling;
   uint64_t _parse_mask;
-  std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
   feature_group_helper _feature_group_helper;
 
   ~TC_parser() {}
@@ -249,161 +278,161 @@ public:
         _line[_read_idx] == '\r')
     {
       // maybeFeature --> ø
+      return;
+    }
+
+    // maybeFeature --> 'String' FeatureValue
+    VW::string_view feature_name = read_name();
+    VW::string_view string_feature_value;
+
+    float float_feature_value = 0.f;
+    bool is_feature_float = isFeatureValueFloat(float_feature_value);
+
+    if (!is_feature_float)
+    {
+      string_feature_value = stringFeatureValue(_line.substr(_read_idx));
+      _v = 1;
     }
     else
     {
-      // maybeFeature --> 'String' FeatureValue
-      VW::string_view feature_name = read_name();
-      VW::string_view string_feature_value;
+      _v = _cur_channel_v * float_feature_value;
+    }
 
-      float float_feature_value = 0.f;
-      bool is_feature_float = isFeatureValueFloat(float_feature_value);
+    if (_v == 0) return;  // dont add 0 valued features to list of features
 
-      if (!is_feature_float)
-      {
-        string_feature_value = stringFeatureValue(_line.substr(_read_idx));
-        _v = 1;
-      }
-      else
-      {
-        _v = _cur_channel_v * float_feature_value;
-      }
+    uint64_t word_hash;
+    // Case where string:string or :string
+    if (!string_feature_value.empty())
+    {
+      // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
+      word_hash = (_p->hasher(string_feature_value.begin(), string_feature_value.length(),
+                        _p->hasher(feature_name.begin(), feature_name.length(), _feature_group_helper.feature_group_hash())) &
+          _parse_mask);
+    }
+    // Case where string:float
+    else if (!feature_name.empty())
+    {
+      word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _feature_group_helper.feature_group_hash()) & _parse_mask);
+    }
+    // Case where :float
+    else
+    {
+      word_hash = _feature_group_helper.feature_group_hash() + _anon++;
+    }
 
-      uint64_t word_hash;
-      // Case where string:string or :string
+    features& fs = _feature_group_helper.get_current_fg();
+    fs.push_back(_v, word_hash);
+
+    if (audit)
+    {
       if (!string_feature_value.empty())
       {
-        // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-        word_hash = (_p->hasher(string_feature_value.begin(), string_feature_value.length(),
-                         _p->hasher(feature_name.begin(), feature_name.length(), _feature_group_helper.feature_group_hash())) &
-            _parse_mask);
+        std::stringstream ss;
+        ss << feature_name << "^" << string_feature_value;
+        fs.space_names.emplace_back(audit_strings(_feature_group_helper.get_fg_name(), ss.str()));
       }
-      // Case where string:float
-      else if (!feature_name.empty())
-      {
-        word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _feature_group_helper.feature_group_hash()) & _parse_mask);
-      }
-      // Case where :float
       else
       {
-        word_hash = _feature_group_helper.feature_group_hash() + _anon++;
+        fs.space_names.emplace_back(audit_strings(_feature_group_helper.get_fg_name(), feature_name.to_string()));
       }
+    }
 
-      if (_v == 0) return;  // dont add 0 valued features to list of features
-      features& fs = _feature_group_helper.get_current_fg();
-      fs.push_back(_v, word_hash);
+    if ( (_feature_group_helper.get_affix_features() > 0) && !feature_name.empty())
+    {
+      uint64_t affix = _feature_group_helper.get_affix_features();
+      features& affix_fs = _feature_group_helper.get_affix_fg();
 
-      if (audit)
+      while (affix > 0)
       {
-        if (!string_feature_value.empty())
+        bool is_prefix = affix & 0x1;
+        uint64_t len = (affix >> 1) & 0x7;
+        VW::string_view affix_name(feature_name);
+        if (affix_name.size() > len)
         {
-          std::stringstream ss;
-          ss << feature_name << "^" << string_feature_value;
-          fs.space_names.push_back(audit_strings(_base.to_string(), ss.str()));
-        }
-        else
-        {
-          fs.space_names.push_back(audit_strings(_base.to_string(), feature_name.to_string()));
-        }
-      }
-
-      if (((*_affix_features)[_feature_group_helper.feature_group_char()] > 0) && (!feature_name.empty()))
-      {
-        features& affix_fs = _feature_group_helper.get_affix_fg();
-        uint64_t affix = (*_affix_features)[_feature_group_helper.feature_group_char()];
-
-        while (affix > 0)
-        {
-          bool is_prefix = affix & 0x1;
-          uint64_t len = (affix >> 1) & 0x7;
-          VW::string_view affix_name(feature_name);
-          if (affix_name.size() > len)
-          {
-            if (is_prefix)
-              affix_name.remove_suffix(affix_name.size() - len);
-            else
-              affix_name.remove_prefix(affix_name.size() - len);
-          }
-
-          word_hash = _p->hasher(affix_name.begin(), affix_name.length(), _feature_group_helper.feature_group_hash()) *
-              (affix_constant + (affix & 0xF) * quadratic_constant);
-          affix_fs.push_back(_v, word_hash);
-          if (audit)
-          {
-            v_array<char> affix_v;
-            if (_feature_group_helper.feature_group_char() != ' ') affix_v.push_back(_feature_group_helper.feature_group_char());
-            affix_v.push_back(is_prefix ? '+' : '-');
-            affix_v.push_back('0' + static_cast<char>(len));
-            affix_v.push_back('=');
-            affix_v.insert(affix_v.end(), affix_name.begin(), affix_name.end());
-            affix_v.push_back('\0');
-            affix_fs.space_names.push_back(audit_strings("affix", affix_v.begin()));
-          }
-          affix >>= 4;
-        }
-      }
-      if ((*_spelling_features)[_feature_group_helper.feature_group_char()])
-      {
-        features& spell_fs = _feature_group_helper.get_spelling_fg();
-        _spelling.clear();
-        for (char c : feature_name)
-        {
-          char d = 0;
-          if ((c >= '0') && (c <= '9'))
-            d = '0';
-          else if ((c >= 'a') && (c <= 'z'))
-            d = 'a';
-          else if ((c >= 'A') && (c <= 'Z'))
-            d = 'A';
-          else if (c == '.')
-            d = '.';
+          if (is_prefix)
+            affix_name.remove_suffix(affix_name.size() - len);
           else
-            d = '#';
-          // if ((spelling.size() == 0) || (spelling.last() != d))
-          _spelling.push_back(d);
+            affix_name.remove_prefix(affix_name.size() - len);
         }
 
-        VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
-        word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), _feature_group_helper.feature_group_hash());
-        spell_fs.push_back(_v, word_hash);
+        word_hash = _p->hasher(affix_name.begin(), affix_name.length(), _feature_group_helper.feature_group_hash()) *
+            (affix_constant + (affix & 0xF) * quadratic_constant);
+        affix_fs.push_back(_v, word_hash);
         if (audit)
         {
-          v_array<char> spelling_v;
-          if (_feature_group_helper.feature_group_char() != ' ')
-          {
-            spelling_v.push_back(_feature_group_helper.feature_group_char());
-            spelling_v.push_back('_');
-          }
-          spelling_v.insert(spelling_v.end(), spelling_strview.begin(), spelling_strview.end());
-          spelling_v.push_back('\0');
-          spell_fs.space_names.push_back(audit_strings("spelling", spelling_v.begin()));
+          v_array<char> affix_v;
+          if (_feature_group_helper.feature_group_char() != ' ') affix_v.push_back(_feature_group_helper.feature_group_char());
+          affix_v.push_back(is_prefix ? '+' : '-');
+          affix_v.push_back('0' + static_cast<char>(len));
+          affix_v.push_back('=');
+          affix_v.insert(affix_v.end(), affix_name.begin(), affix_name.end());
+          affix_v.push_back('\0');
+          affix_fs.space_names.emplace_back(audit_strings("affix", affix_v.begin()));
         }
+        affix >>= 4;
       }
-      if ((*_namespace_dictionaries)[_feature_group_helper.feature_group_char()].size() > 0)
+    }
+    if (_feature_group_helper.is_spelling_feature_group())
+    {
+      features& spell_fs = _feature_group_helper.get_spelling_fg();
+      _spelling.clear();
+      for (char c : feature_name)
       {
-        // Heterogeneous lookup not yet implemented in std
-        // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0919r0.html
-        const std::string feature_name_str(feature_name);
-        for (const auto& map : (*_namespace_dictionaries)[_feature_group_helper.feature_group_char()])
+        char d = 0;
+        if ((c >= '0') && (c <= '9'))
+          d = '0';
+        else if ((c >= 'a') && (c <= 'z'))
+          d = 'a';
+        else if ((c >= 'A') && (c <= 'Z'))
+          d = 'A';
+        else if (c == '.')
+          d = '.';
+        else
+          d = '#';
+        // if ((spelling.size() == 0) || (spelling.last() != d))
+        _spelling.push_back(d);
+      }
+
+      VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
+      word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), _feature_group_helper.feature_group_hash());
+      spell_fs.push_back(_v, word_hash);
+      if (audit)
+      {
+        v_array<char> spelling_v;
+        if (_feature_group_helper.feature_group_char() != ' ')
         {
-          const auto& feats_it = map->find(feature_name_str);
-          if ((feats_it != map->end()) && (feats_it->second->values.size() > 0))
-          {
-            const auto& feats = feats_it->second;
-            features& dict_fs = _feature_group_helper.get_dictionary_fg();
-            dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
-            dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
-            dict_fs.sum_feat_sq += feats->sum_feat_sq;
-            if (audit)
-              for (const auto& id : feats->indicies)
-              {
-                std::stringstream ss;
-                ss << _feature_group_helper.feature_group_char() << '_';
-                ss << feature_name;
-                ss << '=' << id;
-                dict_fs.space_names.push_back(audit_strings("dictionary", ss.str()));
-              }
-          }
+          spelling_v.push_back(_feature_group_helper.feature_group_char());
+          spelling_v.push_back('_');
+        }
+        spelling_v.insert(spelling_v.end(), spelling_strview.begin(), spelling_strview.end());
+        spelling_v.push_back('\0');
+        spell_fs.space_names.push_back(audit_strings("spelling", spelling_v.begin()));
+      }
+    }
+    if (_feature_group_helper.dictionary_exists())
+    {
+      // Heterogeneous lookup not yet implemented in std
+      // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0919r0.html
+      const std::string feature_name_str(feature_name);
+      for (const auto& map : *(_feature_group_helper.get_dictionary()))
+      {
+        const auto& feats_it = map->find(feature_name_str);
+        if ((feats_it != map->end()) && (feats_it->second->values.size() > 0))
+        {
+          const auto& feats = feats_it->second;
+          features& dict_fs = _feature_group_helper.get_dictionary_fg();
+          dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
+          dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
+          dict_fs.sum_feat_sq += feats->sum_feat_sq;
+          if (audit)
+            for (const auto& id : feats->indicies)
+            {
+              std::stringstream ss;
+              ss << _feature_group_helper.feature_group_char() << '_';
+              ss << feature_name;
+              ss << '=' << id;
+              dict_fs.space_names.push_back(audit_strings("dictionary", ss.str()));
+            }
         }
       }
     }
@@ -453,7 +482,6 @@ public:
       // NameSpaceInfo --> 'String' NameSpaceInfoValue
       const VW::string_view name = read_name();
       _feature_group_helper.set_current_fg(name);
-      if (audit) { _base = name; }
       nameSpaceInfoValue();
     }
   }
@@ -482,12 +510,6 @@ public:
     {
       // NameSpace --> ListFeatures
       _feature_group_helper.set_current_fg();
-      if (audit)
-      {
-        // TODO: c++17 allows VW::string_view literals, eg: " "sv
-        static const char* space = " ";
-        _base = space;
-      }
       listFeatures();
     }
     else if (_line[_read_idx] != ':')
@@ -520,15 +542,12 @@ public:
 
   TC_parser(VW::string_view line, vw& all, example* ae)
     : _line(line),
-    _feature_group_helper(ae, all.redefine_some, &all.redefine, all.example_parser->hasher)
+    _feature_group_helper(ae, all.redefine_some, &all.redefine, &all.affix_features, &all.spelling_features, &all.namespace_dictionaries, all.example_parser->hasher)
   {
     if (!_line.empty())
     {
       this->_read_idx = 0;
       this->_p = all.example_parser;
-      this->_affix_features = &all.affix_features;
-      this->_spelling_features = &all.spelling_features;
-      this->_namespace_dictionaries = &all.namespace_dictionaries;
       this->_parse_mask = all.parse_mask;
       listNameSpace();
     }
