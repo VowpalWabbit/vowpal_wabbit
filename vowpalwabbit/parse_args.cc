@@ -1804,7 +1804,8 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
     all.options->check_unregistered();
 
     std::vector<std::string> enabled_reductions;
-    all.l->get_enabled_reductions(enabled_reductions);
+
+    if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
 
     // upon direct query for help -- spit it out to stdout;
     if (all.options->get_typed_option<bool>("help").value())
