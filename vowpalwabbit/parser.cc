@@ -973,7 +973,8 @@ void finish_example_vector(vw& all, std::vector<example*>& ev)
 
 void thread_dispatch(vw& all, const std::vector<example*>& examples)
 {
-  for (auto example : examples) notify_examples_cv(example);
+  auto ex = examples[0]; // We just need to notify the first example.
+  notify_examples_cv(ex);
 }
 
 void main_parse_loop(vw* all) { parse_dispatch(*all, thread_dispatch); }
@@ -988,7 +989,7 @@ std::vector<example*>* get_example(parser* p) {
     return ev;
   }
 
-  // Frankly, we can take any example in the vector of examples. If one of them is parsed, we can rest assured that all are.
+  // The entire vector is parsed if the first one is.
   example* ex = (*ev)[0];
   {
     std::unique_lock<std::mutex> lock(*(ex->ex_lock.example_cv_mutex));
