@@ -347,24 +347,28 @@ void to_flat::convert_txt_to_flat(vw& all)
     uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
     if (multiplier != 1)
     {
-      for (features& fs : *ae)
+      for ( auto& group_list : *ae)
       {
-        for (auto& j : fs.indicies) { j /= multiplier; }
+        for (auto& fs : group_list)
+        {
+          for (auto& j : fs.feats.indicies) { j /= multiplier; }
+        }
       }
     }
     std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;
 
-    for (auto it = ae->feature_space.begin(); it != ae->feature_space.end(); ++it)
+    for (const auto& group_list : *ae)
+    { for (const auto& fs : group_list)
     {
       // Skip over constant namespace as that will be assigned while reading flatbuffer again
-      if (it.index() == 128) { continue; }
+      if (fs.index == 128) { continue; }
 
       std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
 
       std::stringstream ss;
-      ss << it.index() << it.hash();
+      ss << fs.index << fs.hash;
 
-      for (features::iterator& f : *it) { ss << f.index() << f.value(); }
+      for (auto f : fs.feats) { ss << f.index() << f.value(); }
 
       std::string s = ss.str();
       uint64_t refid = uniform_hash(s.c_str(), s.size(), 0);
@@ -376,7 +380,7 @@ void to_flat::convert_txt_to_flat(vw& all)
         // new namespace
         if (all.audit || all.hash_inv)
         {
-          auto& ns_fts = *it;
+          auto& ns_fts = fs.feats;
           std::string ns_name;
           for (const auto& f : ns_fts.audit_range())
           {
@@ -385,14 +389,14 @@ void to_flat::convert_txt_to_flat(vw& all)
                 _builder, f.audit()->second.c_str(), f.value(), f.index()));
           }
           namespace_offset =
-              VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), it.index(), &fts, it.hash());
+              VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), fs.index, &fts, fs.hash);
         }
         else
         {
-          for (features::iterator& f : *it)
+          for (auto f : fs.feats)
           { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index())); }
           namespace_offset =
-              VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, it.index(), &fts, it.hash());
+              VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, fs.index, &fts, fs.hash);
         }
         _share_examples[refid] = namespace_offset;
       }
@@ -403,6 +407,8 @@ void to_flat::convert_txt_to_flat(vw& all)
       }
       namespaces.push_back(namespace_offset);
     }
+    }
+
     std::string tag(ae->tag.begin(), ae->tag.size());
 
     if (all.l->is_multiline)

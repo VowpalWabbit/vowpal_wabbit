@@ -73,13 +73,13 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_standalone_example)
 
   auto example = all->flat_converter->data()->example_obj_as_Example();
   BOOST_CHECK_EQUAL(example->namespaces()->Length(), 1);
-  BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->feats()->size(), 1);
+  BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->features()->size(), 1);
   BOOST_CHECK_CLOSE(example->label_as_SimpleLabel()->label(), 0.0, FLOAT_TOL);
   BOOST_CHECK_CLOSE(example->label_as_SimpleLabel()->weight(), 1.0, FLOAT_TOL);
   BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->hash(), constant_namespace);
-  BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->feats()->Get(0)->name()->c_str(), "hello");
-  BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->feats()->Get(0)->hash(), constant);
-  BOOST_CHECK_CLOSE(example->namespaces()->Get(0)->feats()->Get(0)->value(), 2.23, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->features()->Get(0)->name()->c_str(), "hello");
+  BOOST_CHECK_EQUAL(example->namespaces()->Get(0)->features()->Get(0)->hash(), constant);
+  BOOST_CHECK_CLOSE(example->namespaces()->Get(0)->features()->Get(0)->value(), 2.23, FLOAT_TOL);
 
   // Check vw example
   BOOST_CHECK_EQUAL(examples.size(), 1);
@@ -114,13 +114,13 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
   auto collection_examples = all->flat_converter->data()->example_obj_as_ExampleCollection()->examples();
   BOOST_CHECK_EQUAL(collection_examples->Length(), 1);
   BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Length(), 1);
-  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->feats()->size(), 1);
+  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->features()->size(), 1);
   BOOST_CHECK_CLOSE(collection_examples->Get(0)->label_as_SimpleLabel()->label(), 0.0, FLOAT_TOL);
   BOOST_CHECK_CLOSE(collection_examples->Get(0)->label_as_SimpleLabel()->weight(), 1.0, FLOAT_TOL);
   BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->hash(), constant_namespace);
-  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->feats()->Get(0)->name()->c_str(), "hello");
-  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->feats()->Get(0)->hash(), constant);
-  BOOST_CHECK_CLOSE(collection_examples->Get(0)->namespaces()->Get(0)->feats()->Get(0)->value(), 2.23, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->name()->c_str(), "hello");
+  BOOST_CHECK_EQUAL(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->hash(), constant);
+  BOOST_CHECK_CLOSE(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->value(), 2.23, FLOAT_TOL);
 
   // check vw example
   BOOST_CHECK_EQUAL(examples.size(), 1);
