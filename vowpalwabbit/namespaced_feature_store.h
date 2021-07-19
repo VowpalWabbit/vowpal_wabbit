@@ -11,6 +11,7 @@
 
 #include "feature_group.h"
 #include "chained_proxy_iterator.h"
+#include "object_pool.h"
 
 typedef unsigned char namespace_index;
 
@@ -75,12 +76,12 @@ public:
 /// identifier namespace_hash - 8 byte hash
 struct namespaced_feature_store
 {
-  using iterator = indexed_iterator_t<std::array<std::list<namespaced_features>, 256>,
-      std::vector<namespace_index>::iterator, std::list<namespaced_features>>;
-  using const_iterator = indexed_iterator_t<const std::array<std::list<namespaced_features>, 256>,
-      std::vector<namespace_index>::const_iterator, const std::list<namespaced_features>>;
-  using list_iterator = std::list<namespaced_features>::iterator;
-  using const_list_iterator = std::list<namespaced_features>::const_iterator;
+  using iterator = indexed_iterator_t<std::array<std::vector<namespaced_features>, 256>,
+      std::vector<namespace_index>::iterator, std::vector<namespaced_features>>;
+  using const_iterator = indexed_iterator_t<const std::array<std::vector<namespaced_features>, 256>,
+      std::vector<namespace_index>::const_iterator, const std::vector<namespaced_features>>;
+  using list_iterator = std::vector<namespaced_features>::iterator;
+  using const_list_iterator = std::vector<namespaced_features>::const_iterator;
   using index_flat_iterator = VW::chained_proxy_iterator<list_iterator, features::audit_iterator>;
 
   namespaced_feature_store() = default;
@@ -150,9 +151,12 @@ struct namespaced_feature_store
   features& get_or_create(namespace_index ns_index, uint64_t hash);
 
   // UB if the list itself is modified.
-  inline std::list<namespaced_features>& get_list(namespace_index index) { return _feature_groups[index]; }
+  inline std::vector<namespaced_features>& get_list(namespace_index index) { return _feature_groups[index]; }
 
-  inline const std::list<namespaced_features>& get_list(namespace_index index) const { return _feature_groups[index]; }
+  inline const std::vector<namespaced_features>& get_list(namespace_index index) const
+  {
+    return _feature_groups[index];
+  }
 
   /// Will invalidate any iterator to the removed namespaced_features. Use the overload which returns an iterator if
   /// removing while traversing a list.
@@ -178,12 +182,12 @@ struct namespaced_feature_store
   inline const_iterator end() const { return {_legacy_indices_existing.end(), &_feature_groups}; }
 
 private:
-  std::array<std::list<namespaced_features>, 256> _feature_groups;
+  std::array<std::vector<namespaced_features>, 256> _feature_groups;
   std::vector<namespace_index> _legacy_indices_existing;
 
   // This list is used as an object pool for list nodes from _feature_groups. It allows us to avoid the new/delete cost
   // for linked list nodes as they are removed and readded.
-  std::list<namespaced_features> _saved_feature_group_nodes;
+  moved_object_pool<features> _saved_feature_groups;
 };
 
 // UB if the index or hash is modified.

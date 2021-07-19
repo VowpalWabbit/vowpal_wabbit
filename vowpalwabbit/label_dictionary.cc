@@ -49,9 +49,10 @@ void add_example_namespaces_from_example(example& target, const example& source)
 
 void del_example_namespaces_from_example(example& target, const example& source)
 {
-  for (auto& bucket : const_cast<example&>(source))
+  for (auto& group_list : const_cast<example&>(source))
   {
-    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    // Remove from back to front to avoid vector memmoves.
+    for (auto it = group_list.rbegin(); it != group_list.rend(); ++it)
     {
       if (it->index == constant_namespace) continue;
       del_example_namespace(target, it->index, it->hash, it->feats);
