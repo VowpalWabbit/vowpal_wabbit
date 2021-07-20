@@ -1538,8 +1538,6 @@ public:
 
   BaseState<audit>* PopNamespace()
   {
-    auto& ns = CurrentNamespace();
-
     auto return_state = return_path.back();
     namespace_path.pop_back();
     return_path.pop_back();

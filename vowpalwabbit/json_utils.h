@@ -86,7 +86,7 @@ void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespa
 }
 
 template <bool audit>
-void pop_ns(example* ex, std::vector<Namespace<audit>>& namespaces)
+void pop_ns(example*, std::vector<Namespace<audit>>& namespaces)
 {
   namespaces.pop_back();
 }
