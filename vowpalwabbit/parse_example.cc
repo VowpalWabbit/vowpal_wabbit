@@ -53,56 +53,37 @@ int read_features_string(vw* all, v_array<example*>& examples)
 class feature_group_helper
 {
 public:
-  using char_map = std::array<unsigned char,NUM_NAMESPACES>;
+  using char_map = std::array<unsigned char, NUM_NAMESPACES>;
   using affix_map = std::array<uint64_t, NUM_NAMESPACES>;
   using bool_map = std::array<bool, NUM_NAMESPACES>;
   using namespace_dictionaries = std::vector<std::shared_ptr<feature_dict>>;
   using dictionaries_map = std::array<namespace_dictionaries, NUM_NAMESPACES>;
 
-  feature_group_helper(
-      example* current_example, bool redefine_char_flag,
-      char_map* redefine_char_map,  affix_map* affix_features, bool_map* spelling_features, dictionaries_map* namespace_dictionaries_map,
-      uint32_t hash_seed, hash_func_t hash_fn
-):
-    _feature_group_char(0),
-    _hash(0),
-    _hash_seed(hash_seed),
-    _p_current_feature_group(nullptr),
-    _p_affix_feature_group(nullptr),
-    _p_spelling_feature_group(nullptr),
-    _p_dictionary_feature_group(nullptr),
-    _current_example(current_example),
-    _redefine_char_flag(redefine_char_flag),
-    _redefine_char_map(redefine_char_map),
-    _namespace_dictionaries_map(namespace_dictionaries_map),
-    _affix_features(affix_features),
-    _spelling_features(spelling_features),
-    _hash_function(hash_fn)
-  {}
-  inline unsigned char feature_group_char() const
+  feature_group_helper(example* current_example, bool redefine_char_flag, char_map* redefine_char_map,
+      affix_map* affix_features, bool_map* spelling_features, dictionaries_map* namespace_dictionaries_map,
+      uint32_t hash_seed, hash_func_t hash_fn)
+      : _feature_group_char(0)
+      , _hash(0)
+      , _hash_seed(hash_seed)
+      , _p_current_feature_group(nullptr)
+      , _p_affix_feature_group(nullptr)
+      , _p_spelling_feature_group(nullptr)
+      , _p_dictionary_feature_group(nullptr)
+      , _current_example(current_example)
+      , _redefine_char_flag(redefine_char_flag)
+      , _redefine_char_map(redefine_char_map)
+      , _namespace_dictionaries_map(namespace_dictionaries_map)
+      , _affix_features(affix_features)
+      , _spelling_features(spelling_features)
+      , _hash_function(hash_fn)
   {
-    return _feature_group_char;
   }
-  inline uint64_t feature_group_hash() const
-  {
-    return _hash;
-  }
-  inline features& get_current_fg()
-  {
-    return get_feature_group(_p_current_feature_group,feature_group_char());
-  }
-  inline features& get_affix_fg()
-  {
-    return get_feature_group(_p_affix_feature_group,affix_namespace);
-  }
-  inline features& get_spelling_fg()
-  {
-    return get_feature_group(_p_spelling_feature_group,spelling_namespace);
-  }
-  inline features& get_dictionary_fg()
-  {
-    return get_feature_group(_p_dictionary_feature_group,dictionary_namespace);
-  }
+  inline unsigned char feature_group_char() const { return _feature_group_char; }
+  inline uint64_t feature_group_hash() const { return _hash; }
+  inline features& get_current_fg() { return get_feature_group(_p_current_feature_group, feature_group_char()); }
+  inline features& get_affix_fg() { return get_feature_group(_p_affix_feature_group, affix_namespace); }
+  inline features& get_spelling_fg() { return get_feature_group(_p_spelling_feature_group, spelling_namespace); }
+  inline features& get_dictionary_fg() { return get_feature_group(_p_dictionary_feature_group, dictionary_namespace); }
   inline void set_current_fg(const VW::string_view& fg_name)
   {
     _feature_group_name = fg_name;
@@ -125,33 +106,22 @@ public:
     _spelling = (*_spelling_features)[_feature_group_char];
     _namespace_dictionaries = &(*_namespace_dictionaries_map)[feature_group_char()];
   }
-  inline const VW::string_view& get_fg_name() const
-  {
-    return _feature_group_name;
-  }
-  inline uint64_t get_affix_features() const{
-    return _affix;
-  }
-  inline const bool is_spelling_feature_group() const 
-  {
-    return _spelling;
-  }
-  inline const bool dictionary_exists() const {
-    return !_namespace_dictionaries->empty();
-  }
+  inline const VW::string_view& get_fg_name() const { return _feature_group_name; }
+  inline uint64_t get_affix_features() const { return _affix; }
+  inline const bool is_spelling_feature_group() const { return _spelling; }
+  inline const bool dictionary_exists() const { return !_namespace_dictionaries->empty(); }
   inline const namespace_dictionaries* get_dictionary() const { return _namespace_dictionaries; }
 
 private:
   inline features& get_feature_group(features*& p_features_ref, unsigned char namespace_char)
   {
-    if(p_features_ref == nullptr)
+    if (p_features_ref == nullptr)
     {
-      p_features_ref = & _current_example->feature_space[namespace_char];
+      p_features_ref = &_current_example->feature_space[namespace_char];
 
-      if(p_features_ref->empty())
-        _current_example->indices.emplace_back(namespace_char);
+      if (p_features_ref->empty()) _current_example->indices.emplace_back(namespace_char);
     }
-    return {*p_features_ref};    
+    return {*p_features_ref};
   }
 
   unsigned char _feature_group_char;
@@ -309,14 +279,16 @@ public:
     if (!string_feature_value.empty())
     {
       // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-      word_hash = (_p->hasher(string_feature_value.begin(), string_feature_value.length(),
-                        _p->hasher(feature_name.begin(), feature_name.length(), _feature_group_helper.feature_group_hash())) &
-          _parse_mask);
+      word_hash =
+          (_p->hasher(string_feature_value.begin(), string_feature_value.length(),
+               _p->hasher(feature_name.begin(), feature_name.length(), _feature_group_helper.feature_group_hash())) &
+              _parse_mask);
     }
     // Case where string:float
     else if (!feature_name.empty())
     {
-      word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _feature_group_helper.feature_group_hash()) & _parse_mask);
+      word_hash = (_p->hasher(feature_name.begin(), feature_name.length(), _feature_group_helper.feature_group_hash()) &
+          _parse_mask);
     }
     // Case where :float
     else
@@ -341,7 +313,7 @@ public:
       }
     }
 
-    if ( (_feature_group_helper.get_affix_features() > 0) && !feature_name.empty())
+    if ((_feature_group_helper.get_affix_features() > 0) && !feature_name.empty())
     {
       uint64_t affix = _feature_group_helper.get_affix_features();
       features& affix_fs = _feature_group_helper.get_affix_fg();
@@ -365,7 +337,8 @@ public:
         if (audit)
         {
           v_array<char> affix_v;
-          if (_feature_group_helper.feature_group_char() != ' ') affix_v.push_back(_feature_group_helper.feature_group_char());
+          if (_feature_group_helper.feature_group_char() != ' ')
+            affix_v.push_back(_feature_group_helper.feature_group_char());
           affix_v.push_back(is_prefix ? '+' : '-');
           affix_v.push_back('0' + static_cast<char>(len));
           affix_v.push_back('=');
@@ -398,7 +371,8 @@ public:
       }
 
       VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
-      word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), _feature_group_helper.feature_group_hash());
+      word_hash =
+          hashstring(spelling_strview.begin(), spelling_strview.length(), _feature_group_helper.feature_group_hash());
       spell_fs.push_back(_v, word_hash);
       if (audit)
       {
@@ -545,8 +519,9 @@ public:
   }
 
   TC_parser(VW::string_view line, vw& all, example* ae)
-    : _line(line),
-    _feature_group_helper(ae, all.redefine_some, &all.redefine, &all.affix_features, &all.spelling_features, &all.namespace_dictionaries, all.hash_seed, all.example_parser->hasher)
+      : _line(line)
+      , _feature_group_helper(ae, all.redefine_some, &all.redefine, &all.affix_features, &all.spelling_features,
+            &all.namespace_dictionaries, all.hash_seed, all.example_parser->hasher)
   {
     if (!_line.empty())
     {
