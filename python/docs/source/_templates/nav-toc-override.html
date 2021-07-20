@@ -1,0 +1,16 @@
+<a href="https://vowpalwabbit.org/docs/">
+  {{version}}
+</a>
+
+<i class="fas fa-angle-down"></i>
+
+<nav class="bd-links" id="bd-docs-nav" aria-label="{{ _('Main navigation') }}">
+  <div class="bd-toc-item active">
+    {{ generate_nav_html("sidebar",
+                         startdepth=0,
+                         maxdepth=theme_navigation_depth|int,
+                         collapse=theme_collapse_navigation|tobool,
+                         includehidden=True,
+                         titles_only=True) }}
+  </div>
+</nav>

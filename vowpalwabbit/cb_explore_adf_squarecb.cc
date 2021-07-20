@@ -373,7 +373,7 @@ base_learner* setup(VW::config::options_i& options, vw& all)
   auto data = VW::make_unique<explore_type>(
       with_metrics, gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver);
   auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup) + "-squarecb")
+      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
                 .set_prediction_type(prediction_type_t::action_probs)
                 .set_label_type(label_type_t::cb)
