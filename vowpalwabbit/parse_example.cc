@@ -458,8 +458,7 @@ public:
     else
     {
       // NameSpaceInfo --> 'String' NameSpaceInfoValue
-      const VW::string_view name = read_name();
-      _feature_group_helper.set_current_fg(name);
+      _feature_group_helper.set_current_fg(read_name());
       nameSpaceInfoValue();
     }
   }
