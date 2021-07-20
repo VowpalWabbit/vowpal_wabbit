@@ -309,7 +309,7 @@ public:
       }
       else
       {
-        fs.space_names.emplace_back(audit_strings(_feature_group_helper.get_fg_name(), feature_name.to_string()));
+        fs.space_names.emplace_back(_feature_group_helper.get_fg_name(), feature_name.to_string());
       }
     }
 
