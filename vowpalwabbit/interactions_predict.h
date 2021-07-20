@@ -6,7 +6,6 @@
 #include <cstdint>
 #include "constant.h"
 #include "feature_group.h"
-#include "interactions.h"
 #include "example_predict.h"
 #include <vector>
 #include <string>
@@ -123,8 +122,8 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 #ifndef GEN_INTER_LOOP
 
     // unless GEN_INTER_LOOP is defined we use nested 'for' loops for interactions length 2 (pairs) and 3 (triples)
-    // and generic non-recursive algorythm for all other cases.
-    // nested 'for' loops approach is faster, but can't be used for interation of any length.
+    // and generic non-recursive algorithm for all other cases.
+    // nested 'for' loops approach is faster, but can't be used for interaction of any length.
     const size_t len = ns.size();
 
     if (len == 2)  // special case of pairs
@@ -159,7 +158,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                 // next index differs for permutations and simple combinations
                 feature_value ft_value = first.feats.values[i];
                 auto begin = second.feats.audit_cbegin();
-                if (same_namespace_hash) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1; }
+                if (same_namespace_hash) { begin += i; }
                 auto end = second.feats.audit_cend();
                 num_features += std::distance(begin, end);
                 inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
@@ -218,7 +217,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                     float first_ft_value = first.feats.values[i];
                     size_t j = 0;
                     if (same_namespace1_hash)  // next index differs for permutations and simple combinations
-                      j = (PROCESS_SELF_INTERACTIONS(first_ft_value)) ? i : i + 1;
+                      j = i;
 
                     for (; j < second.feats.indicies.size(); ++j)
                     {  // f3 x k*(f2 x k*f1)
@@ -233,7 +232,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 
                       auto begin = third.feats.audit_cbegin();
                       // next index differs for permutations and simple combinations
-                      if (same_namespace2_hash) { begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1; }
+                      if (same_namespace2_hash) { begin += j; }
                       auto end = third.feats.audit_cend();
                       num_features += std::distance(begin, end);
                       inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
@@ -281,32 +280,11 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
         // let's go throw the list and calculate number of features to skip in namespaces which
         // repeated more than once to generate only simple combinations of features
 
-        // size_t margin = 0;  // number of features to ignore if namespace has been seen before
-
-        // iterate list backward as margin grows in this order
-
         for (fgd = state_data.data() + (state_data.size() - 1); fgd > state_data.data(); --fgd)
         {
           fgd2 = fgd - 1;
           fgd->self_interaction =
               (fgd->current_it == fgd2->current_it);  // state_data.begin().self_interaction is always false
-
-          // Removing this section for now as it greatly simplifies things and is never actually used.
-          // This is because PROCESS_SELF_INTERACTIONS is true and renders this a noop
-          // if (fgd->self_interaction)
-          // {
-          //   size_t& loop_end = fgd2->loop_end;
-          //   if (!PROCESS_SELF_INTERACTIONS(1.f /*unused_value*/)
-          //   {
-          //     ++margin;  // otherwise margin can't be increased
-          //     must_skip_interaction = loop_end < margin;
-          //     if (must_skip_interaction) break;
-          //   }
-
-          //   if (margin != 0) loop_end -= margin;  // skip some features and increase margin
-          // }
-          // else if (margin != 0)
-          //   margin = 0;
         }
 
         // if impossible_without_permutations == true then we faced with case like interaction 'aaaa'
@@ -339,7 +317,6 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
             // unless feature has value x and x != x*x. E.g. x != 0 and x != 1. Features with x == 0 are already
             // filtered out in parce_args.cc::maybeFeature().
             auto current_offset = cur_data->current_it - ec.feature_space.index_flat_begin(cur_data->ns_idx);
-            current_offset += PROCESS_SELF_INTERACTIONS((*cur_data->current_it).value()) ? 0 : 1;
             next_data->current_it = ec.feature_space.index_flat_begin(next_data->ns_idx);
             next_data->current_it += current_offset;
           }

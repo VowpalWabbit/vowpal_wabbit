@@ -98,21 +98,9 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
             for (size_t i = 0; i < ns_fs.feats.size(); ++i)
             {
               const float x = ns_fs.feats.values[i] * ns_fs.feats.values[i];
-
-              if (!PROCESS_SELF_INTERACTIONS(fs.values[i]))
-              {
-                for (size_t j = order_of_inter - 1; j > 0; --j) results[j] += results[j - 1] * x;
-
-                results[0] += x;
-              }
-              else
-              {
-                results[0] += x;
-
-                for (size_t j = 1; j < order_of_inter; ++j) results[j] += results[j - 1] * x;
-
-                ++cnt_ft_value_non_1;
-              }
+              results[0] += x;
+              for (size_t j = 1; j < order_of_inter; ++j) results[j] += results[j - 1] * x;
+              ++cnt_ft_value_non_1;
             }
 
             sum_feat_sq_in_inter *= results[order_of_inter - 1];  // will be explained in http://bit.ly/1Hk9JX1
