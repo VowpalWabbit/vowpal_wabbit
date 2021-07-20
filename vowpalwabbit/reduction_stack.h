@@ -4,11 +4,11 @@
 
 struct vw;
 
-typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::setup_base_fn&, VW::config::options_i&, vw&);
+typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::setup_base_i&, VW::config::options_i&, vw&);
 
 namespace VW
 {
-struct default_reduction_stack_setup : public setup_base_fn
+struct default_reduction_stack_setup : public setup_base_i
 {
   default_reduction_stack_setup(vw& all);
 
