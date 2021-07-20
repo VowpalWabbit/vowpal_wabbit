@@ -121,7 +121,7 @@ private:
 
       if (p_features_ref->empty()) _current_example->indices.emplace_back(namespace_char);
     }
-    return {*p_features_ref};
+    return *p_features_ref;
   }
 
   unsigned char _feature_group_char;
