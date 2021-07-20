@@ -200,11 +200,9 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 
                   // We check it for skipping self interaction.
                   const bool same_namespace3 = (!permutations && (ns[0] == ns[2]));
-                  const bool same_namespace3_hash = (!permutations && (first.hash == third.hash));
 
                   // When there is more than one feature group of the same index, we should not process permutations.
                   // For example we skip x2*x1 but do process x1*x2.
-                  // TODO - ensure this cubic version works
                   if (same_namespace1 && (ns1_i < ns0_i)) { continue; }
                   if (same_namespace2 && (ns2_i < ns1_i)) { continue; }
                   if (same_namespace3 && (ns2_i < ns0_i)) { continue; }
