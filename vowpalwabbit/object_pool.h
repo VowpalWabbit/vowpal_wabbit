@@ -24,13 +24,24 @@
 
 namespace VW
 {
+template <typename T>
+struct default_cleanup
+{
+  void operator()(T*) {}
+};
 
 template <typename T>
+struct default_initializer
+{
+  T* operator()(T* obj) { return obj; }
+};
+
+template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
 struct no_lock_object_pool
 {
   no_lock_object_pool() = default;
-  no_lock_object_pool(size_t initial_chunk_size, size_t chunk_size = 8)
-      : m_initial_chunk_size(initial_chunk_size), m_chunk_size(chunk_size)
+  no_lock_object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
+      : m_initializer(initializer), m_initial_chunk_size(initial_chunk_size), m_chunk_size(chunk_size)
   {
     new_chunk(initial_chunk_size);
   }
@@ -38,7 +49,11 @@ struct no_lock_object_pool
   ~no_lock_object_pool()
   {
     assert(m_pool.size() == size());
-    for (auto* ptr : m_allocated_objects) { delete ptr; }
+    for (auto* ptr : m_allocated_objects)
+    {
+      m_cleanup(ptr);
+      delete ptr;
+    }
   }
 
   void return_object(T* obj)
@@ -74,6 +89,8 @@ private:
     }
   }
 
+  TInitializer m_initializer;
+  TCleanup m_cleanup;
   size_t m_initial_chunk_size = 0;
   size_t m_chunk_size = 8;
   std::queue<T*> m_pool;
@@ -119,11 +136,14 @@ private:
   std::stack<T> m_pool;
 };
 
-template <typename T>
+template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
 struct object_pool
 {
   object_pool() = default;
-  object_pool(size_t initial_chunk_size, size_t chunk_size = 8) : inner_pool(initial_chunk_size, chunk_size) {}
+  object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
+      : inner_pool(initial_chunk_size, initializer, chunk_size)
+  {
+  }
 
   void return_object(T* obj)
   {
@@ -157,6 +177,6 @@ struct object_pool
 
 private:
   mutable std::mutex m_lock;
-  no_lock_object_pool<T> inner_pool;
+  no_lock_object_pool<T, TInitializer, TCleanup> inner_pool;
 };
 }  // namespace VW

@@ -34,7 +34,6 @@ struct indices_proxy_obj
 
   std::vector<namespace_index>::const_iterator begin() const { return feature_space->indices().begin(); }
   std::vector<namespace_index>::const_iterator end() const { return feature_space->indices().end(); }
-  // TODO this needs to be fixed to be resilient to duplicated indices
   size_t size() const { return feature_space->indices().size(); }
   bool empty() const { return feature_space->indices().empty(); }
 };

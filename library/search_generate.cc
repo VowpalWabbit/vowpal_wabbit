@@ -249,16 +249,14 @@ public:
 
       // length info
       auto ns_hash_l = VW::hash_space(vw_obj, "l");
-      auto& fs_l = ex.feature_space['l'];
-      ex.indices.push_back('l');
+      auto& fs_l = ex.feature_space.get_or_create('l', ns_hash_l);
       fs_l.push_back(static_cast<float>(N), VW::hash_feature(vw_obj, "in", ns_hash_l));
       fs_l.push_back(static_cast<float>(m), VW::hash_feature(vw_obj, "out", ns_hash_l));
       if (N != m) { fs_l.push_back(static_cast<float>(N - m), VW::hash_feature(vw_obj, "diff", ns_hash_l)); }
 
       // suffixes thus far
       auto ns_hash_s = VW::hash_space(vw_obj, "s");
-      auto& fs_s = ex.feature_space['s'];
-      ex.indices.push_back('s');
+      auto& fs_s = ex.feature_space.get_or_create('s', ns_hash_s);
       std::string tmp("$");
       for (int i=m; i >= m-15 && i >= 0; i--)
       {
@@ -268,15 +266,13 @@ public:
 
       // characters thus far
       auto ns_hash_c = VW::hash_space(vw_obj, "c");
-      auto& fs_c = ex.feature_space['c'];
-      ex.indices.push_back('c');
+      auto& fs_c = ex.feature_space.get_or_create('c', ns_hash_c);
       for (char c : out) { fs_c.push_back(1.f, VW::hash_feature(vw_obj, "c=" + std::string(1, c), ns_hash_c)); }
       fs_c.push_back(1.f, VW::hash_feature(vw_obj, "c=$", ns_hash_c));
 
       // words thus far
       auto ns_hash_w = VW::hash_space(vw_obj, "w");
-      auto& fs_w = ex.feature_space['w'];
-      ex.indices.push_back('w');
+      auto& fs_w = ex.feature_space.get_or_create('w', ns_hash_w);
       tmp = "";
       for (char c : out)
       { if (c == '^') continue;
@@ -295,8 +291,7 @@ public:
         dict->get_next(nullptr, next);
 
         auto ns_hash_d = VW::hash_space(vw_obj, "d");
-        auto& fs_d = ex.feature_space['d'];
-        ex.indices.push_back('d');
+        auto& fs_d = ex.feature_space.get_or_create('d', ns_hash_d);
 
         char best_char = '~'; float best_count = 0.;
         for (auto xx : next)
@@ -322,8 +317,7 @@ public:
       ex("c=$");
       */
       auto ns_hash_i = VW::hash_space(vw_obj, "i");
-      auto& fs_i = ex.feature_space['i'];
-      ex.indices.push_back('i');
+      auto& fs_i = ex.feature_space.get_or_create('i', ns_hash_i);
       tmp = "";
       for (char c : in.in)
       { if (c == ' ')

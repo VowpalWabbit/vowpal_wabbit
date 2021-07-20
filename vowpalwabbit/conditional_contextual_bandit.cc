@@ -208,19 +208,19 @@ bool has_action(multi_ex& cb_ex) { return !cb_ex.empty(); }
 // Copy other slot namespaces to shared
 void inject_slot_features(example* shared, example* slot)
 {
-  for (auto& bucket : slot->feature_space)
+  for (auto& group_list : slot->feature_space)
   {
-    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    for (auto& ns_fs : group_list)
     {
       // constant namespace should be ignored, as it already exists and we don't want to double it up.
-      if (it->index == constant_namespace) { continue; }
+      if (ns_fs.index == constant_namespace) { continue; }
 
       // slot default namespace has a special namespace in shared
-      if (it->index == default_namespace)
-      { LabelDict::add_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->feats); }
+      if (ns_fs.index == default_namespace)
+      { LabelDict::add_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, ns_fs.feats); }
       else
       {
-        LabelDict::add_example_namespace(*shared, it->index, it->hash, it->feats);
+        LabelDict::add_example_namespace(*shared, ns_fs.index, ns_fs.hash, ns_fs.feats);
       }
     }
   }
@@ -262,18 +262,18 @@ void remove_slot_id(example* shared) { shared->feature_space.remove(ccb_id_names
 
 void remove_slot_features(example* shared, example* slot)
 {
-  for (auto& bucket : slot->feature_space)
+  for (auto& group_list : slot->feature_space)
   {
-    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    for (auto& ns_fs : group_list)
     {
       // constant namespace should be ignored, as it already exists and we don't want to double it up.
-      if (it->index == constant_namespace) { continue; }
+      if (ns_fs.index == constant_namespace) { continue; }
 
-      if (it->index == default_namespace)  // slot default namespace has a special namespace in shared
-      { LabelDict::del_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, it->feats); }
+      if (ns_fs.index == default_namespace)  // slot default namespace has a special namespace in shared
+      { LabelDict::del_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, ns_fs.feats); }
       else
       {
-        LabelDict::del_example_namespace(*shared, it->index, it->hash, it->feats);
+        LabelDict::del_example_namespace(*shared, ns_fs.index, ns_fs.hash, ns_fs.feats);
       }
     }
   }

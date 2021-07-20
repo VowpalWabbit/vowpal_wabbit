@@ -164,7 +164,7 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void output_features(io_buf& cache, unsigned char index, uint64_t ns_hash, const features& fs, uint64_t mask)
+void output_features(io_buf& cache, unsigned char index, uint64_t ns_hash, features& fs, uint64_t mask)
 {
   char* c;
   size_t storage = fs.size() * int_size;
@@ -217,15 +217,15 @@ void cache_tag(io_buf& cache, const v_array<char>& tag)
   cache.set(c);
 }
 
-void cache_features(io_buf& cache, const example* ae, uint64_t mask)
+void cache_features(io_buf& cache, example* ae, uint64_t mask)
 {
   cache_tag(cache, ae->tag);
   cache.write_value<unsigned char>(ae->is_newline ? newline_example : non_newline_example);
   cache.write_value<uint64_t>(static_cast<uint64_t>(ae->feature_space.size()));
-  for (auto& bucket : *const_cast<example*>(ae))
+  for (auto& group_list : *ae)
   {
-    for (auto it = bucket.begin(); it != bucket.end(); ++it)
-    { output_features(cache, it->index, it->hash, it->feats, mask); }
+    for (auto& ns_fs : group_list)
+    { output_features(cache, ns_fs.index, ns_fs.hash, ns_fs.feats, mask); }
   }
 }
 

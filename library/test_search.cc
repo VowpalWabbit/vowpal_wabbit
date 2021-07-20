@@ -45,8 +45,7 @@ public:
     {
       example ex;
       auto ns_hash_w = VW::hash_space(vw_obj, "w");
-      auto& fs_w = ex.feature_space['w'];
-      ex.indices.push_back('w');
+      auto& fs_w = ex.feature_space.get_or_create('w', ns_hash_w);
       fs_w.push_back(1.f, VW::hash_feature(vw_obj, input_example[i].word, ns_hash_w));
       VW::setup_example(vw_obj, &ex);
       action p =
