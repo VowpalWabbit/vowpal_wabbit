@@ -713,7 +713,7 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
           word_count++;
           doc_length += f.value();
         }
-    }
+      }
     }
     for (size_t k = 0; k < l.topics; k++) new_gamma[k] = new_gamma[k] * v[k] + l.lda_alpha;
   } while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);

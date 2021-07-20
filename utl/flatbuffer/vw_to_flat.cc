@@ -347,7 +347,7 @@ void to_flat::convert_txt_to_flat(vw& all)
     uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
     if (multiplier != 1)
     {
-      for ( auto& group_list : *ae)
+      for (auto& group_list : *ae)
       {
         for (auto& fs : group_list)
         {
@@ -358,55 +358,56 @@ void to_flat::convert_txt_to_flat(vw& all)
     std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;
 
     for (const auto& group_list : *ae)
-    { for (const auto& fs : group_list)
     {
-      // Skip over constant namespace as that will be assigned while reading flatbuffer again
-      if (fs.index == 128) { continue; }
-
-      std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
-
-      std::stringstream ss;
-      ss << fs.index << fs.hash;
-
-      for (auto f : fs.feats) { ss << f.index() << f.value(); }
-
-      std::string s = ss.str();
-      uint64_t refid = uniform_hash(s.c_str(), s.size(), 0);
-      flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> namespace_offset;
-      auto find_ns_offset = _share_examples.find(refid);
-
-      if (find_ns_offset == _share_examples.end())
+      for (const auto& fs : group_list)
       {
-        // new namespace
-        if (all.audit || all.hash_inv)
+        // Skip over constant namespace as that will be assigned while reading flatbuffer again
+        if (fs.index == 128) { continue; }
+
+        std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
+
+        std::stringstream ss;
+        ss << fs.index << fs.hash;
+
+        for (auto f : fs.feats) { ss << f.index() << f.value(); }
+
+        std::string s = ss.str();
+        uint64_t refid = uniform_hash(s.c_str(), s.size(), 0);
+        flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> namespace_offset;
+        auto find_ns_offset = _share_examples.find(refid);
+
+        if (find_ns_offset == _share_examples.end())
         {
-          auto& ns_fts = fs.feats;
-          std::string ns_name;
-          for (const auto& f : ns_fts.audit_range())
+          // new namespace
+          if (all.audit || all.hash_inv)
           {
-            ns_name = f.audit()->first;
-            fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(
-                _builder, f.audit()->second.c_str(), f.value(), f.index()));
+            auto& ns_fts = fs.feats;
+            std::string ns_name;
+            for (const auto& f : ns_fts.audit_range())
+            {
+              ns_name = f.audit()->first;
+              fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(
+                  _builder, f.audit()->second.c_str(), f.value(), f.index()));
+            }
+            namespace_offset =
+                VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), fs.index, &fts, fs.hash);
           }
-          namespace_offset =
-              VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), fs.index, &fts, fs.hash);
+          else
+          {
+            for (auto f : fs.feats)
+            { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index())); }
+            namespace_offset =
+                VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, fs.index, &fts, fs.hash);
+          }
+          _share_examples[refid] = namespace_offset;
         }
         else
         {
-          for (auto f : fs.feats)
-          { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index())); }
-          namespace_offset =
-              VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, fs.index, &fts, fs.hash);
+          // offset already exists
+          namespace_offset = find_ns_offset->second;
         }
-        _share_examples[refid] = namespace_offset;
+        namespaces.push_back(namespace_offset);
       }
-      else
-      {
-        // offset already exists
-        namespace_offset = find_ns_offset->second;
-      }
-      namespaces.push_back(namespace_offset);
-    }
     }
 
     std::string tag(ae->tag.begin(), ae->tag.size());

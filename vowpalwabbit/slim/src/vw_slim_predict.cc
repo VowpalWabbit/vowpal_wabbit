@@ -25,8 +25,7 @@ namespace_copy_guard::~namespace_copy_guard()
   _features = nullptr;
 }
 
-void namespace_copy_guard::feature_push_back(feature_value v, feature_index idx)
-{ _features->push_back(v, idx); }
+void namespace_copy_guard::feature_push_back(feature_value v, feature_index idx) { _features->push_back(v, idx); }
 
 feature_offset_guard::feature_offset_guard(example_predict& ex, uint64_t ft_offset)
     : _ex(ex), _old_ft_offset(ex.ft_offset)

@@ -315,7 +315,7 @@ void print_features(vw& all, example& ec)
         {
           for (const auto& f : fs.feats) { audit_feature(dat, f.value(), f.index() + ec.ft_offset); }
         }
-        }
+      }
     }
     size_t num_interacted_features = 0;
     INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction>(

@@ -224,8 +224,7 @@ void cache_features(io_buf& cache, example* ae, uint64_t mask)
   cache.write_value<uint64_t>(static_cast<uint64_t>(ae->feature_space.size()));
   for (auto& group_list : *ae)
   {
-    for (auto& ns_fs : group_list)
-    { output_features(cache, ns_fs.index, ns_fs.hash, ns_fs.feats, mask); }
+    for (auto& ns_fs : group_list) { output_features(cache, ns_fs.index, ns_fs.hash, ns_fs.feats, mask); }
   }
 }
 
