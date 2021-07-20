@@ -305,7 +305,7 @@ public:
       {
         std::stringstream ss;
         ss << feature_name << "^" << string_feature_value;
-        fs.space_names.emplace_back(audit_strings(_feature_group_helper.get_fg_name(), ss.str()));
+        fs.space_names.emplace_back(_feature_group_helper.get_fg_name(), ss.str());
       }
       else
       {
