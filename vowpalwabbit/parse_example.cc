@@ -121,7 +121,7 @@ private:
 
       if (p_features_ref->empty()) _current_example->indices.emplace_back(namespace_char);
     }
-    return {*p_features_ref};
+    return *p_features_ref;
   }
 
   unsigned char _feature_group_char;
@@ -305,11 +305,11 @@ public:
       {
         std::stringstream ss;
         ss << feature_name << "^" << string_feature_value;
-        fs.space_names.emplace_back(audit_strings(_feature_group_helper.get_fg_name(), ss.str()));
+        fs.space_names.emplace_back(_feature_group_helper.get_fg_name(), ss.str());
       }
       else
       {
-        fs.space_names.emplace_back(audit_strings(_feature_group_helper.get_fg_name(), feature_name.to_string()));
+        fs.space_names.emplace_back(_feature_group_helper.get_fg_name(), feature_name.to_string());
       }
     }
 
@@ -344,7 +344,7 @@ public:
           affix_v.push_back('=');
           affix_v.insert(affix_v.end(), affix_name.begin(), affix_name.end());
           affix_v.push_back('\0');
-          affix_fs.space_names.emplace_back(audit_strings("affix", affix_v.begin()));
+          affix_fs.space_names.emplace_back("affix", affix_v.begin());
         }
         affix >>= 4;
       }
@@ -458,8 +458,7 @@ public:
     else
     {
       // NameSpaceInfo --> 'String' NameSpaceInfoValue
-      const VW::string_view name = read_name();
-      _feature_group_helper.set_current_fg(name);
+      _feature_group_helper.set_current_fg(read_name());
       nameSpaceInfoValue();
     }
   }
