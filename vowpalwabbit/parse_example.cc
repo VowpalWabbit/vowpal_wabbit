@@ -78,13 +78,13 @@ public:
       , _hash_function(hash_fn)
   {
   }
-  inline unsigned char feature_group_char() const { return _feature_group_char; }
-  inline uint64_t feature_group_hash() const { return _hash; }
-  inline features& get_current_fg() { return get_feature_group(_p_current_feature_group, feature_group_char()); }
-  inline features& get_affix_fg() { return get_feature_group(_p_affix_feature_group, affix_namespace); }
-  inline features& get_spelling_fg() { return get_feature_group(_p_spelling_feature_group, spelling_namespace); }
-  inline features& get_dictionary_fg() { return get_feature_group(_p_dictionary_feature_group, dictionary_namespace); }
-  inline void set_current_fg(const VW::string_view& fg_name)
+  unsigned char feature_group_char() const { return _feature_group_char; }
+  uint64_t feature_group_hash() const { return _hash; }
+  features& get_current_fg() { return get_feature_group(_p_current_feature_group, feature_group_char()); }
+  features& get_affix_fg() { return get_feature_group(_p_affix_feature_group, affix_namespace); }
+  features& get_spelling_fg() { return get_feature_group(_p_spelling_feature_group, spelling_namespace); }
+  features& get_dictionary_fg() { return get_feature_group(_p_dictionary_feature_group, dictionary_namespace); }
+  void set_current_fg(const VW::string_view& fg_name)
   {
     _feature_group_name = fg_name;
     auto namespace_char = static_cast<unsigned char>(_feature_group_name[0]);
@@ -96,7 +96,7 @@ public:
     _spelling = (*_spelling_features)[_feature_group_char];
     _namespace_dictionaries = &(*_namespace_dictionaries_map)[feature_group_char()];
   }
-  inline void set_current_fg()
+  void set_current_fg()
   {
     _feature_group_name = " ";
     _feature_group_char = ' ';
@@ -106,14 +106,14 @@ public:
     _spelling = (*_spelling_features)[_feature_group_char];
     _namespace_dictionaries = &(*_namespace_dictionaries_map)[feature_group_char()];
   }
-  inline const VW::string_view& get_fg_name() const { return _feature_group_name; }
-  inline uint64_t get_affix_features() const { return _affix; }
-  inline const bool is_spelling_feature_group() const { return _spelling; }
-  inline const bool dictionary_exists() const { return !_namespace_dictionaries->empty(); }
-  inline const namespace_dictionaries* get_dictionary() const { return _namespace_dictionaries; }
+  const VW::string_view& get_fg_name() const { return _feature_group_name; }
+  uint64_t get_affix_features() const { return _affix; }
+  const bool is_spelling_feature_group() const { return _spelling; }
+  const bool dictionary_exists() const { return !_namespace_dictionaries->empty(); }
+  const namespace_dictionaries* get_dictionary() const { return _namespace_dictionaries; }
 
 private:
-  inline features& get_feature_group(features*& p_features_ref, unsigned char namespace_char)
+  features& get_feature_group(features*& p_features_ref, unsigned char namespace_char)
   {
     if (p_features_ref == nullptr)
     {
