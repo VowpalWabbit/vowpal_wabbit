@@ -1044,7 +1044,7 @@ public:
   BaseState<audit>* Float(Context<audit>& ctx, float f) override
   {
     auto& ns = ctx.CurrentNamespace();
-    ns.AddFeature(f, VW::hash_feature_cstr(*ctx.all, const_cast<char*>(ctx.key), ns.namespace_hash), ctx.key);
+    ns.AddFeature(f, VW::hash_feature_cstr(*ctx.all, ctx.key, ns.namespace_hash), ctx.key);
 
     return this;
   }
@@ -1659,7 +1659,7 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
 }
 
 template <bool audit>
-VW_DEPRECATED("read_line_json has been deprecated; use read_line_json_s instead.")
+VW_DEPRECATED("read_line_json has been deprecated; use read_line_json_s instead. This will be removed in VW 9.0.")
 void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory,
     void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {

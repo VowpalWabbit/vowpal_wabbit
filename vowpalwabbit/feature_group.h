@@ -19,7 +19,7 @@
 using feature_value = float;
 using feature_index = uint64_t;
 using audit_strings = std::pair<std::string, std::string>;
-using audit_strings_ptr = std::shared_ptr<audit_strings>;
+using namespace_index = unsigned char;
 
 struct features;
 struct features_value_index_audit_range;
@@ -56,6 +56,8 @@ public:
   using pointer = value_type*;
   using reference = value_type&;
   using const_reference = const value_type&;
+
+  audit_features_iterator() : _begin_values(nullptr), _begin_indices(nullptr), _begin_audit(nullptr) {}
 
   audit_features_iterator(
       feature_value_type_t* begin_values, feature_index_type_t* begin_indices, audit_type_t* begin_audit)
@@ -186,6 +188,8 @@ public:
   using reference = value_type&;
   using const_reference = const value_type&;
 
+  features_iterator() : _begin_values(nullptr), _begin_indices(nullptr) {}
+
   features_iterator(feature_value_type_t* begin_values, feature_index_type_t* begin_indices)
       : _begin_values(begin_values), _begin_indices(begin_indices)
   {
@@ -283,13 +287,12 @@ struct features
 {
   using iterator = features_iterator<feature_value, feature_index>;
   using const_iterator = features_iterator<const feature_value, const feature_index>;
-  using audit_iterator = audit_features_iterator<feature_value, feature_index, audit_strings_ptr>;
-  using const_audit_iterator =
-      audit_features_iterator<const feature_value, const feature_index, const audit_strings_ptr>;
+  using audit_iterator = audit_features_iterator<feature_value, feature_index, audit_strings>;
+  using const_audit_iterator = audit_features_iterator<const feature_value, const feature_index, const audit_strings>;
 
   v_array<feature_value> values;               // Always needed.
   v_array<feature_index> indicies;             // Optional for sparse data.
-  std::vector<audit_strings_ptr> space_names;  // Optional for audit mode.
+  std::vector<audit_strings> space_names;      // Optional for audit mode.
 
   float sum_feat_sq = 0.f;
 
@@ -308,7 +311,7 @@ struct features
   inline bool empty() const { return values.empty(); }
   inline bool nonempty() const { return !empty(); }
 
-  VW_DEPRECATED("Freeing space names is handled directly by truncation or removal.")
+  VW_DEPRECATED("Freeing space names is handled directly by truncation or removal. This will be removed in VW 9.0.")
   void free_space_names(size_t i);
 
   // default iterator for values & features
@@ -345,6 +348,24 @@ struct features
   void push_back(feature_value v, feature_index i);
   bool sort(uint64_t parse_mask);
 
-  VW_DEPRECATED("deep_copy_from is deprecated. Use the copy constructor directly.")
+  VW_DEPRECATED("deep_copy_from is deprecated. Use the copy constructor directly. This will be removed in VW 9.0.")
   void deep_copy_from(const features& src);
 };
+
+namespace VW
+{
+struct namespaced_features
+{
+  features feats;
+  uint64_t hash;
+  namespace_index index;
+
+  namespaced_features(uint64_t hash, namespace_index index) : hash(hash), index(index) {}
+
+  template <typename FeaturesT>
+  namespaced_features(FeaturesT&& inner_features, uint64_t hash, namespace_index index)
+      : feats(std::forward<FeaturesT>(inner_features)), hash(hash), index(index)
+  {
+  }
+};
+}  // namespace VW

@@ -376,7 +376,14 @@ void parse_diagnostics(options_i& options, vw& all)
 
   if (help) { all.logger.quiet = true; }
 
-  if(all.logger.quiet) logger::log_set_level(logger::log_level::off);
+  if (all.logger.quiet)
+  {
+    logger::log_set_level(logger::log_level::off);
+    // This is valid:
+    // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
+    // results in the ostream not outputting anything.
+    all.trace_message = VW::make_unique<std::ostream>(nullptr);
+  }
 
   if (options.was_supplied("limit_output")) logger::set_max_output(all.logger.upper_limit);
 
@@ -1249,7 +1256,6 @@ VW::LEARNER::base_learner* setup_base(options_i& options, vw& all)
   if (base == nullptr) { return setup_base(options, all); }
   else
   {
-    all.enabled_reductions.push_back(setup_func_name);
     return base;
   }
 }
@@ -1744,17 +1750,17 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-void print_enabled_reductions(vw& all)
+void print_enabled_reductions(vw& all, std::vector<std::string>& enabled_reductions)
 {
   // output list of enabled reductions
-  if (!all.logger.quiet && !all.options->was_supplied("audit_regressor") && !all.enabled_reductions.empty())
+  if (!all.logger.quiet && !all.options->was_supplied("audit_regressor") && !enabled_reductions.empty())
   {
     const char* const delim = ", ";
     std::ostringstream imploded;
-    std::copy(all.enabled_reductions.begin(), all.enabled_reductions.end() - 1,
-        std::ostream_iterator<std::string>(imploded, delim));
+    std::copy(
+        enabled_reductions.begin(), enabled_reductions.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
 
-    *(all.trace_message) << "Enabled reductions: " << imploded.str() << all.enabled_reductions.back() << std::endl;
+    *(all.trace_message) << "Enabled reductions: " << imploded.str() << enabled_reductions.back() << std::endl;
   }
 }
 
@@ -1799,14 +1805,17 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
 
     all.options->check_unregistered();
 
+    std::vector<std::string> enabled_reductions;
+    if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
+
     // upon direct query for help -- spit it out to stdout;
     if (all.options->get_typed_option<bool>("help").value())
     {
-      cout << all.options->help(all.enabled_reductions);
+      cout << all.options->help(enabled_reductions);
       exit(0);
     }
 
-    print_enabled_reductions(all);
+    print_enabled_reductions(all, enabled_reductions);
 
     if (!all.options->get_typed_option<bool>("dry_run").value())
     {

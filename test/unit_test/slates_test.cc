@@ -49,12 +49,12 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
 {
   auto& vw = *VW::initialize("--slates --quiet");
   multi_ex examples;
-  examples.push_back(VW::read_example(vw, std::string("slates shared 0.8 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates action 0 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates action 1 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates action 1 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates slot 0:0.8 | ignore_me")));
-  examples.push_back(VW::read_example(vw, std::string("slates slot 1:0.6 | ignore_me")));
+  examples.push_back(VW::read_example(vw, "slates shared 0.8 | ignore_me"));
+  examples.push_back(VW::read_example(vw, "slates action 0 | ignore_me"));
+  examples.push_back(VW::read_example(vw, "slates action 1 | ignore_me"));
+  examples.push_back(VW::read_example(vw, "slates action 1 | ignore_me"));
+  examples.push_back(VW::read_example(vw, "slates slot 0:0.8 | ignore_me"));
+  examples.push_back(VW::read_example(vw, "slates slot 1:0.6 | ignore_me"));
 
   auto mock_learn_or_pred = [](multi_ex& examples)
   {
@@ -78,9 +78,9 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
         examples[5]->l.conditional_contextual_bandit.explicit_included_actions, std::vector<uint32_t>{1,2});
 
     // Prepare and return the prediction
-    auto slot_zero = v_init<ACTION_SCORE::action_score>();
+    v_array<ACTION_SCORE::action_score> slot_zero;
     slot_zero.push_back({0, 1.0});
-    auto slot_one = v_init<ACTION_SCORE::action_score>();
+    v_array<ACTION_SCORE::action_score> slot_one;
     slot_one.push_back({1, 0.5});
     slot_one.push_back({2, 0.5});
     examples[0]->pred.decision_scores.push_back(slot_zero);

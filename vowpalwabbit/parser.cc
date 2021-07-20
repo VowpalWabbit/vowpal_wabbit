@@ -458,7 +458,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       // create children
       size_t num_children = all.num_children;
-      v_array<int> children = v_init<int>();
+      v_array<int> children;
       children.resize_but_with_stl_behavior(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
@@ -660,10 +660,6 @@ example& get_unused_example(vw* all)
   parser* p = all->example_parser;
   auto ex = p->example_pool.get_object();
   p->begin_parsed_examples++;
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  ex->in_use = true;
-  VW_WARNING_STATE_POP
   return *ex;
 }
 
@@ -751,7 +747,7 @@ example* new_unused_example(vw& all)
   ec->example_counter = static_cast<size_t>(all.example_parser->begin_parsed_examples.load());
   return ec;
 }
-example* read_example(vw& all, char* example_line)
+example* read_example(vw& all, const char* example_line)
 {
   example* ret = &get_unused_example(&all);
 
@@ -762,10 +758,7 @@ example* read_example(vw& all, char* example_line)
   return ret;
 }
 
-example* read_example(vw& all, std::string example_line)
-{
-  return read_example(all, const_cast<char*>(example_line.c_str()));
-}
+example* read_example(vw& all, const std::string& example_line) { return read_example(all, example_line.c_str()); }
 
 void add_constant_feature(vw& vw, example* ec)
 {
@@ -773,7 +766,7 @@ void add_constant_feature(vw& vw, example* ec)
   ec->feature_space[constant_namespace].push_back(1, constant);
   ec->num_features++;
   if (vw.audit || vw.hash_inv)
-    ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
+    ec->feature_space[constant_namespace].space_names.push_back(audit_strings("", "Constant"));
 }
 
 void add_label(example* ec, float label, float weight, float base)
@@ -868,10 +861,6 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  ec.in_use = false;
-  VW_WARNING_STATE_POP
   all.example_parser->example_pool.return_object(&ec);
 }
 

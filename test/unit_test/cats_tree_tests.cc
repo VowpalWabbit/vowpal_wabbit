@@ -136,7 +136,6 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
       expected_learners.begin(), expected_learners.end());
 
   delete base;
-  ec.l.cb.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
@@ -170,7 +169,6 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
       expected_learners.begin(), expected_learners.end());
 
   delete base;
-  ec.l.cb.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
@@ -241,7 +239,6 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
       expected_learners.begin(), expected_learners.end());
 
   delete base;
-  ec.l.cb.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
@@ -281,7 +278,6 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
       expected_learners.begin(), expected_learners.end());
 
   delete base;
-  ec.l.cb.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
@@ -317,7 +313,6 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
       expected_learners.begin(), expected_learners.end());
 
   delete base;
-  ec.l.cb.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
@@ -353,7 +348,6 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
       expected_learners.begin(), expected_learners.end());
 
   delete base;
-  ec.l.cb.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
@@ -389,7 +383,6 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
       expected_learners.begin(), expected_learners.end());
 
   delete base;
-  ec.l.cb.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
@@ -425,7 +418,6 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
       expected_learners.begin(), expected_learners.end());
 
   delete base;
-  ec.l.cb.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
@@ -465,7 +457,6 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
       expected_learners.begin(), expected_learners.end());
 
   delete base;
-  ec.l.cb.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(offset_tree_cont_predict)
@@ -524,7 +515,6 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   VW::cats_tree::cats_tree tree;
   tree.init(num_leaves, bandwidth);
   example ec;
-  ec.l.cb.costs = v_init<CB::cb_class>();
   auto ret_val = tree.predict(*as_singleline(test_base), ec);
   BOOST_CHECK_EQUAL(ret_val, expected_action);
   delete test_base;

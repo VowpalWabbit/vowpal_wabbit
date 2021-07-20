@@ -9,21 +9,21 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/regression/cbify-reg.dat
 num sources = 1
-Enabled reductions: ftrl, scorer, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats, cbify
+Enabled reductions: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats, cbify-reg
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.155212 0.155212            1            1.0 3879.0000 188.5713       10
-0.161879 0.168545            2            2.0 16123.0000 12115.5234       10
-0.202606 0.243333            4            4.0 4213.0000 11412.3047       10
-0.219778 0.236950            8            8.0 7932.0000 16733.8242       10
-0.198089 0.176401           16           16.0 8574.0000 6209.9224       10
-0.198836 0.199583           32           32.0 15481.0000 10122.5020       10
+0.155230 0.155230            1            1.0 3879.0000 188.5713       10
+0.161898 0.168566            2            2.0 16123.0000 12115.5234       10
+0.264308 0.366718            4            4.0 4213.0000 17277.8926       10
+0.219796 0.175284            8            8.0 7932.0000 16733.8242       10
+0.224845 0.229895           16           16.0 8574.0000 12075.5098       10
+0.170274 0.115702           32           32.0 15481.0000 15988.0898       10
 
 finished run
 number of examples = 50
 weighted example sum = 50.000000
-weighted label sum = 531947.377945
-average loss = 0.216557
-best constant = 10638.947266
+weighted label sum = 707915.049332
+average loss = 0.182851
+best constant = 14158.300781
 total feature number = 500
-Learn() count per node: id=0, #l=13; id=1, #l=0; id=2, #l=0; 
+Learn() count per node: id=0, #l=3; id=1, #l=0; id=2, #l=0; 

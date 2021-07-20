@@ -68,7 +68,6 @@ cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, s
     , _synthcoversize(synthcoversize)
     , _random_state(random_state)
     , _model_file_version(model_file_version)
-    , _action_probs(v_init<ACTION_SCORE::action_score>())
     , _min_cost(0.0)
     , _max_cost(0.0)
 {
@@ -214,7 +213,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   auto data = VW::make_unique<explore_type>(
       with_metrics, epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
   auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup) + "-synthcover")
+      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
                 .set_prediction_type(prediction_type_t::action_probs)
                 .set_label_type(label_type_t::cb)
