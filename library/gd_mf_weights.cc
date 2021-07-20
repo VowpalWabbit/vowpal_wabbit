@@ -97,27 +97,34 @@ int main(int argc, char *argv[])
     ec = VW::read_example(*model, line);
 
     // write out features for left namespace
-    features& left = ec->feature_space[left_ns];
-    for (size_t i = 0; i < left.size(); ++i)
+    for (auto& ns_fs : ec->feature_space.get_list(left_ns))
     {
-      left_linear << left.space_names[i].second << '\t' << weights[left.indicies[i]];
+      auto& left = ns_fs.feats;
+      for (size_t i = 0; i < left.size(); ++i)
+      {
+        left_linear << ns_fs.feats.space_names[i].second << '\t' << weights[left.indicies[i]];
 
-      left_quadratic << left.space_names[i].second;
-      for (size_t k = 1; k <= rank; k++)
-        left_quadratic << '\t' << weights[(left.indicies[i] + k)];
+        left_quadratic << left.space_names[i].second;
+        for (size_t k = 1; k <= rank; k++)
+          left_quadratic << '\t' << weights[(left.indicies[i] + k)];
+      }
     }
+
     left_linear << std::endl;
     left_quadratic << std::endl;
 
     // write out features for right namespace
-    features& right = ec->feature_space[right_ns];
-    for (size_t i = 0; i < right.size(); ++i)
+    for (auto& ns_fs : ec->feature_space.get_list(right_ns))
     {
-      right_linear << right.space_names[i].second << '\t' << weights[right.indicies[i]];
+      auto& right = ns_fs.feats;
+      for (size_t i = 0; i < right.size(); ++i)
+      {
+        right_linear << right.space_names[i].second << '\t' << weights[right.indicies[i]];
 
-      right_quadratic << right.space_names[i].second;
-      for (size_t k = 1; k <= rank; k++)
-        right_quadratic << '\t' << weights[(right.indicies[i] + k + rank)];
+        right_quadratic << right.space_names[i].second;
+        for (size_t k = 1; k <= rank; k++)
+          right_quadratic << '\t' << weights[(right.indicies[i] + k + rank)];
+      }
     }
     right_linear << std::endl;
     right_quadratic << std::endl;
@@ -126,7 +133,7 @@ int main(int argc, char *argv[])
   }
 
   // write constant
-  constant << weights[ec->feature_space[constant_namespace].indicies[0]] << std::endl;
+  constant << weights[ec->feature_space.get(constant_namespace, constant_namespace).indicies[0]] << std::endl;
 
   // clean up
   VW::finish(*model);
