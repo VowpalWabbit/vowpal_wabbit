@@ -427,7 +427,7 @@ public:
       // permutations is not supported by slim so we can just use combinations!
       _generate_interactions.update_interactions_if_new_namespace_seen<
           INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
-          _interactions, ex.feature_space.get_indices());
+          _interactions, ex.indices.begin(), ex.indices.end());
       score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions,
           /* permutations */ false, ex);
     }
@@ -453,18 +453,23 @@ public:
       std::vector<std::unique_ptr<namespace_copy_guard>> ns_copy_guards;
 
       // shared feature copying
-      for (auto it = shared.feature_space.begin(); it != shared.feature_space.end(); ++it)
+      for (auto& group_list : shared.feature_space)
       {
-        // insert namespace
-        auto ns_copy_guard =
-            std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*action, it->index, it->hash));
+        for (auto& ns_fs : group_list)
+        {
+          // insert namespace
+          auto ns_copy_guard =
+              std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(*action, ns_fs.index, ns_fs.hash));
 
-        // copy features
-        for (auto fs : *shared.feature_space.get_or_null(it->hash))
-          ns_copy_guard->feature_push_back(fs.value(), fs->index);
+          // copy features
+          for (auto fs : *shared.feature_space.get_or_null(ns_fs.index, ns_fs.hash))
+          {
+            ns_copy_guard->feature_push_back(fs.value(), fs.index());
+          }
 
-        // keep guard around
-        ns_copy_guards.push_back(std::move(ns_copy_guard));
+          // keep guard around
+          ns_copy_guards.push_back(std::move(ns_copy_guard));
+        }
       }
 
       RETURN_ON_FAIL(predict(*action, out_scores[i]));
