@@ -19,9 +19,12 @@ project = u'VowpalWabbit'
 copyright = u'2021, John langford et al'
 author = u'John langford et al'
 
-# Read version automatically from vowpalwabbit.__version__--------------------
-
-version = vowpalwabbit.__version__
+# Read version automatically from vowpalwabbit.__version__ or use env var
+override_package_version = os.getenv("VW_SPHINX_VERSION_OVERRIDE")
+if override_package_version != None:
+    version = override_package_version
+else:
+    version = vowpalwabbit.__version__
 
 release = version
 
@@ -39,6 +42,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx_thebe',
     "myst_nb",
+    'sphinx_reredirects',
 ]
 
 numpydoc_show_class_members = False
@@ -100,6 +104,13 @@ html_context = {
     "doc_path": "python/docs/source",
 }
 
+# These suffixes are needed otherwise it chops off DFtoVW etc thinking it is a suffix
+redirects = {
+    "vowpalwabbit.DFtoVW.rst": "reference/vowpalwabbit.DFtoVW.html",
+    "vowpalwabbit.pyvw.rst": "reference/vowpalwabbit.pyvw.html",
+    "vowpalwabbit.sklearn.rst": "reference/vowpalwabbit.sklearn.html",
+}
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -107,6 +118,7 @@ html_static_path = ['_static']
 
 html_css_files = [
     'custom.css',
+    'nav.css'
 ]
 
 html_sidebars = { '**': ['search-field.html', 'nav-toc-override.html'] }
@@ -115,6 +127,8 @@ html_sidebars = { '**': ['search-field.html', 'nav-toc-override.html'] }
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
+
+html_favicon = 'favicon.png'
 
 binder_url_config = {
     "branch": "master",

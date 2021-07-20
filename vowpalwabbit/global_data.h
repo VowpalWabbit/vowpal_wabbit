@@ -277,7 +277,6 @@ public:
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
   std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
-  std::vector<std::string> enabled_reductions;
 
   // Prediction output
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.

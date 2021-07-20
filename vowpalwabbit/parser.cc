@@ -661,10 +661,6 @@ example& get_unused_example(vw* all)
   parser* p = all->example_parser;
   auto ex = p->example_pool.get_object();
   p->begin_parsed_examples++;
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  ex->in_use = true;
-  VW_WARNING_STATE_POP
   return *ex;
 }
 
@@ -876,10 +872,6 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  ec.in_use = false;
-  VW_WARNING_STATE_POP
   all.example_parser->example_pool.return_object(&ec);
 }
 

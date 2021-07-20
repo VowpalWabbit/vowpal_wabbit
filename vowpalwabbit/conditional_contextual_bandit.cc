@@ -36,11 +36,11 @@ using namespace VW::config;
 namespace logger = VW::io::logger;
 
 template <typename T>
-void return_v_array(v_array<T>&& array, VW::v_array_pool<T>& pool)
+void return_v_array(v_array<T>& array, VW::v_array_pool<T>& pool)
 {
   array.clear();
   pool.reclaim_object(std::move(array));
-  array.clear();
+  array = v_array<T>{};
 }
 
 // CCB adds the following interactions:
@@ -154,12 +154,12 @@ void create_cb_labels(ccb& data)
 // the polylabel (union) must be manually cleaned up
 void delete_cb_labels(ccb& data)
 {
-  return_v_array(std::move(data.shared->l.cb.costs), data.cb_label_pool);
+  return_v_array(data.shared->l.cb.costs, data.cb_label_pool);
   data.shared->l.cb.costs.clear();
 
   for (example* action : data.actions)
   {
-    return_v_array(std::move(action->l.cb.costs), data.cb_label_pool);
+    return_v_array(action->l.cb.costs, data.cb_label_pool);
     action->l.cb.costs.clear();
   }
 }
@@ -184,7 +184,7 @@ void save_action_scores(ccb& data, decision_scores_t& decision_scores)
   for (auto& action_score : pred) { action_score.action = data.origin_index[action_score.action]; }
 
   // Exclude the chosen action from next slots.
-  auto original_index_of_chosen_action = pred[0].action;
+  const auto original_index_of_chosen_action = pred[0].action;
   data.exclude_list[original_index_of_chosen_action] = true;
 
   decision_scores.emplace_back(std::move(pred));
@@ -203,7 +203,7 @@ void clear_pred_and_label(ccb& data)
 bool has_action(multi_ex& cb_ex) { return !cb_ex.empty(); }
 
 // This function intentionally does not handle increasing the num_features of the example because
-// the output_example function has special logic to ensure the number of feaures is correctly calculated.
+// the output_example function has special logic to ensure the number of features is correctly calculated.
 // Copy anything in default namespace for slot to ccb_slot_namespace in shared
 // Copy other slot namespaces to shared
 void inject_slot_features(example* shared, example* slot)
@@ -235,10 +235,10 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
   uint64_t index;
   if (data.slot_id_hashes[id] == 0)
   {
-    auto current_index_str = "index" + std::to_string(id);
+    const auto current_index_str = "index" + std::to_string(id);
     index = VW::hash_feature(*data.all, current_index_str, data.id_namespace_hash);
 
-    // To maintain indicies consistent with what the parser does we must scale.
+    // To maintain indices consistent with what the parser does we must scale.
     index *= static_cast<uint64_t>(data.all->wpp) << data.base_learner_stride_shift;
     data.slot_id_hashes[id] = index;
   }
@@ -254,7 +254,7 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
   if (audit)
   {
     auto current_index_str = "index" + std::to_string(id);
-    feat_group.space_names.push_back(audit_strings(data.id_namespace_str, current_index_str));
+    feat_group.space_names.emplace_back(data.id_namespace_str, current_index_str);
   }
 }
 
@@ -283,10 +283,10 @@ void remove_slot_features(example* shared, example* slot)
 template <bool is_learn>
 void build_cb_example(multi_ex& cb_ex, example* slot, const CCB::label& ccb_label, ccb& data)
 {
-  bool slot_has_label = ccb_label.outcome != nullptr;
+  const bool slot_has_label = ccb_label.outcome != nullptr;
 
   // Merge the slot features with the shared example and set it in the cb multi-example
-  // TODO is it imporant for total_sum_feat_sq and num_features to be correct at this point?
+  // TODO is it important for total_sum_feat_sq and num_features to be correct at this point?
   inject_slot_features(data.shared, slot);
   cb_ex.push_back(data.shared);
 
@@ -341,19 +341,19 @@ void build_cb_example(multi_ex& cb_ex, example* slot, const CCB::label& ccb_labe
 
 std::string ccb_decision_to_string(const ccb& data)
 {
-  std::ostringstream outstrm;
+  std::ostringstream out_stream;
   auto& pred = data.shared->pred.a_s;
   // correct indices: we want index relative to the original ccb multi-example,
   // with no actions filtered
-  outstrm << "a_s [";
-  for (const auto& action_score : pred) outstrm << action_score.action << ":" << action_score.score << ", ";
-  outstrm << "] ";
+  out_stream << "a_s [";
+  for (const auto& action_score : pred) out_stream << action_score.action << ":" << action_score.score << ", ";
+  out_stream << "] ";
 
-  outstrm << "excl [";
-  for (auto excl : data.exclude_list) outstrm << excl << ",";
-  outstrm << "] ";
+  out_stream << "excl [";
+  for (auto excl : data.exclude_list) out_stream << excl << ",";
+  out_stream << "] ";
 
-  return outstrm.str();
+  return out_stream.str();
 }
 
 // iterate over slots contained in the multi-example, and for each slot, build a cb example and perform a
@@ -384,7 +384,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
     {
       if (slot->l.conditional_contextual_bandit.outcome != nullptr &&
           slot->l.conditional_contextual_bandit.outcome->probabilities.empty())
-      { THROW("ccb_adf_explore: badly formatted example - missing label probability"); }
+      { THROW("ccb_adf_explore: badly formatted example - missing label probability") }
     }
   }
 
@@ -468,7 +468,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
       else
       {
         // the cb example contains no action => cannot decide
-        decision_scores.push_back(v_array<ACTION_SCORE::action_score>());
+        decision_scores.emplace_back();
         data.action_score_pool.acquire_object(*(decision_scores.end() - 1));
       }
 
@@ -534,31 +534,33 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
   }
 
   // Is it hold out?
-  size_t num_labelled = 0;
+  size_t num_labeled = 0;
   const auto& preds = ec_seq[0]->pred.decision_scores;
   for (size_t i = 0; i < slots.size(); i++)
   {
     auto* outcome = slots[i]->l.conditional_contextual_bandit.outcome;
     if (outcome != nullptr)
     {
-      num_labelled++;
+      num_labeled++;
       if (i == 0 || c.all_slots_loss_report)
       {
-        float l = CB_ALGS::get_cost_estimate(
+        const float l = CB_ALGS::get_cost_estimate(
             outcome->probabilities[TOP_ACTION_INDEX], outcome->cost, preds[i][TOP_ACTION_INDEX].action);
         loss += l * preds[i][TOP_ACTION_INDEX].score;
       }
     }
   }
 
-  if (num_labelled > 0 && num_labelled < slots.size())
-  { logger::errlog_warn("Unlabeled example in train set, was this intentional?"); }
+  if (num_labeled > 0 && num_labeled < slots.size())
+  {
+    logger::errlog_warn("Unlabeled example in train set, was this intentional?");
+  }
 
-  bool holdout_example = num_labelled > 0;
+  bool holdout_example = num_labeled > 0;
   for (const auto& example : ec_seq) { holdout_example &= example->test_only; }
 
   // TODO what does weight mean here?
-  all.sd->update(holdout_example, num_labelled > 0, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
+  all.sd->update(holdout_example, num_labeled > 0, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
   { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores); }
@@ -574,7 +576,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
-  for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_v_array(std::move(a_s), data.action_score_pool); }
+  for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_v_array(a_s, data.action_score_pool); }
   ec_seq[0]->pred.decision_scores.clear();
 
   VW::finish_example(all, ec_seq);
