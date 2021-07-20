@@ -196,14 +196,14 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
 
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::action_probs,
-        "cb_to_cb_adf", true);
+        all.get_setupfn_name(cb_to_cb_adf_setup), true);
   }
   else
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_adf"));
 
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass,
-        "cb_to_cb_adf", true);
+        all.get_setupfn_name(cb_to_cb_adf_setup), true);
   }
 
   l->set_finish_example(finish_example);

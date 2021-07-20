@@ -6,7 +6,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/rcv1_smaller.dat
 num sources = 1
-Enabled reductions: gd, scorer, memory_tree
+Enabled reductions: gd, scorer-identity, memory_tree
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0        1        0       50

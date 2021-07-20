@@ -10,7 +10,7 @@ on:
       - '*'
 
 jobs:
-  check:
+  check_valgrind:
     container:
       image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
