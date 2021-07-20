@@ -84,7 +84,7 @@ public:
   features& get_affix_fg() { return get_feature_group(_p_affix_feature_group, affix_namespace); }
   features& get_spelling_fg() { return get_feature_group(_p_spelling_feature_group, spelling_namespace); }
   features& get_dictionary_fg() { return get_feature_group(_p_dictionary_feature_group, dictionary_namespace); }
-  void set_current_fg(const VW::string_view& fg_name)
+  void set_current_fg(const VW::string_view fg_name)
   {
     _feature_group_name = fg_name;
     auto namespace_char = static_cast<unsigned char>(_feature_group_name[0]);
@@ -98,15 +98,16 @@ public:
   }
   void set_current_fg()
   {
-    _feature_group_name = " ";
-    _feature_group_char = ' ';
+    char default_namespace_str[] = {default_namespace,0};
+    _feature_group_name = default_namespace_str;
+    _feature_group_char = default_namespace;
     _hash = this->_hash_seed == 0 ? 0 : uniform_hash("", 0, this->_hash_seed);
     _p_current_feature_group = nullptr;  // reset cached feature group
     _affix = (*_affix_features)[_feature_group_char];
     _spelling = (*_spelling_features)[_feature_group_char];
     _namespace_dictionaries = &(*_namespace_dictionaries_map)[feature_group_char()];
   }
-  const VW::string_view& get_fg_name() const { return _feature_group_name; }
+  const VW::string_view get_fg_name() const { return _feature_group_name; }
   uint64_t get_affix_features() const { return _affix; }
   const bool is_spelling_feature_group() const { return _spelling; }
   const bool dictionary_exists() const { return !_namespace_dictionaries->empty(); }
