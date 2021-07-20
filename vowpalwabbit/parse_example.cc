@@ -344,7 +344,7 @@ public:
           affix_v.push_back('=');
           affix_v.insert(affix_v.end(), affix_name.begin(), affix_name.end());
           affix_v.push_back('\0');
-          affix_fs.space_names.emplace_back(audit_strings("affix", affix_v.begin()));
+          affix_fs.space_names.emplace_back("affix", affix_v.begin());
         }
         affix >>= 4;
       }
