@@ -575,7 +575,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   }
 }
 
-void del_features_in_top_namespace(search_private& /* priv */, example& ec, size_t ns)
+void del_features_in_top_namespace(search_private& /* priv */, example& ec, namespace_index ns)
 {
   if (std::find(ec.feature_space.indices().begin(), ec.feature_space.indices().end(), ns) ==
       ec.feature_space.indices().end())
@@ -604,7 +604,7 @@ void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
     for (size_t n_id = 0; n_id < priv.neighbor_features.size(); n_id++)
     {
       int32_t offset = priv.neighbor_features[n_id] >> 24;
-      size_t ns = priv.neighbor_features[n_id] & 0xFF;
+      const namespace_index ns = priv.neighbor_features[n_id] & 0xFF;
 
       priv.dat_new_feature_ec = &me;
       priv.dat_new_feature_value = 1.;

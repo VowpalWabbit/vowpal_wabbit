@@ -25,6 +25,7 @@
 #include "cache.h"
 #include "network.h"
 #include "reductions.h"
+#include "numeric_casts.h"
 
 using namespace VW::config;
 
@@ -56,12 +57,11 @@ void open_sockets(sender& s, std::string host)
 void send_features(io_buf* b, example& ec, uint32_t mask)
 {
   // note: subtracting 1 b/c not sending constant
-  output_byte(*b, static_cast<uint64_t>(ec.feature_space.size() - 1));
+  output_byte(*b, VW::cast_to_smaller_type<unsigned char>(ec.feature_space.size() - 1));
 
-  for (auto& bucket : ec.feature_space)
+  for (auto& group_list : ec.feature_space)
   {
-    for (auto it = bucket.begin(); it != bucket.end(); ++it)
-    { output_features(*b, it->index, it->hash, it->feats, mask); }
+    for (auto& ns_fs : group_list) { output_features(*b, ns_fs.index, ns_fs.hash, ns_fs.feats, mask); }
   }
 
   b->flush();
