@@ -162,37 +162,47 @@ bool FloatEqual(float a, float b)
   return abs(a - b) / std::max(a, b) < 1e-6;
 }
 
-System::String^ FormatFeatures(vw* vw, features& arr)
-{ auto sb = gcnew System::Text::StringBuilder();
-  for (size_t i = 0; i < arr.values.size(); i++)
-  { sb->Append(FormatFeature(vw, arr.values[i], arr.indicies[i]))->Append(" ");
-  }
-
+System::String ^
+    FormatFeatures(vw* vw, VW::namespaced_feature_store::index_flat_iterator begin,
+        VW::namespaced_feature_store::index_flat_iterator end) {
+      auto sb = gcnew System::Text::StringBuilder();
+      for (; begin != end; ++begin) { sb->Append(FormatFeature(vw, (*begin).value(), (*begin).index()))->Append(" "); }
   return sb->ToString();
 }
 
-System::String^ CompareFeatures(vw* vw, features& fa, features& fb, unsigned char ns)
-{ std::vector<size_t> fa_missing;
-  for (size_t ia = 0, ib = 0; ia < fa.values.size(); ia++)
-  { auto masked_weight_index = fa.indicies[ia] & vw->weights.mask();
-    auto other_masked_weight_index = fb.indicies[ib] & vw->weights.mask();
+System::String
+    ^
+    CompareFeatures(vw* vw, VW::namespaced_feature_store::index_flat_iterator fa_begin,
+        VW::namespaced_feature_store::index_flat_iterator fa_end,
+        VW::namespaced_feature_store::index_flat_iterator fb_begin,
+        VW::namespaced_feature_store::index_flat_iterator fb_end, unsigned char ns) {
+
+  std::vector<std::pair<uint64_t, float>> fa_missing;
+      for (; fa_begin != fa_end; ++fa_begin)
+  {
+        auto original_fb_begin = fb_begin;
+        auto masked_weight_index = (*fa_begin).index() & vw->weights.mask();
+    auto other_masked_weight_index = (*fb_begin).index() & vw->weights.mask();
 
     /*System::Diagnostics::Debug::WriteLine(System::String::Format("{0} -> {1} vs {2} -> {3}",
       fa.indicies[ia], masked_weight_index,
       fb.indicies[ib], other_masked_weight_index
       ));*/
 
-    if (masked_weight_index == other_masked_weight_index && FloatEqual(fa.values[ia], fb.values[ib]))
-      ib++;
+    if (masked_weight_index == other_masked_weight_index && FloatEqual((*fa_begin).value(), (*fb_begin).value()))
+      ++fb_begin;
     else
     { // fallback to search
-      size_t ib_old = ib;
       bool found = false;
-      for (ib = 0; ib < fb.values.size(); ib++)
-      { auto other_masked_weight_index = fb.indicies[ib] & vw->weights.mask();
+      for (auto inner_fb_begin = original_fb_begin; inner_fb_begin != fb_end; ++inner_fb_begin)
+      {
+        auto other_masked_weight_index = (*inner_fb_begin).index() & vw->weights.mask();
         if (masked_weight_index == other_masked_weight_index)
-        { if (!FloatEqual(fa.values[ia], fb.values[ib]))
-          { return FormatFeature(vw, fa.values[ia], fa.indicies[ia], fb.values[ib], fb.indicies[ib]);
+        {
+          if (!FloatEqual((*fa_begin).value(), (*inner_fb_begin).value()))
+          {
+            return FormatFeature(
+                vw, (*fa_begin).value(), (*fa_begin).index(), (*inner_fb_begin).value(), (*inner_fb_begin).index());
           }
           else
           { found = true;
@@ -201,21 +211,18 @@ System::String^ CompareFeatures(vw* vw, features& fa, features& fb, unsigned cha
         }
       }
 
-      if (!found)
-      { fa_missing.push_back(ia);
+      if (!found) { fa_missing.emplace_back((*fa_begin).index(), (*fa_begin).value());
       }
-
-      ib = ib_old + 1;
     }
   }
 
   if (!fa_missing.empty())
   { auto diff = gcnew System::Text::StringBuilder();
     diff->AppendFormat("missing features in ns '{0}'/'{1}': ", ns, gcnew Char(ns));
-    for (size_t& ia : fa_missing)
+    for (auto ia : fa_missing)
     { diff->AppendFormat("this.weight_index = {0}, x = {1}, ",
-                         fa.indicies[ia] & vw->weights.mask(),
-                         fa.values[ia]);
+                         ia.first & vw->weights.mask(),
+                         ia.second);
     }
 
     return diff->ToString();
@@ -255,18 +262,24 @@ System::String^ VowpalWabbitExample::Diff(VowpalWabbit^ vw, VowpalWabbitExample^
     }
 
     // compare features
-    features& fa = a->feature_space[*i];
-    features& fb = b->feature_space[*i];
+    //features& fa = a->feature_space[*i];
+    //features& fb = b->feature_space[*i];
+    auto fa_i_begin = a->feature_space.index_flat_begin(*i);
+    auto fa_i_end = a->feature_space.index_flat_end(*i);
+    auto fa_size = fa_i_end - fa_i_begin;
+    auto fb_i_begin = b->feature_space.index_flat_begin(*i);
+    auto fb_i_end = b->feature_space.index_flat_end(*i);
+    auto fb_size = fb_i_end - fb_i_begin;
 
-    if (fa.size() != fb.size())
-      return System::String::Format("Feature length differ {0} vs {1}. this({2}) vs other({3})",
-                                    fa.size(), fb.size(), FormatFeatures(vw->m_vw, fa), FormatFeatures(vw->m_vw, fb));
+    if (fa_size != fb_size)
+      return System::String::Format("Feature length differ {0} vs {1}. this({2}) vs other({3})", fa_size, fb_size,
+          FormatFeatures(vw->m_vw, fa_i_begin, fa_i_end), FormatFeatures(vw->m_vw, fb_i_begin, fb_i_end));
 
-    auto diff = CompareFeatures(vw->m_vw, fa, fb, *i);
+    auto diff = CompareFeatures(vw->m_vw, fa_i_begin, fa_i_end, fb_i_begin, fb_i_end, *i);
     if (diff != nullptr)
       return diff;
 
-    diff = CompareFeatures(vw->m_vw, fb, fa, *i);
+    diff = CompareFeatures(vw->m_vw, fb_i_begin, fb_i_end, fa_i_begin, fa_i_end, *i);
     if (diff != nullptr)
       return diff;
   }
@@ -336,28 +349,39 @@ IEnumerator<VowpalWabbitNamespace^>^ VowpalWabbitExample::GetEnumerator()
 
 VowpalWabbitExample::NamespaceEnumerator::NamespaceEnumerator(VowpalWabbitExample^ example)
   : m_example(example)
-{ Reset();
+{
+  m_current = nullptr;
+  m_end = new Holder<std::vector<namespace_index>::const_iterator>{m_example->m_example->indices.end()};
 }
 
 VowpalWabbitExample::NamespaceEnumerator::~NamespaceEnumerator()
-{ }
+{
+  delete m_current;
+  delete m_end;
+}
 
 bool VowpalWabbitExample::NamespaceEnumerator::MoveNext()
-{ m_current++;
-
-  return m_current < m_example->m_example->indices.end();
+{
+  if (m_current == nullptr)
+  {
+    m_current = new Holder<std::vector<namespace_index>::const_iterator>{m_example->m_example->indices.begin()};
+  }
+  else
+  {
+    m_current->value.operator++();
+  }
+  return m_current->value != m_end->value;
 }
 
 void VowpalWabbitExample::NamespaceEnumerator::Reset()
-{ // position before the beginning.
-  m_current = m_example->m_example->indices.begin() - 1;
+{
+  delete m_current;
+  m_current = nullptr;
 }
 
 VowpalWabbitNamespace^ VowpalWabbitExample::NamespaceEnumerator::Current::get()
-{ if (m_current < m_example->m_example->indices.begin() || m_current >= m_example->m_example->indices.end())
-    throw gcnew InvalidOperationException();
-
-  return gcnew VowpalWabbitNamespace(m_example, *m_current, &m_example->m_example->feature_space[*m_current]);
+{
+  return gcnew VowpalWabbitNamespace(m_example, *m_current->value);
 }
 
 System::Object^ VowpalWabbitExample::NamespaceEnumerator::IEnumeratorCurrent::get()
@@ -418,8 +442,8 @@ int VowpalWabbitFeature::GetHashCode()
 }
 
 
-VowpalWabbitNamespace::VowpalWabbitNamespace(VowpalWabbitExample^ example, namespace_index ns, features* features)
-  : m_example(example), m_ns(ns), m_features(features)
+VowpalWabbitNamespace::VowpalWabbitNamespace(VowpalWabbitExample^ example, namespace_index ns)
+  : m_example(example), m_ns(ns)
 { }
 
 VowpalWabbitNamespace::~VowpalWabbitNamespace()
@@ -434,31 +458,41 @@ System::Collections::IEnumerator^ VowpalWabbitNamespace::EnumerableGetEnumerator
 }
 
 IEnumerator<VowpalWabbitFeature^>^ VowpalWabbitNamespace::GetEnumerator()
-{ return gcnew FeatureEnumerator(m_example, m_features);
+{ return gcnew FeatureEnumerator(m_example, m_ns);
 }
 
-VowpalWabbitNamespace::FeatureEnumerator::FeatureEnumerator(VowpalWabbitExample^ example, features* features)
-  : m_example(example), m_features(features), m_iterator(nullptr)
-{ m_end = new Holder<features::iterator> { features->end() };
+VowpalWabbitNamespace::FeatureEnumerator::FeatureEnumerator(VowpalWabbitExample^ example, namespace_index ns_index)
+    : m_example(example), m_ns(ns_index)
+{
+  m_current = nullptr;
+  m_end = new Holder<VW::namespaced_feature_store::index_flat_iterator>{
+      example->m_example->feature_space.index_flat_end(ns_index)};
 }
 
 VowpalWabbitNamespace::FeatureEnumerator::~FeatureEnumerator()
 { delete m_end;
-  delete m_iterator;
+  delete m_current;
 }
 
 void VowpalWabbitNamespace::FeatureEnumerator::Reset()
-{ delete m_iterator;
-  m_iterator = nullptr;
+{
+  delete m_current;
+  m_current = nullptr;
 }
 
 bool VowpalWabbitNamespace::FeatureEnumerator::MoveNext()
-{ if (m_iterator)
-    ++m_iterator->value;
+{
+  if (m_current == nullptr)
+  {
+    m_current = new Holder<VW::namespaced_feature_store::index_flat_iterator>{
+        m_example->m_example->feature_space.index_flat_begin(m_ns)};
+  }
   else
-    m_iterator = new Holder<features::iterator> { m_features->begin() };
+  {
+    ++m_current->value;
+  }
 
-  return m_iterator->value != m_end->value;
+  return m_current->value != m_end->value;
 }
 
 System::Object^ VowpalWabbitNamespace::FeatureEnumerator::IEnumeratorCurrent::get()
@@ -466,9 +500,8 @@ System::Object^ VowpalWabbitNamespace::FeatureEnumerator::IEnumeratorCurrent::ge
 }
 
 VowpalWabbitFeature^ VowpalWabbitNamespace::FeatureEnumerator::Current::get()
-{ if (!m_iterator || m_iterator->value == m_end->value)
-    throw gcnew InvalidOperationException();
-
-  return gcnew VowpalWabbitFeature(m_example, m_iterator->value.value(), m_iterator->value.index());
+{
+  return gcnew VowpalWabbitFeature(
+      m_example, m_current->value.operator*().value(), m_current->value.operator*().index());
 }
 }

@@ -57,10 +57,11 @@ VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Char feat
 }
 
 VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Byte featureGroup)
-{ uint32_t index = featureGroup;
+{ namespace_index index = featureGroup;
   example* ex = m_example->m_example;
 
-  return gcnew VowpalWabbitNamespaceBuilder(ex->feature_space.data() + index, featureGroup, m_example->m_example);
+  auto* fs = &ex->feature_space.get_or_create(index, index);
+  return gcnew VowpalWabbitNamespaceBuilder(fs, featureGroup, m_example->m_example);
 }
 
 VowpalWabbitNamespaceBuilder::VowpalWabbitNamespaceBuilder(features* features,
@@ -74,17 +75,11 @@ VowpalWabbitNamespaceBuilder::~VowpalWabbitNamespaceBuilder()
 }
 
 VowpalWabbitNamespaceBuilder::!VowpalWabbitNamespaceBuilder()
-{ if (m_features->size() > 0)
-  { unsigned char temp = m_index;
-
-    // avoid duplicate insertion
-    // can't check at the beginning, because multiple builders can be open
-    // at the same time
-    for (unsigned char ns : m_example->indices)
-      if (ns == temp)
-        return;
-
-    m_example->indices.push_back(temp);
+{
+  // If it was created but unused. Remove it.
+  if (m_features->size() == 0)
+  {
+    m_example->feature_space.remove(m_index, m_index);
   }
 }
 

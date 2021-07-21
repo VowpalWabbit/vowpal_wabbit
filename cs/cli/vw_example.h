@@ -1,4 +1,4 @@
-﻿// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
@@ -68,12 +68,11 @@ private:
   {
   private:
     VowpalWabbitExample^ m_example;
-    features* m_features;
-    Holder<features::iterator>* m_iterator;
-    Holder<features::iterator>* m_end;
+    namespace_index m_ns;
+    Holder<VW::namespaced_feature_store::index_flat_iterator>* m_current;
+    Holder<VW::namespaced_feature_store::index_flat_iterator>* m_end;
 
-  internal:
-    FeatureEnumerator(VowpalWabbitExample^ example, features* features);
+    internal : FeatureEnumerator(VowpalWabbitExample ^ example, namespace_index ns);
     ~FeatureEnumerator();
 
     property System::Object^ IEnumeratorCurrent
@@ -91,15 +90,14 @@ private:
   };
 
   namespace_index m_ns;
-  features* m_features;
   VowpalWabbitExample^ m_example;
 
-  property System::Collections::IEnumerator^ EnumerableGetEnumerator
-  { virtual System::Collections::IEnumerator^ get() sealed = System::Collections::IEnumerable::GetEnumerator;
-  }
+  property System::Collections::IEnumerator ^
+      EnumerableGetEnumerator {
+        virtual System::Collections::IEnumerator ^ get() sealed = System::Collections::IEnumerable::GetEnumerator;
+      }
 
-public:
-  VowpalWabbitNamespace(VowpalWabbitExample^ m_example, namespace_index ns, features* features);
+      public : VowpalWabbitNamespace(VowpalWabbitExample ^ m_example, namespace_index ns);
   ~VowpalWabbitNamespace();
 
   property namespace_index Index
@@ -130,10 +128,11 @@ private:
   {
   private:
     VowpalWabbitExample^ m_example;
-    namespace_index* m_current;
+    namespace_index ns_index;
+    Holder<std::vector<namespace_index>::const_iterator>* m_current;
+    Holder<std::vector<namespace_index>::const_iterator>* m_end;
 
-  internal:
-    NamespaceEnumerator(VowpalWabbitExample^ example);
+    internal : NamespaceEnumerator(VowpalWabbitExample ^ example);
     ~NamespaceEnumerator();
 
     property System::Object^ IEnumeratorCurrent
