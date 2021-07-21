@@ -18,20 +18,14 @@ void all_reduce(vw& all, T* buffer, const size_t n)
     case AllReduceType::Socket:
     {
       auto* all_reduce_sockets_ptr = dynamic_cast<AllReduceSockets*>(all.all_reduce);
-      if (all_reduce_sockets_ptr == nullptr)
-      {
-        THROW("all_reduce was not a AllReduceSockets* object")
-      }
+      if (all_reduce_sockets_ptr == nullptr) { THROW("all_reduce was not a AllReduceSockets* object") }
       all_reduce_sockets_ptr->all_reduce<T, f>(buffer, n);
       break;
     }
     case AllReduceType::Thread:
     {
       auto* all_reduce_threads_ptr = dynamic_cast<AllReduceThreads*>(all.all_reduce);
-      if (all_reduce_threads_ptr == nullptr)
-      {
-        THROW("all_reduce was not a AllReduceThreads* object")
-      }
+      if (all_reduce_threads_ptr == nullptr) { THROW("all_reduce was not a AllReduceThreads* object") }
       all_reduce_threads_ptr->all_reduce<T, f>(buffer, n);
       break;
     }

@@ -494,8 +494,10 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
     }
   }
   b.nodes[cn].examples_index.clear();                                                    // empty the cn's example list
-  b.nodes[cn].nl = std::max(static_cast<double>(b.nodes[left_child].examples_index.size()), 0.001);   // avoid to set nl to zero
-  b.nodes[cn].nr = std::max(static_cast<double>(b.nodes[right_child].examples_index.size()), 0.001);  // avoid to set nr to zero
+  b.nodes[cn].nl =
+      std::max(static_cast<double>(b.nodes[left_child].examples_index.size()), 0.001);  // avoid to set nl to zero
+  b.nodes[cn].nr =
+      std::max(static_cast<double>(b.nodes[right_child].examples_index.size()), 0.001);  // avoid to set nr to zero
 
   if (std::max(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
   { b.max_ex_in_leaf = static_cast<size_t>(std::max(b.nodes[cn].nl, b.nodes[cn].nr)); }
@@ -792,7 +794,8 @@ void learn_at_leaf_random(
   float reward = 0.f;
   if (b.nodes[leaf_id].examples_index.size() > 0)
   {
-    uint32_t pos = static_cast<uint32_t>(b._random_state->get_and_update_random() * b.nodes[leaf_id].examples_index.size());
+    uint32_t pos =
+        static_cast<uint32_t>(b._random_state->get_and_update_random() * b.nodes[leaf_id].examples_index.size());
     ec_id = b.nodes[leaf_id].examples_index[pos];
   }
   if (ec_id != -1)
