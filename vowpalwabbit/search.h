@@ -100,7 +100,7 @@ struct search
   template <class T>
   T* get_metatask_data()
   {
-    return (T*)metatask_data;
+    return static_cast<T*>(metatask_data);
   }
 
   // for setting programmatic options during initialization
