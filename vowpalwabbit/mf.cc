@@ -70,7 +70,7 @@ void predict(mf& data, single_learner& base, example& ec)
     auto& left_ns_fs = all_features.get_list(left_ns);
     auto& right_ns_fs = all_features.get_list(right_ns);
 
-    if (!left_ns_fs.empty() > 0 && !right_ns_fs.empty())
+    if (!left_ns_fs.empty() && !right_ns_fs.empty())
     {
       for (size_t k = 1; k <= data.rank; k++)
       {
@@ -132,7 +132,7 @@ void learn(mf& data, single_learner& base, example& ec)
     auto& left_ns_fs = all_features.get_list(left_ns);
     auto& right_ns_fs = all_features.get_list(right_ns);
 
-    if (!left_ns_fs.empty() > 0 && !right_ns_fs.empty())
+    if (!left_ns_fs.empty() && !right_ns_fs.empty())
     {
       // TODO: Work out a way to not have to make copies to make this work
       for (const auto& ns_fs : left_ns_fs) { ec.feature_space.get_or_create(left_ns, left_ns).concat(ns_fs.feats); }
