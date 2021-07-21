@@ -109,7 +109,6 @@ set(vw_all_headers
   example.h
   explore_eval.h
   expreplay.h
-  ezexample.h
   fast_pow10.h
   feature_group.h
   ftrl.h
