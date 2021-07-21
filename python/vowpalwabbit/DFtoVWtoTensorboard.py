@@ -23,6 +23,7 @@ class VWtoTensorboard:
 		self.file_writer = tx.SummaryWriter(logdir, flush_secs=30)   # creating file writer
 		self.iteration = 0   # This would keep value of current iteration 
 
+
 	def emit_learning_metrics(self, average_loss, since_last):
 		"""This method for now logs the metrics given as arguments for Tensorboard visualization
 
@@ -42,6 +43,7 @@ class VWtoTensorboard:
 		self.file_writer.add_scalar('average_loss', average_loss, self.iteration)  # logging average_loss on each iteration
 		self.file_writer.add_scalar('since_last', since_last, self.iteration)   # logging since_last on each iteration
 		self.iteration += 1  # Now increment this as the incremented value is for next iteration
+
 
 	def draw_reductions_graph(self, vw):
 		"""This method draws vw model's reductions as graph for Tensorboard visualization
@@ -69,6 +71,23 @@ class VWtoTensorboard:
 		g = GraphDef(node=nodes)
 		event = event_pb2.Event(graph_def=g.SerializeToString())
 		self.file_writer._get_file_writer().add_event(event)
+
+
+	def show_args_as_text(self, vw):
+		"""This method adds vw arguments when model is initialized as text in tensorboard
+
+		Parameters
+		----------
+
+		vw    : A vowpalwabbit object
+				This would be used to get the arguments
+
+		Returns
+		-------
+
+		None
+		"""
+		self.file_writer.add_text("command line arguments", vw.get_arguments())
 
 
 class DFtoVWtoTensorboard:
