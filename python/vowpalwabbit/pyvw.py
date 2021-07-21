@@ -1433,7 +1433,7 @@ class example(pylibvw.example):
         """
         if self.setup_done:
             self.unsetup_example()
-        pylibvw.example.push_hashed_feature(self, self.get_ns(ns).ord_ns, f, v)
+        pylibvw.example.push_hashed_feature(self, self.vw, self.get_ns(ns).ord_ns, f, v)
 
     def push_feature(self, ns, feature, v=1.0, ns_hash=None):
         """Add an unhashed feature to a given namespace
@@ -1487,7 +1487,21 @@ class example(pylibvw.example):
         """
         if self.setup_done:
             self.unsetup_example()
-        pylibvw.example.push_namespace(self, self.get_ns(ns).ord_ns)
+        pylibvw.example.push_namespace(self, self.vw, self.get_ns(ns).ord_ns)
+
+    def erase_namespace(self, ns):
+        """Remove all the features from a given namespace
+
+        Parameters
+        ----------
+
+        ns : namespace
+            namespace which is to be removed
+            
+        """
+        if self.setup_done:
+            self.unsetup_example()
+        return pylibvw.example.erase_namespace(self, self.get_ns(ns).ord_ns)
 
     def pop_namespace(self):
         """Remove the top namespace from an example
@@ -1515,7 +1529,7 @@ class example(pylibvw.example):
         if self.setup_done:
             self.unsetup_example()
         return pylibvw.example.ensure_namespace_exists(
-            self, self.get_ns(ns).ord_ns
+            self, self.vw, self.get_ns(ns).ord_ns
         )
 
     def push_features(self, ns, featureList):
@@ -1591,4 +1605,3 @@ class example(pylibvw.example):
             simple_label
         """
         return label_class(self)
-
