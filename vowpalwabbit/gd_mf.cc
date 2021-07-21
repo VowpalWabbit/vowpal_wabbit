@@ -254,7 +254,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
         // l^k \cdot x_l
         float l_dot_x = d.scalars[2 * k - 1];
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
-        for (auto& second_ns_features : ec.feature_space.get_list(i[0]))
+        for (auto& second_ns_features : ec.feature_space.get_list(i[1]))
         { sd_offset_update<T>(weights, second_ns_features.feats, k + d.rank, update * l_dot_x, regularization); }
       }
     }
