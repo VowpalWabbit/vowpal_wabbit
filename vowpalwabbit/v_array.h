@@ -56,7 +56,7 @@ private:
     if (capacity() == length || length == 0) { return; }
     const size_t old_len = size();
 
-    T* temp = reinterpret_cast<T*>(std::realloc(_begin, sizeof(T) * length));
+    T* temp = static_cast<T*>(std::realloc(_begin, sizeof(T) * length));
     if (temp == nullptr)
     { THROW_OR_RETURN("realloc of " << length << " failed in reserve_nocheck().  out of memory?"); }
     else

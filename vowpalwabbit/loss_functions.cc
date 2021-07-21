@@ -36,8 +36,8 @@ public:
     else if (label == sd->max_label)
       return 0.;
     else
-      return float((sd->max_label - label) * (sd->max_label - label) +
-          2. * (sd->max_label - label) * (prediction - sd->max_label));
+      return static_cast<float>((sd->max_label - label) * (sd->max_label - label) +
+        2. * (sd->max_label - label) * (prediction - sd->max_label));
   }
 
   float getUpdate(float prediction, float label, float update_scale, float pred_per_update)
