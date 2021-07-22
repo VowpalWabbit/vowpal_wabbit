@@ -172,40 +172,14 @@ public:
     (--_end)->~T();
   }
 
-  VW_DEPRECATED("v_array::pop() is deprecated. Use pop_back(). This will be removed in VW 9.0.")
-  T pop()
-  {
-    T ret = back();
-    pop_back();
-    return ret;
-  }
-
-  VW_DEPRECATED("v_array::last() is deprecated. Use back(). This will be removed in VW 9.0.")
-  T last() const { return *(_end - 1); }
-
   bool empty() const { return _begin == _end; }
 
-  VW_DEPRECATED("v_array::decr() is deprecated. Use pop_back(). This will be removed in VW 9.0.")
-  void decr() { _end--; }
-
-  VW_DEPRECATED("v_array::incr() is deprecated. Use push_back(). This will be removed in VW 9.0.")
-  void incr()
-  {
-    if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
-    _end++;
-  }
   T& operator[](size_t i) const { return _begin[i]; }
   inline size_t size() const { return _end - _begin; }
   inline size_t capacity() const { return _end_array - _begin; }
 
-  // maintain the original (deprecated) interface for compatibility. To be removed in VW 10
-  VW_DEPRECATED(
-      "v_array::resize() is deprecated. Use reserve() instead. For standard resize behavior, use "
-      "resize_but_with_stl_behavior(). This will be removed in VW 9.0.")
-  void resize(size_t length) { reserve_nocheck(length); }
-
   // change the number of elements in the vector
-  // to be renamed to resize() in VW 10
+  // to be renamed to resize() in VW 9
   void resize_but_with_stl_behavior(size_t length)
   {
     auto old_size = size();
@@ -335,9 +309,6 @@ public:
     std::copy(first, last, begin() + idx);
   }
 
-  VW_DEPRECATED("Use destructor instead. This will be removed in VW 9.0.")
-  void delete_v() { delete_v_array(); }
-
   void push_back(const T& new_ele)
   {
     if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
@@ -352,135 +323,7 @@ public:
     if (_end == _end_array) reserve_nocheck(2 * capacity() + 3);
     new (_end++) T(std::forward<Args>(args)...);
   }
-
-  VW_DEPRECATED("Use std::lower_bound instead. This will be removed in VW 9.0.")
-  size_t find_sorted(const T& ele) const  // index of the smallest element >= ele, return true if element is in the
-                                          // array
-  {
-    size_t size = _end - _begin;
-    size_t a = 0;
-    size_t b = size;
-    size_t i = (a + b) / 2;
-
-    while (b - a > 1)
-    {
-      if (_begin[i] < ele)  // if a = 0, size = 1, if in while we have b - a >= 1 the loop is infinite
-        a = i;
-      else if (_begin[i] > ele)
-        b = i;
-      else
-        return i;
-
-      i = (a + b) / 2;
-    }
-
-    if ((size == 0) || (_begin[a] > ele) || (_begin[a] == ele))  // pusta tablica, nie wchodzi w while
-      return a;
-    else  // size = 1, ele = 1, _begin[0] = 0
-      return b;
-  }
-
-  VW_DEPRECATED("Use insert and std::upper_bound instead. This will be removed in VW 9.0.")
-  size_t unique_add_sorted(const T& new_ele)
-  {
-    size_t index = 0;
-    size_t size = _end - _begin;
-    size_t to_move;
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_DEPRECATED_USAGE
-    if (!contain_sorted(new_ele, index))
-    {
-      if (_end == _end_array) { reserve_nocheck(2 * capacity() + 3); }
-
-      to_move = size - index;
-
-      if (to_move > 0)
-      {
-        memmove(_begin + index + 1, _begin + index,
-            to_move * sizeof(T));  // kopiuje to_move*.. bytow z _begin+index do _begin+index+1
-      }
-
-      _begin[index] = new_ele;
-
-      _end++;
-    }
-    VW_WARNING_STATE_POP
-
-    return index;
-  }
-
-  VW_DEPRECATED("Use std::lower_bound instead. This will be removed in VW 9.0.")
-  bool contain_sorted(const T& ele, size_t& index)
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_DEPRECATED_USAGE
-    index = find_sorted(ele);
-    VW_WARNING_STATE_POP
-
-    if (index == this->size()) return false;
-
-    if (_begin[index] == ele) return true;
-
-    return false;
-  }
 };
-
-template <class T>
-VW_DEPRECATED("Use v_array's constructor directly instead. This will be removed in VW 9.0.")
-inline v_array<T> v_init()
-{
-  return v_array<T>();
-}
-
-template <class T>
-VW_DEPRECATED("Use v_array's copy constructor or assignment directly instead. This will be removed in VW 9.0.")
-void copy_array(v_array<T>& dst, const v_array<T>& src)
-{
-  dst = src;
-}
-
-template <class T>
-VW_DEPRECATED("Use v_array's copy constructor or assignment directly instead. This will be removed in VW 9.0.")
-void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src)
-{
-  dst.clear();
-  for (const auto& item : src) { dst.push_back(item); }
-}
-
-template <class T>
-VW_DEPRECATED("Use v_array's copy constructor directly instead. This will be removed in VW 9.0.")
-void copy_array(v_array<T>& dst, const v_array<T>& src, T (*copy_item)(const T&))
-{
-  dst.clear();
-  for (const auto& item : src) { dst.push_back(copy_item(*item)); }
-}
-
-template <class T>
-VW_DEPRECATED("Use v_array::insert instead. This will be removed in VW 9.0.")
-void push_many(v_array<T>& v, const T* src, size_t num)
-{
-  v.insert(v.end(), src, src + num);
-}
-
-template <class T>
-VW_DEPRECATED(
-    "calloc_reserve is no longer supported. You should use appropriate constructors instead. This will be removed in "
-    "VW 9.0.")
-void calloc_reserve(v_array<T>& v, size_t length)
-{
-  v.clear();
-  v.reserve(length);
-  std::memset(v.begin(), 0, length * sizeof(T));
-}
-
-template <class T>
-VW_DEPRECATED("Use std::find instead. This will be removed in VW 9.0.")
-bool v_array_contains(const v_array<T>& A, T x)
-{
-  for (auto e = A.cbegin(); e != A.cend(); ++e)
-    if (*e == x) return true;
-  return false;
-}
 
 template <class T>
 std::ostream& operator<<(std::ostream& os, const v_array<T>& v)
@@ -499,39 +342,3 @@ std::ostream& operator<<(std::ostream& os, const v_array<std::pair<T, U> >& v)
   os << " ]";
   return os;
 }
-
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-
-template <class T>
-VW_DEPRECATED("pop is deprecated and will be removed in a future version. This will be removed in VW 9.0.")
-v_array<T> pop(v_array<v_array<T> >& stack)
-{
-  if (stack.size() > 0)
-  {
-    stack.pop_back();
-    return stack.back();
-  }
-  return v_array<T>();
-}
-
-VW_DEPRECATED("v_string is deprecated and will be removed in a future version. This will be removed in VW 9.0.")
-typedef v_array<unsigned char> v_string;
-
-VW_DEPRECATED("string2v_string is deprecated and will be removed in a future version. This will be removed in VW 9.0.")
-inline v_string string2v_string(const std::string& s)
-{
-  v_string res;
-  if (!s.empty()) { res.insert(res.end(), s.begin(), s.end()); }
-  return res;
-}
-
-VW_DEPRECATED("v_string2string is deprecated and will be removed in a future version. This will be removed in VW 9.0.")
-inline std::string v_string2string(const v_string& v_s)
-{
-  std::string res;
-  for (auto i = v_s.cbegin(); i != v_s.cend(); ++i) res.push_back(*i);
-  return res;
-}
-
-VW_WARNING_STATE_POP
