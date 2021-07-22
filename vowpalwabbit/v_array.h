@@ -14,6 +14,7 @@
 #include <ostream>
 #include <string>
 #include <utility>
+#include <type_traits>
 
 #ifndef VW_NOEXCEPT
 #  include "vw_exception.h"
@@ -45,13 +46,13 @@ struct v_array<T, typename std::enable_if<std::is_trivially_copyable<T>::value>:
 private:
   static constexpr size_t ERASE_POINT = ~((1u << 10u) - 1u);
 
-  template <typename S, std::enable_if_t<std::is_trivially_destructible<S>::value, bool> = true>
+  template <typename S, typename std::enable_if<std::is_trivially_destructible<S>::value, bool>::type = true>
   static void destruct_item(S*)
   {
     // If S is trivially destructive nothing needs to be done.
   }
 
-  template <typename S, std::enable_if_t<!std::is_trivially_destructible<S>::value, bool> = true>
+  template <typename S, typename std::enable_if<!std::is_trivially_destructible<S>::value, bool>::type = true>
   static void destruct_item(S* ptr)
   {
     ptr->~S();
