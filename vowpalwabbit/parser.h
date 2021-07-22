@@ -42,7 +42,7 @@ struct parser
       , finished_examples(0)
       , num_parse_threads{num_parse_threads}
       , strict_parse{strict_parse_}
-      , io_lines{100000}
+      , io_lines{10000005}
   {
     this->input = VW::make_unique<io_buf>();
     this->output = VW::make_unique<io_buf>();

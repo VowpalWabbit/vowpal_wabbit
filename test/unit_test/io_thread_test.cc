@@ -9,6 +9,7 @@
 
 #include <queue>
 #include <chrono>
+#include <fstream>
 
 #include "parse_example.cc"
 #include "io_to_queue.h"
@@ -18,6 +19,19 @@
 
 // Initial, const copy of input for comparison
 const std::vector<std::string> global_input = {"0 | price:.23 sqft:.25 age:.05 2006", "1 | price:.18 sqft:.15 age:.35 1976", "0 | price:.53 sqft:.32 age:.87 1924", "0 | price:.23 sqft:.25 age:.05 2006"};
+
+std::string read_string_from_file(const std::string &file_path) {
+    const std::ifstream input_stream(file_path, std::ios_base::binary);
+
+    if (input_stream.fail()) {
+        throw std::runtime_error("Failed to open file");
+    }
+
+    std::stringstream buffer;
+    buffer << input_stream.rdbuf();
+
+    return buffer.str();
+}
 
 void sleep_random_amt_of_time(){
 
@@ -111,12 +125,9 @@ BOOST_AUTO_TEST_CASE(empty_io_test)
 
 BOOST_AUTO_TEST_CASE(io_lines_capture_test_single_thread)
 {
-    vw* vw = VW::initialize("--no_stdin --quiet", nullptr , false, nullptr, nullptr);
+    vw* vw = VW::initialize("--no_stdin --quiet --ring_size=1005", nullptr , false, nullptr, nullptr);
 
-    std::string text = R"(0 | price:.23 sqft:.25 age:.05 2006  
-    1 | price:.18 sqft:.15 age:.35 1976
-    0 | price:.53 sqft:.32 age:.87 1924
-    0 | price:.23 sqft:.25 age:.05 2006)";
+    std::string text = read_string_from_file("/home/nishantkr18/vowpal_wabbit/test/train-sets/0002.dat");
 
     // add input as buffer_view so parses line by line
     vw->example_parser->input->add_file(VW::io::create_buffer_view(text.data(), text.size()));
@@ -124,7 +135,7 @@ BOOST_AUTO_TEST_CASE(io_lines_capture_test_single_thread)
     char* line;
     while(!vw->example_parser->input_file_reader(*vw, line)){}
 
-    BOOST_CHECK_EQUAL(vw->example_parser->io_lines.size(), 5);
+    BOOST_CHECK_EQUAL(vw->example_parser->io_lines.size(), 1001);
 
     // Capturing the io_lines queue.
     while(vw->example_parser->io_lines.size())
@@ -135,7 +146,7 @@ BOOST_AUTO_TEST_CASE(io_lines_capture_test_single_thread)
         capture_io_lines_items(*vw, io_lines_next_item, examples);
     }
 
-    BOOST_CHECK_EQUAL(vw->example_parser->ready_parsed_examples.size(), 5);
+    BOOST_CHECK_EQUAL(vw->example_parser->ready_parsed_examples.size(), 1001);
 
     while(vw->example_parser->ready_parsed_examples.size())
     {
@@ -148,6 +159,67 @@ BOOST_AUTO_TEST_CASE(io_lines_capture_test_single_thread)
 
     VW::finish(*vw);
 }
+
+void run_parser_n_threads(size_t num_parse_threads)
+{
+    using namespace std::chrono;
+
+    vw* vw = VW::initialize("--no_stdin --quiet", nullptr , false, nullptr, nullptr);
+    {
+        auto start = high_resolution_clock::now();
+
+        std::string text = read_string_from_file("/home/nishantkr18/0002_million.dat");
+        // add input as buffer_view so parses line by line
+        vw->example_parser->input->add_file(VW::io::create_buffer_view(text.data(), text.size()));
+
+        char* line;
+        while(!vw->example_parser->input_file_reader(*vw, line)){}
+
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(stop - start);
+        std::cout << "Time taken to read (io_thread): " << duration.count()/1000000.0 << " seconds" << std::endl;
+    }
+    // BOOST_CHECK_EQUAL(vw->example_parser->io_lines.size(), 1001);
+    size_t count = vw->example_parser->io_lines.size();
+    std::thread mock_learner([&vw, &count]() 
+    {
+        while(count--)
+        {
+            auto ev = VW::get_example(vw->example_parser);
+            auto ec = (*ev)[0];
+            VW::finish_example(*vw, *ec);
+            VW::finish_example_vector(*vw, *ev);
+        }
+        set_done(*vw);
+    });
+    auto start = high_resolution_clock::now();
+
+    vw->example_parser->num_parse_threads = num_parse_threads;
+    VW::start_parser(*vw);
+    VW::end_parser(*vw);
+
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    std::cout << "Total Time taken: " << duration.count()/1000000.0 << " seconds, by parser_threads = " << num_parse_threads << std::endl;
+
+    mock_learner.join();
+
+    VW::finish(*vw);
+}
+
+BOOST_AUTO_TEST_CASE(measuring_parser_time)
+{
+   run_parser_n_threads(1);
+   run_parser_n_threads(2);
+   run_parser_n_threads(3);
+   run_parser_n_threads(4);
+   run_parser_n_threads(5);
+   run_parser_n_threads(6);
+   run_parser_n_threads(7);
+   run_parser_n_threads(8);
+}
+
+
 
 // BOOST_AUTO_TEST_CASE(mock_out_pop_io)
 // {
