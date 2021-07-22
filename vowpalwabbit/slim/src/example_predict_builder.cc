@@ -6,7 +6,7 @@ namespace vw_slim
 {
 example_predict_builder::example_predict_builder(
     example_predict* ex, const char* namespace_name, uint32_t feature_index_num_bits)
-    : _ex(ex), _namespace_idx(namespace_idx)
+    : _ex(ex), _namespace_idx(namespace_name[0])
 {
   _feature_index_bit_mask = ((uint64_t)1 << feature_index_num_bits) - 1;
   _namespace_hash = hashstring(namespace_name, strlen(namespace_name), 0);
