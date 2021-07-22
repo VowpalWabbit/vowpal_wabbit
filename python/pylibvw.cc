@@ -554,10 +554,7 @@ uint32_t ex_num_features(example_ptr ec, namespace_index idx)
 {
   auto& fs = ec->feature_space;
   uint32_t ret = 0;
-  for (const auto& nsf : fs.get_list(idx))
-  {
-    ret += nsf.feats.size();
-  }
+  for (const auto& nsf : fs.get_list(idx)) { ret += nsf.feats.size(); }
   return ret;
 }
 
@@ -581,10 +578,7 @@ float ex_sum_feat_sq(example_ptr ec, namespace_index idx)
 {
   auto& fs = ec->feature_space;
   uint32_t ret = 0;
-  for (const auto& nsf : fs.get_list(idx))
-  {
-    ret += nsf.feats.sum_feat_sq;
-  }
+  for (const auto& nsf : fs.get_list(idx)) { ret += nsf.feats.sum_feat_sq; }
   return ret;
 }
 
@@ -663,10 +657,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, namespace_index idx, py::li
       if (got)
       {
         auto& nsf_list = ec->feature_space.get_list(idx);
-        if (nsf_list.size() == 0)
-        {
-          ec->feature_space.get_or_create(idx, ns_hash);
-        }
+        if (nsf_list.size() == 0) { ec->feature_space.get_or_create(idx, ns_hash); }
         nsf_list.back().feats.push_back(f.x, f.weight_index);
         count++;
       }
@@ -708,7 +699,7 @@ bool ex_pop_feature(example_ptr ec, namespace_index idx)
   auto& fs = ec->feature_space;
   auto& nsf_list = fs.get_list(idx);
   features* fg = nullptr;
-  for (auto rit=nsf_list.rbegin(); rit != nsf_list.rend(); ++rit)
+  for (auto rit = nsf_list.rbegin(); rit != nsf_list.rend(); ++rit)
   {
     if (rit->feats.size() > 0)
     {
@@ -736,10 +727,7 @@ void ex_erase_namespace(example_ptr ec, namespace_index idx)
     ec->num_features -= nsf.feats.size();
     bad_hashes.push_back(nsf.hash);
   }
-  for (auto& bad_hash : bad_hashes)
-  {
-    fs.remove(idx, bad_hash);
-  }
+  for (auto& bad_hash : bad_hashes) { fs.remove(idx, bad_hash); }
   ec->reset_total_sum_feat_sq();
 }
 
@@ -755,10 +743,7 @@ bool ex_pop_namespace(example_ptr ec)
     ec->num_features -= nsf.feats.size();
     bad_hashes.push_back(nsf.hash);
   }
-  for (auto& bad_hash : bad_hashes)
-  {
-    fs.remove(idx, bad_hash);
-  }
+  for (auto& bad_hash : bad_hashes) { fs.remove(idx, bad_hash); }
   ec->reset_total_sum_feat_sq();
   return true;
 }
@@ -778,10 +763,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   if (all.skip_gram_transformer != nullptr && !all.skip_gram_transformer->get_initial_ngram_definitions().empty())
   { THROW("error: cannot unsetup example when ngrams are in use!"); }
 
-  if (all.add_constant)
-  {
-    ex_erase_namespace(ae, constant_namespace);
-  }
+  if (all.add_constant) { ex_erase_namespace(ae, constant_namespace); }
 
   uint32_t multiplier = all.wpp << all.weights.stride_shift();
   if (multiplier != 1)  // make room for per-feature information.
@@ -790,10 +772,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     {
       for (auto& nsf : group_list)
       {
-        for (auto& idx : nsf.feats.indicies)
-        {
-          idx /= multiplier;
-        }
+        for (auto& idx : nsf.feats.indicies) { idx /= multiplier; }
       }
     }
   }
