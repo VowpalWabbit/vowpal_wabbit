@@ -6,26 +6,19 @@ namespace vw_slim
 {
 example_predict_builder::example_predict_builder(
     example_predict* ex, const char* namespace_name, uint32_t feature_index_num_bits)
-    : _ex(ex)
+    : _ex(ex), _namespace_idx(namespace_idx)
 {
   _feature_index_bit_mask = ((uint64_t)1 << feature_index_num_bits) - 1;
-  add_namespace(namespace_name[0]);
   _namespace_hash = hashstring(namespace_name, strlen(namespace_name), 0);
   _ex->feature_space.get_or_create(_namespace_idx, _namespace_hash);
 }
 
 example_predict_builder::example_predict_builder(
     example_predict* ex, namespace_index namespace_idx, uint32_t feature_index_num_bits)
-    : _ex(ex), _namespace_hash(namespace_idx)
+    : _ex(ex), _namespace_idx(namespace_idx), _namespace_hash(namespace_idx)
 {
   _feature_index_bit_mask = ((uint64_t)1 << feature_index_num_bits) - 1;
-  add_namespace(namespace_idx);
   _ex->feature_space.get_or_create(_namespace_idx, _namespace_hash);
-}
-
-void example_predict_builder::add_namespace(namespace_index feature_group)
-{
-  _namespace_idx = feature_group;
 }
 
 void example_predict_builder::push_feature_string(const char* feature_name, feature_value value)
