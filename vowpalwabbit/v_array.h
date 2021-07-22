@@ -249,8 +249,8 @@ public:
   }
 
   /**
-   * \brief Clear all elements from container. Additionally keeps track of an erase count and when it reaches a certain threshold
-   * it will also shrink the underlying buffer.
+   * \brief Clear all elements from container. Additionally keeps track of an erase count and when it reaches a certain
+   * threshold it will also shrink the underlying buffer.
    */
   void clear()
   {
