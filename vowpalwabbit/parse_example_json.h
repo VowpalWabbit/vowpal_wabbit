@@ -5,6 +5,7 @@
 #pragma once
 
 #include "v_array.h"
+#include "future_compat.h"
 
 #include <cstring>
 #include <cfloat>
