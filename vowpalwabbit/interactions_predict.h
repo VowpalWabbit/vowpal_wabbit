@@ -283,8 +283,8 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
         for (fgd = state_data.data() + (state_data.size() - 1); fgd > state_data.data(); --fgd)
         {
           fgd2 = fgd - 1;
-          fgd->self_interaction =
-              (fgd->current_it == fgd2->current_it);  // state_data.begin().self_interaction is always false
+          // state_data.begin().self_interaction is always false
+          fgd->self_interaction = (fgd->ns_idx == fgd2->ns_idx);
         }
 
         // if impossible_without_permutations == true then we faced with case like interaction 'aaaa'
