@@ -51,7 +51,7 @@ void del_example_namespaces_from_example(example& target, const example& source)
 {
   for (auto& bucket : const_cast<example&>(source))
   {
-    for (auto it = bucket.begin(); it != bucket.end(); ++it)
+    for (auto it = bucket.rbegin(); it != bucket.rend(); ++it)
     {
       if (it->index == constant_namespace) continue;
       del_example_namespace(target, it->index, it->hash, it->feats);

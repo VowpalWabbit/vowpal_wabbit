@@ -264,16 +264,18 @@ void remove_slot_features(example* shared, example* slot)
 {
   for (auto& group_list : slot->feature_space)
   {
-    for (auto& ns_fs : group_list)
+    for (auto current = group_list.rbegin(); current != group_list.rend(); ++current)
     {
       // constant namespace should be ignored, as it already exists and we don't want to double it up.
-      if (ns_fs.index == constant_namespace) { continue; }
+      if (current->index == constant_namespace) { continue; }
 
-      if (ns_fs.index == default_namespace)  // slot default namespace has a special namespace in shared
-      { LabelDict::del_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, ns_fs.feats); }
+      if (current->index == default_namespace)  // slot default namespace has a special namespace in shared
+      {
+        LabelDict::del_example_namespace(*shared, ccb_slot_namespace, ccb_slot_namespace, current->feats);
+      }
       else
       {
-        LabelDict::del_example_namespace(*shared, ns_fs.index, ns_fs.hash, ns_fs.feats);
+        LabelDict::del_example_namespace(*shared, current->index, current->hash, current->feats);
       }
     }
   }
