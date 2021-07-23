@@ -74,7 +74,7 @@ float cats::get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, f
     {
       float actual_b = std::min(max_value, centre + bandwidth) - std::max(min_value, centre - bandwidth);
 
-      loss = cb_cont_costs.costs[0].cost / float(cb_cont_costs.costs[0].pdf_value * actual_b);
+      loss = cb_cont_costs.costs[0].cost / (cb_cont_costs.costs[0].pdf_value * actual_b);
     }
   }
 
