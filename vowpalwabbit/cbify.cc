@@ -132,7 +132,7 @@ void cbify_adf_data::init_adf_data(
     power_2++;
   }
 
-  this->custom_index_mask = (uint64_t(1) << power_2) - 1;
+  this->custom_index_mask = (static_cast<uint64_t>(1) << power_2) - 1;
 }
 
 cbify_adf_data::~cbify_adf_data()
