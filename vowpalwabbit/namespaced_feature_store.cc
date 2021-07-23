@@ -30,7 +30,7 @@ void namespaced_feature_store::remove(namespace_index ns_index, uint64_t hash)
   auto it = std::find_if(
       bucket.begin(), bucket.end(), [hash](const namespaced_features& group) { return group.hash == hash; });
   if (it == bucket.end()) { return; }
-  assert(it == (--bucket.end()));
+  // assert(it == (--bucket.end()));
   it->feats.clear();
   _saved_feature_groups.reclaim_object(std::move(it->feats));
   bucket.erase(it);
