@@ -47,9 +47,9 @@ namespace exploration
     if (num_actions == 0)
       return E_EXPLORATION_BAD_RANGE;
 
-    if (top_action >= num_actions) top_action = (uint32_t)num_actions - 1;
+    if (top_action >= num_actions) top_action = static_cast<uint32_t>(num_actions) - 1;
 
-    float prob = epsilon / (float)num_actions;
+    float prob = epsilon / static_cast<float>(num_actions);
 
     for (It d = pmf_first; d != pmf_last; ++d) *d = prob;
 
@@ -124,7 +124,7 @@ namespace exploration
     // iterators don't support <= in general
     if (pmf_first == pmf_last || pmf_last < pmf_first) return E_EXPLORATION_BAD_RANGE;
 
-    float num_models = (float)std::accumulate(top_actions_first, top_actions_last, 0.);
+    float num_models = static_cast<float>(std::accumulate(top_actions_first, top_actions_last, 0.));
     if (num_models <= 1e-6)
     {
       // based on above checks we have at least 1 element in pmf
@@ -200,7 +200,7 @@ namespace exploration
     {
       if (touched_mass > 0.999)
       {
-        minimum_uniform = (1.f - untouched_mass) / (float)num_actions_touched;
+        minimum_uniform = (1.f - untouched_mass) / static_cast<float>(num_actions_touched);
         for (It d = pmf_first; d != pmf_last; ++d)
         {
           auto& prob = *d;
