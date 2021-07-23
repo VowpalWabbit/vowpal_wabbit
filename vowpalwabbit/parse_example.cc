@@ -109,8 +109,8 @@ public:
   }
   const VW::string_view get_fg_name() const { return _feature_group_name; }
   uint64_t get_affix_features() const { return _affix; }
-  const bool is_spelling_feature_group() const { return _spelling; }
-  const bool dictionary_exists() const { return !_namespace_dictionaries->empty(); }
+  bool is_spelling_feature_group() const { return _spelling; }
+  bool dictionary_exists() const { return !_namespace_dictionaries->empty(); }
   const namespace_dictionaries* get_dictionary() const { return _namespace_dictionaries; }
 
 private:
@@ -134,15 +134,15 @@ private:
   features* _p_dictionary_feature_group;
   example* _current_example;
   bool _redefine_char_flag;
-  hash_func_t _hash_function;
   VW::string_view _feature_group_name;
   uint64_t _affix;
   bool _spelling;
   namespace_dictionaries* _namespace_dictionaries;
   char_map* _redefine_char_map;
+  dictionaries_map* _namespace_dictionaries_map;
   affix_map* _affix_features;
   bool_map* _spelling_features;
-  dictionaries_map* _namespace_dictionaries_map;
+  hash_func_t _hash_function;
 };
 
 template <bool audit>
@@ -306,11 +306,11 @@ public:
       {
         std::stringstream ss;
         ss << feature_name << "^" << string_feature_value;
-        fs.space_names.emplace_back(_feature_group_helper.get_fg_name(), ss.str());
+        fs.space_names.emplace_back(audit_strings(_feature_group_helper.get_fg_name(), ss.str()));
       }
       else
       {
-        fs.space_names.emplace_back(_feature_group_helper.get_fg_name(), feature_name.to_string());
+        fs.space_names.emplace_back(audit_strings(_feature_group_helper.get_fg_name(), feature_name.to_string()));
       }
     }
 
