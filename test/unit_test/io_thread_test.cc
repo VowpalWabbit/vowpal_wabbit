@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(io_lines_capture_test_single_thread)
 {
     vw* vw = VW::initialize("--no_stdin --quiet --ring_size=1005", nullptr , false, nullptr, nullptr);
 
-    std::string text = read_string_from_file("/home/nishantkr18/vowpal_wabbit/test/train-sets/0002.dat");
+    std::string text = read_string_from_file("../test/train-sets/0002.dat");
 
     // add input as buffer_view so parses line by line
     vw->example_parser->input->add_file(VW::io::create_buffer_view(text.data(), text.size()));
@@ -164,11 +164,11 @@ void run_parser_and_mock_learner(size_t num_parse_threads)
 {
     using namespace std::chrono;
 
-    vw* vw = VW::initialize("--no_stdin --quiet", nullptr , false, nullptr, nullptr);
+    vw* vw = VW::initialize("--no_stdin --quiet ", nullptr , false, nullptr, nullptr);
     {
         auto start = high_resolution_clock::now();
 
-        std::string text = read_string_from_file("/home/nishantkr18/0002_4million.dat");
+        std::string text = read_string_from_file("../../0002_4million.dat");
         // add input as buffer_view so parses line by line
         vw->example_parser->input->add_file(VW::io::create_buffer_view(text.data(), text.size()));
 
@@ -211,11 +211,11 @@ void run_parser_and_learner(size_t num_parse_threads)
 {
     using namespace std::chrono;
 
-    vw* vw = VW::initialize("--no_stdin --quiet", nullptr , false, nullptr, nullptr);
+    vw* vw = VW::initialize("--no_stdin --quiet ", nullptr , false, nullptr, nullptr);
     {
         auto start = high_resolution_clock::now();
 
-        std::string text = read_string_from_file("/home/nishantkr18/0002_4million.dat");
+        std::string text = read_string_from_file("../../0002_4million.dat");
         // add input as buffer_view so parses line by line
         vw->example_parser->input->add_file(VW::io::create_buffer_view(text.data(), text.size()));
 
@@ -246,9 +246,9 @@ void run_io_and_parser(size_t num_parse_threads)
 {
     using namespace std::chrono;
 
-    vw* vw = VW::initialize("--no_stdin --quiet", nullptr , false, nullptr, nullptr);
+    vw* vw = VW::initialize("--no_stdin --quiet ", nullptr , false, nullptr, nullptr);
 
-    std::string text = read_string_from_file("/home/nishantkr18/0002_4million.dat");
+    std::string text = read_string_from_file("../../0002_4million.dat");
     // add input as buffer_view so parses line by line
     vw->example_parser->input->add_file(VW::io::create_buffer_view(text.data(), text.size()));
 
