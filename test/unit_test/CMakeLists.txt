@@ -1,4 +1,5 @@
 add_executable(vw-unit-test.out
+  benchmarks_text.cc
   # cats_test.cc
   # cats_tree_tests.cc
   # cats_user_provided_pdf.cc
@@ -16,7 +17,7 @@ add_executable(vw-unit-test.out
   # guard_test.cc
   # initialize_test.cc
   # io_adapter_test.cc
-  io_thread_test.cc
+  # io_thread_test.cc
   # json_parser_test.cc
   main.cc
   # math_test.cc
