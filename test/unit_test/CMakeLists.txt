@@ -1,6 +1,6 @@
 add_executable(vw-unit-test.out
-  benchmarks_text.cc
-  benchmarks_cache.cc
+  benchmark_functions.cc
+  benchmarks.cc
   # cats_test.cc
   # cats_tree_tests.cc
   # cats_user_provided_pdf.cc

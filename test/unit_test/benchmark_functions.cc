@@ -30,11 +30,11 @@ std::string read_string_from_file(const std::string &file_path) {
     return buffer.str();
 }
 
-float run_io_and_parser(size_t num_parse_threads)
+float run_io_and_parser(size_t num_parse_threads, std::string more_options="")
 {
     using namespace std::chrono;
-
-    vw* vw = VW::initialize("--no_stdin --quiet ", nullptr , false, nullptr, nullptr);
+    std::string options = "--no_stdin --quiet ";
+    vw* vw = VW::initialize(options.append(more_options), nullptr , false, nullptr, nullptr);
 
     std::string text = read_string_from_file("../../0002_4million.dat");
     // add input as buffer_view so parses line by line
@@ -70,11 +70,11 @@ float run_io_and_parser(size_t num_parse_threads)
     return duration.count()/1000000.0;
 }
 
-float run_parser_and_mock_learner(size_t num_parse_threads)
+float run_parser_and_mock_learner(size_t num_parse_threads, std::string more_options="")
 {
     using namespace std::chrono;
-
-    vw* vw = VW::initialize("--no_stdin --quiet ", nullptr , false, nullptr, nullptr);
+    std::string options = "--no_stdin --quiet ";
+    vw* vw = VW::initialize(options.append(more_options), nullptr , false, nullptr, nullptr);
     {
         auto start = high_resolution_clock::now();
 
@@ -117,11 +117,11 @@ float run_parser_and_mock_learner(size_t num_parse_threads)
     return duration.count()/1000000.0;
 }
 
-float run_parser_and_learner(size_t num_parse_threads)
+float run_parser_and_learner(size_t num_parse_threads, std::string more_options="")
 {
     using namespace std::chrono;
-
-    vw* vw = VW::initialize("--no_stdin --quiet ", nullptr , false, nullptr, nullptr);
+    std::string options = "--no_stdin --quiet ";
+    vw* vw = VW::initialize(options.append(more_options), nullptr , false, nullptr, nullptr);
     {
         auto start = high_resolution_clock::now();
 
@@ -150,25 +150,4 @@ float run_parser_and_learner(size_t num_parse_threads)
 
     VW::finish(*vw);
     return duration.count()/1000000.0;
-}
-
-BOOST_AUTO_TEST_CASE(test_io_and_parser)
-{
-    std::cout<<"IO_and_PARSER\n";
-    for(size_t i=1; i<=8; i++)
-        std::cout << "Total Time taken: " << run_io_and_parser(i) << " seconds, by parser_threads = " << i << std::endl;
-}
-
-BOOST_AUTO_TEST_CASE(test_parser_and_mock_learner)
-{
-    std::cout<<"PARSER_and_MOCK_LEARNER\n";
-    for(size_t i=1; i<=8; i++)
-        std::cout << "Total Time taken: " << run_parser_and_mock_learner(i) << " seconds, by parser_threads = " << i << std::endl;
-}
-
-BOOST_AUTO_TEST_CASE(test_parser_and_learner)
-{
-    std::cout<<"PARSER_and_LEARNER\n";
-    for(size_t i=1; i<=8; i++)
-        std::cout << "Total Time taken: " << run_parser_and_learner(i) << " seconds, by parser_threads = " << i << std::endl;
 }
