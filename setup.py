@@ -261,5 +261,4 @@ setup(
     },
     # tox.ini handles additional test dependencies
     tests_require=['tox'],
-    entry_points={'console_scripts': 'pyvw = vw:main'},
 )

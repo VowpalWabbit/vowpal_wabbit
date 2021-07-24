@@ -441,6 +441,19 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
 
 
 def find_vw_binary(test_base_ref_dir, user_supplied_bin_path):
+
+    def is_python_invocation(file_path):
+        if not user_supplied_bin_path:
+            return False
+        elif (user_supplied_bin_path.startswith("python") and
+              user_supplied_bin_path.endswith("-m vowpalwabbit")):
+            return user_supplied_bin_path
+        else:
+            return False
+
+    if is_python_invocation(user_supplied_bin_path):
+        return user_supplied_bin_path
+
     vw_search_paths = [
         Path(test_base_ref_dir).joinpath("../build/vowpalwabbit")
     ]
