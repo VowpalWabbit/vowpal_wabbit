@@ -1,5 +1,4 @@
 add_executable(vw-unit-test.out
-  benchmark_functions.cc
   benchmarks.cc
   # cats_test.cc
   # cats_tree_tests.cc
