@@ -17,4 +17,10 @@ source activate test-python36
 python setup.py check -mrs
 python setup.py install --user
 py.test ./python/tests/
+
+# Run tests for Python module as vw command
+cd test
+python3 run_tests.py --vw_bin_path "python3 -m vowpalwabbit" \
+        -f -j $(nproc) --include_flatbuffers
+
 source deactivate
