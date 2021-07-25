@@ -20,64 +20,75 @@ avg_time() {
                }'
 }
 
-# echo "text million"
-# for i in {1..8}; do 
-# echo $i
-# avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i
-# sleep 1
-# done;
+echo "0001 DATASET"
 
-# echo "text without learner million"
-# for i in {1..8}; do 
-# echo $i
-# avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i --no_learner
-# sleep 1
-# done;
-
-# echo "creating cache million"
-# build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=2 -c -k --quiet
-
-# echo "cache million"
-# for i in {1..8}; do 
-# echo $i
-# avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i -c
-# sleep 1
-# done;
-
-# echo "cache without learner million"
-# for i in {1..8}; do 
-# echo $i
-# avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i --no_learner -c
-# sleep 1
-# done;
-
-echo "text 4million"
+echo "text 0001_million"
 for i in {1..8}; do 
 echo $i
-avg_time 10 build/vowpalwabbit/vw ../0002_4million.dat --num_parse_threads=$i
+avg_time 5 build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=$i
 sleep 1
 done;
 
-echo "text without learner 4million"
+echo "creating cache 0001_million"
+build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=2 -c -k --quiet
+
+echo "cache 0001_million"
 for i in {1..8}; do 
 echo $i
-avg_time 10 build/vowpalwabbit/vw ../0002_4million.dat --num_parse_threads=$i --no_learner
+avg_time 5 build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=$i -c
 sleep 1
 done;
 
-echo "creating cache 4million"
-build/vowpalwabbit/vw ../0002_4million.dat --num_parse_threads=2 -c -k --quiet
-
-echo "cache 4million"
+echo "text 0001_million"
 for i in {1..8}; do 
 echo $i
-avg_time 10 build/vowpalwabbit/vw ../0002_4million.dat --num_parse_threads=$i -c
+avg_time 5 build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=$i
 sleep 1
 done;
 
-echo "cache without learner 4million"
+echo "creating cache 0001_million"
+build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=2 -c -k --quiet
+
+echo "cache 0001_million"
 for i in {1..8}; do 
 echo $i
-avg_time 10 build/vowpalwabbit/vw ../0002_4million.dat --num_parse_threads=$i --no_learner -c
+avg_time 5 build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=$i -c
+sleep 1
+done;
+
+echo "0002 DATASET"
+
+
+echo "text 0002_million"
+for i in {1..8}; do 
+echo $i
+avg_time 5 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i
+sleep 1
+done;
+
+echo "creating cache 0002_million"
+build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=2 -c -k --quiet
+
+echo "cache 0002_million"
+for i in {1..8}; do 
+echo $i
+avg_time 5 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i -c
+sleep 1
+done;
+
+echo "text 0002_million"
+for i in {1..8}; do 
+echo $i
+avg_time 5 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i
+sleep 1
+done;
+
+echo "creating cache 0002_million"
+build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=2 -c -k --quiet
+
+echo "cache 0002_million"
+for i in {1..8}; do 
+echo $i
+avg_time 5 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i -c
 sleep 1
 done;

@@ -149,19 +149,19 @@ public:
 
   void on_example(std::vector<example*>* ev)
   {
-    // ev is guaranteed to have exactly one element always.
-    example* ec = (*ev)[0];
-
-    work_on_example(_context.get_master(), ec);
-    if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
-      _context.template process<example, learn_ex>(*ec);
-    else if (ec->end_pass)
-      _context.template process<example, end_pass>(*ec);
-    else if (is_save_cmd(ec))
-      _context.template process<example, save>(*ec);
-    else
-      _context.template process<example, learn_ex>(*ec);
-    
+    // ev can contain multiple examples for JSON and DsJSON
+    for (example* ec: *ev)
+    {
+      work_on_example(_context.get_master(), ec);
+      if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
+        _context.template process<example, learn_ex>(*ec);
+      else if (ec->end_pass)
+        _context.template process<example, end_pass>(*ec);
+      else if (is_save_cmd(ec))
+        _context.template process<example, save>(*ec);
+      else
+        _context.template process<example, learn_ex>(*ec);
+    }
     VW::finish_example_vector(_context.get_master(), *ev);
   }
 
