@@ -20,33 +20,64 @@ avg_time() {
                }'
 }
 
-echo "text"
+# echo "text million"
+# for i in {1..8}; do 
+# echo $i
+# avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i
+# sleep 1
+# done;
+
+# echo "text without learner million"
+# for i in {1..8}; do 
+# echo $i
+# avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i --no_learner
+# sleep 1
+# done;
+
+# echo "creating cache million"
+# build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=2 -c -k --quiet
+
+# echo "cache million"
+# for i in {1..8}; do 
+# echo $i
+# avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i -c
+# sleep 1
+# done;
+
+# echo "cache without learner million"
+# for i in {1..8}; do 
+# echo $i
+# avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i --no_learner -c
+# sleep 1
+# done;
+
+echo "text 4million"
 for i in {1..8}; do 
 echo $i
-avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i
+avg_time 10 build/vowpalwabbit/vw ../0002_4million.dat --num_parse_threads=$i
 sleep 1
 done;
 
-echo "text without learner"
+echo "text without learner 4million"
 for i in {1..8}; do 
 echo $i
-avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i --no_learner
+avg_time 10 build/vowpalwabbit/vw ../0002_4million.dat --num_parse_threads=$i --no_learner
 sleep 1
 done;
 
-echo "creating cache"
-build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=2 -c --quiet
+echo "creating cache 4million"
+build/vowpalwabbit/vw ../0002_4million.dat --num_parse_threads=2 -c -k --quiet
 
-echo "cache"
+echo "cache 4million"
 for i in {1..8}; do 
 echo $i
-avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i -c
+avg_time 10 build/vowpalwabbit/vw ../0002_4million.dat --num_parse_threads=$i -c
 sleep 1
 done;
 
-echo "cache without learner"
+echo "cache without learner 4million"
 for i in {1..8}; do 
 echo $i
-avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i --no_learner -c
+avg_time 10 build/vowpalwabbit/vw ../0002_4million.dat --num_parse_threads=$i --no_learner -c
 sleep 1
 done;
