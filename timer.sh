@@ -20,8 +20,33 @@ avg_time() {
                }'
 }
 
-for i in {1..4}; do 
+echo "text"
+for i in {1..8}; do 
 echo $i
-avg_time 1 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i
+avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i
+sleep 1
+done;
+
+echo "text without learner"
+for i in {1..8}; do 
+echo $i
+avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i --no_learner
+sleep 1
+done;
+
+echo "creating cache"
+build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=2 -c --quiet
+
+echo "cache"
+for i in {1..8}; do 
+echo $i
+avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i -c
+sleep 1
+done;
+
+echo "cache without learner"
+for i in {1..8}; do 
+echo $i
+avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i --no_learner -c
 sleep 1
 done;
