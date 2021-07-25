@@ -1420,16 +1420,18 @@ vw& parse_args(
     bool strict_parse = false;
     int ring_size_tmp;
     int num_parse_threads = 1;
+    bool no_learner = false;
     option_group_definition vw_args("VW options");
     vw_args.add(make_option("ring_size", ring_size_tmp).default_value(256).help("size of example ring"))
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"))
-        .add(make_option("num_parse_threads", num_parse_threads).help("number of parser threads"));
+        .add(make_option("num_parse_threads", num_parse_threads).help("number of parser threads"))
+        .add(make_option("no_learner", no_learner).help("no learner to use"));
     all.options->add_and_parse(vw_args);
 
     if (ring_size_tmp <= 0) { THROW("ring_size should be positive"); }
     size_t ring_size = static_cast<size_t>(ring_size_tmp);
 
-    all.example_parser = new parser{ring_size, strict_parse, num_parse_threads};
+    all.example_parser = new parser{ring_size, strict_parse, num_parse_threads, no_learner};
     all.example_parser->_shared_data = all.sd;
 
     option_group_definition update_args("Update options");

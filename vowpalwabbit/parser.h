@@ -32,7 +32,7 @@ struct vw;
 struct input_options;
 struct parser
 {
-  parser(size_t ring_size, bool strict_parse_, int num_parse_threads)
+  parser(size_t ring_size, bool strict_parse_, int num_parse_threads, bool no_learner=false)
       : example_pool{ring_size}
       , example_vector_pool{ring_size}
       , ready_parsed_examples{ring_size}
@@ -41,6 +41,7 @@ struct parser
       , end_parsed_examples(0)
       , finished_examples(0)
       , num_parse_threads{num_parse_threads}
+      , no_learner{no_learner}
       , strict_parse{strict_parse_}
       , io_lines{10000005}
   {
@@ -88,6 +89,7 @@ struct parser
   bool emptylines_separate_examples = false;  // true if you want to have holdout computed on a per-block basis rather
                                               // than a per-line basis
   int num_parse_threads = 1; // The number of parse threads to use
+  bool no_learner = false; // The number of parse threads to use
 
   std::mutex output_lock;
   std::condition_variable output_done;

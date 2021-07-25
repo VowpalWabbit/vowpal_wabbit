@@ -35,7 +35,7 @@ namespace LEARNER
 {
 void learn_ex(example& ec, vw& all)
 {
-  all.learn(ec);
+  if(!(all.example_parser->no_learner)) all.learn(ec);
   as_singleline(all.l)->finish_example(all, ec);
 }
 
