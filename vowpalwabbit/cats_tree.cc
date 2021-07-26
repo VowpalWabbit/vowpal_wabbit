@@ -372,6 +372,7 @@ base_learner* setup(options_i& options, vw& all)
                 .set_prediction_type(prediction_type_t::multiclass)
                 .set_label_type(label_type_t::cb)
                 .build();
+  all.example_parser->lbl_parser = CB::cb_label;
   return make_base(*l);
 }
 
