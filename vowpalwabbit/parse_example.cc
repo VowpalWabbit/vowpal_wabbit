@@ -98,7 +98,7 @@ public:
   }
   void set_current_fg()
   {
-    _feature_group_name = _default_namespace_str;
+    _feature_group_name = DEFAULT_NAMESPACE_STR;
     _feature_group_char = default_namespace;
     _hash = this->_hash_seed == 0 ? 0 : uniform_hash("", 0, this->_hash_seed);
     _p_current_feature_group = nullptr;  // reset cached feature group
@@ -142,7 +142,6 @@ private:
   affix_map* _affix_features;
   bool_map* _spelling_features;
   hash_func_t _hash_function;
-  const char* _default_namespace_str = " ";
 };
 
 template <bool audit>
