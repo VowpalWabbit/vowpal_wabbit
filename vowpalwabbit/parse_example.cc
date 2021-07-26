@@ -98,7 +98,7 @@ public:
   }
   void set_current_fg()
   {
-    char default_namespace_str[] = {default_namespace,0};
+    char default_namespace_str[] = {default_namespace, 0};
     _feature_group_name = default_namespace_str;
     _feature_group_char = default_namespace;
     _hash = this->_hash_seed == 0 ? 0 : uniform_hash("", 0, this->_hash_seed);
