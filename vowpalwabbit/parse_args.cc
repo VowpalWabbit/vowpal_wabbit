@@ -320,7 +320,6 @@ void parse_diagnostics(options_i& options, vw& all)
   // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
   {
-
     std::cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
     exit(0);
   }
@@ -1253,8 +1252,7 @@ vw& parse_args(
             all.options->was_supplied("unique_id")) &&
         !(all.options->was_supplied("total") && all.options->was_supplied("node") &&
             all.options->was_supplied("unique_id")))
-    { THROW("you must specificy unique_id, total, and node if you specify any")
-    }
+    { THROW("you must specificy unique_id, total, and node if you specify any") }
 
     if (all.options->was_supplied("span_server"))
     {
@@ -1388,7 +1386,8 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model,
 
   // Convert file_options into  vector.
   std::istringstream ss{file_options};
-  const std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
+  const std::vector<std::string> container{
+      std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
   merge_options_from_header_strings(container, interactions_settings_duplicated, options, all.is_ccb_input_model);
 
@@ -1550,8 +1549,8 @@ void print_enabled_reductions(vw& all, std::vector<std::string>& enabled_reducti
   }
 }
 
-vw* initialize(
-    config::options_i& options, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
+vw* initialize(config::options_i& options, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
+    void* trace_context)
 {
   std::unique_ptr<options_i, options_deleter_type> opts(&options, [](VW::config::options_i*) {});
 
@@ -1694,8 +1693,7 @@ vw* seed_vw_model(vw* vw_model, std::string extra_args, trace_message_t trace_li
   auto serialized_options = serializer.str();
   serialized_options = serialized_options + " " + extra_args;
 
-  vw* new_model =
-      VW::initialize(serialized_options, nullptr, true /* skipModelLoad */, trace_listener, trace_context);
+  vw* new_model = VW::initialize(serialized_options, nullptr, true /* skipModelLoad */, trace_listener, trace_context);
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance
