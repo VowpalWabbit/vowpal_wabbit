@@ -54,7 +54,6 @@
     <ClCompile Include="prediction_test.cc" />
     <ClCompile Include="custom_reduction_test.cc" />
     <ClCompile Include="minimal_custom_reduction.cc" />
-    <ClCompile Include="custom_reduction_test.cc" />
     <ClCompile Include="scope_exit_test.cc" />
     <ClCompile Include="slates_parser_test.cc" />
     <ClCompile Include="slates_test.cc" />
