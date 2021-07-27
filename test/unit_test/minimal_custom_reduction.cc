@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(minimal_reduction_test)
 
     BOOST_CHECK(minimal_reduction::added_to_learner == false);
     BOOST_CHECK(minimal_reduction::called_learn_predict == false);
-    auto& vw = *VW::initialize(sgd_args, nullptr, false, nullptr, nullptr, std::move(learner_builder));
+    auto& vw = *VW::initialize_with_builder(sgd_args, nullptr, false, nullptr, nullptr, std::move(learner_builder));
     BOOST_CHECK(minimal_reduction::added_to_learner);
     BOOST_CHECK(minimal_reduction::called_learn_predict == false);
 

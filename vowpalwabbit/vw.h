@@ -44,14 +44,14 @@ namespace VW
     (2) The code is not yet reentrant.
    */
 vw* initialize(std::unique_ptr<config::options_i, options_deleter_type> options, io_buf* model = nullptr,
-    bool skipModelLoad = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
-    std::unique_ptr<VW::setup_base_i> = nullptr);
+    bool skipModelLoad = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,
-    trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
-    std::unique_ptr<VW::setup_base_i> = nullptr);
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skipModelLoad = false,
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+vw* initialize_with_builder(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
     std::unique_ptr<VW::setup_base_i> = nullptr);
 vw* seed_vw_model(

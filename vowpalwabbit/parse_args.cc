@@ -1564,8 +1564,8 @@ vw* initialize(
   return initialize(std::move(opts), model, skipModelLoad, trace_listener, trace_context);
 }
 
-vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skipModelLoad,
-    trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
+vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skipModelLoad,
+    trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
   // Set up logger as early as possible
   logger::initialize_logger();
@@ -1632,25 +1632,10 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
   }
 }
 
-vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context,
-    std::unique_ptr<VW::setup_base_i> learner_builder)
+vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skipModelLoad,
+    trace_message_t trace_listener, void* trace_context)
 {
-  int argc = 0;
-  char** argv = to_argv(s, argc);
-  vw* ret = nullptr;
-
-  try
-  {
-    ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context, std::move(learner_builder));
-  }
-  catch (...)
-  {
-    free_args(argc, argv);
-    throw;
-  }
-
-  free_args(argc, argv);
-  return ret;
+  return initialize_with_builder(std::move(options), model, skipModelLoad, trace_listener, trace_context, nullptr);
 }
 
 vw* initialize_escaped(
@@ -1674,13 +1659,45 @@ vw* initialize_escaped(
   return ret;
 }
 
-vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener,
+vw* initialize_with_builder(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener,
     void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   std::unique_ptr<options_i, options_deleter_type> options(
       new config::options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
-  return initialize(
+  return initialize_with_builder(
       std::move(options), model, skipModelLoad, trace_listener, trace_context, std::move(learner_builder));
+}
+
+vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener,
+    void* trace_context)
+{
+  return initialize_with_builder(argc, argv, model, skipModelLoad, trace_listener, trace_context, nullptr);
+}
+
+vw* initialize_with_builder(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener,
+    void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
+{
+  int argc = 0;
+  char** argv = to_argv(s, argc);
+  vw* ret = nullptr;
+
+  try
+  {
+    ret = initialize_with_builder(argc, argv, model, skipModelLoad, trace_listener, trace_context, std::move(learner_builder));
+  }
+  catch (...)
+  {
+    free_args(argc, argv);
+    throw;
+  }
+
+  free_args(argc, argv);
+  return ret;
+}
+
+vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+{
+  return initialize_with_builder(s, model, skipModelLoad, trace_listener, trace_context, nullptr);
 }
 
 // Create a new VW instance while sharing the model with another instance

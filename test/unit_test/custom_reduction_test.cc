@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(custom_reduction_test)
 
     BOOST_CHECK(toy_reduction::added_to_learner == false);
     BOOST_CHECK(toy_reduction::called_learn_predict == false);
-    auto& vw = *VW::initialize(sgd_args, nullptr, false, nullptr, nullptr, std::move(learner_builder));
+    auto& vw = *VW::initialize_with_builder(sgd_args, nullptr, false, nullptr, nullptr, std::move(learner_builder));
     BOOST_CHECK(toy_reduction::added_to_learner);
     BOOST_CHECK(toy_reduction::called_learn_predict == false);
 
@@ -214,7 +214,8 @@ BOOST_AUTO_TEST_CASE(custom_reduction_builder_check_throw)
     auto learner_builder = VW::make_unique<custom_builder>();
 
     BOOST_CHECK_THROW(
-        VW::initialize(ksvm_args, nullptr, false, nullptr, nullptr, std::move(learner_builder)), VW::vw_exception);
+        VW::initialize_with_builder(ksvm_args, nullptr, false, nullptr, nullptr, std::move(learner_builder)),
+        VW::vw_exception);
 
     // check that toy_reduction didn't get added to learner
     BOOST_CHECK(toy_reduction::added_to_learner == false);
