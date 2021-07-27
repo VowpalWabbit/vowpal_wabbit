@@ -1130,7 +1130,7 @@ void parse_output_model(options_i& options, vw& all)
       .add(make_option("id", all.id).help("User supplied ID embedded into the final regressor"));
   options.add_and_parse(output_model_options);
 
-  if (all.final_regressor_name.empty() && !all.logger.quiet)
+  if (!all.final_regressor_name.empty() && !all.logger.quiet)
     *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl;
 
   if (options.was_supplied("invert_hash")) all.hash_inv = true;
