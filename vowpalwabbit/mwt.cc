@@ -231,7 +231,6 @@ base_learner* mwt_setup(VW::setup_base_i& setup_base, options_i& options, vw& al
   c->all = &all;
 
   c->evals.resize_but_with_stl_behavior(all.length());
-  all.example_parser->lbl_parser = CB::cb_label;
 
   if (c->num_classes > 0)
   {
@@ -264,5 +263,6 @@ base_learner* mwt_setup(VW::setup_base_i& setup_base, options_i& options, vw& al
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);
+  all.example_parser->lbl_parser = CB::cb_label;
   return make_base(*l);
 }

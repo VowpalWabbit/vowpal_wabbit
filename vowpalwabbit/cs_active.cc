@@ -348,8 +348,6 @@ base_learner* cs_active_setup(VW::setup_base_i& setup_base, options_i& options, 
 
   if (!options.was_supplied("adax")) *(all.trace_message) << "WARNING: --cs_active should be used with --adax" << endl;
 
-  // Label parser set to cost sensitive label parser
-  all.example_parser->lbl_parser = cs_label;
   all.set_minmax(all.sd, data->cost_max);
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);
@@ -363,6 +361,8 @@ base_learner* cs_active_setup(VW::setup_base_i& setup_base, options_i& options, 
             all.get_setupfn_name(cs_active_setup), true);
 
   l.set_finish_example(finish_example);
+  // Label parser set to cost sensitive label parser
+  all.example_parser->lbl_parser = cs_label;
   base_learner* b = make_base(l);
   all.cost_sensitive = b;
   return b;
