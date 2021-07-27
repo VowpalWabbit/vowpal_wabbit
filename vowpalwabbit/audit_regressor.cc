@@ -4,7 +4,6 @@
 
 #include "reductions.h"
 #include "interactions.h"
-
 #include "vw.h"
 #include "shared_data.h"
 #include "gd.h"
