@@ -52,10 +52,10 @@ namespace logger = VW::io::logger;
 //
 // Does std::string end with a certain substring?
 //
-bool ends_with(std::string const& fullString, std::string const& ending)
+bool ends_with(std::string const& full_string, std::string const& ending)
 {
-  if (fullString.length() > ending.length())
-  { return (fullString.compare(fullString.length() - ending.length(), ending.length(), ending) == 0); }
+  if (full_string.length() > ending.length())
+  { return (full_string.compare(full_string.length() - ending.length(), ending.length(), ending) == 0); }
   else
   {
     return false;
@@ -79,7 +79,7 @@ uint64_t hash_file_contents(VW::io::reader* f)
   return v;
 }
 
-bool directory_exists(std::string path)
+bool directory_exists(const std::string& path)
 {
   struct stat info;
   if (stat(path.c_str(), &info) != 0)
@@ -90,14 +90,14 @@ bool directory_exists(std::string path)
   //  return boost::filesystem::exists(p) && boost::filesystem::is_directory(p);
 }
 
-std::string find_in_path(std::vector<std::string> paths, std::string fname)
+std::string find_in_path(const std::vector<std::string>& paths, const std::string& fname)
 {
 #ifdef _WIN32
-  std::string delimiter = "\\";
+  const std::string delimiter = "\\";
 #else
-  std::string delimiter = "/";
+  const std::string delimiter = "/";
 #endif
-  for (std::string path : paths)
+  for (const auto& path : paths)
   {
     std::string full = ends_with(path, delimiter) ? (path + fname) : (path + delimiter + fname);
     std::ifstream f(full.c_str());
@@ -120,25 +120,25 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     s.remove_prefix(2);
   }
 
-  std::string fname = find_in_path(all.dictionary_path, std::string(s));
-  if (fname == "") THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path");
+  std::string file_name = find_in_path(all.dictionary_path, std::string(s));
+  if (file_name.empty()) THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path")
 
-  bool is_gzip = ends_with(fname, ".gz");
+  bool is_gzip = ends_with(file_name, ".gz");
   std::unique_ptr<VW::io::reader> file_adapter;
   try
   {
-    file_adapter = is_gzip ? VW::io::open_compressed_file_reader(fname) : VW::io::open_file_reader(fname);
+    file_adapter = is_gzip ? VW::io::open_compressed_file_reader(file_name) : VW::io::open_file_reader(file_name);
   }
   catch (...)
   {
-    THROW("error: cannot read dictionary from file '" << fname << "'"
-                                                      << ", opening failed");
+    THROW("error: cannot read dictionary from file '" << file_name << "'"
+                                                      << ", opening failed")
   }
 
   uint64_t fd_hash = hash_file_contents(file_adapter.get());
 
   if (!all.logger.quiet)
-    *(all.trace_message) << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << std::hex << fd_hash
+    *(all.trace_message) << "scanned dictionary '" << s << "' from '" << file_name << "', hash=" << std::hex << fd_hash
                          << std::dec << endl;
 
   // see if we've already read this dictionary
@@ -154,21 +154,21 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   std::unique_ptr<VW::io::reader> fd;
   try
   {
-    fd = VW::io::open_file_reader(fname);
+    fd = VW::io::open_file_reader(file_name);
   }
   catch (...)
   {
-    THROW("error: cannot re-read dictionary from file '" << fname << "', opening failed");
+    THROW("error: cannot re-read dictionary from file '" << file_name << "', opening failed")
   }
   auto map = std::make_shared<feature_dict>();
-  // mimicing old v_hashmap behavior for load factor.
+  // mimicking old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
   map->max_load_factor(0.25);
   example* ec = VW::alloc_examples(1);
 
-  size_t def = static_cast<size_t>(' ');
+  auto def = static_cast<size_t>(' ');
 
-  ssize_t size = 2048, pos, nread;
+  ssize_t size = 2048, pos, num_read;
   char rc;
   char* buffer = calloc_or_throw<char>(size);
   do
@@ -176,8 +176,8 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     pos = 0;
     do
     {
-      nread = fd->read(&rc, 1);
-      if ((rc != EOF) && (nread > 0)) buffer[pos++] = rc;
+      num_read = fd->read(&rc, 1);
+      if ((rc != EOF) && (num_read > 0)) buffer[pos++] = rc;
       if (pos >= size - 1)
       {
         size *= 2;
@@ -186,12 +186,12 @@ void parse_dictionary_argument(vw& all, const std::string& str)
         {
           free(buffer);
           VW::dealloc_examples(ec, 1);
-          THROW("error: memory allocation failed in reading dictionary");
+          THROW("error: memory allocation failed in reading dictionary")
         }
         else
           buffer = new_buffer;
       }
-    } while ((rc != EOF) && (rc != '\n') && (nread > 0));
+    } while ((rc != EOF) && (rc != '\n') && (num_read > 0));
     buffer[pos] = 0;
 
     // we now have a line in buffer
@@ -208,14 +208,14 @@ void parse_dictionary_argument(vw& all, const std::string& str)
     *d = '|';  // set up for parser::read_line
     VW::read_line(all, ec, d);
     // now we just need to grab stuff from the default namespace of ec!
-    if (ec->feature_space[def].size() == 0) { continue; }
+    if (ec->feature_space[def].empty()) { continue; }
     map->emplace(word, VW::make_unique<features>(ec->feature_space[def]));
 
     // clear up ec
     ec->tag.clear();
     ec->indices.clear();
     for (size_t i = 0; i < 256; i++) { ec->feature_space[i].clear(); }
-  } while ((rc != EOF) && (nread > 0));
+  } while ((rc != EOF) && (num_read > 0));
   free(buffer);
   VW::dealloc_examples(ec, 1);
 
@@ -228,7 +228,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   all.loaded_dictionaries.push_back(info);
 }
 
-void parse_affix_argument(vw& all, std::string str)
+void parse_affix_argument(vw& all, const std::string& str)
 {
   if (str.length() == 0) return;
   char* cstr = calloc_or_throw<char>(str.length() + 1);
@@ -249,18 +249,18 @@ void parse_affix_argument(vw& all, std::string str)
         prefix = 0;
         q++;
       }
-      if ((q[0] < '1') || (q[0] > '7')) THROW("malformed affix argument (length must be 1..7): " << p);
+      if ((q[0] < '1') || (q[0] > '7')) THROW("malformed affix argument (length must be 1..7): " << p)
 
-      uint16_t len = static_cast<uint16_t>(q[0] - '0');
-      uint16_t ns = static_cast<uint16_t>(' ');  // default namespace
+      auto len = static_cast<uint16_t>(q[0] - '0');
+      auto ns = static_cast<uint16_t>(' ');  // default namespace
       if (q[1] != 0)
       {
         if (valid_ns(q[1]))
           ns = static_cast<uint16_t>(q[1]);
         else
-          THROW("malformed affix argument (invalid namespace): " << p);
+          THROW("malformed affix argument (invalid namespace): " << p)
 
-        if (q[2] != 0) THROW("malformed affix argument (too long): " << p);
+        if (q[2] != 0) THROW("malformed affix argument (too long): " << p)
       }
 
       uint16_t afx = (len << 1) | (prefix & 0x1);
@@ -291,7 +291,7 @@ void parse_diagnostics(options_i& options, vw& all)
       .add(make_option("progress", progress_arg)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
-      .add(make_option("quiet", all.logger.quiet).help("Don't output disgnostics and progress updates"))
+      .add(make_option("quiet", all.logger.quiet).help("Don't output diagnostics and progress updates"))
       .add(make_option("limit_output", all.logger.upper_limit).help("Avoid chatty output. Limit total printed lines."))
       .add(make_option("dry_run", skip_driver)
                .help("Parse arguments and print corresponding metadata. Will not execute driver."))
@@ -320,6 +320,7 @@ void parse_diagnostics(options_i& options, vw& all)
   // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
   {
+
     std::cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
     exit(0);
   }
@@ -328,7 +329,7 @@ void parse_diagnostics(options_i& options, vw& all)
   {
     all.progress_arg = static_cast<float>(::atof(progress_arg.c_str()));
     // --progress interval is dual: either integer or floating-point
-    if (progress_arg.find_first_of(".") == std::string::npos)
+    if (progress_arg.find_first_of('.') == std::string::npos)
     {
       // No "." in arg: assume integer -> additive
       all.progress_add = true;
@@ -345,18 +346,18 @@ void parse_diagnostics(options_i& options, vw& all)
       // A "." in arg: assume floating-point -> multiplicative
       all.progress_add = false;
 
-      if (all.progress_arg <= 1.0)
+      if (all.progress_arg <= 1.f)
       {
         *(all.trace_message) << "warning: multiplicative --progress <float>: " << progress_arg
                              << " is <= 1.0: adding 1.0" << endl;
-        all.progress_arg += 1.0;
+        all.progress_arg += 1.f;
       }
-      else if (all.progress_arg > 9.0)
+      else if (all.progress_arg > 9.f)
       {
         *(all.trace_message) << "warning: multiplicative --progress <float>"
                              << " is > 9.0: you probably meant to use an integer" << endl;
       }
-      all.sd->dump_interval = 1.0;
+      all.sd->dump_interval = 1.f;
     }
   }
 }
@@ -425,7 +426,7 @@ input_options parse_source(vw& all, options_i& options)
   if (parsed_options.cache) { parsed_options.cache_files.push_back(all.data_filename + ".cache"); }
 
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
-    THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
+    THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.")
 
   if (!all.holdout_set_off &&
       (options.was_supplied("output_feature_regularizer_binary") ||
@@ -525,7 +526,7 @@ std::string spoof_hex_encoded_namespaces(const std::string& arg)
     {
       std::string substr = arg.substr(pos + NUMBER_OF_HEX_CHARS, NUMBER_OF_HEX_CHARS);
       char* p;
-      auto c = static_cast<namespace_index>(std::strtoul(substr.c_str(), &p, HEX_BASE));
+      const auto c = static_cast<namespace_index>(std::strtoul(substr.c_str(), &p, HEX_BASE));
       if (*p == '\0')
       {
         res.push_back(c);
@@ -630,13 +631,13 @@ void parse_feature_tweaks(
 
   if (options.was_supplied("spelling"))
   {
-    for (size_t id = 0; id < spelling_ns.size(); id++)
+    for (auto& spelling_n : spelling_ns)
     {
-      spelling_ns[id] = spoof_hex_encoded_namespaces(spelling_ns[id]);
-      if (spelling_ns[id][0] == '_')
+      spelling_n = spoof_hex_encoded_namespaces(spelling_n);
+      if (spelling_n[0] == '_')
         all.spelling_features[static_cast<unsigned char>(' ')] = true;
       else
-        all.spelling_features[static_cast<size_t>(spelling_ns[id][0])] = true;
+        all.spelling_features[static_cast<size_t>(spelling_n[0])] = true;
     }
   }
 
@@ -651,12 +652,12 @@ void parse_feature_tweaks(
   // Process ngram and skips arguments
   if (options.was_supplied("skips"))
   {
-    if (!options.was_supplied("ngram")) { THROW("You can not skip unless ngram is > 1"); }
+    if (!options.was_supplied("ngram")) { THROW("You can not skip unless ngram is > 1") }
   }
 
   if (options.was_supplied("ngram"))
   {
-    if (options.was_supplied("sort_features")) { THROW("ngram is incompatible with sort_features."); }
+    if (options.was_supplied("sort_features")) { THROW("ngram is incompatible with sort_features.") }
 
     std::vector<std::string> hex_decoded_ngram_strings;
     hex_decoded_ngram_strings.reserve(ngram_strings.size());
@@ -678,7 +679,7 @@ void parse_feature_tweaks(
   {
     if (all.default_bits == false && new_bits != all.num_bits)
       THROW("Number of bits is set to " << new_bits << " and " << all.num_bits
-                                        << " by argument and model.  That does not work.");
+                                        << " by argument and model.  That does not work.")
 
     all.default_bits = false;
     all.num_bits = new_bits;
@@ -770,7 +771,7 @@ void parse_feature_tweaks(
     if (!all.logger.quiet) *(all.trace_message) << endl;
   }
 
-  if (decoded_interactions.size() > 0)
+  if (!decoded_interactions.empty())
   {
     // Sorts the overall list
     std::sort(decoded_interactions.begin(), decoded_interactions.end(), INTERACTIONS::sort_interactions_comparator);
@@ -873,7 +874,7 @@ void parse_feature_tweaks(
 
   if (options.was_supplied("redefine"))
   {
-    // initail values: i-th namespace is redefined to i itself
+    // initial values: i-th namespace is redefined to i itself
     for (size_t i = 0; i < 256; i++) all.redefine[i] = static_cast<unsigned char>(i);
 
     // note: --redefine declaration order is matter
@@ -902,7 +903,7 @@ void parse_feature_tweaks(
           operator_found = true;
       }
 
-      if (!operator_found) THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=");
+      if (!operator_found) THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=")
 
       if (++operator_pos > 3)  // seek operator end
         *(all.trace_message)
@@ -937,7 +938,7 @@ void parse_feature_tweaks(
     if (options.was_supplied("dictionary_path"))
       for (const std::string& path : dictionary_path)
         if (directory_exists(path)) all.dictionary_path.push_back(path);
-    if (directory_exists(".")) all.dictionary_path.push_back(".");
+    if (directory_exists(".")) all.dictionary_path.emplace_back(".");
 
 #if _WIN32
     std::string PATH;
@@ -1039,15 +1040,15 @@ void parse_example_tweaks(options_i& options, vw& all)
 
   all.loss = getLossFunction(all, loss_function, loss_parameter);
 
-  if (all.l1_lambda < 0.)
+  if (all.l1_lambda < 0.f)
   {
     *(all.trace_message) << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
-    all.l1_lambda = 0.;
+    all.l1_lambda = 0.f;
   }
-  if (all.l2_lambda < 0.)
+  if (all.l2_lambda < 0.f)
   {
     *(all.trace_message) << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
-    all.l2_lambda = 0.;
+    all.l2_lambda = 0.f;
   }
   all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
   all.reg_mode += (all.l2_lambda > 0.) ? 2 : 0;
@@ -1130,7 +1131,7 @@ void parse_output_model(options_i& options, vw& all)
       .add(make_option("id", all.id).help("User supplied ID embedded into the final regressor"));
   options.add_and_parse(output_model_options);
 
-  if (all.final_regressor_name.compare("") && !all.logger.quiet)
+  if (all.final_regressor_name.empty() && !all.logger.quiet)
     *(all.trace_message) << "final_regressor = " << all.final_regressor_name << endl;
 
   if (options.was_supplied("invert_hash")) all.hash_inv = true;
@@ -1147,7 +1148,7 @@ void load_input_model(vw& all, io_buf& io_temp)
 {
   // Need to see if we have to load feature mask first or second.
   // -i and -mask are from same file, load -i file first so mask can use it
-  if (!all.feature_mask.empty() && all.initial_regressors.size() > 0 && all.feature_mask == all.initial_regressors[0])
+  if (!all.feature_mask.empty() && !all.initial_regressors.empty() && all.feature_mask == all.initial_regressors[0])
   {
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
@@ -1168,7 +1169,7 @@ void load_input_model(vw& all, io_buf& io_temp)
 ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t num_bytes)
 {
   auto* wrapper_context = reinterpret_cast<trace_message_wrapper*>(context);
-  std::string str(buffer, num_bytes);
+  const std::string str(buffer, num_bytes);
   wrapper_context->_trace_message(wrapper_context->_inner_context, str);
   return static_cast<ssize_t>(num_bytes);
 }
@@ -1199,8 +1200,8 @@ vw& parse_args(
         .add(make_option("strict_parse", strict_parse).help("throw on malformed examples"));
     all.options->add_and_parse(vw_args);
 
-    if (ring_size_tmp <= 0) { THROW("ring_size should be positive"); }
-    size_t ring_size = static_cast<size_t>(ring_size_tmp);
+    if (ring_size_tmp <= 0) { THROW("ring_size should be positive") }
+    auto ring_size = static_cast<size_t>(ring_size_tmp);
 
     all.example_parser = new parser{ring_size, strict_parse};
     all.example_parser->_shared_data = all.sd;
@@ -1252,7 +1253,8 @@ vw& parse_args(
             all.options->was_supplied("unique_id")) &&
         !(all.options->was_supplied("total") && all.options->was_supplied("node") &&
             all.options->was_supplied("unique_id")))
-    { THROW("you must specificy unique_id, total, and node if you specify any"); }
+    { THROW("you must specificy unique_id, total, and node if you specify any")
+    }
 
     if (all.options->was_supplied("span_server"))
     {
@@ -1261,7 +1263,7 @@ vw& parse_args(
           span_server_arg, span_server_port_arg, unique_id_arg, total_arg, node_arg, all.logger.quiet);
     }
 
-    parse_diagnostics(*all.options.get(), all);
+    parse_diagnostics(*all.options, all);
 
     all.initial_t = static_cast<float>(all.sd->t);
     return all;
@@ -1273,9 +1275,9 @@ vw& parse_args(
   }
 }
 
-bool check_interaction_settings_collision(options_i& options, std::string file_options)
+bool check_interaction_settings_collision(options_i& options, const std::string& file_options)
 {
-  bool command_line_has_interaction = options.was_supplied("q") || options.was_supplied("quadratic") ||
+  const bool command_line_has_interaction = options.was_supplied("q") || options.was_supplied("quadratic") ||
       options.was_supplied("cubic") || options.was_supplied("interactions");
 
   if (!command_line_has_interaction) return false;
@@ -1307,7 +1309,7 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
     // If we previously encountered an option we want to skip, ignore tokens without --.
     if (skipping)
     {
-      for (auto token : opt.original_tokens)
+      for (const auto& token : opt.original_tokens)
       {
         auto found = token.find("--");
         if (found != std::string::npos) { skipping = false; }
@@ -1332,7 +1334,7 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
     // File options should always use long form.
 
     // If the key is empty this must be a value, otherwise set the key.
-    if (!treat_as_value && opt.string_key != "")
+    if (!treat_as_value && !opt.string_key.empty())
     {
       // If the new token is a new option and there were no values previously it was a bool option. Add it as a switch.
       if (count == 0 && first_seen) { options.insert(saved_key, ""); }
@@ -1352,9 +1354,9 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
       saved_key = opt.string_key;
       is_ccb_input_model = is_ccb_input_model || (saved_key == "ccb_explore_adf");
 
-      if (opt.value.size() > 0)
+      if (!opt.value.empty())
       {
-        for (auto value : opt.value)
+        for (const auto& value : opt.value)
         {
           options.insert(saved_key, value);
           count++;
@@ -1366,7 +1368,7 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
       // If treat_as_value is set, boost incorrectly interpreted the token as containing an option key
       // In this case, what should have happened is all original_tokens items should be in value.
       auto source = treat_as_value ? opt.original_tokens : opt.value;
-      for (auto value : source)
+      for (const auto& value : source)
       {
         options.insert(saved_key, value);
         count++;
@@ -1374,7 +1376,7 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
     }
   }
 
-  if (count == 0 && saved_key != "") { options.insert(saved_key, ""); }
+  if (count == 0 && !saved_key.empty()) { options.insert(saved_key, ""); }
 }
 
 options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model, bool& interactions_settings_duplicated)
@@ -1386,7 +1388,7 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model,
 
   // Convert file_options into  vector.
   std::istringstream ss{file_options};
-  std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
+  const std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
   merge_options_from_header_strings(container, interactions_settings_duplicated, options, all.is_ccb_input_model);
 
@@ -1394,14 +1396,14 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model,
 }
 
 void parse_modules(
-    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
+    options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_namespaces)
 {
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
   options.add_and_parse(rand_options);
   all.get_random_state()->set_random_state(all.random_seed);
 
-  parse_feature_tweaks(options, all, interactions_settings_duplicated, dictionary_nses);  // feature tweaks
+  parse_feature_tweaks(options, all, interactions_settings_duplicated, dictionary_namespaces);  // feature tweaks
 
   parse_example_tweaks(options, all);  // example manipulation
 
@@ -1429,9 +1431,9 @@ void parse_modules(
   }
 }
 
-void parse_sources(options_i& options, vw& all, io_buf& model, bool skipModelLoad)
+void parse_sources(options_i& options, vw& all, io_buf& model, bool skip_model_load)
 {
-  if (!skipModelLoad)
+  if (!skip_model_load)
     load_input_model(all, model);
   else
     model.close_file();
@@ -1441,7 +1443,7 @@ void parse_sources(options_i& options, vw& all, io_buf& model, bool skipModelLoa
 
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
-  size_t params_per_problem = all.l->increment;
+  const size_t params_per_problem = all.l->increment;
   while (params_per_problem > (static_cast<uint64_t>(1) << i)) i++;
   all.wpp = (1 << i) >> all.weights.stride_shift();
 }
@@ -1466,7 +1468,7 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
 
     // now pos is position where value starts
     // find position of next space
-    size_t pos_after_value = cmd.find(" ", pos);
+    const size_t pos_after_value = cmd.find(' ', pos);
     if (pos_after_value == std::string::npos)
     {
       // we reach the end of the std::string, so replace the all characters after pos by new_value
@@ -1502,7 +1504,7 @@ char** to_argv_escaped(std::string const& s, int& argc)
 
 char** to_argv(std::string const& s, int& argc)
 {
-  VW::string_view strview(s);
+  const VW::string_view strview(s);
   std::vector<VW::string_view> foo;
   tokenize(' ', strview, foo);
 
@@ -1513,7 +1515,7 @@ char** to_argv(std::string const& s, int& argc)
   argv[0][1] = '\0';
   for (size_t i = 0; i < foo.size(); i++)
   {
-    size_t len = foo[i].length();
+    const size_t len = foo[i].length();
     argv[i + 1] = calloc_or_throw<char>(len + 1);
     memcpy(argv[i + 1], foo[i].data(), len);
     // copy() is supported with boost::string_view, not with string_ref
@@ -1549,14 +1551,14 @@ void print_enabled_reductions(vw& all, std::vector<std::string>& enabled_reducti
 }
 
 vw* initialize(
-    config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+    config::options_i& options, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   std::unique_ptr<options_i, options_deleter_type> opts(&options, [](VW::config::options_i*) {});
 
-  return initialize(std::move(opts), model, skipModelLoad, trace_listener, trace_context);
+  return initialize(std::move(opts), model, skip_model_load, trace_listener, trace_context);
 }
 
-vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skipModelLoad,
+vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skip_model_load,
     trace_message_t trace_listener, void* trace_context)
 {
   // Set up logger as early as possible
@@ -1566,26 +1568,26 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
   try
   {
     // if user doesn't pass in a model, read from options
-    io_buf localModel;
+    io_buf local_model;
     if (!model)
     {
       std::vector<std::string> all_initial_regressor_files(all.initial_regressors);
       if (all.options->was_supplied("input_feature_regularizer"))
       { all_initial_regressor_files.push_back(all.per_feature_regularizer_input); }
-      read_regressor_file(all, all_initial_regressor_files, localModel);
-      model = &localModel;
+      read_regressor_file(all, all_initial_regressor_files, local_model);
+      model = &local_model;
     }
 
     // Loads header of model files and loads the command line options into the options object.
     bool interactions_settings_duplicated;
-    load_header_merge_options(*all.options.get(), all, *model, interactions_settings_duplicated);
+    load_header_merge_options(*all.options, all, *model, interactions_settings_duplicated);
 
-    std::vector<std::string> dictionary_nses;
-    parse_modules(*all.options.get(), all, interactions_settings_duplicated, dictionary_nses);
-    parse_sources(*all.options.get(), all, *model, skipModelLoad);
+    std::vector<std::string> dictionary_namespaces;
+    parse_modules(*all.options, all, interactions_settings_duplicated, dictionary_namespaces);
+    parse_sources(*all.options, all, *model, skip_model_load);
 
     // we must delay so parse_mask is fully defined.
-    for (size_t id = 0; id < dictionary_nses.size(); id++) parse_dictionary_argument(all, dictionary_nses[id]);
+    for (const auto& dictionary_namespace : dictionary_namespaces) parse_dictionary_argument(all, dictionary_namespace);
 
     all.options->check_unregistered();
 
@@ -1623,7 +1625,7 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
   }
 }
 
-vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+vw* initialize(std::string s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
   char** argv = to_argv(s, argc);
@@ -1631,7 +1633,7 @@ vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t
 
   try
   {
-    ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context);
+    ret = initialize(argc, argv, model, skip_model_load, trace_listener, trace_context);
   }
   catch (...)
   {
@@ -1644,7 +1646,7 @@ vw* initialize(std::string s, io_buf* model, bool skipModelLoad, trace_message_t
 }
 
 vw* initialize_escaped(
-    std::string const& s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+    std::string const& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
   char** argv = to_argv_escaped(s, argc);
@@ -1652,7 +1654,7 @@ vw* initialize_escaped(
 
   try
   {
-    ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context);
+    ret = initialize(argc, argv, model, skip_model_load, trace_listener, trace_context);
   }
   catch (...)
   {
@@ -1665,16 +1667,16 @@ vw* initialize_escaped(
 }
 
 vw* initialize(
-    int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+    int argc, char* argv[], io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   std::unique_ptr<options_i, options_deleter_type> options(
       new config::options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
-  return initialize(std::move(options), model, skipModelLoad, trace_listener, trace_context);
+  return initialize(std::move(options), model, skip_model_load, trace_listener, trace_context);
 }
 
 // Create a new VW instance while sharing the model with another instance
 // The extra arguments will be appended to those of the other VW instance
-vw* seed_vw_model(vw* vw_model, const std::string extra_args, trace_message_t trace_listener, void* trace_context)
+vw* seed_vw_model(vw* vw_model, std::string extra_args, trace_message_t trace_listener, void* trace_context)
 {
   options_serializer_boost_po serializer;
   for (auto const& option : vw_model->options->get_all_options())
@@ -1693,7 +1695,7 @@ vw* seed_vw_model(vw* vw_model, const std::string extra_args, trace_message_t tr
   serialized_options = serialized_options + " " + extra_args;
 
   vw* new_model =
-      VW::initialize(serialized_options.c_str(), nullptr, true /* skipModelLoad */, trace_listener, trace_context);
+      VW::initialize(serialized_options, nullptr, true /* skipModelLoad */, trace_listener, trace_context);
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance
@@ -1708,17 +1710,17 @@ void sync_stats(vw& all)
 {
   if (all.all_reduce != nullptr)
   {
-    float loss = static_cast<float>(all.sd->sum_loss);
+    const auto loss = static_cast<float>(all.sd->sum_loss);
     all.sd->sum_loss = static_cast<double>(accumulate_scalar(all, loss));
-    float weighted_labeled_examples = static_cast<float>(all.sd->weighted_labeled_examples);
+    const auto weighted_labeled_examples = static_cast<float>(all.sd->weighted_labeled_examples);
     all.sd->weighted_labeled_examples = static_cast<double>(accumulate_scalar(all, weighted_labeled_examples));
-    float weighted_labels = static_cast<float>(all.sd->weighted_labels);
+    const auto weighted_labels = static_cast<float>(all.sd->weighted_labels);
     all.sd->weighted_labels = static_cast<double>(accumulate_scalar(all, weighted_labels));
-    float weighted_unlabeled_examples = static_cast<float>(all.sd->weighted_unlabeled_examples);
+    const auto weighted_unlabeled_examples = static_cast<float>(all.sd->weighted_unlabeled_examples);
     all.sd->weighted_unlabeled_examples = static_cast<double>(accumulate_scalar(all, weighted_unlabeled_examples));
-    float example_number = static_cast<float>(all.sd->example_number);
+    const auto example_number = static_cast<float>(all.sd->example_number);
     all.sd->example_number = static_cast<uint64_t>(accumulate_scalar(all, example_number));
-    float total_features = static_cast<float>(all.sd->total_features);
+    const auto total_features = static_cast<float>(all.sd->total_features);
     all.sd->total_features = static_cast<uint64_t>(accumulate_scalar(all, total_features));
   }
 }
