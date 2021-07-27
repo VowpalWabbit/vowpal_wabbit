@@ -44,13 +44,16 @@ namespace VW
     (2) The code is not yet reentrant.
    */
 vw* initialize(std::unique_ptr<config::options_i, options_deleter_type> options, io_buf* model = nullptr,
-    bool skipModelLoad = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+    bool skipModelLoad = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
+    std::unique_ptr<VW::setup_base_i> = nullptr);
 vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,
-    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
+    std::unique_ptr<VW::setup_base_i> = nullptr);
 vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skipModelLoad = false,
-    trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
+    std::unique_ptr<VW::setup_base_i> = nullptr);
 vw* seed_vw_model(
     vw* vw_model, std::string extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Allows the input command line string to have spaces escaped by '\'

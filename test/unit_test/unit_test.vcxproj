@@ -52,6 +52,7 @@
     <ClCompile Include="vw_versions_test.cc" />
     <ClCompile Include="power_test.cc" />
     <ClCompile Include="prediction_test.cc" />
+    <ClCompile Include="custom_reduction_test.cc" />
     <ClCompile Include="scope_exit_test.cc" />
     <ClCompile Include="slates_parser_test.cc" />
     <ClCompile Include="slates_test.cc" />
