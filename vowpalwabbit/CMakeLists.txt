@@ -123,6 +123,8 @@ set(vw_all_headers
   hashstring.h
   interact.h
   interactions_predict.h
+  cached_learner.h
+  reduction_stack.h
   interactions.h
   io_buf.h
   json_utils.h
@@ -291,6 +293,7 @@ set(vw_all_sources
   global_data.cc
   hashstring.cc
   interact.cc
+  reduction_stack.cc
   interactions.cc
   io_buf.cc
   kernel_svm.cc
