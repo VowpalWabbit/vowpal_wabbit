@@ -405,8 +405,10 @@ void finish_example(vw& all, nn&, example& ec)
   return_simple_example(all, nullptr, ec);
 }
 
-base_learner* nn_setup(VW::setup_base_i& setup_base, options_i& options, vw& all)
+base_learner* nn_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto n = scoped_calloc_or_throw<nn>();
   bool meanfield = false;
   option_group_definition new_options("Neural Network");
@@ -451,11 +453,11 @@ base_learner* nn_setup(VW::setup_base_i& setup_base, options_i& options, vw& all
   n->hidden_units_pred = calloc_or_throw<polyprediction>(n->k);
   n->hiddenbias_pred = calloc_or_throw<polyprediction>(n->k);
 
-  auto base = as_singleline(setup_base(options, all));
+  auto base = as_singleline(stack_builder.setup_base_learner());
   n->increment = base->increment;  // Indexing of output layer is odd.
   nn& nv = *n.get();
   learner<nn, example>& l = init_learner(n, base, predict_or_learn_multi<true, true>,
-      predict_or_learn_multi<false, true>, n->k + 1, all.get_setupfn_name(nn_setup), true);
+      predict_or_learn_multi<false, true>, n->k + 1, stack_builder.get_setupfn_name(nn_setup), true);
   if (nv.multitask) l.set_multipredict(multipredict);
   l.set_finish_example(finish_example);
   l.set_end_pass(end_pass);

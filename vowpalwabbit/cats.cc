@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "cats.h"
-#include "parse_args.h"
+#include "global_data.h"
 #include "error_constants.h"
 #include "debug_log.h"
 #include "shared_data.h"
@@ -160,8 +160,11 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-LEARNER::base_learner* setup(setup_base_i& setup_base, options_i& options, vw& all)
+LEARNER::base_learner* setup(setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   option_group_definition new_options("Continuous actions tree with smoothing");
   uint32_t num_actions = 0;
   float bandwidth = 0;
@@ -196,7 +199,7 @@ LEARNER::base_learner* setup(setup_base_i& setup_base, options_i& options, vw& a
                          << bandwidth << std::endl;
   }
 
-  LEARNER::base_learner* p_base = setup_base(options, all);
+  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
   auto p_reduction = scoped_calloc_or_throw<cats>(as_singleline(p_base));
   p_reduction->num_actions = num_actions;
   p_reduction->bandwidth = bandwidth;
@@ -204,7 +207,7 @@ LEARNER::base_learner* setup(setup_base_i& setup_base, options_i& options, vw& a
   p_reduction->min_value = min_value;
 
   LEARNER::learner<cats, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, all.get_setupfn_name(setup), true);
+      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, stack_builder.get_setupfn_name(setup), true);
 
   l.set_finish_example(finish_example);
 

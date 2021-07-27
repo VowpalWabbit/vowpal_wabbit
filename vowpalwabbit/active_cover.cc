@@ -206,8 +206,11 @@ void predict_or_learn_active_cover(active_cover& a, single_learner& base, exampl
   }
 }
 
-base_learner* active_cover_setup(VW::setup_base_i& setup_base, options_i& options, vw& all)
+base_learner* active_cover_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   auto data = VW::make_unique<active_cover>();
   option_group_definition new_options("Active Learning with Cover");
 
@@ -240,7 +243,7 @@ base_learner* active_cover_setup(VW::setup_base_i& setup_base, options_i& option
 
   if (options.was_supplied("active")) THROW("error: you can't use --active_cover and --active at the same time");
 
-  auto* base = as_singleline(setup_base(options, all));
+  auto* base = as_singleline(stack_builder.setup_base_learner());
 
   data->lambda_n = new float[data->cover_size];
   data->lambda_d = new float[data->cover_size];
@@ -253,7 +256,7 @@ base_learner* active_cover_setup(VW::setup_base_i& setup_base, options_i& option
 
   const auto cover_size = data->cover_size;
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn_active_cover<true>,
-      predict_or_learn_active_cover<false>, all.get_setupfn_name(active_cover_setup))
+      predict_or_learn_active_cover<false>, stack_builder.get_setupfn_name(active_cover_setup))
                 .set_params_per_weight(cover_size + 1)
                 .set_prediction_type(prediction_type_t::scalar)
                 .set_label_type(label_type_t::simple)

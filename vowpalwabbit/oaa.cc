@@ -218,8 +218,10 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   VW::finish_example(all, ec);
 }
 
-VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& setup_base, options_i& options, vw& all)
+VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto data = scoped_calloc_or_throw<oaa>();
   bool probabilities = false;
   bool scores = false;
@@ -263,7 +265,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& setup_base, options_i& op
 
   oaa* data_ptr = data.get();
   VW::LEARNER::learner<oaa, example>* l;
-  auto base = as_singleline(setup_base(options, all));
+  auto base = as_singleline(stack_builder.setup_base_learner());
   if (probabilities || scores)
   {
     if (probabilities)
@@ -274,7 +276,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& setup_base, options_i& op
                              << std::endl;
       // the three boolean template parameters are: is_learn, print_all and scores
       l = &LEARNER::init_multiclass_learner(data, base, learn<false, true, true>, predict<false, true, true>,
-          all.example_parser, data->k, all.get_setupfn_name(oaa_setup) + "-prob", prediction_type_t::scalars);
+          all.example_parser, data->k, stack_builder.get_setupfn_name(oaa_setup) + "-prob", prediction_type_t::scalars);
       all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
       all.sd->report_multiclass_log_loss = true;
       l->set_finish_example(finish_example_scores<true>);
@@ -282,7 +284,8 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& setup_base, options_i& op
     else
     {
       l = &VW::LEARNER::init_multiclass_learner(data, base, learn<false, true, false>, predict<false, true, false>,
-          all.example_parser, data->k, all.get_setupfn_name(oaa_setup) + "-scores", prediction_type_t::scalars);
+          all.example_parser, data->k, stack_builder.get_setupfn_name(oaa_setup) + "-scores",
+          prediction_type_t::scalars);
       all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
       l->set_finish_example(finish_example_scores<false>);
     }
@@ -290,13 +293,13 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& setup_base, options_i& op
   else if (all.raw_prediction != nullptr)
   {
     l = &VW::LEARNER::init_multiclass_learner(data, base, learn<true, false, false>, predict<true, false, false>,
-        all.example_parser, data->k, all.get_setupfn_name(oaa_setup) + "-raw", prediction_type_t::multiclass);
+        all.example_parser, data->k, stack_builder.get_setupfn_name(oaa_setup) + "-raw", prediction_type_t::multiclass);
     all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   }
   else
   {
     l = &VW::LEARNER::init_multiclass_learner(data, base, learn<false, false, false>, predict<false, false, false>,
-        all.example_parser, data->k, all.get_setupfn_name(oaa_setup), prediction_type_t::multiclass);
+        all.example_parser, data->k, stack_builder.get_setupfn_name(oaa_setup), prediction_type_t::multiclass);
     all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   }
 

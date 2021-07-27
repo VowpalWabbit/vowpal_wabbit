@@ -131,8 +131,10 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 
 void finish_example(vw& all, csoaa&, example& ec) { COST_SENSITIVE::finish_example(all, ec); }
 
-base_learner* csoaa_setup(VW::setup_base_i& setup_base, options_i& options, vw& all)
+base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto c = scoped_calloc_or_throw<csoaa>();
   option_group_definition new_options("Cost Sensitive One Against All");
   new_options.add(
@@ -142,10 +144,10 @@ base_learner* csoaa_setup(VW::setup_base_i& setup_base, options_i& options, vw& 
 
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
 
-  learner<csoaa, example>& l = init_learner(
-      c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>, predict_or_learn<false>, c->num_classes,
-      prediction_type_t::multiclass, all.get_setupfn_name(csoaa_setup), true /*csoaa.learn calls gd.learn. nothing to be
-                                                                                gained by calling csoaa.predict first*/
+  learner<csoaa, example>& l = init_learner(c, as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true>, predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass,
+      stack_builder.get_setupfn_name(csoaa_setup), true /*csoaa.learn calls gd.learn. nothing to be
+                                                 gained by calling csoaa.predict first*/
   );
   all.example_parser->lbl_parser = cs_label;
 
@@ -817,8 +819,10 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
   return ret;
 }
 
-base_learner* csldf_setup(VW::setup_base_i& setup_base, options_i& options, vw& all)
+base_learner* csldf_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto ld = scoped_calloc_or_throw<ldf>();
 
   std::string csoaa_ldf;
@@ -897,10 +901,10 @@ base_learner* csldf_setup(VW::setup_base_i& setup_base, options_i& options, vw& 
   ld->label_features.reserve(256);
 
   ld->read_example_this_loop = 0;
-  single_learner* pbase = as_singleline(setup_base(*all.options, all));
+  single_learner* pbase = as_singleline(stack_builder.setup_base_learner());
   learner<ldf, multi_ex>* pl = nullptr;
 
-  std::string name = all.get_setupfn_name(csldf_setup);
+  std::string name = stack_builder.get_setupfn_name(csldf_setup);
   if (ld->rank)
     pl = &init_learner(
         ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type_t::action_scores, name + "-rank");

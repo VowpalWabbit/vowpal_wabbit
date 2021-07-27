@@ -100,8 +100,10 @@ void end_examples(sender& s)
   s.buf->close_files();
 }
 
-VW::LEARNER::base_learner* sender_setup(VW::setup_base_i&, options_i& options, vw& all)
+VW::LEARNER::base_learner* sender_setup(VW::setup_base_i& stack_builder)
 {
+  VW::config::options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   std::string host;
 
   option_group_definition sender_options("Network sending");
@@ -115,7 +117,8 @@ VW::LEARNER::base_learner* sender_setup(VW::setup_base_i&, options_i& options, v
   s->all = &all;
   s->delay_ring = calloc_or_throw<example*>(all.example_parser->ring_size);
 
-  VW::LEARNER::learner<sender, example>& l = init_learner(s, learn, learn, 1, all.get_setupfn_name(sender_setup));
+  VW::LEARNER::learner<sender, example>& l =
+      init_learner(s, learn, learn, 1, stack_builder.get_setupfn_name(sender_setup));
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);
   return make_base(l);

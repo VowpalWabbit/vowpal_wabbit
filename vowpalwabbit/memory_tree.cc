@@ -1197,8 +1197,10 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
 //////////////////////////////End of Save & Load///////////////////////////////
 }  // namespace memory_tree_ns
 
-base_learner* memory_tree_setup(VW::setup_base_i& setup_base, options_i& options, vw& all)
+base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   using namespace memory_tree_ns;
   auto tree = scoped_calloc_or_throw<memory_tree>();
   option_group_definition new_options("Memory Tree");
@@ -1253,8 +1255,8 @@ base_learner* memory_tree_setup(VW::setup_base_i& setup_base, options_i& options
   if (tree->oas == false)
   {
     num_learners = tree->max_nodes + 1;
-    learner<memory_tree, example>& l = init_multiclass_learner(tree, as_singleline(setup_base(options, all)), learn,
-        predict, all.example_parser, num_learners, all.get_setupfn_name(memory_tree_setup));
+    learner<memory_tree, example>& l = init_multiclass_learner(tree, as_singleline(stack_builder.setup_base_learner()),
+        learn, predict, all.example_parser, num_learners, stack_builder.get_setupfn_name(memory_tree_setup));
     all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
     // srand(time(0));
     l.set_save_load(save_load_memory_tree);
@@ -1265,8 +1267,8 @@ base_learner* memory_tree_setup(VW::setup_base_i& setup_base, options_i& options
   else
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
-    learner<memory_tree, example>& l = init_learner(tree, as_singleline(setup_base(options, all)), learn, predict,
-        num_learners, prediction_type_t::multilabels, all.get_setupfn_name(memory_tree_setup));
+    learner<memory_tree, example>& l = init_learner(tree, as_singleline(stack_builder.setup_base_learner()), learn,
+        predict, num_learners, prediction_type_t::multilabels, stack_builder.get_setupfn_name(memory_tree_setup));
 
     l.set_end_pass(end_pass);
     l.set_save_load(save_load_memory_tree);
