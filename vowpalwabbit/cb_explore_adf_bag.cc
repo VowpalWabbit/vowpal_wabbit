@@ -143,8 +143,10 @@ void print_bag_example(vw& all, cb_explore_adf_base<cb_explore_adf_bag>& data, m
   cb_explore_adf_base<cb_explore_adf_bag>::print_multiline_example(all, data, ec_seq);
 }
 
-VW::LEARNER::base_learner* setup(VW::setup_base_i& setup_base, VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  VW::config::options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
   float epsilon = 0.;
@@ -173,7 +175,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& setup_base, VW::config::optio
   if (!options.was_supplied("no_predict")) { options.insert("no_predict", ""); }
 
   size_t problem_multiplier = bag_size;
-  VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
+  VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");
@@ -182,7 +184,7 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& setup_base, VW::config::optio
   auto data =
       VW::make_unique<explore_type>(with_metrics, epsilon, bag_size, greedify, first_only, all.get_random_state());
   auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup))
+      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
                 .set_prediction_type(prediction_type_t::action_probs)
                 .set_label_type(label_type_t::cb)

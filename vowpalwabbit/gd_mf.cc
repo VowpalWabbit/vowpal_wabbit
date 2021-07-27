@@ -320,8 +320,11 @@ void learn(gdmf& d, single_learner&, example& ec)
   if (all.training && ec.l.simple.label != FLT_MAX) mf_train(d, ec);
 }
 
-base_learner* gd_mf_setup(VW::setup_base_i&, options_i& options, vw& all)
+base_learner* gd_mf_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   auto data = scoped_calloc_or_throw<gdmf>();
 
   bool bfgs = false;
@@ -368,8 +371,8 @@ base_learner* gd_mf_setup(VW::setup_base_i&, options_i& options, vw& all)
   }
   all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
 
-  learner<gdmf, example>& l = init_learner(
-      data, learn, predict, (UINT64_ONE << all.weights.stride_shift()), all.get_setupfn_name(gd_mf_setup), true);
+  learner<gdmf, example>& l = init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()),
+      stack_builder.get_setupfn_name(gd_mf_setup), true);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
 

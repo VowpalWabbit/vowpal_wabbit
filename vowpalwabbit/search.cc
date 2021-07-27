@@ -2513,8 +2513,10 @@ void parse_neighbor_features(VW::string_view nf_strview, search& sch)
   }
 }
 
-base_learner* setup(VW::setup_base_i& setup_base, options_i& options, vw& all)
+base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   free_ptr<search> sch = scoped_calloc_or_throw<search>();
   search_private& priv = *sch->priv;
   std::string task_string;
@@ -2743,7 +2745,7 @@ base_learner* setup(VW::setup_base_i& setup_base, options_i& options, vw& all)
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
-  base_learner* base = setup_base(*all.options, all);
+  base_learner* base = stack_builder.setup_base_learner();
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   all.example_parser->lbl_parser = MC::mc_label;
@@ -2769,8 +2771,9 @@ base_learner* setup(VW::setup_base_i& setup_base, options_i& options, vw& all)
 
   cdbg << "num_learners = " << priv.num_learners << endl;
 
-  learner<search, multi_ex>& l = init_learner(sch, make_base(*base), do_actual_learning<true>,
-      do_actual_learning<false>, priv.total_number_of_policies * priv.num_learners, all.get_setupfn_name(setup), true);
+  learner<search, multi_ex>& l =
+      init_learner(sch, make_base(*base), do_actual_learning<true>, do_actual_learning<false>,
+          priv.total_number_of_policies * priv.num_learners, stack_builder.get_setupfn_name(setup), true);
 
   l.set_finish_example(finish_multiline_example);
   l.set_end_examples(end_examples);

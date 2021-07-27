@@ -45,8 +45,10 @@ void learn(print& p, VW::LEARNER::base_learner&, example& ec)
   cout << std::endl;
 }
 
-VW::LEARNER::base_learner* print_setup(VW::setup_base_i&, options_i& options, vw& all)
+VW::LEARNER::base_learner* print_setup(VW::setup_base_i& stack_builder)
 {
+  VW::config::options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   bool print_option = false;
   option_group_definition new_options("Print psuedolearner");
   new_options.add(make_option("print", print_option).keep().necessary().help("print examples"));
@@ -55,7 +57,7 @@ VW::LEARNER::base_learner* print_setup(VW::setup_base_i&, options_i& options, vw
 
   all.weights.stride_shift(0);
   auto* learner = VW::LEARNER::make_base_learner(VW::make_unique<print>(&all), learn, learn,
-      all.get_setupfn_name(print_setup), prediction_type_t::scalar, label_type_t::simple)
+      stack_builder.get_setupfn_name(print_setup), prediction_type_t::scalar, label_type_t::simple)
                       .build();
   return VW::LEARNER::make_base(*learner);
 }

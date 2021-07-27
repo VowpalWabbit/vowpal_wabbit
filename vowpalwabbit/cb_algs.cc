@@ -144,8 +144,10 @@ void eval_finish_example(vw& all, cb& c, example& ec)
 }
 }  // namespace CB_ALGS
 using namespace CB_ALGS;
-base_learner* cb_algs_setup(VW::setup_base_i& setup_base, options_i& options, vw& all)
+base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto data = scoped_calloc_or_throw<cb>();
   std::string type_string = "dr";
   bool eval = false;
@@ -203,7 +205,7 @@ base_learner* cb_algs_setup(VW::setup_base_i& setup_base, options_i& options, vw
     options.insert("csoaa", ss.str());
   }
 
-  auto base = as_singleline(setup_base(options, all));
+  auto base = as_singleline(stack_builder.setup_base_learner());
   if (eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
   else
   {
@@ -214,13 +216,13 @@ base_learner* cb_algs_setup(VW::setup_base_i& setup_base, options_i& options, vw
   if (eval)
   {
     l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type_t::multiclass,
-        all.get_setupfn_name(cb_algs_setup) + "-eval", true);
+        stack_builder.get_setupfn_name(cb_algs_setup) + "-eval", true);
     l->set_finish_example(eval_finish_example);
   }
   else
   {
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, problem_multiplier,
-        prediction_type_t::multiclass, all.get_setupfn_name(cb_algs_setup));
+        prediction_type_t::multiclass, stack_builder.get_setupfn_name(cb_algs_setup));
     l->set_finish_example(finish_example);
   }
   c.scorer = all.scorer;
