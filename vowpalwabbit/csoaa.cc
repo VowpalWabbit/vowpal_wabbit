@@ -863,8 +863,6 @@ base_learner* csldf_setup(options_i& options, vw& all)
   }
   if (options.was_supplied("ldf_override")) ldf_arg = ldf_override;
 
-  all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
-
   ld->treat_as_classifier = false;
   if (ldf_arg == "multiline" || ldf_arg == "m")
     ld->treat_as_classifier = false;
@@ -913,6 +911,8 @@ base_learner* csldf_setup(options_i& options, vw& all)
 
   pl->set_finish_example(finish_multiline_example);
   pl->set_end_pass(end_pass);
+
+  all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
   all.cost_sensitive = make_base(*pl);
   return all.cost_sensitive;
 }
