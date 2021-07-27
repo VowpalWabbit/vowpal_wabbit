@@ -85,12 +85,13 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
   vw->finish_example(examples);
 }
 
-static void benchmark_cb_adf_iris(benchmark::State& state, int num_feature_groups, bool same_first_char, bool interactions)
+static void benchmark_cb_adf_iris(
+    benchmark::State& state, int num_feature_groups, bool same_first_char, bool interactions)
 {
   std::string cmd = "--cb_explore_adf --quiet";
   if (interactions) { cmd += " -q ::"; }
   auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
-  int batch_size = 200; //20000;
+  int batch_size = 200;  // 20000;
   int actions_per_event = 48;
   int shared_feats_size = 78;
   int shared_feats_count = 3;
@@ -104,28 +105,18 @@ static void benchmark_cb_adf_iris(benchmark::State& state, int num_feature_group
     std::ostringstream shared_ss;
     shared_ss << "shared |";
     for (int shared_feat = 0; shared_feat < shared_feats_count; ++shared_feat)
-    {
-      shared_ss << " " << (rand() % shared_feats_size);
-    }
+    { shared_ss << " " << (rand() % shared_feats_size); }
     examples.push_back(VW::read_example(*vw, shared_ss.str()));
     int action_ind = rand() % actions_per_event;
     for (int ac = 0; ac < actions_per_event; ++ac)
     {
       std::ostringstream action_ss;
-      if (ac == action_ind)
-      {
-        action_ss << action_ind << ":1.0:0.5 ";
-      }
+      if (ac == action_ind) { action_ss << action_ind << ":1.0:0.5 "; }
       action_ss << "|";
-      if (same_first_char)
-      {
-        action_ss << "f";
-      }
+      if (same_first_char) { action_ss << "f"; }
       action_ss << (rand() % num_feature_groups);
       for (int action_feat = 0; action_feat < action_feats_count; ++action_feat)
-      {
-        action_ss << " " << (rand() % action_feats_size);
-      }
+      { action_ss << " " << (rand() % action_feats_size); }
       examples.push_back(VW::read_example(*vw, action_ss.str()));
     }
     examples_vec.push_back(examples);
