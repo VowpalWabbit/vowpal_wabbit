@@ -28,4 +28,11 @@ namespace config
 {
 struct options_i;
 }  // namespace config
+
+struct setup_base_i
+{
+  virtual VW::LEARNER::base_learner* operator()(VW::config::options_i&, vw&) = 0;
+
+  virtual ~setup_base_i() = default;
+};
 }  // namespace VW

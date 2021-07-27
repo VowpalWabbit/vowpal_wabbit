@@ -55,7 +55,7 @@
 typedef float weight;
 
 typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
-typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::config::options_i&, vw&);
+typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::setup_base_i&, VW::config::options_i&, vw&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);
 
@@ -101,6 +101,7 @@ struct parser_options;
 
 namespace VW
 {
+struct default_reduction_stack_setup;
 namespace parsers
 {
 namespace flatbuffer
@@ -276,8 +277,6 @@ public:
 
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
-  std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
-
   // Prediction output
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
   std::unique_ptr<VW::io::writer> raw_prediction;                      // file descriptors for text output.
@@ -335,7 +334,7 @@ public:
   vw& operator=(const vw&&) = delete;
 
   std::string get_setupfn_name(reduction_setup_fn setup);
-  void build_setupfn_name_dict();
+  void build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>&);
 
 private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
