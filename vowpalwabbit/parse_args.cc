@@ -1412,7 +1412,8 @@ void parse_modules(
 
 void parse_reductions(vw& all, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
-  if (!learner_builder) { learner_builder = VW::make_unique<VW::default_reduction_stack_setup>(all, *all.options.get()); }
+  if (!learner_builder)
+  { learner_builder = VW::make_unique<VW::default_reduction_stack_setup>(all, *all.options.get()); }
   else
   {
     learner_builder->delayed_attach(all, *all.options.get());
