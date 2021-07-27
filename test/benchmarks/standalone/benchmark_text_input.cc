@@ -85,6 +85,63 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
   vw->finish_example(examples);
 }
 
+static void benchmark_cb_adf_iris(benchmark::State& state, int num_feature_groups, bool same_first_char, bool interactions)
+{
+  std::string cmd = "--cb_explore_adf --quiet";
+  if (interactions) { cmd += " -q ::"; }
+  auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
+  int batch_size = 200; //20000;
+  int actions_per_event = 48;
+  int shared_feats_size = 78;
+  int shared_feats_count = 3;
+  int action_feats_size = 141;
+  int action_feats_count = 8;
+  std::vector<multi_ex> examples_vec;
+  srand(0);
+  for (int batch = 0; batch < batch_size; ++batch)
+  {
+    multi_ex examples;
+    std::ostringstream shared_ss;
+    shared_ss << "shared |";
+    for (int shared_feat = 0; shared_feat < shared_feats_count; ++shared_feat)
+    {
+      shared_ss << " " << (rand() % shared_feats_size);
+    }
+    examples.push_back(VW::read_example(*vw, shared_ss.str()));
+    int action_ind = rand() % actions_per_event;
+    for (int ac = 0; ac < actions_per_event; ++ac)
+    {
+      std::ostringstream action_ss;
+      if (ac == action_ind)
+      {
+        action_ss << action_ind << ":1.0:0.5 ";
+      }
+      action_ss << "|";
+      if (same_first_char)
+      {
+        action_ss << "f";
+      }
+      action_ss << (rand() % num_feature_groups);
+      for (int action_feat = 0; action_feat < action_feats_count; ++action_feat)
+      {
+        action_ss << " " << (rand() % action_feats_size);
+      }
+      examples.push_back(VW::read_example(*vw, action_ss.str()));
+    }
+    examples_vec.push_back(examples);
+  }
+
+  for (auto _ : state)
+  {
+    for (multi_ex examples : examples_vec)
+    {
+      vw->learn(examples);
+      vw->finish_example(examples);
+    }
+    benchmark::ClobberMemory();
+  }
+}
+
 BENCHMARK_CAPTURE(bench_text, 120_string_fts, get_x_string_fts(120));
 BENCHMARK_CAPTURE(bench_text, 120_num_fts, get_x_numerical_fts(120));
 
@@ -98,3 +155,9 @@ BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, many_features, "a b c d e f g h i j k
 
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, few_features, 2);
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, many_features, 120);
+
+BENCHMARK_CAPTURE(benchmark_cb_adf_iris, no_namespaces, 1, false, false);
+BENCHMARK_CAPTURE(benchmark_cb_adf_iris, diff_char_no_interactions, 3, false, false);
+BENCHMARK_CAPTURE(benchmark_cb_adf_iris, diff_char_interactions, 3, false, true);
+BENCHMARK_CAPTURE(benchmark_cb_adf_iris, same_char_no_interactions, 3, true, false);
+BENCHMARK_CAPTURE(benchmark_cb_adf_iris, same_char_interactions, 3, true, true);
