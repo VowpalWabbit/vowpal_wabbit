@@ -85,7 +85,7 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
   vw->finish_example(examples);
 }
 
-static void benchmark_cb_adf_iris(
+static void benchmark_cb_adf_large(
     benchmark::State& state, int num_feature_groups, bool same_first_char, bool interactions)
 {
   std::string cmd = "--cb_explore_adf --quiet";
@@ -147,8 +147,8 @@ BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, many_features, "a b c d e f g h i j k
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, few_features, 2);
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, many_features, 120);
 
-BENCHMARK_CAPTURE(benchmark_cb_adf_iris, no_namespaces, 1, false, false);
-BENCHMARK_CAPTURE(benchmark_cb_adf_iris, diff_char_no_interactions, 3, false, false);
-BENCHMARK_CAPTURE(benchmark_cb_adf_iris, diff_char_interactions, 3, false, true);
-BENCHMARK_CAPTURE(benchmark_cb_adf_iris, same_char_no_interactions, 3, true, false);
-BENCHMARK_CAPTURE(benchmark_cb_adf_iris, same_char_interactions, 3, true, true);
+BENCHMARK_CAPTURE(benchmark_cb_adf_large, no_namespaces, 1, false, false);
+BENCHMARK_CAPTURE(benchmark_cb_adf_large, diff_char_no_interactions, 3, false, false);
+BENCHMARK_CAPTURE(benchmark_cb_adf_large, diff_char_interactions, 3, false, true);
+BENCHMARK_CAPTURE(benchmark_cb_adf_large, same_char_no_interactions, 3, true, false);
+BENCHMARK_CAPTURE(benchmark_cb_adf_large, same_char_interactions, 3, true, true);
