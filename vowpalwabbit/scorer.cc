@@ -66,8 +66,10 @@ inline float glf1(float in) { return 2.f / (1.f + correctedExp(-in)) - 1.f; }
 
 inline float id(float in) { return in; }
 
-VW::LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* scorer_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto s = scoped_calloc_or_throw<scorer>();
   std::string link;
   option_group_definition new_options("scorer options");
@@ -81,30 +83,30 @@ VW::LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
 
   s->all = &all;
 
-  auto base = as_singleline(setup_base(options, all));
+  auto base = as_singleline(stack_builder.setup_base_learner());
   VW::LEARNER::learner<scorer, example>* l;
   void (*multipredict_f)(scorer&, VW::LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool) =
       multipredict<id>;
 
   if (link == "identity")
     l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>,
-        all.get_setupfn_name(scorer_setup) + "-identity", base->learn_returns_prediction);
+        stack_builder.get_setupfn_name(scorer_setup) + "-identity", base->learn_returns_prediction);
   else if (link == "logistic")
   {
     l = &init_learner(s, base, predict_or_learn<true, logistic>, predict_or_learn<false, logistic>,
-        all.get_setupfn_name(scorer_setup) + "-logistic", base->learn_returns_prediction);
+        stack_builder.get_setupfn_name(scorer_setup) + "-logistic", base->learn_returns_prediction);
     multipredict_f = multipredict<logistic>;
   }
   else if (link == "glf1")
   {
     l = &init_learner(s, base, predict_or_learn<true, glf1>, predict_or_learn<false, glf1>,
-        all.get_setupfn_name(scorer_setup) + "-glf1", base->learn_returns_prediction);
+        stack_builder.get_setupfn_name(scorer_setup) + "-glf1", base->learn_returns_prediction);
     multipredict_f = multipredict<glf1>;
   }
   else if (link == "poisson")
   {
     l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>,
-        all.get_setupfn_name(scorer_setup) + "-poisson", base->learn_returns_prediction);
+        stack_builder.get_setupfn_name(scorer_setup) + "-poisson", base->learn_returns_prediction);
     multipredict_f = multipredict<expf>;
   }
   else

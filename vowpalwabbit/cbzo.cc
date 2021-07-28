@@ -316,8 +316,11 @@ void (*get_predict(vw& all, uint8_t policy))(cbzo&, base_learner&, example&)
     THROW("Unknown policy encountered: " << policy)
 }
 
-base_learner* setup(options_i& options, vw& all)
+base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   auto data = scoped_calloc_or_throw<cbzo>();
 
   std::string policy_str;
@@ -360,7 +363,7 @@ base_learner* setup(options_i& options, vw& all)
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
   learner<cbzo, example>& l = init_learner(data, get_learn(all, policy, feature_mask_off), get_predict(all, policy), 0,
-      prediction_type_t::pdf, all.get_setupfn_name(setup));
+      prediction_type_t::pdf, stack_builder.get_setupfn_name(setup));
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

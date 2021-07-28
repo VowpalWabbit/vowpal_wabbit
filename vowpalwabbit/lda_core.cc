@@ -1273,8 +1273,11 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
   return in;
 }
 
-VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
+VW::LEARNER::base_learner* lda_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   auto ld = scoped_calloc_or_throw<lda>();
   option_group_definition new_options("Latent Dirichlet Allocation");
   int math_mode;
@@ -1338,9 +1341,9 @@ VW::LEARNER::base_learner *lda_setup(options_i &options, vw &all)
 
   all.example_parser->lbl_parser = no_label::no_label_parser;
 
-  VW::LEARNER::learner<lda, example> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
+  VW::LEARNER::learner<lda, example>& l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
-      prediction_type_t::scalars, all.get_setupfn_name(lda_setup), true);
+      prediction_type_t::scalars, stack_builder.get_setupfn_name(lda_setup), true);
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
