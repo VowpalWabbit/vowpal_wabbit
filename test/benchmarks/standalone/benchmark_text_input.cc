@@ -127,9 +127,12 @@ static void benchmark_cb_adf_large(
     for (multi_ex examples : examples_vec)
     {
       vw->learn(examples);
-      vw->finish_example(examples);
     }
     benchmark::ClobberMemory();
+  }
+  for (multi_ex examples : examples_vec)
+  {
+    vw->finish_example(examples);
   }
 }
 
