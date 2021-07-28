@@ -104,7 +104,7 @@ public:
     _p_current_feature_group = nullptr;  // reset cached feature group
     _affix = (*_affix_features)[_feature_group_char];
     _spelling = (*_spelling_features)[_feature_group_char];
-    _namespace_dictionaries = &(*_namespace_dictionaries_map)[feature_group_char()];
+    _namespace_dictionaries = &((*_namespace_dictionaries_map)[feature_group_char()]);
   }
   const VW::string_view get_fg_name() const { return _feature_group_name; }
   uint64_t get_affix_features() const { return _affix; }
