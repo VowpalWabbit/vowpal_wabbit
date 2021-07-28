@@ -1410,7 +1410,10 @@ void parse_modules(
   parse_output_preds(options, all);
 }
 
-void parse_reductions(vw& all, std::unique_ptr<VW::setup_base_i> learner_builder)
+// note: Although we have the option to override setup_base_i,
+// the most common scenario is to use the default_reduction_stack_setup.
+// Expect learner_builder to be nullptr most/all of the cases.
+void instantiate_learner(vw& all, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   if (!learner_builder)
   { learner_builder = VW::make_unique<VW::default_reduction_stack_setup>(all, *all.options.get()); }
@@ -1590,7 +1593,7 @@ vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> opt
 
     std::vector<std::string> dictionary_nses;
     parse_modules(*all.options.get(), all, interactions_settings_duplicated, dictionary_nses);
-    parse_reductions(all, std::move(learner_builder));
+    instantiate_learner(all, std::move(learner_builder));
     parse_sources(*all.options.get(), all, *model, skipModelLoad);
 
     // we must delay so parse_mask is fully defined.
@@ -1668,8 +1671,8 @@ vw* initialize_with_builder(int argc, char* argv[], io_buf* model, bool skipMode
       std::move(options), model, skipModelLoad, trace_listener, trace_context, std::move(learner_builder));
 }
 
-vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener,
-    void* trace_context)
+vw* initialize(
+    int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   return initialize_with_builder(argc, argv, model, skipModelLoad, trace_listener, trace_context, nullptr);
 }
@@ -1683,7 +1686,8 @@ vw* initialize_with_builder(std::string s, io_buf* model, bool skipModelLoad, tr
 
   try
   {
-    ret = initialize_with_builder(argc, argv, model, skipModelLoad, trace_listener, trace_context, std::move(learner_builder));
+    ret = initialize_with_builder(
+        argc, argv, model, skipModelLoad, trace_listener, trace_context, std::move(learner_builder));
   }
   catch (...)
   {

@@ -25,9 +25,11 @@ struct default_reduction_stack_setup : public setup_base_i
 
   std::string get_setupfn_name(reduction_setup_fn setup) override;
 
-protected:
-  std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
+private:
   VW::config::options_i* options_impl = nullptr;
   vw* all_ptr = nullptr;
+
+protected:
+  std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
 };
 }  // namespace VW
