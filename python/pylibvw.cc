@@ -118,6 +118,8 @@ public:
   template <typename T>
   py::object* value_to_pyobject(VW::config::typed_option<T>& opt)
   {
+    T not_supplied{};
+
     if (m_opt.was_supplied(opt.m_name))
     {
       if (opt.default_value_supplied())
@@ -125,7 +127,7 @@ public:
             opt.m_allow_override, opt.value(), true, opt.default_value(), true));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.value(), true, py::object(), false));
+            opt.m_allow_override, opt.value(), true, not_supplied, false));
     }
     else
     {
@@ -134,7 +136,7 @@ public:
             opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, py::object(), false, py::object(), false));
+            opt.m_allow_override, py::object(), false, not_supplied, false));
     }
   }
 
@@ -477,7 +479,9 @@ search_ptr get_search_ptr(vw_ptr all)
 
 py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
 {
-  auto opt_manager = OptionManager(*all->options, all->enabled_reductions, py_class);
+  std::vector<std::string> enabled_reductions;
+  if (all->l) all->l->get_enabled_reductions(enabled_reductions);
+  auto opt_manager = OptionManager(*all->options, enabled_reductions, py_class);
   return opt_manager.get_vw_option_pyobjects(enabled_only);
 }
 
@@ -498,10 +502,12 @@ std::string get_arguments(vw_ptr all)
 
 py::list get_enabled_reductions(vw_ptr all)
 {
-  py::list enabled_reductions;
-  for (auto ex : all->enabled_reductions) { enabled_reductions.append(ex); }
+  py::list py_enabled_reductions;
+  std::vector<std::string> enabled_reductions;
+  if (all->l) all->l->get_enabled_reductions(enabled_reductions);
+  for (auto ex : enabled_reductions) { py_enabled_reductions.append(ex); }
 
-  return enabled_reductions;
+  return py_enabled_reductions;
 }
 
 predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
@@ -691,7 +697,7 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
 
 py::list my_parse(vw_ptr& all, char* str)
 {
-  v_array<example*> examples = v_init<example*>();
+  v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(all.get()));
   all->example_parser->text_reader(all.get(), str, strlen(str), examples);
 
@@ -703,8 +709,6 @@ py::list my_parse(vw_ptr& all, char* str)
     // returned to the pool using finish_example.
     example_collection.append(boost::shared_ptr<example>(ex, dont_delete_me));
   }
-  examples.clear();
-  examples.delete_v();
   return example_collection;
 }
 

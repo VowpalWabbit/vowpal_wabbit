@@ -55,11 +55,13 @@ void save_load(ExternalBinding& external_binding, io_buf& model_file, bool read,
 
 }  // namespace RED_PYTHON
 using namespace RED_PYTHON;
-VW::LEARNER::base_learner* red_python_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* red_python_setup(VW::setup_base_i& stack_builder)
 {
+  vw& all = *stack_builder.get_all_pointer();
+
   if (!all.ext_binding) return nullptr;
 
-  auto base = as_singleline(setup_base(options, all));
+  auto base = as_singleline(stack_builder.setup_base_learner());
 
   VW::LEARNER::learner<ExternalBinding, example>& ret =
       learner<ExternalBinding, example>::init_learner(all.ext_binding.get(), base, learn, predict, 1, base->pred_type,
@@ -76,11 +78,12 @@ VW::LEARNER::base_learner* red_python_setup(options_i& options, vw& all)
 }
 
 using namespace RED_PYTHON;
-VW::LEARNER::base_learner* red_python_multiline_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* red_python_multiline_setup(VW::setup_base_i& stack_builder)
 {
+  vw& all = *stack_builder.get_all_pointer();
   if (!all.ext_binding) return nullptr;
 
-  auto base = as_multiline(setup_base(options, all));
+  auto base = as_multiline(stack_builder.setup_base_learner());
 
   VW::LEARNER::learner<ExternalBinding, multi_ex>& ret = learner<ExternalBinding, multi_ex>::init_learner(
       all.ext_binding.get(), base, multi_learn, multi_predict, 1, prediction_type_t::action_probs,
@@ -97,8 +100,9 @@ VW::LEARNER::base_learner* red_python_multiline_setup(options_i& options, vw& al
 }
 
 using namespace RED_PYTHON;
-VW::LEARNER::base_learner* red_python_base_setup(options_i&, vw& all)
+VW::LEARNER::base_learner* red_python_base_setup(VW::setup_base_i& stack_builder)
 {
+  vw& all = *stack_builder.get_all_pointer();
   if (!all.ext_binding) return nullptr;
 
   learner<ExternalBinding, example>& l = init_learner_py(all.ext_binding.get(), learn, predict, 1,

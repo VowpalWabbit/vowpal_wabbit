@@ -3,7 +3,6 @@
 #include <iostream>
 #include "learner.h"
 #include "pmf_to_pdf.h"
-#include "parse_args.h"  // setup_base()
 #include "action_score.h"
 #include "cb_label_parser.h"
 
@@ -128,15 +127,11 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   data->max_value = max_val;
   data->_p_base = as_singleline(test_harness);
 
-  ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
-
   predict(*data, *data->_p_base, ec);
 
   check_pdf_sums_to_one(ec.pred.pdf);
   check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
 
-  ec.l.cb_cont = VW::cb_continuous::continuous_label();
-  ec.l.cb_cont.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   ec.l.cb_cont.costs.clear();
   ec.l.cb_cont.costs.push_back({1010.17f, .5f, .05f});  // action, cost, prob
 
@@ -175,7 +170,6 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
 
     const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
     data->_p_base = as_singleline(test_harness);
-    ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
 
     predict(*data, *data->_p_base, ec);
 
@@ -211,7 +205,6 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
 
     const auto test_harness = VW::pmf_to_pdf::get_test_harness_reduction(prediction_scores);
     data->_p_base = as_singleline(test_harness);
-    ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
 
     predict(*data, *data->_p_base, ec);
 

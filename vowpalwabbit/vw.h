@@ -64,7 +64,9 @@ vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skipM
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
 
-VW_DEPRECATED("By value version is deprecated, pass std::string by const ref instead using `to_argv`")
+VW_DEPRECATED(
+    "By value version is deprecated, pass std::string by const ref instead using `to_argv`. This will be removed in VW "
+    "9.0.")
 char** get_argv_from_string(std::string s, int& argc);
 
 // The argv array from both of these functions must be freed.
@@ -109,12 +111,12 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
 // thus any delay introduced when freeing examples must be at least as long as the one
 // introduced by all.l->finish_example implementations.
 // e.g. multiline examples as used by cb_adf must not be released before the finishing newline example.
-VW_DEPRECATED("label size is no longer used, please use the other overload")
+VW_DEPRECATED("label size is no longer used, please use the other overload. This will be removed in VW 9.0.")
 example* alloc_examples(size_t, size_t count);
 example* alloc_examples(size_t count);
 VW_DEPRECATED(
     "This interface is deprecated and unsafe. Deletion function pointers are no longer needed. Please use "
-    "dealloc_examples")
+    "dealloc_examples. This will be removed in VW 9.0.")
 void dealloc_example(void (*delete_label)(polylabel*), example& ec, void (*delete_prediction)(void*) = nullptr);
 
 void dealloc_examples(example* example_ptr, size_t count);
@@ -149,14 +151,15 @@ void finish_example(vw& all, example& ec);
 void finish_example(vw& all, multi_ex& ec);
 void empty_example(vw& all, example& ec);
 
-VW_DEPRECATED("label size or copy_label are no longer used, please use the other overload")
+VW_DEPRECATED(
+    "label size or copy_label are no longer used, please use the other overload. This will be removed in VW 9.0.")
 void copy_example_data(bool audit, example*, example*, size_t, void (*copy_label)(polylabel*, polylabel*));
 VW_DEPRECATED("copy_label is no longer required. Use copy_example_data_with_label")
 void copy_example_data(bool audit, example*, example*, void (*copy_label)(polylabel*, polylabel*));
 
-VW_DEPRECATED("Use the overload without audit and with added const.")
+VW_DEPRECATED("Use the overload without audit and with added const. This will be removed in VW 9.0.")
 void copy_example_metadata(bool audit, example*, example*);
-VW_DEPRECATED("Use the overload without audit and with added const.")
+VW_DEPRECATED("Use the overload without audit and with added const. This will be removed in VW 9.0.")
 void copy_example_data(bool audit, example*, example*);  // metadata + features, don't copy the label
 void move_feature_namespace(example* dst, example* src, namespace_index c);
 
@@ -212,15 +215,15 @@ inline uint64_t chain_hash(vw& all, const std::string& name, const std::string& 
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)
 {
-  return (&all.weights[((uint64_t)index) << all.weights.stride_shift()])[offset];
+  return (&all.weights[static_cast<uint64_t>(index) << all.weights.stride_shift()])[offset];
 }
 
 inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value)
 {
-  (&all.weights[((uint64_t)index) << all.weights.stride_shift()])[offset] = value;
+  (&all.weights[static_cast<uint64_t>(index) << all.weights.stride_shift()])[offset] = value;
 }
 
-inline uint32_t num_weights(vw& all) { return (uint32_t)all.length(); }
+inline uint32_t num_weights(vw& all) { return static_cast<uint32_t>(all.length()); }
 
 inline uint32_t get_stride(vw& all) { return all.weights.stride(); }
 

@@ -95,7 +95,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
   if (max_label == 1) return 0;
 
   std::vector<v_array<uint32_t>> tournaments;
-  v_array<uint32_t> t = v_init<uint32_t>();
+  v_array<uint32_t> t;
 
   for (uint32_t i = 0; i < max_label; i++)
   {
@@ -121,7 +121,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 
     for (size_t i = 0; i < tournaments.size(); i++)
     {
-      v_array<uint32_t> empty = v_init<uint32_t>();
+      v_array<uint32_t> empty;
       new_tournaments.push_back(empty);
     }
 
@@ -322,8 +322,10 @@ void learn(ect& e, single_learner& base, example& ec)
   ec.pred.multiclass = pred;
 }
 
-base_learner* ect_setup(options_i& options, vw& all)
+base_learner* ect_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto data = scoped_calloc_or_throw<ect>();
   std::string link;
   option_group_definition new_options("Error Correcting Tournament Options");
@@ -339,11 +341,11 @@ base_learner* ect_setup(options_i& options, vw& all)
 
   size_t wpp = create_circuit(*data.get(), data->k, data->errors + 1);
 
-  base_learner* base = setup_base(options, all);
+  base_learner* base = stack_builder.setup_base_learner();
   if (link == "logistic") data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
 
   learner<ect, example>& l = init_multiclass_learner(
-      data, as_singleline(base), learn, predict, all.example_parser, wpp, all.get_setupfn_name(ect_setup));
+      data, as_singleline(base), learn, predict, all.example_parser, wpp, stack_builder.get_setupfn_name(ect_setup));
   all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
 
   return make_base(l);

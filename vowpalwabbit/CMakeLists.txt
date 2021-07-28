@@ -109,7 +109,6 @@ set(vw_all_headers
   example.h
   explore_eval.h
   expreplay.h
-  ezexample.h
   fast_pow10.h
   feature_group.h
   ftrl.h
@@ -124,6 +123,8 @@ set(vw_all_headers
   hashstring.h
   interact.h
   interactions_predict.h
+  cached_learner.h
+  reduction_stack.h
   interactions.h
   io_buf.h
   json_utils.h
@@ -146,7 +147,7 @@ set(vw_all_headers
   multilabel_oaa.h
   multilabel.h
   mwt.h
-  namespaced_features.h
+  namespaced_feature_store.h
   numeric_casts.h
   named_labels.h
   network.h
@@ -293,6 +294,7 @@ set(vw_all_sources
   global_data.cc
   hashstring.cc
   interact.cc
+  reduction_stack.cc
   interactions.cc
   io_buf.cc
   kernel_svm.cc
@@ -311,7 +313,7 @@ set(vw_all_sources
   multilabel_oaa.cc
   multilabel.cc
   mwt.cc
-  namespaced_features.cc
+  namespaced_feature_store.cc
   named_labels.cc
   network.cc
   kskip_ngram_transformer.cc

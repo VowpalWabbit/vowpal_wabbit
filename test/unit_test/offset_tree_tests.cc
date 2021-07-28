@@ -71,8 +71,6 @@ BOOST_AUTO_TEST_CASE(offset_tree_learn_basic)
   VW::offset_tree::offset_tree tree(3);
   tree.init();
   example ec;
-  ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
-  ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{-1.0f, 1, 0.5f});
 
   tree.learn(*as_singleline(test_harness), ec);
@@ -162,8 +160,6 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   VW::offset_tree::offset_tree tree(static_cast<uint32_t>(expected_scores.size()));
   tree.init();
   example ec;
-  ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
-  ec.l.cb.costs = v_init<CB::cb_class>();
   auto& ret_val = tree.predict(*as_singleline(test_base), ec);
   BOOST_CHECK_EQUAL_COLLECTIONS(ret_val.begin(), ret_val.end(), expected_scores.begin(), expected_scores.end());
   delete test_base;

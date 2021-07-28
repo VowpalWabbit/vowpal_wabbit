@@ -42,7 +42,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
     for (const auto& f : fs.audit_range())
     {
       std::cout << '\t';
-      if (audit) std::cout << f.audit()->get()->first << '^' << f.audit()->get()->second << ':';
+      if (audit) std::cout << f.audit()->first << '^' << f.audit()->second << ':';
       std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
       std::cout << ':' << (&weights[f.index()])[offset];
     }
@@ -60,12 +60,11 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
         for (const auto& f1 : ec.feature_space[static_cast<unsigned char>(i[0])].audit_range())
           for (const auto& f2 : ec.feature_space[static_cast<unsigned char>(i[1])].audit_range())
           {
-            std::cout << '\t' << f1.audit()->get()->first << k << '^' << f1.audit()->get()->second << ':'
-                      << ((f1.index() + k) & mask) << "(" << ((f1.index() + offset + k) & mask) << ")" << ':'
-                      << f1.value();
+            std::cout << '\t' << f1.audit()->first << k << '^' << f1.audit()->second << ':' << ((f1.index() + k) & mask)
+                      << "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
             std::cout << ':' << (&weights[f1.index()])[offset + k];
 
-            std::cout << ':' << f2.audit()->get()->first << k << '^' << f2.audit()->get()->second << ':'
+            std::cout << ':' << f2.audit()->first << k << '^' << f2.audit()->second << ':'
                       << ((f2.index() + k + d.rank) & mask) << "(" << ((f2.index() + offset + k + d.rank) & mask) << ")"
                       << ':' << f2.value();
             std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
@@ -321,8 +320,11 @@ void learn(gdmf& d, single_learner&, example& ec)
   if (all.training && ec.l.simple.label != FLT_MAX) mf_train(d, ec);
 }
 
-base_learner* gd_mf_setup(options_i& options, vw& all)
+base_learner* gd_mf_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   auto data = scoped_calloc_or_throw<gdmf>();
 
   bool bfgs = false;
@@ -369,8 +371,8 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   }
   all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
 
-  learner<gdmf, example>& l = init_learner(
-      data, learn, predict, (UINT64_ONE << all.weights.stride_shift()), all.get_setupfn_name(gd_mf_setup), true);
+  learner<gdmf, example>& l = init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()),
+      stack_builder.get_setupfn_name(gd_mf_setup), true);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
 

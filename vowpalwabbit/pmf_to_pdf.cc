@@ -102,12 +102,6 @@ void reduction::transform_prediction(example& ec)
   }
 }
 
-reduction::~reduction()
-{
-  temp_lbl_cb.costs.delete_v();
-  temp_pred_a_s.delete_v();
-}
-
 void reduction::predict(example& ec)
 {
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
@@ -157,8 +151,8 @@ void reduction::learn(example& ec)
 
   // going to pass label into tree, so need to used discretized version of bandwidth i.e. tree_bandwidth
   uint32_t b = tree_bandwidth;
-  const uint32_t local_min_value = std::max(0, action_segment_index - static_cast<int>(b) + 1);
-  const uint32_t local_max_value = std::min(num_actions - 1 - b, action_segment_index + b);
+  const uint32_t local_min_value = std::max(0, action_segment_index - static_cast<int>(b));
+  const uint32_t local_max_value = std::min(num_actions - 1, action_segment_index + b);
 
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
 
@@ -238,8 +232,10 @@ void finish_example(vw& all, reduction& c, example& ec)
   VW::finish_example(all, ec);
 }
 
-base_learner* setup(options_i& options, vw& all)
+base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto data = scoped_calloc_or_throw<pmf_to_pdf::reduction>();
 
   option_group_definition new_options("Convert discrete PMF into continuous PDF");
@@ -299,11 +295,11 @@ base_learner* setup(options_i& options, vw& all)
 
   options.replace("tree_bandwidth", std::to_string(data->tree_bandwidth));
 
-  auto p_base = as_singleline(setup_base(options, all));
+  auto p_base = as_singleline(stack_builder.setup_base_learner());
   data->_p_base = p_base;
 
   learner<pmf_to_pdf::reduction, example>& l =
-      init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf, all.get_setupfn_name(setup));
+      init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf, stack_builder.get_setupfn_name(setup));
 
   return make_base(l);
 }

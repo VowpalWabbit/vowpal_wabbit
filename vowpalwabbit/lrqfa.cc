@@ -88,7 +88,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
               if (all.audit || all.hash_inv)
               {
                 std::stringstream new_feature_buffer;
-                new_feature_buffer << right << '^' << rfs.space_names[rfn].get()->second << '^' << n;
+                new_feature_buffer << right << '^' << rfs.space_names[rfn].second << '^' << n;
 #ifdef _WIN32
                 char* new_space = _strdup("lrqfa");
                 char* new_feature = _strdup(new_feature_buffer.str().c_str());
@@ -96,7 +96,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
                 char* new_space = strdup("lrqfa");
                 char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
-                rfs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space, new_feature)));
+                rfs.space_names.push_back(audit_strings(new_space, new_feature));
               }
             }
           }
@@ -131,8 +131,10 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   }
 }
 
-VW::LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   std::string lrqfa;
   option_group_definition new_options("Low Rank Quadratics FA");
   new_options.add(
@@ -152,10 +154,10 @@ VW::LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
   for (char i : lrq->field_name) lrq->field_id[static_cast<int>(i)] = fd_id++;
 
   all.wpp = all.wpp * static_cast<uint64_t>(1 + lrq->k);
-  auto base = setup_base(options, all);
-  learner<LRQFAstate, example>& l =
-      init_learner(lrq, as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
-          1 + lrq->field_name.size() * lrq->k, all.get_setupfn_name(lrqfa_setup), base->learn_returns_prediction);
+  auto base = stack_builder.setup_base_learner();
+  learner<LRQFAstate, example>& l = init_learner(lrq, as_singleline(base), predict_or_learn<true>,
+      predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k, stack_builder.get_setupfn_name(lrqfa_setup),
+      base->learn_returns_prediction);
 
   return make_base(l);
 }

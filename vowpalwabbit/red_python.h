@@ -7,9 +7,9 @@
 #include "reductions_fwd.h"
 #include "io_buf.h"
 
-VW::LEARNER::base_learner* red_python_setup(VW::config::options_i& options, vw& all);
-VW::LEARNER::base_learner* red_python_multiline_setup(VW::config::options_i& options, vw& all);
-VW::LEARNER::base_learner* red_python_base_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* red_python_setup(VW::setup_base_i&);
+VW::LEARNER::base_learner* red_python_multiline_setup(VW::setup_base_i&);
+VW::LEARNER::base_learner* red_python_base_setup(VW::setup_base_i&);
 
 namespace RED_PYTHON
 {

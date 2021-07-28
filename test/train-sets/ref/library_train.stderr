@@ -8,7 +8,7 @@ decay_learning_rate = 1
 creating cache_file = train-sets/library_train.cache
 Reading datafile = train-sets/library_train
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, shared_feature_merger
+Enabled reductions: gd, scorer-identity, csoaa_ldf, shared_feature_merger
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0    known        1       30

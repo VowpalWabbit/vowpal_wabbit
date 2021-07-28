@@ -277,7 +277,7 @@ void print_lda_features(vw& all, example& ec)
   {
     for (const auto& f : fs.audit_range())
     {
-      std::cout << '\t' << f.audit()->get()->first << '^' << f.audit()->get()->second << ':'
+      std::cout << '\t' << f.audit()->first << '^' << f.audit()->second << ':'
                 << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
       for (size_t k = 0; k < all.lda; k++) std::cout << ':' << (&weights[f.index()])[k];
     }
@@ -298,7 +298,7 @@ void print_features(vw& all, example& ec)
       if (fs.space_names.size() > 0)
         for (const auto& f : fs.audit_range())
         {
-          audit_interaction(dat, f.audit()->get());
+          audit_interaction(dat, f.audit());
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
           audit_interaction(dat, nullptr);
         }
@@ -1149,8 +1149,11 @@ uint64_t ceil_log_2(uint64_t v)
     return 1 + ceil_log_2(v >> 1);
 }
 
-base_learner* setup(options_i& options, vw& all)
+base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   auto g = scoped_calloc_or_throw<gd>();
 
   bool sgd = false;
@@ -1276,7 +1279,7 @@ base_learner* setup(options_i& options, vw& all)
 
   gd* bare = g.get();
   learner<gd, example>& ret = init_learner(g, g->learn, bare->predict,
-      (static_cast<uint64_t>(1) << all.weights.stride_shift()), all.get_setupfn_name(setup), true);
+      (static_cast<uint64_t>(1) << all.weights.stride_shift()), stack_builder.get_setupfn_name(setup), true);
   ret.set_sensitivity(bare->sensitivity);
   ret.set_multipredict(bare->multipredict);
   ret.set_update(bare->update);

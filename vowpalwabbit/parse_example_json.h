@@ -5,6 +5,7 @@
 #pragma once
 
 #include "v_array.h"
+#include "future_compat.h"
 
 #include <cstring>
 #include <cfloat>
@@ -1659,7 +1660,7 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
 }
 
 template <bool audit>
-VW_DEPRECATED("read_line_json has been deprecated; use read_line_json_s instead.")
+VW_DEPRECATED("read_line_json has been deprecated; use read_line_json_s instead. This will be removed in VW 9.0.")
 void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory,
     void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {

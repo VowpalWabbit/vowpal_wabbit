@@ -193,6 +193,8 @@
     <ClInclude Include="guard.h" />
     <ClInclude Include="interact.h" />
     <ClInclude Include="interactions_predict.h" />
+    <ClInclude Include="cached_learner.h" />
+    <ClInclude Include="reduction_stack.h" />
     <ClInclude Include="interactions.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="io/io_adapter.h" />
@@ -213,7 +215,7 @@
     <ClInclude Include="multiclass.h" />
     <ClInclude Include="multilabel_oaa.h" />
     <ClInclude Include="multilabel.h" />
-    <ClInclude Include="namespaced_features.h" />
+    <ClInclude Include="namespaced_feature_store.h" />
     <ClInclude Include="mwt.h" />
     <ClInclude Include="named_labels.h" />
     <ClInclude Include="network.h" />
@@ -355,6 +357,7 @@
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="interact.cc" />
     <ClCompile Include="interactions.cc" />
+    <ClCompile Include="reduction_stack.cc" />
     <ClCompile Include="io/io_adapter.cc" />
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="kernel_svm.cc" />
@@ -373,7 +376,7 @@
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="multilabel_oaa.cc" />
     <ClCompile Include="multilabel.cc" />
-    <ClCompile Include="namespaced_features.cc" />
+    <ClCompile Include="namespaced_feature_store.cc" />
     <ClCompile Include="mwt.cc" />
     <ClCompile Include="named_labels.cc" />
     <ClCompile Include="network.cc" />
