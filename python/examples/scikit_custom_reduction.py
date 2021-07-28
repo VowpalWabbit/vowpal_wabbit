@@ -1,5 +1,4 @@
 import sys, os
-import math
 import numpy as np
 
 from scipy.sparse import coo_matrix
@@ -73,7 +72,7 @@ class ScikitGDReduction(pyvw.Copperhead):
             # pickle.loads(s)
         else:
             s = pickle.dumps(self.classifier)
-            print(f'saving {read} {text}')
+            print(f'saving {read} {text}: {s}')
             # print(s)
 
     # todo saving and loading
@@ -112,7 +111,7 @@ def run_example():
     vw = pyvw.vw(python_reduction=ScikitGDReduction, arg_str="-f hola.model --save_resume --loss_function logistic -d /root/vowpal_wabbit/test/train-sets/rcv1_small.dat")
 
     vw.run_parser()
-    config = vw.get_config()
+    # config = vw.get_config()
 
     #vw.learn("-1 |f 9:6.2699720e-02 14:3.3754818e-02")
     #prediction = vw.predict("-1 |f 9:6.2699720e-02 14:3.3754818e-02")

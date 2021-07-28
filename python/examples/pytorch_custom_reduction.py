@@ -1,5 +1,4 @@
 import sys, os
-import math
 import numpy as np
 import torch
 
@@ -9,9 +8,6 @@ from vowpalwabbit import pyvw
 class PyTorchReduction(pyvw.Copperhead):
     def __init__(self):
         super(PyTorchReduction, self).__init__()
-
-    def _save_load(self):
-        print("saving/loading")
 
     def reduction_init(self, vw):
         config = vw.get_config()
@@ -31,7 +27,7 @@ class PyTorchReduction(pyvw.Copperhead):
 
         for ns_id in range(ec.num_namespaces()):
             # 128 ord_ns is constant namespace
-            ord_ns = ec.namespace(ns_id)
+            # ord_ns = ec.namespace(ns_id)
             names = pyvw.namespace_id(ec, ns_id)
             for i in range(ec.num_features_in(names.ord_ns)):
                 f = ec.feature(names.ord_ns, i)
@@ -81,7 +77,7 @@ class PyTorchReduction(pyvw.Copperhead):
         self.scheduler.step()
 
     # see https://pytorch.org/tutorials/beginner/saving_loading_models.html
-    def _save_load(self, read, text):
+    def _save_load(self, read, text, modelIO):
         if read:
             # model.load_state_dict(torch.load(PATH))
             # model.eval()

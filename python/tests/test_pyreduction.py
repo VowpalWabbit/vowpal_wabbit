@@ -67,8 +67,6 @@ def cpp_binary():
     vw.finish()
     return vw.get_log()
 
-import pytest
-
 def helper_compare_binary_output(a, b):
     assert len(a) == len(b)
     line_number = 0
