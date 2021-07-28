@@ -91,12 +91,12 @@ static void benchmark_cb_adf_large(
   std::string cmd = "--cb_explore_adf --quiet";
   if (interactions) { cmd += " -q ::"; }
   auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
-  int batch_size = 200;  // 20000;
-  int actions_per_event = 48;
-  int shared_feats_size = 78;
+  int batch_size = 100;  // 20000;
+  int actions_per_event = 6;  // 48;
+  int shared_feats_size = 7;  // 78;
   int shared_feats_count = 3;
-  int action_feats_size = 141;
-  int action_feats_count = 8;
+  int action_feats_size = 14;  // 141;
+  int action_feats_count = 4;  // 8;
   std::vector<multi_ex> examples_vec;
   srand(0);
   for (int batch = 0; batch < batch_size; ++batch)
