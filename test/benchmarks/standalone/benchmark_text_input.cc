@@ -124,16 +124,10 @@ static void benchmark_cb_adf_large(
 
   for (auto _ : state)
   {
-    for (multi_ex examples : examples_vec)
-    {
-      vw->learn(examples);
-    }
+    for (multi_ex examples : examples_vec) { vw->learn(examples); }
     benchmark::ClobberMemory();
   }
-  for (multi_ex examples : examples_vec)
-  {
-    vw->finish_example(examples);
-  }
+  for (multi_ex examples : examples_vec) { vw->finish_example(examples); }
 }
 
 BENCHMARK_CAPTURE(bench_text, 120_string_fts, get_x_string_fts(120));
