@@ -152,6 +152,18 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     data.explore.learn(base, examples);
     if (data._metrics)
     {
+      size_t num_features = 0;
+      size_t num_namespaces = 0;
+
+      for (const auto& example : examples)
+      {
+        num_features += example->get_num_features();
+        num_namespaces += example->indices.size();
+      }
+
+      data._metrics->sum_features += num_features;
+      data._metrics->sum_namespaces += num_namespaces;
+
       data._metrics->metric_labeled++;
       data._metrics->metric_sum_cost += data._known_cost.cost;
       if (data._known_cost.action == 0)
@@ -182,25 +194,16 @@ template <typename ExploreType>
 void cb_explore_adf_base<ExploreType>::output_example(vw& all, multi_ex& ec_seq)
 {
   if (ec_seq.size() <= 0) return;
-
-  size_t num_features = 0;
-  size_t num_namespaces = 0;
-
   float loss = 0.;
 
   auto& ec = *ec_seq[0];
   const auto& preds = ec.pred.a_s;
 
+  size_t num_features = 0;
+
   for (const auto& example : ec_seq)
   {
     num_features += example->get_num_features();
-    num_namespaces += example->indices.size();
-  }
-
-  if (_metrics)
-  {
-    _metrics->sum_features += num_features;
-    _metrics->sum_namespaces += num_namespaces;
   }
 
   bool labeled_example = true;
