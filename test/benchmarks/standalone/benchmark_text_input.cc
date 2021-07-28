@@ -108,7 +108,6 @@ static void benchmark_cb_adf_large(
     { shared_ss << " " << (rand() % shared_feats_size); }
     examples.push_back(VW::read_example(*vw, shared_ss.str()));
     int action_ind = rand() % actions_per_event;
-    std::cout << shared_ss.str() << std::endl;
     for (int ac = 0; ac < actions_per_event; ++ac)
     {
       std::ostringstream action_ss;
@@ -121,9 +120,7 @@ static void benchmark_cb_adf_large(
         action_ss << " " << (rand() % action_feats_size) << " ";
       }
       examples.push_back(VW::read_example(*vw, action_ss.str()));
-      std::cout << action_ss.str() << std::endl;
     }
-    std::cout << std::endl;
     examples_vec.push_back(examples);
   }
 
