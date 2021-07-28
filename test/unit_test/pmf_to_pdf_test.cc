@@ -3,7 +3,6 @@
 #include <iostream>
 #include "learner.h"
 #include "pmf_to_pdf.h"
-#include "parse_args.h"  // setup_base()
 #include "action_score.h"
 #include "cb_label_parser.h"
 

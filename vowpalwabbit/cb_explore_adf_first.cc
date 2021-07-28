@@ -93,8 +93,10 @@ void cb_explore_adf_first::save_load(io_buf& io, bool read, bool text)
   }
 }
 
-base_learner* setup(VW::setup_base_i& setup_base, config::options_i& options, vw& all)
+base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  VW::config::options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
   size_t tau = 0;
@@ -115,7 +117,7 @@ base_learner* setup(VW::setup_base_i& setup_base, config::options_i& options, vw
 
   size_t problem_multiplier = 1;
 
-  multi_learner* base = as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");
@@ -125,7 +127,7 @@ base_learner* setup(VW::setup_base_i& setup_base, config::options_i& options, vw
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup))
+      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
                 .set_prediction_type(prediction_type_t::action_probs)
                 .set_label_type(label_type_t::cb)

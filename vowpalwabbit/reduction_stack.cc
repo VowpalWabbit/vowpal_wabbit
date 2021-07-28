@@ -86,8 +86,6 @@
 void register_reductions(std::vector<reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
 {
-  VW::cached_learner null_ptr_learner;
-
   std::map<reduction_setup_fn, std::string> allowlist = {{GD::setup, "gd"}, {ftrl_setup, "ftrl"},
       {scorer_setup, "scorer"}, {CSOAA::csldf_setup, "csoaa_ldf"},
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
@@ -98,12 +96,14 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
   auto name_extractor = VW::config::options_name_extractor();
   vw dummy_all;
 
+  VW::cached_learner null_ptr_learner(dummy_all, name_extractor, nullptr);
+
   for (auto setup_fn : reductions)
   {
     if (allowlist.count(setup_fn)) { reduction_stack.push_back(std::make_tuple(allowlist[setup_fn], setup_fn)); }
     else
     {
-      auto base = setup_fn(null_ptr_learner, name_extractor, dummy_all);
+      auto base = setup_fn(null_ptr_learner);
 
       if (base == nullptr)
         reduction_stack.push_back(std::make_tuple(name_extractor.generated_name, setup_fn));
@@ -212,8 +212,10 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
 
 namespace VW
 {
-default_reduction_stack_setup::default_reduction_stack_setup(vw& all)
+default_reduction_stack_setup::default_reduction_stack_setup(vw& all, VW::config::options_i& options)
 {
+  options_impl = &options;
+  all_ptr = &all;
   // push all reduction functions into the stack
   prepare_reductions(reduction_stack);
   // populate setup_fn -> name map to be used to lookup names in setup_base
@@ -222,7 +224,7 @@ default_reduction_stack_setup::default_reduction_stack_setup(vw& all)
 
 // this function consumes all the reduction_stack until it's able to construct a base_learner
 // same signature/code as the old setup_base(...) from parse_args.cc
-VW::LEARNER::base_learner* default_reduction_stack_setup::operator()(VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* default_reduction_stack_setup::setup_base_learner()
 {
   if (!reduction_stack.empty())
   {
@@ -232,14 +234,14 @@ VW::LEARNER::base_learner* default_reduction_stack_setup::operator()(VW::config:
     reduction_stack.pop_back();
 
     // 'hacky' way of keeping track of the option group created by the setup_func about to be created
-    options.tint(setup_func_name);
-    auto base = setup_func(*this, options, all);
-    options.reset_tint();
+    options_impl->tint(setup_func_name);
+    auto base = setup_func(*this);
+    options_impl->reset_tint();
 
     // returning nullptr means that setup_func (any reduction) was not 'enabled' but
     // only added their respective command args and did not add itself into the
     // chain of learners, therefore we call into setup_base again
-    if (base == nullptr) { return this->operator()(options, all); }
+    if (base == nullptr) { return this->setup_base_learner(); }
     else
     {
       reduction_stack.clear();
@@ -248,5 +250,10 @@ VW::LEARNER::base_learner* default_reduction_stack_setup::operator()(VW::config:
   }
 
   return nullptr;
+}
+
+std::string default_reduction_stack_setup::get_setupfn_name(reduction_setup_fn setup)
+{
+  return all_ptr->get_setupfn_name(setup);
 }
 }  // namespace VW

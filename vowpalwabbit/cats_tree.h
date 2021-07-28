@@ -10,7 +10,7 @@ namespace VW
 {
 namespace cats_tree
 {
-LEARNER::base_learner* setup(setup_base_i& setup_base_fn, config::options_i& options, vw& all);
+LEARNER::base_learner* setup(setup_base_i& stack_builder);
 
 struct tree_node
 {

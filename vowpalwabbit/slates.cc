@@ -232,8 +232,10 @@ void learn_or_predict(slates_data& data, VW::LEARNER::multi_learner& base, multi
   }
 }
 
-VW::LEARNER::base_learner* slates_setup(VW::setup_base_i& setup_base, options_i& options, vw& all)
+VW::LEARNER::base_learner* slates_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<slates_data>();
   bool slates_option = false;
   option_group_definition new_options("Slates");
@@ -247,10 +249,10 @@ VW::LEARNER::base_learner* slates_setup(VW::setup_base_i& setup_base, options_i&
     options.add_and_parse(new_options);
   }
 
-  auto* base = as_multiline(setup_base(options, all));
+  auto* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = slates_label_parser;
-  auto* l = VW::LEARNER::make_reduction_learner(
-      std::move(data), base, learn_or_predict<true>, learn_or_predict<false>, all.get_setupfn_name(slates_setup))
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
+      stack_builder.get_setupfn_name(slates_setup))
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_prediction_type(prediction_type_t::decision_probs)
                 .set_label_type(label_type_t::slates)

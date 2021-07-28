@@ -185,8 +185,10 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
 
 using namespace EXPLORE_EVAL;
 
-base_learner* explore_eval_setup(VW::setup_base_i& setup_base, options_i& options, vw& all)
+base_learner* explore_eval_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto data = scoped_calloc_or_throw<explore_eval>();
   bool explore_eval_option = false;
   option_group_definition new_options("Explore evaluation");
@@ -210,11 +212,11 @@ base_learner* explore_eval_setup(VW::setup_base_i& setup_base, options_i& option
 
   if (!options.was_supplied("cb_explore_adf")) options.insert("cb_explore_adf", "");
 
-  multi_learner* base = as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   learner<explore_eval, multi_ex>& l = init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1,
-      prediction_type_t::action_probs, all.get_setupfn_name(explore_eval_setup), true);
+      prediction_type_t::action_probs, stack_builder.get_setupfn_name(explore_eval_setup), true);
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);
