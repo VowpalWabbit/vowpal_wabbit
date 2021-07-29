@@ -1666,7 +1666,6 @@ vw* initialize_escaped(
 vw* initialize_with_builder(int argc, char* argv[], io_buf* model, bool skip_model_load, trace_message_t trace_listener,
     void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
-  return initialize(std::move(options), model, skip_model_load, trace_listener, trace_context);
   std::unique_ptr<options_i, options_deleter_type> options(
       new config::options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
   return initialize_with_builder(
