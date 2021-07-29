@@ -34,7 +34,7 @@ Diagnostic options:
   -a [ --audit ]        print weights of features
   -P [ --progress ] arg Progress update frequency. int: additive, float: 
                         multiplicative
-  --quiet               Don't output disgnostics and progress updates
+  --quiet               Don't output diagnostics and progress updates
   --limit_output arg    Avoid chatty output. Limit total printed lines.
   --dry_run             Parse arguments and print corresponding metadata. Will 
                         not execute driver.

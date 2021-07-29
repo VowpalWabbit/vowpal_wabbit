@@ -355,8 +355,10 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
 
 using namespace MARGINAL;
 
-VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* marginal_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   free_ptr<MARGINAL::data> d = scoped_calloc_or_throw<MARGINAL::data>();
   std::string marginal;
 
@@ -386,8 +388,9 @@ VW::LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
     }
   }
 
-  VW::LEARNER::learner<MARGINAL::data, example>& ret = init_learner(d, as_singleline(setup_base(options, all)),
-      predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(marginal_setup), true);
+  VW::LEARNER::learner<MARGINAL::data, example>& ret =
+      init_learner(d, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true>,
+          predict_or_learn<false>, stack_builder.get_setupfn_name(marginal_setup), true);
   ret.set_save_load(save_load);
 
   return make_base(ret);

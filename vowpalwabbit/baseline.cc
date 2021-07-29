@@ -161,8 +161,10 @@ float sensitivity(baseline& data, base_learner& base, example& ec)
   return baseline_sens + sens;
 }
 
-base_learner* baseline_setup(options_i& options, vw& all)
+base_learner* baseline_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto data = scoped_calloc_or_throw<baseline>();
   bool baseline_option = false;
   std::string loss_function;
@@ -192,10 +194,10 @@ base_learner* baseline_setup(options_i& options, vw& all)
   auto loss_function_type = all.loss->getType();
   if (loss_function_type != "logistic") data->lr_scaling = true;
 
-  auto base = as_singleline(setup_base(options, all));
+  auto base = as_singleline(stack_builder.setup_base_learner());
 
-  learner<baseline, example>& l =
-      init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(baseline_setup));
+  learner<baseline, example>& l = init_learner(
+      data, base, predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(baseline_setup));
 
   l.set_sensitivity(sensitivity);
 

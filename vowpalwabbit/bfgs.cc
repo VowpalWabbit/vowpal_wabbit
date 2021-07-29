@@ -1058,8 +1058,11 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
 void init_driver(bfgs& b) { b.backstep_on = true; }
 
-base_learner* bfgs_setup(options_i& options, vw& all)
+base_learner* bfgs_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   auto b = VW::make_unique<bfgs>();
   bool conjugate_gradient = false;
   bool bfgs_option = false;
@@ -1122,13 +1125,13 @@ base_learner* bfgs_setup(options_i& options, vw& all)
   {
     learn_ptr = learn<true>;
     predict_ptr = predict<true>;
-    learner_name = all.get_setupfn_name(bfgs_setup) + "-audit";
+    learner_name = stack_builder.get_setupfn_name(bfgs_setup) + "-audit";
   }
   else
   {
     learn_ptr = learn<false>;
     predict_ptr = predict<false>;
-    learner_name = all.get_setupfn_name(bfgs_setup);
+    learner_name = stack_builder.get_setupfn_name(bfgs_setup);
   }
 
   return make_base(*make_base_learner(

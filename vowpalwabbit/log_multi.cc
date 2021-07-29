@@ -498,8 +498,11 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
   }
 }
 
-base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
+base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   auto data = scoped_calloc_or_throw<log_multi>();
   option_group_definition new_options("Logarithmic Time Multiclass Tree");
   new_options.add(make_option("log_multi", data->k).keep().necessary().help("Use online tree for multiclass"))
@@ -519,8 +522,8 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
-  learner<log_multi, example>& l = init_multiclass_learner(data, as_singleline(setup_base(options, all)), learn,
-      predict, all.example_parser, data->max_predictors, all.get_setupfn_name(log_multi_setup));
+  learner<log_multi, example>& l = init_multiclass_learner(data, as_singleline(stack_builder.setup_base_learner()),
+      learn, predict, all.example_parser, data->max_predictors, stack_builder.get_setupfn_name(log_multi_setup));
   all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   l.set_save_load(save_load_tree);
 

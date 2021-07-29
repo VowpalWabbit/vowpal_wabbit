@@ -221,8 +221,10 @@ void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
   }
 }
 
-VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  VW::config::options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   using config::make_option;
 
   bool cb_explore_adf_option = false;
@@ -289,7 +291,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   // Cover is using doubly robust without the cooperation of the base reduction
   if (cb_type_enum == CB_TYPE_MTR) { problem_multiplier *= 2; }
 
-  VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(setup_base(options, all));
+  VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool epsilon_decay;
@@ -310,7 +312,7 @@ VW::LEARNER::base_learner* setup(config::options_i& options, vw& all)
   auto data = VW::make_unique<explore_type>(with_metrics, cover_size, psi, nounif, epsilon, epsilon_decay, first_only,
       as_multiline(all.cost_sensitive), all.scorer, cb_type_enum, all.model_file_ver);
   auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup))
+      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_learn_returns_prediction(true)
                 .set_params_per_weight(problem_multiplier)
                 .set_prediction_type(prediction_type_t::action_probs)
