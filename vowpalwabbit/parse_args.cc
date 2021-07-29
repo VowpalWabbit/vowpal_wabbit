@@ -1568,8 +1568,9 @@ vw* initialize(config::options_i& options, io_buf* model, bool skip_model_load, 
   return initialize(std::move(opts), model, skip_model_load, trace_listener, trace_context);
 }
 
-vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skip_model_load,
-    trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
+vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
+    bool skip_model_load, trace_message_t trace_listener, void* trace_context,
+    std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
   // Set up logger as early as possible
   logger::initialize_logger();
@@ -1725,7 +1726,8 @@ vw* seed_vw_model(vw* vw_model, std::string extra_args, trace_message_t trace_li
   auto serialized_options = serializer.str();
   serialized_options = serialized_options + " " + extra_args;
 
-  vw* new_model = VW::initialize(serialized_options, nullptr, true /* skip_model_load */, trace_listener, trace_context);
+  vw* new_model =
+      VW::initialize(serialized_options, nullptr, true /* skip_model_load */, trace_listener, trace_context);
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance
