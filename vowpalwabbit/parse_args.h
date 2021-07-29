@@ -31,10 +31,10 @@ struct input_options
 // trace listener + context need to be passed at initialization to capture all messages.
 vw& parse_args(VW::config::options_i& options, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 void parse_modules(VW::config::options_i& options, vw& all);
-void parse_sources(VW::config::options_i& options, vw& all, io_buf& model, bool skipModelLoad = false);
+void parse_sources(VW::config::options_i& options, vw& all, io_buf& model, bool skip_model_load = false);
 
 void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
     VW::config::options_i& options, bool& is_ccb_input_model);
 
 std::string spoof_hex_encoded_namespaces(const std::string& arg);
-bool ends_with(const std::string& fullString, const std::string& ending);
+bool ends_with(const std::string& full_string, const std::string& ending);
