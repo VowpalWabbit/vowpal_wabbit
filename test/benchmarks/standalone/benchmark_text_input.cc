@@ -85,16 +85,15 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
   vw->finish_example(examples);
 }
 
-static std::vector<std::vector<std::string>> gen_cb_examples(
-  int num_examples, // Total number of multi_ex examples
-  int shared_feats_size, // Number of possible shared features
-  int shared_feats_count, // Number of shared features per multi_ex
-  int actions_per_example, // Number of actions in each multi_ex
-  int feature_groups_size, // Number of possible feature groups
-  int feature_groups_count, // Number of features groups per action
-  int action_feats_size, // Number of possible per-action features
-  int action_feats_count, // Number of actions per feature group per action
-  bool same_first_char // Flag to keep first character of all feature groups the same
+static std::vector<std::vector<std::string>> gen_cb_examples(int num_examples,  // Total number of multi_ex examples
+    int shared_feats_size,                                                      // Number of possible shared features
+    int shared_feats_count,    // Number of shared features per multi_ex
+    int actions_per_example,   // Number of actions in each multi_ex
+    int feature_groups_size,   // Number of possible feature groups
+    int feature_groups_count,  // Number of features groups per action
+    int action_feats_size,     // Number of possible per-action features
+    int action_feats_count,    // Number of actions per feature group per action
+    bool same_first_char       // Flag to keep first character of all feature groups the same
 )
 {
   srand(0);
@@ -118,9 +117,7 @@ static std::vector<std::vector<std::string>> gen_cb_examples(
         if (same_first_char) { action_ss << "f"; }
         action_ss << ((char)(65 + rand() % feature_groups_size)) << " ";
         for (int action_feat = 0; action_feat < action_feats_count; ++action_feat)
-        {
-          action_ss << (rand() % action_feats_size) << " ";
-        }
+        { action_ss << (rand() % action_feats_size) << " "; }
       }
       examples.push_back(action_ss.str());
     }
@@ -129,17 +126,16 @@ static std::vector<std::vector<std::string>> gen_cb_examples(
   return examples_vec;
 }
 
-static std::vector<std::vector<std::string>> gen_ccb_examples(
-  int num_examples, // Total number of multi_ex examples
-  int shared_feats_size, // Number of possible shared features
-  int shared_feats_count, // Number of shared features per multi_ex
-  int actions_per_example, // Number of actions in each multi_ex
-  int feature_groups_size, // Number of possible feature groups
-  int feature_groups_count, // Number of features groups per action or slot
-  int action_feats_size, // Number of possible per-action/slot features
-  int action_feats_count, // Number of actions per feature group per action or slot
-  bool same_first_char, // Flag to keep first character of all feature groups the same
-  int slots_per_example // Number of slots
+static std::vector<std::vector<std::string>> gen_ccb_examples(int num_examples,  // Total number of multi_ex examples
+    int shared_feats_size,                                                       // Number of possible shared features
+    int shared_feats_count,    // Number of shared features per multi_ex
+    int actions_per_example,   // Number of actions in each multi_ex
+    int feature_groups_size,   // Number of possible feature groups
+    int feature_groups_count,  // Number of features groups per action or slot
+    int action_feats_size,     // Number of possible per-action/slot features
+    int action_feats_count,    // Number of actions per feature group per action or slot
+    bool same_first_char,      // Flag to keep first character of all feature groups the same
+    int slots_per_example      // Number of slots
 )
 {
   srand(0);
@@ -162,9 +158,7 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(
         if (same_first_char) { action_ss << "f"; }
         action_ss << ((char)(65 + rand() % feature_groups_size)) << " ";
         for (int action_feat = 0; action_feat < action_feats_count; ++action_feat)
-        {
-          action_ss << (rand() % action_feats_size) << " ";
-        }
+        { action_ss << (rand() % action_feats_size) << " "; }
       }
       examples.push_back(action_ss.str());
     }
@@ -178,9 +172,7 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(
         if (same_first_char) { slot_ss << "f"; }
         slot_ss << ((char)(65 + rand() % feature_groups_size)) << " ";
         for (int slot_feat = 0; slot_feat < action_feats_count; ++slot_feat)
-        {
-          slot_ss << (rand() % action_feats_size) << " ";
-        }
+        { slot_ss << (rand() % action_feats_size) << " "; }
       }
       examples.push_back(slot_ss.str());
     }
@@ -195,10 +187,7 @@ static std::vector<multi_ex> load_examples(vw* vw, std::vector<std::vector<std::
   for (auto ex_str : ex_strs)
   {
     multi_ex mxs;
-    for (auto example : ex_str)
-    {
-      mxs.push_back(VW::read_example(*vw, example));
-    }
+    for (auto example : ex_str) { mxs.push_back(VW::read_example(*vw, example)); }
     examples_vec.push_back(mxs);
   }
   return examples_vec;
@@ -231,13 +220,23 @@ BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, many_features, "a b c d e f g h i j k
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, few_features, 2);
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, many_features, 120);
 
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_no_namespaces, gen_cb_examples(100, 7, 3, 6, 1, 4, 14, 2, false), "--cb_explore_adf --quiet");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_no_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false), "--cb_explore_adf --quiet");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false), "--cb_explore_adf --quiet -q ::");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_no_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true), "--cb_explore_adf --quiet");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true), "--cb_explore_adf --quiet -q ::");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_no_namespaces, gen_ccb_examples(100, 7, 3, 6, 1, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_no_interactions, gen_ccb_examples(100, 7, 3, 6, 3, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_interactions, gen_ccb_examples(100, 7, 3, 6, 3, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet -q ::");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_no_interactions, gen_ccb_examples(100, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_interactions, gen_ccb_examples(100, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet -q ::");
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_no_namespaces, gen_cb_examples(100, 7, 3, 6, 1, 4, 14, 2, false),
+    "--cb_explore_adf --quiet");
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_no_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false),
+    "--cb_explore_adf --quiet");
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false),
+    "--cb_explore_adf --quiet -q ::");
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_no_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true),
+    "--cb_explore_adf --quiet");
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true),
+    "--cb_explore_adf --quiet -q ::");
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_no_namespaces, gen_ccb_examples(100, 7, 3, 6, 1, 4, 14, 2, false, 3),
+    "--ccb_explore_adf --quiet");
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_no_interactions,
+    gen_ccb_examples(100, 7, 3, 6, 3, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet");
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_interactions, gen_ccb_examples(100, 7, 3, 6, 3, 4, 14, 2, false, 3),
+    "--ccb_explore_adf --quiet -q ::");
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_no_interactions,
+    gen_ccb_examples(100, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet");
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_interactions, gen_ccb_examples(100, 7, 3, 6, 3, 4, 14, 2, true, 3),
+    "--ccb_explore_adf --quiet -q ::");
