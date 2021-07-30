@@ -230,13 +230,13 @@ BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_no_interactions, gen_cb_exam
     "--cb_explore_adf --quiet");
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_interactions, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true),
     "--cb_explore_adf --quiet -q ::");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_no_namespaces, gen_ccb_examples(50, 7, 3, 6, 1, 4, 14, 2, false, 3),
+BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_no_namespaces, gen_ccb_examples(50, 7, 3, 6, 1, 4, 14, 2, false, 3),
     "--ccb_explore_adf --quiet");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_no_interactions,
+BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_no_interactions,
     gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3),
+BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3),
     "--ccb_explore_adf --quiet -q ::");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_no_interactions,
+BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_no_interactions,
     gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet");
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3),
+BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3),
     "--ccb_explore_adf --quiet -q ::");
