@@ -29,18 +29,18 @@ avg_time() {
 # done;
 # echo "creating cache"
 # build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=2 -c -k --quiet
-# echo "cache"
-# for i in {1..8}; do 
-# echo $i
-# avg_time 3 build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=$i -c
-# sleep 1
-# done;
-echo "json"
+echo "cache"
 for i in {1..8}; do 
 echo $i
-avg_time 3 build/vowpalwabbit/vw ../0001_million.json --num_parse_threads=$i --json
+avg_time 10 build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=$i -c
 sleep 1
 done;
+# echo "json"
+# for i in {1..8}; do 
+# echo $i
+# avg_time 3 build/vowpalwabbit/vw ../0001_million.json --num_parse_threads=$i --json
+# sleep 1
+# done;
 # echo ""
 
 # echo "0002 DATASET"
