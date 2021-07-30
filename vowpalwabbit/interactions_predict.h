@@ -141,7 +141,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
             if (second.feats.nonempty())
             {
               const bool same_namespace_index = (!permutations && (ns[0] == ns[1]));
-              const bool same_namespace_hash = (!permutations && (first.hash == second.hash));
+              const bool same_namespace_index_and_hash = (same_namespace_index && (first.hash == second.hash));
 
               // When there is more than one feature group of the same index, we should not process permutations. For
               // example we skip x2*x1 but do process x1*x2.
@@ -158,7 +158,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                 // next index differs for permutations and simple combinations
                 feature_value ft_value = first.feats.values[i];
                 auto begin = second.feats.audit_cbegin();
-                if (same_namespace_hash) { begin += i; }
+                if (same_namespace_index_and_hash) { begin += i; }
                 auto end = second.feats.audit_cend();
                 num_features += std::distance(begin, end);
                 inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
@@ -191,20 +191,20 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                 ns2_i++;
                 if (third.feats.nonempty())
                 {  // don't compare 1 and 3 as interaction is sorted
-                  const bool same_namespace1 = (!permutations && (ns[0] == ns[1]));
-                  const bool same_namespace1_hash = (!permutations && (first.hash == second.hash));
+                  const bool same_namespace1_index = (!permutations && (ns[0] == ns[1]));
+                  const bool same_namespace1_index_and_hash = (same_namespace1_index && (first.hash == second.hash));
 
-                  const bool same_namespace2 = (!permutations && (ns[1] == ns[2]));
-                  const bool same_namespace2_hash = (!permutations && (second.hash == third.hash));
+                  const bool same_namespace2_index = (!permutations && (ns[1] == ns[2]));
+                  const bool same_namespace2_index_and_hash = (same_namespace2_index && (second.hash == third.hash));
 
                   // We check it for skipping self interaction.
-                  const bool same_namespace3 = (!permutations && (ns[0] == ns[2]));
+                  const bool same_namespace3_index = (!permutations && (ns[0] == ns[2]));
 
                   // When there is more than one feature group of the same index, we should not process permutations.
                   // For example we skip x2*x1 but do process x1*x2.
-                  if (same_namespace1 && (ns1_i < ns0_i)) { continue; }
-                  if (same_namespace2 && (ns2_i < ns1_i)) { continue; }
-                  if (same_namespace3 && (ns2_i < ns0_i)) { continue; }
+                  if (same_namespace1_index && (ns1_i < ns0_i)) { continue; }
+                  if (same_namespace2_index && (ns2_i < ns1_i)) { continue; }
+                  if (same_namespace3_index && (ns2_i < ns0_i)) { continue; }
 
                   for (size_t i = 0; i < first.feats.indicies.size(); ++i)
                   {
@@ -216,7 +216,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
                     const uint64_t halfhash1 = FNV_prime * static_cast<uint64_t>(first.feats.indicies[i]);
                     float first_ft_value = first.feats.values[i];
                     size_t j = 0;
-                    if (same_namespace1_hash)  // next index differs for permutations and simple combinations
+                    if (same_namespace1_index_and_hash)  // next index differs for permutations and simple combinations
                       j = i;
 
                     for (; j < second.feats.indicies.size(); ++j)
@@ -232,7 +232,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 
                       auto begin = third.feats.audit_cbegin();
                       // next index differs for permutations and simple combinations
-                      if (same_namespace2_hash) { begin += j; }
+                      if (same_namespace2_index_and_hash) { begin += j; }
                       auto end = third.feats.audit_cend();
                       num_features += std::distance(begin, end);
                       inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
