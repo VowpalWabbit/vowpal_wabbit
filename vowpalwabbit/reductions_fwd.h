@@ -34,7 +34,7 @@ typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::setup_base_i&);
 
 struct setup_base_i
 {
-  virtual void delayed_attach(vw&, VW::config::options_i&) = 0;
+  virtual void delayed_state_attach(vw&, VW::config::options_i&) = 0;
 
   virtual VW::LEARNER::base_learner* setup_base_learner() = 0;
 

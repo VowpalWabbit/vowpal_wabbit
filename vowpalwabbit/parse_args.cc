@@ -1420,7 +1420,7 @@ void instantiate_learner(vw& all, std::unique_ptr<VW::setup_base_i> learner_buil
   { learner_builder = VW::make_unique<VW::default_reduction_stack_setup>(all, *all.options.get()); }
   else
   {
-    learner_builder->delayed_attach(all, *all.options.get());
+    learner_builder->delayed_state_attach(all, *all.options.get());
   }
 
   // kick-off reduction setup functions
