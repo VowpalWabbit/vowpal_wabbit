@@ -20,58 +20,45 @@ avg_time() {
                }'
 }
 
-# echo "0001 DATASET"
-# echo "text"
-# for i in {1..8}; do 
-# echo $i
-# avg_time 3 build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=$i
-# sleep 1
-# done;
-# echo "creating cache"
-# build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=2 -c -k --quiet
-echo "cache"
+echo "TEXT"
+echo "0001 dataset"
+for i in {1..8}; do 
+echo $i
+avg_time 5 build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=$i
+sleep 1
+done;
+echo "0002 dataset"
+for i in {1..8}; do 
+echo $i
+avg_time 5 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i
+sleep 1
+done;
+echo ""
+
+echo "creating cache"
+build/vowpalwabbit/vw ../0001_million.dat -c -k --quiet
+build/vowpalwabbit/vw ../0002_million.dat -c -k --quiet
+echo ""
+
+echo "CACHE"
+echo "0001 dataset"
 for i in {1..8}; do 
 echo $i
 avg_time 10 build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=$i -c
 sleep 1
 done;
-# echo "json"
-# for i in {1..8}; do 
-# echo $i
-# avg_time 3 build/vowpalwabbit/vw ../0001_million.json --num_parse_threads=$i --json
-# sleep 1
-# done;
-# echo ""
+echo "0002 dataset"
+for i in {1..8}; do 
+echo $i
+avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i -c
+sleep 1
+done;
+echo ""
 
-# echo "0002 DATASET"
-# echo "text"
-# for i in {1..8}; do 
-# echo $i
-# avg_time 3 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i
-# sleep 1
-# done;
-# echo "creating cache"
-# build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=2 -c -k --quiet
-# echo "cache"
-# for i in {1..8}; do 
-# echo $i
-# avg_time 3 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i -c
-# sleep 1
-# done;
-# echo ""
-
-# echo "0000 DATASET"
-# echo "text"
-# for i in {1..8}; do 
-# echo $i
-# avg_time 3 build/vowpalwabbit/vw ../0000_million.dat --num_parse_threads=$i
-# sleep 1
-# done;
-# echo "creating cache"
-# build/vowpalwabbit/vw ../0000_million.dat --num_parse_threads=2 -c -k --quiet
-# echo "cache"
-# for i in {1..8}; do 
-# echo $i
-# avg_time 3 build/vowpalwabbit/vw ../0000_million.dat --num_parse_threads=$i -c
-# sleep 1
-# done;
+echo "json"
+for i in {1..8}; do 
+echo $i
+avg_time 3 build/vowpalwabbit/vw ../0001_million.json --num_parse_threads=$i --json
+sleep 1
+done;
+echo ""
