@@ -29,7 +29,7 @@ inline void capture_io_lines_items(vw& all, std::vector<char>*& io_lines_next_it
   }
 }
 
-inline void run_parser(vw& all, std::vector<VW::string_view>& words_localcpy, std::vector<VW::string_view>& parse_name_localcpy, dispatch_fptr& dispatch)
+inline void run_parser(vw& all, std::vector<VW::string_view>& words_localcpy, std::vector<VW::string_view>& parse_name_localcpy, io_buf& local_buf, dispatch_fptr& dispatch)
 {
   example* example_ptr = &VW::get_unused_example(&all);
   std::vector<example*>* examples = &VW::get_unused_example_vector(&all);
@@ -40,7 +40,7 @@ inline void run_parser(vw& all, std::vector<VW::string_view>& words_localcpy, st
 
   if(io_lines_next_item != nullptr)
   {
-    int num_chars_read = all.example_parser->reader(&all, *examples, words_localcpy, parse_name_localcpy, io_lines_next_item);
+    int num_chars_read = all.example_parser->reader(&all, *examples, words_localcpy, parse_name_localcpy, local_buf, io_lines_next_item);
 
     if(num_chars_read > 0){
       dispatch(all, *examples);
@@ -66,9 +66,10 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
     // used in substring_to_example.
     std::vector<VW::string_view> words_localcpy;
     std::vector<VW::string_view> parse_name_localcpy;
+    io_buf local_buf;
     while (!all.example_parser->done)
     {
-      run_parser(all, words_localcpy, parse_name_localcpy, dispatch);
+      run_parser(all, words_localcpy, parse_name_localcpy, local_buf, dispatch);
     }
 
   }

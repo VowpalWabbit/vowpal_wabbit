@@ -38,7 +38,7 @@ size_t strip_features_string(char*& line, size_t num_chars_init){
   return num_chars;
 }
 
-int read_features_string(vw* all, std::vector<example*>& examples, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name, std::vector<char> *io_lines_next_item)
+int read_features_string(vw* all, std::vector<example*>& examples, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name, io_buf&, std::vector<char> *io_lines_next_item)
 {
   // this needs to outlive the string_views pointing to it
   size_t num_chars;

@@ -63,7 +63,7 @@ struct parser
 
   std::unique_ptr<io_buf> input;  // Input source(s)
   /// reader consumes the input io_buf in the vw object and is generally for file based parsing
-  int (*reader)(vw*, std::vector<example*>& examples, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name, std::vector<char>* io_lines_next_item);
+  int (*reader)(vw*, std::vector<example*>& examples, std::vector<VW::string_view>& words, std::vector<VW::string_view>& parse_name, io_buf& buf, std::vector<char>* io_lines_next_item);
   /// text_reader consumes the char* input and is for text based parsing
   void (*text_reader)(vw*, const char*, size_t, std::vector<example*>&);
 

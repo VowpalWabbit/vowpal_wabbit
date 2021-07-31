@@ -152,7 +152,7 @@ int read_cached_features_single_example(vw* all, example *ae, io_buf *input)
   return (int)total;
 }
 
-int read_cached_features(vw* all, std::vector<example*>& examples, std::vector<VW::string_view>&, std::vector<VW::string_view>&, std::vector<char> *io_lines_next_item) {
+int read_cached_features(vw* all, std::vector<example*>& examples, std::vector<VW::string_view>&, std::vector<VW::string_view>&, io_buf& buf, std::vector<char> *io_lines_next_item) {
 
   // this needs to outlive the string_views pointing to it
   std::vector<char> line;
@@ -163,7 +163,6 @@ int read_cached_features(vw* all, std::vector<example*>& examples, std::vector<V
 
   num_chars = line.size();
 
-  io_buf buf;
   if(line.size() > 0) {
     buf.add_file(VW::io::create_buffer_view(line.data(), line.size()));
   }

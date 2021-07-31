@@ -20,21 +20,6 @@ avg_time() {
                }'
 }
 
-echo "TEXT"
-echo "0001 dataset"
-for i in {1..8}; do 
-echo $i
-avg_time 5 build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=$i
-sleep 1
-done;
-echo "0002 dataset"
-for i in {1..8}; do 
-echo $i
-avg_time 5 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i
-sleep 1
-done;
-echo ""
-
 echo "creating cache"
 build/vowpalwabbit/vw ../0001_million.dat -c -k --quiet
 build/vowpalwabbit/vw ../0002_million.dat -c -k --quiet
@@ -51,6 +36,21 @@ echo "0002 dataset"
 for i in {1..8}; do 
 echo $i
 avg_time 10 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i -c
+sleep 1
+done;
+echo ""
+
+echo "TEXT"
+echo "0001 dataset"
+for i in {1..8}; do 
+echo $i
+avg_time 5 build/vowpalwabbit/vw ../0001_million.dat --num_parse_threads=$i
+sleep 1
+done;
+echo "0002 dataset"
+for i in {1..8}; do 
+echo $i
+avg_time 5 build/vowpalwabbit/vw ../0002_million.dat --num_parse_threads=$i
 sleep 1
 done;
 echo ""
