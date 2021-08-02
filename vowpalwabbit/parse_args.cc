@@ -28,6 +28,7 @@
 #include "vw_validate.h"
 #include "vw_allreduce.h"
 #include "metrics.h"
+
 #include "options.h"
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
@@ -1172,9 +1173,10 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
   return static_cast<ssize_t>(num_bytes);
 }
 
-vw& parse_args(vw& all, std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener,
-    void* trace_context)
+vw& parse_args(
+    std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener, void* trace_context)
 {
+  vw& all = *(new vw());
   all.options = std::move(options);
 
   if (trace_listener)
@@ -1572,7 +1574,7 @@ vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> opt
 {
   // Set up logger as early as possible
   logger::initialize_logger();
-  parse_args(all, std::move(options), trace_listener, trace_context);
+  vw& all = parse_args(std::move(options), trace_listener, trace_context);
 
   try
   {

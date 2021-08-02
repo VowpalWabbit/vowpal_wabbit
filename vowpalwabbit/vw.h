@@ -33,8 +33,6 @@
 #include "parser.h"
 #include "parse_example.h"
 
-#include "red_python.h"
-
 #include "options.h"
 
 #include "compat.h"
