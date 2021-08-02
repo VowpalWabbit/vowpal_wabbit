@@ -435,27 +435,27 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
 
   learner<ftrl, example>* l;
   if (all.audit || all.hash_inv)
-    l = VW::LEARNER::make_reduction_learner(std::move(b), static_cast<single_learner*>(nullptr), learn_ptr, predict<true>,
-        stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + "-audit")
-                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-                .set_prediction_type(prediction_type_t::scalar)
-                .set_label_type(label_type_t::simple)
-                .set_sensitivity(sensitivity)
-                .set_multipredict<base_learner>(multipredict<true>)
-                .set_save_load(save_load)
-                .set_end_pass(end_pass)
-                .build();
+    l = VW::LEARNER::make_reduction_learner(std::move(b), static_cast<single_learner*>(nullptr), learn_ptr,
+        predict<true>, stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + "-audit")
+            .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+            .set_prediction_type(prediction_type_t::scalar)
+            .set_label_type(label_type_t::simple)
+            .set_sensitivity(sensitivity)
+            .set_multipredict<base_learner>(multipredict<true>)
+            .set_save_load(save_load)
+            .set_end_pass(end_pass)
+            .build();
   else
-    l = VW::LEARNER::make_reduction_learner(std::move(b), static_cast<single_learner*>(nullptr), learn_ptr, predict<false>,
-        stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name)
-                .set_learn_returns_prediction(learn_returns_prediction)
-                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-                .set_prediction_type(prediction_type_t::scalar)
-                .set_label_type(label_type_t::simple)
-                .set_sensitivity(sensitivity)
-                .set_multipredict(multipredict<false>)
-                .set_save_load(save_load)
-                .set_end_pass(end_pass)
-                .build();
+    l = VW::LEARNER::make_reduction_learner(std::move(b), static_cast<single_learner*>(nullptr), learn_ptr,
+        predict<false>, stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name)
+            .set_learn_returns_prediction(learn_returns_prediction)
+            .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+            .set_prediction_type(prediction_type_t::scalar)
+            .set_label_type(label_type_t::simple)
+            .set_sensitivity(sensitivity)
+            .set_multipredict(multipredict<false>)
+            .set_save_load(save_load)
+            .set_end_pass(end_pass)
+            .build();
   return make_base(*l);
 }
