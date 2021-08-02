@@ -22,6 +22,8 @@ struct interaction_ground
   double total_uniform_reward;
   double total_importance_weighted_cost;//the accumulated importance weighted loss of the policy which optimizes the negative of the given value.
   double total_uniform_cost;
+public:
+  interaction_ground() { total_importance_weighted_reward = 0.; total_uniform_reward = 0.; total_importance_weighted_cost = 0.; total_uniform_cost = 0.;};
 };
 
   void negate_cost(multi_ex& ec_seq)
@@ -86,13 +88,13 @@ base_learner* interaction_ground_setup(VW::setup_base_i& stack_builder)
   size_t problem_multiplier = 2;  // One for reward and one for loss
   auto ld = VW::make_unique<interaction_ground>();
 
+  // Ensure cb_adf so we are reducing to something useful.
+  if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
+
   auto base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
 
   auto* l = make_reduction_learner(std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::action_scores)
-                .set_label_type(label_type_t::cb)
                 .build();
 
   return make_base(*l);
