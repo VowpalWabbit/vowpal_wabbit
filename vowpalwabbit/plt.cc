@@ -322,8 +322,10 @@ void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
 
 using namespace plt_ns;
 
-base_learner* plt_setup(options_i& options, vw& all)
+base_learner* plt_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto tree = scoped_calloc_or_throw<plt>();
   option_group_definition new_options("Probabilistic Label Tree ");
   new_options.add(make_option("plt", tree->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))
@@ -369,11 +371,11 @@ base_learner* plt_setup(options_i& options, vw& all)
 
   learner<plt, example>* l;
   if (tree->top_k > 0)
-    l = &init_learner(tree, as_singleline(setup_base(options, all)), learn, predict<false>, tree->t,
-        prediction_type_t::multilabels, all.get_setupfn_name(plt_setup) + "-top_k", true);
+    l = &init_learner(tree, as_singleline(stack_builder.setup_base_learner()), learn, predict<false>, tree->t,
+        prediction_type_t::multilabels, stack_builder.get_setupfn_name(plt_setup) + "-top_k", true);
   else
-    l = &init_learner(tree, as_singleline(setup_base(options, all)), learn, predict<true>, tree->t,
-        prediction_type_t::multilabels, all.get_setupfn_name(plt_setup), true);
+    l = &init_learner(tree, as_singleline(stack_builder.setup_base_learner()), learn, predict<true>, tree->t,
+        prediction_type_t::multilabels, stack_builder.get_setupfn_name(plt_setup), true);
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
 
