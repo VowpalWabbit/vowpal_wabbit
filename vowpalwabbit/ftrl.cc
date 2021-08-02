@@ -7,6 +7,7 @@
 #include "correctedMath.h"
 #include "gd.h"
 #include "shared_data.h"
+#include "label_parser.h"
 
 #include "io/logger.h"
 
