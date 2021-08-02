@@ -20,6 +20,7 @@
 #include "csoaa.h"
 #include "cb_algs.h"
 #include "cb_adf.h"
+#include "interaction_ground.h"
 #include "cb_to_cb_adf.h"
 #include "cb_dro.h"
 #include "cb_explore.h"
@@ -172,6 +173,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(CSOAA::csldf_setup);
   reductions.push_back(cb_algs_setup);
   reductions.push_back(cb_adf_setup);
+  reductions.push_back(interaction_ground_setup);
   reductions.push_back(mwt_setup);
   reductions.push_back(VW::cats_tree::setup);
   reductions.push_back(cb_explore_setup);
