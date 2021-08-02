@@ -541,6 +541,12 @@ public:
     finish_example_fd.print_example_f(all, finish_example_fd.data, (void*)&ec);
   }
 
+  void get_enabled_reductions(std::vector<std::string>& enabled_reductions)
+  {
+    if (learn_fd.base) { learn_fd.base->get_enabled_reductions(enabled_reductions); }
+    enabled_reductions.push_back(name);
+  }
+
   template <class L>
   static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
       prediction_type_t pred_type, const std::string& name, bool learn_returns_prediction = false)

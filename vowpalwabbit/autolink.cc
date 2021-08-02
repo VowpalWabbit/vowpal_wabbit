@@ -6,7 +6,6 @@
 
 #include "learner.h"
 #include "global_data.h"
-#include "parse_args.h"
 
 #include <cstdint>
 
@@ -86,8 +85,10 @@ void predict_or_learn(VW::autolink& b, VW::LEARNER::single_learner& base, exampl
     b.predict(base, ec);
 }
 
-VW::LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* autolink_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   uint32_t d;
   option_group_definition new_options("Autolink");
   new_options.add(make_option("autolink", d).keep().necessary().help("create link function with polynomial d"));
@@ -95,7 +96,7 @@ VW::LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   auto autolink_reduction = scoped_calloc_or_throw<VW::autolink>(d, all.weights.stride_shift());
-  auto base = setup_base(options, all);
+  auto base = stack_builder.setup_base_learner();
   return make_base(init_learner(autolink_reduction, as_singleline(base), predict_or_learn<true>,
-      predict_or_learn<false>, all.get_setupfn_name(autolink_setup), base->learn_returns_prediction));
+      predict_or_learn<false>, stack_builder.get_setupfn_name(autolink_setup), base->learn_returns_prediction));
 }

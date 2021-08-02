@@ -44,17 +44,17 @@ namespace VW
     (2) The code is not yet reentrant.
    */
 vw* initialize(std::unique_ptr<config::options_i, options_deleter_type> options, io_buf* model = nullptr,
-    bool skipModelLoad = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false,
+    bool skip_model_load = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* initialize(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,
+vw* initialize(std::string s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skipModelLoad = false,
+vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* seed_vw_model(
     vw* vw_model, std::string extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Allows the input command line string to have spaces escaped by '\'
-vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skipModelLoad = false,
+vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
@@ -210,15 +210,15 @@ inline uint64_t chain_hash(vw& all, const std::string& name, const std::string& 
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)
 {
-  return (&all.weights[((uint64_t)index) << all.weights.stride_shift()])[offset];
+  return (&all.weights[static_cast<uint64_t>(index) << all.weights.stride_shift()])[offset];
 }
 
 inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value)
 {
-  (&all.weights[((uint64_t)index) << all.weights.stride_shift()])[offset] = value;
+  (&all.weights[static_cast<uint64_t>(index) << all.weights.stride_shift()])[offset] = value;
 }
 
-inline uint32_t num_weights(vw& all) { return (uint32_t)all.length(); }
+inline uint32_t num_weights(vw& all) { return static_cast<uint32_t>(all.length()); }
 
 inline uint32_t get_stride(vw& all) { return all.weights.stride(); }
 

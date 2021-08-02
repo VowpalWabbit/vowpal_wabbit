@@ -6,7 +6,7 @@
 #include "error_constants.h"
 #include "api_status.h"
 #include "debug_log.h"
-#include "parse_args.h"
+#include "global_data.h"
 #include "explore.h"
 #include "guard.h"
 
@@ -100,8 +100,10 @@ void predict_or_learn(sample_pdf& reduction, single_learner&, example& ec)
 // END sample_pdf reduction and reduction methods
 ////////////////////////////////////////////////////
 
-LEARNER::base_learner* sample_pdf_setup(options_i& options, vw& all)
+LEARNER::base_learner* sample_pdf_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   option_group_definition new_options("Continuous actions - sample pdf");
   bool invoked = false;
   new_options.add(
@@ -111,14 +113,17 @@ LEARNER::base_learner* sample_pdf_setup(options_i& options, vw& all)
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  LEARNER::base_learner* p_base = setup_base(options, all);
-  auto p_reduction = scoped_calloc_or_throw<sample_pdf>();
+  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
+  auto p_reduction = VW::make_unique<sample_pdf>();
   p_reduction->init(as_singleline(p_base), all.get_random_state());
 
-  LEARNER::learner<sample_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, all.get_setupfn_name(sample_pdf_setup));
+  // This learner will assume the label type from base, so should not call set_label_type
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(sample_pdf_setup))
+                .set_prediction_type(prediction_type_t::action_pdf_value)
+                .build();
 
-  return make_base(l);
+  return VW::LEARNER::make_base(*l);
 }
 }  // namespace continuous_action
 }  // namespace VW

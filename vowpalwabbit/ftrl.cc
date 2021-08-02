@@ -333,9 +333,13 @@ void end_pass(ftrl& g)
   }
 }
 
-base_learner* ftrl_setup(options_i& options, vw& all)
+base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   auto b = VW::make_unique<ftrl>();
+
   bool ftrl_option = false;
   bool pistol = false;
   bool coin = false;
@@ -432,7 +436,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   learner<ftrl, example>* l;
   if (all.audit || all.hash_inv)
     l = VW::LEARNER::make_reduction_learner(std::move(b), static_cast<single_learner*>(nullptr), learn_ptr, predict<true>,
-        all.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + "-audit")
+        stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + "-audit")
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_prediction_type(prediction_type_t::scalar)
                 .set_label_type(label_type_t::simple)
@@ -443,7 +447,7 @@ base_learner* ftrl_setup(options_i& options, vw& all)
                 .build();
   else
     l = VW::LEARNER::make_reduction_learner(std::move(b), static_cast<single_learner*>(nullptr), learn_ptr, predict<false>,
-        all.get_setupfn_name(ftrl_setup) + "-" + algorithm_name)
+        stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name)
                 .set_learn_returns_prediction(learn_returns_prediction)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_prediction_type(prediction_type_t::scalar)
