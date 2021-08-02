@@ -25,26 +25,26 @@ namespace logger = VW::io::logger;
 
 struct ftrl_update_data
 {
-  float update;
-  float ftrl_alpha;
-  float ftrl_beta;
-  float l1_lambda;
-  float l2_lambda;
-  float predict;
-  float normalized_squared_norm_x;
-  float average_squared_norm_x;
+  float update = 0.f;
+  float ftrl_alpha = 0.f;
+  float ftrl_beta = 0.f;
+  float l1_lambda = 0.f;
+  float l2_lambda = 0.f;
+  float predict = 0.f;
+  float normalized_squared_norm_x = 0.f;
+  float average_squared_norm_x = 0.f;
 };
 
 struct ftrl
 {
-  vw* all;  // features, finalize, l1, l2,
-  float ftrl_alpha;
-  float ftrl_beta;
+  vw* all = nullptr;  // features, finalize, l1, l2,
+  float ftrl_alpha = 0.f;
+  float ftrl_beta = 0.f;
   struct ftrl_update_data data;
-  size_t no_win_counter;
-  size_t early_stop_thres;
-  uint32_t ftrl_size;
-  double total_weight;
+  size_t no_win_counter = 0;
+  size_t early_stop_thres = 0;
+  uint32_t ftrl_size = 0;
+  double total_weight = 0.0;
 };
 
 struct uncertainty
@@ -335,7 +335,7 @@ void end_pass(ftrl& g)
 
 base_learner* ftrl_setup(options_i& options, vw& all)
 {
-  auto b = scoped_calloc_or_throw<ftrl>();
+  auto b = VW::make_unique<ftrl>();
   bool ftrl_option = false;
   bool pistol = false;
   bool coin = false;
@@ -431,17 +431,27 @@ base_learner* ftrl_setup(options_i& options, vw& all)
 
   learner<ftrl, example>* l;
   if (all.audit || all.hash_inv)
-    l = &init_learner(b, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift(),
-        all.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + "-audit");
+    l = VW::LEARNER::make_reduction_learner(std::move(b), static_cast<single_learner*>(nullptr), learn_ptr, predict<true>,
+        all.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + "-audit")
+                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_prediction_type(prediction_type_t::scalar)
+                .set_label_type(label_type_t::simple)
+                .set_sensitivity(sensitivity)
+                .set_multipredict<base_learner>(multipredict<true>)
+                .set_save_load(save_load)
+                .set_end_pass(end_pass)
+                .build();
   else
-    l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift(),
-        all.get_setupfn_name(ftrl_setup) + "-" + algorithm_name, learn_returns_prediction);
-  l->set_sensitivity(sensitivity);
-  if (all.audit || all.hash_inv)
-    l->set_multipredict(multipredict<true>);
-  else
-    l->set_multipredict(multipredict<false>);
-  l->set_save_load(save_load);
-  l->set_end_pass(end_pass);
+    l = VW::LEARNER::make_reduction_learner(std::move(b), static_cast<single_learner*>(nullptr), learn_ptr, predict<false>,
+        all.get_setupfn_name(ftrl_setup) + "-" + algorithm_name)
+                .set_learn_returns_prediction(learn_returns_prediction)
+                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_prediction_type(prediction_type_t::scalar)
+                .set_label_type(label_type_t::simple)
+                .set_sensitivity(sensitivity)
+                .set_multipredict(multipredict<false>)
+                .set_save_load(save_load)
+                .set_end_pass(end_pass)
+                .build();
   return make_base(*l);
 }
