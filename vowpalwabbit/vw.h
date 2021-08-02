@@ -56,6 +56,10 @@ vw* seed_vw_model(
 // Allows the input command line string to have spaces escaped by '\'
 vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+// Experimental (VW::setup_base_i):
+vw* initialize_with_builder(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,
+    trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
+    std::unique_ptr<VW::setup_base_i> = nullptr);
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
 
