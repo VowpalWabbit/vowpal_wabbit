@@ -224,10 +224,19 @@ namespace VW
 {
 default_reduction_stack_setup::default_reduction_stack_setup(vw& all, VW::config::options_i& options)
 {
-  options_impl = &options;
-  all_ptr = &all;
   // push all reduction functions into the stack
   prepare_reductions(reduction_stack);
+  delayed_state_attach(all, options);
+}
+
+default_reduction_stack_setup::default_reduction_stack_setup() { prepare_reductions(reduction_stack); }
+
+// this should be reworked, but its setup related to how setup is tied with all object
+// which is not applicable to everything
+void default_reduction_stack_setup::delayed_state_attach(vw& all, VW::config::options_i& options)
+{
+  all_ptr = &all;
+  options_impl = &options;
   // populate setup_fn -> name map to be used to lookup names in setup_base
   all.build_setupfn_name_dict(reduction_stack);
 }
