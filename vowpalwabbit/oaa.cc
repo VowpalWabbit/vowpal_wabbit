@@ -18,12 +18,12 @@ namespace logger = VW::io::logger;
 
 struct oaa
 {
-  uint64_t k;
-  vw* all;                    // for raw
-  polyprediction* pred;       // for multipredict
-  uint64_t num_subsample;     // for randomized subsampling, how many negatives to draw?
-  uint32_t* subsample_order;  // for randomized subsampling, in what order should we touch classes
-  size_t subsample_id;        // for randomized subsampling, where do we live in the list
+  uint64_t k = 0;
+  vw* all = nullptr;                    // for raw
+  polyprediction* pred = nullptr;       // for multipredict
+  uint64_t num_subsample = 0;     // for randomized subsampling, how many negatives to draw?
+  uint32_t* subsample_order = nullptr;  // for randomized subsampling, in what order should we touch classes
+  size_t subsample_id = 0;        // for randomized subsampling, where do we live in the list
 
   ~oaa()
   {
@@ -222,7 +222,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto data = scoped_calloc_or_throw<oaa>();
+  auto data = VW::make_unique<oaa>();
   bool probabilities = false;
   bool scores = false;
   option_group_definition new_options("One Against All Options");
@@ -264,10 +264,16 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   }
 
   oaa* data_ptr = data.get();
-  VW::LEARNER::learner<oaa, example>* l;
+  uint64_t kVal = data->k;
   auto base = as_singleline(stack_builder.setup_base_learner());
+  void (*learn_ptr)(oaa& o, VW::LEARNER::single_learner& base, example& ec);
+  void (*pred_ptr)(oaa& o, LEARNER::single_learner& base, example& ec);
+  std::string name_addition;
+  prediction_type_t pred_type;
+  void (*finish_ptr)(vw& all, oaa& o, example& ec);
   if (probabilities || scores)
   {
+    pred_type = prediction_type_t::scalar;
     if (probabilities)
     {
       auto loss_function_type = all.loss->getType();
@@ -275,40 +281,52 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
         *(all.trace_message) << "WARNING: --probabilities should be used only with --loss_function=logistic"
                              << std::endl;
       // the three boolean template parameters are: is_learn, print_all and scores
-      l = &LEARNER::init_multiclass_learner(data, base, learn<false, true, true>, predict<false, true, true>,
-          all.example_parser, data->k, stack_builder.get_setupfn_name(oaa_setup) + "-prob", prediction_type_t::scalars);
-      all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
+      learn_ptr = learn<false, true, true>;
+      pred_ptr = predict<false, true, true>;
+      name_addition = "-prob";
+      finish_ptr = finish_example_scores<true>;
       all.sd->report_multiclass_log_loss = true;
-      l->set_finish_example(finish_example_scores<true>);
     }
     else
     {
-      l = &VW::LEARNER::init_multiclass_learner(data, base, learn<false, true, false>, predict<false, true, false>,
-          all.example_parser, data->k, stack_builder.get_setupfn_name(oaa_setup) + "-scores",
-          prediction_type_t::scalars);
-      all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
-      l->set_finish_example(finish_example_scores<false>);
+      learn_ptr = learn<false, true, false>;
+      pred_ptr = predict<false, true, false>;
+      name_addition = "-scores";
+      finish_ptr = finish_example_scores<false>;
     }
   }
-  else if (all.raw_prediction != nullptr)
+  else 
   {
-    l = &VW::LEARNER::init_multiclass_learner(data, base, learn<true, false, false>, predict<true, false, false>,
-        all.example_parser, data->k, stack_builder.get_setupfn_name(oaa_setup) + "-raw", prediction_type_t::multiclass);
-    all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
+    pred_type = prediction_type_t::multiclass;
+    finish_ptr = MULTICLASS::finish_example<oaa>;
+    if (all.raw_prediction != nullptr) {
+      learn_ptr = learn<true, false, false>;
+      pred_ptr = predict<true, false, false>;
+      name_addition = "-raw";
+    }
+    else
+    {
+      learn_ptr = learn<false, false, false>;
+      pred_ptr = predict<false, false, false>;
+      name_addition = "";
+    }
   }
-  else
-  {
-    l = &VW::LEARNER::init_multiclass_learner(data, base, learn<false, false, false>, predict<false, false, false>,
-        all.example_parser, data->k, stack_builder.get_setupfn_name(oaa_setup), prediction_type_t::multiclass);
-    all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
-  }
+
+  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+  all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
 
   if (data_ptr->num_subsample > 0)
   {
-    l->set_learn(learn_randomized);
-    l->set_finish_example(MULTICLASS::finish_example_without_loss<oaa>);
-    l->learn_returns_prediction = false;
+    learn_ptr = learn_randomized;
+    finish_ptr = MULTICLASS::finish_example_without_loss<oaa>;
   }
+  
+  auto l = make_reduction_learner(std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
+    .set_params_per_weight(kVal)
+    .set_label_type(label_type_t::multiclass)
+    .set_prediction_type(pred_type)
+    .set_finish_example(finish_ptr)
+    .build();
 
   return make_base(*l);
 }
