@@ -106,9 +106,10 @@ bool features::sort(uint64_t parse_mask)
   // Compared indices are masked even though the saved values are not necessarilly masked.
   const auto comparator = [parse_mask](feature_value value_first, feature_value value_second, feature_index index_first,
                               feature_index index_second) {
-                                auto masked_index_first = index_first & parse_mask;
-                                auto masked_index_second = index_second & parse_mask;
-    return (masked_index_first < masked_index_second) || ((masked_index_first == masked_index_second) && (value_first < value_second));
+    auto masked_index_first = index_first & parse_mask;
+    auto masked_index_second = index_second & parse_mask;
+    return (masked_index_first < masked_index_second) ||
+        ((masked_index_first == masked_index_second) && (value_first < value_second));
   };
   auto dest_index_vec = sort_permutation(values, indicies, comparator);
   apply_permutation_in_place(values, dest_index_vec);
