@@ -41,7 +41,7 @@ struct ftrl
   vw* all = nullptr;  // features, finalize, l1, l2,
   float ftrl_alpha = 0.f;
   float ftrl_beta = 0.f;
-  struct ftrl_update_data data;
+  ftrl_update_data data;
   size_t no_win_counter = 0;
   size_t early_stop_thres = 0;
   uint32_t ftrl_size = 0;
@@ -76,7 +76,7 @@ float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
 }
 
 template <bool audit>
-void predict(ftrl& b, single_learner&, example& ec)
+void predict(ftrl& b, base_learner&, example& ec)
 {
   size_t num_features_from_interactions = 0;
   ec.partial_prediction = GD::inline_predict(*b.all, ec, num_features_from_interactions);
@@ -221,7 +221,7 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   w[W_XT] /= d.average_squared_norm_x;
 }
 
-void coin_betting_predict(ftrl& b, single_learner&, example& ec)
+void coin_betting_predict(ftrl& b, base_learner&, example& ec)
 {
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
@@ -239,7 +239,7 @@ void coin_betting_predict(ftrl& b, single_learner&, example& ec)
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
-void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
+void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
 {
   b.data.predict = 0;
 
@@ -273,7 +273,7 @@ void coin_betting_update_after_prediction(ftrl& b, example& ec)
 }
 
 template <bool audit>
-void learn_proximal(ftrl& a, single_learner& base, example& ec)
+void learn_proximal(ftrl& a, base_learner& base, example& ec)
 {
   // predict with confidence
   predict<audit>(a, base, ec);
@@ -283,7 +283,7 @@ void learn_proximal(ftrl& a, single_learner& base, example& ec)
 }
 
 template <bool audit>
-void learn_pistol(ftrl& a, single_learner& base, example& ec)
+void learn_pistol(ftrl& a, base_learner& base, example& ec)
 {
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
@@ -293,7 +293,7 @@ void learn_pistol(ftrl& a, single_learner& base, example& ec)
 }
 
 template <bool audit>
-void learn_coin_betting(ftrl& a, single_learner& base, example& ec)
+void learn_coin_betting(ftrl& a, base_learner& base, example& ec)
 {
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);
@@ -378,7 +378,7 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   b->all->normalized_sum_norm_x = 0;
   b->total_weight = 0;
 
-  void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
+  void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
   bool learn_returns_prediction = false;
 
   std::string algorithm_name;
@@ -434,27 +434,19 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
     b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
-  learner<ftrl, example>* l;
-  if (all.audit || all.hash_inv)
-    l = VW::LEARNER::make_base_learner(std::move(b), learn_ptr, predict<true>,
-        stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + "-audit", prediction_type_t::scalar,
-        label_type_t::simple)
-            .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-            .set_sensitivity(sensitivity)
-            .set_multipredict(multipredict<true>)
-            .set_save_load(save_load)
-            .set_end_pass(end_pass)
-            .build();
-  else
-    l = VW::LEARNER::make_base_learner(std::move(b), learn_ptr, predict<false>,
-        stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name, prediction_type_t::scalar,
-        label_type_t::simple)
-            .set_learn_returns_prediction(learn_returns_prediction)
-            .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-            .set_sensitivity(sensitivity)
-            .set_multipredict(multipredict<false>)
-            .set_save_load(save_load)
-            .set_end_pass(end_pass)
-            .build();
+  auto predict_ptr = (all.audit || all.hash_inv) ? predict<true> : predict<false>;
+  auto multipredict_ptr = (all.audit || all.hash_inv) ? multipredict<true> : multipredict<false>;
+  std::string name_addition = (all.audit || all.hash_inv) ? "-audit" : "";
+
+  auto l = VW::LEARNER::make_base_learner(std::move(b), learn_ptr, predict_ptr,
+      stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, prediction_type_t::scalar,
+      label_type_t::simple)
+               .set_learn_returns_prediction(learn_returns_prediction)
+               .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+               .set_sensitivity(sensitivity)
+               .set_multipredict(multipredict_ptr)
+               .set_save_load(save_load)
+               .set_end_pass(end_pass)
+               .build();
   return make_base(*l);
 }

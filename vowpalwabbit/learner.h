@@ -802,29 +802,25 @@ struct common_learner_builder
   {
   }
 
-  template <class LearnerT>
-  FluentBuilderT& set_predict(void (*fn_ptr)(DataT&, LearnerT&, ExampleT&))
+  FluentBuilderT& set_predict(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&))
   {
     this->_learner->learn_fd.predict_f = (learn_data::fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  template <class LearnerT>
-  FluentBuilderT& set_learn(void (*fn_ptr)(DataT&, LearnerT&, ExampleT&))
+  FluentBuilderT& set_learn(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&))
   {
     this->_learner->learn_fd.learn_f = (learn_data::fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  template <class LearnerT>
-  FluentBuilderT& set_multipredict(void (*fn_ptr)(DataT&, LearnerT&, ExampleT&, size_t, size_t, polyprediction*, bool))
+  FluentBuilderT& set_multipredict(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&, size_t, size_t, polyprediction*, bool))
   {
     this->_learner->learn_fd.multipredict_f = (learn_data::multi_fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  template <class LearnerT>
-  FluentBuilderT& set_update(void (*u)(DataT& data, LearnerT& base, ExampleT&))
+  FluentBuilderT& set_update(void (*u)(DataT& data, BaseLearnerT& base, ExampleT&))
   {
     this->_learner->learn_fd.update_f = (learn_data::fn)u;
     return *static_cast<FluentBuilderT*>(this);
@@ -1066,9 +1062,9 @@ reduction_no_data_learner_builder<ExampleT, BaseLearnerT> make_no_data_reduction
   return builder;
 }
 
-template <class DataT, class BaseLearnerT, class ExampleT>
+template <class DataT, class ExampleT>
 base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&& data,
-    void (*learn_fn)(DataT&, BaseLearnerT&, ExampleT&), void (*predict_fn)(DataT&, BaseLearnerT&, ExampleT&),
+    void (*learn_fn)(DataT&, base_learner&, ExampleT&), void (*predict_fn)(DataT&, base_learner&, ExampleT&),
     const std::string& name, prediction_type_t pred_type, label_type_t label_type)
 {
   auto builder = base_learner_builder<DataT, ExampleT>(std::move(data), name, pred_type, label_type);
