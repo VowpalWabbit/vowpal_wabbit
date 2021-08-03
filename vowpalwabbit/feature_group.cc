@@ -9,6 +9,7 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include <numeric>
 
 struct feature_slice  // a helper struct for functions using the set {v,i,space_name}
 {
@@ -67,46 +68,53 @@ void features::push_back(feature_value v, feature_index i)
   sum_feat_sq += v * v;
 }
 
+// https://stackoverflow.com/questions/17074324/how-can-i-sort-two-vectors-in-the-same-way-with-criteria-that-uses-only-one-of
+template <typename IndexVec, typename ValVec, typename Compare>
+std::vector<std::size_t> sort_permutation(const IndexVec& index_vec, const ValVec& value_vec, const Compare& compare)
+{
+  assert(index_vec.size() == value_vec.size());
+  std::vector<std::size_t> dest_index_vec(index_vec.size());
+  std::iota(dest_index_vec.begin(), dest_index_vec.end(), 0);
+  std::sort(dest_index_vec.begin(), dest_index_vec.end(),
+      [&](std::size_t i, std::size_t j) { return compare(index_vec[i], index_vec[j], value_vec[i], value_vec[j]); });
+  return dest_index_vec;
+}
+
+template <typename VecT>
+void apply_permutation_in_place(VecT& vec, const std::vector<std::size_t>& dest_index_vec)
+{
+  std::vector<bool> done(vec.size());
+  for (std::size_t i = 0; i < vec.size(); ++i)
+  {
+    if (done[i]) { continue; }
+    done[i] = true;
+    std::size_t prev_j = i;
+    std::size_t j = dest_index_vec[i];
+    while (i != j)
+    {
+      std::swap(vec[prev_j], vec[j]);
+      done[j] = true;
+      prev_j = j;
+      j = dest_index_vec[j];
+    }
+  }
+}
+
 bool features::sort(uint64_t parse_mask)
 {
   if (indicies.empty()) { return false; }
-
-  if (!space_names.empty())
-  {
-    std::vector<feature_slice> slice;
-    slice.reserve(indicies.size());
-    for (size_t i = 0; i < indicies.size(); i++)
-    { slice.push_back({values[i], indicies[i] & parse_mask, space_names[i]}); }
-    // The comparator should return true if the first element is less than the second.
-    std::sort(slice.begin(), slice.end(), [](const feature_slice& first, const feature_slice& second) {
-      return (first.weight_index < second.weight_index) ||
-          ((first.weight_index == second.weight_index) && (first.x < second.x));
-    });
-
-    for (size_t i = 0; i < slice.size(); i++)
-    {
-      values[i] = slice[i].x;
-      indicies[i] = slice[i].weight_index;
-      space_names[i] = slice[i].space_name;
-    }
-  }
-  else
-  {
-    std::vector<feature> slice;
-    slice.reserve(indicies.size());
-
-    for (size_t i = 0; i < indicies.size(); i++) { slice.emplace_back(values[i], indicies[i] & parse_mask); }
-    // The comparator should return true if the first element is less than the second.
-    std::sort(slice.begin(), slice.end(), [](const feature& first, const feature& second) {
-      return (first.weight_index < second.weight_index) ||
-          ((first.weight_index == second.weight_index) && (first.x < second.x));
-    });
-    for (size_t i = 0; i < slice.size(); i++)
-    {
-      values[i] = slice[i].x;
-      indicies[i] = slice[i].weight_index;
-    }
-  }
+  // Compared indices are masked even though the saved values are not necessarilly masked.
+  const auto comparator = [parse_mask](feature_value value_first, feature_value value_second, feature_index index_first,
+                              feature_index index_second) {
+    auto masked_index_first = index_first & parse_mask;
+    auto masked_index_second = index_second & parse_mask;
+    return (masked_index_first < masked_index_second) ||
+        ((masked_index_first == masked_index_second) && (value_first < value_second));
+  };
+  auto dest_index_vec = sort_permutation(values, indicies, comparator);
+  apply_permutation_in_place(values, dest_index_vec);
+  apply_permutation_in_place(indicies, dest_index_vec);
+  apply_permutation_in_place(space_names, dest_index_vec);
   return true;
 }
 
