@@ -346,7 +346,7 @@ struct features
   void truncate_to(size_t i);
   void concat(const features& other);
   void push_back(feature_value v, feature_index i);
-  bool sort();
+  bool sort(uint64_t parse_mask);
 
   VW_DEPRECATED("deep_copy_from is deprecated. Use the copy constructor directly. This will be removed in VW 9.0.")
   void deep_copy_from(const features& src);

@@ -26,11 +26,11 @@ void unique_features(features& fs, int max)
   fs.truncate_to(last_index);
 }
 
-void unique_sort_features(example* ae)
+void unique_sort_features(uint64_t parse_mask, example* ae)
 {
   for (features& fs : *ae)
   {
-    if (fs.sort()) { unique_features(fs); }
+    if (fs.sort(parse_mask)) { unique_features(fs); }
   }
 
   ae->sorted = true;

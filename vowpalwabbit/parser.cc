@@ -648,7 +648,7 @@ void feature_limit(vw& all, example* ex)
     if (all.limit[index] < ex->feature_space[index].size())
     {
       features& fs = ex->feature_space[index];
-      fs.sort();
+      fs.sort(all.parse_mask);
       unique_features(fs, all.limit[index]);
     }
 }
@@ -670,7 +670,7 @@ void setup_examples(vw& all, v_array<example*>& examples)
 
 void setup_example(vw& all, example* ae)
 {
-  if (all.example_parser->sort_features && ae->sorted == false) unique_sort_features(ae);
+  if (all.example_parser->sort_features && ae->sorted == false) unique_sort_features(all.parse_mask, ae);
 
   if (all.example_parser->write_cache)
   { VW::write_example_to_cache(*all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask); }

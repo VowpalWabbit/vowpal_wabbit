@@ -218,7 +218,7 @@ flat_example* flatten_example(vw& all, example* ec)
 flat_example* flatten_sort_example(vw& all, example* ec)
 {
   flat_example* fec = flatten_example(all, ec);
-  fec->fs.sort();
+  fec->fs.sort(all.parse_mask);
   fec->total_sum_feat_sq = collision_cleanup(fec->fs);
   return fec;
 }
