@@ -338,7 +338,6 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-
   auto b = VW::make_unique<ftrl>();
 
   bool ftrl_option = false;
