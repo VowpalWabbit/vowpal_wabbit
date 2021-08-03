@@ -9,6 +9,7 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include <numeric>
 
 struct feature_slice  // a helper struct for functions using the set {v,i,space_name}
 {
@@ -69,17 +70,18 @@ void features::push_back(feature_value v, feature_index i)
 
 // https://stackoverflow.com/questions/17074324/how-can-i-sort-two-vectors-in-the-same-way-with-criteria-that-uses-only-one-of
 template <typename IndexVec, typename ValVec, typename Compare>
-std::vector<std::size_t> sort_permutation(const IndexVec& index_vec, const ValVec& value_vec, Compare& compare)
+std::vector<std::size_t> sort_permutation(const IndexVec& index_vec, const ValVec& value_vec, const Compare& compare)
 {
-  std::vector<std::size_t> p(vec.size());
-  std::iota(p.begin(), p.end(), 0);
-  std::sort(p.begin(), p.end(),
+  assert(index_vec.size() == value_vec.size());
+  std::vector<std::size_t> dest_index_vec(index_vec.size());
+  std::iota(dest_index_vec.begin(), dest_index_vec.end(), 0);
+  std::sort(dest_index_vec.begin(), dest_index_vec.end(),
       [&](std::size_t i, std::size_t j) { return compare(index_vec[i], index_vec[j], value_vec[i], value_vec[j]); });
-  return p;
+  return dest_index_vec;
 }
 
 template <typename VecT>
-void apply_permutation_in_place(VecT& vec, const std::vector<std::size_t>& p)
+void apply_permutation_in_place(VecT& vec, const std::vector<std::size_t>& dest_index_vec)
 {
   std::vector<bool> done(vec.size());
   for (std::size_t i = 0; i < vec.size(); ++i)
@@ -87,13 +89,13 @@ void apply_permutation_in_place(VecT& vec, const std::vector<std::size_t>& p)
     if (done[i]) { continue; }
     done[i] = true;
     std::size_t prev_j = i;
-    std::size_t j = p[i];
+    std::size_t j = dest_index_vec[i];
     while (i != j)
     {
       std::swap(vec[prev_j], vec[j]);
       done[j] = true;
       prev_j = j;
-      j = p[j];
+      j = dest_index_vec[j];
     }
   }
 }
@@ -106,10 +108,10 @@ bool features::sort()
                               feature_index index_second) {
     return (index_first < index_second) || ((index_first == index_second) && (value_first < value_second));
   };
-  auto p = sort_permutation(values, indicies, comparator);
-  apply_permutation_in_place(values, p);
-  apply_permutation_in_place(indicies, p);
-  apply_permutation_in_place(space_names, p);
+  auto dest_index_vec = sort_permutation(values, indicies, comparator);
+  apply_permutation_in_place(values, dest_index_vec);
+  apply_permutation_in_place(indicies, dest_index_vec);
+  apply_permutation_in_place(space_names, dest_index_vec);
   return true;
 }
 
