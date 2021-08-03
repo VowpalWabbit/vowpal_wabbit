@@ -114,7 +114,9 @@ bool features::sort(uint64_t parse_mask)
   auto dest_index_vec = sort_permutation(values, indicies, comparator);
   apply_permutation_in_place(values, dest_index_vec);
   apply_permutation_in_place(indicies, dest_index_vec);
-  apply_permutation_in_place(space_names, dest_index_vec);
+  if (!space_names.empty()) {
+    apply_permutation_in_place(space_names, dest_index_vec);
+  }
   return true;
 }
 
