@@ -67,48 +67,53 @@ void features::push_back(feature_value v, feature_index i)
   sum_feat_sq += v * v;
 }
 
-bool features::sort(uint64_t parse_mask)
+// https://stackoverflow.com/questions/17074324/how-can-i-sort-two-vectors-in-the-same-way-with-criteria-that-uses-only-one-of
+template <typename IndexVec, typename ValVec, typename Compare>
+std::vector<std::size_t> sort_permutation(const IndexVec& index_vec, const ValVec& value_vec, Compare& compare)
+{
+  std::vector<std::size_t> p(vec.size());
+  std::iota(p.begin(), p.end(), 0);
+  std::sort(p.begin(), p.end(),
+      [&](std::size_t i, std::size_t j) { return compare(index_vec[i], index_vec[j], value_vec[i], value_vec[j]); });
+  return p;
+}
+
+template <typename VecT>
+void apply_permutation_in_place(VecT& vec, const std::vector<std::size_t>& p)
+{
+  std::vector<bool> done(vec.size());
+  for (std::size_t i = 0; i < vec.size(); ++i)
+  {
+    if (done[i]) { continue; }
+    done[i] = true;
+    std::size_t prev_j = i;
+    std::size_t j = p[i];
+    while (i != j)
+    {
+      std::swap(vec[prev_j], vec[j]);
+      done[j] = true;
+      prev_j = j;
+      j = p[j];
+    }
+  }
+}
+
+bool features::sort()
 {
   if (indicies.empty()) { return false; }
 
-  if (!space_names.empty())
-  {
-    std::vector<feature_slice> slice;
-    slice.reserve(indicies.size());
-    for (size_t i = 0; i < indicies.size(); i++)
-    { slice.push_back({values[i], indicies[i] & parse_mask, space_names[i]}); }
-    // The comparator should return true if the first element is less than the second.
-    std::sort(slice.begin(), slice.end(), [](const feature_slice& first, const feature_slice& second) {
-      return (first.weight_index < second.weight_index) ||
-          ((first.weight_index == second.weight_index) && (first.x < second.x));
-    });
-
-    for (size_t i = 0; i < slice.size(); i++)
-    {
-      values[i] = slice[i].x;
-      indicies[i] = slice[i].weight_index;
-      space_names[i] = slice[i].space_name;
-    }
-  }
-  else
-  {
-    std::vector<feature> slice;
-    slice.reserve(indicies.size());
-
-    for (size_t i = 0; i < indicies.size(); i++) { slice.emplace_back(values[i], indicies[i] & parse_mask); }
-    // The comparator should return true if the first element is less than the second.
-    std::sort(slice.begin(), slice.end(), [](const feature& first, const feature& second) {
-      return (first.weight_index < second.weight_index) ||
-          ((first.weight_index == second.weight_index) && (first.x < second.x));
-    });
-    for (size_t i = 0; i < slice.size(); i++)
-    {
-      values[i] = slice[i].x;
-      indicies[i] = slice[i].weight_index;
-    }
-  }
+  const auto comparator = [](feature_value value_first, feature_value value_second, feature_index index_first,
+                              feature_index index_second) {
+    return (index_first < index_second) || ((index_first == index_second) && (value_first < value_second));
+  };
+  auto p = sort_permutation(values, indicies, comparator);
+  apply_permutation_in_place(values, p);
+  apply_permutation_in_place(indicies, p);
+  apply_permutation_in_place(space_names, p);
   return true;
 }
+
+
 
 void features::deep_copy_from(const features& src)
 {
