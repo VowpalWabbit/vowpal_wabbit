@@ -113,8 +113,6 @@ bool features::sort()
   return true;
 }
 
-
-
 void features::deep_copy_from(const features& src)
 {
   values = src.values;
