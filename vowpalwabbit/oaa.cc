@@ -264,13 +264,13 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   }
 
   oaa* data_ptr = data.get();
-  uint64_t kVal = data->k;
+  uint64_t k_value = data->k;
   auto base = as_singleline(stack_builder.setup_base_learner());
-  void (*learn_ptr)(oaa & o, VW::LEARNER::single_learner & base, example & ec);
-  void (*pred_ptr)(oaa & o, LEARNER::single_learner & base, example & ec);
+  void (*learn_ptr)(oaa& o, VW::LEARNER::single_learner& base, example& ec);
+  void (*pred_ptr)(oaa& o, LEARNER::single_learner& base, example& ec);
   std::string name_addition;
   prediction_type_t pred_type;
-  void (*finish_ptr)(vw & all, oaa & o, example & ec);
+  void (*finish_ptr)(vw& all, oaa& o, example& ec);
   if (probabilities || scores)
   {
     pred_type = prediction_type_t::scalar;
@@ -314,7 +314,6 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   }
 
   all.example_parser->lbl_parser = MULTICLASS::mc_label;
-  all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
 
   if (data_ptr->num_subsample > 0)
   {
@@ -324,7 +323,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
 
   auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
-               .set_params_per_weight(kVal)
+               .set_params_per_weight(k_value)
                .set_label_type(label_type_t::multiclass)
                .set_prediction_type(pred_type)
                .set_finish_example(finish_ptr)
