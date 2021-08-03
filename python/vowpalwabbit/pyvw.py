@@ -4,7 +4,7 @@
 from __future__ import division
 import pylibvw
 import warnings
-from vowpalwabbit.DFtoVWtoTensorboard import VWtoTensorboard
+from vowpalwabbit.DFtoVWtoTBorTW import (VWtoTensorboard, VWtoTensorwatchStreamer)
 
 
 # baked in con py boost https://wiki.python.org/moin/boost.python/FAQ#The_constructors_of_some_classes_I_am_trying_to_wrap_are_private_because_instances_must_be_created_by_using_a_factory._Is_it_possible_to_wrap_such_classes.3F
@@ -561,7 +561,7 @@ class vw(pylibvw.vw):
         feat_hash = self.hash_feature(feature_name, space_hash)
         return self.get_weight(feat_hash)
 
-    def learn(self, ec, vw_to_tensorboard=None):
+    def learn(self, ec, vw_to_tensorboard=None, vw_to_tensorwatch=None):
         """Perform an online update
 
         Parameters
@@ -572,8 +572,11 @@ class vw(pylibvw.vw):
 
         vw_to_tensorboard : VWtoTensorboard object
                            This object is used to calculate metrics and then log them for Tensorboard visualization
+
+        vw_to_tensorwatch : VWtoTensorwatchStreamer object
+                           This object is used to calculate metrics and then get them streamed for Tensorwatch visualization
         """
-        if isinstance(vw_to_tensorboard, VWtoTensorboard):
+        if isinstance(vw_to_tensorboard, VWtoTensorboard) or isinstance(vw_to_tensorwatch, VWtoTensorwatchStreamer):
             sum_loss = super().get_sum_loss()
             weighted_examples = super().get_weighted_examples()
 
@@ -606,7 +609,7 @@ class vw(pylibvw.vw):
         if new_example:
             self.finish_example(ec)
 
-        if isinstance(vw_to_tensorboard, VWtoTensorboard):
+        if isinstance(vw_to_tensorboard, VWtoTensorboard) or isinstance(vw_to_tensorwatch, VWtoTensorwatchStreamer):
             if new_example is False:  # As according to this method's logic self.finish_example(ec) is only called  if new_example==True  thats why  if new_example==False then self.finish_example(ec) has not been called
                 raise RuntimeError("finish_example on current example has not been called, metrics may not be computed correctly")
 
@@ -618,7 +621,11 @@ class vw(pylibvw.vw):
             average_loss = (sum_loss / weighted_examples) if weighted_examples != 0  else 0.0
             since_last = (sum_loss_since_last / weighted_examples_since_last) if weighted_examples_since_last != 0  else 0.0
 
-            vw_to_tensorboard.emit_learning_metrics(average_loss, since_last)
+            if vw_to_tensorboard:
+                vw_to_tensorboard.emit_learning_metrics(average_loss, since_last)
+
+            if vw_to_tensorwatch:
+                vw_to_tensorwatch.emit_learning_metrics(average_loss, since_last)
 
     def predict(self, ec, prediction_type=None):
         """Just make a prediction on the example

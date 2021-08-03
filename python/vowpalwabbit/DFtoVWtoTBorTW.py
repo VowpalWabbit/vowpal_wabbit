@@ -1,10 +1,12 @@
 import tensorboardX as tx
+import tensorwatch as tw
 from tensorboardX.proto.graph_pb2 import GraphDef
 from tensorboardX.proto.node_def_pb2 import NodeDef
 from tensorboardX.proto import event_pb2
 
+
 class VWtoTensorboard:
-	"""The object of this class would be passed as a callback to DFtoVWtoTensorboard fit method to ensure writing of logs for Tensorboard"""
+	"""The object of this class can be passed as a callback or used to ensure writing of logs for Tensorboard"""
 
 	def __init__(self, logdir):
 		"""Construct a VWtoTensorboard object
@@ -90,13 +92,134 @@ class VWtoTensorboard:
 		self.file_writer.add_text("command line arguments", vw.get_arguments())
 
 
-class DFtoVWtoTensorboard:
-	"""This class provides capability for learning possible on DFtoVW object, provides capability to 
-	print metrics (average_loss, since_last, label, prediction, num_features) and also provides support 
-	to log these metrics for Tensorboard Visualization"""
+
+class VWtoTensorwatchStreamer:
+	"""The object of this class can be passed as a callback or used to visualize in Tensorwatch"""
+
+	def __init__(self, port=4500):
+		"""Construct a VWtoTensorwatchStreamer object
+
+		Parameters
+		----------
+
+		port : int
+			Port on which Watcher of Tensorwatch should stream
+
+		Returns
+		-------
+
+		self : VWtoTensorwatchStreamer
+		"""
+		self.watcher = tw.Watcher(port=port)
+		self.iteration = 0
+		self.avg_loss_tw = self.watcher.create_stream('average_loss')
+		self.since_last_tw = self.watcher.create_stream('since_last')
+
+
+	def emit_learning_metrics(self, average_loss, since_last):
+		"""This method for now logs the metrics given as arguments for Tensorwatch visualization
+
+		Parameters
+		----------
+
+		average_loss : float
+				This is the average_loss value to be logged for Tensorwatch
+		since_last   : float
+				This is the since_last value to be logged for Tensorwatch
+
+		Returns
+		-------
+
+		None
+		"""
+		self.avg_loss_tw.write( (self.iteration, average_loss) )
+		self.since_last_tw.write( (self.iteration, since_last) )
+		self.iteration += 1
+
+
+	def __del__(self):
+		"""When the object is being destroyed, this would be called to close the watcher, this helps in freeing port
+
+		Parameters
+		----------
+
+		None
+
+		Returns
+		-------
+
+		None
+		"""
+		self.watcher.close()
+
+
+
+class VWtoTensorwatchClient:
+	"""The object of this class can be used to visualize results in Tensorwatch"""
+
+	def __init__(self, port=4500):
+		"""Construct a VWtoTensorwatchClient object
+
+		Parameters
+		----------
+
+		port : int
+			Port on which WatcherClient should work
+
+		Returns
+		-------
+
+		self : VWtoTensorwatchClient
+		"""
+		self.client = tw.WatcherClient(port=port)
+
+
+	def plot_metrics(self):
+		"""This displays learning metrics plots in Tensorwatch
+
+		Parameters
+		----------
+
+		None
+
+		Returns
+		-------
+
+		None
+		"""
+		avg_loss_tw = self.client.open_stream('average_loss')
+		since_last_tw = self.client.open_stream('since_last')
+
+		avg_plot = tw.Visualizer(avg_loss_tw, vis_type='line', xtitle='iterations', ytitle='average_loss')
+		avg_plot.show()
+
+		since_last_plot = tw.Visualizer(since_last_tw, vis_type='line', xtitle='iterations', ytitle='since_last')
+		since_last_plot.show()
+
+
+	def __del__(self):
+		"""When the object is being destroyed, this would be called to close the WatcherClient
+
+		Parameters
+		----------
+
+		None
+
+		Returns
+		-------
+
+		None
+		"""
+		self.client.close()
+
+
+
+class DFtoVWtoTBorTW:
+	"""This class provides capability for learning possible on DFtoVW object and also provides support 
+	to log these metrics for Tensorboard and Tensorwatch Visualization"""
 
 	def __init__(self, vw_formatted_data, vw):
-		"""Construct a DFtoVWtoTensorboard object
+		"""Construct a DFtoVWtoTBorTW object
 
 		Parameters
 		----------
@@ -109,14 +232,13 @@ class DFtoVWtoTensorboard:
 		Returns
 		-------
 
-		self : DFtoVWtoTensorboard
+		self : DFtoVWtoTBorTW
 		"""
 		self.vw = vw  # As this needs to be remembered
 		self.vw_formatted_data = vw_formatted_data
 
 
-	#------------------------------------------------------------------------------------------------		
-	def fit(self, vw_to_tensorboard=None):
+	def fit(self, vw_to_tensorboard=None, vw_to_tensorwatch=None):
 		"""Learns on the relevant examples and can also log metrics for tensorboard visualization
 
 		Parameters
@@ -127,11 +249,16 @@ class DFtoVWtoTensorboard:
 					If value is VWtoTensorboard object : metrics are computed and logged for Tensorboard visualization
 					If value is None : metrics are not computed and not logged for Tensorboard visualization
 
+		vw_to_tensorwatch  : VWtoTensorwatch object 
+					Default value is None, this parameter is used to control the streaming of metrics for Tensorwatch
+					If value is VWtoTensorwatchStreamer object : metrics are computed for Tensorwatch visualization
+					If value is None : metrics are not computed and not visualized using Tensorwatch
+
 		Returns
 		-------
 
 		None
 		"""
 		for iteration, vw_format in enumerate(self.vw_formatted_data):
-			self.vw.learn(vw_format, vw_to_tensorboard)         # learn on example
+			self.vw.learn(vw_format, vw_to_tensorboard, vw_to_tensorwatch)         # learn on example
 
