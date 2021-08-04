@@ -32,7 +32,7 @@ enum class prediction_type_t
   multiclass,
   multilabels,
   prob,
-  multiclassprobs, // not in use?
+  multiclassprobs,  // not in use?
   decision_probs,
   action_pdf_value,
   active_multiclass

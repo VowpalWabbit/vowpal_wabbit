@@ -1618,8 +1618,8 @@ vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> opt
 
     if (!all.logger.quiet)
     {
-      *(all.trace_message) << "Input label = "  << to_string(all.example_parser->lbl_parser.label_type) << std::endl;
-      *(all.trace_message) << "Output pred = "  << to_string(all.l->pred_type) << std::endl;
+      *(all.trace_message) << "Input label = " << to_string(all.example_parser->lbl_parser.label_type) << std::endl;
+      *(all.trace_message) << "Output pred = " << to_string(all.l->pred_type) << std::endl;
     }
 
     if (!all.options->get_typed_option<bool>("dry_run").value())
