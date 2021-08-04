@@ -30,8 +30,14 @@ BOOST_AUTO_TEST_CASE(unique_feature_group_test)
 
   const auto parse_mask = (static_cast<uint64_t>(1) << 18) - 1;
   fs.sort(parse_mask);
+
+  auto fs_copy = fs;
   unique_features(fs, 5);
 
   check_collections_exact(std::vector<feature_index>(fs.indicies.begin(), fs.indicies.end()),
-      std::vector<feature_index>{1, 3, 5, 7, 11});
+      std::vector<feature_index>{1, 2, 3, 5, 7});
+
+  unique_features(fs_copy);
+  check_collections_exact(std::vector<feature_index>(fs_copy.indicies.begin(), fs_copy.indicies.end()),
+      std::vector<feature_index>{1, 2, 3, 5, 7,11,12,13,25});
 }

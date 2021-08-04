@@ -42,7 +42,8 @@ void unique_features(features& fs, int max)
       }
 
       const auto unique_items_found = last_index + 1;
-      if (static_cast<int>(unique_items_found) >= max) { break; }
+      // Rely on a negative integer to wrap around and be larger if a user passed in a negative value.
+      if (unique_items_found >= static_cast<size_t>(max)) { break; }
     }
   }
 
