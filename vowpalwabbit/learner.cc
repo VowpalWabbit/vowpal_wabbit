@@ -23,7 +23,30 @@ const char* to_string(prediction_type_t prediction_type)
     CASE(prediction_type_t::multiclass)
     CASE(prediction_type_t::multilabels)
     CASE(prediction_type_t::prob)
+    CASE(prediction_type_t::pdf)
     CASE(prediction_type_t::multiclassprobs)
+    CASE(prediction_type_t::decision_probs)
+    CASE(prediction_type_t::action_pdf_value)
+    CASE(prediction_type_t::active_multiclass)
+    default:
+      return "<unsupported>";
+  }
+}
+
+const char* to_string(label_type_t label_type)
+{
+  switch (label_type)
+  {
+    CASE(label_type_t::simple)
+    CASE(label_type_t::cb)
+    CASE(label_type_t::cb_eval)
+    CASE(label_type_t::cs)
+    CASE(label_type_t::multilabel)
+    CASE(label_type_t::multiclass)
+    CASE(label_type_t::ccb)
+    CASE(label_type_t::slates)
+    CASE(label_type_t::nolabel)
+    CASE(label_type_t::continuous)
     default:
       return "<unsupported>";
   }

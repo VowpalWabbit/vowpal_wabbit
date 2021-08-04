@@ -32,13 +32,14 @@ enum class prediction_type_t
   multiclass,
   multilabels,
   prob,
-  multiclassprobs,
+  multiclassprobs, // not in use?
   decision_probs,
   action_pdf_value,
   active_multiclass
 };
 
 const char* to_string(prediction_type_t prediction_type);
+const char* to_string(label_type_t label_type);
 
 namespace VW
 {
