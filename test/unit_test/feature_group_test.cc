@@ -30,13 +30,33 @@ BOOST_AUTO_TEST_CASE(unique_feature_group_test)
   const auto parse_mask = (static_cast<uint64_t>(1) << 18) - 1;
   fs.sort(parse_mask);
 
-  auto fs_copy = fs;
-  unique_features(fs, 5);
+  auto fs_copy1 = fs;
+  auto fs_copy2 = fs;
+  auto fs_copy3 = fs;
 
+  // Cap at 5
+  unique_features(fs, 5);
   check_collections_exact(
       std::vector<feature_index>(fs.indicies.begin(), fs.indicies.end()), std::vector<feature_index>{1, 2, 3, 5, 7});
 
-  unique_features(fs_copy);
-  check_collections_exact(std::vector<feature_index>(fs_copy.indicies.begin(), fs_copy.indicies.end()),
+  // Uncapped
+  unique_features(fs_copy1);
+  check_collections_exact(std::vector<feature_index>(fs_copy1.indicies.begin(), fs_copy1.indicies.end()),
+      std::vector<feature_index>{1, 2, 3, 5, 7, 11, 12, 13, 25});
+
+  // Special case at size 1
+  unique_features(fs_copy2, 1);
+  check_collections_exact(std::vector<feature_index>(fs_copy2.indicies.begin(), fs_copy2.indicies.end()),
+      std::vector<feature_index>{1});
+
+  // Special case at size 0
+  features empty_features;
+  unique_features(empty_features, 0);
+  check_collections_exact(std::vector<feature_index>(fs_copy2.indicies.begin(), fs_copy2.indicies.end()),
+      std::vector<feature_index>{1});
+
+  // Explicit negative input that isn't -1
+  unique_features(fs_copy1, -10);
+  check_collections_exact(std::vector<feature_index>(fs_copy1.indicies.begin(), fs_copy1.indicies.end()),
       std::vector<feature_index>{1, 2, 3, 5, 7, 11, 12, 13, 25});
 }
