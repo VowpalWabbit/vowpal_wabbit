@@ -10,7 +10,6 @@
 #include "feature_group.h"
 #include "unique_sort.h"
 
-
 BOOST_AUTO_TEST_CASE(unique_feature_group_test)
 {
   features fs;
@@ -34,10 +33,10 @@ BOOST_AUTO_TEST_CASE(unique_feature_group_test)
   auto fs_copy = fs;
   unique_features(fs, 5);
 
-  check_collections_exact(std::vector<feature_index>(fs.indicies.begin(), fs.indicies.end()),
-      std::vector<feature_index>{1, 2, 3, 5, 7});
+  check_collections_exact(
+      std::vector<feature_index>(fs.indicies.begin(), fs.indicies.end()), std::vector<feature_index>{1, 2, 3, 5, 7});
 
   unique_features(fs_copy);
   check_collections_exact(std::vector<feature_index>(fs_copy.indicies.begin(), fs_copy.indicies.end()),
-      std::vector<feature_index>{1, 2, 3, 5, 7,11,12,13,25});
+      std::vector<feature_index>{1, 2, 3, 5, 7, 11, 12, 13, 25});
 }

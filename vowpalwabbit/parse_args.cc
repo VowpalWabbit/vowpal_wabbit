@@ -597,8 +597,9 @@ void parse_feature_tweaks(
       .add(make_option("skips", skip_strings)
                .help("Generate skips in N grams. This in conjunction with the ngram tag can be used to generate "
                      "generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN."))
-      .add(make_option("feature_limit", all.limit_strings)
-               .help("limit to N unique features per namespace. To apply to a single namespace 'foo', arg should be fN"))
+      .add(
+          make_option("feature_limit", all.limit_strings)
+              .help("limit to N unique features per namespace. To apply to a single namespace 'foo', arg should be fN"))
       .add(make_option("affix", affix)
                .keep()
                .help("generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for "
