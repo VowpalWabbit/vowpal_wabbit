@@ -266,11 +266,11 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   oaa* data_ptr = data.get();
   uint64_t k_value = data->k;
   auto base = as_singleline(stack_builder.setup_base_learner());
-  void (*learn_ptr)(oaa& o, VW::LEARNER::single_learner& base, example& ec);
-  void (*pred_ptr)(oaa& o, LEARNER::single_learner& base, example& ec);
+  void (*learn_ptr)(oaa&, VW::LEARNER::single_learner&, example&);
+  void (*pred_ptr)(oaa&, LEARNER::single_learner&, example&);
   std::string name_addition;
   prediction_type_t pred_type;
-  void (*finish_ptr)(vw& all, oaa& o, example& ec);
+  void (*finish_ptr)(vw&, oaa&, example&);
   if (probabilities || scores)
   {
     pred_type = prediction_type_t::scalar;
