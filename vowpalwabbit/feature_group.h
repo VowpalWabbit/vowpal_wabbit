@@ -41,6 +41,41 @@ struct feature
 
 static_assert(std::is_trivial<feature>::value, "To be used in v_array feature must be trivial");
 
+namespace VW
+{
+struct namespace_extent
+{
+  namespace_extent() = default;
+
+  namespace_extent(size_t begin_index, size_t end_index, uint64_t hash)
+      : begin_index(begin_index), end_index(end_index), hash(hash)
+  {
+  }
+
+  namespace_extent(size_t begin_index, uint64_t hash) : begin_index(begin_index), hash(hash) {}
+
+  size_t begin_index = 0;
+  size_t end_index = 0;
+  uint64_t hash = 0;
+
+  friend bool operator==(const namespace_extent& lhs, const namespace_extent& rhs)
+  {
+    return lhs.begin_index == rhs.begin_index && lhs.end_index == rhs.end_index && lhs.hash == rhs.hash;
+  }
+  friend bool operator!=(const namespace_extent& lhs, const namespace_extent& rhs)
+  {
+    return !(lhs == rhs);
+  }
+};
+namespace details
+{
+std::vector<std::pair<bool, uint64_t>> flatten_namespace_extents(
+    const std::vector<namespace_extent>& extents, size_t overall_feature_space_size);
+
+std::vector<namespace_extent> unflatten_namespace_extents(const std::vector<std::pair<bool, uint64_t>>& extents);
+}  // namespace details
+}  // namespace VW
+
 template <typename feature_value_type_t, typename feature_index_type_t, typename audit_type_t>
 class audit_features_iterator final
 {
@@ -173,6 +208,52 @@ public:
   friend struct features;
 };
 
+template <typename features_t, typename audit_features_iterator_t, typename extent_it>
+class ns_extent_iterator final
+{
+public:
+  ns_extent_iterator(features_t* feature_group, uint64_t hash, extent_it index_current)
+      : _feature_group(feature_group), _hash(hash), _index_current(index_current)
+  {
+  }
+
+private:
+  features_t* _feature_group;
+  uint64_t _hash;
+  extent_it _index_current;
+
+public:
+  std::pair<audit_features_iterator_t, audit_features_iterator_t> operator*()
+  {
+    return std::make_pair(_feature_group->audit_begin() + _index_current->begin_index,
+        _feature_group->audit_begin() + _index_current->end_index);
+  }
+  std::pair<audit_features_iterator_t, audit_features_iterator_t> operator*() const
+  {
+    return std::make_pair(_feature_group->audit_begin() + _index_current->begin_index,
+        _feature_group->audit_begin() + _index_current->end_index);
+  }
+
+  // Required for forward_iterator
+  ns_extent_iterator& operator++()
+  {
+    while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash != _hash)
+    {
+      ++_index_current;
+    }
+
+    return *this;
+  }
+
+  friend bool operator==(const ns_extent_iterator& lhs, const ns_extent_iterator& rhs)
+  {
+    return lhs._feature_group == rhs._feature_group && lhs._index_current == rhs._index_current;
+  }
+
+  friend bool operator!=(const ns_extent_iterator& lhs, const ns_extent_iterator& rhs) { return !(lhs == rhs); }
+  friend struct features;
+};
+
 template <typename feature_value_type_t, typename feature_index_type_t>
 class features_iterator final
 {
@@ -289,10 +370,14 @@ struct features
   using const_iterator = features_iterator<const feature_value, const feature_index>;
   using audit_iterator = audit_features_iterator<feature_value, feature_index, audit_strings>;
   using const_audit_iterator = audit_features_iterator<const feature_value, const feature_index, const audit_strings>;
+  using extent_iterator = ns_extent_iterator<features, audit_iterator, std::vector<VW::namespace_extent>::iterator>;
+  using const_extent_iterator =
+      ns_extent_iterator<const features, const_audit_iterator, std::vector<VW::namespace_extent>::const_iterator>;
 
-  v_array<feature_value> values;               // Always needed.
-  v_array<feature_index> indicies;             // Optional for sparse data.
-  std::vector<audit_strings> space_names;      // Optional for audit mode.
+  v_array<feature_value> values;           // Always needed.
+  v_array<feature_index> indicies;         // Optional for sparse data.
+  std::vector<audit_strings> space_names;  // Optional for audit mode.
+  std::vector<VW::namespace_extent> namespace_extents;
 
   float sum_feat_sq = 0.f;
 
@@ -340,6 +425,11 @@ struct features
     return {values.end(), indicies.end(), space_names.data() + space_names.size()};
   }
 
+  extent_iterator hash_extents_begin(uint64_t hash) { return {this, hash, namespace_extents.begin()}; }
+  const_extent_iterator hash_extents_begin(uint64_t hash) const { return {this, hash, namespace_extents.begin()}; }
+  extent_iterator hash_extents_end(uint64_t hash) { return {this, hash, namespace_extents.end()}; }
+  const_extent_iterator hash_extents_end(uint64_t hash) const { return {this, hash, namespace_extents.end()}; }
+
   void clear();
   void truncate_to(const audit_iterator& pos);
   void truncate_to(const iterator& pos);
@@ -347,6 +437,15 @@ struct features
   void concat(const features& other);
   void push_back(feature_value v, feature_index i);
   bool sort(uint64_t parse_mask);
+
+  void start_ns_extent(uint64_t hash);
+  void end_ns_extent();
+
+  bool all_extents_complete()
+  {
+    return std::all_of(namespace_extents.begin(), namespace_extents.end(),
+        [](const VW::namespace_extent& obj) { return obj.begin_index != obj.end_index && obj.end_index != 0; });
+  }
 
   VW_DEPRECATED("deep_copy_from is deprecated. Use the copy constructor directly. This will be removed in VW 9.0.")
   void deep_copy_from(const features& src);

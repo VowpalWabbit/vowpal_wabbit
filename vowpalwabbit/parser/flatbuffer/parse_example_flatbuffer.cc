@@ -177,6 +177,13 @@ void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
   ae->indices.push_back(temp_index);
 
   auto& fs = ae->feature_space[temp_index];
+  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_EXTENTS))
+  {
+    for (const auto& extent : *(ns->extents()))
+    {
+      fs.namespace_extents.emplace_back(extent->begin(), extent->end(), extent->hash());
+    }
+  }
 
   for (const auto& feature : *(ns->features()))
   { parse_features(all, fs, feature, (all->audit || all->hash_inv) ? ns->name() : nullptr); }

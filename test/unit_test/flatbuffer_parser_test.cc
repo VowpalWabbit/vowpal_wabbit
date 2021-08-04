@@ -11,6 +11,9 @@
 #include <vector>
 #include "parser/flatbuffer/parse_example_flatbuffer.h"
 #include "constant.h"
+#include "feature_group.h"
+
+BOOST_TEST_DONT_PRINT_LOG_VALUE(VW::namespace_extent)
 
 flatbuffers::Offset<void> get_label(flatbuffers::FlatBufferBuilder& builder, VW::parsers::flatbuffer::Label label_type)
 {
@@ -27,11 +30,13 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer_coll
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Example>> examples;
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
+  std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::NamespaceExtent>> ns_extent;
 
   auto label = get_label(builder, label_type);
 
   fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, "hello", 2.23f, constant));
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts));
+  ns_extent.push_back(VW::parsers::flatbuffer::CreateNamespaceExtent(builder, 0, 1, 0));
+  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts, &ns_extent));
   examples.push_back(VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label));
 
   auto eg_collection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(builder, &examples);
@@ -43,11 +48,13 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer(
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
+  std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::NamespaceExtent>> ns_extent;
 
   auto label = get_label(builder, label_type);
 
   fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, "hello", 2.23f, constant));
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts));
+  ns_extent.push_back(VW::parsers::flatbuffer::CreateNamespaceExtent(builder, 0, 1, 0));
+  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts, &ns_extent));
   auto example = VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label);
 
   return CreateExampleRoot(builder, VW::parsers::flatbuffer::ExampleType_Example, example.Union());
@@ -87,6 +94,9 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_standalone_example)
 
   BOOST_CHECK_EQUAL(examples[0]->indices[0], constant_namespace);
   BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(examples[0]->feature_space[examples[0]->indices[0]].namespace_extents.size(), 1);
+  BOOST_CHECK_EQUAL(
+      examples[0]->feature_space[examples[0]->indices[0]].namespace_extents[0], (VW::namespace_extent{0, 1, 0}));
 
   VW::finish_example(*all, *examples[0]);
   VW::finish(*all);
@@ -127,6 +137,10 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
 
   BOOST_CHECK_EQUAL(examples[0]->indices[0], constant_namespace);
   BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(
+      examples[0]->feature_space[examples[0]->indices[0]].namespace_extents.size(), 1);
+  BOOST_CHECK_EQUAL(examples[0]->feature_space[examples[0]->indices[0]].namespace_extents[0],
+      (VW::namespace_extent{0, 1, 0}));
 
   VW::finish_example(*all, *examples[0]);
   VW::finish(*all);

@@ -26,6 +26,7 @@ void features::clear()
   values.clear();
   indicies.clear();
   space_names.clear();
+  namespace_extents.clear();
 }
 
 void features::truncate_to(const iterator& pos) { truncate_to(std::distance(begin(), pos)); }
@@ -38,6 +39,14 @@ void features::truncate_to(size_t i)
   if (indicies.end() != indicies.begin()) { indicies.resize_but_with_stl_behavior(i); }
 
   if (space_names.size() > i) { space_names.erase(space_names.begin() + i, space_names.end()); }
+
+  while (!namespace_extents.empty() && namespace_extents.back().begin_index >= i) { namespace_extents.pop_back(); }
+
+  // Check if the truncation cuts an extent in the middle.
+  if (!namespace_extents.empty())
+  {
+    if (namespace_extents.back().end_index > i) { namespace_extents.back().end_index = i; }
+  }
 }
 
 void features::concat(const features& other)
@@ -52,13 +61,24 @@ void features::concat(const features& other)
   //  - empty() && other.audit -> push val, idx, audit
   //  - empty() && !other.audit -> push val, idx
 
+  const auto extent_offset = indicies.size();
   if (!empty() && (space_names.empty() != other.space_names.empty()))
-  { THROW_OR_RETURN_VOID("Cannot merge two feature groups if one has audit info and the other does not."); }
+  {
+    THROW_OR_RETURN_VOID("Cannot merge two feature groups if one has audit info and the other does not.");
+  }
   values.insert(values.end(), other.values.begin(), other.values.end());
   indicies.insert(indicies.end(), other.indicies.begin(), other.indicies.end());
 
   if (!other.space_names.empty())
-  { space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end()); }
+  {
+    space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end());
+  }
+
+  for (const auto& ns_extent : other.namespace_extents)
+  {
+    namespace_extents.emplace_back(
+        ns_extent.begin_index + extent_offset, ns_extent.end_index + extent_offset, ns_extent.hash);
+  }
 }
 
 void features::push_back(feature_value v, feature_index i)
@@ -100,6 +120,58 @@ void apply_permutation_in_place(VecT& vec, const std::vector<std::size_t>& dest_
   }
 }
 
+void push_many(std::vector<std::pair<bool, uint64_t>>& vec, size_t num, bool is_valid, uint64_t hash)
+{
+  for (auto i = 0; i < num; ++i) { vec.emplace_back(is_valid, hash); }
+}
+
+namespace VW
+{
+namespace details
+{
+std::vector<std::pair<bool, uint64_t>> flatten_namespace_extents(
+    const std::vector<namespace_extent>& extents, size_t overall_feature_space_size)
+{
+  assert(extents.empty() || (overall_feature_space_size >= extents.back().end_index));
+  std::vector<std::pair<bool, uint64_t>> flattened;
+  flattened.reserve(overall_feature_space_size);
+  auto last_end = 0;
+  for (const auto& extent : extents)
+  {
+    if (extent.begin_index > last_end) { push_many(flattened, extent.begin_index - last_end, false, 0); }
+    push_many(flattened, extent.end_index - extent.begin_index, true, extent.hash);
+    last_end = extent.end_index;
+  }
+  if (overall_feature_space_size > last_end) { push_many(flattened, overall_feature_space_size - last_end, false, 0); }
+  return flattened;
+}
+
+std::vector<namespace_extent> unflatten_namespace_extents(const std::vector<std::pair<bool, uint64_t>>& extents)
+{
+  if (extents.empty()) { return {}; }
+  std::vector<namespace_extent> results;
+  auto eq = [](const std::pair<bool, uint64_t>& left, const std::pair<bool, uint64_t>& right) {
+    return left.first == right.first && left.second == right.second;
+  };
+  auto last_start = 0;
+  auto current = extents[0];
+  for (size_t i = 1; i < extents.size(); ++i)
+  {
+    if (!eq(current, extents[i]))
+    {
+      // Check if it was a valid sequence, or an empty segment.
+      if (current.first) { results.emplace_back(last_start, i, current.second); }
+      last_start = i;
+      current = extents[i];
+    }
+  }
+
+  if (current.first) { results.emplace_back(last_start, extents.size(), current.second); }
+  return results;
+}
+}  // namespace details
+}  // namespace VW
+
 bool features::sort(uint64_t parse_mask)
 {
   if (indicies.empty()) { return false; }
@@ -115,7 +187,44 @@ bool features::sort(uint64_t parse_mask)
   apply_permutation_in_place(values, dest_index_vec);
   apply_permutation_in_place(indicies, dest_index_vec);
   apply_permutation_in_place(space_names, dest_index_vec);
+
+  auto flat_extents = VW::details::flatten_namespace_extents(namespace_extents, indicies.size());
+  apply_permutation_in_place(flat_extents, dest_index_vec);
+  namespace_extents = VW::details::unflatten_namespace_extents(flat_extents);
+
   return true;
+}
+
+void features::start_ns_extent(uint64_t hash)
+{
+  // Either the list should be empty or the last one should have a valid end index.
+  assert(namespace_extents.empty() || (!namespace_extents.empty() && namespace_extents.back().end_index != 0));
+  namespace_extents.emplace_back(indicies.size(), hash);
+}
+
+void features::end_ns_extent()
+{
+  // There should have been an extent started.
+  assert(!namespace_extents.empty());
+  // If the last extent has already been ended this is an error.
+  assert(namespace_extents.back().end_index == 0);
+
+  const auto end_index = indicies.size();
+  namespace_extents.back().end_index = end_index;
+
+  // If the size of the extent is empty then just remove it.
+  if (namespace_extents.back().begin_index == namespace_extents.back().end_index) { namespace_extents.pop_back(); }
+
+  // If the most recent extent is actually the same as the previous one, merge them.
+  if (namespace_extents.size() > 1)
+  {
+    auto& prev = namespace_extents[namespace_extents.size() - 2];
+    if (prev.hash == namespace_extents.back().hash)
+    {
+      prev.end_index = end_index;
+      namespace_extents.pop_back();
+    }
+  }
 }
 
 void features::deep_copy_from(const features& src)
@@ -124,4 +233,5 @@ void features::deep_copy_from(const features& src)
   indicies = src.indicies;
   space_names = src.space_names;
   sum_feat_sq = src.sum_feat_sq;
+  namespace_extents = src.namespace_extents;
 }

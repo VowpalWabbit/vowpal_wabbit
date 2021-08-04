@@ -6,10 +6,17 @@ table Feature {
   hash:uint64;
 }
 
+table NamespaceExtent {
+  begin:uint64;
+  end:uint64;
+  hash:uint64;
+}
+
 table Namespace {
   name:string;
   hash:uint8;
   features:[Feature];
+  extents:[NamespaceExtent];
 }
 
 table SimpleLabel {

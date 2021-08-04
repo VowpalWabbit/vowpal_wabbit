@@ -405,6 +405,7 @@ public:
     _index = 0;
     _new_index = false;
     _anon = 0;
+    bool did_start_extent = false;
     if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
         _line[_read_idx] == '\r')
     {
@@ -418,12 +419,16 @@ public:
         _base = space;
       }
       _channel_hash = this->_hash_seed == 0 ? 0 : uniform_hash("", 0, this->_hash_seed);
+      _ae->feature_space[_index].start_ns_extent(_channel_hash);
+      did_start_extent = true;
       listFeatures();
     }
     else if (_line[_read_idx] != ':')
     {
       // NameSpace --> NameSpaceInfo ListFeatures
       nameSpaceInfo();
+      _ae->feature_space[_index].start_ns_extent(_channel_hash);
+      did_start_extent = true;
       listFeatures();
     }
     else
@@ -432,7 +437,14 @@ public:
       parserWarning(
           "malformed example! '|',String,space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"");
     }
+
     if (_new_index && _ae->feature_space[_index].size() > 0) _ae->indices.push_back(_index);
+
+    // If the namespace was empty this will handle it internally.
+    if (did_start_extent)
+    {
+      _ae->feature_space[_index].end_ns_extent();
+    }
   }
 
   inline FORCE_INLINE void listNameSpace()
