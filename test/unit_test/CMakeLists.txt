@@ -15,6 +15,7 @@ add_executable(vw-unit-test.out
   example_header_test.cc
   example_test.cc
   explore_test.cc
+  feature_group_test.cc
   guard_test.cc
   initialize_test.cc
   interactions_test.cc
