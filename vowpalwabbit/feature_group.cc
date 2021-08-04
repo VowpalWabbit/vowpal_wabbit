@@ -186,12 +186,11 @@ bool features::sort(uint64_t parse_mask)
   auto dest_index_vec = sort_permutation(values, indicies, comparator);
   apply_permutation_in_place(values, dest_index_vec);
   apply_permutation_in_place(indicies, dest_index_vec);
-  apply_permutation_in_place(space_names, dest_index_vec);
+  if (!space_names.empty()) { apply_permutation_in_place(space_names, dest_index_vec); }
 
   auto flat_extents = VW::details::flatten_namespace_extents(namespace_extents, indicies.size());
   apply_permutation_in_place(flat_extents, dest_index_vec);
   namespace_extents = VW::details::unflatten_namespace_extents(flat_extents);
-
   return true;
 }
 
