@@ -63,4 +63,10 @@ BOOST_AUTO_TEST_CASE(unique_feature_group_test)
   features empty_features;
   unique_features(empty_features, 0);
   BOOST_REQUIRE(empty_features.empty());
+
+  features fs_size_one;
+  fs_size_one.push_back(1.f, 1);
+  unique_features(fs_size_one);
+  check_collections_exact(
+      std::vector<feature_index>(fs_size_one.indicies.begin(), fs_size_one.indicies.end()), std::vector<feature_index>{1});
 }
