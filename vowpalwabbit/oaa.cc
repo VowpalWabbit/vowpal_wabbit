@@ -273,7 +273,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   void (*finish_ptr)(vw&, oaa&, example&);
   if (probabilities || scores)
   {
-    pred_type = prediction_type_t::scalar;
+    pred_type = prediction_type_t::scalars;
     if (probabilities)
     {
       auto loss_function_type = all.loss->getType();
