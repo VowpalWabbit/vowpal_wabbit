@@ -17,9 +17,7 @@ void del_example_namespace(example& ec, namespace_index ns, features& fs)
   assert(del_target.size() >= fs.size());
   assert(!ec.indices.empty());
   if (ec.indices.back() == ns && ec.feature_space[static_cast<size_t>(ns)].size() == fs.size())
-  {
-    ec.indices.pop_back();
-  }
+  { ec.indices.pop_back(); }
   ec.reset_total_sum_feat_sq();
   ec.num_features -= fs.size();
   del_target.truncate_to(del_target.size() - fs.size());
@@ -49,9 +47,7 @@ void add_example_namespaces_from_example(example& target, example& source)
 void del_example_namespaces_from_example(example& target, example& source)
 {
   if (source.indices.empty())  // making sure we can deal with empty shared example
-  {
-    return;
-  }
+  { return; }
   namespace_index* idx = source.indices.end();
   idx--;
   for (; idx >= source.indices.begin(); idx--)

@@ -76,17 +76,13 @@ void features::concat(const features& other)
   //  - empty() && !other.audit -> push val, idx
 
   if (!empty() && (space_names.empty() != other.space_names.empty()))
-  {
-    THROW_OR_RETURN_VOID("Cannot merge two feature groups if one has audit info and the other does not.");
-  }
+  { THROW_OR_RETURN_VOID("Cannot merge two feature groups if one has audit info and the other does not."); }
   values.insert(values.end(), other.values.begin(), other.values.end());
   indicies.insert(indicies.end(), other.indicies.begin(), other.indicies.end());
   sum_feat_sq += other.sum_feat_sq;
 
   if (!other.space_names.empty())
-  {
-    space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end());
-  }
+  { space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end()); }
 }
 
 void features::push_back(feature_value v, feature_index i)
