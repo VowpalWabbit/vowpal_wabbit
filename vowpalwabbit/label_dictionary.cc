@@ -23,7 +23,6 @@ void del_example_namespace(example& ec, namespace_index ns, features& fs)
   ec.reset_total_sum_feat_sq();
   ec.num_features -= fs.size();
   del_target.truncate_to(del_target.size() - fs.size());
-  del_target.sum_feat_sq -= fs.sum_feat_sq;
 }
 
 void add_example_namespace(example& ec, namespace_index ns, features& fs)
