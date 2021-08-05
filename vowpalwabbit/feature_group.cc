@@ -122,7 +122,7 @@ void apply_permutation_in_place(VecT& vec, const std::vector<std::size_t>& dest_
 
 void push_many(std::vector<std::pair<bool, uint64_t>>& vec, size_t num, bool is_valid, uint64_t hash)
 {
-  for (auto i = 0; i < num; ++i) { vec.emplace_back(is_valid, hash); }
+  for (auto i = std::size_t{0}; i < num; ++i) { vec.emplace_back(is_valid, hash); }
 }
 
 namespace VW
@@ -135,7 +135,7 @@ std::vector<std::pair<bool, uint64_t>> flatten_namespace_extents(
   assert(extents.empty() || (overall_feature_space_size >= extents.back().end_index));
   std::vector<std::pair<bool, uint64_t>> flattened;
   flattened.reserve(overall_feature_space_size);
-  auto last_end = 0;
+  auto last_end = std::size_t{0};
   for (const auto& extent : extents)
   {
     if (extent.begin_index > last_end) { push_many(flattened, extent.begin_index - last_end, false, 0); }
@@ -153,9 +153,9 @@ std::vector<namespace_extent> unflatten_namespace_extents(const std::vector<std:
   auto eq = [](const std::pair<bool, uint64_t>& left, const std::pair<bool, uint64_t>& right) {
     return left.first == right.first && left.second == right.second;
   };
-  auto last_start = 0;
+  auto last_start = std::size_t{0};
   auto current = extents[0];
-  for (size_t i = 1; i < extents.size(); ++i)
+  for (auto i = std::size_t{1}; i < extents.size(); ++i)
   {
     if (!eq(current, extents[i]))
     {
