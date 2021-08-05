@@ -10,8 +10,6 @@
 #include "feature_group.h"
 #include "unique_sort.h"
 
-BOOST_TEST_DONT_PRINT_LOG_VALUE(VW::namespace_extent)
-
 BOOST_AUTO_TEST_CASE(unique_feature_group_test)
 {
   features fs;

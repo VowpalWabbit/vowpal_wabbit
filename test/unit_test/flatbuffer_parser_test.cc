@@ -13,8 +13,6 @@
 #include "constant.h"
 #include "feature_group.h"
 
-BOOST_TEST_DONT_PRINT_LOG_VALUE(VW::namespace_extent)
-
 flatbuffers::Offset<void> get_label(flatbuffers::FlatBufferBuilder& builder, VW::parsers::flatbuffer::Label label_type)
 {
   flatbuffers::Offset<void> label;

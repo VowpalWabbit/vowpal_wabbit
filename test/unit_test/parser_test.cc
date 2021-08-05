@@ -5,6 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
+#include "test_common.h"
 #include "parse_args.h"
 #include "parse_example.h"
 
@@ -16,9 +17,6 @@ BOOST_AUTO_TEST_CASE(spoof_hex_encoded_namespace_test)
   BOOST_CHECK_EQUAL(spoof_hex_encoded_namespaces("\\xab"), "\xab");
   BOOST_CHECK_EQUAL(spoof_hex_encoded_namespaces("\\x01 unrelated \\x56"), "\x01 unrelated \x56");
 }
-
-
-BOOST_TEST_DONT_PRINT_LOG_VALUE(VW::namespace_extent)
 
 BOOST_AUTO_TEST_CASE(parse_text_with_extents)
 {

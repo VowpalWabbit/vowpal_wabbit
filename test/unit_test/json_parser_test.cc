@@ -826,9 +826,6 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates_dedup_id_missing)
   VW::finish(*vw);
 }
 
-
-BOOST_TEST_DONT_PRINT_LOG_VALUE(VW::namespace_extent)
-
 BOOST_AUTO_TEST_CASE(parse_json_simple_verify_extents)
 {
   auto* vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
