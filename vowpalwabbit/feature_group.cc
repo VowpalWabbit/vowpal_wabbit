@@ -28,20 +28,43 @@ void features::clear()
   space_names.clear();
 }
 
-void features::truncate_to(const iterator& pos) { truncate_to(std::distance(begin(), pos)); }
-
-void features::truncate_to(const audit_iterator& pos) { truncate_to(std::distance(audit_begin(), pos)); }
-
-void features::truncate_to(size_t i)
+void features::truncate_to(const audit_iterator& pos, float sum_feat_sq_of_removed_section)
 {
+  truncate_to(std::distance(audit_begin(), pos), sum_feat_sq_of_removed_section);
+}
+
+void features::truncate_to(const iterator& pos, float sum_feat_sq_of_removed_section)
+{
+  truncate_to(std::distance(begin(), pos), sum_feat_sq_of_removed_section);
+}
+
+void features::truncate_to(size_t i, float sum_feat_sq_of_removed_section)
+{
+  assert(i <= size());
+  if (i == size()) { return; }
+  sum_feat_sq -= sum_feat_sq_of_removed_section;
+
   values.resize_but_with_stl_behavior(i);
   if (indicies.end() != indicies.begin()) { indicies.resize_but_with_stl_behavior(i); }
 
   if (space_names.size() > i) { space_names.erase(space_names.begin() + i, space_names.end()); }
 }
 
+void features::truncate_to(const audit_iterator& pos) { truncate_to(std::distance(audit_begin(), pos)); }
+void features::truncate_to(const iterator& pos) { truncate_to(std::distance(begin(), pos)); }
+void features::truncate_to(size_t i)
+{
+  assert(i <= size());
+  float sum_ft_squares_of_removed_chunk = 0.f;
+  for (auto idx = i; idx < values.size(); ++idx) { sum_ft_squares_of_removed_chunk += values[idx] * values[i]; }
+  truncate_to(i, sum_ft_squares_of_removed_chunk);
+}
+
 void features::concat(const features& other)
 {
+  assert(values.size() == indicies.size());
+  assert(other.values.size() == other.indicies.size());
+
   if (other.empty()) { return; }
 
   // Conditions to check:
@@ -53,12 +76,17 @@ void features::concat(const features& other)
   //  - empty() && !other.audit -> push val, idx
 
   if (!empty() && (space_names.empty() != other.space_names.empty()))
-  { THROW_OR_RETURN_VOID("Cannot merge two feature groups if one has audit info and the other does not."); }
+  {
+    THROW_OR_RETURN_VOID("Cannot merge two feature groups if one has audit info and the other does not.");
+  }
   values.insert(values.end(), other.values.begin(), other.values.end());
   indicies.insert(indicies.end(), other.indicies.begin(), other.indicies.end());
+  sum_feat_sq += other.sum_feat_sq;
 
   if (!other.space_names.empty())
-  { space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end()); }
+  {
+    space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end());
+  }
 }
 
 void features::push_back(feature_value v, feature_index i)
