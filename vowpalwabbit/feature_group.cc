@@ -83,9 +83,7 @@ void features::concat(const features& other)
   }
 
   if (!other.space_names.empty())
-  {
-    space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end());
-  }
+  { space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end()); }
 }
 
 void features::push_back(feature_value v, feature_index i)
@@ -141,7 +139,7 @@ bool features::sort(uint64_t parse_mask)
   auto dest_index_vec = sort_permutation(values, indicies, comparator);
   apply_permutation_in_place(values, dest_index_vec);
   apply_permutation_in_place(indicies, dest_index_vec);
-  apply_permutation_in_place(space_names, dest_index_vec);
+  if (!space_names.empty()) { apply_permutation_in_place(space_names, dest_index_vec); }
   return true;
 }
 
