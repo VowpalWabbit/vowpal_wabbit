@@ -1,0 +1,14 @@
+To use this tool you will need to download and build Google's AFL fuzzer https://github.com/google/AFL
+
+Then run the following commands
+cd /path/to/vw
+mkdir build
+cd build
+CXX=/path/to/AFL/afl-g++ cmake ..
+make test_initialize
+
+Then run the fuzz.py script
+python fuzz.py --afl_dir=/path/to/AFL
+
+The default timeout is 10 minutes per test, but it is recommended you run at least 1 hour per test.
+Using a timeout of 0 will cause the tests to run to completion or until you cancel the process with C-c
