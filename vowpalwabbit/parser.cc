@@ -676,8 +676,9 @@ void setup_example(vw& all, example* ae)
   { VW::write_example_to_cache(*all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask); }
 
   // Require all extents to be complete in an example.
-  for (auto& fg : *ae) { assert(fg.all_extents_complete());
-  }
+#ifndef NDEBUG
+  for (auto& fg : *ae) { assert(fg.all_extents_complete()); }
+#endif
 
   ae->partial_prediction = 0.;
   ae->num_features = 0;
