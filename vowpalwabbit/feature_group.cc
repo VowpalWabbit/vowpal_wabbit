@@ -63,16 +63,6 @@ void features::truncate_to(const audit_iterator& pos) { truncate_to(std::distanc
 void features::truncate_to(const iterator& pos) { truncate_to(std::distance(begin(), pos)); }
 void features::truncate_to(size_t i)
 {
-  assert(i < size());
-  float sum_ft_squares_of_removed_chunk = 0.f;
-  for (auto idx = i; idx < values.size(); ++idx) { sum_ft_squares_of_removed_chunk += values[idx] * values[i]; }
-  truncate_to(i, sum_ft_squares_of_removed_chunk);
-}
-
-void features::truncate_to(const audit_iterator& pos) { truncate_to(std::distance(audit_begin(), pos)); }
-void features::truncate_to(const iterator& pos) { truncate_to(std::distance(begin(), pos)); }
-void features::truncate_to(size_t i)
-{
   assert(i <= size());
   float sum_ft_squares_of_removed_chunk = 0.f;
   for (auto idx = i; idx < values.size(); ++idx) { sum_ft_squares_of_removed_chunk += values[idx] * values[i]; }
