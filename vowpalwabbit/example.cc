@@ -51,9 +51,10 @@ float collision_cleanup(features& fs)
   }
 
   sum_sq += pos.value() * pos.value();
-  fs.sum_feat_sq = sum_sq;
   ++pos;
-  fs.truncate_to(pos);
+  // Don't change the sum_feat_sq as we will do it manually directly after.
+  fs.truncate_to(pos, 0);
+  fs.sum_feat_sq = sum_sq;
 
   return sum_sq;
 }
