@@ -372,9 +372,10 @@ void to_flat::convert_txt_to_flat(vw& all)
 
       if (find_ns_offset == _share_examples.end())
       {
-        for (const auto& extent : ae->feature_space[ns].namespace_extents) {
-          ns_extents.push_back(
-              VW::parsers::flatbuffer::CreateNamespaceExtent(_builder, extent.begin_index,extent.end_index,extent.hash));
+        for (const auto& extent : ae->feature_space[ns].namespace_extents)
+        {
+          ns_extents.push_back(VW::parsers::flatbuffer::CreateNamespaceExtent(
+              _builder, extent.begin_index, extent.end_index, extent.hash));
         }
         // new namespace
         if (all.audit || all.hash_inv)

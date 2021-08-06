@@ -73,9 +73,7 @@ void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespa
     // Close last
     auto& top = namespaces.back();
     if (!top.ftrs->namespace_extents.empty() && top.ftrs->namespace_extents.back().end_index == 0)
-    {
-      top.ftrs->end_ns_extent();
-    }
+    { top.ftrs->end_ns_extent(); }
   }
   // Add new
   n.ftrs->start_ns_extent(n.namespace_hash);

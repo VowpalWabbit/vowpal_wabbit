@@ -854,8 +854,8 @@ BOOST_AUTO_TEST_CASE(parse_json_simple_verify_extents)
 
   BOOST_CHECK_EQUAL(examples[0]->feature_space[' '].namespace_extents.size(), 1);
   BOOST_CHECK_EQUAL(examples[0]->feature_space['f'].namespace_extents.size(), 2);
-  BOOST_CHECK_EQUAL(
-      examples[0]->feature_space['f'].namespace_extents[0], (VW::namespace_extent{0, 4, VW::hash_space(*vw, "features")}));
+  BOOST_CHECK_EQUAL(examples[0]->feature_space['f'].namespace_extents[0],
+      (VW::namespace_extent{0, 4, VW::hash_space(*vw, "features")}));
   BOOST_CHECK_EQUAL(examples[0]->feature_space['f'].namespace_extents[1],
       (VW::namespace_extent{4, 5, VW::hash_space(*vw, "features2")}));
   BOOST_CHECK_EQUAL(examples[0]->feature_space['n'].namespace_extents.size(), 1);

@@ -58,4 +58,4 @@ inline std::ostream& operator<<(std::ostream& os, const namespace_extent& extent
   os << "{" << extent.begin_index << "," << extent.end_index << "," << extent.hash << "}";
   return os;
 }
-}
+}  // namespace VW

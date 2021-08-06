@@ -34,7 +34,8 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer_coll
 
   fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, "hello", 2.23f, constant));
   ns_extent.push_back(VW::parsers::flatbuffer::CreateNamespaceExtent(builder, 0, 1, 0));
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts, &ns_extent));
+  namespaces.push_back(
+      VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts, &ns_extent));
   examples.push_back(VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label));
 
   auto eg_collection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(builder, &examples);
@@ -52,7 +53,8 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer(
 
   fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, "hello", 2.23f, constant));
   ns_extent.push_back(VW::parsers::flatbuffer::CreateNamespaceExtent(builder, 0, 1, 0));
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts, &ns_extent));
+  namespaces.push_back(
+      VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, constant_namespace, &fts, &ns_extent));
   auto example = VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label);
 
   return CreateExampleRoot(builder, VW::parsers::flatbuffer::ExampleType_Example, example.Union());
@@ -135,10 +137,9 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
 
   BOOST_CHECK_EQUAL(examples[0]->indices[0], constant_namespace);
   BOOST_CHECK_CLOSE(examples[0]->feature_space[examples[0]->indices[0]].values[0], 2.23f, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(examples[0]->feature_space[examples[0]->indices[0]].namespace_extents.size(), 1);
   BOOST_CHECK_EQUAL(
-      examples[0]->feature_space[examples[0]->indices[0]].namespace_extents.size(), 1);
-  BOOST_CHECK_EQUAL(examples[0]->feature_space[examples[0]->indices[0]].namespace_extents[0],
-      (VW::namespace_extent{0, 1, 0}));
+      examples[0]->feature_space[examples[0]->indices[0]].namespace_extents[0], (VW::namespace_extent{0, 1, 0}));
 
   VW::finish_example(*all, *examples[0]);
   VW::finish(*all);

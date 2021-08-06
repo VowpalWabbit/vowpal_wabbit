@@ -441,10 +441,7 @@ public:
     if (_new_index && _ae->feature_space[_index].size() > 0) _ae->indices.push_back(_index);
 
     // If the namespace was empty this will handle it internally.
-    if (did_start_extent)
-    {
-      _ae->feature_space[_index].end_ns_extent();
-    }
+    if (did_start_extent) { _ae->feature_space[_index].end_ns_extent(); }
   }
 
   inline FORCE_INLINE void listNameSpace()

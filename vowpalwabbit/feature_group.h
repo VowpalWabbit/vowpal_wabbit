@@ -62,10 +62,7 @@ struct namespace_extent
   {
     return lhs.begin_index == rhs.begin_index && lhs.end_index == rhs.end_index && lhs.hash == rhs.hash;
   }
-  friend bool operator!=(const namespace_extent& lhs, const namespace_extent& rhs)
-  {
-    return !(lhs == rhs);
-  }
+  friend bool operator!=(const namespace_extent& lhs, const namespace_extent& rhs) { return !(lhs == rhs); }
 };
 namespace details
 {
@@ -238,9 +235,7 @@ public:
   ns_extent_iterator& operator++()
   {
     while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash != _hash)
-    {
-      ++_index_current;
-    }
+    { ++_index_current; }
 
     return *this;
   }

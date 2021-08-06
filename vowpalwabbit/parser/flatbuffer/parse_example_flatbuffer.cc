@@ -180,9 +180,7 @@ void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_EXTENTS))
   {
     for (const auto& extent : *(ns->extents()))
-    {
-      fs.namespace_extents.emplace_back(extent->begin(), extent->end(), extent->hash());
-    }
+    { fs.namespace_extents.emplace_back(extent->begin(), extent->end(), extent->hash()); }
   }
 
   for (const auto& feature : *(ns->features()))

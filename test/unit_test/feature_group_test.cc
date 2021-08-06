@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(unique_feature_group_test)
   unique_features(fs_copy1);
   check_collections_exact(std::vector<feature_index>(fs_copy1.indicies.begin(), fs_copy1.indicies.end()),
       std::vector<feature_index>{1, 2, 3, 5, 7, 11, 12, 13, 25});
-  check_collections_exact(fs_copy1.namespace_extents, std::vector<VW::namespace_extent>{{2, 4, 1}, {5,8,2}});
+  check_collections_exact(fs_copy1.namespace_extents, std::vector<VW::namespace_extent>{{2, 4, 1}, {5, 8, 2}});
 
   // Special case at max 1
   unique_features(fs_copy2, 1);
@@ -82,7 +82,6 @@ BOOST_AUTO_TEST_CASE(unique_feature_group_test)
   BOOST_REQUIRE(fs_size_one.namespace_extents.empty());
 }
 
-
 BOOST_AUTO_TEST_CASE(flatten_then_unflatten_namespace_extents_test)
 {
   std::vector<VW::namespace_extent> extents{{0, 1, 1}, {1, 2, 2}};
@@ -102,7 +101,6 @@ BOOST_AUTO_TEST_CASE(flatten_then_unflatten_namespace_extents_test)
   unflattened_list = VW::details::unflatten_namespace_extents(flat_list);
   BOOST_REQUIRE(unflattened_list == extents);
 }
-
 
 BOOST_AUTO_TEST_CASE(sort_feature_group_test)
 {

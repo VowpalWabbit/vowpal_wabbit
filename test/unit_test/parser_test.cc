@@ -27,7 +27,6 @@ BOOST_AUTO_TEST_CASE(parse_text_with_extents)
   BOOST_CHECK_EQUAL(ex->feature_space['n'].size(), 2);
   BOOST_CHECK_EQUAL(ex->feature_space['3'].size(), 0);
 
-
   BOOST_CHECK_EQUAL(ex->feature_space['f'].namespace_extents.size(), 3);
   BOOST_CHECK_EQUAL(ex->feature_space['n'].namespace_extents.size(), 1);
 
