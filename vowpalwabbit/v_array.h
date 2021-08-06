@@ -90,7 +90,7 @@ private:
   void make_space_at(size_t idx, size_t width)
   {
     _end += width;
-    if (size() + width > capacity()) { reserve(2 * capacity() + width); }
+    if (size() + width > capacity()) { reserve_nocheck(2 * capacity() + width); }
     memmove(&_begin[idx + width], &_begin[idx], (size() - (idx + width)) * sizeof(T));
   }
 

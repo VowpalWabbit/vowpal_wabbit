@@ -69,13 +69,20 @@ void features::truncate_to(size_t i)
   truncate_to(i, sum_ft_squares_of_removed_chunk);
 }
 
+void features::truncate_to(const audit_iterator& pos) { truncate_to(std::distance(audit_begin(), pos)); }
+void features::truncate_to(const iterator& pos) { truncate_to(std::distance(begin(), pos)); }
+void features::truncate_to(size_t i)
+{
+  assert(i <= size());
+  float sum_ft_squares_of_removed_chunk = 0.f;
+  for (auto idx = i; idx < values.size(); ++idx) { sum_ft_squares_of_removed_chunk += values[idx] * values[i]; }
+  truncate_to(i, sum_ft_squares_of_removed_chunk);
+}
+
 void features::concat(const features& other)
 {
   assert(values.size() == indicies.size());
   assert(other.values.size() == other.indicies.size());
-
-  if (other.empty()) { return; }
-
   // Conditions to check:
   //  - !empty() && audit && other.audit -> push val, idx, audit
   //  - !empty() && audit && !other.audit -> fail
@@ -84,13 +91,16 @@ void features::concat(const features& other)
   //  - empty() && other.audit -> push val, idx, audit
   //  - empty() && !other.audit -> push val, idx
 
-  if (!empty() && (space_names.empty() != other.space_names.empty()))
-  { THROW_OR_RETURN_VOID("Cannot merge two feature groups if one has audit info and the other does not."); }
+  // Cannot merge two feature groups if one has audit info and the other does not.
+  assert(!(!empty() && (space_names.empty() != other.space_names.empty())));
+  sum_feat_sq += other.sum_feat_sq;
 
   const auto extent_offset = indicies.size();
-  values.insert(values.end(), other.values.begin(), other.values.end());
-  indicies.insert(indicies.end(), other.indicies.begin(), other.indicies.end());
-  sum_feat_sq += other.sum_feat_sq;
+  for (size_t i = 0; i < other.size(); ++i)
+  {
+    values.push_back(other.values[i]);
+    indicies.push_back(other.indicies[i]);
+  }
 
   if (!other.space_names.empty())
   { space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end()); }
