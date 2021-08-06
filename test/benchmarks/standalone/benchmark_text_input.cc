@@ -95,7 +95,7 @@ static void benchmark_cb_adf_large(
   std::string cmd = "--cb_explore_adf --quiet";
   if (interactions) { cmd += " -q ::"; }
   auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
-  int example_size = 10;
+  int example_size = 100;
   int actions_per_event = 6;
   int shared_feats_size = 7;
   int shared_feats_count = 3;
