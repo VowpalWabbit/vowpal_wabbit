@@ -57,6 +57,7 @@ struct cbify
   cbify_adf_data adf_data;
   float loss0;
   float loss1;
+  bool flip_loss_sign;
   uint32_t chosen_action;
 
   // for ldf inputs
@@ -67,10 +68,11 @@ struct cbify
 
 float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
 {
+  float mult = data.flip_loss_sign ? -1.f : 1.f;
   if (label != final_prediction)
-    return data.loss1;
+    return mult * data.loss1;
   else
-    return data.loss0;
+    return mult * data.loss0;
 }
 
 float loss_cs(const cbify& data, const v_array<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
@@ -693,7 +695,8 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
                .default_value(0.1f)
                .help("ratio of zero loss for 0/1 loss"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
-      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"))
+      .add(make_option("flip_loss_sign", data->flip_loss_sign).keep().help("flip sign of loss (use reward instead of loss)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
