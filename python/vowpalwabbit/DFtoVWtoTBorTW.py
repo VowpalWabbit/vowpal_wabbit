@@ -96,12 +96,14 @@ class VWtoTensorboard:
 class VWtoTensorwatchStreamer:
 	"""The object of this class can be passed as a callback or used to visualize in Tensorwatch"""
 
-	def __init__(self, port=4500):
+	def __init__(self, logfile, port=4500):
 		"""Construct a VWtoTensorwatchStreamer object
 
 		Parameters
 		----------
 
+		logfile : str
+			This is the logfile where tensorwatch will log the metrics to, so if no client is listening to the socket then client can pick values from the log file, file should have '.log' extension
 		port : int
 			Port on which Watcher of Tensorwatch should stream
 
@@ -110,7 +112,7 @@ class VWtoTensorwatchStreamer:
 
 		self : VWtoTensorwatchStreamer
 		"""
-		self.watcher = tw.Watcher(port=port)
+		self.watcher = tw.Watcher(logfile, port=port)
 		self.iteration = 0
 		self.avg_loss_tw = self.watcher.create_stream('average_loss')
 		self.since_last_tw = self.watcher.create_stream('since_last')
@@ -157,7 +159,7 @@ class VWtoTensorwatchStreamer:
 class VWtoTensorwatchClient:
 	"""The object of this class can be used to visualize results in Tensorwatch"""
 
-	def __init__(self, port=4500):
+	def __init__(self, logfile, port=4500):
 		"""Construct a VWtoTensorwatchClient object
 
 		Parameters
@@ -171,7 +173,7 @@ class VWtoTensorwatchClient:
 
 		self : VWtoTensorwatchClient
 		"""
-		self.client = tw.WatcherClient(port=port)
+		self.client = tw.WatcherClient(logfile, port=port)
 
 
 	def plot_metrics(self):
