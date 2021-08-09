@@ -13,6 +13,10 @@
 
 #include "io/logger.h"
 
+#define PRINT_ALL true
+#define SCORES true
+#define PROBABILITIES true
+
 using namespace VW::config;
 namespace logger = VW::io::logger;
 
@@ -281,16 +285,16 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
         *(all.trace_message) << "WARNING: --probabilities should be used only with --loss_function=logistic"
                              << std::endl;
       // the three boolean template parameters are: is_learn, print_all and scores
-      learn_ptr = learn<false, true, true>;
-      pred_ptr = predict<false, true, true>;
+      learn_ptr = learn<!PRINT_ALL, SCORES, PROBABILITIES>;
+      pred_ptr = predict<!PRINT_ALL, SCORES, PROBABILITIES>;
       name_addition = "-prob";
       finish_ptr = finish_example_scores<true>;
       all.sd->report_multiclass_log_loss = true;
     }
     else
     {
-      learn_ptr = learn<false, true, false>;
-      pred_ptr = predict<false, true, false>;
+      learn_ptr = learn<!PRINT_ALL, SCORES, !PROBABILITIES>;
+      pred_ptr = predict<!PRINT_ALL, SCORES, !PROBABILITIES>;
       name_addition = "-scores";
       finish_ptr = finish_example_scores<false>;
     }
@@ -301,14 +305,14 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
     finish_ptr = MULTICLASS::finish_example<oaa>;
     if (all.raw_prediction != nullptr)
     {
-      learn_ptr = learn<true, false, false>;
-      pred_ptr = predict<true, false, false>;
+      learn_ptr = learn<PRINT_ALL, !SCORES, !PROBABILITIES>;
+      pred_ptr = predict<PRINT_ALL, !SCORES, !PROBABILITIES>;
       name_addition = "-raw";
     }
     else
     {
-      learn_ptr = learn<false, false, false>;
-      pred_ptr = predict<false, false, false>;
+      learn_ptr = learn<!PRINT_ALL, !SCORES, !PROBABILITIES>;
+      pred_ptr = predict<!PRINT_ALL, !SCORES, !PROBABILITIES>;
       name_addition = "";
     }
   }
