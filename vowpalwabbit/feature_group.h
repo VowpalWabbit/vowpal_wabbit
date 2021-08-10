@@ -341,6 +341,10 @@ struct features
   }
 
   void clear();
+  // These 3 overloads can be used if the sum_feat_sq of the removed section is known to avoid recalculating.
+  void truncate_to(const audit_iterator& pos, float sum_feat_sq_of_removed_section);
+  void truncate_to(const iterator& pos, float sum_feat_sq_of_removed_section);
+  void truncate_to(size_t i, float sum_feat_sq_of_removed_section);
   void truncate_to(const audit_iterator& pos);
   void truncate_to(const iterator& pos);
   void truncate_to(size_t i);

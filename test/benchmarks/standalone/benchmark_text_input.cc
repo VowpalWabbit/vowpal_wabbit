@@ -29,6 +29,7 @@ static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
     VW::empty_example(*vw, *examples[0]);
     benchmark::ClobberMemory();
   }
+  VW::finish(*vw);
 }
 
 static void benchmark_learn_simple(benchmark::State& state, std::string example_string)
@@ -43,6 +44,7 @@ static void benchmark_learn_simple(benchmark::State& state, std::string example_
     benchmark::ClobberMemory();
   }
   vw->finish_example(*example);
+  VW::finish(*vw);
 }
 
 static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
@@ -60,6 +62,7 @@ static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
     benchmark::ClobberMemory();
   }
   vw->finish_example(examples);
+  VW::finish(*vw);
 }
 
 static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature_string)
@@ -83,6 +86,7 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
     benchmark::ClobberMemory();
   }
   vw->finish_example(examples);
+  VW::finish(*vw);
 }
 
 static std::vector<std::vector<std::string>> gen_cb_examples(int num_examples,  // Total number of multi_ex examples
@@ -204,6 +208,7 @@ static void benchmark_multi(
     benchmark::ClobberMemory();
   }
   for (multi_ex examples : examples_vec) { vw->finish_example(examples); }
+  VW::finish(*vw);
 }
 
 BENCHMARK_CAPTURE(bench_text, 120_string_fts, get_x_string_fts(120));
