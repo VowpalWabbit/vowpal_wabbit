@@ -637,6 +637,7 @@ void parse_feature_tweaks(
 
   option_group_definition feature_options("Feature options");
   feature_options
+      .add(make_option("privacy_activation", all.privacy_activation).help("Helps in aggregated learning saving only the features which cross 10 users"))
       .add(make_option("hash", hash_function).keep().help("how to hash the features. Available options: strings, all"))
       .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("seed for hash function"))
       .add(make_option("ignore", ignores).keep().help("ignore namespaces beginning with character <arg>"))

@@ -157,6 +157,7 @@ public:
   bool default_bits;
 
   uint32_t hash_seed;
+  bool privacy_activation = false;
 
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;

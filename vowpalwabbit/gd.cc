@@ -747,7 +747,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
     for (auto it = weights.begin(); it != weights.end(); ++it)
     {
       const auto weight_value = *it;
-      if (*it != 0.f && weights.is_activated(it.index())) //TODO : Check where else this condition is needed
+      if (*it != 0.f && ((all.privacy_activation==false)||(weights.is_activated(it.index())==true && all.privacy_activation==true))) //TODO : Check where else this condition is needed
       {
         const auto weight_index = it.index() >> weights.stride_shift();
 
@@ -789,7 +789,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
     } while (brw > 0);
   else  // write
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
-      if (*v != 0. && weights.is_activated(v.index())) // checks for a non zero weight value and if the number of bits set to 1 for a feature greater than the threshold
+      if (*v != 0. && ((all.privacy_activation==false)||(weights.is_activated(v.index())==true && all.privacy_activation==true))) // checks for a non zero weight value and if the number of bits set to 1 for a feature greater than the threshold
       {
         i = v.index() >> weights.stride_shift();
         std::stringstream msg;
