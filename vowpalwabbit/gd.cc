@@ -1281,14 +1281,14 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   gd* bare = g.get();
   learner<gd, example>* l = make_base_learner(std::move(g), g->learn, bare->predict,
       stack_builder.get_setupfn_name(setup), prediction_type_t::scalar, label_type_t::simple)
-              .set_learn_returns_prediction(true)
-              .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-              .set_sensitivity(bare->sensitivity)
-              .set_multipredict(bare->multipredict)
-              .set_update(bare->update)
-              .set_save_load(save_load)
-              .set_end_pass(end_pass)
-              .build();
+                                .set_learn_returns_prediction(true)
+                                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                                .set_sensitivity(bare->sensitivity)
+                                .set_multipredict(bare->multipredict)
+                                .set_update(bare->update)
+                                .set_save_load(save_load)
+                                .set_end_pass(end_pass)
+                                .build();
   return make_base(*l);
 }
 
