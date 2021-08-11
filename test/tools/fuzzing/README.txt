@@ -8,9 +8,9 @@ CXX=/path/to/AFL/afl-g++ cmake ..
 make test_initialize
 
 Then run the fuzz.py script
-python fuzz.py --afl_dir=/path/to/AFL
+python fuzz.py --afl_dir=/path/to/AFL -t timeout
 
-The default timeout is 10 minutes per test, but it is recommended you run at least 1 hour per test.
-Using a timeout of 0 will cause the tests to run to completion or until you cancel the process with C-c
+The default timeout is 60 minutes per test, It is not recommended to do much less than that.
+Using a timeout of 0 will cause the tests to run to completion or until you cancel the process with C-c (or any keyboard interrupt)
 
 Once a failing test is fixed, add it to the appropriate model directory to ensure it gets tested going forward.
