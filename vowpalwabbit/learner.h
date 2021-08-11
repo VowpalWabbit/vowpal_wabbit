@@ -1006,6 +1006,7 @@ struct base_learner_builder
       : common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>(
             std::move(data), name)
   {
+    this->_learner->persist_metrics_fd.save_metric_f = static_cast<save_metric_data::fn>(noop_persist_metrics);
     this->_learner->end_pass_fd.func = static_cast<func_data::fn>(noop);
     this->_learner->end_examples_fd.func = static_cast<func_data::fn>(noop);
     this->_learner->init_fd.func = static_cast<func_data::fn>(noop);
