@@ -55,7 +55,7 @@ def main():
     parser.add_argument(
         '--test_bin_path', help="Specify test binary to use. Otherwise, binary will be searched for in build directory")
     parser.add_argument(
-        '-t', '--timeout', type=int, default=10,  help="Max runtime for each fuzzing test in minutes")
+        '-t', '--timeout', type=int, default=10,  help="Max runtime for each fuzzing test in minutes. WARNING: this option is currently nonfunctional")
     parser.add_argument(
         '-f', '--full_tests',  action='store_true', help="Run full tests. This disables the '-d' option in AFL")
     #parser.add_argument(
@@ -102,14 +102,26 @@ def main():
             # VW test binary and options
             cmd.extend([test_bin, row['command'], '--quiet', '--no_stdin', '-i', '@@'])
 
-            #print(cmd)
+            timeout = None
+            if args.timeout != 0:
+                timeout = 60*args.timeout
+
+            # shlex.join is only available in python 3.8+
+            cmd_string = ' '.join(cmd)
+            print("running ", cmd_string)
             try:
-                if args.timeout == 0:
-                    subprocess.run(cmd)
-                else:
-                    subprocess.run(cmd, timeout=60*args.timeout)
-            except:
-                print('Finished running ', cmd)
+                # shell=True because afl-fuzz won't detect all crashes otherwise. Still unsure why some are detected and others aren't.
+                # TODO: The timeout doesn't actually work here
+                subprocess.run(
+                    cmd_string,
+                    check=True,
+                    shell=True,
+                    timeout=timeout
+                )
+            except subprocess.TimeoutExpired:
+                print('Timeout on  ', cmd_string)
+            except KeyboardInterrupt:
+                print('Finished running ', cmd_string)
 
 if __name__ == "__main__":
     main()

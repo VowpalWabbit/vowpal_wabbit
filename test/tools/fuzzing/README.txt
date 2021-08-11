@@ -12,3 +12,5 @@ python fuzz.py --afl_dir=/path/to/AFL
 
 The default timeout is 10 minutes per test, but it is recommended you run at least 1 hour per test.
 Using a timeout of 0 will cause the tests to run to completion or until you cancel the process with C-c
+
+Once a failing test is fixed, add it to the appropriate model directory to ensure it gets tested going forward.
