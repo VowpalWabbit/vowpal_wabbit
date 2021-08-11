@@ -673,13 +673,13 @@ void update(gd& g, base_learner&, example& ec)
   {
     if(g.all->weights.sparse)
     {
-      g.all->weights.sparse_weights.set_tag(hashall(ec.tag.begin(),ec.tag.size(),g.all->hash_seed)%32); // find the 5-bit hash of the tag for sparse weights
+      g.all->weights.sparse_weights.set_tag(ec.tag_hash); // find the 5-bit hash of the tag for sparse weights
       train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
       g.all->weights.sparse_weights.unset_tag(); // set the tag to false after the example has been trained on    
     }
     else
     {
-      g.all->weights.dense_weights.set_tag(hashall(ec.tag.begin(),ec.tag.size(),g.all->hash_seed)%32); // find the 5-bit hash of the tag for dense weights
+      g.all->weights.dense_weights.set_tag(ec.tag_hash); // find the 5-bit hash of the tag for dense weights
       train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
       g.all->weights.dense_weights.unset_tag(); // set the tag to false after the example has been trained on
     }

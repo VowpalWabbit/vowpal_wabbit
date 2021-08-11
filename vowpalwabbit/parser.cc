@@ -698,6 +698,12 @@ void setup_example(vw& all, example* ae)
   // If this example has a test only label then it is true regardless.
   ae->test_only |= all.example_parser->lbl_parser.test_label(&ae->l);
 
+  if(all.privacy_activation)
+  {
+    ae->tag_hash=hashall(ae->tag.begin(),ae->tag.size(),all.hash_seed)%32;
+    
+  }
+
   if (all.example_parser->emptylines_separate_examples &&
       (example_is_newline(*ae) &&
           (all.example_parser->lbl_parser.label_type != label_type_t::ccb || CCB::ec_is_example_unset(*ae))))
@@ -855,6 +861,7 @@ void empty_example(vw& /*all*/, example& ec)
 
   ec.indices.clear();
   ec.tag.clear();
+//  ec.tag_hash.clear();
   ec.sorted = false;
   ec.end_pass = false;
   ec.is_newline = false;
