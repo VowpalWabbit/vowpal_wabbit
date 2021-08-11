@@ -1610,6 +1610,16 @@ vw* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf*
 
     return &all;
   }
+  catch (VW::save_load_model_exception& e)
+  {
+    const bool DETETE_ALL = true, FINALIZE_REDUCTIONS=true;
+    std::stringstream better_msg;
+    better_msg << e.what() << " , model files = ";
+    for(const auto& regressor_name : all.initial_regressors)
+      better_msg << regressor_name << ", ";
+    finish(all, DETETE_ALL, !FINALIZE_REDUCTIONS);
+    throw save_load_model_exception(e.Filename(), e.LineNumber(), better_msg.str());
+  }
   catch (std::exception& e)
   {
     *(all.trace_message) << "Error: " << e.what() << endl;
@@ -1723,7 +1733,7 @@ void sync_stats(vw& all)
   }
 }
 
-void finish(vw& all, bool delete_all)
+void finish(vw& all, bool delete_all, bool finalize_reductions)
 {
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!all.logger.quiet && !all.options->was_supplied("audit_regressor"))
@@ -1783,7 +1793,7 @@ void finish(vw& all, bool delete_all)
   bool finalize_regressor_exception_thrown = false;
   try
   {
-    finalize_regressor(all, all.final_regressor_name);
+    if (finalize_reductions) finalize_regressor(all, all.final_regressor_name);
   }
   catch (vw_exception& e)
   {
