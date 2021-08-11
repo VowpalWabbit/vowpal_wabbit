@@ -2,10 +2,12 @@ import argparse
 import csv
 import os
 from pathlib import Path
+import threading
 import time
 import shlex
 import subprocess
 import sys
+import signal
 
 def find_in_path(paths, file_matcher, debug_file_name):
     for path in paths:
@@ -55,7 +57,7 @@ def main():
     parser.add_argument(
         '--test_bin_path', help="Specify test binary to use. Otherwise, binary will be searched for in build directory")
     parser.add_argument(
-        '-t', '--timeout', type=int, default=10,  help="Max runtime for each fuzzing test in minutes. WARNING: this option is currently nonfunctional")
+        '-t', '--timeout', type=int, default=60,  help="Max runtime for each fuzzing test in minutes. 0 will disable the timeout")
     parser.add_argument(
         '-f', '--full_tests',  action='store_true', help="Run full tests. This disables the '-d' option in AFL")
     #parser.add_argument(
@@ -107,21 +109,21 @@ def main():
                 timeout = 60*args.timeout
 
             # shlex.join is only available in python 3.8+
-            cmd_string = ' '.join(cmd)
-            print("running ", cmd_string)
+            cmd = ' '.join(cmd)
+            print("running ", cmd)
+            p = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
             try:
-                # shell=True because afl-fuzz won't detect all crashes otherwise. Still unsure why some are detected and others aren't.
-                # TODO: The timeout doesn't actually work here
-                subprocess.run(
-                    cmd_string,
-                    check=True,
-                    shell=True,
-                    timeout=timeout
-                )
+                p.communicate(timeout=timeout)
+
+                if p.returncode != 0:
+                    sys.exit('Fuzzer initialization failed')
             except subprocess.TimeoutExpired:
-                print('Timeout on  ', cmd_string)
+                # subprocess.kill() doesn't seem to work for some reason
+                os.killpg(os.getpgid(p.pid), signal.SIGKILL)
+                print('Timeout on  ', cmd)
             except KeyboardInterrupt:
-                print('Finished running ', cmd_string)
+                os.killpg(os.getpgid(p.pid), signal.SIGKILL)
+                print('Finished running ', cmd)
 
 if __name__ == "__main__":
     main()
