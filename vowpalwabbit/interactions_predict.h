@@ -18,7 +18,7 @@ namespace INTERACTIONS
 template <bool audit, typename FuncT, typename AuditFuncT>
 inline void do_inter(example_predict& ex, const std::vector<namespace_index>& interaction,
     namespace_index last_term,
-    size_t offset, size_t current_inter_index, size_t feature_index, float value, const FuncT& func, const AuditFuncT& audit_func)
+    size_t offset, size_t current_inter_index, size_t feature_index, float value, bool permutations, const FuncT& func, const AuditFuncT& audit_func)
 {
   assert(current_inter_index < interaction.size());
   auto current_term = interaction[current_inter_index];
@@ -26,7 +26,7 @@ inline void do_inter(example_predict& ex, const std::vector<namespace_index>& in
   auto& current_ns = ex.feature_space[current_term];
   auto begin = current_ns.audit_cbegin();
 
-  if (last_term == current_term) {
+  if (!permutations && (last_term == current_term)) {
     assert(offset == 0 || offset < current_ns.size());
     begin += offset;
   }
@@ -51,7 +51,7 @@ inline void do_inter(example_predict& ex, const std::vector<namespace_index>& in
 
       auto new_value = value * begin.value();
       auto index = FNV_prime * (feature_index ^ static_cast<uint64_t>(begin.index()));
-      do_inter<audit>(ex, interaction, current_term, i, current_inter_index + 1, index, new_value, func, audit_func);
+      do_inter<audit>(ex, interaction, current_term, offset + i, current_inter_index + 1, index, new_value, permutations, func, audit_func);
       i++;
 
       if (audit) { audit_func(nullptr); }
@@ -62,10 +62,10 @@ inline void do_inter(example_predict& ex, const std::vector<namespace_index>& in
 template <bool audit, class DataT, void (*FuncT)(DataT&, const float, float&), class WeightsT, typename AuditFuncT>
 inline void setup_call_with_lambda(DataT& data, WeightsT& weights, example_predict& ex,
     const std::vector<namespace_index>& interactions, namespace_index last_term, size_t offset,
-    size_t current_inter_index, size_t feature_index, float value, size_t& num, const AuditFuncT& audit_func)
+    size_t current_inter_index, size_t feature_index, float value, size_t& num, bool permutations, const AuditFuncT& audit_func)
 {
   do_inter<audit>(
-      ex, interactions, last_term, offset, current_inter_index, feature_index, value, [&](uint64_t index, float value) {
+      ex, interactions, last_term, offset, current_inter_index, feature_index, value,permutations, [&](uint64_t index, float value) {
         num++;
         FuncT(data, value, weights[index]);
       },
@@ -75,10 +75,10 @@ inline void setup_call_with_lambda(DataT& data, WeightsT& weights, example_predi
 template <bool audit, class DataT, void (*FuncT)(DataT&, const float, float), class WeightsT, typename AuditFuncT>
 inline void setup_call_with_lambda(DataT& data, WeightsT& weights, example_predict& ex,
     const std::vector<namespace_index>& interactions, namespace_index last_term, size_t offset,
-    size_t current_inter_index, size_t feature_index, float value, size_t& num, const AuditFuncT& audit_func)
+    size_t current_inter_index, size_t feature_index, float value, size_t& num,bool permutations, const AuditFuncT& audit_func)
 {
   do_inter<audit>(
-      ex, interactions, last_term, offset, current_inter_index, feature_index, value, [&](uint64_t index, float value) {
+      ex, interactions, last_term, offset, current_inter_index, feature_index, value, permutations, [&](uint64_t index, float value) {
         FuncT(data, value, weights[index]);
         num++;
       },
@@ -88,10 +88,10 @@ inline void setup_call_with_lambda(DataT& data, WeightsT& weights, example_predi
 template <bool audit, class DataT, void (*FuncT)(DataT&, float, uint64_t), class WeightsT, typename AuditFuncT>
 inline void setup_call_with_lambda(DataT& data, WeightsT& weights, example_predict& ex,
     const std::vector<namespace_index>& interactions, namespace_index last_term, size_t offset,
-    size_t current_inter_index, size_t feature_index, float value, size_t& num, const AuditFuncT& audit_func)
+    size_t current_inter_index, size_t feature_index, float value, size_t& num,bool permutations, const AuditFuncT& audit_func)
 {
   do_inter<audit>(
-      ex, interactions, last_term, offset, current_inter_index, feature_index, value, [&](uint64_t index, float value) {
+      ex, interactions, last_term, offset, current_inter_index, feature_index, value, permutations, [&](uint64_t index, float value) {
         FuncT(data, value, index);
         num++;
       },
@@ -109,7 +109,6 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     size_t& num_features)  // default value removed to eliminate ambiguity in old complers
 {
   num_features = 0;
-   (void)permutations; // Permuatations ignored...
 
   auto audit_func_l = [&](const audit_strings* astr) { audit_func(dat, astr); };
 
@@ -125,7 +124,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
       auto value = begin.value();
       auto index = FNV_prime * static_cast<uint64_t>(begin.index());
       setup_call_with_lambda<audit, DataT, FuncT, WeightsT>(
-          dat, weights, ec, ns, ns[0], i, 1, index, value, num_features, audit_func_l);
+          dat, weights, ec, ns, ns[0], i, 1, index, value, num_features, permutations, audit_func_l);
       i++;
       if (audit) { audit_func_l(nullptr); }
     }
