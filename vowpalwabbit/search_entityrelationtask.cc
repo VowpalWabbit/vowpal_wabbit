@@ -16,7 +16,7 @@ constexpr size_t NUM_LDF_ENTITY_EXAMPLES = 10;
 
 namespace EntityRelationTask
 {
-Search::search_task task = {"entity_relation", run, initialize, nullptr, nullptr};
+Search::search_task task = {"entity_relation", run, initialize, nullptr, nullptr, nullptr};
 }
 
 namespace EntityRelationTask
