@@ -109,7 +109,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     size_t& num_features)  // default value removed to eliminate ambiguity in old complers
 {
   num_features = 0;
-  permutations; // Permuatations ignored...
+   (void)permutations; // Permuatations ignored...
 
   auto audit_func_l = [&](const audit_strings* astr) { audit_func(dat, astr); };
 
