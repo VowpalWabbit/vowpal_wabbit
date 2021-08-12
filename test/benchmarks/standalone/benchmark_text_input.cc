@@ -89,14 +89,14 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
   VW::finish(*vw);
 }
 
-static std::vector<std::vector<std::string>> gen_cb_examples(int num_examples,  // Total number of multi_ex examples
-    int shared_feats_size,                                                      // Number of possible shared features
-    int shared_feats_count,    // Number of shared features per multi_ex
-    int actions_per_example,   // Number of actions in each multi_ex
-    int feature_groups_size,   // Number of possible feature groups
-    int feature_groups_count,  // Number of features groups per action
-    int action_feats_size,     // Number of possible per-action features
-    int action_feats_count,    // Number of actions per feature group per action
+static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples,  // Total number of multi_ex examples
+    size_t shared_feats_size,                                                      // Number of possible shared features
+    size_t shared_feats_count,    // Number of shared features per multi_ex
+    size_t actions_per_example,   // Number of actions in each multi_ex
+    size_t feature_groups_size,   // Number of possible feature groups
+    size_t feature_groups_count,  // Number of features groups per action
+    size_t action_feats_size,     // Number of possible per-action features
+    size_t action_feats_count,    // Number of actions per feature group per action
     bool same_first_char       // Flag to keep first character of all feature groups the same
 )
 {
@@ -119,7 +119,7 @@ static std::vector<std::vector<std::string>> gen_cb_examples(int num_examples,  
       {
         action_ss << "|";
         if (same_first_char) { action_ss << "f"; }
-        action_ss << ((char)(65 + rand() % feature_groups_size)) << " ";
+        action_ss << (static_cast<char>(65 + rand() % feature_groups_size)) << " ";
         for (int action_feat = 0; action_feat < action_feats_count; ++action_feat)
         { action_ss << (rand() % action_feats_size) << " "; }
       }
@@ -130,16 +130,16 @@ static std::vector<std::vector<std::string>> gen_cb_examples(int num_examples,  
   return examples_vec;
 }
 
-static std::vector<std::vector<std::string>> gen_ccb_examples(int num_examples,  // Total number of multi_ex examples
-    int shared_feats_size,                                                       // Number of possible shared features
-    int shared_feats_count,    // Number of shared features per multi_ex
-    int actions_per_example,   // Number of actions in each multi_ex
-    int feature_groups_size,   // Number of possible feature groups
-    int feature_groups_count,  // Number of features groups per action or slot
-    int action_feats_size,     // Number of possible per-action/slot features
-    int action_feats_count,    // Number of actions per feature group per action or slot
+static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_examples,  // Total number of multi_ex examples
+    size_t shared_feats_size,                                                       // Number of possible shared features
+    size_t shared_feats_count,    // Number of shared features per multi_ex
+    size_t actions_per_example,   // Number of actions in each multi_ex
+    size_t feature_groups_size,   // Number of possible feature groups
+    size_t feature_groups_count,  // Number of features groups per action or slot
+    size_t action_feats_size,     // Number of possible per-action/slot features
+    size_t action_feats_count,    // Number of actions per feature group per action or slot
     bool same_first_char,      // Flag to keep first character of all feature groups the same
-    int slots_per_example      // Number of slots
+    size_t slots_per_example      // Number of slots
 )
 {
   srand(0);
@@ -185,20 +185,20 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(int num_examples, 
   return examples_vec;
 }
 
-static std::vector<multi_ex> load_examples(vw* vw, std::vector<std::vector<std::string>> ex_strs)
+static std::vector<multi_ex> load_examples(vw* vw, const std::vector<std::vector<std::string>>& ex_strs)
 {
   std::vector<multi_ex> examples_vec;
-  for (auto ex_str : ex_strs)
+  for (const auto& ex_str : ex_strs)
   {
     multi_ex mxs;
-    for (auto example : ex_str) { mxs.push_back(VW::read_example(*vw, example)); }
+    for (const auto& example : ex_str) { mxs.push_back(VW::read_example(*vw, example)); }
     examples_vec.push_back(mxs);
   }
   return examples_vec;
 }
 
 static void benchmark_multi(
-    benchmark::State& state, std::vector<std::vector<std::string>> examples_str, std::string cmd)
+    benchmark::State& state, const std::vector<std::vector<std::string>>& examples_str, const std::string& cmd)
 {
   auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
   std::vector<multi_ex> examples_vec = load_examples(vw, examples_str);
