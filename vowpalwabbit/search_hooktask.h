@@ -17,8 +17,8 @@ struct task_data
   void (*run_f)(Search::search&);
   void (*run_setup_f)(Search::search&);
   void (*run_takedown_f)(Search::search&);
-  std::shared_ptr<void> run_object;  // for python this will really be a (py::object*), but we don't want basic VW to
-                                     // have to know about hook
+  std::shared_ptr<void> run_object;    // for python this will really be a (py::object*), but we don't want basic VW to
+                                       // have to know about hook
   std::shared_ptr<void> setup_object;  // for python this will really be a (py::object*), but we don't want basic VW to
                                        // have to know about hook
   std::shared_ptr<void> takedown_object;  // for python this will really be a (py::object*), but we don't want basic VW
