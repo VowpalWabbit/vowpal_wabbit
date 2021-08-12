@@ -83,7 +83,7 @@ struct task_data
   std::vector<uint32_t> bfs;             // order of nodes to process
   std::vector<size_t> pred;              // predictions
   example* cur_node;                     // pointer to the current node for add_edge_features_fn
-  std::vector<float> neighbor_predictions;           // prediction on this neighbor for add_edge_features_fn
+  std::vector<float> neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
   std::vector<uint32_t> confusion_matrix;
   std::vector<float> true_counts;
   float true_counts_total;

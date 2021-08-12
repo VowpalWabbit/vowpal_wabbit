@@ -214,8 +214,8 @@ struct search
 
   // internal data that you don't get to see!
   search_private* priv;
-  std::shared_ptr<void> task_data; // your task data!
-  std::shared_ptr<void> metatask_data; // your metatask data!
+  std::shared_ptr<void> task_data;      // your task data!
+  std::shared_ptr<void> metatask_data;  // your metatask data!
   const char* task_name;
   const char* metatask_name;
 
