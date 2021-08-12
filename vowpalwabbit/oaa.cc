@@ -13,12 +13,12 @@
 
 #include "io/logger.h"
 
-#define PRINT_ALL true
-#define SCORES true
-#define PROBABILITIES true
-
 using namespace VW::config;
 namespace logger = VW::io::logger;
+
+static constexpr bool PRINT_ALL = true;
+static constexpr bool SCORES = true;
+static constexpr bool PROBABILITIES = true;
 
 struct oaa
 {
