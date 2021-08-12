@@ -30,7 +30,6 @@ inline void do_inter(example_predict& ex, const std::vector<namespace_index>& in
 
   if ((interaction.size() - 1) == current_inter_index)
   {
-    auto i = 0;
     for (; begin != current_ns.audit_cend(); ++begin)
     {
       if (audit) { audit_func(begin.audit() == nullptr ? &EMPTY_AUDIT_STRINGS : begin.audit()); }
@@ -58,7 +57,7 @@ inline void do_inter(example_predict& ex, const std::vector<namespace_index>& in
 }
 
 template <bool audit, class DataT, void (*FuncT)(DataT&, const float, float&), class WeightsT, typename AuditFuncT>
-FORCE_INLINE void setup_call_with_lambda(DataT& data, WeightsT& weights, example_predict& ex,
+inline void setup_call_with_lambda(DataT& data, WeightsT& weights, example_predict& ex,
     const std::vector<namespace_index>& interactions, namespace_index last_term, size_t offset,
     size_t current_inter_index, size_t feature_index, float value, size_t& num, const AuditFuncT& audit_func)
 {
@@ -71,7 +70,7 @@ FORCE_INLINE void setup_call_with_lambda(DataT& data, WeightsT& weights, example
 }
 
 template <bool audit, class DataT, void (*FuncT)(DataT&, const float, float), class WeightsT, typename AuditFuncT>
-FORCE_INLINE void setup_call_with_lambda(DataT& data, WeightsT& weights, example_predict& ex,
+inline void setup_call_with_lambda(DataT& data, WeightsT& weights, example_predict& ex,
     const std::vector<namespace_index>& interactions, namespace_index last_term, size_t offset,
     size_t current_inter_index, size_t feature_index, float value, size_t& num, const AuditFuncT& audit_func)
 {
@@ -84,7 +83,7 @@ FORCE_INLINE void setup_call_with_lambda(DataT& data, WeightsT& weights, example
 }
 
 template <bool audit, class DataT, void (*FuncT)(DataT&, float, uint64_t), class WeightsT, typename AuditFuncT>
-FORCE_INLINE void setup_call_with_lambda(DataT& data, WeightsT& weights, example_predict& ex,
+inline void setup_call_with_lambda(DataT& data, WeightsT& weights, example_predict& ex,
     const std::vector<namespace_index>& interactions, namespace_index last_term, size_t offset,
     size_t current_inter_index, size_t feature_index, float value, size_t& num, const AuditFuncT& audit_func)
 {
