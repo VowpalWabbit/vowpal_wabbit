@@ -97,7 +97,7 @@ static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples
     size_t feature_groups_count,  // Number of features groups per action
     size_t action_feats_size,     // Number of possible per-action features
     size_t action_feats_count,    // Number of actions per feature group per action
-    bool same_first_char       // Flag to keep first character of all feature groups the same
+    bool same_first_char          // Flag to keep first character of all feature groups the same
 )
 {
   srand(0);
@@ -131,14 +131,14 @@ static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples
 }
 
 static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_examples,  // Total number of multi_ex examples
-    size_t shared_feats_size,                                                       // Number of possible shared features
+    size_t shared_feats_size,     // Number of possible shared features
     size_t shared_feats_count,    // Number of shared features per multi_ex
     size_t actions_per_example,   // Number of actions in each multi_ex
     size_t feature_groups_size,   // Number of possible feature groups
     size_t feature_groups_count,  // Number of features groups per action or slot
     size_t action_feats_size,     // Number of possible per-action/slot features
     size_t action_feats_count,    // Number of actions per feature group per action or slot
-    bool same_first_char,      // Flag to keep first character of all feature groups the same
+    bool same_first_char,         // Flag to keep first character of all feature groups the same
     size_t slots_per_example      // Number of slots
 )
 {
