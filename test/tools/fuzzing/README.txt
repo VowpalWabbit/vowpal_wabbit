@@ -7,7 +7,7 @@ cd build
 CXX=/path/to/AFL/afl-g++ cmake ..
 make test_initialize
 
-Then run the fuzz.py script
+Then run the fuzz.py script (Python 3.8 or higher is required to run this script)
 python fuzz.py --afl_dir=/path/to/AFL -t timeout
 
 The default timeout is 60 minutes per test, It is not recommended to do much less than that.

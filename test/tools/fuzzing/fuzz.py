@@ -9,6 +9,8 @@ import subprocess
 import sys
 import signal
 
+# Python 3.8+ required
+
 def find_in_path(paths, file_matcher, debug_file_name):
     for path in paths:
         absolute_path = os.path.abspath(str(path))
@@ -109,7 +111,7 @@ def main():
                 timeout = 60*args.timeout
 
             # shlex.join is only available in python 3.8+
-            cmd = ' '.join(cmd)
+            cmd = shlex.join(cmd)
             print("running ", cmd)
             p = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
             try:
