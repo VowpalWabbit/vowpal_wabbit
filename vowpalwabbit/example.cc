@@ -77,7 +77,7 @@ void copy_example_metadata(example* dst, const example* src)
   dst->example_counter = src->example_counter;
 
   dst->ft_offset = src->ft_offset;
-
+  dst->tag_hash=src->tag_hash;
   dst->partial_prediction = src->partial_prediction;
   if (src->passthrough == nullptr)
     dst->passthrough = nullptr;

@@ -700,8 +700,7 @@ void setup_example(vw& all, example* ae)
 
   if(all.privacy_activation)
   {
-    ae->tag_hash=hashall(ae->tag.begin(),ae->tag.size(),all.hash_seed)%32;
-    
+    ae->tag_hash=hashall(ae->tag.begin(),ae->tag.size(),all.hash_seed)%all.feature_bitset_num_bits;
   }
 
   if (all.example_parser->emptylines_separate_examples &&
