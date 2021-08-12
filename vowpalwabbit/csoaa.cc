@@ -33,8 +33,8 @@ namespace CSOAA
 {
 struct csoaa
 {
-  uint32_t num_classes;
-  polyprediction* pred;
+  uint32_t num_classes = 0;
+  polyprediction* pred = nullptr;
   ~csoaa() { free(pred); }
 };
 
@@ -135,7 +135,7 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto c = scoped_calloc_or_throw<csoaa>();
+  auto c = VW::make_unique<csoaa>();
   option_group_definition new_options("Cost Sensitive One Against All");
   new_options.add(
       make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"));
@@ -143,16 +143,19 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
+  size_t ws = c->num_classes;
+  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(csoaa_setup))
+                .set_learn_returns_prediction(
+                    true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
+                .set_params_per_weight(ws)
+                .set_prediction_type(prediction_type_t::multiclass)
+                .set_label_type(label_type_t::cs)
+                .set_finish_example(finish_example)
+                .build();
 
-  learner<csoaa, example>& l = init_learner(c, as_singleline(stack_builder.setup_base_learner()),
-      predict_or_learn<true>, predict_or_learn<false>, c->num_classes, prediction_type_t::multiclass,
-      stack_builder.get_setupfn_name(csoaa_setup), true /*csoaa.learn calls gd.learn. nothing to be
-                                                 gained by calling csoaa.predict first*/
-  );
   all.example_parser->lbl_parser = cs_label;
-
-  l.set_finish_example(finish_example);
-  all.cost_sensitive = make_base(l);
+  all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }
 
@@ -163,17 +166,17 @@ struct ldf
 {
   LabelDict::label_feature_map label_features;
 
-  size_t read_example_this_loop;
-  bool is_wap;
-  bool first_pass;
-  bool treat_as_classifier;
-  bool is_probabilities;
-  float csoaa_example_t;
-  vw* all;
+  size_t read_example_this_loop = 0;
+  bool is_wap = false;
+  bool first_pass = false;
+  bool treat_as_classifier = false;
+  bool is_probabilities = false;
+  float csoaa_example_t = false;
+  vw* all = nullptr;
 
-  bool rank;
+  bool rank = false;
   action_scores a_s;
-  uint64_t ft_offset;
+  uint64_t ft_offset = 0;
 
   std::vector<action_scores> stored_preds;
 };
@@ -823,7 +826,7 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto ld = scoped_calloc_or_throw<ldf>();
+  auto ld = VW::make_unique<ldf>();
 
   std::string csoaa_ldf;
   std::string ldf_override;
@@ -902,22 +905,39 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
 
   ld->read_example_this_loop = 0;
   single_learner* pbase = as_singleline(stack_builder.setup_base_learner());
-  learner<ldf, multi_ex>* pl = nullptr;
 
   std::string name = stack_builder.get_setupfn_name(csldf_setup);
+  std::string name_addition;
+  prediction_type_t pred_type;
+  void (*pred_ptr)(ldf&, single_learner&, multi_ex&);
   if (ld->rank)
-    pl = &init_learner(
-        ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf_rank, 1, prediction_type_t::action_scores, name + "-rank");
+  {
+    name_addition = "-rank";
+    pred_type = prediction_type_t::action_scores;
+    pred_ptr = predict_csoaa_ldf_rank;
+  }
   else if (ld->is_probabilities)
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::prob, name + "-prob");
+  {
+    name_addition = "-prob";
+    pred_type = prediction_type_t::prob;
+    pred_ptr = predict_csoaa_ldf;
+  }
   else
-    pl = &init_learner(ld, pbase, learn_csoaa_ldf, predict_csoaa_ldf, 1, prediction_type_t::multiclass, name);
+  {
+    name_addition = "";
+    pred_type = prediction_type_t::multiclass;
+    pred_ptr = predict_csoaa_ldf;
+  }
 
-  pl->set_finish_example(finish_multiline_example);
-  pl->set_end_pass(end_pass);
+  auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
+                .set_finish_example(finish_multiline_example)
+                .set_end_pass(end_pass)
+                .set_label_type(label_type_t::cs)
+                .set_prediction_type(pred_type)
+                .build();
 
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
-  all.cost_sensitive = make_base(*pl);
+  all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }
 }  // namespace CSOAA

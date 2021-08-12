@@ -51,6 +51,9 @@
     <ClCompile Include="explore_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="feature_group_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="guard_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
