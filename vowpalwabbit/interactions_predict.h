@@ -25,8 +25,11 @@ inline void do_inter(example_predict& ex, const std::vector<namespace_index>& in
 
   auto& current_ns = ex.feature_space[current_term];
   auto begin = current_ns.audit_cbegin();
-  assert(offset == 0 || offset < current_ns.size());
-  if (last_term == current_term) { begin += offset; }
+
+  if (last_term == current_term) {
+    assert(offset == 0 || offset < current_ns.size());
+    begin += offset;
+  }
 
   if ((interaction.size() - 1) == current_inter_index)
   {
