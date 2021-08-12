@@ -112,7 +112,7 @@ def main():
 
             # shlex.join is only available in python 3.8+
             cmd = shlex.join(cmd)
-            print("running ", cmd)
+            print(f"running {cmd}")
             p = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
             try:
                 p.communicate(timeout=timeout)
