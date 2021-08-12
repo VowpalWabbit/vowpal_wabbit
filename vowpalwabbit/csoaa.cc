@@ -933,6 +933,7 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
                 .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
                 .set_label_type(label_type_t::cs)
+                .set_prediction_type(pred_type)
                 .build();
 
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
