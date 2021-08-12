@@ -66,7 +66,7 @@ def main():
     #    '-p', '--parallel', type=int, default=1,  help="Number of CPUs to use per test.")
     args = parser.parse_args()
 
-    # Unfortunately, there doesn't appare to be a sane way to run different tests concurrently. Therefore this script will
+    # Unfortunately, there doesn't appear to be a sane way to run different tests concurrently. Therefore this script will
     # run for (# of tests * timeout) seconds
     
     script_dir = Path(os.path.dirname(os.path.abspath(__file__)))
