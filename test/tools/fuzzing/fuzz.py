@@ -75,7 +75,7 @@ def main():
     # the '@@' parameter in the command line
     models_dir = os.path.join(script_dir, 'models')
     
-    print("Using VW binary: {}".format((test_bin)))
+    print(f"Using VW binary: {test_bin}")
 
     try:
         os.mkdir('output')
