@@ -16,7 +16,7 @@ namespace INTERACTIONS
 {
 
 template <bool audit, typename FuncT, typename AuditFuncT>
-FORCE_INLINE void do_inter(example_predict& ex, const std::vector<namespace_index>& interaction,
+inline void do_inter(example_predict& ex, const std::vector<namespace_index>& interaction,
     namespace_index last_term,
     size_t offset, size_t current_inter_index, size_t feature_index, float value, const FuncT& func, const AuditFuncT& audit_func)
 {
