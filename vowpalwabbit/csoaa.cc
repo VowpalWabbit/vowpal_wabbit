@@ -144,9 +144,10 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
 
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
   size_t ws = c->num_classes;
-  auto* l = make_reduction_learner(
-      std::move(c), as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(csoaa_setup))
-                .set_learn_returns_prediction(true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
+  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(csoaa_setup))
+                .set_learn_returns_prediction(
+                    true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
                 .set_params_per_weight(ws)
                 .set_prediction_type(prediction_type_t::multiclass)
                 .set_label_type(label_type_t::cs)
@@ -929,10 +930,10 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   }
 
   auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
-      .set_finish_example(finish_multiline_example)
-      .set_end_pass(end_pass)
-      .set_label_type(label_type_t::cs)
-      .build();
+                .set_finish_example(finish_multiline_example)
+                .set_end_pass(end_pass)
+                .set_label_type(label_type_t::cs)
+                .build();
 
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
   all.cost_sensitive = make_base(*l);
