@@ -12,7 +12,7 @@ license as described in the file LICENSE.
 #include "../vowpalwabbit/search.h"
 #include "../vowpalwabbit/search_hooktask.h"
 
-#include <memory>
+#  include <memory>
 
 template <class INPUT, class OUTPUT>
 class SearchTask
@@ -64,30 +64,21 @@ private:
 
   static void _search_run_fn(Search::search&sch)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    if (d->run_object == nullptr)
-    {
-      THROW("error: calling _search_run_fn without setting run object");
-    }
+    if (d->run_object == nullptr) { THROW("error: calling _search_run_fn without setting run object"); }
     auto* run_obj = static_cast<SearchTask<INPUT, OUTPUT>*>(d->run_object.get());
     run_obj->_run(sch, run_obj->_input, run_obj->_output);
   }
 
   static void _search_setup_fn(Search::search&sch)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    if (d->run_object == nullptr)
-    {
-      THROW("error: calling _search_setup_fn without setting run object");
-    }
+    if (d->run_object == nullptr) { THROW("error: calling _search_setup_fn without setting run object"); }
     auto* run_obj = static_cast<SearchTask<INPUT, OUTPUT>*>(d->run_object.get());
     run_obj->_setup(sch, run_obj->_input, run_obj->_output);
   }
 
   static void _search_takedown_fn(Search::search&sch)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    if (d->run_object == nullptr)
-    {
-      THROW("error: calling _search_takedown_fn without setting run object");
-    }
+    if (d->run_object == nullptr) { THROW("error: calling _search_takedown_fn without setting run object"); }
     auto* run_obj = static_cast<SearchTask<INPUT, OUTPUT>*>(d->run_object.get());
     run_obj->_takedown(sch, run_obj->_input, run_obj->_output);
   }
