@@ -37,7 +37,7 @@ inline void do_inter(example_predict& ex, const std::vector<namespace_index>& in
     {
       if (audit) { audit_func(begin.audit() == nullptr ? &EMPTY_AUDIT_STRINGS : begin.audit()); }
       auto new_value = value * begin.value();
-      auto index = FNV_prime * (feature_index ^ static_cast<uint64_t>(begin.index()));
+      auto index = (feature_index ^ static_cast<uint64_t>(begin.index()));
       func(index, new_value);
       if (audit) { audit_func(nullptr); }
     }
