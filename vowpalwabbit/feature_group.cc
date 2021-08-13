@@ -95,8 +95,20 @@ void features::concat(const features& other)
   if (!other.space_names.empty())
   { space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end()); }
 
-  for (const auto& ns_extent : other.namespace_extents)
+  // If the back of the current list and the front of the other list have the same hash then merge the extent.
+  size_t offset = 0;
+  if (!namespace_extents.empty() && !other.namespace_extents.empty())
   {
+    if (namespace_extents.back().hash == other.namespace_extents.front().hash)
+    {
+      namespace_extents.back().end_index += (other.namespace_extents.front().end_index - other.namespace_extents.front().begin_index);
+      offset = 1;
+    }
+  }
+
+  for (size_t i = offset; i < other.namespace_extents.size() - offset; ++i)
+  {
+    const auto& ns_extent = other.namespace_extents[i];
     namespace_extents.emplace_back(
         ns_extent.begin_index + extent_offset, ns_extent.end_index + extent_offset, ns_extent.hash);
   }
