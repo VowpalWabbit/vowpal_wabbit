@@ -186,12 +186,13 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
   bool always_predict = all.final_prediction_sink.size() > 0;
   auto p_reduction = VW::make_unique<cats_pdf>(as_singleline(p_base), always_predict);
 
-  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(setup))
-      .set_learn_returns_prediction(true)
-      .set_prediction_type(prediction_type_t::pdf)
-      .set_finish_example(finish_example)
-      .set_label_type(label_type_t::continuous)
-      .build();
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(setup))
+                .set_learn_returns_prediction(true)
+                .set_prediction_type(prediction_type_t::pdf)
+                .set_finish_example(finish_example)
+                .set_label_type(label_type_t::continuous)
+                .build();
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
 
