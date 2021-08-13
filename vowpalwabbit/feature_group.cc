@@ -97,13 +97,10 @@ void features::concat(const features& other)
 
   // If the back of the current list and the front of the other list have the same hash then merge the extent.
   size_t offset = 0;
-  if (!namespace_extents.empty() && !other.namespace_extents.empty())
+  if (!namespace_extents.empty() && !other.namespace_extents.empty() && (namespace_extents.back().hash == other.namespace_extents.front().hash))
   {
-    if (namespace_extents.back().hash == other.namespace_extents.front().hash)
-    {
-      namespace_extents.back().end_index += (other.namespace_extents.front().end_index - other.namespace_extents.front().begin_index);
-      offset = 1;
-    }
+    namespace_extents.back().end_index += (other.namespace_extents.front().end_index - other.namespace_extents.front().begin_index);
+    offset = 1;
   }
 
   for (size_t i = offset; i < other.namespace_extents.size() - offset; ++i)
