@@ -442,8 +442,9 @@ struct features
 
   bool all_extents_complete()
   {
+    // For an extent to be complete it must not have an end index of 0 and it must be > 0 in width.
     return std::all_of(namespace_extents.begin(), namespace_extents.end(),
-        [](const VW::namespace_extent& obj) { return obj.begin_index != obj.end_index && obj.end_index != 0; });
+        [](const VW::namespace_extent& obj) { return obj.begin_index < obj.end_index; });
   }
 
   VW_DEPRECATED("deep_copy_from is deprecated. Use the copy constructor directly. This will be removed in VW 9.0.")
