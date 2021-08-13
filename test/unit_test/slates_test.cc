@@ -23,11 +23,13 @@ struct test_base
   PredictFunc test_predict_func;
 
   test_base(LearnFunc learn, PredictFunc predict) : test_learn_func(learn), test_predict_func(predict) {}
-  static void invoke_learn(test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::multi_learner& /*base*/, multi_ex& examples)
+  static void invoke_learn(
+      test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::base_learner& /*base*/, multi_ex& examples)
   {
       data.test_learn_func(examples);
   }
-  static void invoke_predict(test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::multi_learner& /*base*/, multi_ex& examples)
+  static void invoke_predict(
+      test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::base_learner& /*base*/, multi_ex& examples)
   {
       data.test_predict_func(examples);
   }
@@ -37,12 +39,13 @@ template <typename LearnFunc, typename PredictFunc>
 VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, multi_ex>* make_test_learner(
     const LearnFunc& learn, const PredictFunc& predict)
 {
-  auto test_base_data = scoped_calloc_or_throw<test_base<LearnFunc, PredictFunc>>(learn, predict);
-  using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::LEARNER::multi_learner&, multi_ex&);
+  auto test_base_data = VW::make_unique<test_base<LearnFunc, PredictFunc>>(learn, predict);
+  using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::LEARNER::base_learner&, multi_ex&);
   auto learn_fptr = &test_base<LearnFunc, PredictFunc>::invoke_learn;
   auto predict_fptr = &test_base<LearnFunc, PredictFunc>::invoke_predict;
-  return &VW::LEARNER::init_learner(test_base_data, (VW::LEARNER::multi_learner*)nullptr, static_cast<func>(learn_fptr),
-      static_cast<func>(predict_fptr), 0, prediction_type_t::decision_probs, "mock_reduction");
+  return VW::LEARNER::make_base_learner(std::move(test_base_data), static_cast<func>(learn_fptr),
+      static_cast<func>(predict_fptr), "mock_reduction", prediction_type_t::decision_probs, label_type_t::ccb)
+      .build();
 }
 
 BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
