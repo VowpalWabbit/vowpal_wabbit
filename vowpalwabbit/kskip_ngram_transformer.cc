@@ -59,11 +59,15 @@ void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NU
     {
       logger::log_error("You must specify the namespace index before the n");
     }
-    else
+    else if(isdigit(gram[1]) != 0)
     {
       int n = atoi(gram.c_str() + 1);
       dest[static_cast<uint32_t>(static_cast<unsigned char>(*gram.c_str()))] = n;
       logger::errlog_info("Generating {0}-{1} for {2} namespaces.", n, descriptor, gram[0]);
+    }
+    else
+    {
+      logger::log_error("{0} value must be a number.", descriptor);
     }
   }
 }
