@@ -39,7 +39,7 @@ struct cb_class
 
 struct label
 {
-  v_array<cb_class> costs;
+  std::vector<cb_class> costs;
   float weight = 1.f;
 };
 

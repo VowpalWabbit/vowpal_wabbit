@@ -5,7 +5,7 @@
 
 namespace MulticlassTask
 {
-Search::search_task task = {"multiclasstask", run, initialize, finish, nullptr, nullptr};
+Search::search_task task = {"multiclasstask", run, initialize, nullptr, nullptr, nullptr};
 }
 
 namespace MulticlassTask
@@ -27,12 +27,6 @@ void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i&
   my_task_data->y_allowed.push_back(1);
   my_task_data->y_allowed.push_back(2);
   sch.set_task_data(my_task_data);
-}
-
-void finish(Search::search& sch)
-{
-  task_data* my_task_data = sch.get_task_data<task_data>();
-  delete my_task_data;
 }
 
 void run(Search::search& sch, multi_ex& ec)
