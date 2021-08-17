@@ -34,7 +34,7 @@ Diagnostic options:
   -a [ --audit ]        print weights of features
   -P [ --progress ] arg Progress update frequency. int: additive, float: 
                         multiplicative
-  --quiet               Don't output disgnostics and progress updates
+  --quiet               Don't output diagnostics and progress updates
   --limit_output arg    Avoid chatty output. Limit total printed lines.
   --dry_run             Parse arguments and print corresponding metadata. Will 
                         not execute driver.
@@ -67,8 +67,9 @@ Feature options:
                                   generate generalized n-skip-k-gram. To 
                                   generate n-skips for a single namespace 
                                   'foo', arg should be fN.
-  --feature_limit arg             limit to N features. To apply to a single 
-                                  namespace 'foo', arg should be fN
+  --feature_limit arg             limit to N unique features per namespace. To 
+                                  apply to a single namespace 'foo', arg should
+                                  be fN
   --affix arg                     generate prefixes/suffixes of features; 
                                   argument '+2a,-3b,+1' means generate 2-char 
                                   prefixes for namespace a, 3-char suffixes for

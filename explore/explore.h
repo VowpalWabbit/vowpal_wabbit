@@ -117,7 +117,7 @@ int swap_chosen(ActionIt action_first, ActionIt action_last, uint32_t chosen_ind
  * @param pdf_first Iterator pointing to the beginning of the pdf.
  * @param pdf_last Iterator pointing to the end of the pdf.
  * @param chosen_value returns the sampled continuous value.
- * @param pdf_value returns the probablity density at the sampled location.
+ * @param pdf_value returns the probability density at the sampled location.
  * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
  */
 template <typename It>

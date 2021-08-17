@@ -8,7 +8,7 @@
 // It can also parse a continuous labeled example.
 
 #include "cats_pdf.h"
-#include "parse_args.h"
+#include "global_data.h"
 #include "error_constants.h"
 #include "api_status.h"
 #include "cb_continuous_label.h"
@@ -159,8 +159,11 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-LEARNER::base_learner* setup(config::options_i& options, vw& all)
+LEARNER::base_learner* setup(setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   option_group_definition new_options("Continuous action tree with smoothing with full pdf");
   int num_actions = 0;
   new_options.add(
@@ -179,17 +182,21 @@ LEARNER::base_learner* setup(config::options_i& options, vw& all)
   if (!options.was_supplied("get_pmf")) options.insert("get_pmf", "");
   options.insert("cats_tree", std::to_string(num_actions));
 
-  LEARNER::base_learner* p_base = setup_base(options, all);
+  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
   bool always_predict = all.final_prediction_sink.size() > 0;
-  auto p_reduction = scoped_calloc_or_throw<cats_pdf>(as_singleline(p_base), always_predict);
+  auto p_reduction = VW::make_unique<cats_pdf>(as_singleline(p_base), always_predict);
 
-  LEARNER::learner<cats_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::pdf, all.get_setupfn_name(setup), true);
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(setup))
+                .set_learn_returns_prediction(true)
+                .set_prediction_type(prediction_type_t::pdf)
+                .set_finish_example(finish_example)
+                .set_label_type(label_type_t::continuous)
+                .build();
 
-  l.set_finish_example(finish_example);
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
 
-  return make_base(l);
+  return make_base(*l);
 }
 }  // namespace cats_pdf
 }  // namespace continuous_action

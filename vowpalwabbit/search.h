@@ -83,24 +83,24 @@ struct search
   template <class T>
   void set_task_data(T* data)
   {
-    task_data = data;
+    task_data = std::shared_ptr<T>(data);
   }
   template <class T>
   T* get_task_data()
   {
-    return (T*)task_data;
+    return static_cast<T*>(task_data.get());
   }
 
   // for managing metatask-specific data
   template <class T>
   void set_metatask_data(T* data)
   {
-    metatask_data = data;
+    metatask_data = std::shared_ptr<T>(data);
   }
   template <class T>
   T* get_metatask_data()
   {
-    return (T*)metatask_data;
+    return static_cast<T*>(metatask_data.get());
   }
 
   // for setting programmatic options during initialization
@@ -119,7 +119,7 @@ struct search
   //   ec                    the example (features) on which to make a prediction
   //   my_tag                a tag for this prediction, so that you can explicitly
   //                           state, for future predictions, which ones depend
-  //                           explicitely or implicitly on this prediction
+  //                           explicitly or implicitly on this prediction
   //   oracle_actions        an array of actions that the oracle would take
   //                           nullptr => the oracle doesn't know (is random!)
   //   oracle_actions_cnt    the length of the previous array, or 0 if it's nullptr
@@ -214,12 +214,12 @@ struct search
 
   // internal data that you don't get to see!
   search_private* priv;
-  void* task_data;      // your task data!
-  void* metatask_data;  // your metatask data!
+  std::shared_ptr<void> task_data;      // your task data!
+  std::shared_ptr<void> metatask_data;  // your metatask data!
   const char* task_name;
   const char* metatask_name;
 
-  vw& get_vw_pointer_unsafe();  // although you should rarely need this, some times you need a poiter to the vw data
+  vw& get_vw_pointer_unsafe();  // although you should rarely need this, some times you need a pointer to the vw data
                                 // structure :(
   void set_force_oracle(bool force);  // if the library wants to force search to use the oracle, set this to true
   search();
@@ -365,5 +365,5 @@ default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const 
 // char* mismatch_error_string);
 
 // our interface within VW
-VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);
 }  // namespace Search

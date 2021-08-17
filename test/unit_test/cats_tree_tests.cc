@@ -25,21 +25,21 @@ struct reduction_test_harness
 
   void set_predict_response(const vector<float>& predictions) { _predictions = predictions; }
 
-  void test_predict(single_learner& base, example& ec) { ec.pred.scalar = _predictions[_curr_idx++]; }
+  void test_predict(base_learner& base, example& ec) { ec.pred.scalar = _predictions[_curr_idx++]; }
 
-  void test_learn(single_learner& base, example& ec)
+  void test_learn(base_learner& base, example& ec)
   {
     _labels.emplace_back(ec.l.simple);
     _weights.emplace_back(ec.weight);
     _learner_offset.emplace_back(ec.ft_offset);
   }
 
-  static void predict(reduction_test_harness& test_reduction, single_learner& base, example& ec)
+  static void predict(reduction_test_harness& test_reduction, base_learner& base, example& ec)
   {
     test_reduction.test_predict(base, ec);
   }
 
-  static void learn(reduction_test_harness& test_reduction, single_learner& base, example& ec)
+  static void learn(reduction_test_harness& test_reduction, base_learner& base, example& ec)
   {
     test_reduction.test_learn(base, ec);
   };
@@ -69,16 +69,16 @@ template <typename T = reduction_test_harness>
 learner<T, example>* get_test_harness_reduction(const predictions_t& base_reduction_predictions, T*& pharness)
 {
   // Setup a test harness base reduction
-  auto test_harness = scoped_calloc_or_throw<T>();
+  auto test_harness = VW::make_unique<T>();
   pharness = test_harness.get();
   test_harness->set_predict_response(base_reduction_predictions);
-  auto& test_learner =
-      init_learner(test_harness,  // Data structure passed by vw_framework into test_harness predict/learn calls
-          T::learn,               // test_harness learn
-          T::predict,             // test_harness predict
-          1,                      // Number of regressors in test_harness (not used)
-          "test_learner");        // Create a learner using the base reduction.
-  return &test_learner;
+  auto test_learner = VW::LEARNER::make_base_learner(
+      std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
+      reduction_test_harness::learn,    // test_harness learn
+      reduction_test_harness::predict,  // test_harness predict
+      "test_learner", prediction_type_t::scalar, label_type_t::cb)
+                          .build();  // Create a learner using the base reduction.
+  return test_learner;
 }
 }  // namespace cats_tree
 }  // namespace VW

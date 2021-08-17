@@ -22,10 +22,6 @@ float calculate_total_sum_features_squared(bool permutations, example& ec)
   return sum_features_squared;
 }
 
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-example::example() { in_use = true; }
-
 example::~example()
 {
   if (passthrough)
@@ -34,7 +30,6 @@ example::~example()
     passthrough = nullptr;
   }
 }
-VW_WARNING_STATE_POP
 
 float collision_cleanup(features& fs)
 {
@@ -56,9 +51,10 @@ float collision_cleanup(features& fs)
   }
 
   sum_sq += pos.value() * pos.value();
-  fs.sum_feat_sq = sum_sq;
   ++pos;
-  fs.truncate_to(pos);
+  // Don't change the sum_feat_sq as we will do it manually directly after.
+  fs.truncate_to(pos, 0);
+  fs.sum_feat_sq = sum_sq;
 
   return sum_sq;
 }
