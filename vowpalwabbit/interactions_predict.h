@@ -14,6 +14,8 @@ const static std::pair<std::string, std::string> EMPTY_AUDIT_STRINGS = std::make
 
 namespace INTERACTIONS
 {
+using features_range_t = std::pair<features::const_audit_iterator, features::const_audit_iterator>;
+
 /*
  * By default include interactions of feature with itself.
  * This approach produces slightly more interactions but it's safer
@@ -63,8 +65,8 @@ struct feature_gen_data
 inline bool has_empty_interaction(
     const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
 {
-  return !std::all_of(namespace_indexes.begin(), namespace_indexes.end(),
-      [&](namespace_index idx) { return !feature_groups[idx].empty(); });
+  return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
+      [&](namespace_index idx) { return feature_groups[idx].empty(); });
 }
 
 // The inline function below may be adjusted to change the way
@@ -78,34 +80,26 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1 * val
 
 // #define GEN_INTER_LOOP
 
-std::tuple<std::pair<features::const_audit_iterator, features::const_audit_iterator>,
-    std::pair<features::const_audit_iterator,
-        features::const_audit_iterator>> inline generate_quadratic_char_combination(const std::array<features,
-                                                                                        NUM_NAMESPACES>& feature_groups,
-    namespace_index ns_idx1, namespace_index ns_idx2)
+std::tuple<features_range_t, features_range_t> inline generate_quadratic_char_combination(
+    const std::array<features, NUM_NAMESPACES>& feature_groups, namespace_index ns_idx1, namespace_index ns_idx2)
 {
   return {std::make_tuple(std::make_pair(feature_groups[ns_idx1].audit_begin(), feature_groups[ns_idx1].audit_end()),
       std::make_pair(feature_groups[ns_idx2].audit_begin(), feature_groups[ns_idx2].audit_end()))};
 }
 
-std::tuple<std::pair<features::const_audit_iterator, features::const_audit_iterator>,
-    std::pair<features::const_audit_iterator, features::const_audit_iterator>,
-    std::pair<features::const_audit_iterator,
-        features::const_audit_iterator>> inline generate_cubic_char_combination(const std::array<features,
-                                                                                    NUM_NAMESPACES>& feature_groups,
-    namespace_index ns_idx1, namespace_index ns_idx2, namespace_index ns_idx3)
+std::tuple<features_range_t, features_range_t, features_range_t> inline generate_cubic_char_combination(
+    const std::array<features, NUM_NAMESPACES>& feature_groups, namespace_index ns_idx1, namespace_index ns_idx2,
+    namespace_index ns_idx3)
 {
   return {std::make_tuple(std::make_pair(feature_groups[ns_idx1].audit_begin(), feature_groups[ns_idx1].audit_end()),
       std::make_pair(feature_groups[ns_idx2].audit_begin(), feature_groups[ns_idx2].audit_end()),
       std::make_pair(feature_groups[ns_idx3].audit_begin(), feature_groups[ns_idx3].audit_end()))};
 }
 
-std::vector<std::pair<features::const_audit_iterator,
-    features::const_audit_iterator>> inline generate_generic_char_combination(const std::array<features,
-                                                                                  NUM_NAMESPACES>& feature_groups,
-    const std::vector<namespace_index>& namespace_indexes)
+std::vector<features_range_t> inline generate_generic_char_combination(
+    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
 {
-  std::vector<std::pair<features::const_audit_iterator, features::const_audit_iterator>> inter;
+  std::vector<features_range_t> inter;
   for (const auto namespace_index : namespace_indexes)
   { inter.emplace_back(feature_groups[namespace_index].audit_begin(), feature_groups[namespace_index].audit_end()); }
   return inter;
@@ -135,10 +129,8 @@ void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::c
 }
 
 template <bool Audit, typename KernelFuncT, typename AuditFuncT>
-size_t process_quadratic_interaction(
-    const std::tuple<std::pair<features::const_audit_iterator, features::const_audit_iterator>,
-        std::pair<features::const_audit_iterator, features::const_audit_iterator>>& range,
-    bool permutations, const KernelFuncT& kernel_func, const AuditFuncT& audit_func)
+size_t process_quadratic_interaction(const std::tuple<features_range_t, features_range_t>& range, bool permutations,
+    const KernelFuncT& kernel_func, const AuditFuncT& audit_func)
 {
   size_t num_features = 0;
   auto first_begin = std::get<0>(range).first;
@@ -164,10 +156,7 @@ size_t process_quadratic_interaction(
 }
 
 template <bool Audit, typename KernelFuncT, typename AuditFuncT>
-size_t process_cubic_interaction(
-    const std::tuple<std::pair<features::const_audit_iterator, features::const_audit_iterator>,
-        std::pair<features::const_audit_iterator, features::const_audit_iterator>,
-        std::pair<features::const_audit_iterator, features::const_audit_iterator>>& range,
+size_t process_cubic_interaction(const std::tuple<features_range_t, features_range_t, features_range_t>& range,
     bool permutations, const KernelFuncT& kernel_func, const AuditFuncT& audit_func)
 {
   size_t num_features = 0;
@@ -216,9 +205,8 @@ size_t process_cubic_interaction(
 }
 
 template <bool Audit, typename KernelFuncT, typename AuditFuncT>
-size_t process_generic_interaction(
-    const std::vector<std::pair<features::const_audit_iterator, features::const_audit_iterator>>& range,
-    bool permutations, const KernelFuncT& kernel_func, const AuditFuncT& audit_func)
+size_t process_generic_interaction(const std::vector<features_range_t>& range, bool permutations,
+    const KernelFuncT& kernel_func, const AuditFuncT& audit_func)
 {
   size_t num_features = 0;
   std::vector<feature_gen_data> state_data;
