@@ -38,8 +38,8 @@ void learn(interaction_ground& ig, multi_learner& base, multi_ex& ec_seq)
 {
   //find reward of sequence
   CB::cb_class label = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);
-  ig.total_uniform_cost += label.cost;
-  ig.total_uniform_reward += -label.cost;
+  ig.total_uniform_cost += label.cost / label.probability / ec_seq.size();//=p(uniform) * IPS estimate
+  ig.total_uniform_reward += -label.cost / label.probability / ec_seq.size();
 
   //find prediction & update for cost
   base.predict(ec_seq);
@@ -61,7 +61,7 @@ void predict(interaction_ground& ig, multi_learner& base, multi_ex& ec_seq)
 {
   //figure out which is better by our current estimate.
   if (ig.total_uniform_cost - ig.total_importance_weighted_cost
-      > ig.total_importance_weighted_reward - ig.total_uniform_reward)
+      > ig.total_uniform_reward - ig.total_importance_weighted_reward)
     base.predict(ec_seq);
   else
     base.predict(ec_seq,1);
