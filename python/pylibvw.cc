@@ -23,6 +23,7 @@
 
 #include "red_python.h"
 #include "reductions_fwd.h"
+#include "reduction_stack.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -369,6 +370,28 @@ py::object OptionManager::base_option_to_pyobject<VW::config::typelist<>>(VW::co
   return py::object();
 }
 
+struct custom_builder : VW::default_reduction_stack_setup
+{
+  custom_builder()
+  {
+    reduction_stack.emplace_back("custom_python_reduction", red_python_setup);
+  }
+
+  VW::LEARNER::base_learner* setup_base_learner() override
+  {
+    // all.ext_binding == nullptr; -> set the instance of the python reduction in the correct place
+    if (reduction_stack.size() == 1)
+    {
+      VW::default_reduction_stack_setup::setup_base_learner();
+      // THROW("about to install GD");
+    }
+    else {
+      VW::default_reduction_stack_setup::setup_base_learner();
+    }
+  }
+};
+
+
 class py_log_wrapper
 {
 public:
@@ -429,7 +452,9 @@ vw_ptr my_initialize_with_pyred(std::string args, py_log_wrapper_ptr py_log, py:
   {
     // auto ext_binding = scoped_calloc_or_throw<RED_PYTHON::ExternalBinding>(new PyCppBridge(&with_reduction));
     auto ext_binding = std::unique_ptr<RED_PYTHON::ExternalBinding>(new PyCppBridge(&with_reduction));
-    foo = VW::initialize_with_reduction(args, nullptr, false, trace_listener, trace_context, std::move(ext_binding));
+    // auto c_builder = std::unique_ptr<>(new custom_builder());
+    auto learner_builder = VW::make_unique<custom_builder>();
+    foo = VW::initialize_with_builder(args, nullptr, false, trace_listener, trace_context, std::move(learner_builder));
   }
   else
   {

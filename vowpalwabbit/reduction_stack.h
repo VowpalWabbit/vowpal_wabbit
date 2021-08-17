@@ -19,7 +19,7 @@ struct default_reduction_stack_setup : public setup_base_i
 
   // this function consumes all the reduction_stack until it's able to construct a base_learner
   // same signature as the old setup_base(...) from parse_args.cc
-  VW::LEARNER::base_learner* setup_base_learner() override;
+  virtual VW::LEARNER::base_learner* setup_base_learner() override;
 
   VW::config::options_i* get_options() override { return options_impl; }
 
