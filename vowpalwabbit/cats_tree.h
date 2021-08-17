@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
+#include <vector>
 #include "learner.h"
 #include "options.h"
 #include "error_reporting.h"
@@ -63,7 +64,7 @@ struct cats_tree
   void init(uint32_t num_actions, uint32_t bandwidth);
   int32_t learner_count() const;
   uint32_t predict(LEARNER::single_learner& base, example& ec);
-  void init_node_costs(v_array<CB::cb_class>& ac);
+  void init_node_costs(std::vector<CB::cb_class>& ac);
   const tree_node& get_sibling(const tree_node& tree_node);
   float return_cost(const tree_node& w);
   void learn(LEARNER::single_learner& base, example& ec);

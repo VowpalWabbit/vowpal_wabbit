@@ -4,6 +4,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "v_array.h"
 
 namespace VW
@@ -29,7 +30,7 @@ struct pdf_segment
   pdf_segment(float left, float right, float pdf_value) : left(left), right(right), pdf_value(pdf_value) {}
 };
 
-using probability_density_function = v_array<pdf_segment>;
+using probability_density_function = std::vector<pdf_segment>;
 
 std::string to_string(const probability_density_function_value& pdf_value, bool print_newline = false);
 std::string to_string(const probability_density_function& pdf, bool print_newline = false, int precision = -1);
