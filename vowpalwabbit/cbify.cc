@@ -60,8 +60,8 @@ struct cbify
   uint32_t chosen_action;
 
   // for ldf inputs
-  std::vector<v_array<COST_SENSITIVE::wclass>> cs_costs;
-  std::vector<v_array<CB::cb_class>> cb_costs;
+  std::vector<std::vector<COST_SENSITIVE::wclass>> cs_costs;
+  std::vector<std::vector<CB::cb_class>> cb_costs;
   std::vector<ACTION_SCORE::action_scores> cb_as;
 };
 
@@ -73,7 +73,7 @@ float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
     return data.loss0;
 }
 
-float loss_cs(const cbify& data, const v_array<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
+float loss_cs(const cbify& data, const std::vector<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
 {
   float cost = 0.;
   for (const auto& wc : costs)
@@ -88,7 +88,7 @@ float loss_cs(const cbify& data, const v_array<COST_SENSITIVE::wclass>& costs, u
 }
 
 float loss_csldf(
-    const cbify& data, const std::vector<v_array<COST_SENSITIVE::wclass>>& cs_costs, uint32_t final_prediction)
+    const cbify& data, const std::vector<std::vector<COST_SENSITIVE::wclass>>& cs_costs, uint32_t final_prediction)
 {
   float cost = 0.;
   for (const auto& costs : cs_costs)
