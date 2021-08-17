@@ -211,7 +211,7 @@ size_t process_cubic_interaction(
       // next index differs for permutations and simple combinations
       if (same_namespace2) { begin += j; }
       num_features += std::distance(begin, third_end);
-      kernel_func(begin, second_end, ft_value, halfhash);
+      kernel_func(begin, third_end, ft_value, halfhash);
       if (Audit) audit_func(nullptr);
       j++;
     }  // end for (snd)
