@@ -1522,31 +1522,14 @@ public:
 
   void PushNamespace(const char* ns, BaseState<audit>* return_state)
   {
-    Namespace<audit> n;
-    n.feature_group = ns[0];
-    n.namespace_hash = VW::hash_space_cstr(*all, ns);
-    n.ftrs = ex->feature_space.data() + ns[0];
-    n.feature_count = 0;
-
-    n.name = ns;
-
-    namespace_path.push_back(n);
+    push_ns(ex, ns, namespace_path, *all);
     return_path.push_back(return_state);
   }
 
   BaseState<audit>* PopNamespace()
   {
-    auto& ns = CurrentNamespace();
-    if (ns.feature_count > 0)
-    {
-      auto feature_group = ns.feature_group;
-      // Do not insert feature_group if it already exists.
-      if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
-      { ex->indices.push_back(feature_group); }
-    }
-
+    pop_ns(ex, namespace_path);
     auto return_state = return_path.back();
-    namespace_path.pop_back();
     return_path.pop_back();
     return return_state;
   }

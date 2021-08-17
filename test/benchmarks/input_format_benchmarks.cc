@@ -34,6 +34,7 @@ std::shared_ptr<std::vector<char>> get_cache_buffer(const std::string& es)
   }
   vw->example_parser->output->flush();
   VW::finish_example(*vw, *ae);
+  VW::finish(*vw);
 
   return buffer;
 }
@@ -59,6 +60,7 @@ static void bench_cache_io_buf(benchmark::State& state, ExtraArgs&&... extra_arg
     VW::empty_example(*vw, *examples[0]);
     benchmark::ClobberMemory();
   }
+  VW::finish(*vw);
 }
 
 template <class... ExtraArgs>
@@ -82,6 +84,7 @@ static void bench_cache_io_buf_collections(benchmark::State& state, ExtraArgs&&.
     while (read_cached_features(vw, examples)) { VW::empty_example(*vw, *examples[0]); }
     benchmark::ClobberMemory();
   }
+  VW::finish(*vw);
 }
 
 template <class... ExtraArgs>
@@ -103,6 +106,7 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
     VW::empty_example(*vw, *examples[0]);
     benchmark::ClobberMemory();
   }
+  VW::finish(*vw);
 }
 
 static void benchmark_example_reuse(benchmark::State& state)
@@ -126,6 +130,7 @@ static void benchmark_example_reuse(benchmark::State& state)
     examples.clear();
     benchmark::ClobberMemory();
   }
+  VW::finish(*vw);
 }
 
 BENCHMARK_CAPTURE(bench_cache_io_buf, 120_string_fts, get_x_string_fts(120));
