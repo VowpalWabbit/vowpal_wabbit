@@ -381,6 +381,7 @@ struct custom_builder : VW::default_reduction_stack_setup
   {
     if (should_call_custom_python_setup)
     {
+      assert(instance != nullptr);
       should_call_custom_python_setup = false;
       return red_python_setup(*this, std::move(instance));
     }
@@ -389,12 +390,12 @@ struct custom_builder : VW::default_reduction_stack_setup
 
     if (reduction_stack.size() == 1)
     {
-      VW::default_reduction_stack_setup::setup_base_learner();
+      return VW::default_reduction_stack_setup::setup_base_learner();
       // THROW("about to install GD");
     }
     else
     {
-      VW::default_reduction_stack_setup::setup_base_learner();
+      return VW::default_reduction_stack_setup::setup_base_learner();
     }
   }
 };
