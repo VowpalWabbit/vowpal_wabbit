@@ -373,10 +373,9 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
 
   if (data.slots.size() > data.actions.size())
   {
-    std::stringstream msg;
-    msg << "ccb_adf_explore: badly formatted example - number of actions " << data.actions.size()
-        << " must be greater than the number of slots " << data.slots.size();
-    THROW(msg.str())
+    THROW_FMT(
+        "ccb_adf_explore: badly formatted example - number of actions {} must be greater than the number"
+        "of slots {}", data.actions.size(), data.slots.size())
   }
 
   if (is_learn)

@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
+#include <fmt/format.h>
 #ifndef VW_NOEXCEPT
 #  include <stdexcept>
 #  include <sstream>
@@ -201,6 +202,16 @@ bool launchDebugger();
       std::stringstream __msg;                       \
       __msg << args;                                 \
       throw ex(__FILENAME__, __LINE__, __msg.str()); \
+    }
+
+#  define THROW_FMT(fmt_str, ...)                                                        \
+    {                                                                                \
+      throw VW::vw_exception(__FILENAME__, __LINE__, fmt::format(fmt_str, __VA_ARGS__)); \
+    }
+
+#  define THROW_FMT_EX(ex, fmt_str, ...)                                   \
+    {                                                                  \
+      throw ex(__FILENAME__, __LINE__, fmt::format(fmt_str, __VA_ARGS__)); \
     }
 }  // namespace VW
 
