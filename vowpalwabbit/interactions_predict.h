@@ -199,7 +199,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     }
     else if (len == 3)  // special case for triples
     {
-      for (auto& range : generate_cubic_combinations(ec.feature_space, ns[0], ns[1], ns[3]))
+      for (auto& range : generate_cubic_combinations(ec.feature_space, ns[0], ns[1], ns[2]))
       {
         auto& first_begin = std::get<0>(range).first;
         auto& first_end = std::get<0>(range).second;
