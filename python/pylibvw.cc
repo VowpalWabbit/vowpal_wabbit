@@ -372,10 +372,7 @@ py::object OptionManager::base_option_to_pyobject<VW::config::typelist<>>(VW::co
 
 struct custom_builder : VW::default_reduction_stack_setup
 {
-  custom_builder()
-  {
-    reduction_stack.emplace_back("custom_python_reduction", red_python_setup);
-  }
+  custom_builder() { reduction_stack.emplace_back("custom_python_reduction", red_python_setup); }
 
   VW::LEARNER::base_learner* setup_base_learner() override
   {
@@ -385,12 +382,12 @@ struct custom_builder : VW::default_reduction_stack_setup
       VW::default_reduction_stack_setup::setup_base_learner();
       // THROW("about to install GD");
     }
-    else {
+    else
+    {
       VW::default_reduction_stack_setup::setup_base_learner();
     }
   }
 };
-
 
 class py_log_wrapper
 {
