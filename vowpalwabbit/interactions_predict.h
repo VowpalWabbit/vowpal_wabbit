@@ -221,9 +221,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
           const float first_ft_value = first_begin.value();
           size_t j = 0;
           if (same_namespace1)  // next index differs for permutations and simple combinations
-          {
-            j = i;
-          }
+          { j = i; }
 
           for (auto inner_second_begin = second_begin + j; inner_second_begin != second_end; ++inner_second_begin)
           {
@@ -331,7 +329,8 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 
             // trying to go back increasing loop_idx of each namespace by the way
             bool go_further;
-            do {
+            do
+            {
               --cur_data;
               ++cur_data->current_it;
               go_further = cur_data->current_it == cur_data->end_it;
