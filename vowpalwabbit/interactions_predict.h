@@ -107,9 +107,7 @@ std::vector<std::pair<features::const_audit_iterator,
 {
   std::vector<std::pair<features::const_audit_iterator, features::const_audit_iterator>> inter;
   for (const auto namespace_index : namespace_indexes)
-  {
-    inter.emplace_back(feature_groups[namespace_index].audit_begin(), feature_groups[namespace_index].audit_end());
-  }
+  { inter.emplace_back(feature_groups[namespace_index].audit_begin(), feature_groups[namespace_index].audit_end()); }
   return inter;
 }
 
@@ -193,17 +191,13 @@ size_t process_cubic_interaction(
     const float first_ft_value = first_begin.value();
     size_t j = 0;
     if (same_namespace1)  // next index differs for permutations and simple combinations
-    {
-      j = i;
-    }
+    { j = i; }
 
     for (auto inner_second_begin = second_begin + j; inner_second_begin != second_end; ++inner_second_begin)
     {
       // f3 x k*(f2 x k*f1)
       if (Audit)
-      {
-        audit_func(inner_second_begin.audit() != nullptr ? inner_second_begin.audit() : &EMPTY_AUDIT_STRINGS);
-      }
+      { audit_func(inner_second_begin.audit() != nullptr ? inner_second_begin.audit() : &EMPTY_AUDIT_STRINGS); }
       feature_index halfhash = FNV_prime * (halfhash1 ^ inner_second_begin.index());
       feature_value ft_value = INTERACTION_VALUE(first_ft_value, inner_second_begin.value());
 
@@ -301,7 +295,8 @@ size_t process_generic_interaction(
       kernel_func(begin, cur_data->end_it, ft_value, halfhash);
       // trying to go back increasing loop_idx of each namespace by the way
       bool go_further;
-      do {
+      do
+      {
         --cur_data;
         ++cur_data->current_it;
         go_further = cur_data->current_it == cur_data->end_it;
@@ -330,8 +325,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
   num_features = 0;
   // often used values
   const auto inner_kernel_func = [&](features::const_audit_iterator begin, features::const_audit_iterator end,
-                                     feature_value value, feature_index index)
-  {
+                                     feature_value value, feature_index index) {
     inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(dat, begin, end, ec.ft_offset, weights, value, index);
   };
 
