@@ -675,11 +675,8 @@ void parse_feature_tweaks(
       decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
 
-   if (!all.logger.quiet)
-   {
-     *(all.trace_message) << fmt::format(
-          "creating cubic features for triples: {}\n", fmt::join(cubics, " "));
-   }
+    if (!all.logger.quiet)
+    { *(all.trace_message) << fmt::format("creating cubic features for triples: {}\n", fmt::join(cubics, " ")); }
   }
 
   if (options.was_supplied("interactions"))
@@ -690,7 +687,7 @@ void parse_feature_tweaks(
       if (parsed.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
       decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
-     if (!all.logger.quiet)
+    if (!all.logger.quiet)
     {
       *(all.trace_message) << fmt::format(
           "creating features for following interactions: {}\n", fmt::join(interactions, " "));

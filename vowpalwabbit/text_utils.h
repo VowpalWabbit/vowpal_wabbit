@@ -8,7 +8,6 @@
 
 #include "vw_string_view.h"
 
-
 namespace VW
 {
 /**
@@ -20,9 +19,9 @@ namespace VW
 bool ends_with(VW::string_view full_string, VW::string_view ending);
 
 /**
- * \brief Replace hex sequences in a string with their corresponding byte. A hex sequence must only contain two digits and must be in the form \x00
- * \param arg String to replace hex values within
- * \return A copy of the original string with hex values replaced with corresponding byte.
+ * \brief Replace hex sequences in a string with their corresponding byte. A hex sequence must only contain two digits
+ * and must be in the form \x00 \param arg String to replace hex values within \return A copy of the original string
+ * with hex values replaced with corresponding byte.
  */
 std::string decode_inline_hex(VW::string_view arg);
-}
+}  // namespace VW
