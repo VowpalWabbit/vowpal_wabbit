@@ -7,7 +7,6 @@
 #include "example_predict.h"
 #include "reductions_fwd.h"
 #include "constant.h"
-#include "interaction_term.h"
 
 #include <cstddef>
 
