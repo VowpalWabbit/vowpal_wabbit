@@ -105,22 +105,12 @@ std::vector<std::pair<features::const_audit_iterator,
                                                                                   NUM_NAMESPACES>& feature_groups,
     const std::vector<namespace_index>& namespace_indexes)
 {
-  const auto is_not_empty = std::all_of(namespace_indexes.begin(), namespace_indexes.end(),
-      [&](namespace_index idx) { return !feature_groups[idx].empty(); });
-
-  assert(is_not_empty);
-
-  if (is_not_empty)
+  std::vector<std::pair<features::const_audit_iterator, features::const_audit_iterator>> inter;
+  for (const auto namespace_index : namespace_indexes)
   {
-    std::vector<std::pair<features::const_audit_iterator, features::const_audit_iterator>> inter;
-    for (const auto namespace_index : namespace_indexes)
-    {
-      inter.emplace_back(feature_groups[namespace_index].audit_begin(), feature_groups[namespace_index].audit_end());
-    }
-    return {inter};
+    inter.emplace_back(feature_groups[namespace_index].audit_begin(), feature_groups[namespace_index].audit_end());
   }
-
-  return {};
+  return inter;
 }
 
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
