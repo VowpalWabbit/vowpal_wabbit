@@ -7,10 +7,6 @@
 #include "reductions_fwd.h"
 #include "io_buf.h"
 
-VW::LEARNER::base_learner* red_python_setup(VW::setup_base_i&);
-VW::LEARNER::base_learner* red_python_multiline_setup(VW::setup_base_i&);
-VW::LEARNER::base_learner* red_python_base_setup(VW::setup_base_i&);
-
 namespace RED_PYTHON
 {
 class ExternalBinding
@@ -31,3 +27,8 @@ public:
   virtual ~ExternalBinding(){};
 };
 }  // namespace RED_PYTHON
+
+VW::LEARNER::base_learner* red_python_setup(VW::setup_base_i&, std::unique_ptr<RED_PYTHON::ExternalBinding>);
+VW::LEARNER::base_learner* red_python_setup_normie(VW::setup_base_i&);
+VW::LEARNER::base_learner* red_python_multiline_setup(VW::setup_base_i&);
+VW::LEARNER::base_learner* red_python_base_setup(VW::setup_base_i&);

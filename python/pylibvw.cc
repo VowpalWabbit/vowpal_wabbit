@@ -372,11 +372,21 @@ py::object OptionManager::base_option_to_pyobject<VW::config::typelist<>>(VW::co
 
 struct custom_builder : VW::default_reduction_stack_setup
 {
-  custom_builder() { reduction_stack.emplace_back("custom_python_reduction", red_python_setup); }
+  bool should_call_custom_python_setup = false;
+  std::unique_ptr<RED_PYTHON::ExternalBinding> instance;
+
+  custom_builder(std::unique_ptr<RED_PYTHON::ExternalBinding> _instance) { instance = std::move(_instance); }
 
   VW::LEARNER::base_learner* setup_base_learner() override
   {
-    // all.ext_binding == nullptr; -> set the instance of the python reduction in the correct place
+    if (should_call_custom_python_setup)
+    {
+      should_call_custom_python_setup = false;
+      return red_python_setup(*this, std::move(instance));
+    }
+
+    if (std::get<0>(reduction_stack.back()).compare("extra_metrics") == 0) { should_call_custom_python_setup = true; }
+
     if (reduction_stack.size() == 1)
     {
       VW::default_reduction_stack_setup::setup_base_learner();
@@ -447,10 +457,9 @@ vw_ptr my_initialize_with_pyred(std::string args, py_log_wrapper_ptr py_log, py:
 
   if (with_reduction)
   {
-    // auto ext_binding = scoped_calloc_or_throw<RED_PYTHON::ExternalBinding>(new PyCppBridge(&with_reduction));
     auto ext_binding = std::unique_ptr<RED_PYTHON::ExternalBinding>(new PyCppBridge(&with_reduction));
-    // auto c_builder = std::unique_ptr<>(new custom_builder());
-    auto learner_builder = VW::make_unique<custom_builder>();
+    auto learner_builder = VW::make_unique<custom_builder>(std::move(ext_binding));
+
     foo = VW::initialize_with_builder(args, nullptr, false, trace_listener, trace_context, std::move(learner_builder));
   }
   else

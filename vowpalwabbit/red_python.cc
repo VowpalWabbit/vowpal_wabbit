@@ -64,8 +64,9 @@ VW::LEARNER::base_learner* red_python_setup(
 
   auto base = as_singleline(stack_builder.setup_base_learner());
 
-  VW::LEARNER::learner<ExternalBinding, example>& ret = learner<ExternalBinding, example>::init_learner(instance.get(),
-      base, learn, predict, 1, base->pred_type, all.get_setupfn_name(red_python_setup), base->learn_returns_prediction);
+  VW::LEARNER::learner<ExternalBinding, example>& ret =
+      learner<ExternalBinding, example>::init_learner(instance.get(), base, learn, predict, 1, base->pred_type,
+          all.get_setupfn_name(red_python_setup_normie), base->learn_returns_prediction);
 
   if (instance->ShouldRegisterFinishExample()) ret.set_finish_example(finish_example);
 
@@ -78,7 +79,7 @@ VW::LEARNER::base_learner* red_python_setup(
 }
 
 using namespace RED_PYTHON;
-VW::LEARNER::base_learner* red_python_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* red_python_setup_normie(VW::setup_base_i& stack_builder)
 {
   vw& all = *stack_builder.get_all_pointer();
 

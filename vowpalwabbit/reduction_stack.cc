@@ -92,7 +92,8 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
       {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"},
-      {red_python_setup, "custom_python_reduction"}, {red_python_multiline_setup, "custom_python_multi_reduction"},
+      {red_python_setup_normie, "custom_python_reduction"},
+      {red_python_multiline_setup, "custom_python_multi_reduction"},
       {red_python_base_setup, "custom_python_base_reduction"}, {generate_interactions_setup, "generate_interactions"}};
 
   auto name_extractor = VW::config::options_name_extractor();
