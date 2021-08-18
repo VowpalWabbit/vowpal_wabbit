@@ -248,7 +248,6 @@
     <ClInclude Include="queue.h" />
     <ClInclude Include="rand48.h" />
     <ClInclude Include="recall_tree.h" />
-    <ClInclude Include="wrapper_reduction.h" />
     <ClInclude Include="sample_pdf.h" />
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search_dep_parser.h" />
@@ -270,11 +269,13 @@
     <ClInclude Include="stagewise_poly.h" />
     <ClInclude Include="svrg.h" />
     <ClInclude Include="tag_utils.h" />
+    <ClInclude Include="text_utils.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
     <ClInclude Include="v_array.h" />
     <ClInclude Include="version.h" />
+    <ClInclude Include="wrapper_reduction.h" />
     <ClInclude Include="vw_allreduce.h" />
     <ClInclude Include="vw_exception.h" />
     <ClInclude Include="vw_math.h" />
@@ -401,7 +402,6 @@
     <ClCompile Include="prob_dist_cont.cc" />
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="recall_tree.cc" />
-    <ClCompile Include="wrapper_reduction.cc" />
     <ClCompile Include="sample_pdf.cc" />
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="search_dep_parser.cc" />
@@ -423,9 +423,11 @@
     <ClCompile Include="stagewise_poly.cc" />
     <ClCompile Include="svrg.cc" />
     <ClCompile Include="tag_utils.cc" />
+    <ClCompile Include="text_utils.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="version.cc" />
+    <ClCompile Include="wrapper_reduction.cc" />
     <ClCompile Include="vw_exception.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClCompile Include="warm_cb.cc" />

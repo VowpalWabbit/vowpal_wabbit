@@ -14,6 +14,8 @@
 
 #include <fstream>
 
+#include "text_utils.h"
+
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <winsock2.h>
@@ -549,7 +551,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       std::string temp = all.data_filename;
       if (!quiet) *(all.trace_message) << "Reading datafile = " << temp << endl;
 
-      auto should_use_compressed = input_options.compressed || ends_with(all.data_filename, ".gz");
+      auto should_use_compressed = input_options.compressed || VW::ends_with(all.data_filename, ".gz");
 
       try
       {
