@@ -255,7 +255,7 @@ public:
   // 3. keep track of the multi_ex copy of the vector<boost pointer> copy (to avoid another copy)
   //          both lists points to the same elements unless end user adds or removes
   //          if that's the case we need to be able to override and force a copy
-  void CallMultiLearner(ExList example_list, bool should_call_learn = true)
+  void CallMultiLearner(ExList& example_list, bool should_call_learn = true)
   {
     if (isMulti)
     {
@@ -972,11 +972,7 @@ uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi.label; }
 float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi.weight; }
 uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass; }
 
-float ex_get_scalar(example_ptr ec)
-{
-  const auto value = ec->pred.scalar;
-  return value;
-}
+float ex_get_scalar(example_ptr ec) { return ec->pred.scalar; }
 
 py::list ex_get_scalars(example_ptr ec)
 {
@@ -1061,7 +1057,7 @@ uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.cos
 float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
 float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].partial_prediction; }
 // example_ptr examples_get_cb_label_from_adf(ExList examples)
-py::tuple examples_get_cb_label_from_adf(ExList examples)
+py::tuple examples_get_cb_label_from_adf(ExList& examples)
 {
   auto it = std::find_if(examples.begin(), examples.end(), [](example_ptr& ex) { return !(ex->l.cb.costs.empty()); });
   if (it != examples.end())
