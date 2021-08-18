@@ -756,7 +756,6 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
   uint64_t i = 0;
   uint32_t old_i = 0;
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
-  if (weights.first() == nullptr) { THROW("Model content is corrupted, weights not initialized"); }
   if (read) do
     {
       brw = 1;
