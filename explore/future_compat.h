@@ -17,7 +17,11 @@
 #else
 #define VW_STD17_CONSTEXPR
 #define VW_ATTR(name)
-#    define VW_FALLTHROUGH  // fall through
+#    if defined(__GNUC__) && __GNUC__ >= 7
+#      define VW_FALLTHROUGH [[gnu::fallthrough]];
+#    else
+#      define VW_FALLTHROUGH
+#    endif
 #endif
 
 #ifdef HAS_STD14

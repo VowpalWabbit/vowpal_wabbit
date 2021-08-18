@@ -2450,7 +2450,7 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
   // from
   for (size_t i = 0; i < A; i++)
   {
-    v_array<CS::wclass> costs;
+    std::vector<CS::wclass> costs;
 
     // to
     for (size_t j = 0; j < A; j++)
