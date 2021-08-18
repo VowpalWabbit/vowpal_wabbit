@@ -756,6 +756,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
   uint64_t i = 0;
   uint32_t old_i = 0;
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
+  if (weights.first() == nullptr) { THROW("Model content is corrupted, weights not initialized"); }
   if (read) do
     {
       brw = 1;
@@ -776,16 +777,19 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
       }
     } while (brw > 0);
   else  // write
+  {
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
+    {
       if (*v != 0.)
       {
         i = v.index() >> weights.stride_shift();
         std::stringstream msg;
-
         brw = write_index(model_file, msg, text, all.num_bits, i);
         msg << ":" << *v << "\n";
         brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
       }
+    }
+  }
 }
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)

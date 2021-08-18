@@ -47,10 +47,10 @@ public:
 class dense_parameters
 {
 private:
-  weight* _begin;
-  uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
-  uint32_t _stride_shift;
-  bool _seeded;  // whether the instance is sharing model state with others
+  weight* _begin = nullptr;
+  uint64_t _weight_mask = 0;  // (stride*(1 << num_bits) -1)
+  uint32_t _stride_shift = 0;
+  bool _seeded = false;  // whether the instance is sharing model state with others
 
 public:
   typedef dense_iterator<weight> iterator;
@@ -85,7 +85,11 @@ public:
   const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _begin, stride()); }
 
   inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
-  inline weight& operator[](size_t i) { return _begin[i & _weight_mask]; }
+  inline weight& operator[](size_t i)
+  {
+    if (_begin == nullptr) { THROW("Error: Dense parameters not initialized."); }
+    return _begin[i & _weight_mask];
+  }
 
   void shallow_copy(const dense_parameters& input)
   {
