@@ -48,8 +48,6 @@ using generate_func_t = std::vector<std::vector<namespace_index>>(
 std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interactions(
     bool leave_duplicate_interactions, const std::set<namespace_index>& new_example_indices);
 
-bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b);
-
 void sort_and_filter_duplicate_interactions(
     std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt);
 
@@ -102,7 +100,7 @@ std::vector<std::vector<namespace_index>> compile_interactions(
       final_interactions.push_back(inter);
     }
   }
-  std::sort(final_interactions.begin(), final_interactions.end(), INTERACTIONS::sort_interactions_comparator);
+  std::sort(final_interactions.begin(), final_interactions.end());
   size_t removed_cnt = 0;
   size_t sorted_cnt = 0;
   INTERACTIONS::sort_and_filter_duplicate_interactions(

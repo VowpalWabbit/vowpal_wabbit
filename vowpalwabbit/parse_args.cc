@@ -774,7 +774,7 @@ void parse_feature_tweaks(
   if (!decoded_interactions.empty())
   {
     // Sorts the overall list
-    std::sort(decoded_interactions.begin(), decoded_interactions.end(), INTERACTIONS::sort_interactions_comparator);
+    std::sort(decoded_interactions.begin(), decoded_interactions.end());
 
     size_t removed_cnt = 0;
     size_t sorted_cnt = 0;
