@@ -702,8 +702,7 @@ void parse_feature_tweaks(
           [](const std::vector<namespace_index>& interaction) { return INTERACTIONS::contains_wildcard(interaction); });
       if (any_contain_wildcards)
       {
-        *(all.trace_message) << "\n"
-                             << "WARNING: any duplicate namespace interactions will be removed\n"
+        *(all.trace_message) << "WARNING: any duplicate namespace interactions will be removed\n"
                              << "You can use --leave_duplicate_interactions to disable this behaviour.\n";
       }
     }
