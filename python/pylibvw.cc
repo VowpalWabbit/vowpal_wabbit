@@ -44,7 +44,7 @@ typedef boost::shared_ptr<vw> vw_ptr;
 typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
-typedef std::vector<example_ptr> ExList;
+typedef std::vector<example_ptr> ex_list;
 
 class PyCppCallback;
 typedef boost::shared_ptr<PyCppCallback> py_cpp_callback_ptr;
@@ -255,7 +255,7 @@ public:
   // 3. keep track of the multi_ex copy of the vector<boost pointer> copy (to avoid another copy)
   //          both lists points to the same elements unless end user adds or removes
   //          if that's the case we need to be able to override and force a copy
-  void CallMultiLearner(ExList& example_list, bool should_call_learn = true)
+  void CallMultiLearner(ex_list& example_list, bool should_call_learn = true)
   {
     if (isMulti)
     {
@@ -326,9 +326,9 @@ public:
     this->call_py_impl_method("_finish_example", example_ptr(ec, dont_delete_me));
   }
 
-  ExList multi_ex_to_boost(multi_ex* examples)
+  ex_list multi_ex_to_boost(multi_ex* examples)
   {
-    ExList list;
+    ex_list list;
     for (auto ec : *examples) { list.emplace_back(ec, dont_delete_me); }
 
     return list;
@@ -336,21 +336,21 @@ public:
 
   void ActualLearn(multi_ex* examples)
   {
-    ExList list = multi_ex_to_boost(examples);
+    ex_list list = multi_ex_to_boost(examples);
     this->call_py_impl_method(
         "_learn_convenience", list, py_cpp_callback_ptr(new PyCppCallback(base_learner, examples), dont_delete_me));
   }
 
   void ActualPredict(multi_ex* examples)
   {
-    ExList list = multi_ex_to_boost(examples);
+    ex_list list = multi_ex_to_boost(examples);
     this->call_py_impl_method(
         "_predict_convenience", list, py_cpp_callback_ptr(new PyCppCallback(base_learner, examples), dont_delete_me));
   }
 
   void ActualFinishExample(multi_ex* examples)
   {
-    ExList list = multi_ex_to_boost(examples);
+    ex_list list = multi_ex_to_boost(examples);
     this->call_py_impl_method("_finish_example", list);
   }
 
@@ -372,11 +372,17 @@ py::object OptionManager::base_option_to_pyobject<VW::config::typelist<>>(VW::co
 
 struct custom_builder : VW::default_reduction_stack_setup
 {
-  bool should_call_custom_python_setup = false;
   std::unique_ptr<RED_PYTHON::ExternalBinding> instance;
 
+  bool should_call_custom_python_setup = false;
+  std::string call_after_executing;
+
   // decide here if its base, multi or single
-  custom_builder(std::unique_ptr<RED_PYTHON::ExternalBinding> _instance) { instance = std::move(_instance); }
+  custom_builder(std::unique_ptr<RED_PYTHON::ExternalBinding> _instance)
+  {
+    instance = std::move(_instance);
+    call_after_executing = "extra_metrics";
+  }
 
   VW::LEARNER::base_learner* setup_base_learner() override
   {
@@ -387,7 +393,8 @@ struct custom_builder : VW::default_reduction_stack_setup
       return red_python_setup(*this, std::move(instance));
     }
 
-    if (std::get<0>(reduction_stack.back()).compare("extra_metrics") == 0) { should_call_custom_python_setup = true; }
+    if (std::get<0>(reduction_stack.back()).compare(call_after_executing) == 0)
+    { should_call_custom_python_setup = true; }
 
     if (reduction_stack.size() == 1)
     {
@@ -469,7 +476,6 @@ vw_ptr my_initialize_with_pyred(std::string args, py_log_wrapper_ptr py_log, py:
     foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
   }
 
-  // return boost::shared_ptr<vw>(foo, [](vw *all){VW::finish(*all);});
   return boost::shared_ptr<vw>(foo);
 }
 
@@ -1056,8 +1062,8 @@ float ex_get_cbandits_cost(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i
 uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].action; }
 float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
 float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].partial_prediction; }
-// example_ptr examples_get_cb_label_from_adf(ExList examples)
-py::tuple examples_get_cb_label_from_adf(ExList& examples)
+// example_ptr examples_get_cb_label_from_adf(ex_list examples)
+py::tuple examples_get_cb_label_from_adf(ex_list& examples)
 {
   auto it = std::find_if(examples.begin(), examples.end(), [](example_ptr& ex) { return !(ex->l.cb.costs.empty()); });
   if (it != examples.end())
@@ -1550,8 +1556,8 @@ BOOST_PYTHON_MODULE(pylibvw)
           "get_cbandits_num_costs)");
 
   // equivalent to multi_ex, might be a bit more efficient
-  py::class_<ExList>("ExList")
-      .def(py::vector_indexing_suite<ExList>())
+  py::class_<ex_list>("ex_list")
+      .def(py::vector_indexing_suite<ex_list>())
       .def("get_example_with_label", &examples_get_cb_label_from_adf, "Assuming a contextual_bandits label type,");
 
   py::class_<Search::predictor, predictor_ptr>("predictor", py::no_init)
@@ -1585,9 +1591,9 @@ BOOST_PYTHON_MODULE(pylibvw)
 
   py::class_<PyCppCallback, py_cpp_callback_ptr>("pycpp_callback", py::no_init)
       .def("call_base_learner", &PyCppCallback::CallBaseLearner,
-          "Callback used for custom python reductions. See Copperhead. (you don't want to call this yourself!")
+          "Callback used for custom python reductions. See ReductionInterface. (you don't want to call this yourself!")
       .def("call_multi_learner", &PyCppCallback::CallMultiLearner,
-          "Callback used for custom python reductions. See Copperhead. (you don't want to call this yourself!");
+          "Callback used for custom python reductions. See ReductionInterface. (you don't want to call this yourself!");
 
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")

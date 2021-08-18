@@ -113,11 +113,11 @@ def no_impl(method):
   return method
 
 # End user (pyvw library consumer) will have to create a class that
-# inherits from Copperhead and implements the custom _predict() and
+# inherits from ReductionInterface and implements the custom _predict() and
 # _learn(). Optionally the user can also implement _finish_example()
 # if needed. See test_pyreduction.py for examples
-"""Copperhead class"""
-class Copperhead(ABC):
+"""ReductionInterface class"""
+class ReductionInterface(ABC):
     @abc.abstractmethod
     def _predict(self, ec, learner):
         pass
@@ -420,12 +420,12 @@ class vw(pylibvw.vw):
         if python_reduction is None:
             super(vw, self).__init__(" ".join(l), self.log_wrapper)
         else:
-            if issubclass(python_reduction, Copperhead):
+            if issubclass(python_reduction, ReductionInterface):
                 self._py_reduction = python_reduction()
                 super(vw, self).__init__(" ".join(l), self.log_wrapper, self._py_reduction)
                 self._py_reduction.reduction_init(self)
             else:
-                raise TypeError("The python_reduction argument must be a class that inherits from Copperhead")
+                raise TypeError("The python_reduction argument must be a class that inherits from ReductionInterface")
         self.init = True
 
         # check to see if native parser needs to run

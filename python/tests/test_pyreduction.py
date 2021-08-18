@@ -3,7 +3,7 @@ import math
 
 from vowpalwabbit import pyvw
 
-class NoopPythonReduction(pyvw.Copperhead):
+class NoopPythonReduction(pyvw.ReductionInterface):
     def __init__(self):
         super(NoopPythonReduction, self).__init__()
 
@@ -18,7 +18,7 @@ class NoopPythonReduction(pyvw.Copperhead):
 
 # this is a recreation of the impl in vw
 # see https://github.com/VowpalWabbit/vowpal_wabbit/blob/ac3a2c21a9760b68ce49368b11a35bf95faeb8b8/vowpalwabbit/binary.cc
-class BinaryPythonReduction(pyvw.Copperhead):
+class BinaryPythonReduction(pyvw.ReductionInterface):
     def reduction_init(self, vw):
         pass
 

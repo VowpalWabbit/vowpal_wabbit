@@ -1,11 +1,12 @@
-import sys, os
+import sys
+import os
 import numpy as np
 import torch
 
 from scipy.sparse import coo_matrix
 from vowpalwabbit import pyvw
 
-class PyTorchReduction(pyvw.Copperhead):
+class PyTorchReduction(pyvw.ReductionInterface):
     def __init__(self):
         super(PyTorchReduction, self).__init__()
 

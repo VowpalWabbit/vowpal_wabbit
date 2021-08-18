@@ -1,10 +1,11 @@
-import sys, os
+import sys
+import os
 import numpy as np
 
 from scipy.sparse import coo_matrix
 from vowpalwabbit import pyvw
 
-class ScikitGDReduction(pyvw.Copperhead):
+class ScikitGDReduction(pyvw.ReductionInterface):
     def __init__(self):
         super(ScikitGDReduction, self).__init__()
 
