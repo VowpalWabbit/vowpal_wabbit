@@ -49,6 +49,9 @@ class BinaryPythonReduction(pyvw.ReductionInterface):
 def noop_example():
     vw = pyvw.vw(enable_logging=True, python_reduction=NoopPythonReduction, arg_str="--loss_function logistic --binary -d test/train-sets/rcv1_small.dat")
     vw.run_parser()
+    expected_reductions = {'gd', 'scorer-identity', 'binary', 'python_single'}
+    enabled = vw.get_enabled_reductions()
+    assert set(enabled) == expected_reductions
     vw.finish()
     return vw.get_log()
 
@@ -57,6 +60,10 @@ def noop_example():
 def python_binary():
     vw = pyvw.vw(enable_logging=True, python_reduction=BinaryPythonReduction, arg_str="--loss_function logistic -d test/train-sets/rcv1_small.dat")
     vw.run_parser()
+    expected_reductions = {'gd', 'scorer-identity', 'python_single'}
+    enabled = vw.get_enabled_reductions()
+    assert set(enabled) == expected_reductions
+
     vw.finish()
     return vw.get_log()
 
@@ -64,6 +71,9 @@ def python_binary():
 def cpp_binary():
     vw = pyvw.vw("--loss_function logistic --binary -d test/train-sets/rcv1_small.dat", enable_logging=True)
     vw.run_parser()
+    expected_reductions = {'gd', 'scorer-identity', 'binary'}
+    enabled = vw.get_enabled_reductions()
+    assert set(enabled) == expected_reductions
     vw.finish()
     return vw.get_log()
 

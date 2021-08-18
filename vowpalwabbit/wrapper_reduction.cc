@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "red_python.h"
+#include "wrapper_reduction.h"
 
 #include "reductions.h"
 #include "vw.h"
@@ -10,11 +10,11 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace RED_PYTHON
+namespace WRAPPER
 {
 struct wrapper
 {
-  std::unique_ptr<RED_PYTHON::ExternalBinding> instance;
+  std::unique_ptr<WRAPPER::ExternalBinding> instance;
 };
 
 void base_learn(wrapper& wrap, base_learner&, example& ec)
@@ -70,10 +70,10 @@ void save_load(wrapper& wrap, io_buf& model_file, bool read, bool text)
   wrap.instance->ActualSaveLoad(&model_file, read, text);
 }
 
-}  // namespace RED_PYTHON
-using namespace RED_PYTHON;
-VW::LEARNER::base_learner* red_python_setup(
-    VW::setup_base_i& stack_builder, std::unique_ptr<RED_PYTHON::ExternalBinding> instance)
+}  // namespace WRAPPER
+using namespace WRAPPER;
+VW::LEARNER::base_learner* wrapper_reduction_setup(
+    VW::setup_base_i& stack_builder, std::unique_ptr<WRAPPER::ExternalBinding> instance)
 {
   if (!instance) { return nullptr; };
 
@@ -84,7 +84,7 @@ VW::LEARNER::base_learner* red_python_setup(
   pr->instance = std::move(instance);
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(pr), as_singleline(stack_builder.setup_base_learner()),
-      RED_PYTHON::learn, RED_PYTHON::predict, std::string("blah"))
+      WRAPPER::learn, WRAPPER::predict, std::string("python_single"))
                 .build();
 
   if (should_register_finish_example) l->set_finish_example(finish_example);
@@ -95,9 +95,9 @@ VW::LEARNER::base_learner* red_python_setup(
   return make_base(*l);
 }
 
-using namespace RED_PYTHON;
-VW::LEARNER::base_learner* red_python_multiline_setup(
-    VW::setup_base_i& stack_builder, std::unique_ptr<RED_PYTHON::ExternalBinding> instance)
+using namespace WRAPPER;
+VW::LEARNER::base_learner* wrapper_reduction_multiline_setup(
+    VW::setup_base_i& stack_builder, std::unique_ptr<WRAPPER::ExternalBinding> instance)
 {
   if (!instance) return nullptr;
 
@@ -107,7 +107,7 @@ VW::LEARNER::base_learner* red_python_multiline_setup(
   pr->instance = std::move(instance);
 
   VW::LEARNER::learner<wrapper, multi_ex>& ret = learner<wrapper, multi_ex>::init_learner(pr.get(), base, multi_learn,
-      multi_predict, 1, prediction_type_t::action_probs, std::string("hola"), base->learn_returns_prediction);
+      multi_predict, 1, prediction_type_t::action_probs, std::string("python_multi"), base->learn_returns_prediction);
 
   if (pr->instance->ShouldRegisterFinishExample()) ret.set_finish_example(finish_multiex);
   if (pr->instance->ShouldRegisterSaveLoad()) ret.set_save_load(save_load);
@@ -117,9 +117,9 @@ VW::LEARNER::base_learner* red_python_multiline_setup(
   return make_base(ret);
 }
 
-using namespace RED_PYTHON;
-VW::LEARNER::base_learner* red_python_base_setup(
-    VW::setup_base_i&, std::unique_ptr<RED_PYTHON::ExternalBinding> instance)
+using namespace WRAPPER;
+VW::LEARNER::base_learner* wrapper_reduction_base_setup(
+    VW::setup_base_i&, std::unique_ptr<WRAPPER::ExternalBinding> instance)
 {
   if (!instance) return nullptr;
 
@@ -129,8 +129,8 @@ VW::LEARNER::base_learner* red_python_base_setup(
   auto pr = VW::make_unique<wrapper>();
   pr->instance = std::move(instance);
 
-  auto* l = VW::LEARNER::make_base_learner<wrapper, example>(std::move(pr), RED_PYTHON::base_learn,
-      RED_PYTHON::base_predict, std::string("blah"), prediction_type_t::scalar, label_type_t::simple)
+  auto* l = VW::LEARNER::make_base_learner<wrapper, example>(std::move(pr), WRAPPER::base_learn, WRAPPER::base_predict,
+      std::string("python_base"), prediction_type_t::scalar, label_type_t::simple)
                 .build();
 
   if (should_register_finish_example) l->set_finish_example(finish_example);

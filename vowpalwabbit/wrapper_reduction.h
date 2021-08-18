@@ -7,7 +7,7 @@
 #include "reductions_fwd.h"
 #include "io_buf.h"
 
-namespace RED_PYTHON
+namespace WRAPPER
 {
 class ExternalBinding
 {
@@ -26,8 +26,9 @@ public:
 
   virtual ~ExternalBinding(){};
 };
-}  // namespace RED_PYTHON
+}  // namespace WRAPPER
 
-VW::LEARNER::base_learner* red_python_setup(VW::setup_base_i&, std::unique_ptr<RED_PYTHON::ExternalBinding>);
-VW::LEARNER::base_learner* red_python_multiline_setup(VW::setup_base_i&, std::unique_ptr<RED_PYTHON::ExternalBinding>);
-VW::LEARNER::base_learner* red_python_base_setup(VW::setup_base_i&, std::unique_ptr<RED_PYTHON::ExternalBinding>);
+VW::LEARNER::base_learner* wrapper_reduction_setup(VW::setup_base_i&, std::unique_ptr<WRAPPER::ExternalBinding>);
+VW::LEARNER::base_learner* wrapper_reduction_multiline_setup(
+    VW::setup_base_i&, std::unique_ptr<WRAPPER::ExternalBinding>);
+VW::LEARNER::base_learner* wrapper_reduction_base_setup(VW::setup_base_i&, std::unique_ptr<WRAPPER::ExternalBinding>);

@@ -21,7 +21,7 @@
 #include "simple_label_parser.h"
 #include "shared_data.h"
 
-#include "red_python.h"
+#include "wrapper_reduction.h"
 #include "reductions_fwd.h"
 #include "reduction_stack.h"
 
@@ -269,7 +269,7 @@ public:
   }
 };
 
-class PyCppBridge : public RED_PYTHON::ExternalBinding
+class PyCppBridge : public WRAPPER::ExternalBinding
 {
 private:
   py::object* py_reduction_impl;
@@ -372,13 +372,13 @@ py::object OptionManager::base_option_to_pyobject<VW::config::typelist<>>(VW::co
 
 struct custom_builder : VW::default_reduction_stack_setup
 {
-  std::unique_ptr<RED_PYTHON::ExternalBinding> instance;
+  std::unique_ptr<WRAPPER::ExternalBinding> instance;
 
   bool should_call_custom_python_setup = false;
   std::string call_after_executing;
 
   // decide here if its base, multi or single
-  custom_builder(std::unique_ptr<RED_PYTHON::ExternalBinding> _instance)
+  custom_builder(std::unique_ptr<WRAPPER::ExternalBinding> _instance)
   {
     instance = std::move(_instance);
     call_after_executing = "extra_metrics";
@@ -390,7 +390,7 @@ struct custom_builder : VW::default_reduction_stack_setup
     {
       assert(instance != nullptr);
       should_call_custom_python_setup = false;
-      return red_python_setup(*this, std::move(instance));
+      return wrapper_reduction_setup(*this, std::move(instance));
     }
 
     if (std::get<0>(reduction_stack.back()).compare(call_after_executing) == 0)
@@ -466,7 +466,7 @@ vw_ptr my_initialize_with_pyred(std::string args, py_log_wrapper_ptr py_log, py:
 
   if (with_reduction)
   {
-    auto ext_binding = std::unique_ptr<RED_PYTHON::ExternalBinding>(new PyCppBridge(&with_reduction));
+    auto ext_binding = std::unique_ptr<WRAPPER::ExternalBinding>(new PyCppBridge(&with_reduction));
     auto learner_builder = VW::make_unique<custom_builder>(std::move(ext_binding));
 
     foo = VW::initialize_with_builder(args, nullptr, false, trace_listener, trace_context, std::move(learner_builder));
