@@ -704,7 +704,7 @@ void parse_feature_tweaks(
       {
         *(all.trace_message) << "\n"
                              << "WARNING: any duplicate namespace interactions will be removed\n"
-                             << "You can use --leave_duplicate_interactions to disable this behaviour.";
+                             << "You can use --leave_duplicate_interactions to disable this behaviour.\n";
       }
     }
 
