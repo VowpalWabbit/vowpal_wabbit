@@ -1066,7 +1066,10 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       save_load_online_state(all, model_file, read, text, g.total_weight, &g);
     }
     else
+    {
+      if (!all.weights.sparse && !all.weights.dense_weights.not_null()) { THROW("Error: Model weights not initialized."); }
       save_load_regressor(all, model_file, read, text);
+    }
   }
   if (!all.training)  // If the regressor was saved as --save_resume, then when testing we want to materialize the
                       // weights.
