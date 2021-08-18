@@ -386,15 +386,18 @@ struct custom_builder : VW::default_reduction_stack_setup
 
   VW::LEARNER::base_learner* setup_base_learner() override
   {
-    if (should_call_custom_python_setup)
+    if (instance)
     {
-      assert(instance != nullptr);
-      should_call_custom_python_setup = false;
-      return wrapper_reduction_setup(*this, std::move(instance));
-    }
+      if (should_call_custom_python_setup)
+      {
+        assert(instance != nullptr);
+        should_call_custom_python_setup = false;
+        return wrapper_reduction_setup(*this, std::move(instance));
+      }
 
-    if (std::get<0>(reduction_stack.back()).compare(call_after_executing) == 0)
-    { should_call_custom_python_setup = true; }
+      if (std::get<0>(reduction_stack.back()).compare(call_after_executing) == 0)
+      { should_call_custom_python_setup = true; }
+    }
 
     if (reduction_stack.size() == 1)
     {
