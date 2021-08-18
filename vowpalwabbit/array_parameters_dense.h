@@ -85,7 +85,8 @@ public:
   const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _begin, stride()); }
 
   inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
-  inline weight& operator[](size_t i) {
+  inline weight& operator[](size_t i)
+  {
     if (_begin == nullptr) { THROW("Error: Dense parameters not initialized."); }
     return _begin[i & _weight_mask];
   }

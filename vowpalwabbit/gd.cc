@@ -758,24 +758,24 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (weights.first() == nullptr) { THROW("Model content is corrupted, weights not initialized"); }
   if (read) do
-  {
-    brw = 1;
-    if (all.num_bits < 31)  // backwards compatible
     {
-      brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&old_i), sizeof(old_i), "");
-      i = old_i;
-    }
-    else
-      brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i), "");
-    if (brw > 0)
-    {
-      if (i >= length)
-        THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length "
-                                                                  << length);
-      weight* v = &weights.strided_index(i);
-      brw += model_file.bin_read_fixed(reinterpret_cast<char*>(&(*v)), sizeof(*v), "");
-    }
-  } while (brw > 0);
+      brw = 1;
+      if (all.num_bits < 31)  // backwards compatible
+      {
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&old_i), sizeof(old_i), "");
+        i = old_i;
+      }
+      else
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i), "");
+      if (brw > 0)
+      {
+        if (i >= length)
+          THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length "
+                                                                   << length);
+        weight* v = &weights.strided_index(i);
+        brw += model_file.bin_read_fixed(reinterpret_cast<char*>(&(*v)), sizeof(*v), "");
+      }
+    } while (brw > 0);
   else  // write
   {
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
