@@ -9,12 +9,7 @@ namespace VW
 {
 bool ends_with(VW::string_view full_string, VW::string_view ending)
 {
-  if (full_string.length() > ending.length())
-  { return (full_string.compare(full_string.length() - ending.length(), ending.length(), ending) == 0); }
-  else
-  {
-    return false;
-  }
+  return full_string.ends_with(ending);
 }
 
 std::string decode_inline_hex(VW::string_view arg)
