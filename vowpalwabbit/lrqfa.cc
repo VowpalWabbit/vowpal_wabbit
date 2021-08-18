@@ -7,6 +7,7 @@
 #include "reductions.h"
 #include "rand48.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
+#include "text_utils.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -145,7 +146,7 @@ VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
   auto lrq = scoped_calloc_or_throw<LRQFAstate>();
   lrq->all = &all;
 
-  std::string lrqopt = spoof_hex_encoded_namespaces(lrqfa);
+  std::string lrqopt = VW::decode_inline_hex(lrqfa);
   size_t last_index = lrqopt.find_last_not_of("0123456789");
   new (&lrq->field_name) std::string(lrqopt.substr(0, last_index + 1));  // make sure there is no duplicates
   lrq->k = atoi(lrqopt.substr(last_index + 1).c_str());
