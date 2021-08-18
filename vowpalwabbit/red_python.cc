@@ -75,7 +75,7 @@ using namespace RED_PYTHON;
 VW::LEARNER::base_learner* red_python_setup(
     VW::setup_base_i& stack_builder, std::unique_ptr<RED_PYTHON::ExternalBinding> instance)
 {
-  if (instance == nullptr) { return nullptr; };
+  if (!instance) { return nullptr; };
 
   bool should_register_finish_example = instance->ShouldRegisterFinishExample();
   bool should_set_save_load = instance->ShouldRegisterSaveLoad();
@@ -92,47 +92,42 @@ VW::LEARNER::base_learner* red_python_setup(
 
   pr.release();
 
-  // return make_base(ret);
   return make_base(*l);
 }
 
 using namespace RED_PYTHON;
-VW::LEARNER::base_learner* red_python_multiline_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* red_python_multiline_setup(
+    VW::setup_base_i& stack_builder, std::unique_ptr<RED_PYTHON::ExternalBinding> instance)
 {
-  vw& all = *stack_builder.get_all_pointer();
-  if (!all.ext_binding) return nullptr;
+  if (!instance) return nullptr;
 
   auto base = as_multiline(stack_builder.setup_base_learner());
 
   auto pr = VW::make_unique<wrapper>();
+  pr->instance = std::move(instance);
 
   VW::LEARNER::learner<wrapper, multi_ex>& ret = learner<wrapper, multi_ex>::init_learner(pr.get(), base, multi_learn,
-      multi_predict, 1, prediction_type_t::action_probs, all.get_setupfn_name(red_python_multiline_setup),
-      base->learn_returns_prediction);
+      multi_predict, 1, prediction_type_t::action_probs, std::string("hola"), base->learn_returns_prediction);
 
-  if (all.ext_binding->ShouldRegisterFinishExample()) ret.set_finish_example(finish_multiex);
+  if (pr->instance->ShouldRegisterFinishExample()) ret.set_finish_example(finish_multiex);
+  if (pr->instance->ShouldRegisterSaveLoad()) ret.set_save_load(save_load);
 
-  if (all.ext_binding->ShouldRegisterSaveLoad()) ret.set_save_load(save_load);
-
-  pr->instance = std::move(all.ext_binding);
-  // learner should delete ext_binding
-  // all.ext_binding.release();
   pr.release();
 
   return make_base(ret);
 }
 
 using namespace RED_PYTHON;
-VW::LEARNER::base_learner* red_python_base_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* red_python_base_setup(
+    VW::setup_base_i&, std::unique_ptr<RED_PYTHON::ExternalBinding> instance)
 {
-  vw& all = *stack_builder.get_all_pointer();
-  if (!all.ext_binding) return nullptr;
+  if (!instance) return nullptr;
 
-  bool should_register_finish_example = all.ext_binding->ShouldRegisterFinishExample();
-  bool should_set_save_load = all.ext_binding->ShouldRegisterSaveLoad();
+  bool should_register_finish_example = instance->ShouldRegisterFinishExample();
+  bool should_set_save_load = instance->ShouldRegisterSaveLoad();
 
   auto pr = VW::make_unique<wrapper>();
-  pr->instance = std::move(all.ext_binding);
+  pr->instance = std::move(instance);
 
   auto* l = VW::LEARNER::make_base_learner<wrapper, example>(std::move(pr), RED_PYTHON::base_learn,
       RED_PYTHON::base_predict, std::string("blah"), prediction_type_t::scalar, label_type_t::simple)

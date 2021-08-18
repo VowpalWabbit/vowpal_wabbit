@@ -73,7 +73,6 @@
 #include "shared_feature_merger.h"
 #include "cbzo.h"
 // #include "cntk.h"
-#include "red_python.h"
 #include "cats.h"
 #include "cats_pdf.h"
 #include "cb_explore_pdf.h"
@@ -92,8 +91,7 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
       {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"},
-      {red_python_multiline_setup, "custom_python_multi_reduction"},
-      {red_python_base_setup, "custom_python_base_reduction"}, {generate_interactions_setup, "generate_interactions"}};
+      {generate_interactions_setup, "generate_interactions"}};
 
   auto name_extractor = VW::config::options_name_extractor();
   vw dummy_all;
@@ -119,13 +117,8 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
 {
   std::vector<reduction_setup_fn> reductions;
 
-  bool python_base_reduction = false;
-
   // Base algorithms
-  if (python_base_reduction)
-    reductions.push_back(red_python_base_setup);
-  else
-    reductions.push_back(GD::setup);  // always
+  reductions.push_back(GD::setup);
   reductions.push_back(kernel_svm_setup);
   reductions.push_back(ftrl_setup);
   reductions.push_back(svrg_setup);
@@ -191,8 +184,6 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::cb_explore_adf::first::setup);
   reductions.push_back(VW::cb_explore_adf::cover::setup);
   reductions.push_back(VW::cb_explore_adf::bag::setup);
-  // if (!python_base_reduction)
-  //   reductions.push_back(red_python_multiline_setup);
   reductions.push_back(cb_dro_setup);
   reductions.push_back(cb_sample_setup);
   reductions.push_back(explore_eval_setup);
