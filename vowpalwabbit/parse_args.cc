@@ -495,6 +495,13 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
 }  // namespace VW
 
+inline std::vector<namespace_index> parse_char_interactions(VW::string_view input)
+{
+  std::vector<namespace_index> result;
+  auto decoded = VW::decode_inline_hex(input);
+  result.insert(result.begin(), decoded.begin(), decoded.end());
+  return result;
+}
 
 void parse_feature_tweaks(
     options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)

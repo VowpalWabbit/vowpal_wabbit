@@ -14,9 +14,6 @@
 #include <set>
 #include <algorithm>
 
-#include "text_utils.h"
-#include "vw_string_view.h"
-
 namespace INTERACTIONS
 {
 VW::LEARNER::base_learner* generate_interactions_setup(VW::config::options_i& options, vw& all);
@@ -26,14 +23,6 @@ constexpr unsigned char printable_end = '~';
 constexpr unsigned char printable_ns_size = printable_end - printable_start;
 constexpr uint64_t valid_ns_size =
     printable_end - printable_start - 1;  // -1 to skip characters ':' and '|' excluded in is_valid_ns()
-
-inline std::vector<namespace_index> parse_char_interactions(VW::string_view input)
-{
-  std::vector<namespace_index> result;
-  auto decoded = VW::decode_inline_hex(input);
-  result.insert(result.begin(), decoded.begin(), decoded.end());
-  return result;
-}
 
 inline constexpr bool is_printable_namespace(const unsigned char ns)
 {
