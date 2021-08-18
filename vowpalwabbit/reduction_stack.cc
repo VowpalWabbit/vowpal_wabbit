@@ -92,7 +92,6 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
       {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"},
-      {red_python_setup_normie, "custom_python_reduction"},
       {red_python_multiline_setup, "custom_python_multi_reduction"},
       {red_python_base_setup, "custom_python_base_reduction"}, {generate_interactions_setup, "generate_interactions"}};
 
@@ -215,7 +214,6 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   reductions.push_back(Search::setup);
   reductions.push_back(audit_regressor_setup);
-  // if (!python_base_reduction) reductions.push_back(red_python_setup);
   reductions.push_back(VW::metrics::metrics_setup);
 
   register_reductions(reductions, reduction_stack);

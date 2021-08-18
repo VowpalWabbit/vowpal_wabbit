@@ -97,21 +97,6 @@ VW::LEARNER::base_learner* red_python_setup(
 }
 
 using namespace RED_PYTHON;
-VW::LEARNER::base_learner* red_python_setup_normie(VW::setup_base_i& stack_builder)
-{
-  vw& all = *stack_builder.get_all_pointer();
-
-  // force a temp throw for now
-  if (!all.ext_binding)
-  {
-    throw("stop sailing!");
-    return nullptr;
-  };
-
-  return red_python_setup(stack_builder, std::move(all.ext_binding));
-}
-
-using namespace RED_PYTHON;
 VW::LEARNER::base_learner* red_python_multiline_setup(VW::setup_base_i& stack_builder)
 {
   vw& all = *stack_builder.get_all_pointer();

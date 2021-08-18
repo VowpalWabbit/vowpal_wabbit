@@ -375,6 +375,7 @@ struct custom_builder : VW::default_reduction_stack_setup
   bool should_call_custom_python_setup = false;
   std::unique_ptr<RED_PYTHON::ExternalBinding> instance;
 
+  // decide here if its base, multi or single
   custom_builder(std::unique_ptr<RED_PYTHON::ExternalBinding> _instance) { instance = std::move(_instance); }
 
   VW::LEARNER::base_learner* setup_base_learner() override
