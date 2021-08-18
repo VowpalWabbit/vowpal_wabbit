@@ -706,7 +706,7 @@ void parse_feature_tweaks(
     if (!all.logger.quiet && !options.was_supplied("leave_duplicate_interactions"))
     {
       auto any_contain_wildcards = std::any_of(decoded_interactions.begin(), decoded_interactions.end(),
-          [](const std::vector<namespace_index>& interaction) { return contains_wildcard(interaction); });
+          [](const std::vector<namespace_index>& interaction) { return INTERACTIONS::contains_wildcard(interaction); });
       if (any_contain_wildcards)
       {
         *(all.trace_message) << "WARNING: any duplicate namespace interactions will be removed\n"
@@ -715,12 +715,12 @@ void parse_feature_tweaks(
     }
 
     // Sorts the overall list
-    std::sort(decoded_interactions.begin(), decoded_interactions.end(), sort_interactions_comparator);
+    std::sort(decoded_interactions.begin(), decoded_interactions.end(), INTERACTIONS::sort_interactions_comparator);
 
     size_t removed_cnt = 0;
     size_t sorted_cnt = 0;
     // Sorts individual interactions
-    sort_and_filter_duplicate_interactions(
+    INTERACTIONS::sort_and_filter_duplicate_interactions(
         decoded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
     if (removed_cnt > 0 && !all.logger.quiet)
