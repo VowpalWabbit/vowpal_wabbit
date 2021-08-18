@@ -2,7 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <algorithm>
 #include "vw.h"
 
 #include "multiclass.h"
@@ -12,8 +11,6 @@
 #include "search_hooktask.h"
 #include "parse_example.h"
 #include "gd.h"
-#include "options.h"
-#include "options_types.h"
 #include "future_compat.h"
 #include "slates_label.h"
 #include "simple_label_parser.h"
