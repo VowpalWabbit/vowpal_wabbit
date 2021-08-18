@@ -27,6 +27,30 @@ struct eval_gen_data
   }
 };
 
+namespace std
+{
+std::ostream& operator<<(std::ostream& os, const INTERACTIONS::interaction_term& obj)
+{
+  return os << "_ns_char: " << obj.ns_char() << " _ns_hash: " << obj.ns_hash() << " _wildcard: " << obj.wildcard()
+            << " _type: " << INTERACTIONS::to_string(obj.type());
+}
+}
+
+inline std::vector<std::vector<INTERACTIONS::interaction_term>> to_terms(
+    const std::vector<std::vector<namespace_index>>& char_lists)
+{
+  std::vector<std::vector<INTERACTIONS::interaction_term>> terms;
+  for (const auto& list : char_lists)
+  {
+    std::vector<INTERACTIONS::interaction_term> conv;
+    for (const auto& c : list) { conv.emplace_back(c); }
+    terms.push_back(conv);
+  }
+  return terms;
+}
+
+
+
 void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t)
 {
   ++dat.new_features_cnt;
@@ -139,17 +163,23 @@ BOOST_AUTO_TEST_CASE(interaction_generic_with_duplicates_expand_wildcard_only)
 
 BOOST_AUTO_TEST_CASE(sort_and_filter_interactions)
 {
-  std::vector<std::vector<namespace_index>> input = {{'b', 'a'}, {'a', 'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
+  using namespace INTERACTIONS;
+  
+  std::vector<std::vector<interaction_term>> input = {{interaction_term{'b'}, interaction_term{'a'}},
+      {interaction_term{'a'}, interaction_term{'b'}, interaction_term{'a'}},
+      {interaction_term{'a'}, interaction_term{'a'}}, {interaction_term{'b'}, interaction_term{'b'}}};
 
   size_t removed_count = 0;
   size_t sorted_count = 0;
   INTERACTIONS::sort_and_filter_duplicate_interactions(input, false, removed_count, sorted_count);
 
-  std::vector<std::vector<namespace_index>> compare_set = {{'b', 'a'}, {'a', 'a', 'b'}, {'a', 'a'}, {'b', 'b'}};
+  std::vector<std::vector<namespace_index>> compare_set_chars = {{'b', 'a'}, {'a', 'a', 'b'}, {'a', 'a'}, {'b', 'b'}};
+  auto compare_set = to_terms(compare_set_chars);
   check_vector_of_vectors_exact(input, compare_set);
 }
 
-void sort_all(std::vector<std::vector<namespace_index>>& interactions)
+template <typename T>
+void sort_all(std::vector<std::vector<T>>& interactions)
 {
   for (auto& interaction : interactions) { std::sort(interaction.begin(), interaction.end()); }
   std::sort(interactions.begin(), interactions.end());
@@ -157,8 +187,10 @@ void sort_all(std::vector<std::vector<namespace_index>>& interactions)
 
 BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations_and_combinations_same)
 {
+  using namespace INTERACTIONS;
   std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
-  std::vector<std::vector<namespace_index>> interactions = {{':', 'a'}};
+  std::vector<std::vector<interaction_term>> interactions = {
+      {interaction_term::make_wildcard(interaction_term_type::ns_char), interaction_term{'a'}}};
 
   // Permutations implies leave duplicate interactions (second template arg)
   auto result_perms =
@@ -168,7 +200,8 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations_and_combination
       INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
           interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'b', 'a'}, {'c', 'a'}, {'d', 'a'}};
+  std::vector<std::vector<namespace_index>> compare_set_chars = {{'a', 'a'}, {'b', 'a'}, {'c', 'a'}, {'d', 'a'}};
+  auto compare_set = to_terms(compare_set_chars);
 
   sort_all(compare_set);
   sort_all(result_perms);
@@ -180,14 +213,18 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations_and_combination
 BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_combinations)
 {
   std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
-  std::vector<std::vector<namespace_index>> interactions = {{':', ':'}};
+  std::vector<std::vector<INTERACTIONS::interaction_term>> interactions = {
+      {INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
+          INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)}};
+
 
   auto result =
       INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
           interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'b'},
+  std::vector<std::vector<namespace_index>> compare_set_chars = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'b'},
       {'b', 'c'}, {'b', 'd'}, {'c', 'c'}, {'c', 'd'}, {'d', 'd'}};
+  auto compare_set = to_terms(compare_set_chars);
 
   sort_all(compare_set);
   sort_all(result);
@@ -197,14 +234,19 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_combinations)
 BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations)
 {
   std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
-  std::vector<std::vector<namespace_index>> interactions = {{':', ':'}};
+  std::vector<std::vector<INTERACTIONS::interaction_term>> interactions = {
+      {INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
+          INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)}};
+
 
   auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
       interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'a'},
+  std::vector<std::vector<namespace_index>> compare_set_chars = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'a'},
       {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'a'}, {'c', 'b'}, {'c', 'c'}, {'c', 'd'}, {'d', 'a'}, {'d', 'b'},
       {'d', 'c'}, {'d', 'd'}};
+
+  auto compare_set = to_terms(compare_set_chars);
 
   sort_all(compare_set);
   sort_all(result);
@@ -214,13 +256,17 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations)
 BOOST_AUTO_TEST_CASE(compile_interactions_cubic_combinations)
 {
   std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
-  std::vector<std::vector<namespace_index>> interactions = {{':', ':', ':'}};
+  std::vector<std::vector<INTERACTIONS::interaction_term>> interactions = {
+      {INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
+          INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
+          INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)}};
+
 
   auto result =
       INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
           interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set = {
+  std::vector<std::vector<namespace_index>> compare_set_chars = {
       {'a', 'a', 'a'},
       {'a', 'a', 'b'},
       {'a', 'a', 'c'},
@@ -242,6 +288,7 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_combinations)
       {'c', 'd', 'd'},
       {'d', 'd', 'd'},
   };
+  auto compare_set = to_terms(compare_set_chars);
 
   sort_all(compare_set);
   sort_all(result);
@@ -251,12 +298,15 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_combinations)
 BOOST_AUTO_TEST_CASE(compile_interactions_cubic_permutations)
 {
   std::set<namespace_index> indices = {'a', 'b', 'c', 'd'};
-  std::vector<std::vector<namespace_index>> interactions = {{':', ':', ':'}};
+  std::vector<std::vector<INTERACTIONS::interaction_term>> interactions = {
+      {INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
+          INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
+          INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)}};
 
   auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
       interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set = {
+  std::vector<std::vector<namespace_index>> compare_set_chars = {
       {'a', 'a', 'a'}, {'a', 'a', 'b'}, {'a', 'a', 'c'}, {'a', 'a', 'd'}, {'a', 'b', 'a'}, {'a', 'b', 'b'},
       {'a', 'b', 'c'}, {'a', 'b', 'd'}, {'a', 'c', 'a'}, {'a', 'c', 'b'}, {'a', 'c', 'c'}, {'a', 'c', 'd'},
       {'a', 'd', 'a'}, {'a', 'd', 'b'}, {'a', 'd', 'c'}, {'a', 'd', 'd'}, {'b', 'a', 'a'}, {'b', 'a', 'b'},
@@ -268,8 +318,8 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_permutations)
       {'d', 'a', 'a'}, {'d', 'a', 'b'}, {'d', 'a', 'c'}, {'d', 'a', 'd'}, {'d', 'b', 'a'}, {'d', 'b', 'b'},
       {'d', 'b', 'c'}, {'d', 'b', 'd'}, {'d', 'c', 'a'}, {'d', 'c', 'b'}, {'d', 'c', 'c'}, {'d', 'c', 'd'},
       {'d', 'd', 'a'}, {'d', 'd', 'b'}, {'d', 'd', 'c'}, {'d', 'd', 'd'}
-
   };
+  auto compare_set = to_terms(compare_set_chars);
 
   sort_all(compare_set);
   sort_all(result);

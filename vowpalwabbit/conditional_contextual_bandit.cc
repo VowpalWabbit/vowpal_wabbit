@@ -56,22 +56,42 @@ void return_collection(std::vector<T>& array, VW::vector_pool<T>& pool)
 //   2. Every existing interaction + ccb_slot_namespace
 //   3. wildcard_namespace + ccb_id_namespace
 //   4. wildcard_namespace + ccb_slot_namespace
-void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interactions_to_add_to)
+void insert_ccb_interactions(std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions_to_add_to)
 {
   const auto reserve_size = interactions_to_add_to.size() * 2;
-  std::vector<std::vector<namespace_index>> new_interactions;
+  std::vector<std::vector<INTERACTIONS::interaction_term>> new_interactions;
   new_interactions.reserve(reserve_size);
   for (const auto& inter : interactions_to_add_to)
   {
     new_interactions.push_back(inter);
-    new_interactions.back().push_back(static_cast<namespace_index>(ccb_id_namespace));
+    if (inter.front().type() == INTERACTIONS::interaction_term_type::ns_char)
+    {
+      new_interactions.back().emplace_back(ccb_id_namespace);
+    }
+    else
+    {
+      // TODO - ensure these generated features actually are within an extent.
+      new_interactions.back().emplace_back(ccb_id_namespace, ccb_id_namespace);
+    }
     new_interactions.push_back(inter);
-    new_interactions.back().push_back(static_cast<namespace_index>(ccb_slot_namespace));
+    if (inter.front().type() == INTERACTIONS::interaction_term_type::ns_char)
+    {
+      new_interactions.back().emplace_back(ccb_slot_namespace);
+    }
+    else
+    {
+      // TODO - ensure these generated features actually are within an extent.
+      new_interactions.back().emplace_back(ccb_slot_namespace, ccb_slot_namespace);
+    }
   }
   interactions_to_add_to.reserve(interactions_to_add_to.size() + new_interactions.size() + 2);
   std::move(new_interactions.begin(), new_interactions.end(), std::back_inserter(interactions_to_add_to));
-  interactions_to_add_to.push_back({wildcard_namespace, ccb_id_namespace});
-  interactions_to_add_to.push_back({wildcard_namespace, ccb_slot_namespace});
+  interactions_to_add_to.push_back({
+      INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
+      INTERACTIONS::interaction_term(ccb_id_namespace)});
+  interactions_to_add_to.push_back({
+      INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
+      INTERACTIONS::interaction_term(ccb_slot_namespace)});
 }
 
 struct ccb

@@ -59,6 +59,7 @@ set(vw_all_headers
   boosting.h
   bs.h
   cache.h
+  interaction_term.h
   cats_pdf.h
   cats_tree.h
   cats.h
@@ -282,6 +283,7 @@ set(vw_all_sources
   distributionally_robust.cc
   ect.cc
   example_predict.cc
+  interaction_term.cc
   example.cc
   explore_eval.cc
   feature_group.cc

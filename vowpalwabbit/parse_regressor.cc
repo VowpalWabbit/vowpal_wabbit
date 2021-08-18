@@ -230,9 +230,19 @@ void save_load_header(
 
           // Only the read path is implemented since this is for old version read support.
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
-          std::vector<namespace_index> temp(pair, *(&pair + 1));
+
+          std::vector<INTERACTIONS::interaction_term> temp = {pair[0] == ':'
+                  ? INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)
+                  : INTERACTIONS::interaction_term(pair[0]),
+              pair[1] == ':'
+                  ? INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)
+                  : INTERACTIONS::interaction_term(pair[1])
+
+          };
           if (std::count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-          { all.interactions.emplace_back(temp.begin(), temp.end()); }
+          {
+            all.interactions.push_back(temp);
+          }
         }
 
         msg << "\n";
@@ -252,9 +262,18 @@ void save_load_header(
           // Only the read path is implemented since this is for old version read support.
           bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
 
-          std::vector<namespace_index> temp(triple, *(&triple + 1));
+          std::vector<INTERACTIONS::interaction_term> temp = {triple[0] == ':'
+                  ? INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)
+                  : INTERACTIONS::interaction_term(triple[0]),
+              triple[1] == ':'
+                  ? INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)
+                  : INTERACTIONS::interaction_term(triple[1]),
+              triple[2] == ':'
+                  ? INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)
+                  : INTERACTIONS::interaction_term(triple[2])
+          };
           if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-          { all.interactions.emplace_back(temp.begin(), temp.end()); }
+          { all.interactions.push_back(temp); }
         }
 
         msg << "\n";
@@ -265,7 +284,7 @@ void save_load_header(
         {
           if (!read) THROW("cannot write legacy format");
 
-          // the only version that saves interacions among pairs and triples
+          // the only version that saves interactions among pairs and triples
           uint32_t len = 0;
 
           msg << len << " interactions: ";
@@ -283,9 +302,12 @@ void save_load_header(
             bytes_read_write += size;
             if (size != inter_len) { THROW("Failed to read interaction from model file."); }
 
-            std::vector<namespace_index> temp(buff2, buff2 + size);
+            std::vector<INTERACTIONS::interaction_term> temp;
+            for (auto buff2_i = 0; buff2_i < size; buff2_i++) { temp.emplace_back(buff2[buff2_i]); }
             if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-            { all.interactions.emplace_back(buff2, buff2 + inter_len); }
+            {
+              all.interactions.push_back(temp);
+            }
           }
 
           msg << "\n";

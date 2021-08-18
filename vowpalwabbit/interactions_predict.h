@@ -7,6 +7,7 @@
 #include "constant.h"
 #include "feature_group.h"
 #include "example_predict.h"
+#include "interaction_term.h"
 #include <vector>
 #include <string>
 
@@ -62,11 +63,22 @@ struct feature_gen_data
   }
 };
 
+
 inline bool has_empty_interaction(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
+    const std::array<features, NUM_NAMESPACES>& feature_groups,
+    const std::vector<INTERACTIONS::interaction_term>& namespace_indexes)
 {
   return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
-      [&](namespace_index idx) { return feature_groups[idx].empty(); });
+      [&](INTERACTIONS::interaction_term term)
+      {
+        if (term.type() == INTERACTIONS::interaction_term_type::ns_char)
+        {
+          return feature_groups[term.ns_char()].empty();
+        }
+
+        // TODO exhaustively handle types.
+        return false;
+      });
 }
 
 // The inline function below may be adjusted to change the way
@@ -97,11 +109,14 @@ std::tuple<features_range_t, features_range_t, features_range_t> inline generate
 }
 
 std::vector<features_range_t> inline generate_generic_char_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
+    const std::array<features, NUM_NAMESPACES>& feature_groups,
+    const std::vector<INTERACTIONS::interaction_term>& terms)
 {
   std::vector<features_range_t> inter;
-  for (const auto namespace_index : namespace_indexes)
-  { inter.emplace_back(feature_groups[namespace_index].audit_begin(), feature_groups[namespace_index].audit_end()); }
+  for (const auto term : terms)
+  {
+    inter.emplace_back(feature_groups[term.ns_char()].audit_begin(), feature_groups[term.ns_char()].audit_end());
+  }
   return inter;
 }
 
@@ -306,7 +321,8 @@ size_t process_generic_interaction(const std::vector<features_range_t>& range, b
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
     void (*audit_func)(DataT&, const audit_strings*),
     class WeightsT>  // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(const std::vector<std::vector<namespace_index>>& interactions, bool permutations,
+inline void generate_interactions(const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions,
+    bool permutations,
     example_predict& ec, DataT& dat, WeightsT& weights,
     size_t& num_features)  // default value removed to eliminate ambiguity in old complers
 {
@@ -325,6 +341,15 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     // Skip over any interaction with an empty namespace.
     if (has_empty_interaction(ec.feature_space, ns)) { continue; }
 
+    if (!std::equal(ns.begin(), ns.end(), ns.begin(),
+            [](const INTERACTIONS::interaction_term& a, const INTERACTIONS::interaction_term& b)
+            { return a.type() == b.type(); }))
+    {
+      THROW_OR_RETURN("Cannot mix interactions of character and hash based.", 0);
+    }
+
+    const auto inter_type = ns.front().type();
+
 #ifndef GEN_INTER_LOOP
 
     // unless GEN_INTER_LOOP is defined we use nested 'for' loops for interactions length 2 (pairs) and 3 (triples)
@@ -333,21 +358,30 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     const size_t len = ns.size();
     if (len == 2)  // special case of pairs
     {
-      num_features +=
-          process_quadratic_interaction<audit>(generate_quadratic_char_combination(ec.feature_space, ns[0], ns[1]),
-              permutations, inner_kernel_func, depth_audit_func);
+      if (inter_type == INTERACTIONS::interaction_term_type::ns_char)
+      {
+        num_features +=
+            process_quadratic_interaction<audit>(generate_quadratic_char_combination(ec.feature_space, ns[0].ns_char(), ns[1].ns_char()),
+                permutations, inner_kernel_func, depth_audit_func);
+      }
     }
     else if (len == 3)  // special case for triples
     {
-      num_features +=
-          process_cubic_interaction<audit>(generate_cubic_char_combination(ec.feature_space, ns[0], ns[1], ns[2]),
-              permutations, inner_kernel_func, depth_audit_func);
+      if (inter_type == INTERACTIONS::interaction_term_type::ns_char)
+      {
+        num_features += process_cubic_interaction<audit>(
+            generate_cubic_char_combination(ec.feature_space, ns[0].ns_char(), ns[1].ns_char(), ns[2].ns_char()),
+                permutations, inner_kernel_func, depth_audit_func);
+      }
     }
     else  // generic case: quatriples, etc.
 #endif
     {
-      num_features += process_generic_interaction<audit>(
-          generate_generic_char_combination(ec.feature_space, ns), permutations, inner_kernel_func, depth_audit_func);
+      if (inter_type == INTERACTIONS::interaction_term_type::ns_char)
+      {
+        num_features += process_generic_interaction<audit>(
+            generate_generic_char_combination(ec.feature_space, ns), permutations, inner_kernel_func, depth_audit_func);
+      }
     }
   }
 }  // foreach interaction in all.interactions
