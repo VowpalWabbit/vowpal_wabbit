@@ -1076,5 +1076,14 @@ base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&&
   return builder;
 }
 
+template <class ExampleT>
+base_learner_builder<char, ExampleT> make_no_data_base_learner(void (*learn_fn)(char&, base_learner&, ExampleT&),
+    void (*predict_fn)(char&, base_learner&, ExampleT&), const std::string& name, prediction_type_t pred_type,
+    label_type_t label_type)
+{
+  return make_base_learner<char, ExampleT>(
+      std::unique_ptr<char>(nullptr), learn_fn, predict_fn, name, pred_type, label_type);
+}
+
 }  // namespace LEARNER
 }  // namespace VW

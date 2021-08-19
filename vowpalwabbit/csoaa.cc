@@ -320,7 +320,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
     label_data& simple_lbl = ec1->l.simple;
     auto& simple_red_features = ec1->_reduction_features.template get<simple_label_reduction_features>();
 
-    v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
+    auto costs1 = save_cs_label.costs;
     if (costs1[0].class_index == static_cast<uint32_t>(-1)) continue;
 
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
@@ -336,7 +336,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, multi_ex& ec_seq)
     for (size_t k2 = k1 + 1; k2 < K; k2++)
     {
       example* ec2 = ec_seq[k2];
-      v_array<COST_SENSITIVE::wclass> costs2 = ec2->l.cs.costs;
+      auto costs2 = ec2->l.cs.costs;
 
       if (costs2[0].class_index == static_cast<uint32_t>(-1)) continue;
       float value_diff = std::fabs(costs2[0].wap_value - costs1[0].wap_value);

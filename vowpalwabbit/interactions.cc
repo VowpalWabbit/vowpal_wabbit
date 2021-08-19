@@ -156,17 +156,8 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
 
 bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b)
 {
-  if (a.size() != b.size()) { return a.size() > b.size(); }
-  for (size_t i = 0; i < a.size(); i++)
-  {
-    if (a[i] < b[i])
-      return true;
-    else if (a[i] == b[i])
-      continue;
-    else
-      return false;
-  }
-  return false;
+  if (a.size() != b.size()) { return a.size() < b.size(); }
+  return a < b;
 }
 
 /*

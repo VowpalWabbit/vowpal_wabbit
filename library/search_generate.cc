@@ -206,6 +206,7 @@ struct input
   input(std::string _in, std::string _out, float _weight) : in(_in), out(_out), weight(_weight) {}
   input(std::string _in, std::string _out) : in(_in), out(_out), weight(1.) {}
   input(std::string _in) : in(_in), out(_in), weight(1.) {}
+  input() : weight(1.) {}
 };
 
 typedef std::string output;
