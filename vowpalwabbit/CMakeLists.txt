@@ -59,7 +59,6 @@ set(vw_all_headers
   boosting.h
   bs.h
   cache.h
-  interaction_term.h
   cats_pdf.h
   cats_tree.h
   cats.h
@@ -123,6 +122,7 @@ set(vw_all_headers
   guard.h
   hashstring.h
   interact.h
+  interaction_term.h
   interactions_predict.h
   cached_learner.h
   reduction_stack.h
@@ -283,7 +283,6 @@ set(vw_all_sources
   distributionally_robust.cc
   ect.cc
   example_predict.cc
-  interaction_term.cc
   example.cc
   explore_eval.cc
   feature_group.cc
@@ -297,6 +296,7 @@ set(vw_all_sources
   hashstring.cc
   interact.cc
   reduction_stack.cc
+  interaction_term.cc
   interactions.cc
   io_buf.cc
   kernel_svm.cc
