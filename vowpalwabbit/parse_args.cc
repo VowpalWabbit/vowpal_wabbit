@@ -510,6 +510,7 @@ std::vector<INTERACTIONS::interaction_term> parse_char_interactions(VW::string_v
    }
  }
  return result;
+}
 
 void parse_feature_tweaks(
     options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
