@@ -299,7 +299,7 @@ void save_load_header(
             if (size != inter_len) { THROW("Failed to read interaction from model file."); }
 
             std::vector<INTERACTIONS::interaction_term> temp;
-            for (auto buff2_i = 0; buff2_i < size; buff2_i++) { temp.emplace_back(buff2[buff2_i]); }
+            for (auto buff2_i = std::size_t{0}; buff2_i < size; buff2_i++) { temp.emplace_back(buff2[buff2_i]); }
             if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
             { all.interactions.push_back(temp); }
           }
