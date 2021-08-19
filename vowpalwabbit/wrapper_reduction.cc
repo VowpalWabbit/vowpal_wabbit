@@ -91,20 +91,21 @@ VW::LEARNER::base_learner* wrapper_reduction_multiline_setup(
 {
   if (!instance) return nullptr;
 
-  auto base = as_multiline(stack_builder.setup_base_learner());
-
   auto pr = VW::make_unique<wrap>();
   pr->instance = std::move(instance);
 
-  VW::LEARNER::learner<wrap, multi_ex>& ret = learner<wrap, multi_ex>::init_learner(pr.get(), base, multi_learn,
-      multi_predict, 1, prediction_type_t::action_probs, std::string("python_multi"), base->learn_returns_prediction);
+  bool should_register_finish_example = pr->instance->should_register_finish_example();
+  bool should_set_save_load = pr->instance->should_register_saveload();
 
-  if (pr->instance->should_register_finish_example()) ret.set_finish_example(finish_multiex);
-  if (pr->instance->should_register_saveload()) ret.set_save_load(save_load);
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(pr), as_multiline(stack_builder.setup_base_learner()),
+      wrapper::multi_learn, wrapper::multi_predict, std::string("python_multi"))
+                .set_prediction_type(prediction_type_t::action_probs)
+                .build();
 
-  pr.release();
+  if (should_register_finish_example) l->set_finish_example(finish_multiex);
+  if (should_set_save_load) l->set_save_load(save_load);
 
-  return make_base(ret);
+  return make_base(*l);
 }
 
 using namespace wrapper;
