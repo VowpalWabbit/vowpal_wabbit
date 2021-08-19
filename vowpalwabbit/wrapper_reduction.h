@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include <vector>
 #include "reductions_fwd.h"
 #include "io_buf.h"
 
@@ -12,17 +11,16 @@ namespace WRAPPER
 class ExternalBinding
 {
 public:
-  virtual void SetBaseLearner(void* learner) = 0;
-  virtual void ActualLearn(example*) = 0;
-  virtual void ActualPredict(example*) = 0;
-  virtual void ActualSaveLoad(io_buf* model_file, bool read, bool text) = 0;
   virtual bool ShouldRegisterFinishExample() = 0;
   virtual bool ShouldRegisterSaveLoad() = 0;
-  virtual void ActualFinishExample(example*) = 0;
-
+  virtual void SetBaseLearner(void* learner) = 0;
+  virtual void ActualLearn(example*) = 0;
   virtual void ActualLearn(multi_ex*) = 0;
+  virtual void ActualPredict(example*) = 0;
   virtual void ActualPredict(multi_ex*) = 0;
+  virtual void ActualFinishExample(example*) = 0;
   virtual void ActualFinishExample(multi_ex*) = 0;
+  virtual void ActualSaveLoad(io_buf* model_file, bool read, bool text) = 0;
 
   virtual ~ExternalBinding(){};
 };

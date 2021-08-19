@@ -17,17 +17,9 @@ struct wrapper
   std::unique_ptr<WRAPPER::ExternalBinding> instance;
 };
 
-void base_learn(wrapper& wrap, base_learner&, example& ec)
-{
-  // wrap.instance->SetBaseLearner(nullptr);
-  wrap.instance->ActualLearn(&ec);
-}
+void base_learn(wrapper& wrap, base_learner&, example& ec) { wrap.instance->ActualLearn(&ec); }
 
-void base_predict(wrapper& wrap, base_learner&, example& ec)
-{
-  // wrap.instance->SetBaseLearner(&base);
-  wrap.instance->ActualPredict(&ec);
-}
+void base_predict(wrapper& wrap, base_learner&, example& ec) { wrap.instance->ActualPredict(&ec); }
 
 void learn(wrapper& wrap, single_learner& base, example& ec)
 {
@@ -77,11 +69,11 @@ VW::LEARNER::base_learner* wrapper_reduction_setup(
 {
   if (!instance) { return nullptr; };
 
-  bool should_register_finish_example = instance->ShouldRegisterFinishExample();
-  bool should_set_save_load = instance->ShouldRegisterSaveLoad();
-
   auto pr = VW::make_unique<wrapper>();
   pr->instance = std::move(instance);
+
+  bool should_register_finish_example = pr->instance->ShouldRegisterFinishExample();
+  bool should_set_save_load = pr->instance->ShouldRegisterSaveLoad();
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(pr), as_singleline(stack_builder.setup_base_learner()),
       WRAPPER::learn, WRAPPER::predict, std::string("python_single"))
@@ -123,11 +115,11 @@ VW::LEARNER::base_learner* wrapper_reduction_base_setup(
 {
   if (!instance) return nullptr;
 
-  bool should_register_finish_example = instance->ShouldRegisterFinishExample();
-  bool should_set_save_load = instance->ShouldRegisterSaveLoad();
-
   auto pr = VW::make_unique<wrapper>();
   pr->instance = std::move(instance);
+
+  bool should_register_finish_example = pr->instance->ShouldRegisterFinishExample();
+  bool should_set_save_load = pr->instance->ShouldRegisterSaveLoad();
 
   auto* l = VW::LEARNER::make_base_learner<wrapper, example>(std::move(pr), WRAPPER::base_learn, WRAPPER::base_predict,
       std::string("python_base"), prediction_type_t::scalar, label_type_t::simple)
