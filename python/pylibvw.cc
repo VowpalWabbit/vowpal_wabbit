@@ -118,21 +118,20 @@ vw_ptr my_initialize_with_pyred(std::string args, py_log_wrapper_ptr py_log, py:
     trace_context = py_log.get();
   }
 
-  vw* foo;
-
   if (with_reduction)
   {
     auto ext_binding = std::unique_ptr<WRAPPER::ExternalBinding>(new PyCppBridge(&with_reduction));
     auto learner_builder = VW::make_unique<custom_builder_with_binding>(std::move(ext_binding));
 
-    foo = VW::initialize_with_builder(args, nullptr, false, trace_listener, trace_context, std::move(learner_builder));
+    return boost::shared_ptr<vw>(
+        VW::initialize_with_builder(args, nullptr, false, trace_listener, trace_context, std::move(learner_builder)));
   }
   else
   {
-    foo = VW::initialize(args, nullptr, false, trace_listener, trace_context);
+    return boost::shared_ptr<vw>(VW::initialize(args, nullptr, false, trace_listener, trace_context));
   }
 
-  return boost::shared_ptr<vw>(foo);
+  return boost::shared_ptr<vw>();
 }
 
 vw_ptr my_initialize(std::string args) { return my_initialize_with_log(args, nullptr); }
@@ -718,7 +717,7 @@ float ex_get_cbandits_cost(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i
 uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].action; }
 float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
 float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].partial_prediction; }
-// example_ptr examples_get_cb_label_from_adf(ex_list examples)
+
 py::tuple examples_get_cb_label_from_adf(ex_list& examples)
 {
   auto it = std::find_if(examples.begin(), examples.end(), [](example_ptr& ex) { return !(ex->l.cb.costs.empty()); });
@@ -726,12 +725,10 @@ py::tuple examples_get_cb_label_from_adf(ex_list& examples)
   {
     uint32_t labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), it));
     return py::make_tuple(*it, labelled_action);
-    // return *it;
   }
   else
   {
     return py::make_tuple(py::object(), -1);
-    // return example_ptr();
   }
 }
 
