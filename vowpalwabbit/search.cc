@@ -1010,7 +1010,7 @@ void ensure_size(v_array<T>& A, size_t sz)
 template <class T>
 void set_at(v_array<T>& v, T item, size_t pos)
 {
-  if (pos >= v.size()) { v.resize_but_with_stl_behavior(pos); }
+  if (pos >= v.size()) { v.resize_but_with_stl_behavior(pos + 1); }
   v[pos] = item;
 }
 
