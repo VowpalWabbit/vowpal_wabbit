@@ -49,8 +49,7 @@ template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, Weight
                      // compilers
 
 inline void generate_interactions(const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions,
-    bool permutations,
-    example_predict& ec, DataT& dat, WeightsT& weights,
+    bool permutations, example_predict& ec, DataT& dat, WeightsT& weights,
     size_t& num_interacted_features)  // default value removed to eliminate
                                       // ambiguity in old complers
 {
@@ -63,8 +62,7 @@ inline void generate_interactions(const std::vector<std::vector<INTERACTIONS::in
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), class WeightsT>
 inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
     const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions, bool permutations,
-    example_predict& ec, DataT& dat,
-    size_t& num_interacted_features)
+    example_predict& ec, DataT& dat, size_t& num_interacted_features)
 {
   uint64_t offset = ec.ft_offset;
   if (ignore_some_linear)
@@ -98,8 +96,7 @@ inline void vec_add(float& p, float fx, float fw) { p += fw * fx; }
 template <class WeightsT>
 inline float inline_predict(WeightsT& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
     const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions, bool permutations,
-    example_predict& ec,
-    float initial = 0.f)
+    example_predict& ec, float initial = 0.f)
 {
   foreach_feature<float, float, vec_add, WeightsT>(
       weights, ignore_some_linear, ignore_linear, interactions, permutations, ec, initial);
@@ -109,8 +106,7 @@ inline float inline_predict(WeightsT& weights, bool ignore_some_linear, std::arr
 template <class WeightsT>
 inline float inline_predict(WeightsT& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
     const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions, bool permutations,
-    example_predict& ec,
-    size_t& num_interacted_features, float initial = 0.f)
+    example_predict& ec, size_t& num_interacted_features, float initial = 0.f)
 {
   foreach_feature<float, float, vec_add, WeightsT>(
       weights, ignore_some_linear, ignore_linear, interactions, permutations, ec, initial, num_interacted_features);

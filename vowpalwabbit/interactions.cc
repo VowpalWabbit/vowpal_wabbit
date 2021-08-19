@@ -23,7 +23,8 @@ namespace INTERACTIONS
  */
 
 // returns number of new features that will be generated for example and sum of their squared values
-void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions,
+void eval_count_of_generated_ft(bool permutations,
+    const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions,
     const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value)
 {
   new_features_cnt = 0;
@@ -222,8 +223,8 @@ std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interaction
 // filter duplicate namespaces treating them as unordered sets of namespaces.
 // also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
 
-void sort_and_filter_duplicate_interactions(
-    std::vector<std::vector<INTERACTIONS::interaction_term>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
+void sort_and_filter_duplicate_interactions(std::vector<std::vector<INTERACTIONS::interaction_term>>& vec,
+    bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
 {
   // 2 out parameters
   removed_cnt = 0;

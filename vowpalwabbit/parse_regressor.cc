@@ -240,9 +240,7 @@ void save_load_header(
 
           };
           if (std::count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-          {
-            all.interactions.push_back(temp);
-          }
+          { all.interactions.push_back(temp); }
         }
 
         msg << "\n";
@@ -270,10 +268,8 @@ void save_load_header(
                   : INTERACTIONS::interaction_term(triple[1]),
               triple[2] == ':'
                   ? INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)
-                  : INTERACTIONS::interaction_term(triple[2])
-          };
-          if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-          { all.interactions.push_back(temp); }
+                  : INTERACTIONS::interaction_term(triple[2])};
+          if (count(all.interactions.begin(), all.interactions.end(), temp) == 0) { all.interactions.push_back(temp); }
         }
 
         msg << "\n";
@@ -305,9 +301,7 @@ void save_load_header(
             std::vector<INTERACTIONS::interaction_term> temp;
             for (auto buff2_i = 0; buff2_i < size; buff2_i++) { temp.emplace_back(buff2[buff2_i]); }
             if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-            {
-              all.interactions.push_back(temp);
-            }
+            { all.interactions.push_back(temp); }
           }
 
           msg << "\n";

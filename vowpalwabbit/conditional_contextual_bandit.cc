@@ -65,9 +65,7 @@ void insert_ccb_interactions(std::vector<std::vector<INTERACTIONS::interaction_t
   {
     new_interactions.push_back(inter);
     if (inter.front().type() == INTERACTIONS::interaction_term_type::ns_char)
-    {
-      new_interactions.back().emplace_back(ccb_id_namespace);
-    }
+    { new_interactions.back().emplace_back(ccb_id_namespace); }
     else
     {
       // TODO - ensure these generated features actually are within an extent.
@@ -75,9 +73,7 @@ void insert_ccb_interactions(std::vector<std::vector<INTERACTIONS::interaction_t
     }
     new_interactions.push_back(inter);
     if (inter.front().type() == INTERACTIONS::interaction_term_type::ns_char)
-    {
-      new_interactions.back().emplace_back(ccb_slot_namespace);
-    }
+    { new_interactions.back().emplace_back(ccb_slot_namespace); }
     else
     {
       // TODO - ensure these generated features actually are within an extent.
@@ -86,12 +82,12 @@ void insert_ccb_interactions(std::vector<std::vector<INTERACTIONS::interaction_t
   }
   interactions_to_add_to.reserve(interactions_to_add_to.size() + new_interactions.size() + 2);
   std::move(new_interactions.begin(), new_interactions.end(), std::back_inserter(interactions_to_add_to));
-  interactions_to_add_to.push_back({
-      INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
-      INTERACTIONS::interaction_term(ccb_id_namespace)});
-  interactions_to_add_to.push_back({
-      INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
-      INTERACTIONS::interaction_term(ccb_slot_namespace)});
+  interactions_to_add_to.push_back(
+      {INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
+          INTERACTIONS::interaction_term(ccb_id_namespace)});
+  interactions_to_add_to.push_back(
+      {INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
+          INTERACTIONS::interaction_term(ccb_slot_namespace)});
 }
 
 struct ccb

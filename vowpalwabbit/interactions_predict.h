@@ -63,22 +63,15 @@ struct feature_gen_data
   }
 };
 
-
-inline bool has_empty_interaction(
-    const std::array<features, NUM_NAMESPACES>& feature_groups,
+inline bool has_empty_interaction(const std::array<features, NUM_NAMESPACES>& feature_groups,
     const std::vector<INTERACTIONS::interaction_term>& namespace_indexes)
 {
-  return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
-      [&](INTERACTIONS::interaction_term term)
-      {
-        if (term.type() == INTERACTIONS::interaction_term_type::ns_char)
-        {
-          return feature_groups[term.ns_char()].empty();
-        }
+  return std::any_of(namespace_indexes.begin(), namespace_indexes.end(), [&](INTERACTIONS::interaction_term term) {
+    if (term.type() == INTERACTIONS::interaction_term_type::ns_char) { return feature_groups[term.ns_char()].empty(); }
 
-        // TODO exhaustively handle types.
-        return false;
-      });
+    // TODO exhaustively handle types.
+    return false;
+  });
 }
 
 // The inline function below may be adjusted to change the way
@@ -114,9 +107,7 @@ std::vector<features_range_t> inline generate_generic_char_combination(
 {
   std::vector<features_range_t> inter;
   for (const auto term : terms)
-  {
-    inter.emplace_back(feature_groups[term.ns_char()].audit_begin(), feature_groups[term.ns_char()].audit_end());
-  }
+  { inter.emplace_back(feature_groups[term.ns_char()].audit_begin(), feature_groups[term.ns_char()].audit_end()); }
   return inter;
 }
 
@@ -322,8 +313,7 @@ template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, Weight
     void (*audit_func)(DataT&, const audit_strings*),
     class WeightsT>  // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions,
-    bool permutations,
-    example_predict& ec, DataT& dat, WeightsT& weights,
+    bool permutations, example_predict& ec, DataT& dat, WeightsT& weights,
     size_t& num_features)  // default value removed to eliminate ambiguity in old complers
 {
   num_features = 0;
@@ -342,11 +332,10 @@ inline void generate_interactions(const std::vector<std::vector<INTERACTIONS::in
     if (has_empty_interaction(ec.feature_space, ns)) { continue; }
 
     if (!std::equal(ns.begin(), ns.end(), ns.begin(),
-            [](const INTERACTIONS::interaction_term& a, const INTERACTIONS::interaction_term& b)
-            { return a.type() == b.type(); }))
-    {
-      THROW_OR_RETURN("Cannot mix interactions of character and hash based.", 0);
-    }
+            [](const INTERACTIONS::interaction_term& a, const INTERACTIONS::interaction_term& b) {
+              return a.type() == b.type();
+            }))
+    { THROW_OR_RETURN("Cannot mix interactions of character and hash based.", 0); }
 
     const auto inter_type = ns.front().type();
 
@@ -360,9 +349,9 @@ inline void generate_interactions(const std::vector<std::vector<INTERACTIONS::in
     {
       if (inter_type == INTERACTIONS::interaction_term_type::ns_char)
       {
-        num_features +=
-            process_quadratic_interaction<audit>(generate_quadratic_char_combination(ec.feature_space, ns[0].ns_char(), ns[1].ns_char()),
-                permutations, inner_kernel_func, depth_audit_func);
+        num_features += process_quadratic_interaction<audit>(
+            generate_quadratic_char_combination(ec.feature_space, ns[0].ns_char(), ns[1].ns_char()), permutations,
+            inner_kernel_func, depth_audit_func);
       }
     }
     else if (len == 3)  // special case for triples
@@ -371,7 +360,7 @@ inline void generate_interactions(const std::vector<std::vector<INTERACTIONS::in
       {
         num_features += process_cubic_interaction<audit>(
             generate_cubic_char_combination(ec.feature_space, ns[0].ns_char(), ns[1].ns_char(), ns[2].ns_char()),
-                permutations, inner_kernel_func, depth_audit_func);
+            permutations, inner_kernel_func, depth_audit_func);
       }
     }
     else  // generic case: quatriples, etc.

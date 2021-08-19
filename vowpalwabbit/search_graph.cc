@@ -325,9 +325,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, multi_ex& ec
     if (i.size() != 2) continue;
     if (i[0].type() != INTERACTIONS::interaction_term_type::ns_char ||
         i[1].type() != INTERACTIONS::interaction_term_type::ns_char)
-    {
-      THROW("can only use character based interactions in search graph");
-    }
+    { THROW("can only use character based interactions in search graph"); }
     int i0 = static_cast<int>(i[0].ns_char());
     int i1 = static_cast<int>(i[1].ns_char());
     if ((i0 == static_cast<int>(neighbor_namespace)) || (i1 == static_cast<int>(neighbor_namespace)))

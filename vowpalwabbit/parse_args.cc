@@ -498,18 +498,19 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
 std::vector<INTERACTIONS::interaction_term> parse_char_interactions(VW::string_view str)
 {
- std::vector<INTERACTIONS::interaction_term> result;
- result.reserve(str.size());
- auto encoded = VW::decode_inline_hex(str);
- for (const auto c : str)
- {
-   if (c == ':') { result.push_back(INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)); }
-   else
-   {
-     result.push_back(INTERACTIONS::interaction_term{static_cast<namespace_index>(c)});
-   }
- }
- return result;
+  std::vector<INTERACTIONS::interaction_term> result;
+  result.reserve(str.size());
+  auto encoded = VW::decode_inline_hex(str);
+  for (const auto c : str)
+  {
+    if (c == ':')
+    { result.push_back(INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)); }
+    else
+    {
+      result.push_back(INTERACTIONS::interaction_term{static_cast<namespace_index>(c)});
+    }
+  }
+  return result;
 }
 
 void parse_feature_tweaks(
@@ -715,7 +716,9 @@ void parse_feature_tweaks(
     if (!all.logger.quiet && !options.was_supplied("leave_duplicate_interactions"))
     {
       auto any_contain_wildcards = std::any_of(decoded_interactions.begin(), decoded_interactions.end(),
-          [](const std::vector<INTERACTIONS::interaction_term>& interaction) { return INTERACTIONS::contains_wildcard(interaction); });
+          [](const std::vector<INTERACTIONS::interaction_term>& interaction) {
+            return INTERACTIONS::contains_wildcard(interaction);
+          });
       if (any_contain_wildcards)
       {
         *(all.trace_message) << "WARNING: any duplicate namespace interactions will be removed\n"

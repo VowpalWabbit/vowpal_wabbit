@@ -69,9 +69,7 @@ void predict(mf& data, single_learner& base, example& ec)
   {
     if (i[0].type() != INTERACTIONS::interaction_term_type::ns_char ||
         i[1].type() != INTERACTIONS::interaction_term_type::ns_char)
-    {
-      THROW("can only use character based interactions in matrix factorization");
-    }
+    { THROW("can only use character based interactions in matrix factorization"); }
     auto left_ns = static_cast<int>(i[0].ns_char());
     auto right_ns = static_cast<int>(i[1].ns_char());
 
@@ -134,9 +132,7 @@ void learn(mf& data, single_learner& base, example& ec)
   {
     if (i[0].type() != INTERACTIONS::interaction_term_type::ns_char ||
         i[1].type() != INTERACTIONS::interaction_term_type::ns_char)
-    {
-      THROW("can only use character based interactions in matrix factorization");
-    }
+    { THROW("can only use character based interactions in matrix factorization"); }
     int left_ns = static_cast<int>(i[0].ns_char());
     int right_ns = static_cast<int>(i[1].ns_char());
 

@@ -34,7 +34,7 @@ std::ostream& operator<<(std::ostream& os, const INTERACTIONS::interaction_term&
   return os << "_ns_char: " << obj.ns_char() << " _ns_hash: " << obj.ns_hash() << " _wildcard: " << obj.wildcard()
             << " _type: " << INTERACTIONS::to_string(obj.type());
 }
-}
+}  // namespace std
 
 inline std::vector<std::vector<INTERACTIONS::interaction_term>> to_terms(
     const std::vector<std::vector<namespace_index>>& char_lists)
@@ -48,8 +48,6 @@ inline std::vector<std::vector<INTERACTIONS::interaction_term>> to_terms(
   }
   return terms;
 }
-
-
 
 void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t)
 {
@@ -164,7 +162,7 @@ BOOST_AUTO_TEST_CASE(interaction_generic_with_duplicates_expand_wildcard_only)
 BOOST_AUTO_TEST_CASE(sort_and_filter_interactions)
 {
   using namespace INTERACTIONS;
-  
+
   std::vector<std::vector<interaction_term>> input = {{interaction_term{'b'}, interaction_term{'a'}},
       {interaction_term{'a'}, interaction_term{'b'}, interaction_term{'a'}},
       {interaction_term{'a'}, interaction_term{'a'}}, {interaction_term{'b'}, interaction_term{'b'}}};
@@ -217,13 +215,12 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_combinations)
       {INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
           INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)}};
 
-
   auto result =
       INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
           interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set_chars = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'b'},
-      {'b', 'c'}, {'b', 'd'}, {'c', 'c'}, {'c', 'd'}, {'d', 'd'}};
+  std::vector<std::vector<namespace_index>> compare_set_chars = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'},
+      {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'c'}, {'c', 'd'}, {'d', 'd'}};
   auto compare_set = to_terms(compare_set_chars);
 
   sort_all(compare_set);
@@ -238,13 +235,12 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations)
       {INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
           INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)}};
 
-
   auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
       interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set_chars = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'}, {'b', 'a'},
-      {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'a'}, {'c', 'b'}, {'c', 'c'}, {'c', 'd'}, {'d', 'a'}, {'d', 'b'},
-      {'d', 'c'}, {'d', 'd'}};
+  std::vector<std::vector<namespace_index>> compare_set_chars = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'},
+      {'b', 'a'}, {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'a'}, {'c', 'b'}, {'c', 'c'}, {'c', 'd'}, {'d', 'a'},
+      {'d', 'b'}, {'d', 'c'}, {'d', 'd'}};
 
   auto compare_set = to_terms(compare_set_chars);
 
@@ -260,7 +256,6 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_combinations)
       {INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
           INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
           INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)}};
-
 
   auto result =
       INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
@@ -306,19 +301,18 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_permutations)
   auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
       interactions, indices);
 
-  std::vector<std::vector<namespace_index>> compare_set_chars = {
-      {'a', 'a', 'a'}, {'a', 'a', 'b'}, {'a', 'a', 'c'}, {'a', 'a', 'd'}, {'a', 'b', 'a'}, {'a', 'b', 'b'},
-      {'a', 'b', 'c'}, {'a', 'b', 'd'}, {'a', 'c', 'a'}, {'a', 'c', 'b'}, {'a', 'c', 'c'}, {'a', 'c', 'd'},
-      {'a', 'd', 'a'}, {'a', 'd', 'b'}, {'a', 'd', 'c'}, {'a', 'd', 'd'}, {'b', 'a', 'a'}, {'b', 'a', 'b'},
-      {'b', 'a', 'c'}, {'b', 'a', 'd'}, {'b', 'b', 'a'}, {'b', 'b', 'b'}, {'b', 'b', 'c'}, {'b', 'b', 'd'},
-      {'b', 'c', 'a'}, {'b', 'c', 'b'}, {'b', 'c', 'c'}, {'b', 'c', 'd'}, {'b', 'd', 'a'}, {'b', 'd', 'b'},
-      {'b', 'd', 'c'}, {'b', 'd', 'd'}, {'c', 'a', 'a'}, {'c', 'a', 'b'}, {'c', 'a', 'c'}, {'c', 'a', 'd'},
-      {'c', 'b', 'a'}, {'c', 'b', 'b'}, {'c', 'b', 'c'}, {'c', 'b', 'd'}, {'c', 'c', 'a'}, {'c', 'c', 'b'},
-      {'c', 'c', 'c'}, {'c', 'c', 'd'}, {'c', 'd', 'a'}, {'c', 'd', 'b'}, {'c', 'd', 'c'}, {'c', 'd', 'd'},
-      {'d', 'a', 'a'}, {'d', 'a', 'b'}, {'d', 'a', 'c'}, {'d', 'a', 'd'}, {'d', 'b', 'a'}, {'d', 'b', 'b'},
-      {'d', 'b', 'c'}, {'d', 'b', 'd'}, {'d', 'c', 'a'}, {'d', 'c', 'b'}, {'d', 'c', 'c'}, {'d', 'c', 'd'},
-      {'d', 'd', 'a'}, {'d', 'd', 'b'}, {'d', 'd', 'c'}, {'d', 'd', 'd'}
-  };
+  std::vector<std::vector<namespace_index>> compare_set_chars = {{'a', 'a', 'a'}, {'a', 'a', 'b'}, {'a', 'a', 'c'},
+      {'a', 'a', 'd'}, {'a', 'b', 'a'}, {'a', 'b', 'b'}, {'a', 'b', 'c'}, {'a', 'b', 'd'}, {'a', 'c', 'a'},
+      {'a', 'c', 'b'}, {'a', 'c', 'c'}, {'a', 'c', 'd'}, {'a', 'd', 'a'}, {'a', 'd', 'b'}, {'a', 'd', 'c'},
+      {'a', 'd', 'd'}, {'b', 'a', 'a'}, {'b', 'a', 'b'}, {'b', 'a', 'c'}, {'b', 'a', 'd'}, {'b', 'b', 'a'},
+      {'b', 'b', 'b'}, {'b', 'b', 'c'}, {'b', 'b', 'd'}, {'b', 'c', 'a'}, {'b', 'c', 'b'}, {'b', 'c', 'c'},
+      {'b', 'c', 'd'}, {'b', 'd', 'a'}, {'b', 'd', 'b'}, {'b', 'd', 'c'}, {'b', 'd', 'd'}, {'c', 'a', 'a'},
+      {'c', 'a', 'b'}, {'c', 'a', 'c'}, {'c', 'a', 'd'}, {'c', 'b', 'a'}, {'c', 'b', 'b'}, {'c', 'b', 'c'},
+      {'c', 'b', 'd'}, {'c', 'c', 'a'}, {'c', 'c', 'b'}, {'c', 'c', 'c'}, {'c', 'c', 'd'}, {'c', 'd', 'a'},
+      {'c', 'd', 'b'}, {'c', 'd', 'c'}, {'c', 'd', 'd'}, {'d', 'a', 'a'}, {'d', 'a', 'b'}, {'d', 'a', 'c'},
+      {'d', 'a', 'd'}, {'d', 'b', 'a'}, {'d', 'b', 'b'}, {'d', 'b', 'c'}, {'d', 'b', 'd'}, {'d', 'c', 'a'},
+      {'d', 'c', 'b'}, {'d', 'c', 'c'}, {'d', 'c', 'd'}, {'d', 'd', 'a'}, {'d', 'd', 'b'}, {'d', 'd', 'c'},
+      {'d', 'd', 'd'}};
   auto compare_set = to_terms(compare_set_chars);
 
   sort_all(compare_set);

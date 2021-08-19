@@ -36,7 +36,8 @@ inline bool contains_wildcard(const std::vector<namespace_index>& interaction)
 }
 
 // function estimates how many new features will be generated for example and their sum(value^2).
-void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions,
+void eval_count_of_generated_ft(bool permutations,
+    const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions,
     const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value);
 
 std::vector<std::vector<namespace_index>> generate_namespace_combinations_with_repetition(
@@ -52,8 +53,8 @@ std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interaction
 bool sort_interactions_comparator(
     const std::vector<INTERACTIONS::interaction_term>& a, const std::vector<INTERACTIONS::interaction_term>& b);
 
-void sort_and_filter_duplicate_interactions(
-    std::vector<std::vector<INTERACTIONS::interaction_term>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt);
+void sort_and_filter_duplicate_interactions(std::vector<std::vector<INTERACTIONS::interaction_term>>& vec,
+    bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt);
 
 template <generate_func_t generate_func, bool leave_duplicate_interactions>
 std::vector<std::vector<INTERACTIONS::interaction_term>> compile_interaction(
@@ -104,8 +105,8 @@ std::vector<std::vector<INTERACTIONS::interaction_term>> compile_interactions(
   for (const auto& inter : interactions)
   {
     // Only ns_char is supported so far.
-    assert(std::all_of(inter.begin(), inter.end(), [](const INTERACTIONS::interaction_term& term) {
-      return term.type() == interaction_term_type::ns_char;}));
+    assert(std::all_of(inter.begin(), inter.end(),
+        [](const INTERACTIONS::interaction_term& term) { return term.type() == interaction_term_type::ns_char; }));
 
     if (contains_wildcard(inter))
     {
