@@ -10,73 +10,73 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-namespace WRAPPER
+namespace wrapper
 {
-struct wrapper
+struct wrap
 {
-  std::unique_ptr<WRAPPER::ExternalBinding> instance;
+  std::unique_ptr<wrapper::external_binding> instance;
 };
 
-void base_learn(wrapper& wrap, base_learner&, example& ec) { wrap.instance->ActualLearn(&ec); }
+void base_learn(wrap& wrap, base_learner&, example& ec) { wrap.instance->actual_learn(&ec); }
 
-void base_predict(wrapper& wrap, base_learner&, example& ec) { wrap.instance->ActualPredict(&ec); }
+void base_predict(wrap& wrap, base_learner&, example& ec) { wrap.instance->actual_predict(&ec); }
 
-void learn(wrapper& wrap, single_learner& base, example& ec)
+void learn(wrap& wrap, single_learner& base, example& ec)
 {
-  wrap.instance->SetBaseLearner(&base);
-  wrap.instance->ActualLearn(&ec);
+  wrap.instance->set_base_learner(&base);
+  wrap.instance->actual_learn(&ec);
 }
 
-void predict(wrapper& wrap, single_learner& base, example& ec)
+void predict(wrap& wrap, single_learner& base, example& ec)
 {
-  wrap.instance->SetBaseLearner(&base);
-  wrap.instance->ActualPredict(&ec);
+  wrap.instance->set_base_learner(&base);
+  wrap.instance->actual_predict(&ec);
 }
 
-void multi_learn(wrapper& wrap, multi_learner& base, multi_ex& examples)
+void multi_learn(wrap& wrap, multi_learner& base, multi_ex& examples)
 {
-  wrap.instance->SetBaseLearner(&base);
-  wrap.instance->ActualLearn(&examples);
+  wrap.instance->set_base_learner(&base);
+  wrap.instance->actual_learn(&examples);
 }
 
-void multi_predict(wrapper& wrap, multi_learner& base, multi_ex& examples)
+void multi_predict(wrap& wrap, multi_learner& base, multi_ex& examples)
 {
-  wrap.instance->SetBaseLearner(&base);
-  wrap.instance->ActualPredict(&examples);
+  wrap.instance->set_base_learner(&base);
+  wrap.instance->actual_predict(&examples);
 }
 
-void finish_example(vw& all, wrapper& wrap, example& ec)
+void finish_example(vw& all, wrap& wrap, example& ec)
 {
-  wrap.instance->ActualFinishExample(&ec);
+  wrap.instance->actual_finish_example(&ec);
   VW::finish_example(all, ec);
 }
 
-void finish_multiex(vw& all, wrapper& wrap, multi_ex& examples)
+void finish_multiex(vw& all, wrap& wrap, multi_ex& examples)
 {
-  wrap.instance->ActualFinishExample(&examples);
+  wrap.instance->actual_finish_example(&examples);
   VW::finish_example(all, examples);
 }
 
-void save_load(wrapper& wrap, io_buf& model_file, bool read, bool text)
+void save_load(wrap& wrap, io_buf& model_file, bool read, bool text)
 {
-  wrap.instance->ActualSaveLoad(&model_file, read, text);
+  wrap.instance->actual_saveload(&model_file, read, text);
 }
 
-}  // namespace WRAPPER
-using namespace WRAPPER;
+}  // namespace wrapper
+using namespace wrapper;
 VW::LEARNER::base_learner* wrapper_reduction_setup(
-    VW::setup_base_i& stack_builder, std::unique_ptr<WRAPPER::ExternalBinding> instance)
+    VW::setup_base_i& stack_builder, std::unique_ptr<wrapper::external_binding> instance)
 {
   if (!instance) { return nullptr; };
 
-  auto pr = VW::make_unique<wrapper>();
+  auto pr = VW::make_unique<wrap>();
   pr->instance = std::move(instance);
 
-  bool should_register_finish_example = pr->instance->ShouldRegisterFinishExample();
-  bool should_set_save_load = pr->instance->ShouldRegisterSaveLoad();
+  bool should_register_finish_example = pr->instance->should_register_finish_example();
+  bool should_set_save_load = pr->instance->should_register_saveload();
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(pr), as_singleline(stack_builder.setup_base_learner()),
-      WRAPPER::learn, WRAPPER::predict, std::string("python_single"))
+      wrapper::learn, wrapper::predict, std::string("python_single"))
                 .build();
 
   if (should_register_finish_example) l->set_finish_example(finish_example);
@@ -85,41 +85,41 @@ VW::LEARNER::base_learner* wrapper_reduction_setup(
   return make_base(*l);
 }
 
-using namespace WRAPPER;
+using namespace wrapper;
 VW::LEARNER::base_learner* wrapper_reduction_multiline_setup(
-    VW::setup_base_i& stack_builder, std::unique_ptr<WRAPPER::ExternalBinding> instance)
+    VW::setup_base_i& stack_builder, std::unique_ptr<wrapper::external_binding> instance)
 {
   if (!instance) return nullptr;
 
   auto base = as_multiline(stack_builder.setup_base_learner());
 
-  auto pr = VW::make_unique<wrapper>();
+  auto pr = VW::make_unique<wrap>();
   pr->instance = std::move(instance);
 
-  VW::LEARNER::learner<wrapper, multi_ex>& ret = learner<wrapper, multi_ex>::init_learner(pr.get(), base, multi_learn,
+  VW::LEARNER::learner<wrap, multi_ex>& ret = learner<wrap, multi_ex>::init_learner(pr.get(), base, multi_learn,
       multi_predict, 1, prediction_type_t::action_probs, std::string("python_multi"), base->learn_returns_prediction);
 
-  if (pr->instance->ShouldRegisterFinishExample()) ret.set_finish_example(finish_multiex);
-  if (pr->instance->ShouldRegisterSaveLoad()) ret.set_save_load(save_load);
+  if (pr->instance->should_register_finish_example()) ret.set_finish_example(finish_multiex);
+  if (pr->instance->should_register_saveload()) ret.set_save_load(save_load);
 
   pr.release();
 
   return make_base(ret);
 }
 
-using namespace WRAPPER;
+using namespace wrapper;
 VW::LEARNER::base_learner* wrapper_reduction_base_setup(
-    VW::setup_base_i&, std::unique_ptr<WRAPPER::ExternalBinding> instance)
+    VW::setup_base_i&, std::unique_ptr<wrapper::external_binding> instance)
 {
   if (!instance) return nullptr;
 
-  auto pr = VW::make_unique<wrapper>();
+  auto pr = VW::make_unique<wrap>();
   pr->instance = std::move(instance);
 
-  bool should_register_finish_example = pr->instance->ShouldRegisterFinishExample();
-  bool should_set_save_load = pr->instance->ShouldRegisterSaveLoad();
+  bool should_register_finish_example = pr->instance->should_register_finish_example();
+  bool should_set_save_load = pr->instance->should_register_saveload();
 
-  auto* l = VW::LEARNER::make_base_learner<wrapper, example>(std::move(pr), WRAPPER::base_learn, WRAPPER::base_predict,
+  auto* l = VW::LEARNER::make_base_learner<wrap, example>(std::move(pr), wrapper::base_learn, wrapper::base_predict,
       std::string("python_base"), prediction_type_t::scalar, label_type_t::simple)
                 .build();
 

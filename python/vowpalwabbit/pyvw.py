@@ -82,24 +82,24 @@ class VWOption:
             return ''
 
 class Learner:
-    def __init__(self, vwCppBridge):
-        self.vwCppBridge = vwCppBridge
+    def __init__(self, vw_cpp_bridge):
+        self.vw_cpp_bridge = vw_cpp_bridge
 
     def learn(self, ec):
-        self.vwCppBridge.call_base_learner(ec, True)
+        self.vw_cpp_bridge.call_base_learner(ec, True)
 
     def predict(self, ec):
-        self.vwCppBridge.call_base_learner(ec, False)
+        self.vw_cpp_bridge.call_base_learner(ec, False)
 
     def multi_learn(self, examples, offset = 0, id = 0):
-        self.vwCppBridge.call_multi_learner(examples, True)
+        self.vw_cpp_bridge.call_multi_learner(examples, True)
 
     def multi_predict(self, examples, offset = 0, id = 0):
-        self.vwCppBridge.call_multi_learner(examples, False)
+        self.vw_cpp_bridge.call_multi_learner(examples, False)
 
 class ModelIO:
-    def __init__(self, vwCppBridge):
-        self.vwCppBridge = vwCppBridge
+    def __init__(self, vw_cpp_bridge):
+        self.vw_cpp_bridge = vw_cpp_bridge
 
     # (char* data, size_t len, const char* read_message, bool read, std::stringstream& msg, bool text)
     def read_write(self):

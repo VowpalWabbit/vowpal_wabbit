@@ -23,7 +23,7 @@
 #include <boost/utility.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
-#include "pyreduction.cc"
+#include "python_reduction.cc"
 
 // Brings VW_DLL_PUBLIC to help control exports
 #define VWDLL_EXPORTS
@@ -120,7 +120,7 @@ vw_ptr my_initialize_with_pyred(std::string args, py_log_wrapper_ptr py_log, py:
 
   if (with_reduction)
   {
-    auto ext_binding = std::unique_ptr<WRAPPER::ExternalBinding>(new PyCppBridge(&with_reduction));
+    auto ext_binding = std::unique_ptr<wrapper::external_binding>(new py_cpp_bridge(&with_reduction));
     auto learner_builder = VW::make_unique<custom_builder_with_binding>(std::move(ext_binding));
 
     return boost::shared_ptr<vw>(
@@ -175,7 +175,7 @@ py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
 {
   std::vector<std::string> enabled_reductions;
   if (all->l) all->l->get_enabled_reductions(enabled_reductions);
-  auto opt_manager = OptionManager(*all->options, enabled_reductions, py_class);
+  auto opt_manager = option_manager(*all->options, enabled_reductions, py_class);
   return opt_manager.get_vw_option_pyobjects(enabled_only);
 }
 
@@ -1242,10 +1242,10 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::class_<py_log_wrapper, py_log_wrapper_ptr>(
       "vw_log", "do not use, see pyvw.vw.init(enable_logging..)", py::init<py::object>());
 
-  py::class_<PyCppCallback, py_cpp_callback_ptr>("pycpp_callback", py::no_init)
-      .def("call_base_learner", &PyCppCallback::CallBaseLearner,
+  py::class_<py_cpp_callback, py_cpp_callback_ptr>("pycpp_callback", py::no_init)
+      .def("call_base_learner", &py_cpp_callback::call_base_learner,
           "Callback used for custom python reductions. See ReductionInterface. (you don't want to call this yourself!")
-      .def("call_multi_learner", &PyCppCallback::CallMultiLearner,
+      .def("call_multi_learner", &py_cpp_callback::call_multi_learner,
           "Callback used for custom python reductions. See ReductionInterface. (you don't want to call this yourself!");
 
   py::class_<Search::search, search_ptr>("search")

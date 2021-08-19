@@ -55,7 +55,7 @@ void options_boost_po::add_to_description(
 
 void options_boost_po::add_and_parse(const option_group_definition& group)
 {
-  m_option_group_dic[m_current_reduction_tint].push_back(group);
+  m_option_group_dict[m_current_reduction_tint].push_back(group);
 
   po::options_description new_options(group.m_name);
 

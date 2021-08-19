@@ -6,27 +6,27 @@
 #include "reductions_fwd.h"
 #include "io_buf.h"
 
-namespace WRAPPER
+namespace wrapper
 {
-class ExternalBinding
+class external_binding
 {
 public:
-  virtual bool ShouldRegisterFinishExample() = 0;
-  virtual bool ShouldRegisterSaveLoad() = 0;
-  virtual void SetBaseLearner(void* learner) = 0;
-  virtual void ActualLearn(example*) = 0;
-  virtual void ActualLearn(multi_ex*) = 0;
-  virtual void ActualPredict(example*) = 0;
-  virtual void ActualPredict(multi_ex*) = 0;
-  virtual void ActualFinishExample(example*) = 0;
-  virtual void ActualFinishExample(multi_ex*) = 0;
-  virtual void ActualSaveLoad(io_buf* model_file, bool read, bool text) = 0;
+  virtual bool should_register_finish_example() = 0;
+  virtual bool should_register_saveload() = 0;
+  virtual void set_base_learner(void* learner) = 0;
+  virtual void actual_learn(example*) = 0;
+  virtual void actual_learn(multi_ex*) = 0;
+  virtual void actual_predict(example*) = 0;
+  virtual void actual_predict(multi_ex*) = 0;
+  virtual void actual_finish_example(example*) = 0;
+  virtual void actual_finish_example(multi_ex*) = 0;
+  virtual void actual_saveload(io_buf* model_file, bool read, bool text) = 0;
 
-  virtual ~ExternalBinding(){};
+  virtual ~external_binding(){};
 };
-}  // namespace WRAPPER
+}  // namespace wrapper
 
-VW::LEARNER::base_learner* wrapper_reduction_setup(VW::setup_base_i&, std::unique_ptr<WRAPPER::ExternalBinding>);
+VW::LEARNER::base_learner* wrapper_reduction_setup(VW::setup_base_i&, std::unique_ptr<wrapper::external_binding>);
 VW::LEARNER::base_learner* wrapper_reduction_multiline_setup(
-    VW::setup_base_i&, std::unique_ptr<WRAPPER::ExternalBinding>);
-VW::LEARNER::base_learner* wrapper_reduction_base_setup(VW::setup_base_i&, std::unique_ptr<WRAPPER::ExternalBinding>);
+    VW::setup_base_i&, std::unique_ptr<wrapper::external_binding>);
+VW::LEARNER::base_learner* wrapper_reduction_base_setup(VW::setup_base_i&, std::unique_ptr<wrapper::external_binding>);
