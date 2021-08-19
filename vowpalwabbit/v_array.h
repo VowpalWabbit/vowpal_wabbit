@@ -193,12 +193,7 @@ public:
 
   bool empty() const { return _begin == _end; }
 
-  T& operator[](size_t i) const
-  {
-    // In debug builds ensure we don't index out of bounds.
-    assert(i < size());
-    return _begin[i];
-  }
+  T& operator[](size_t i) const { return _begin[i]; }
   size_t size() const { return _end - _begin; }
   size_t capacity() const { return _end_array - _begin; }
 
