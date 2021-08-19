@@ -1008,10 +1008,10 @@ void ensure_size(v_array<T>& A, size_t sz)
 }
 
 template <class T>
-void push_at(v_array<T>& v, T item, size_t pos)
+void set_at(v_array<T>& v, T item, size_t pos)
 {
   if (pos > v.size()) { v.resize_but_with_stl_behavior(pos); }
-  v.insert(v.begin() + pos, item);
+  v[pos] = item;
 }
 
 action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* oracle_actions,
@@ -1627,7 +1627,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
         for (size_t i = 0; i < condition_on_cnt; i++)
         {
-          push_at(priv.learn_condition_on_act,
+          set_at(priv.learn_condition_on_act,
               action_repr(((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size()))
                       ? priv.ptag_to_action[condition_on[i]]
                       : 0),
@@ -2823,11 +2823,11 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
     if (priv->acset.use_passthrough_repr)
     {
       assert((mytag >= priv->ptag_to_action.size()) || (priv->ptag_to_action[mytag].repr == nullptr));
-      push_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
+      set_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
     }
     else
-      push_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag);
-    cdbg << "push_at " << mytag << endl;
+      set_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag);
+    cdbg << "set_at " << mytag << endl;
   }
   if (priv->auto_hamming_loss)
     loss(priv->use_action_costs ? action_cost_loss(a, allowed_actions, allowed_actions_cost, allowed_actions_cnt)
@@ -2863,7 +2863,7 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
         priv->ptag_to_action[mytag].repr = nullptr;
       }
     }
-    push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
+    set_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
   }
   if (priv->auto_hamming_loss) loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));  // TODO: action costs
   cdbg << "predict returning " << a << endl;
