@@ -175,7 +175,7 @@ public:
 class PyCppCallback
 {
 private:
-  void* base_learner;
+  LEARNER::base_learner* base_learner;
 
   bool isMulti = false;
   multi_ex* examples = nullptr;
@@ -183,9 +183,10 @@ private:
   io_buf* model_file = nullptr;
 
 public:
-  PyCppCallback(void* base_learner) : base_learner(base_learner) {}
+  PyCppCallback(LEARNER::base_learner* base_learner) : base_learner(base_learner) {}
   PyCppCallback(io_buf* model_file) : model_file(model_file) {}
-  PyCppCallback(void* base_learner, multi_ex* examples) : base_learner(base_learner), examples(examples)
+  PyCppCallback(LEARNER::base_learner* base_learner, multi_ex* examples)
+      : base_learner(base_learner), examples(examples)
   {
     isMulti = true;
   }
@@ -195,9 +196,9 @@ public:
     if (!isMulti)
     {
       if (should_call_learn)
-        reinterpret_cast<VW::LEARNER::single_learner*>(this->base_learner)->learn(*ec.get());
+        as_singleline(this->base_learner)->learn(*ec.get());
       else
-        reinterpret_cast<VW::LEARNER::single_learner*>(this->base_learner)->predict(*ec.get());
+        as_singleline(this->base_learner)->predict(*ec.get());
     }
   }
 
@@ -210,10 +211,10 @@ public:
     {
       if (should_call_learn)
         VW::LEARNER::multiline_learn_or_predict<true>(
-            *reinterpret_cast<VW::LEARNER::multi_learner*>(base_learner), *examples, (*examples)[0]->ft_offset);
+            *as_multiline(this->base_learner), *examples, (*examples)[0]->ft_offset);
       else
         VW::LEARNER::multiline_learn_or_predict<false>(
-            *reinterpret_cast<VW::LEARNER::multi_learner*>(base_learner), *examples, (*examples)[0]->ft_offset);
+            *as_multiline(this->base_learner), *examples, (*examples)[0]->ft_offset);
     }
   }
 };
@@ -222,7 +223,7 @@ class PyCppBridge : public WRAPPER::ExternalBinding
 {
 private:
   py::object* py_reduction_impl;
-  void* base_learner;
+  LEARNER::base_learner* base_learner;
   bool register_finish_learn = false;
   bool register_save_load = false;
 
@@ -308,7 +309,7 @@ public:
     this->call_py_impl_method("_save_load_convenience", read, text, py_cpp_callback_ptr(new PyCppCallback(model_file)));
   }
 
-  void SetBaseLearner(void* learner) { this->base_learner = learner; }
+  void SetBaseLearner(void* learner) { this->base_learner = reinterpret_cast<VW::LEARNER::base_learner*>(learner); }
 };
 
 // specialization needed to compile, this should never be reached since we always use
