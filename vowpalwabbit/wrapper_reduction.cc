@@ -82,8 +82,6 @@ VW::LEARNER::base_learner* wrapper_reduction_setup(
   if (should_register_finish_example) l->set_finish_example(finish_example);
   if (should_set_save_load) l->set_save_load(save_load);
 
-  pr.release();
-
   return make_base(*l);
 }
 
