@@ -335,7 +335,7 @@ inline void generate_interactions(const std::vector<std::vector<INTERACTIONS::in
             [](const INTERACTIONS::interaction_term& a, const INTERACTIONS::interaction_term& b) {
               return a.type() == b.type();
             }))
-    { THROW_OR_RETURN("Cannot mix interactions of character and hash based.", 0); }
+    { THROW_OR_RETURN("Cannot mix interactions of character and hash based."); }
 
     const auto inter_type = ns.front().type();
 
