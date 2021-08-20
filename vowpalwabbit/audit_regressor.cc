@@ -190,6 +190,8 @@ void finish_example(vw& all, audit_regressor_data& rd, example& ec)
 
 void finish(audit_regressor_data& rd)
 {
+  rd.out_file.flush();
+
   if (rd.values_audited < rd.loaded_regressor_values)
   {
     *rd.all->trace_message << fmt::format(
