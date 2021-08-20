@@ -16,7 +16,7 @@ constexpr size_t NUM_LDF_ENTITY_EXAMPLES = 10;
 
 namespace EntityRelationTask
 {
-Search::search_task task = {"entity_relation", run, initialize, finish, nullptr, nullptr};
+Search::search_task task = {"entity_relation", run, initialize, nullptr, nullptr, nullptr};
 }
 
 namespace EntityRelationTask
@@ -37,7 +37,7 @@ struct task_data
   v_array<uint32_t> y_allowed_entity;
   v_array<uint32_t> y_allowed_relation;
   size_t search_order;
-  example* ldf_entity;
+  std::array<example, NUM_LDF_ENTITY_EXAMPLES> ldf_entity;
   example* ldf_relation;
 };
 
@@ -77,30 +77,19 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   if (my_task_data->search_order != 3 && my_task_data->search_order != 4) { sch.set_options(0); }
   else
   {
-    example* ldf_examples = VW::alloc_examples(NUM_LDF_ENTITY_EXAMPLES);
     CS::wclass default_wclass = {0., 0, 0., 0.};
     for (size_t a = 0; a < NUM_LDF_ENTITY_EXAMPLES; a++)
     {
-      ldf_examples[a].l.cs.costs.push_back(default_wclass);
-      ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
+      my_task_data->ldf_entity[a].l.cs.costs.push_back(default_wclass);
+      my_task_data->ldf_entity[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
     }
-    my_task_data->ldf_entity = ldf_examples;
-    my_task_data->ldf_relation = ldf_examples + 4;
+    my_task_data->ldf_relation = my_task_data->ldf_entity.data() + 4;
     sch.set_options(Search::IS_LDF);
   }
 
   sch.set_num_learners(2);
   if (my_task_data->search_order == 4) sch.set_num_learners(3);
 }
-
-void finish(Search::search& sch)
-{
-  task_data* my_task_data = sch.get_task_data<task_data>();
-  my_task_data->y_allowed_entity.delete_v();
-  my_task_data->y_allowed_relation.delete_v();
-  if (my_task_data->search_order == 3) { VW::dealloc_examples(my_task_data->ldf_entity, NUM_LDF_ENTITY_EXAMPLES); }
-  delete my_task_data;
-}  // if we had task data, we'd want to free it here
 
 bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
 {
@@ -140,7 +129,7 @@ size_t predict_entity(
   size_t prediction;
   if (my_task_data->allow_skip)
   {
-    v_array<uint32_t> star_labels = v_init<uint32_t>();
+    v_array<uint32_t> star_labels;
     star_labels.push_back(ex->l.multi.label);
     star_labels.push_back(LABEL_SKIP);
     my_task_data->y_allowed_entity.push_back(LABEL_SKIP);
@@ -167,7 +156,7 @@ size_t predict_entity(
         lab.costs[0].wap_value = 0.f;
       }
       prediction = Search::predictor(sch, my_tag)
-                       .set_input(my_task_data->ldf_entity, 4)
+                       .set_input(my_task_data->ldf_entity.data(), 4)
                        .set_oracle(ex->l.multi.label - 1)
                        .set_learner_id(1)
                        .predict() +
@@ -199,7 +188,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   task_data* my_task_data = sch.get_task_data<task_data>();
   size_t hist[2];
   decode_tag(ex->tag, type, id1, id2);
-  v_array<uint32_t> constrained_relation_labels = v_init<uint32_t>();
+  v_array<uint32_t> constrained_relation_labels;
   if (my_task_data->constraints && predictions[id1] != 0 && predictions[id2] != 0)
   {
     hist[0] = predictions[id1];
@@ -220,7 +209,7 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
   size_t prediction;
   if (my_task_data->allow_skip)
   {
-    v_array<uint32_t> star_labels = v_init<uint32_t>();
+    v_array<uint32_t> star_labels;
     star_labels.push_back(ex->l.multi.label);
     star_labels.push_back(LABEL_SKIP);
     constrained_relation_labels.push_back(LABEL_SKIP);
@@ -280,7 +269,6 @@ size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predi
     }
   }
   sch.loss(loss);
-  constrained_relation_labels.delete_v();
   return prediction;
 }
 
@@ -381,7 +369,7 @@ void run(Search::search& sch, multi_ex& ec)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
 
-  v_array<size_t> predictions = v_init<size_t>();
+  v_array<size_t> predictions;
   for (size_t i = 0; i < ec.size(); i++) { predictions.push_back(0); }
 
   switch (my_task_data->search_order)
@@ -406,7 +394,6 @@ void run(Search::search& sch, multi_ex& ec)
   {
     if (sch.output().good()) sch.output() << predictions[i] << ' ';
   }
-  predictions.delete_v();
 }
 // this is totally bogus for the example -- you'd never actually do this!
 void update_example_indicies(bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)

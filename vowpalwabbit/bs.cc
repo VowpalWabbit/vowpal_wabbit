@@ -221,8 +221,10 @@ void finish_example(vw& all, bs& d, example& ec)
   VW::finish_example(all, ec);
 }
 
-base_learner* bs_setup(options_i& options, vw& all)
+base_learner* bs_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto data = scoped_calloc_or_throw<bs>();
   std::string type_string("mean");
   option_group_definition new_options("Bootstrap");
@@ -254,8 +256,8 @@ base_learner* bs_setup(options_i& options, vw& all)
   data->all = &all;
   data->_random_state = all.get_random_state();
 
-  learner<bs, example>& l = init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>,
-      predict_or_learn<false>, data->B, all.get_setupfn_name(bs_setup), true);
+  learner<bs, example>& l = init_learner(data, as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true>, predict_or_learn<false>, data->B, stack_builder.get_setupfn_name(bs_setup), true);
   l.set_finish_example(finish_example);
 
   return make_base(l);

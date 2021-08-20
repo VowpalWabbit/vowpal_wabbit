@@ -68,7 +68,6 @@ cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, s
     , _synthcoversize(synthcoversize)
     , _random_state(random_state)
     , _model_file_version(model_file_version)
-    , _action_probs(v_init<ACTION_SCORE::action_score>())
     , _min_cost(0.0)
     , _max_cost(0.0)
 {
@@ -160,8 +159,10 @@ void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool te
   }
 }
 
-VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
+VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  VW::config::options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
   float epsilon = 0.;
@@ -205,7 +206,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   }
 
   size_t problem_multiplier = 1;
-  VW::LEARNER::multi_learner* base = as_multiline(setup_base(options, all));
+  VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");
@@ -214,7 +215,7 @@ VW::LEARNER::base_learner* setup(VW::config::options_i& options, vw& all)
   auto data = VW::make_unique<explore_type>(
       with_metrics, epsilon, psi, synthcoversize, all.get_random_state(), all.model_file_ver);
   auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup) + "-synthcover")
+      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
                 .set_prediction_type(prediction_type_t::action_probs)
                 .set_label_type(label_type_t::cb)

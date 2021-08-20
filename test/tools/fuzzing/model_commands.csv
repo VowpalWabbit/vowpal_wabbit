@@ -1,0 +1,4 @@
+model_name,command
+cover_adf_e_dec,--cb_explore_adf --cover 3 --noconstant
+cover_adf_e_fixed,--cb_explore_adf --cover 3 --epsilon 0.5 -t
+sqcb_ld,--cb_explore_adf -q UA --squarecb -t

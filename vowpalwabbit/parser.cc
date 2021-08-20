@@ -14,6 +14,8 @@
 
 #include <fstream>
 
+#include "text_utils.h"
+
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <winsock2.h>
@@ -458,7 +460,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       // create children
       size_t num_children = all.num_children;
-      v_array<int> children = v_init<int>();
+      v_array<int> children;
       children.resize_but_with_stl_behavior(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
@@ -549,7 +551,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       std::string temp = all.data_filename;
       if (!quiet) *(all.trace_message) << "Reading datafile = " << temp << endl;
 
-      auto should_use_compressed = input_options.compressed || ends_with(all.data_filename, ".gz");
+      auto should_use_compressed = input_options.compressed || VW::ends_with(all.data_filename, ".gz");
 
       try
       {
@@ -660,10 +662,6 @@ example& get_unused_example(vw* all)
   parser* p = all->example_parser;
   auto ex = p->example_pool.get_object();
   p->begin_parsed_examples++;
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  ex->in_use = true;
-  VW_WARNING_STATE_POP
   return *ex;
 }
 
@@ -770,7 +768,7 @@ void add_constant_feature(vw& vw, example* ec)
   ec->feature_space[constant_namespace].push_back(1, constant);
   ec->num_features++;
   if (vw.audit || vw.hash_inv)
-    ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
+    ec->feature_space[constant_namespace].space_names.push_back(audit_strings("", "Constant"));
 }
 
 void add_label(example* ec, float label, float weight, float base)
@@ -865,10 +863,6 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  ec.in_use = false;
-  VW_WARNING_STATE_POP
   all.example_parser->example_pool.return_object(&ec);
 }
 

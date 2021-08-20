@@ -105,7 +105,7 @@ float loss(warm_cb& data, uint32_t label, uint32_t final_prediction)
     return data.loss0;
 }
 
-float loss_cs(warm_cb& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
+float loss_cs(warm_cb& data, std::vector<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
 {
   float cost = 0.;
   for (auto wc : costs)
@@ -119,12 +119,10 @@ float loss_cs(warm_cb& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t fi
   return data.loss0 + (data.loss1 - data.loss0) * cost;
 }
 
-template <class T>
-uint32_t find_min(std::vector<T> arr)
+uint32_t find_min(const std::vector<float>& arr)
 {
-  T min_val = FLT_MAX;
+  float min_val = FLT_MAX;
   uint32_t argmin = 0;
-
   for (uint32_t i = 0; i < arr.size(); i++)
   {
     if (arr[i] < min_val)
@@ -521,8 +519,10 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   data.cumu_var = 0.f;
 }
 
-base_learner* warm_cb_setup(options_i& options, vw& all)
+base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   uint32_t num_actions = 0;
   auto data = scoped_calloc_or_throw<warm_cb>();
   bool use_cs;
@@ -576,7 +576,6 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   { THROW("label corruption on cost-sensitive examples not currently supported"); }
 
   data->app_seed = uniform_hash("vw", 2, 0);
-  data->a_s = v_init<action_score>();
   data->all = &all;
   data->_random_state = all.get_random_state();
   data->use_cs = use_cs;
@@ -595,7 +594,7 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
 
   learner<warm_cb, example>* l;
 
-  multi_learner* base = as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   // Note: the current version of warm start CB can only support epsilon-greedy exploration
   // We need to wait for the epsilon value to be passed from the base
   // cb_explore learner, if there is one
@@ -609,14 +608,14 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
   if (use_cs)
   {
     l = &init_cost_sensitive_learner(data, base, predict_and_learn_adf<true>, predict_and_learn_adf<true>,
-        all.example_parser, data->choices_lambda, all.get_setupfn_name(warm_cb_setup) + "-cs",
+        all.example_parser, data->choices_lambda, stack_builder.get_setupfn_name(warm_cb_setup) + "-cs",
         prediction_type_t::multiclass, true);
     all.example_parser->lbl_parser.label_type = label_type_t::cs;
   }
   else
   {
     l = &init_multiclass_learner(data, base, predict_and_learn_adf<false>, predict_and_learn_adf<false>,
-        all.example_parser, data->choices_lambda, all.get_setupfn_name(warm_cb_setup) + "-multi",
+        all.example_parser, data->choices_lambda, stack_builder.get_setupfn_name(warm_cb_setup) + "-multi",
         prediction_type_t::multiclass, true);
     all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   }

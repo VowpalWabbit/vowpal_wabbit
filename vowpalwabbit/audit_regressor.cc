@@ -4,7 +4,6 @@
 
 #include "reductions.h"
 #include "interactions.h"
-#include "parse_args.h"
 #include "vw.h"
 #include "shared_data.h"
 #include "gd.h"
@@ -81,7 +80,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
     features& fs = ec.feature_space[*i];
     for (size_t j = 0; j < fs.size(); ++j)
     {
-      tempstream << '\t' << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':'
+      tempstream << '\t' << fs.space_names[j].first << '^' << fs.space_names[j].second << ':'
                  << ((fs.indicies[j] >> weights.stride_shift()) & all.parse_mask);
       for (size_t k = 0; k < all.lda; k++)
       {
@@ -118,7 +117,7 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
         if (fs.space_names.size() > 0)
           for (size_t j = 0; j < fs.size(); ++j)
           {
-            audit_regressor_interaction(rd, fs.space_names[j].get());
+            audit_regressor_interaction(rd, &fs.space_names[j]);
             audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indicies[j]) + ec.ft_offset);
             audit_regressor_interaction(rd, nullptr);
           }
@@ -239,8 +238,11 @@ void init_driver(audit_regressor_data& dat)
   }
 }
 
-VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* audit_regressor_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   std::string out_file;
 
   option_group_definition new_options("Audit Regressor");
@@ -265,10 +267,10 @@ VW::LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
   dat->out_file->add_file(VW::io::open_file_writer(out_file));
 
   VW::LEARNER::learner<audit_regressor_data, example>& ret =
-      VW::LEARNER::init_learner(dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1,
-          all.get_setupfn_name(audit_regressor_setup), true /*audit.learn does not predict or learn.
-                                                               nothing to be gained by calling
-                                                               predict() before learn()*/
+      VW::LEARNER::init_learner(dat, as_singleline(stack_builder.setup_base_learner()), audit_regressor,
+          audit_regressor, 1, stack_builder.get_setupfn_name(audit_regressor_setup), true /*audit.learn does not predict
+                                                                                   or learn. nothing to be gained by
+                                                                                   calling predict() before learn()*/
       );
   ret.set_end_examples(end_examples);
   ret.set_finish_example(finish_example);

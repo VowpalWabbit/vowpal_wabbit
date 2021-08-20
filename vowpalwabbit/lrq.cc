@@ -7,6 +7,7 @@
 #include "rand48.h"
 #include "vw_exception.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
+#include "text_utils.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -118,7 +119,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
               if (all.audit || all.hash_inv)
               {
                 std::stringstream new_feature_buffer;
-                new_feature_buffer << right << '^' << right_fs.space_names[rfn].get()->second << '^' << n;
+                new_feature_buffer << right << '^' << right_fs.space_names[rfn].second << '^' << n;
 
 #ifdef _WIN32
                 char* new_space = _strdup("lrq");
@@ -127,7 +128,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
                 char* new_space = strdup("lrq");
                 char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
-                right_fs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space, new_feature)));
+                right_fs.space_names.push_back(audit_strings(new_space, new_feature));
               }
             }
           }
@@ -162,8 +163,10 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
   }  // end for(max_iter)
 }
 
-base_learner* lrq_setup(options_i& options, vw& all)
+base_learner* lrq_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto lrq = scoped_calloc_or_throw<LRQstate>();
   std::vector<std::string> lrq_names;
   option_group_definition new_options("Low Rank Quadratics");
@@ -175,7 +178,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
   uint32_t maxk = 0;
   lrq->all = &all;
 
-  for (auto& lrq_name : lrq_names) lrq_name = spoof_hex_encoded_namespaces(lrq_name);
+  for (auto& lrq_name : lrq_names) lrq_name = VW::decode_inline_hex(lrq_name);
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 
@@ -209,9 +212,9 @@ base_learner* lrq_setup(options_i& options, vw& all)
   if (!all.logger.quiet) *(all.trace_message) << std::endl;
 
   all.wpp = all.wpp * static_cast<uint64_t>(1 + maxk);
-  auto base = setup_base(options, all);
+  auto base = stack_builder.setup_base_learner();
   learner<LRQstate, example>& l = init_learner(lrq, as_singleline(base), predict_or_learn<true>,
-      predict_or_learn<false>, 1 + maxk, all.get_setupfn_name(lrq_setup), base->learn_returns_prediction);
+      predict_or_learn<false>, 1 + maxk, stack_builder.get_setupfn_name(lrq_setup), base->learn_returns_prediction);
   l.set_end_pass(reset_seed);
 
   // TODO: leaks memory ?

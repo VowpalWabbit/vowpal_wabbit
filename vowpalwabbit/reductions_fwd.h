@@ -28,4 +28,25 @@ namespace config
 {
 struct options_i;
 }  // namespace config
+
+struct setup_base_i;
+typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::setup_base_i&);
+
+struct setup_base_i
+{
+  virtual void delayed_state_attach(vw&, VW::config::options_i&) = 0;
+
+  virtual VW::LEARNER::base_learner* setup_base_learner() = 0;
+
+  // this one we can share freely
+  virtual VW::config::options_i* get_options() = 0;
+
+  // in reality we would want to be more specific than this
+  // to start hiding global state away
+  virtual vw* get_all_pointer() = 0;
+
+  virtual std::string get_setupfn_name(reduction_setup_fn setup) = 0;
+
+  virtual ~setup_base_i() = default;
+};
 }  // namespace VW

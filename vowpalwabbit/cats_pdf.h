@@ -12,7 +12,7 @@ namespace continuous_action
 namespace cats_pdf
 {
 // Setup reduction in stack
-LEARNER::base_learner* setup(config::options_i& options, vw& all);
+LEARNER::base_learner* setup(setup_base_i& stack_builder);
 
 }  // namespace cats_pdf
 }  // namespace continuous_action

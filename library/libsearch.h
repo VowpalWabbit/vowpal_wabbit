@@ -12,7 +12,10 @@ license as described in the file LICENSE.
 #include "../vowpalwabbit/search.h"
 #include "../vowpalwabbit/search_hooktask.h"
 
-template<class INPUT, class OUTPUT> class SearchTask
+#  include <memory>
+
+template <class INPUT, class OUTPUT>
+class SearchTask
 {
 public:
   SearchTask(vw& vw_obj) : vw_obj(vw_obj), sch(*(Search::search*)vw_obj.searchstr)
@@ -27,9 +30,7 @@ public:
     d->run_f = _search_run_fn;
     d->run_setup_f = _search_setup_fn;
     d->run_takedown_f = _search_takedown_fn;
-    d->run_object = this;
-    d->extra_data  = NULL;
-    d->extra_data2 = NULL;
+    d->run_object = std::shared_ptr<SearchTask<INPUT, OUTPUT>>(this);
   }
   virtual ~SearchTask()
   { trigger.clear(); // the individual examples get cleaned up below
@@ -51,41 +52,36 @@ protected:
 private:
   example* bogus_example;
   multi_ex trigger;
+  INPUT _input;
+  OUTPUT _output;
 
   void call_vw(INPUT& input_example, OUTPUT& output)
-  { HookTask::task_data* d = sch.template get_task_data<HookTask::task_data> (); // ugly calling convention :(
-    d->extra_data  = (void*)&input_example;
-    d->extra_data2 = (void*)&output;
+  {
+    _input = input_example;
+    _output = output;
     vw_obj.learn(trigger); // this will cause our search_run_fn hook to get called
   }
 
   static void _search_run_fn(Search::search&sch)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    if ((d->run_object == NULL) || (d->extra_data == NULL) || (d->extra_data2 == NULL))
-    {
-      THROW("error: calling _search_run_fn without setting run object");
-    }
-    ((SearchTask*)d->run_object)->_run(sch, *(INPUT*)d->extra_data, *(OUTPUT*)d->extra_data2);
+    if (d->run_object == nullptr) { THROW("error: calling _search_run_fn without setting run object"); }
+    auto* run_obj = static_cast<SearchTask<INPUT, OUTPUT>*>(d->run_object.get());
+    run_obj->_run(sch, run_obj->_input, run_obj->_output);
   }
 
   static void _search_setup_fn(Search::search&sch)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    if ((d->run_object == NULL) || (d->extra_data == NULL) || (d->extra_data2 == NULL))
-    {
-      THROW("error: calling _search_setup_fn without setting run object");
-    }
-    ((SearchTask*)d->run_object)->_setup(sch, *(INPUT*)d->extra_data, *(OUTPUT*)d->extra_data2);
+    if (d->run_object == nullptr) { THROW("error: calling _search_setup_fn without setting run object"); }
+    auto* run_obj = static_cast<SearchTask<INPUT, OUTPUT>*>(d->run_object.get());
+    run_obj->_setup(sch, run_obj->_input, run_obj->_output);
   }
 
   static void _search_takedown_fn(Search::search&sch)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    if ((d->run_object == NULL) || (d->extra_data == NULL) || (d->extra_data2 == NULL))
-    {
-      THROW("error: calling _search_takedown_fn without setting run object");
-    }
-    ((SearchTask*)d->run_object)->_takedown(sch, *(INPUT*)d->extra_data, *(OUTPUT*)d->extra_data2);
+    if (d->run_object == nullptr) { THROW("error: calling _search_takedown_fn without setting run object"); }
+    auto* run_obj = static_cast<SearchTask<INPUT, OUTPUT>*>(d->run_object.get());
+    run_obj->_takedown(sch, run_obj->_input, run_obj->_output);
   }
-
 };
 
 

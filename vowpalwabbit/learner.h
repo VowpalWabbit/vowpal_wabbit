@@ -194,6 +194,20 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
   debug_decrement_depth(ec_seq);
 }
 
+inline bool ec_is_example_header(example const& ec, label_type_t label_type)
+{
+  if (label_type == label_type_t::cb) { return CB::ec_is_example_header(ec); }
+  else if (label_type == label_type_t::ccb)
+  {
+    return CCB::ec_is_example_header(ec);
+  }
+  else if (label_type == label_type_t::cs)
+  {
+    return COST_SENSITIVE::ec_is_example_header(ec);
+  }
+  return false;
+}
+
 /// \brief Defines the interface for a learning algorithm.
 ///
 /// Learner is implemented as a struct of pointers, and associated methods. It
@@ -525,6 +539,12 @@ public:
       THROW("fatal: learner did not register print example fn: " + name);
 
     finish_example_fd.print_example_f(all, finish_example_fd.data, (void*)&ec);
+  }
+
+  void get_enabled_reductions(std::vector<std::string>& enabled_reductions)
+  {
+    if (learn_fd.base) { learn_fd.base->get_enabled_reductions(enabled_reductions); }
+    enabled_reductions.push_back(name);
   }
 
   template <class L>
@@ -986,6 +1006,7 @@ struct base_learner_builder
       : common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>(
             std::move(data), name)
   {
+    this->_learner->persist_metrics_fd.save_metric_f = static_cast<save_metric_data::fn>(noop_persist_metrics);
     this->_learner->end_pass_fd.func = static_cast<func_data::fn>(noop);
     this->_learner->end_examples_fd.func = static_cast<func_data::fn>(noop);
     this->_learner->init_fd.func = static_cast<func_data::fn>(noop);
@@ -1053,6 +1074,15 @@ base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&&
   builder.set_update(learn_fn);
   builder.set_predict(predict_fn);
   return builder;
+}
+
+template <class ExampleT>
+base_learner_builder<char, ExampleT> make_no_data_base_learner(void (*learn_fn)(char&, base_learner&, ExampleT&),
+    void (*predict_fn)(char&, base_learner&, ExampleT&), const std::string& name, prediction_type_t pred_type,
+    label_type_t label_type)
+{
+  return make_base_learner<char, ExampleT>(
+      std::unique_ptr<char>(nullptr), learn_fn, predict_fn, name, pred_type, label_type);
 }
 
 }  // namespace LEARNER

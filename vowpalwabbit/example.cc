@@ -22,10 +22,6 @@ float calculate_total_sum_features_squared(bool permutations, example& ec)
   return sum_features_squared;
 }
 
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-example::example() { in_use = true; }
-
 example::~example()
 {
   if (passthrough)
@@ -34,7 +30,6 @@ example::~example()
     passthrough = nullptr;
   }
 }
-VW_WARNING_STATE_POP
 
 float collision_cleanup(features& fs)
 {
@@ -56,9 +51,10 @@ float collision_cleanup(features& fs)
   }
 
   sum_sq += pos.value() * pos.value();
-  fs.sum_feat_sq = sum_sq;
   ++pos;
-  fs.truncate_to(pos);
+  // Don't change the sum_feat_sq as we will do it manually directly after.
+  fs.truncate_to(pos, 0);
+  fs.sum_feat_sq = sum_sq;
 
   return sum_sq;
 }
@@ -169,7 +165,6 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len)
   features_and_source fs;
   fs.stride_shift = all.weights.stride_shift();
   fs.mask = all.weights.mask() >> all.weights.stride_shift();
-  fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
   feature_map_len = fs.feature_map.size();

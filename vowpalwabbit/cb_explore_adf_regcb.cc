@@ -52,7 +52,7 @@ private:
 
   // for backing up cb example data when computing sensitivities
   std::vector<ACTION_SCORE::action_scores> _ex_as;
-  std::vector<v_array<CB::cb_class>> _ex_costs;
+  std::vector<std::vector<CB::cb_class>> _ex_costs;
 
 public:
   cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost,
@@ -248,8 +248,10 @@ void cb_explore_adf_regcb::save_load(io_buf& io, bool read, bool text)
   }
 }
 
-base_learner* setup(VW::config::options_i& options, vw& all)
+base_learner* setup(VW::setup_base_i& stack_builder)
 {
+  VW::config::options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   using config::make_option;
   bool cb_explore_adf_option = false;
   bool regcb = false;
@@ -290,7 +292,7 @@ base_learner* setup(VW::config::options_i& options, vw& all)
   // Set explore_type
   size_t problem_multiplier = 1;
 
-  multi_learner* base = as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");
@@ -299,7 +301,7 @@ base_learner* setup(VW::config::options_i& options, vw& all)
   auto data = VW::make_unique<explore_type>(
       with_metrics, regcbopt, c0, first_only, min_cb_cost, max_cb_cost, all.model_file_ver);
   auto* l = make_reduction_learner(
-      std::move(data), base, explore_type::learn, explore_type::predict, all.get_setupfn_name(setup) + "-regcb")
+      std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
                 .set_prediction_type(prediction_type_t::action_probs)
                 .set_label_type(label_type_t::cb)

@@ -12,13 +12,12 @@ namespace VW
 {
 namespace pmf_to_pdf
 {
-LEARNER::base_learner* setup(config::options_i& options, vw& all);
+LEARNER::base_learner* setup(VW::setup_base_i& stack_builder);
 struct reduction
 {
   void predict(example& ec);
   void learn(example& ec);
 
-  ~reduction();
   std::vector<float> pdf_lim;
   uint32_t num_actions;
   uint32_t tree_bandwidth;

@@ -379,9 +379,9 @@ void to_flat::convert_txt_to_flat(vw& all)
           std::string ns_name;
           for (const auto& f : ns_fts.audit_range())
           {
-            ns_name = f.audit()->get()->first;
+            ns_name = f.audit()->first;
             fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(
-                _builder, f.audit()->get()->second.c_str(), f.value(), f.index()));
+                _builder, f.audit()->second.c_str(), f.value(), f.index()));
           }
           namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), ns, &fts);
         }
