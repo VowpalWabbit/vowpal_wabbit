@@ -39,8 +39,8 @@ float query_decision(active& a, float ec_revert_weight, float k)
   else
   {
     const auto weighted_queries = static_cast<float>(a._shared_data->weighted_labeled_examples);
-    const float avg_loss = (static_cast<float>(a._shared_data->sum_loss) / k) + std::sqrt(
-        (1.f + 0.5f * std::log(k)) / (weighted_queries + 0.0001f));
+    const float avg_loss = (static_cast<float>(a._shared_data->sum_loss) / k) +
+        std::sqrt((1.f + 0.5f * std::log(k)) / (weighted_queries + 0.0001f));
     bias = get_active_coin_bias(k, avg_loss, ec_revert_weight / k, a.active_c0);
   }
   if (a._random_state->get_and_update_random() < bias)
@@ -99,9 +99,7 @@ void active_print_result(VW::io::writer* f, float res, float weight, const v_arr
   const auto result = fmt::format("{:f}{}{}\n", res, tag_str, weight_str);
   const auto t = f->write(result.c_str(), result.size());
   if (t != static_cast<ssize_t>(result.size()))
-  {
-    logger::errlog_error("write error: {}", VW::strerror_to_string(errno));
-  }
+  { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void output_and_account_example(vw& all, active& a, example& ec)
@@ -110,16 +108,12 @@ void output_and_account_example(vw& all, active& a, example& ec)
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only)
-  {
-    all.sd->weighted_labels += (static_cast<double>(ld.label)) * static_cast<double>(ec.weight);
-  }
-  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? static_cast<double>(ec.weight): 0.0;
+  { all.sd->weighted_labels += (static_cast<double>(ld.label)) * static_cast<double>(ec.weight); }
+  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? static_cast<double>(ec.weight) : 0.0;
 
   float ai = -1;
   if (ld.label == FLT_MAX)
-  {
-    ai = query_decision(a, ec.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples));
-  }
+  { ai = query_decision(a, ec.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples)); }
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
   for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag); }
