@@ -586,6 +586,10 @@ class vw(pylibvw.vw):
             ec = self.parse(ec)
             new_example = True
 
+            if isinstance(vw_to_tensorwatch, VWtoTensorwatchStreamer):
+                label = get_label(ec, super().get_label_type())
+                prediction = get_prediction(ec, super().get_prediction_type())
+
         elif isinstance(ec, list):
             if not self._is_multiline():
                 raise TypeError("Expecting a mutiline Learner.")
@@ -625,7 +629,7 @@ class vw(pylibvw.vw):
                 vw_to_tensorboard.emit_learning_metrics(average_loss, since_last)
 
             if vw_to_tensorwatch:
-                vw_to_tensorwatch.emit_learning_metrics(average_loss, since_last)
+                vw_to_tensorwatch.emit_learning_metrics(average_loss, since_last, label, prediction)
 
     def predict(self, ec, prediction_type=None):
         """Just make a prediction on the example

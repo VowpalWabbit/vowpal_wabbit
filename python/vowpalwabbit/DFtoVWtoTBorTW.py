@@ -116,9 +116,11 @@ class VWtoTensorwatchStreamer:
 		self.iteration = 0
 		self.avg_loss_tw = self.watcher.create_stream('average_loss')
 		self.since_last_tw = self.watcher.create_stream('since_last')
+		self.label_tw = self.watcher.create_stream('label')
+		self.prediction_tw = self.watcher.create_stream('prediction')
 
 
-	def emit_learning_metrics(self, average_loss, since_last):
+	def emit_learning_metrics(self, average_loss, since_last, label, prediction):
 		"""This method for now logs the metrics given as arguments for Tensorwatch visualization
 
 		Parameters
@@ -136,6 +138,8 @@ class VWtoTensorwatchStreamer:
 		"""
 		self.avg_loss_tw.write( (self.iteration, average_loss) )
 		self.since_last_tw.write( (self.iteration, since_last) )
+		self.label_tw.write( (self.iteration, label) )
+		self.prediction_tw.write( (self.iteration, prediction) )
 		self.iteration += 1
 
 
@@ -165,6 +169,8 @@ class VWtoTensorwatchClient:
 		Parameters
 		----------
 
+		logfile : str
+			This is the logfile where tensorwatch will log the metrics to, so if no client is listening to the socket then client can pick values from the log file, file should have '.log' extension
 		port : int
 			Port on which WatcherClient should work
 
@@ -191,6 +197,8 @@ class VWtoTensorwatchClient:
 		"""
 		avg_loss_tw = self.client.open_stream('average_loss')
 		since_last_tw = self.client.open_stream('since_last')
+		label_tw = self.client.open_stream('label')
+		prediction_tw = self.client.open_stream('prediction')
 
 		avg_plot = tw.Visualizer(avg_loss_tw, vis_type='line', xtitle='iterations', ytitle='average_loss')
 		avg_plot.show()
@@ -198,6 +206,11 @@ class VWtoTensorwatchClient:
 		since_last_plot = tw.Visualizer(since_last_tw, vis_type='line', xtitle='iterations', ytitle='since_last')
 		since_last_plot.show()
 
+		label_plot = tw.Visualizer(label_tw, vis_type='bar', xtitle='label_per_iteration')
+		label_plot.show()
+
+		prediction_plot = tw.Visualizer(prediction_tw, vis_type='bar', xtitle='prediction_per_iteration')
+		prediction_plot.show()
 
 	def __del__(self):
 		"""When the object is being destroyed, this would be called to close the WatcherClient
