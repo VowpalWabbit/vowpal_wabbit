@@ -689,6 +689,8 @@ Stagewise polynomial options:
 Stochastic Variance Reduced Gradient:
   --svrg                  Streaming Stochastic Variance Reduced Gradient
   --stage_size arg (=1, ) Number of passes per SVRG stage
+Debug: test reduction:
+  --test_red arg        set default champion (0 or 1)
 Top K:
   --top arg             top k recommendation
 Make Multiclass into Warm-starting Contextual Bandit:

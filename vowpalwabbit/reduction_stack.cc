@@ -16,6 +16,7 @@
 #include "multilabel_oaa.h"
 #include "bs.h"
 #include "topk.h"
+#include "test_red.h"
 #include "ect.h"
 #include "csoaa.h"
 #include "cb_algs.h"
@@ -187,6 +188,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(cb_dro_setup);
   reductions.push_back(cb_sample_setup);
   reductions.push_back(explore_eval_setup);
+  reductions.push_back(VW::test_red::test_red_setup);
   reductions.push_back(VW::shared_feature_merger::shared_feature_merger_setup);
   reductions.push_back(CCB::ccb_explore_adf_setup);
   reductions.push_back(VW::slates::slates_setup);
