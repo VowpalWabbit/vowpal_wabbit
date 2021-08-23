@@ -293,7 +293,11 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
         assert(false);
       }
 
-      if (current_obj.HasMember("_original_label_cost")) { data->originalLabelCost = current_obj["_original_label_cost"].GetFloat(); }
+      if (current_obj.HasMember("_original_label_cost"))
+      {
+        assert(current_obj["_original_label_cost"].IsFloat());
+        data->originalLabelCost = current_obj["_original_label_cost"].GetFloat();
+      }
     }
 
     for (const auto& slot : slot_examples)
