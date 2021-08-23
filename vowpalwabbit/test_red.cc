@@ -128,9 +128,10 @@ struct single_config
 
   void persist(metric_sink& metrics, const std::string& suffix)
   {
-    metrics.float_metrics_list.emplace_back("upcnt" + suffix, update_count);
+    metrics.int_metrics_list.emplace_back("upcnt" + suffix, update_count);
     metrics.float_metrics_list.emplace_back("ips" + suffix, ips / update_count);
-    metrics.float_metrics_list.emplace_back("bound" + suffix, chisq.recompute_duals().first);
+    distributionally_robust::ScoredDual sd = chisq.recompute_duals();
+    metrics.float_metrics_list.emplace_back("bound" + suffix, (float)(sd.first));
     metrics.float_metrics_list.emplace_back("w" + suffix, last_w);
     metrics.float_metrics_list.emplace_back("r" + suffix, last_r);
   }
@@ -244,8 +245,8 @@ struct tr_data
   ACTION_SCORE::action_scores champ_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
 
-template <bool is_explore, typename T>
-void predict_automl(tr_data& data, T& base, multi_ex& ec)
+template <bool is_explore>
+void predict_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 {
   size_t i = data.cm.current_champ;
   for (example* ex : ec) { data.cm.configure_interactions(ex, i); }
@@ -264,8 +265,8 @@ void predict_automl(tr_data& data, T& base, multi_ex& ec)
   base.predict(ec, i);
 }
 
-template <typename T>
-void actual_learn(tr_data& data, T& base, multi_ex& ec, size_t i, CB::cb_class& logged, size_t labelled_action)
+void actual_learn(
+    tr_data& data, multi_learner& base, multi_ex& ec, size_t i, CB::cb_class& logged, size_t labelled_action)
 {
   assert(ec[0]->interactions == nullptr);
 
@@ -286,7 +287,7 @@ void actual_learn(tr_data& data, T& base, multi_ex& ec, size_t i, CB::cb_class& 
 
   base.learn(ec, i);
 
-  const auto action_scores = ec[0]->pred.a_s;
+  const auto& action_scores = ec[0]->pred.a_s;
   // cb_adf => first action is a greedy action
   const auto maxit = action_scores.begin();
   const uint32_t chosen_action = maxit->action;
@@ -304,8 +305,8 @@ void actual_learn(tr_data& data, T& base, multi_ex& ec, size_t i, CB::cb_class& 
   if (data.cm.current_champ == i) { data.champ_a_s = std::move(ec[0]->pred.a_s); }
 }
 
-template <bool is_explore, typename T>
-void learn_automl(tr_data& data, T& base, multi_ex& ec)
+template <bool is_explore>
+void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 {
   bool is_learn = true;
   // assert we learn twice
@@ -429,9 +430,8 @@ VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
 
     // problem multiplier is set to data->pm
-    learner<tr_data, multi_ex>* l = &init_learner(data, as_multiline(base_learner), learn_automl<true, multi_learner>,
-        predict_automl<true, multi_learner>, data->pm, base_learner->pred_type,
-        stack_builder.get_setupfn_name(test_red_setup), true);
+    auto* l = &init_learner(data, as_multiline(base_learner), learn_automl<true>, predict_automl<true>, data->pm,
+        base_learner->pred_type, stack_builder.get_setupfn_name(test_red_setup), true);
     l->set_persist_metrics(persist);
     l->set_finish_example(_finish_example);
     l->set_save_load(save_load_aml);

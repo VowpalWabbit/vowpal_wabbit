@@ -105,6 +105,43 @@ class Simulator:
     def choose_time_of_day(self, times_of_day):
         return random.choice(times_of_day)
 
+    def process_metrics(self, metrics):
+        vw_b = metrics["bound_1"]
+        vw_b_2 = metrics["bound_2"]
+        w = metrics["w_1"]
+        r = metrics["r_1"]
+        w2 = metrics["w_2"]
+        r2 = metrics["r_2"]
+        assert(r == r2)
+        self.ocrl.update(1, w, r)
+        self.count_1.update(((w,r),))
+        self.ocrl.recomputeduals()
+        self.ocrl2.update(1, w2, r2)
+        self.count_2.update(((w2,r2),))
+        self.ocrl2.recomputeduals()
+
+        if False:
+            print(str(i)+":"+str(vw_b_2)+", "+str(vw_b))
+            print("ips"+str(i)+":"+str(metrics["ips_2"])+", "+str(metrics["ips_1"]))
+            # only works for no interactions - hardcoded
+            # compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
+            assert float(vw_b_2) <= float(metrics["ips_1"]) , f"{vw_b_2} is higher than {metrics['ips_1']} at {i}"
+            # assert (i < 30)
+
+        if metrics["test_county"] % 500 == 0: # or metrics["test_county"] == 117:
+            print("no interactions: lb: " + str(vw_b), file=self.debug_log)
+            print("python: lb:" + str(self.ocrl.duals[0][0]), file=self.debug_log)
+            print("interactions: lb: " + str(vw_b_2), file=self.debug_log)
+            print("python: lb: " + str(self.ocrl2.duals[0][0]), file=self.debug_log)
+            print("no interactions: ips: " + str(metrics["ips_1"]), file=self.debug_log)
+            print("interactions: ips: " + str(metrics["ips_2"]), file=self.debug_log)
+            print("num examples: " + str(metrics["test_county"]), file=self.debug_log)
+            print(f"w{w}", file=self.debug_log)
+            print(f"r{r}", file=self.debug_log)
+            print(file=self.debug_log)
+        assert(vw_b >= 0)
+        assert(vw_b_2 >= 0)
+
     def run_simulation(self, vw, num_iterations, users, times_of_day, actions, cost_function, do_learn = True, shift=1):
         for i in range(shift, shift+num_iterations):
             print("", file=self.debug_log)
@@ -138,49 +175,15 @@ class Simulator:
 
             if self.has_aml and i % 1 == 0:
                 metrics = vw.get_learner_metrics()
-                vw_b = metrics["bound_1"]
-                vw_b_2 = metrics["bound_2"]
-                w = metrics["w_1"]
-                r = metrics["r_1"]
-                w2 = metrics["w_2"]
-                r2 = metrics["r_2"]
-                assert(r == r2)
-                self.ocrl.update(1, w, r)
-                self.count_1.update(((w,r),))
-                self.ocrl.recomputeduals()
-                self.ocrl2.update(1, w2, r2)
-                self.count_2.update(((w2,r2),))
-                self.ocrl2.recomputeduals()
+                self.process_metrics(metrics)
 
-                if False:
-                    print(str(i)+":"+str(vw_b_2)+", "+str(vw_b))
-                    print("ips"+str(i)+":"+str(metrics["ips_2"])+", "+str(metrics["ips_1"]))
-                    # only works for no interactions - hardcoded
-                    # compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
-                    assert float(vw_b_2) <= float(metrics["ips_1"]) , f"{vw_b_2} is higher than {metrics['ips_1']} at {i}"
-                    # assert (i < 30)
-
-                if metrics["test_county"] % 500 == 0: # or metrics["test_county"] == 117:
-                    print("no interactions: lb: " + str(vw_b), file=self.debug_log)
-                    print("python: lb:" + str(self.ocrl.duals[0][0]), file=self.debug_log)
-                    print("interactions: lb: " + str(vw_b_2), file=self.debug_log)
-                    print("python: lb: " + str(self.ocrl2.duals[0][0]), file=self.debug_log)
-                    print("no interactions: ips: " + str(metrics["ips_1"]), file=self.debug_log)
-                    print("interactions: ips: " + str(metrics["ips_2"]), file=self.debug_log)
-                    print("num examples: " + str(metrics["test_county"]), file=self.debug_log)
-                    print(f"w{w}", file=self.debug_log)
-                    print(f"r{r}", file=self.debug_log)
-                    print(file=self.debug_log)
-                assert(vw_b >= 0)
-                assert(vw_b_2 >= 0)
-
-        if num_iterations + shift >= 2000:
+        if self.has_aml and num_iterations + shift >= 2000: # fix: hardcoded 2000 bad
             print("counter1:"+str(self.count_1), file=self.debug_log)
             print("counter2:"+str(self.count_2), file=self.debug_log)
             print("indexcount:"+str(self.index_count), file=self.debug_log)
             print("ohterindexcount:"+str(self.other_index_count), file=self.debug_log)
 
-            self.debug_log.close()
+            self.debug_log.close() # or also fix this
 
         return self.ctr
 
@@ -213,7 +216,7 @@ def _test_helper_save_load(vw_arg: str, num_iterations=2000, seed=10, has_automl
 def test_with_interaction():
     import math
 
-    ctr = _test_helper(vw_arg="--cb_explore_adf -q GT --quiet --epsilon 0.2 --random_seed 5", log_filename="with_inter.txt")
+    ctr = _test_helper(vw_arg="--cb_explore_adf -q GT --quiet --epsilon 0.2 --random_seed 5")
     without_save = ctr[-1]
 
     assert(without_save >= 0.70)
@@ -227,7 +230,7 @@ def test_with_interaction():
     assert(math.isclose(without_save, with_save, rel_tol=1e-2))
 
 def test_without_interaction():
-    ctr = _test_helper(vw_arg="--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", log_filename="without_inter.txt")
+    ctr = _test_helper(vw_arg="--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5")
 
     assert(ctr[-1] <= 0.49)
     assert(ctr[-1] >= 0.38)
@@ -236,7 +239,7 @@ def test_without_interaction():
 # set test_red to 0 to return pred of no interaction
 def test_custom_reduction(config=0, sim_saveload=False):
     if sim_saveload:
-        ctr = _test_helper_save_load(vw_arg=f"--save_resume --test_red {str(config)} --cb_explore_adf -q GT --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json")
+        ctr = _test_helper_save_load(vw_arg=f"--save_resume --test_red {str(config)} --cb_explore_adf -q GT --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json", log_filename=f"custom_reduc_{str(config)}.txt")
     else:
         ctr = _test_helper(vw_arg=f"--test_red {str(config)} --cb_explore_adf -q GT --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json", log_filename=f"custom_reduc_{str(config)}.txt")
 
@@ -271,4 +274,4 @@ test_custom_reduction(config=with_interaction)
 # print_stars()
 
 # print("pred WITHOUT interaction ******")
-# test_custom_reduction(config=without_interaction)
+test_custom_reduction(config=without_interaction)
