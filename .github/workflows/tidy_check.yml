@@ -10,7 +10,7 @@ on:
       - '*'
 
 jobs:
-  build:
+  run-clang-tidy:
     container:
       image: vowpalwabbit/ubuntu2004-dev:latest
     runs-on: ubuntu-latest
@@ -18,10 +18,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: Configure CMake
         shell: bash
-        run: cmake -S . -B build
+        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=On
       - name: Run clang tidy
         shell: bash
-        run: |
-          cat build/compile_commands.json | \
-            jq -r '.[] | select(.file | startswith("/vw/vowpalwabbit")) | .file' | \
-            xargs -n 1 -I {} clang-tidy-10 -header-filter=./vowpalwabbit/* -p=build {}
+        run: ./.scripts/linux/run-clang-tidy.sh
