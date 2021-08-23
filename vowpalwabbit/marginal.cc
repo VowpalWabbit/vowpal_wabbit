@@ -193,7 +193,7 @@ void update_marginal(data& sm, example& ec)
   const uint64_t mask = sm.m_weights->mask();
   const float label = ec.l.simple.label;
   float weight = ec.weight;
-  if (sm.unweighted_marginals) weight = 1.;
+  if (sm.unweighted_marginals) { weight = 1.; }
 
   for (example::iterator i = ec.begin(); i != ec.end(); ++i)
   {
@@ -223,8 +223,8 @@ void update_marginal(data& sm, example& ec)
           e.second.weight = get_adanormalhedge_weights(e.second.regret, e.second.abs_regret);
         }
 
-        m.first = m.first * (1.f - sm.decay) + ec.l.simple.label * weight;
-        m.second = m.second * (1.f - sm.decay) + weight;
+        m.first = m.first * static_cast<double>(1.f - sm.decay) + static_cast<double>(ec.l.simple.label * weight);
+        m.second = m.second * static_cast<double>(1.f - sm.decay) + static_cast<double>(weight);
       }
     }
   }
