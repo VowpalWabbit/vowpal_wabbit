@@ -16,7 +16,7 @@ class Simulator:
     times_of_day = ['morning', 'afternoon']
     actions = ["politics", "sports", "music", "food", "finance", "health", "camping"]
 
-    def __init__(self, debug_logfile=False, seed=10):
+    def __init__(self, debug_logfile=None, seed=10):
         random.seed(seed)
 
         if debug_logfile:
