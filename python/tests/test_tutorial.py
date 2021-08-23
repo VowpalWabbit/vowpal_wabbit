@@ -169,6 +169,14 @@ def run_simulation(vw, num_iterations, users, times_of_day, actions, cost_functi
             ocrl2.update(1, w2, r2)
             count_2.update(((w2,r2),))
             ocrl2.recomputeduals()
+
+            print(str(i)+":"+str(vw_b_2)+", "+str(vw_b))
+            print("ips"+str(i)+":"+str(metrics["ips_2"])+", "+str(metrics["ips_1"]))
+            # only works for no interactions - hardcoded
+            # compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
+            assert float(vw_b_2) <= float(metrics["ips_1"]) , f"{vw_b_2} is higher than {metrics['ips_1']} at {i}"
+            # assert (i < 30)
+
             if metrics["test_county"] % 500 == 0: # or metrics["test_county"] == 117:
                 print("no interactions: lb: " + str(vw_b), file=debug_log)
                 print("python: lb:" + str(ocrl.duals[0][0]), file=debug_log)
@@ -257,8 +265,8 @@ print_stars()
 
 with_interaction = 1
 without_interaction = 0
-print("pred WITH interaction ******")
-test_custom_reduction(config=with_interaction)
+# print("pred WITH interaction ******")
+# test_custom_reduction(config=with_interaction)
 
 print_stars()
 

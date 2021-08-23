@@ -83,6 +83,13 @@ void fail_if_enabled(vw& all, std::string name)
 }
 }  // namespace helper
 
+// struct config_desc
+// {
+//   std::vector<std::vector<namespace_index>> interactions_1;
+//   size_t budget = 0;
+//   size_t last_time_ran = 0; // in # of examples
+// }
+
 struct single_config
 {
   single_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
@@ -133,6 +140,7 @@ struct single_config
   float last_w = 0.0;
   float last_r = 0.0;
   size_t update_count = 0;
+  // add budget
 };
 
 enum config_state
