@@ -156,6 +156,8 @@ ScoredDual ChiSquared::recompute_duals()
 
     duals = *it;
   }
+  
+  duals.first = std::min(rmax, std::max(rmin, sign * duals.first));
 
   return duals;
 }
