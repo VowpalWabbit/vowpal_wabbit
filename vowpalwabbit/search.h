@@ -332,7 +332,7 @@ private:
   ptag my_tag;
   example* ec;
   size_t ec_cnt;
-  bool ec_alloced;
+  std::vector<example> allocated_examples;
   float weight;
   v_array<action> oracle_actions;
   v_array<ptag> condition_on_tags;
@@ -341,8 +341,6 @@ private:
   v_array<float> allowed_actions_cost;
   size_t learner_id;
   search& sch;
-
-  void free_ec();
 
   // prevent the user from doing something stupid :) ... ugh needed to turn this off for python :(
   // predictor(const predictor&P);
