@@ -18,10 +18,7 @@ namespace MARGINAL
 struct expert
 {
   expert() = default;
-  expert(float regret, float abs_regret, float weight)
-    : regret(regret)
-    , abs_regret(abs_regret)
-    , weight(weight) {}
+  expert(float regret, float abs_regret, float weight) : regret(regret), abs_regret(abs_regret), weight(weight) {}
 
   float regret = 0.f;
   float abs_regret = 0.f;
@@ -144,9 +141,7 @@ void make_marginal(data& sm, example& ec)
           sm.net_weight += weight;
           sm.net_feature_weight += sm.expert_state[key].second.weight;
           if VW_STD17_CONSTEXPR (is_learn)
-          {
-            sm.alg_loss += weight * sm.m_loss_function->getLoss(sm.m_shared_data, marginal_pred, label);
-          }
+          { sm.alg_loss += weight * sm.m_loss_function->getLoss(sm.m_shared_data, marginal_pred, label); }
         }
       }
     }
@@ -168,9 +163,7 @@ void compute_expert_loss(data& sm, example& ec)
   // add in the feature-based expert and normalize,
   const float label = ec.l.simple.label;
 
-  if (sm.net_weight + sm.net_feature_weight > 0.f)
-  { sm.average_pred += sm.net_feature_weight * sm.feature_pred;
-  }
+  if (sm.net_weight + sm.net_feature_weight > 0.f) { sm.average_pred += sm.net_feature_weight * sm.feature_pred; }
   else
   {
     sm.net_feature_weight = 1.;
