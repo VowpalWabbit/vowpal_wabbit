@@ -1790,7 +1790,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
       // but according to Casey, the only operation used is Sum
       // The _original_label_cost element is found either at the top level OR under
       // the _outcomes node (for CCB)
-      all->example_parser->metrics->CbeaSumCostOriginal += interaction.originalLabelCost;
+      all->example_parser->metrics->DsjsonSumCostOriginal += interaction.originalLabelCost;
     }
 
     // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
