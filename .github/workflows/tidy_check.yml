@@ -1,0 +1,27 @@
+name: Clang-tidy
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    container:
+      image: vowpalwabbit/ubuntu2004-dev:latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Configure CMake
+        shell: bash
+        run: cmake -S . -B build
+      - name: Run clang tidy
+        shell: bash
+        run: |
+          cat build/compile_commands.json | \
+            jq -r '.[] | select(.file | startswith("/vw/vowpalwabbit")) | .file' | \
+            xargs -n 1 -I {} clang-tidy-10 -header-filter=./vowpalwabbit/* -p=build {}
