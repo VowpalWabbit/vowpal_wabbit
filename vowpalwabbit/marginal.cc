@@ -17,6 +17,12 @@ namespace MARGINAL
 {
 struct expert
 {
+  expert() = default;
+  expert(float regret, float abs_regret, float weight)
+    : regret(regret)
+    , abs_regret(abs_regret)
+    , weight(weight) {}
+
   float regret = 0.f;
   float abs_regret = 0.f;
   float weight = 1.f;
