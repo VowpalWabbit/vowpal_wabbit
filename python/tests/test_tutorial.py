@@ -5,6 +5,8 @@ import collections
 import os
 import random
 
+import os
+
 # this test was adapted from this tutorial: https://vowpalwabbit.org/tutorials/cb_simulation.html
 
 class Simulator:
