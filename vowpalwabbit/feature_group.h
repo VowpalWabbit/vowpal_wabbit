@@ -60,7 +60,7 @@ struct namespace_extent
 
   friend bool operator==(const namespace_extent& lhs, const namespace_extent& rhs)
   {
-    return lhs.begin_index == rhs.begin_index && lhs.end_index == rhs.end_index && lhs.hash == rhs.hash;
+    return lhs.hash == rhs.hash && lhs.begin_index == rhs.begin_index && lhs.end_index == rhs.end_index;
   }
   friend bool operator!=(const namespace_extent& lhs, const namespace_extent& rhs) { return !(lhs == rhs); }
 };
