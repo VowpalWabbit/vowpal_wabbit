@@ -225,7 +225,7 @@ struct config_manager
     }
     if (max_2 != 0)
     {
-      helper::add_interaction(interactions, max_1, max_2);
+      helper::add_interaction(interactions, (namespace_index)max_1, (namespace_index)max_2);
       return true;
     }
 
@@ -463,14 +463,7 @@ VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
   // to make sure there are not subtle bugs
   auto* base_learner = stack_builder.setup_base_learner();
 
-  // hard code test 312 from RunTests
-  // if we comment this following line it works ?? why ??
-  // add_interaction(all.interactions, 'G', 'T');
   assert(all.interactions.empty() == true);
-
-  // useful for switching the order around - what params learn'ed first
-  // helper::add_interaction(data->cm.interactions_1, 'G', 'T');
-  // add_interaction(data->cm.empty_interactions, 'G', 'T');
 
   // ask jack about flushing the cache, after mutating reductions
   // that might change

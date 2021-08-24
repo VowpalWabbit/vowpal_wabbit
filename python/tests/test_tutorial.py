@@ -241,10 +241,11 @@ def test_without_interaction():
 # set test_red to 1 to return pred of with interaction
 # set test_red to 0 to return pred of no interaction
 def test_custom_reduction(config=0, sim_saveload=False):
+    args = f"--test_red {str(config)} --cb_explore_adf -q AA --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json"
     if sim_saveload:
-        ctr = _test_helper_save_load(vw_arg=f"--save_resume --test_red {str(config)} --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json", log_filename=f"custom_reduc_{str(config)}.txt")
+        ctr = _test_helper_save_load(vw_arg=f"--save_resume {args}", log_filename=f"custom_reduc_{str(config)}.txt")
     else:
-        ctr = _test_helper(vw_arg=f"--test_red {str(config)} --cb_explore_adf -q AA --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json", log_filename=f"custom_reduc_{str(config)}.txt")
+        ctr = _test_helper(vw_arg=args, log_filename=f"custom_reduc_{str(config)}.txt")
 
     # print("custom reduction - "+str(config))
     # print(ctr[-1])
