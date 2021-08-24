@@ -67,7 +67,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
     data.adf_data.ecs[chosen_action]->l.cb = std::move(new_ld);
   }
 
-  auto restore_guard = VW::scope_exit([&backup_ld, &data, &ec, &chosen_action, &is_test_label, &new_ld] {
+  auto restore_guard = VW::scope_exit([&backup_ld, &data, &chosen_action, &is_test_label, &new_ld] {
     if (!is_test_label && chosen_action < data.adf_data.num_actions)
     {
       new_ld = std::move(data.adf_data.ecs[chosen_action]->l.cb);
