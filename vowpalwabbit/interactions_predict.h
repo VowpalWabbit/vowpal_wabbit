@@ -88,9 +88,8 @@ inline bool has_empty_interaction_cubic(const std::array<features, NUM_NAMESPACE
 inline bool has_empty_interaction(const std::array<features, NUM_NAMESPACES>& feature_groups,
     const std::vector<INTERACTIONS::interaction_term>& namespace_indexes)
 {
-  return std::any_of(namespace_indexes.begin(), namespace_indexes.end(), [&](INTERACTIONS::interaction_term term) {
-        return term_is_empty(term, feature_groups);
-  });
+  return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
+      [&](INTERACTIONS::interaction_term term) { return term_is_empty(term, feature_groups); });
 }
 
 // The inline function below may be adjusted to change the way
@@ -349,8 +348,9 @@ inline void generate_interactions(const std::vector<std::vector<INTERACTIONS::in
   {
     // Cannot mix interactions of character and hash based.
     assert(std::equal(ns.begin(), ns.end(), ns.begin(),
-        [](const INTERACTIONS::interaction_term& a, const INTERACTIONS::interaction_term& b)
-        { return a.type() == b.type(); }));
+        [](const INTERACTIONS::interaction_term& a, const INTERACTIONS::interaction_term& b) {
+          return a.type() == b.type();
+        }));
 
     const auto inter_type = ns.front().type();
 
