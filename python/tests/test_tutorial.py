@@ -63,16 +63,19 @@ class Simulator:
                 return self.USER_DISLIKED_ARTICLE
 
     # This function modifies (context, action, cost, probability) to VW friendly format
-    def to_vw_example_format(self, context, actions, cb_label = None):
+    def to_vw_example_format(self, context, actions, cb_label = None, ns1='G', ns2='T'):
+        if ns1 == ns2:
+            raise("not allowed to have same namespace")
+
         if cb_label is not None:
             chosen_action, cost, prob = cb_label
             self.other_index_count.update(((chosen_action,prob),))
         example_string = ""
-        example_string += "shared |Gser user={} time_of_day={}\n".format(context["user"], context["time_of_day"])
+        example_string += f'shared |{ns1}ser user={context["user"]} time_of_day={context["time_of_day"]}\n'
         for action in actions:
             if cb_label is not None and action == chosen_action:
                 example_string += "0:{}:{} ".format(cost, prob)
-            example_string += "|Tction article={} \n".format(action)
+            example_string += f'|{ns2}ction article={action} \n'
         #Strip the last newline
         print("example:::"+example_string[:-1], file=self.debug_log)
         return example_string[:-1]
@@ -105,7 +108,7 @@ class Simulator:
     def choose_time_of_day(self, times_of_day):
         return random.choice(times_of_day)
 
-    def process_metrics(self, metrics):
+    def process_metrics(self, i, metrics):
         vw_b = metrics["bound_1"]
         vw_b_2 = metrics["bound_2"]
         w = metrics["w_1"]
@@ -175,7 +178,7 @@ class Simulator:
 
             if self.has_aml and i % 1 == 0:
                 metrics = vw.get_learner_metrics()
-                self.process_metrics(metrics)
+                self.process_metrics(i, metrics)
 
         if self.has_aml and num_iterations + shift >= 2000: # fix: hardcoded 2000 bad
             print("counter1:"+str(self.count_1), file=self.debug_log)
@@ -239,16 +242,17 @@ def test_without_interaction():
 # set test_red to 0 to return pred of no interaction
 def test_custom_reduction(config=0, sim_saveload=False):
     if sim_saveload:
-        ctr = _test_helper_save_load(vw_arg=f"--save_resume --test_red {str(config)} --cb_explore_adf -q GT --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json", log_filename=f"custom_reduc_{str(config)}.txt")
+        ctr = _test_helper_save_load(vw_arg=f"--save_resume --test_red {str(config)} --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json", log_filename=f"custom_reduc_{str(config)}.txt")
     else:
-        ctr = _test_helper(vw_arg=f"--test_red {str(config)} --cb_explore_adf -q GT --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json", log_filename=f"custom_reduc_{str(config)}.txt")
+        ctr = _test_helper(vw_arg=f"--test_red {str(config)} --cb_explore_adf -q AA --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json", log_filename=f"custom_reduc_{str(config)}.txt")
 
     # print("custom reduction - "+str(config))
     # print(ctr[-1])
 
-    if config == 0:
-        assert(ctr[-1] > 0.35)
-    elif config == 1:
+    if config == 0: # starting champ is no interactions
+        # assert(ctr[-1] > 0.35) # without rotation
+        assert(ctr[-1] > 0.70) # with champ rotation
+    elif config == 1: # starting champ is with interactions
         assert(ctr[-1] > 0.75)
     else:
         assert(false)

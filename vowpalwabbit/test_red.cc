@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "constant.h"  // NUM_NAMESPACES
 #include "debug_log.h"
 #include "reductions.h"
 #include "learner.h"
@@ -22,43 +23,43 @@ namespace test_red
 {
 namespace helper
 {
-// for debugging purposes
-void print_interactions(example* ec)
-{
-  if (ec == nullptr) return;
-  if (ec->interactions == nullptr) return;
+// // for debugging purposes
+// void print_interactions(example* ec)
+// {
+//   if (ec == nullptr) return;
+//   if (ec->interactions == nullptr) return;
 
-  std::cerr << "p:";  // << ec->interactions;
+//   std::cerr << "p:";  // << ec->interactions;
 
-  for (std::vector<namespace_index> v : *(ec->interactions))
-  {
-    for (namespace_index c : v) { std::cerr << " interaction:" << c << ","; }
-  }
-  std::cerr << std::endl;
-}
+//   for (std::vector<namespace_index> v : *(ec->interactions))
+//   {
+//     for (namespace_index c : v) { std::cerr << " interaction:" << c << ","; }
+//   }
+//   std::cerr << std::endl;
+// }
 
-// useful to understand what namespaces are used in the examples we are given
-// this can evolve to feed in data to generate possible interactions
-void print_all_namespaces_in_examples(multi_ex& exs)
-{
-  for (example* ex : exs)
-  {
-    for (auto i : ex->indices) { std::cerr << i << ", "; }
-    std::cerr << std::endl;
-  }
-}
+// // useful to understand what namespaces are used in the examples we are given
+// // this can evolve to feed in data to generate possible interactions
+// void print_all_namespaces_in_examples(multi_ex& exs)
+// {
+//   for (example* ex : exs)
+//   {
+//     for (auto i : ex->indices) { std::cerr << i << ", "; }
+//     std::cerr << std::endl;
+//   }
+// }
 
-void print_all_preds(example& ex, size_t i)
-{
-  const auto& preds = ex.pred.a_s;
-  std::cerr << "config_" << i << ": ";
-  for (uint32_t i = 0; i < preds.size(); i++)
-  {
-    std::cerr << preds[i].action << "(" << preds[i].score << ")"
-              << ", ";
-  }
-  std::cerr << std::endl;
-}
+// void print_all_preds(example& ex, size_t i)
+// {
+//   const auto& preds = ex.pred.a_s;
+//   std::cerr << "config_" << i << ": ";
+//   for (uint32_t i = 0; i < preds.size(); i++)
+//   {
+//     std::cerr << preds[i].action << "(" << preds[i].score << ")"
+//               << ", ";
+//   }
+//   std::cerr << std::endl;
+// }
 
 // add an interaction to an existing instance
 void add_interaction(
@@ -129,12 +130,14 @@ struct single_config
   void persist(metric_sink& metrics, const std::string& suffix)
   {
     metrics.int_metrics_list.emplace_back("upcnt" + suffix, update_count);
-    metrics.float_metrics_list.emplace_back("ips" + suffix, ips / update_count);
+    metrics.float_metrics_list.emplace_back("ips" + suffix, current_ips());
     distributionally_robust::ScoredDual sd = chisq.recompute_duals();
     metrics.float_metrics_list.emplace_back("bound" + suffix, (float)(sd.first));
     metrics.float_metrics_list.emplace_back("w" + suffix, last_w);
     metrics.float_metrics_list.emplace_back("r" + suffix, last_r);
   }
+
+  float current_ips() { return ips / update_count; }
 
   float ips = 0.0;
   VW::distributionally_robust::ChiSquared chisq;
@@ -158,7 +161,9 @@ struct config_manager
   size_t current_champ = 0;
   single_config configs[2];
 
-  size_t max_configs = 2;
+  size_t ns_counter[NUM_NAMESPACES] = {0};
+
+  const size_t max_live_configs = 2;
   std::vector<std::vector<namespace_index>> interactions_1;
   std::vector<std::vector<namespace_index>> empty_interactions;
 
@@ -174,10 +179,81 @@ struct config_manager
         break;
 
       case Experimenting:
+        evaluate();
         break;
 
       default:
         break;
+    }
+  }
+
+  void count_ns(multi_ex& exs)
+  {
+    for (example* ex : exs)
+    {
+      for (auto i : ex->indices) { ns_counter[i]++; }
+    }
+  }
+
+  /*
+    namespace count total -> scheduled experiments, meta-metrics of the previous experiments?
+    example number for the last time it got used,
+
+    atomized in a very nice way:
+    prepare: for us to do beam search over the configuration space over diff heuristics
+    -> pluggable, encapsulated
+    -> expand config, create new model from config, find neighbours of this config
+  */
+
+  bool add_highest_two_ns(std::vector<std::vector<namespace_index>>& interactions)
+  {
+    size_t max_1 = 0;
+    size_t max_2 = 0;
+    for (size_t i = 0; i < NUM_NAMESPACES; i++)
+    {
+      if (ns_counter[i] != 0 && i != 128)  // not sure why
+      {
+        if (max_1 == 0)
+          max_1 = i;
+        else if (max_2 == 0)
+          max_2 = i;
+        else if (ns_counter[max_1] < ns_counter[i])
+          max_1 = i;
+        else if (ns_counter[max_2] < ns_counter[i])
+          max_2 = i;
+      }
+    }
+    if (max_2 != 0)
+    {
+      helper::add_interaction(interactions, max_1, max_2);
+      return true;
+    }
+
+    return false;
+  }
+
+  void evaluate()
+  {
+    if (interactions_1.empty())
+    {
+      bool result = add_highest_two_ns(interactions_1);
+      if (result) assert(interactions_1.size() > 0);
+    }
+
+    float temp_champ_ips = configs[current_champ].current_ips();
+
+    // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
+    for (size_t i = 0; i < max_live_configs; i++)
+    {
+      if (i == current_champ) continue;
+
+      distributionally_robust::ScoredDual sd = configs[i].chisq.recompute_duals();
+      float challenger_l_bound = (float)sd.first;
+      if (temp_champ_ips < challenger_l_bound)
+      {
+        current_champ = i;  // champ switch
+        temp_champ_ips = challenger_l_bound;
+      }
     }
   }
 
@@ -186,9 +262,9 @@ struct config_manager
     if (model_file.num_files() == 0) { return; }
     if (!read || true)
     {
-      // make sure we can deserialize based on dynamic values like max_configs
+      // make sure we can deserialize based on dynamic values like max_live_configs
       // i.e. read/write first the quantity and then do the for loop
-      for (size_t i = 0; i < max_configs; i++) { configs[i].save_load_aml(model_file, read, text); }
+      for (size_t i = 0; i < max_live_configs; i++) { configs[i].save_load_aml(model_file, read, text); }
 
       std::stringstream msg;
       if (!read) msg << "_aml_cm_state " << current_state << "\n";
@@ -209,9 +285,9 @@ struct config_manager
     metrics.int_metrics_list.emplace_back("test_county", county);
     metrics.int_metrics_list.emplace_back("current_champ", current_champ);
 
-    const std::string suffixes[2] = {"_1", "_2"};
+    const std::string suffixes[5] = {"_1", "_2", "_3", "_4", "_5"};
 
-    for (int i = 0; i < 2; i++) { configs[i].persist(metrics, suffixes[i]); }
+    for (size_t i = 0; i < max_live_configs; i++) { configs[i].persist(metrics, suffixes[i]); }
   }
 
   void configure_interactions(example* ec, size_t config_number)
@@ -248,15 +324,12 @@ struct tr_data
 template <bool is_explore>
 void predict_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 {
+  data.cm.count_ns(ec);
   size_t i = data.cm.current_champ;
   for (example* ex : ec) { data.cm.configure_interactions(ex, i); }
 
   // assert that the config is set correctly
-  if (i == 1) { assert(ec[0]->interactions->empty() != true); }
-  else if (i == 0)
-  {
-    assert(ec[0]->interactions->empty() == true);
-  }
+  if (i == 0) { assert(ec[0]->interactions->empty() == true); }
 
   auto restore_guard = VW::scope_exit([&data, &ec, &i] {
     for (example* ex : ec) { data.cm.restore_interactions(ex); }
@@ -272,12 +345,7 @@ void actual_learn(
 
   for (example* ex : ec) { data.cm.configure_interactions(ex, i); }
 
-  // assert that the config is set correctly
-  if (i == 1) { assert(ec[0]->interactions->empty() != true); }
-  else if (i == 0)
-  {
-    assert(ec[0]->interactions->empty() == true);
-  }
+  if (i == 0) { assert(ec[0]->interactions->empty() == true); }
 
   auto restore_guard = VW::scope_exit([&data, &ec, &i] {
     for (example* ex : ec) { data.cm.restore_interactions(ex); }
@@ -310,7 +378,7 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 {
   bool is_learn = true;
   // assert we learn twice
-  assert(data.pm == 2);
+  assert(data.pm == data.cm.max_live_configs);
 
   if (is_learn) { data.cm.county++; }
   // extra assert just bc
@@ -401,7 +469,7 @@ VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
   assert(all.interactions.empty() == true);
 
   // useful for switching the order around - what params learn'ed first
-  helper::add_interaction(data->cm.interactions_1, 'G', 'T');
+  // helper::add_interaction(data->cm.interactions_1, 'G', 'T');
   // add_interaction(data->cm.empty_interactions, 'G', 'T');
 
   // ask jack about flushing the cache, after mutating reductions
@@ -439,7 +507,7 @@ VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
             .set_persist_metrics(persist)
             .set_prediction_type(base_learner->pred_type)
             .set_label_type(label_type_t::cb)
-            .set_learn_returns_prediction(base_learner->learn_returns_prediction)
+            .set_learn_returns_prediction(true)
             .build();
 
     return make_base(*l);
