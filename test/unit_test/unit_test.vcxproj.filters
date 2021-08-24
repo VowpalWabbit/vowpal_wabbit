@@ -173,11 +173,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="DistributionallyRobustUnitTestData.py">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="crminustwo.py">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
 </Project>
