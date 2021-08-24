@@ -70,6 +70,8 @@ void list_to_json_file(dsjson_metrics* ds_metrics, std::string filename, metric_
       writer.String(ds_metrics->LastEventId.c_str());
       writer.Key("last_event_time");
       writer.String(ds_metrics->LastEventTime.c_str());
+      writer.Key("dsjson_sum_cost_original");
+      writer.Double(ds_metrics->DsjsonSumCostOriginal);
     }
 
     writer.EndObject();
