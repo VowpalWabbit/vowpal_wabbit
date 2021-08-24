@@ -11,7 +11,7 @@ struct cached_learner : public setup_base_i
 
   operator bool() const { return !(_cached == nullptr); }
 
-  void delayed_state_attach(vw& all, VW::config::options_i& options)
+  void delayed_state_attach(vw& all, VW::config::options_i& options) override
   {
     options_impl = &options;
     all_ptr = &all;
