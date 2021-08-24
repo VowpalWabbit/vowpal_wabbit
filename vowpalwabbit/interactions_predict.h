@@ -69,7 +69,7 @@ inline bool term_is_empty(
   if (term.type() == INTERACTIONS::interaction_term_type::ns_char) { return feature_groups[term.ns_char()].empty(); }
   // TODO exhaustively handle types.
   return false;
-};
+}
 
 inline bool has_empty_interaction_quadratic(const std::array<features, NUM_NAMESPACES>& feature_groups,
     const std::vector<INTERACTIONS::interaction_term>& namespace_indexes)
