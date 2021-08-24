@@ -356,7 +356,7 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 
 void persist(tr_data& data, metric_sink& metrics) { data.cm.persist(metrics); }
 
-void _finish_example(vw& all, tr_data& data, multi_ex& ec)
+void finish_example(vw& all, tr_data& data, multi_ex& ec)
 {
   data.adf_learner->print_example(all, ec);
   VW::finish_example(all, ec);
@@ -374,7 +374,7 @@ VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
   vw& all = *stack_builder.get_all_pointer();
 
   size_t test_red;
-  auto data = scoped_calloc_or_throw<tr_data>();
+  auto data = VW::make_unique<tr_data>();
 
   option_group_definition new_options("Debug: test reduction");
   new_options.add(make_option("test_red", test_red).necessary().keep().help("set default champion (0 or 1)"));
@@ -428,13 +428,20 @@ VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
   {
     // fetch cb_explore_adf to call directly into the print routine twice
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
+    auto ppw = data->pm;
 
-    // problem multiplier is set to data->pm
-    auto* l = &init_learner(data, as_multiline(base_learner), learn_automl<true>, predict_automl<true>, data->pm,
-        base_learner->pred_type, stack_builder.get_setupfn_name(test_red_setup), true);
-    l->set_persist_metrics(persist);
-    l->set_finish_example(_finish_example);
-    l->set_save_load(save_load_aml);
+    auto* l =
+        make_reduction_learner(std::move(data), as_multiline(base_learner), learn_automl<true>, predict_automl<true>,
+            stack_builder.get_setupfn_name(test_red_setup))
+            .set_params_per_weight(ppw)  // refactor pm
+            .set_finish_example(finish_example)
+            .set_save_load(save_load_aml)
+            .set_persist_metrics(persist)
+            .set_prediction_type(base_learner->pred_type)
+            .set_label_type(label_type_t::cb)
+            .set_learn_returns_prediction(base_learner->learn_returns_prediction)
+            .build();
+
     return make_base(*l);
   }
   else
