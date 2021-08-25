@@ -161,6 +161,12 @@ namespace VW
 {
 namespace details
 {
+// This function converts the list of ranges into a flat list of elements
+// corresponding to each index in the given list of ranges. The
+// overall_feature_space_size is used to fill th elements between th last range
+// ending and the end of the overall logical list. This function is used to
+// perform elementwise operations such as filtering and sorting when combined
+// with the other vectors in a features object.
 std::vector<std::pair<bool, uint64_t>> flatten_namespace_extents(
     const std::vector<namespace_extent>& extents, size_t overall_feature_space_size)
 {
@@ -178,6 +184,8 @@ std::vector<std::pair<bool, uint64_t>> flatten_namespace_extents(
   return flattened;
 }
 
+// This function can take the output of flatten_namespace_extents and reverse it
+// to get back to the original representation required in the features object.
 std::vector<namespace_extent> unflatten_namespace_extents(const std::vector<std::pair<bool, uint64_t>>& extents)
 {
   if (extents.empty()) { return {}; }
