@@ -190,14 +190,11 @@ std::vector<namespace_extent> unflatten_namespace_extents(const std::vector<std:
 {
   if (extents.empty()) { return {}; }
   std::vector<namespace_extent> results;
-  auto eq = [](const std::pair<bool, uint64_t>& left, const std::pair<bool, uint64_t>& right) {
-    return left.first == right.first && left.second == right.second;
-  };
   auto last_start = std::size_t{0};
   auto current = extents[0];
   for (auto i = std::size_t{1}; i < extents.size(); ++i)
   {
-    if (!eq(current, extents[i]))
+    if (current != extents[i])
     {
       // Check if it was a valid sequence, or an empty segment.
       if (current.first) { results.emplace_back(last_start, i, current.second); }
