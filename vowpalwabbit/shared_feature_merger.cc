@@ -61,17 +61,15 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, multi_ex
   }
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit(
-      [has_example_header, &shared_example, &ec_seq]
-      {
-        if (has_example_header)
-        {
-          for (auto& example : ec_seq) { LabelDict::del_example_namespaces_from_example(*example, *shared_example); }
-          std::swap(shared_example->pred, ec_seq[0]->pred);
-          std::swap(shared_example->tag, ec_seq[0]->tag);
-          ec_seq.insert(ec_seq.begin(), shared_example);
-        }
-      });
+  auto restore_guard = VW::scope_exit([has_example_header, &shared_example, &ec_seq] {
+    if (has_example_header)
+    {
+      for (auto& example : ec_seq) { LabelDict::del_example_namespaces_from_example(*example, *shared_example); }
+      std::swap(shared_example->pred, ec_seq[0]->pred);
+      std::swap(shared_example->tag, ec_seq[0]->tag);
+      ec_seq.insert(ec_seq.begin(), shared_example);
+    }
+  });
 
   if (ec_seq.empty()) { return; }
   if (is_learn) { base.learn(ec_seq); }
