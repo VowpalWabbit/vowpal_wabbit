@@ -126,7 +126,6 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(gd_mf_setup);
   reductions.push_back(print_setup);
   reductions.push_back(noop_setup);
-  reductions.push_back(lda_setup);
   reductions.push_back(bfgs_setup);
   reductions.push_back(OjaNewton_setup);
   // reductions.push_back(VW_CNTK::setup);
@@ -148,6 +147,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(lrqfa_setup);
   reductions.push_back(stagewise_poly_setup);
   reductions.push_back(scorer_setup);
+  reductions.push_back(lda_setup);
   reductions.push_back(VW::cbzo::setup);
 
   // Reductions
