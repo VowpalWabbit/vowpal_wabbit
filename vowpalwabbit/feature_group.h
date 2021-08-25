@@ -372,6 +372,10 @@ struct features
   v_array<feature_value> values;           // Always needed.
   v_array<feature_index> indicies;         // Optional for sparse data.
   std::vector<audit_strings> space_names;  // Optional for audit mode.
+
+  // Each extent represents a range [begin, end) of values which exist in a
+  // given namespace. These extents must not overlap and the indices must not go
+  // outside the range of the values container.
   std::vector<VW::namespace_extent> namespace_extents;
 
   float sum_feat_sq = 0.f;
