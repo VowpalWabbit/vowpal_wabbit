@@ -10,8 +10,8 @@
 
 struct active
 {
-  float active_c0 = 0.f;
-  vw* all = nullptr;  // statistics, loss
+  float active_c0;
+  vw* all;  // statistics, loss
   std::shared_ptr<rand_state> _random_state;
 };
 

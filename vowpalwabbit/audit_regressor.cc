@@ -12,14 +12,14 @@ using namespace VW::config;
 
 struct audit_regressor_data
 {
-  vw* all = nullptr;
-  size_t increment = 0;
-  size_t cur_class = 0;
-  size_t total_class_cnt = 0;
-  std::vector<std::string>* ns_pre = nullptr;
-  io_buf* out_file = nullptr;
-  size_t loaded_regressor_values = 0;
-  size_t values_audited = 0;
+  vw* all;
+  size_t increment;
+  size_t cur_class;
+  size_t total_class_cnt;
+  std::vector<std::string>* ns_pre;
+  io_buf* out_file;
+  size_t loaded_regressor_values;
+  size_t values_audited;
 };
 
 inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_strings* f)
@@ -260,22 +260,22 @@ VW::LEARNER::base_learner* audit_regressor_setup(VW::setup_base_i& stack_builder
 
   all.audit = true;
 
-  auto dat = VW::make_unique<audit_regressor_data>();
+  auto dat = scoped_calloc_or_throw<audit_regressor_data>();
   dat->all = &all;
   dat->ns_pre = new std::vector<std::string>();  // explicitly invoking std::vector's constructor
   dat->out_file = new io_buf();
   dat->out_file->add_file(VW::io::open_file_writer(out_file));
 
-  auto* ret =
-      make_reduction_learner(std::move(dat), as_singleline(stack_builder.setup_base_learner()), audit_regressor,
-          audit_regressor, stack_builder.get_setupfn_name(audit_regressor_setup))
-          .set_learn_returns_prediction(
-              true) /*audit.learn does not predict or learn. nothing to be gained by calling predict() before learn()*/
-          .set_end_examples(end_examples)
-          .set_finish_example(finish_example)
-          .set_finish(finish)
-          .set_init_driver(init_driver)
-          .build();
+  VW::LEARNER::learner<audit_regressor_data, example>& ret =
+      VW::LEARNER::init_learner(dat, as_singleline(stack_builder.setup_base_learner()), audit_regressor,
+          audit_regressor, 1, stack_builder.get_setupfn_name(audit_regressor_setup), true /*audit.learn does not predict
+                                                                                   or learn. nothing to be gained by
+                                                                                   calling predict() before learn()*/
+      );
+  ret.set_end_examples(end_examples);
+  ret.set_finish_example(finish_example);
+  ret.set_finish(finish);
+  ret.set_init_driver(init_driver);
 
-  return make_base(*ret);
+  return VW::LEARNER::make_base<audit_regressor_data>(ret);
 }
