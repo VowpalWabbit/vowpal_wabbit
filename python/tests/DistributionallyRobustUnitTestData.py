@@ -187,6 +187,11 @@ class OnlineDRO:
             qlbs.append(ocrl.qlb(w, r))
             
         print(pformat(qlbs))
-        
-OnlineDRO.recompute_duals_test()
-OnlineDRO.qlb_test()
+
+def main():
+    print("generating unit test data. see distributionally_robust_test.cc")
+    OnlineDRO.recompute_duals_test()
+    OnlineDRO.qlb_test()
+
+if __name__ == "__main__":
+    main()
