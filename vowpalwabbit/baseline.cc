@@ -41,13 +41,13 @@ bool baseline_enabled(example* ec)
 
 struct baseline
 {
-  example* ec;
-  vw* all;
-  bool lr_scaling;  // whether to scale baseline learning rate based on max label
-  float lr_multiplier;
-  bool global_only;  // only use a global constant for the baseline
-  bool global_initialized;
-  bool check_enabled;  // only use baseline when the example contains enabled flag
+  example* ec = nullptr;
+  vw* all = nullptr;
+  bool lr_scaling = false;  // whether to scale baseline learning rate based on max label
+  float lr_multiplier = 0.f;
+  bool global_only = false;  // only use a global constant for the baseline
+  bool global_initialized = false;
+  bool check_enabled = false;  // only use baseline when the example contains enabled flag
 
   ~baseline()
   {
@@ -167,7 +167,7 @@ base_learner* baseline_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto data = scoped_calloc_or_throw<baseline>();
+  auto data = VW::make_unique<baseline>();
   bool baseline_option = false;
   std::string loss_function;
 
@@ -198,10 +198,11 @@ base_learner* baseline_setup(VW::setup_base_i& stack_builder)
 
   auto base = as_singleline(stack_builder.setup_base_learner());
 
-  learner<baseline, example>& l = init_learner(
-      data, base, predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(baseline_setup));
+  auto* l = make_reduction_learner(
+      std::move(data), base, predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(baseline_setup))
+        .set_label_type(label_type_t::simple)
+        .set_sensitivity(sensitivity)
+        .build();
 
-  l.set_sensitivity(sensitivity);
-
-  return make_base(l);
+  return make_base(*l);
 }
