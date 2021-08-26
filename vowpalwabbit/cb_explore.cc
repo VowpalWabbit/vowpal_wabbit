@@ -64,10 +64,7 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
   // Explore tau times, then act according to optimal.
   action_scores probs = ec.pred.a_s;
   bool learn = is_learn && ec.l.cb.costs[0].probability < 1;
-  if (learn)
-  {
-    base.learn(ec);
-  }
+  if (learn) { base.learn(ec); }
   else
   {
     base.predict(ec);
@@ -99,10 +96,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
   action_scores probs = ec.pred.a_s;
   probs.clear();
 
-  if (is_learn)
-  {
-    base.learn(ec);
-  }
+  if (is_learn) { base.learn(ec); }
   else
   {
     base.predict(ec);
@@ -427,12 +421,13 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
     params_per_weight = 1;
     name_addition = "-greedy";
   }
-  auto* l = make_reduction_learner(std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_explore_setup) + name_addition)
-                        .set_params_per_weight(params_per_weight)
-                        .set_prediction_type(prediction_type_t::action_probs)
-                        .set_finish_example(finish_example)
-                        .set_save_load(save_load)
-                        .build();
+  auto* l = make_reduction_learner(
+      std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_explore_setup) + name_addition)
+                .set_params_per_weight(params_per_weight)
+                .set_prediction_type(prediction_type_t::action_probs)
+                .set_finish_example(finish_example)
+                .set_save_load(save_load)
+                .build();
 
   return make_base(*l);
 }
