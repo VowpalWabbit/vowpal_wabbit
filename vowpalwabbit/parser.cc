@@ -192,7 +192,6 @@ void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
 void reset_source(vw& all, size_t numbits)
 {
   io_buf* input = all.example_parser->input.get();
-  input->current = 0;
 
   // If in write cache mode then close all of the input files then open the written cache as the new input.
   if (all.example_parser->write_cache)
@@ -251,10 +250,11 @@ void reset_source(vw& all, size_t numbits)
     }
     else
     {
+      if(!input->is_resettable()) { THROW("Cannot reset source as it is a non-resettable input type.")}
+      input->reset();
       for (auto& file : input->get_input_files())
       {
-        input->reset_file(file.get());
-        if (cache_numbits(input, file.get()) < numbits) THROW("argh, a bug in caching of some sort!");
+        if (cache_numbits(input, file.get()) < numbits) { THROW("argh, a bug in caching of some sort!") }
       }
     }
   }
@@ -352,7 +352,6 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options)
 {
-  all.example_parser->input->current = 0;
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   // default text reader
