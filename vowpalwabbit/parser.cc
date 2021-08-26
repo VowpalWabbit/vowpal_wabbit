@@ -250,7 +250,7 @@ void reset_source(vw& all, size_t numbits)
     }
     else
     {
-      if(!input->is_resettable()) { THROW("Cannot reset source as it is a non-resettable input type.")}
+      if (!input->is_resettable()) { THROW("Cannot reset source as it is a non-resettable input type.") }
       input->reset();
       for (auto& file : input->get_input_files())
       {
