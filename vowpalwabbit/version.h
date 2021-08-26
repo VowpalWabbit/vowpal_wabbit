@@ -12,9 +12,9 @@ namespace VW
 {
 struct version_struct
 {
-  int32_t major = 0;
-  int32_t minor = 0;
-  int32_t rev = 0;
+  int32_t major;
+  int32_t minor;
+  int32_t rev;
 
   version_struct(int maj = 0, int min = 0, int rv = 0);
   version_struct(const char* v_str);
