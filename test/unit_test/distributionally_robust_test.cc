@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals)
 {
   // to generate this data:
   //
-  // python ./DistributionallyRobustUnitTestData.py
+  // python ./python/tests/DistributionallyRobustUnitTestData.py
 
   std::pair<double, double> data[] = {{0.4692680899768591, 0.08779271803562538},
       {3.010121430917521, 0.1488852932982503}, {1.3167456935454493, 0.5579699034039329},
