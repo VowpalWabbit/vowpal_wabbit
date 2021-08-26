@@ -206,12 +206,13 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
   p_reduction->max_value = max_value;
   p_reduction->min_value = min_value;
 
-  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(setup))
-      .set_learn_returns_prediction(true)
-      .set_prediction_type(prediction_type_t::action_pdf_value)
-      .set_finish_example(finish_example)
-      .set_label_type(label_type_t::continuous)
-      .build();
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(setup))
+                .set_learn_returns_prediction(true)
+                .set_prediction_type(prediction_type_t::action_pdf_value)
+                .set_finish_example(finish_example)
+                .set_label_type(label_type_t::continuous)
+                .build();
 
   return make_base(*l);
 }

@@ -198,11 +198,11 @@ base_learner* baseline_setup(VW::setup_base_i& stack_builder)
 
   auto base = as_singleline(stack_builder.setup_base_learner());
 
-  auto* l = make_reduction_learner(
-      std::move(data), base, predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(baseline_setup))
-        .set_label_type(label_type_t::simple)
-        .set_sensitivity(sensitivity)
-        .build();
+  auto* l = make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(baseline_setup))
+                .set_label_type(label_type_t::simple)
+                .set_sensitivity(sensitivity)
+                .build();
 
   return make_base(*l);
 }

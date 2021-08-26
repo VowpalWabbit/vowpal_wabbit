@@ -165,15 +165,17 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
 
   std::string name_addition = options.was_supplied("simulation") ? "-simulation" : "";
   bool lrp = options.was_supplied("simulation") ? true : base->learn_returns_prediction;
-  void (*finish_ptr)(vw&, active&, example&) = options.was_supplied("simulation") ? reinterpret_cast<void (*)(vw&, active&, example&)>(return_simple_example) : return_active_example;
+  void (*finish_ptr)(vw&, active&, example&) = options.was_supplied("simulation")
+      ? reinterpret_cast<void (*)(vw&, active&, example&)>(return_simple_example)
+      : return_active_example;
   if (!options.was_supplied("simulation")) { all.active = true; }
 
-  auto* l = make_reduction_learner(
-      std::move(data), base, predict_or_learn_simulation<true>, predict_or_learn_simulation<false>, stack_builder.get_setupfn_name(active_setup) + name_addition)
-               .set_learn_returns_prediction(lrp)
-               .set_label_type(label_type_t::simple)
-               .set_finish_example(finish_ptr)
-               .build();
+  auto* l = make_reduction_learner(std::move(data), base, predict_or_learn_simulation<true>,
+      predict_or_learn_simulation<false>, stack_builder.get_setupfn_name(active_setup) + name_addition)
+                .set_learn_returns_prediction(lrp)
+                .set_label_type(label_type_t::simple)
+                .set_finish_example(finish_ptr)
+                .build();
 
   return make_base(*l);
 }

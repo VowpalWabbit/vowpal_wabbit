@@ -256,7 +256,8 @@ base_learner* bs_setup(VW::setup_base_i& stack_builder)
   data->all = &all;
   data->_random_state = all.get_random_state();
 
-  auto* l = make_reduction_learner(std::move(data),as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(bs_setup))
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(bs_setup))
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_example)

@@ -219,13 +219,14 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
   auto label_type = eval ? label_type_t::cb_eval : label_type_t::cb;
   auto finish_ex = eval ? eval_finish_example : finish_example;
 
-  auto* l = make_reduction_learner(std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
-      .set_params_per_weight(problem_multiplier)
-      .set_prediction_type(prediction_type_t::multiclass)
-      .set_learn_returns_prediction(eval)
-      .set_label_type(label_type)
-      .set_finish_example(finish_ex)
-      .build();
+  auto* l = make_reduction_learner(
+      std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
+                .set_params_per_weight(problem_multiplier)
+                .set_prediction_type(prediction_type_t::multiclass)
+                .set_learn_returns_prediction(eval)
+                .set_label_type(label_type)
+                .set_finish_example(finish_ex)
+                .build();
 
   return make_base(*l);
 }

@@ -266,14 +266,16 @@ VW::LEARNER::base_learner* audit_regressor_setup(VW::setup_base_i& stack_builder
   dat->out_file = new io_buf();
   dat->out_file->add_file(VW::io::open_file_writer(out_file));
 
-  auto* ret = make_reduction_learner(std::move(dat), as_singleline(stack_builder.setup_base_learner()), audit_regressor,
+  auto* ret =
+      make_reduction_learner(std::move(dat), as_singleline(stack_builder.setup_base_learner()), audit_regressor,
           audit_regressor, stack_builder.get_setupfn_name(audit_regressor_setup))
-              .set_learn_returns_prediction(true) /*audit.learn does not predict or learn. nothing to be gained by calling predict() before learn()*/
-              .set_end_examples(end_examples)
-              .set_finish_example(finish_example)
-              .set_finish(finish)
-              .set_init_driver(init_driver)
-              .build();
+          .set_learn_returns_prediction(
+              true) /*audit.learn does not predict or learn. nothing to be gained by calling predict() before learn()*/
+          .set_end_examples(end_examples)
+          .set_finish_example(finish_example)
+          .set_finish(finish)
+          .set_init_driver(init_driver)
+          .build();
 
   return make_base(*ret);
 }
