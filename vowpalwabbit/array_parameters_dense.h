@@ -114,6 +114,21 @@ public:
     for (iterator iter = begin(); iter != end(); ++iter) (&(*iter))[offset] = 0;
   }
 
+  void swap_offsets(size_t offset_1, size_t offset_2)
+  {
+    for (iterator iter = begin(); iter != end(); ++iter)
+    {
+      auto temp = (&(*iter))[offset_1];
+      (&(*iter))[offset_1] = (&(*iter))[offset_2];
+      (&(*iter))[offset_2] = temp;
+    }
+  }
+
+  void copy_offsets(size_t from, size_t to)
+  {
+    for (iterator iter = begin(); iter != end(); ++iter) { (&(*iter))[to] = (&(*iter))[from]; }
+  }
+
   uint64_t mask() const { return _weight_mask; }
 
   uint64_t seeded() const { return _seeded; }

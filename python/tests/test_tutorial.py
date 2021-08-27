@@ -247,8 +247,8 @@ def test_custom_reduction(config=0, sim_saveload=False):
     else:
         ctr = _test_helper(vw_arg=args, log_filename=f"custom_reduc_{str(config)}.txt")
 
-    # print("custom reduction - "+str(config))
-    # print(ctr[-1])
+    print("custom reduction - "+str(config))
+    print(ctr[-1])
 
     if config == 0: # starting champ is no interactions
         # assert(ctr[-1] > 0.35) # without rotation

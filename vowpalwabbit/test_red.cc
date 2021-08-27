@@ -82,6 +82,19 @@ void fail_if_enabled(vw& all, std::string name)
   if (std::find(enabled_reductions.begin(), enabled_reductions.end(), name) != enabled_reductions.end())
     THROW("plz no bad stack" + name);
 }
+
+void print_weights_nonzero(size_t count, dense_parameters& weights)
+{
+  size_t w_count = 0;
+  for (auto it = weights.begin(); it != weights.end(); ++it)
+  {
+    w_count++;
+    if ((&(*it))[0] != 0.f) { std::cerr << count << ":0:" << (&(*it))[0] << std::endl; }
+    if ((&(*it))[1] != 0.f) { std::cerr << count << ":1:" << (&(*it))[1] << std::endl; }
+    if ((&(*it))[2] != 0.f) { std::cerr << count << ":2:" << (&(*it))[2] << std::endl; }
+  }
+  std::cerr << std::endl;
+}
 }  // namespace helper
 
 // struct config_desc
@@ -196,6 +209,12 @@ struct config_manager
   }
 
   /*
+    conf = initConfig('F','B')
+    conf.append('C', 'G')
+
+    conf.merge(conf2); -> normie merge/add ?
+    conf.multiply('T') -> FT, FB, BT
+
     namespace count total -> scheduled experiments, meta-metrics of the previous experiments?
     example number for the last time it got used,
 
@@ -203,8 +222,39 @@ struct config_manager
     prepare: for us to do beam search over the configuration space over diff heuristics
     -> pluggable, encapsulated
     -> expand config, create new model from config, find neighbours of this config
+
+    // schema discovery
+    // rotate configs with budget
+
+    enumerate cnofigs, swap them in and out on a schedule, autoschema disvoery, but playing all
+
+
+    reset and copy -- learner stack
+    warmstart, reset to zero (or random?)
+
+
+    // first do weights:
+    DONE assert all weights are zero when i = n
+    DONE clear all weights to zero when i = n
+    DONE~~ test by clearing champ with interactions
+    DONEswap weights from i to j
+    DONE~~ test by having pm=3 and learn on only 2 and copy to 3, clear 2, test -> bad, swap from 3 -> good results
+
+    1 ) q :: -> subtract, Olga refactor
+        config oracle
+
+    // parallelized per reduction
+    2 ) clear and copy impls of the stack used in personalizer
+      a) audit step, verification
+      b) test
+
+    3 ) unit tests
+
+    --- then rlbakeoff
+    --- then deployed
   */
 
+  // will become an iterator on top of this class that does ns discovery
   bool add_highest_two_ns(std::vector<std::vector<namespace_index>>& interactions)
   {
     size_t max_1 = 0;
@@ -315,7 +365,7 @@ struct tr_data
   // all is not needed but good to have for testing purposes
   vw* all;
   // problem multiplier
-  size_t pm = 2;
+  size_t pm = 3;
   // to simulate printing in cb_explore_adf
   multi_learner* adf_learner;
   ACTION_SCORE::action_scores champ_a_s;  // a sequence of classes with scores.  Also used for probabilities.
@@ -376,9 +426,28 @@ void actual_learn(
 template <bool is_explore>
 void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 {
+  assert(data.all->weights.sparse == false);
+  if (data.cm.county > 118 && data.cm.county <= 120)
+  {
+    // helper::print_weights_nonzero(data.cm.county, data.all->weights.dense_weights);
+    if (data.cm.county == 119)
+    {
+      // clear operation
+      // data.all->weights.dense_weights.set_zero(2);
+
+      //** swap
+      // data.all->weights.dense_weights.swap_offsets(0,1);
+
+      //** copy / init with champs weights
+      // data.all->weights.dense_weights.copy_offsets(data.cm.current_champ, 2);
+
+      // helper::print_weights_nonzero(data.cm.county, data.all->weights.dense_weights);
+    }
+  }
+
   bool is_learn = true;
   // assert we learn twice
-  assert(data.pm == data.cm.max_live_configs);
+  assert(data.pm == data.cm.max_live_configs + 1);
 
   if (is_learn) { data.cm.county++; }
   // extra assert just bc
@@ -405,7 +474,7 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 
   if (data.cm.current_state == Experimenting)
   {
-    for (size_t i = 0; i < data.pm; i++) { actual_learn(data, base, ec, i, logged, labelled_action); }
+    for (size_t i = 0; i < data.cm.max_live_configs; i++) { actual_learn(data, base, ec, i, logged, labelled_action); }
     // replace with prediction depending on current_champ
     ec[0]->pred.a_s = std::move(data.champ_a_s);
   }
@@ -464,6 +533,8 @@ VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
   auto* base_learner = stack_builder.setup_base_learner();
 
   assert(all.interactions.empty() == true);
+
+  assert(all.weights.sparse == false);
 
   // ask jack about flushing the cache, after mutating reductions
   // that might change

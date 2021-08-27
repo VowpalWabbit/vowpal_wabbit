@@ -173,6 +173,7 @@ inline void increment_offset(example& ex, const size_t increment, const size_t i
 
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
+  // std::cerr<<increment*i<<std::endl;
   for (auto& ec : ec_seq) { ec->ft_offset += static_cast<uint32_t>(increment * i); }
   debug_increment_depth(ec_seq);
 }
@@ -811,6 +812,18 @@ struct common_learner_builder
   FluentBuilderT& set_learn(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&))
   {
     this->_learner->learn_fd.learn_f = (learn_data::fn)fn_ptr;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_copy(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&))
+  {
+    // this->_learner->learn_fd.learn_f = (learn_data::fn)fn_ptr;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_reset_zero(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&))
+  {
+    // this->_learner->learn_fd.learn_f = (learn_data::fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
 
