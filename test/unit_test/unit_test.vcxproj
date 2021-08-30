@@ -77,8 +77,6 @@
     <ClInclude Include="test_common.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="crminustwo.py" />
-    <None Include="DistributionallyRobustUnitTestData.py" />
     <None Include="packages.config" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -934,6 +934,16 @@ public:
         return &ctx.array_float_state;
       }
 
+      else if (ctx.key_length == 20 && !strncmp(str, "_original_label_cost", 20))
+      {
+        if(!ctx.decision_service_data) {
+          THROW("_original_label_cost is only valid in DSJson");
+        }
+        ctx.float_state.output_float = &ctx.decision_service_data->originalLabelCost;
+        ctx.float_state.return_state = this;
+        return &ctx.float_state;
+      }
+
       else if (ctx.key_length == 5 && !_stricmp(ctx.key, "__aid"))
       {
         ctx.uint_dedup_state.return_state = this;
@@ -1428,6 +1438,12 @@ public:
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
       }
+      else if (length == 20 && !strncmp(str, "_original_label_cost", 20))
+      {
+        ctx.float_state.output_float = &data->originalLabelCost;
+        ctx.float_state.return_state = this;
+        return &ctx.float_state;
+      }
     }
 
     // ignore unknown properties
@@ -1464,6 +1480,11 @@ public:
 
   VW::example_factory_t example_factory;
   void* example_factory_context;
+
+  // TODO: This shouldn't really exist in the Context. Once the JSON parser
+  // gets refactored to separate the VWJson/DSJson concepts, this should
+  // be moved into the DSJson version of the context
+  DecisionServiceInteraction* decision_service_data = nullptr;
 
   // states
   DefaultState<audit> default_state;
@@ -1698,6 +1719,7 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   VWReaderHandler<audit>& handler = parser.handler;
   handler.init(&all, &examples, &ss, line + length, example_factory, ex_factory_context);
   handler.ctx.SetStartStateToDecisionService(data);
+  handler.ctx.decision_service_data = data;
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
@@ -1763,6 +1785,12 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
         else
           all->example_parser->metrics->LastEventTime = std::move(interaction.timestamp);
       }
+
+      // Technically the aggregation operation here is supposed to be user-defined
+      // but according to Casey, the only operation used is Sum
+      // The _original_label_cost element is found either at the top level OR under
+      // the _outcomes node (for CCB)
+      all->example_parser->metrics->DsjsonSumCostOriginal += interaction.originalLabelCost;
     }
 
     // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
