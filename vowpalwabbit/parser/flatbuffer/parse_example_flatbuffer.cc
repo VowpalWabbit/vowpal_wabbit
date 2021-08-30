@@ -194,10 +194,7 @@ void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
   uint64_t hash = 0;
   const auto hash_found = get_namespace_hash(all, ns, hash);
 
-  if (std::find(ae->indices.begin(), ae->indices.end(), index) == ae->indices.end())
-  {
-    ae->indices.push_back(index);
-  }
+  if (std::find(ae->indices.begin(), ae->indices.end(), index) == ae->indices.end()) { ae->indices.push_back(index); }
 
   auto& fs = ae->feature_space[index];
 

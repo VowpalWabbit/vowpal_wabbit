@@ -366,9 +366,7 @@ void to_flat::convert_txt_to_flat(vw& all)
 
         for (auto it = ae->feature_space[ns].begin() + extent.begin_index;
              it != ae->feature_space[ns].begin() + extent.end_index; ++it)
-        {
-          ss << it.index() << it.value();
-        }
+        { ss << it.index() << it.value(); }
         ss << ":" << extent.hash;
 
         std::string s = ss.str();
