@@ -7,7 +7,7 @@
 #include <limits>
 
 #include "cats_tree.h"
-#include "learner.h"     // init_learner()
+#include "learner.h"
 #include "reductions.h"
 #include "debug_log.h"
 #include "explore_internal.h"
