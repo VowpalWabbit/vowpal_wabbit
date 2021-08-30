@@ -157,7 +157,7 @@ namespace distributionally_robust
         bin_text_read_write_fixed(
             model_file, reinterpret_cast<char*>(&duals_stale), sizeof(duals_stale), "", read, msg, text);
 
-        duals.second.save_load_aml(model_file, read, text);
+        duals.second.save_load(model_file, read, text);
 
         if (!read) msg << "_aml_chi_alpha " << alpha << "\n";
         bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&alpha), sizeof(alpha), "", read, msg, text);
