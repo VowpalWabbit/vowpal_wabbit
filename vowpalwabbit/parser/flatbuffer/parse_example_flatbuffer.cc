@@ -162,29 +162,46 @@ void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
   _multi_ex_index++;
 }
 
-void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
+namespace_index get_namespace_index(vw* all, const Namespace* ns)
 {
-  namespace_index temp_index;
+  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME)) { return static_cast<uint8_t>(ns->name()->c_str()[0]); }
+  else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_HASH))
+  {
+    return ns->hash();
+  }
+
+  THROW("Either name or hash field must be specified to get the namespace index.");
+
+}
+
+uint64_t get_namespace_hash(vw* all, const Namespace* ns) {
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
-    temp_index = static_cast<uint8_t>(ns->name()->c_str()[0]);
-    _c_hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
+    return all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
   }
-  else
+  else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_FULL_HASH))
   {
-    temp_index = ns->hash();
+    return ns->full_hash();
   }
-  ae->indices.push_back(temp_index);
+  THROW("Either name or full_hash field must be specified to get the namespace hash.");
+}
 
-  auto& fs = ae->feature_space[temp_index];
-  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_EXTENTS))
+void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
+{
+  const namespace_index index = get_namespace_index(all, ns);
+  const auto hash = get_namespace_hash(all, ns);
+
+  if (std::find(ae->indices.begin(), ae->indices.end(), index) == ae->indices.end())
   {
-    for (const auto& extent : *(ns->extents()))
-    { fs.namespace_extents.emplace_back(extent->begin(), extent->end(), extent->hash()); }
+    ae->indices.push_back(index);
   }
 
+  auto& fs = ae->feature_space[index];
+
+  fs.start_ns_extent(hash);
   for (const auto& feature : *(ns->features()))
   { parse_features(all, fs, feature, (all->audit || all->hash_inv) ? ns->name() : nullptr); }
+  fs.end_ns_extent();
 }
 
 void parser::parse_features(vw* all, features& fs, const Feature* feature, const flatbuffers::String* ns)
