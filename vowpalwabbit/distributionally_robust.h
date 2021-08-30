@@ -143,7 +143,7 @@ namespace distributionally_robust
       return duals.second.qfunc(w, r);
     }
 
-    void save_load_aml(io_buf& model_file, bool read, bool text)
+    void save_load(io_buf& model_file, bool read, bool text)
     {
       if (model_file.num_files() == 0) { return; }
       if (!read || true)
