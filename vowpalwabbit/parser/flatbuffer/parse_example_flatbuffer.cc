@@ -173,7 +173,7 @@ namespace_index get_namespace_index(const Namespace* ns)
   THROW("Either name or hash field must be specified to get the namespace index.");
 }
 
-bool get_namespace_hash(vw* all, const Namespace* ns, uint64_t hash)
+bool get_namespace_hash(vw* all, const Namespace* ns, uint64_t& hash)
 {
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
