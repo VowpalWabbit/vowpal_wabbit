@@ -61,7 +61,7 @@ void VW::autolink::prepare_example(VW::LEARNER::single_learner& base, example& e
   {
     if (base_pred != 0.f)
     {
-      fs.push_back(base_pred, AUTOCONSTANT + (i << _stride_shift));
+      fs.push_back(base_pred, AUTOCONSTANT + (i << _stride_shift), autolink_namespace);
       base_pred *= ec.pred.scalar;
     }
   }

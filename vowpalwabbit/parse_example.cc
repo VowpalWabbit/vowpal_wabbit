@@ -247,7 +247,7 @@ public:
 
           word_hash = _p->hasher(affix_name.begin(), affix_name.length(), (uint64_t)_channel_hash) *
               (affix_constant + (affix & 0xF) * quadratic_constant);
-          affix_fs.push_back(_v, word_hash);
+          affix_fs.push_back(_v, word_hash, affix_namespace);
           if (audit)
           {
             v_array<char> affix_v;
@@ -265,7 +265,7 @@ public:
       if ((*_spelling_features)[_index])
       {
         features& spell_fs = _ae->feature_space[spelling_namespace];
-        if (spell_fs.size() == 0) _ae->indices.push_back(spelling_namespace);
+        if (spell_fs.empty()) { _ae->indices.push_back(spelling_namespace); }
         // v_array<char> spelling;
         _spelling.clear();
         for (char c : feature_name)
@@ -287,7 +287,7 @@ public:
 
         VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
         word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
-        spell_fs.push_back(_v, word_hash);
+        spell_fs.push_back(_v, word_hash, spelling_namespace);
         if (audit)
         {
           v_array<char> spelling_v;
@@ -313,11 +313,13 @@ public:
           {
             const auto& feats = feats_it->second;
             features& dict_fs = _ae->feature_space[dictionary_namespace];
-            if (dict_fs.size() == 0) _ae->indices.push_back(dictionary_namespace);
+            if (dict_fs.empty()) { _ae->indices.push_back(dictionary_namespace); }
+            dict_fs.start_ns_extent(dictionary_namespace);
             dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
             dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
             dict_fs.sum_feat_sq += feats->sum_feat_sq;
             if (audit)
+            {
               for (const auto& id : feats->indicies)
               {
                 std::stringstream ss;
@@ -326,6 +328,8 @@ public:
                 ss << '=' << id;
                 dict_fs.space_names.push_back(audit_strings("dictionary", ss.str()));
               }
+            }
+            dict_fs.end_ns_extent();
           }
         }
       }

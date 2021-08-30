@@ -54,7 +54,7 @@ void init_global(baseline& data)
   data.ec.indices.push_back(constant_namespace);
   // different index from constant to avoid conflicts
   data.ec.feature_space[constant_namespace].push_back(
-      1, ((constant - 17) * data.all->wpp) << data.all->weights.stride_shift());
+      1, ((constant - 17) * data.all->wpp) << data.all->weights.stride_shift(), constant_namespace);
   data.ec.reset_total_sum_feat_sq();
   data.ec.num_features++;
 }
