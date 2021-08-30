@@ -291,18 +291,15 @@ void to_flat::create_no_label(example* v, ExampleBuilder& ex_builder)
   ex_builder.label = VW::parsers::flatbuffer::Createno_label(_builder, (uint8_t)'\000').Union();
 }
 
-flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespace(features::audit_iterator begin,
-    features::audit_iterator end, namespace_index index, uint64_t hash, bool audit)
+flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespace(
+    features::audit_iterator begin, features::audit_iterator end, namespace_index index, uint64_t hash, bool audit)
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
   std::stringstream ss;
   ss << index;
 
-  for (auto it = begin; it != end; ++it)
-  {
-    ss << it.index() << it.value();
-  }
-   ss << ":" << hash;
+  for (auto it = begin; it != end; ++it) { ss << it.index() << it.value(); }
+  ss << ":" << hash;
 
   std::string s = ss.str();
   uint64_t refid = uniform_hash(s.c_str(), s.size(), 0);
@@ -321,17 +318,13 @@ flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespac
         fts.push_back(
             VW::parsers::flatbuffer::CreateFeatureDirect(_builder, it.audit()->second.c_str(), it.value(), it.index()));
       }
-      namespace_offset =
-          VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), index, &fts, hash);
+      namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), index, &fts, hash);
     }
     else
     {
       for (auto it = begin; it != end; ++it)
-      {
-        fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, it.value(), it.index()));
-      }
-      namespace_offset =
-          VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, index, &fts, hash);
+      { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, it.value(), it.index())); }
+      namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, index, &fts, hash);
     }
     _share_examples[refid] = namespace_offset;
   }
@@ -428,7 +421,8 @@ void to_flat::convert_txt_to_flat(vw& all)
       // Skip over constant namespace as that will be assigned while reading flatbuffer again
       if (ns == 128) { continue; }
 
-      // Not all features exist in an extent - so we reform the extents list to one which contains non-hash-extents so we can add all of these segments.
+      // Not all features exist in an extent - so we reform the extents list to one which contains non-hash-extents so
+      // we can add all of these segments.
       auto flattened_extents =
           VW::details::flatten_namespace_extents(ae->feature_space[ns].namespace_extents, ae->feature_space[ns].size());
       auto unflattened_with_ranges_that_dont_have_extents = unflatten_namespace_extents_dont_skip(flattened_extents);
