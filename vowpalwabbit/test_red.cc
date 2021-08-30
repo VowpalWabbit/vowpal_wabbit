@@ -21,6 +21,7 @@ namespace VW
 {
 namespace test_red
 {
+const size_t MAX_CONFIGS = 3;
 namespace helper
 {
 // // for debugging purposes
@@ -136,7 +137,7 @@ struct single_config
       if (!read) msg << "_aml_config_lastr " << last_r << "\n";
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&last_r), sizeof(last_r), "", read, msg, text);
 
-      chisq.save_load_aml(model_file, read, text);
+      chisq.save_load(model_file, read, text);
     }
   }
 
@@ -172,11 +173,11 @@ struct config_manager
   config_state current_state = Idle;
   size_t county = 0;
   size_t current_champ = 0;
-  single_config configs[2];
+  single_config configs[MAX_CONFIGS];
 
   size_t ns_counter[NUM_NAMESPACES] = {0};
 
-  const size_t max_live_configs = 2;
+  const size_t max_live_configs = MAX_CONFIGS;
   std::vector<std::vector<namespace_index>> interactions_1;
   std::vector<std::vector<namespace_index>> empty_interactions;
 
@@ -354,6 +355,10 @@ struct config_manager
       ec->interactions = &(empty_interactions);
       // std::cerr << config_number << "int:" << ec->interactions <<"s"<< ec->interactions->size() << std::endl;
     }
+    else
+    {
+      ec->interactions = &(empty_interactions);
+    }
   }
 
   void restore_interactions(example* ec) { ec->interactions = nullptr; }
@@ -365,7 +370,7 @@ struct tr_data
   // all is not needed but good to have for testing purposes
   vw* all;
   // problem multiplier
-  size_t pm = 3;
+  size_t pm = MAX_CONFIGS;
   // to simulate printing in cb_explore_adf
   multi_learner* adf_learner;
   ACTION_SCORE::action_scores champ_a_s;  // a sequence of classes with scores.  Also used for probabilities.
@@ -447,7 +452,7 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 
   bool is_learn = true;
   // assert we learn twice
-  assert(data.pm == data.cm.max_live_configs + 1);
+  assert(data.pm == data.cm.max_live_configs);
 
   if (is_learn) { data.cm.county++; }
   // extra assert just bc
