@@ -31,7 +31,7 @@ namespace distributionally_robust
     }
     double qfunc(double w, double r) { return unbounded ? 1 : -(gamma + (beta + r) * w) / ((n + 1) * kappa); }
 
-    void save_load_aml(io_buf& model_file, bool read, bool text)
+    void save_load(io_buf& model_file, bool read, bool text)
     {
       if (model_file.num_files() == 0) { return; }
       if (!read || true)
