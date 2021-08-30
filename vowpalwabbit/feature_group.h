@@ -13,6 +13,7 @@
 #include <string>
 #include <algorithm>
 #include <cstddef>
+#include <numeric>
 #include <vector>
 #include <type_traits>
 
@@ -439,16 +440,18 @@ struct features
   void truncate_to(size_t i);
   void concat(const features& other);
   void push_back(feature_value v, feature_index i);
+  void push_back(feature_value v, feature_index i, uint64_t ns_hash);
   bool sort(uint64_t parse_mask);
 
   void start_ns_extent(uint64_t hash);
   void end_ns_extent();
 
-  bool all_extents_complete()
+  bool validate_extents()
   {
     // For an extent to be complete it must not have an end index of 0 and it must be > 0 in width.
-    return std::all_of(namespace_extents.begin(), namespace_extents.end(),
+    const auto all_extents_complete = std::all_of(namespace_extents.begin(), namespace_extents.end(),
         [](const VW::namespace_extent& obj) { return obj.begin_index < obj.end_index; });
+    return all_extents_complete;
   }
 
   VW_DEPRECATED("deep_copy_from is deprecated. Use the copy constructor directly. This will be removed in VW 9.0.")

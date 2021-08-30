@@ -120,6 +120,34 @@ void features::push_back(feature_value v, feature_index i)
   sum_feat_sq += v * v;
 }
 
+void features::push_back(feature_value v, feature_index i, uint64_t hash)
+{
+  // If there is an open extent but of a different hash - we must close it before we do anything.
+  if (!namespace_extents.empty() && namespace_extents.back().hash != hash && (namespace_extents.back().end_index == 0))
+  {
+    end_ns_extent();
+  }
+
+  // We only need to extend the extent if it has had its end index set. If the end index is 0, then we assume the extent
+  // is open and will be closed before the example is finished being constructed.
+  const bool should_extend_existing =
+      !namespace_extents.empty() && namespace_extents.back().hash == hash && namespace_extents.back().end_index != 0;
+  // If there is an extent but of a different hash - we must add a new one.
+  const bool should_create_new = namespace_extents.empty() || namespace_extents.back().hash != hash;
+
+  if (should_extend_existing)
+  { namespace_extents.back().end_index++;
+  }
+  else if (should_create_new)
+  {
+    namespace_extents.emplace_back(indicies.size(), indicies.size() + 1, hash);
+  }
+  
+  values.push_back(v);
+  indicies.push_back(i);
+  sum_feat_sq += v * v;
+}
+
 // https://stackoverflow.com/questions/17074324/how-can-i-sort-two-vectors-in-the-same-way-with-criteria-that-uses-only-one-of
 template <typename IndexVec, typename ValVec, typename Compare>
 std::vector<std::size_t> sort_permutation(const IndexVec& index_vec, const ValVec& value_vec, const Compare& compare)

@@ -679,7 +679,7 @@ void setup_example(vw& all, example* ae)
 
   // Require all extents to be complete in an example.
 #ifndef NDEBUG
-  for (auto& fg : *ae) { assert(fg.all_extents_complete()); }
+  for (auto& fg : *ae) { assert(fg.validate_extents()); }
 #endif
 
   ae->partial_prediction = 0.;
@@ -770,7 +770,7 @@ example* read_example(vw& all, const std::string& example_line) { return read_ex
 void add_constant_feature(vw& vw, example* ec)
 {
   ec->indices.push_back(constant_namespace);
-  ec->feature_space[constant_namespace].push_back(1, constant);
+  ec->feature_space[constant_namespace].push_back(1, constant, constant_namespace);
   ec->num_features++;
   if (vw.audit || vw.hash_inv)
     ec->feature_space[constant_namespace].space_names.push_back(audit_strings("", "Constant"));
