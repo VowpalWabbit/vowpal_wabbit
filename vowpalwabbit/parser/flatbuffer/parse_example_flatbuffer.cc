@@ -162,7 +162,7 @@ void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
   _multi_ex_index++;
 }
 
-namespace_index get_namespace_index(vw* all, const Namespace* ns)
+namespace_index get_namespace_index(const Namespace* ns)
 {
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME)) { return static_cast<uint8_t>(ns->name()->c_str()[0]); }
   else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_HASH))
@@ -171,25 +171,28 @@ namespace_index get_namespace_index(vw* all, const Namespace* ns)
   }
 
   THROW("Either name or hash field must be specified to get the namespace index.");
-
 }
 
-uint64_t get_namespace_hash(vw* all, const Namespace* ns) {
+bool get_namespace_hash(vw* all, const Namespace* ns, uint64_t hash)
+{
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
-    return all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
+    hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
+    return true;
   }
   else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_FULL_HASH))
   {
-    return ns->full_hash();
+    hash = ns->full_hash();
+    return true;
   }
-  THROW("Either name or full_hash field must be specified to get the namespace hash.");
+  return false;
 }
 
 void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
 {
-  const namespace_index index = get_namespace_index(all, ns);
-  const auto hash = get_namespace_hash(all, ns);
+  const namespace_index index = get_namespace_index(ns);
+  uint64_t hash = 0;
+  const auto hash_found = get_namespace_hash(all, ns, hash);
 
   if (std::find(ae->indices.begin(), ae->indices.end(), index) == ae->indices.end())
   {
@@ -198,10 +201,10 @@ void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
 
   auto& fs = ae->feature_space[index];
 
-  fs.start_ns_extent(hash);
+  if (hash_found) { fs.start_ns_extent(hash); }
   for (const auto& feature : *(ns->features()))
   { parse_features(all, fs, feature, (all->audit || all->hash_inv) ? ns->name() : nullptr); }
-  fs.end_ns_extent();
+  if (hash_found) { fs.end_ns_extent(); }
 }
 
 void parser::parse_features(vw* all, features& fs, const Feature* feature, const flatbuffers::String* ns)
