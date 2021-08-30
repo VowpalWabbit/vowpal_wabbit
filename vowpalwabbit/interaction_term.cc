@@ -43,6 +43,20 @@ bool operator>(const interaction_term& lhs, const interaction_term& rhs) { retur
 
 bool operator>=(const interaction_term& lhs, const interaction_term& rhs) { return !(lhs < rhs); }
 
+bool operator==(const interaction_term& lhs, const interaction_term& rhs)
+{
+  // Ignore _ns_hash for char only terms.
+  if (lhs._type == interaction_term_type::ns_char)
+  {
+    return lhs._ns_char == rhs._ns_char && lhs._wildcard == rhs._wildcard && lhs._type == rhs._type;
+  }
+
+  return lhs._ns_char == rhs._ns_char && lhs._ns_hash == rhs._ns_hash && lhs._wildcard == rhs._wildcard &&
+      lhs._type == rhs._type;
+}
+
+bool operator!=(const interaction_term& lhs, const interaction_term& rhs) { return !(lhs == rhs); }
+
 interaction_term::interaction_term(namespace_index ns_char) : _ns_char(ns_char), _type(interaction_term_type::ns_char)
 {
   assert(_ns_char != wildcard_namespace);

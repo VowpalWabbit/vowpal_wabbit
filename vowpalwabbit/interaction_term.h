@@ -42,17 +42,8 @@ struct interaction_term
   friend bool operator<=(const interaction_term& lhs, const interaction_term& rhs);
   friend bool operator>(const interaction_term& lhs, const interaction_term& rhs);
   friend bool operator>=(const interaction_term& lhs, const interaction_term& rhs);
-  friend bool operator==(const interaction_term& lhs, const interaction_term& rhs)
-  {
-    // Ignore _ns_hash for char only terms.
-    if (lhs._type == interaction_term_type::ns_char)
-    { return lhs._ns_char == rhs._ns_char && lhs._wildcard == rhs._wildcard && lhs._type == rhs._type; }
-
-    return lhs._ns_char == rhs._ns_char && lhs._ns_hash == rhs._ns_hash && lhs._wildcard == rhs._wildcard &&
-        lhs._type == rhs._type;
-  }
-
-  friend bool operator!=(const interaction_term& lhs, const interaction_term& rhs) { return !(lhs == rhs); }
+  friend bool operator==(const interaction_term& lhs, const interaction_term& rhs);
+  friend bool operator!=(const interaction_term& lhs, const interaction_term& rhs);
 
   explicit interaction_term(namespace_index ns_char);
 
