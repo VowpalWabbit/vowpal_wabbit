@@ -860,7 +860,7 @@ void empty_example(vw& /*all*/, example& ec)
 
   ec.indices.clear();
   ec.tag.clear();
-//  ec.tag_hash.clear();
+  ec.tag_hash=0;
   ec.sorted = false;
   ec.end_pass = false;
   ec.is_newline = false;
