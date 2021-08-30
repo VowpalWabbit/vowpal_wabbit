@@ -21,10 +21,10 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
       _buffer.shift_to_front(head);
       head = _buffer._begin;
     }
-    if (current < input_files.size() &&
-        fill(input_files[current].get()) > 0)  // read more bytes from current file if present
+    if (_current < input_files.size() &&
+        fill(input_files[_current].get()) > 0)  // read more bytes from _current file if present
       return buf_read(pointer, n);             // more bytes are read.
-    else if (++current < input_files.size())
+    else if (++_current < input_files.size())
       return buf_read(pointer, n);  // No more bytes, so go to next file and try again.
     else
     {
@@ -39,7 +39,7 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
 bool io_buf::isbinary()
 {
   if (_buffer._end == head)
-    if (fill(input_files[current].get()) <= 0) return false;
+    if (fill(input_files[_current].get()) <= 0) return false;
 
   bool ret = (*head == 0);
   if (ret) head++;
@@ -66,9 +66,9 @@ size_t io_buf::readto(char*& pointer, char terminal)
       _buffer.shift_to_front(head);
       head = _buffer._begin;
     }
-    if (current < input_files.size() && fill(input_files[current].get()) > 0)  // more bytes are read.
+    if (_current < input_files.size() && fill(input_files[_current].get()) > 0)  // more bytes are read.
       return readto(pointer, terminal);
-    else if (++current < input_files.size())  // no more bytes, so go to next file.
+    else if (++_current < input_files.size())  // no more bytes, so go to next file.
       return readto(pointer, terminal);
     else  // no more bytes to read, return everything we have.
     {
@@ -120,6 +120,9 @@ void io_buf::replace_buffer(char* buff, size_t capacity)
 
 void io_buf::flush()
 {
+  // This operation only makes sense in write mode.
+  assert(input_files.empty());
+
   if (!output_files.empty())
   {
     auto bytes_written = output_files[0]->write(_buffer._begin, unflushed_bytes_count());
@@ -130,3 +133,22 @@ void io_buf::flush()
   }
 }
 
+void io_buf::reset()
+{
+  // This operation is only intended for read buffers.
+  assert(output_files.empty());
+
+  for (auto& f : input_files) { f->reset(); }
+  _buffer._end = _buffer._begin;
+  head = _buffer._begin;
+  _current = 0;
+}
+
+bool io_buf::is_resettable() const
+{
+  // This operation is only intended for read buffers.
+  assert(output_files.empty());
+
+  return std::all_of(input_files.begin(), input_files.end(),
+      [](const std::unique_ptr<VW::io::reader>& ptr) { return ptr->is_resettable(); });
+}
