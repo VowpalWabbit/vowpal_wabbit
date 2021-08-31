@@ -124,7 +124,7 @@ std::vector<features_range_t> inline generate_generic_char_combination(
     const std::vector<INTERACTIONS::interaction_term>& terms)
 {
   std::vector<features_range_t> inter;
-  for (const auto term : terms)
+  for (const auto& term : terms)
   { inter.emplace_back(feature_groups[term.ns_char()].audit_begin(), feature_groups[term.ns_char()].audit_end()); }
   return inter;
 }

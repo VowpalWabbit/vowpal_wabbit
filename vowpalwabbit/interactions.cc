@@ -40,7 +40,7 @@ void eval_count_of_generated_ft(bool permutations,
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
 
-      for (auto ns : inter)
+      for (const auto& ns : inter)
       {
         if (ns.type() == INTERACTIONS::interaction_term_type::ns_char)
         {
