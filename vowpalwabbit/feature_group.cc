@@ -175,7 +175,6 @@ void do_swap_for_all(size_t pos1, size_t pos2, VecT& vec)
   std::swap(vec[pos1], vec[pos2]);
 }
 
-
 template <typename... VecTs>
 void apply_permutation_in_place(const std::vector<std::size_t>& dest_index_vec, VecTs... vecs)
 {
@@ -260,8 +259,7 @@ bool features::sort(uint64_t parse_mask)
   if (indicies.empty()) { return false; }
   // Compared indices are masked even though the saved values are not necessarilly masked.
   const auto comparator = [parse_mask](feature_index index_first, feature_index index_second, feature_value value_first,
-                              feature_value value_second)
-  {
+                              feature_value value_second) {
     const auto masked_index_first = index_first & parse_mask;
     const auto masked_index_second = index_second & parse_mask;
     return (masked_index_first < masked_index_second) ||
@@ -269,10 +267,7 @@ bool features::sort(uint64_t parse_mask)
   };
   const auto flat_extents = VW::details::flatten_namespace_extents(namespace_extents, indicies.size());
   const auto dest_index_vec = sort_permutation(indicies, values, comparator);
-  if (!space_names.empty())
-  {
-    apply_permutation_in_place(dest_index_vec, values, indicies, flat_extents, space_names);
-  }
+  if (!space_names.empty()) { apply_permutation_in_place(dest_index_vec, values, indicies, flat_extents, space_names); }
   else
   {
     apply_permutation_in_place(dest_index_vec, values, indicies, flat_extents);
