@@ -157,9 +157,15 @@ std::vector<std::size_t> sort_permutation(const IndexVec& index_vec, const ValVe
 }
 
 template <typename VecT, typename... Rest>
-size_t size_of_first_vec(const VecT& vec, Rest... rest)
+size_t size_of_first_vec(const VecT& vec, Rest...)
 {
   return vec.size();
+}
+
+template <typename VecT>
+void do_swap_for_all(size_t pos1, size_t pos2, VecT& vec)
+{
+  std::swap(vec[pos1], vec[pos2]);
 }
 
 template <typename VecT, typename... Rest>
@@ -167,12 +173,6 @@ void do_swap_for_all(size_t pos1, size_t pos2, VecT& vec, Rest... rest)
 {
   std::swap(vec[pos1], vec[pos2]);
   do_swap_for_all(pos1, pos2, rest...);
-}
-
-template <typename VecT>
-void do_swap_for_all(size_t pos1, size_t pos2, VecT& vec)
-{
-  std::swap(vec[pos1], vec[pos2]);
 }
 
 template <typename... VecTs>
