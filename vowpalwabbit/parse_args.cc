@@ -1760,7 +1760,7 @@ void finish(vw& all, bool delete_all)
   {
     finalize_regressor(all, all.final_regressor_name);
   }
-  catch (vw_exception& e)
+  catch (vw_exception& /* e */)
   {
     finalize_regressor_exception = std::current_exception();
   }
