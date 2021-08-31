@@ -28,12 +28,9 @@ interaction_term_type interaction_term::type() const { return _type; }
 
 bool operator<(const interaction_term& lhs, const interaction_term& rhs)
 {
-  if (lhs._type < rhs._type) return true;
-  if (rhs._type < lhs._type) return false;
-  if (lhs._ns_char < rhs._ns_char) return true;
-  if (rhs._ns_char < lhs._ns_char) return false;
-  if (lhs._ns_hash < rhs._ns_hash) return true;
-  if (rhs._ns_hash < lhs._ns_hash) return false;
+  if (lhs._type != rhs._type) { return lhs._type < rhs._type; }
+  if (lhs._ns_char != rhs._ns_char) { return lhs._ns_char < rhs._ns_char; }
+  if (lhs._ns_hash != rhs._ns_hash) { return lhs._ns_hash < rhs._ns_hash; }
   return lhs._wildcard < rhs._wildcard;
 }
 
