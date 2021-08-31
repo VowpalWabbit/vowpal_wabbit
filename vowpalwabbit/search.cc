@@ -128,10 +128,6 @@ struct action_cache
   action k;
   bool is_opt;
   float cost;
-  action_cache(float _min_cost, action _k, bool _is_opt, float _cost)
-      : min_cost(_min_cost), k(_k), is_opt(_is_opt), cost(_cost)
-  {
-  }
 };
 std::ostream& operator<<(std::ostream& os, const action_cache& x)
 {
@@ -193,7 +189,7 @@ public:
                              // oracle (0 means "infinite")
   bool linear_ordering;      // insist that examples are generated in linear order (rather that the default hoopla
                              // permutation)
-  bool (*label_is_test)(polylabel&);  // tell me if the label data from an example is test
+  bool (*label_is_test)(polylabel*);  // tell me if the label data from an example is test
 
   size_t t;                                     // current search step
   size_t T;                                     // length of root trajectory
@@ -1070,7 +1066,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
     {
       action cl = cs_get_cost_index(priv.cb_learner, l, k);
       float cost = array_contains(cl, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f;
-      this_cache->push_back(action_cache(0., cl, cl == a, cost));
+      this_cache->push_back(action_cache{0., cl, cl == a, cost});
     }
     assert(priv.memo_foreach_action.size() == priv.meta_t + priv.t - 1);
     priv.memo_foreach_action.push_back(this_cache);
@@ -1134,7 +1130,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       if (priv.metaoverride && priv.metaoverride->_foreach_action)
         priv.metaoverride->_foreach_action(*priv.metaoverride->sch, priv.t - 1, min_cost, cl, cl == act, cost);
       if (override_action == cl) a_cost = cost;
-      if (this_cache) this_cache->push_back(action_cache(min_cost, cl, cl == act, cost));
+      if (this_cache) this_cache->push_back(action_cache{min_cost, cl, cl == act, cost});
     }
     if (this_cache)
     {
@@ -1270,7 +1266,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
       best_action = a;
       a_cost = best_prediction;
     }
-    if (this_cache) this_cache->push_back(action_cache(0., a, false, ecs[a].partial_prediction));
+    if (this_cache) this_cache->push_back(action_cache{0., a, false, ecs[a].partial_prediction});
 
     priv.num_features += ecs[a].get_num_features();
     ecs[a].l = old_label;
@@ -1921,20 +1917,6 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   if (!priv.linear_ordering) hoopla_permute(timesteps.begin(), timesteps.end());
 }
 
-struct final_item
-{
-  v_array<scored_action>* prefix;
-  std::string str;
-  float total_cost;
-  final_item(v_array<scored_action>* p, std::string s, float ic) : prefix(p), str(s), total_cost(ic) {}
-};
-
-void free_final_item(final_item* p)
-{
-  delete p->prefix;
-  delete p;
-}
-
 void BaseTask::Run()
 {
   search_private& priv = *sch->priv;
@@ -2254,7 +2236,7 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
 
   for (size_t i = 0; i < ec_seq.size(); i++)
   {
-    is_test_ex |= priv.label_is_test(ec_seq[i]->l);
+    is_test_ex |= priv.label_is_test(&ec_seq[i]->l);
     is_holdout_ex |= ec_seq[i]->test_only;
     if (is_test_ex && is_holdout_ex) break;
   }
@@ -2335,7 +2317,7 @@ void end_examples(search& sch)
   }
 }
 
-bool mc_label_is_test(polylabel& lab) { return MC::test_label(lab.multi); }
+bool mc_label_is_test(polylabel* lab) { return MC::test_label(lab->multi); }
 
 void search_initialize(vw* all, search& sch)
 {
@@ -2904,12 +2886,12 @@ void search::set_options(uint32_t opts)
     );
 }
 
-void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
+void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel*))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
     logger::errlog_warn("warning: task should not set label parser except in initialize function!");
   this->priv->all->example_parser->lbl_parser = lp;
-  this->priv->all->example_parser->lbl_parser.test_label = reinterpret_cast<bool (*)(polylabel*)>(is_test);
+  this->priv->all->example_parser->lbl_parser.test_label = is_test;
   this->priv->label_is_test = is_test;
 }
 
