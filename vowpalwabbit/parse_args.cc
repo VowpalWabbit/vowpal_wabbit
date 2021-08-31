@@ -1771,9 +1771,6 @@ void finish(vw& all, bool delete_all)
 
   if (delete_all) delete &all;
 
-  if (finalize_regressor_exception)
-  {
-    std::rethrow_exception(finalize_regressor_exception);
-  }
+  if (finalize_regressor_exception) { std::rethrow_exception(finalize_regressor_exception); }
 }
 }  // namespace VW
