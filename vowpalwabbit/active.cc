@@ -43,10 +43,8 @@ float query_decision(active& a, float ec_revert_weight, float k)
         std::sqrt((1.f + 0.5f * std::log(k)) / (weighted_queries + 0.0001f));
     bias = get_active_coin_bias(k, avg_loss, ec_revert_weight / k, a.active_c0);
   }
-  if (a._random_state->get_and_update_random() < bias)
-    return 1.f / bias;
-  else
-    return -1.;
+
+  return (a._random_state->get_and_update_random() < bias) ? 1.f / bias : -1.f;
 }
 
 template <bool is_learn>
