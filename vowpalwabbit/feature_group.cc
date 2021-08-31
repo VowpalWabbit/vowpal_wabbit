@@ -156,11 +156,33 @@ std::vector<std::size_t> sort_permutation(const IndexVec& index_vec, const ValVe
   return dest_index_vec;
 }
 
-template <typename VecT>
-void apply_permutation_in_place(VecT& vec, const std::vector<std::size_t>& dest_index_vec)
+template <typename VecT, typename... Rest>
+size_t size_of_first_vec(const VecT& vec, Rest... rest)
 {
-  std::vector<bool> done(vec.size());
-  for (std::size_t i = 0; i < vec.size(); ++i)
+  return vec.size();
+}
+
+template <typename VecT, typename... Rest>
+void do_swap_for_all(size_t pos1, size_t pos2, VecT& vec, Rest... rest)
+{
+  std::swap(vec[pos1], vec[pos2]);
+  do_swap_for_all(pos1, pos2, rest...);
+}
+
+template <typename VecT>
+void do_swap_for_all(size_t pos1, size_t pos2, VecT& vec)
+{
+  std::swap(vec[pos1], vec[pos2]);
+}
+
+
+template <typename... VecTs>
+void apply_permutation_in_place(const std::vector<std::size_t>& dest_index_vec, VecTs... vecs)
+{
+  const auto size = size_of_first_vec(vecs...);
+  assert(dest_index_vec.size() == size);
+  std::vector<bool> done(size);
+  for (std::size_t i = 0; i < size; ++i)
   {
     if (done[i]) { continue; }
     done[i] = true;
@@ -168,7 +190,7 @@ void apply_permutation_in_place(VecT& vec, const std::vector<std::size_t>& dest_
     std::size_t j = dest_index_vec[i];
     while (i != j)
     {
-      std::swap(vec[prev_j], vec[j]);
+      do_swap_for_all(prev_j, j, vecs...);
       done[j] = true;
       prev_j = j;
       j = dest_index_vec[j];
@@ -237,20 +259,24 @@ bool features::sort(uint64_t parse_mask)
 {
   if (indicies.empty()) { return false; }
   // Compared indices are masked even though the saved values are not necessarilly masked.
-  const auto comparator = [parse_mask](feature_value value_first, feature_value value_second, feature_index index_first,
-                              feature_index index_second) {
-    auto masked_index_first = index_first & parse_mask;
-    auto masked_index_second = index_second & parse_mask;
+  const auto comparator = [parse_mask](feature_index index_first, feature_index index_second, feature_value value_first,
+                              feature_value value_second)
+  {
+    const auto masked_index_first = index_first & parse_mask;
+    const auto masked_index_second = index_second & parse_mask;
     return (masked_index_first < masked_index_second) ||
         ((masked_index_first == masked_index_second) && (value_first < value_second));
   };
-  auto dest_index_vec = sort_permutation(indicies, values, comparator);
-  apply_permutation_in_place(values, dest_index_vec);
-  apply_permutation_in_place(indicies, dest_index_vec);
-  if (!space_names.empty()) { apply_permutation_in_place(space_names, dest_index_vec); }
-
-  auto flat_extents = VW::details::flatten_namespace_extents(namespace_extents, indicies.size());
-  apply_permutation_in_place(flat_extents, dest_index_vec);
+  const auto flat_extents = VW::details::flatten_namespace_extents(namespace_extents, indicies.size());
+  const auto dest_index_vec = sort_permutation(indicies, values, comparator);
+  if (!space_names.empty())
+  {
+    apply_permutation_in_place(dest_index_vec, values, indicies, flat_extents, space_names);
+  }
+  else
+  {
+    apply_permutation_in_place(dest_index_vec, values, indicies, flat_extents);
+  }
   namespace_extents = VW::details::unflatten_namespace_extents(flat_extents);
   return true;
 }
