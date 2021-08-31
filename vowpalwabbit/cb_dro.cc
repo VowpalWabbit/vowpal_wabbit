@@ -48,7 +48,7 @@ struct cb_dro_data
         const CB::cb_class logged = (*it)->l.cb.costs[0];
         const uint32_t labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), it));
 
-        const auto action_scores = examples[0]->pred.a_s;
+        const auto& action_scores = examples[0]->pred.a_s;
 
         // cb_explore_adf => want maximum probability
         // cb_adf => first action is a greedy action

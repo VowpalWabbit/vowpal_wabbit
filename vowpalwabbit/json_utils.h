@@ -16,6 +16,7 @@ struct DecisionServiceInteraction
   std::vector<unsigned> actions;
   std::vector<float> probabilities;
   float probabilityOfDrop = 0.f;
+  float originalLabelCost = 0.f;
   bool skipLearn{false};
 };
 

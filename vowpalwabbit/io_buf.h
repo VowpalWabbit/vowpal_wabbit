@@ -11,6 +11,7 @@
 #include <memory>
 #include <cassert>
 #include <cstdlib>
+#include <algorithm>
 
 #include "v_array.h"
 #include "hash.h"
@@ -89,6 +90,9 @@ class io_buf
   internal_buffer _buffer;
   char* head = nullptr;
 
+  // file descriptor currently being used.
+  size_t _current = 0;
+
   std::vector<std::unique_ptr<VW::io::reader>> input_files;
   std::vector<std::unique_ptr<VW::io::writer>> output_files;
 
@@ -106,9 +110,6 @@ public:
 
   const std::vector<std::unique_ptr<VW::io::reader>>& get_input_files() const { return input_files; }
   const std::vector<std::unique_ptr<VW::io::writer>>& get_output_files() const { return output_files; }
-
-  // file descriptor currently being used.
-  size_t current = 0;
 
   void verify_hash(bool verify)
   {
@@ -136,17 +137,22 @@ public:
     output_files.push_back(std::move(file));
   }
 
-  void reset_buffer()
-  {
-    _buffer._end = _buffer._begin;
-    head = _buffer._begin;
-  }
+  /**
+   * @brief Calls reset on all contained input files. Moves back to the first
+   * file being the current one processed and resets the buffer position. If the
+   * contained readers are not resettable then this function will fail. The
+   * buffer should be tested with io_buf::is_resettable prior to calling this to
+   * avoid failure.
+   */
+  void reset();
 
-  void reset_file(VW::io::reader* f)
-  {
-    f->reset();
-    reset_buffer();
-  }
+  /**
+   * @brief Test if this io_buf supports resetting.
+   *
+   * @return true if all contained input files can be reset
+   * @return false if any contained input files cannot be reset
+   */
+  bool is_resettable() const;
 
   void set(char* p) { head = p; }
 
