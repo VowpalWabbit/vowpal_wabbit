@@ -244,7 +244,7 @@ bool features::sort(uint64_t parse_mask)
     return (masked_index_first < masked_index_second) ||
         ((masked_index_first == masked_index_second) && (value_first < value_second));
   };
-  auto dest_index_vec = sort_permutation(values, indicies, comparator);
+  auto dest_index_vec = sort_permutation(indicies, values, comparator);
   apply_permutation_in_place(values, dest_index_vec);
   apply_permutation_in_place(indicies, dest_index_vec);
   if (!space_names.empty()) { apply_permutation_in_place(space_names, dest_index_vec); }
