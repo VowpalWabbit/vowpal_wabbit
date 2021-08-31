@@ -1756,7 +1756,6 @@ void finish(vw& all, bool delete_all)
   // finalize_regressor can throw if it can't write the file.
   // we still want to free up all the memory.
   std::exception_ptr finalize_regressor_exception;
-  bool finalize_regressor_exception_thrown = false;
   try
   {
     finalize_regressor(all, all.final_regressor_name);
