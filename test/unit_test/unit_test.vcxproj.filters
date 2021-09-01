@@ -153,6 +153,9 @@
     <ClCompile Include="parse_args_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="tutorial_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="vw_versions_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
