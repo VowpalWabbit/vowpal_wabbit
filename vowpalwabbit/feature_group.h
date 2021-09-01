@@ -396,9 +396,6 @@ struct features
   inline bool empty() const { return values.empty(); }
   inline bool nonempty() const { return !empty(); }
 
-  VW_DEPRECATED("Freeing space names is handled directly by truncation or removal. This will be removed in VW 9.0.")
-  void free_space_names(size_t i);
-
   // default iterator for values & features
   inline iterator begin() { return {values.begin(), indicies.begin()}; }
   inline const_iterator begin() const { return {values.begin(), indicies.begin()}; }
@@ -453,9 +450,6 @@ struct features
         [](const VW::namespace_extent& obj) { return obj.begin_index < obj.end_index; });
     return all_extents_complete;
   }
-
-  VW_DEPRECATED("deep_copy_from is deprecated. Use the copy constructor directly. This will be removed in VW 9.0.")
-  void deep_copy_from(const features& src);
 };
 
 namespace VW

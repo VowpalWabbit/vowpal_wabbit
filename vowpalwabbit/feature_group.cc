@@ -18,8 +18,6 @@ struct feature_slice  // a helper struct for functions using the set {v,i,space_
   audit_strings space_name;
 };
 
-void features::free_space_names(size_t i) { space_names.erase(space_names.begin() + i, space_names.end()); }
-
 void features::clear()
 {
   sum_feat_sq = 0.f;
@@ -306,13 +304,4 @@ void features::end_ns_extent()
       namespace_extents.pop_back();
     }
   }
-}
-
-void features::deep_copy_from(const features& src)
-{
-  values = src.values;
-  indicies = src.indicies;
-  space_names = src.space_names;
-  sum_feat_sq = src.sum_feat_sq;
-  namespace_extents = src.namespace_extents;
 }
