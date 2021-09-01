@@ -47,9 +47,9 @@ struct data
   }
 
   data(float initial_numerator, float initial_denominator, float decay, bool update_before_learn,
-      bool unweighted_marginals, bool compete, vw* all)
+      bool unweighted_marginals, bool compete, vw& all)
       : data(initial_numerator, initial_denominator, decay, update_before_learn, unweighted_marginals, compete,
-            &all->weights, all->loss.get(), all->sd)
+            &all.weights, all.loss.get(), all.sd)
   {
   }
 
@@ -410,7 +410,7 @@ VW::LEARNER::base_learner* marginal_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(marginal_options)) { return nullptr; }
 
   auto d = VW::make_unique<MARGINAL::data>(
-      initial_numerator, initial_denominator, decay, update_before_learn, unweighted_marginals, compete, all);
+      initial_numerator, initial_denominator, decay, update_before_learn, unweighted_marginals, compete, *all);
 
   marginal = VW::decode_inline_hex(marginal);
   if (marginal.find(':') != std::string::npos) { THROW("Cannot use wildcard with marginal.") }
