@@ -88,6 +88,7 @@ public:
     std::vector<float> ordered_scores(scores.size());
     for (auto const& action_score : scores) { ordered_scores[action_score.action] = action_score.score; }
     for (auto action_score : ordered_scores) { pmf.push_back(action_score); }
+    vw->finish_example(examples);
 
     std::pair<int, float> pmf_sample = sample_custom_pmf(pmf);
     return std::pair<std::string, float>(actions[pmf_sample.first], pmf_sample.second);
@@ -148,10 +149,11 @@ public:
 
 std::vector<float> _test_helper(std::string vw_arg, int num_iterations = 3000, int seed = 10)
 {
-  auto vw = VW::initialize(vw_arg);
+  auto vw = VW::initialize(vw_arg, nullptr, false, nullptr, nullptr);
   Simulator sim("", seed);
+  auto ctr = sim.run_simulation(vw, num_iterations);
   VW::finish(*vw);
-  return sim.run_simulation(vw, num_iterations);
+  return ctr;
 }
 
 std::vector<float> _test_helper_save_load(std::string vw_arg, int num_iterations = 3000, int seed = 10)
@@ -159,7 +161,7 @@ std::vector<float> _test_helper_save_load(std::string vw_arg, int num_iterations
   int split = 1500;
   int before_save = num_iterations - split;
 
-  auto first_vw = VW::initialize(vw_arg);
+  auto first_vw = VW::initialize(vw_arg, nullptr, false, nullptr, nullptr);
   Simulator sim("", seed);
   // first chunk
   auto ctr = sim.run_simulation(first_vw, before_save);
@@ -168,7 +170,7 @@ std::vector<float> _test_helper_save_load(std::string vw_arg, int num_iterations
   VW::save_predictor(*first_vw, model_file);
   VW::finish(*first_vw);
   // reload in another instance
-  auto other_vw = VW::initialize("--quiet -i test_save_load.vw");
+  auto other_vw = VW::initialize("--quiet -i test_save_load.vw", nullptr, false, nullptr, nullptr);
   // continue
   ctr = sim.run_simulation(other_vw, split, true, before_save + 1);
   VW::finish(*other_vw);
