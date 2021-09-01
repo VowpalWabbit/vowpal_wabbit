@@ -30,8 +30,9 @@ inline const char* to_string(interaction_term_type e)
   }
 }
 
-struct interaction_term
+class interaction_term
 {
+public:
   namespace_index ns_char() const;
   uint64_t ns_hash() const;
   bool wildcard() const;
