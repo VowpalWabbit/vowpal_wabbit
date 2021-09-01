@@ -136,9 +136,8 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
     {
       assert(!namespaces.empty());
       float number = get_number(value);
-      namespaces.back().AddFeature(number,
-          VW::hash_feature_cstr(all, const_cast<char*>(key_namespace), namespaces.back().namespace_hash),
-          key_namespace);
+      namespaces.back().AddFeature(
+          number, VW::hash_feature_cstr(all, key_namespace, namespaces.back().namespace_hash), key_namespace);
     }
     break;
     default:
@@ -185,7 +184,7 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
 
         auto* stored_ex = (*dedup_examples)[dedup_id];
         ex->indices = stored_ex->indices;
-        for (auto& ns : ex->indices) { ex->feature_space[ns].deep_copy_from(stored_ex->feature_space[ns]); }
+        for (auto& ns : ex->indices) { ex->feature_space[ns] = stored_ex->feature_space[ns]; }
         ex->ft_offset = stored_ex->ft_offset;
         ex->l.slates.slot_id = stored_ex->l.slates.slot_id;
       }
@@ -265,6 +264,7 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
       auto& current_obj = outcomes[i];
       auto& destination = slot_examples[i]->l.slates.probabilities;
       auto& actions = current_obj["_a"];
+
       if (actions.GetType() == rapidjson::kNumberType) { destination.push_back({actions.GetUint(), 0.f}); }
       else if (actions.GetType() == rapidjson::kArrayType)
       {
@@ -291,6 +291,12 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
       else
       {
         assert(false);
+      }
+
+      if (current_obj.HasMember("_original_label_cost"))
+      {
+        assert(current_obj["_original_label_cost"].IsFloat());
+        data->originalLabelCost = current_obj["_original_label_cost"].GetFloat();
       }
     }
 

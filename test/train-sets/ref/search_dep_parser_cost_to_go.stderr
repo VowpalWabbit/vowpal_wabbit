@@ -6,7 +6,7 @@ decay_learning_rate = 1
 creating cache_file = train-sets/wsj_small.dparser.vw.gz.cache
 Reading datafile = train-sets/wsj_small.dparser.vw.gz
 num sources = 1
-Enabled reductions: gd, scorer, csoaa, search_task
+Enabled reductions: gd, scorer-identity, csoaa, search_task
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
 88.000000  88.000000         1  [43:1 5:2 5:2 5:2 1..] [0:8 1:1 2:1 3:1 4:..]     0     0      144        0      144  0.000000
@@ -17,7 +17,7 @@ loss       last        counter           output prefix          output prefix  p
 finished run
 number of examples per pass = 2
 passes used = 6
-weighted example sum = 12
-weighted label sum = 0
-average loss = 10.9167
+weighted example sum = 12.000000
+weighted label sum = 0.000000
+average loss = 10.916667
 total feature number = 276631

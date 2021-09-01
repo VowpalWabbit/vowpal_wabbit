@@ -6,9 +6,16 @@ class Test:
     unique_id = set()
 
     @staticmethod
-    def register_output(idnum, filename):
+    def register_output(idnum, filename, overwrite=True):
+        if not overwrite and Test.has_output(filename):
+            return
+
         Test.output[filename] = idnum
     
+    @staticmethod
+    def has_output(filename):
+        return filename in Test.output
+
     @staticmethod
     def filename_to_test_id(filename):
         return Test.output[filename]
@@ -64,13 +71,13 @@ class Test:
             self.vw_command = " ".join(self.vw_command.split()[1:])
 
             # check what input files this command needs
-            input_file_flags = ["-d", "-i", "--dictionary", "--feature_mask"]
+            input_file_flags = ["-d", "-i", "--dictionary", "--feature_mask", "--cache_file"]
             files = []
             for flag in input_file_flags:
                 next_files = Parser.get_values_of_vwarg(self.vw_command, flag)
 
                 # some cleanup only when its dictionary
-                if flag is "--dictionary":
+                if flag == "--dictionary":
                     next_files = [f.split(":")[-1]  for f in next_files]
                     dpath = Parser.get_values_of_vwarg(self.vw_command, "--dictionary_path")
                     if dpath:
@@ -85,6 +92,11 @@ class Test:
             files = Parser.get_values_of_vwarg(self.vw_command, "-f")
             for f in files:
                 Test.register_output(int(self.id), f)
+            
+            files = Parser.get_values_of_vwarg(self.vw_command, "--cache_file")
+            for f in files:
+                # treat cache_file differently because it is both an input and output
+                Test.register_output(int(self.id), f, overwrite=False)
 
             # check who produces the input files of this test
             files = Parser.get_values_of_vwarg(self.vw_command, "-i")
@@ -93,6 +105,15 @@ class Test:
             for f in files:
                 if "model-sets" not in f:
                     depends_on.append(Test.filename_to_test_id(f))
+
+            files = Parser.get_values_of_vwarg(self.vw_command, "--cache_file")
+            for f in files:
+                parent_test = Test.filename_to_test_id(f)
+                if str(parent_test) != self.id:
+                    depends_on.append(parent_test)
+                else:
+                    self.input_files.remove(f)
+
             if depends_on:
                 self.depends_on = depends_on
         

@@ -10,6 +10,19 @@ def get_all_options():
     return pyvw.get_all_vw_options()
 
 
+def to_json():
+    config = get_all_options()
+    for name, config_group in config.items():
+        for (group_name, options) in config_group:
+            for option in options:
+                option._type = str(type(option._default_value).__name__)
+    
+    import json
+
+    with open("vw_options.json", "w") as f:
+        f.write(json.dumps(config, indent=2, default=lambda x: x.__dict__))
+
+
 def get_config_of_vw_cmd(test):
     vw = pyvw.vw(arg_str=test["vw_command"])
     config = vw.get_config()

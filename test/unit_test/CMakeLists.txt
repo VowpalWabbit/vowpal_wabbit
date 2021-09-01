@@ -1,4 +1,5 @@
 add_executable(vw-unit-test.out
+  cache_test.cc
   cats_test.cc
   cats_tree_tests.cc
   cats_user_provided_pdf.cc
@@ -8,11 +9,13 @@ add_executable(vw-unit-test.out
   chain_hashing.cc
   chain_hashing.cc
   continuous_actions_parser_test.cc
+  distributionally_robust_test.cc
   dsjson_parser_test.cc
   error_test.cc
   example_header_test.cc
   example_test.cc
   explore_test.cc
+  feature_group_test.cc
   guard_test.cc
   initialize_test.cc
   interactions_test.cc
@@ -21,6 +24,7 @@ add_executable(vw-unit-test.out
   main.cc
   math_test.cc
   multiclass_label_parser_test.cc
+  namespaced_feature_store_test.cc
   numeric_cast_tests.cc
   object_pool_test.cc
   offset_tree_tests.cc
@@ -33,6 +37,8 @@ add_executable(vw-unit-test.out
   pmf_to_pdf_test.cc
   power_test.cc
   prediction_test.cc
+  custom_reduction_test.cc
+  minimal_custom_reduction.cc
   random_test.cc
   random_test.cc
   scope_exit_test.cc

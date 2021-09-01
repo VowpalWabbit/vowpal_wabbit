@@ -106,7 +106,6 @@ inline node init_node()
 
   node.parent = 0;
   node.min_count = 0;
-  node.preds = v_init<node_pred>();
   init_leaf(node);
 
   return node;
@@ -172,7 +171,11 @@ void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
 
 bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t label)
 {
-  class_index = static_cast<uint32_t>(b.nodes[current].preds.unique_add_sorted(node_pred(label)));
+  auto& preds = b.nodes[current].preds;
+  node_pred val_to_insert(label);
+  auto found_it = std::lower_bound(preds.begin(), preds.end(), val_to_insert);
+  if (found_it == preds.end() || !(*found_it == val_to_insert)) { found_it = preds.insert(found_it, val_to_insert); }
+  class_index = static_cast<uint32_t>(std::distance(preds.begin(), found_it));
   b.nodes[current].preds[class_index].label_count++;
 
   if (b.nodes[current].preds[class_index].label_count > b.nodes[current].max_count)
@@ -495,8 +498,11 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
   }
 }
 
-base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
+base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   auto data = scoped_calloc_or_throw<log_multi>();
   option_group_definition new_options("Logarithmic Time Multiclass Tree");
   new_options.add(make_option("log_multi", data->k).keep().necessary().help("Use online tree for multiclass"))
@@ -516,8 +522,8 @@ base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
-  learner<log_multi, example>& l = init_multiclass_learner(data, as_singleline(setup_base(options, all)), learn,
-      predict, all.example_parser, data->max_predictors, all.get_setupfn_name(log_multi_setup));
+  learner<log_multi, example>& l = init_multiclass_learner(data, as_singleline(stack_builder.setup_base_learner()),
+      learn, predict, all.example_parser, data->max_predictors, stack_builder.get_setupfn_name(log_multi_setup));
   all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
   l.set_save_load(save_load_tree);
 

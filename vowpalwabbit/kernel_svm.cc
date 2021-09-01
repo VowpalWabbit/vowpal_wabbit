@@ -143,7 +143,6 @@ void svm_example::init_svm_example(flat_example* fec)
 
 svm_example::~svm_example()
 {
-  krow.delete_v();
   // free flatten example contents
   // flat_example* fec = &calloc_or_throw<flat_example>();
   //*fec = ex;
@@ -263,13 +262,13 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
       {
         features& fs = fec->fs;
         size_t len = fs.size();
-        fs.values = v_init<feature_value>();
+        fs.values.clear();
         fs.values.resize_but_with_stl_behavior(len);
         brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.values.begin()), len * sizeof(feature_value), "");
         if (!brw) return 3;
 
         len = fs.indicies.size();
-        fs.indicies = v_init<feature_index>();
+        fs.indicies.clear();
         fs.indicies.resize_but_with_stl_behavior(len);
         brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.indicies.begin()), len * sizeof(feature_index), "");
         if (!brw) return 3;
@@ -795,8 +794,11 @@ void learn(svm_params& params, single_learner&, example& ec)
   }
 }
 
-VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   auto params = scoped_calloc_or_throw<svm_params>();
   std::string kernel_type;
   float bandwidth = 1.f;
@@ -870,7 +872,8 @@ VW::LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 
   params->all->weights.stride_shift(0);
 
-  learner<svm_params, example>& l = init_learner(params, learn, predict, 1, all.get_setupfn_name(kernel_svm_setup));
+  learner<svm_params, example>& l =
+      init_learner(params, learn, predict, 1, stack_builder.get_setupfn_name(kernel_svm_setup));
   l.set_save_load(save_load);
   return make_base(l);
 }

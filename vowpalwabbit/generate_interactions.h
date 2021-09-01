@@ -10,4 +10,4 @@
 #include <vector>
 #include <set>
 
-VW::LEARNER::base_learner* generate_interactions_setup(VW::config::options_i& options, vw& all);
+VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_builder);

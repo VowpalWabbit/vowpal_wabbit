@@ -111,7 +111,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   ec.num_features -= f1.size();
   ec.num_features -= f2.size();
 
-  in.feat_store.deep_copy_from(f1);
+  in.feat_store = f1;
 
   multiply(f1, f2, in);
   ec.reset_total_sum_feat_sq();
@@ -135,12 +135,14 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, example& 
   // re-insert namespace into the right position
   if (n2_i < indices_original_size) { ec.indices.insert(ec.indices.begin() + n2_i, in.n2); }
 
-  f1.deep_copy_from(in.feat_store);
+  f1 = in.feat_store;
   ec.num_features = in.num_features;
 }
 
-VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   std::string s;
   option_group_definition new_options("Interact via elementwise multiplication");
   new_options.add(make_option("interact", s)
@@ -164,8 +166,8 @@ VW::LEARNER::base_learner* interact_setup(options_i& options, vw& all)
   data->all = &all;
 
   VW::LEARNER::learner<interact, example>* l;
-  l = &VW::LEARNER::init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
-      predict_or_learn<false, true>, 1, all.get_setupfn_name(interact_setup));
+  l = &VW::LEARNER::init_learner(data, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true, true>,
+      predict_or_learn<false, true>, 1, stack_builder.get_setupfn_name(interact_setup));
 
   return make_base(*l);
 }

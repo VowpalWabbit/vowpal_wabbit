@@ -1,3 +1,10 @@
+trigger:
+- master
+- 'releases/**'
+
+pr:
+- '*'
+
 resources:
 - repo: self
 

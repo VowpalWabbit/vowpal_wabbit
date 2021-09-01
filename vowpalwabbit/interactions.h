@@ -18,11 +18,6 @@ namespace INTERACTIONS
 {
 VW::LEARNER::base_learner* generate_interactions_setup(VW::config::options_i& options, vw& all);
 
-constexpr bool feature_self_interactions = true;
-// must return logical expression
-/*old: ft_value != 1.0 && feature_self_interactions_for_value_other_than_1*/
-#define PROCESS_SELF_INTERACTIONS(ft_value) feature_self_interactions
-
 constexpr unsigned char printable_start = ' ';
 constexpr unsigned char printable_end = '~';
 constexpr unsigned char printable_ns_size = printable_end - printable_start;

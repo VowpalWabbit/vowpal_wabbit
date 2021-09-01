@@ -27,23 +27,51 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, example& ec)
 {
   data.adf_data.copy_example_to_adf(*data.weights, ec);
 
-  CB::label ld;
+  CB::label backup_ld;
+  CB::label new_ld;
   bool is_test_label = CB::is_test_label(ec.l.cb);
 
-  uint32_t chosen_action;
-  if (!is_test_label) chosen_action = ec.l.cb.costs[0].action - 1;
+  uint32_t chosen_action = 0;
+  uint32_t index_with_cost = 0;
+
+  if (!is_test_label)
+  {
+    // cb.costs can be more than one in --cb
+    // we need to keep the observed cost one only
+    if (ec.l.cb.costs.size() > 1)
+    {
+      for (auto c : ec.l.cb.costs)
+      {
+        if (c.has_observed_cost())
+        {
+          chosen_action = c.action - 1;
+          break;
+        }
+        index_with_cost++;
+      }
+    }
+    else
+    {
+      chosen_action = ec.l.cb.costs[0].action - 1;
+      index_with_cost = 0;
+    }
+
+    new_ld.weight = ec.l.cb.weight;
+    new_ld.costs.emplace_back(ec.l.cb.costs[index_with_cost].cost, ec.l.cb.costs[index_with_cost].action - 1,
+        ec.l.cb.costs[index_with_cost].probability);
+  }
 
   if (!is_test_label && chosen_action < data.adf_data.num_actions)
   {
-    ld = std::move(data.adf_data.ecs[chosen_action]->l.cb);
-    data.adf_data.ecs[chosen_action]->l.cb = std::move(ec.l.cb);
+    backup_ld = std::move(data.adf_data.ecs[chosen_action]->l.cb);
+    data.adf_data.ecs[chosen_action]->l.cb = std::move(new_ld);
   }
 
-  auto restore_guard = VW::scope_exit([&ld, &data, &ec, &chosen_action, &is_test_label] {
+  auto restore_guard = VW::scope_exit([&backup_ld, &data, &chosen_action, &is_test_label, &new_ld] {
     if (!is_test_label && chosen_action < data.adf_data.num_actions)
     {
-      ec.l.cb = std::move(data.adf_data.ecs[chosen_action]->l.cb);
-      data.adf_data.ecs[chosen_action]->l.cb = std::move(ld);
+      new_ld = std::move(data.adf_data.ecs[chosen_action]->l.cb);
+      data.adf_data.ecs[chosen_action]->l.cb = std::move(backup_ld);
     }
   });
 
@@ -73,8 +101,10 @@ void finish_example(vw& all, cb_to_cb_adf& c, example& ec)
 
     Related files: cb_algs.cc, cb_explore.cc, cbify.cc
 */
-VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   bool compat_old_cb = false;
   bool force_legacy = false;
   std::string type_string = "mtr";
@@ -133,7 +163,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   {
     options.insert("cb_explore_adf", "");
     // no need to register custom predict/learn, cbify will take care of that
-    return setup_base(options, all);
+    return stack_builder.setup_base_learner();
   }
 
   // user specified "cb_explore" but we're not using an old model file
@@ -152,7 +182,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
   data->explore_mode = override_cb_explore;
   data->weights = &(all.weights);
 
-  multi_learner* base = as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
 
   learner<cb_to_cb_adf, example>* l;
 
@@ -168,14 +198,14 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(options_i& options, vw& all)
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
 
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::action_probs,
-        "cb_to_cb_adf", true);
+        all.get_setupfn_name(cb_to_cb_adf_setup), true);
   }
   else
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_adf"));
 
     l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass,
-        "cb_to_cb_adf", true);
+        all.get_setupfn_name(cb_to_cb_adf_setup), true);
   }
 
   l->set_finish_example(finish_example);

@@ -1613,7 +1613,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 
 # Test 160: test --bootstrap & --oaa interaction
 # (Also adds -q :: and -P1 to get & verify perfect predictions in 2nd pass)
-{VW} -d train-sets/multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions  -c -k --passes 2 --holdout_off -P1
+{VW} -d train-sets/multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions -c -k --passes 2 --holdout_off -P1
     train-sets/ref/bootstrap_and_oaa.stderr
 
 # Test 161: --classweight
@@ -2359,20 +2359,157 @@ train-sets/ref/slates_simple_w_interactions.stderr
 {VW} -d train-sets/cb_load.dat --cb_explore_adf -q UA --regcb -i models/regcb_ld.model -t
     train-sets/ref/regcb_load.stderr
 
-# Test 324: test extra_metrics with djson ccb
+# Test 324: test dsjson with some errors
 # Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error
 # Line 57 of ccb_data_parse_error.json has a missing quote on purpose
 {VW} -d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread
     train-sets/ref/metrics_ccb_parse_error.stderr
     test-sets/ref/metrics_ccb_parse_error.json
 
-# Test 325: test privacy_activation command line argument
+# Test 325: test dsjson with some errors and limit output
+# Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error
+# Line 57 of ccb_data_parse_error.json has a missing quote on purpose
+# shares same metric file as test 324
+{VW} -d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --limit_output 1
+    train-sets/ref/metrics_ccb_parse_error_limit.stderr
+    test-sets/ref/metrics_ccb_parse_error.json
+
+# Test 326: test dsjson with some errors with quiet
+# Since logging is not thread safe, diff might fail randomnly. Added onethread to minimize error
+# Line 57 of ccb_data_parse_error.json has a missing quote on purpose
+# shares same metric file as test 324
+{VW} -d train-sets/ccb_data_parse_error.json --dsjson --ccb_explore_adf --extra_metrics metrics_ccb_parse_error.json --onethread --quiet
+    train-sets/ref/metrics_ccb_parse_error_quiet.stderr
+    test-sets/ref/metrics_ccb_parse_error.json
+
+# Test 327: simple cb dsjson
+# Required for having side-by-side comparison with the same one with pdrop from 328
+{VW} -d train-sets/cb_simple.json --dsjson --cb_explore_adf --invert_hash cb_simple_invert_hash.txt && \
+        tail -n +2 cb_simple_invert_hash.txt > cb_simple_invert_hash.txt.new && \
+            rm cb_simple_invert_hash.txt && \
+                mv cb_simple_invert_hash.txt.new cb_simple_invert_hash.txt
+    train-sets/ref/cb_simple.stderr
+    train-sets/ref/cb_simple_invert_hash.txt
+
+# Test 328: simple cb dsjson with pdrop
+# Required for having side-by-side comparison with the same one without pdrop from 327
+# TODO: update stderr when reported metrics pdrop issue is fixed
+{VW} -d train-sets/cb_simple_pdrop.json --dsjson --cb_explore_adf --invert_hash cb_simple_pdrop_invert_hash.txt && \
+        tail -n +2 cb_simple_pdrop_invert_hash.txt > cb_simple_pdrop_invert_hash.txt.new && \
+            rm cb_simple_pdrop_invert_hash.txt && \
+                mv cb_simple_pdrop_invert_hash.txt.new cb_simple_pdrop_invert_hash.txt
+    train-sets/ref/cb_simple_pdrop.stderr
+    train-sets/ref/cb_simple_pdrop_invert_hash.txt
+
+# Test 329: simple cb dsjson with pdrop=1 (unsupported)
+{VW} -d train-sets/cb_simple_pdrop1.json --dsjson --cb_explore_adf
+    train-sets/ref/cb_simple_pdrop1.stderr
+
+# Test 330: simple ccb dsjson
+# Required for having side-by-side comparison with the same one with pdrop from 331
+{VW} -d train-sets/ccb_simple.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_invert_hash.txt && \
+        tail -n +2 ccb_simple_invert_hash.txt > ccb_simple_invert_hash.txt.new && \
+            rm ccb_simple_invert_hash.txt && \
+                mv ccb_simple_invert_hash.txt.new ccb_simple_invert_hash.txt
+    train-sets/ref/ccb_simple.stderr
+    train-sets/ref/ccb_simple_invert_hash.txt
+
+# Test 331: simple ccb dsjson with pdrop
+# Required for having side-by-side comparison with the same one without pdrop from 330
+# TODO: update stderr when reported metrics pdrop issue is fixed
+{VW} -d train-sets/ccb_simple_pdrop.json --dsjson --ccb_explore_adf --invert_hash ccb_simple_pdrop_invert_hash.txt && \
+        tail -n +2 ccb_simple_pdrop_invert_hash.txt > ccb_simple_pdrop_invert_hash.txt.new && \
+            rm ccb_simple_pdrop_invert_hash.txt && \
+                mv ccb_simple_pdrop_invert_hash.txt.new ccb_simple_pdrop_invert_hash.txt
+    train-sets/ref/ccb_simple_pdrop.stderr
+    train-sets/ref/ccb_simple_pdrop_invert_hash.txt
+
+# Test 332: regression test for #3062
+{VW} -d train-sets/issue3062.txt --cb_explore 2 --cb_force_legacy --save_resume -f issue3062.model
+    train-sets/ref/issue3062train.stderr
+
+# Test 333: regression test for #3062
+{VW} -d train-sets/issue3062.txt -t --cb_explore 2 --cb_force_legacy --save_resume -i issue3062.model
+    train-sets/ref/issue3062test.stderr
+
+# Test 334: test cb_dro with softmax and cb_explore_adf
+{VW} --cb_dro --cb_explore_adf --rank_all -d train-sets/cb_adf_sm.data -p cb_dro_explore_adf_sm.predict --cb_type sm
+    train-sets/ref/cb_dro_explore_adf_sm.stderr
+    pred-sets/ref/cb_dro_explore_adf_sm.predict
+
+# Test 335: test --baseline
+{VW} -d train-sets/0001.dat --baseline
+    train-sets/ref/baseline_test.stderr
+
+# Test 336:
+{VW} -d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aa --quiet  --invert_hash dupeindex_self_quadratic.txt
+    train-sets/ref/dupeindex_self_quadratic.txt
+
+# Test 337:
+{VW} -d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaa --quiet --invert_hash dupeindex_self_cubic.txt
+    train-sets/ref/dupeindex_self_cubic.txt
+
+# Test 338:
+{VW} -d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaaa --quiet --invert_hash dupeindex_self_quartic.txt
+    train-sets/ref/dupeindex_self_quartic.txt
+
+# Test 339:
+{VW} -d train-sets/cb_multi_cost.dat --cb 4 --cb_force_legacy
+    train-sets/ref/cb_multi_cost_legacy.stderr
+
+# Test 340:
+{VW} -d train-sets/cb_multi_cost.dat --cb 4
+    train-sets/ref/cb_multi_cost.stderr
+
+# Test 341: csoaa_ldf with shared features
+{VW} -d train-sets/cs_shared.ldf --csoaa_ldf m
+    train-sets/ref/cs_shared_ldf.stderr
+
+# Test 342: check cb_adf with cache (part1 - no cache, but generate one)
+{VW} --cb_adf -k --cache_file models/cb_test_cache.ldf.cache -d train-sets/cb_test.ldf
+    train-sets/ref/cb_adf_mtr_cache.stderr
+
+# Test 343: check cb_adf with cache (part2 - run with cache)
+{VW} --cb_adf --cache_file models/cb_test_cache.ldf.cache -d train-sets/cb_test.ldf
+    train-sets/ref/cb_adf_mtr_cache_2.stderr
+
+# Test 344: check cb_adf with multiple passes
+{VW} --cb_adf -c --passes 2 -d train-sets/cb_adf_multipass_crash_1.data --holdout_off
+    train-sets/ref/cb_adf_multipass_crash_1.stderr
+
+# Test 345: check cb with multiple passes
+{VW} -d train-sets/cb_multi_cost.dat --cb 4 -k -c --passes 2 --holdout_off
+    train-sets/ref/cb_multi_cost_multipass.stderr
+
+# Test 346: check legacy mode cb with multiple passes
+{VW} -d train-sets/cb_multi_cost.dat --cb 4 -k -c --passes 2 --holdout_off --cb_force_legacy
+    train-sets/ref/cb_multi_cost_multipass_legacy.stderr
+
+# Test 347: cats save with predictions
+{VW} --cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -f models/cats_train.model -p cats_save.predict --save_resume
+    train-sets/ref/cats_save.stderr
+    pred-sets/ref/cats_save.predict
+
+# Test 348: cats load with predictions
+{VW} --cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -i models/cats_train.model -p cats_load.predict --save_resume
+    train-sets/ref/cats_load.stderr
+    pred-sets/ref/cats_load.predict
+
+# Test 349: model with corrupted weights gd.cc
+./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd.model
+    train-sets/ref/corrupt_weights_gd.stderr
+
+# Test 350: model with corrupted weights gd_mf.cc
+./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd_mf.model
+    train-sets/ref/corrupt_weights_gd_mf.stderr
+
+# Test 351: test privacy_activation command line argument
 {VW} --privacy_activation -d train-sets/privacy_dataset --invert_hash readable_model_privacy.txt --cbify 2 --cb_adf -f  model_privacy.vw
     train-sets/ref/privacy_dataset.stderr
     model-sets/model_privacy.vw
     pred-sets/ref/readable_model_privacy.txt  
 
-# Test 326: test privacy_activation command line argument with no tags input
+# Test 352: test privacy_activation command line argument with no tags input
 {VW} --privacy_activation -d train-sets/privacy_dataset_no_tags --invert_hash readable_model_privacy_no_tags.txt --cbify 2 --cb_adf -f  model_privacy_no_tags.vw
     train-sets/ref/privacy_no_tags.stderr
     model-sets/model_privacy_no_tags.vw

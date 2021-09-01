@@ -61,9 +61,10 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 
   float loss = 0.;
   ACTION_SCORE::action_scores preds = (*ec_seq)[0]->pred.a_s;
+  label_type_t label_type = all.example_parser->lbl_parser.label_type;
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
-    if (!CB::ec_is_example_header(*(*ec_seq)[i])) num_features += (*ec_seq)[i]->get_num_features();
+    if (!VW::LEARNER::ec_is_example_header(*(*ec_seq)[i], label_type)) num_features += (*ec_seq)[i]->get_num_features();
 
   bool labeled_example = true;
   if (c.known_cost.probability > 0)
@@ -127,13 +128,17 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
 
   if (label_example != nullptr)  // extract label
   {
-    data.action_label = label_example->l.cb;
-    label_example->l.cb = data.empty_label;
+    data.action_label = std::move(label_example->l.cb);
+    label_example->l.cb = std::move(data.empty_label);
   }
   multiline_learn_or_predict<false>(base, ec_seq, data.offset);
 
   if (label_example != nullptr)  // restore label
-    label_example->l.cb = data.action_label;
+  {
+    label_example->l.cb = std::move(data.action_label);
+    data.empty_label.costs.clear();
+    data.empty_label.weight = 1.f;
+  }
 
   data.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);
   if (label_example != nullptr && is_learn)
@@ -180,8 +185,10 @@ void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_se
 
 using namespace EXPLORE_EVAL;
 
-base_learner* explore_eval_setup(options_i& options, vw& all)
+base_learner* explore_eval_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto data = scoped_calloc_or_throw<explore_eval>();
   bool explore_eval_option = false;
   option_group_definition new_options("Explore evaluation");
@@ -205,11 +212,11 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("cb_explore_adf")) options.insert("cb_explore_adf", "");
 
-  multi_learner* base = as_multiline(setup_base(options, all));
+  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   learner<explore_eval, multi_ex>& l = init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1,
-      prediction_type_t::action_probs, all.get_setupfn_name(explore_eval_setup), true);
+      prediction_type_t::action_probs, stack_builder.get_setupfn_name(explore_eval_setup), true);
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);

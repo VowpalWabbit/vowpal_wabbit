@@ -5321,15 +5321,15 @@ static void benchmark_rcv1_dataset(benchmark::State& state, std::string command_
   {
     for (auto* example : examples)
     {
-      VW::setup_example(*vw, example);
       vw->learn(*example);
-      vw->finish_example(*example);
     }
 
     benchmark::ClobberMemory();
   }
 
-  VW::finish(*vw, true);
+  for (auto* example : examples) { vw->finish_example(*example); }
+
+  VW::finish(*vw);
 }
 
 BENCHMARK_CAPTURE(benchmark_rcv1_dataset, simple, "--quiet");

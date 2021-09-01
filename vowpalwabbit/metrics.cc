@@ -70,6 +70,8 @@ void list_to_json_file(dsjson_metrics* ds_metrics, std::string filename, metric_
       writer.String(ds_metrics->LastEventId.c_str());
       writer.Key("last_event_time");
       writer.String(ds_metrics->LastEventTime.c_str());
+      writer.Key("dsjson_sum_cost_original");
+      writer.Double(ds_metrics->DsjsonSumCostOriginal);
     }
 
     writer.EndObject();
@@ -94,6 +96,8 @@ void output_metrics(vw& all)
 #ifdef BUILD_EXTERNAL_PARSER
     if (all.external_parser) { all.external_parser->persist_metrics(list_metrics.int_metrics_list); }
 #endif
+
+    list_metrics.int_metrics_list.emplace_back("total_log_calls", logger::get_log_count());
 
     list_to_json_file(all.example_parser->metrics.get(), filename, list_metrics);
   }
@@ -120,8 +124,9 @@ void persist(metrics_data& data, metric_sink& metrics)
   metrics.int_metrics_list.emplace_back("total_learn_calls", data.learn_count);
 }
 
-VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
+VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
   auto data = scoped_calloc_or_throw<metrics_data>();
 
   option_group_definition new_options("Debug: Metrics");
@@ -133,13 +138,13 @@ VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
 
   if (data->out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
 
-  auto* base_learner = setup_base(options, all);
+  auto* base_learner = stack_builder.setup_base_learner();
 
   if (base_learner->is_multiline)
   {
     learner<metrics_data, multi_ex>* l = &init_learner(data, as_multiline(base_learner),
         predict_or_learn<true, multi_learner, multi_ex>, predict_or_learn<false, multi_learner, multi_ex>, 1,
-        base_learner->pred_type, all.get_setupfn_name(metrics_setup), base_learner->learn_returns_prediction);
+        base_learner->pred_type, stack_builder.get_setupfn_name(metrics_setup), base_learner->learn_returns_prediction);
     l->set_persist_metrics(persist);
     return make_base(*l);
   }
@@ -147,7 +152,7 @@ VW::LEARNER::base_learner* metrics_setup(options_i& options, vw& all)
   {
     learner<metrics_data, example>* l = &init_learner(data, as_singleline(base_learner),
         predict_or_learn<true, single_learner, example>, predict_or_learn<false, single_learner, example>, 1,
-        base_learner->pred_type, all.get_setupfn_name(metrics_setup), base_learner->learn_returns_prediction);
+        base_learner->pred_type, stack_builder.get_setupfn_name(metrics_setup), base_learner->learn_returns_prediction);
     l->set_persist_metrics(persist);
     return make_base(*l);
   }

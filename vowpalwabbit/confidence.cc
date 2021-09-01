@@ -89,8 +89,10 @@ void return_confidence_example(vw& all, confidence& /* c */, example& ec)
   VW::finish_example(all, ec);
 }
 
-base_learner* confidence_setup(options_i& options, vw& all)
+base_learner* confidence_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   bool confidence_arg = false;
   bool confidence_after_training = false;
   option_group_definition new_options("Confidence");
@@ -124,11 +126,11 @@ base_learner* confidence_setup(options_i& options, vw& all)
     predict_with_confidence_ptr = predict_or_learn_with_confidence<false, false>;
   }
 
-  auto base = as_singleline(setup_base(options, all));
+  auto base = as_singleline(stack_builder.setup_base_learner());
 
   // Create new learner
-  learner<confidence, example>& l = init_learner(
-      data, base, learn_with_confidence_ptr, predict_with_confidence_ptr, all.get_setupfn_name(confidence_setup), true);
+  learner<confidence, example>& l = init_learner(data, base, learn_with_confidence_ptr, predict_with_confidence_ptr,
+      stack_builder.get_setupfn_name(confidence_setup), true);
 
   l.set_finish_example(return_confidence_example);
 

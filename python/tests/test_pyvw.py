@@ -376,6 +376,19 @@ def test_example_features():
     ex.push_namespace(ns2)
     assert ex.pop_namespace()
 
+
+def test_get_weight_name():
+    model = vw(quiet=True)
+    model.learn("1 | a a b c |ns x")
+    assert model.get_weight_from_name("a") != 0.
+    assert model.get_weight_from_name("b") != 0.
+    assert model.get_weight_from_name("b") == model.get_weight_from_name("c")
+    assert model.get_weight_from_name("a") != model.get_weight_from_name("b")
+    assert model.get_weight_from_name("x") == 0.
+    assert model.get_weight_from_name("x", "ns") != 0.
+    assert model.get_weight_from_name("x", "ns") == model.get_weight_from_name("b")
+
+
 def test_runparser_cmd_string():
     vw = pyvw.vw("--data ./test/train-sets/rcv1_small.dat")
     assert vw.parser_ran == True, "vw should set parser_ran to true if --data present"
@@ -451,6 +464,8 @@ def test_dsjson_with_metrics():
         assert isclose(a, b)
 
     learner_metric_dict = vw.get_learner_metrics()
+    assert(len(vw.get_learner_metrics()) == 17)
+
     assert(learner_metric_dict["total_predict_calls"] == 2)
     assert(learner_metric_dict["total_learn_calls"] == 1)
     assert(learner_metric_dict["cbea_labeled_ex"] == 1)
@@ -459,7 +474,15 @@ def test_dsjson_with_metrics():
     assert(learner_metric_dict["cbea_label_not_first"] == 0)
     assert(pytest.approx(learner_metric_dict["cbea_sum_cost"]) == -0.9)
     assert(pytest.approx(learner_metric_dict["cbea_sum_cost_baseline"]) == -0.9)
-    assert(len(vw.get_learner_metrics()) == 8)
+    assert(learner_metric_dict["cbea_non_zero_cost"] == 1)
+    assert(pytest.approx(learner_metric_dict["cbea_avg_feat_per_event"]) == 18)
+    assert(pytest.approx(learner_metric_dict["cbea_avg_actions_per_event"]) == 2)
+    assert(pytest.approx(learner_metric_dict["cbea_avg_ns_per_event"]) == 12)
+    assert(pytest.approx(learner_metric_dict["cbea_avg_feat_per_action"]) == 9)
+    assert(pytest.approx(learner_metric_dict["cbea_avg_ns_per_action"]) == 6)
+    assert(learner_metric_dict["cbea_min_actions"] == 2)
+    assert(learner_metric_dict["cbea_max_actions"] == 2)
+    assert(learner_metric_dict["sfm_count_learn_example_with_shared"] == 1)
 
 def test_constructor_exception_is_safe():
     try:

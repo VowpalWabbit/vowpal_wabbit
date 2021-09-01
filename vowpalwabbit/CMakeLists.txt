@@ -84,6 +84,7 @@ set(vw_all_headers
   cb_to_cb_adf.h
   ccb_label.h
   ccb_reduction_features.h
+  chained_proxy_iterator.h
   continuous_actions_reduction_features.h
   classweight.h
   compat.h
@@ -108,7 +109,6 @@ set(vw_all_headers
   example.h
   explore_eval.h
   expreplay.h
-  ezexample.h
   fast_pow10.h
   feature_group.h
   ftrl.h
@@ -123,6 +123,8 @@ set(vw_all_headers
   hashstring.h
   interact.h
   interactions_predict.h
+  cached_learner.h
+  reduction_stack.h
   interactions.h
   io_buf.h
   json_utils.h
@@ -145,6 +147,7 @@ set(vw_all_headers
   multilabel_oaa.h
   multilabel.h
   mwt.h
+  namespaced_feature_store.h
   numeric_casts.h
   named_labels.h
   network.h
@@ -201,6 +204,7 @@ set(vw_all_headers
   stagewise_poly.h
   svrg.h
   tag_utils.h
+  text_utils.h
   topk.h
   unique_sort.h
   v_array.h
@@ -215,6 +219,10 @@ set(vw_all_headers
   vwdll.h
   vwvis.h
   warm_cb.h
+  generic_range.h
+  active_multiclass_prediction.h
+  debug_log.h
+  rand_state.h
 )
 
 if(BUILD_FLATBUFFERS)
@@ -286,6 +294,7 @@ set(vw_all_sources
   global_data.cc
   hashstring.cc
   interact.cc
+  reduction_stack.cc
   interactions.cc
   io_buf.cc
   kernel_svm.cc
@@ -304,6 +313,7 @@ set(vw_all_sources
   multilabel_oaa.cc
   multilabel.cc
   mwt.cc
+  namespaced_feature_store.cc
   named_labels.cc
   network.cc
   kskip_ngram_transformer.cc
@@ -346,6 +356,7 @@ set(vw_all_sources
   stagewise_poly.cc
   svrg.cc
   tag_utils.cc
+  text_utils.cc
   topk.cc
   unique_sort.cc
   version.cc

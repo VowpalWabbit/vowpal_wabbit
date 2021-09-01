@@ -22,8 +22,6 @@ float calculate_total_sum_features_squared(bool permutations, example& ec)
   return sum_features_squared;
 }
 
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
 example::~example()
 {
   if (passthrough)
@@ -32,7 +30,6 @@ example::~example()
     passthrough = nullptr;
   }
 }
-VW_WARNING_STATE_POP
 
 float collision_cleanup(features& fs)
 {
@@ -54,9 +51,10 @@ float collision_cleanup(features& fs)
   }
 
   sum_sq += pos.value() * pos.value();
-  fs.sum_feat_sq = sum_sq;
   ++pos;
-  fs.truncate_to(pos);
+  // Don't change the sum_feat_sq as we will do it manually directly after.
+  fs.truncate_to(pos, 0);
+  fs.sum_feat_sq = sum_sq;
 
   return sum_sq;
 }
@@ -82,8 +80,7 @@ void copy_example_metadata(example* dst, const example* src)
     dst->passthrough = nullptr;
   else
   {
-    dst->passthrough = new features;
-    dst->passthrough->deep_copy_from(*src->passthrough);
+    dst->passthrough = new features(*src->passthrough);
   }
   dst->loss = src->loss;
   dst->weight = src->weight;
@@ -101,7 +98,7 @@ void copy_example_data(example* dst, const example* src)
 
   // copy feature data
   dst->indices = src->indices;
-  for (namespace_index c : src->indices) dst->feature_space[c].deep_copy_from(src->feature_space[c]);
+  for (namespace_index c : src->indices) dst->feature_space[c] = src->feature_space[c];
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->total_sum_feat_sq_calculated = src->total_sum_feat_sq_calculated;
@@ -168,7 +165,6 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len)
   features_and_source fs;
   fs.stride_shift = all.weights.stride_shift();
   fs.mask = all.weights.mask() >> all.weights.stride_shift();
-  fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
   feature_map_len = fs.feature_map.size();

@@ -293,8 +293,10 @@ void finish_example(vw& all, cs_active&, example& ec)
   VW::finish_example(all, ec);
 }
 
-base_learner* cs_active_setup(options_i& options, vw& all)
+base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
   auto data = scoped_calloc_or_throw<cs_active>();
 
   bool simulation = false;
@@ -348,21 +350,21 @@ base_learner* cs_active_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("adax")) *(all.trace_message) << "WARNING: --cs_active should be used with --adax" << endl;
 
-  // Label parser set to cost sensitive label parser
-  all.example_parser->lbl_parser = cs_label;
   all.set_minmax(all.sd, data->cost_max);
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);
 
   learner<cs_active, example>& l = simulation
-      ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>,
+      ? init_learner(data, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true, true>,
             predict_or_learn<false, true>, data->num_classes, prediction_type_t::active_multiclass,
-            all.get_setupfn_name(cs_active_setup) + "-sim", true)
-      : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, false>,
+            stack_builder.get_setupfn_name(cs_active_setup) + "-sim", true)
+      : init_learner(data, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true, false>,
             predict_or_learn<false, false>, data->num_classes, prediction_type_t::active_multiclass,
-            all.get_setupfn_name(cs_active_setup), true);
+            stack_builder.get_setupfn_name(cs_active_setup), true);
 
   l.set_finish_example(finish_example);
+  // Label parser set to cost sensitive label parser
+  all.example_parser->lbl_parser = cs_label;
   base_learner* b = make_base(l);
   all.cost_sensitive = b;
   return b;
