@@ -1213,7 +1213,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def(py::vector_indexing_suite<ex_list>())
       .def("get_example_with_label", &examples_get_cb_label_from_adf, "Assuming a contextual_bandits label type,");
 
-  py::class_<Search::predictor, predictor_ptr>("predictor", py::no_init)
+  py::class_<Search::predictor, predictor_ptr, boost::noncopyable>("predictor", py::no_init)
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")
       //.def("set_input_ldf", &my_set_input_ldf, "set the inputs (a list of examples) for this predictor (LDF mode
       // only)")

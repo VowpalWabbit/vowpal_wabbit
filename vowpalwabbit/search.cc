@@ -1008,10 +1008,10 @@ void ensure_size(v_array<T>& A, size_t sz)
 }
 
 template <class T>
-void push_at(v_array<T>& v, T item, size_t pos)
+void set_at(v_array<T>& v, T item, size_t pos)
 {
-  if (pos > v.size()) { v.resize_but_with_stl_behavior(pos); }
-  v.insert(v.begin() + pos, item);
+  if (pos >= v.size()) { v.resize_but_with_stl_behavior(pos + 1); }
+  v[pos] = item;
 }
 
 action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* oracle_actions,
@@ -1627,7 +1627,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
         for (size_t i = 0; i < condition_on_cnt; i++)
         {
-          push_at(priv.learn_condition_on_act,
+          set_at(priv.learn_condition_on_act,
               action_repr(((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size()))
                       ? priv.ptag_to_action[condition_on[i]]
                       : 0),
@@ -2823,11 +2823,11 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
     if (priv->acset.use_passthrough_repr)
     {
       assert((mytag >= priv->ptag_to_action.size()) || (priv->ptag_to_action[mytag].repr == nullptr));
-      push_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
+      set_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
     }
     else
-      push_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag);
-    cdbg << "push_at " << mytag << endl;
+      set_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag);
+    cdbg << "set_at " << mytag << endl;
   }
   if (priv->auto_hamming_loss)
     loss(priv->use_action_costs ? action_cost_loss(a, allowed_actions, allowed_actions_cost, allowed_actions_cnt)
@@ -2863,7 +2863,7 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
         priv->ptag_to_action[mytag].repr = nullptr;
       }
     }
-    push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
+    set_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
   }
   if (priv->auto_hamming_loss) loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));  // TODO: action costs
   cdbg << "predict returning " << a << endl;
@@ -2949,28 +2949,10 @@ predictor::predictor(search& sch, ptag my_tag)
     , my_tag(my_tag)
     , ec(nullptr)
     , ec_cnt(0)
-    , ec_alloced(false)
     , weight(1.)
     , learner_id(0)
     , sch(sch)
 {
-}
-
-void predictor::free_ec()
-{
-  if (ec_alloced)
-  {
-    if (is_ldf) { VW::dealloc_examples(ec, ec_cnt); }
-    else
-    {
-      VW::dealloc_examples(ec, 1);
-    }
-  }
-}
-
-predictor::~predictor()
-{
-  free_ec();
 }
 
 predictor& predictor::reset()
@@ -2979,51 +2961,35 @@ predictor& predictor::reset()
   this->erase_alloweds();
   condition_on_tags.clear();
   condition_on_names.clear();
-  free_ec();
+  allocated_examples.clear();
   return *this;
 }
 
 predictor& predictor::set_input(example& input_example)
 {
-  free_ec();
   is_ldf = false;
   ec = &input_example;
   ec_cnt = 1;
-  ec_alloced = false;
   return *this;
 }
 
 predictor& predictor::set_input(example* input_example, size_t input_length)
 {
-  free_ec();
   is_ldf = true;
   ec = input_example;
   ec_cnt = input_length;
-  ec_alloced = false;
   return *this;
 }
 
 void predictor::set_input_length(size_t input_length)
 {
   is_ldf = true;
-  if (ec_alloced)
-  {
-    for (size_t i = ec_cnt; ec_cnt < input_length; ++i) ec[i].~example();
-    example* temp = static_cast<example*>(realloc(ec, input_length * sizeof(example)));
-    if (temp != nullptr)
-      ec = temp;
-    else
-      THROW("realloc failed in search.cc");
-  }
-  else
-    ec = VW::alloc_examples(input_length);
+  allocated_examples.resize(input_length);
+  ec = allocated_examples.data();
   ec_cnt = input_length;
-  ec_alloced = true;
 }
 void predictor::set_input_at(size_t posn, example& ex)
 {
-  if (!ec_alloced) THROW("call to set_input_at without previous call to set_input_length");
-
   if (posn >= ec_cnt)
     THROW("call to set_input_at with too large a position: posn (" << posn << ") >= ec_cnt(" << ec_cnt << ")");
 
