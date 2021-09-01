@@ -279,7 +279,7 @@ def print_stars():
 with_interaction = 1
 without_interaction = 0
 # print("pred WITH interaction ******")
-# test_custom_reduction(config=with_interaction)
+test_custom_reduction(config=with_interaction)
 
 # print_stars()
 

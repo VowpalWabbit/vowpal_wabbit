@@ -21,7 +21,7 @@ namespace VW
 {
 namespace test_red
 {
-const size_t MAX_CONFIGS = 3;
+const size_t MAX_CONFIGS = 2;
 namespace helper
 {
 // // for debugging purposes
@@ -115,91 +115,6 @@ void print_weights_nonzero(size_t count, dense_parameters& weights)
       }
     }
   }
-/*
-  auto it = weights.begin();
-  ++it;
-  ++it;
-  // ++it;
-  // ++it;
-
-  for (; it != weights.end(); )
-  {
-    // if (*v != 0.)
-    // {
-
-    w_count++;
-    size_t off = 0;
-    //stride of 4 with gd
-    //  gd: importance aware, normalization, autograd,
-
-    auto zero = (&(*it))[0 + off];
-    auto four = (&(*it))[4 + off];
-    auto eight = (&(*it))[8 + off];
-    
-    auto real_index = it.index()>>2;
-    std::cerr<< real_index << std::endl;
-    std::cerr<< (real_index&3) << std::endl;
-    assert((real_index & 3) == 0);
-    assert(((real_index+1) & 3) == 1);
-    // assert((real_index+2) & 3) == 2);
-
-    if (!cmpf(zero, 0.f) || !cmpf(four, 0.f) || !cmpf(eight, 0.f)){
-      if(cmpf(zero,four) && cmpf(zero, eight)){
-      std::cerr<< (it.index() >> 2) << ":all weights equal:" << zero <<std::endl;
-      }
-      else if (cmpf(zero,four) && !cmpf(zero, 0.f)){
-        std::cerr<< (it.index()>>2) << ":0,4 weights equal:" << zero <<" :8:"<<eight<<std::endl;
-      }
-      else if (cmpf(eight,four) && !cmpf(eight, 0.f)){
-      std::cerr<< (it.index()>>2) << ":4,8 weights equal:" << eight <<" :0:"<<zero<<std::endl;
-      }
-      else if (cmpf(eight,zero) && !cmpf(eight, 0.f)){
-      std::cerr<< (it.index()>>2) << ":0,8 weights equal:" << eight<<" :4:"<<four <<std::endl;
-      }
-      else if (!cmpf(zero, 0.f) && cmpf(four, 0.f) && cmpf(eight, 0.f)){
-        std::cerr << (it.index()>>2) <<":c"<< count << ":0:" << zero << std::endl; 
-      }
-      else if (cmpf(zero, 0.f) && !cmpf(four, 0.f) && cmpf(eight, 0.f)){
-        std::cerr << ((it.index()+4)>>2) <<":c"<< count << ":0(4):" << four << std::endl; 
-      }
-      else if (cmpf(zero, 0.f) && cmpf(four, 0.f) && !cmpf(eight, 0.f)){
-        std::cerr << ((it.index()+8)>>2)  <<":c"<< count << ":0(8):" << eight << std::endl; 
-      }
-    }
-    else{
-
-    }
-
-    // if (!cmpf((&(*it))[0 + off], 0.f) && cmpf((&(*it))[0 + off],(&(*it))[4 + off])  && cmpf((&(*it))[0 + off], (&(*it))[8 + off]) ){
-    //   std::cerr<< it.index() << ":all weights equal:" << (&(*it))[0 + off] <<std::endl;
-    // }
-    // else if(cmpf((&(*it))[0 + off],(&(*it))[8 + off]) && cmpf((&(*it))[4 + off],(&(*it))[8 + off]) && (&(*it))[8 + off] != 0.f){
-    //   std::cerr<< it.index() << ":0,4,8 weights equal:" << (&(*it))[0 + off] <<std::endl;
-    // }
-    // else if(cmpf((&(*it))[0 + off],(&(*it))[4 + off]) && (&(*it))[4 + off] != 0.f){
-    //   std::cerr<< it.index() << ":0,4 weights equal:" << (&(*it))[0 + off] <<std::endl;
-    // }
-    // else if(cmpf((&(*it))[4 + off],(&(*it))[8 + off]) && (&(*it))[8 + off] != 0.f){
-    //   std::cerr<< it.index() << ":4,8 weights equal:" << (&(*it))[0 + off] <<std::endl;
-    // }
-    // else if(cmpf((&(*it))[0 + off],(&(*it))[8 + off]) && (&(*it))[8 + off] != 0.f){
-    //   std::cerr<< it.index() << ":0,8 weights equal:" << (&(*it))[0 + off] <<std::endl;
-    // }
-    // else{
-    //   if ((&(*it))[0 + off] != 0.f) { std::cerr << it.index() <<":c"<< count << ":0:" << (&(*it))[0 + off] << std::endl; }
-    //   if ((&(*it))[4 + off] != 0.f) { std::cerr << it.index() <<":c"<< count << ":4:" << (&(*it))[4 + off] << std::endl; }
-    //   if ((&(*it))[8 + off] != 0.f) { std::cerr << it.index() <<":c"<< count << ":8:" << (&(*it))[8 + off] << std::endl; }
-    // }
-    ++it;
-    if (it != weights.end()) ++it;
-    if (it != weights.end()) ++it;
-    // ++it;
-    // ++it;
-    // }
-    // else{
-    // }
-  }
-*/
   std::cerr << std::endl;
 }
 }  // namespace helper
@@ -553,7 +468,7 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
   assert(data.all->weights.sparse == false);
   if (data.cm.county > 1998 && data.cm.county <= 2000)
   {
-    helper::print_weights_nonzero(data.cm.county, data.all->weights.dense_weights);
+    // helper::print_weights_nonzero(data.cm.county, data.all->weights.dense_weights);
     if (data.cm.county == 119)
     {
       // clear operation
