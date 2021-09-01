@@ -150,6 +150,7 @@ std::vector<float> _test_helper(std::string vw_arg, int num_iterations = 3000, i
 {
   auto vw = VW::initialize(vw_arg);
   Simulator sim("", seed);
+  VW::finish(*vw);
   return sim.run_simulation(vw, num_iterations);
 }
 
@@ -165,11 +166,12 @@ std::vector<float> _test_helper_save_load(std::string vw_arg, int num_iterations
   // save
   std::string model_file = "test_save_load.vw";
   VW::save_predictor(*first_vw, model_file);
+  VW::finish(*first_vw);
   // reload in another instance
   auto other_vw = VW::initialize("--quiet -i test_save_load.vw");
   // continue
   ctr = sim.run_simulation(other_vw, split, true, before_save + 1);
-
+  VW::finish(*other_vw);
   return ctr;
 }
 
