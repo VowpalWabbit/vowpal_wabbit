@@ -42,6 +42,8 @@ add_executable(vw-unit-test.out
   random_test.cc
   random_test.cc
   scope_exit_test.cc
+  simulator.cc
+  simulator.h
   slates_parser_test.cc
   slates_test.cc
   stable_unique_tests.cc

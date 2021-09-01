@@ -153,6 +153,9 @@
     <ClCompile Include="parse_args_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="simulator.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="tutorial_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -170,6 +173,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="simulator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="test_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
