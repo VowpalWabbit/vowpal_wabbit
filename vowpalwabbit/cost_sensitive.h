@@ -20,6 +20,13 @@ struct wclass
   uint32_t class_index;
   float partial_prediction;  // a partial prediction: new!
   float wap_value;           // used for wap to store values derived from costs
+
+  wclass(float x, uint32_t class_index, float partial_prediction, float wap_value)
+      : x(x), class_index(class_index), partial_prediction(partial_prediction), wap_value(wap_value)
+  {
+  }
+  wclass() : x(0.f), class_index(0), partial_prediction(0.f), wap_value(0.f) {}
+
   bool operator==(wclass j) { return class_index == j.class_index; }
 };
 /* if class_index > 0, then this is a "normal" example
@@ -30,7 +37,7 @@ struct wclass
 
 struct label
 {
-  v_array<wclass> costs;
+  std::vector<wclass> costs;
 };
 
 void output_example(vw& all, example& ec);

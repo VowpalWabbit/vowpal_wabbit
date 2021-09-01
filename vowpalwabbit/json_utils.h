@@ -16,6 +16,7 @@ struct DecisionServiceInteraction
   std::vector<unsigned> actions;
   std::vector<float> probabilities;
   float probabilityOfDrop = 0.f;
+  float originalLabelCost = 0.f;
   bool skipLearn{false};
 };
 
@@ -36,15 +37,15 @@ struct Namespace
     ftrs->push_back(v, i);
     feature_count++;
 
-    if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, feature_name)));
+    if (audit) ftrs->space_names.push_back(audit_strings(name, feature_name));
   }
 
   void AddFeature(vw* all, const char* str)
   {
-    ftrs->push_back(1., VW::hash_feature_cstr(*all, const_cast<char*>(str), namespace_hash));
+    ftrs->push_back(1., VW::hash_feature_cstr(*all, str, namespace_hash));
     feature_count++;
 
-    if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, str)));
+    if (audit) ftrs->space_names.push_back(audit_strings(name, str));
   }
 
   void AddFeature(vw* all, const char* key, const char* value)
@@ -54,7 +55,7 @@ struct Namespace
 
     std::stringstream ss;
     ss << key << "^" << value;
-    if (audit) ftrs->space_names.push_back(audit_strings_ptr(new audit_strings(name, ss.str())));
+    if (audit) ftrs->space_names.push_back(audit_strings(name, ss.str()));
   }
 };
 

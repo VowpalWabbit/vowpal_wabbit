@@ -14,6 +14,8 @@
 
 #include <fstream>
 
+#include "text_utils.h"
+
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <winsock2.h>
@@ -190,7 +192,6 @@ void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
 void reset_source(vw& all, size_t numbits)
 {
   io_buf* input = all.example_parser->input.get();
-  input->current = 0;
 
   // If in write cache mode then close all of the input files then open the written cache as the new input.
   if (all.example_parser->write_cache)
@@ -249,10 +250,11 @@ void reset_source(vw& all, size_t numbits)
     }
     else
     {
+      if (!input->is_resettable()) { THROW("Cannot reset source as it is a non-resettable input type.") }
+      input->reset();
       for (auto& file : input->get_input_files())
       {
-        input->reset_file(file.get());
-        if (cache_numbits(input, file.get()) < numbits) THROW("argh, a bug in caching of some sort!");
+        if (cache_numbits(input, file.get()) < numbits) { THROW("argh, a bug in caching of some sort!") }
       }
     }
   }
@@ -350,7 +352,6 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options)
 {
-  all.example_parser->input->current = 0;
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   // default text reader
@@ -458,7 +459,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       // create children
       size_t num_children = all.num_children;
-      v_array<int> children = v_init<int>();
+      v_array<int> children;
       children.resize_but_with_stl_behavior(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
@@ -549,7 +550,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       std::string temp = all.data_filename;
       if (!quiet) *(all.trace_message) << "Reading datafile = " << temp << endl;
 
-      auto should_use_compressed = input_options.compressed || ends_with(all.data_filename, ".gz");
+      auto should_use_compressed = input_options.compressed || VW::ends_with(all.data_filename, ".gz");
 
       try
       {
@@ -660,10 +661,6 @@ example& get_unused_example(vw* all)
   parser* p = all->example_parser;
   auto ex = p->example_pool.get_object();
   p->begin_parsed_examples++;
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  ex->in_use = true;
-  VW_WARNING_STATE_POP
   return *ex;
 }
 
@@ -677,10 +674,7 @@ void setup_example(vw& all, example* ae)
   if (all.example_parser->sort_features && ae->sorted == false) unique_sort_features(all.parse_mask, ae);
 
   if (all.example_parser->write_cache)
-  {
-    all.example_parser->lbl_parser.cache_label(&ae->l, ae->_reduction_features, *(all.example_parser->output));
-    cache_features(*(all.example_parser->output), ae, all.parse_mask);
-  }
+  { VW::write_example_to_cache(*all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask); }
 
   ae->partial_prediction = 0.;
   ae->num_features = 0;
@@ -759,7 +753,7 @@ example* new_unused_example(vw& all)
   ec->example_counter = static_cast<size_t>(all.example_parser->begin_parsed_examples.load());
   return ec;
 }
-example* read_example(vw& all, char* example_line)
+example* read_example(vw& all, const char* example_line)
 {
   example* ret = &get_unused_example(&all);
 
@@ -770,10 +764,7 @@ example* read_example(vw& all, char* example_line)
   return ret;
 }
 
-example* read_example(vw& all, std::string example_line)
-{
-  return read_example(all, const_cast<char*>(example_line.c_str()));
-}
+example* read_example(vw& all, const std::string& example_line) { return read_example(all, example_line.c_str()); }
 
 void add_constant_feature(vw& vw, example* ec)
 {
@@ -781,7 +772,7 @@ void add_constant_feature(vw& vw, example* ec)
   ec->feature_space[constant_namespace].push_back(1, constant);
   ec->num_features++;
   if (vw.audit || vw.hash_inv)
-    ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
+    ec->feature_space[constant_namespace].space_names.push_back(audit_strings("", "Constant"));
 }
 
 void add_label(example* ec, float label, float weight, float base)
@@ -877,10 +868,6 @@ void clean_example(vw& all, example& ec, bool rewind)
   }
 
   empty_example(all, ec);
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  ec.in_use = false;
-  VW_WARNING_STATE_POP
   all.example_parser->example_pool.return_object(&ec);
 }
 

@@ -97,7 +97,7 @@ label_parser cb_label = {
   // read_cached_label
   [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return CB::read_cached_label(sd, v->cb, cache); },
    // get_weight
-  [](polylabel*, const reduction_features&) { return 1.f; },
+  [](polylabel* v, const reduction_features&) { return v->cb.weight; },
   // test_label
   [](polylabel* v) { return CB::is_test_label(v->cb); },
   label_type_t::cb

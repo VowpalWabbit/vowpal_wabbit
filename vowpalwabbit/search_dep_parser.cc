@@ -17,22 +17,35 @@ using namespace VW::config;
 
 namespace DepParserTask
 {
-Search::search_task task = {"dep_parser", run, initialize, finish, setup, nullptr};
+Search::search_task task = {"dep_parser", run, initialize, nullptr, setup, nullptr};
 }
 
 struct task_data
 {
-  example *ex;
+  example ex;
   size_t root_label;
   uint32_t num_label;
-  v_array<uint32_t> valid_actions, action_loss, gold_heads, gold_tags, stack, heads, tags, temp, valid_action_temp;
-  v_array<action> gold_actions, gold_action_temp;
+  v_array<uint32_t> valid_actions;
+  v_array<uint32_t> action_loss;
+  v_array<uint32_t> gold_heads;
+  v_array<uint32_t> gold_tags;
+  v_array<uint32_t> stack;
+  v_array<uint32_t> heads;
+  v_array<uint32_t> tags;
+  v_array<uint32_t> temp;
+  v_array<uint32_t> valid_action_temp;
+  v_array<action> gold_actions;
+  v_array<action> gold_action_temp;
   std::vector<std::pair<action, float>> gold_action_losses;
-  v_array<uint32_t> children[6];  // [0]:num_left_arcs, [1]:num_right_arcs; [2]: leftmost_arc, [3]: second_leftmost_arc,
-                                  // [4]:rightmost_arc, [5]: second_rightmost_arc
-  example *ec_buf[13];
+
+  // [0]:num_left_arcs, [1]:num_right_arcs; [2]: leftmost_arc, [3]: second_leftmost_arc,
+  // [4]:rightmost_arc, [5]: second_rightmost_arc
+  std::array<v_array<uint32_t>, 6> children;
+
+  std::array<example*, 13> ec_buf;
   bool old_style_labels;
-  bool cost_to_go, one_learner;
+  bool cost_to_go;
+  bool one_learner;
   uint32_t transition_system;
 };
 
@@ -51,7 +64,6 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   vw &all = sch.get_vw_pointer_unsafe();
   task_data *data = new task_data();
   data->action_loss.resize_but_with_stl_behavior(5);
-  data->ex = nullptr;
   sch.set_task_data<task_data>(data);
 
   option_group_definition new_options("Dependency Parser Options");
@@ -74,11 +86,10 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
       make_option("old_style_labels", data->old_style_labels).keep().help("Use old hack of label information"));
   options.add_and_parse(new_options);
 
-  data->ex = VW::alloc_examples(1);
-  data->ex->indices.push_back(val_namespace);
-  for (size_t i = 1; i < 14; i++) data->ex->indices.push_back(static_cast<unsigned char>(i) + 'A');
-  data->ex->indices.push_back(constant_namespace);
-  data->ex->interactions = &sch.get_vw_pointer_unsafe().interactions;
+  data->ex.indices.push_back(val_namespace);
+  for (size_t i = 1; i < 14; i++) data->ex.indices.push_back(static_cast<unsigned char>(i) + 'A');
+  data->ex.indices.push_back(constant_namespace);
+  data->ex.interactions = &sch.get_vw_pointer_unsafe().interactions;
 
   if (data->one_learner)
     sch.set_num_learners(1);
@@ -104,25 +115,6 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   sch.set_label_parser(COST_SENSITIVE::cs_label, [](polylabel &l) -> bool { return l.cs.costs.size() == 0; });
 }
 
-void finish(Search::search &sch)
-{
-  task_data *data = sch.get_task_data<task_data>();
-  data->valid_actions.delete_v();
-  data->valid_action_temp.delete_v();
-  data->gold_heads.delete_v();
-  data->gold_tags.delete_v();
-  data->stack.delete_v();
-  data->heads.delete_v();
-  data->tags.delete_v();
-  data->temp.delete_v();
-  data->action_loss.delete_v();
-  data->gold_actions.delete_v();
-  data->gold_action_temp.delete_v();
-  VW::dealloc_examples(data->ex, 1);
-  for (size_t i = 0; i < 6; i++) data->children[i].delete_v();
-  delete data;
-}
-
 void inline add_feature(
     example &ex, uint64_t idx, unsigned char ns, uint64_t mask, uint64_t multiplier, bool /* audit */ = false)
 {
@@ -139,20 +131,23 @@ void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t 
         tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
 }
 
-void inline reset_ex(example *ex)
+void inline reset_ex(example& ex)
 {
-  ex->num_features = 0;
-  ex->reset_total_sum_feat_sq();
-  for (features &fs : *ex) fs.clear();
+  ex.num_features = 0;
+  ex.reset_total_sum_feat_sq();
+  for (features& fs : ex) { fs.clear(); }
 }
 
 // arc-hybrid System.
 size_t transition_hybrid(Search::search &sch, uint64_t a_id, uint32_t idx, uint32_t t_id, uint32_t /* n */)
 {
   task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t> &heads = data->heads, &stack = data->stack, &gold_heads = data->gold_heads,
-                    &gold_tags = data->gold_tags, &tags = data->tags;
-  v_array<uint32_t> *children = data->children;
+  v_array<uint32_t>& heads = data->heads;
+  v_array<uint32_t>& stack = data->stack;
+  v_array<uint32_t>& gold_heads = data->gold_heads;
+  v_array<uint32_t>& gold_tags = data->gold_tags;
+  v_array<uint32_t>& tags = data->tags;
+  v_array<uint32_t>* children = data->children.data();
   if (a_id == SHIFT)
   {
     stack.push_back(idx);
@@ -193,9 +188,12 @@ size_t transition_hybrid(Search::search &sch, uint64_t a_id, uint32_t idx, uint3
 size_t transition_eager(Search::search &sch, uint64_t a_id, uint32_t idx, uint32_t t_id, uint32_t n)
 {
   task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t> &heads = data->heads, &stack = data->stack, &gold_heads = data->gold_heads,
-                    &gold_tags = data->gold_tags, &tags = data->tags;
-  v_array<uint32_t> *children = data->children;
+  v_array<uint32_t>& heads = data->heads;
+  v_array<uint32_t>& stack = data->stack;
+  v_array<uint32_t>& gold_heads = data->gold_heads;
+  v_array<uint32_t>& gold_tags = data->gold_tags;
+  v_array<uint32_t>& tags = data->tags;
+  v_array<uint32_t>* children = data->children.data();
   if (a_id == SHIFT)
   {
     stack.push_back(idx);
@@ -249,8 +247,8 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
   auto &tags = data->tags;
   auto &children = data->children;
   auto &temp = data->temp;
-  example **ec_buf = data->ec_buf;
-  example &ex = *(data->ex);
+  example** ec_buf = data->ec_buf.data();
+  example& ex = data->ex;
 
   size_t n = ec.size();
   bool empty = stack.empty();
@@ -305,13 +303,13 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
     add_feature(ex, temp[j] + additional_offset, val_namespace, mask, multiplier);
   }
   size_t count = 0;
-  for (features &fs : *data->ex)
+  for (features& fs : data->ex)
   {
     fs.sum_feat_sq = static_cast<float>(fs.size());
     count += fs.size();
   }
 
-  data->ex->num_features = count;
+  data->ex.num_features = count;
 }
 
 void get_valid_actions(Search::search &sch, v_array<uint32_t> &valid_action, uint64_t idx, uint64_t n,
@@ -632,7 +630,7 @@ void run(Search::search &sch, multi_ex &ec)
       {
         get_cost_to_go_losses(sch, gold_action_losses, left_label, right_label);
         a_id = P.set_tag(count)
-                   .set_input(*(data->ex))
+                   .set_input(data->ex)
                    .set_allowed(gold_action_losses)
                    .set_condition_range(count - 1, sch.get_history_length(), 'p')
                    .set_learner_id(0)
@@ -644,7 +642,7 @@ void run(Search::search &sch, multi_ex &ec)
         convert_to_onelearner_actions(sch, gold_actions, gold_action_temp, left_label, right_label);
         convert_to_onelearner_actions(sch, valid_actions, valid_action_temp, my_null, my_null);
         a_id = P.set_tag(count)
-                   .set_input(*(data->ex))
+                   .set_input(data->ex)
                    .set_oracle(gold_action_temp)
                    .set_allowed(valid_action_temp)
                    .set_condition_range(count - 1, sch.get_history_length(), 'p')
@@ -675,7 +673,7 @@ void run(Search::search &sch, multi_ex &ec)
       {
         get_cost_to_go_losses(sch, gold_action_losses, left_label, right_label);
         a_id = P.set_tag(count)
-                   .set_input(*(data->ex))
+                   .set_input(data->ex)
                    .set_allowed(gold_action_losses)
                    .set_condition_range(count - 1, sch.get_history_length(), 'p')
                    .set_learner_id(0)
@@ -685,7 +683,7 @@ void run(Search::search &sch, multi_ex &ec)
       {
         get_gold_actions(sch, idx, n, gold_actions);
         a_id = P.set_tag(count)
-                   .set_input(*(data->ex))
+                   .set_input(data->ex)
                    .set_oracle(gold_actions)
                    .set_allowed(valid_actions)
                    .set_condition_range(count - 1, sch.get_history_length(), 'p')
@@ -707,7 +705,7 @@ void run(Search::search &sch, multi_ex &ec)
             gold_action_losses.push_back(
                 std::make_pair(static_cast<action>(i), i != (a_id == REDUCE_LEFT ? left_label : right_label)));
           t_id = P.set_tag(count)
-                     .set_input(*(data->ex))
+                     .set_input(data->ex)
                      .set_allowed(gold_action_losses)
                      .set_condition_range(count - 1, sch.get_history_length(), 'p')
                      .set_learner_id(a_id - 1)
@@ -716,7 +714,7 @@ void run(Search::search &sch, multi_ex &ec)
         else
         {
           t_id = P.set_tag(count)
-                     .set_input(*(data->ex))
+                     .set_input(data->ex)
                      .set_oracle(a_id == REDUCE_LEFT ? left_label : right_label)
                      .erase_alloweds()
                      .set_condition_range(count - 1, sch.get_history_length(), 'p')

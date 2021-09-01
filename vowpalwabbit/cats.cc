@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "cats.h"
-#include "parse_args.h"
+#include "global_data.h"
 #include "error_constants.h"
 #include "debug_log.h"
 #include "shared_data.h"
@@ -74,7 +74,7 @@ float cats::get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, f
     {
       float actual_b = std::min(max_value, centre + bandwidth) - std::max(min_value, centre - bandwidth);
 
-      loss = cb_cont_costs.costs[0].cost / float(cb_cont_costs.costs[0].pdf_value * actual_b);
+      loss = cb_cont_costs.costs[0].cost / (cb_cont_costs.costs[0].pdf_value * actual_b);
     }
   }
 
@@ -160,8 +160,11 @@ void reduction_output::print_update_cb_cont(vw& all, const example& ec)
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-LEARNER::base_learner* setup(options_i& options, vw& all)
+LEARNER::base_learner* setup(setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   option_group_definition new_options("Continuous actions tree with smoothing");
   uint32_t num_actions = 0;
   float bandwidth = 0;
@@ -196,19 +199,22 @@ LEARNER::base_learner* setup(options_i& options, vw& all)
                          << bandwidth << std::endl;
   }
 
-  LEARNER::base_learner* p_base = setup_base(options, all);
-  auto p_reduction = scoped_calloc_or_throw<cats>(as_singleline(p_base));
+  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
+  auto p_reduction = VW::make_unique<cats>(as_singleline(p_base));
   p_reduction->num_actions = num_actions;
   p_reduction->bandwidth = bandwidth;
   p_reduction->max_value = max_value;
   p_reduction->min_value = min_value;
 
-  LEARNER::learner<cats, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::action_pdf_value, all.get_setupfn_name(setup), true);
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(setup))
+                .set_learn_returns_prediction(true)
+                .set_prediction_type(prediction_type_t::action_pdf_value)
+                .set_finish_example(finish_example)
+                .set_label_type(label_type_t::continuous)
+                .build();
 
-  l.set_finish_example(finish_example);
-
-  return make_base(l);
+  return make_base(*l);
 }
 
 }  // namespace cats

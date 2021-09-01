@@ -7,13 +7,13 @@
 #include <limits>
 
 #include "cats_tree.h"
-#include "parse_args.h"  // setup_base()
-#include "learner.h"     // init_learner()
+#include "learner.h"
 #include "reductions.h"
 #include "debug_log.h"
 #include "explore_internal.h"
 #include "hash.h"
 #include "guard.h"
+#include "label_parser.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -181,11 +181,11 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
       }
     }
   }
-  ec.l.cb = saved_label;
+  ec.l.cb = std::move(saved_label);
   return (cur_node.id - _binary_tree.internal_node_count() + 1);  // 1 to k
 }
 
-void cats_tree::init_node_costs(v_array<cb_class>& ac)
+void cats_tree::init_node_costs(std::vector<cb_class>& ac)
 {
   assert(ac.size() > 0);
   assert(ac[0].action > 0);
@@ -226,7 +226,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
   auto saved_pred = stash_guard(ec.pred);
 
   const vector<tree_node>& nodes = _binary_tree.nodes;
-  v_array<cb_class>& ac = ec.l.cb.costs;
+  auto& ac = ec.l.cb.costs;
 
   VW_DBG(ec) << "tree_c: learn() -- tree_traversal -- " << std::endl;
 
@@ -335,8 +335,11 @@ void learn(cats_tree& tree, single_learner& base, example& ec)
   VW_DBG(ec) << "tree_c: after tree.learn() " << cb_label_to_string(ec) << features_to_string(ec) << std::endl;
 }
 
-base_learner* setup(options_i& options, vw& all)
+base_learner* setup(setup_base_i& stack_builder)
 {
+  options_i& options = *stack_builder.get_options();
+  vw& all = *stack_builder.get_all_pointer();
+
   option_group_definition new_options("CATS Tree Options");
   uint32_t num_actions;  // = K = 2^D
   uint32_t bandwidth;    // = 2^h#
@@ -360,16 +363,20 @@ base_learner* setup(options_i& options, vw& all)
     options.replace("link", "glf1");
   }
 
-  auto tree = scoped_calloc_or_throw<cats_tree>();
+  auto tree = VW::make_unique<cats_tree>();
   tree->init(num_actions, bandwidth);
   tree->set_trace_message(all.trace_message.get(), all.logger.quiet);
 
-  base_learner* base = setup_base(options, all);
-
-  learner<cats_tree, example>& l = init_learner(tree, as_singleline(base), learn, predict, tree->learner_count(),
-      prediction_type_t::multiclass, all.get_setupfn_name(setup));
-
-  return make_base(l);
+  base_learner* base = stack_builder.setup_base_learner();
+  int32_t params_per_weight = tree->learner_count();
+  auto* l = make_reduction_learner(
+      std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(setup))
+                .set_params_per_weight(params_per_weight)
+                .set_prediction_type(prediction_type_t::multiclass)
+                .set_label_type(label_type_t::cb)
+                .build();
+  all.example_parser->lbl_parser = CB::cb_label;
+  return make_base(*l);
 }
 
 }  // namespace cats_tree

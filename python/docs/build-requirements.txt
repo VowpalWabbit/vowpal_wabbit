@@ -1,0 +1,11 @@
+matplotlib
+myst-nb
+numpy
+numpydoc
+pandas
+pydata-sphinx-theme
+scikit-learn
+scipy
+Sphinx
+sphinx-thebe
+sphinx-reredirects

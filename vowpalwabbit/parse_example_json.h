@@ -5,6 +5,7 @@
 #pragma once
 
 #include "v_array.h"
+#include "future_compat.h"
 
 #include <cstring>
 #include <cfloat>
@@ -933,6 +934,16 @@ public:
         return &ctx.array_float_state;
       }
 
+      else if (ctx.key_length == 20 && !strncmp(str, "_original_label_cost", 20))
+      {
+        if(!ctx.decision_service_data) {
+          THROW("_original_label_cost is only valid in DSJson");
+        }
+        ctx.float_state.output_float = &ctx.decision_service_data->originalLabelCost;
+        ctx.float_state.return_state = this;
+        return &ctx.float_state;
+      }
+
       else if (ctx.key_length == 5 && !_stricmp(ctx.key, "__aid"))
       {
         ctx.uint_dedup_state.return_state = this;
@@ -1044,7 +1055,7 @@ public:
   BaseState<audit>* Float(Context<audit>& ctx, float f) override
   {
     auto& ns = ctx.CurrentNamespace();
-    ns.AddFeature(f, VW::hash_feature_cstr(*ctx.all, const_cast<char*>(ctx.key), ns.namespace_hash), ctx.key);
+    ns.AddFeature(f, VW::hash_feature_cstr(*ctx.all, ctx.key, ns.namespace_hash), ctx.key);
 
     return this;
   }
@@ -1208,7 +1219,7 @@ public:
     auto* stored_ex = (*ctx.dedup_examples)[i];
 
     new_ex->indices = stored_ex->indices;
-    for (auto& ns : new_ex->indices) { new_ex->feature_space[ns].deep_copy_from(stored_ex->feature_space[ns]); }
+    for (auto& ns : new_ex->indices) { new_ex->feature_space[ns] = stored_ex->feature_space[ns]; }
     new_ex->ft_offset = stored_ex->ft_offset;
     return return_state;
   }
@@ -1427,6 +1438,12 @@ public:
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
       }
+      else if (length == 20 && !strncmp(str, "_original_label_cost", 20))
+      {
+        ctx.float_state.output_float = &data->originalLabelCost;
+        ctx.float_state.return_state = this;
+        return &ctx.float_state;
+      }
     }
 
     // ignore unknown properties
@@ -1463,6 +1480,11 @@ public:
 
   VW::example_factory_t example_factory;
   void* example_factory_context;
+
+  // TODO: This shouldn't really exist in the Context. Once the JSON parser
+  // gets refactored to separate the VWJson/DSJson concepts, this should
+  // be moved into the DSJson version of the context
+  DecisionServiceInteraction* decision_service_data = nullptr;
 
   // states
   DefaultState<audit> default_state;
@@ -1521,31 +1543,14 @@ public:
 
   void PushNamespace(const char* ns, BaseState<audit>* return_state)
   {
-    Namespace<audit> n;
-    n.feature_group = ns[0];
-    n.namespace_hash = VW::hash_space_cstr(*all, ns);
-    n.ftrs = ex->feature_space.data() + ns[0];
-    n.feature_count = 0;
-
-    n.name = ns;
-
-    namespace_path.push_back(n);
+    push_ns(ex, ns, namespace_path, *all);
     return_path.push_back(return_state);
   }
 
   BaseState<audit>* PopNamespace()
   {
-    auto& ns = CurrentNamespace();
-    if (ns.feature_count > 0)
-    {
-      auto feature_group = ns.feature_group;
-      // Do not insert feature_group if it already exists.
-      if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
-      { ex->indices.push_back(feature_group); }
-    }
-
+    pop_ns(ex, namespace_path);
     auto return_state = return_path.back();
-    namespace_path.pop_back();
     return_path.pop_back();
     return return_state;
   }
@@ -1659,27 +1664,35 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
 }
 
 template <bool audit>
-VW_DEPRECATED("read_line_json has been deprecated; use read_line_json_s instead.")
+VW_DEPRECATED("read_line_json has been deprecated; use read_line_json_s instead. This will be removed in VW 9.0.")
 void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory,
     void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   read_line_json_s<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context, dedup_examples);
 }
 
-inline void apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
+inline bool apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
 {
+  if (pdrop == 1.)
+  {
+    logger::errlog_error("JSON parser error: examples with pdrop==1 are not supported");
+    return false;
+  }
+  // Event with certain pdrop had (1-pdrop) as probability to survive,
+  // so it is one of (1 / (1-pdrop)) events that we should learn on, and weight should be updated accordingly.
   if (all.example_parser->lbl_parser.label_type == label_type_t::cb)
   {
-    for (auto& e : examples) { e->l.cb.weight = 1 - pdrop; }
+    for (auto& e : examples) { e->l.cb.weight /= 1 - pdrop; }
   }
   else if (all.example_parser->lbl_parser.label_type == label_type_t::ccb)
   {
-    for (auto& e : examples) { e->l.conditional_contextual_bandit.weight = 1 - pdrop; }
+    for (auto& e : examples) { e->l.conditional_contextual_bandit.weight /= 1 - pdrop; }
   }
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
     // TODO
   }
+  return true;
 }
 
 // returns true if succesfully parsed, returns false if not and logs warning
@@ -1690,9 +1703,7 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {
     parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
-    apply_pdrop(all, data->probabilityOfDrop, examples);
-    // not necessarily true for now
-    return true;
+    return apply_pdrop(all, data->probabilityOfDrop, examples);
   }
 
   std::vector<char> line_vec;
@@ -1708,11 +1719,10 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   VWReaderHandler<audit>& handler = parser.handler;
   handler.init(&all, &examples, &ss, line + length, example_factory, ex_factory_context);
   handler.ctx.SetStartStateToDecisionService(data);
+  handler.ctx.decision_service_data = data;
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
-
-  apply_pdrop(all, data->probabilityOfDrop, examples);
 
   if (result.IsError())
   {
@@ -1728,13 +1738,13 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
     }
     else
     {
-      logger::errlog_warn("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
+      logger::errlog_error("JSON parser error at {0}: {1}. Handler: {2} State: {3}", result.Offset(),
           GetParseError_En(result.Code()), handler.error().str(), (current_state ? current_state->name : "null"));
       return false;
     }
   }
 
-  return true;
+  return apply_pdrop(all, data->probabilityOfDrop, examples);
 }  // namespace VW
 }  // namespace VW
 
@@ -1775,6 +1785,12 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
         else
           all->example_parser->metrics->LastEventTime = std::move(interaction.timestamp);
       }
+
+      // Technically the aggregation operation here is supposed to be user-defined
+      // but according to Casey, the only operation used is Sum
+      // The _original_label_cost element is found either at the top level OR under
+      // the _outcomes node (for CCB)
+      all->example_parser->metrics->DsjsonSumCostOriginal += interaction.originalLabelCost;
     }
 
     // TODO: In refactoring the parser to be usable standalone, we need to ensure that we

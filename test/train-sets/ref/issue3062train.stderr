@@ -1,0 +1,19 @@
+final_regressor = issue3062.model
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/issue3062.txt
+num sources = 1
+Enabled reductions: gd, scorer-identity, csoaa, cb, cb_explore-greedy
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+3.900000 3.900000            1            1.0 1:1:0.25 1:0.975000        2
+
+finished run
+number of examples = 1
+weighted example sum = 1.000000
+weighted label sum = 0.000000
+average loss = 3.900000
+total feature number = 2

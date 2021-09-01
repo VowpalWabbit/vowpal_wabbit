@@ -22,14 +22,14 @@ BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
   multi_ex examples;
-  examples.push_back(VW::read_example(vw, std::string("ccb shared |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb slot 0 |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb slot 3 |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb slot 1 |")));
+  examples.push_back(VW::read_example(vw, "ccb shared |"));
+  examples.push_back(VW::read_example(vw, "ccb action |"));
+  examples.push_back(VW::read_example(vw, "ccb action |"));
+  examples.push_back(VW::read_example(vw, "ccb action |"));
+  examples.push_back(VW::read_example(vw, "ccb action |"));
+  examples.push_back(VW::read_example(vw, "ccb slot 0 |"));
+  examples.push_back(VW::read_example(vw, "ccb slot 3 |"));
+  examples.push_back(VW::read_example(vw, "ccb slot 1 |"));
 
   vw.predict(examples);
 
@@ -95,10 +95,10 @@ BOOST_AUTO_TEST_CASE(ccb_invalid_example_checks)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
   multi_ex examples;
-  examples.push_back(VW::read_example(vw, std::string("ccb shared |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb action |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb slot 0 |")));
-  examples.push_back(VW::read_example(vw, std::string("ccb slot 3 |")));
+  examples.push_back(VW::read_example(vw, "ccb shared |"));
+  examples.push_back(VW::read_example(vw, "ccb action |"));
+  examples.push_back(VW::read_example(vw, "ccb slot 0 |"));
+  examples.push_back(VW::read_example(vw, "ccb slot 3 |"));
 
   for (auto* example : examples) { VW::setup_example(vw, example); }
 

@@ -6,6 +6,7 @@
 
 #include "v_array.h"
 #include "future_compat.h"
+#include "generic_range.h"
 
 #include <utility>
 #include <memory>
@@ -18,7 +19,7 @@
 using feature_value = float;
 using feature_index = uint64_t;
 using audit_strings = std::pair<std::string, std::string>;
-using audit_strings_ptr = std::shared_ptr<audit_strings>;
+using namespace_index = unsigned char;
 
 struct features;
 struct features_value_index_audit_range;
@@ -55,6 +56,8 @@ public:
   using pointer = value_type*;
   using reference = value_type&;
   using const_reference = const value_type&;
+
+  audit_features_iterator() : _begin_values(nullptr), _begin_indices(nullptr), _begin_audit(nullptr) {}
 
   audit_features_iterator(
       feature_value_type_t* begin_values, feature_index_type_t* begin_indices, audit_type_t* begin_audit)
@@ -185,6 +188,8 @@ public:
   using reference = value_type&;
   using const_reference = const value_type&;
 
+  features_iterator() : _begin_values(nullptr), _begin_indices(nullptr) {}
+
   features_iterator(feature_value_type_t* begin_values, feature_index_type_t* begin_indices)
       : _begin_values(begin_values), _begin_indices(begin_indices)
   {
@@ -282,49 +287,19 @@ struct features
 {
   using iterator = features_iterator<feature_value, feature_index>;
   using const_iterator = features_iterator<const feature_value, const feature_index>;
-  using audit_iterator = audit_features_iterator<feature_value, feature_index, audit_strings_ptr>;
-  using const_audit_iterator =
-      audit_features_iterator<const feature_value, const feature_index, const audit_strings_ptr>;
+  using audit_iterator = audit_features_iterator<feature_value, feature_index, audit_strings>;
+  using const_audit_iterator = audit_features_iterator<const feature_value, const feature_index, const audit_strings>;
 
   v_array<feature_value> values;               // Always needed.
   v_array<feature_index> indicies;             // Optional for sparse data.
-  std::vector<audit_strings_ptr> space_names;  // Optional for audit mode.
+  std::vector<audit_strings> space_names;      // Optional for audit mode.
 
   float sum_feat_sq = 0.f;
 
-  class features_audit_range
-  {
-  private:
-    features* _outer;
-
-  public:
-    explicit features_audit_range(features* outer) : _outer(outer) {}
-
-    inline audit_iterator begin() { return _outer->audit_begin(); }
-    inline const_audit_iterator begin() const { return _outer->audit_cbegin(); }
-    inline audit_iterator end() { return _outer->audit_end(); }
-    inline const_audit_iterator end() const { return _outer->audit_cend(); }
-
-    inline const_audit_iterator cbegin() const { return _outer->audit_cbegin(); }
-    inline const_audit_iterator cend() const { return _outer->audit_cend(); }
-  };
-
-  class const_features_audit_range
-  {
-  private:
-    const features* _outer;
-
-  public:
-    explicit const_features_audit_range(const features* outer) : _outer(outer) {}
-
-    inline const_audit_iterator cbegin() const { return _outer->audit_cbegin(); }
-    inline const_audit_iterator cend() const { return _outer->audit_cend(); }
-  };
-
   features() = default;
   ~features() = default;
-  features(const features&) = delete;
-  features& operator=(const features&) = delete;
+  features(const features&) = default;
+  features& operator=(const features&) = default;
 
   // custom move operators required since we need to leave the old value in
   // a null state to prevent freeing of shallow copied v_arrays
@@ -336,7 +311,7 @@ struct features
   inline bool empty() const { return values.empty(); }
   inline bool nonempty() const { return !empty(); }
 
-  VW_DEPRECATED("Freeing space names is handled directly by truncation or removal.")
+  VW_DEPRECATED("Freeing space names is handled directly by truncation or removal. This will be removed in VW 9.0.")
   void free_space_names(size_t i);
 
   // default iterator for values & features
@@ -348,8 +323,8 @@ struct features
   inline const_iterator cbegin() const { return {values.cbegin(), indicies.cbegin()}; }
   inline const_iterator cend() const { return {values.cend(), indicies.cend()}; }
 
-  inline features_audit_range audit_range() { return features_audit_range{this}; }
-  inline const_features_audit_range audit_range() const { return const_features_audit_range{this}; }
+  inline VW::generic_range<audit_iterator> audit_range() { return {audit_begin(), audit_end()}; }
+  inline VW::generic_range<const_audit_iterator> audit_range() const { return {audit_cbegin(), audit_cend()}; }
 
   inline audit_iterator audit_begin() { return {values.begin(), indicies.begin(), space_names.data()}; }
   inline const_audit_iterator audit_begin() const { return {values.begin(), indicies.begin(), space_names.data()}; }
@@ -366,10 +341,35 @@ struct features
   }
 
   void clear();
+  // These 3 overloads can be used if the sum_feat_sq of the removed section is known to avoid recalculating.
+  void truncate_to(const audit_iterator& pos, float sum_feat_sq_of_removed_section);
+  void truncate_to(const iterator& pos, float sum_feat_sq_of_removed_section);
+  void truncate_to(size_t i, float sum_feat_sq_of_removed_section);
   void truncate_to(const audit_iterator& pos);
   void truncate_to(const iterator& pos);
   void truncate_to(size_t i);
+  void concat(const features& other);
   void push_back(feature_value v, feature_index i);
   bool sort(uint64_t parse_mask);
+
+  VW_DEPRECATED("deep_copy_from is deprecated. Use the copy constructor directly. This will be removed in VW 9.0.")
   void deep_copy_from(const features& src);
 };
+
+namespace VW
+{
+struct namespaced_features
+{
+  features feats;
+  uint64_t hash;
+  namespace_index index;
+
+  namespaced_features(uint64_t hash, namespace_index index) : hash(hash), index(index) {}
+
+  template <typename FeaturesT>
+  namespaced_features(FeaturesT&& inner_features, uint64_t hash, namespace_index index)
+      : feats(std::forward<FeaturesT>(inner_features)), hash(hash), index(index)
+  {
+  }
+};
+}  // namespace VW
