@@ -1,0 +1,6 @@
+Started Training CB and IGL on Fri Aug 20 02:27:17 UTC 2021.
+Saving to ../notes/result_pathological.dat
+|: -----------------------------------------------------------------------------------------------------:|
+|Filename	|	Num Examples	|	CB Loss|IGL Loss	|	IGL Flipped Sign Loss|
+|: -----------------------------------------------------------------------------------------------------:|
+Finished Training CB and IGL on 2021-08-20_02:27:17.
