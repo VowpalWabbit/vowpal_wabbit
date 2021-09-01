@@ -786,6 +786,7 @@ def main():
 
     executor = ThreadPoolExecutor(max_workers=args.jobs)
 
+
     for test in tests:
         tasks.append(executor.submit(run_command_line_test,
                                      test,
