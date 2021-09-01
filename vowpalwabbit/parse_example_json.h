@@ -1663,14 +1663,6 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
   // "Line: '"<< line_copy << "'");
 }
 
-template <bool audit>
-VW_DEPRECATED("read_line_json has been deprecated; use read_line_json_s instead. This will be removed in VW 9.0.")
-void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory,
-    void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
-{
-  read_line_json_s<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context, dedup_examples);
-}
-
 inline bool apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
 {
   if (pdrop == 1.)
