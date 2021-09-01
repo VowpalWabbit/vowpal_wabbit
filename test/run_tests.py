@@ -256,7 +256,7 @@ def run_command_line_test(test: TestData,
             valgrind_log_file_name = "test-{}.valgrind-err".format(test.id)
             valgrind_log_file_path = os.path.join(
                     working_dir, valgrind_log_file_name)
-            command_line = "valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full --log-file='{}' {}".format(valgrind_log_file_path, command_line)
+            command_line = "valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full --log-file={} {}".format(valgrind_log_file_path, command_line)
 
         if test.is_shell:
             cmd = command_line
