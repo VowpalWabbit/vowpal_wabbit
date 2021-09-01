@@ -1481,8 +1481,6 @@ char** to_argv(std::string const& s, int& argc)
   return argv;
 }
 
-char** get_argv_from_string(std::string s, int& argc) { return to_argv(s, argc); }
-
 void free_args(int argc, char* argv[])
 {
   for (int i = 0; i < argc; i++) free(argv[i]);
