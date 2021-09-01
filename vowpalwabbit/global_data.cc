@@ -70,11 +70,6 @@ void send_prediction(VW::io::writer* f, global_prediction p)
     THROWERRNO("send_prediction write(unknown socket fd)");
 }
 
-void binary_print_result(VW::io::writer* f, float res, float weight, v_array<char> array)
-{
-  binary_print_result_by_ref(f, res, weight, array);
-}
-
 void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>&)
 {
   if (f != nullptr)
@@ -94,8 +89,6 @@ int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag)
   return tag.begin() != tag.end();
 }
 
-int print_tag(std::stringstream& ss, v_array<char> tag) { return print_tag_by_ref(ss, tag); }
-
 std::string vw::get_setupfn_name(reduction_setup_fn setup_fn)
 {
   const auto loc = _setup_name_map.find(setup_fn);
@@ -108,10 +101,6 @@ void vw::build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_s
   for (auto&& setup_tuple : reduction_stack) { _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple); }
 }
 
-void print_result(VW::io::writer* f, float res, float unused, v_array<char> tag)
-{
-  print_result_by_ref(f, res, unused, tag);
-}
 
 void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char>& tag)
 {
@@ -127,19 +116,6 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
     if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
   }
-}
-
-void print_raw_text(VW::io::writer* f, std::string s, v_array<char> tag)
-{
-  if (f == nullptr) return;
-
-  std::stringstream ss;
-  ss << s;
-  print_tag_by_ref(ss, tag);
-  ss << '\n';
-  ssize_t len = ss.str().size();
-  ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void print_raw_text_by_ref(VW::io::writer* f, const std::string& s, const v_array<char>& tag)
@@ -272,8 +248,6 @@ vw::vw() : options(nullptr, nullptr)
   reg_mode = 0;
   current_pass = 0;
 
-  delete_prediction = nullptr;
-
   bfgs = false;
   no_bias = false;
   hessian_on = false;
@@ -296,8 +270,6 @@ vw::vw() : options(nullptr, nullptr)
               // updates (see parse_args.cc)
   numpasses = 1;
 
-  print = print_result;
-  print_text = print_raw_text;
   print_by_ref = print_result_by_ref;
   print_text_by_ref = print_raw_text_by_ref;
   lda = 0;
