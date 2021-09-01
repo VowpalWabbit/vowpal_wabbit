@@ -84,34 +84,27 @@ void fail_if_enabled(vw& all, std::string name)
     THROW("plz no bad stack" + name);
 }
 
-bool cmpf(float A, float B, float epsilon = 0.001f)
-{
-    return (fabs(A - B) < epsilon);
-}
+bool cmpf(float A, float B, float epsilon = 0.001f) { return (fabs(A - B) < epsilon); }
 
 void print_weights_nonzero(size_t count, dense_parameters& weights)
 {
-  size_t w_count = 0;
-  // for (auto it = weights.begin(); it != weights.end(); ++it)
-
-  auto it = weights.begin();
-  for (; it != weights.end(); ++it)
+  for (auto it = weights.begin(); it != weights.end(); ++it)
   {
-    auto real_index = it.index()>>2;
+    auto real_index = it.index() >> 2;
     int type = real_index & 3;
 
     size_t off = 0;
     auto zero = (&(*it))[0 + off];
     if (!cmpf(zero, 0.f))
     {
-      if (type == 0){
-        std::cerr << (real_index) <<":c"<< count << ":0:" << zero << std::endl; 
+      if (type == 0) { std::cerr << (real_index) << ":c" << count << ":0:" << zero << std::endl; }
+      else if (type == 1)
+      {
+        std::cerr << (real_index - 1) << ":c" << count << ":4:" << zero << std::endl;
       }
-      else if (type == 1){
-        std::cerr << (real_index-1) <<":c"<< count << ":4:" << zero << std::endl; 
-      }
-      else if (type == 2){
-        std::cerr << (real_index-2) <<":c"<< count << ":8:" << zero << std::endl; 
+      else if (type == 2)
+      {
+        std::cerr << (real_index - 2) << ":c" << count << ":8:" << zero << std::endl;
       }
     }
   }
