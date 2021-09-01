@@ -4,20 +4,20 @@ namespace simulator
 {
 cb_sim::cb_sim(int seed) : seed(seed) { srand(seed); }
 
-float cb_sim::get_cost(std::map<std::string, std::string> context, std::string action)
+float cb_sim::get_cost(const std::map<std::string, std::string>& context, const std::string& action)
 {
-  if (context["user"] == "Tom")
+  if (context.at("user") == "Tom")
   {
-    if (context["time_of_day"] == "morning" && action == "politics") { return USER_LIKED_ARTICLE; }
-    else if (context["time_of_day"] == "afternoon" && action == "music")
+    if (context.at("time_of_day") == "morning" && action == "politics") { return USER_LIKED_ARTICLE; }
+    else if (context.at("time_of_day") == "afternoon" && action == "music")
     {
       return USER_LIKED_ARTICLE;
     }
   }
-  else if (context["user"] == "Anna")
+  else if (context.at("user") == "Anna")
   {
-    if (context["time_of_day"] == "morning" && action == "sports") { return USER_LIKED_ARTICLE; }
-    else if (context["time_of_day"] == "afternoon" && action == "politics")
+    if (context.at("time_of_day") == "morning" && action == "sports") { return USER_LIKED_ARTICLE; }
+    else if (context.at("time_of_day") == "afternoon" && action == "politics")
     {
       return USER_LIKED_ARTICLE;
     }
@@ -26,10 +26,11 @@ float cb_sim::get_cost(std::map<std::string, std::string> context, std::string a
 }
 // todo: skip text format and create vw example directly
 std::vector<std::string> cb_sim::to_vw_example_format(
-    std::map<std::string, std::string> context, std::string chosen_action, float cost, float prob)
+    const std::map<std::string, std::string>& context, const std::string& chosen_action, float cost, float prob)
 {
   std::vector<std::string> multi_ex_str;
-  multi_ex_str.push_back(fmt::format("shared |User user={} time_of_day={}", context["user"], context["time_of_day"]));
+  multi_ex_str.push_back(
+      fmt::format("shared |User user={} time_of_day={}", context.at("user"), context.at("time_of_day")));
   for (const auto& action : actions)
   {
     std::ostringstream ex;
@@ -40,7 +41,7 @@ std::vector<std::string> cb_sim::to_vw_example_format(
   return multi_ex_str;
 }
 
-std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float> pmf)
+std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
 {
   float total = std::accumulate(pmf.begin(), pmf.end(), 0.f);
   float scale = 1.f / total;
@@ -50,12 +51,12 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float> pmf)
   for (int index = 0; index < pmf.size(); ++index)
   {
     sum_prob += pmf[index];
-    if (sum_prob > draw) { return std::pair<int, float>(index, pmf[index]); }
+    if (sum_prob > draw) { return std::make_pair(index, pmf[index]); }
   }
   THROW("Error: No prob selected");
 }
 
-std::pair<std::string, float> cb_sim::get_action(vw* vw, std::map<std::string, std::string> context)
+std::pair<std::string, float> cb_sim::get_action(vw* vw, const std::map<std::string, std::string>& context)
 {
   std::vector<std::string> multi_ex_str = to_vw_example_format(context);
   multi_ex examples;
@@ -70,16 +71,16 @@ std::pair<std::string, float> cb_sim::get_action(vw* vw, std::map<std::string, s
   vw->finish_example(examples);
 
   std::pair<int, float> pmf_sample = sample_custom_pmf(pmf);
-  return std::pair<std::string, float>(actions[pmf_sample.first], pmf_sample.second);
+  return std::make_pair(actions[pmf_sample.first], pmf_sample.second);
 }
 
-std::string cb_sim::choose_user()
+const std::string& cb_sim::choose_user()
 {
   int rand_ind = rand() % users.size();
   return users[rand_ind];
 }
 
-std::string cb_sim::choose_time_of_day()
+const std::string& cb_sim::choose_time_of_day()
 {
   int rand_ind = rand() % times_of_day.size();
   return times_of_day[rand_ind];
@@ -96,7 +97,7 @@ std::vector<float> cb_sim::run_simulation(vw* vw, int num_iterations, bool do_le
     auto time_of_day = choose_time_of_day();
 
     // 3. Pass context to vw to get an action
-    std::map<std::string, std::string> context{{"user", user}, {"time_of_day", time_of_day}};
+    const std::map<std::string, std::string> context{{"user", user}, {"time_of_day", time_of_day}};
     auto action_prob = get_action(vw, context);
     auto chosen_action = action_prob.first;
     auto prob = action_prob.second;

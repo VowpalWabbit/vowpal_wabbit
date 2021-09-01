@@ -7,7 +7,7 @@
 
 #include "simulator.h"
 
-std::vector<float> _test_helper(std::string vw_arg, int num_iterations = 3000, int seed = 10)
+std::vector<float> _test_helper(const std::string& vw_arg, int num_iterations = 3000, int seed = 10)
 {
   auto vw = VW::initialize(vw_arg);
   simulator::cb_sim sim(seed);
@@ -16,7 +16,7 @@ std::vector<float> _test_helper(std::string vw_arg, int num_iterations = 3000, i
   return ctr;
 }
 
-std::vector<float> _test_helper_save_load(std::string vw_arg, int num_iterations = 3000, int seed = 10)
+std::vector<float> _test_helper_save_load(const std::string& vw_arg, int num_iterations = 3000, int seed = 10)
 {
   int split = 1500;
   int before_save = num_iterations - split;

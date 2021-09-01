@@ -17,14 +17,14 @@ class cb_sim
   std::vector<float> ctr;
 
 public:
-  cb_sim(int seed);
-  float get_cost(std::map<std::string, std::string> context, std::string action);
+  cb_sim(int = 0);
+  float get_cost(const std::map<std::string, std::string>&, const std::string&);
   std::vector<std::string> to_vw_example_format(
-      std::map<std::string, std::string> context, std::string chosen_action = "", float cost = 0.f, float prob = 0.f);
-  std::pair<int, float> sample_custom_pmf(std::vector<float> pmf);
-  std::pair<std::string, float> get_action(vw* vw, std::map<std::string, std::string> context);
-  std::string choose_user();
-  std::string choose_time_of_day();
-  std::vector<float> run_simulation(vw* vw, int num_iterations, bool do_learn = true, int shift = 1);
+      const std::map<std::string, std::string>&, const std::string& = "", float = 0.f, float = 0.f);
+  std::pair<int, float> sample_custom_pmf(std::vector<float>& pmf);
+  std::pair<std::string, float> get_action(vw* vw, const std::map<std::string, std::string>&);
+  const std::string& choose_user();
+  const std::string& choose_time_of_day();
+  std::vector<float> run_simulation(vw*, int, bool = true, int = 1);
 };
 }  // namespace simulator
