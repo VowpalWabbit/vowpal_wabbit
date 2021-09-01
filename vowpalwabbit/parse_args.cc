@@ -1753,16 +1753,14 @@ void finish(vw& all, bool delete_all)
   // implement finally.
   // finalize_regressor can throw if it can't write the file.
   // we still want to free up all the memory.
-  vw_exception finalize_regressor_exception(__FILE__, __LINE__, "empty");
-  bool finalize_regressor_exception_thrown = false;
+  std::exception_ptr finalize_regressor_exception;
   try
   {
     finalize_regressor(all, all.final_regressor_name);
   }
-  catch (vw_exception& e)
+  catch (vw_exception& /* e */)
   {
-    finalize_regressor_exception = e;
-    finalize_regressor_exception_thrown = true;
+    finalize_regressor_exception = std::current_exception();
   }
 
   metrics::output_metrics(all);
@@ -1770,6 +1768,6 @@ void finish(vw& all, bool delete_all)
 
   if (delete_all) delete &all;
 
-  if (finalize_regressor_exception_thrown) throw finalize_regressor_exception;
+  if (finalize_regressor_exception) { std::rethrow_exception(finalize_regressor_exception); }
 }
 }  // namespace VW
