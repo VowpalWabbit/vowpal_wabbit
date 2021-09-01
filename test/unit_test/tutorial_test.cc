@@ -17,13 +17,12 @@ class Simulator
   std::vector<std::string> users{"Tom", "Anna"};
   std::vector<std::string> times_of_day{"morning", "afternoon"};
   std::vector<std::string> actions{"politics", "sports", "music", "food", "finance", "health", "camping"};
-  std::string debug_logfile;
   int seed;
   float cost_sum = 0.f;
   std::vector<float> ctr;
 
 public:
-  Simulator(std::string debug_logfile = "", int seed = 0) : debug_logfile(debug_logfile), seed(seed) { srand(seed); }
+  Simulator(int seed = 0) : seed(seed) { srand(seed); }
 
   float get_cost(std::map<std::string, std::string> context, std::string action)
   {
@@ -149,8 +148,8 @@ public:
 
 std::vector<float> _test_helper(std::string vw_arg, int num_iterations = 3000, int seed = 10)
 {
-  auto vw = VW::initialize(vw_arg, nullptr, false, nullptr, nullptr);
-  Simulator sim("", seed);
+  auto vw = VW::initialize(vw_arg);
+  Simulator sim(seed);
   auto ctr = sim.run_simulation(vw, num_iterations);
   VW::finish(*vw);
   return ctr;
@@ -161,8 +160,8 @@ std::vector<float> _test_helper_save_load(std::string vw_arg, int num_iterations
   int split = 1500;
   int before_save = num_iterations - split;
 
-  auto first_vw = VW::initialize(vw_arg, nullptr, false, nullptr, nullptr);
-  Simulator sim("", seed);
+  auto first_vw = VW::initialize(vw_arg);
+  Simulator sim(seed);
   // first chunk
   auto ctr = sim.run_simulation(first_vw, before_save);
   // save
@@ -170,7 +169,7 @@ std::vector<float> _test_helper_save_load(std::string vw_arg, int num_iterations
   VW::save_predictor(*first_vw, model_file);
   VW::finish(*first_vw);
   // reload in another instance
-  auto other_vw = VW::initialize("--quiet -i test_save_load.vw", nullptr, false, nullptr, nullptr);
+  auto other_vw = VW::initialize("--quiet -i " + model_file);
   // continue
   ctr = sim.run_simulation(other_vw, split, true, before_save + 1);
   VW::finish(*other_vw);
