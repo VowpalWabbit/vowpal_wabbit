@@ -124,9 +124,12 @@ public:
     }
   }
 
-  void copy_offsets(size_t from, size_t to)
+  void copy_offsets(size_t from, size_t to, size_t width = 1)
   {
-    for (iterator iter = begin(); iter != end(); ++iter) { (&(*iter))[to] = (&(*iter))[from]; }
+    for (iterator iter = begin(); iter != end(); ++iter)
+    { 
+      for(size_t j = 0; j < width; j++){ (&(*iter))[to+j] = (&(*iter))[from+j]; }
+    }
   }
 
   uint64_t mask() const { return _weight_mask; }

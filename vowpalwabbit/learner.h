@@ -815,18 +815,6 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_copy(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&))
-  {
-    // this->_learner->learn_fd.learn_f = (learn_data::fn)fn_ptr;
-    return *static_cast<FluentBuilderT*>(this);
-  }
-
-  FluentBuilderT& set_reset_zero(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&))
-  {
-    // this->_learner->learn_fd.learn_f = (learn_data::fn)fn_ptr;
-    return *static_cast<FluentBuilderT*>(this);
-  }
-
   FluentBuilderT& set_multipredict(
       void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&, size_t, size_t, polyprediction*, bool))
   {
@@ -906,6 +894,18 @@ struct common_learner_builder
     _learner->persist_metrics_fd.save_metric_f = (save_metric_data::fn)fn_ptr;
     _learner->persist_metrics_fd.data = _learner->learn_fd.data;
     _learner->persist_metrics_fd.base = _learner->learn_fd.base;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_copy(void (*fn_ptr)(DataT&, BaseLearnerT&, size_t& from, size_t& to))
+  {
+    // this->_learner->learn_fd.learn_f = (learn_data::fn)fn_ptr;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_reset_zero(void (*fn_ptr)(DataT&, BaseLearnerT&, size_t&))
+  {
+    // this->_learner->learn_fd.learn_f = (learn_data::fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
 };

@@ -84,25 +84,131 @@ void fail_if_enabled(vw& all, std::string name)
     THROW("plz no bad stack" + name);
 }
 
+bool cmpf(float A, float B, float epsilon = 0.001f)
+{
+    return (fabs(A - B) < epsilon);
+}
+
 void print_weights_nonzero(size_t count, dense_parameters& weights)
 {
   size_t w_count = 0;
-  for (auto it = weights.begin(); it != weights.end(); ++it)
+  // for (auto it = weights.begin(); it != weights.end(); ++it)
+
+  auto it = weights.begin();
+  for (; it != weights.end(); ++it)
   {
-    w_count++;
-    if ((&(*it))[0] != 0.f) { std::cerr << count << ":0:" << (&(*it))[0] << std::endl; }
-    if ((&(*it))[1] != 0.f) { std::cerr << count << ":1:" << (&(*it))[1] << std::endl; }
-    if ((&(*it))[2] != 0.f) { std::cerr << count << ":2:" << (&(*it))[2] << std::endl; }
+    auto real_index = it.index()>>2;
+    int type = real_index & 3;
+
+    size_t off = 0;
+    auto zero = (&(*it))[0 + off];
+    if (!cmpf(zero, 0.f))
+    {
+      if (type == 0){
+        std::cerr << (real_index) <<":c"<< count << ":0:" << zero << std::endl; 
+      }
+      else if (type == 1){
+        std::cerr << (real_index-1) <<":c"<< count << ":4:" << zero << std::endl; 
+      }
+      else if (type == 2){
+        std::cerr << (real_index-2) <<":c"<< count << ":8:" << zero << std::endl; 
+      }
+    }
   }
+/*
+  auto it = weights.begin();
+  ++it;
+  ++it;
+  // ++it;
+  // ++it;
+
+  for (; it != weights.end(); )
+  {
+    // if (*v != 0.)
+    // {
+
+    w_count++;
+    size_t off = 0;
+    //stride of 4 with gd
+    //  gd: importance aware, normalization, autograd,
+
+    auto zero = (&(*it))[0 + off];
+    auto four = (&(*it))[4 + off];
+    auto eight = (&(*it))[8 + off];
+    
+    auto real_index = it.index()>>2;
+    std::cerr<< real_index << std::endl;
+    std::cerr<< (real_index&3) << std::endl;
+    assert((real_index & 3) == 0);
+    assert(((real_index+1) & 3) == 1);
+    // assert((real_index+2) & 3) == 2);
+
+    if (!cmpf(zero, 0.f) || !cmpf(four, 0.f) || !cmpf(eight, 0.f)){
+      if(cmpf(zero,four) && cmpf(zero, eight)){
+      std::cerr<< (it.index() >> 2) << ":all weights equal:" << zero <<std::endl;
+      }
+      else if (cmpf(zero,four) && !cmpf(zero, 0.f)){
+        std::cerr<< (it.index()>>2) << ":0,4 weights equal:" << zero <<" :8:"<<eight<<std::endl;
+      }
+      else if (cmpf(eight,four) && !cmpf(eight, 0.f)){
+      std::cerr<< (it.index()>>2) << ":4,8 weights equal:" << eight <<" :0:"<<zero<<std::endl;
+      }
+      else if (cmpf(eight,zero) && !cmpf(eight, 0.f)){
+      std::cerr<< (it.index()>>2) << ":0,8 weights equal:" << eight<<" :4:"<<four <<std::endl;
+      }
+      else if (!cmpf(zero, 0.f) && cmpf(four, 0.f) && cmpf(eight, 0.f)){
+        std::cerr << (it.index()>>2) <<":c"<< count << ":0:" << zero << std::endl; 
+      }
+      else if (cmpf(zero, 0.f) && !cmpf(four, 0.f) && cmpf(eight, 0.f)){
+        std::cerr << ((it.index()+4)>>2) <<":c"<< count << ":0(4):" << four << std::endl; 
+      }
+      else if (cmpf(zero, 0.f) && cmpf(four, 0.f) && !cmpf(eight, 0.f)){
+        std::cerr << ((it.index()+8)>>2)  <<":c"<< count << ":0(8):" << eight << std::endl; 
+      }
+    }
+    else{
+
+    }
+
+    // if (!cmpf((&(*it))[0 + off], 0.f) && cmpf((&(*it))[0 + off],(&(*it))[4 + off])  && cmpf((&(*it))[0 + off], (&(*it))[8 + off]) ){
+    //   std::cerr<< it.index() << ":all weights equal:" << (&(*it))[0 + off] <<std::endl;
+    // }
+    // else if(cmpf((&(*it))[0 + off],(&(*it))[8 + off]) && cmpf((&(*it))[4 + off],(&(*it))[8 + off]) && (&(*it))[8 + off] != 0.f){
+    //   std::cerr<< it.index() << ":0,4,8 weights equal:" << (&(*it))[0 + off] <<std::endl;
+    // }
+    // else if(cmpf((&(*it))[0 + off],(&(*it))[4 + off]) && (&(*it))[4 + off] != 0.f){
+    //   std::cerr<< it.index() << ":0,4 weights equal:" << (&(*it))[0 + off] <<std::endl;
+    // }
+    // else if(cmpf((&(*it))[4 + off],(&(*it))[8 + off]) && (&(*it))[8 + off] != 0.f){
+    //   std::cerr<< it.index() << ":4,8 weights equal:" << (&(*it))[0 + off] <<std::endl;
+    // }
+    // else if(cmpf((&(*it))[0 + off],(&(*it))[8 + off]) && (&(*it))[8 + off] != 0.f){
+    //   std::cerr<< it.index() << ":0,8 weights equal:" << (&(*it))[0 + off] <<std::endl;
+    // }
+    // else{
+    //   if ((&(*it))[0 + off] != 0.f) { std::cerr << it.index() <<":c"<< count << ":0:" << (&(*it))[0 + off] << std::endl; }
+    //   if ((&(*it))[4 + off] != 0.f) { std::cerr << it.index() <<":c"<< count << ":4:" << (&(*it))[4 + off] << std::endl; }
+    //   if ((&(*it))[8 + off] != 0.f) { std::cerr << it.index() <<":c"<< count << ":8:" << (&(*it))[8 + off] << std::endl; }
+    // }
+    ++it;
+    if (it != weights.end()) ++it;
+    if (it != weights.end()) ++it;
+    // ++it;
+    // ++it;
+    // }
+    // else{
+    // }
+  }
+*/
   std::cerr << std::endl;
 }
 }  // namespace helper
 
 // struct config_desc
 // {
-//   std::vector<std::vector<namespace_index>> interactions_1;
-//   size_t budget = 0;
-//   size_t last_time_ran = 0; // in # of examples
+//   std::vector<std::vector<namespace_index>> interactions;
+// size_t budget = 0;
+// size_t last_time_ran = 0; // in # of examples
 // }
 
 struct single_config
@@ -158,6 +264,7 @@ struct single_config
   float last_w = 0.0;
   float last_r = 0.0;
   size_t update_count = 0;
+  // config_desc my_desc;
   // add budget
 };
 
@@ -180,6 +287,17 @@ struct config_manager
   const size_t max_live_configs = MAX_CONFIGS;
   std::vector<std::vector<namespace_index>> interactions_1;
   std::vector<std::vector<namespace_index>> empty_interactions;
+
+  /*
+    max_live_configs = 5;
+    config_manager -has-> 10 configs it wants to test
+
+    1 champ, 4 tests (give a budget 500 examples)
+    ~ time passes ~ 500 later
+    10 configs (5 are live, 5 are dormant)
+     1) give more budget to live ones, in case they are almost good
+     2) swap configs, what does it imply, the 4 are bad, add 4 new configs from the dormants
+  */
 
   void one_step()
   {
@@ -357,7 +475,8 @@ struct config_manager
     }
     else
     {
-      ec->interactions = &(empty_interactions);
+      ec->interactions = &(interactions_1);
+      // ec->interactions = &(empty_interactions);
     }
   }
 
@@ -432,19 +551,26 @@ template <bool is_explore>
 void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 {
   assert(data.all->weights.sparse == false);
-  if (data.cm.county > 118 && data.cm.county <= 120)
+  if (data.cm.county > 1998 && data.cm.county <= 2000)
   {
-    // helper::print_weights_nonzero(data.cm.county, data.all->weights.dense_weights);
+    helper::print_weights_nonzero(data.cm.county, data.all->weights.dense_weights);
     if (data.cm.county == 119)
     {
       // clear operation
-      // data.all->weights.dense_weights.set_zero(2);
+      // data.all->weights.dense_weights.set_zero(8);
+      // data.all->weights.dense_weights.set_zero(8 + 1);
+      // data.all->weights.dense_weights.set_zero(8 + 2);
+      // data.all->weights.dense_weights.set_zero(8 + 3);
 
       //** swap
       // data.all->weights.dense_weights.swap_offsets(0,1);
 
       //** copy / init with champs weights
-      // data.all->weights.dense_weights.copy_offsets(data.cm.current_champ, 2);
+
+      // data.all->weights.dense_weights.copy_offsets(data.cm.current_champ*4, 8);
+      // data.all->weights.dense_weights.copy_offsets(data.cm.current_champ*4+1, 8+1);
+      // data.all->weights.dense_weights.copy_offsets(data.cm.current_champ*4+2, 8+2);
+      // data.all->weights.dense_weights.copy_offsets(data.cm.current_champ*4+3, 8+3);
 
       // helper::print_weights_nonzero(data.cm.county, data.all->weights.dense_weights);
     }
