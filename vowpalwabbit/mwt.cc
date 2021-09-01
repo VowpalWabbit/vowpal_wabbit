@@ -232,7 +232,7 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   for (char i : s) c->namespaces[static_cast<unsigned char>(i)] = true;
   c->all = &all;
 
-  c->evals.resize(all.length());
+  c->evals.resize(all.length(), policy_data{});
 
   if (c->num_classes > 0)
   {
