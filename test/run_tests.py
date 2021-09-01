@@ -9,17 +9,17 @@ import os.path
 import subprocess
 import sys
 import traceback
-import shlex
 
 import json
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 import socket
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, List, Set
 
 import runtests_parser
 from run_tests_common import TestData
 import runtests_flatbuffer_converter as fb_converter
+
 
 class Color():
     LIGHT_CYAN = '\033[96m'
@@ -495,8 +495,8 @@ def find_or_use_user_supplied_path(test_base_ref_dir, user_supplied_bin_path, se
         return find_in_path(search_paths, is_correct_bin_func, debug_file_name)
     else:
         if not Path(user_supplied_bin_path).exists() or not Path(user_supplied_bin_path).is_file():
-            raise ValueError("Invalid {debug_file_name} binary path: {}".format(
-                (user_supplied_bin_path)))
+            raise ValueError("Invalid {} binary path: {}".format(debug_file_name,
+                user_supplied_bin_path))
         return user_supplied_bin_path
 
 def find_runtests_file(test_base_ref_dir):
@@ -785,7 +785,6 @@ def main():
     completed_tests = Completion()
 
     executor = ThreadPoolExecutor(max_workers=args.jobs)
-
 
     for test in tests:
         tasks.append(executor.submit(run_command_line_test,
