@@ -86,12 +86,18 @@ void fail_if_enabled(vw& all, std::string name)
 
 bool cmpf(float A, float B, float epsilon = 0.001f) { return (fabs(A - B) < epsilon); }
 
-void print_weights_nonzero(size_t count, dense_parameters& weights)
+void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
 {
   for (auto it = weights.begin(); it != weights.end(); ++it)
   {
-    auto real_index = it.index() >> 2;
-    int type = real_index & 3;
+    assert(weights.stride_shift() == 2);
+    auto real_index = it.index() >> weights.stride_shift();
+    if (MAX_CONFIGS > 4)
+      assert(all->wpp == 8);
+    else
+      assert(all->wpp == 4);
+
+    int type = real_index & (all->wpp - 1);
 
     size_t off = 0;
     auto zero = (&(*it))[0 + off];
@@ -100,11 +106,23 @@ void print_weights_nonzero(size_t count, dense_parameters& weights)
       if (type == 0) { std::cerr << (real_index) << ":c" << count << ":0:" << zero << std::endl; }
       else if (type == 1)
       {
-        std::cerr << (real_index - 1) << ":c" << count << ":4:" << zero << std::endl;
+        std::cerr << (real_index - 1) << ":c" << count << ":1:" << zero << std::endl;
       }
       else if (type == 2)
       {
-        std::cerr << (real_index - 2) << ":c" << count << ":8:" << zero << std::endl;
+        std::cerr << (real_index - 2) << ":c" << count << ":2:" << zero << std::endl;
+      }
+      else if (type == 3)
+      {
+        std::cerr << (real_index - 3) << ":c" << count << ":3:" << zero << std::endl;
+      }
+      else if (type == 4)
+      {
+        std::cerr << (real_index - 4) << ":c" << count << ":4:" << zero << std::endl;
+      }
+      else if (type == 5)
+      {
+        std::cerr << (real_index - 5) << ":c" << count << ":5:" << zero << std::endl;
       }
     }
   }
