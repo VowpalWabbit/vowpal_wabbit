@@ -226,12 +226,14 @@ def run_command_line_test(test_id,
                           dependencies=None,
                           fuzzy_compare=False,
                           skip=False,
-                          valgrind=False):
+                          valgrind=False,
+                          skip_reason=None):
 
     if skip:
         completed_tests.report_completion(test_id, False)
         return (test_id, {
             "result": Result.SKIPPED,
+            "skip_reason":skip_reason,
             "checks": {}
         })
 
@@ -242,6 +244,7 @@ def run_command_line_test(test_id,
                 completed_tests.report_completion(test_id, False)
                 return (test_id, {
                     "result": Result.SKIPPED,
+                    "skip_reason":skip_reason,
                     "checks": {}
                 })
 
@@ -570,28 +573,28 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
     for test in tests:
         test_id = test['id']
         if 'vw_command' not in test:
-            print("{}Skipping test {} for flatbuffers, no vw command available{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             test['skip'] = True
+            test['skip_reason'] = "no vw command available for automatic converted flatbuffer test"
             continue
         if 'flatbuffer' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, already a flatbuffer test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             test['skip'] = True
+            test['skip_reason'] = "already a flatbuffer test"
             continue
         if 'malformed' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, malformed input{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             test['skip'] = True
+            test['skip_reason'] = "malformed input"
             continue
         if 'input_files' not in test:
-            print("{}Skipping test {} for flatbuffers, no input files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             test['skip'] = True
+            test['skip_reason'] = "no input files for for automatic converted flatbuffer test"
             continue
         if 'dictionary' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, currently dictionaries are not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             test['skip'] = True
+            test['skip_reason'] = "currently dictionaries are not supported for automatic converted flatbuffer tests"
             continue
         if 'help' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, --help test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
             test['skip'] = True
+            test['skip_reason'] = "--help test skipped for automatic converted flatbuffer tests"
             continue
         #todo: 300 understand why is it failing
         # test 189, 312, 316, 318 and 319 depend on dsjson parser behaviour
@@ -600,6 +603,8 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
         # pdrop is not supported in fb, so 327-331 are excluded
         # 336, 337, 338 - the FB converter script seems to be affecting the invert_hash
         if str(test_id) in ('300', '189', '312', '316', '318', '319', '324', '325', '326', '327', '328', '329', '330', '331', '336', '337', '338'):
+            test['skip'] = True
+            test['skip_reason'] = "test skipped for automatic converted flatbuffer tests for unknown reason"
             continue
 
         # test id is being used as an index here, not necessarily a contract
@@ -766,8 +771,8 @@ def main():
             command_line = "{} {}".format((vw_bin), (test['vw_command']))
             if not args.include_flatbuffers and not args.for_flatbuffers:
                 if '--flatbuffer' in test['vw_command']:
-                    print("{} is a flatbuffer test, can be run with --include_flatbuffers flag, Skipping...".format(test_number))
-                    continue
+                    test['skip'] = True
+                    test['skip_reason'] = "{} is a flatbuffer test, can be run with --include_flatbuffers flag".format(test_number)
         else:
             print("{} is an unknown type. Skipping...".format((test_number)))
             continue
@@ -786,6 +791,7 @@ def main():
                                      dependencies=dependencies,
                                      fuzzy_compare=args.fuzzy_compare,
                                      skip=test['skip'] if "skip" in test else False,
+                                     skip_reason=test['skip_reason'] if "skip_reason" in test else False,
                                      valgrind=args.valgrind))
 
     num_success = 0
@@ -821,8 +827,8 @@ def main():
             result_text = success_text
         elif result['result'] == Result.FAIL:
             result_text = fail_text
-        else:
-            result_text = skipped_text
+        elif result['result'] == Result.SKIPPED:
+            result_text = skipped_text + " ({})".format(result['skip_reason'] if result['skip_reason'] is not None else "unknown reason")
 
         print("Test {}: {}".format((test_number), (result_text)))
         if not result['result'] == Result.SUCCESS:

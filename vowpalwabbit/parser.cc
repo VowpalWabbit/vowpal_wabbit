@@ -92,8 +92,6 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     return (counter > after);
 }
 
-void set_compressed(parser* /*par*/) {}
-
 uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
 {
   size_t v_length;
@@ -127,10 +125,6 @@ void set_cache_reader(vw& all) { all.example_parser->reader = read_cached_featur
 void set_string_reader(vw& all)
 {
   all.example_parser->reader = read_features_string;
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  all.print = print_result;
-  VW_WARNING_STATE_POP
   all.print_by_ref = print_result_by_ref;
 }
 
@@ -173,10 +167,6 @@ void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
   if (all.example_parser->input->isbinary())
   {
     all.example_parser->reader = read_cached_features;
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_DEPRECATED_USAGE
-    all.print = binary_print_result;
-    VW_WARNING_STATE_POP
     all.print_by_ref = binary_print_result_by_ref;
   }
   else if (json || dsjson)
@@ -259,8 +249,6 @@ void reset_source(vw& all, size_t numbits)
     }
   }
 }
-
-void finalize_source(parser*) {}
 
 void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
@@ -938,10 +926,6 @@ size_t get_feature_number(example* ec) { return ec->get_num_features(); }
 
 float get_confidence(example* ec) { return ec->confidence; }
 }  // namespace VW
-
-void adjust_used_index(vw&)
-{ /* no longer used */
-}
 
 namespace VW
 {
