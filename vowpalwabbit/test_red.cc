@@ -479,27 +479,16 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
   assert(data.all->weights.sparse == false);
   if (data.cm.county > 1998 && data.cm.county <= 2000)
   {
-    // helper::print_weights_nonzero(data.cm.county, data.all->weights.dense_weights);
-    if (data.cm.county == 119)
-    {
-      // clear operation
-      // data.all->weights.dense_weights.set_zero(8);
-      // data.all->weights.dense_weights.set_zero(8 + 1);
-      // data.all->weights.dense_weights.set_zero(8 + 2);
-      // data.all->weights.dense_weights.set_zero(8 + 3);
+    //** clear operation
+    // data.all->weights.dense_weights.clear_offset(3, data.all->wpp);
 
-      //** swap
-      // data.all->weights.dense_weights.swap_offsets(0,1);
+    //** swap
+    // data.all->weights.dense_weights.swap_offsets(0, 2, data.all->wpp);
 
-      //** copy / init with champs weights
+    //** copy / init with champs weights
+    // data.all->weights.dense_weights.copy_offsets(3, 0, data.all->wpp);
 
-      // data.all->weights.dense_weights.copy_offsets(data.cm.current_champ*4, 8);
-      // data.all->weights.dense_weights.copy_offsets(data.cm.current_champ*4+1, 8+1);
-      // data.all->weights.dense_weights.copy_offsets(data.cm.current_champ*4+2, 8+2);
-      // data.all->weights.dense_weights.copy_offsets(data.cm.current_champ*4+3, 8+3);
-
-      // helper::print_weights_nonzero(data.cm.county, data.all->weights.dense_weights);
-    }
+    // helper::print_weights_nonzero(data.all, data.cm.county, data.all->weights.dense_weights);
   }
 
   bool is_learn = true;
@@ -546,6 +535,8 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
   // extra: assert again just like at the top
   assert(data.all->interactions.empty() == true);
   assert(ec[0]->interactions == nullptr);
+
+  // if (data.cm.county > 1998) data.all->weights.dense_weights.clear_offset(3, data.all->wpp);
 }
 
 void persist(tr_data& data, metric_sink& metrics) { data.cm.persist(metrics); }
