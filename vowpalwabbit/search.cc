@@ -2518,11 +2518,10 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                       .keep()
                       .necessary()
                       .help("the search task (use \"--search_task list\" to get a list of available tasks)"));
-  new_options.add(
-      make_option("search_metatask", metatask_string)
-          .keep()
-          .help("the search metatask (use \"--search_metatask list\" to get a list of available metatasks."
-          " Note: a valid search_task needs to be supplied in addition for this to output.)"));
+  new_options.add(make_option("search_metatask", metatask_string)
+                      .keep()
+                      .help("the search metatask (use \"--search_metatask list\" to get a list of available metatasks."
+                            " Note: a valid search_task needs to be supplied in addition for this to output.)"));
   new_options.add(make_option("search_interpolation", interpolation_string)
                       .keep()
                       .help("at what level should interpolation happen? [*data|policy]"));
@@ -2681,7 +2680,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     // command line action, output directly to cerr
     std::vector<const char*> names;
     std::transform(all_tasks.begin(), all_tasks.end(), std::back_inserter(names),
-      [](const search_task* task){ return task->task_name;});
+        [](const search_task* task) { return task->task_name; });
     fmt::print(stderr, "available search tasks:\n  - {}\n", fmt::join(names, "\n  - "));
     exit(0);
   }
@@ -2690,7 +2689,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     // command line action, output directly to cerr
     std::vector<const char*> names;
     std::transform(all_metatasks.begin(), all_metatasks.end(), std::back_inserter(names),
-      [](const search_metatask* task){ return task->metatask_name;});
+        [](const search_metatask* task) { return task->metatask_name; });
     fmt::print(stderr, "available search metatasks:\n  - {}\n", fmt::join(names, "\n  - "));
     exit(0);
   }
@@ -2707,9 +2706,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (priv.task == nullptr)
   {
     if (!options.was_supplied("help"))
-    {
-      THROW("fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list");
-    }
+    { THROW("fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list"); }
   }
   priv.metatask = nullptr;
   for (auto* task : all_metatasks)
