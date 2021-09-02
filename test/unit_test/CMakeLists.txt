@@ -1,4 +1,5 @@
 add_executable(vw-unit-test.out
+  automl_test.cc
   cache_test.cc
   cats_test.cc
   cats_tree_tests.cc

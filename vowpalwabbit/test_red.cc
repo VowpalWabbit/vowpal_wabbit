@@ -21,47 +21,9 @@ namespace VW
 {
 namespace test_red
 {
-const size_t MAX_CONFIGS = 2;
+const size_t MAX_CONFIGS = 3;
 namespace helper
 {
-// // for debugging purposes
-// void print_interactions(example* ec)
-// {
-//   if (ec == nullptr) return;
-//   if (ec->interactions == nullptr) return;
-
-//   std::cerr << "p:";  // << ec->interactions;
-
-//   for (std::vector<namespace_index> v : *(ec->interactions))
-//   {
-//     for (namespace_index c : v) { std::cerr << " interaction:" << c << ","; }
-//   }
-//   std::cerr << std::endl;
-// }
-
-// // useful to understand what namespaces are used in the examples we are given
-// // this can evolve to feed in data to generate possible interactions
-// void print_all_namespaces_in_examples(multi_ex& exs)
-// {
-//   for (example* ex : exs)
-//   {
-//     for (auto i : ex->indices) { std::cerr << i << ", "; }
-//     std::cerr << std::endl;
-//   }
-// }
-
-// void print_all_preds(example& ex, size_t i)
-// {
-//   const auto& preds = ex.pred.a_s;
-//   std::cerr << "config_" << i << ": ";
-//   for (uint32_t i = 0; i < preds.size(); i++)
-//   {
-//     std::cerr << preds[i].action << "(" << preds[i].score << ")"
-//               << ", ";
-//   }
-//   std::cerr << std::endl;
-// }
-
 // add an interaction to an existing instance
 void add_interaction(
     std::vector<std::vector<namespace_index>>& interactions, namespace_index first, namespace_index second)
@@ -92,10 +54,10 @@ void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
   {
     assert(weights.stride_shift() == 2);
     auto real_index = it.index() >> weights.stride_shift();
-    if (MAX_CONFIGS > 4)
-      assert(all->wpp == 8);
-    else
-      assert(all->wpp == 4);
+    // if (MAX_CONFIGS > 4)
+    //   assert(all->wpp == 8);
+    // else
+    //   assert(all->wpp == 4);
 
     int type = real_index & (all->wpp - 1);
 
@@ -137,9 +99,9 @@ void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
 // size_t last_time_ran = 0; // in # of examples
 // }
 
-struct single_config
+struct scored_config
 {
-  single_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
+  scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
 
   void update(float w, float r)
   {
@@ -206,7 +168,7 @@ struct config_manager
   config_state current_state = Idle;
   size_t county = 0;
   size_t current_champ = 0;
-  single_config configs[MAX_CONFIGS];
+  scored_config configs[MAX_CONFIGS];
 
   size_t ns_counter[NUM_NAMESPACES] = {0};
 

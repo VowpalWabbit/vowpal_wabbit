@@ -125,4 +125,57 @@ std::vector<float> cb_sim::run_simulation(vw* vw, int num_iterations, bool do_le
   }
   return ctr;
 }
+std::vector<float> cb_sim::run_simulation_hook(
+    vw* vw, int num_iterations, callback_map& callbacks, bool do_learn, int shift)
+{
+  auto res = cb_sim::run_simulation(vw, num_iterations, do_learn, shift);
+
+  if (!callbacks.empty())
+  {
+    BOOST_TEST_MESSAGE("executing callbacks...");
+    for (auto it = callbacks.begin(); it != callbacks.end(); it++) { it->second(vw); }
+  }
+
+  return res;
+}
+
+std::vector<float> _test_helper(const std::string& vw_arg, int num_iterations, int seed)
+{
+  auto vw = VW::initialize(vw_arg);
+  simulator::cb_sim sim(seed);
+  auto ctr = sim.run_simulation(vw, num_iterations);
+  VW::finish(*vw);
+  return ctr;
+}
+
+std::vector<float> _test_helper_save_load(const std::string& vw_arg, int num_iterations, int seed)
+{
+  int split = 1500;
+  int before_save = num_iterations - split;
+
+  auto first_vw = VW::initialize(vw_arg);
+  simulator::cb_sim sim(seed);
+  // first chunk
+  auto ctr = sim.run_simulation(first_vw, before_save);
+  // save
+  std::string model_file = "test_save_load.vw";
+  VW::save_predictor(*first_vw, model_file);
+  VW::finish(*first_vw);
+  // reload in another instance
+  auto other_vw = VW::initialize("--quiet -i " + model_file);
+  // continue
+  ctr = sim.run_simulation(other_vw, split, true, before_save + 1);
+  VW::finish(*other_vw);
+  return ctr;
+}
+
+std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, int num_iterations, int seed)
+{
+  BOOST_CHECK(true);
+  auto* vw = VW::initialize(vw_arg);
+  simulator::cb_sim sim(seed);
+  auto ctr = sim.run_simulation_hook(vw, num_iterations, hooks);
+  VW::finish(*vw);
+  return ctr;
+}
 }  // namespace simulator

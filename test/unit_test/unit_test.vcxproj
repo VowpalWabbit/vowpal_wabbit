@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="automl_test.cc" />
     <ClCompile Include="cats_test.cc" />
     <ClCompile Include="cats_tree_tests.cc" />
     <ClCompile Include="cats_user_provided_pdf.cc" />

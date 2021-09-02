@@ -256,12 +256,12 @@ private:
   func_data finisher_fd;
   std::string name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
 
-  std::shared_ptr<void> learner_data;
 
   learner(){};  // Should only be able to construct a learner through
                 // init_learner function
 
 public:
+  std::shared_ptr<void> learner_data;  // oops for now
   prediction_type_t pred_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
