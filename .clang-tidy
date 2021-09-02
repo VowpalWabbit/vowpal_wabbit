@@ -1,3 +1,2 @@
-Checks: '-*,readability-braces-around-statements'
+Checks: '-*,readability-*,modernize-*,performance-*,-modernize-use-trailing-return-type,-readability-uppercase-literal-suffix'
 FormatStyle: file
-WarningsAsErrors: '-*,readability-braces-around-statements'

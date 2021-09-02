@@ -10,4 +10,4 @@ cd $REPO_DIR
 
 cat $REPO_DIR/build/compile_commands.json | \
     jq -r ".[] | select(.file | startswith(\"$REPO_DIR/vowpalwabbit\")) | .file" | \
-    xargs -n 1 -I {} clang-tidy -header-filter=$REPO_DIR/vowpalwabbit/* -p=build {}
+    xargs -n 1 -I {} clang-tidy --config="$(cat $REPO_DIR/.clang-tidy-ci)" -header-filter=$REPO_DIR/vowpalwabbit/* -p=build {}
