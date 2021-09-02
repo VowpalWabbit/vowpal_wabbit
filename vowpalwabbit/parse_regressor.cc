@@ -298,9 +298,11 @@ void save_load_header(
           file_options += " " + temp.str();
         }
         else
+        {
           *(all.trace_message) << "WARNING: this model file contains 'rank: " << rank
                                << "' value but it will be ignored as another value specified via the command line."
                                << std::endl;
+        }
       }
     }
 
