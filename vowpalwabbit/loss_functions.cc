@@ -65,7 +65,10 @@ public:
     return log((alternative - prediction) / (alternative - t)) / eta_t;
   }
 
-  float getSquareGrad(float prediction, float label) override { return 4.f * (prediction - label) * (prediction - label); }
+  float getSquareGrad(float prediction, float label) override
+  {
+    return 4.f * (prediction - label) * (prediction - label);
+  }
   float first_derivative(shared_data* sd, float prediction, float label) override
   {
     if (prediction < sd->min_label)
@@ -111,7 +114,10 @@ public:
     return (t - prediction) / ((alternative - prediction) * eta_t);
   }
 
-  float getSquareGrad(float prediction, float label) override { return 4.f * (prediction - label) * (prediction - label); }
+  float getSquareGrad(float prediction, float label) override
+  {
+    return 4.f * (prediction - label) * (prediction - label);
+  }
   float first_derivative(shared_data*, float prediction, float label) override { return 2.f * (prediction - label); }
   float second_derivative(shared_data*, float, float) override { return 2.; }
 };
@@ -151,7 +157,10 @@ public:
     return d * d;
   }
 
-  float first_derivative(shared_data*, float prediction, float label) override { return (label * prediction >= 1) ? 0 : -label; }
+  float first_derivative(shared_data*, float prediction, float label) override
+  {
+    return (label * prediction >= 1) ? 0 : -label;
+  }
 
   float second_derivative(shared_data*, float, float) override { return 0.; }
 };
