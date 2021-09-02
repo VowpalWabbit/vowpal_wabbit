@@ -1,4 +1,9 @@
 #include "simulator.h"
+#include "test_common.h"
+#include "vw.h"
+
+#include <numeric>
+#include <fmt/format.h>
 
 namespace simulator
 {
@@ -58,7 +63,7 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
 
 std::pair<std::string, float> cb_sim::get_action(vw* vw, const std::map<std::string, std::string>& context)
 {
-  std::vector<std::string> multi_ex_str = to_vw_example_format(context);
+  std::vector<std::string> multi_ex_str = cb_sim::to_vw_example_format(context, "");
   multi_ex examples;
   for (const std::string& ex : multi_ex_str) { examples.push_back(VW::read_example(*vw, ex)); }
   vw->predict(examples);

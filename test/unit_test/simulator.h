@@ -1,7 +1,10 @@
-#include "vw.h"
-#include "test_common.h"
-#include <numeric>
-#include <fmt/format.h>
+#pragma once
+
+#include <functional>
+#include <map>
+#include <vector>
+
+struct vw;
 
 namespace simulator
 {
