@@ -298,12 +298,13 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   auto* p_base = as_singleline(stack_builder.setup_base_learner());
   data->_p_base = p_base;
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(setup))
-    .set_prediction_type(prediction_type_t::pdf)
-    .set_label_type(label_type_t::continuous)
-    // .set_output_label_type(label_type_t::cb)
-    // .set_input_prediction_type(prediction_type_t::action_scores)
-    .build();
+  auto* l = VW::LEARNER::make_reduction_learner(
+      std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(setup))
+                .set_prediction_type(prediction_type_t::pdf)
+                .set_label_type(label_type_t::continuous)
+                // .set_output_label_type(label_type_t::cb)
+                // .set_input_prediction_type(prediction_type_t::action_scores)
+                .build();
   return make_base(*l);
 }
 
