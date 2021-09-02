@@ -5,6 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
+#include "test_common.h"
 #include "simulator.h"
 
 BOOST_AUTO_TEST_CASE(cpp_simulator_without_interaction)

@@ -1,4 +1,8 @@
 #include "simulator.h"
+#include "test_common.h"
+
+#include <numeric>
+#include <fmt/format.h>
 
 namespace simulator
 {

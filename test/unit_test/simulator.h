@@ -1,7 +1,6 @@
+#pragma once
+
 #include "vw.h"
-#include "test_common.h"
-#include <numeric>
-#include <fmt/format.h>
 
 namespace simulator
 {
