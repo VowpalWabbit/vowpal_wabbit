@@ -155,7 +155,7 @@ std::vector<std::size_t> sort_permutation(const IndexVec& index_vec, const ValVe
 }
 
 template <typename VecT, typename... Rest>
-size_t size_of_first_vec(const VecT& vec, Rest...)
+size_t size_of_first_vec(const VecT& vec, Rest&... /*rest*/)
 {
   return vec.size();
 }
@@ -167,14 +167,14 @@ void do_swap_for_all(size_t pos1, size_t pos2, VecT& vec)
 }
 
 template <typename VecT, typename... Rest>
-void do_swap_for_all(size_t pos1, size_t pos2, VecT& vec, Rest... rest)
+void do_swap_for_all(size_t pos1, size_t pos2, VecT& vec, Rest&... rest)
 {
   std::swap(vec[pos1], vec[pos2]);
   do_swap_for_all(pos1, pos2, rest...);
 }
 
 template <typename... VecTs>
-void apply_permutation_in_place(const std::vector<std::size_t>& dest_index_vec, VecTs... vecs)
+void apply_permutation_in_place(const std::vector<std::size_t>& dest_index_vec, VecTs&... vecs)
 {
   const auto size = size_of_first_vec(vecs...);
   assert(dest_index_vec.size() == size);
@@ -263,7 +263,7 @@ bool features::sort(uint64_t parse_mask)
     return (masked_index_first < masked_index_second) ||
         ((masked_index_first == masked_index_second) && (value_first < value_second));
   };
-  const auto flat_extents = VW::details::flatten_namespace_extents(namespace_extents, indicies.size());
+  auto flat_extents = VW::details::flatten_namespace_extents(namespace_extents, indicies.size());
   const auto dest_index_vec = sort_permutation(indicies, values, comparator);
   if (!space_names.empty()) { apply_permutation_in_place(dest_index_vec, values, indicies, flat_extents, space_names); }
   else
