@@ -236,7 +236,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto data = scoped_calloc_or_throw<pmf_to_pdf::reduction>();
+  auto data = VW::make_unique<pmf_to_pdf::reduction>();
 
   option_group_definition new_options("Convert discrete PMF into continuous PDF");
   new_options
@@ -295,13 +295,16 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   options.replace("tree_bandwidth", std::to_string(data->tree_bandwidth));
 
-  auto p_base = as_singleline(stack_builder.setup_base_learner());
+  auto* p_base = as_singleline(stack_builder.setup_base_learner());
   data->_p_base = p_base;
 
-  learner<pmf_to_pdf::reduction, example>& l =
-      init_learner(data, p_base, learn, predict, 1, prediction_type_t::pdf, stack_builder.get_setupfn_name(setup));
-
-  return make_base(l);
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(setup))
+    .set_prediction_type(prediction_type_t::pdf)
+    .set_label_type(label_type_t::continuous)
+    // .set_output_label_type(label_type_t::cb)
+    // .set_input_prediction_type(prediction_type_t::action_scores)
+    .build();
+  return make_base(*l);
 }
 
 }  // namespace pmf_to_pdf
