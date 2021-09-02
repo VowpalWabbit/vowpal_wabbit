@@ -5,6 +5,10 @@
 
 namespace simulator
 {
+// maps an int: # learned examples
+// with a function to 'test' at that point in time in the simulator
+using callback_map = typename std::map<int, std::function<bool(vw*)>>;
+
 class cb_sim
 {
   float USER_LIKED_ARTICLE = -1.f;
@@ -26,5 +30,10 @@ public:
   const std::string& choose_user();
   const std::string& choose_time_of_day();
   std::vector<float> run_simulation(vw*, int, bool = true, int = 1);
+  std::vector<float> run_simulation_hook(vw*, int, callback_map&, bool = true, int = 1);
 };
+
+std::vector<float> _test_helper(const std::string&, int = 3000, int = 10);
+std::vector<float> _test_helper_save_load(const std::string&, int = 3000, int = 10);
+std::vector<float> _test_helper_hook(const std::string&, callback_map&, int = 3000, int = 10);
 }  // namespace simulator
