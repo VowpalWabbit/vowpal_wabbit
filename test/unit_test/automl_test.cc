@@ -5,6 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
+#include "test_common.h"
 #include "simulator.h"
 #include "test_red.cc"
 #include "constant.h"
