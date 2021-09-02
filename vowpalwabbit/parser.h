@@ -110,6 +110,7 @@ struct dsjson_metrics
   size_t NumberOfSkippedEvents = 0;
   size_t NumberOfEventsZeroActions = 0;
   size_t LineParseError = 0;
+  float DsjsonSumCostOriginal = 0.f;
   std::string FirstEventId;
   std::string FirstEventTime;
   std::string LastEventId;
@@ -118,17 +119,10 @@ struct dsjson_metrics
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
 
-VW_DEPRECATED("Function is no longer used. This will be removed in VW 9.0.")
-void adjust_used_index(vw& all);
-
 // parser control
 void lock_done(parser& p);
 void set_done(vw& all);
 
 // source control functions
 void reset_source(vw& all, size_t numbits);
-VW_DEPRECATED("Function is no longer used. This will be removed in VW 9.0.")
-void finalize_source(parser* source);
-VW_DEPRECATED("Function is no longer used. This will be removed in VW 9.0.")
-void set_compressed(parser* par);
 void free_parser(vw& all);

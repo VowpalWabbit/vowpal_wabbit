@@ -92,8 +92,6 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     return (counter > after);
 }
 
-void set_compressed(parser* /*par*/) {}
-
 uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
 {
   size_t v_length;
@@ -127,10 +125,6 @@ void set_cache_reader(vw& all) { all.example_parser->reader = read_cached_featur
 void set_string_reader(vw& all)
 {
   all.example_parser->reader = read_features_string;
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  all.print = print_result;
-  VW_WARNING_STATE_POP
   all.print_by_ref = print_result_by_ref;
 }
 
@@ -173,10 +167,6 @@ void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
   if (all.example_parser->input->isbinary())
   {
     all.example_parser->reader = read_cached_features;
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_DEPRECATED_USAGE
-    all.print = binary_print_result;
-    VW_WARNING_STATE_POP
     all.print_by_ref = binary_print_result_by_ref;
   }
   else if (json || dsjson)
@@ -192,7 +182,6 @@ void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
 void reset_source(vw& all, size_t numbits)
 {
   io_buf* input = all.example_parser->input.get();
-  input->current = 0;
 
   // If in write cache mode then close all of the input files then open the written cache as the new input.
   if (all.example_parser->write_cache)
@@ -251,16 +240,15 @@ void reset_source(vw& all, size_t numbits)
     }
     else
     {
+      if (!input->is_resettable()) { THROW("Cannot reset source as it is a non-resettable input type.") }
+      input->reset();
       for (auto& file : input->get_input_files())
       {
-        input->reset_file(file.get());
-        if (cache_numbits(input, file.get()) < numbits) THROW("argh, a bug in caching of some sort!");
+        if (cache_numbits(input, file.get()) < numbits) { THROW("argh, a bug in caching of some sort!") }
       }
     }
   }
 }
-
-void finalize_source(parser*) {}
 
 void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
@@ -352,7 +340,6 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options)
 {
-  all.example_parser->input->current = 0;
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   // default text reader
@@ -453,7 +440,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       // learning state to be shared across children
       shared_data* sd = static_cast<shared_data*>(
           mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
-      memcpy(sd, all.sd, sizeof(shared_data));
+      new (sd) shared_data(*all.sd);
       free(all.sd);
       all.sd = sd;
       all.example_parser->_shared_data = sd;
@@ -939,10 +926,6 @@ size_t get_feature_number(example* ec) { return ec->get_num_features(); }
 
 float get_confidence(example* ec) { return ec->confidence; }
 }  // namespace VW
-
-void adjust_used_index(vw&)
-{ /* no longer used */
-}
 
 namespace VW
 {
