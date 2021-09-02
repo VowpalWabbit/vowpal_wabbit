@@ -1,11 +1,18 @@
 #pragma once
 
+#ifndef STATIC_LINK_VW
+#  define BOOST_TEST_DYN_LINK
+#endif
+
+#include <boost/test/unit_test.hpp>
+#include <boost/test/test_tools.hpp>
+
+#include "test_common.h"
+
 #include <functional>
 #include <map>
 #include <vector>
 #include <string>
-
-#include "test_common.h"
 
 struct vw;
 
