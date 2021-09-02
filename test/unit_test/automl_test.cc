@@ -88,45 +88,47 @@ bool weights_offset_test(vw* all)
   for (auto index : feature_indexes)
   {
     BOOST_CHECK_NE(ZERO, weights.strided_index(index));
-    float w1 = weights.strided_index(index+offset_to_clear);
-    float w2 = weights.strided_index(index+offset_to_clear+1);
+    float w1 = weights.strided_index(index + offset_to_clear);
+    float w2 = weights.strided_index(index + offset_to_clear + 1);
     BOOST_CHECK_NE(ZERO, w1);
     BOOST_CHECK_NE(ZERO, w2);
   }
   // this will break once offset 0 stops being hard-coded to empty interactions
   BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index));
-  BOOST_CHECK_CLOSE(expected_w1, weights.strided_index(interaction_index+offset_to_clear), FLOAT_TOL);
-  BOOST_CHECK_CLOSE(expected_w2, weights.strided_index(interaction_index+offset_to_clear+1), FLOAT_TOL);
+  BOOST_CHECK_CLOSE(expected_w1, weights.strided_index(interaction_index + offset_to_clear), FLOAT_TOL);
+  BOOST_CHECK_CLOSE(expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), FLOAT_TOL);
 
   // all weights of offset 1 will be set to zero
   weights.clear_offset(offset_to_clear, all->wpp);
 
-  for (auto index : feature_indexes) {
+  for (auto index : feature_indexes)
+  {
     BOOST_CHECK_NE(ZERO, weights.strided_index(index));
-    float w1 = weights.strided_index(index+offset_to_clear);
-    float w2 = weights.strided_index(index+offset_to_clear+1);
+    float w1 = weights.strided_index(index + offset_to_clear);
+    float w2 = weights.strided_index(index + offset_to_clear + 1);
     BOOST_CHECK_EQUAL(ZERO, w1);
     BOOST_CHECK_NE(ZERO, w2);
     BOOST_CHECK_NE(ZERO, w2);
   }
   BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index));
-  BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index+offset_to_clear));
-  BOOST_CHECK_CLOSE(expected_w2, weights.strided_index(interaction_index+offset_to_clear+1), FLOAT_TOL);
+  BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index + offset_to_clear));
+  BOOST_CHECK_CLOSE(expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), FLOAT_TOL);
 
   // copy from offset 2 to offset 1
-  weights.copy_offsets(offset_to_clear+1, offset_to_clear, all->wpp);
+  weights.copy_offsets(offset_to_clear + 1, offset_to_clear, all->wpp);
 
-  for (auto index : feature_indexes) {
+  for (auto index : feature_indexes)
+  {
     BOOST_CHECK_NE(ZERO, weights.strided_index(index));
-    float w1 = weights.strided_index(index+offset_to_clear);
-    float w2 = weights.strided_index(index+offset_to_clear+1);
+    float w1 = weights.strided_index(index + offset_to_clear);
+    float w2 = weights.strided_index(index + offset_to_clear + 1);
     BOOST_CHECK_NE(ZERO, w1);
     BOOST_CHECK_NE(ZERO, w2);
     BOOST_CHECK_EQUAL(w1, w2);
   }
   BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index));
-  float actual_w1 = weights.strided_index(interaction_index+offset_to_clear);
-  float actual_w2 = weights.strided_index(interaction_index+offset_to_clear+1);
+  float actual_w1 = weights.strided_index(interaction_index + offset_to_clear);
+  float actual_w2 = weights.strided_index(interaction_index + offset_to_clear + 1);
   BOOST_CHECK_CLOSE(expected_w2, actual_w1, FLOAT_TOL);
   BOOST_CHECK_CLOSE(expected_w2, actual_w2, FLOAT_TOL);
   BOOST_CHECK_EQUAL(actual_w1, actual_w2);
@@ -164,8 +166,8 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
 BOOST_AUTO_TEST_CASE(automl_save_load)
 {
   callback_map empty_hooks;
-  auto ctr = simulator::_test_helper_hook(
-      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", empty_hooks);
+  auto ctr =
+      simulator::_test_helper_hook("--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", empty_hooks);
   float without_save = ctr.back();
   BOOST_CHECK_GT(without_save, 0.7f);
 
