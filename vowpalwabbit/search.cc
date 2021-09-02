@@ -41,12 +41,11 @@ namespace Search
 {
 using byte_array = std::unique_ptr<uint8_t[]>;
 
-search_task* all_tasks[] = {&SequenceTask::task, &SequenceSpanTask::task, &SequenceTaskCostToGo::task,
+std::array<search_task*, 10> all_tasks = {&SequenceTask::task, &SequenceSpanTask::task, &SequenceTaskCostToGo::task,
     &ArgmaxTask::task, &SequenceTask_DemoLDF::task, &MulticlassTask::task, &DepParserTask::task,
-    &EntityRelationTask::task, &HookTask::task, &GraphTask::task, nullptr};  // must nullptr terminate!
+    &EntityRelationTask::task, &HookTask::task, &GraphTask::task};
 
-search_metatask* all_metatasks[] = {
-    &DebugMT::metatask, &SelectiveBranchingMT::metatask, nullptr};  // must nullptr terminate!
+std::array<search_metatask*, 2> all_metatasks = {&DebugMT::metatask, &SelectiveBranchingMT::metatask};
 
 constexpr bool PRINT_UPDATE_EVERY_EXAMPLE = false;
 constexpr bool PRINT_UPDATE_EVERY_PASS = false;
@@ -2522,7 +2521,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   new_options.add(
       make_option("search_metatask", metatask_string)
           .keep()
-          .help("the search metatask (use \"--search_metatask list\" to get a list of available metatasks)"));
+          .help("the search metatask (use \"--search_metatask list\" to get a list of available metatasks."
+          " Note: a valid search_task needs to be supplied in addition for this to output.)"));
   new_options.add(make_option("search_interpolation", interpolation_string)
                       .keep()
                       .help("at what level should interpolation happen? [*data|policy]"));
@@ -2582,27 +2582,27 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   parse_neighbor_features(neighbor_features_string, *sch.get());
 
-  if (interpolation_string.compare("data") == 0)  // run as dagger
+  if (interpolation_string == "data")  // run as dagger
   {
     priv.adaptive_beta = true;
     priv.allow_current_policy = true;
     priv.passes_per_policy = all.numpasses;
     if (priv.current_policy > 1) priv.current_policy = 1;
   }
-  else if (interpolation_string.compare("policy") == 0)
+  else if (interpolation_string == "policy")
     ;
   else
     THROW("error: --search_interpolation must be 'data' or 'policy'");
 
-  if ((rollout_string.compare("policy") == 0) || (rollout_string.compare("learn") == 0))
+  if ((rollout_string == "policy") || (rollout_string == "learn"))
     priv.rollout_method = POLICY;
-  else if ((rollout_string.compare("oracle") == 0) || (rollout_string.compare("ref") == 0))
+  else if ((rollout_string == "oracle") || (rollout_string == "ref"))
     priv.rollout_method = ORACLE;
-  else if ((rollout_string.compare("mix_per_state") == 0))
+  else if ((rollout_string == "mix_per_state"))
     priv.rollout_method = MIX_PER_STATE;
-  else if ((rollout_string.compare("mix_per_roll") == 0) || (rollout_string.compare("mix") == 0))
+  else if ((rollout_string == "mix_per_roll") || (rollout_string == "mix"))
     priv.rollout_method = MIX_PER_ROLL;
-  else if ((rollout_string.compare("none") == 0))
+  else if ((rollout_string == "none"))
   {
     priv.rollout_method = NO_ROLLOUT;
     priv.no_caching = true;
@@ -2610,13 +2610,13 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   else
     THROW("error: --search_rollout must be 'learn', 'ref', 'mix', 'mix_per_state' or 'none'");
 
-  if ((rollin_string.compare("policy") == 0) || (rollin_string.compare("learn") == 0))
+  if ((rollin_string == "policy") || (rollin_string == "learn"))
     priv.rollin_method = POLICY;
-  else if ((rollin_string.compare("oracle") == 0) || (rollin_string.compare("ref") == 0))
+  else if ((rollin_string == "oracle") || (rollin_string == "ref"))
     priv.rollin_method = ORACLE;
-  else if ((rollin_string.compare("mix_per_state") == 0))
+  else if ((rollin_string == "mix_per_state"))
     priv.rollin_method = MIX_PER_STATE;
-  else if ((rollin_string.compare("mix_per_roll") == 0) || (rollin_string.compare("mix") == 0))
+  else if ((rollin_string == "mix_per_roll") || (rollin_string == "mix"))
     priv.rollin_method = MIX_PER_ROLL;
   else
     THROW("error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'");
@@ -2676,44 +2676,51 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   cdbg << "search current_policy = " << priv.current_policy
        << " total_number_of_policies = " << priv.total_number_of_policies << endl;
 
-  if (task_string.compare("list") == 0)
+  if (task_string == "list")
   {
     // command line action, output directly to cerr
-    std::cerr << endl << "available search tasks:" << endl;
-    for (search_task** mytask = all_tasks; *mytask != nullptr; mytask++)
-      std::cerr << "  " << (*mytask)->task_name << endl;
-    std::cerr << endl;
+    std::vector<const char*> names;
+    std::transform(all_tasks.begin(), all_tasks.end(), std::back_inserter(names),
+      [](const search_task* task){ return task->task_name;});
+    fmt::print(stderr, "available search tasks:\n  - {}\n", fmt::join(names, "\n  - "));
     exit(0);
   }
-  if (metatask_string.compare("list") == 0)
+  if (metatask_string == "list")
   {
     // command line action, output directly to cerr
-    std::cerr << endl << "available search metatasks:" << endl;
-    for (search_metatask** mytask = all_metatasks; *mytask != nullptr; mytask++)
-      std::cerr << "  " << (*mytask)->metatask_name << endl;
-    std::cerr << endl;
+    std::vector<const char*> names;
+    std::transform(all_metatasks.begin(), all_metatasks.end(), std::back_inserter(names),
+      [](const search_metatask* task){ return task->metatask_name;});
+    fmt::print(stderr, "available search metatasks:\n  - {}\n", fmt::join(names, "\n  - "));
     exit(0);
   }
-  for (search_task** mytask = all_tasks; *mytask != nullptr; mytask++)
-    if (task_string.compare((*mytask)->task_name) == 0)
+  for (auto* task : all_tasks)
+  {
+    if (task_string == task->task_name)
     {
-      priv.task = *mytask;
-      sch->task_name = (*mytask)->task_name;
+      priv.task = task;
+      sch->task_name = task->task_name;
       break;
     }
+  }
+
   if (priv.task == nullptr)
   {
     if (!options.was_supplied("help"))
+    {
       THROW("fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list");
+    }
   }
   priv.metatask = nullptr;
-  for (search_metatask** mytask = all_metatasks; *mytask != nullptr; mytask++)
-    if (metatask_string.compare((*mytask)->metatask_name) == 0)
+  for (auto* task : all_metatasks)
+  {
+    if (metatask_string == task->metatask_name)
     {
-      priv.metatask = *mytask;
-      sch->metatask_name = (*mytask)->metatask_name;
+      priv.metatask = task;
+      sch->metatask_name = task->metatask_name;
       break;
     }
+  }
   all.example_parser->emptylines_separate_examples = true;
 
   if (!options.was_supplied("csoaa") && !options.was_supplied("cs_active") && !options.was_supplied("csoaa_ldf") &&
