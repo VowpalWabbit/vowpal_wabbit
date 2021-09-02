@@ -8,8 +8,12 @@ table Feature {
 
 table Namespace {
   name:string;
+  /// The index of the namespace which is either the first character of the namespace
+  /// string or a reserved namespace identifier.
   hash:uint8;
   features:[Feature];
+  /// The 64 bit hash of the full namespace string.
+  full_hash:uint64;
 }
 
 table SimpleLabel {

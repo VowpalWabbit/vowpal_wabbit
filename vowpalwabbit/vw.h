@@ -63,11 +63,6 @@ vw* initialize_with_builder(std::string s, io_buf* model = nullptr, bool skipMod
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
 
-VW_DEPRECATED(
-    "By value version is deprecated, pass std::string by const ref instead using `to_argv`. This will be removed in VW "
-    "9.0.")
-char** get_argv_from_string(std::string s, int& argc);
-
 // The argv array from both of these functions must be freed.
 char** to_argv(std::string const& s, int& argc);
 char** to_argv_escaped(std::string const& s, int& argc);
@@ -105,19 +100,12 @@ example* read_example(vw& all, const std::string& example_line);
 // after you create and fill feature_spaces, get an example with everything filled in.
 example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len);
 
-// callers must free memory using dealloc_example
+// callers must free memory using dealloc_examples
 // this interface must be used with care as finish_example is a no-op for these examples.
 // thus any delay introduced when freeing examples must be at least as long as the one
 // introduced by all.l->finish_example implementations.
 // e.g. multiline examples as used by cb_adf must not be released before the finishing newline example.
-VW_DEPRECATED("label size is no longer used, please use the other overload. This will be removed in VW 9.0.")
-example* alloc_examples(size_t, size_t count);
 example* alloc_examples(size_t count);
-VW_DEPRECATED(
-    "This interface is deprecated and unsafe. Deletion function pointers are no longer needed. Please use "
-    "dealloc_examples. This will be removed in VW 9.0.")
-void dealloc_example(void (*delete_label)(polylabel*), example& ec, void (*delete_prediction)(void*) = nullptr);
-
 void dealloc_examples(example* example_ptr, size_t count);
 
 void parse_example_label(vw& all, example& ec, std::string label);
@@ -150,16 +138,6 @@ void finish_example(vw& all, example& ec);
 void finish_example(vw& all, multi_ex& ec);
 void empty_example(vw& all, example& ec);
 
-VW_DEPRECATED(
-    "label size or copy_label are no longer used, please use the other overload. This will be removed in VW 9.0.")
-void copy_example_data(bool audit, example*, example*, size_t, void (*copy_label)(polylabel*, polylabel*));
-VW_DEPRECATED("copy_label is no longer required. Use copy_example_data_with_label")
-void copy_example_data(bool audit, example*, example*, void (*copy_label)(polylabel*, polylabel*));
-
-VW_DEPRECATED("Use the overload without audit and with added const. This will be removed in VW 9.0.")
-void copy_example_metadata(bool audit, example*, example*);
-VW_DEPRECATED("Use the overload without audit and with added const. This will be removed in VW 9.0.")
-void copy_example_data(bool audit, example*, example*);  // metadata + features, don't copy the label
 void move_feature_namespace(example* dst, example* src, namespace_index c);
 
 void copy_example_metadata(example*, const example*);

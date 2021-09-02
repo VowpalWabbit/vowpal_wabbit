@@ -29,5 +29,3 @@ steps:
   displayName: RunTest flatbuffers C++
 - bash: ./.scripts/linux/java.sh
   displayName: Build + test Java
-- bash: ./.scripts/linux/python36.sh
-  displayName: Build + test Python 3.6

@@ -56,11 +56,13 @@
     <ClCompile Include="custom_reduction_test.cc" />
     <ClCompile Include="minimal_custom_reduction.cc" />
     <ClCompile Include="scope_exit_test.cc" />
+    <ClCompile Include="simulator.cc" />
     <ClCompile Include="slates_parser_test.cc" />
     <ClCompile Include="slates_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />
     <ClCompile Include="tag_utils_test.cc" />
     <ClCompile Include="test_common.cc" />
+    <ClCompile Include="tutorial_test.cc" />
     <ClCompile Include="v_array_test.cc" />
     <ClCompile Include="vwdll_test.cc" />
     <ClCompile Include="weights_test.cc" />
@@ -74,6 +76,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="simulator.h" />
     <ClInclude Include="test_common.h" />
   </ItemGroup>
   <ItemGroup>
