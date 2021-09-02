@@ -1,6 +1,10 @@
 #pragma once
 
-#include "vw.h"
+#include <functional>
+#include <map>
+#include <vector>
+
+struct vw;
 
 namespace simulator
 {
