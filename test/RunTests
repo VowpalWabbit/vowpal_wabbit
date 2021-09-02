@@ -1613,7 +1613,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 
 # Test 160: test --bootstrap & --oaa interaction
 # (Also adds -q :: and -P1 to get & verify perfect predictions in 2nd pass)
-{VW} -d train-sets/multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions  -c -k --passes 2 --holdout_off -P1
+{VW} -d train-sets/multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions -c -k --passes 2 --holdout_off -P1
     train-sets/ref/bootstrap_and_oaa.stderr
 
 # Test 161: --classweight
@@ -2494,5 +2494,13 @@ train-sets/ref/slates_simple_w_interactions.stderr
 {VW} --cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -i models/cats_train.model -p cats_load.predict --save_resume
     train-sets/ref/cats_load.stderr
     pred-sets/ref/cats_load.predict
+
+# Test 349: model with corrupted weights gd.cc
+./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd.model
+    train-sets/ref/corrupt_weights_gd.stderr
+
+# Test 350: model with corrupted weights gd_mf.cc
+./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd_mf.model
+    train-sets/ref/corrupt_weights_gd_mf.stderr
 
 # Do not delete this line or the empty line above it
