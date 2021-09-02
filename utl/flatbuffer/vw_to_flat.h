@@ -84,4 +84,7 @@ private:
   void write_collection_to_file(bool is_multiline, std::ofstream& outfile);
   void write_to_file(bool collection, bool is_multiline, MultiExampleBuilder& multi_ex_builder,
       ExampleBuilder& ex_builder, std::ofstream& outfile);
+
+  flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> create_namespace(
+      features::audit_iterator begin, features::audit_iterator end, namespace_index index, uint64_t hash, bool audit);
 };

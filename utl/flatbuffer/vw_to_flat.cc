@@ -291,6 +291,69 @@ void to_flat::create_no_label(example* v, ExampleBuilder& ex_builder)
   ex_builder.label = VW::parsers::flatbuffer::Createno_label(_builder, (uint8_t)'\000').Union();
 }
 
+flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespace(
+    features::audit_iterator begin, features::audit_iterator end, namespace_index index, uint64_t hash, bool audit)
+{
+  std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
+  std::stringstream ss;
+  ss << index;
+
+  for (auto it = begin; it != end; ++it) { ss << it.index() << it.value(); }
+  ss << ":" << hash;
+
+  std::string s = ss.str();
+  uint64_t refid = uniform_hash(s.c_str(), s.size(), 0);
+  const auto find_ns_offset = _share_examples.find(refid);
+
+  if (find_ns_offset == _share_examples.end())
+  {
+    flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> namespace_offset;
+    // new namespace
+    if (audit)
+    {
+      std::string ns_name;
+      for (auto it = begin; it != end; ++it)
+      {
+        ns_name = it.audit()->first;
+        fts.push_back(
+            VW::parsers::flatbuffer::CreateFeatureDirect(_builder, it.audit()->second.c_str(), it.value(), it.index()));
+      }
+      namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), index, &fts, hash);
+    }
+    else
+    {
+      for (auto it = begin; it != end; ++it)
+      { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, it.value(), it.index())); }
+      namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, index, &fts, hash);
+    }
+    _share_examples[refid] = namespace_offset;
+  }
+
+  return _share_examples[refid];
+}
+
+std::vector<VW::namespace_extent> unflatten_namespace_extents_dont_skip(
+    const std::vector<std::pair<bool, uint64_t>>& extents)
+{
+  if (extents.empty()) { return {}; }
+  std::vector<VW::namespace_extent> results;
+  auto last_start = std::size_t{0};
+  auto current = extents[0];
+  for (auto i = std::size_t{1}; i < extents.size(); ++i)
+  {
+    if (current != extents[i])
+    {
+      // Check if it was a valid sequence, or an empty segment.
+      results.emplace_back(last_start, i, current.second);
+      last_start = i;
+      current = extents[i];
+    }
+  }
+
+  results.emplace_back(last_start, extents.size(), current.second);
+  return results;
+}
+
 void to_flat::convert_txt_to_flat(vw& all)
 {
   std::ofstream outfile;
@@ -358,47 +421,19 @@ void to_flat::convert_txt_to_flat(vw& all)
       // Skip over constant namespace as that will be assigned while reading flatbuffer again
       if (ns == 128) { continue; }
 
-      std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
+      // Not all features exist in an extent - so we reform the extents list to one which contains non-hash-extents so
+      // we can add all of these segments.
+      auto flattened_extents =
+          VW::details::flatten_namespace_extents(ae->feature_space[ns].namespace_extents, ae->feature_space[ns].size());
+      auto unflattened_with_ranges_that_dont_have_extents = unflatten_namespace_extents_dont_skip(flattened_extents);
 
-      std::stringstream ss;
-      ss << ns;
-
-      for (features::iterator& f : ae->feature_space[ns]) { ss << f.index() << f.value(); }
-
-      std::string s = ss.str();
-      uint64_t refid = uniform_hash(s.c_str(), s.size(), 0);
-      flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> namespace_offset;
-      auto find_ns_offset = _share_examples.find(refid);
-
-      if (find_ns_offset == _share_examples.end())
+      for (const auto& extent : unflattened_with_ranges_that_dont_have_extents)
       {
-        // new namespace
-        if (all.audit || all.hash_inv)
-        {
-          auto& ns_fts = ae->feature_space[ns];
-          std::string ns_name;
-          for (const auto& f : ns_fts.audit_range())
-          {
-            ns_name = f.audit()->first;
-            fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(
-                _builder, f.audit()->second.c_str(), f.value(), f.index()));
-          }
-          namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, ns_name.c_str(), ns, &fts);
-        }
-        else
-        {
-          for (features::iterator& f : ae->feature_space[ns])
-          { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, f.value(), f.index())); }
-          namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, ns, &fts);
-        }
-        _share_examples[refid] = namespace_offset;
+        // The extent hash for a non-hash-extent will be 0, which is the same as the field no existing to flatbuffers.
+        auto created_ns = create_namespace(ae->feature_space[ns].audit_begin() + extent.begin_index,
+            ae->feature_space[ns].audit_begin() + extent.end_index, ns, extent.hash, all.audit || all.hash_inv);
+        namespaces.push_back(created_ns);
       }
-      else
-      {
-        // offset already exists
-        namespace_offset = find_ns_offset->second;
-      }
-      namespaces.push_back(namespace_offset);
     }
     std::string tag(ae->tag.begin(), ae->tag.size());
 

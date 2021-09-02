@@ -1655,6 +1655,9 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
 
   BaseState<audit>* current_state = handler.current_state();
 
+  // The stack of namespaces must be drained so there are no half extents left around.
+  while (!handler.ctx.namespace_path.empty()) { handler.ctx.PopNamespace(); }
+
   THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
                                 << ". "
                                    "Handler: "
@@ -1719,6 +1722,9 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   if (result.IsError())
   {
     BaseState<audit>* current_state = handler.current_state();
+
+    // The stack of namespaces must be drained so there are no half extents left around.
+    while (!handler.ctx.namespace_path.empty()) { handler.ctx.PopNamespace(); }
 
     if (all.example_parser->strict_parse)
     {
