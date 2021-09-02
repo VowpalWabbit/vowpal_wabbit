@@ -68,6 +68,17 @@ void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespa
   n.ftrs = ex->feature_space.data() + ns[0];
   n.feature_count = 0;
   n.name = ns;
+
+  if (!namespaces.empty())
+  {
+    // Close last
+    auto& top = namespaces.back();
+    if (!top.ftrs->namespace_extents.empty() && top.ftrs->namespace_extents.back().end_index == 0)
+    { top.ftrs->end_ns_extent(); }
+  }
+  // Add new
+  n.ftrs->start_ns_extent(n.namespace_hash);
+
   namespaces.push_back(std::move(n));
 }
 
@@ -82,5 +93,13 @@ void pop_ns(example* ex, std::vector<Namespace<audit>>& namespaces)
     if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
     { ex->indices.push_back(feature_group); }
   }
+
+  ns.ftrs->end_ns_extent();
   namespaces.pop_back();
+
+  if (!namespaces.empty())
+  {
+    auto& top = namespaces.back();
+    top.ftrs->start_ns_extent(top.namespace_hash);
+  }
 }

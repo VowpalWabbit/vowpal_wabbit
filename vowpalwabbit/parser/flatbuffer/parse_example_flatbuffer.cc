@@ -162,24 +162,46 @@ void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
   _multi_ex_index++;
 }
 
-void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
+namespace_index get_namespace_index(const Namespace* ns)
 {
-  namespace_index temp_index;
+  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME)) { return static_cast<uint8_t>(ns->name()->c_str()[0]); }
+  else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_HASH))
+  {
+    return ns->hash();
+  }
+
+  THROW("Either name or hash field must be specified to get the namespace index.");
+}
+
+bool get_namespace_hash(vw* all, const Namespace* ns, uint64_t& hash)
+{
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
-    temp_index = static_cast<uint8_t>(ns->name()->c_str()[0]);
-    _c_hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
+    hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
+    return true;
   }
-  else
+  else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_FULL_HASH))
   {
-    temp_index = ns->hash();
+    hash = ns->full_hash();
+    return true;
   }
-  ae->indices.push_back(temp_index);
+  return false;
+}
 
-  auto& fs = ae->feature_space[temp_index];
+void parser::parse_namespaces(vw* all, example* ae, const Namespace* ns)
+{
+  const namespace_index index = get_namespace_index(ns);
+  uint64_t hash = 0;
+  const auto hash_found = get_namespace_hash(all, ns, hash);
+  if (hash_found) { _c_hash = hash; }
+  if (std::find(ae->indices.begin(), ae->indices.end(), index) == ae->indices.end()) { ae->indices.push_back(index); }
 
+  auto& fs = ae->feature_space[index];
+
+  if (hash_found) { fs.start_ns_extent(hash); }
   for (const auto& feature : *(ns->features()))
   { parse_features(all, fs, feature, (all->audit || all->hash_inv) ? ns->name() : nullptr); }
+  if (hash_found) { fs.end_ns_extent(); }
 }
 
 void parser::parse_features(vw* all, features& fs, const Feature* feature, const flatbuffers::String* ns)

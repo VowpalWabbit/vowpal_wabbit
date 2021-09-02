@@ -664,6 +664,11 @@ void setup_example(vw& all, example* ae)
   if (all.example_parser->write_cache)
   { VW::write_example_to_cache(*all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask); }
 
+  // Require all extents to be complete in an example.
+#ifndef NDEBUG
+  for (auto& fg : *ae) { assert(fg.validate_extents()); }
+#endif
+
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->reset_total_sum_feat_sq();
@@ -759,7 +764,7 @@ example* read_example(vw& all, const std::string& example_line) { return read_ex
 void add_constant_feature(vw& vw, example* ec)
 {
   ec->indices.push_back(constant_namespace);
-  ec->feature_space[constant_namespace].push_back(1, constant);
+  ec->feature_space[constant_namespace].push_back(1, constant, constant_namespace);
   ec->num_features++;
   if (vw.audit || vw.hash_inv)
     ec->feature_space[constant_namespace].space_names.push_back(audit_strings("", "Constant"));

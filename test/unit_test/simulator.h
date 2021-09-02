@@ -1,8 +1,18 @@
 #pragma once
 
+#ifndef STATIC_LINK_VW
+#  define BOOST_TEST_DYN_LINK
+#endif
+
+#include <boost/test/unit_test.hpp>
+#include <boost/test/test_tools.hpp>
+
+#include "test_common.h"
+
 #include <functional>
 #include <map>
 #include <vector>
+#include <string>
 
 struct vw;
 
@@ -14,11 +24,11 @@ using callback_map = typename std::map<int, std::function<bool(vw*)>>;
 
 class cb_sim
 {
-  float USER_LIKED_ARTICLE = -1.f;
-  float USER_DISLIKED_ARTICLE = 0.f;
-  std::vector<std::string> users{"Tom", "Anna"};
-  std::vector<std::string> times_of_day{"morning", "afternoon"};
-  std::vector<std::string> actions{"politics", "sports", "music", "food", "finance", "health", "camping"};
+  const float USER_LIKED_ARTICLE = -1.f;
+  const float USER_DISLIKED_ARTICLE = 0.f;
+  const std::vector<std::string> users;
+  const std::vector<std::string> times_of_day;
+  const std::vector<std::string> actions;
   int seed;
   float cost_sum = 0.f;
   std::vector<float> ctr;
@@ -27,7 +37,7 @@ public:
   cb_sim(int = 0);
   float get_cost(const std::map<std::string, std::string>&, const std::string&);
   std::vector<std::string> to_vw_example_format(
-      const std::map<std::string, std::string>&, const std::string& = "", float = 0.f, float = 0.f);
+      const std::map<std::string, std::string>&, const std::string&, float = 0.f, float = 0.f);
   std::pair<int, float> sample_custom_pmf(std::vector<float>& pmf);
   std::pair<std::string, float> get_action(vw* vw, const std::map<std::string, std::string>&);
   const std::string& choose_user();
