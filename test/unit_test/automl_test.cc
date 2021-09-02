@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
   test_hooks.emplace(1, weights_offset_test);
 
   auto ctr = simulator::_test_helper_hook(
-      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations);
+      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, (int)num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }

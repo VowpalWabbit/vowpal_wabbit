@@ -63,7 +63,7 @@ class Simulator:
                 return self.USER_DISLIKED_ARTICLE
 
     # This function modifies (context, action, cost, probability) to VW friendly format
-    def to_vw_example_format(self, context, actions, cb_label = None, ns1='G', ns2='T'):
+    def to_vw_example_format(self, context, actions, cb_label = None, ns1='U', ns2='A'):
         if ns1 == ns2:
             raise("not allowed to have same namespace")
 
@@ -222,12 +222,12 @@ def _test_helper_save_load(vw_arg: str, num_iterations=2000, seed=10, has_automl
 def test_with_interaction():
     import math
 
-    ctr = _test_helper(vw_arg="--invert_hash readable.vw --cb_explore_adf -q GT --quiet --epsilon 0.2 --random_seed 5")
+    ctr = _test_helper(vw_arg="--invert_hash readable.vw --cb_explore_adf -q UA --quiet --epsilon 0.2 --random_seed 5")
     without_save = ctr[-1]
 
     assert(without_save >= 0.70)
 
-    ctr = _test_helper_save_load(vw_arg="--save_resume --cb_explore_adf -q GT --quiet --epsilon 0.2 --random_seed 5")
+    ctr = _test_helper_save_load(vw_arg="--save_resume --cb_explore_adf -q UA --quiet --epsilon 0.2 --random_seed 5")
     with_save = ctr[-1]
 
     assert(with_save >= 0.70)
