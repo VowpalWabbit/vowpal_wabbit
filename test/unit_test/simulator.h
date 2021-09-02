@@ -17,11 +17,11 @@ using callback_map = typename std::map<int, std::function<bool(vw*)>>;
 
 class cb_sim
 {
-  float USER_LIKED_ARTICLE = -1.f;
-  float USER_DISLIKED_ARTICLE = 0.f;
-  const std::vector<std::string> users{"Tom", "Anna"};
-  const std::vector<std::string> times_of_day{"morning", "afternoon"};
-  const std::vector<std::string> actions{"politics", "sports", "music", "food", "finance", "health", "camping"};
+  const float USER_LIKED_ARTICLE = -1.f;
+  const float USER_DISLIKED_ARTICLE = 0.f;
+  const std::vector<std::string> users;
+  const std::vector<std::string> times_of_day;
+  const std::vector<std::string> actions;
   int seed;
   float cost_sum = 0.f;
   std::vector<float> ctr;

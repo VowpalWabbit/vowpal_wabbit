@@ -1,12 +1,19 @@
-#include "simulator.h"
 #include "vw.h"
+#include "simulator.h"
 
 #include <numeric>
 #include <fmt/format.h>
 
 namespace simulator
 {
-cb_sim::cb_sim(int seed) : seed(seed) { srand(seed); }
+cb_sim::cb_sim(int seed)
+    : seed(seed)
+    , users({"Tom", "Anna"})
+    , times_of_day({"morning", "afternoon"})
+    , actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
+{
+  srand(seed);
+}
 
 float cb_sim::get_cost(const std::map<std::string, std::string>& context, const std::string& action)
 {
