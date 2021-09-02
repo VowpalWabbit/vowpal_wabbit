@@ -1,5 +1,4 @@
 #include "simulator.h"
-#include "test_common.h"
 #include "vw.h"
 
 #include <numeric>

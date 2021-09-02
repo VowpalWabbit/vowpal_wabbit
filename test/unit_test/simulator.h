@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 
+#include "test_common.h"
+
 struct vw;
 
 namespace simulator
