@@ -27,7 +27,7 @@ public:
   cb_sim(int = 0);
   float get_cost(const std::map<std::string, std::string>&, const std::string&);
   std::vector<std::string> to_vw_example_format(
-      const std::map<std::string, std::string>&, const std::string& = "", float = 0.f, float = 0.f);
+      const std::map<std::string, std::string>&, const std::string&, float = 0.f, float = 0.f);
   std::pair<int, float> sample_custom_pmf(std::vector<float>& pmf);
   std::pair<std::string, float> get_action(vw* vw, const std::map<std::string, std::string>&);
   const std::string& choose_user();
