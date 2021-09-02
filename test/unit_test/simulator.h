@@ -3,6 +3,7 @@
 #include <functional>
 #include <map>
 #include <vector>
+#include <string>
 
 struct vw;
 
@@ -16,9 +17,9 @@ class cb_sim
 {
   float USER_LIKED_ARTICLE = -1.f;
   float USER_DISLIKED_ARTICLE = 0.f;
-  std::vector<std::string> users{"Tom", "Anna"};
-  std::vector<std::string> times_of_day{"morning", "afternoon"};
-  std::vector<std::string> actions{"politics", "sports", "music", "food", "finance", "health", "camping"};
+  const std::vector<std::string> users{"Tom", "Anna"};
+  const std::vector<std::string> times_of_day{"morning", "afternoon"};
+  const std::vector<std::string> actions{"politics", "sports", "music", "food", "finance", "health", "camping"};
   int seed;
   float cost_sum = 0.f;
   std::vector<float> ctr;
