@@ -35,7 +35,7 @@ struct sort_data
 
 struct stagewise_poly
 {
-  vw *all = nullptr;  // many uses, unmodular reduction
+  vw* all = nullptr;  // many uses, unmodular reduction
 
   float sched_exponent = 0.f;
   uint32_t batch_sz = 0;
