@@ -515,7 +515,7 @@ if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
 
   target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
   target_link_libraries(vw_c_wrapper PUBLIC VowpalWabbit::vw)
-  if(VW_INSTALL)
+  if(VW_INSTALL_LIB)
     install(
       TARGETS vw_c_wrapper
       EXPORT VowpalWabbitConfig
@@ -525,9 +525,9 @@ if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
   endif()
 endif()
 
-if(VW_INSTALL)
+if(VW_INSTALL_LIB)
   install(
-    TARGETS vw vw-bin allreduce vw_io
+    TARGETS vw allreduce vw_io
     EXPORT VowpalWabbitConfig
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -540,4 +540,13 @@ if(VW_INSTALL)
   install(
     FILES io/io_adapter.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vowpalwabbit/io
   )
+endif()
+
+if(VW_INSTALL)
+  install(
+    TARGETS vw-bin
+    EXPORT VowpalWabbitConfig
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()

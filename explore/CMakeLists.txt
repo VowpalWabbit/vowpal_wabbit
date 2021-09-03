@@ -20,7 +20,7 @@ target_sources(explore INTERFACE ${explore_all_headers})
 # Place the explore headers in their own folder in VS
 source_group(explore FILES ${explore_all_headers})
 
-if(VW_INSTALL)
+if(VW_INSTALL_LIB)
   install(
     TARGETS explore
     EXPORT VowpalWabbitConfig
