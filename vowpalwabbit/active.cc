@@ -160,12 +160,11 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
   }
   else
   {
+    all.active = true;
     learn_func = predict_or_learn_active<true>;
     pred_func = predict_or_learn_active<false>;
     learn_returns_prediction = base->learn_returns_prediction;
   }
-
-  all.active = true;
 
   // Create new learner
   auto reduction_builder = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name);
