@@ -151,3 +151,4 @@ vowpalwabbit/parser/flatbuffer/generated/example_generated.h
 #Test stderr/predict files
 test/flatbuffer/*.predict
 test/flatbuffer/*.stderr
+
