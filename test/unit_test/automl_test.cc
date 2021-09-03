@@ -13,6 +13,7 @@
 #include "simulator.h"
 #include "reductions_fwd.h"
 #include "test_red.cc"
+#include "metric_sink.h"
 #include "constant.h"
 
 #include <functional>
@@ -22,8 +23,20 @@ using simulator::callback_map;
 
 namespace automl_test
 {
-namespace helper
+namespace ut_helper
 {
+void assert_metric(const std::string& metric_name, const size_t value, const VW::metric_sink& metrics)
+{
+  auto it = std::find_if(metrics.int_metrics_list.begin(), metrics.int_metrics_list.end(),
+      [&metric_name](const std::pair<std::string, size_t>& element) { return element.first == metric_name; });
+
+  if (it == metrics.int_metrics_list.end()) { BOOST_FAIL("could not find metric. fatal."); }
+  else
+  {
+    BOOST_CHECK_EQUAL(it->second, value);
+  }
+}
+
 VW::test_red::tr_data* get_automl_data(vw& all)
 {
   std::vector<std::string> e_r;
@@ -63,9 +76,9 @@ size_t interaction_to_index(parameters& weights, size_t one, size_t two)
   // FNV_prime from constant.h
   return hash_to_index(weights, (FNV_prime * one) ^ two);
 }
-}  // namespace helper
+}  // namespace ut_helper
 
-using namespace helper;
+using namespace ut_helper;
 
 // 0) runs after 1331 learned examples from simulator.h
 // 1) clears (set to zero) offset 1
@@ -153,7 +166,7 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
 
   // lambda test/assert
   test_hooks.emplace(num_iterations - 1, [&num_iterations](vw& all, multi_ex&) {
-    VW::test_red::tr_data* tr = helper::get_automl_data(all);
+    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(tr->cm.county, num_iterations - 1);
     BOOST_CHECK_GT(tr->cm.max_live_configs, 2);
     BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
@@ -185,7 +198,7 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
   BOOST_CHECK_CLOSE(without_save, with_save, FLOAT_TOL);
 }
 
-BOOST_AUTO_TEST_CASE(assert_0th_event)
+BOOST_AUTO_TEST_CASE(assert_0th_event_automl)
 {
   const size_t zero = 0;
   const size_t num_iterations = 10;
@@ -193,7 +206,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event)
 
   // technically runs after the 0th example is learned
   test_hooks.emplace(zero, [&zero](vw& all, multi_ex&) {
-    VW::test_red::tr_data* tr = helper::get_automl_data(all);
+    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(tr->cm.county, zero);
     BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Idle);
     return true;
@@ -201,7 +214,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event)
 
   // test executes right after learn call of the 10th example
   test_hooks.emplace(num_iterations, [&num_iterations](vw& all, multi_ex&) {
-    VW::test_red::tr_data* tr = helper::get_automl_data(all);
+    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(tr->cm.county, num_iterations);
     BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
     return true;
@@ -209,6 +222,38 @@ BOOST_AUTO_TEST_CASE(assert_0th_event)
 
   auto ctr = simulator::_test_helper_hook(
       "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations);
+
+  BOOST_CHECK_GT(ctr.back(), 0.1f);
+}
+
+BOOST_AUTO_TEST_CASE(assert_0th_event_metrics)
+{
+  const auto metric_name = std::string("total_learn_calls");
+  const size_t zero = 0;
+  const size_t num_iterations = 10;
+  callback_map test_hooks;
+
+  // technically runs after the 0th example is learned
+  test_hooks.emplace(zero, [&metric_name, &zero](vw& all, multi_ex&) {
+    VW::metric_sink metrics;
+    all.l->persist_metrics(metrics);
+
+    ut_helper::assert_metric(metric_name, zero, metrics);
+    return true;
+  });
+
+  // test executes right after learn call of the 10th example
+  test_hooks.emplace(num_iterations, [&metric_name, &num_iterations](vw& all, multi_ex&) {
+    VW::metric_sink metrics;
+    all.l->persist_metrics(metrics);
+
+    ut_helper::assert_metric(metric_name, num_iterations, metrics);
+    return true;
+  });
+
+  auto ctr = simulator::_test_helper_hook(
+      "--extra_metrics ut_metrics.json --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks,
+      num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
 }
