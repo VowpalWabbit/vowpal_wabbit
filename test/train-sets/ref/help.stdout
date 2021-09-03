@@ -389,6 +389,7 @@ Make Multiclass into Contextual Bandit:
   --loss_01_ratio arg (=0.1, ) ratio of zero loss for 0/1 loss
   --loss0 arg (=0, )           loss for correct label
   --loss1 arg (=1, )           loss for incorrect label
+  --flip_loss_sign             flip sign of loss (use reward instead of loss)
 Make csoaa_ldf into Contextual Bandit:
   --cbify_ldf           Convert csoaa_ldf into a contextual bandit problem
   --loss0 arg (=0, )    loss for correct label
@@ -472,6 +473,9 @@ Generate interactions:
                                   '-q ::'.
 Continuous actions - convert to pmf:
   --get_pmf             Convert a single multiclass prediction to a pmf
+Interaction Grounded Learning:
+  --igl                 Do Interaction Grounding with multiline action 
+                        dependent features.
 Interact via elementwise multiplication:
   --interact arg        Put weights on feature products from namespaces <n1> 
                         and <n2>
