@@ -86,13 +86,13 @@ std::pair<std::string, float> cb_sim::get_action(vw* vw, const std::map<std::str
 
 const std::string& cb_sim::choose_user()
 {
-  int rand_ind = static_cast<int>(random_state.get_and_update_random()*users.size());
+  int rand_ind = static_cast<int>(random_state.get_and_update_random() * users.size());
   return users[rand_ind];
 }
 
 const std::string& cb_sim::choose_time_of_day()
 {
-  int rand_ind = static_cast<int>(random_state.get_and_update_random()*times_of_day.size());
+  int rand_ind = static_cast<int>(random_state.get_and_update_random() * times_of_day.size());
   return times_of_day[rand_ind];
 }
 
