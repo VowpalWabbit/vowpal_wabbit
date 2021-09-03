@@ -164,7 +164,7 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
     pred_func = predict_or_learn_active<false>;
     learn_returns_prediction = base->learn_returns_prediction;
   }
-  
+
   all.active = true;
 
   // Create new learner
