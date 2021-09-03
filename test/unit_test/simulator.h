@@ -12,6 +12,7 @@
 #include <boost/test/test_tools.hpp>
 
 #include "test_common.h"
+#include "rand_state.h"
 
 #include <functional>
 #include <map>
@@ -33,13 +34,13 @@ class cb_sim
   const std::vector<std::string> users;
   const std::vector<std::string> times_of_day;
   const std::vector<std::string> actions;
-  int seed;
+  rand_state random_state;
   float cost_sum = 0.f;
   std::vector<float> ctr;
   size_t callback_count;
 
 public:
-  cb_sim(int = 0);
+  cb_sim(uint64_t = 0);
   float get_cost(const std::map<std::string, std::string>&, const std::string&);
   std::vector<std::string> to_vw_example_format(
       const std::map<std::string, std::string>&, const std::string&, float = 0.f, float = 0.f);
