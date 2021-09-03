@@ -1,190 +1,294 @@
 import socket
-import sys
 import argparse
+from typing import Callable, ContextManager, Optional, Union, TextIO
+import contextlib
+import io
 
-#readline is under GPL licensing
-#import readline
+TEXT_ENCODING = "utf-8"
+NEWLINE_CHAR_BYTE = b"\n"[0]
 
-def recvall(s, n):
-    buf=s.recv(n)
-    ret=len(buf)
-    while ret>0 and len(buf)<n:
-        if buf[-1]=='\n': break
-        tmp=s.recv(n)
-        ret=len(tmp)
-        buf=buf+tmp
-    return buf
 
-def _find_getch():
+def recvall(s: socket.socket, bufsize: int) -> str:
+    received_buffer = s.recv(bufsize)
+    received_num_bytes = len(received_buffer)
+    while received_num_bytes > 0 and len(received_buffer) < bufsize:
+        if received_buffer[-1] == NEWLINE_CHAR_BYTE:
+            break
+        tmp_buffer = s.recv(bufsize)
+        received_num_bytes = len(tmp_buffer)
+        received_buffer = received_buffer + tmp_buffer
+    return received_buffer.decode(TEXT_ENCODING)
+
+
+def _get_getch_impl_unix() -> Optional[Callable[[], str]]:
     try:
-        import Carbon    # try OS/X
-        Carbon.Evt       # unix doesn't have this
-        def _getch():
-            if Carbon.Evt.EventAvail(0x0008)[0]==0: # 0x0008 is the keyDownMask
-                return ''
-            else:
-                (what,msg,when,where,mod)=Carbon.Evt.GetNextEvent(0x0008)[1]
-                ch = chr(msg & 0x000000FF)
-                if ord(ch) == 3:
-                    raise Exception("control-c")
-                return ch
-        return _getch()
-    except:
-        pass
+        import sys  # type: ignore
+        import tty  # type: ignore
+        import termios  # type: ignore
+    except ImportError:
+        return None
 
-    try:
-        import msvcrt   # try windows
-        def _getch():
-            ch = msvcrt.getch
+    def _getch():
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
             if ord(ch) == 3:
-                raise Exception("control-c")
+                raise KeyboardInterrupt
             return ch
-    except:
-        pass
-    
-    # POSIX system. Create and return a getch that manipulates the tty.
+
+    return _getch
+
+
+def _get_getch_impl_win() -> Optional[Callable[[], str]]:
     try:
-        import sys, tty, termios
-        def _getch():
-            fd = sys.stdin.fileno()
-            old_settings = termios.tcgetattr(fd)
-            try:
-                tty.setraw(fd)
-                ch = sys.stdin.read(1)
-            finally:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-                if ord(ch) == 3:
-                    raise Exception("control-c")
-                return ch
+        # try Windows API
+        import msvcrt  # type: ignore
+    except ImportError:
+        return None
 
-        return _getch
+    def _getch():
+        ch = msvcrt.getch
+        if ord(ch) == 3:
+            raise KeyboardInterrupt
+        return ch
+
+    return _getch
+
+
+# The MacOS Carbon API was removed in 10.15, however the
+# standard unix approach should work and so should be tried first.
+def _get_getch_impl_macos() -> Optional[Callable[[], str]]:
+
+    try:
+        # try OS/X API
+        import Carbon  # type: ignore
+
+        # unix doesn't have this
+        Carbon.Evt
     except:
+        return None
+
+    def _getch():
+        if Carbon.Evt.EventAvail(0x0008)[0] == 0:  # 0x0008 is the keyDownMask
+            return ""
+        else:
+            (what, msg, when, where, mod) = Carbon.Evt.GetNextEvent(0x0008)[1]
+            ch = chr(msg & 0x000000FF)
+            if ord(ch) == 3:
+                raise KeyboardInterrupt
+            return ch
+
+    return _getch
+
+
+def try_find_getch():
+    macos_getch = _get_getch_impl_macos()
+    if macos_getch is not None:
+        return macos_getch
+
+    win_getch = _get_getch_impl_win()
+    if win_getch is not None:
+        return win_getch
+
+    unix_getch = _get_getch_impl_unix()
+    if unix_getch is not None:
+        return unix_getch
+
+    raise Exception(
+        "Could not find a getch implementation. --keypress cannot be used without it."
+    )
+
+
+def check_file_exists(file_path: str, file_mode: str) -> None:
+    with open(file_path, file_mode) as _:
         pass
 
-    return lambda: raw_input('')
-        
-def get_label(example,minus1,i,tag,pred, input_fn=raw_input):
-    print '\nrequest for example %d: tag="%s", prediction=%g: %s'%(i,tag,pred,example)
+
+def get_label(
+    example: str, minus1: bool, i: int, tag: str, pred: float, input_fn: Callable[[str], str]
+) -> Optional[str]:
+    print(
+        'Request for example {}: tag="{}", prediction={}: {}'.format(
+            i, tag, pred, example
+        )
+    )
     while True:
-        label=input_fn('Provide? [0/1/skip]: ')
-        if label == '1':
+        label = input_fn("Provide? [0/1/skip]: ")
+        if label == "1":
             break
-        if label == '0':
-            if minus1: label='-1'
+        if label == "0":
+            if minus1:
+                label = "-1"
             break
-        if 0 < len(label) <= len('skip') and 'skip'.startswith(label):
+        if 0 < len(label) <= len("skip") and "skip".startswith(label):
             label = None
             break
     return label
 
-parser = argparse.ArgumentParser(description="interact with VW in active learning mode")
-parser.add_argument("-s","--seed", help="seed labeled dataset")
-parser.add_argument("-o","--output", help="output file")
-parser.add_argument("-u","--human", help="human readable examples in this file (same # of lines as unlabeled); use with -v")
-parser.add_argument("-v","--verbose", action="store_true", help="show example (in addition to tag)")
-parser.add_argument("-m","--minus1", action="store_true", help="interpret 0 as -1")
-parser.add_argument("-k","--keypress", action="store_true", help="don't require 'Enter' after keypresses")
-parser.add_argument("host", help="the machine VW is running on")
-parser.add_argument("port", type=int, help="the port VW is listening on")
-parser.add_argument("unlabeled_dataset", help="file with unlabeled data")
-args = parser.parse_args()
 
-input_fn = raw_input
-if args.keypress:
-    getch = _find_getch()
-    def raw_input_keypress(str):
-        print str,
-        return getch()
-    input_fn = raw_input_keypress
-
-seed=None
-if args.seed is not None:
-    try:
-        seed=open(args.seed,'r')
-    except:
-        print 'Warning: could not read from %s'%args.seed
-
-try:
-    unlabeled=open(args.unlabeled_dataset,'r')
-except:
-    print 'Error: could not read from %s'%args.unlabeled_dataset
-    exit(1)
-
-human=None
-if args.human is not None:
-    try:
-        human = open(args.human, 'r')
-    except:
-        print 'Warning: could not read human examples from %s' % args.human
-    
-output=None
-if args.output is not None:
-    try:
-        output=open(args.output,'w')
-    except:
-        print 'Warning: could not write to %s'%args.output
+def send_example(sock: socket.socket, example_line: str) -> None:
+    # We must ensure there is a newline present at the end of the line.
+    line = example_line.strip() + "\n"
+    sock.sendall(line.encode(TEXT_ENCODING))
 
 
-# Create a socket
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-queries=0
-try:
-    # Connect to server and perform handshake
-
-    print 'connecting to %s:%d ...'%(args.host,args.port)
-    sock.connect((args.host, args.port))
-    print 'done'
-    # Send seed dataset
-    if seed:
-        print 'seeding vw ...'
-        for line in seed:
-            sock.sendall(line)
-            recvall(sock, 256)
-        print 'done'
-    # Send unlabeled dataset
-    print 'sending unlabeled examples ...'
-    for i,line in enumerate(unlabeled):
-        humanString = line
+def active_process_unlabeled_dataset(
+    sock: socket.socket,
+    unlabeled: TextIO,
+    input_fn: Callable[[str], str],
+    minus1: bool,
+    verbose=False,
+    human: Optional[TextIO] = None,
+    output: Optional[TextIO] = None,
+):
+    for i, line in enumerate(unlabeled):
+        human_string = line
         if human is not None:
             try:
-                humanString = human.next()
+                human_string = next(human)
             except:
-                print 'Warning: out of lines in human data, reverting to vw strings'
-                humanString = None
-        sock.sendall(line)
-        print 'sending unlabeled '+repr(line[:20])
-        response=recvall(sock, 256)
-        #print 'unlabeled response '+repr(response)
-        responselist=response.split(' ')
-        if len(responselist)==2:
-            #VW does not care about this label
+                print("Warning: out of lines in human data, reverting to vw strings")
+                human_string = line
+        send_example(sock, line)
+        response = recvall(sock, 256)
+        responselist = response.split(" ")
+        if len(responselist) == 2:
+            # VW does not care about this label
+            if verbose:
+                print(
+                    'Importance omitted from response for example {}, "{}", skipping...'.format(
+                        i, response.strip()
+                    )
+                )
             continue
-        prediction,tag,importance=responselist
+        prediction, tag, importance = responselist
+        if verbose:
+            print(
+                "Example {} reponse: prediction={}, tag={}, importance={}".format(
+                    i, prediction, tag, importance
+                )
+            )
         try:
-            imp=float(importance)
+            imp = float(importance)
         except:
             continue
-        queries+=1
-        label=get_label(humanString if args.verbose else '\n', args.minus1, i, tag, float(prediction), input_fn)
+        label = get_label(
+            human_string if verbose else "",
+            minus1,
+            i,
+            tag,
+            float(prediction),
+            input_fn,
+        )
         if label is None:
             continue
-        front,rest=line.split('|',1)
-        if tag=='':
-            tag="'empty"
-        labeled_example=label+' '+"%g"%imp+' '+tag+' |'+rest
-        #print 'sending labeled '+repr(labeled_example[:20])
-        sock.sendall(labeled_example)
+        front, rest = line.split("|", 1)
+        if tag == "":
+            tag = "'empty"
+        labeled_example = "{} {} {} |{}".format(label, imp, tag, rest)
+        send_example(sock, labeled_example)
         if output:
             output.write(labeled_example)
             output.flush()
         recvall(sock, 256)
-finally:
-    sock.close()
-    unlabeled.close()
-    if output:
-        output.close()
-    if seed:
-        seed.close()
-    if human:
-        human.close()
+
+
+# This is normally only available in 3.7+, bring it here for 3.6
+class backported_nullcontext(contextlib.AbstractContextManager):
+    def __enter__(self):
+        return None
+
+    def __exit__(self, *excinfo):
+        pass
+
+
+def open_if_not_none(file_path: str, file_mode: str) -> ContextManager:
+    if file_path is not None:
+        return open(file_path, file_mode)
+    else:
+        return backported_nullcontext()
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="interact with VW in active learning mode"
+    )
+    parser.add_argument("-s", "--seed", help="seed labeled dataset")
+    parser.add_argument("-o", "--output", help="output file")
+    parser.add_argument(
+        "-u",
+        "--human",
+        help="human readable examples in this file (same # of lines as unlabeled); use with -v",
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="show example (in addition to tag)"
+    )
+    parser.add_argument("-m", "--minus1", action="store_true", help="interpret 0 as -1")
+    parser.add_argument(
+        "-k",
+        "--keypress",
+        action="store_true",
+        help="don't require 'Enter' after keypresses",
+    )
+    parser.add_argument("host", help="the machine VW is running on")
+    parser.add_argument("port", type=int, help="the port VW is listening on")
+    parser.add_argument("unlabeled_dataset", help="file with unlabeled data")
+    args = parser.parse_args()
+
+    input_fn = input
+    if args.keypress:
+        getch = try_find_getch()
+
+        def raw_input_keypress(str: str) -> str:
+            print(str, end="")
+            return getch()
+
+        input_fn = raw_input_keypress
+
+    check_file_exists(args.unlabeled_dataset, "r")
+    if args.seed is not None:
+        check_file_exists(args.seed, "r")
+    if args.human is not None:
+        check_file_exists(args.human, "r")
+    if args.output is not None:
+        check_file_exists(args.output, "w")
+
+    # Create a socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        # Connect to server and perform handshake
+        print("Connecting to {}:{}...".format(args.host, args.port))
+        sock.connect((args.host, args.port))
+        print("Done")
+
+        # Send seed dataset
+        if args.seed is not None:
+            print("Seeding vw...")
+            with open(args.seed, "r") as seed_file:
+                for line in seed_file:
+                    send_example(sock, line)
+                    sock.sendall(line.encode(TEXT_ENCODING))
+                    recvall(sock, 256)
+            print("Done")
+
+        # Send unlabeled dataset
+        print("Sending unlabeled examples...")
+        with open(args.unlabeled_dataset, "r") as unlabeled:
+            with open_if_not_none(args.human, "r") as human:
+                with open_if_not_none(args.output, "w") as output:
+                    active_process_unlabeled_dataset(
+                        sock=sock,
+                        unlabeled=unlabeled,
+                        input_fn=input_fn,
+                        minus1=args.minus1,
+                        verbose=args.verbose,
+                        human=human,
+                        output=output,
+                    )
+
+
+if __name__ == "__main__":
+    main()
