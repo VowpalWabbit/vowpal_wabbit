@@ -100,8 +100,8 @@ bool weights_offset_test(vw& all, multi_ex&)
   const size_t interaction_index = interaction_to_index(all.weights,
       get_index_for_feature(all, "Action", "article=sports"), get_index_for_feature(all, "User", "user=Tom"));
 
-  const float expected_w1 = 0.584335148f;
-  const float expected_w2 = 0.584628344f;
+  const float expected_w1 = 0.588607371f;
+  const float expected_w2 = 0.588550389f;
   const float ZERO = 0.f;
 
   for (auto index : feature_indexes)
