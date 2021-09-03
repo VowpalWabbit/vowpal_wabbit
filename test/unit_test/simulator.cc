@@ -6,13 +6,12 @@
 
 namespace simulator
 {
-cb_sim::cb_sim(int seed)
-    : seed(seed)
-    , users({"Tom", "Anna"})
+cb_sim::cb_sim(uint64_t seed)
+    : users({"Tom", "Anna"})
     , times_of_day({"morning", "afternoon"})
     , actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
 {
-  srand(seed);
+  random_state.set_random_state(seed);
 }
 
 float cb_sim::get_cost(const std::map<std::string, std::string>& context, const std::string& action)
@@ -57,7 +56,7 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
   float total = std::accumulate(pmf.begin(), pmf.end(), 0.f);
   float scale = 1.f / total;
   for (float& val : pmf) { val *= scale; }
-  float draw = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+  float draw = random_state.get_and_update_random();
   float sum_prob = 0.f;
   for (int index = 0; index < pmf.size(); ++index)
   {
@@ -87,13 +86,13 @@ std::pair<std::string, float> cb_sim::get_action(vw* vw, const std::map<std::str
 
 const std::string& cb_sim::choose_user()
 {
-  int rand_ind = rand() % users.size();
+  int rand_ind = static_cast<int>(random_state.get_and_update_random()*users.size());
   return users[rand_ind];
 }
 
 const std::string& cb_sim::choose_time_of_day()
 {
-  int rand_ind = rand() % times_of_day.size();
+  int rand_ind = static_cast<int>(random_state.get_and_update_random()*times_of_day.size());
   return times_of_day[rand_ind];
 }
 
