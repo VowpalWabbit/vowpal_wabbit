@@ -72,7 +72,6 @@ using namespace Interaction_Ground;
 base_learner* interaction_ground_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
   bool igl_option=false;
 
   option_group_definition new_options("Interaction Grounded Learning");
