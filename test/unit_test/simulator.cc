@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "vw.h"
 #include "simulator.h"
 
@@ -12,6 +16,7 @@ cb_sim::cb_sim(uint64_t seed)
     , actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
 {
   random_state.set_random_state(seed);
+  callback_count = 0;
 }
 
 float cb_sim::get_cost(const std::map<std::string, std::string>& context, const std::string& action)
@@ -96,9 +101,27 @@ const std::string& cb_sim::choose_time_of_day()
   return times_of_day[rand_ind];
 }
 
-std::vector<float> cb_sim::run_simulation(vw* vw, int num_iterations, bool do_learn, int shift)
+void cb_sim::call_if_exists(vw& vw, multi_ex& ex, const callback_map& callbacks, const size_t event)
 {
-  for (int i = shift; i < shift + num_iterations; ++i)
+  auto iter = callbacks.find(event);
+  if (iter != callbacks.end())
+  {
+    callback_count++;
+    bool callback_result = iter->second(vw, ex);
+    BOOST_CHECK_EQUAL(callback_result, true);
+  }
+}
+
+std::vector<float> cb_sim::run_simulation_hook(
+    vw* vw, size_t num_iterations, callback_map& callbacks, bool do_learn, size_t shift)
+{
+  // check if there's a callback for the first possible element,
+  // in this case most likely 0th event
+  // i.e. right before sending any event to VW
+  multi_ex dummy;
+  call_if_exists(*vw, dummy, callbacks, shift - 1);
+
+  for (size_t i = shift; i < shift + num_iterations; ++i)
   {
     // 1. In each simulation choose a user
     auto user = choose_user();
@@ -126,6 +149,8 @@ std::vector<float> cb_sim::run_simulation(vw* vw, int num_iterations, bool do_le
       // 6. Learn
       vw->learn(examples);
 
+      call_if_exists(*vw, examples, callbacks, i);
+
       // 7. Let VW know you're done with these objects
       vw->finish_example(examples);
     }
@@ -133,23 +158,24 @@ std::vector<float> cb_sim::run_simulation(vw* vw, int num_iterations, bool do_le
     // We negate this so that on the plot instead of minimizing cost, we are maximizing reward
     ctr.push_back(-1 * cost_sum / static_cast<float>(i));
   }
+
+  // avoid silently failing: ensure that all callbacks
+  // got called and then cleanup
+  BOOST_CHECK_EQUAL(callbacks.size(), callback_count);
+  callbacks.clear();
+  callback_count = 0;
+  BOOST_CHECK_EQUAL(callbacks.size(), callback_count);
+
   return ctr;
 }
-std::vector<float> cb_sim::run_simulation_hook(
-    vw* vw, int num_iterations, callback_map& callbacks, bool do_learn, int shift)
+
+std::vector<float> cb_sim::run_simulation(vw* vw, size_t num_iterations, bool do_learn, size_t shift)
 {
-  auto res = cb_sim::run_simulation(vw, num_iterations, do_learn, shift);
-
-  if (!callbacks.empty())
-  {
-    BOOST_TEST_MESSAGE("executing callbacks...");
-    for (auto it = callbacks.begin(); it != callbacks.end(); it++) { it->second(vw); }
-  }
-
-  return res;
+  callback_map callbacks;
+  return cb_sim::run_simulation_hook(vw, num_iterations, callbacks, do_learn, shift);
 }
 
-std::vector<float> _test_helper(const std::string& vw_arg, int num_iterations, int seed)
+std::vector<float> _test_helper(const std::string& vw_arg, size_t num_iterations, int seed)
 {
   auto vw = VW::initialize(vw_arg);
   simulator::cb_sim sim(seed);
@@ -158,10 +184,11 @@ std::vector<float> _test_helper(const std::string& vw_arg, int num_iterations, i
   return ctr;
 }
 
-std::vector<float> _test_helper_save_load(const std::string& vw_arg, int num_iterations, int seed)
+std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_iterations, int seed)
 {
-  int split = 1500;
-  int before_save = num_iterations - split;
+  const size_t split = 1500;
+  BOOST_CHECK_GT(num_iterations, split);
+  size_t before_save = num_iterations - split;
 
   auto first_vw = VW::initialize(vw_arg);
   simulator::cb_sim sim(seed);
@@ -179,7 +206,7 @@ std::vector<float> _test_helper_save_load(const std::string& vw_arg, int num_ite
   return ctr;
 }
 
-std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, int num_iterations, int seed)
+std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, size_t num_iterations, int seed)
 {
   BOOST_CHECK(true);
   auto* vw = VW::initialize(vw_arg);
