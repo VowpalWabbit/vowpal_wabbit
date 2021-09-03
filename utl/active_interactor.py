@@ -1,8 +1,7 @@
 import socket
 import argparse
-from typing import Callable, ContextManager, Optional, Union, TextIO
+from typing import Callable, ContextManager, Optional, TextIO
 import contextlib
-import io
 
 TEXT_ENCODING = "utf-8"
 NEWLINE_CHAR_BYTE = b"\n"[0]
