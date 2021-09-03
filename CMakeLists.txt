@@ -85,8 +85,8 @@ option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
 
-option(VW_INSTALL "Add install targets for executables" ON)
-option(VW_INSTALL_LIB "Add install targets for native libraries as well. Implies VW_INSTALL." OFF)
+option(VW_INSTALL "Add install targets for executables and libraries. Implies VW_INSTALL_EXE." ON)
+option(VW_INSTALL_EXE "Add install targets for native executables only." ON)
 option(BUILD_TESTS "Build and enable tests." ON)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_ONLY_STANDALONE_BENCHMARKS "Build only the benchmarks that can run standalone (and do not use vw internals)" OFF)
@@ -118,8 +118,8 @@ if(WIN32 AND (PROFILE OR VALGRIND_PROFILE OR GCOV OR STATIC_LINK_VW OR BUILD_JAV
   message(FATAL_ERROR "Unsupported option enabled on Windows build")
 endif()
 
-if(VW_INSTALL_LIB)
-  set(VW_INSTALL ON)
+if(VW_INSTALL)
+  set(VW_INSTALL_EXE ON CACHE BOOL "")
 endif()
 
 # This was the previous default but is only valid on x86_64 systems.
@@ -337,7 +337,7 @@ endif()
 # TODO convert c_test directory to cmake
 
 # Handle installation of targets, version, config and pkgconfig
-if(VW_INSTALL_LIB)
+if(VW_INSTALL)
   find_package(Boost REQUIRED COMPONENTS program_options)
 
   FOREACH(BOOST_LIBRARY ${Boost_LIBRARIES})

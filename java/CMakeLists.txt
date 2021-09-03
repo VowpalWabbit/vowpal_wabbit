@@ -69,7 +69,7 @@ else()
     set(JAVA_INSTALL_PATH /Library/Java/Extensions)
 endif()
 
-if(VW_INSTALL_LIB)
+if(VW_INSTALL)
   install(TARGETS vw_jni
     RUNTIME DESTINATION ${JAVA_INSTALL_PATH}
     LIBRARY DESTINATION ${JAVA_INSTALL_PATH}

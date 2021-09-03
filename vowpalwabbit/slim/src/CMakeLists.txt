@@ -25,7 +25,7 @@ target_link_libraries(vwslim PUBLIC VowpalWabbit::explore)
 
 include(GNUInstallDirs)
 
-if(VW_INSTALL_LIB)
+if(VW_INSTALL)
   install(
     TARGETS vwslim
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

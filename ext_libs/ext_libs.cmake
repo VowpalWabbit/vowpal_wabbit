@@ -5,7 +5,7 @@ if(FMT_SYS_DEP)
   # fmt was initially built against 7.1.3. Its possible earlier versions will also work, but that needs to be tested
   find_package(fmt 7.1.3 REQUIRED)
 else()
-  if(VW_INSTALL_LIB)
+  if(VW_INSTALL)
     set(FMT_INSTALL ON CACHE BOOL "install fmt library" FORCE)
   endif()
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/fmt)
@@ -19,7 +19,7 @@ if(SPDLOG_SYS_DEP)
 else()
   set(spdlog_target spdlog::spdlog)
   set(SPDLOG_FMT_EXTERNAL ON CACHE BOOL "Enable external FMTLIB in spdlog" FORCE)
-  if(VW_INSTALL_LIB)
+  if(VW_INSTALL)
     set(SPDLOG_INSTALL ON CACHE BOOL "install spdlog library" FORCE)
   endif()
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/spdlog)
@@ -38,7 +38,7 @@ else()
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
 
-  if(VW_INSTALL_LIB)
+  if(VW_INSTALL)
     install(
       TARGETS RapidJSON
       EXPORT VowpalWabbitConfig)

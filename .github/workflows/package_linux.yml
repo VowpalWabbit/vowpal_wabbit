@@ -20,7 +20,7 @@ jobs:
       - name: Configure
         shell: bash
         run: |
-          cmake -S . -B build -DSTATIC_LINK_VW_JAVA=On -DVW_INSTALL=On -DVW_INSTALL_LIB=Off -DBUILD_TESTS=Off -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build -DSTATIC_LINK_VW_JAVA=ON -DVW_INSTALL=OFF -DVW_INSTALL_EXE=ON -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release
       - name: Build
         shell: bash
         run: |

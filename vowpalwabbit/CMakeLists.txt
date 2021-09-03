@@ -466,7 +466,7 @@ if(NOT WIN32)
     target_link_libraries(active_interactor PUBLIC gcov --coverage)
   endif()
 
-  if(VW_INSTALL)
+  if(VW_INSTALL_EXE)
     install(
       TARGETS active_interactor
       EXPORT VowpalWabbitConfig
@@ -486,7 +486,7 @@ if(NOT WIN32)
         --output=$<TARGET_FILE:vw-bin>.1
       DEPENDS vw-bin)
 
-      if(VW_INSTALL)
+      if(VW_INSTALL_EXE)
         install(FILES $<TARGET_FILE:vw-bin>.1 DESTINATION share/man/man1)
       endif()
   else()
@@ -515,7 +515,7 @@ if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
 
   target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
   target_link_libraries(vw_c_wrapper PUBLIC VowpalWabbit::vw)
-  if(VW_INSTALL_LIB)
+  if(VW_INSTALL)
     install(
       TARGETS vw_c_wrapper
       EXPORT VowpalWabbitConfig
@@ -525,7 +525,7 @@ if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
   endif()
 endif()
 
-if(VW_INSTALL_LIB)
+if(VW_INSTALL)
   install(
     TARGETS vw allreduce vw_io
     EXPORT VowpalWabbitConfig
@@ -542,7 +542,7 @@ if(VW_INSTALL_LIB)
   )
 endif()
 
-if(VW_INSTALL)
+if(VW_INSTALL_EXE)
   install(
     TARGETS vw-bin
     EXPORT VowpalWabbitConfig

@@ -17,7 +17,7 @@ endif()
 target_include_directories(spanning_tree PRIVATE ${vowpal_wabbit_dir})
 target_link_libraries(spanning_tree PRIVATE Boost::program_options ${LINK_THREADS})
 
-if(VW_INSTALL)
+if(VW_INSTALL_EXE)
   install(
     TARGETS spanning_tree
     EXPORT VowpalWabbitConfig
