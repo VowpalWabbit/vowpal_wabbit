@@ -161,6 +161,7 @@ using namespace automl_test;
 
 BOOST_AUTO_TEST_CASE(automl_weight_operations)
 {
+  const size_t seed = 10;
   const size_t num_iterations = 1331;
   callback_map test_hooks;
 
@@ -177,7 +178,37 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
   test_hooks.emplace(num_iterations, weights_offset_test);
 
   auto ctr = simulator::_test_helper_hook(
-      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations);
+      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations, seed);
+
+  BOOST_CHECK_GT(ctr.back(), 0.6f);
+}
+
+BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
+{
+  const size_t num_iterations = 1331;
+  const size_t seed = 10;
+  const size_t deterministic_champ_switch = 735;
+  callback_map test_hooks;
+
+  test_hooks.emplace(deterministic_champ_switch - 1, [&](vw& all, multi_ex&) {
+    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
+    BOOST_CHECK_EQUAL(tr->cm.current_champ, 0);
+    BOOST_CHECK_EQUAL(deterministic_champ_switch - 1, tr->cm.county);
+    BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
+    return true;
+  });
+
+  test_hooks.emplace(deterministic_champ_switch, [&deterministic_champ_switch](vw& all, multi_ex&) {
+    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
+    BOOST_CHECK_EQUAL(tr->cm.current_champ, 1);
+    BOOST_CHECK_EQUAL(deterministic_champ_switch, tr->cm.county);
+    BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
+    return true;
+  });
+
+  // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
+  auto ctr = simulator::_test_helper_hook(
+      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
