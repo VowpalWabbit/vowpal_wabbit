@@ -24,7 +24,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          cmake --build build --target all
+          cmake --build build --parallel $(nproc) --target all
       - name: Package tar.gz
         shell: bash
         run: |
