@@ -7,4 +7,3 @@
 #include "reductions_fwd.h"
 
 VW::LEARNER::base_learner* interaction_ground_setup(VW::setup_base_i& stack_builder);
-

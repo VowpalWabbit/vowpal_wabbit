@@ -696,7 +696,9 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
                .help("ratio of zero loss for 0/1 loss"))
       .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
       .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"))
-      .add(make_option("flip_loss_sign", data->flip_loss_sign).keep().help("flip sign of loss (use reward instead of loss)"));
+      .add(make_option("flip_loss_sign", data->flip_loss_sign)
+               .keep()
+               .help("flip sign of loss (use reward instead of loss)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
