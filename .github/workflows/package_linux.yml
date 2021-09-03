@@ -1,0 +1,47 @@
+name: Linux / Package
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    container:
+      image: vowpalwabbit/manylinux2010-build:latest
+    runs-on: ubuntu-latest
+    steps:
+      # v1 must be used because newer versions require a node.js version that will not run on this old image.
+      - uses: actions/checkout@v1
+      - name: Configure
+        shell: bash
+        run: |
+          cmake -S . -B build -DSTATIC_LINK_VW_JAVA=On -DVW_INSTALL=On -DVW_INSTALL_LIB=Off -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build --target all
+      - name: Package tar.gz
+        shell: bash
+        run: |
+          cd build
+          cpack -G TGZ
+      - name: Package Deb
+        shell: bash
+        run: |
+          cd build
+          cpack -G DEB
+      - name: Upload tar.gz
+        uses: actions/upload-artifact@v1
+        with:
+          name: targz
+          path: build/_CPack_Packages/Linux/TGZ
+      - name: Upload deb
+        uses: actions/upload-artifact@v1
+        with:
+          name: deb
+          path: build/_CPack_Packages/Linux/DEB
