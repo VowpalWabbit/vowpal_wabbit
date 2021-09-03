@@ -156,6 +156,7 @@ struct scored_config
   // add budget
 };
 
+// all possible states of config_manager
 enum config_state
 {
   Idle,
@@ -163,6 +164,9 @@ enum config_state
   Experimenting
 };
 
+// config_manager is a state machine (config_state) 'time' moves forward after a call into one_step()
+// this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
+// into its own base_learner.learn(). see learn_automl(...)
 struct config_manager
 {
   config_state current_state = Idle;
@@ -400,22 +404,23 @@ void predict_automl(tr_data& data, multi_learner& base, multi_ex& ec)
   base.predict(ec, i);
 }
 
-void actual_learn(
-    tr_data& data, multi_learner& base, multi_ex& ec, size_t i, CB::cb_class& logged, size_t labelled_action)
+// inner loop of learn driven by # MAX_CONFIGS
+void offset_learn(
+    tr_data& data, multi_learner& base, multi_ex& ec, const size_t offset, CB::cb_class& logged, size_t labelled_action)
 {
   assert(ec[0]->interactions == nullptr);
 
-  for (example* ex : ec) { data.cm.configure_interactions(ex, i); }
+  for (example* ex : ec) { data.cm.configure_interactions(ex, offset); }
 
-  if (i == 0) { assert(ec[0]->interactions->empty() == true); }
+  if (offset == 0) { assert(ec[0]->interactions->empty() == true); }
 
-  auto restore_guard = VW::scope_exit([&data, &ec, &i] {
+  auto restore_guard = VW::scope_exit([&data, &ec, &offset] {
     for (example* ex : ec) { data.cm.restore_interactions(ex); }
   });
 
-  if (!base.learn_returns_prediction) { base.predict(ec, i); }
+  if (!base.learn_returns_prediction) { base.predict(ec, offset); }
 
-  base.learn(ec, i);
+  base.learn(ec, offset);
 
   const auto& action_scores = ec[0]->pred.a_s;
   // cb_adf => first action is a greedy action
@@ -429,12 +434,14 @@ void actual_learn(
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
   const float r = -logged.cost;
 
-  data.cm.configs[i].update(chosen_action == labelled_action ? w : 0, r);
+  data.cm.configs[offset].update(chosen_action == labelled_action ? w : 0, r);
 
   // cache the champ
-  if (data.cm.current_champ == i) { data.champ_a_s = std::move(ec[0]->pred.a_s); }
+  if (data.cm.current_champ == offset) { data.champ_a_s = std::move(ec[0]->pred.a_s); }
 }
 
+// this is the registered learn function for this reduction
+// mostly uses config_manager and actual_learn(..)
 template <bool is_explore>
 void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 {
@@ -482,14 +489,15 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 
   if (data.cm.current_state == Experimenting)
   {
-    for (size_t i = 0; i < data.cm.max_live_configs; i++) { actual_learn(data, base, ec, i, logged, labelled_action); }
+    for (size_t offset = 0; offset < data.cm.max_live_configs; offset++)
+    { offset_learn(data, base, ec, offset, logged, labelled_action); }
     // replace with prediction depending on current_champ
     ec[0]->pred.a_s = std::move(data.champ_a_s);
   }
   else
   {
     size_t champ = data.cm.current_champ;
-    actual_learn(data, base, ec, champ, logged, labelled_action);
+    offset_learn(data, base, ec, champ, logged, labelled_action);
     // replace bc champ always gets cached
     ec[0]->pred.a_s = std::move(data.champ_a_s);
   }
