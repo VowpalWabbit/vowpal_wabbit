@@ -51,9 +51,10 @@ float collision_cleanup(features& fs)
   }
 
   sum_sq += pos.value() * pos.value();
-  fs.sum_feat_sq = sum_sq;
   ++pos;
-  fs.truncate_to(pos);
+  // Don't change the sum_feat_sq as we will do it manually directly after.
+  fs.truncate_to(pos, 0);
+  fs.sum_feat_sq = sum_sq;
 
   return sum_sq;
 }
@@ -104,22 +105,6 @@ void copy_example_data(example* dst, const example* src)
   dst->use_permutations = src->use_permutations;
   dst->interactions = src->interactions;
   dst->_debug_current_reduction_depth = src->_debug_current_reduction_depth;
-}
-
-void copy_example_metadata(bool /* audit */, example* dst, example* src) { copy_example_metadata(dst, src); }
-
-void copy_example_data(bool /* audit */, example* dst, example* src) { copy_example_data(dst, src); }
-
-void copy_example_data(bool /* audit */, example* dst, example* src, void (*copy_label)(polylabel*, polylabel*))
-{
-  copy_example_data(dst, src);
-  copy_example_label(dst, src, copy_label);
-}
-
-void copy_example_data(
-    bool audit, example* dst, example* src, size_t /*label_size*/, void (*copy_label)(polylabel*, polylabel*))
-{
-  copy_example_data(audit, dst, src, copy_label);
 }
 
 void copy_example_data_with_label(example* dst, const example* src)
@@ -294,17 +279,13 @@ std::string prob_dist_pred_to_string(const example& ec)
 
 namespace VW
 {
-example* alloc_examples(size_t, size_t count)
+example* alloc_examples(size_t count)
 {
   example* ec = calloc_or_throw<example>(count);
-  if (ec == nullptr) return nullptr;
+  if (ec == nullptr) { return nullptr; }
   for (size_t i = 0; i < count; i++) { new (ec + i) example; }
   return ec;
 }
-
-example* alloc_examples(size_t count) { return alloc_examples(0, count); }
-
-void dealloc_example(void (*)(polylabel*), example& ec, void (*)(void*)) { ec.~example(); }
 
 void dealloc_examples(example* example_ptr, size_t count)
 {

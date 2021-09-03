@@ -23,6 +23,7 @@
 #include "reductions.h"
 #include "vw.h"
 #include "shared_data.h"
+#include "label_parser.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::gd
@@ -43,23 +44,23 @@ namespace GD
 struct gd
 {
   //  double normalized_sum_norm_x;
-  double total_weight;
-  size_t no_win_counter;
-  size_t early_stop_thres;
-  float initial_constant;
-  float neg_norm_power;
-  float neg_power_t;
-  float sparse_l2;
-  float update_multiplier;
-  void (*predict)(gd&, base_learner&, example&);
-  void (*learn)(gd&, base_learner&, example&);
-  void (*update)(gd&, base_learner&, example&);
-  float (*sensitivity)(gd&, base_learner&, example&);
-  void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool);
-  bool adaptive_input;
-  bool normalized_input;
-  bool adax;
-  vw* all;  // parallel, features, parameters
+  double total_weight = 0.0;
+  size_t no_win_counter = 0;
+  size_t early_stop_thres = 0;
+  float initial_constant = 0.f;
+  float neg_norm_power = 0.f;
+  float neg_power_t = 0.f;
+  float sparse_l2 = 0.f;
+  float update_multiplier = 0.f;
+  void (*predict)(gd&, base_learner&, example&) = nullptr;
+  void (*learn)(gd&, base_learner&, example&) = nullptr;
+  void (*update)(gd&, base_learner&, example&) = nullptr;
+  float (*sensitivity)(gd&, base_learner&, example&) = nullptr;
+  void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool) = nullptr;
+  bool adaptive_input = false;
+  bool normalized_input = false;
+  bool adax = false;
+  vw* all = nullptr;  // parallel, features, parameters
 };
 
 void sync_weights(vw& all);
@@ -775,16 +776,19 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
       }
     } while (brw > 0);
   else  // write
+  {
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
+    {
       if (*v != 0.)
       {
         i = v.index() >> weights.stride_shift();
         std::stringstream msg;
-
         brw = write_index(model_file, msg, text, all.num_bits, i);
         msg << ":" << *v << "\n";
         brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
       }
+    }
+  }
 }
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
@@ -1065,7 +1069,10 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       save_load_online_state(all, model_file, read, text, g.total_weight, &g);
     }
     else
+    {
+      if (!all.weights.not_null()) { THROW("Error: Model weights not initialized."); }
       save_load_regressor(all, model_file, read, text);
+    }
   }
   if (!all.training)  // If the regressor was saved as --save_resume, then when testing we want to materialize the
                       // weights.
@@ -1154,7 +1161,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
 
-  auto g = scoped_calloc_or_throw<gd>();
+  auto g = VW::make_unique<gd>();
 
   bool sgd = false;
   bool adaptive = false;
@@ -1278,14 +1285,17 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   all.weights.stride_shift(static_cast<uint32_t>(ceil_log_2(stride - 1)));
 
   gd* bare = g.get();
-  learner<gd, example>& ret = init_learner(g, g->learn, bare->predict,
-      (static_cast<uint64_t>(1) << all.weights.stride_shift()), stack_builder.get_setupfn_name(setup), true);
-  ret.set_sensitivity(bare->sensitivity);
-  ret.set_multipredict(bare->multipredict);
-  ret.set_update(bare->update);
-  ret.set_save_load(save_load);
-  ret.set_end_pass(end_pass);
-  return make_base(ret);
+  learner<gd, example>* l = make_base_learner(std::move(g), g->learn, bare->predict,
+      stack_builder.get_setupfn_name(setup), prediction_type_t::scalar, label_type_t::simple)
+                                .set_learn_returns_prediction(true)
+                                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                                .set_sensitivity(bare->sensitivity)
+                                .set_multipredict(bare->multipredict)
+                                .set_update(bare->update)
+                                .set_save_load(save_load)
+                                .set_end_pass(end_pass)
+                                .build();
+  return make_base(*l);
 }
 
 }  // namespace GD

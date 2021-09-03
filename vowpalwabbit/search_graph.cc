@@ -58,7 +58,7 @@ instance "n1 n2 n3 0 n4 | ..." is the same as "n1 n2 n3 n4 | ...", but
 
 namespace GraphTask
 {
-Search::search_task task = {"graph", run, initialize, finish, setup, takedown};
+Search::search_task task = {"graph", run, initialize, nullptr, setup, takedown};
 
 struct task_data
 {
@@ -83,13 +83,13 @@ struct task_data
   std::vector<uint32_t> bfs;             // order of nodes to process
   std::vector<size_t> pred;              // predictions
   example* cur_node;                     // pointer to the current node for add_edge_features_fn
-  float* neighbor_predictions;           // prediction on this neighbor for add_edge_features_fn
-  uint32_t* confusion_matrix;
-  float* true_counts;
+  std::vector<float> neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
+  std::vector<uint32_t> confusion_matrix;
+  std::vector<float> true_counts;
   float true_counts_total;
 };
 
-inline bool example_is_test(polylabel& l) { return l.cs.costs.size() == 0; }
+inline bool example_is_test(polylabel* l) { return l->cs.costs.size() == 0; }
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
@@ -116,10 +116,10 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   D->K = num_actions;
   D->numN = (D->directed + 1) * (D->K + 1);
   *(sch.get_vw_pointer_unsafe().trace_message) << "K=" << D->K << ", numN=" << D->numN << std::endl;
-  D->neighbor_predictions = calloc_or_throw<float>(D->numN);
+  D->neighbor_predictions.resize(D->numN, 0.f);
 
-  D->confusion_matrix = calloc_or_throw<uint32_t>((D->K + 1) * (D->K + 1));
-  D->true_counts = calloc_or_throw<float>(D->K + 1);
+  D->confusion_matrix.resize((D->K + 1) * (D->K + 1), 0);
+  D->true_counts.resize(D->K + 1, 0.f);
   D->true_counts_total = static_cast<float>(D->K + 1);
   for (size_t k = 0; k <= D->K; k++) D->true_counts[k] = 1.;
 
@@ -128,15 +128,6 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   sch.set_task_data<task_data>(D);
   sch.set_options(0);  // Search::AUTO_HAMMING_LOSS
   sch.set_label_parser(COST_SENSITIVE::cs_label, example_is_test);
-}
-
-void finish(Search::search& sch)
-{
-  task_data* D = sch.get_task_data<task_data>();
-  free(D->neighbor_predictions);
-  free(D->confusion_matrix);
-  free(D->true_counts);
-  delete D;
 }
 
 inline bool example_is_edge(example* e) { return e->l.cs.costs.size() > 1; }

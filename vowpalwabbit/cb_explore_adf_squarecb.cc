@@ -61,7 +61,7 @@ private:
 
   // for backing up cb example data when computing sensitivities
   std::vector<ACTION_SCORE::action_scores> _ex_as;
-  std::vector<v_array<CB::cb_class>> _ex_costs;
+  std::vector<std::vector<CB::cb_class>> _ex_costs;
 
 public:
   cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,

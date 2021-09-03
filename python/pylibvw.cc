@@ -911,7 +911,7 @@ void search_run_fn(Search::search& sch)
   try
   {
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    py::object run = *(py::object*)d->run_object;
+    py::object run = *static_cast<py::object*>(d->run_object.get());
     run.attr("__call__")();
   }
   catch (...)
@@ -928,7 +928,7 @@ void search_setup_fn(Search::search& sch)
   try
   {
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    py::object run = *(py::object*)d->setup_object;
+    py::object run = *static_cast<py::object*>(d->setup_object.get());
     run.attr("__call__")();
   }
   catch (...)
@@ -945,7 +945,7 @@ void search_takedown_fn(Search::search& sch)
   try
   {
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    py::object run = *(py::object*)d->takedown_object;
+    py::object run = *static_cast<py::object*>(d->takedown_object.get());
     run.attr("__call__")();
   }
   catch (...)
@@ -974,26 +974,23 @@ void set_structured_predict_hook(
 {
   verify_search_set_properly(sch);
   HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
-  d->run_f = &search_run_fn;
-  delete (py::object*)d->run_object;
-  d->run_object = NULL;
-  delete (py::object*)d->setup_object;
-  d->setup_object = NULL;
-  delete (py::object*)d->takedown_object;
-  d->takedown_object = NULL;
+  d->run_object = nullptr;
+  d->setup_object = nullptr;
+  d->takedown_object = nullptr;
   sch->set_force_oracle(false);
-  d->run_object = new py::object(run_object);
+
+  d->run_f = &search_run_fn;
+  d->run_object = std::make_shared<py::object>(run_object);
   if (setup_object.ptr() != Py_None)
   {
-    d->setup_object = new py::object(setup_object);
+    d->setup_object = std::make_shared<py::object>(setup_object);
     d->run_setup_f = &search_setup_fn;
   }
   if (takedown_object.ptr() != Py_None)
   {
-    d->takedown_object = new py::object(takedown_object);
+    d->takedown_object = std::make_shared<py::object>(takedown_object);
     d->run_takedown_f = &search_takedown_fn;
   }
-  d->delete_run_object = &py_delete_run_object;
 }
 
 void my_set_test_only(example_ptr ec, bool val) { ec->test_only = val; }
@@ -1314,7 +1311,7 @@ BOOST_PYTHON_MODULE(pylibvw)
           "Assuming a contextual_bandits label type, get the partial prediction for a given pair (i=0.. "
           "get_cbandits_num_costs)");
 
-  py::class_<Search::predictor, predictor_ptr>("predictor", py::no_init)
+  py::class_<Search::predictor, predictor_ptr, boost::noncopyable>("predictor", py::no_init)
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")
       //.def("set_input_ldf", &my_set_input_ldf, "set the inputs (a list of examples) for this predictor (LDF mode
       // only)")

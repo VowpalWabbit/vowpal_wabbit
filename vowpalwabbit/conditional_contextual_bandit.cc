@@ -36,11 +36,19 @@ using namespace VW::config;
 namespace logger = VW::io::logger;
 
 template <typename T>
-void return_v_array(v_array<T>& array, VW::v_array_pool<T>& pool)
+void return_collection(v_array<T>& array, VW::v_array_pool<T>& pool)
 {
   array.clear();
   pool.reclaim_object(std::move(array));
   array = v_array<T>{};
+}
+
+template <typename T>
+void return_collection(std::vector<T>& array, VW::vector_pool<T>& pool)
+{
+  array.clear();
+  pool.reclaim_object(std::move(array));
+  array = std::vector<T>{};
 }
 
 // CCB adds the following interactions:
@@ -87,7 +95,7 @@ struct ccb
   size_t base_learner_stride_shift = 0;
   bool all_slots_loss_report = false;
 
-  VW::v_array_pool<CB::cb_class> cb_label_pool;
+  VW::vector_pool<CB::cb_class> cb_label_pool;
   VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
 
   VW::version_struct model_file_version;
@@ -154,12 +162,12 @@ void create_cb_labels(ccb& data)
 // the polylabel (union) must be manually cleaned up
 void delete_cb_labels(ccb& data)
 {
-  return_v_array(data.shared->l.cb.costs, data.cb_label_pool);
+  return_collection(data.shared->l.cb.costs, data.cb_label_pool);
   data.shared->l.cb.costs.clear();
 
   for (example* action : data.actions)
   {
-    return_v_array(action->l.cb.costs, data.cb_label_pool);
+    return_collection(action->l.cb.costs, data.cb_label_pool);
     action->l.cb.costs.clear();
   }
 }
@@ -243,7 +251,7 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
     index = data.slot_id_hashes[id];
   }
 
-  shared->feature_space[ccb_id_namespace].push_back(1., index);
+  shared->feature_space[ccb_id_namespace].push_back(1., index, ccb_id_namespace);
   shared->indices.push_back(ccb_id_namespace);
 
   if (audit)
@@ -584,7 +592,7 @@ void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
     CB_ADF::global_print_newline(all.final_prediction_sink);
   }
 
-  for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_v_array(a_s, data.action_score_pool); }
+  for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_collection(a_s, data.action_score_pool); }
   ec_seq[0]->pred.decision_scores.clear();
 
   VW::finish_example(all, ec_seq);

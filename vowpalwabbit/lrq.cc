@@ -7,6 +7,7 @@
 #include "rand48.h"
 #include "vw_exception.h"
 #include "parse_args.h"  // for spoof_hex_encoded_namespaces
+#include "text_utils.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -177,7 +178,7 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
   uint32_t maxk = 0;
   lrq->all = &all;
 
-  for (auto& lrq_name : lrq_names) lrq_name = spoof_hex_encoded_namespaces(lrq_name);
+  for (auto& lrq_name : lrq_names) lrq_name = VW::decode_inline_hex(lrq_name);
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 

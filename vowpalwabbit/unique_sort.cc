@@ -3,25 +3,53 @@
 // license as described in the file LICENSE.
 #include "example.h"
 #include "unique_sort.h"
+#include "feature_group.h"
+
 #include <algorithm>
 
+/**
+ * \brief Remove all non unique features from a feature group.
+ * - Uniqueness is determined by feature index.
+ * - This function requires the feature group to be sorted. For sorting see features::sort.
+ *
+ * \param fs Feature group to remove non-unique features from
+ * \param max The maximum number of unique features to keep. -1 to keep all unique features.
+ */
 void unique_features(features& fs, int max)
 {
   if (fs.indicies.empty()) return;
+  if (max == 0)
+  {
+    fs.clear();
+    return;
+  }
+  if (max == 1)
+  {
+    fs.truncate_to(1);
+    return;
+  }
 
-  auto range = fs.audit_range();
-  auto last_index = range.begin();
-  auto end = max > 0 ? range.begin() + std::min(fs.size(), static_cast<size_t>(max)) : range.end();
+  auto flat_extents = VW::details::flatten_namespace_extents(fs.namespace_extents, fs.indicies.size());
 
-  for (auto i = ++range.begin(); i != end; ++i)
-    if (i.index() != last_index.index())
+  auto last_index = std::size_t{0};
+  for (auto i = std::size_t{1}; i != fs.size(); ++i)
+  {
+    if (fs.indicies[i] != fs.indicies[last_index])
+    {
       if (i != ++last_index)
       {
-        last_index.value() = i.value();
-        last_index.index() = i.index();
-        if (!fs.space_names.empty()) *last_index.audit() = *i.audit();
+        fs.values[last_index] = fs.values[i];
+        fs.indicies[last_index] = fs.indicies[i];
+        flat_extents[last_index] = flat_extents[i];
+        if (!fs.space_names.empty()) { fs.space_names[last_index] = std::move(fs.space_names[i]); }
       }
 
+      const auto unique_items_found = last_index + 1;
+      // Rely on a negative integer to wrap around and be larger if a user passed in a negative value.
+      if (unique_items_found >= static_cast<size_t>(max)) { break; }
+    }
+  }
+  fs.namespace_extents = VW::details::unflatten_namespace_extents(flat_extents);
   ++last_index;
   fs.truncate_to(last_index);
 }

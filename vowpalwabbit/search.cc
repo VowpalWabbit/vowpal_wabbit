@@ -128,10 +128,6 @@ struct action_cache
   action k;
   bool is_opt;
   float cost;
-  action_cache(float _min_cost, action _k, bool _is_opt, float _cost)
-      : min_cost(_min_cost), k(_k), is_opt(_is_opt), cost(_cost)
-  {
-  }
 };
 std::ostream& operator<<(std::ostream& os, const action_cache& x)
 {
@@ -193,7 +189,7 @@ public:
                              // oracle (0 means "infinite")
   bool linear_ordering;      // insist that examples are generated in linear order (rather that the default hoopla
                              // permutation)
-  bool (*label_is_test)(polylabel&);  // tell me if the label data from an example is test
+  bool (*label_is_test)(polylabel*);  // tell me if the label data from an example is test
 
   size_t t;                                     // current search step
   size_t T;                                     // length of root trajectory
@@ -1008,10 +1004,10 @@ void ensure_size(v_array<T>& A, size_t sz)
 }
 
 template <class T>
-void push_at(v_array<T>& v, T item, size_t pos)
+void set_at(v_array<T>& v, T item, size_t pos)
 {
-  if (pos > v.size()) { v.resize_but_with_stl_behavior(pos); }
-  v.insert(v.begin() + pos, item);
+  if (pos >= v.size()) { v.resize_but_with_stl_behavior(pos + 1); }
+  v[pos] = item;
 }
 
 action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* oracle_actions,
@@ -1070,7 +1066,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
     {
       action cl = cs_get_cost_index(priv.cb_learner, l, k);
       float cost = array_contains(cl, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f;
-      this_cache->push_back(action_cache(0., cl, cl == a, cost));
+      this_cache->push_back(action_cache{0., cl, cl == a, cost});
     }
     assert(priv.memo_foreach_action.size() == priv.meta_t + priv.t - 1);
     priv.memo_foreach_action.push_back(this_cache);
@@ -1134,7 +1130,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       if (priv.metaoverride && priv.metaoverride->_foreach_action)
         priv.metaoverride->_foreach_action(*priv.metaoverride->sch, priv.t - 1, min_cost, cl, cl == act, cost);
       if (override_action == cl) a_cost = cost;
-      if (this_cache) this_cache->push_back(action_cache(min_cost, cl, cl == act, cost));
+      if (this_cache) this_cache->push_back(action_cache{min_cost, cl, cl == act, cost});
     }
     if (this_cache)
     {
@@ -1270,7 +1266,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
       best_action = a;
       a_cost = best_prediction;
     }
-    if (this_cache) this_cache->push_back(action_cache(0., a, false, ecs[a].partial_prediction));
+    if (this_cache) this_cache->push_back(action_cache{0., a, false, ecs[a].partial_prediction});
 
     priv.num_features += ecs[a].get_num_features();
     ecs[a].l = old_label;
@@ -1627,7 +1623,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
         for (size_t i = 0; i < condition_on_cnt; i++)
         {
-          push_at(priv.learn_condition_on_act,
+          set_at(priv.learn_condition_on_act,
               action_repr(((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size()))
                       ? priv.ptag_to_action[condition_on[i]]
                       : 0),
@@ -1919,20 +1915,6 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   }
 
   if (!priv.linear_ordering) hoopla_permute(timesteps.begin(), timesteps.end());
-}
-
-struct final_item
-{
-  v_array<scored_action>* prefix;
-  std::string str;
-  float total_cost;
-  final_item(v_array<scored_action>* p, std::string s, float ic) : prefix(p), str(s), total_cost(ic) {}
-};
-
-void free_final_item(final_item* p)
-{
-  delete p->prefix;
-  delete p;
 }
 
 void BaseTask::Run()
@@ -2254,7 +2236,7 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
 
   for (size_t i = 0; i < ec_seq.size(); i++)
   {
-    is_test_ex |= priv.label_is_test(ec_seq[i]->l);
+    is_test_ex |= priv.label_is_test(&ec_seq[i]->l);
     is_holdout_ex |= ec_seq[i]->test_only;
     if (is_test_ex && is_holdout_ex) break;
   }
@@ -2335,7 +2317,7 @@ void end_examples(search& sch)
   }
 }
 
-bool mc_label_is_test(polylabel& lab) { return MC::test_label(lab.multi); }
+bool mc_label_is_test(polylabel* lab) { return MC::test_label(lab->multi); }
 
 void search_initialize(vw* all, search& sch)
 {
@@ -2450,7 +2432,7 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
   // from
   for (size_t i = 0; i < A; i++)
   {
-    v_array<CS::wclass> costs;
+    std::vector<CS::wclass> costs;
 
     // to
     for (size_t j = 0; j < A; j++)
@@ -2823,11 +2805,11 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
     if (priv->acset.use_passthrough_repr)
     {
       assert((mytag >= priv->ptag_to_action.size()) || (priv->ptag_to_action[mytag].repr == nullptr));
-      push_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
+      set_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
     }
     else
-      push_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag);
-    cdbg << "push_at " << mytag << endl;
+      set_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag);
+    cdbg << "set_at " << mytag << endl;
   }
   if (priv->auto_hamming_loss)
     loss(priv->use_action_costs ? action_cost_loss(a, allowed_actions, allowed_actions_cost, allowed_actions_cnt)
@@ -2863,7 +2845,7 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
         priv->ptag_to_action[mytag].repr = nullptr;
       }
     }
-    push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
+    set_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
   }
   if (priv->auto_hamming_loss) loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));  // TODO: action costs
   cdbg << "predict returning " << a << endl;
@@ -2904,12 +2886,12 @@ void search::set_options(uint32_t opts)
     );
 }
 
-void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
+void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel*))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
     logger::errlog_warn("warning: task should not set label parser except in initialize function!");
   this->priv->all->example_parser->lbl_parser = lp;
-  this->priv->all->example_parser->lbl_parser.test_label = reinterpret_cast<bool (*)(polylabel*)>(is_test);
+  this->priv->all->example_parser->lbl_parser.test_label = is_test;
   this->priv->label_is_test = is_test;
 }
 
@@ -2949,28 +2931,10 @@ predictor::predictor(search& sch, ptag my_tag)
     , my_tag(my_tag)
     , ec(nullptr)
     , ec_cnt(0)
-    , ec_alloced(false)
     , weight(1.)
     , learner_id(0)
     , sch(sch)
 {
-}
-
-void predictor::free_ec()
-{
-  if (ec_alloced)
-  {
-    if (is_ldf) { VW::dealloc_examples(ec, ec_cnt); }
-    else
-    {
-      VW::dealloc_examples(ec, 1);
-    }
-  }
-}
-
-predictor::~predictor()
-{
-  free_ec();
 }
 
 predictor& predictor::reset()
@@ -2979,51 +2943,35 @@ predictor& predictor::reset()
   this->erase_alloweds();
   condition_on_tags.clear();
   condition_on_names.clear();
-  free_ec();
+  allocated_examples.clear();
   return *this;
 }
 
 predictor& predictor::set_input(example& input_example)
 {
-  free_ec();
   is_ldf = false;
   ec = &input_example;
   ec_cnt = 1;
-  ec_alloced = false;
   return *this;
 }
 
 predictor& predictor::set_input(example* input_example, size_t input_length)
 {
-  free_ec();
   is_ldf = true;
   ec = input_example;
   ec_cnt = input_length;
-  ec_alloced = false;
   return *this;
 }
 
 void predictor::set_input_length(size_t input_length)
 {
   is_ldf = true;
-  if (ec_alloced)
-  {
-    for (size_t i = ec_cnt; ec_cnt < input_length; ++i) ec[i].~example();
-    example* temp = static_cast<example*>(realloc(ec, input_length * sizeof(example)));
-    if (temp != nullptr)
-      ec = temp;
-    else
-      THROW("realloc failed in search.cc");
-  }
-  else
-    ec = VW::alloc_examples(input_length);
+  allocated_examples.resize(input_length);
+  ec = allocated_examples.data();
   ec_cnt = input_length;
-  ec_alloced = true;
 }
 void predictor::set_input_at(size_t posn, example& ex)
 {
-  if (!ec_alloced) THROW("call to set_input_at without previous call to set_input_length");
-
   if (posn >= ec_cnt)
     THROW("call to set_input_at with too large a position: posn (" << posn << ") >= ec_cnt(" << ec_cnt << ")");
 

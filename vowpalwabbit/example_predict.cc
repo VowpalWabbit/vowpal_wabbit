@@ -27,21 +27,6 @@ bool example_predict::iterator::operator!=(const iterator& rhs) { return _index 
 example_predict::iterator example_predict::begin() { return {feature_space.data(), indices.begin()}; }
 example_predict::iterator example_predict::end() { return {feature_space.data(), indices.end()}; }
 
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_DEPRECATED_USAGE
-safe_example_predict::safe_example_predict()
-{
-  ft_offset = 0;
-}
-
-VW_WARNING_STATE_POP
-void safe_example_predict::clear()
-{
-  for (auto ns : indices) feature_space[ns].clear();
-  indices.clear();
-}
-
-
 std::string features_to_string(const example_predict& ec)
 {
   std::stringstream strstream;
