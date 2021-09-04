@@ -92,12 +92,17 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
 void active_print_result(VW::io::writer* f, float res, float weight, const v_array<char>& tag)
 {
   if (f == nullptr) { return; }
-  const auto weight_str = weight >= 0 ? fmt::format(" {:f}", weight) : "";
-  const auto tag_str = !tag.empty() ? fmt::format(" {}", std::string(tag.begin(), tag.end())) : "";
-  const auto result = fmt::format("{:f}{}{}\n", res, tag_str, weight_str);
-  const auto t = f->write(result.c_str(), result.size());
-  if (t != static_cast<ssize_t>(result.size()))
-  { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
+
+  std::stringstream ss;
+  ss << std::fixed << res;
+  if (!print_tag_by_ref(ss, tag)) { ss << ' '; }
+
+  if (weight >= 0) { ss << " " << std::fixed << weight; }
+  ss << '\n';
+  const auto ss_str = ss.str();
+  ssize_t len = ss_str.size();
+  ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
+  if (t != len) { logger::errlog_error("write error: {}", VW::strerror_to_string(errno)); }
 }
 
 void output_and_account_example(vw& all, active& a, example& ec)
@@ -160,6 +165,7 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
   }
   else
   {
+    all.active = true;
     learn_func = predict_or_learn_active<true>;
     pred_func = predict_or_learn_active<false>;
     learn_returns_prediction = base->learn_returns_prediction;
