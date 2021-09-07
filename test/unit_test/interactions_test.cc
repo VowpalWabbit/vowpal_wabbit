@@ -19,6 +19,14 @@
 #include "parse_args.h"
 #include "constant.h"
 
+namespace std
+{
+std::ostream& operator<<(std::ostream& os, const std::pair<namespace_index, uint64_t>& obj)
+{
+  return os << "_ns_char: " << obj.first << " _ns_hash: " << obj.second;
+}
+}  // namespace std
+
 struct eval_gen_data
 {
   size_t& new_features_cnt;
