@@ -12,7 +12,7 @@
 #include "io/logger.h"
 
 // DispatchFuncT should be of the form - void(vw&, const v_array<example*>&)
-template<typename DispatchFuncT>
+template <typename DispatchFuncT>
 void parse_dispatch(vw& all, DispatchFuncT& dispatch_func)
 {
   v_array<example*> examples;
