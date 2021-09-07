@@ -72,15 +72,12 @@ inline bool has_empty_interaction(
 inline bool has_empty_interaction(
     const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& namespace_indexes)
 {
-  return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
-      [&](extent_term idx)
-      {
-        return std::find_if(feature_groups[idx.first].namespace_extents.begin(),
-                   feature_groups[idx.first].namespace_extents.end(),
-                   [&idx](const VW::namespace_extent& extent) {
-                     return idx.second == extent.hash && ((extent.end_index - extent.begin_index) > 0);
-                   }) == feature_groups[idx.first].namespace_extents.end();
-      });
+  return std::any_of(namespace_indexes.begin(), namespace_indexes.end(), [&](extent_term idx) {
+    return std::find_if(feature_groups[idx.first].namespace_extents.begin(),
+               feature_groups[idx.first].namespace_extents.end(), [&idx](const VW::namespace_extent& extent) {
+                 return idx.second == extent.hash && ((extent.end_index - extent.begin_index) > 0);
+               }) == feature_groups[idx.first].namespace_extents.end();
+  });
 }
 
 // The inline function below may be adjusted to change the way
@@ -111,10 +108,7 @@ std::vector<std::tuple<features_range_t, features_range_t>> inline generate_quad
   {
     for (auto it = fg1.hash_extents_begin(extent1.second); it != fg1.hash_extents_end(extent1.second); ++it)
     {
-      for (auto it2 = it; it2 != fg1.hash_extents_end(extent1.second); ++it2)
-      {
-        result.emplace_back(*it, *it2);
-      }
+      for (auto it2 = it; it2 != fg1.hash_extents_end(extent1.second); ++it2) { result.emplace_back(*it, *it2); }
     }
   }
   else
@@ -122,32 +116,24 @@ std::vector<std::tuple<features_range_t, features_range_t>> inline generate_quad
     for (auto it = fg1.hash_extents_begin(extent1.second); it != fg1.hash_extents_end(extent1.second); ++it)
     {
       for (auto it2 = fg1.hash_extents_begin(extent2.second); it2 != fg1.hash_extents_end(extent2.second); ++it2)
-      {
-        result.emplace_back(*it, *it2);
-      }
+      { result.emplace_back(*it, *it2); }
     }
   }
   return result;
 }
 
 std::vector<std::vector<features_range_t>> inline generate_generic_extent_combination_inner(
-    const std::array<features, NUM_NAMESPACES>& feature_groups,
-    const std::vector<extent_term>& terms, size_t current, const extent_term& prev_term, size_t offset, const std::vector<features_range_t>& so_far)
+    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& terms, size_t current,
+    const extent_term& prev_term, size_t offset, const std::vector<features_range_t>& so_far)
 {
-  if (current == terms.size())
-  {
-    return {so_far};
-  }
+  if (current == terms.size()) { return {so_far}; }
 
   std::vector<std::vector<features_range_t>> result;
   const auto& current_term = terms[current];
 
   const auto& current_fg = feature_groups[current_term.first];
   auto it = current_fg.hash_extents_begin(current_term.second);
-  if (prev_term == current_term)
-  {
-    std::advance(it, offset);
-  }
+  if (prev_term == current_term) { std::advance(it, offset); }
   else
   {
     offset = 0;
@@ -158,7 +144,8 @@ std::vector<std::vector<features_range_t>> inline generate_generic_extent_combin
   {
     auto so_far_copy = so_far;
     so_far_copy.emplace_back(*it);
-    auto t = generate_generic_extent_combination_inner(feature_groups, terms, current + 1, current_term, offset + i, so_far_copy);
+    auto t = generate_generic_extent_combination_inner(
+        feature_groups, terms, current + 1, current_term, offset + i, so_far_copy);
     result.insert(result.end(), t.begin(), t.end());
     i++;
   }
@@ -167,14 +154,14 @@ std::vector<std::vector<features_range_t>> inline generate_generic_extent_combin
 }
 
 std::vector<std::vector<features_range_t>> inline generate_generic_extent_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups,
-    const std::vector<extent_term>& terms)
+    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& terms)
 {
   std::vector<std::vector<features_range_t>> result;
   const auto& current_term = terms[0];
   const auto& current_fg = feature_groups[current_term.first];
   auto i = 0;
-  for (auto it = current_fg.hash_extents_begin(current_term.second); it != current_fg.hash_extents_end(current_term.second); ++it)
+  for (auto it = current_fg.hash_extents_begin(current_term.second);
+       it != current_fg.hash_extents_end(current_term.second); ++it)
   {
     auto t = generate_generic_extent_combination_inner(feature_groups, terms, 1, current_term, i, {*it});
     result.insert(result.end(), t.begin(), t.end());
@@ -194,8 +181,7 @@ std::tuple<features_range_t, features_range_t, features_range_t> inline generate
 }
 
 std::vector<features_range_t> inline generate_generic_char_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups,
-    const std::vector<namespace_index>& terms)
+    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& terms)
 {
   std::vector<features_range_t> inter;
   for (const auto& term : terms)
@@ -405,8 +391,8 @@ template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, Weight
     void (*audit_func)(DataT&, const audit_strings*),
     class WeightsT>  // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(const std::vector<std::vector<namespace_index>>& interactions,
-    const std::vector<std::vector<extent_term>>& extent_interactions,
-    bool permutations, example_predict& ec, DataT& dat, WeightsT& weights,
+    const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, example_predict& ec,
+    DataT& dat, WeightsT& weights,
     size_t& num_features)  // default value removed to eliminate ambiguity in old complers
 {
   num_features = 0;
@@ -432,32 +418,33 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     const size_t len = ns.size();
     if (len == 2)  // special case of pairs
     {
-      num_features += process_quadratic_interaction<audit>(
-          generate_quadratic_char_combination(ec.feature_space, ns[0], ns[1]), permutations,
-          inner_kernel_func, depth_audit_func);
-
+      num_features +=
+          process_quadratic_interaction<audit>(generate_quadratic_char_combination(ec.feature_space, ns[0], ns[1]),
+              permutations, inner_kernel_func, depth_audit_func);
     }
     else if (len == 3)  // special case for triples
     {
-      num_features += process_cubic_interaction<audit>(
-          generate_cubic_char_combination(ec.feature_space, ns[0], ns[1], ns[2]),
-          permutations, inner_kernel_func, depth_audit_func);
+      num_features +=
+          process_cubic_interaction<audit>(generate_cubic_char_combination(ec.feature_space, ns[0], ns[1], ns[2]),
+              permutations, inner_kernel_func, depth_audit_func);
     }
     else  // generic case: quatriples, etc.
 #endif
     {
-        num_features += process_generic_interaction<audit>(
-            generate_generic_char_combination(ec.feature_space, ns), permutations, inner_kernel_func, depth_audit_func);
+      num_features += process_generic_interaction<audit>(
+          generate_generic_char_combination(ec.feature_space, ns), permutations, inner_kernel_func, depth_audit_func);
     }
   }
 
   for (const auto& ns : extent_interactions)
   {
     if (has_empty_interaction(ec.feature_space, ns)) { continue; }
-    if (std::any_of(ns.begin(), ns.end(), [](const extent_term& term){return term.first == wildcard_namespace;})) {THROW("Wildcard not yet implemented.");}
-    for(const auto& combination : generate_generic_extent_combination(ec.feature_space, ns))
+    if (std::any_of(ns.begin(), ns.end(), [](const extent_term& term) { return term.first == wildcard_namespace; }))
+    { THROW("Wildcard not yet implemented."); }
+    for (const auto& combination : generate_generic_extent_combination(ec.feature_space, ns))
     {
-      num_features += process_generic_interaction<audit>(combination, permutations, inner_kernel_func, depth_audit_func);
+      num_features +=
+          process_generic_interaction<audit>(combination, permutations, inner_kernel_func, depth_audit_func);
     }
   }
 }  // foreach interaction in all.interactions

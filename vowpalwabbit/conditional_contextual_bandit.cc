@@ -56,7 +56,8 @@ void return_collection(std::vector<T>& array, VW::vector_pool<T>& pool)
 //   2. Every existing interaction + ccb_slot_namespace
 //   3. wildcard_namespace + ccb_id_namespace
 //   4. wildcard_namespace + ccb_slot_namespace
-void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interactions_to_add_to, std::vector<std::vector<extent_term>>& extent_interactions_to_add_to)
+void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interactions_to_add_to,
+    std::vector<std::vector<extent_term>>& extent_interactions_to_add_to)
 {
   const auto reserve_size = interactions_to_add_to.size() * 2;
   std::vector<std::vector<namespace_index>> new_interactions;
@@ -74,7 +75,7 @@ void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interact
   interactions_to_add_to.push_back({wildcard_namespace, ccb_slot_namespace});
 
   std::vector<std::vector<extent_term>> new_extent_interactions;
-  new_extent_interactions.reserve(new_extent_interactions.size()*2);
+  new_extent_interactions.reserve(new_extent_interactions.size() * 2);
   for (const auto& inter : extent_interactions_to_add_to)
   {
     new_extent_interactions.push_back(inter);
@@ -83,9 +84,12 @@ void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interact
     new_extent_interactions.back().emplace_back(ccb_slot_namespace, ccb_slot_namespace);
   }
   extent_interactions_to_add_to.reserve(extent_interactions_to_add_to.size() + new_extent_interactions.size() + 2);
-  std::move(new_extent_interactions.begin(), new_extent_interactions.end(), std::back_inserter(extent_interactions_to_add_to));
-  extent_interactions_to_add_to.push_back({std::make_pair(wildcard_namespace, wildcard_namespace), std::make_pair(ccb_id_namespace, ccb_id_namespace)});
-  extent_interactions_to_add_to.push_back({std::make_pair(wildcard_namespace, wildcard_namespace), std::make_pair(ccb_slot_namespace, ccb_slot_namespace)});
+  std::move(new_extent_interactions.begin(), new_extent_interactions.end(),
+      std::back_inserter(extent_interactions_to_add_to));
+  extent_interactions_to_add_to.push_back(
+      {std::make_pair(wildcard_namespace, wildcard_namespace), std::make_pair(ccb_id_namespace, ccb_id_namespace)});
+  extent_interactions_to_add_to.push_back(
+      {std::make_pair(wildcard_namespace, wildcard_namespace), std::make_pair(ccb_slot_namespace, ccb_slot_namespace)});
 }
 
 struct ccb
@@ -626,7 +630,8 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
         sizeof(sm.has_seen_multi_slot_example), "", read, msg, text);
   }
 
-  if (read && sm.has_seen_multi_slot_example) { insert_ccb_interactions(sm.all->interactions, sm.all->extent_interactions); }
+  if (read && sm.has_seen_multi_slot_example)
+  { insert_ccb_interactions(sm.all->interactions, sm.all->extent_interactions); }
 }
 
 base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)

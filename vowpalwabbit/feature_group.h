@@ -227,7 +227,7 @@ private:
 public:
   using iterator_category = std::forward_iterator_tag;
   using difference_type = std::ptrdiff_t;
-  using value_type =  std::pair<audit_features_iterator_t, audit_features_iterator_t>;
+  using value_type = std::pair<audit_features_iterator_t, audit_features_iterator_t>;
   using pointer = value_type*;
   using reference = value_type&;
   using const_reference = const value_type&;
@@ -247,9 +247,7 @@ public:
   {
     // 1. get to end of current segment.
     while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash == _hash)
-    {
-      ++_index_current;
-    }
+    { ++_index_current; }
 
     // 2. skip over any non-equal segments
     while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash != _hash)

@@ -600,7 +600,8 @@ void parse_feature_tweaks(
                .help("Create feature interactions of any level between namespaces."))
       .add(make_option("new_full_interactions", full_name_interactions)
                .keep()
-               .help("EXPERIMENTAL: Create feature interactions of any level between namespaces by specifying the full name of each namespace."))
+               .help("EXPERIMENTAL: Create feature interactions of any level between namespaces by specifying the full "
+                     "name of each namespace."))
       .add(make_option("permutations", all.permutations)
                .help("Use permutations instead of combinations for feature interactions of same namespace."))
       .add(make_option("leave_duplicate_interactions", leave_duplicate_interactions)

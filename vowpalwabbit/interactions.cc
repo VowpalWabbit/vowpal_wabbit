@@ -42,7 +42,7 @@ std::pair<size_t, float> eval_count_for_extent(
 
 // returns number of new features that will be generated for example and sum of their squared values
 void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
-  const std::vector<std::vector<extent_term>>& extent_interactions,
+    const std::vector<std::vector<extent_term>>& extent_interactions,
     const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value)
 {
   new_features_cnt = 0;
@@ -214,7 +214,7 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
           }
 
           // namespace is same for whole block
-          
+
           // count number of features with value != 1.;
           size_t cnt_ft_value_non_1 = 0;
 
@@ -228,8 +228,8 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
           std::fill(results.begin(), results.end(), 0.f);
 
           auto& current_fg = feature_spaces[extent_it->first];
-          for (auto it = current_fg.hash_extents_begin(extent_it->second); it != current_fg.hash_extents_end(extent_it->second);
-               ++it)
+          for (auto it = current_fg.hash_extents_begin(extent_it->second);
+               it != current_fg.hash_extents_end(extent_it->second); ++it)
           {
             auto this_range = *it;
             for (auto inner_begin = this_range.first; inner_begin != this_range.second; ++inner_begin)
@@ -244,7 +244,7 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
           sum_feat_sq_in_inter *= results[order_of_inter - 1];
 
           auto count_and_sum_ft_sq = eval_count_for_extent(feature_spaces, *extent_it);
-         
+
           const size_t ft_size = count_and_sum_ft_sq.first;
           if (cnt_ft_value_non_1 == 0 && ft_size < order_of_inter)
           {
@@ -273,7 +273,6 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
 
               n += num;
             }
-
           }
 
           num_features_in_inter *= n;

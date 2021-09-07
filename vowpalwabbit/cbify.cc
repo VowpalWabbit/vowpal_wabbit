@@ -107,8 +107,8 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
   if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
 }
 
-void cbify_adf_data::init_adf_data(
-    const std::size_t num_actions, std::size_t increment, std::vector<std::vector<namespace_index>>& interactions, std::vector<std::vector<extent_term>>& extent_interactions)
+void cbify_adf_data::init_adf_data(const std::size_t num_actions, std::size_t increment,
+    std::vector<std::vector<namespace_index>>& interactions, std::vector<std::vector<extent_term>>& extent_interactions)
 {
   this->num_actions = num_actions;
   this->increment = increment;
@@ -759,7 +759,8 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
   {
     multi_learner* base = as_multiline(stack_builder.setup_base_learner());
 
-    if (data->use_adf) { data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions); }
+    if (data->use_adf)
+    { data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions); }
 
     if (use_cs)
     {

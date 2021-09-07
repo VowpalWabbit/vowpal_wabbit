@@ -79,8 +79,8 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
   ex->extent_interactions = &vw.extent_interactions;
   size_t fast_features_count;
   float fast_features_value;
-  INTERACTIONS::eval_count_of_generated_ft(
-      vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space, fast_features_count, fast_features_value);
+  INTERACTIONS::eval_count_of_generated_ft(vw.permutations, *ex->interactions, *ex->extent_interactions,
+      ex->feature_space, fast_features_count, fast_features_value);
   ex->interactions = &vw.interactions;
 
   BOOST_CHECK_EQUAL(naive_features_count, fast_features_count);
@@ -106,8 +106,8 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_permuations_test)
   ex->extent_interactions = &vw.extent_interactions;
   size_t fast_features_count;
   float fast_features_value;
-  INTERACTIONS::eval_count_of_generated_ft(
-      vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space, fast_features_count, fast_features_value);
+  INTERACTIONS::eval_count_of_generated_ft(vw.permutations, *ex->interactions, *ex->extent_interactions,
+      ex->feature_space, fast_features_count, fast_features_value);
   ex->interactions = &vw.interactions;
 
   vw.predict(*ex);
@@ -288,34 +288,21 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
   {
     auto a = parse_full_name_interactions(*vw, "a|b");
     std::vector<extent_term> expected = {
-        extent_term{
-            'a', VW::hash_space(*vw, "a")},
-        extent_term{
-            'b', VW::hash_space(*vw, "b")}};
+        extent_term{'a', VW::hash_space(*vw, "a")}, extent_term{'b', VW::hash_space(*vw, "b")}};
     check_collections_exact(a, expected);
   }
 
   {
     auto a = parse_full_name_interactions(*vw, "art|bat|and");
-    std::vector<extent_term> expected = {
-        extent_term{
-            'a', VW::hash_space(*vw, "art")},
-        extent_term{
-            'b', VW::hash_space(*vw, "bat")},
-        extent_term{
-            'a', VW::hash_space(*vw, "and")}
-    };
+    std::vector<extent_term> expected = {extent_term{'a', VW::hash_space(*vw, "art")},
+        extent_term{'b', VW::hash_space(*vw, "bat")}, extent_term{'a', VW::hash_space(*vw, "and")}};
     check_collections_exact(a, expected);
   }
 
   {
     auto a = parse_full_name_interactions(*vw, "art|:|and");
-    std::vector<extent_term> expected = {
-        extent_term{
-            'a', VW::hash_space(*vw, "art")},
-        extent_term{wildcard_namespace, wildcard_namespace},
-        extent_term{
-            'a', VW::hash_space(*vw, "and")}};
+    std::vector<extent_term> expected = {extent_term{'a', VW::hash_space(*vw, "art")},
+        extent_term{wildcard_namespace, wildcard_namespace}, extent_term{'a', VW::hash_space(*vw, "and")}};
     check_collections_exact(a, expected);
   }
 
