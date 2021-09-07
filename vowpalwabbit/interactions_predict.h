@@ -98,30 +98,6 @@ std::tuple<features_range_t, features_range_t> inline generate_quadratic_char_co
       std::make_pair(feature_groups[ns_idx2].audit_begin(), feature_groups[ns_idx2].audit_end()))};
 }
 
-std::vector<std::tuple<features_range_t, features_range_t>> inline generate_quadratic_extent_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, extent_term extent1, extent_term extent2)
-{
-  const auto& fg1 = feature_groups[extent1.first];
-  const auto& fg2 = feature_groups[extent2.first];
-  std::vector<std::tuple<features_range_t, features_range_t>> result;
-  if (extent1 == extent2)
-  {
-    for (auto it = fg1.hash_extents_begin(extent1.second); it != fg1.hash_extents_end(extent1.second); ++it)
-    {
-      for (auto it2 = it; it2 != fg1.hash_extents_end(extent1.second); ++it2) { result.emplace_back(*it, *it2); }
-    }
-  }
-  else
-  {
-    for (auto it = fg1.hash_extents_begin(extent1.second); it != fg1.hash_extents_end(extent1.second); ++it)
-    {
-      for (auto it2 = fg1.hash_extents_begin(extent2.second); it2 != fg1.hash_extents_end(extent2.second); ++it2)
-      { result.emplace_back(*it, *it2); }
-    }
-  }
-  return result;
-}
-
 std::vector<std::vector<features_range_t>> inline generate_generic_extent_combination_inner(
     const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& terms, size_t current,
     const extent_term& prev_term, size_t offset, const std::vector<features_range_t>& so_far)
