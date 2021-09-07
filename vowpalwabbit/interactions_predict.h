@@ -62,20 +62,19 @@ struct feature_gen_data
   }
 };
 
-inline bool term_is_empty(
-    namespace_index term, const std::array<features, NUM_NAMESPACES>& feature_groups)
+inline bool term_is_empty(namespace_index term, const std::array<features, NUM_NAMESPACES>& feature_groups)
 {
   return feature_groups[term].empty();
 }
 
-inline bool has_empty_interaction_quadratic(const std::array<features, NUM_NAMESPACES>& feature_groups,
-    const std::vector<namespace_index>& namespace_indexes)
+inline bool has_empty_interaction_quadratic(
+    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
 {
   return term_is_empty(namespace_indexes[0], feature_groups) || term_is_empty(namespace_indexes[1], feature_groups);
 }
 
-inline bool has_empty_interaction_cubic(const std::array<features, NUM_NAMESPACES>& feature_groups,
-    const std::vector<namespace_index>& namespace_indexes)
+inline bool has_empty_interaction_cubic(
+    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
 {
   return term_is_empty(namespace_indexes[0], feature_groups) || term_is_empty(namespace_indexes[1], feature_groups) ||
       term_is_empty(namespace_indexes[2], feature_groups);
