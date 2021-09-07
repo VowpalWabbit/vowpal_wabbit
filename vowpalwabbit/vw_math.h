@@ -1,4 +1,5 @@
 #pragma once
+#define NOMINMAX
 
 #include <cmath>
 
@@ -62,6 +63,23 @@ VW_STD14_CONSTEXPR inline int64_t choose(int64_t n, int64_t k) noexcept
     r /= d;
   }
   return r;
+}
+
+/**
+ * @brief Clamp a value in the range [lower_bound, upper_bound]
+ * @param num value to clamp
+ * @param lower_bound lower bound of clamp range
+ * @param upper_bound upper bound of clamp range
+ */
+template <typename T>
+VW_STD14_CONSTEXPR T clamp(const T& num, const T& lower_bound, const T& upper_bound)
+{
+  assert(lower_bound <= upper_bound);
+#ifdef HAS_STD17
+  return std::clamp(num, lower_bound, upper_bound);
+#else
+  return std::max(lower_bound, std::min(n, upper_bound));
+#endif
 }
 
 }  // namespace math

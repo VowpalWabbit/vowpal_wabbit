@@ -103,7 +103,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   }
 
   for (size_t i = 0; i < num_actions; i++)
-  { preds[i].score = std::min(_max_cost, std::max(_min_cost, preds[i].score)); }
+  { preds[i].score = VW::math::clamp(preds[i].score, _min_cost, _max_cost);}
   std::make_heap(
       preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
         return ACTION_SCORE::score_comp(&a, &b) > 0;
