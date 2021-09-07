@@ -82,6 +82,9 @@ Feature options:
                                   defaults to current directory or env{PATH}
   --interactions arg              Create feature interactions of any level 
                                   between namespaces.
+  --new_full_interactions arg     EXPERIMENTAL: Create feature interactions of 
+                                  any level between namespaces by specifying 
+                                  the full name of each namespace.
   --permutations                  Use permutations instead of combinations for 
                                   feature interactions of same namespace.
   --leave_duplicate_interactions  Don't remove interactions with duplicate 

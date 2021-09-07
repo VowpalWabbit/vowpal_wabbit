@@ -1,1 +1,1 @@
-[critical] vw (gd_mf.cc:284): Error: Model weights not initialized.
+[critical] vw (gd_mf.cc:267): Error: Model weights not initialized.
