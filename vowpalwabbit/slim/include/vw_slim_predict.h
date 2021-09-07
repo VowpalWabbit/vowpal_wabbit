@@ -226,6 +226,7 @@ class vw_predict
   std::string _version;
   std::string _command_line_arguments;
   std::vector<std::vector<namespace_index>> _interactions;
+  std::vector<std::vector<extent_term>> _unused_extent_interactions;
   INTERACTIONS::interactions_generator _generate_interactions;
   bool _contains_wildcard;
   std::array<bool, NUM_NAMESPACES> _ignore_linear;
@@ -425,12 +426,12 @@ public:
       // permutations is not supported by slim so we can just use combinations!
       _generate_interactions.update_interactions_if_new_namespace_seen<
           INTERACTIONS::generate_namespace_combinations_with_repetition, false>(_interactions, ex.indices);
-      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions,
+      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions, _unused_extent_interactions
           /* permutations */ false, ex);
     }
     else
     {
-      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, /* permutations */ false, ex);
+      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, _unused_extent_interactions, /* permutations */ false, ex);
     }
     return S_VW_PREDICT_OK;
   }

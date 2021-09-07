@@ -22,7 +22,8 @@ namespace INTERACTIONS
  *  Estimation of generated features properties
  */
 
-std::pair<float, float> calc(const std::array<features, NUM_NAMESPACES>& feature_spaces, extent_term const& term)
+std::pair<size_t, float> eval_count_for_extent(
+    const std::array<features, NUM_NAMESPACES>& feature_spaces, const extent_term& term)
 {
   size_t num_features_in_inter = 1;
   float sum_feat_sq_in_inter = 1.;
@@ -72,14 +73,12 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
-
-
       for (auto& extent : inter)
       {
-        auto _ = calc(feature_spaces, extent);
+        auto count_and_sum_ft_sq = eval_count_for_extent(feature_spaces, extent);
 
-        num_features_in_inter *= _.first;
-        sum_feat_sq_in_inter *= _.second;
+        num_features_in_inter *= count_and_sum_ft_sq.first;
+        sum_feat_sq_in_inter *= count_and_sum_ft_sq.second;
         // If there are no features, then we don't want to accumulate the default value of 1.0, so we zero out here.
         if (num_features_in_inter == 0) { sum_feat_sq_in_inter = 0; }
       }
@@ -192,14 +191,14 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
 
-      for (auto ns = inter.begin(); ns != inter.end(); ++ns)
+      for (auto extent_it = inter.begin(); extent_it != inter.end(); ++extent_it)
       {
-        if ((ns == inter.end() - 1) || (*ns != *(ns + 1)))  // neighbour namespaces are different
+        if ((extent_it == inter.end() - 1) || (*extent_it != *(extent_it + 1)))  // neighbour namespaces are different
         {
           // just multiply precomputed values
-          auto current = calc(feature_spaces, *ns);
-          num_features_in_inter *= current.first;
-          sum_feat_sq_in_inter *= current.second;
+          auto count_and_sum_ft_sq = eval_count_for_extent(feature_spaces, *extent_it);
+          num_features_in_inter *= count_and_sum_ft_sq.first;
+          sum_feat_sq_in_inter *= count_and_sum_ft_sq.second;
           if (num_features_in_inter == 0) break;  // one of namespaces has no features - go to next interaction
         }
         else  // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
@@ -209,8 +208,10 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
           // already compared ns == ns+1
           size_t order_of_inter = 2;
 
-          for (auto ns_end = ns + 2; ns_end < inter.end(); ++ns_end)
-            if (*ns == *ns_end) ++order_of_inter;
+          for (auto extent_end = extent_it + 2; extent_end < inter.end(); ++extent_end)
+          {
+            if (*extent_it == *extent_end) { ++order_of_inter; }
+          }
 
           // namespace is same for whole block
           
@@ -226,8 +227,8 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
           results.resize_but_with_stl_behavior(order_of_inter);
           std::fill(results.begin(), results.end(), 0.f);
 
-            auto& current_fg = feature_spaces[ns->first];
-          for (auto it = current_fg.hash_extents_begin(ns->second); it != current_fg.hash_extents_end(ns->second);
+          auto& current_fg = feature_spaces[extent_it->first];
+          for (auto it = current_fg.hash_extents_begin(extent_it->second); it != current_fg.hash_extents_end(extent_it->second);
                ++it)
           {
             auto this_range = *it;
@@ -235,16 +236,16 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
             {
               const float x = inner_begin.value() * inner_begin.value();
               results[0] += x;
-              for (size_t j = 1; j < order_of_inter; ++j) results[j] += results[j - 1] * x;
+              for (size_t j = 1; j < order_of_inter; ++j) { results[j] += results[j - 1] * x; }
               ++cnt_ft_value_non_1;
             }
           }
 
           sum_feat_sq_in_inter *= results[order_of_inter - 1];
 
-          auto c = calc(feature_spaces, *ns);
+          auto count_and_sum_ft_sq = eval_count_for_extent(feature_spaces, *extent_it);
          
-          const size_t ft_size = c.first;
+          const size_t ft_size = count_and_sum_ft_sq.first;
           if (cnt_ft_value_non_1 == 0 && ft_size < order_of_inter)
           {
             num_features_in_inter = 0;
@@ -273,11 +274,11 @@ void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector
               n += num;
             }
 
-          }  // details on http://bit.ly/1Hk9JX1
+          }
 
           num_features_in_inter *= n;
 
-          ns += order_of_inter - 1;  // jump over whole block
+          extent_it += order_of_inter - 1;  // jump over whole block
         }
       }
 

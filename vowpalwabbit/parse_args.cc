@@ -520,7 +520,7 @@ std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view s
       {
         THROW("A wildcard term in --new_full_interactions cannot contain characters other than ':'. Found: " << token)
       }
-      result.emplace_back(wildcard_namespace, 0);
+      result.emplace_back(wildcard_namespace, wildcard_namespace);
     }
     else
     {

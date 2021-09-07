@@ -77,7 +77,6 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
           vw.interactions, std::set<namespace_index>(ex->indices.begin(), ex->indices.end()));
   ex->interactions = &interactions;
   ex->extent_interactions = &vw.extent_interactions;
-  ex->interactions = &interactions;
   size_t fast_features_count;
   float fast_features_value;
   INTERACTIONS::eval_count_of_generated_ft(
@@ -314,7 +313,7 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
     std::vector<extent_term> expected = {
         extent_term{
             'a', VW::hash_space(*vw, "art")},
-        extent_term{wildcard_namespace, 0},
+        extent_term{wildcard_namespace, wildcard_namespace},
         extent_term{
             'a', VW::hash_space(*vw, "and")}};
     check_collections_exact(a, expected);

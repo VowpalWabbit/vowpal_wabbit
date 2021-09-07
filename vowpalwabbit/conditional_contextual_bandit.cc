@@ -84,8 +84,8 @@ void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interact
   }
   extent_interactions_to_add_to.reserve(extent_interactions_to_add_to.size() + new_extent_interactions.size() + 2);
   std::move(new_extent_interactions.begin(), new_extent_interactions.end(), std::back_inserter(extent_interactions_to_add_to));
-  extent_interactions_to_add_to.push_back({std::make_pair(wildcard_namespace, 0), std::make_pair(ccb_id_namespace, ccb_id_namespace)});
-  extent_interactions_to_add_to.push_back({std::make_pair(wildcard_namespace, 0), std::make_pair(ccb_slot_namespace, ccb_slot_namespace)});
+  extent_interactions_to_add_to.push_back({std::make_pair(wildcard_namespace, wildcard_namespace), std::make_pair(ccb_id_namespace, ccb_id_namespace)});
+  extent_interactions_to_add_to.push_back({std::make_pair(wildcard_namespace, wildcard_namespace), std::make_pair(ccb_slot_namespace, ccb_slot_namespace)});
 }
 
 struct ccb
