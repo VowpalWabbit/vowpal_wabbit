@@ -78,7 +78,7 @@ VW_STD14_CONSTEXPR T clamp(const T& num, const T& lower_bound, const T& upper_bo
 #ifdef HAS_STD17
   return std::clamp(num, lower_bound, upper_bound);
 #else
-  return std::max(lower_bound, std::min(n, upper_bound));
+  return std::max(lower_bound, std::min(num, upper_bound));
 #endif
 }
 
