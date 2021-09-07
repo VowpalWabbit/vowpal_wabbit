@@ -34,7 +34,6 @@ test/*.cmp
 *.a
 t_*
 bin
-.*
 !.pipelines
 vw.1
 *.cache
