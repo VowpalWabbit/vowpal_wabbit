@@ -245,6 +245,13 @@ public:
   // Required for forward_iterator
   ns_extent_iterator& operator++()
   {
+    // 1. get to end of current segment.
+    while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash == _hash)
+    {
+      ++_index_current;
+    }
+
+    // 2. skip over any non-equal segments
     while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash != _hash)
     { ++_index_current; }
 
