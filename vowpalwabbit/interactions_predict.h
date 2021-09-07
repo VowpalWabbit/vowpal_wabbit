@@ -7,7 +7,7 @@
 #include "constant.h"
 #include "feature_group.h"
 #include "example_predict.h"
-#include "interaction_term.h"
+#include <utility>
 #include <vector>
 #include <string>
 
@@ -69,6 +69,19 @@ inline bool has_empty_interaction(
   return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
       [&](namespace_index idx) { return feature_groups[idx].empty(); });
 }
+inline bool has_empty_interaction(
+    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& namespace_indexes)
+{
+  return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
+      [&](extent_term idx)
+      {
+        return std::find_if(feature_groups[idx.first].namespace_extents.begin(),
+                   feature_groups[idx.first].namespace_extents.end(),
+                   [&idx](const VW::namespace_extent& extent) {
+                     return idx.second == extent.hash && ((extent.end_index - extent.begin_index) > 0);
+                   }) == feature_groups[idx.first].namespace_extents.end();
+      });
+}
 
 // The inline function below may be adjusted to change the way
 // synthetic (interaction) features' values are calculated, e.g.,
@@ -86,6 +99,83 @@ std::tuple<features_range_t, features_range_t> inline generate_quadratic_char_co
 {
   return {std::make_tuple(std::make_pair(feature_groups[ns_idx1].audit_begin(), feature_groups[ns_idx1].audit_end()),
       std::make_pair(feature_groups[ns_idx2].audit_begin(), feature_groups[ns_idx2].audit_end()))};
+}
+
+std::vector<std::tuple<features_range_t, features_range_t>> inline generate_quadratic_extent_combination(
+    const std::array<features, NUM_NAMESPACES>& feature_groups, extent_term extent1, extent_term extent2)
+{
+  const auto& fg1 = feature_groups[extent1.first];
+  const auto& fg2 = feature_groups[extent2.first];
+  std::vector<std::tuple<features_range_t, features_range_t>> result;
+  if (extent1 == extent2)
+  {
+    for (auto it = fg1.hash_extents_begin(extent1.second); it != fg1.hash_extents_end(extent1.second); ++it)
+    {
+      for (auto it2 = it; it2 != fg1.hash_extents_end(extent1.second); ++it2)
+      {
+        result.emplace_back(*it, *it2);
+      }
+    }
+  }
+  else
+  {
+    for (auto it = fg1.hash_extents_begin(extent1.second); it != fg1.hash_extents_end(extent1.second); ++it)
+    {
+      for (auto it2 = fg1.hash_extents_begin(extent2.second); it2 != fg1.hash_extents_end(extent2.second); ++it2)
+      {
+        result.emplace_back(*it, *it2);
+      }
+    }
+  }
+  return result;
+}
+
+std::vector<std::vector<features_range_t>> inline generate_generic_extent_combination_inner(
+    const std::array<features, NUM_NAMESPACES>& feature_groups,
+    const std::vector<extent_term>& terms, size_t current, const extent_term& prev_term, size_t offset, const std::vector<features_range_t>& so_far)
+{
+  if (current == terms.size())
+  {
+    return {so_far};
+  }
+
+  std::vector<std::vector<features_range_t>> result;
+  const auto& current_term = terms[current];
+
+  const auto& current_fg = feature_groups[current_term.first];
+  auto it = current_fg.hash_extents_begin(current_term.second);
+  if (prev_term == current_term)
+  {
+    std::advance(it, offset);
+  }
+  auto i = 0;
+  for (; it != current_fg.hash_extents_end(current_term.second); ++it)
+  {
+    auto so_far_copy = so_far;
+    so_far_copy.emplace_back(*it);
+    auto t = generate_generic_extent_combination_inner(feature_groups, terms, current + 1, current_term, offset + i, so_far_copy);
+    result.insert(result.end(), t.begin(), t.end());
+    i++;
+  }
+
+  return result;
+}
+
+std::vector<std::vector<features_range_t>> inline generate_generic_extent_combination(
+    const std::array<features, NUM_NAMESPACES>& feature_groups,
+    const std::vector<extent_term>& terms)
+{
+  std::vector<std::vector<features_range_t>> result;
+  const auto& current_term = terms[0];
+  const auto& current_fg = feature_groups[current_term.first];
+  auto i = 0;
+  for (auto it = current_fg.hash_extents_begin(current_term.second); it != current_fg.hash_extents_end(current_term.second); ++it)
+  {
+    generate_generic_extent_combination_inner(feature_groups, terms, 1, current_term, i, {*it});
+    i++;
+  }
+
+  return result;
 }
 
 std::tuple<features_range_t, features_range_t, features_range_t> inline generate_cubic_char_combination(
@@ -309,7 +399,7 @@ template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, Weight
     void (*audit_func)(DataT&, const audit_strings*),
     class WeightsT>  // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(const std::vector<std::vector<namespace_index>>& interactions,
-    const std::vector<std::vector<INTERACTIONS::extent_interaction>>& extent_interactions,
+    const std::vector<std::vector<extent_term>>& extent_interactions,
     bool permutations, example_predict& ec, DataT& dat, WeightsT& weights,
     size_t& num_features)  // default value removed to eliminate ambiguity in old complers
 {
@@ -357,7 +447,12 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
 
   for (const auto& ns : extent_interactions)
   {
-    // ...
+    if (has_empty_interaction(ec.feature_space, ns)) { continue; }
+    if (std::any_of(ns.begin(), ns.end(), [](const extent_term& term){return term.first == wildcard_namespace;})) {THROW("Wildcard not yet implemented.");}
+    for(const auto& combination : generate_generic_extent_combination(ec.feature_space, ns))
+    {
+      num_features += process_generic_interaction<audit>(combination, permutations, inner_kernel_func, depth_audit_func);
+    }
   }
 }  // foreach interaction in all.interactions
 

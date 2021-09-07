@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <algorithm>
 
+#include "constant.h"
 #include "parse_regressor.h"
 #include "parser.h"
 #include "parse_primitives.h"
@@ -503,6 +504,33 @@ std::vector<namespace_index> parse_char_interactions(VW::string_view input)
   return result;
 }
 
+std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view str)
+{
+  std::vector<extent_term> result;
+  auto encoded = VW::decode_inline_hex(str);
+
+  std::vector<VW::string_view> tokens;
+  tokenize('|', str, tokens, true);
+  for (const auto& token : tokens)
+  {
+    if (token.empty()) { THROW("A term in --new_full_interactions cannot be empty. Given: " << str) }
+    if (std::find(token.begin(), token.end(), ':') != token.end())
+    {
+      if (token.size() != 1)
+      {
+        THROW("A wildcard term in --new_full_interactions cannot contain characters other than ':'. Found: " << token)
+      }
+      result.emplace_back(wildcard_namespace, 0);
+    }
+    else
+    {
+      const auto ns_hash = VW::hash_space(all, std::string{token});
+      result.emplace_back(static_cast<namespace_index>(token[0]), ns_hash);
+    }
+  }
+  return result;
+}
+
 void parse_feature_tweaks(
     options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
@@ -512,6 +540,7 @@ void parse_feature_tweaks(
   std::vector<std::string> quadratics;
   std::vector<std::string> cubics;
   std::vector<std::string> interactions;
+  std::vector<std::string> full_name_interactions;
   std::vector<std::string> ignores;
   std::vector<std::string> ignore_linears;
   std::vector<std::string> keeps;
@@ -569,6 +598,9 @@ void parse_feature_tweaks(
       .add(make_option("interactions", interactions)
                .keep()
                .help("Create feature interactions of any level between namespaces."))
+      .add(make_option("new_full_interactions", full_name_interactions)
+               .keep()
+               .help("EXPERIMENTAL: Create feature interactions of any level between namespaces by specifying the full name of each namespace."))
       .add(make_option("permutations", all.permutations)
                .help("Use permutations instead of combinations for feature interactions of same namespace."))
       .add(make_option("leave_duplicate_interactions", leave_duplicate_interactions)
@@ -738,6 +770,16 @@ void parse_feature_tweaks(
     }
 
     all.interactions = std::move(decoded_interactions);
+  }
+
+  if (options.was_supplied("new_full_interactions"))
+  {
+    for (const auto& i : full_name_interactions)
+    {
+      auto parsed = parse_full_name_interactions(all, i);
+      if (parsed.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
+      all.extent_interactions.push_back(parsed);
+    }
   }
 
   for (size_t i = 0; i < 256; i++)

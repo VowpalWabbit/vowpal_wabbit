@@ -196,7 +196,6 @@
     <ClInclude Include="cached_learner.h" />
     <ClInclude Include="reduction_stack.h" />
     <ClInclude Include="interactions.h" />
-    <ClInclude Include="interaction_term.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="io/io_adapter.h" />
     <ClInclude Include="kskip_ngram_transformer.h" />
@@ -358,7 +357,6 @@
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="interact.cc" />
     <ClCompile Include="interactions.cc" />
-    <ClCompile Include="interaction_term.cc" />
     <ClCompile Include="reduction_stack.cc" />
     <ClCompile Include="io/io_adapter.cc" />
     <ClCompile Include="io_buf.cc" />

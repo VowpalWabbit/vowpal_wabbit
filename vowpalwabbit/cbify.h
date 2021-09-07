@@ -4,6 +4,7 @@
 
 #pragma once
 #include "reductions_fwd.h"
+#include "feature_group.h"
 
 class parameters;
 struct example;
@@ -17,7 +18,7 @@ struct cbify_adf_data
   uint64_t custom_index_mask;
 
   void init_adf_data(
-      const std::size_t num_actions, size_t increment, std::vector<std::vector<namespace_index>>& interactions);
+      const std::size_t num_actions, size_t increment, std::vector<std::vector<namespace_index>>& interactions, std::vector<std::vector<extent_term>>& extent_interactions);
   void copy_example_to_adf(parameters& weights, example& ec);
 
   ~cbify_adf_data();

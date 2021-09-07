@@ -8,6 +8,7 @@
 #include "future_compat.h"
 #include "generic_range.h"
 
+#include <iterator>
 #include <utility>
 #include <memory>
 #include <string>
@@ -224,6 +225,12 @@ private:
   extent_it _index_current;
 
 public:
+  using iterator_category = std::forward_iterator_tag;
+  using difference_type = std::ptrdiff_t;
+  using value_type =  std::pair<audit_features_iterator_t, audit_features_iterator_t>;
+  using pointer = value_type*;
+  using reference = value_type&;
+  using const_reference = const value_type&;
   std::pair<audit_features_iterator_t, audit_features_iterator_t> operator*()
   {
     return std::make_pair(_feature_group->audit_begin() + _index_current->begin_index,

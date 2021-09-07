@@ -56,38 +56,36 @@ void return_collection(std::vector<T>& array, VW::vector_pool<T>& pool)
 //   2. Every existing interaction + ccb_slot_namespace
 //   3. wildcard_namespace + ccb_id_namespace
 //   4. wildcard_namespace + ccb_slot_namespace
-void insert_ccb_interactions(std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions_to_add_to)
+void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interactions_to_add_to, std::vector<std::vector<extent_term>>& extent_interactions_to_add_to)
 {
   const auto reserve_size = interactions_to_add_to.size() * 2;
-  std::vector<std::vector<INTERACTIONS::interaction_term>> new_interactions;
+  std::vector<std::vector<namespace_index>> new_interactions;
   new_interactions.reserve(reserve_size);
   for (const auto& inter : interactions_to_add_to)
   {
     new_interactions.push_back(inter);
-    if (inter.front().type() == INTERACTIONS::interaction_term_type::ns_char)
-    { new_interactions.back().emplace_back(ccb_id_namespace); }
-    else
-    {
-      // TODO - ensure these generated features actually are within an extent.
-      new_interactions.back().emplace_back(ccb_id_namespace, ccb_id_namespace);
-    }
+    new_interactions.back().push_back(static_cast<namespace_index>(ccb_id_namespace));
     new_interactions.push_back(inter);
-    if (inter.front().type() == INTERACTIONS::interaction_term_type::ns_char)
-    { new_interactions.back().emplace_back(ccb_slot_namespace); }
-    else
-    {
-      // TODO - ensure these generated features actually are within an extent.
-      new_interactions.back().emplace_back(ccb_slot_namespace, ccb_slot_namespace);
-    }
+    new_interactions.back().push_back(static_cast<namespace_index>(ccb_slot_namespace));
   }
   interactions_to_add_to.reserve(interactions_to_add_to.size() + new_interactions.size() + 2);
   std::move(new_interactions.begin(), new_interactions.end(), std::back_inserter(interactions_to_add_to));
-  interactions_to_add_to.push_back(
-      {INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
-          INTERACTIONS::interaction_term(ccb_id_namespace)});
-  interactions_to_add_to.push_back(
-      {INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char),
-          INTERACTIONS::interaction_term(ccb_slot_namespace)});
+  interactions_to_add_to.push_back({wildcard_namespace, ccb_id_namespace});
+  interactions_to_add_to.push_back({wildcard_namespace, ccb_slot_namespace});
+
+  std::vector<std::vector<extent_term>> new_extent_interactions;
+  new_extent_interactions.reserve(new_extent_interactions.size()*2);
+  for (const auto& inter : extent_interactions_to_add_to)
+  {
+    new_extent_interactions.push_back(inter);
+    new_extent_interactions.back().emplace_back(ccb_id_namespace, ccb_id_namespace);
+    new_extent_interactions.push_back(inter);
+    new_extent_interactions.back().emplace_back(ccb_slot_namespace, ccb_slot_namespace);
+  }
+  extent_interactions_to_add_to.reserve(extent_interactions_to_add_to.size() + new_extent_interactions.size() + 2);
+  std::move(new_extent_interactions.begin(), new_extent_interactions.end(), std::back_inserter(extent_interactions_to_add_to));
+  extent_interactions_to_add_to.push_back({std::make_pair(wildcard_namespace, 0), std::make_pair(ccb_id_namespace, ccb_id_namespace)});
+  extent_interactions_to_add_to.push_back({std::make_pair(wildcard_namespace, 0), std::make_pair(ccb_slot_namespace, ccb_slot_namespace)});
 }
 
 struct ccb
@@ -432,7 +430,7 @@ void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
   // mode a new namespace is added (ccb_id_namespace) and so we can be confident
   // that the cache will be invalidated.
   if (!previously_should_augment_with_slot_info && should_augment_with_slot_info)
-  { insert_ccb_interactions(data.all->interactions); }
+  { insert_ccb_interactions(data.all->interactions, data.all->extent_interactions); }
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
@@ -628,7 +626,7 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
         sizeof(sm.has_seen_multi_slot_example), "", read, msg, text);
   }
 
-  if (read && sm.has_seen_multi_slot_example) { insert_ccb_interactions(sm.all->interactions); }
+  if (read && sm.has_seen_multi_slot_example) { insert_ccb_interactions(sm.all->interactions, sm.all->extent_interactions); }
 }
 
 base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)

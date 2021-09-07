@@ -67,9 +67,9 @@ inline void foreach_feature(vw& all, example& ec, DataT& dat)
 {
   return all.weights.sparse
       ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters>(all.weights.sparse_weights,
-            all.ignore_some_linear, all.ignore_linear, *ec.interactions, all.permutations, ec, dat)
+            all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec, dat)
       : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters>(all.weights.dense_weights,
-            all.ignore_some_linear, all.ignore_linear, *ec.interactions, all.permutations, ec, dat);
+            all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec, dat);
 }
 
 // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
@@ -78,9 +78,9 @@ inline void foreach_feature(vw& all, example& ec, DataT& dat, size_t& num_intera
 {
   return all.weights.sparse ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters>(
                                   all.weights.sparse_weights, all.ignore_some_linear, all.ignore_linear,
-                                  *ec.interactions, all.permutations, ec, dat, num_interacted_features)
+                                  *ec.interactions, *ec.extent_interactions, all.permutations, ec, dat, num_interacted_features)
                             : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters>(all.weights.dense_weights,
-                                  all.ignore_some_linear, all.ignore_linear, *ec.interactions, all.permutations, ec,
+                                  all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
                                   dat, num_interacted_features);
 }
 
@@ -115,9 +115,9 @@ inline float inline_predict(vw& all, example& ec)
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   return all.weights.sparse
       ? inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear, all.ignore_linear,
-            *ec.interactions, all.permutations, ec, simple_red_features.initial)
+            *ec.interactions, *ec.extent_interactions, all.permutations, ec, simple_red_features.initial)
       : inline_predict<dense_parameters>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear,
-            *ec.interactions, all.permutations, ec, simple_red_features.initial);
+            *ec.interactions, *ec.extent_interactions, all.permutations, ec, simple_red_features.initial);
 }
 
 inline float inline_predict(vw& all, example& ec, size_t& num_generated_features)
@@ -125,9 +125,9 @@ inline float inline_predict(vw& all, example& ec, size_t& num_generated_features
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   return all.weights.sparse
       ? inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear, all.ignore_linear,
-            *ec.interactions, all.permutations, ec, num_generated_features, simple_red_features.initial)
+            *ec.interactions, *ec.extent_interactions, all.permutations, ec, num_generated_features, simple_red_features.initial)
       : inline_predict<dense_parameters>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear,
-            *ec.interactions, all.permutations, ec, num_generated_features, simple_red_features.initial);
+            *ec.interactions, *ec.extent_interactions, all.permutations, ec, num_generated_features, simple_red_features.initial);
 }
 
 inline float trunc_weight(const float w, const float gravity)
@@ -144,10 +144,10 @@ inline void generate_interactions(vw& all, example_predict& ec, R& dat, size_t& 
 {
   if (all.weights.sparse)
     generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(
-        *ec.interactions, all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features);
+        *ec.interactions, *ec.extent_interactions, all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features);
   else
     generate_interactions<R, S, T, audit, audit_func, dense_parameters>(
-        *ec.interactions, all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features);
+        *ec.interactions, *ec.extent_interactions, all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features);
 }
 
 // this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
@@ -156,10 +156,10 @@ inline void generate_interactions(vw& all, example_predict& ec, R& dat, size_t& 
 {
   if (all.weights.sparse)
     generate_interactions<R, S, T, sparse_parameters>(
-        all.interactions, all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features);
+        all.interactions, all.extent_interactions, all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features);
   else
     generate_interactions<R, S, T, dense_parameters>(
-        all.interactions, all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features);
+        all.interactions, all.extent_interactions, all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features);
 }
 
 }  // namespace INTERACTIONS
