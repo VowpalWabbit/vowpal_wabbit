@@ -11,9 +11,9 @@
 #include "parse_example.h"
 #include "io/logger.h"
 
-using dispatch_fptr = std::function<void(vw&, const v_array<example*>&)>;
-
-inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
+// DispatchFuncT should be of the form - void(vw&, const v_array<example*>&)
+template<typename DispatchFuncT>
+void parse_dispatch(vw& all, DispatchFuncT& dispatch_func)
 {
   v_array<example*> examples;
   size_t example_number = 0;  // for variable-size batch learning algorithms
@@ -28,7 +28,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
       {
         VW::setup_examples(all, examples);
         example_number += examples.size();
-        dispatch(all, examples);
+        dispatch_func(all, examples);
       }
       else
       {
@@ -46,7 +46,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
           all.passes_complete = 0;
           all.pass_length = all.pass_length * 2 + 1;
         }
-        dispatch(all, examples);  // must be called before lock_done or race condition exists.
+        dispatch_func(all, examples);  // must be called before lock_done or race condition exists.
         if (all.passes_complete >= all.numpasses && all.max_examples >= example_number) lock_done(*all.example_parser);
         example_number = 0;
       }
