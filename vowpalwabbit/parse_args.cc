@@ -778,7 +778,14 @@ void parse_feature_tweaks(
     {
       auto parsed = parse_full_name_interactions(all, i);
       if (parsed.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
+      std::sort(parsed.begin(), parsed.end());
       all.extent_interactions.push_back(parsed);
+    }
+    std::sort(all.extent_interactions.begin(), all.extent_interactions.end());
+    if (!leave_duplicate_interactions)
+    {
+      all.extent_interactions.erase(
+          std::unique(all.extent_interactions.begin(), all.extent_interactions.end()), all.extent_interactions.end());
     }
   }
 
