@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
   size_t rank = atoi(location);
 
   // global model params
-  std::vector<INTERACTIONS::interaction_term> first_pair;
+  std::vector<unsigned char> first_pair;
   for (auto const& i : model->interactions)
   {
     if(i.size() == 2)
@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
     return 2;
   }
 
-  unsigned char left_ns = first_pair[0].ns_char();
-  unsigned char right_ns = first_pair[1].ns_char();
+  unsigned char left_ns = first_pair[0];
+  unsigned char right_ns = first_pair[1];
   dense_parameters& weights = model->weights.dense_weights;
 
   FILE* file;
