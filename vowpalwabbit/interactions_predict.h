@@ -148,8 +148,13 @@ std::vector<std::vector<features_range_t>> inline generate_generic_extent_combin
   {
     std::advance(it, offset);
   }
+  else
+  {
+    offset = 0;
+  }
   auto i = 0;
-  for (; it != current_fg.hash_extents_end(current_term.second); ++it)
+  auto end = current_fg.hash_extents_end(current_term.second);
+  for (; it != end; ++it)
   {
     auto so_far_copy = so_far;
     so_far_copy.emplace_back(*it);
@@ -171,7 +176,8 @@ std::vector<std::vector<features_range_t>> inline generate_generic_extent_combin
   auto i = 0;
   for (auto it = current_fg.hash_extents_begin(current_term.second); it != current_fg.hash_extents_end(current_term.second); ++it)
   {
-    generate_generic_extent_combination_inner(feature_groups, terms, 1, current_term, i, {*it});
+    auto t = generate_generic_extent_combination_inner(feature_groups, terms, 1, current_term, i, {*it});
+    result.insert(result.end(), t.begin(), t.end());
     i++;
   }
 
