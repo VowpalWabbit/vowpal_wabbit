@@ -15,7 +15,6 @@
 #include "parse_primitives.h"
 #include "vw.h"
 #include "interactions.h"
-#include "interaction_term.h"
 
 #include "parse_args.h"
 #include "reduction_stack.h"
@@ -496,20 +495,11 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
 }  // namespace VW
 
-std::vector<INTERACTIONS::interaction_term> parse_char_interactions(VW::string_view str)
+std::vector<namespace_index> parse_char_interactions(VW::string_view input)
 {
-  std::vector<INTERACTIONS::interaction_term> result;
-  result.reserve(str.size());
-  auto encoded = VW::decode_inline_hex(str);
-  for (const auto c : str)
-  {
-    if (c == ':')
-    { result.push_back(INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char)); }
-    else
-    {
-      result.push_back(INTERACTIONS::interaction_term{static_cast<namespace_index>(c)});
-    }
-  }
+  std::vector<namespace_index> result;
+  auto decoded = VW::decode_inline_hex(input);
+  result.insert(result.begin(), decoded.begin(), decoded.end());
   return result;
 }
 
@@ -652,7 +642,7 @@ void parse_feature_tweaks(
   }
 
   // prepare namespace interactions
-  std::vector<std::vector<INTERACTIONS::interaction_term>> decoded_interactions;
+  std::vector<std::vector<namespace_index>> decoded_interactions;
 
   if ( ( (!all.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
@@ -674,7 +664,7 @@ void parse_feature_tweaks(
     {
       auto parsed = parse_char_interactions(i);
       if (parsed.size() != 2) { THROW("error, quadratic features must involve two sets.)") }
-      decoded_interactions.push_back(parsed);
+      decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
 
     if (!all.logger.quiet)
@@ -689,7 +679,7 @@ void parse_feature_tweaks(
     {
       auto parsed = parse_char_interactions(i);
       if (parsed.size() != 3) { THROW("error, cubic features must involve three sets.") }
-      decoded_interactions.push_back(parsed);
+      decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
 
     if (!all.logger.quiet)
@@ -702,7 +692,7 @@ void parse_feature_tweaks(
     {
       auto parsed = parse_char_interactions(i);
       if (parsed.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
-      decoded_interactions.push_back(parsed);
+      decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
     if (!all.logger.quiet)
     {
@@ -716,9 +706,7 @@ void parse_feature_tweaks(
     if (!all.logger.quiet && !options.was_supplied("leave_duplicate_interactions"))
     {
       auto any_contain_wildcards = std::any_of(decoded_interactions.begin(), decoded_interactions.end(),
-          [](const std::vector<INTERACTIONS::interaction_term>& interaction) {
-            return INTERACTIONS::contains_wildcard(interaction);
-          });
+          [](const std::vector<namespace_index>& interaction) { return INTERACTIONS::contains_wildcard(interaction); });
       if (any_contain_wildcards)
       {
         *(all.trace_message) << "WARNING: any duplicate namespace interactions will be removed\n"

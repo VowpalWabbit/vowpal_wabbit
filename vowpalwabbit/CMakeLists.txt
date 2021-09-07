@@ -122,7 +122,6 @@ set(vw_all_headers
   guard.h
   hashstring.h
   interact.h
-  interaction_term.h
   interactions_predict.h
   cached_learner.h
   reduction_stack.h
@@ -296,7 +295,6 @@ set(vw_all_sources
   hashstring.cc
   interact.cc
   reduction_stack.cc
-  interaction_term.cc
   interactions.cc
   io_buf.cc
   kernel_svm.cc

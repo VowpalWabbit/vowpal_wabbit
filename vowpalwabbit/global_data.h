@@ -220,7 +220,8 @@ public:
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
-  std::vector<std::vector<INTERACTIONS::interaction_term>> interactions;
+  std::vector<std::vector<namespace_index>> interactions;
+  std::vector<std::vector<extent_term>> extent_interactions;
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;

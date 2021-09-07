@@ -7,7 +7,6 @@
 #include "example_predict.h"
 #include "reductions_fwd.h"
 #include "constant.h"
-#include "interaction_term.h"
 
 #include <cstddef>
 
@@ -36,8 +35,7 @@ inline bool contains_wildcard(const std::vector<namespace_index>& interaction)
 }
 
 // function estimates how many new features will be generated for example and their sum(value^2).
-void eval_count_of_generated_ft(bool permutations,
-    const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions,
+void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
     const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value);
 
 std::vector<std::vector<namespace_index>> generate_namespace_combinations_with_repetition(
@@ -50,22 +48,21 @@ using generate_func_t = std::vector<std::vector<namespace_index>>(
 std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interactions(
     bool leave_duplicate_interactions, const std::set<namespace_index>& new_example_indices);
 
-bool sort_interactions_comparator(
-    const std::vector<INTERACTIONS::interaction_term>& a, const std::vector<INTERACTIONS::interaction_term>& b);
+bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b);
 
-void sort_and_filter_duplicate_interactions(std::vector<std::vector<INTERACTIONS::interaction_term>>& vec,
-    bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt);
+void sort_and_filter_duplicate_interactions(
+    std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt);
 
 template <generate_func_t generate_func, bool leave_duplicate_interactions>
-std::vector<std::vector<INTERACTIONS::interaction_term>> compile_interaction(
-    const std::vector<INTERACTIONS::interaction_term>& interaction, const std::set<namespace_index>& indices)
+std::vector<std::vector<namespace_index>> compile_interaction(
+    const std::vector<namespace_index>& interaction, const std::set<namespace_index>& indices)
 {
   std::vector<size_t> insertion_indices;
-  std::vector<INTERACTIONS::interaction_term> insertion_ns;
+  std::vector<namespace_index> insertion_ns;
   size_t num_wildcards = 0;
   for (size_t i = 0; i < interaction.size(); i++)
   {
-    if (!interaction[i].wildcard())
+    if (interaction[i] != wildcard_namespace)
     {
       insertion_indices.push_back(i);
       insertion_ns.push_back(interaction[i]);
@@ -77,16 +74,8 @@ std::vector<std::vector<INTERACTIONS::interaction_term>> compile_interaction(
   }
 
   // Quadratic fast path or generic generation function.
-  auto result_indices = num_wildcards == 2
-      ? expand_quadratics_wildcard_interactions(leave_duplicate_interactions, indices)
-      : generate_func(indices, num_wildcards);
-  std::vector<std::vector<INTERACTIONS::interaction_term>> result;
-  for (const auto& r : result_indices)
-  {
-    std::vector<INTERACTIONS::interaction_term> conv;
-    for (const auto& i : r) { conv.emplace_back(i); }
-    result.push_back(conv);
-  }
+  auto result = num_wildcards == 2 ? expand_quadratics_wildcard_interactions(leave_duplicate_interactions, indices)
+                                   : generate_func(indices, num_wildcards);
   for (size_t i = 0; i < insertion_indices.size(); i++)
   {
     for (auto& res : result) { res.insert(res.begin() + insertion_indices[i], insertion_ns[i]); }
@@ -96,18 +85,13 @@ std::vector<std::vector<INTERACTIONS::interaction_term>> compile_interaction(
 
 // Compiling an interaction means to expand out wildcards (:) for each index present
 template <generate_func_t generate_func, bool leave_duplicate_interactions>
-std::vector<std::vector<INTERACTIONS::interaction_term>> compile_interactions(
-    const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions,
-    const std::set<namespace_index>& indices)
+std::vector<std::vector<namespace_index>> compile_interactions(
+    const std::vector<std::vector<namespace_index>>& interactions, const std::set<namespace_index>& indices)
 {
-  std::vector<std::vector<INTERACTIONS::interaction_term>> final_interactions;
+  std::vector<std::vector<namespace_index>> final_interactions;
 
   for (const auto& inter : interactions)
   {
-    // Only ns_char is supported so far.
-    assert(std::all_of(inter.begin(), inter.end(),
-        [](const INTERACTIONS::interaction_term& term) { return term.type() == interaction_term_type::ns_char; }));
-
     if (contains_wildcard(inter))
     {
       auto compiled = compile_interaction<generate_func, leave_duplicate_interactions>(inter, indices);
@@ -132,11 +116,10 @@ private:
   std::set<namespace_index> all_seen_namespaces;
 
 public:
-  std::vector<std::vector<INTERACTIONS::interaction_term>> generated_interactions;
+  std::vector<std::vector<namespace_index>> generated_interactions;
 
   template <generate_func_t generate_func, bool leave_duplicate_interactions>
-  void update_interactions_if_new_namespace_seen(
-      const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions,
+  void update_interactions_if_new_namespace_seen(const std::vector<std::vector<namespace_index>>& interactions,
       const v_array<namespace_index>& new_example_indices)
   {
     auto prev_count = all_seen_namespaces.size();

@@ -61,17 +61,14 @@ void predict(mf& data, single_learner& base, example& ec)
   auto* saved_interactions = ec.interactions;
   auto restore_guard = VW::scope_exit([saved_interactions, &ec] { ec.interactions = saved_interactions; });
 
-  std::vector<std::vector<INTERACTIONS::interaction_term>> empty_interactions;
+  std::vector<std::vector<namespace_index>> empty_interactions;
   ec.interactions = &empty_interactions;
 
   // add interaction terms to prediction
   for (auto& i : *saved_interactions)
   {
-    if (i[0].type() != INTERACTIONS::interaction_term_type::ns_char ||
-        i[1].type() != INTERACTIONS::interaction_term_type::ns_char)
-    { THROW("can only use character based interactions in matrix factorization"); }
-    auto left_ns = static_cast<int>(i[0].ns_char());
-    auto right_ns = static_cast<int>(i[1].ns_char());
+    auto left_ns = static_cast<int>(i[0]);
+    auto right_ns = static_cast<int>(i[1]);
 
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
     {
@@ -123,18 +120,15 @@ void learn(mf& data, single_learner& base, example& ec)
   ec.indices.push_back(0);
 
   auto* saved_interactions = ec.interactions;
-  std::vector<std::vector<INTERACTIONS::interaction_term>> empty_interactions;
+  std::vector<std::vector<namespace_index>> empty_interactions;
   ec.interactions = &empty_interactions;
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces
   for (auto& i : *saved_interactions)
   {
-    if (i[0].type() != INTERACTIONS::interaction_term_type::ns_char ||
-        i[1].type() != INTERACTIONS::interaction_term_type::ns_char)
-    { THROW("can only use character based interactions in matrix factorization"); }
-    int left_ns = static_cast<int>(i[0].ns_char());
-    int right_ns = static_cast<int>(i[1].ns_char());
+    int left_ns = static_cast<int>(i[0]);
+    int right_ns = static_cast<int>(i[1]);
 
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
     {
@@ -205,8 +199,8 @@ base_learner* mf_setup(VW::setup_base_i& stack_builder)
   data->all = &all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  const auto non_pair_count = std::count_if(all.interactions.begin(), all.interactions.end(),
-      [](const std::vector<INTERACTIONS::interaction_term>& interaction) { return interaction.size() != 2; });
+  auto non_pair_count = std::count_if(all.interactions.begin(), all.interactions.end(),
+      [](const std::vector<unsigned char>& interaction) { return interaction.size() != 2; });
   if (non_pair_count > 0) { THROW("can only use pairs with new_mf"); }
 
   all.random_positive_weights = true;

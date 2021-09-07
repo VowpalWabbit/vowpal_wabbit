@@ -22,6 +22,9 @@ using feature_index = uint64_t;
 using audit_strings = std::pair<std::string, std::string>;
 using namespace_index = unsigned char;
 
+// First: character based feature group, second: hash of extent
+using extent_term = std::pair<namespace_index, uint64_t>;
+
 struct features;
 struct features_value_index_audit_range;
 

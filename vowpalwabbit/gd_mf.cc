@@ -49,19 +49,16 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
   }
   for (const auto& i : all.interactions)
   {
-    if (i.size() != 2) { THROW("can only use pairs in matrix factorization"); }
-    if (i[0].type() != INTERACTIONS::interaction_term_type::ns_char ||
-        i[1].type() != INTERACTIONS::interaction_term_type::ns_char)
-    { THROW("can only use character based interactions in matrix factorization"); }
+    if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
-    if (ec.feature_space[static_cast<unsigned char>(i[0].ns_char())].size() > 0 &&
-        ec.feature_space[static_cast<unsigned char>(i[1].ns_char())].size() > 0)
+    if (ec.feature_space[static_cast<unsigned char>(i[0])].size() > 0 &&
+        ec.feature_space[static_cast<unsigned char>(i[1])].size() > 0)
     {
       /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
       for (size_t k = 1; k <= d.rank; k++)
       {
-        for (const auto& f1 : ec.feature_space[static_cast<unsigned char>(i[0].ns_char())].audit_range())
-          for (const auto& f2 : ec.feature_space[static_cast<unsigned char>(i[1].ns_char())].audit_range())
+        for (const auto& f1 : ec.feature_space[static_cast<unsigned char>(i[0])].audit_range())
+          for (const auto& f2 : ec.feature_space[static_cast<unsigned char>(i[1])].audit_range())
           {
             std::cout << '\t' << f1.audit()->first << k << '^' << f1.audit()->second << ':' << ((f1.index() + k) & mask)
                       << "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
@@ -104,15 +101,12 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   ec.num_features_from_interactions = 0;
   for (const auto& i : d.all->interactions)
   {
-    if (i.size() != 2) { THROW("can only use pairs in matrix factorization"); }
-    if (i[0].type() != INTERACTIONS::interaction_term_type::ns_char ||
-        i[1].type() != INTERACTIONS::interaction_term_type::ns_char)
-    { THROW("can only use character based interactions in gd_mf"); }
-    const auto interacted_count = ec.feature_space[static_cast<int>(i[0].ns_char())].size() *
-        ec.feature_space[static_cast<int>(i[1].ns_char())].size();
+    if (i.size() != 2) THROW("can only use pairs in matrix factorization");
+    const auto interacted_count =
+        ec.feature_space[static_cast<int>(i[0])].size() * ec.feature_space[static_cast<int>(i[1])].size();
     ec.num_features -= interacted_count;
-    ec.num_features += ec.feature_space[static_cast<int>(i[0].ns_char())].size() * d.rank;
-    ec.num_features += ec.feature_space[static_cast<int>(i[1].ns_char())].size() * d.rank;
+    ec.num_features += ec.feature_space[static_cast<int>(i[0])].size() * d.rank;
+    ec.num_features += ec.feature_space[static_cast<int>(i[1])].size() * d.rank;
     ec.num_features_from_interactions += interacted_count;
   }
 
@@ -132,13 +126,9 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   // interaction terms
   for (const auto& i : d.all->interactions)
   {
-    if (i[0].type() != INTERACTIONS::interaction_term_type::ns_char ||
-        i[1].type() != INTERACTIONS::interaction_term_type::ns_char)
-    { THROW("can only use character based interactions in matrix factorization"); }
     // The check for non-pair interactions is done in the previous loop
 
-    if (ec.feature_space[static_cast<int>(i[0].ns_char())].size() > 0 &&
-        ec.feature_space[static_cast<int>(i[1].ns_char())].size() > 0)
+    if (ec.feature_space[static_cast<int>(i[0])].size() > 0 && ec.feature_space[static_cast<int>(i[1])].size() > 0)
     {
       for (uint64_t k = 1; k <= d.rank; k++)
       {
@@ -146,15 +136,13 @@ float mf_predict(gdmf& d, example& ec, T& weights)
         // l^k is from index+1 to index+d.rank
         // float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         pred_offset x_dot_l = {0., k};
-        GD::foreach_feature<pred_offset, offset_add, T>(
-            weights, ec.feature_space[static_cast<int>(i[0].ns_char())], x_dot_l);
+        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[0])], x_dot_l);
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         // float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(),
         // k+d.rank);
         pred_offset x_dot_r = {0., k + d.rank};
-        GD::foreach_feature<pred_offset, offset_add, T>(
-            weights, ec.feature_space[static_cast<int>(i[1].ns_char())], x_dot_r);
+        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[1])], x_dot_r);
 
         prediction += x_dot_l.p * x_dot_r.p;
 
@@ -216,12 +204,8 @@ void mf_train(gdmf& d, example& ec, T& weights)
   for (const auto& i : all.interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
-    if (i[0].type() != INTERACTIONS::interaction_term_type::ns_char ||
-        i[1].type() != INTERACTIONS::interaction_term_type::ns_char)
-    { THROW("can only use character based interactions in matrix factorization"); }
 
-    if (ec.feature_space[static_cast<int>(i[0].ns_char())].size() > 0 &&
-        ec.feature_space[static_cast<int>(i[1].ns_char())].size() > 0)
+    if (ec.feature_space[static_cast<int>(i[0])].size() > 0 && ec.feature_space[static_cast<int>(i[1])].size() > 0)
     {
       // update l^k weights
       for (size_t k = 1; k <= d.rank; k++)
@@ -229,8 +213,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
         // r^k \cdot x_r
         float r_dot_x = d.scalars[2 * k];
         // l^k <- l^k + update * (r^k \cdot x_r) * x_l
-        sd_offset_update<T>(
-            weights, ec.feature_space[static_cast<int>(i[0].ns_char())], k, update * r_dot_x, regularization);
+        sd_offset_update<T>(weights, ec.feature_space[static_cast<int>(i[0])], k, update * r_dot_x, regularization);
       }
       // update r^k weights
       for (size_t k = 1; k <= d.rank; k++)
@@ -239,7 +222,7 @@ void mf_train(gdmf& d, example& ec, T& weights)
         float l_dot_x = d.scalars[2 * k - 1];
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
         sd_offset_update<T>(
-            weights, ec.feature_space[static_cast<int>(i[1].ns_char())], k + d.rank, update * l_dot_x, regularization);
+            weights, ec.feature_space[static_cast<int>(i[1])], k + d.rank, update * l_dot_x, regularization);
       }
     }
   }

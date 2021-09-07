@@ -104,18 +104,8 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
       {'B', 'E', 'H'}, {'B', 'J', 'K'}, {'B', 'E', 'N'}};
 
   all.interactions.clear();
-  for (const auto& r : newpairs)
-  {
-    std::vector<INTERACTIONS::interaction_term> conv;
-    for (const auto& i : r) { conv.emplace_back(i); }
-    all.interactions.push_back(conv);
-  }
-  for (const auto& r : newtriples)
-  {
-    std::vector<INTERACTIONS::interaction_term> conv;
-    for (const auto& i : r) { conv.emplace_back(i); }
-    all.interactions.push_back(conv);
-  }
+  all.interactions.insert(std::end(all.interactions), std::begin(newpairs), std::end(newpairs));
+  all.interactions.insert(std::end(all.interactions), std::begin(newtriples), std::end(newtriples));
 
   if (data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);

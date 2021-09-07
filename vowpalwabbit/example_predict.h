@@ -62,7 +62,10 @@ struct example_predict
 
   // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
   // vector is an interaction and each char is a namespace.
-  std::vector<std::vector<INTERACTIONS::interaction_term>>* interactions = nullptr;
+  std::vector<std::vector<namespace_index>>* interactions = nullptr;
+
+  // Optional
+  std::vector<std::vector<extent_term>>* extent_interactions = nullptr;
   reduction_features _reduction_features;
 
   // Used for debugging reductions.  Keeps track of current reduction level.

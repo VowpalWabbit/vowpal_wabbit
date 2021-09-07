@@ -23,8 +23,7 @@ namespace INTERACTIONS
  */
 
 // returns number of new features that will be generated for example and sum of their squared values
-void eval_count_of_generated_ft(bool permutations,
-    const std::vector<std::vector<INTERACTIONS::interaction_term>>& interactions,
+void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
     const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value)
 {
   new_features_cnt = 0;
@@ -40,15 +39,12 @@ void eval_count_of_generated_ft(bool permutations,
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
 
-      for (const auto& ns : inter)
+      for (namespace_index ns : inter)
       {
-        if (ns.type() == INTERACTIONS::interaction_term_type::ns_char)
-        {
-          num_features_in_inter *= feature_spaces[ns.ns_char()].size();
-          sum_feat_sq_in_inter *= feature_spaces[ns.ns_char()].sum_feat_sq;
-          // If there are no features, then we don't want to accumulate the default value of 1.0, so we zero out here.
-          if (num_features_in_inter == 0) { sum_feat_sq_in_inter = 0; }
-        }
+        num_features_in_inter *= feature_spaces[ns].size();
+        sum_feat_sq_in_inter *= feature_spaces[ns].sum_feat_sq;
+        // If there are no features, then we don't want to accumulate the default value of 1.0, so we zero out here.
+        if (num_features_in_inter == 0) { sum_feat_sq_in_inter = 0; }
       }
 
       new_features_cnt += num_features_in_inter;
@@ -64,92 +60,89 @@ void eval_count_of_generated_ft(bool permutations,
 
       for (auto ns = inter.begin(); ns != inter.end(); ++ns)
       {
-        if (ns->type() == INTERACTIONS::interaction_term_type::ns_char)
+        if ((ns == inter.end() - 1) || (*ns != *(ns + 1)))  // neighbour namespaces are different
         {
-          if ((ns == inter.end() - 1) || (*ns != *(ns + 1)))  // neighbour namespaces are different
+          // just multiply precomputed values
+          const int nsc = *ns;
+          num_features_in_inter *= feature_spaces[nsc].size();
+          sum_feat_sq_in_inter *= feature_spaces[nsc].sum_feat_sq;
+          if (num_features_in_inter == 0) break;  // one of namespaces has no features - go to next interaction
+        }
+        else  // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
+        {
+          // let's find out real length of this block
+
+          // already compared ns == ns+1
+          size_t order_of_inter = 2;
+
+          for (auto ns_end = ns + 2; ns_end < inter.end(); ++ns_end)
+            if (*ns == *ns_end) ++order_of_inter;
+
+          // namespace is same for whole block
+          const features& fs = feature_spaces[static_cast<int>(*ns)];
+
+          // count number of features with value != 1.;
+          size_t cnt_ft_value_non_1 = 0;
+
+          // in this block we shall calculate number of generated features and sum of their values
+          // keeping in mind rules applicable for simple combinations instead of permutations
+
+          // let's calculate sum of their squared value for whole block
+
+          // ensure results as big as order_of_inter and empty.
+          results.resize_but_with_stl_behavior(order_of_inter);
+          std::fill(results.begin(), results.end(), 0.f);
+
+          // recurrent value calculations
+          for (size_t i = 0; i < fs.size(); ++i)
           {
-            // just multiply precomputed values
-            const int nsc = ns->ns_char();
-            num_features_in_inter *= feature_spaces[nsc].size();
-            sum_feat_sq_in_inter *= feature_spaces[nsc].sum_feat_sq;
-            if (num_features_in_inter == 0) break;  // one of namespaces has no features - go to next interaction
+            const float x = fs.values[i] * fs.values[i];
+            results[0] += x;
+            for (size_t j = 1; j < order_of_inter; ++j) results[j] += results[j - 1] * x;
+            ++cnt_ft_value_non_1;
           }
-          else  // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
+
+          sum_feat_sq_in_inter *= results[order_of_inter - 1];  // will be explained in http://bit.ly/1Hk9JX1
+
+          // let's calculate  the number of a new features
+
+          // if number of features is less than  order of interaction then go to the next interaction
+          // as you can't make simple combination of interaction 'aaa' if a contains < 3 features.
+          // unless one of them has value != 1. and we are counting them.
+          const size_t ft_size = fs.size();
+          if (cnt_ft_value_non_1 == 0 && ft_size < order_of_inter)
           {
-            // let's find out real length of this block
-
-            // already compared ns == ns+1
-            size_t order_of_inter = 2;
-
-            for (auto ns_end = ns + 2; ns_end < inter.end(); ++ns_end)
-              if (*ns == *ns_end) ++order_of_inter;
-
-            // namespace is same for whole block
-            const features& fs = feature_spaces[static_cast<int>(ns->ns_char())];
-
-            // count number of features with value != 1.;
-            size_t cnt_ft_value_non_1 = 0;
-
-            // in this block we shall calculate number of generated features and sum of their values
-            // keeping in mind rules applicable for simple combinations instead of permutations
-
-            // let's calculate sum of their squared value for whole block
-
-            // ensure results as big as order_of_inter and empty.
-            results.resize_but_with_stl_behavior(order_of_inter);
-            std::fill(results.begin(), results.end(), 0.f);
-
-            // recurrent value calculations
-            for (size_t i = 0; i < fs.size(); ++i)
-            {
-              const float x = fs.values[i] * fs.values[i];
-              results[0] += x;
-              for (size_t j = 1; j < order_of_inter; ++j) results[j] += results[j - 1] * x;
-              ++cnt_ft_value_non_1;
-            }
-
-            sum_feat_sq_in_inter *= results[order_of_inter - 1];  // will be explained in http://bit.ly/1Hk9JX1
-
-            // let's calculate  the number of a new features
-
-            // if number of features is less than  order of interaction then go to the next interaction
-            // as you can't make simple combination of interaction 'aaa' if a contains < 3 features.
-            // unless one of them has value != 1. and we are counting them.
-            const size_t ft_size = fs.size();
-            if (cnt_ft_value_non_1 == 0 && ft_size < order_of_inter)
-            {
-              num_features_in_inter = 0;
-              break;
-            }
-
-            size_t n;
-            if (cnt_ft_value_non_1 == 0)  // number of generated simple combinations is C(n,k)
-            {
-              n = static_cast<size_t>(
-                  VW::math::choose(static_cast<int64_t>(ft_size), static_cast<int64_t>(order_of_inter)));
-            }
-            else
-            {
-              n = 0;
-              for (size_t l = 0; l <= order_of_inter; ++l)
-              {
-                // C(l+m-1, l) * C(n-m, k-l)
-                size_t num = (l == 0) ? 1 : static_cast<size_t>(VW::math::choose(l + cnt_ft_value_non_1 - 1, l));
-
-                if (ft_size - cnt_ft_value_non_1 >= order_of_inter - l)
-                  num *= static_cast<size_t>(VW::math::choose(ft_size - cnt_ft_value_non_1, order_of_inter - l));
-                else
-                  num = 0;
-
-                n += num;
-              }
-
-            }  // details on http://bit.ly/1Hk9JX1
-
-            num_features_in_inter *= n;
-
-            ns += order_of_inter - 1;  // jump over whole block
+            num_features_in_inter = 0;
+            break;
           }
+
+          size_t n;
+          if (cnt_ft_value_non_1 == 0)  // number of generated simple combinations is C(n,k)
+          {
+            n = static_cast<size_t>(
+                VW::math::choose(static_cast<int64_t>(ft_size), static_cast<int64_t>(order_of_inter)));
+          }
+          else
+          {
+            n = 0;
+            for (size_t l = 0; l <= order_of_inter; ++l)
+            {
+              // C(l+m-1, l) * C(n-m, k-l)
+              size_t num = (l == 0) ? 1 : static_cast<size_t>(VW::math::choose(l + cnt_ft_value_non_1 - 1, l));
+
+              if (ft_size - cnt_ft_value_non_1 >= order_of_inter - l)
+                num *= static_cast<size_t>(VW::math::choose(ft_size - cnt_ft_value_non_1, order_of_inter - l));
+              else
+                num = 0;
+
+              n += num;
+            }
+
+          }  // details on http://bit.ly/1Hk9JX1
+
+          num_features_in_inter *= n;
+
+          ns += order_of_inter - 1;  // jump over whole block
         }
       }
 
@@ -161,8 +154,7 @@ void eval_count_of_generated_ft(bool permutations,
   }
 }
 
-bool sort_interactions_comparator(
-    const std::vector<INTERACTIONS::interaction_term>& a, const std::vector<INTERACTIONS::interaction_term>& b)
+bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b)
 {
   if (a.size() != b.size()) { return a.size() < b.size(); }
   return a < b;
@@ -172,11 +164,11 @@ bool sort_interactions_comparator(
  *   Sorting and filtering duplicate interactions
  */
 
-// returns true if interaction contains one or more duplicated namespaces
+// returns true if iteraction contains one or more duplicated namespaces
 // with one exeption - returns false if interaction made of one namespace
 // like 'aaa' as it has no sense to sort such things.
 
-inline bool must_be_left_sorted(const std::vector<INTERACTIONS::interaction_term>& oi)
+inline bool must_be_left_sorted(const std::vector<namespace_index>& oi)
 {
   if (oi.size() <= 1) return true;  // one letter in std::string - no need to sort
 
@@ -223,31 +215,31 @@ std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interaction
 // filter duplicate namespaces treating them as unordered sets of namespaces.
 // also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
 
-void sort_and_filter_duplicate_interactions(std::vector<std::vector<INTERACTIONS::interaction_term>>& vec,
-    bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
+void sort_and_filter_duplicate_interactions(
+    std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
 {
   // 2 out parameters
   removed_cnt = 0;
   sorted_cnt = 0;
 
   // interaction value sort + original position
-  std::vector<std::pair<std::vector<INTERACTIONS::interaction_term>, size_t>> vec_sorted;
+  std::vector<std::pair<std::vector<namespace_index>, size_t>> vec_sorted;
   for (size_t i = 0; i < vec.size(); ++i)
   {
-    std::vector<INTERACTIONS::interaction_term> sorted_i(vec[i]);
+    std::vector<namespace_index> sorted_i(vec[i]);
     std::stable_sort(std::begin(sorted_i), std::end(sorted_i));
-    vec_sorted.emplace_back(sorted_i, i);
+    vec_sorted.push_back(std::make_pair(sorted_i, i));
   }
 
   if (filter_duplicates)
   {
     // remove duplicates
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<INTERACTIONS::interaction_term>, size_t> const& a,
-            std::pair<std::vector<INTERACTIONS::interaction_term>, size_t> const& b) { return a.first < b.first; });
+        [](std::pair<std::vector<namespace_index>, size_t> const& a,
+            std::pair<std::vector<namespace_index>, size_t> const& b) { return a.first < b.first; });
     auto last = unique(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<INTERACTIONS::interaction_term>, size_t> const& a,
-            std::pair<std::vector<INTERACTIONS::interaction_term>, size_t> const& b) { return a.first == b.first; });
+        [](std::pair<std::vector<namespace_index>, size_t> const& a,
+            std::pair<std::vector<namespace_index>, size_t> const& b) { return a.first == b.first; });
     vec_sorted.erase(last, vec_sorted.end());
 
     // report number of removed interactions
@@ -255,14 +247,14 @@ void sort_and_filter_duplicate_interactions(std::vector<std::vector<INTERACTIONS
 
     // restore original order
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<INTERACTIONS::interaction_term>, size_t> const& a,
-            std::pair<std::vector<INTERACTIONS::interaction_term>, size_t> const& b) { return a.second < b.second; });
+        [](std::pair<std::vector<namespace_index>, size_t> const& a,
+            std::pair<std::vector<namespace_index>, size_t> const& b) { return a.second < b.second; });
   }
 
   // we have original vector and vector with duplicates removed + corresponding indexes in original vector
   // plus second vector's data is sorted. We can reuse it if we need interaction to be left sorted.
   // let's make a new vector from these two sources - without dulicates and with sorted data whenever it's needed.
-  std::vector<std::vector<INTERACTIONS::interaction_term>> res;
+  std::vector<std::vector<namespace_index>> res;
   for (auto& i : vec_sorted)
   {
     if (must_be_left_sorted(i.first))

@@ -14,7 +14,6 @@
 #include "model_parser.h"
 #include "opts.h"
 #include "interactions.h"
-#include "interaction_term.h"
 
 namespace vw_slim
 {
@@ -226,7 +225,7 @@ class vw_predict
   std::string _id;
   std::string _version;
   std::string _command_line_arguments;
-  std::vector<std::vector<INTERACTIONS::interaction_term>> _interactions;
+  std::vector<std::vector<namespace_index>> _interactions;
   INTERACTIONS::interactions_generator _generate_interactions;
   bool _contains_wildcard;
   std::array<bool, NUM_NAMESPACES> _ignore_linear;
@@ -295,31 +294,11 @@ public:
     if (find_opt_int(_command_line_arguments, "--hash_seed", hash_seed) && hash_seed)
       return E_VW_PREDICT_ERR_HASH_SEED_NOT_SUPPORTED;
 
-    std::vector<std::vector<namespace_index>> interactions_temp;
-    find_opt(_command_line_arguments, "-q", interactions_temp);
-    find_opt(_command_line_arguments, "--quadratic", interactions_temp);
-    find_opt(_command_line_arguments, "--cubic", interactions_temp);
-    find_opt(_command_line_arguments, "--interactions", interactions_temp);
-
     _interactions.clear();
-    _interactions.reserve(interactions_temp.size());
-    for (const auto& inter : interactions_temp)
-    {
-      std::vector<INTERACTIONS::interaction_term> current;
-      for (const auto c : inter)
-      {
-        if (c == ':')
-        {
-          current.push_back(
-              INTERACTIONS::interaction_term::make_wildcard(INTERACTIONS::interaction_term_type::ns_char));
-        }
-        else
-        {
-          current.push_back(INTERACTIONS::interaction_term{static_cast<namespace_index>(c)});
-        }
-      }
-      _interactions.push_back(current);
-    }
+    find_opt(_command_line_arguments, "-q", _interactions);
+    find_opt(_command_line_arguments, "--quadratic", _interactions);
+    find_opt(_command_line_arguments, "--cubic", _interactions);
+    find_opt(_command_line_arguments, "--interactions", _interactions);
 
     // VW performs the following transformation as a side-effect of looking for duplicates.
     // This affects how interaction hashes are generated.
