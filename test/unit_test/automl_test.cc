@@ -12,9 +12,9 @@
 #include "test_common.h"
 #include "simulator.h"
 #include "reductions_fwd.h"
-#include "test_red.cc"
+#include "automl.cc"
 #include "metric_sink.h"
-#include "constant.h"
+#include "constant.h" // FNV_prime
 
 #include <functional>
 #include <map>

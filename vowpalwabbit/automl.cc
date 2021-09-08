@@ -265,14 +265,6 @@ struct config_manager
     }
   }
 
-  /*void count_ns(multi_ex& exs)
-  {
-    for (example* ex : exs)
-    {
-      for (auto i : ex->indices) { ns_counter[i]++; }
-    }
-  }*/
-
   /*
     conf = initConfig('F','B')
     conf.append('C', 'G')
@@ -293,59 +285,9 @@ struct config_manager
 
     enumerate cnofigs, swap them in and out on a schedule, autoschema disvoery, but playing all
 
-
     reset and copy -- learner stack
     warmstart, reset to zero (or random?)
-
-
-    // first do weights:
-    DONE assert all weights are zero when i = n
-    DONE clear all weights to zero when i = n
-    DONE~~ test by clearing champ with interactions
-    DONEswap weights from i to j
-    DONE~~ test by having pm=3 and learn on only 2 and copy to 3, clear 2, test -> bad, swap from 3 -> good results
-
-    1 ) q :: -> subtract, Olga refactor
-        config oracle
-
-    // parallelized per reduction
-    2 ) clear and copy impls of the stack used in personalizer
-      a) audit step, verification
-      b) test
-
-    3 ) unit tests
-
-    --- then rlbakeoff
-    --- then deployed
   */
-
-  // will become an iterator on top of this class that does ns discovery
-  /*bool add_highest_two_ns(interaction_vec& interactions)
-  {
-    size_t max_1 = 0;
-    size_t max_2 = 0;
-    for (size_t i = 0; i < NUM_NAMESPACES; i++)
-    {
-      if (ns_counter[i] != 0 && i != 128)  // not sure why
-      {
-        if (max_1 == 0)
-          max_1 = i;
-        else if (max_2 == 0)
-          max_2 = i;
-        else if (ns_counter[max_1] < ns_counter[i])
-          max_1 = i;
-        else if (ns_counter[max_2] < ns_counter[i])
-          max_2 = i;
-      }
-    }
-    if (max_2 != 0)
-    {
-      helper::add_interaction(interactions, (namespace_index)max_1, (namespace_index)max_2);
-      return true;
-    }
-
-    return false;
-  }*/
 
   // TODO: Make more robust and separate to oracle
   void gen_configs(oracle& oc, const multi_ex& ec)
@@ -525,19 +467,6 @@ template <bool is_explore>
 void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 {
   assert(data.all->weights.sparse == false);
-  if (data.cm.county > 1998 && data.cm.county <= 2000)
-  {
-    //** clear operation
-    // data.all->weights.dense_weights.clear_offset(3, data.all->wpp);
-
-    //** swap
-    // data.all->weights.dense_weights.swap_offsets(0, 2, data.all->wpp);
-
-    //** copy / init with champs weights
-    // data.all->weights.dense_weights.copy_offsets(3, 0, data.all->wpp);
-
-    // helper::print_weights_nonzero(data.all, data.cm.county, data.all->weights.dense_weights);
-  }
 
   bool is_learn = true;
   // assert we learn twice
@@ -588,8 +517,6 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
   // extra: assert again just like at the top
   assert(data.all->interactions.empty() == true);
   assert(ec[0]->interactions == nullptr);
-
-  // if (data.cm.county > 1998) data.all->weights.dense_weights.clear_offset(3, data.all->wpp);
 }
 
 void persist(tr_data& data, metric_sink& metrics) { data.cm.persist(metrics); }

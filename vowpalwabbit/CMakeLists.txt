@@ -206,7 +206,7 @@ set(vw_all_headers
   tag_utils.h
   text_utils.h
   topk.h
-  test_red.h
+  automl.h
   unique_sort.h
   v_array.h
   version.h
@@ -359,7 +359,7 @@ set(vw_all_sources
   tag_utils.cc
   text_utils.cc
   topk.cc
-  test_red.cc
+  automl.cc
   unique_sort.cc
   version.cc
   vw_exception.cc

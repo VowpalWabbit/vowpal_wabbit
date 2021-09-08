@@ -16,7 +16,7 @@
 #include "multilabel_oaa.h"
 #include "bs.h"
 #include "topk.h"
-#include "test_red.h"
+#include "automl.h"
 #include "ect.h"
 #include "csoaa.h"
 #include "cb_algs.h"

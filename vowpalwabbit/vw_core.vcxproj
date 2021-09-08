@@ -269,7 +269,7 @@
     <ClInclude Include="stagewise_poly.h" />
     <ClInclude Include="svrg.h" />
     <ClInclude Include="tag_utils.h" />
-    <ClInclude Include="test_red.h" />
+    <ClInclude Include="automl.h" />
     <ClInclude Include="text_utils.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
@@ -423,7 +423,7 @@
     <ClCompile Include="stagewise_poly.cc" />
     <ClCompile Include="svrg.cc" />
     <ClCompile Include="tag_utils.cc" />
-    <ClCompile Include="test_red.cc" />
+    <ClCompile Include="automl.cc" />
     <ClCompile Include="text_utils.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
