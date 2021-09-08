@@ -220,8 +220,7 @@ struct config_manager
       configs;                       // Stores all configs in consideration (Mapp allows easy deletion unlike vector)
   size_t live_indices[MAX_CONFIGS];  // Current live config indices
   // Maybe not needed with oracle
-  std::priority_queue<std::pair<int, size_t>, std::vector<std::pair<int, size_t>>, std::less<std::pair<int, size_t>>>
-      new_indices;  // Maps priority to config index, unused configs
+  std::priority_queue<std::pair<float, size_t>> new_indices;  // Maps priority to config index, unused configs
   const size_t max_live_configs = MAX_CONFIGS;
   config_manager()
   {
@@ -299,7 +298,7 @@ struct config_manager
       scored_config sc;
       sc.interactions = interactions;
       configs[config_index] = sc;
-      size_t priority = 0;  // Make this some function of interactions and possibly ns_counter from oracle
+      float priority = 0.f;  // Make this some function of interactions and possibly ns_counter from oracle
       if (config_index >= max_live_configs) { new_indices.push(std::make_pair(priority, config_index)); }
     }
   }
@@ -317,7 +316,7 @@ struct config_manager
       if (std::find(std::begin(live_indices), std::end(live_indices), redo_index) == std::end(live_indices))
       {
         // Priority should be set differently (based on oracle)
-        new_indices.push(std::make_pair(0, redo_index));
+        new_indices.push(std::make_pair(0.f, redo_index));
       }
     }
   }
