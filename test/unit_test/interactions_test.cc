@@ -318,4 +318,5 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
   BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "||||"), VW::vw_exception);
   BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "|a|||b"), VW::vw_exception);
   BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "abc|::"), VW::vw_exception);
+  VW::finish(*vw);
 }
