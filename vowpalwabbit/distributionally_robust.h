@@ -51,6 +51,15 @@ namespace distributionally_robust
       if (!read) { msg << "_duals_n " << n << "\n"; }
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&n), sizeof(n), "", read, msg, text);
     }
+
+    void reset()
+    {
+      unbounded = false;
+      kappa = 0.f;
+      gamma = 0.f;
+      beta = 0.f;
+      n = 0.0;
+    }
   };
 
   using ScoredDual = std::pair<double, Duals>;
@@ -193,6 +202,29 @@ namespace distributionally_robust
 
       if (!read) { msg << "_chisq_chi_delta " << delta << "\n"; }
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&delta), sizeof(delta), "", read, msg, text);
+    }
+
+    void reset()
+    {
+      alpha = 0.0;
+      tau = 0.0;
+      wmin = 0.0;
+      wmax = 0.0;
+      rmin = 0.0;
+      rmax = 0.0;
+
+      n = 0.0;
+      sumw = 0.0;
+      sumwsq = 0.0;
+      sumwr = 0.0;
+      sumwsqr = 0.0;
+      sumwsqrsq = 0.0;
+
+      delta = 0.0;
+
+      duals_stale = false;
+      duals.first = 0.0;
+      duals.second.reset();
     }
 
     ScoredDual recompute_duals();

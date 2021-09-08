@@ -936,9 +936,7 @@ public:
 
       else if (ctx.key_length == 20 && !strncmp(str, "_original_label_cost", 20))
       {
-        if(!ctx.decision_service_data) {
-          THROW("_original_label_cost is only valid in DSJson");
-        }
+        if (!ctx.decision_service_data) { THROW("_original_label_cost is only valid in DSJson"); }
         ctx.float_state.output_float = &ctx.decision_service_data->originalLabelCost;
         ctx.float_state.return_state = this;
         return &ctx.float_state;
