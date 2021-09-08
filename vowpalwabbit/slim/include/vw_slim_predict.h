@@ -427,9 +427,8 @@ public:
       _generate_interactions.update_interactions_if_new_namespace_seen<
           INTERACTIONS::generate_namespace_combinations_with_repetition, false>(_interactions, ex.indices);
       score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions,
-          _unused_extent_interactions
-          /* permutations */ false,
-          ex);
+          _unused_extent_interactions,
+          /* permutations */ false, ex);
     }
     else
     {

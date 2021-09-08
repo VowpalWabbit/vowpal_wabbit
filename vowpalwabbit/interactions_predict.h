@@ -7,6 +7,7 @@
 #include "constant.h"
 #include "feature_group.h"
 #include "example_predict.h"
+#include "vw_exception.h"
 #include <utility>
 #include <vector>
 #include <string>
@@ -416,7 +417,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
   {
     if (has_empty_interaction(ec.feature_space, ns)) { continue; }
     if (std::any_of(ns.begin(), ns.end(), [](const extent_term& term) { return term.first == wildcard_namespace; }))
-    { THROW("Wildcard not yet implemented."); }
+    { THROW_OR_RETURN_VOID("Wildcard not yet implemented."); }
     for (const auto& combination : generate_generic_extent_combination(ec.feature_space, ns))
     {
       num_features +=
