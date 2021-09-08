@@ -1738,7 +1738,7 @@ void finish(vw& all, bool delete_all)
 
     float best_constant;
     float best_constant_loss;
-    if (get_best_constant(all, best_constant, best_constant_loss))
+    if (get_best_constant(all.loss.get(), all.sd, best_constant, best_constant_loss))
     {
       *(all.trace_message) << endl << "best constant = " << best_constant;
       if (best_constant_loss != FLT_MIN)
