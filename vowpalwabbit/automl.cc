@@ -181,7 +181,7 @@ struct oracle
 
 struct test_oracle : oracle
 {
-  std::map<size_t, size_t>
+  std::map<namespace_index, size_t>
       ns_counter;  // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   // This function can be swapped out some verion of -q ::, with subtraction
   std::vector<interaction_vec> gen_interactions(const multi_ex& ecs)
