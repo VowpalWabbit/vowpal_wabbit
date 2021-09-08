@@ -371,3 +371,20 @@ BOOST_AUTO_TEST_CASE(cpp_simulator_test_red)
   BOOST_CHECK_GT(ctr.back(), 0.6f);
   BOOST_CHECK_LT(ctr.back(), 0.65f);
 }
+
+BOOST_AUTO_TEST_CASE(learner_copy_clear_test)
+{
+  callback_map test_hooks;
+
+  test_hooks.emplace(10, [&](vw& all, multi_ex&) {
+    all.l->copy_offset_based(0, 1);
+    all.l->clear_offset_based(0);
+
+    // no-op for now
+
+    return true;
+  });
+
+  auto ctr = simulator::_test_helper_hook(
+      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, 10);
+}
