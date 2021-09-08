@@ -10,12 +10,10 @@ bool get_best_constant(loss_function* loss_func, shared_data* sd, float& best_co
 {
   if (sd->first_observed_label == FLT_MAX ||  // no non-test labels observed or function was never called
       (loss_func == nullptr) || (sd == nullptr))
-  {
-    return false;
-  }
+  { return false; }
 
   float label1 = sd->first_observed_label;  // observed labels might be inside [sd->Min_label, sd->Max_label], so
-                                                // can't use Min/Max
+                                            // can't use Min/Max
   float label2 = sd->second_observed_label;
   if (label2 == FLT_MAX)
   {
@@ -34,8 +32,7 @@ bool get_best_constant(loss_function* loss_func, shared_data* sd, float& best_co
 
   if (label1 != label2)
   {
-    label1_cnt =
-        static_cast<float>(sd->weighted_labels - label2 * sd->weighted_labeled_examples) / (label1 - label2);
+    label1_cnt = static_cast<float>(sd->weighted_labels - label2 * sd->weighted_labeled_examples) / (label1 - label2);
     label2_cnt = static_cast<float>(sd->weighted_labeled_examples) - label1_cnt;
   }
   else
@@ -47,9 +44,7 @@ bool get_best_constant(loss_function* loss_func, shared_data* sd, float& best_co
 
   auto funcName = loss_func->getType();
   if (funcName == "squared" || funcName == "Huber" || funcName == "classic")
-  {
-    best_constant = static_cast<float>(sd->weighted_labels) / static_cast<float>(sd->weighted_labeled_examples);
-  }
+  { best_constant = static_cast<float>(sd->weighted_labels) / static_cast<float>(sd->weighted_labeled_examples); }
   else if (sd->is_more_than_two_labels_observed)
   {
     // loss functions below don't have generic formuas for constant yet.
