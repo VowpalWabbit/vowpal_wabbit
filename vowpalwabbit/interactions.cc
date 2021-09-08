@@ -4,6 +4,7 @@
 
 #include "interactions.h"
 
+#include "vw_exception.h"
 #include "vw_math.h"
 #include "v_array.h"
 
@@ -403,104 +404,6 @@ void sort_and_filter_duplicate_interactions(
   }
 
   vec = res;
-}
-
-std::vector<namespace_index> indices_to_values_one_based(
-    const std::vector<size_t>& indices, const std::set<namespace_index>& values)
-{
-  std::vector<namespace_index> result;
-  result.reserve(indices.size());
-  for (size_t i = 0; i < indices.size(); i++)
-  {
-    auto it = values.begin();
-    std::advance(it, indices[i] - 1);
-    result.push_back(*it);
-  }
-  return result;
-}
-
-std::vector<namespace_index> indices_to_values_ignore_last_index(
-    const std::vector<size_t>& indices, const std::set<namespace_index>& values)
-{
-  std::vector<namespace_index> result;
-  result.reserve(indices.size() - 1);
-  for (size_t i = 0; i < indices.size() - 1; i++)
-  {
-    auto it = values.begin();
-    std::advance(it, indices[i]);
-    result.push_back(*it);
-  }
-  return result;
-}
-
-std::vector<std::vector<namespace_index>> generate_namespace_combinations_with_repetition(
-    const std::set<namespace_index>& namespaces, size_t num_to_pick)
-{
-  std::vector<std::vector<namespace_index>> result;
-  // This computation involves factorials and so can only be done with relatively small inputs.
-  // Factorial 22 would result in 64 bit overflow.
-  if ((namespaces.size() + num_to_pick) <= 21)
-  { result.reserve(VW::math::number_of_combinations_with_repetition(namespaces.size(), num_to_pick)); }
-
-  auto last_index = namespaces.size() - 1;
-  // last index is used to signal when done
-  std::vector<size_t> indices(num_to_pick + 1, 0);
-  while (true)
-  {
-    for (size_t i = 0; i < num_to_pick; ++i)
-    {
-      if (indices[i] > last_index)
-      {
-        // Increment the next index
-        indices[i + 1] += 1;
-        // Decrement all past indices
-        for (int k = static_cast<int>(i); k >= 0; --k) { indices[static_cast<size_t>(k)] = indices[i + 1]; }
-      }
-    }
-
-    if (indices[num_to_pick] > 0) break;
-    result.emplace_back(indices_to_values_ignore_last_index(indices, namespaces));
-
-    indices[0] += 1;
-  }
-
-  return result;
-}
-
-std::vector<std::vector<namespace_index>> generate_namespace_permutations_with_repetition(
-    const std::set<namespace_index>& namespaces, size_t num_to_pick)
-{
-  std::vector<std::vector<namespace_index>> result;
-  result.reserve(VW::math::number_of_permutations_with_repetition(namespaces.size(), num_to_pick));
-
-  std::vector<size_t> one_based_chosen_indices(num_to_pick, 0);
-  for (size_t i = 0; i < num_to_pick - 1; i++) { one_based_chosen_indices[i] = 1; }
-  one_based_chosen_indices[num_to_pick - 1] = 0;
-
-  size_t number_of_namespaces = namespaces.size();
-  size_t next_index = num_to_pick;
-
-  while (true)
-  {
-    if (one_based_chosen_indices[next_index - 1] == number_of_namespaces)
-    {
-      next_index--;
-      if (next_index == 0) { break; }
-    }
-    else
-    {
-      one_based_chosen_indices[next_index - 1]++;
-      while (next_index < num_to_pick)
-      {
-        next_index++;
-        one_based_chosen_indices[next_index - 1] = 1;
-      }
-
-      result.emplace_back(indices_to_values_one_based(one_based_chosen_indices, namespaces));
-    }
-  }
-
-  return result;
 }
 
 }  // namespace INTERACTIONS
