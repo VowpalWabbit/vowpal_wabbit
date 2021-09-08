@@ -123,25 +123,6 @@ class Simulator:
         self.count_2.update(((w2,r2),))
         self.ocrl2.recomputeduals()
 
-        if False:
-            print(str(i)+":"+str(vw_b_2)+", "+str(vw_b))
-            print("ips"+str(i)+":"+str(metrics["ips_2"])+", "+str(metrics["ips_1"]))
-            # only works for no interactions - hardcoded
-            # compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
-            assert float(vw_b_2) <= float(metrics["ips_1"]) , f"{vw_b_2} is higher than {metrics['ips_1']} at {i}"
-            # assert (i < 30)
-
-        if metrics["test_county"] % 500 == 0: # or metrics["test_county"] == 117:
-            print("no interactions: lb: " + str(vw_b), file=self.debug_log)
-            print("python: lb:" + str(self.ocrl.duals[0][0]), file=self.debug_log)
-            print("interactions: lb: " + str(vw_b_2), file=self.debug_log)
-            print("python: lb: " + str(self.ocrl2.duals[0][0]), file=self.debug_log)
-            print("no interactions: ips: " + str(metrics["ips_1"]), file=self.debug_log)
-            print("interactions: ips: " + str(metrics["ips_2"]), file=self.debug_log)
-            print("num examples: " + str(metrics["test_county"]), file=self.debug_log)
-            print(f"w{w}", file=self.debug_log)
-            print(f"r{r}", file=self.debug_log)
-            print(file=self.debug_log)
         assert(vw_b >= 0)
         assert(vw_b_2 >= 0)
 
@@ -236,9 +217,8 @@ def test_with_interaction():
     assert(math.isclose(without_save, with_save, rel_tol=1e-2))
 
 def test_without_interaction():
-    ctr = _test_helper(vw_arg="--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5")
+    ctr = _test_helper(vw_arg="--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", num_iterations=4000)
 
-    print(ctr[-1])
     assert(ctr[-1] <= 0.49)
     assert(ctr[-1] >= 0.38)
 
@@ -246,42 +226,18 @@ def test_without_interaction():
 # set test_red to 0 to return pred of no interaction
 def test_custom_reduction(config=0, sim_saveload=False):
     # 10281881982--audit --invert_hash
-    args = f"--invert_hash readable.vw --test_red {str(config)} --cb_explore_adf -q AA --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json"
+    args = f"--invert_hash readable.vw --test_red {str(config)} --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json"
     if sim_saveload:
         ctr = _test_helper_save_load(vw_arg=f"--save_resume {args}", log_filename=f"custom_reduc_{str(config)}.txt")
     else:
-        ctr = _test_helper(vw_arg=args, log_filename=f"custom_reduc_{str(config)}.txt")
+        ctr = _test_helper(vw_arg=args, log_filename=f"custom_reduc_{str(config)}.txt", num_iterations=4000)
 
-    print("custom reduction - "+str(config))
-    print(ctr[-1])
-
-    # if config == 0: # starting champ is no interactions
-    #     # assert(ctr[-1] > 0.35) # without rotation
-    #     assert(ctr[-1] > 0.70) # with champ rotation
-    # elif config == 1: # starting champ is with interactions
-    #     assert(ctr[-1] > 0.75)
-    # else:
-    #     assert(false)
+    if config == 0: # starting champ is no interactions
+        assert(ctr[-1] > 0.65)
+    elif config == 1: # starting champ is with interactions
+        assert(ctr[-1] > 0.75)
+    else:
+        assert(false)
 
 # good for attaching debugger
 print(f"pid: {os.getpid()}\n")
-
-def print_stars():
-    print()
-    [print("****************************") for _ in range(5)]
-    print()
-
-# test_with_interaction()
-# test_without_interaction()
-
-# print_stars()
-
-with_interaction = 1
-without_interaction = 0
-# print("pred WITH interaction ******")
-test_custom_reduction(config=with_interaction)
-
-# print_stars()
-
-# print("pred WITHOUT interaction ******")
-test_custom_reduction(config=without_interaction)
