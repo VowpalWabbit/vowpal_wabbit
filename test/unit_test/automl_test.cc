@@ -14,7 +14,7 @@
 #include "reductions_fwd.h"
 #include "automl.cc"
 #include "metric_sink.h"
-#include "constant.h" // FNV_prime
+#include "constant.h"  // FNV_prime
 
 #include <functional>
 #include <map>
