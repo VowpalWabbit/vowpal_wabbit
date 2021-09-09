@@ -217,6 +217,11 @@ public:
   ns_extent_iterator(features_t* feature_group, uint64_t hash, extent_it index_current)
       : _feature_group(feature_group), _hash(hash), _index_current(index_current)
   {
+    // Seek to the first valid position.
+    while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash != _hash)
+    {
+      ++_index_current;
+    }
   }
 
 private:
@@ -245,13 +250,11 @@ public:
   // Required for forward_iterator
   ns_extent_iterator& operator++()
   {
-    // 1. get to end of current segment.
-    while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash == _hash)
-    { ++_index_current; }
-
-    // 2. skip over any non-equal segments
+    ++_index_current;
     while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash != _hash)
-    { ++_index_current; }
+    {
+      ++_index_current;
+    }
 
     return *this;
   }
