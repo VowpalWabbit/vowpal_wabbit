@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: Build C++ VW binary
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On
           cmake --build build --target vw-bin vw-unit-test.out vw_c_api_unit_test spanning_tree to_flatbuff
       - name: Run unit tests with Valgrind
         run: valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full ./build/test/unit_test/vw-unit-test.out
@@ -36,7 +36,7 @@ jobs:
     steps:
       - name: Build C++ VW binary
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On
           cmake --build build --target vw-bin vw-unit-test.out vw_c_api_unit_test spanning_tree to_flatbuff
       - name: Run unit tests with Valgrind
         run: valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full ./build/test/unit_test/vw-unit-test.out

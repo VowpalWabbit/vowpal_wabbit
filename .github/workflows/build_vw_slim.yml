@@ -19,7 +19,7 @@ jobs:
       - name: Build VW Slim
         shell: bash
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DWARNINGS=OFF -DBUILD_SLIM_VW=On -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DBUILD_FLATBUFFERS=Off
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DWARNINGS=OFF -DBUILD_SLIM_VW=On -DBUILD_TESTS=On
           cmake --build build --target vwslim --target  vw-slim-test
       - name: Test VW Slim
         shell: bash

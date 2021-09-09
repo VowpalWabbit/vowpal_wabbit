@@ -22,7 +22,7 @@ jobs:
       - name: Build C++
         shell: bash
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -DWARNINGS=Off -DWARNING_AS_ERROR=On -DDO_NOT_BUILD_VW_C_WRAPPER=On -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -DWARNING_AS_ERROR=On -DDO_NOT_BUILD_VW_C_WRAPPER=On -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On
           cmake --build build --target all
       - name: Test C++ run_tests.py
         shell: bash
