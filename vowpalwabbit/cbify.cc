@@ -36,7 +36,7 @@ struct cbify_reg
   float min_value = 0.f;
   float max_value = 0.f;
   float bandwidth = 0.f;
-  int num_actions = 0.f;
+  int num_actions = 0;
   int loss_option = 0;
   int loss_report = 0;
   float loss_01_ratio = 0.f;
