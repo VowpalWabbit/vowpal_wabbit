@@ -18,7 +18,7 @@ namespace logger = VW::io::logger;
 
 struct confidence
 {
-  vw* all;
+  vw* all = nullptr;
 };
 
 template <bool is_learn, bool is_confidence_after_training>
@@ -109,7 +109,7 @@ base_learner* confidence_setup(VW::setup_base_i& stack_builder)
     return nullptr;
   }
 
-  auto data = scoped_calloc_or_throw<confidence>();
+  auto data = VW::make_unique<confidence>();
   data->all = &all;
 
   void (*learn_with_confidence_ptr)(confidence&, single_learner&, example&) = nullptr;
@@ -129,10 +129,12 @@ base_learner* confidence_setup(VW::setup_base_i& stack_builder)
   auto base = as_singleline(stack_builder.setup_base_learner());
 
   // Create new learner
-  learner<confidence, example>& l = init_learner(data, base, learn_with_confidence_ptr, predict_with_confidence_ptr,
-      stack_builder.get_setupfn_name(confidence_setup), true);
+  auto* l = make_reduction_learner(std::move(data), base, learn_with_confidence_ptr, predict_with_confidence_ptr, stack_builder.get_setupfn_name(confidence_setup))
+      .set_learn_returns_prediction(true)
+      .set_label_type(label_type_t::simple)
+      .set_prediction_type(prediction_type_t::scalar)
+      .set_finish_example(return_confidence_example)
+      .build();
 
-  l.set_finish_example(return_confidence_example);
-
-  return make_base(l);
+  return make_base(*l);
 }
