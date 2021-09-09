@@ -17,4 +17,4 @@ fi
 
 rm -rf build
 cmake -S . -B build -G Ninja -DBUILD_BENCHMARKS=ON -DBUILD_ONLY_STANDALONE_BENCHMARKS=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_FLATBUFFERS=On
-cmake --build --target vw-benchmarks.out
+cmake --build build --target vw-benchmarks.out
