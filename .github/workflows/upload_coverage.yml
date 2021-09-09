@@ -24,10 +24,6 @@ jobs:
         shell: bash
         run: python3 run_tests.py -f -j $(nproc) --include_flatbuffers --clean_dirty
         working-directory: test
-      - name: run_tests.py - flatbuffer conversion
-        shell: bash
-        run:  python3 run_tests.py -f -j $(nproc) --for_flatbuffers --clean_dirty
-        working-directory: test
       - name: Unit tests
         shell: bash
         run: ./build/test/unit_test/vw-unit-test.out
