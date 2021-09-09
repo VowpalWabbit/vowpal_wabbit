@@ -34,6 +34,5 @@ jobs:
         working-directory: build
       - name: Test C++ flatbuffers
         shell: bash
-        run: |
-          python3 run_tests.py -f --for_flatbuffers --clean_dirty -j $(nproc)
+        run: python3 run_tests.py -f --for_flatbuffers --clean_dirty -j $(nproc)
         working-directory: test
