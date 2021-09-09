@@ -12,16 +12,16 @@ on:
 jobs:
   check:
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
+      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Install GTest
-        shell: bash
-        run: ./.scripts/linux/install-gtest.sh
       - name: Build VW Slim
         shell: bash
-        run: ./.scripts/linux/build-slim.sh
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DWARNINGS=OFF -DBUILD_SLIM_VW=On -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DBUILD_FLATBUFFERS=Off
+          cmake --build build --target vwslim --target  vw-slim-test
       - name: Test VW Slim
         shell: bash
-        run: ./.scripts/linux/test-slim.sh
+        run: ./vw-slim-test
+        working-directory: build/vowpalwabbit/slim/test/
