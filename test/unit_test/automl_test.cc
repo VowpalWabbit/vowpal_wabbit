@@ -101,9 +101,9 @@ bool weights_offset_test(vw& all, multi_ex& ec)
   const size_t interaction_index = interaction_to_index(all.weights,
       get_index_for_feature(all, "Action", "article=sports"), get_index_for_feature(all, "Action", "article=sports"));
 
-  const float expected_w0 = -0.034559913f;
-  const float expected_w1 = 0.146688581f;
-  const float expected_w2 = -0.0204007924f;
+  const float expected_w0 = -0.057428766f;
+  const float expected_w1 = 0.0219418537f;
+  const float expected_w2 = -0.127155572f;
   const float ZERO = 0.f;
 
   for (auto index : feature_indexes)
@@ -159,7 +159,7 @@ bool weights_offset_test(vw& all, multi_ex& ec)
 
   // Ensure weights are non-zero for another live interaction
   const size_t interaction_index_other = interaction_to_index(all.weights,
-      get_index_for_feature(all, "User", "user=Anna"), get_index_for_feature(all, "Action", "article=sports"));
+      get_index_for_feature(all, "Action", "article=sports"), get_index_for_feature(all, "User", "user=Anna"));
 
   BOOST_CHECK_NE(ZERO, weights.strided_index(interaction_index_other));
   BOOST_CHECK_NE(ZERO, weights.strided_index(interaction_index_other + 1));
@@ -167,7 +167,7 @@ bool weights_offset_test(vw& all, multi_ex& ec)
 
   // Ensure weights are 0 for non-live interactions
   const size_t interaction_index_empty = interaction_to_index(all.weights,
-      get_index_for_feature(all, "Action", "article=sports"), get_index_for_feature(all, "User", "user=Anna"));
+      get_index_for_feature(all, "User", "user=Anna"), get_index_for_feature(all, "Action", "article=sports"));
 
   BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index_empty));
   BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index_empty + 1));
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
 
   test_hooks.emplace(deterministic_champ_switch - 1, [&](vw& all, multi_ex&) {
     VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
-    BOOST_CHECK_EQUAL(tr->cm.current_champ, 0);
+    BOOST_CHECK_EQUAL(tr->cm.current_champ, 2);
     BOOST_CHECK_EQUAL(deterministic_champ_switch - 1, tr->cm.county);
     BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
     return true;
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
 
   test_hooks.emplace(deterministic_champ_switch, [&deterministic_champ_switch](vw& all, multi_ex&) {
     VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
-    BOOST_CHECK_EQUAL(tr->cm.current_champ, 0);
+    BOOST_CHECK_EQUAL(tr->cm.current_champ, 2);
     BOOST_CHECK_EQUAL(deterministic_champ_switch, tr->cm.county);
     BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
     return true;
@@ -328,30 +328,31 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_budget)
     BOOST_CHECK_EQUAL(tr->cm.current_champ, 0);
     BOOST_CHECK_EQUAL(sizeof(tr->cm.live_indices), 3 * sizeof(size_t));
     BOOST_CHECK_EQUAL(tr->cm.live_indices[0], 0);
-    BOOST_CHECK_EQUAL(tr->cm.live_indices[1], 6);
-    BOOST_CHECK_EQUAL(tr->cm.live_indices[2], 5);
-    BOOST_CHECK_EQUAL(tr->cm.configs.size(), 7);
+    BOOST_CHECK_EQUAL(tr->cm.live_indices[1], 7);
+    BOOST_CHECK_EQUAL(tr->cm.live_indices[2], 3);
+    BOOST_CHECK_EQUAL(tr->cm.configs.size(), 8);
     BOOST_CHECK_EQUAL(tr->cm.configs[0].budget, 10);
-    BOOST_CHECK_EQUAL(tr->cm.configs[1].budget, 10);
-    BOOST_CHECK_EQUAL(tr->cm.configs[5].budget, 6);
-    BOOST_CHECK_EQUAL(tr->cm.configs[6].budget, 6);
+    BOOST_CHECK_EQUAL(tr->cm.configs[1].budget, 20);
+    BOOST_CHECK_EQUAL(tr->cm.configs[7].budget, 6);
+    BOOST_CHECK_EQUAL(tr->cm.configs[3].budget, 6);
     BOOST_CHECK_EQUAL(tr->cm.configs[0].update_count, 15);
     BOOST_CHECK_EQUAL(tr->cm.configs[1].update_count, 0);
-    BOOST_CHECK_EQUAL(tr->cm.configs[5].update_count, 4);
-    BOOST_CHECK_EQUAL(tr->cm.configs[6].update_count, 4);
-    BOOST_CHECK_EQUAL(static_cast<char>(tr->cm.configs[4].interactions[0][0]), 'U');
-    BOOST_CHECK_EQUAL(static_cast<char>(tr->cm.configs[4].interactions[0][1]), 'A');
-    BOOST_CHECK_EQUAL(static_cast<char>(tr->cm.configs[5].interactions[0][0]), 'U');
-    BOOST_CHECK_EQUAL(static_cast<char>(tr->cm.configs[5].interactions[0][1]), 'U');
-    BOOST_CHECK_EQUAL(static_cast<char>(tr->cm.configs[6].interactions[0][0]), 'U');
-    BOOST_CHECK_EQUAL(static_cast<int>(tr->cm.configs[6].interactions[0][1]), 128);
+    BOOST_CHECK_EQUAL(tr->cm.configs[7].update_count, 4);
+    BOOST_CHECK_EQUAL(tr->cm.configs[3].update_count, 4);
+    BOOST_CHECK_EQUAL(tr->cm.new_indices.size(), 3);
+    BOOST_CHECK_EQUAL(tr->cm.configs[0].exclusions.size(), 0);
+    BOOST_CHECK_EQUAL(tr->cm.configs[7].exclusions.size(), 1);
+    BOOST_CHECK_EQUAL(tr->cm.configs[3].exclusions.size(), 1);
+    BOOST_CHECK_EQUAL(tr->cm.live_interactions[0].size(), 6);
+    BOOST_CHECK_EQUAL(tr->cm.live_interactions[1].size(), 3);
+    BOOST_CHECK_EQUAL(tr->cm.live_interactions[2].size(), 3);
     return true;
   });
 
-  // Champ changes at example 41, so chi-squared should be greater at new champ
+  // Test that champ can change properly
   test_hooks.emplace(forty_one, [&forty_one](vw& all, multi_ex&) {
     VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
-    BOOST_CHECK_EQUAL(tr->cm.current_champ, 1);
+    BOOST_CHECK_EQUAL(tr->cm.current_champ, 2);
     BOOST_CHECK_GT(tr->cm.configs[tr->cm.live_indices[tr->cm.current_champ]].chisq.recompute_duals().first,
         tr->cm.configs[0].chisq.recompute_duals().first);
     return true;
@@ -368,8 +369,7 @@ BOOST_AUTO_TEST_CASE(cpp_simulator_test_red)
 {
   auto ctr =
       simulator::_test_helper("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics --test_red 0");
-  BOOST_CHECK_GT(ctr.back(), 0.6f);
-  BOOST_CHECK_LT(ctr.back(), 0.65f);
+  BOOST_CHECK_GT(ctr.back(), 0.65f);
 }
 
 BOOST_AUTO_TEST_CASE(learner_copy_clear_test)
@@ -387,4 +387,25 @@ BOOST_AUTO_TEST_CASE(learner_copy_clear_test)
 
   auto ctr = simulator::_test_helper_hook(
       "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, 10);
+}
+
+BOOST_AUTO_TEST_CASE(quadratic_exclusion_oracle_test)
+{
+  VW::test_red::quadratic_exclusion_oracle oc;
+  std::map<namespace_index, size_t> ns_counter = {{'A', 1}, {'B', 1}, {'C', 1}, {'D', 1}, {'E', 1}};
+  std::set<namespace_index> exclusions = {'B', 'C'};
+  std::vector<std::vector<namespace_index>> interactions = oc.gen_interactions(ns_counter, exclusions);
+  BOOST_CHECK_EQUAL(interactions.size(), 6);
+  BOOST_CHECK_EQUAL(interactions[0][0], 'A');
+  BOOST_CHECK_EQUAL(interactions[0][1], 'A');
+  BOOST_CHECK_EQUAL(interactions[1][0], 'A');
+  BOOST_CHECK_EQUAL(interactions[1][1], 'D');
+  BOOST_CHECK_EQUAL(interactions[2][0], 'A');
+  BOOST_CHECK_EQUAL(interactions[2][1], 'E');
+  BOOST_CHECK_EQUAL(interactions[3][0], 'D');
+  BOOST_CHECK_EQUAL(interactions[3][1], 'D');
+  BOOST_CHECK_EQUAL(interactions[4][0], 'D');
+  BOOST_CHECK_EQUAL(interactions[4][1], 'E');
+  BOOST_CHECK_EQUAL(interactions[5][0], 'E');
+  BOOST_CHECK_EQUAL(interactions[5][1], 'E');
 }

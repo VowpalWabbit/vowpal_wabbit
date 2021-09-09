@@ -95,6 +95,11 @@ void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
 struct scored_config
 {
   scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
+  scored_config(size_t starting_budget) : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity())
+  {
+    this->starting_budget = starting_budget;
+    budget = starting_budget;
+  }
 
   void update(float w, float r)
   {
@@ -145,10 +150,11 @@ struct scored_config
 
   float current_ips() { return ips / update_count; }
 
-  // Should not reset the interactions
+  // Should not reset exclusions. Note that this doubles the budget on each run.
   void reset_stats()
   {
     chisq.reset();
+    starting_budget *= 2;
     budget = starting_budget;
     ips = 0.0;
     last_w = 0.0;
@@ -156,10 +162,10 @@ struct scored_config
     update_count = 0;
   }
 
-  size_t starting_budget = 10;  // TODO: consider being set in command-line
-  interaction_vec interactions;
+  std::set<namespace_index> exclusions;
   VW::distributionally_robust::ChiSquared chisq;
-  size_t budget = starting_budget;
+  size_t starting_budget;
+  size_t budget;
   float ips = 0.0;
   float last_w = 0.0;
   float last_r = 0.0;
@@ -176,35 +182,35 @@ enum config_state
 
 struct oracle
 {
-  virtual std::vector<interaction_vec> gen_interactions(const multi_ex& ecs) = 0;
+  virtual interaction_vec gen_interactions(const std::map<namespace_index, size_t>&, const std::set<namespace_index>&) = 0;
 };
 
-struct test_oracle : oracle
+struct quadratic_exclusion_oracle
 {
-  std::map<namespace_index, size_t>
-      ns_counter;  // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
-  // This function can be swapped out some verion of -q ::, with subtraction
-  std::vector<interaction_vec> gen_interactions(const multi_ex& ecs)
+  // This code is primarily borrowed from expand_quadratics_wildcard_interactions in
+  // interactions.cc. It will generate interactions with -q :: and exclude namespaces
+  // from the corresponding stride. This function can be swapped out depending on
+  // preference of how to generate interactions from a given set of exclusions.
+  interaction_vec gen_interactions(const std::map<namespace_index, size_t>& ns_counter, const std::set<namespace_index>& exclusions)
   {
-    std::vector<interaction_vec> res;
-    for (example* ex : ecs)
+    std::set<std::vector<namespace_index>> interactions;
+
+    for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
     {
-      for (auto ns : ex->indices)
+      auto idx1 = (*it).first;
+      if (exclusions.find(idx1) != exclusions.end()) { continue; }
+      interactions.insert({idx1, idx1});
+
+      for (auto jt = it; jt != ns_counter.end(); ++jt)
       {
-        ns_counter[ns]++;
-        if (ns_counter[ns] == 1)
-        {
-          for (auto other_ns_pair : ns_counter)
-          {
-            auto other_ns = other_ns_pair.first;
-            interaction_vec iv;
-            helper::add_interaction(iv, ns, other_ns);
-            res.push_back(iv);
-          }
-        }
+        auto idx2 = (*jt).first;
+        if (exclusions.find(idx2) != exclusions.end()) { continue; }
+        interactions.insert({idx1, idx2});
+        interactions.insert({idx2, idx2});
       }
     }
-    return res;
+
+    return interaction_vec(interactions.begin(), interactions.end());
   }
 };
 
@@ -216,17 +222,21 @@ struct config_manager
   config_state current_state = Idle;
   size_t county = 0;
   size_t current_champ = 0;
-  std::map<size_t, scored_config>
-      configs;                       // Stores all configs in consideration (Mapp allows easy deletion unlike vector)
+  // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
+  std::map<namespace_index, size_t> ns_counter;
+  // Stores all configs in consideration (Map allows easy deletion unlike vector)
+  std::map<size_t, scored_config> configs;
   size_t live_indices[MAX_CONFIGS];  // Current live config indices
-  // Maybe not needed with oracle
-  std::priority_queue<std::pair<float, size_t>> new_indices;  // Maps priority to config index, unused configs
+  interaction_vec live_interactions[MAX_CONFIGS];  // Live interaction vectors
+  // Maybe not needed with oracle, maps priority to config index, unused configs
+  std::priority_queue<std::pair<float, size_t>> new_indices;
   const size_t max_live_configs = MAX_CONFIGS;
-  config_manager()
+  quadratic_exclusion_oracle oc;
+  size_t starting_budget;
+  config_manager(size_t starting_budget)
   {
-    interaction_vec empty;
-    scored_config sc;
-    sc.interactions = empty;
+    this->starting_budget = starting_budget;
+    scored_config sc(starting_budget);
     configs[0] = sc;
     for (size_t stride = 0; stride < max_live_configs; ++stride) { live_indices[stride] = stride; }
   }
@@ -242,7 +252,7 @@ struct config_manager
      2) swap configs, what does it imply, the 4 are bad, add 4 new configs from the dormants
   */
 
-  void one_step(oracle& oc, multi_ex& ec)
+  void one_step(multi_ex& ec)
   {
     switch (current_state)
     {
@@ -254,7 +264,7 @@ struct config_manager
         break;
 
       case Experimenting:
-        gen_configs(oc, ec);
+        gen_configs(ec);
         update_live_configs();
         update_champ();
         break;
@@ -288,19 +298,54 @@ struct config_manager
     warmstart, reset to zero (or random?)
   */
 
-  // TODO: Make more robust and separate to oracle
-  void gen_configs(oracle& oc, const multi_ex& ec)
+  // Basic implementation of scheduler to pick new configs when one runs out of budget.
+  // Highest priority will be picked first because of max-PQ implementation, this will
+  // be the config with the least exclusion. Note that all configs will run to budget
+  // before priorities and budget are reset.
+  float get_priority(size_t config_index)
   {
-    std::vector<interaction_vec> generated_interactions = oc.gen_interactions(ec);
-    for (auto interactions : generated_interactions)
+    float priority = 0.f;
+    for (auto ns : configs[config_index].exclusions) { priority -= ns_counter[ns]; }
+    return priority;
+  }
+
+  // This will generate configs with all combinations of current namespaces. These
+  // combinations will be held stored as 'exclusions' but can be used differently
+  // depending on oracle design.
+  void gen_configs(const multi_ex& ecs)
+  {
+    std::set<namespace_index> new_namespaces;
+    for (example* ex : ecs)
     {
-      size_t config_index = configs.size();
-      scored_config sc;
-      sc.interactions = interactions;
-      configs[config_index] = sc;
-      float priority = 0.f;  // Make this some function of interactions and possibly ns_counter from oracle
-      if (config_index >= max_live_configs) { new_indices.push(std::make_pair(priority, config_index)); }
+      for (auto& ns : ex->indices)
+      {
+        ns_counter[ns]++;
+        if (ns_counter[ns] == 1)
+        {
+          new_namespaces.insert(ns);
+        }
+      }
     }
+    for (auto& ns : new_namespaces)
+    {
+      std::set<std::set<namespace_index>> new_exclusions;
+      for (auto& config : configs)
+      {
+        std::set<namespace_index> new_exclusion(config.second.exclusions);
+        new_exclusion.insert(ns);
+        new_exclusions.insert(new_exclusion);
+      }
+      for (auto& new_exclusion : new_exclusions)
+      {
+        size_t config_index = configs.size();
+        scored_config sc(starting_budget);
+        sc.exclusions = new_exclusion;
+        configs[config_index] = sc;
+        float priority = get_priority(config_index);
+        if (config_index >= max_live_configs) { new_indices.push(std::make_pair(priority, config_index)); }
+      }
+    }
+
   }
 
   // This function is triggered when all sets of interactions generated by the oracle have been tried and
@@ -315,12 +360,14 @@ struct config_manager
       auto redo_index = ind_config.first;
       if (std::find(std::begin(live_indices), std::end(live_indices), redo_index) == std::end(live_indices))
       {
-        // Priority should be set differently (based on oracle)
-        new_indices.push(std::make_pair(0.f, redo_index));
+        float priority = get_priority(redo_index);
+        new_indices.push(std::make_pair(priority, redo_index));
       }
     }
   }
 
+  // This function defines the logic update the live configs' budgets, and to swap out
+  // new configs when the budget runs out.
   void update_live_configs()
   {
     for (size_t stride = 0; stride < max_live_configs; ++stride)
@@ -394,7 +441,8 @@ struct config_manager
   void configure_interactions(example* ec, size_t stride)
   {
     if (ec == nullptr) return;
-    ec->interactions = &(configs[live_indices[stride]].interactions);
+    live_interactions[stride] = oc.gen_interactions(ns_counter, configs[live_indices[stride]].exclusions);
+    ec->interactions = &(live_interactions[stride]);
   }
 
   void restore_interactions(example* ec) { ec->interactions = nullptr; }
@@ -403,7 +451,6 @@ struct config_manager
 struct tr_data
 {
   config_manager cm;
-  test_oracle oc;
   // all is not needed but good to have for testing purposes
   vw* all;
   // problem multiplier
@@ -411,6 +458,7 @@ struct tr_data
   // to simulate printing in cb_explore_adf
   multi_learner* adf_learner;
   ACTION_SCORE::action_scores champ_a_s;  // a sequence of classes with scores.  Also used for probabilities.
+  tr_data(size_t starting_budget) : cm(starting_budget) {}
 };
 
 template <bool is_explore>
@@ -493,7 +541,7 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
   }
 
   config_state current_state = data.cm.current_state;
-  data.cm.one_step(data.oc, ec);
+  data.cm.one_step(ec);
 
   if (current_state == Experimenting)
   {
@@ -538,16 +586,18 @@ VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
   vw& all = *stack_builder.get_all_pointer();
 
   size_t test_red;
-  auto data = VW::make_unique<tr_data>();
+  size_t starting_budget;
 
   option_group_definition new_options("Debug: test reduction");
-  new_options.add(make_option("test_red", test_red).necessary().keep().help("set default champion (0 or 1)"));
+  new_options
+      .add(make_option("test_red", test_red).necessary().keep().help("set default champion (0 or 1)"))
+      .add(make_option("budget", starting_budget).keep().default_value(10).help("set initial budget for automl interactions"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
+  auto data = VW::make_unique<tr_data>(starting_budget);
   // all is not needed but good to have for testing purposes
   data->all = &all;
-
   data->cm.current_champ = test_red;
 
   // override and clear all the global interactions
