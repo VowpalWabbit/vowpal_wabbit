@@ -20,19 +20,17 @@ jobs:
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DGCOV=ON -DBUILD_FLATBUFFERS=On
           cmake --build build --target vw-bin spanning_tree vw-unit-test.out to_flatbuff
-      - name: Test C++ run_tests.py
+      - name: run_tests.py
         shell: bash
-        run: python3 run_tests.py -f -j $(nproc) --include_flatbuffers
+        run: python3 run_tests.py -f -j $(nproc) --include_flatbuffers --clean_dirty
         working-directory: test
-      - name: Test C++ flatbuffers
+      - name: run_tests.py - flatbuffer conversion
         shell: bash
-        run: |
-          python3 run_tests.py -f  -j $(nproc) --for_flatbuffers --clean_dirty
+        run:  python3 run_tests.py -f -j $(nproc) --for_flatbuffers --clean_dirty
         working-directory: test
-      - name: Test C++ ctest
+      - name: Unit tests
         shell: bash
-        run: ctest --verbose --output-on-failure
-        working-directory: build
+        run: ./build/test/unit_test/vw-unit-test.out
       - name: Upload to codecov.io
         shell: bash
         run: bash <(curl -s https://codecov.io/bash) -Z
