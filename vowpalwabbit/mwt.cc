@@ -31,7 +31,7 @@ struct policy_data
 struct mwt
 {
   bool namespaces[256];        // the set of namespaces to evaluate.
-  v_array<policy_data> evals;  // accrued losses of features.
+  std::vector<policy_data> evals;  // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
   v_array<uint64_t> policies;
   double total;
@@ -232,7 +232,7 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   for (char i : s) c->namespaces[static_cast<unsigned char>(i)] = true;
   c->all = &all;
 
-  c->evals.resize_but_with_stl_behavior(all.length());
+  c->evals.resize(all.length(), policy_data{});
 
   if (c->num_classes > 0)
   {

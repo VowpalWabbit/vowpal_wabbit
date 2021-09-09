@@ -1,4 +1,5 @@
 add_executable(vw-unit-test.out
+  automl_test.cc
   cache_test.cc
   cats_test.cc
   cats_tree_tests.cc
@@ -42,6 +43,8 @@ add_executable(vw-unit-test.out
   random_test.cc
   random_test.cc
   scope_exit_test.cc
+  simulator.cc
+  simulator.h
   slates_parser_test.cc
   slates_test.cc
   stable_unique_tests.cc
@@ -49,6 +52,7 @@ add_executable(vw-unit-test.out
   test_common.cc
   test_common.h
   tokenize_tests.cc
+  tutorial_test.cc
   v_array_test.cc
   vw_versions_test.cc
   weights_test.cc

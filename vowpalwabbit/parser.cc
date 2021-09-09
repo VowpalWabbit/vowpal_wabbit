@@ -440,7 +440,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       // learning state to be shared across children
       shared_data* sd = static_cast<shared_data*>(
           mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
-      memcpy(sd, all.sd, sizeof(shared_data));
+      new (sd) shared_data(*all.sd);
       free(all.sd);
       all.sd = sd;
       all.example_parser->_shared_data = sd;
@@ -664,6 +664,11 @@ void setup_example(vw& all, example* ae)
   if (all.example_parser->write_cache)
   { VW::write_example_to_cache(*all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask); }
 
+  // Require all extents to be complete in an example.
+#ifndef NDEBUG
+  for (auto& fg : *ae) { assert(fg.validate_extents()); }
+#endif
+
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->reset_total_sum_feat_sq();
@@ -757,7 +762,7 @@ example* read_example(vw& all, const std::string& example_line) { return read_ex
 void add_constant_feature(vw& vw, example* ec)
 {
   ec->indices.push_back(constant_namespace);
-  ec->feature_space[constant_namespace].push_back(1, constant);
+  ec->feature_space[constant_namespace].push_back(1, constant, constant_namespace);
   ec->num_features++;
   if (vw.audit || vw.hash_inv)
     ec->feature_space[constant_namespace].space_names.push_back(audit_strings("", "Constant"));
