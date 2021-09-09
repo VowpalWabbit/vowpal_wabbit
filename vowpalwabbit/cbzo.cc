@@ -363,11 +363,12 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
-  auto* l = make_base_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy), stack_builder.get_setupfn_name(setup), prediction_type_t::pdf, label_type_t::continuous)
-      .set_params_per_weight(0)
-      .set_save_load(save_load)
-      .set_finish_example(finish_example)
-      .build();
+  auto* l = make_base_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
+      stack_builder.get_setupfn_name(setup), prediction_type_t::pdf, label_type_t::continuous)
+                .set_params_per_weight(0)
+                .set_save_load(save_load)
+                .set_finish_example(finish_example)
+                .build();
 
   return make_base(*l);
 }
