@@ -13,6 +13,7 @@ class loss_function
 public:
   // Identifies the type of the implementing loss function, matches the name used in getLossFunction.
   virtual std::string getType() = 0;
+  virtual float getParameter() { return 0.f; }
 
   /*
    * getLoss evaluates the example loss.
