@@ -18,8 +18,8 @@ jobs:
       - name: Build with coverage C++
         shell: bash
         run: |
-        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DGCOV=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DBUILD_FLATBUFFERS=On
-        cmake --build build --target vw-bin spanning_tree vw-unit-test.out
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DGCOV=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DBUILD_FLATBUFFERS=On
+          cmake --build build --target vw-bin spanning_tree vw-unit-test.out
       - name: Test C++ run_tests.py
         shell: bash
         run: python3 run_tests.py -f -j $(nproc) --include_flatbuffers
