@@ -19,16 +19,11 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Build C++ VW binary
-        run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On
-          cmake --build build --target vw-bin vw-unit-test.out vw_c_api_unit_test spanning_tree to_flatbuff
+        run: ./.scripts/linux/build-minimal.sh Release
       - name: Run unit tests with Valgrind
-        run: valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full ./build/test/unit_test/vw-unit-test.out
-      - name: Run C API tests with Valgrind
-        run: valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full ./build/bindings/c/test/vw_c_api_unit_test
+        run: ./.scripts/linux/unit-tests-valgrind.sh
       - name: Run test suite with Valgrind
-        run: ./RunTests -d -f -E 0.001 -F -V ../build/vowpalwabbit/vw
-        working-directory: test
+        run: ./.scripts/linux/test-valgrind.sh
   check_valgrind_new:
     container:
       image: vowpalwabbit/ubuntu1804-build:latest
@@ -36,13 +31,8 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Build C++ VW binary
-        run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On
-          cmake --build build --target vw-bin vw-unit-test.out vw_c_api_unit_test spanning_tree to_flatbuff
+        run: ./.scripts/linux/build-minimal.sh Release
       - name: Run unit tests with Valgrind
-        run: valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full ./build/test/unit_test/vw-unit-test.out
-      - name: Run C API tests with Valgrind
-        run: valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full ./build/bindings/c/test/vw_c_api_unit_test
+        run: ./.scripts/linux/unit-tests-valgrind.sh
       - name: Run test suite with Valgrind
-        run: python3 run_tests.py -f -j $(nproc) --include_flatbuffers --valgrind
-        working-directory: test
+        run: ./.scripts/linux/test-valgrind-run_tests.sh
