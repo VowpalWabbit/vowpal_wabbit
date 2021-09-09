@@ -14,6 +14,8 @@
 
 #include "vw.h"
 
+namespace test_helpers
+{
 void make_example(multi_ex& examples, vw& vw, int arm, float* costs, float* probs)
 {
   examples.push_back(VW::read_example(vw, "shared | shared_f"));
@@ -55,8 +57,11 @@ float get_float_metric(const VW::metric_sink& metrics, const std::string& metric
   return it->second;
 }
 
+} //namespace test_helpers
+
 BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
 {
+  using namespace test_helpers;
   auto& vw = *VW::initialize(
       "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5");
   float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
@@ -95,6 +100,7 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
 
 BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
 {
+  using namespace test_helpers;
   auto& vw = *VW::initialize(
       "--cb_explore_adf --baseline_challenger_cb --cb_c_tau 0.995 --quiet --power_t 0 -l 0.001 --extra_metrics "
       "ut_metrics.json --random_seed 5");

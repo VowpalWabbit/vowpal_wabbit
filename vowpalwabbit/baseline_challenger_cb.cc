@@ -81,10 +81,10 @@ struct baseline_challenger_data
     {
       const auto lbl_example =
           std::find_if(examples.begin(), examples.end(), [](example* item) { return !item->l.cb.costs.empty(); });
-      const auto labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), lbl_example));
       if (lbl_example != examples.end())
       {
-        const CB::cb_class logged = (*lbl_example)->l.cb.costs[0];
+        const auto labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), lbl_example));
+        const CB::cb_class& logged = (*lbl_example)->l.cb.costs[0];
 
         double r = -logged.cost;
         double w = (labelled_action == chosen_action ? 1 : 0) / logged.probability;
@@ -99,10 +99,10 @@ struct baseline_challenger_data
 
     // We play baseline if policy expectation is worse than the baseline lower bound
     double ci = baseline.lower_bound();
-    double exp = policy_expectation.current();
+    double expectation = policy_expectation.current();
 
     // TODO don't check for it at every time step
-    bool play_baseline = ci > exp;
+    bool play_baseline = ci > expectation;
 
     if (play_baseline)
     {
@@ -148,7 +148,6 @@ void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
 VW::LEARNER::base_learner* baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
   double alpha;
   double tau;
   bool is_enabled = false;
@@ -163,8 +162,6 @@ VW::LEARNER::base_learner* baseline_challenger_cb_setup(VW::setup_base_i& stack_
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (!options.was_supplied("cb_adf")) { THROW("cb_challenger requires cb_explore_adf or cb_adf"); }
-
-  if (!all.logger.quiet) { *(all.trace_message) << "Using CB baseline challenger" << std::endl; }
 
   bool emit_metrics = options.was_supplied("extra_metrics");
   auto data = VW::make_unique<baseline_challenger_data>(emit_metrics, alpha, tau);
