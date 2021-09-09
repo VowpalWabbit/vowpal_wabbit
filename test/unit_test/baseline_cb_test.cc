@@ -57,7 +57,7 @@ float get_float_metric(const VW::metric_sink& metrics, const std::string& metric
   return it->second;
 }
 
-} //namespace test_helpers
+}  // namespace test_helpers
 
 BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
 {
