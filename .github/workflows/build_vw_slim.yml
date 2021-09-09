@@ -18,10 +18,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: Build VW Slim
         shell: bash
-        run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DWARNINGS=OFF -DBUILD_SLIM_VW=On -DBUILD_TESTS=On
-          cmake --build build --target vwslim --target  vw-slim-test
+        run: ./.scripts/linux/build-slim.sh
       - name: Test VW Slim
         shell: bash
-        run: ./vw-slim-test
-        working-directory: build/vowpalwabbit/slim/test/
+        run: ./.scripts/linux/test-slim.sh
