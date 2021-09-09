@@ -18,7 +18,7 @@ on:
 jobs:
   benchmark:
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
+      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1

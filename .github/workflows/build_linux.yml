@@ -1,4 +1,4 @@
-name: Coverage
+name: Linux / C++
 
 on:
   push:
@@ -8,31 +8,32 @@ on:
   pull_request:
     branches:
       - '*'
+
 jobs:
-  upload:
+  build:
     container:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build-type: ["Debug", "Release"]
     steps:
       - uses: actions/checkout@v1
-      - name: Build with coverage C++
+      - name: Build C++
         shell: bash
         run: |
-        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DGCOV=ON -DWARNINGS=OFF -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DBUILD_FLATBUFFERS=On
-        cmake --build build --target vw-bin spanning_tree vw-unit-test.out
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -DWARNINGS=Off -DWARNING_AS_ERROR=On -DDO_NOT_BUILD_VW_C_WRAPPER=On -DBUILD_JAVA=Off -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On
+          cmake --build build --target all
       - name: Test C++ run_tests.py
         shell: bash
         run: python3 run_tests.py -f -j $(nproc) --include_flatbuffers
-        working-directory: test
-      - name: Test C++ flatbuffers
-        shell: bash
-        run: |
-          python3 run_tests.py -f  -j $(nproc) --for_flatbuffers --clean_dirty
         working-directory: test
       - name: Test C++ ctest
         shell: bash
         run: ctest --verbose --output-on-failure
         working-directory: build
-      - name: Upload to codecov.io
+      - name: Test C++ flatbuffers
         shell: bash
-        run: bash <(curl -s https://codecov.io/bash) -Z
+        run: |
+          python3 run_tests.py -f --for_flatbuffers --clean_dirty -j $(nproc)
+        working-directory: test

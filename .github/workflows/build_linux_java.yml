@@ -1,0 +1,29 @@
+name: Linux / Ubuntu Java
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    container:
+      image: vowpalwabbit/ubuntu1804-build:latest
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build-type: ["Debug", "Release"]
+    steps:
+      - uses: actions/checkout@v1
+      - name: Build C++
+        shell: bash
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -DWARNINGS=Off -DWARNING_AS_ERROR=On -DDO_NOT_BUILD_VW_C_WRAPPER=On -DBUILD_JAVA=On -DBUILD_PYTHON=Off -DBUILD_TESTS=On -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On
+          cmake --build build --target vw_jni
+      - name: Test Java
+        shell: bash
+        run: mvn clean test -f java/pom.xml
