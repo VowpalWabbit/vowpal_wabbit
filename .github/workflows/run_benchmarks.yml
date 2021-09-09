@@ -36,7 +36,7 @@ jobs:
           path: benchmark/tools/
       - name: Install benchmark compare requirements
         shell: bash
-        run: /usr/local/miniconda/envs/test-python36/bin/pip install -r benchmark/tools/requirements.txt
+        run: python3 -m pip install -r benchmark/tools/requirements.txt
       - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ # generated or downloaded files
       - uses: actions/checkout@v1
       - name: Download ${{ github.base_ref }} benchmark results
