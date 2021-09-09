@@ -141,6 +141,7 @@
     <ClInclude Include="autolink.h" />
     <ClInclude Include="automl.h" />
     <ClInclude Include="baseline.h" />
+    <ClInclude Include="baseline_challenger_cb.h" />
     <ClInclude Include="best_constant.h" />
     <ClInclude Include="bfgs.h" />
     <ClInclude Include="binary.h" />
@@ -313,6 +314,7 @@
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="automl.cc" />
     <ClCompile Include="baseline.cc" />
+    <ClCompile Include="baseline_challenger_cb.cc" />
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="bfgs.cc" />
     <ClCompile Include="binary.cc" />
