@@ -155,9 +155,10 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
 
 VW::metric_sink run_simulation(int steps, int switch_step)
 {
- using namespace test_helpers;
+  using namespace test_helpers;
   auto* vw = VW::initialize(
-      "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5  --save_resume");
+      "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5  "
+      "--save_resume");
   float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
   float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
 
@@ -171,10 +172,11 @@ VW::metric_sink run_simulation(int steps, int switch_step)
     make_example(ex, *vw, sample(4, probs_p0, s), costs_p0, probs_p0);
     vw->learn(ex);
     vw->finish_example(ex);
-    if(i == switch_step) {
-        VW::save_predictor(*vw, "model_file.vw");
-        VW::finish(*vw);
-        vw = VW::initialize("--quiet --extra_metrics ut_metrics.json --save_resume -i model_file.vw");
+    if (i == switch_step)
+    {
+      VW::save_predictor(*vw, "model_file.vw");
+      VW::finish(*vw);
+      vw = VW::initialize("--quiet --extra_metrics ut_metrics.json --save_resume -i model_file.vw");
     }
   }
   VW::metric_sink metrics;
@@ -191,17 +193,12 @@ BOOST_AUTO_TEST_CASE(baseline_cb_save_load_test)
   auto m1 = run_simulation(50, -1);
   auto m2 = run_simulation(50, 20);
 
-  BOOST_CHECK_EQUAL(
-    test_helpers::get_int_metric(m1, "baseline_cb_baseline_in_use"),
-    test_helpers::get_int_metric(m2, "baseline_cb_baseline_in_use"));
+  BOOST_CHECK_EQUAL(test_helpers::get_int_metric(m1, "baseline_cb_baseline_in_use"),
+      test_helpers::get_int_metric(m2, "baseline_cb_baseline_in_use"));
 
-  BOOST_CHECK_EQUAL(
-    test_helpers::get_float_metric(m1, "baseline_cb_baseline_lowerbound"),
-    test_helpers::get_float_metric(m2, "baseline_cb_baseline_lowerbound"));
+  BOOST_CHECK_EQUAL(test_helpers::get_float_metric(m1, "baseline_cb_baseline_lowerbound"),
+      test_helpers::get_float_metric(m2, "baseline_cb_baseline_lowerbound"));
 
-  BOOST_CHECK_EQUAL(
-    test_helpers::get_float_metric(m1, "baseline_cb_policy_expectation"),
-    test_helpers::get_float_metric(m2, "baseline_cb_policy_expectation"));
-
+  BOOST_CHECK_EQUAL(test_helpers::get_float_metric(m1, "baseline_cb_policy_expectation"),
+      test_helpers::get_float_metric(m2, "baseline_cb_policy_expectation"));
 }
-
