@@ -246,6 +246,7 @@ public:
   quantileloss(float& tau_) : tau(tau_) {}
 
   std::string getType() override { return "quantile"; }
+  float getParameter() override { return tau; }
 
   float getLoss(shared_data*, float prediction, float label) override
   {
