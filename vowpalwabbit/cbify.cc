@@ -785,8 +785,9 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     }
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
-            .set_finish_example(finish_ptr)
             .set_label_type(label_type)
+            .set_prediction_type(prediction_type_t::multiclass)
+            .set_finish_example(finish_ptr)
             .build();
   }
   else
