@@ -26,13 +26,13 @@ const size_t MAX_CONFIGS = 3;
 namespace helper
 {
 // add an interaction to an existing instance
-void add_interaction(interaction_vec& interactions, namespace_index first, namespace_index second)
+/*void add_interaction(interaction_vec& interactions, namespace_index first, namespace_index second)
 {
   std::vector<namespace_index> vect;
   vect.push_back(first);
   vect.push_back(second);
   interactions.push_back(vect);
-}
+}*/
 
 // fail if incompatible reductions got setup
 // inefficient, address later
@@ -95,11 +95,6 @@ void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
 struct scored_config
 {
   scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
-  scored_config(size_t starting_budget) : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity())
-  {
-    this->starting_budget = starting_budget;
-    budget = starting_budget;
-  }
 
   void update(float w, float r)
   {
@@ -129,11 +124,6 @@ struct scored_config
       if (!read) msg << "_aml_config_lastr " << last_r << "\n";
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&last_r), sizeof(last_r), "", read, msg, text);
 
-      if (!read) msg << "_aml_config_lastr " << budget << "\n";
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&budget), sizeof(budget), "", read, msg, text);
-
-      // TODO: add save_load for interactions
-
       chisq.save_load(model_file, read, text);
     }
   }
@@ -150,26 +140,29 @@ struct scored_config
 
   float current_ips() { return ips / update_count; }
 
-  // Should not reset exclusions. Note that this doubles the budget on each run.
   void reset_stats()
   {
-    chisq.reset();
-    starting_budget *= 2;
-    budget = starting_budget;
+    chisq.reset(0.05, 0.999);
     ips = 0.0;
     last_w = 0.0;
     last_r = 0.0;
     update_count = 0;
   }
 
-  std::set<namespace_index> exclusions;
   VW::distributionally_robust::ChiSquared chisq;
-  size_t starting_budget;
-  size_t budget;
   float ips = 0.0;
   float last_w = 0.0;
   float last_r = 0.0;
   size_t update_count = 0;
+  int config_index = -1;
+};
+
+struct exclusion_config
+{
+  exclusion_config(size_t starting_budget = 10) : starting_budget(starting_budget), budget(starting_budget) {}
+  std::set<namespace_index> exclusions;
+  size_t starting_budget;
+  size_t budget;
 };
 
 // all possible states of config_manager
@@ -186,7 +179,7 @@ struct oracle
       const std::map<namespace_index, size_t>&, const std::set<namespace_index>&) = 0;
 };
 
-struct quadratic_exclusion_oracle
+struct quadratic_exclusion_oracle : oracle
 {
   // This code is primarily borrowed from expand_quadratics_wildcard_interactions in
   // interactions.cc. It will generate interactions with -q :: and exclude namespaces
@@ -211,8 +204,8 @@ struct quadratic_exclusion_oracle
         interactions.insert({idx2, idx2});
       }
     }
-
-    return interaction_vec(interactions.begin(), interactions.end());
+    interaction_vec v = interaction_vec(interactions.begin(), interactions.end());
+    return v;
   }
 };
 
@@ -227,9 +220,9 @@ struct config_manager
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, size_t> ns_counter;
   // Stores all configs in consideration (Map allows easy deletion unlike vector)
-  std::map<size_t, scored_config> configs;
-  size_t live_indices[MAX_CONFIGS];                // Current live config indices
-  interaction_vec live_interactions[MAX_CONFIGS];  // Live interaction vectors
+  std::map<size_t, exclusion_config> configs;
+  scored_config scores[MAX_CONFIGS];
+  interaction_vec live_interactions[MAX_CONFIGS];  // Live pre-allocated vectors in use
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, size_t>> new_indices;
   const size_t max_live_configs = MAX_CONFIGS;
@@ -238,9 +231,9 @@ struct config_manager
   config_manager(size_t starting_budget)
   {
     this->starting_budget = starting_budget;
-    scored_config sc(starting_budget);
-    configs[0] = sc;
-    for (size_t stride = 0; stride < max_live_configs; ++stride) { live_indices[stride] = stride; }
+    exclusion_config conf(starting_budget);
+    configs[0] = conf;
+    scores[0].config_index = -2;
   }
 
   /*
@@ -337,11 +330,11 @@ struct config_manager
       for (auto& new_exclusion : new_exclusions)
       {
         size_t config_index = configs.size();
-        scored_config sc(starting_budget);
-        sc.exclusions = new_exclusion;
-        configs[config_index] = sc;
+        exclusion_config conf(starting_budget);
+        conf.exclusions = new_exclusion;
+        configs[config_index] = conf;
         float priority = get_priority(config_index);
-        if (config_index >= max_live_configs) { new_indices.push(std::make_pair(priority, config_index)); }
+        new_indices.push(std::make_pair(priority, config_index));
       }
     }
   }
@@ -351,17 +344,20 @@ struct config_manager
   // 'new_indices' which can be used to swap out live configs as they run out of budget. This functionality
   // may be better within the oracle, which could generate better priorities for different configs based
   // on ns_counter (which is updated as each example is processed)
-  void repopulate_new_indices()
+  bool repopulate_new_indices()
   {
+    std::set<namespace_index> live_indices;
+    for (size_t stride = 0; stride < max_live_configs; ++stride) { live_indices.insert(scores[stride].config_index); }
     for (auto ind_config : configs)
     {
       auto redo_index = ind_config.first;
-      if (std::find(std::begin(live_indices), std::end(live_indices), redo_index) == std::end(live_indices))
+      if (live_indices.find(redo_index) == live_indices.end())
       {
         float priority = get_priority(redo_index);
         new_indices.push(std::make_pair(priority, redo_index));
       }
     }
+    return !new_indices.empty();
   }
 
   // This function defines the logic update the live configs' budgets, and to swap out
@@ -370,16 +366,30 @@ struct config_manager
   {
     for (size_t stride = 0; stride < max_live_configs; ++stride)
     {
-      if (stride == current_champ) { continue; }
-      size_t config_index = live_indices[stride];
-      if (configs[config_index].budget == 0)
+      int config_index = scores[stride].config_index;
+      // Special case to initialize first champion to -q ::
+      if (config_index == -2)
       {
-        configs[config_index].reset_stats();
+        scores[stride].config_index = 0;
+        live_interactions[stride] = oc.gen_interactions(ns_counter, configs[0].exclusions);
+      }
+      if (stride == current_champ) { continue; }
+      if (config_index == -1 || configs[config_index].budget == 0)
+      {
+        if (config_index >= 0)
+        {
+          scores[stride].reset_stats();
+          configs[config_index].starting_budget *= 2;
+          configs[config_index].budget = configs[config_index].starting_budget;
+        }
         // TODO: Add logic to erase index from configs map if wanted
-        if (new_indices.empty()) { repopulate_new_indices(); }
-        config_index = new_indices.top().second;
+        if (new_indices.empty() && !repopulate_new_indices()) { continue; }
+        config_index = static_cast<int>(new_indices.top().second);
         new_indices.pop();
-        live_indices[stride] = config_index;
+        scores[stride].config_index = config_index;
+        // Regenerate interactions each time an exclusion is swapped in
+        live_interactions[stride].clear();
+        live_interactions[stride] = oc.gen_interactions(ns_counter, configs[config_index].exclusions);
         // We may also want to 0 out weights here? Currently keep all same in stride position
       }
       configs[config_index].budget--;
@@ -388,14 +398,13 @@ struct config_manager
 
   void update_champ()
   {
-    float temp_champ_ips = configs[live_indices[current_champ]].current_ips();
+    float temp_champ_ips = scores[current_champ].current_ips();
 
     // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
     for (size_t stride = 0; stride < max_live_configs; ++stride)
     {
       if (stride == current_champ) continue;
-      size_t config_index = live_indices[stride];
-      distributionally_robust::ScoredDual sd = configs[config_index].chisq.recompute_duals();
+      distributionally_robust::ScoredDual sd = scores[stride].chisq.recompute_duals();
       float challenger_l_bound = static_cast<float>(sd.first);
       if (temp_champ_ips < challenger_l_bound)
       {
@@ -412,7 +421,8 @@ struct config_manager
     {
       // make sure we can deserialize based on dynamic values like max_live_configs
       // i.e. read/write first the quantity and then do the for loop
-      for (size_t i = 0; i < configs.size(); i++) { configs[i].save_load_aml(model_file, read, text); }
+      for (size_t stride = 0; stride < max_live_configs; ++stride)
+      { scores[stride].save_load_aml(model_file, read, text); }
 
       std::stringstream msg;
       if (!read) msg << "_aml_cm_state " << current_state << "\n";
@@ -433,13 +443,13 @@ struct config_manager
     metrics.int_metrics_list.emplace_back("test_county", county);
     metrics.int_metrics_list.emplace_back("current_champ", current_champ);
     for (size_t stride = 0; stride < max_live_configs; ++stride)
-    { configs[live_indices[stride]].persist(metrics, "_" + std::to_string(stride)); }
+    { scores[stride].persist(metrics, "_" + std::to_string(stride)); }
   }
 
+  // This sets up example with correct ineractions vector
   void configure_interactions(example* ec, size_t stride)
   {
     if (ec == nullptr) return;
-    live_interactions[stride] = oc.gen_interactions(ns_counter, configs[live_indices[stride]].exclusions);
     ec->interactions = &(live_interactions[stride]);
   }
 
@@ -500,7 +510,7 @@ void offset_learn(
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
   const float r = -logged.cost;
 
-  data.cm.configs[data.cm.live_indices[stride]].update(chosen_action == labelled_action ? w : 0, r);
+  data.cm.scores[stride].update(chosen_action == labelled_action ? w : 0, r);
 
   // cache the champ
   if (data.cm.current_champ == stride) { data.champ_a_s = std::move(ec[0]->pred.a_s); }
@@ -545,7 +555,7 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
   {
     for (size_t stride = 0; stride < data.cm.max_live_configs; ++stride)
     {
-      if (data.cm.live_indices[stride] >= data.cm.configs.size()) { continue; }
+      if (data.cm.scores[stride].config_index < 0) { continue; }
       offset_learn(data, base, ec, stride, logged, labelled_action);
     }
     // replace with prediction depending on current_champ

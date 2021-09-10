@@ -204,25 +204,22 @@ namespace distributionally_robust
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&delta), sizeof(delta), "", read, msg, text);
     }
 
-    void reset()
+    void reset(double _alpha, double _tau)
     {
-      alpha = 0.0;
-      tau = 0.0;
+      alpha = _alpha;
+      tau = _tau;
       wmin = 0.0;
-      wmax = 0.0;
+      wmax = std::numeric_limits<double>::infinity();
       rmin = 0.0;
-      rmax = 0.0;
-
+      rmax = 1;
       n = 0.0;
       sumw = 0.0;
       sumwsq = 0.0;
       sumwr = 0.0;
       sumwsqr = 0.0;
       sumwsqrsq = 0.0;
-
-      delta = 0.0;
-
-      duals_stale = false;
+      delta = chisq_onedof_isf(alpha);
+      duals_stale = true;
       duals.first = 0.0;
       duals.second.reset();
     }
