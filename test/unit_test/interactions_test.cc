@@ -326,16 +326,13 @@ BOOST_AUTO_TEST_CASE(extent_vs_char_interactions)
 {
   auto* vw_char_inter = VW::initialize("--quiet -q AB");
   auto* vw_extent_inter = VW::initialize("--quiet --new_full_interactions group1|group2");
-  auto cleanup = VW::scope_exit(
-      [&]()
-      {
-        VW::finish(*vw_char_inter);
-        VW::finish(*vw_extent_inter);
-      });
+  auto cleanup = VW::scope_exit([&]() {
+    VW::finish(*vw_char_inter);
+    VW::finish(*vw_extent_inter);
+  });
 
   auto parse_and_return_num_fts = [&](const char* char_inter_example,
-                                      const char* extent_inter_example) -> std::pair<size_t, size_t>
-  {
+                                      const char* extent_inter_example) -> std::pair<size_t, size_t> {
     auto* ex_char = VW::read_example(*vw_char_inter, char_inter_example);
     auto* ex_extent = VW::read_example(*vw_extent_inter, extent_inter_example);
     vw_char_inter->predict(*ex_char);
@@ -364,13 +361,13 @@ BOOST_AUTO_TEST_CASE(extent_vs_char_interactions)
 BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
 {
   auto* vw = VW::initialize("--quiet");
-  auto* ex = VW::read_example(*vw, "|user_info a b c |user_geo a b c d |user_info a b |another a b c |extra a b |extra_filler a |extra a b |extra_filler a |extra a b");
-  auto cleanup = VW::scope_exit(
-      [&]()
-      {
-        VW::finish_example(*vw, *ex);
-        VW::finish(*vw);
-      });
+  auto* ex = VW::read_example(*vw,
+      "|user_info a b c |user_geo a b c d |user_info a b |another a b c |extra a b |extra_filler a |extra a b "
+      "|extra_filler a |extra a b");
+  auto cleanup = VW::scope_exit([&]() {
+    VW::finish_example(*vw, *ex);
+    VW::finish(*vw);
+  });
 
   {
     const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info");
