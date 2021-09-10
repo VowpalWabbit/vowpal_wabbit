@@ -338,7 +338,7 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_budget)
     BOOST_CHECK_EQUAL(tr->cm.scores[0].update_count, 15);
     BOOST_CHECK_EQUAL(tr->cm.scores[1].update_count, 4);
     BOOST_CHECK_EQUAL(tr->cm.scores[2].update_count, 4);
-    BOOST_CHECK_EQUAL(tr->cm.new_indices.size(), 3);
+    BOOST_CHECK_EQUAL(tr->cm.index_queue.size(), 3);
     BOOST_CHECK_EQUAL(tr->cm.configs[0].exclusions.size(), 0);
     BOOST_CHECK_EQUAL(tr->cm.configs[7].exclusions.size(), 1);
     BOOST_CHECK_EQUAL(tr->cm.configs[3].exclusions.size(), 1);
