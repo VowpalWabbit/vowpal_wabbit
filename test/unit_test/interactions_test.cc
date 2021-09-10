@@ -18,6 +18,7 @@
 #include "interactions.h"
 #include "parse_args.h"
 #include "constant.h"
+#include "interactions_predict.h"
 
 namespace std
 {
@@ -358,4 +359,37 @@ BOOST_AUTO_TEST_CASE(extent_vs_char_interactions)
   std::tie(num_char_fts, num_extent_fts) =
       parse_and_return_num_fts("|A a b c |B a b c d", "|group2 a d |group1 c |group1 a b |group2 b c");
   BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+}
+
+BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
+{
+  auto* vw = VW::initialize("--quiet");
+  auto* ex = VW::read_example(*vw, "|user_info a b c |user_geo a b c d |user_info a b |another a b c |extra a b |extra_filler a |extra a b |extra_filler a |extra a b");
+  auto cleanup = VW::scope_exit(
+      [&]()
+      {
+        VW::finish_example(*vw, *ex);
+        VW::finish(*vw);
+      });
+
+  {
+    const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info");
+    auto pairs = INTERACTIONS::generate_generic_extent_combination(ex->feature_space, extent_terms);
+    BOOST_REQUIRE_EQUAL(pairs.size(), 3);
+    BOOST_REQUIRE_EQUAL(pairs[0].size(), 2);
+  }
+
+  {
+    const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info|user_info");
+    auto triples = INTERACTIONS::generate_generic_extent_combination(ex->feature_space, extent_terms);
+    BOOST_REQUIRE_EQUAL(triples.size(), 4);
+    BOOST_REQUIRE_EQUAL(triples[0].size(), 3);
+  }
+
+  {
+    const auto extent_terms = parse_full_name_interactions(*vw, "user_info|extra");
+    auto pairs = INTERACTIONS::generate_generic_extent_combination(ex->feature_space, extent_terms);
+    BOOST_REQUIRE_EQUAL(pairs.size(), 6);
+    BOOST_REQUIRE_EQUAL(pairs[0].size(), 2);
+  }
 }
