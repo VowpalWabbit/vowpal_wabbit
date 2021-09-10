@@ -221,7 +221,7 @@ struct config_manager
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, size_t> ns_counter;
   // Stores all configs in consideration (Map allows easy deletion unlike vector)
-  std::map<size_t, exclusion_config> configs;
+  std::map<int, exclusion_config> configs;
   scored_config scores[MAX_CONFIGS];
   interaction_vec live_interactions[MAX_CONFIGS];  // Live pre-allocated vectors in use
   // Maybe not needed with oracle, maps priority to config index, unused configs
@@ -330,7 +330,7 @@ struct config_manager
       }
       for (auto& new_exclusion : new_exclusions)
       {
-        int config_index = configs.size();
+        int config_index = static_cast<int>(configs.size());
         exclusion_config conf(starting_budget);
         conf.exclusions = new_exclusion;
         configs[config_index] = conf;
