@@ -374,6 +374,8 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
         VW::finish(*vw);
       });
 
+  INTERACTIONS::generate_interactions_object_cache cache;
+
   {
     const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info");
     size_t counter = 0;
@@ -382,7 +384,8 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
         {
           counter++;
           BOOST_REQUIRE_EQUAL(combination.size(), 2);
-        });
+        },
+        cache.in_process_frames, cache.frame_pool);
     BOOST_REQUIRE_EQUAL(counter, 3);
   }
 
@@ -394,7 +397,8 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
         {
           counter++;
           BOOST_REQUIRE_EQUAL(combination.size(), 3);
-        });
+        },
+        cache.in_process_frames, cache.frame_pool);
     BOOST_REQUIRE_EQUAL(counter, 4);
   }
 
@@ -406,7 +410,8 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
         {
           counter++;
           BOOST_REQUIRE_EQUAL(combination.size(), 2);
-        });
+        },
+        cache.in_process_frames, cache.frame_pool);
     BOOST_REQUIRE_EQUAL(counter, 6);
   }
 }
