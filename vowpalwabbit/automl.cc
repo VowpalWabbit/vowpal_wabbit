@@ -185,6 +185,7 @@ struct quadratic_exclusion_oracle : oracle
   // interactions.cc. It will generate interactions with -q :: and exclude namespaces
   // from the corresponding stride. This function can be swapped out depending on
   // preference of how to generate interactions from a given set of exclusions.
+  // Transforms exclusions -> interactions expected by VW.
   interaction_vec gen_interactions(
       const std::map<namespace_index, size_t>& ns_counter, const std::set<namespace_index>& exclusions)
   {
