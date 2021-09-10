@@ -8,9 +8,11 @@
 #include "feature_group.h"
 #include "example_predict.h"
 #include "vw_exception.h"
+#include "object_pool.h"
 #include <utility>
 #include <vector>
 #include <string>
+#include <stack>
 
 const static std::pair<std::string, std::string> EMPTY_AUDIT_STRINGS = std::make_pair("", "");
 
@@ -143,7 +145,7 @@ void generate_generic_extent_combination_iterative(const std::array<features, NU
     VW::moved_object_pool<extent_interaction_expansion_stack_item>& frame_pool)
 {
   while (!in_process_frames.empty()) { in_process_frames.pop(); }
-  
+
   // Add an inner scope to deal with name clashes.
   {
     const auto& current_term = terms[0];
