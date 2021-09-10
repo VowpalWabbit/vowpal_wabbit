@@ -12,13 +12,10 @@ on:
 jobs:
   check:
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
+      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Install GTest
-        shell: bash
-        run: ./.scripts/linux/install-gtest.sh
       - name: Build VW Slim
         shell: bash
         run: ./.scripts/linux/build-slim.sh
