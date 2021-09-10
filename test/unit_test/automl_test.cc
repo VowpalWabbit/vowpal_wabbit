@@ -417,20 +417,23 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
   const size_t num_iterations = 3000;
   callback_map test_hooks;
 
-  test_hooks.emplace(100, [&](cb_sim& sim, vw&, multi_ex&) {
+  test_hooks.emplace(100, [&](cb_sim& sim, vw& all, multi_ex&) {
+    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
+    auto count_ns_T = tr->cm.ns_counter.count('T');
+    BOOST_CHECK_EQUAL(count_ns_T, 0);
+
+    // change user namespace to start with letter T
     sim.user_ns = "Tser";
     return true;
   });
 
-  test_hooks.emplace(101, [&](cb_sim& sim, vw&, multi_ex&) {
-    sim.user_ns = "User";
-    return true;
-  });
-
-  test_hooks.emplace(102, [&](cb_sim&, vw& all, multi_ex&) {
+  test_hooks.emplace(101, [&](cb_sim& sim, vw& all, multi_ex&) {
     VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
     size_t tser_count = tr->cm.ns_counter.at('T');
     BOOST_CHECK_GT(tser_count, 1);
+
+    // reset user namespace to appropriate value
+    sim.user_ns = "User";
     return true;
   });
 
