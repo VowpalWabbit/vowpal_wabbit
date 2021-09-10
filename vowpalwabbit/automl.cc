@@ -298,7 +298,7 @@ struct config_manager
   // Highest priority will be picked first because of max-PQ implementation, this will
   // be the config with the least exclusion. Note that all configs will run to budget
   // before priorities and budget are reset.
-  float get_priority(size_t config_index)
+  float get_priority(int config_index)
   {
     float priority = 0.f;
     for (auto ns : configs[config_index].exclusions) { priority -= ns_counter[ns]; }
