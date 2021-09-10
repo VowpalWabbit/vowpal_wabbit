@@ -20,6 +20,8 @@
 #include <map>
 
 using simulator::callback_map;
+using simulator::cb_sim;
+
 constexpr float AUTO_ML_FLOAT_TOL = 0.01f;
 
 namespace automl_test
@@ -87,7 +89,7 @@ using namespace ut_helper;
 // n) asserts weights before/after every operation
 // NOTE: interactions are currently 0 for offset 0 since
 // config 0 is hard-coded to be empty interactions for now.
-bool weights_offset_test(vw& all, multi_ex& ec)
+bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
 {
   const size_t offset_to_clear = 1;
   auto& weights = all.weights.dense_weights;
@@ -187,7 +189,7 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
   callback_map test_hooks;
 
   // lambda test/assert
-  test_hooks.emplace(num_iterations - 1, [&num_iterations](vw& all, multi_ex&) {
+  test_hooks.emplace(num_iterations - 1, [&num_iterations](cb_sim&, vw& all, multi_ex&) {
     VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(tr->cm.county, num_iterations - 1);
     BOOST_CHECK_GT(tr->cm.max_live_configs, 2);
@@ -211,7 +213,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
   const size_t deterministic_champ_switch = 735;
   callback_map test_hooks;
 
-  test_hooks.emplace(deterministic_champ_switch - 1, [&](vw& all, multi_ex&) {
+  test_hooks.emplace(deterministic_champ_switch - 1, [&](cb_sim&, vw& all, multi_ex&) {
     VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(tr->cm.current_champ, 2);
     BOOST_CHECK_EQUAL(deterministic_champ_switch - 1, tr->cm.county);
@@ -219,7 +221,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
     return true;
   });
 
-  test_hooks.emplace(deterministic_champ_switch, [&deterministic_champ_switch](vw& all, multi_ex&) {
+  test_hooks.emplace(deterministic_champ_switch, [&deterministic_champ_switch](cb_sim&, vw& all, multi_ex&) {
     VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(tr->cm.current_champ, 2);
     BOOST_CHECK_EQUAL(deterministic_champ_switch, tr->cm.county);
@@ -259,7 +261,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_automl)
   callback_map test_hooks;
 
   // technically runs after the 0th example is learned
-  test_hooks.emplace(zero, [&zero](vw& all, multi_ex&) {
+  test_hooks.emplace(zero, [&zero](cb_sim&, vw& all, multi_ex&) {
     VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(tr->cm.county, zero);
     BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Idle);
@@ -267,7 +269,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_automl)
   });
 
   // test executes right after learn call of the 10th example
-  test_hooks.emplace(num_iterations, [&num_iterations](vw& all, multi_ex&) {
+  test_hooks.emplace(num_iterations, [&num_iterations](cb_sim&, vw& all, multi_ex&) {
     VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(tr->cm.county, num_iterations);
     BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
@@ -288,7 +290,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_metrics)
   callback_map test_hooks;
 
   // technically runs after the 0th example is learned
-  test_hooks.emplace(zero, [&metric_name, &zero](vw& all, multi_ex&) {
+  test_hooks.emplace(zero, [&metric_name, &zero](cb_sim&, vw& all, multi_ex&) {
     VW::metric_sink metrics;
     all.l->persist_metrics(metrics);
 
@@ -297,7 +299,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_metrics)
   });
 
   // test executes right after learn call of the 10th example
-  test_hooks.emplace(num_iterations, [&metric_name, &num_iterations](vw& all, multi_ex&) {
+  test_hooks.emplace(num_iterations, [&metric_name, &num_iterations](cb_sim&, vw& all, multi_ex&) {
     VW::metric_sink metrics;
     all.l->persist_metrics(metrics);
 
@@ -321,7 +323,7 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_budget)
   callback_map test_hooks;
 
   // Note this is after learning 14 examples (first iteration is Idle)
-  test_hooks.emplace(fifteen, [&fifteen](vw& all, multi_ex&) {
+  test_hooks.emplace(fifteen, [&fifteen](cb_sim&, vw& all, multi_ex&) {
     VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
     BOOST_CHECK_EQUAL(tr->cm.county, 15);
@@ -350,7 +352,7 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_budget)
   });
 
   // Test that champ can change properly
-  test_hooks.emplace(forty_one, [&forty_one](vw& all, multi_ex&) {
+  test_hooks.emplace(forty_one, [&forty_one](cb_sim&, vw& all, multi_ex&) {
     VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(tr->cm.current_champ, 2);
     BOOST_CHECK_GT(tr->cm.configs[tr->cm.live_indices[tr->cm.current_champ]].chisq.recompute_duals().first,
@@ -376,7 +378,7 @@ BOOST_AUTO_TEST_CASE(learner_copy_clear_test)
 {
   callback_map test_hooks;
 
-  test_hooks.emplace(10, [&](vw& all, multi_ex&) {
+  test_hooks.emplace(10, [&](cb_sim&, vw& all, multi_ex&) {
     all.l->copy_offset_based(0, 1);
     all.l->clear_offset_based(0);
 
@@ -408,4 +410,58 @@ BOOST_AUTO_TEST_CASE(quadratic_exclusion_oracle_test)
   BOOST_CHECK_EQUAL(interactions[4][1], 'E');
   BOOST_CHECK_EQUAL(interactions[5][0], 'E');
   BOOST_CHECK_EQUAL(interactions[5][1], 'E');
+}
+
+BOOST_AUTO_TEST_CASE(namespace_switch)
+{
+  const size_t num_iterations = 3000;
+  callback_map test_hooks;
+
+  test_hooks.emplace(100, [&](cb_sim& sim, vw&, multi_ex&) {
+    sim.user_ns = "Tser";
+    return true;
+  });
+
+  test_hooks.emplace(101, [&](cb_sim& sim, vw&, multi_ex&) {
+    sim.user_ns = "User";
+    return true;
+  });
+
+  test_hooks.emplace(102, [&](cb_sim&, vw& all, multi_ex&) {
+    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
+    size_t tser_count = tr->cm.ns_counter.at('T');
+    BOOST_CHECK_GT(tser_count, 1);
+    return true;
+  });
+
+  test_hooks.emplace(num_iterations, [&](cb_sim&, vw& all, multi_ex&) {
+    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
+
+    auto champ_exclusions = tr->cm.configs.at(tr->cm.current_champ).exclusions;
+    // TODO: i was expecting only 1 here
+    BOOST_CHECK_EQUAL(champ_exclusions.size(), 2);
+
+    auto excluded = champ_exclusions.begin();
+    // TODO: this should have been T?
+    // not sure this makes sense, assuming I'm accesing things right
+    BOOST_CHECK_EQUAL(*excluded, 'A');
+    excluded = std::next(excluded);
+    BOOST_CHECK_EQUAL(*excluded, 'U');
+
+    auto champ_interactions = tr->cm.live_interactions[tr->cm.current_champ];
+    BOOST_CHECK_EQUAL(champ_interactions.size(), 6);
+
+    // TODO: remove print later or translate to asserts
+    // this is printing A and its also marked as excluded
+    for (std::vector<namespace_index> v : champ_interactions)
+    {
+      for (namespace_index c : v) { std::cerr << " interaction:" << c << ","; }
+    }
+
+    return true;
+  });
+
+  auto ctr = simulator::_test_helper_hook(
+      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations);
+  BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
