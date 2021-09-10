@@ -320,3 +320,42 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
   BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "abc|::"), VW::vw_exception);
   VW::finish(*vw);
 }
+
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions)
+{
+  auto* vw_char_inter = VW::initialize("--quiet -q AB");
+  auto* vw_extent_inter = VW::initialize("--quiet --new_full_interactions group1|group2");
+  auto cleanup = VW::scope_exit(
+      [&]()
+      {
+        VW::finish(*vw_char_inter);
+        VW::finish(*vw_extent_inter);
+      });
+
+  auto parse_and_return_num_fts = [&](const char* char_inter_example,
+                                      const char* extent_inter_example) -> std::pair<size_t, size_t>
+  {
+    auto* ex_char = VW::read_example(*vw_char_inter, char_inter_example);
+    auto* ex_extent = VW::read_example(*vw_extent_inter, extent_inter_example);
+    vw_char_inter->predict(*ex_char);
+    vw_extent_inter->predict(*ex_extent);
+    vw_char_inter->finish_example(*ex_char);
+    vw_extent_inter->finish_example(*ex_extent);
+    return std::make_pair(vw_char_inter->sd->total_features, vw_extent_inter->sd->total_features);
+  };
+
+  size_t num_char_fts = 0;
+  size_t num_extent_fts = 0;
+
+  std::tie(num_char_fts, num_extent_fts) =
+      parse_and_return_num_fts("|A a b c |B a b c d", "|group1 a b c |group2 a b c d");
+  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+
+  std::tie(num_char_fts, num_extent_fts) =
+      parse_and_return_num_fts("|A a b c |B a b c d", "|group1 c |group1 a b |group2 a b c d");
+  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+
+  std::tie(num_char_fts, num_extent_fts) =
+      parse_and_return_num_fts("|A a b c |B a b c d", "|group2 a d |group1 c |group1 a b |group2 b c");
+  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+}
