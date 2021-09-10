@@ -165,7 +165,7 @@ void generate_generic_extent_combination_iterative(const std::array<features, NU
     }
   }
 
-  while(!in_process_frames.empty())
+  while (!in_process_frames.empty())
   {
     auto top = std::move(in_process_frames.top());
     in_process_frames.pop();
@@ -327,8 +327,7 @@ size_t process_cubic_interaction(const std::tuple<features_range_t, features_ran
 
 template <bool Audit, typename KernelFuncT, typename AuditFuncT>
 size_t process_generic_interaction(const std::vector<features_range_t>& range, bool permutations,
-                                   const KernelFuncT& kernel_func, const AuditFuncT& audit_func,
-                                   std::vector<feature_gen_data>& state_data)
+    const KernelFuncT& kernel_func, const AuditFuncT& audit_func, std::vector<feature_gen_data>& state_data)
 {
   size_t num_features = 0;
   state_data.clear();
@@ -430,8 +429,8 @@ template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, Weight
     class WeightsT>  // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(const std::vector<std::vector<namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, example_predict& ec,
-    DataT& dat, WeightsT& weights,
-    size_t& num_features, generate_interactions_object_cache& cache)  // default value removed to eliminate ambiguity in old complers
+    DataT& dat, WeightsT& weights, size_t& num_features,
+    generate_interactions_object_cache& cache)  // default value removed to eliminate ambiguity in old complers
 {
   num_features = 0;
   // often used values
@@ -473,8 +472,8 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     {
       // Skip over any interaction with an empty namespace.
       if (has_empty_interaction(ec.feature_space, ns)) { continue; }
-      num_features += process_generic_interaction<audit>(
-          generate_generic_char_combination(ec.feature_space, ns), permutations, inner_kernel_func, depth_audit_func, cache.state_data);
+      num_features += process_generic_interaction<audit>(generate_generic_char_combination(ec.feature_space, ns),
+          permutations, inner_kernel_func, depth_audit_func, cache.state_data);
     }
   }
 
@@ -484,27 +483,28 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     if (std::any_of(ns.begin(), ns.end(), [](const extent_term& term) { return term.first == wildcard_namespace; }))
     { continue; }
 
-    generate_generic_extent_combination_iterative(ec.feature_space, ns, [&](const std::vector<features_range_t>& combination)
-    {
-      const size_t len = ns.size();
-      if (len == 2)
-      {
-        num_features +=
-            process_quadratic_interaction<audit>(std::make_tuple(combination[0], combination[1]),
-                permutations, inner_kernel_func, depth_audit_func);
-      }
-      else if (len == 3)
-      {
-        num_features +=
-            process_cubic_interaction<audit>(std::make_tuple(combination[0], combination[1], combination[2]),
-                permutations, inner_kernel_func, depth_audit_func);
-      }
-      else
-      {
-        num_features += process_generic_interaction<audit>(
-            combination, permutations, inner_kernel_func, depth_audit_func, cache.state_data);
-      }
-    }, cache.in_process_frames, cache.frame_pool);
+    generate_generic_extent_combination_iterative(
+        ec.feature_space, ns,
+        [&](const std::vector<features_range_t>& combination) {
+          const size_t len = ns.size();
+          if (len == 2)
+          {
+            num_features += process_quadratic_interaction<audit>(
+                std::make_tuple(combination[0], combination[1]), permutations, inner_kernel_func, depth_audit_func);
+          }
+          else if (len == 3)
+          {
+            num_features +=
+                process_cubic_interaction<audit>(std::make_tuple(combination[0], combination[1], combination[2]),
+                    permutations, inner_kernel_func, depth_audit_func);
+          }
+          else
+          {
+            num_features += process_generic_interaction<audit>(
+                combination, permutations, inner_kernel_func, depth_audit_func, cache.state_data);
+          }
+        },
+        cache.in_process_frames, cache.frame_pool);
   }
 }  // foreach interaction in all.interactions
 

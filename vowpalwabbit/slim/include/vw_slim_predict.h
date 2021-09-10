@@ -433,8 +433,8 @@ public:
     }
     else
     {
-      score = GD::inline_predict<W>(
-          *_weights, false, _ignore_linear, _interactions, _unused_extent_interactions, /* permutations */ false, ex, _generate_interactions_object_cache);
+      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, _unused_extent_interactions,
+          /* permutations */ false, ex, _generate_interactions_object_cache);
     }
     return S_VW_PREDICT_OK;
   }

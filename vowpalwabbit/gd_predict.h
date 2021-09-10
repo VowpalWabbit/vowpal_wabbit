@@ -50,9 +50,9 @@ template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, Weight
 
 inline void generate_interactions(const std::vector<std::vector<namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, example_predict& ec,
-    DataT& dat, WeightsT& weights,
-    size_t& num_interacted_features, INTERACTIONS::generate_interactions_object_cache& cache)  // default value removed to eliminate
-                                      // ambiguity in old complers
+    DataT& dat, WeightsT& weights, size_t& num_interacted_features,
+    INTERACTIONS::generate_interactions_object_cache& cache)  // default value removed to eliminate
+                                                              // ambiguity in old complers
 {
   INTERACTIONS::generate_interactions<DataT, WeightOrIndexT, FuncT, false, dummy_func<DataT>, WeightsT>(
       interactions, extent_interactions, permutations, ec, dat, weights, num_interacted_features, cache);
@@ -99,8 +99,8 @@ inline void vec_add(float& p, float fx, float fw) { p += fw * fx; }
 template <class WeightsT>
 inline float inline_predict(WeightsT& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
     const std::vector<std::vector<namespace_index>>& interactions,
-    const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, example_predict& ec, INTERACTIONS::generate_interactions_object_cache& cache,
-    float initial = 0.f)
+    const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, example_predict& ec,
+    INTERACTIONS::generate_interactions_object_cache& cache, float initial = 0.f)
 {
   foreach_feature<float, float, vec_add, WeightsT>(
       weights, ignore_some_linear, ignore_linear, interactions, extent_interactions, permutations, ec, initial, cache);
