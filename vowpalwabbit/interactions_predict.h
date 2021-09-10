@@ -120,53 +120,66 @@ std::tuple<features_range_t, features_range_t> inline generate_quadratic_char_co
       std::make_pair(feature_groups[ns_idx2].audit_begin(), feature_groups[ns_idx2].audit_end()))};
 }
 
-std::vector<std::vector<features_range_t>> inline generate_generic_extent_combination_inner(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& terms, size_t current,
-    const extent_term& prev_term, size_t offset, const std::vector<features_range_t>& so_far)
+template <typename DispatchCombinationFuncT>
+void generate_generic_extent_combination_iterative(
+    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& terms,
+    const DispatchCombinationFuncT& dispatch_combination_func)
 {
-  if (current == terms.size()) { return {so_far}; }
-
-  std::vector<std::vector<features_range_t>> result;
-  const auto& current_term = terms[current];
-
-  const auto& current_fg = feature_groups[current_term.first];
-  auto it = current_fg.hash_extents_begin(current_term.second);
-  if (prev_term == current_term) { std::advance(it, offset); }
-  else
+  struct item
   {
-    offset = 0;
-  }
-  auto i = 0;
-  auto end = current_fg.hash_extents_end(current_term.second);
-  for (; it != end; ++it)
+    size_t current_term;
+    size_t prev_term;
+    size_t offset;
+    std::vector<features_range_t> so_far;
+  };
+
+  std::stack<item> in_process_frames;
+
+  // Add an inner scope to deal with name clashes.
   {
-    auto so_far_copy = so_far;
-    so_far_copy.emplace_back(*it);
-    auto t = generate_generic_extent_combination_inner(
-        feature_groups, terms, current + 1, current_term, offset + i, so_far_copy);
-    result.insert(result.end(), t.begin(), t.end());
-    i++;
+    const auto& current_term = terms[0];
+    const auto& current_fg = feature_groups[current_term.first];
+    size_t i = 0;
+    for (auto it = current_fg.hash_extents_begin(current_term.second);
+         it != current_fg.hash_extents_end(current_term.second); ++it)
+    {
+      in_process_frames.push(item{1, 0, i, std::vector<features_range_t>{*it}});
+      i++;
+    }
   }
-
-  return result;
-}
-
-std::vector<std::vector<features_range_t>> inline generate_generic_extent_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& terms)
-{
-  std::vector<std::vector<features_range_t>> result;
-  const auto& current_term = terms[0];
-  const auto& current_fg = feature_groups[current_term.first];
-  auto i = 0;
-  for (auto it = current_fg.hash_extents_begin(current_term.second);
-       it != current_fg.hash_extents_end(current_term.second); ++it)
+  
+  while(!in_process_frames.empty())
   {
-    auto t = generate_generic_extent_combination_inner(feature_groups, terms, 1, current_term, i, {*it});
-    result.insert(result.end(), t.begin(), t.end());
-    i++;
-  }
+    auto top = std::move(in_process_frames.top());
+    in_process_frames.pop();
+    
+    const auto& current_term = terms[top.current_term];
+    const auto& prev_term = terms[top.prev_term];
+    const auto& current_fg = feature_groups[current_term.first];
 
-  return result;
+    auto it = current_fg.hash_extents_begin(current_term.second);
+    if (prev_term == current_term) { std::advance(it, top.offset); }
+    else
+    {
+      top.offset = 0;
+    }
+    size_t i = 0;
+    auto end = current_fg.hash_extents_end(current_term.second);
+    for (; it != end; ++it)
+    {
+      auto so_far_copy = top.so_far;
+      so_far_copy.emplace_back(*it);
+      if (top.current_term == terms.size() - 1)
+      {
+        dispatch_combination_func(so_far_copy);
+      }
+      else
+      {
+        in_process_frames.push(item{top.current_term + 1, top.current_term, top.offset + i, std::move(so_far_copy)});
+      }
+      i++;
+    }
+  }
 }
 
 std::tuple<features_range_t, features_range_t, features_range_t> inline generate_cubic_char_combination(
@@ -442,12 +455,13 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
   {
     if (has_empty_interaction(ec.feature_space, ns)) { continue; }
     if (std::any_of(ns.begin(), ns.end(), [](const extent_term& term) { return term.first == wildcard_namespace; }))
-    { THROW_OR_RETURN_VOID("Wildcard not yet implemented."); }
-    for (const auto& combination : generate_generic_extent_combination(ec.feature_space, ns))
+    { continue; }
+
+    generate_generic_extent_combination_iterative(ec.feature_space, ns, [&](const std::vector<features_range_t>& combination)
     {
-      num_features +=
+        num_features +=
           process_generic_interaction<audit>(combination, permutations, inner_kernel_func, depth_audit_func);
-    }
+    });
   }
 }  // foreach interaction in all.interactions
 
