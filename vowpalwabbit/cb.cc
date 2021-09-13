@@ -200,10 +200,10 @@ void parse_label(parser* p, shared_data* sd, CB_EVAL::label& ld, std::vector<VW:
   ld.action = static_cast<uint32_t>(hashstring(words[0].begin(), words[0].length(), 0));
 
   // Removing the first element of a vector is not efficient at all, every element must be copied/moved.
-  const auto stashed_first_token = std::move(words[0]);
+  auto stashed_first_token = words[0];
   words.erase(words.begin());
   CB::parse_label(p, sd, ld.event, words, red_features);
-  words.insert(words.begin(), std::move(stashed_first_token));
+  words.insert(words.begin(),stashed_first_token);
 }
 
 // clang-format off
