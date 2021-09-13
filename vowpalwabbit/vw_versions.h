@@ -23,3 +23,4 @@
 #define VERSION_FILE_WITH_REG_CB_SAVE_RESUME "8.11.0"     // version that ensures accuracy of loaded models in regcb
 #define VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME "8.11.0"  // version that ensures accuracy of loaded models in squarecb
 #define VERSION_FILE_WITH_FIRST_SAVE_RESUME "8.11.0"      // version that ensures accuracy of loaded models in first
+#define VERSION_FILE_WITH_AUTOML "8.11.0"  // version that ensures accuracy of loaded models in automl reduction

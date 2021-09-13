@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
 
 // Need to add save_load functionality to multiple structs in automl reduction including
 // config_manager and scored_config.
-/*BOOST_AUTO_TEST_CASE(automl_save_load)
+BOOST_AUTO_TEST_CASE(automl_save_load)
 {
   callback_map empty_hooks;
   auto ctr =
@@ -254,7 +254,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
   BOOST_CHECK_GT(with_save, 0.7f);
 
   BOOST_CHECK_CLOSE(without_save, with_save, FLOAT_TOL);
-}*/
+}
 
 BOOST_AUTO_TEST_CASE(assert_0th_event_automl)
 {
@@ -335,8 +335,8 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_budget)
     BOOST_CHECK_EQUAL(tr->cm.configs.size(), 8);
     BOOST_CHECK_EQUAL(tr->cm.configs[0].budget, 10);
     BOOST_CHECK_EQUAL(tr->cm.configs[7].budget, 20);
-    BOOST_CHECK_EQUAL(tr->cm.configs[1].budget, 6);
-    BOOST_CHECK_EQUAL(tr->cm.configs[6].budget, 6);
+    BOOST_CHECK_EQUAL(tr->cm.configs[1].budget, 10);
+    BOOST_CHECK_EQUAL(tr->cm.configs[6].budget, 10);
     BOOST_CHECK_EQUAL(tr->cm.scores[0].update_count, 15);
     BOOST_CHECK_EQUAL(tr->cm.scores[1].update_count, 4);
     BOOST_CHECK_EQUAL(tr->cm.scores[2].update_count, 4);
