@@ -119,7 +119,16 @@ enum config_state
   Experimenting
 };
 
-struct config_manager
+struct config_manager_base
+{
+  virtual void one_step(multi_ex& ec) = 0;
+  virtual void configure_interactions(example* ec, size_t stride) = 0;
+  virtual void restore_interactions(example* ec) = 0;
+  virtual void save_load_config_manager(io_buf& model_file, bool read, bool text) = 0;
+  virtual void persist(metric_sink& metrics) = 0;
+};
+
+struct config_manager : config_manager_base
 {
   config_state current_state = Idle;
   size_t county = 0;
@@ -142,17 +151,19 @@ struct config_manager
 
   config_manager(size_t starting_budget);
 
-  void one_step(multi_ex& ec);
+  void one_step(multi_ex& ec) override;
+  void configure_interactions(example* ec, size_t stride) override;
+  void restore_interactions(example* ec) override;
+  void save_load_config_manager(io_buf& model_file, bool read, bool text) override;
+  void persist(metric_sink& metrics) override;
+
+private:
+  void handle_empty_buget(size_t stride);
+  void update_champ();
   float get_priority(int config_index);
   void gen_configs(const multi_ex& ecs);
   bool repopulate_index_queue();
   void update_live_configs();
-  void update_champ();
-  void save_load_config_manager(io_buf& model_file, bool read, bool text);
-  void persist(metric_sink& metrics);
-  void configure_interactions(example* ec, size_t stride);
-  void restore_interactions(example* ec);
-  void handle_empty_buget(size_t stride);
 };
 
 struct tr_data
