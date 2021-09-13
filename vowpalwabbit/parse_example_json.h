@@ -1858,7 +1858,7 @@ void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<
 }
 
 template <bool audit>
-int read_features_json(vw* all, v_array<example*>& examples)
+int read_features_json(vw* all, io_buf& buf, v_array<example*>& examples)
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;
@@ -1868,7 +1868,7 @@ int read_features_json(vw* all, v_array<example*>& examples)
 
     char* line;
     size_t num_chars;
-    size_t num_chars_initial = read_features(all, line, num_chars);
+    size_t num_chars_initial = read_features(buf, line, num_chars);
     if (num_chars_initial < 1) return static_cast<int>(num_chars_initial);
 
     // Ensure there is a null terminator.
