@@ -6,6 +6,7 @@
 
 #include "options.h"
 #include "vw.h"
+#include "version.h"
 
 #include <memory>
 
@@ -194,13 +195,13 @@ struct options_exporter : options_i
   options_exporter()
   {
     // must pass an allocator when the object may need to allocate memory
-    rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-    // define the document as an object rather than an array
-    document.SetObject();
+    auto& allocator = _document.GetAllocator();
+    // define the _document as an object rather than an array
+    _document.SetObject();
 
     // create a rapidjson array type with similar syntax to std::vector
     rapidjson::Value array(rapidjson::kArrayType);
-    document.AddMember("option_groups", array, allocator);
+    _document.AddMember("option_groups", array, allocator);
   }
 
   template <typename T>
@@ -258,7 +259,7 @@ struct options_exporter : options_i
 
   void add_and_parse(const option_group_definition& group) override
   {
-    rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+    rapidjson::Document::AllocatorType& allocator = _document.GetAllocator();
 
     rapidjson::Value group_object(rapidjson::kObjectType);
     rapidjson::Value group_name_value;
@@ -289,7 +290,7 @@ struct options_exporter : options_i
     }
 
     group_object.AddMember("options", options_array, allocator);
-    document["option_groups"].PushBack(group_object, allocator);
+    _document["option_groups"].PushBack(group_object, allocator);
   }
 
   bool add_parse_and_check_necessary(const option_group_definition& group) override
@@ -352,7 +353,7 @@ struct options_exporter : options_i
   std::vector<std::string> get_positional_tokens() const override { return {}; }
 
   std::map<std::string, std::shared_ptr<base_option>> _all_options;
-  rapidjson::Document document;
+  rapidjson::Document _document;
 };
 
 int main(int argc, char* argv[])
@@ -360,9 +361,19 @@ int main(int argc, char* argv[])
   options_exporter exporter;
   auto* vw = VW::initialize(exporter);
 
+  auto& allocator = exporter._document.GetAllocator();
+  rapidjson::Value version_object(rapidjson::kObjectType);
+  rapidjson::Value version_text;
+  version_text.SetString(VW::version.to_string(), allocator);
+  version_object.AddMember("version", version_text, allocator);
+  rapidjson::Value git_commit_text;
+  git_commit_text.SetString(VW::git_commit, allocator);
+  version_object.AddMember("git_commit", git_commit_text, allocator);
+  exporter._document.AddMember("version_info", version_object, allocator);
+
   rapidjson::StringBuffer strbuf;
   rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
-  exporter.document.Accept(writer);
+  exporter._document.Accept(writer);
 
   std::cout << strbuf.GetString() << std::endl;
 
