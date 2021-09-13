@@ -303,8 +303,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c =
-          cache_numbits(all.example_parser->input.get_input_files().back().get());
+      uint64_t c = cache_numbits(all.example_parser->input.get_input_files().back().get());
       if (c < all.num_bits)
       {
         if (!quiet)
