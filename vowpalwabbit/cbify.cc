@@ -33,13 +33,13 @@ struct cbify;
 
 struct cbify_reg
 {
-  float min_value;
-  float max_value;
-  float bandwidth;
-  int num_actions;
-  int loss_option;
-  int loss_report;
-  float loss_01_ratio;
+  float min_value = 0.f;
+  float max_value = 0.f;
+  float bandwidth = 0.f;
+  int num_actions = 0;
+  int loss_option = 0;
+  int loss_report = 0;
+  float loss_01_ratio = 0.f;
   continuous_label cb_cont_label;
   float max_cost = std::numeric_limits<float>::lowest();
 };
@@ -47,17 +47,17 @@ struct cbify_reg
 struct cbify
 {
   CB::label cb_label;
-  uint64_t app_seed;
+  uint64_t app_seed = 0;
   action_scores a_s;
   cbify_reg regression_data;
   // used as the seed
-  size_t example_counter;
-  vw* all;
-  bool use_adf;  // if true, reduce to cb_explore_adf instead of cb_explore
+  size_t example_counter = 0;
+  vw* all = nullptr;
+  bool use_adf = false;  // if true, reduce to cb_explore_adf instead of cb_explore
   cbify_adf_data adf_data;
-  float loss0;
-  float loss1;
-  uint32_t chosen_action;
+  float loss0 = 0.f;
+  float loss1 = 0.f;
+  uint32_t chosen_action = 0;
 
   // for ldf inputs
   std::vector<std::vector<COST_SENSITIVE::wclass>> cs_costs;
@@ -660,7 +660,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
   vw& all = *stack_builder.get_all_pointer();
   uint32_t num_actions = 0;
   uint32_t cb_continuous_num_actions = 0;
-  auto data = scoped_calloc_or_throw<cbify>();
+  auto data = VW::make_unique<cbify>();
   bool use_cs;
   bool use_reg;  // todo: check
   bool use_discrete;
@@ -753,59 +753,96 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
   }
 
   learner<cbify, example>* l;
+  void (*finish_ptr)(vw&, cbify&, example&);
+  std::string name_addition;
+  label_type_t label_type;
 
   if (data->use_adf)
   {
+    void (*learn_ptr)(cbify&, multi_learner&, example&);
+    void (*predict_ptr)(cbify&, multi_learner&, example&);
     multi_learner* base = as_multiline(stack_builder.setup_base_learner());
 
     if (data->use_adf) { data->adf_data.init_adf_data(num_actions, base->increment, all.interactions); }
 
     if (use_cs)
     {
-      l = &init_cost_sensitive_learner(data, base, learn_adf<true>, predict_adf<true>, all.example_parser, 1,
-          stack_builder.get_setupfn_name(cbify_setup) + "-adf-cs");
-      all.example_parser->lbl_parser.label_type = label_type_t::cs;
+      learn_ptr = learn_adf<true>;
+      predict_ptr = predict_adf<true>;
+      finish_ptr = COST_SENSITIVE::finish_example;
+      name_addition = "-adf-cs";
+      label_type = label_type_t::cs;
+      all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
     }
     else
     {
-      l = &init_multiclass_learner(data, base, learn_adf<false>, predict_adf<false>, all.example_parser, 1,
-          stack_builder.get_setupfn_name(cbify_setup) + "-adf");
-      all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
+      learn_ptr = learn_adf<false>;
+      predict_ptr = predict_adf<false>;
+      finish_ptr = MULTICLASS::finish_example<cbify&>;
+      name_addition = "-adf";
+      label_type = label_type_t::multiclass;
+      all.example_parser->lbl_parser = MULTICLASS::mc_label;
     }
+    l = make_reduction_learner(
+        std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
+            .set_label_type(label_type)
+            .set_prediction_type(prediction_type_t::multiclass)
+            .set_finish_example(finish_ptr)
+            .build();
   }
   else
   {
+    void (*learn_ptr)(cbify&, single_learner&, example&);
+    void (*predict_ptr)(cbify&, single_learner&, example&);
+    prediction_type_t pred_type;
     single_learner* base = as_singleline(stack_builder.setup_base_learner());
     if (use_reg)
     {
+      label_type = label_type_t::simple;
+      pred_type = prediction_type_t::scalar;
       all.example_parser->lbl_parser = simple_label_parser;
       if (use_discrete)
       {
-        l = &init_learner(data, base, predict_or_learn_regression_discrete<true>,
-            predict_or_learn_regression_discrete<false>, 1, prediction_type_t::scalar,
-            stack_builder.get_setupfn_name(cbify_setup) + "-reg-discrete", true);
-        l->set_finish_example(finish_example_cb_reg_discrete);
+        learn_ptr = predict_or_learn_regression_discrete<true>;
+        predict_ptr = predict_or_learn_regression_discrete<false>;
+        finish_ptr = finish_example_cb_reg_discrete;
+        name_addition = "-reg-discrete";
       }
       else
       {
-        l = &init_learner(data, base, predict_or_learn_regression<true>, predict_or_learn_regression<false>, 1,
-            prediction_type_t::scalar, stack_builder.get_setupfn_name(cbify_setup) + "-reg", true);
-        l->set_finish_example(finish_example_cb_reg_continous);
+        learn_ptr = predict_or_learn_regression<true>;
+        predict_ptr = predict_or_learn_regression<false>;
+        finish_ptr = finish_example_cb_reg_continous;
+        name_addition = "-reg";
       }
     }
     else if (use_cs)
     {
-      l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>,
-          all.example_parser, 1, stack_builder.get_setupfn_name(cbify_setup) + "-cs", prediction_type_t::multiclass,
-          true);
-      all.example_parser->lbl_parser.label_type = label_type_t::cs;
+      label_type = label_type_t::cs;
+      pred_type = prediction_type_t::multiclass;
+      learn_ptr = predict_or_learn<true, true>;
+      predict_ptr = predict_or_learn<false, true>;
+      finish_ptr = COST_SENSITIVE::finish_example;
+      name_addition = "-cs";
+      all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
     }
     else
     {
-      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>,
-          all.example_parser, 1, stack_builder.get_setupfn_name(cbify_setup), prediction_type_t::multiclass, true);
-      all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
+      label_type = label_type_t::multiclass;
+      pred_type = prediction_type_t::multiclass;
+      learn_ptr = predict_or_learn<true, false>;
+      predict_ptr = predict_or_learn<false, false>;
+      finish_ptr = MULTICLASS::finish_example<cbify&>;
+      name_addition = "";
+      all.example_parser->lbl_parser = MULTICLASS::mc_label;
     }
+    l = make_reduction_learner(
+        std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
+            .set_learn_returns_prediction(true)
+            .set_label_type(label_type)
+            .set_prediction_type(pred_type)
+            .set_finish_example(finish_ptr)
+            .build();
   }
 
   return make_base(*l);
@@ -815,7 +852,7 @@ base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto data = scoped_calloc_or_throw<cbify>();
+  auto data = VW::make_unique<cbify>();
   bool cbify_ldf_option = false;
 
   option_group_definition new_options("Make csoaa_ldf into Contextual Bandit");
@@ -845,11 +882,13 @@ base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
   }
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  learner<cbify, multi_ex>& l = init_learner(data, base, do_actual_learning_ldf, do_actual_predict_ldf, 1,
-      prediction_type_t::multiclass, stack_builder.get_setupfn_name(cbifyldf_setup));
-
-  l.set_finish_example(finish_multiline_example);
+  auto* l = make_reduction_learner(std::move(data), base, do_actual_learning_ldf, do_actual_predict_ldf,
+      stack_builder.get_setupfn_name(cbifyldf_setup))
+                .set_prediction_type(prediction_type_t::multiclass)
+                .set_label_type(label_type_t::cs)
+                .set_finish_example(finish_multiline_example)
+                .build();
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
 
-  return make_base(l);
+  return make_base(*l);
 }
