@@ -92,16 +92,16 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     return (counter > after);
 }
 
-uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
+uint32_t cache_numbits(VW::io::reader* filepointer)
 {
   size_t v_length;
-  buf->read_file(filepointer, reinterpret_cast<char*>(&v_length), sizeof(v_length));
+  io_buf::read_file(filepointer, reinterpret_cast<char*>(&v_length), sizeof(v_length));
   if (v_length > 61) THROW("cache version too long, cache file is probably invalid");
 
   if (v_length == 0) THROW("cache version too short, cache file is probably invalid");
 
   std::vector<char> t(v_length);
-  buf->read_file(filepointer, t.data(), v_length);
+  io_buf::read_file(filepointer, t.data(), v_length);
   VW::version_struct v_tmp(t.data());
   if (v_tmp != VW::version)
   {
@@ -109,12 +109,12 @@ uint32_t cache_numbits(io_buf* buf, VW::io::reader* filepointer)
   }
 
   char temp;
-  if (buf->read_file(filepointer, &temp, 1) < 1) THROW("failed to read");
+  if (io_buf::read_file(filepointer, &temp, 1) < 1) THROW("failed to read");
 
   if (temp != 'c') THROW("data file is not a cache file");
 
   uint32_t cache_numbits;
-  if (buf->read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < static_cast<int>(sizeof(cache_numbits)))
+  if (io_buf::read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < static_cast<int>(sizeof(cache_numbits)))
   { return true; }
 
   return cache_numbits;
@@ -164,7 +164,7 @@ void set_json_reader(vw& all, bool dsjson = false)
 
 void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
 {
-  if (all.example_parser->input->isbinary())
+  if (all.example_parser->input.isbinary())
   {
     all.example_parser->reader = read_cached_features;
     all.print_by_ref = binary_print_result_by_ref;
@@ -181,15 +181,15 @@ void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
 
 void reset_source(vw& all, size_t numbits)
 {
-  io_buf* input = all.example_parser->input.get();
+  io_buf& input = all.example_parser->input;
 
   // If in write cache mode then close all of the input files then open the written cache as the new input.
   if (all.example_parser->write_cache)
   {
-    all.example_parser->output->flush();
+    all.example_parser->output.flush();
     // Turn off write_cache as we are now reading it instead of writing!
     all.example_parser->write_cache = false;
-    all.example_parser->output->close_file();
+    all.example_parser->output.close_file();
 
     // This deletes the file from disk.
     remove(all.example_parser->finalname.c_str());
@@ -198,9 +198,9 @@ void reset_source(vw& all, size_t numbits)
     if (0 != rename(all.example_parser->currentname.c_str(), all.example_parser->finalname.c_str()))
       THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.example_parser->currentname << " to "
                                                                           << all.example_parser->finalname);
-    input->close_files();
+    input.close_files();
     // Now open the written cache as the new input file.
-    input->add_file(VW::io::open_file_reader(all.example_parser->finalname));
+    input.add_file(VW::io::open_file_reader(all.example_parser->finalname));
     set_cache_reader(all);
   }
 
@@ -218,7 +218,7 @@ void reset_source(vw& all, size_t numbits)
       }
 
       all.final_prediction_sink.clear();
-      all.example_parser->input->close_files();
+      all.example_parser->input.close_files();
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
@@ -234,17 +234,17 @@ void reset_source(vw& all, size_t numbits)
 
       auto socket = VW::io::wrap_socket_descriptor(f);
       all.final_prediction_sink.push_back(socket->get_writer());
-      all.example_parser->input->add_file(socket->get_reader());
+      all.example_parser->input.add_file(socket->get_reader());
 
       set_daemon_reader(all, is_currently_json_reader(all), is_currently_dsjson_reader(all));
     }
     else
     {
-      if (!input->is_resettable()) { THROW("Cannot reset source as it is a non-resettable input type.") }
-      input->reset();
-      for (auto& file : input->get_input_files())
+      if (!input.is_resettable()) { THROW("Cannot reset source as it is a non-resettable input type.") }
+      input.reset();
+      for (auto& file : input.get_input_files())
       {
-        if (cache_numbits(input, file.get()) < numbits) { THROW("argh, a bug in caching of some sort!") }
+        if (cache_numbits(file.get()) < numbits) { THROW("argh, a bug in caching of some sort!") }
       }
     }
   }
@@ -252,8 +252,8 @@ void reset_source(vw& all, size_t numbits)
 
 void make_write_cache(vw& all, std::string& newname, bool quiet)
 {
-  io_buf* output = all.example_parser->output.get();
-  if (output->num_files() != 0)
+  io_buf& output = all.example_parser->output;
+  if (output.num_files() != 0)
   {
     *(all.trace_message) << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
@@ -262,7 +262,7 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
   all.example_parser->currentname = newname + std::string(".writing");
   try
   {
-    output->add_file(VW::io::open_file_writer(all.example_parser->currentname));
+    output.add_file(VW::io::open_file_writer(all.example_parser->currentname));
   }
   catch (const std::exception&)
   {
@@ -272,11 +272,11 @@ void make_write_cache(vw& all, std::string& newname, bool quiet)
 
   size_t v_length = static_cast<uint64_t>(VW::version.to_string().length()) + 1;
 
-  output->bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
-  output->bin_write_fixed(VW::version.to_string().c_str(), v_length);
-  output->bin_write_fixed("c", 1);
-  output->bin_write_fixed(reinterpret_cast<const char*>(&all.num_bits), sizeof(all.num_bits));
-  output->flush();
+  output.bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
+  output.bin_write_fixed(VW::version.to_string().c_str(), v_length);
+  output.bin_write_fixed("c", 1);
+  output.bin_write_fixed(reinterpret_cast<const char*>(&all.num_bits), sizeof(all.num_bits));
+  output.flush();
 
   all.example_parser->finalname = newname;
   all.example_parser->write_cache = true;
@@ -292,7 +292,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
     bool cache_file_opened = false;
     if (!kill_cache) try
       {
-        all.example_parser->input->add_file(VW::io::open_file_reader(file));
+        all.example_parser->input.add_file(VW::io::open_file_reader(file));
         cache_file_opened = true;
       }
       catch (const std::exception&)
@@ -304,13 +304,13 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
     else
     {
       uint64_t c =
-          cache_numbits(all.example_parser->input.get(), all.example_parser->input->get_input_files().back().get());
+          cache_numbits(all.example_parser->input.get_input_files().back().get());
       if (c < all.num_bits)
       {
         if (!quiet)
           *(all.trace_message) << "WARNING: cache file is ignored as it's made with less bit precision than required!"
                                << endl;
-        all.example_parser->input->close_file();
+        all.example_parser->input.close_file();
         make_write_cache(all, file, quiet);
       }
       else
@@ -515,7 +515,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
     all.final_prediction_sink.push_back(socket->get_writer());
 
-    all.example_parser->input->add_file(socket->get_reader());
+    all.example_parser->input.add_file(socket->get_reader());
     if (!all.logger.quiet) *(all.trace_message) << "reading data from port " << port << endl;
 
     if (all.active) { set_string_reader(all); }
@@ -529,7 +529,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   }
   else
   {
-    if (all.example_parser->input->num_files() != 0)
+    if (all.example_parser->input.num_files() != 0)
     {
       if (!quiet) *(all.trace_message) << "ignoring text input in favor of cache input" << endl;
     }
@@ -557,7 +557,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
           }
         }
 
-        if (adapter) { all.example_parser->input->add_file(std::move(adapter)); }
+        if (adapter) { all.example_parser->input.add_file(std::move(adapter)); }
       }
       catch (std::exception const&)
       {
@@ -608,7 +608,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   if (passes > 1 && !all.example_parser->resettable)
     THROW("need a cache file for multiple passes : try using --cache_file");
 
-  if (!quiet && !all.daemon) *(all.trace_message) << "num sources = " << all.example_parser->input->num_files() << endl;
+  if (!quiet && !all.daemon) *(all.trace_message) << "num sources = " << all.example_parser->input.num_files() << endl;
 }
 
 void lock_done(parser& p)
@@ -662,7 +662,7 @@ void setup_example(vw& all, example* ae)
   if (all.example_parser->sort_features && ae->sorted == false) unique_sort_features(all.parse_mask, ae);
 
   if (all.example_parser->write_cache)
-  { VW::write_example_to_cache(*all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask); }
+  { VW::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask); }
 
   // Require all extents to be complete in an example.
 #ifndef NDEBUG

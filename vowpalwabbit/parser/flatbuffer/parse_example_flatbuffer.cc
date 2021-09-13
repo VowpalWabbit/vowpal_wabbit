@@ -37,14 +37,14 @@ bool parser::parse(vw* all, uint8_t* buffer_pointer)
   }
 
   char* line = nullptr;
-  auto len = all->example_parser->input->buf_read(line, sizeof(uint32_t));
+  auto len = all->example_parser->input.buf_read(line, sizeof(uint32_t));
 
   if (len < sizeof(uint32_t)) { return false; }
 
   _object_size = flatbuffers::ReadScalar<flatbuffers::uoffset_t>(line);
 
   // read one object, object size defined by the read prefix
-  all->example_parser->input->buf_read(line, _object_size);
+  all->example_parser->input.buf_read(line, _object_size);
 
   _flatbuffer_pointer = reinterpret_cast<uint8_t*>(line);
   _data = VW::parsers::flatbuffer::GetExampleRoot(_flatbuffer_pointer);

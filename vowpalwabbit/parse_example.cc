@@ -20,7 +20,7 @@ namespace logger = VW::io::logger;
 size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
   line = nullptr;
-  size_t num_chars_initial = all->example_parser->input->readto(line, '\n');
+  size_t num_chars_initial = all->example_parser->input.readto(line, '\n');
   if (num_chars_initial < 1) return num_chars_initial;
   num_chars = num_chars_initial;
   if (line[0] == '\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf')
