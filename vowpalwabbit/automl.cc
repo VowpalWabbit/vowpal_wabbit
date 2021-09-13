@@ -139,7 +139,7 @@ struct scored_config
     metrics.float_metrics_list.emplace_back("bound" + suffix, static_cast<float>(sd.first));
     metrics.float_metrics_list.emplace_back("w" + suffix, last_w);
     metrics.float_metrics_list.emplace_back("r" + suffix, last_r);
-    metrics.float_metrics_list.emplace_back("conf_idx" + suffix, config_index);
+    metrics.int_metrics_list.emplace_back("conf_idx" + suffix, config_index);
   }
 
   float current_ips() { return ips / update_count; }
@@ -721,7 +721,8 @@ void finish_example(vw& all, tr_data& data, multi_ex& ec)
 void save_load_aml(tr_data& d, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
-  if (!read || d.model_file_version >= VERSION_FILE_WITH_AUTOML) { d.cm.save_load_config_manager(model_file, read, text); }
+  if (!read || d.model_file_version >= VERSION_FILE_WITH_AUTOML)
+  { d.cm.save_load_config_manager(model_file, read, text); }
 }
 
 VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
@@ -734,10 +735,7 @@ VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
 
   option_group_definition new_options("Debug: test reduction");
   new_options.add(make_option("test_red", test_red).necessary().keep().help("set default champion (0 or 1)"))
-      .add(make_option("budget", budget)
-               .keep()
-               .default_value(10)
-               .help("set initial budget for automl interactions"));
+      .add(make_option("budget", budget).keep().default_value(10).help("set initial budget for automl interactions"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
