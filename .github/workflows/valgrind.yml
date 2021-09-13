@@ -14,14 +14,10 @@ on:
 jobs:
   check_valgrind:
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
+      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Install Valgrind
-        run: |
-          sudo apt update -y
-          sudo apt install -y valgrind
       - name: Build C++ VW binary
         run: ./.scripts/linux/build-minimal.sh Release
       - name: Run unit tests with Valgrind
@@ -30,14 +26,10 @@ jobs:
         run: ./.scripts/linux/test-valgrind.sh
   check_valgrind_new:
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
+      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Install Valgrind
-        run: |
-          sudo apt update -y
-          sudo apt install -y valgrind
       - name: Build C++ VW binary
         run: ./.scripts/linux/build-minimal.sh Release
       - name: Run unit tests with Valgrind
