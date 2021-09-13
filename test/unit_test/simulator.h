@@ -23,9 +23,10 @@ struct vw;
 
 namespace simulator
 {
+struct cb_sim;
 // maps an int: # learned examples
 // with a function to 'test' at that point in time in the simulator
-using callback_map = typename std::map<size_t, std::function<bool(vw&, multi_ex&)>>;
+using callback_map = typename std::map<size_t, std::function<bool(cb_sim&, vw&, multi_ex&)>>;
 
 class cb_sim
 {
@@ -40,6 +41,9 @@ class cb_sim
   size_t callback_count;
 
 public:
+  std::string user_ns;
+  std::string action_ns;
+
   cb_sim(uint64_t = 0);
   float get_cost(const std::map<std::string, std::string>&, const std::string&);
   std::vector<std::string> to_vw_example_format(
