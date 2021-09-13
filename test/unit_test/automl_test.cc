@@ -439,13 +439,6 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
     auto champ_interactions = tr->cm.live_interactions[tr->cm.current_champ];
     BOOST_CHECK_EQUAL(champ_interactions.size(), 6);
 
-    // TODO: remove print later or translate to asserts
-    // this is printing A and its also marked as excluded
-    for (std::vector<namespace_index> v : champ_interactions)
-    {
-      for (namespace_index c : v) { std::cerr << " interaction:" << c << ","; }
-    }
-
     return true;
   });
 

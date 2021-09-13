@@ -6,12 +6,11 @@
 #include "debug_log.h"
 #include "reductions.h"
 #include "learner.h"
-#include <cfloat>
-
 #include "io/logger.h"
 #include "vw.h"
 #include "vw_versions.h"
-#include "version.h"
+
+#include <cfloat>
 
 using namespace VW::config;
 using namespace VW::LEARNER;
@@ -217,17 +216,6 @@ config_manager::config_manager(size_t budget) : budget(budget)
   scores[0].config_index = 0;
 }
 
-/*
-  max_live_configs = 5;
-  config_manager -has-> 10 configs it wants to test
-
-  1 champ, 4 tests (give a budget 500 examples)
-  ~ time passes ~ 500 later
-  10 configs (5 are live, 5 are dormant)
-   1) give more budget to live ones, in case they are almost good
-   2) swap configs, what does it imply, the 4 are bad, add 4 new configs from the dormants
-*/
-
 void config_manager::one_step(multi_ex& ec)
 {
   switch (current_state)
@@ -249,30 +237,6 @@ void config_manager::one_step(multi_ex& ec)
       break;
   }
 }
-
-/*
-  conf = initConfig('F','B')
-  conf.append('C', 'G')
-
-  conf.merge(conf2); -> normie merge/add ?
-  conf.multiply('T') -> FT, FB, BT
-
-  namespace count total -> scheduled experiments, meta-metrics of the previous experiments?
-  example number for the last time it got used,
-
-  atomized in a very nice way:
-  prepare: for us to do beam search over the configuration space over diff heuristics
-  -> pluggable, encapsulated
-  -> expand config, create new model from config, find neighbours of this config
-
-  // schema discovery
-  // rotate configs with budget
-
-  enumerate cnofigs, swap them in and out on a schedule, autoschema disvoery, but playing all
-
-  reset and copy -- learner stack
-  warmstart, reset to zero (or random?)
-*/
 
 // Basic implementation of scheduler to pick new configs when one runs out of budget.
 // Highest priority will be picked first because of max-PQ implementation, this will
@@ -620,7 +584,7 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
       if (data.cm.scores[stride].config_index < 0) { continue; }
       offset_learn(data, base, ec, stride, logged, labelled_action);
     }
-    // replace with prediction depending on current_champ
+    // replace bc champ always gets cached
     ec[0]->pred.a_s = std::move(data.champ_a_s);
   }
   else
