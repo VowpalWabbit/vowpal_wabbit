@@ -102,7 +102,7 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
   for (auto _ : state)
   {
     vw->example_parser->input->add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
-    vw->example_parser->reader(vw,*vw->example_parser->input, examples);
+    vw->example_parser->reader(vw, *vw->example_parser->input, examples);
     VW::empty_example(*vw, *examples[0]);
     benchmark::ClobberMemory();
   }
