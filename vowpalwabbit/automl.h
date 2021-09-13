@@ -122,7 +122,6 @@ struct exclusion_config
   void save_load_exclusion_config(io_buf& model_file, bool read, bool text);
 };
 
-
 struct config_manager
 {
   config_state current_state = Idle;
@@ -176,9 +175,11 @@ struct tr_data
   LEARNER::multi_learner* adf_learner;
   VW::version_struct model_file_version;
   ACTION_SCORE::action_scores champ_a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  tr_data(size_t starting_budget, VW::version_struct model_file_version) : cm(starting_budget), model_file_version(model_file_version) {}
+  tr_data(size_t starting_budget, VW::version_struct model_file_version)
+      : cm(starting_budget), model_file_version(model_file_version)
+  {
+  }
 };
-
 
 }  // namespace test_red
 }  // namespace VW
