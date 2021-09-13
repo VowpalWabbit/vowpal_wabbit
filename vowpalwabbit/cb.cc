@@ -203,7 +203,7 @@ void parse_label(parser* p, shared_data* sd, CB_EVAL::label& ld, std::vector<VW:
   auto stashed_first_token = words[0];
   words.erase(words.begin());
   CB::parse_label(p, sd, ld.event, words, red_features);
-  words.insert(words.begin(),stashed_first_token);
+  words.insert(words.begin(), stashed_first_token);
 }
 
 // clang-format off
