@@ -17,10 +17,10 @@
 
 namespace logger = VW::io::logger;
 
-size_t read_features(vw* all, char*& line, size_t& num_chars)
+size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
 {
   line = nullptr;
-  size_t num_chars_initial = all->example_parser->input.readto(line, '\n');
+  size_t num_chars_initial = buf.readto(line, '\n');
   if (num_chars_initial < 1) return num_chars_initial;
   num_chars = num_chars_initial;
   if (line[0] == '\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf')
@@ -33,11 +33,11 @@ size_t read_features(vw* all, char*& line, size_t& num_chars)
   return num_chars_initial;
 }
 
-int read_features_string(vw* all, v_array<example*>& examples)
+int read_features_string(vw* all, io_buf& buf, v_array<example*>& examples)
 {
   char* line;
   size_t num_chars;
-  size_t num_chars_initial = read_features(all, line, num_chars);
+  size_t num_chars_initial = read_features(buf, line, num_chars);
   if (num_chars_initial < 1)
   {
     examples[0]->is_newline = true;

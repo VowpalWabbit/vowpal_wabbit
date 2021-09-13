@@ -140,9 +140,9 @@ int VW::read_example_from_cache(
   return static_cast<int>(total);
 }
 
-int read_cached_features(vw* all, v_array<example*>& examples)
+int read_cached_features(vw* all, io_buf& buf, v_array<example*>& examples)
 {
-  return VW::read_example_from_cache(all->example_parser->input, examples[0], all->example_parser->lbl_parser,
+  return VW::read_example_from_cache(buf, examples[0], all->example_parser->lbl_parser,
       all->example_parser->sorted_cache, all->example_parser->_shared_data);
 }
 
