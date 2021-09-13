@@ -14,6 +14,8 @@ cb_sim::cb_sim(uint64_t seed)
     : users({"Tom", "Anna"})
     , times_of_day({"morning", "afternoon"})
     , actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
+    , user_ns("User")
+    , action_ns("Action")
 {
   random_state.set_random_state(seed);
   callback_count = 0;
@@ -45,12 +47,12 @@ std::vector<std::string> cb_sim::to_vw_example_format(
 {
   std::vector<std::string> multi_ex_str;
   multi_ex_str.push_back(
-      fmt::format("shared |User user={} time_of_day={}", context.at("user"), context.at("time_of_day")));
+      fmt::format("shared |{} user={} time_of_day={}", user_ns, context.at("user"), context.at("time_of_day")));
   for (const auto& action : actions)
   {
     std::ostringstream ex;
     if (action == chosen_action) { ex << fmt::format("0:{}:{} ", cost, prob); }
-    ex << fmt::format("|Action article={}", action);
+    ex << fmt::format("|{} article={}", action_ns, action);
     multi_ex_str.push_back(ex.str());
   }
   return multi_ex_str;
@@ -107,7 +109,7 @@ void cb_sim::call_if_exists(vw& vw, multi_ex& ex, const callback_map& callbacks,
   if (iter != callbacks.end())
   {
     callback_count++;
-    bool callback_result = iter->second(vw, ex);
+    bool callback_result = iter->second(*this, vw, ex);
     BOOST_CHECK_EQUAL(callback_result, true);
   }
 }

@@ -11,16 +11,10 @@ on:
 jobs:
   upload:
     container:
-      image: vowpalwabbit/ubuntu1604-build:latest
+      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Apt update
-        shell: bash
-        run: sudo apt update
-      - name: Install curl
-        shell: bash
-        run: sudo apt install -y curl
       - name: Build with coverage C++
         shell: bash
         run: ./.scripts/linux/build-with-coverage.sh
