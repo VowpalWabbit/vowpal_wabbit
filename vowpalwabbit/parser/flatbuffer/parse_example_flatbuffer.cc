@@ -19,14 +19,14 @@ namespace parsers
 {
 namespace flatbuffer
 {
-int flatbuffer_to_examples(vw* all, v_array<example*>& examples)
+int flatbuffer_to_examples(vw* all, io_buf& buf, v_array<example*>& examples)
 {
-  return static_cast<int>(all->flat_converter->parse_examples(all, examples));
+  return static_cast<int>(all->flat_converter->parse_examples(all, buf, examples));
 }
 
 const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
 
-bool parser::parse(vw* all, uint8_t* buffer_pointer)
+bool parser::parse(io_buf& buf, uint8_t* buffer_pointer)
 {
   if (buffer_pointer)
   {
@@ -37,14 +37,14 @@ bool parser::parse(vw* all, uint8_t* buffer_pointer)
   }
 
   char* line = nullptr;
-  auto len = all->example_parser->input->buf_read(line, sizeof(uint32_t));
+  auto len = buf.buf_read(line, sizeof(uint32_t));
 
   if (len < sizeof(uint32_t)) { return false; }
 
   _object_size = flatbuffers::ReadScalar<flatbuffers::uoffset_t>(line);
 
   // read one object, object size defined by the read prefix
-  all->example_parser->input->buf_read(line, _object_size);
+  buf.buf_read(line, _object_size);
 
   _flatbuffer_pointer = reinterpret_cast<uint8_t*>(line);
   _data = VW::parsers::flatbuffer::GetExampleRoot(_flatbuffer_pointer);
@@ -80,7 +80,7 @@ void parser::process_collection_item(vw* all, v_array<example*>& examples)
   }
 }
 
-bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffer_pointer)
+bool parser::parse_examples(vw* all, io_buf& buf, v_array<example*>& examples, uint8_t* buffer_pointer)
 {
   if (_active_multi_ex)
   {
@@ -96,7 +96,7 @@ bool parser::parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffe
   else
   {
     // new object to be read from file
-    if (!parse(all, buffer_pointer)) { return false; }
+    if (!parse(buf, buffer_pointer)) { return false; }
 
     switch (_data->example_obj_type())
     {
