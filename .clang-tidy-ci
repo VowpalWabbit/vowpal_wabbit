@@ -1,3 +1,3 @@
-Checks: '-*,readability-braces-around-statements'
+Checks: '-*,performance-unnecessary-copy-initialization,performance-for-range-copy,performance-move-const-arg'
 FormatStyle: file
 WarningsAsErrors: '-*,readability-braces-around-statements'
