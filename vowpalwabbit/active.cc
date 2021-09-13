@@ -114,7 +114,7 @@ void output_and_account_example(vw& all, active& a, example& ec)
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only)
   { all.sd->weighted_labels += (static_cast<double>(ld.label)) * static_cast<double>(ec.weight); }
-  // all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? static_cast<double>(ec.weight) : 0.0;
+  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? static_cast<double>(ec.weight) : 0.0;
 
   float ai = -1;
   if (ld.label == FLT_MAX)
