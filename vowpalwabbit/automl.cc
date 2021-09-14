@@ -125,7 +125,7 @@ void scored_config::persist(metric_sink& metrics, const std::string& suffix)
   metrics.int_metrics_list.emplace_back("conf_idx" + suffix, config_index);
 }
 
-float scored_config::current_ips() { return ips / update_count; }
+float scored_config::current_ips() const { return ips / update_count; }
 
 void scored_config::reset_stats()
 {
@@ -194,7 +194,7 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
 interaction_vec quadratic_exclusion_oracle::gen_interactions(const std::map<namespace_index, size_t>& ns_counter,
-    const std::map<namespace_index, std::set<namespace_index>>& exclusions)
+    const std::map<namespace_index, std::set<namespace_index>>& exclusions) const
 {
   std::set<std::vector<namespace_index>> interactions;
 
@@ -230,9 +230,9 @@ config_manager::config_manager(size_t budget, const size_t max_live_configs)
   configs[0] = conf;
   scored_config sc;
   sc.config_index = 0;
-  scores.push_back(sc);
   interaction_vec v;
-  live_interactions.push_back(v);
+  sc.live_interactions = v;
+  scores.push_back(sc);
 }
 
 void config_manager::one_step(const multi_ex& ec)
@@ -306,10 +306,10 @@ void config_manager::gen_exclusion_configs(const multi_ex& ecs)
   // Regenerate interactions if new namespaces are seen
   if (!new_namespaces.empty())
   {
-    for (size_t stride = 0; stride < scores.size(); ++stride)
+    for (auto& score : scores)
     {
-      live_interactions[stride].clear();
-      live_interactions[stride] = oc.gen_interactions(ns_counter, configs[scores[stride].config_index].exclusions);
+      score.live_interactions.clear();
+      score.live_interactions = oc.gen_interactions(ns_counter, configs[score.config_index].exclusions);
     }
   }
 }
@@ -346,8 +346,8 @@ void config_manager::handle_empty_budget(size_t stride)
   index_queue.pop();
   scores[stride].config_index = config_index;
   // Regenerate interactions each time an exclusion is swapped in
-  live_interactions[stride].clear();
-  live_interactions[stride] = oc.gen_interactions(ns_counter, configs[config_index].exclusions);
+  scores[stride].live_interactions.clear();
+  scores[stride].live_interactions = oc.gen_interactions(ns_counter, configs[config_index].exclusions);
   // We may also want to 0 out weights here? Currently keep all same in stride position
 }
 
@@ -363,10 +363,10 @@ void config_manager::update_live_configs()
       if (index_queue.empty() && !repopulate_index_queue()) { return; }
       scored_config sc;
       sc.config_index = index_queue.top().second;
+      interaction_vec v = oc.gen_interactions(ns_counter, configs[sc.config_index].exclusions);
+      sc.live_interactions = v;
       index_queue.pop();
       scores.push_back(sc);
-      interaction_vec v = oc.gen_interactions(ns_counter, configs[sc.config_index].exclusions);
-      live_interactions.push_back(v);
     }
     else if (scores[stride].update_count >= configs[scores[stride].config_index].budget)
     {
@@ -462,12 +462,11 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
       index_queue.push(std::make_pair(priority, index));
     }
 
-    // Regenerate interactions vectors
-    live_interactions.clear();
-    for (size_t stride = 0; stride < scores.size(); ++stride)
+    for (auto& score : scores)
     {
-      interaction_vec v = oc.gen_interactions(ns_counter, configs[scores[stride].config_index].exclusions);
-      live_interactions.push_back(v);
+      score.live_interactions.clear();
+      interaction_vec v = oc.gen_interactions(ns_counter, configs[score.config_index].exclusions);
+      score.live_interactions = v;
     }
   }
   else
@@ -529,7 +528,7 @@ void config_manager::persist(metric_sink& metrics)
 void config_manager::apply_config(example* ec, size_t stride)
 {
   if (ec == nullptr) return;
-  ec->interactions = &(live_interactions[stride]);
+  ec->interactions = &(scores[stride].live_interactions);
 }
 
 void config_manager::revert_config(example* ec) { ec->interactions = nullptr; }

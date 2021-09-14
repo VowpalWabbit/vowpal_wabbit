@@ -39,26 +39,27 @@ struct scored_config
   float last_r = 0.0;
   size_t update_count = 0;
   size_t config_index = 0;
+  interaction_vec live_interactions;  // Live pre-allocated vectors in use
 
   scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
 
   void update(float w, float r);
   void save_load_scored_config(io_buf& model_file, bool read, bool text);
   void persist(metric_sink& metrics, const std::string& suffix);
-  float current_ips();
+  float current_ips() const;
   void reset_stats();
 };
 
 struct oracle
 {
   virtual interaction_vec gen_interactions(
-      const std::map<namespace_index, size_t>&, const std::map<namespace_index, std::set<namespace_index>>&) = 0;
+      const std::map<namespace_index, size_t>&, const std::map<namespace_index, std::set<namespace_index>>&) const = 0;
 };
 
 struct quadratic_exclusion_oracle : oracle
 {
   interaction_vec gen_interactions(const std::map<namespace_index, size_t>& ns_counter,
-      const std::map<namespace_index, std::set<namespace_index>>& exclusions);
+      const std::map<namespace_index, std::set<namespace_index>>& exclusions) const;
 };
 
 struct exclusion_config
@@ -98,7 +99,7 @@ struct config_manager : config_manager_base
   config_state current_state = Idle;
   size_t county = 0;
   size_t current_champ = 0;
-  size_t budget;
+  const size_t budget;
   const size_t max_live_configs;
   quadratic_exclusion_oracle oc;
 
@@ -109,7 +110,6 @@ struct config_manager : config_manager_base
   std::map<size_t, exclusion_config> configs;
 
   std::vector<scored_config> scores;
-  std::vector<interaction_vec> live_interactions;  // Live pre-allocated vectors in use
 
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, size_t>> index_queue;

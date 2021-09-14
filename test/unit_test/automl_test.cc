@@ -344,9 +344,9 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_budget)
     BOOST_CHECK_EQUAL(aml->cm.configs[0].exclusions.size(), 0);
     BOOST_CHECK_EQUAL(aml->cm.configs[7].exclusions.size(), 1);
     BOOST_CHECK_EQUAL(aml->cm.configs[3].exclusions.size(), 1);
-    BOOST_CHECK_EQUAL(aml->cm.live_interactions[0].size(), 6);
-    BOOST_CHECK_EQUAL(aml->cm.live_interactions[1].size(), 3);
-    BOOST_CHECK_EQUAL(aml->cm.live_interactions[2].size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm.scores[0].live_interactions.size(), 6);
+    BOOST_CHECK_EQUAL(aml->cm.scores[1].live_interactions.size(), 3);
+    BOOST_CHECK_EQUAL(aml->cm.scores[2].live_interactions.size(), 1);
     return true;
   });
 
@@ -437,7 +437,7 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
 
     BOOST_CHECK(champ_exclusions.find('T') != champ_exclusions.end());
 
-    auto champ_interactions = aml->cm.live_interactions[aml->cm.current_champ];
+    auto champ_interactions = aml->cm.scores[aml->cm.current_champ].live_interactions;
     BOOST_CHECK_EQUAL(champ_interactions.size(), 6);
 
     return true;
