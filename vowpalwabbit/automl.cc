@@ -210,7 +210,8 @@ interaction_vec quadratic_exclusion_oracle::gen_interactions(
 // config_manager is a state machine (config_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
-config_manager::config_manager(size_t budget, const size_t live_configs) : budget(budget), live_configs(live_configs)
+config_manager::config_manager(size_t budget, const size_t max_live_configs)
+    : budget(budget), max_live_configs(max_live_configs)
 {
   exclusion_config conf(budget);
   configs[0] = conf;
@@ -341,9 +342,8 @@ void config_manager::handle_empty_budget(size_t stride)
 // new configs when the budget runs out.
 void config_manager::update_live_configs()
 {
-  for (size_t stride = 0; stride < live_configs; ++stride)
+  for (size_t stride = 0; stride < max_live_configs; ++stride)
   {
-    size_t config_index = scores[stride].config_index;
     if (stride == current_champ) { continue; }
     if (scores.size() <= stride)
     {
@@ -355,7 +355,7 @@ void config_manager::update_live_configs()
       interaction_vec v = oc.gen_interactions(ns_counter, configs[sc.config_index].exclusions);
       live_interactions.push_back(v);
     }
-    else if (scores[stride].update_count >= configs[config_index].budget)
+    else if (scores[stride].update_count >= configs[scores[stride].config_index].budget)
     {
       handle_empty_budget(stride);
     }
@@ -642,19 +642,23 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   vw& all = *stack_builder.get_all_pointer();
 
   size_t budget;
-  size_t live_configs;
+  size_t max_live_configs;
 
   option_group_definition new_options("Debug: automl reduction");
   new_options
-      .add(make_option("automl", live_configs).necessary().keep().default_value(3).help("set number of live configs"))
+      .add(make_option("automl", max_live_configs)
+               .necessary()
+               .keep()
+               .default_value(3)
+               .help("set number of live configs"))
       .add(make_option("budget", budget).keep().default_value(10).help("set initial budget for automl interactions"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto data = VW::make_unique<automl>(budget, all.model_file_ver, live_configs);
+  auto data = VW::make_unique<automl>(budget, all.model_file_ver, max_live_configs);
   // all is not needed but good to have for testing purposes
   data->all = &all;
-  assert(live_configs <= MAX_CONFIGS);
+  assert(max_live_configs <= MAX_CONFIGS);
 
   // override and clear all the global interactions
   // see parser.cc line 740

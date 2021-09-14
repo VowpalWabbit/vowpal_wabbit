@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
   test_hooks.emplace(num_iterations - 1, [&num_iterations](cb_sim&, vw& all, multi_ex&) {
     VW::automl::automl* aml = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(aml->cm.county, num_iterations - 1);
-    BOOST_CHECK_GT(aml->cm.live_configs, 2);
+    BOOST_CHECK_GT(aml->cm.max_live_configs, 2);
     BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Experimenting);
     return true;
   });

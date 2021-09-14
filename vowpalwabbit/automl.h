@@ -134,7 +134,7 @@ struct config_manager : config_manager_base
   size_t county = 0;
   size_t current_champ = 0;
   size_t budget;
-  const size_t live_configs;
+  const size_t max_live_configs;
   quadratic_exclusion_oracle oc;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
@@ -149,7 +149,7 @@ struct config_manager : config_manager_base
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, size_t>> index_queue;
 
-  config_manager(size_t starting_budget, size_t live_configs);
+  config_manager(size_t starting_budget, size_t max_live_configs);
 
   void one_step(multi_ex& ec) override;
   void configure_interactions(example* ec, size_t stride) override;
@@ -174,8 +174,8 @@ struct automl
   LEARNER::multi_learner* adf_learner;  //  re-use print from cb_explore_adf
   VW::version_struct model_file_version;
   ACTION_SCORE::action_scores champ_a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  automl(size_t starting_budget, VW::version_struct model_file_version, size_t live_configs)
-      : cm(starting_budget, live_configs), model_file_version(model_file_version)
+  automl(size_t starting_budget, VW::version_struct model_file_version, size_t max_live_configs)
+      : cm(starting_budget, max_live_configs), model_file_version(model_file_version)
   {
   }
 };
