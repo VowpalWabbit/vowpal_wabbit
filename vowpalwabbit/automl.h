@@ -122,7 +122,7 @@ enum config_state
 struct config_manager_base
 {
   // This fn gets called before learning any example
-  virtual void one_step(multi_ex& ec) = 0;
+  virtual void one_step(const multi_ex& ec) = 0;
   // This fn is responsible for applying a config
   // tracked by 'stride' into the example.
   // the impl is responsible of tracking this config-stride mapping
@@ -156,7 +156,7 @@ struct config_manager : config_manager_base
 
   config_manager(size_t starting_budget, size_t max_live_configs);
 
-  void one_step(multi_ex& ec) override;
+  void one_step(const multi_ex& ec) override;
   void apply_config(example* ec, size_t stride) override;
   void revert_config(example* ec) override;
   void save_load(io_buf& model_file, bool read, bool text) override;

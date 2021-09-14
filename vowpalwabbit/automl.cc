@@ -222,7 +222,7 @@ config_manager::config_manager(size_t budget, const size_t max_live_configs)
   live_interactions.push_back(v);
 }
 
-void config_manager::one_step(multi_ex& ec)
+void config_manager::one_step(const multi_ex& ec)
 {
   switch (current_state)
   {
