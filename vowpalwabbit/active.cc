@@ -19,6 +19,9 @@ using namespace VW::config;
 
 namespace logger = VW::io::logger;
 
+constexpr float ACTIVE_MIN_LABEL = 0.f;
+constexpr float ACTIVE_MAX_LABEL = 1.f;
+
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
   const float b = c0 * (std::log(k + 1.f) + 0.0001f) / (k + 0.0001f);
@@ -85,7 +88,12 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   if (ec.l.simple.label == FLT_MAX)
   {
     const float threshold = (a._shared_data->max_label + a._shared_data->min_label) * 0.5f;
+    // We want to understand the change in prediction if the label were to be
+    // the opposite of what was predicted. 0 and 1 are used for the expected min
+    // and max labels to be coming in from the active interactor.
+    ec.l.simple.label = (ec.pred.scalar >= threshold) ? ACTIVE_MIN_LABEL : ACTIVE_MAX_LABEL;
     ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
+    ec.l.simple.label = FLT_MAX;
   }
 }
 
@@ -112,7 +120,6 @@ void output_and_account_example(vw& all, active& a, example& ec)
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only)
   { all.sd->weighted_labels += (static_cast<double>(ld.label)) * static_cast<double>(ec.weight); }
-  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? static_cast<double>(ec.weight) : 0.0;
 
   float ai = -1;
   if (ld.label == FLT_MAX)
