@@ -160,7 +160,7 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
         bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), "", read, msg, text);
         other_namespaces.insert(other_ns);
       }
-      exclusions[ns] == other_namespaces;
+      exclusions[ns] = other_namespaces;
     }
   }
   else
