@@ -149,8 +149,18 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
     for (size_t i = 0; i < exclusion_size; ++i)
     {
       namespace_index ns;
+      size_t other_ns_size;
+      std::set<namespace_index> other_namespaces;
       bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text);
-      exclusions.insert(ns);
+      bin_text_read_write_fixed(
+          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), "", read, msg, text);
+      for (size_t i = 0; i < other_ns_size; ++i)
+      {
+        namespace_index other_ns;
+        bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), "", read, msg, text);
+        other_namespaces.insert(other_ns);
+      }
+      exclusions[ns] == other_namespaces;
     }
   }
   else
@@ -159,8 +169,16 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
     msg << "exclusion_size " << exclusion_size << "\n";
     bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), "", read, msg, text);
-    for (const auto& ns : exclusions)
-    { bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text); }
+    for (const auto& ns_pair : exclusions)
+    {
+      namespace_index ns = ns_pair.first;
+      size_t other_ns_size = ns_pair.second.size();
+      bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text);
+      bin_text_read_write_fixed(
+          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), "", read, msg, text);
+      for (const auto& other_ns : ns_pair.second)
+      { bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), "", read, msg, text); }
+    }
   }
 
   if (!read || true)
@@ -175,21 +193,25 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
 // from the corresponding stride. This function can be swapped out depending on
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
-interaction_vec quadratic_exclusion_oracle::gen_interactions(
-    const std::map<namespace_index, size_t>& ns_counter, const std::set<namespace_index>& exclusions)
+interaction_vec quadratic_exclusion_oracle::gen_interactions(const std::map<namespace_index, size_t>& ns_counter,
+    const std::map<namespace_index, std::set<namespace_index>>& exclusions)
 {
   std::set<std::vector<namespace_index>> interactions;
 
   for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
   {
     auto idx1 = (*it).first;
-    if (exclusions.find(idx1) != exclusions.end()) { continue; }
+    // Only handles ':' for now, extend to handle specific namespaces later as needed
+    if (exclusions.find(idx1) != exclusions.end() && exclusions.at(idx1).find(':') != exclusions.at(idx1).end())
+    { continue; }
     interactions.insert({idx1, idx1});
 
     for (auto jt = it; jt != ns_counter.end(); ++jt)
     {
       auto idx2 = (*jt).first;
-      if (exclusions.find(idx2) != exclusions.end()) { continue; }
+      // Only handles ':' for now, extend to handle specific namespaces later as needed
+      if (exclusions.find(idx2) != exclusions.end() && exclusions.at(idx2).find(':') != exclusions.at(idx2).end())
+      { continue; }
       interactions.insert({idx1, idx2});
       interactions.insert({idx2, idx2});
     }
@@ -242,7 +264,7 @@ void config_manager::one_step(const multi_ex& ec)
 float config_manager::calc_priority(size_t config_index)
 {
   float priority = 0.f;
-  for (const auto& ns : configs[config_index].exclusions) { priority -= ns_counter[ns]; }
+  for (const auto& ns_pair : configs[config_index].exclusions) { priority -= ns_counter[ns_pair.first]; }
   return priority;
 }
 
@@ -264,11 +286,11 @@ void config_manager::gen_exclusion_configs(const multi_ex& ecs)
   // Add new configs if new namespace are seen
   for (const auto& ns : new_namespaces)
   {
-    std::set<std::set<namespace_index>> new_exclusions;
+    std::set<std::map<namespace_index, std::set<namespace_index>>> new_exclusions;
     for (const auto& config : configs)
     {
-      std::set<namespace_index> new_exclusion(config.second.exclusions);
-      new_exclusion.insert(ns);
+      std::map<namespace_index, std::set<namespace_index>> new_exclusion(config.second.exclusions);
+      new_exclusion[ns] = {':'};
       new_exclusions.insert(new_exclusion);
     }
     for (const auto& new_exclusion : new_exclusions)

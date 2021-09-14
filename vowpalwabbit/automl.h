@@ -52,18 +52,18 @@ struct scored_config
 struct oracle
 {
   virtual interaction_vec gen_interactions(
-      const std::map<namespace_index, size_t>&, const std::set<namespace_index>&) = 0;
+      const std::map<namespace_index, size_t>&, const std::map<namespace_index, std::set<namespace_index>>&) = 0;
 };
 
 struct quadratic_exclusion_oracle : oracle
 {
-  interaction_vec gen_interactions(
-      const std::map<namespace_index, size_t>& ns_counter, const std::set<namespace_index>& exclusions);
+  interaction_vec gen_interactions(const std::map<namespace_index, size_t>& ns_counter,
+      const std::map<namespace_index, std::set<namespace_index>>& exclusions);
 };
 
 struct exclusion_config
 {
-  std::set<namespace_index> exclusions;
+  std::map<namespace_index, std::set<namespace_index>> exclusions;
   size_t budget;
 
   exclusion_config(size_t budget = 10) : budget(budget) {}
