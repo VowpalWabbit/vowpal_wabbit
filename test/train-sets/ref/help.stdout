@@ -200,6 +200,9 @@ Audit Regressor:
                         this mode.
 Autolink:
   --autolink arg        create link function with polynomial d
+Debug: automl reduction:
+  --automl arg (=3, )   set number of live configs
+  --budget arg (=10, )  set initial budget for automl interactions
 Baseline options:
   --baseline            Learn an additive baseline (from constant features) and
                         a residual separately in regression.
@@ -689,9 +692,6 @@ Stagewise polynomial options:
 Stochastic Variance Reduced Gradient:
   --svrg                  Streaming Stochastic Variance Reduced Gradient
   --stage_size arg (=1, ) Number of passes per SVRG stage
-Debug: test reduction:
-  --test_red arg        set default champion (0 or 1)
-  --budget arg (=10, )  set initial budget for automl interactions
 Top K:
   --top arg             top k recommendation
 Make Multiclass into Warm-starting Contextual Bandit:

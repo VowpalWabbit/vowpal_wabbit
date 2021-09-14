@@ -24,7 +24,7 @@ void parse_dispatch(vw& all, DispatchFuncT& dispatch)
     {
       examples.push_back(&VW::get_unused_example(&all));  // need at least 1 example
       if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
-          all.example_parser->reader(&all, *all.example_parser->input, examples) > 0)
+          all.example_parser->reader(&all, all.example_parser->input, examples) > 0)
       {
         VW::setup_examples(all, examples);
         example_number += examples.size();

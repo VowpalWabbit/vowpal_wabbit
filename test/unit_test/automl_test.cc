@@ -12,7 +12,7 @@
 #include "test_common.h"
 #include "simulator.h"
 #include "reductions_fwd.h"
-#include "automl.cc"
+#include "automl.h"
 #include "metric_sink.h"
 #include "constant.h"  // FNV_prime
 
@@ -40,16 +40,16 @@ void assert_metric(const std::string& metric_name, const size_t value, const VW:
   }
 }
 
-VW::test_red::tr_data* get_automl_data(vw& all)
+VW::automl::automl* get_automl_data(vw& all)
 {
   std::vector<std::string> e_r;
   all.l->get_enabled_reductions(e_r);
-  if (std::find(e_r.begin(), e_r.end(), "test_red") == e_r.end())
-  { BOOST_FAIL("test_red not found in enabled reductions"); }
+  if (std::find(e_r.begin(), e_r.end(), "automl") == e_r.end())
+  { BOOST_FAIL("automl not found in enabled reductions"); }
 
-  VW::LEARNER::multi_learner* test_red_learner = as_multiline(all.l->get_learner_by_name_prefix("test_red"));
+  VW::LEARNER::multi_learner* automl_learner = as_multiline(all.l->get_learner_by_name_prefix("automl"));
 
-  return (VW::test_red::tr_data*)test_red_learner->learner_data.get();
+  return (VW::automl::automl*)automl_learner->learner_data.get();
 }
 
 // see parse_example.cc:maybeFeature(..) for other cases
@@ -177,7 +177,7 @@ bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
   BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index_empty + 1));
   BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index_empty + 2));
 
-  // VW::test_red::helper::print_weights_nonzero(all, 0, all->weights.dense_weights);
+  // VW::automl::helper::print_weights_nonzero(all, 0, all->weights.dense_weights);
   return true;
 }
 }  // namespace automl_test
@@ -192,10 +192,10 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
 
   // lambda test/assert
   test_hooks.emplace(num_iterations - 1, [&num_iterations](cb_sim&, vw& all, multi_ex&) {
-    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
-    BOOST_CHECK_EQUAL(tr->cm.county, num_iterations - 1);
-    BOOST_CHECK_GT(tr->cm.max_live_configs, 2);
-    BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
+    VW::automl::automl* aml = ut_helper::get_automl_data(all);
+    BOOST_CHECK_EQUAL(aml->cm.county, num_iterations - 1);
+    BOOST_CHECK_GT(aml->cm.live_configs, 2);
+    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Experimenting);
     return true;
   });
 
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
   test_hooks.emplace(num_iterations, weights_offset_test);
 
   auto ctr = simulator::_test_helper_hook(
-      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations, seed);
+      "--automl 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
 }
@@ -216,24 +216,24 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
   callback_map test_hooks;
 
   test_hooks.emplace(deterministic_champ_switch - 1, [&](cb_sim&, vw& all, multi_ex&) {
-    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
-    BOOST_CHECK_EQUAL(tr->cm.current_champ, 0);
-    BOOST_CHECK_EQUAL(deterministic_champ_switch - 1, tr->cm.county);
-    BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
+    VW::automl::automl* aml = ut_helper::get_automl_data(all);
+    BOOST_CHECK_EQUAL(aml->cm.current_champ, 0);
+    BOOST_CHECK_EQUAL(deterministic_champ_switch - 1, aml->cm.county);
+    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Experimenting);
     return true;
   });
 
   test_hooks.emplace(deterministic_champ_switch, [&deterministic_champ_switch](cb_sim&, vw& all, multi_ex&) {
-    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
-    BOOST_CHECK_EQUAL(tr->cm.current_champ, 0);
-    BOOST_CHECK_EQUAL(deterministic_champ_switch, tr->cm.county);
-    BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
+    VW::automl::automl* aml = ut_helper::get_automl_data(all);
+    BOOST_CHECK_EQUAL(aml->cm.current_champ, 0);
+    BOOST_CHECK_EQUAL(deterministic_champ_switch, aml->cm.county);
+    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Experimenting);
     return true;
   });
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations, seed);
+      "--automl 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
 }
@@ -244,12 +244,12 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
 {
   callback_map empty_hooks;
   auto ctr =
-      simulator::_test_helper_hook("--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", empty_hooks);
+      simulator::_test_helper_hook("--automl 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", empty_hooks);
   float without_save = ctr.back();
   BOOST_CHECK_GT(without_save, 0.7f);
 
   ctr = simulator::_test_helper_save_load(
-      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --save_resume");
+      "--automl 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --save_resume");
   float with_save = ctr.back();
   BOOST_CHECK_GT(with_save, 0.7f);
 
@@ -264,22 +264,22 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_automl)
 
   // technically runs after the 0th example is learned
   test_hooks.emplace(zero, [&zero](cb_sim&, vw& all, multi_ex&) {
-    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
-    BOOST_CHECK_EQUAL(tr->cm.county, zero);
-    BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Idle);
+    VW::automl::automl* aml = ut_helper::get_automl_data(all);
+    BOOST_CHECK_EQUAL(aml->cm.county, zero);
+    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Idle);
     return true;
   });
 
   // test executes right after learn call of the 10th example
   test_hooks.emplace(num_iterations, [&num_iterations](cb_sim&, vw& all, multi_ex&) {
-    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
-    BOOST_CHECK_EQUAL(tr->cm.county, num_iterations);
-    BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
+    VW::automl::automl* aml = ut_helper::get_automl_data(all);
+    BOOST_CHECK_EQUAL(aml->cm.county, num_iterations);
+    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Experimenting);
     return true;
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations);
+      "--automl 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
 }
@@ -325,42 +325,42 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_budget)
 
   // Note this is after learning 14 examples (first iteration is Idle)
   test_hooks.emplace(fifteen, [&fifteen](cb_sim&, vw& all, multi_ex&) {
-    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
-    BOOST_CHECK_EQUAL(tr->cm.current_state, VW::test_red::config_state::Experimenting);
-    BOOST_CHECK_EQUAL(tr->cm.county, 15);
-    BOOST_CHECK_EQUAL(tr->cm.current_champ, 0);
-    BOOST_CHECK_EQUAL(tr->cm.scores[0].config_index, 0);
-    BOOST_CHECK_EQUAL(tr->cm.scores[1].config_index, 1);
-    BOOST_CHECK_EQUAL(tr->cm.scores[2].config_index, 6);
-    BOOST_CHECK_EQUAL(tr->cm.configs.size(), 8);
-    BOOST_CHECK_EQUAL(tr->cm.configs[0].budget, 10);
-    BOOST_CHECK_EQUAL(tr->cm.configs[7].budget, 20);
-    BOOST_CHECK_EQUAL(tr->cm.configs[1].budget, 10);
-    BOOST_CHECK_EQUAL(tr->cm.configs[6].budget, 10);
-    BOOST_CHECK_EQUAL(tr->cm.scores[0].update_count, 15);
-    BOOST_CHECK_EQUAL(tr->cm.scores[1].update_count, 4);
-    BOOST_CHECK_EQUAL(tr->cm.scores[2].update_count, 4);
-    BOOST_CHECK_EQUAL(tr->cm.index_queue.size(), 3);
-    BOOST_CHECK_EQUAL(tr->cm.configs[0].exclusions.size(), 0);
-    BOOST_CHECK_EQUAL(tr->cm.configs[7].exclusions.size(), 1);
-    BOOST_CHECK_EQUAL(tr->cm.configs[3].exclusions.size(), 1);
-    BOOST_CHECK_EQUAL(tr->cm.live_interactions[0].size(), 6);
-    BOOST_CHECK_EQUAL(tr->cm.live_interactions[1].size(), 3);
-    BOOST_CHECK_EQUAL(tr->cm.live_interactions[2].size(), 1);
+    VW::automl::automl* aml = ut_helper::get_automl_data(all);
+    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Experimenting);
+    BOOST_CHECK_EQUAL(aml->cm.county, 15);
+    BOOST_CHECK_EQUAL(aml->cm.current_champ, 0);
+    BOOST_CHECK_EQUAL(aml->cm.scores[0].config_index, 0);
+    BOOST_CHECK_EQUAL(aml->cm.scores[1].config_index, 1);
+    BOOST_CHECK_EQUAL(aml->cm.scores[2].config_index, 6);
+    BOOST_CHECK_EQUAL(aml->cm.configs.size(), 8);
+    BOOST_CHECK_EQUAL(aml->cm.configs[0].budget, 10);
+    BOOST_CHECK_EQUAL(aml->cm.configs[7].budget, 20);
+    BOOST_CHECK_EQUAL(aml->cm.configs[1].budget, 10);
+    BOOST_CHECK_EQUAL(aml->cm.configs[6].budget, 10);
+    BOOST_CHECK_EQUAL(aml->cm.scores[0].update_count, 15);
+    BOOST_CHECK_EQUAL(aml->cm.scores[1].update_count, 4);
+    BOOST_CHECK_EQUAL(aml->cm.scores[2].update_count, 4);
+    BOOST_CHECK_EQUAL(aml->cm.index_queue.size(), 3);
+    BOOST_CHECK_EQUAL(aml->cm.configs[0].exclusions.size(), 0);
+    BOOST_CHECK_EQUAL(aml->cm.configs[7].exclusions.size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm.configs[3].exclusions.size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm.live_interactions[0].size(), 6);
+    BOOST_CHECK_EQUAL(aml->cm.live_interactions[1].size(), 3);
+    BOOST_CHECK_EQUAL(aml->cm.live_interactions[2].size(), 1);
     return true;
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations);
+      "--automl 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
 }
 
 // Note higher ctr compared to cpp_simulator_without_interaction in tutorial_test.cc
-BOOST_AUTO_TEST_CASE(cpp_simulator_test_red)
+BOOST_AUTO_TEST_CASE(cpp_simulator_automl)
 {
   auto ctr =
-      simulator::_test_helper("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics --test_red 0");
+      simulator::_test_helper("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics --automl 3");
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
 
@@ -377,13 +377,13 @@ BOOST_AUTO_TEST_CASE(learner_copy_clear_test)
     return true;
   });
 
-  auto ctr = simulator::_test_helper_hook(
-      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, 10);
+  auto ctr =
+      simulator::_test_helper_hook("--automl 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, 10);
 }
 
 BOOST_AUTO_TEST_CASE(quadratic_exclusion_oracle_test)
 {
-  VW::test_red::quadratic_exclusion_oracle oc;
+  VW::automl::quadratic_exclusion_oracle oc;
   std::map<namespace_index, size_t> ns_counter = {{'A', 1}, {'B', 1}, {'C', 1}, {'D', 1}, {'E', 1}};
   std::set<namespace_index> exclusions = {'B', 'C'};
   std::vector<std::vector<namespace_index>> interactions = oc.gen_interactions(ns_counter, exclusions);
@@ -408,8 +408,8 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
   callback_map test_hooks;
 
   test_hooks.emplace(100, [&](cb_sim& sim, vw& all, multi_ex&) {
-    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
-    auto count_ns_T = tr->cm.ns_counter.count('T');
+    VW::automl::automl* aml = ut_helper::get_automl_data(all);
+    auto count_ns_T = aml->cm.ns_counter.count('T');
     BOOST_CHECK_EQUAL(count_ns_T, 0);
 
     // change user namespace to start with letter T
@@ -418,8 +418,8 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
   });
 
   test_hooks.emplace(101, [&](cb_sim& sim, vw& all, multi_ex&) {
-    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
-    size_t tser_count = tr->cm.ns_counter.at('T');
+    VW::automl::automl* aml = ut_helper::get_automl_data(all);
+    size_t tser_count = aml->cm.ns_counter.at('T');
     BOOST_CHECK_GT(tser_count, 1);
 
     // reset user namespace to appropriate value
@@ -428,28 +428,21 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
   });
 
   test_hooks.emplace(num_iterations, [&](cb_sim&, vw& all, multi_ex&) {
-    VW::test_red::tr_data* tr = ut_helper::get_automl_data(all);
+    VW::automl::automl* aml = ut_helper::get_automl_data(all);
 
-    auto champ_exclusions = tr->cm.configs[tr->cm.scores[tr->cm.current_champ].config_index].exclusions;
+    auto champ_exclusions = aml->cm.configs[aml->cm.scores[aml->cm.current_champ].config_index].exclusions;
     BOOST_CHECK_EQUAL(champ_exclusions.size(), 1);
 
     auto excluded = champ_exclusions.begin();
     BOOST_CHECK_EQUAL(*excluded, 'T');
 
-    auto champ_interactions = tr->cm.live_interactions[tr->cm.current_champ];
+    auto champ_interactions = aml->cm.live_interactions[aml->cm.current_champ];
     BOOST_CHECK_EQUAL(champ_interactions.size(), 6);
-
-    // TODO: remove print later or translate to asserts
-    // this is printing A and its also marked as excluded
-    for (std::vector<namespace_index> v : champ_interactions)
-    {
-      for (namespace_index c : v) { std::cerr << " interaction:" << c << ","; }
-    }
 
     return true;
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--test_red 0 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --budget 500", test_hooks, num_iterations);
+      "--automl 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --budget 500", test_hooks, num_iterations);
   BOOST_CHECK_GT(ctr.back(), 0.8f);
 }
