@@ -429,20 +429,19 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
     return true;
   });
 
-  /*test_hooks.emplace(num_iterations, [&](cb_sim&, vw& all, multi_ex&) {
+  test_hooks.emplace(num_iterations, [&](cb_sim&, vw& all, multi_ex&) {
     VW::automl::automl* aml = ut_helper::get_automl_data(all);
 
     auto champ_exclusions = aml->cm.configs[aml->cm.scores[aml->cm.current_champ].config_index].exclusions;
     BOOST_CHECK_EQUAL(champ_exclusions.size(), 1);
 
-    auto excluded = champ_exclusions.begin();
-    BOOST_CHECK_EQUAL(*excluded, 'T');
+    BOOST_CHECK(champ_exclusions.find('T') != champ_exclusions.end());
 
     auto champ_interactions = aml->cm.live_interactions[aml->cm.current_champ];
     BOOST_CHECK_EQUAL(champ_interactions.size(), 6);
 
     return true;
-  });*/
+  });
 
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --budget 500", test_hooks, num_iterations);
