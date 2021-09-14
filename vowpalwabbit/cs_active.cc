@@ -362,7 +362,7 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
   if (simulation)
   {
     learn_ptr = predict_or_learn<true, true>;
-    predict_ptr = predict_or_learn<true, false>;
+    predict_ptr = predict_or_learn<false, true>;
     name_addition = "-sim";
   }
   else
