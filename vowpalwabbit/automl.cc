@@ -168,7 +168,8 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
     msg << "exclusion_size " << exclusion_size << "\n";
     bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), "", read, msg, text);
-    for (auto& ns : exclusions) { bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text); }
+    for (const auto& ns : exclusions)
+    { bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text); }
   }
 
   if (!read || true)
@@ -246,10 +247,10 @@ void config_manager::one_step(multi_ex& ec)
 // Highest priority will be picked first because of max-PQ implementation, this will
 // be the config with the least exclusion. Note that all configs will run to budget
 // before priorities and budget are reset.
-float config_manager::get_priority(int config_index)
+float config_manager::get_priority(size_t config_index)
 {
   float priority = 0.f;
-  for (auto ns : configs[config_index].exclusions) { priority -= ns_counter[ns]; }
+  for (const auto& ns : configs[config_index].exclusions) { priority -= ns_counter[ns]; }
   return priority;
 }
 
@@ -260,27 +261,27 @@ void config_manager::gen_configs(const multi_ex& ecs)
 {
   std::set<namespace_index> new_namespaces;
   // Count all namepsace seen in current example
-  for (example* ex : ecs)
+  for (const example* ex : ecs)
   {
-    for (auto& ns : ex->indices)
+    for (const auto& ns : ex->indices)
     {
       ns_counter[ns]++;
       if (ns_counter[ns] == 1) { new_namespaces.insert(ns); }
     }
   }
   // Add new configs if new namespace are seen
-  for (auto& ns : new_namespaces)
+  for (const auto& ns : new_namespaces)
   {
     std::set<std::set<namespace_index>> new_exclusions;
-    for (auto& config : configs)
+    for (const auto& config : configs)
     {
       std::set<namespace_index> new_exclusion(config.second.exclusions);
       new_exclusion.insert(ns);
       new_exclusions.insert(new_exclusion);
     }
-    for (auto& new_exclusion : new_exclusions)
+    for (const auto& new_exclusion : new_exclusions)
     {
-      int config_index = static_cast<int>(configs.size());
+      size_t config_index = configs.size();
       exclusion_config conf(budget);
       conf.exclusions = new_exclusion;
       configs[config_index] = conf;
@@ -306,11 +307,11 @@ void config_manager::gen_configs(const multi_ex& ecs)
 // on ns_counter (which is updated as each example is processed)
 bool config_manager::repopulate_index_queue()
 {
-  std::set<int> live_indices;
-  for (size_t stride = 0; stride < scores.size(); ++stride) { live_indices.insert(scores[stride].config_index); }
-  for (auto& ind_config : configs)
+  std::set<size_t> live_indices;
+  for (const auto& score : scores) { live_indices.insert(score.config_index); }
+  for (const auto& ind_config : configs)
   {
-    int redo_index = ind_config.first;
+    size_t redo_index = ind_config.first;
     if (live_indices.find(redo_index) == live_indices.end())
     {
       float priority = get_priority(redo_index);
@@ -322,7 +323,7 @@ bool config_manager::repopulate_index_queue()
 
 void config_manager::handle_empty_budget(size_t stride)
 {
-  int config_index = scores[stride].config_index;
+  size_t config_index = scores[stride].config_index;
   scores[stride].reset_stats();
   configs[config_index].budget *= 2;
   // TODO: Add logic to erase index from configs map if wanted
@@ -342,7 +343,7 @@ void config_manager::update_live_configs()
 {
   for (size_t stride = 0; stride < live_configs; ++stride)
   {
-    int config_index = scores[stride].config_index;
+    size_t config_index = scores[stride].config_index;
     if (stride == current_champ) { continue; }
     if (scores.size() <= stride)
     {
@@ -417,7 +418,7 @@ void config_manager::save_load_config_manager(io_buf& model_file, bool read, boo
         model_file, reinterpret_cast<char*>(&config_size), sizeof(config_size), "", read, msg, text);
     for (size_t i = 0; i < config_size; ++i)
     {
-      int index;
+      size_t index;
       exclusion_config conf;
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), "", read, msg, text);
       conf.save_load_exclusion_config(model_file, read, text);
@@ -442,7 +443,7 @@ void config_manager::save_load_config_manager(io_buf& model_file, bool read, boo
     for (size_t i = 0; i < index_queue_size; ++i)
     {
       float priority;
-      int index;
+      size_t index;
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&priority), sizeof(priority), "", read, msg, text);
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), "", read, msg, text);
       index_queue.push(std::make_pair(priority, index));
@@ -463,8 +464,7 @@ void config_manager::save_load_config_manager(io_buf& model_file, bool read, boo
     msg << "score_size " << score_size << "\n";
     bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), "", read, msg, text);
-    for (size_t stride = 0; stride < score_size; ++stride)
-    { scores[stride].save_load_scored_config(model_file, read, text); }
+    for (auto& score : scores) { score.save_load_scored_config(model_file, read, text); }
 
     // Save configs
     config_size = configs.size();
@@ -604,10 +604,7 @@ void learn_automl(automl& data, multi_learner& base, multi_ex& ec)
   if (current_state == Experimenting)
   {
     for (size_t stride = 0; stride < data.cm.scores.size(); ++stride)
-    {
-      if (data.cm.scores[stride].config_index < 0) { continue; }
-      offset_learn(data, base, ec, stride, logged, labelled_action);
-    }
+    { offset_learn(data, base, ec, stride, logged, labelled_action); }
     // replace bc champ always gets cached
     ec[0]->pred.a_s = std::move(data.champ_a_s);
   }
@@ -657,6 +654,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<automl>(budget, all.model_file_ver, live_configs);
   // all is not needed but good to have for testing purposes
   data->all = &all;
+  assert(live_configs <= MAX_CONFIGS);
 
   // override and clear all the global interactions
   // see parser.cc line 740

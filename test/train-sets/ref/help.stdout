@@ -201,7 +201,7 @@ Audit Regressor:
 Autolink:
   --autolink arg        create link function with polynomial d
 Debug: automl reduction:
-  --automl arg          set number of live configs
+  --automl arg (=3, )   set number of live configs
   --budget arg (=10, )  set initial budget for automl interactions
 Baseline options:
   --baseline            Learn an additive baseline (from constant features) and

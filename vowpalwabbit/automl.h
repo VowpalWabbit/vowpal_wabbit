@@ -78,7 +78,7 @@ struct scored_config
   float last_w = 0.0;
   float last_r = 0.0;
   size_t update_count = 0;
-  int config_index = -1;
+  size_t config_index = 0;
 
   scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
 
@@ -141,13 +141,13 @@ struct config_manager : config_manager_base
   std::map<namespace_index, size_t> ns_counter;
 
   // Stores all configs in consideration (Map allows easy deletion unlike vector)
-  std::map<int, exclusion_config> configs;
+  std::map<size_t, exclusion_config> configs;
 
   std::vector<scored_config> scores;
   std::vector<interaction_vec> live_interactions;  // Live pre-allocated vectors in use
 
   // Maybe not needed with oracle, maps priority to config index, unused configs
-  std::priority_queue<std::pair<float, int>> index_queue;
+  std::priority_queue<std::pair<float, size_t>> index_queue;
 
   config_manager(size_t starting_budget, size_t live_configs);
 
@@ -160,7 +160,7 @@ struct config_manager : config_manager_base
 private:
   void handle_empty_buget(size_t stride);
   void update_champ();
-  float get_priority(int config_index);
+  float get_priority(size_t config_index);
   void gen_configs(const multi_ex& ecs);
   bool repopulate_index_queue();
   void handle_empty_budget(size_t stride);
