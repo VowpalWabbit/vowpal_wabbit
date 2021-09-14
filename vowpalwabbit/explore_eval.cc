@@ -214,14 +214,15 @@ base_learner* explore_eval_setup(VW::setup_base_i& stack_builder)
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
-  
-  auto* l = make_reduction_learner(std::move(data), base, do_actual_learning<true>, do_actual_learning<false>, stack_builder.get_setupfn_name(explore_eval_setup))
-      .set_learn_returns_prediction(true)
-      .set_prediction_type(prediction_type_t::action_probs)
-      .set_label_type(label_type_t::cb)
-      .set_finish_example(finish_multiline_example)
-      .set_finish(finish)
-      .build();
+
+  auto* l = make_reduction_learner(std::move(data), base, do_actual_learning<true>, do_actual_learning<false>,
+      stack_builder.get_setupfn_name(explore_eval_setup))
+                .set_learn_returns_prediction(true)
+                .set_prediction_type(prediction_type_t::action_probs)
+                .set_label_type(label_type_t::cb)
+                .set_finish_example(finish_multiline_example)
+                .set_finish(finish)
+                .build();
 
   return make_base(*l);
 }

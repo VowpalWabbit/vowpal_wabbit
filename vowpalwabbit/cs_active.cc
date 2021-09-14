@@ -354,8 +354,8 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);
 
-  void (*learn_ptr)(cs_active& cs_a, single_learner& base, example& ec);
-  void (*predict_ptr)(cs_active& cs_a, single_learner& base, example& ec);
+  void (*learn_ptr)(cs_active & cs_a, single_learner & base, example & ec);
+  void (*predict_ptr)(cs_active & cs_a, single_learner & base, example & ec);
   size_t ws = data->num_classes;
   std::string name_addition;
 
@@ -372,13 +372,14 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
     name_addition = "";
   }
 
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
-      .set_params_per_weight(ws)
-      .set_learn_returns_prediction(true)
-      .set_prediction_type(prediction_type_t::active_multiclass)
-      .set_label_type(label_type_t::cs)
-      .set_finish_example(finish_example)
-      .build();
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
+      predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
+                .set_params_per_weight(ws)
+                .set_learn_returns_prediction(true)
+                .set_prediction_type(prediction_type_t::active_multiclass)
+                .set_label_type(label_type_t::cs)
+                .set_finish_example(finish_example)
+                .build();
 
   // Label parser set to cost sensitive label parser
   all.example_parser->lbl_parser = cs_label;
