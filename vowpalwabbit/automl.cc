@@ -23,15 +23,6 @@ namespace automl
 {
 namespace helper
 {
-// add an interaction to an existing instance
-/*void add_interaction(interaction_vec& interactions, namespace_index first, namespace_index second)
-{
-  std::vector<namespace_index> vect;
-  vect.push_back(first);
-  vect.push_back(second);
-  interactions.push_back(vect);
-}*/
-
 // fail if incompatible reductions got setup
 // inefficient, address later
 // references global all interactions
