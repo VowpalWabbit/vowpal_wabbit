@@ -15,12 +15,12 @@
 
 namespace VW
 {
-namespace test_red
+namespace automl
 {
 using namespace_index = unsigned char;
 using interaction_vec = std::vector<std::vector<namespace_index>>;
 
-VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder);
+VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder);
 
 namespace helper
 {
@@ -69,7 +69,7 @@ bool cmpf(float, float, float);
 // void print_weights_nonzero(vw*, size_t, dense_parameters&);
 }  // namespace helper
 
-const size_t MAX_CONFIGS = 3;
+const size_t MAX_CONFIGS = 10;
 
 struct scored_config
 {
@@ -134,7 +134,7 @@ struct config_manager : config_manager_base
   size_t county = 0;
   size_t current_champ = 0;
   size_t budget;
-  const size_t max_live_configs = MAX_CONFIGS;
+  const size_t live_configs;
   quadratic_exclusion_oracle oc;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
@@ -143,13 +143,13 @@ struct config_manager : config_manager_base
   // Stores all configs in consideration (Map allows easy deletion unlike vector)
   std::map<int, exclusion_config> configs;
 
-  scored_config scores[MAX_CONFIGS];
-  interaction_vec live_interactions[MAX_CONFIGS];  // Live pre-allocated vectors in use
+  std::vector<scored_config> scores;
+  std::vector<interaction_vec> live_interactions;  // Live pre-allocated vectors in use
 
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, int>> index_queue;
 
-  config_manager(size_t starting_budget);
+  config_manager(size_t starting_budget, size_t live_configs);
 
   void one_step(multi_ex& ec) override;
   void configure_interactions(example* ec, size_t stride) override;
@@ -163,22 +163,22 @@ private:
   float get_priority(int config_index);
   void gen_configs(const multi_ex& ecs);
   bool repopulate_index_queue();
+  void handle_empty_budget(size_t stride);
   void update_live_configs();
 };
 
-struct tr_data
+struct automl
 {
   config_manager cm;
-  vw* all;  //  TBD might not be needed
-  size_t pm = MAX_CONFIGS;
+  vw* all;                              //  TBD might not be needed
   LEARNER::multi_learner* adf_learner;  //  re-use print from cb_explore_adf
   VW::version_struct model_file_version;
-  ACTION_SCORE::action_scores champ_a_s;  //  temp to keep track of champ's a_s
-
-  tr_data(size_t starting_budget, VW::version_struct model_file_version)
-      : cm(starting_budget), model_file_version(model_file_version)
+  ACTION_SCORE::action_scores champ_a_s;  // a sequence of classes with scores.  Also used for probabilities.
+  automl(size_t starting_budget, VW::version_struct model_file_version, size_t live_configs)
+      : cm(starting_budget, live_configs), model_file_version(model_file_version)
   {
   }
 };
-}  // namespace test_red
+
+}  // namespace automl
 }  // namespace VW

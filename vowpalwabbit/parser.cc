@@ -728,8 +728,8 @@ void setup_example(vw& all, example* ae)
   // Set the interactions for this example to the global set.
   // ae->interactions = &all.interactions;
   // this might be a perf hit, verify later (the lookup in the options object)
-  // disable when test_red was supplied
-  if (!all.options->was_supplied("test_red")) { ae->interactions = &all.interactions; }
+  // disable when automl was supplied
+  if (!all.options->was_supplied("automl")) { ae->interactions = &all.interactions; }
   else
   {
     ae->interactions = nullptr;

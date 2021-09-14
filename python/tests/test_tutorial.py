@@ -109,22 +109,23 @@ class Simulator:
         return random.choice(times_of_day)
 
     def process_metrics(self, i, metrics):
-        vw_b = metrics["bound_1"]
-        vw_b_2 = metrics["bound_2"]
-        w = metrics["w_1"]
-        r = metrics["r_1"]
-        w2 = metrics["w_2"]
-        r2 = metrics["r_2"]
-        assert(r == r2)
-        self.ocrl.update(1, w, r)
-        self.count_1.update(((w,r),))
-        self.ocrl.recomputeduals()
-        self.ocrl2.update(1, w2, r2)
-        self.count_2.update(((w2,r2),))
-        self.ocrl2.recomputeduals()
+        if "bound_1" in metrics:
+            vw_b = metrics["bound_1"]
+            vw_b_2 = metrics["bound_2"]
+            w = metrics["w_1"]
+            r = metrics["r_1"]
+            w2 = metrics["w_2"]
+            r2 = metrics["r_2"]
+            assert(r == r2)
+            self.ocrl.update(1, w, r)
+            self.count_1.update(((w,r),))
+            self.ocrl.recomputeduals()
+            self.ocrl2.update(1, w2, r2)
+            self.count_2.update(((w2,r2),))
+            self.ocrl2.recomputeduals()
 
-        assert(vw_b >= 0)
-        assert(vw_b_2 >= 0)
+            assert(vw_b >= 0)
+            assert(vw_b_2 >= 0)
 
     def run_simulation(self, vw, num_iterations, users, times_of_day, actions, cost_function, do_learn = True, shift=1):
         for i in range(shift, shift+num_iterations):
@@ -173,7 +174,7 @@ class Simulator:
 
 def _test_helper(vw_arg: str, num_iterations=2000, seed=10, has_automl=False, log_filename=None):
     vw = pyvw.vw(arg_str=vw_arg)
-    has_aml = "test_red" in vw.get_enabled_reductions()
+    has_aml = "automl" in vw.get_enabled_reductions()
     sim = Simulator(seed=seed, has_automl=has_aml, debug_logfile=log_filename)
     ctr = sim.run_simulation(vw, num_iterations, sim.users, sim.times_of_day, sim.actions, sim.get_cost)
     vw.save("readable.vw")
@@ -185,7 +186,7 @@ def _test_helper_save_load(vw_arg: str, num_iterations=2000, seed=10, has_automl
     before_save = num_iterations-split
 
     first_vw = pyvw.vw(arg_str=vw_arg)
-    has_aml = "test_red" in first_vw.get_enabled_reductions()
+    has_aml = "automl" in first_vw.get_enabled_reductions()
     sim = Simulator(seed=seed, has_automl=has_aml, debug_logfile=log_filename)
     # first chunk
     ctr = sim.run_simulation(first_vw, before_save, sim.users, sim.times_of_day, sim.actions, sim.get_cost)
@@ -222,19 +223,17 @@ def test_without_interaction():
     assert(ctr[-1] <= 0.49)
     assert(ctr[-1] >= 0.38)
 
-# set test_red to 1 to return pred of with interaction
-# set test_red to 0 to return pred of no interaction
-def test_custom_reduction(config=0, sim_saveload=False):
+def test_custom_reduction(config=3, sim_saveload=False):
     # 10281881982--audit --invert_hash
-    args = f"--invert_hash readable.vw --test_red {str(config)} --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json"
+    args = f"--invert_hash readable.vw --automl {str(config)} --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json"
     if sim_saveload:
         ctr = _test_helper_save_load(vw_arg=f"--save_resume {args}", log_filename=f"custom_reduc_{str(config)}.txt")
     else:
         ctr = _test_helper(vw_arg=args, log_filename=f"custom_reduc_{str(config)}.txt", num_iterations=4000)
 
-    if config == 0: # starting champ is no interactions
+    if config == 1: # with one live config
         assert(ctr[-1] > 0.65)
-    elif config == 1: # starting champ is with interactions
+    elif config == 3: # with three live configs
         assert(ctr[-1] > 0.75)
     else:
         assert(false)

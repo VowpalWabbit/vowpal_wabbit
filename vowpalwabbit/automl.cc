@@ -19,7 +19,7 @@ namespace logger = VW::io::logger;
 
 namespace VW
 {
-namespace test_red
+namespace automl
 {
 namespace helper
 {
@@ -209,11 +209,15 @@ interaction_vec quadratic_exclusion_oracle::gen_interactions(
 // config_manager is a state machine (config_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
-config_manager::config_manager(size_t budget) : budget(budget)
+config_manager::config_manager(size_t budget, const size_t live_configs) : budget(budget), live_configs(live_configs)
 {
   exclusion_config conf(budget);
   configs[0] = conf;
-  scores[0].config_index = 0;
+  scored_config sc;
+  sc.config_index = 0;
+  scores.push_back(sc);
+  interaction_vec v;
+  live_interactions.push_back(v);
 }
 
 void config_manager::one_step(multi_ex& ec)
@@ -287,13 +291,10 @@ void config_manager::gen_configs(const multi_ex& ecs)
   // Regenerate interactions if new namespaces are seen
   if (!new_namespaces.empty())
   {
-    for (size_t stride = 0; stride < max_live_configs; ++stride)
+    for (size_t stride = 0; stride < scores.size(); ++stride)
     {
-      if (scores[stride].config_index >= 0)
-      {
-        live_interactions[stride].clear();
-        live_interactions[stride] = oc.gen_interactions(ns_counter, configs[scores[stride].config_index].exclusions);
-      }
+      live_interactions[stride].clear();
+      live_interactions[stride] = oc.gen_interactions(ns_counter, configs[scores[stride].config_index].exclusions);
     }
   }
 }
@@ -306,8 +307,8 @@ void config_manager::gen_configs(const multi_ex& ecs)
 bool config_manager::repopulate_index_queue()
 {
   std::set<int> live_indices;
-  for (size_t stride = 0; stride < max_live_configs; ++stride) { live_indices.insert(scores[stride].config_index); }
-  for (auto ind_config : configs)
+  for (size_t stride = 0; stride < scores.size(); ++stride) { live_indices.insert(scores[stride].config_index); }
+  for (auto& ind_config : configs)
   {
     int redo_index = ind_config.first;
     if (live_indices.find(redo_index) == live_indices.end())
@@ -319,14 +320,11 @@ bool config_manager::repopulate_index_queue()
   return !index_queue.empty();
 }
 
-void config_manager::handle_empty_buget(size_t stride)
+void config_manager::handle_empty_budget(size_t stride)
 {
   int config_index = scores[stride].config_index;
-  if (config_index >= 0)
-  {
-    scores[stride].reset_stats();
-    configs[config_index].budget *= 2;
-  }
+  scores[stride].reset_stats();
+  configs[config_index].budget *= 2;
   // TODO: Add logic to erase index from configs map if wanted
   if (index_queue.empty() && !repopulate_index_queue()) { return; }
   config_index = index_queue.top().second;
@@ -342,12 +340,24 @@ void config_manager::handle_empty_buget(size_t stride)
 // new configs when the budget runs out.
 void config_manager::update_live_configs()
 {
-  for (size_t stride = 0; stride < max_live_configs; ++stride)
+  for (size_t stride = 0; stride < live_configs; ++stride)
   {
     int config_index = scores[stride].config_index;
     if (stride == current_champ) { continue; }
-    if (config_index == -1 || scores[stride].update_count >= configs[config_index].budget)
-    { handle_empty_buget(stride); }
+    if (scores.size() <= stride)
+    {
+      if (index_queue.empty() && !repopulate_index_queue()) { return; }
+      scored_config sc;
+      sc.config_index = index_queue.top().second;
+      index_queue.pop();
+      scores.push_back(sc);
+      interaction_vec v = oc.gen_interactions(ns_counter, configs[sc.config_index].exclusions);
+      live_interactions.push_back(v);
+    }
+    else if (scores[stride].update_count >= configs[config_index].budget)
+    {
+      handle_empty_budget(stride);
+    }
   }
 }
 
@@ -356,7 +366,7 @@ void config_manager::update_champ()
   float temp_champ_ips = scores[current_champ].current_ips();
 
   // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
-  for (size_t stride = 0; stride < max_live_configs; ++stride)
+  for (size_t stride = 0; stride < scores.size(); ++stride)
   {
     if (stride == current_champ) continue;
     distributionally_robust::ScoredDual sd = scores[stride].chisq.recompute_duals();
@@ -374,12 +384,6 @@ void config_manager::save_load_config_manager(io_buf& model_file, bool read, boo
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
 
-  // Save/load easily serializable objects
-  // make sure we can deserialize based on dynamic values like max_live_configs
-  // i.e. read/write first the quantity and then do the for loop
-  for (size_t stride = 0; stride < max_live_configs; ++stride)
-  { scores[stride].save_load_scored_config(model_file, read, text); }
-
   if (!read) msg << "_aml_cm_state " << current_state << "\n";
   bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&current_state), sizeof(current_state), "", read, msg, text);
@@ -394,8 +398,20 @@ void config_manager::save_load_config_manager(io_buf& model_file, bool read, boo
   size_t config_size;
   size_t ns_counter_size;
   size_t index_queue_size;
+  size_t score_size;
   if (read)
   {
+    // Load scores
+    scores.clear();
+    bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), "", read, msg, text);
+    for (size_t i = 0; i < score_size; ++i)
+    {
+      scored_config sc;
+      sc.save_load_scored_config(model_file, read, text);
+      scores.push_back(sc);
+    }
+
     // Load configs
     bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&config_size), sizeof(config_size), "", read, msg, text);
@@ -433,13 +449,23 @@ void config_manager::save_load_config_manager(io_buf& model_file, bool read, boo
     }
 
     // Regenerate interactions vectors
-    // **Note results can change if new namespace is seen between last interaction
-    // generation and save_resume
-    for (size_t stride = 0; stride < max_live_configs; ++stride)
-    { live_interactions[stride] = oc.gen_interactions(ns_counter, configs[scores[stride].config_index].exclusions); }
+    live_interactions.clear();
+    for (size_t stride = 0; stride < scores.size(); ++stride)
+    {
+      interaction_vec v = oc.gen_interactions(ns_counter, configs[scores[stride].config_index].exclusions);
+      live_interactions.push_back(v);
+    }
   }
   else
   {
+    // Save scores
+    score_size = scores.size();
+    msg << "score_size " << score_size << "\n";
+    bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), "", read, msg, text);
+    for (size_t stride = 0; stride < score_size; ++stride)
+    { scores[stride].save_load_scored_config(model_file, read, text); }
+
     // Save configs
     config_size = configs.size();
     msg << "config_size " << config_size << "\n";
@@ -482,7 +508,7 @@ void config_manager::persist(metric_sink& metrics)
 {
   metrics.int_metrics_list.emplace_back("test_county", county);
   metrics.int_metrics_list.emplace_back("current_champ", current_champ);
-  for (size_t stride = 0; stride < max_live_configs; ++stride)
+  for (size_t stride = 0; stride < scores.size(); ++stride)
   { scores[stride].persist(metrics, "_" + std::to_string(stride)); }
 }
 
@@ -496,7 +522,7 @@ void config_manager::configure_interactions(example* ec, size_t stride)
 void config_manager::restore_interactions(example* ec) { ec->interactions = nullptr; }
 
 template <bool is_explore>
-void predict_automl(tr_data& data, multi_learner& base, multi_ex& ec)
+void predict_automl(automl& data, multi_learner& base, multi_ex& ec)
 {
   size_t champ_stride = data.cm.current_champ;
   for (example* ex : ec) { data.cm.configure_interactions(ex, champ_stride); }
@@ -510,7 +536,7 @@ void predict_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 
 // inner loop of learn driven by # MAX_CONFIGS
 void offset_learn(
-    tr_data& data, multi_learner& base, multi_ex& ec, const size_t stride, CB::cb_class& logged, size_t labelled_action)
+    automl& data, multi_learner& base, multi_ex& ec, const size_t stride, CB::cb_class& logged, size_t labelled_action)
 {
   assert(ec[0]->interactions == nullptr);
 
@@ -545,13 +571,11 @@ void offset_learn(
 // this is the registered learn function for this reduction
 // mostly uses config_manager and actual_learn(..)
 template <bool is_explore>
-void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
+void learn_automl(automl& data, multi_learner& base, multi_ex& ec)
 {
   assert(data.all->weights.sparse == false);
 
   bool is_learn = true;
-  // assert we learn twice
-  assert(data.pm == data.cm.max_live_configs);
 
   if (is_learn) { data.cm.county++; }
   // extra assert just bc
@@ -579,7 +603,7 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
 
   if (current_state == Experimenting)
   {
-    for (size_t stride = 0; stride < data.cm.max_live_configs; ++stride)
+    for (size_t stride = 0; stride < data.cm.scores.size(); ++stride)
     {
       if (data.cm.scores[stride].config_index < 0) { continue; }
       offset_learn(data, base, ec, stride, logged, labelled_action);
@@ -600,39 +624,39 @@ void learn_automl(tr_data& data, multi_learner& base, multi_ex& ec)
   assert(ec[0]->interactions == nullptr);
 }
 
-void persist(tr_data& data, metric_sink& metrics) { data.cm.persist(metrics); }
+void persist(automl& data, metric_sink& metrics) { data.cm.persist(metrics); }
 
-void finish_example(vw& all, tr_data& data, multi_ex& ec)
+void finish_example(vw& all, automl& data, multi_ex& ec)
 {
   data.adf_learner->print_example(all, ec);
   VW::finish_example(all, ec);
 }
 
-void save_load_aml(tr_data& d, io_buf& model_file, bool read, bool text)
+void save_load_aml(automl& d, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
   if (!read || d.model_file_version >= VERSION_FILE_WITH_AUTOML)
   { d.cm.save_load_config_manager(model_file, read, text); }
 }
 
-VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
 
-  size_t test_red;
   size_t budget;
+  size_t live_configs;
 
-  option_group_definition new_options("Debug: test reduction");
-  new_options.add(make_option("test_red", test_red).necessary().keep().help("set default champion (0 or 1)"))
+  option_group_definition new_options("Debug: automl reduction");
+  new_options
+      .add(make_option("automl", live_configs).necessary().keep().default_value(3).help("set number of live configs"))
       .add(make_option("budget", budget).keep().default_value(10).help("set initial budget for automl interactions"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto data = VW::make_unique<tr_data>(budget, all.model_file_ver);
+  auto data = VW::make_unique<automl>(budget, all.model_file_ver, live_configs);
   // all is not needed but good to have for testing purposes
   data->all = &all;
-  data->cm.current_champ = test_red;
 
   // override and clear all the global interactions
   // see parser.cc line 740
@@ -671,11 +695,11 @@ VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
   {
     // fetch cb_explore_adf to call directly into the print routine twice
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
-    auto ppw = data->pm;
+    auto ppw = MAX_CONFIGS;
 
     auto* l =
         make_reduction_learner(std::move(data), as_multiline(base_learner), learn_automl<true>, predict_automl<true>,
-            stack_builder.get_setupfn_name(test_red_setup))
+            stack_builder.get_setupfn_name(automl_setup))
             .set_params_per_weight(ppw)  // refactor pm
             .set_finish_example(finish_example)
             .set_save_load(save_load_aml)
@@ -694,5 +718,5 @@ VW::LEARNER::base_learner* test_red_setup(VW::setup_base_i& stack_builder)
   }
 }
 
-}  // namespace test_red
+}  // namespace automl
 }  // namespace VW
