@@ -234,7 +234,7 @@ void config_manager::one_step(multi_ex& ec)
       break;
 
     case Experimenting:
-      gen_configs(ec);
+      gen_exclusion_configs(ec);
       update_live_configs();
       update_champ();
       break;
@@ -248,7 +248,7 @@ void config_manager::one_step(multi_ex& ec)
 // Highest priority will be picked first because of max-PQ implementation, this will
 // be the config with the least exclusion. Note that all configs will run to budget
 // before priorities and budget are reset.
-float config_manager::get_priority(size_t config_index)
+float config_manager::calc_priority(size_t config_index)
 {
   float priority = 0.f;
   for (const auto& ns : configs[config_index].exclusions) { priority -= ns_counter[ns]; }
@@ -258,7 +258,7 @@ float config_manager::get_priority(size_t config_index)
 // This will generate configs with all combinations of current namespaces. These
 // combinations will be held stored as 'exclusions' but can be used differently
 // depending on oracle design.
-void config_manager::gen_configs(const multi_ex& ecs)
+void config_manager::gen_exclusion_configs(const multi_ex& ecs)
 {
   std::set<namespace_index> new_namespaces;
   // Count all namepsace seen in current example
@@ -286,7 +286,7 @@ void config_manager::gen_configs(const multi_ex& ecs)
       exclusion_config conf(budget);
       conf.exclusions = new_exclusion;
       configs[config_index] = conf;
-      float priority = get_priority(config_index);
+      float priority = calc_priority(config_index);
       index_queue.push(std::make_pair(priority, config_index));
     }
   }
@@ -315,7 +315,7 @@ bool config_manager::repopulate_index_queue()
     size_t redo_index = ind_config.first;
     if (live_indices.find(redo_index) == live_indices.end())
     {
-      float priority = get_priority(redo_index);
+      float priority = calc_priority(redo_index);
       index_queue.push(std::make_pair(priority, redo_index));
     }
   }
@@ -380,7 +380,7 @@ void config_manager::update_champ()
   }
 }
 
-void config_manager::save_load_config_manager(io_buf& model_file, bool read, bool text)
+void config_manager::save_load(io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
@@ -513,22 +513,22 @@ void config_manager::persist(metric_sink& metrics)
 }
 
 // This sets up example with correct ineractions vector
-void config_manager::configure_interactions(example* ec, size_t stride)
+void config_manager::apply_config(example* ec, size_t stride)
 {
   if (ec == nullptr) return;
   ec->interactions = &(live_interactions[stride]);
 }
 
-void config_manager::restore_interactions(example* ec) { ec->interactions = nullptr; }
+void config_manager::revert_config(example* ec) { ec->interactions = nullptr; }
 
 template <bool is_explore>
 void predict_automl(automl& data, multi_learner& base, multi_ex& ec)
 {
   size_t champ_stride = data.cm.current_champ;
-  for (example* ex : ec) { data.cm.configure_interactions(ex, champ_stride); }
+  for (example* ex : ec) { data.cm.apply_config(ex, champ_stride); }
 
   auto restore_guard = VW::scope_exit([&data, &ec, &champ_stride] {
-    for (example* ex : ec) { data.cm.restore_interactions(ex); }
+    for (example* ex : ec) { data.cm.revert_config(ex); }
   });
 
   base.predict(ec, champ_stride);
@@ -540,10 +540,10 @@ void offset_learn(
 {
   assert(ec[0]->interactions == nullptr);
 
-  for (example* ex : ec) { data.cm.configure_interactions(ex, stride); }
+  for (example* ex : ec) { data.cm.apply_config(ex, stride); }
 
   auto restore_guard = VW::scope_exit([&data, &ec, &stride] {
-    for (example* ex : ec) { data.cm.restore_interactions(ex); }
+    for (example* ex : ec) { data.cm.revert_config(ex); }
   });
 
   if (!base.learn_returns_prediction) { base.predict(ec, stride); }
@@ -632,8 +632,7 @@ void finish_example(vw& all, automl& data, multi_ex& ec)
 void save_load_aml(automl& d, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
-  if (!read || d.model_file_version >= VERSION_FILE_WITH_AUTOML)
-  { d.cm.save_load_config_manager(model_file, read, text); }
+  if (!read || d.model_file_version >= VERSION_FILE_WITH_AUTOML) { d.cm.save_load(model_file, read, text); }
 }
 
 VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)

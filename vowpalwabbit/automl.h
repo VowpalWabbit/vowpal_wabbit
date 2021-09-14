@@ -121,10 +121,15 @@ enum config_state
 
 struct config_manager_base
 {
+  // This fn gets called before learning any example
   virtual void one_step(multi_ex& ec) = 0;
-  virtual void configure_interactions(example* ec, size_t stride) = 0;
-  virtual void restore_interactions(example* ec) = 0;
-  virtual void save_load_config_manager(io_buf& model_file, bool read, bool text) = 0;
+  // This fn is responsible for applying a config
+  // tracked by 'stride' into the example.
+  // the impl is responsible of tracking this config-stride mapping
+  virtual void apply_config(example* ec, size_t stride) = 0;
+  // This fn is the 'undo' of configure_interactions
+  virtual void revert_config(example* ec) = 0;
+  virtual void save_load(io_buf& model_file, bool read, bool text) = 0;
   virtual void persist(metric_sink& metrics) = 0;
 };
 
@@ -152,16 +157,16 @@ struct config_manager : config_manager_base
   config_manager(size_t starting_budget, size_t max_live_configs);
 
   void one_step(multi_ex& ec) override;
-  void configure_interactions(example* ec, size_t stride) override;
-  void restore_interactions(example* ec) override;
-  void save_load_config_manager(io_buf& model_file, bool read, bool text) override;
+  void apply_config(example* ec, size_t stride) override;
+  void revert_config(example* ec) override;
+  void save_load(io_buf& model_file, bool read, bool text) override;
   void persist(metric_sink& metrics) override;
 
 private:
   void handle_empty_buget(size_t stride);
   void update_champ();
-  float get_priority(size_t config_index);
-  void gen_configs(const multi_ex& ecs);
+  float calc_priority(size_t config_index);
+  void gen_exclusion_configs(const multi_ex& ecs);
   bool repopulate_index_queue();
   void handle_empty_budget(size_t stride);
   void update_live_configs();
