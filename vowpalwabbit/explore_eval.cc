@@ -25,18 +25,18 @@ namespace EXPLORE_EVAL
 struct explore_eval
 {
   CB::cb_class known_cost;
-  vw* all;
+  vw* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
-  uint64_t offset;
+  uint64_t offset = 0;
   CB::label action_label;
   CB::label empty_label;
-  size_t example_counter;
+  size_t example_counter = 0;
 
-  size_t update_count;
-  size_t violations;
-  float multiplier;
+  size_t update_count = 0;
+  size_t violations = 0;
+  float multiplier = 0.f;
 
-  bool fixed_multiplier;
+  bool fixed_multiplier = false;
 };
 
 void finish(explore_eval& data)
@@ -189,7 +189,7 @@ base_learner* explore_eval_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto data = scoped_calloc_or_throw<explore_eval>();
+  auto data = VW::make_unique<explore_eval>();
   bool explore_eval_option = false;
   option_group_definition new_options("Explore evaluation");
   new_options
@@ -214,11 +214,14 @@ base_learner* explore_eval_setup(VW::setup_base_i& stack_builder)
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
+  
+  auto* l = make_reduction_learner(std::move(data), base, do_actual_learning<true>, do_actual_learning<false>, stack_builder.get_setupfn_name(explore_eval_setup))
+      .set_learn_returns_prediction(true)
+      .set_prediction_type(prediction_type_t::action_probs)
+      .set_label_type(label_type_t::cb)
+      .set_finish_example(finish_multiline_example)
+      .set_finish(finish)
+      .build();
 
-  learner<explore_eval, multi_ex>& l = init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1,
-      prediction_type_t::action_probs, stack_builder.get_setupfn_name(explore_eval_setup), true);
-
-  l.set_finish_example(finish_multiline_example);
-  l.set_finish(finish);
-  return make_base(l);
+  return make_base(*l);
 }
