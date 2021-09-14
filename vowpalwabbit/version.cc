@@ -17,18 +17,36 @@ version_struct::version_struct(int maj, int min, int rv)
 
 version_struct::version_struct(const char* v_str) { from_string(v_str); }
 
-version_struct::version_struct(const version_struct& v)
+version_struct::version_struct(const version_struct& other)
 {
-  major = v.major;
-  minor = v.minor;
-  rev = v.rev;
+  major = other.major;
+  minor = other.minor;
+  rev = other.rev;
 }
 
-void version_struct::operator=(const version_struct& v)
+version_struct::version_struct(version_struct&& other) noexcept
 {
-  major = v.major;
-  minor = v.minor;
-  rev = v.rev;
+  major = other.major;
+  minor = other.minor;
+  rev = other.rev;
+}
+
+version_struct& version_struct::operator=(const version_struct& other)
+{
+  if (this == &other) return *this;
+  major = other.major;
+  minor = other.minor;
+  rev = other.rev;
+  return *this;
+}
+
+version_struct& version_struct::operator=(version_struct&& other) noexcept
+{
+  if (this == &other) return *this;
+  major = other.major;
+  minor = other.minor;
+  rev = other.rev;
+  return *this;
 }
 
 void version_struct::operator=(const char* v_str) { from_string(v_str); }
