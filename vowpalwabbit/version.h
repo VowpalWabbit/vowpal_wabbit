@@ -16,8 +16,7 @@ struct version_struct
   int32_t minor;
   int32_t rev;
 
-  constexpr version_struct(int maj = 0, int min = 0, int rv = 0) : major{maj}, minor{min}, rev{rv}
-  {}
+  constexpr version_struct(int maj = 0, int min = 0, int rv = 0) : major{maj}, minor{min}, rev{rv} {}
 
   version_struct(const char* v_str);
   void operator=(const char* v_str);

@@ -80,7 +80,6 @@ void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
 template <bool is_learn>
 void predict_or_learn_active(active& a, single_learner& base, example& ec)
 {
-
   if (is_learn)
     base.learn(ec);
   else
