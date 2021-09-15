@@ -178,7 +178,7 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (options.was_supplied("lda")) { THROW("error: you can't combine lda and active learning") }
-  auto data = VW::make_unique<active>(active_c0, all.sd, all.get_random_state());
+  auto data = VW::make_unique<active>(active_c0, all.sd, all.get_random_state(), all.model_file_ver);
   auto base = as_singleline(stack_builder.setup_base_learner());
 
   using learn_pred_func_t = void (*)(active&, VW::LEARNER::single_learner&, example&);

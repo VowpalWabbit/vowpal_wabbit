@@ -5,14 +5,15 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 #include "reductions_fwd.h"
 #include "rand_state.h"
 #include "version.h"
 
 struct active
 {
-  active(float active_c0, shared_data* shared_data, std::shared_ptr<rand_state> random_state)
-      : active_c0(active_c0), _shared_data(shared_data), _random_state(std::move(random_state))
+  active(float active_c0, shared_data* shared_data, std::shared_ptr<rand_state> random_state, VW::version_struct  model_version)
+      : active_c0(active_c0), _shared_data(shared_data), _random_state(std::move(random_state)), _model_version{std::move(model_version)}
   {
   }
 
