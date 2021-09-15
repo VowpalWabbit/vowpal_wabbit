@@ -527,8 +527,12 @@ void config_manager::persist(metric_sink& metrics)
 // This sets up example with correct ineractions vector
 void config_manager::apply_config(example* ec, size_t stride)
 {
-  if (ec == nullptr) return;
-  ec->interactions = &(scores[stride].live_interactions);
+  if (ec == nullptr) { return; }
+  if (stride < max_live_configs) { ec->interactions = &(scores[stride].live_interactions); }
+  else
+  {
+    THROW("fatal: trying to apply a config higher than max configs allowed");
+  }
 }
 
 void config_manager::revert_config(example* ec) { ec->interactions = nullptr; }
@@ -550,8 +554,6 @@ void predict_automl(automl& data, multi_learner& base, multi_ex& ec)
 void offset_learn(
     automl& data, multi_learner& base, multi_ex& ec, const size_t stride, CB::cb_class& logged, size_t labelled_action)
 {
-  assert(ec[0]->interactions == nullptr);
-
   for (example* ex : ec) { data.cm.apply_config(ex, stride); }
 
   auto restore_guard = VW::scope_exit([&data, &ec, &stride] {
@@ -592,10 +594,6 @@ void learn_automl(automl& data, multi_learner& base, multi_ex& ec)
   if (is_learn) { data.cm.county++; }
   // extra assert just bc
   assert(data.all->interactions.empty() == true);
-
-  // we force parser to set always as nullptr, see change in parser.cc
-  assert(ec[0]->interactions == nullptr);
-  // that way we can modify all.interactions without parser caring
 
   CB::cb_class logged{};
   size_t labelled_action = 0;
