@@ -637,7 +637,17 @@ void persist(automl& data, metric_sink& metrics) { data.cm.persist(metrics); }
 
 void finish_example(vw& all, automl& data, multi_ex& ec)
 {
-  data.adf_learner->print_example(all, ec);
+  {
+    size_t champ_stride = data.cm.current_champ;
+    for (example* ex : ec) { data.cm.apply_config(ex, champ_stride); }
+
+    auto restore_guard = VW::scope_exit([&data, &ec, &champ_stride] {
+      for (example* ex : ec) { data.cm.revert_config(ex); }
+    });
+
+    data.adf_learner->print_example(all, ec);
+  }
+
   VW::finish_example(all, ec);
 }
 
