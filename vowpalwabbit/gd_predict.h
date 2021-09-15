@@ -29,7 +29,6 @@ inline void foreach_feature(WeightsT& weights, const features& fs, DataT& dat, u
 {
   for (const auto& f : fs)
   {
-    weights.turn_on_bit(f.index() + offset); // set a bit in the bitset to 1 for the feature
     weight& w = weights[(f.index() + offset)];
     FuncT(dat, mult * f.value(), w);
   }

@@ -29,7 +29,6 @@ using features_range_t = std::pair<features::const_audit_iterator, features::con
 template <class DataT, void (*FuncT)(DataT&, const float, float&), class WeightsT>
 inline void call_FuncT(DataT& dat, WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
-  weights.turn_on_bit(ft_idx);
   FuncT(dat, ft_value, weights[ft_idx]);
 }
 

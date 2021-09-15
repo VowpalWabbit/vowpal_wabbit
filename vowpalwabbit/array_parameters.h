@@ -120,14 +120,6 @@ public:
     _tag_info.tag_hash=tag_hash;
     _tag_info.is_set=true;
   }
-  
-  void turn_on_bit(uint64_t feature_index) // function to lookup a bit for a feature in the 32-bitset using the 5-bit tag hash and set it to 1.
-  {
-    if(_tag_info.is_set) 
-    {
-      _feature_bit_vector[feature_index & _weight_mask][_tag_info.tag_hash]=1;
-    }
-  }
 
   void unset_tag(){ _tag_info.is_set=false;} // function to set the tag to false after an example is trained on
 
@@ -164,7 +156,14 @@ public:
     return const_iterator(i, stride());
   }
 
-  inline weight& operator[](size_t i) { return *(get_or_default_and_get(i)); }
+  inline weight& operator[](size_t i) 
+  { 
+    if(_tag_info.is_set) 
+    {
+      _feature_bit_vector[i & _weight_mask][_tag_info.tag_hash]=1;
+    }
+    return *(get_or_default_and_get(i)); 
+  }
 
   inline const weight& operator[](size_t i) const { return *(get_or_default_and_get(i)); }
 
