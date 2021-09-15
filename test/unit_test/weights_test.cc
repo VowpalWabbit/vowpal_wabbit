@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_feature_is_activated, T, weight_types) // uni
   for(int tag_hash=0;tag_hash<threshold;tag_hash++) // function to set the bits in bitset to 1 equal to the threshold 
   {
     w.set_tag(tag_hash);
-    int weight = w[feature_index]; 
+    auto& weight = w[feature_index]; 
   }
   BOOST_CHECK_EQUAL(w.is_activated(feature_index),true); 
 }
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_feature_not_activated, T, weight_types) // un
   for(int tag_hash=0;tag_hash<(threshold-1);tag_hash++) // function to set the bits in bitset to 1 equal to the (threshold-1)
   {
     w.set_tag(tag_hash);
-    int weight = w[feature_index];
+    auto& weight = w[feature_index];
   }
   BOOST_CHECK_EQUAL(w.is_activated(feature_index),false); 
 }
