@@ -23,7 +23,7 @@ struct vw;
 
 namespace simulator
 {
-struct cb_sim;
+class cb_sim;
 // maps an int: # learned examples
 // with a function to 'test' at that point in time in the simulator
 using callback_map = typename std::map<size_t, std::function<bool(cb_sim&, vw&, multi_ex&)>>;
