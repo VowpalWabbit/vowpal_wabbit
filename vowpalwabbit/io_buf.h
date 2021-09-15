@@ -368,6 +368,9 @@ namespace VW
 template <typename T>
 size_t process_model_field(io_buf& io, T& var, bool read, VW::string_view name, bool text)
 {
+  // It is not valid to read a text based field.
+  assert(!(read && text));
+
   auto* data = reinterpret_cast<char*>(&var);
   auto len = sizeof(var);
 
@@ -375,10 +378,11 @@ size_t process_model_field(io_buf& io, T& var, bool read, VW::string_view name, 
 
   if (text)
   {
-    std::string msg = fmt::format("{} = {}\n", name, var);
+    auto msg = fmt::format("{} = {}\n", name, var);
     return io.bin_write_fixed(msg.c_str(), msg.size());
   }
 
+  // If not read or text we are just writing the binary data.
   return io.bin_write_fixed(data, len);
 }
 }  // namespace VW
