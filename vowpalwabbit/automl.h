@@ -95,10 +95,14 @@ struct config_manager : config_manager_base
   // Stores all configs in consideration (Map allows easy deletion unlike vector)
   std::map<size_t, exclusion_config> configs;
 
+  // Stores scores of live configs, size will never exceed max_live_configs
   std::vector<scored_config> scores;
 
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, size_t>> index_queue;
+
+  // Stores new namespaces seen between champ changes (and config generations)
+  std::set<namespace_index> new_namespaces;
 
   config_manager(size_t, size_t);
 
@@ -112,10 +116,11 @@ private:
   void gen_quadratic_interactions(size_t);
   void update_champ();
   float calc_priority(size_t);
-  void gen_exclusion_configs(const multi_ex&);
+  void process_namespaces(const multi_ex&);
+  void exclusion_configs_oracle();
   bool repopulate_index_queue();
   void handle_empty_budget(size_t);
-  void update_live_configs();
+  void schedule();
 };
 
 struct automl

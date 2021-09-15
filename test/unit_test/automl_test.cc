@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
     auto champ_exclusions = aml->cm.configs[aml->cm.scores[aml->cm.current_champ].config_index].exclusions;
     BOOST_CHECK_EQUAL(champ_exclusions.size(), 1);
 
-    BOOST_CHECK(champ_exclusions.find('T') != champ_exclusions.end());
+    BOOST_CHECK(champ_exclusions.find(static_cast<namespace_index>(128)) != champ_exclusions.end());
 
     auto champ_interactions = aml->cm.scores[aml->cm.current_champ].live_interactions;
     BOOST_CHECK_EQUAL(champ_interactions.size(), 6);
