@@ -462,13 +462,15 @@ public:
   // non-recursive
   void copy_offset_based(size_t from, size_t to)
   {
-    copy_clear_fd.copy_notify_f(copy_clear_fd.data, *copy_clear_fd.base, from, to);
+    // apply increment to match learn(ex, i) behaviour
+    copy_clear_fd.copy_notify_f(copy_clear_fd.data, *copy_clear_fd.base, increment * from, increment * to);
   }
 
   // non-recursive
   void clear_offset_based(size_t offset)
   {
-    copy_clear_fd.clear_notify_f(copy_clear_fd.data, *copy_clear_fd.base, offset);
+    // apply increment to match learn(ex, i) behaviour
+    copy_clear_fd.clear_notify_f(copy_clear_fd.data, *copy_clear_fd.base, increment * offset);
   }
 
   // called to clean up state.  Autorecursive.
