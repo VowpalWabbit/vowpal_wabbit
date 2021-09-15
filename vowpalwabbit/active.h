@@ -7,6 +7,7 @@
 #include <memory>
 #include "reductions_fwd.h"
 #include "rand_state.h"
+#include "version.h"
 
 struct active
 {
@@ -18,6 +19,10 @@ struct active
   float active_c0;
   shared_data* _shared_data;  // statistics, loss
   std::shared_ptr<rand_state> _random_state;
+
+  float _min_seen_label = 0.f;
+  float _max_seen_label = 1.f;
+  VW::version_struct _model_version;
 };
 
 VW::LEARNER::base_learner* active_setup(VW::setup_base_i& stack_builder);

@@ -11,6 +11,7 @@
 #include "active.h"
 #include "vw_exception.h"
 #include "shared_data.h"
+#include "vw_versions.h"
 
 #include "io/logger.h"
 
@@ -18,9 +19,6 @@ using namespace VW::LEARNER;
 using namespace VW::config;
 
 namespace logger = VW::io::logger;
-
-constexpr float ACTIVE_MIN_LABEL = 0.f;
-constexpr float ACTIVE_MAX_LABEL = 1.f;
 
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
@@ -80,6 +78,7 @@ void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
 template <bool is_learn>
 void predict_or_learn_active(active& a, single_learner& base, example& ec)
 {
+
   if (is_learn)
     base.learn(ec);
   else
@@ -91,9 +90,16 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
     // We want to understand the change in prediction if the label were to be
     // the opposite of what was predicted. 0 and 1 are used for the expected min
     // and max labels to be coming in from the active interactor.
-    ec.l.simple.label = (ec.pred.scalar >= threshold) ? ACTIVE_MIN_LABEL : ACTIVE_MAX_LABEL;
-    ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
+    ec.l.simple.label = (ec.pred.scalar >= threshold) ? a._min_seen_label : a._max_seen_label;
+    std::cout << a._min_seen_label << std::endl;
+    ec.confidence = std::abs(ec.pred.scalar - threshold) / base.sensitivity(ec);
     ec.l.simple.label = FLT_MAX;
+  }
+  else
+  {
+    // Update seen labels based on the current example's label.
+    a._min_seen_label = std::min(ec.l.simple.label, a._min_seen_label);
+    a._max_seen_label = std::max(ec.l.simple.label, a._max_seen_label);
   }
 }
 
@@ -135,6 +141,20 @@ void return_active_example(vw& all, active& a, example& ec)
 {
   output_and_account_example(all, a, ec);
   VW::finish_example(all, ec);
+}
+
+void save_load(active& a, io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+  if(a._model_version >= VW::version_definitions::VERSION_FILE_WITH_ACTIVE_SEEN_LABELS)
+  {
+      std::stringstream msg;
+      if (!read) { msg << fmt::format("Active: min_seen_label {}, max_seen_label: {}\n", a._min_seen_label, a._max_seen_label); }
+      bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&a._min_seen_label),
+          sizeof(a._min_seen_label), "", read, msg, text);
+      bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&a._max_seen_label),
+          sizeof(a._max_seen_label), "", read, msg, text);
+  }
 }
 
 base_learner* active_setup(VW::setup_base_i& stack_builder)
@@ -183,6 +203,7 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
   reduction_builder.set_label_type(label_type_t::simple);
   reduction_builder.set_prediction_type(prediction_type_t::scalar);
   reduction_builder.set_learn_returns_prediction(learn_returns_prediction);
+  reduction_builder.set_save_load(save_load);
   if (!simulation) { reduction_builder.set_finish_example(return_active_example); }
 
   return make_base(*reduction_builder.build());

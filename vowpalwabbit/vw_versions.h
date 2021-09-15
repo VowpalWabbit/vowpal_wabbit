@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "version.h"
+
 #define EMPTY_VERSION_FILE "0.0.0"  // empty version, default
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "7.6.0"
@@ -19,7 +21,15 @@
 #define VERSION_FILE_WITH_CB_ADF_SAVE "8.3.2"  // first version with user supplied header
 #define VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG \
   "8.9.0"  // CCB optimization for models with only single slot used introduced in this version.
-#define VERSION_FILE_WITH_CB_TO_CBADF "8.11.0"  // first version that maps --cb to use cb_adf
+#define VERSION_FILE_WITH_CB_TO_CBADF "8.11.0"            // first version that maps --cb to use cb_adf
 #define VERSION_FILE_WITH_REG_CB_SAVE_RESUME "8.11.0"     // version that ensures accuracy of loaded models in regcb
 #define VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME "8.11.0"  // version that ensures accuracy of loaded models in squarecb
 #define VERSION_FILE_WITH_FIRST_SAVE_RESUME "8.11.0"      // version that ensures accuracy of loaded models in first
+
+namespace VW
+{
+namespace version_definitions
+{
+constexpr VW::version_struct VERSION_FILE_WITH_ACTIVE_SEEN_LABELS{9, 0, 0};
+}
+}  // namespace VW

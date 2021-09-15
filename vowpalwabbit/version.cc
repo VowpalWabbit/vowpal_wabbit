@@ -8,13 +8,6 @@
 
 namespace VW
 {
-version_struct::version_struct(int maj, int min, int rv)
-{
-  major = maj;
-  minor = min;
-  rev = rv;
-}
-
 version_struct::version_struct(const char* v_str) { from_string(v_str); }
 
 version_struct::version_struct(const version_struct& v)

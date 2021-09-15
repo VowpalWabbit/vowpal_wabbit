@@ -16,7 +16,9 @@ struct version_struct
   int32_t minor;
   int32_t rev;
 
-  version_struct(int maj = 0, int min = 0, int rv = 0);
+  constexpr version_struct(int maj = 0, int min = 0, int rv = 0) : major{maj}, minor{min}, rev{rv}
+  {}
+
   version_struct(const char* v_str);
   version_struct(const version_struct& v);
 
