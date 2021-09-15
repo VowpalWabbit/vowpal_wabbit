@@ -21,7 +21,7 @@ namespace VW
 {
 namespace automl
 {
-namespace helper
+namespace details
 {
 // fail if incompatible reductions got setup
 // todo: audit if they reference global all interactions
@@ -80,7 +80,7 @@ void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
   std::cerr << std::endl;
 }
 */
-}  // namespace helper
+}  // namespace details
 
 void scored_config::update(float w, float r)
 {
@@ -182,57 +182,19 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
     }
   }
 
-  if (!read || true)
-  {
-    if (!read) msg << "_aml_budget " << budget << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&budget), sizeof(budget), "", read, msg, text);
-  }
-}
-
-// This code is primarily borrowed from expand_quadratics_wildcard_interactions in
-// interactions.cc. It will generate interactions with -q :: and exclude namespaces
-// from the corresponding stride. This function can be swapped out depending on
-// preference of how to generate interactions from a given set of exclusions.
-// Transforms exclusions -> interactions expected by VW.
-interaction_vec quadratic_exclusion_oracle::gen_interactions(const std::map<namespace_index, size_t>& ns_counter,
-    const std::map<namespace_index, std::set<namespace_index>>& exclusions) const
-{
-  std::set<std::vector<namespace_index>> interactions;
-
-  for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
-  {
-    auto idx1 = (*it).first;
-    // Only handles ':' for now, extend to handle specific namespaces later as needed
-    if (exclusions.find(idx1) != exclusions.end() && exclusions.at(idx1).find(':') != exclusions.at(idx1).end())
-    { continue; }
-    interactions.insert({idx1, idx1});
-
-    for (auto jt = it; jt != ns_counter.end(); ++jt)
-    {
-      auto idx2 = (*jt).first;
-      // Only handles ':' for now, extend to handle specific namespaces later as needed
-      if (exclusions.find(idx2) != exclusions.end() && exclusions.at(idx2).find(':') != exclusions.at(idx2).end())
-      { continue; }
-      interactions.insert({idx1, idx2});
-      interactions.insert({idx2, idx2});
-    }
-  }
-  interaction_vec v = interaction_vec(interactions.begin(), interactions.end());
-  return v;
+  if (!read) msg << "_aml_budget " << budget << "\n";
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&budget), sizeof(budget), "", read, msg, text);
 }
 
 // config_manager is a state machine (config_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
-config_manager::config_manager(size_t budget, const size_t max_live_configs)
+config_manager::config_manager(size_t budget, size_t max_live_configs)
     : budget(budget), max_live_configs(max_live_configs)
 {
   exclusion_config conf(budget);
   configs[0] = conf;
   scored_config sc;
-  sc.config_index = 0;
-  interaction_vec v;
-  sc.live_interactions = v;
   scores.push_back(sc);
 }
 
@@ -255,6 +217,36 @@ void config_manager::one_step(const multi_ex& ec)
 
     default:
       break;
+  }
+}
+
+// This code is primarily borrowed from expand_quadratics_wildcard_interactions in
+// interactions.cc. It will generate interactions with -q :: and exclude namespaces
+// from the corresponding stride. This function can be swapped out depending on
+// preference of how to generate interactions from a given set of exclusions.
+// Transforms exclusions -> interactions expected by VW.
+void config_manager::gen_quadratic_interactions(size_t stride)
+{
+  auto& exclusions = configs[scores[stride].config_index].exclusions;
+  auto& interactions = scores[stride].live_interactions;
+  if (!interactions.empty()) { interactions.clear(); }
+  for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
+  {
+    auto idx1 = (*it).first;
+    // Only handles ':' for now, extend to handle specific namespaces later as needed
+    if (exclusions.find(idx1) != exclusions.end() && exclusions.at(idx1).find(':') != exclusions.at(idx1).end())
+    { continue; }
+    interactions.push_back({idx1, idx1});
+    auto jt = it;
+    ++jt;
+    for (; jt != ns_counter.end(); ++jt)
+    {
+      auto idx2 = (*jt).first;
+      // Only handles ':' for now, extend to handle specific namespaces later as needed
+      if (exclusions.find(idx2) != exclusions.end() && exclusions.at(idx2).find(':') != exclusions.at(idx2).end())
+      { continue; }
+      interactions.push_back({idx1, idx2});
+    }
   }
 }
 
@@ -307,11 +299,7 @@ void config_manager::gen_exclusion_configs(const multi_ex& ecs)
   // Regenerate interactions if new namespaces are seen
   if (!new_namespaces.empty())
   {
-    for (auto& score : scores)
-    {
-      score.live_interactions.clear();
-      score.live_interactions = oc.gen_interactions(ns_counter, configs[score.config_index].exclusions);
-    }
+    for (size_t stride = 0; stride < scores.size(); ++stride) { gen_quadratic_interactions(stride); }
   }
 }
 
@@ -336,8 +324,9 @@ bool config_manager::repopulate_index_queue()
   return !index_queue.empty();
 }
 
-void config_manager::handle_empty_budget(scored_config& score)
+void config_manager::handle_empty_budget(size_t stride)
 {
+  auto& score = scores[stride];
   size_t config_index = score.config_index;
   score.reset_stats();
   configs[config_index].budget *= 2;
@@ -347,8 +336,7 @@ void config_manager::handle_empty_budget(scored_config& score)
   index_queue.pop();
   score.config_index = config_index;
   // Regenerate interactions each time an exclusion is swapped in
-  score.live_interactions.clear();
-  score.live_interactions = oc.gen_interactions(ns_counter, configs[config_index].exclusions);
+  gen_quadratic_interactions(stride);
   // We may also want to 0 out weights here? Currently keep all same in stride position
 }
 
@@ -364,14 +352,13 @@ void config_manager::update_live_configs()
       if (index_queue.empty() && !repopulate_index_queue()) { return; }
       scored_config sc;
       sc.config_index = index_queue.top().second;
-      interaction_vec v = oc.gen_interactions(ns_counter, configs[sc.config_index].exclusions);
-      sc.live_interactions = v;
       index_queue.pop();
       scores.push_back(sc);
+      gen_quadratic_interactions(stride);
     }
     else if (scores[stride].update_count >= configs[scores[stride].config_index].budget)
     {
-      handle_empty_budget(scores[stride]);
+      handle_empty_budget(stride);
     }
   }
 }
@@ -463,12 +450,7 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
       index_queue.push(std::make_pair(priority, index));
     }
 
-    for (auto& score : scores)
-    {
-      score.live_interactions.clear();
-      interaction_vec v = oc.gen_interactions(ns_counter, configs[score.config_index].exclusions);
-      score.live_interactions = v;
-    }
+    for (size_t stride = 0; stride < scores.size(); ++stride) { gen_quadratic_interactions(stride); }
   }
   else
   {
@@ -612,7 +594,7 @@ void learn_automl(automl& data, multi_learner& base, multi_ex& ec)
   config_state current_state = data.cm.current_state;
   data.cm.one_step(ec);
 
-  if (current_state == Experimenting)
+  if (current_state == config_state::Experimenting)
   {
     for (size_t stride = 0; stride < data.cm.scores.size(); ++stride)
     { offset_learn(data, base, ec, stride, logged, labelled_action); }
@@ -696,7 +678,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   // ask jack about flushing the cache, after mutating reductions
   // that might change
 
-  helper::fail_if_enabled(all,
+  details::fail_if_enabled(all,
       {"ccb_explore_adf", "audit_regressor", "baseline", "cb_explore_adf_rnd", "cb_to_cb_adf", "cbify", "replay_c",
           "replay_b", "replay_m", "memory_tree", "new_mf", "nn", "stage_poly"});
 

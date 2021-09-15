@@ -18,15 +18,15 @@ namespace VW
 namespace automl
 {
 using namespace_index = unsigned char;
-using interaction_vec = std::vector<std::vector<namespace_index>>;
+using interaction_vec_t = std::vector<std::vector<namespace_index>>;
 
 VW::LEARNER::base_learner* automl_setup(VW::setup_base_i&);
 
-namespace helper
+namespace details
 {
 void fail_if_enabled(vw&, const std::set<std::string>&);
 // void print_weights_nonzero(vw*, size_t, dense_parameters&);
-}  // namespace helper
+}  // namespace details
 
 constexpr size_t MAX_CONFIGS = 10;
 
@@ -38,7 +38,7 @@ struct scored_config
   float last_r = 0.0;
   size_t update_count = 0;
   size_t config_index = 0;
-  interaction_vec live_interactions;  // Live pre-allocated vectors in use
+  interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
   scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
 
@@ -47,18 +47,6 @@ struct scored_config
   void persist(metric_sink&, const std::string&);
   float current_ips() const;
   void reset_stats();
-};
-
-struct oracle
-{
-  virtual interaction_vec gen_interactions(
-      const std::map<namespace_index, size_t>&, const std::map<namespace_index, std::set<namespace_index>>&) const = 0;
-};
-
-struct quadratic_exclusion_oracle : oracle
-{
-  interaction_vec gen_interactions(
-      const std::map<namespace_index, size_t>&, const std::map<namespace_index, std::set<namespace_index>>&) const;
 };
 
 struct exclusion_config
@@ -95,12 +83,11 @@ struct config_manager_base
 
 struct config_manager : config_manager_base
 {
-  config_state current_state = Idle;
+  config_state current_state = config_state::Idle;
   size_t county = 0;
   size_t current_champ = 0;
-  const size_t budget;
-  const size_t max_live_configs;
-  quadratic_exclusion_oracle oc;
+  size_t budget;
+  size_t max_live_configs;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, size_t> ns_counter;
@@ -122,19 +109,20 @@ struct config_manager : config_manager_base
   void persist(metric_sink&) override;
 
 private:
+  void gen_quadratic_interactions(size_t);
   void update_champ();
   float calc_priority(size_t);
   void gen_exclusion_configs(const multi_ex&);
   bool repopulate_index_queue();
-  void handle_empty_budget(scored_config&);
+  void handle_empty_budget(size_t);
   void update_live_configs();
 };
 
 struct automl
 {
   config_manager cm;
-  vw* all;                              //  TBD might not be needed
-  LEARNER::multi_learner* adf_learner;  //  re-use print from cb_explore_adf
+  vw* all = nullptr;                              //  TBD might not be needed
+  LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   VW::version_struct model_file_version;
   ACTION_SCORE::action_scores champ_a_s;  // a sequence of classes with scores.  Also used for probabilities.
   automl(size_t starting_budget, VW::version_struct model_file_version, size_t max_live_configs)

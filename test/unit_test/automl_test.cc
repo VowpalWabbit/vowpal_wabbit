@@ -189,6 +189,12 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_budget)
     BOOST_CHECK_EQUAL(aml->cm.scores[0].live_interactions.size(), 6);
     BOOST_CHECK_EQUAL(aml->cm.scores[1].live_interactions.size(), 3);
     BOOST_CHECK_EQUAL(aml->cm.scores[2].live_interactions.size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm.configs[6].exclusions.size(), 2);
+    BOOST_CHECK_EQUAL(aml->cm.configs[6].exclusions['U'].size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm.configs[6].exclusions[128].size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm.scores[2].live_interactions.size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm.scores[2].live_interactions[0][0], 'A');
+    BOOST_CHECK_EQUAL(aml->cm.scores[2].live_interactions[0][1], 'A');
     return true;
   });
 
@@ -221,29 +227,6 @@ BOOST_AUTO_TEST_CASE(learner_copy_clear_test)
 
   auto ctr =
       simulator::_test_helper_hook("--automl 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks, 10);
-}
-
-BOOST_AUTO_TEST_CASE(quadratic_exclusion_oracle_test)
-{
-  VW::automl::quadratic_exclusion_oracle oc;
-  std::map<namespace_index, size_t> ns_counter = {{'A', 1}, {'B', 1}, {'C', 1}, {'D', 1}, {'E', 1}};
-  std::map<namespace_index, std::set<namespace_index>> exclusions;
-  exclusions['B'] = {':'};
-  exclusions['C'] = {':'};
-  std::vector<std::vector<namespace_index>> interactions = oc.gen_interactions(ns_counter, exclusions);
-  BOOST_CHECK_EQUAL(interactions.size(), 6);
-  BOOST_CHECK_EQUAL(interactions[0][0], 'A');
-  BOOST_CHECK_EQUAL(interactions[0][1], 'A');
-  BOOST_CHECK_EQUAL(interactions[1][0], 'A');
-  BOOST_CHECK_EQUAL(interactions[1][1], 'D');
-  BOOST_CHECK_EQUAL(interactions[2][0], 'A');
-  BOOST_CHECK_EQUAL(interactions[2][1], 'E');
-  BOOST_CHECK_EQUAL(interactions[3][0], 'D');
-  BOOST_CHECK_EQUAL(interactions[3][1], 'D');
-  BOOST_CHECK_EQUAL(interactions[4][0], 'D');
-  BOOST_CHECK_EQUAL(interactions[4][1], 'E');
-  BOOST_CHECK_EQUAL(interactions[5][0], 'E');
-  BOOST_CHECK_EQUAL(interactions[5][1], 'E');
 }
 
 BOOST_AUTO_TEST_CASE(namespace_switch)
