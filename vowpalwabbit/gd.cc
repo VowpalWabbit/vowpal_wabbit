@@ -799,6 +799,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
         msg << ":" << *v << "\n";
         brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
       }
+    }
   }
 }
 
