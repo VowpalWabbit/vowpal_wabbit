@@ -356,7 +356,6 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
 
   void (*learn_ptr)(cs_active & cs_a, single_learner & base, example & ec);
   void (*predict_ptr)(cs_active & cs_a, single_learner & base, example & ec);
-  size_t ws = data->num_classes;
   std::string name_addition;
 
   if (simulation)
@@ -372,6 +371,7 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
     name_addition = "";
   }
 
+  size_t ws = data->num_classes;
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
       predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
                 .set_params_per_weight(ws)
