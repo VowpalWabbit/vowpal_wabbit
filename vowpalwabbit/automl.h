@@ -20,7 +20,7 @@ namespace automl
 using namespace_index = unsigned char;
 using interaction_vec = std::vector<std::vector<namespace_index>>;
 
-VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder);
+VW::LEARNER::base_learner* automl_setup(VW::setup_base_i&);
 
 namespace helper
 {
@@ -44,8 +44,8 @@ struct scored_config
   scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
 
   void update(float w, float r);
-  void save_load_scored_config(io_buf& model_file, bool read, bool text);
-  void persist(metric_sink& metrics, const std::string& suffix);
+  void save_load_scored_config(io_buf&, bool, bool);
+  void persist(metric_sink&, const std::string&);
   float current_ips() const;
   void reset_stats();
 };
@@ -58,8 +58,8 @@ struct oracle
 
 struct quadratic_exclusion_oracle : oracle
 {
-  interaction_vec gen_interactions(const std::map<namespace_index, size_t>& ns_counter,
-      const std::map<namespace_index, std::set<namespace_index>>& exclusions) const;
+  interaction_vec gen_interactions(
+      const std::map<namespace_index, size_t>&, const std::map<namespace_index, std::set<namespace_index>>&) const;
 };
 
 struct exclusion_config
@@ -69,7 +69,7 @@ struct exclusion_config
 
   exclusion_config(size_t budget = 10) : budget(budget) {}
 
-  void save_load_exclusion_config(io_buf& model_file, bool read, bool text);
+  void save_load_exclusion_config(io_buf&, bool, bool);
 };
 
 // all possible states of config_manager
@@ -83,15 +83,15 @@ enum config_state
 struct config_manager_base
 {
   // This fn gets called before learning any example
-  virtual void one_step(const multi_ex& ec) = 0;
+  virtual void one_step(const multi_ex&) = 0;
   // This fn is responsible for applying a config
   // tracked by 'stride' into the example.
   // the impl is responsible of tracking this config-stride mapping
-  virtual void apply_config(example* ec, size_t stride) = 0;
+  virtual void apply_config(example*, size_t) = 0;
   // This fn is the 'undo' of configure_interactions
-  virtual void revert_config(example* ec) = 0;
-  virtual void save_load(io_buf& model_file, bool read, bool text) = 0;
-  virtual void persist(metric_sink& metrics) = 0;
+  virtual void revert_config(example*) = 0;
+  virtual void save_load(io_buf&, bool, bool) = 0;
+  virtual void persist(metric_sink&) = 0;
 };
 
 struct config_manager : config_manager_base
@@ -114,20 +114,20 @@ struct config_manager : config_manager_base
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, size_t>> index_queue;
 
-  config_manager(size_t starting_budget, size_t max_live_configs);
+  config_manager(size_t, size_t);
 
-  void one_step(const multi_ex& ec) override;
-  void apply_config(example* ec, size_t stride) override;
-  void revert_config(example* ec) override;
-  void save_load(io_buf& model_file, bool read, bool text) override;
-  void persist(metric_sink& metrics) override;
+  void one_step(const multi_ex&) override;
+  void apply_config(example*, size_t) override;
+  void revert_config(example*) override;
+  void save_load(io_buf&, bool, bool) override;
+  void persist(metric_sink&) override;
 
 private:
   void update_champ();
-  float calc_priority(size_t config_index);
-  void gen_exclusion_configs(const multi_ex& ecs);
+  float calc_priority(size_t);
+  void gen_exclusion_configs(const multi_ex&);
   bool repopulate_index_queue();
-  void handle_empty_budget(size_t stride);
+  void handle_empty_budget(scored_config&);
   void update_live_configs();
 };
 

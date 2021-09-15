@@ -335,19 +335,19 @@ bool config_manager::repopulate_index_queue()
   return !index_queue.empty();
 }
 
-void config_manager::handle_empty_budget(size_t stride)
+void config_manager::handle_empty_budget(scored_config& score)
 {
-  size_t config_index = scores[stride].config_index;
-  scores[stride].reset_stats();
+  size_t config_index = score.config_index;
+  score.reset_stats();
   configs[config_index].budget *= 2;
   // TODO: Add logic to erase index from configs map if wanted
   if (index_queue.empty() && !repopulate_index_queue()) { return; }
   config_index = index_queue.top().second;
   index_queue.pop();
-  scores[stride].config_index = config_index;
+  score.config_index = config_index;
   // Regenerate interactions each time an exclusion is swapped in
-  scores[stride].live_interactions.clear();
-  scores[stride].live_interactions = oc.gen_interactions(ns_counter, configs[config_index].exclusions);
+  score.live_interactions.clear();
+  score.live_interactions = oc.gen_interactions(ns_counter, configs[config_index].exclusions);
   // We may also want to 0 out weights here? Currently keep all same in stride position
 }
 
@@ -370,7 +370,7 @@ void config_manager::update_live_configs()
     }
     else if (scores[stride].update_count >= configs[scores[stride].config_index].budget)
     {
-      handle_empty_budget(stride);
+      handle_empty_budget(scores[stride]);
     }
   }
 }
@@ -708,7 +708,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   {
     // fetch cb_explore_adf to call directly into the print routine twice
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
-    auto ppw = MAX_CONFIGS;
+    auto ppw = max_live_configs;
 
     auto* l =
         make_reduction_learner(std::move(data), as_multiline(base_learner), learn_automl<true>, predict_automl<true>,
