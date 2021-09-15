@@ -319,7 +319,7 @@ void save_load(cb_explore& cb, io_buf& io, bool read, bool text)
     std::stringstream msg;
     if (!read) { msg << "cb cover storing example counter:  = " << cb.counter << "\n"; }
     bin_text_read_write_fixed_validated(
-        io, reinterpret_cast<char*>(&cb.counter), sizeof(cb.counter), "", read, msg, text);
+        io, reinterpret_cast<char*>(&cb.counter), sizeof(cb.counter), read, msg, text);
   }
 }
 }  // namespace CB_EXPLORE

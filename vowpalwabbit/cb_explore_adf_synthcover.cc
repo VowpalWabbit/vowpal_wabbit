@@ -152,10 +152,10 @@ void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool te
   {
     std::stringstream msg;
     if (!read) msg << "_min_cost " << _min_cost << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_min_cost), sizeof(_min_cost), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_min_cost), sizeof(_min_cost), read, msg, text);
 
     if (!read) msg << "_max_cost " << _max_cost << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_max_cost), sizeof(_max_cost), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_max_cost), sizeof(_max_cost), read, msg, text);
   }
 }
 
