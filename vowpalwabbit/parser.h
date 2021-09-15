@@ -42,8 +42,6 @@ struct parser
       , finished_examples(0)
       , strict_parse{strict_parse_}
   {
-    this->input = VW::make_unique<io_buf>();
-    this->output = VW::make_unique<io_buf>();
     this->lbl_parser = simple_label_parser;
   }
 
@@ -57,7 +55,7 @@ struct parser
   VW::object_pool<example> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
 
-  std::unique_ptr<io_buf> input;  // Input source(s)
+  io_buf input;  // Input source(s)
 
   /// reader consumes the given io_buf and produces parsed examples. The number
   /// of produced examples is implementation defined. However, in practice for
@@ -73,7 +71,7 @@ struct parser
 
   hash_func_t hasher;
   bool resettable;           // Whether or not the input can be reset.
-  std::unique_ptr<io_buf> output;  // Where to output the cache.
+  io_buf output;             // Where to output the cache.
   std::string currentname;
   std::string finalname;
 

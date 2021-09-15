@@ -18,12 +18,14 @@ struct version_struct
 
   version_struct(int maj = 0, int min = 0, int rv = 0);
   version_struct(const char* v_str);
-  version_struct(const version_struct& v);
+  void operator=(const char* v_str);
+
+  version_struct(const version_struct& other);
+  version_struct(version_struct&& other) noexcept;
+  version_struct& operator=(const version_struct& other);
+  version_struct& operator=(version_struct&& other) noexcept;
 
   ~version_struct() = default;
-
-  void operator=(const version_struct& v);
-  void operator=(const char* v_str);
 
   bool operator==(const version_struct& v) const;
   bool operator==(const char* v_str) const;

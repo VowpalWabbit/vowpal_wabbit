@@ -206,7 +206,7 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
     lrq->lrindices[static_cast<int>(i[0])] = true;
     lrq->lrindices[static_cast<int>(i[1])] = true;
 
-    maxk = std::max(k, k);
+    maxk = std::max(maxk, k);
   }
 
   if (!all.logger.quiet) *(all.trace_message) << std::endl;
