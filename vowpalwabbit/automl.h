@@ -24,8 +24,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i&);
 
 namespace helper
 {
-void fail_if_enabled(vw&, const std::string&);
-bool cmpf(float, float, float);
+void fail_if_enabled(vw&, const std::set<std::string>&);
 // void print_weights_nonzero(vw*, size_t, dense_parameters&);
 }  // namespace helper
 

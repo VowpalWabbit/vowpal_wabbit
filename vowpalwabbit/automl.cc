@@ -24,19 +24,19 @@ namespace automl
 namespace helper
 {
 // fail if incompatible reductions got setup
-// inefficient, address later
-// references global all interactions
-void fail_if_enabled(vw& all, std::string name)
+// todo: audit if they reference global all interactions
+void fail_if_enabled(vw& all, const std::set<std::string>& not_compat)
 {
   std::vector<std::string> enabled_reductions;
   if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
 
-  if (std::find(enabled_reductions.begin(), enabled_reductions.end(), name) != enabled_reductions.end())
-    THROW("plz no bad stack" + name);
+  for (auto reduction : enabled_reductions)
+  {
+    if (not_compat.count(reduction) > 0) THROW("automl.cc: plz no bad stack" + reduction);
+  }
 }
 
-bool cmpf(float A, float B, float epsilon = 0.001f) { return (fabs(A - B) < epsilon); }
-
+/*
 void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
 {
   for (auto it = weights.begin(); it != weights.end(); ++it)
@@ -79,6 +79,7 @@ void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
   }
   std::cerr << std::endl;
 }
+*/
 }  // namespace helper
 
 void scored_config::update(float w, float r)
@@ -531,7 +532,7 @@ void config_manager::apply_config(example* ec, size_t stride)
   if (stride < max_live_configs) { ec->interactions = &(scores[stride].live_interactions); }
   else
   {
-    THROW("fatal: trying to apply a config higher than max configs allowed");
+    THROW("fatal (automl): trying to apply a config higher than max configs allowed");
   }
 }
 
@@ -695,21 +696,9 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   // ask jack about flushing the cache, after mutating reductions
   // that might change
 
-  helper::fail_if_enabled(all, "ccb_explore_adf");
-  helper::fail_if_enabled(all, "audit_regressor");
-  helper::fail_if_enabled(all, "baseline");
-  helper::fail_if_enabled(all, "cb_explore_adf_rnd");
-  helper::fail_if_enabled(all, "cb_to_cb_adf");
-  helper::fail_if_enabled(all, "cbify");
-  helper::fail_if_enabled(all, "replay_c");
-  helper::fail_if_enabled(all, "replay_b");
-  helper::fail_if_enabled(all, "replay_m");
-  // fail_if_enabled(all, "gd");
-  // fail_if_enabled(all, "generate_interactions");
-  helper::fail_if_enabled(all, "memory_tree");
-  helper::fail_if_enabled(all, "new_mf");
-  helper::fail_if_enabled(all, "nn");
-  helper::fail_if_enabled(all, "stage_poly");
+  helper::fail_if_enabled(all,
+      {"ccb_explore_adf", "audit_regressor", "baseline", "cb_explore_adf_rnd", "cb_to_cb_adf", "cbify", "replay_c",
+          "replay_b", "replay_m", "memory_tree", "new_mf", "nn", "stage_poly"});
 
   // only this has been tested
   if (base_learner->is_multiline)
@@ -735,7 +724,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   else
   {
     // not implemented yet
-    THROW("not supported");
+    THROW("fatal: automl not supported for single line learners yet");
   }
 }
 
