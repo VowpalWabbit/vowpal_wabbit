@@ -12,10 +12,12 @@
 #include <cassert>
 #include <cstdlib>
 #include <algorithm>
+#include <fmt/format.h>
 
 #include "v_array.h"
 #include "hash.h"
 #include "io/io_adapter.h"
+#include "vw_string_view.h"
 
 #ifndef VW_NOEXCEPT
 #  include "vw_exception.h"
@@ -359,6 +361,26 @@ inline size_t bin_text_read_write_fixed_validated(
     if (nbytes == 0) { THROW("Unexpected end of file encountered."); }
   }
   return nbytes;
+}
+
+namespace VW
+{
+template<typename T>
+size_t process_model_field(io_buf& io, T& var, bool read, VW::string_view name, bool text)
+{
+  auto* data = reinterpret_cast<char*>(&var);
+  auto len = sizeof(var);
+
+  if (read) { return io.bin_read_fixed(data, len, ""); }
+
+  if (text)
+  {
+    std::string msg = fmt::format("{} = {}\n", name, var);
+    return io.bin_write_fixed(msg.c_str(), msg.size());
+  }
+
+  return io.bin_write_fixed(data, len);
+}
 }
 
 #define writeit(what, str)                                                                  \
