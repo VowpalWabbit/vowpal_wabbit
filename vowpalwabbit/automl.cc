@@ -23,15 +23,6 @@ namespace automl
 {
 namespace helper
 {
-// add an interaction to an existing instance
-/*void add_interaction(interaction_vec& interactions, namespace_index first, namespace_index second)
-{
-  std::vector<namespace_index> vect;
-  vect.push_back(first);
-  vect.push_back(second);
-  interactions.push_back(vect);
-}*/
-
 // fail if incompatible reductions got setup
 // inefficient, address later
 // references global all interactions
@@ -134,7 +125,7 @@ void scored_config::persist(metric_sink& metrics, const std::string& suffix)
   metrics.int_metrics_list.emplace_back("conf_idx" + suffix, config_index);
 }
 
-float scored_config::current_ips() { return ips / update_count; }
+float scored_config::current_ips() const { return ips / update_count; }
 
 void scored_config::reset_stats()
 {
@@ -158,8 +149,18 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
     for (size_t i = 0; i < exclusion_size; ++i)
     {
       namespace_index ns;
+      size_t other_ns_size;
+      std::set<namespace_index> other_namespaces;
       bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text);
-      exclusions.insert(ns);
+      bin_text_read_write_fixed(
+          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), "", read, msg, text);
+      for (size_t i = 0; i < other_ns_size; ++i)
+      {
+        namespace_index other_ns;
+        bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), "", read, msg, text);
+        other_namespaces.insert(other_ns);
+      }
+      exclusions[ns] = other_namespaces;
     }
   }
   else
@@ -168,8 +169,16 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
     msg << "exclusion_size " << exclusion_size << "\n";
     bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), "", read, msg, text);
-    for (const auto& ns : exclusions)
-    { bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text); }
+    for (const auto& ns_pair : exclusions)
+    {
+      namespace_index ns = ns_pair.first;
+      size_t other_ns_size = ns_pair.second.size();
+      bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text);
+      bin_text_read_write_fixed(
+          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), "", read, msg, text);
+      for (const auto& other_ns : ns_pair.second)
+      { bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), "", read, msg, text); }
+    }
   }
 
   if (!read || true)
@@ -184,21 +193,25 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
 // from the corresponding stride. This function can be swapped out depending on
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
-interaction_vec quadratic_exclusion_oracle::gen_interactions(
-    const std::map<namespace_index, size_t>& ns_counter, const std::set<namespace_index>& exclusions)
+interaction_vec quadratic_exclusion_oracle::gen_interactions(const std::map<namespace_index, size_t>& ns_counter,
+    const std::map<namespace_index, std::set<namespace_index>>& exclusions) const
 {
   std::set<std::vector<namespace_index>> interactions;
 
   for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
   {
     auto idx1 = (*it).first;
-    if (exclusions.find(idx1) != exclusions.end()) { continue; }
+    // Only handles ':' for now, extend to handle specific namespaces later as needed
+    if (exclusions.find(idx1) != exclusions.end() && exclusions.at(idx1).find(':') != exclusions.at(idx1).end())
+    { continue; }
     interactions.insert({idx1, idx1});
 
     for (auto jt = it; jt != ns_counter.end(); ++jt)
     {
       auto idx2 = (*jt).first;
-      if (exclusions.find(idx2) != exclusions.end()) { continue; }
+      // Only handles ':' for now, extend to handle specific namespaces later as needed
+      if (exclusions.find(idx2) != exclusions.end() && exclusions.at(idx2).find(':') != exclusions.at(idx2).end())
+      { continue; }
       interactions.insert({idx1, idx2});
       interactions.insert({idx2, idx2});
     }
@@ -210,18 +223,19 @@ interaction_vec quadratic_exclusion_oracle::gen_interactions(
 // config_manager is a state machine (config_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
-config_manager::config_manager(size_t budget, const size_t live_configs) : budget(budget), live_configs(live_configs)
+config_manager::config_manager(size_t budget, const size_t max_live_configs)
+    : budget(budget), max_live_configs(max_live_configs)
 {
   exclusion_config conf(budget);
   configs[0] = conf;
   scored_config sc;
   sc.config_index = 0;
-  scores.push_back(sc);
   interaction_vec v;
-  live_interactions.push_back(v);
+  sc.live_interactions = v;
+  scores.push_back(sc);
 }
 
-void config_manager::one_step(multi_ex& ec)
+void config_manager::one_step(const multi_ex& ec)
 {
   switch (current_state)
   {
@@ -233,7 +247,7 @@ void config_manager::one_step(multi_ex& ec)
       break;
 
     case Experimenting:
-      gen_configs(ec);
+      gen_exclusion_configs(ec);
       update_live_configs();
       update_champ();
       break;
@@ -247,17 +261,17 @@ void config_manager::one_step(multi_ex& ec)
 // Highest priority will be picked first because of max-PQ implementation, this will
 // be the config with the least exclusion. Note that all configs will run to budget
 // before priorities and budget are reset.
-float config_manager::get_priority(size_t config_index)
+float config_manager::calc_priority(size_t config_index)
 {
   float priority = 0.f;
-  for (const auto& ns : configs[config_index].exclusions) { priority -= ns_counter[ns]; }
+  for (const auto& ns_pair : configs[config_index].exclusions) { priority -= ns_counter[ns_pair.first]; }
   return priority;
 }
 
 // This will generate configs with all combinations of current namespaces. These
 // combinations will be held stored as 'exclusions' but can be used differently
 // depending on oracle design.
-void config_manager::gen_configs(const multi_ex& ecs)
+void config_manager::gen_exclusion_configs(const multi_ex& ecs)
 {
   std::set<namespace_index> new_namespaces;
   // Count all namepsace seen in current example
@@ -272,11 +286,11 @@ void config_manager::gen_configs(const multi_ex& ecs)
   // Add new configs if new namespace are seen
   for (const auto& ns : new_namespaces)
   {
-    std::set<std::set<namespace_index>> new_exclusions;
+    std::set<std::map<namespace_index, std::set<namespace_index>>> new_exclusions;
     for (const auto& config : configs)
     {
-      std::set<namespace_index> new_exclusion(config.second.exclusions);
-      new_exclusion.insert(ns);
+      std::map<namespace_index, std::set<namespace_index>> new_exclusion(config.second.exclusions);
+      new_exclusion[ns] = {':'};
       new_exclusions.insert(new_exclusion);
     }
     for (const auto& new_exclusion : new_exclusions)
@@ -285,17 +299,17 @@ void config_manager::gen_configs(const multi_ex& ecs)
       exclusion_config conf(budget);
       conf.exclusions = new_exclusion;
       configs[config_index] = conf;
-      float priority = get_priority(config_index);
+      float priority = calc_priority(config_index);
       index_queue.push(std::make_pair(priority, config_index));
     }
   }
   // Regenerate interactions if new namespaces are seen
   if (!new_namespaces.empty())
   {
-    for (size_t stride = 0; stride < scores.size(); ++stride)
+    for (auto& score : scores)
     {
-      live_interactions[stride].clear();
-      live_interactions[stride] = oc.gen_interactions(ns_counter, configs[scores[stride].config_index].exclusions);
+      score.live_interactions.clear();
+      score.live_interactions = oc.gen_interactions(ns_counter, configs[score.config_index].exclusions);
     }
   }
 }
@@ -314,26 +328,26 @@ bool config_manager::repopulate_index_queue()
     size_t redo_index = ind_config.first;
     if (live_indices.find(redo_index) == live_indices.end())
     {
-      float priority = get_priority(redo_index);
+      float priority = calc_priority(redo_index);
       index_queue.push(std::make_pair(priority, redo_index));
     }
   }
   return !index_queue.empty();
 }
 
-void config_manager::handle_empty_budget(size_t stride)
+void config_manager::handle_empty_budget(scored_config& score)
 {
-  size_t config_index = scores[stride].config_index;
-  scores[stride].reset_stats();
+  size_t config_index = score.config_index;
+  score.reset_stats();
   configs[config_index].budget *= 2;
   // TODO: Add logic to erase index from configs map if wanted
   if (index_queue.empty() && !repopulate_index_queue()) { return; }
   config_index = index_queue.top().second;
   index_queue.pop();
-  scores[stride].config_index = config_index;
+  score.config_index = config_index;
   // Regenerate interactions each time an exclusion is swapped in
-  live_interactions[stride].clear();
-  live_interactions[stride] = oc.gen_interactions(ns_counter, configs[config_index].exclusions);
+  score.live_interactions.clear();
+  score.live_interactions = oc.gen_interactions(ns_counter, configs[config_index].exclusions);
   // We may also want to 0 out weights here? Currently keep all same in stride position
 }
 
@@ -341,23 +355,22 @@ void config_manager::handle_empty_budget(size_t stride)
 // new configs when the budget runs out.
 void config_manager::update_live_configs()
 {
-  for (size_t stride = 0; stride < live_configs; ++stride)
+  for (size_t stride = 0; stride < max_live_configs; ++stride)
   {
-    size_t config_index = scores[stride].config_index;
     if (stride == current_champ) { continue; }
     if (scores.size() <= stride)
     {
       if (index_queue.empty() && !repopulate_index_queue()) { return; }
       scored_config sc;
       sc.config_index = index_queue.top().second;
+      interaction_vec v = oc.gen_interactions(ns_counter, configs[sc.config_index].exclusions);
+      sc.live_interactions = v;
       index_queue.pop();
       scores.push_back(sc);
-      interaction_vec v = oc.gen_interactions(ns_counter, configs[sc.config_index].exclusions);
-      live_interactions.push_back(v);
     }
-    else if (scores[stride].update_count >= configs[config_index].budget)
+    else if (scores[stride].update_count >= configs[scores[stride].config_index].budget)
     {
-      handle_empty_budget(stride);
+      handle_empty_budget(scores[stride]);
     }
   }
 }
@@ -380,7 +393,7 @@ void config_manager::update_champ()
   }
 }
 
-void config_manager::save_load_config_manager(io_buf& model_file, bool read, bool text)
+void config_manager::save_load(io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
@@ -449,12 +462,11 @@ void config_manager::save_load_config_manager(io_buf& model_file, bool read, boo
       index_queue.push(std::make_pair(priority, index));
     }
 
-    // Regenerate interactions vectors
-    live_interactions.clear();
-    for (size_t stride = 0; stride < scores.size(); ++stride)
+    for (auto& score : scores)
     {
-      interaction_vec v = oc.gen_interactions(ns_counter, configs[scores[stride].config_index].exclusions);
-      live_interactions.push_back(v);
+      score.live_interactions.clear();
+      interaction_vec v = oc.gen_interactions(ns_counter, configs[score.config_index].exclusions);
+      score.live_interactions = v;
     }
   }
   else
@@ -513,22 +525,26 @@ void config_manager::persist(metric_sink& metrics)
 }
 
 // This sets up example with correct ineractions vector
-void config_manager::configure_interactions(example* ec, size_t stride)
+void config_manager::apply_config(example* ec, size_t stride)
 {
-  if (ec == nullptr) return;
-  ec->interactions = &(live_interactions[stride]);
+  if (ec == nullptr) { return; }
+  if (stride < max_live_configs) { ec->interactions = &(scores[stride].live_interactions); }
+  else
+  {
+    THROW("fatal: trying to apply a config higher than max configs allowed");
+  }
 }
 
-void config_manager::restore_interactions(example* ec) { ec->interactions = nullptr; }
+void config_manager::revert_config(example* ec) { ec->interactions = nullptr; }
 
 template <bool is_explore>
 void predict_automl(automl& data, multi_learner& base, multi_ex& ec)
 {
   size_t champ_stride = data.cm.current_champ;
-  for (example* ex : ec) { data.cm.configure_interactions(ex, champ_stride); }
+  for (example* ex : ec) { data.cm.apply_config(ex, champ_stride); }
 
   auto restore_guard = VW::scope_exit([&data, &ec, &champ_stride] {
-    for (example* ex : ec) { data.cm.restore_interactions(ex); }
+    for (example* ex : ec) { data.cm.revert_config(ex); }
   });
 
   base.predict(ec, champ_stride);
@@ -538,12 +554,10 @@ void predict_automl(automl& data, multi_learner& base, multi_ex& ec)
 void offset_learn(
     automl& data, multi_learner& base, multi_ex& ec, const size_t stride, CB::cb_class& logged, size_t labelled_action)
 {
-  assert(ec[0]->interactions == nullptr);
-
-  for (example* ex : ec) { data.cm.configure_interactions(ex, stride); }
+  for (example* ex : ec) { data.cm.apply_config(ex, stride); }
 
   auto restore_guard = VW::scope_exit([&data, &ec, &stride] {
-    for (example* ex : ec) { data.cm.restore_interactions(ex); }
+    for (example* ex : ec) { data.cm.revert_config(ex); }
   });
 
   if (!base.learn_returns_prediction) { base.predict(ec, stride); }
@@ -580,10 +594,6 @@ void learn_automl(automl& data, multi_learner& base, multi_ex& ec)
   if (is_learn) { data.cm.county++; }
   // extra assert just bc
   assert(data.all->interactions.empty() == true);
-
-  // we force parser to set always as nullptr, see change in parser.cc
-  assert(ec[0]->interactions == nullptr);
-  // that way we can modify all.interactions without parser caring
 
   CB::cb_class logged{};
   size_t labelled_action = 0;
@@ -625,15 +635,24 @@ void persist(automl& data, metric_sink& metrics) { data.cm.persist(metrics); }
 
 void finish_example(vw& all, automl& data, multi_ex& ec)
 {
-  data.adf_learner->print_example(all, ec);
+  {
+    size_t champ_stride = data.cm.current_champ;
+    for (example* ex : ec) { data.cm.apply_config(ex, champ_stride); }
+
+    auto restore_guard = VW::scope_exit([&data, &ec, &champ_stride] {
+      for (example* ex : ec) { data.cm.revert_config(ex); }
+    });
+
+    data.adf_learner->print_example(all, ec);
+  }
+
   VW::finish_example(all, ec);
 }
 
 void save_load_aml(automl& d, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
-  if (!read || d.model_file_version >= VERSION_FILE_WITH_AUTOML)
-  { d.cm.save_load_config_manager(model_file, read, text); }
+  if (!read || d.model_file_version >= VERSION_FILE_WITH_AUTOML) { d.cm.save_load(model_file, read, text); }
 }
 
 VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
@@ -642,19 +661,23 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   vw& all = *stack_builder.get_all_pointer();
 
   size_t budget;
-  size_t live_configs;
+  size_t max_live_configs;
 
   option_group_definition new_options("Debug: automl reduction");
   new_options
-      .add(make_option("automl", live_configs).necessary().keep().default_value(3).help("set number of live configs"))
+      .add(make_option("automl", max_live_configs)
+               .necessary()
+               .keep()
+               .default_value(3)
+               .help("set number of live configs"))
       .add(make_option("budget", budget).keep().default_value(10).help("set initial budget for automl interactions"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto data = VW::make_unique<automl>(budget, all.model_file_ver, live_configs);
+  auto data = VW::make_unique<automl>(budget, all.model_file_ver, max_live_configs);
   // all is not needed but good to have for testing purposes
   data->all = &all;
-  assert(live_configs <= MAX_CONFIGS);
+  assert(max_live_configs <= MAX_CONFIGS);
 
   // override and clear all the global interactions
   // see parser.cc line 740
@@ -693,7 +716,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   {
     // fetch cb_explore_adf to call directly into the print routine twice
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
-    auto ppw = MAX_CONFIGS;
+    auto ppw = max_live_configs;
 
     auto* l =
         make_reduction_learner(std::move(data), as_multiline(base_learner), learn_automl<true>, predict_automl<true>,

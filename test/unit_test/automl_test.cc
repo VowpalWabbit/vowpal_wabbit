@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
   test_hooks.emplace(num_iterations - 1, [&num_iterations](cb_sim&, vw& all, multi_ex&) {
     VW::automl::automl* aml = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(aml->cm.county, num_iterations - 1);
-    BOOST_CHECK_GT(aml->cm.live_configs, 2);
+    BOOST_CHECK_GT(aml->cm.max_live_configs, 2);
     BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Experimenting);
     return true;
   });
@@ -344,9 +344,9 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_budget)
     BOOST_CHECK_EQUAL(aml->cm.configs[0].exclusions.size(), 0);
     BOOST_CHECK_EQUAL(aml->cm.configs[7].exclusions.size(), 1);
     BOOST_CHECK_EQUAL(aml->cm.configs[3].exclusions.size(), 1);
-    BOOST_CHECK_EQUAL(aml->cm.live_interactions[0].size(), 6);
-    BOOST_CHECK_EQUAL(aml->cm.live_interactions[1].size(), 3);
-    BOOST_CHECK_EQUAL(aml->cm.live_interactions[2].size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm.scores[0].live_interactions.size(), 6);
+    BOOST_CHECK_EQUAL(aml->cm.scores[1].live_interactions.size(), 3);
+    BOOST_CHECK_EQUAL(aml->cm.scores[2].live_interactions.size(), 1);
     return true;
   });
 
@@ -385,7 +385,9 @@ BOOST_AUTO_TEST_CASE(quadratic_exclusion_oracle_test)
 {
   VW::automl::quadratic_exclusion_oracle oc;
   std::map<namespace_index, size_t> ns_counter = {{'A', 1}, {'B', 1}, {'C', 1}, {'D', 1}, {'E', 1}};
-  std::set<namespace_index> exclusions = {'B', 'C'};
+  std::map<namespace_index, std::set<namespace_index>> exclusions;
+  exclusions['B'] = {':'};
+  exclusions['C'] = {':'};
   std::vector<std::vector<namespace_index>> interactions = oc.gen_interactions(ns_counter, exclusions);
   BOOST_CHECK_EQUAL(interactions.size(), 6);
   BOOST_CHECK_EQUAL(interactions[0][0], 'A');
@@ -433,10 +435,9 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
     auto champ_exclusions = aml->cm.configs[aml->cm.scores[aml->cm.current_champ].config_index].exclusions;
     BOOST_CHECK_EQUAL(champ_exclusions.size(), 1);
 
-    auto excluded = champ_exclusions.begin();
-    BOOST_CHECK_EQUAL(*excluded, 'T');
+    BOOST_CHECK(champ_exclusions.find('T') != champ_exclusions.end());
 
-    auto champ_interactions = aml->cm.live_interactions[aml->cm.current_champ];
+    auto champ_interactions = aml->cm.scores[aml->cm.current_champ].live_interactions;
     BOOST_CHECK_EQUAL(champ_interactions.size(), 6);
 
     return true;
