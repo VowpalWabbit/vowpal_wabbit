@@ -365,7 +365,7 @@ inline size_t bin_text_read_write_fixed_validated(
 
 namespace VW
 {
-template<typename T>
+template <typename T>
 size_t process_model_field(io_buf& io, T& var, bool read, VW::string_view name, bool text)
 {
   auto* data = reinterpret_cast<char*>(&var);
@@ -381,7 +381,7 @@ size_t process_model_field(io_buf& io, T& var, bool read, VW::string_view name, 
 
   return io.bin_write_fixed(data, len);
 }
-}
+}  // namespace VW
 
 #define writeit(what, str)                                                                  \
   do                                                                                        \
