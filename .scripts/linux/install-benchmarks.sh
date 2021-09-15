@@ -14,9 +14,7 @@ cd benchmark/googletest
 git checkout release-1.11.0
 # Go to the library root directory
 cd ..
-# Make a build directory to place the build output.
-cmake -E make_directory "build"
 # Generate build system files with cmake.
-cmake -E chdir "build" cmake -DCMAKE_BUILD_TYPE=Release ../
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 # Install globally
 sudo cmake --build "build" --config Release --target install

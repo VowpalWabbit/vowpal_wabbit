@@ -16,14 +16,14 @@ namespace parsers
 {
 namespace flatbuffer
 {
-int flatbuffer_to_examples(vw* all, v_array<example*>& examples);
+int flatbuffer_to_examples(vw* all, io_buf& buf, v_array<example*>& examples);
 
 class parser
 {
 public:
   parser() = default;
   const VW::parsers::flatbuffer::ExampleRoot* data();
-  bool parse_examples(vw* all, v_array<example*>& examples, uint8_t* buffer_pointer = nullptr);
+  bool parse_examples(vw* all, io_buf& buf, v_array<example*>& examples, uint8_t* buffer_pointer = nullptr);
 
 private:
   const VW::parsers::flatbuffer::ExampleRoot* _data;
@@ -37,7 +37,7 @@ private:
   uint32_t _labeled_action = 0;
   uint64_t _c_hash = 0;
 
-  bool parse(vw* all, uint8_t* buffer_pointer = nullptr);
+  bool parse(io_buf& buf, uint8_t* buffer_pointer = nullptr);
   void process_collection_item(vw* all, v_array<example*>& examples);
   void parse_example(vw* all, example* ae, const Example* eg);
   void parse_multi_example(vw* all, example* ae, const MultiExample* eg);

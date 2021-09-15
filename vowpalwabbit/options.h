@@ -322,7 +322,7 @@ struct options_name_extractor : options_i
 
     generated_name.clear();
 
-    for (auto opt : group.m_options)
+    for (const auto& opt : group.m_options)
     {
       if (opt->m_necessary)
       {

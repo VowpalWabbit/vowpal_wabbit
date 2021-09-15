@@ -68,7 +68,8 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_standalone_example)
 
   v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(all));
-  all->flat_converter->parse_examples(all, examples, buf);
+  io_buf unused_buffer;
+  all->flat_converter->parse_examples(all, unused_buffer, examples, buf);
 
   auto example = all->flat_converter->data()->example_obj_as_Example();
   BOOST_CHECK_EQUAL(example->namespaces()->Length(), 1);
@@ -111,7 +112,8 @@ BOOST_AUTO_TEST_CASE(test_flatbuffer_collection)
 
   v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(all));
-  all->flat_converter->parse_examples(all, examples, buf);
+  io_buf unused_buffer;
+  all->flat_converter->parse_examples(all, unused_buffer, examples, buf);
 
   auto collection_examples = all->flat_converter->data()->example_obj_as_ExampleCollection()->examples();
   BOOST_CHECK_EQUAL(collection_examples->Length(), 1);

@@ -10,6 +10,7 @@
 
 #include "reductions.h"
 #include "rand48.h"
+#include "vw_math.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -76,11 +77,10 @@ struct recall_tree
   bool randomized_routing;
 };
 
-float to_prob(float x)
+VW_STD14_CONSTEXPR float to_prob(float x)
 {
-  static const float alpha = 2.0f;
-  // http://stackoverflow.com/questions/2789481/problem-calling-stdmax
-  return std::max(0.f, std::min(1.f, 0.5f * (1.0f + alpha * x)));
+  constexpr float alpha = 2.0f;
+  return VW::math::clamp(0.5f * (1.0f + alpha * x), 0.f, 1.f);
 }
 
 void init_tree(recall_tree& b, uint32_t root, uint32_t depth, uint32_t& routers_used)
