@@ -24,12 +24,12 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i&);
 
 namespace helper
 {
-void fail_if_enabled(vw&, std::string);
+void fail_if_enabled(vw&, const std::string&);
 bool cmpf(float, float, float);
 // void print_weights_nonzero(vw*, size_t, dense_parameters&);
 }  // namespace helper
 
-const size_t MAX_CONFIGS = 10;
+constexpr size_t MAX_CONFIGS = 10;
 
 struct scored_config
 {

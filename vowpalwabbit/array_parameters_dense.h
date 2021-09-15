@@ -117,7 +117,7 @@ public:
   void copy_offsets(const size_t from, const size_t to, const size_t params_per_problem)
   {
     std::int64_t diff = to - from;
-    for (iterator iter = begin(); iter != end(); ++iter)
+    for (auto iter = begin(); iter != end(); ++iter)
     {
       size_t actual_index = iter.index() >> stride_shift();
       size_t actual_type = actual_index & (params_per_problem - 1);

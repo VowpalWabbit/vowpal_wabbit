@@ -186,7 +186,6 @@ inline void increment_offset(example& ex, const size_t increment, const size_t i
 
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 {
-  // std::cerr<<increment*i<<std::endl;
   for (auto& ec : ec_seq) { ec->ft_offset += static_cast<uint32_t>(increment * i); }
   debug_increment_depth(ec_seq);
 }
