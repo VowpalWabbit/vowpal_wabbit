@@ -155,10 +155,8 @@ void save_load_header(
     }
 
     char model = 'm';
-    bytes_read_write +=
-        bin_text_read_write_fixed_validated(model_file, &model, 1, read, msg, text);
-    if (model != 'm') { THROW("file is not a model file")
-    }
+    bytes_read_write += bin_text_read_write_fixed_validated(model_file, &model, 1, read, msg, text);
+    if (model != 'm') { THROW("file is not a model file") }
 
     msg << "Min label:" << all.sd->min_label << "\n";
     bytes_read_write += bin_text_read_write_fixed_validated(
@@ -402,7 +400,7 @@ void save_load_header(
       if (len > buff2.size()) { buff2.resize(len + 1); }
       memcpy(buff2.data(), serialized_keep_options.c_str(), len + 1);
       *(buff2.data() + len) = 0;
-      bytes_read_write += bin_text_read_write(model_file, buff2.data(), len + 1, // len+1 to write a \0
+      bytes_read_write += bin_text_read_write(model_file, buff2.data(), len + 1,  // len+1 to write a \0
           read, msg, text);
     }
 

@@ -961,20 +961,20 @@ void save_load_online_state(
       sizeof(all.sd->weighted_labeled_examples), read, msg, text);
 
   msg << "weighted_labels " << all.sd->weighted_labels << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->weighted_labels),
-      sizeof(all.sd->weighted_labels), read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&all.sd->weighted_labels), sizeof(all.sd->weighted_labels), read, msg, text);
 
   msg << "weighted_unlabeled_examples " << all.sd->weighted_unlabeled_examples << "\n";
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->weighted_unlabeled_examples),
       sizeof(all.sd->weighted_unlabeled_examples), read, msg, text);
 
   msg << "example_number " << all.sd->example_number << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->example_number),
-      sizeof(all.sd->example_number), read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&all.sd->example_number), sizeof(all.sd->example_number), read, msg, text);
 
   msg << "total_features " << all.sd->total_features << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->total_features),
-      sizeof(all.sd->total_features), read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&all.sd->total_features), sizeof(all.sd->total_features), read, msg, text);
 
   if (!read || all.model_file_ver >= VERSION_SAVE_RESUME_FIX)
   {
@@ -998,8 +998,7 @@ void save_load_online_state(
     else  // backwards compatiblity.
     {
       size_t temp_pass = static_cast<size_t>(all.current_pass);
-      bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&temp_pass), sizeof(temp_pass), read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&temp_pass), sizeof(temp_pass), read, msg, text);
       all.current_pass = temp_pass;
     }
   }

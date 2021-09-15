@@ -320,8 +320,7 @@ inline size_t bin_text_write(io_buf& io, char* data, size_t len, std::stringstre
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)
-inline size_t bin_text_read_write(
-    io_buf& io, char* data, size_t len, bool read, std::stringstream& msg, bool text)
+inline size_t bin_text_read_write(io_buf& io, char* data, size_t len, bool read, std::stringstream& msg, bool text)
 {
   if (read) { return bin_read(io, data, len); }
   return bin_text_write(io, data, len, msg, text);
@@ -357,17 +356,17 @@ inline size_t bin_text_read_write_fixed_validated(
   return nbytes;
 }
 
-#define writeit(what, str)                                                                  \
-  do                                                                                        \
-  {                                                                                         \
-    msg << str << " = " << what << " ";                                                     \
+#define writeit(what, str)                                                              \
+  do                                                                                    \
+  {                                                                                     \
+    msg << str << " = " << what << " ";                                                 \
     bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), read, msg, text); \
   } while (0);
 
-#define writeitvar(what, str, mywhat)                                                           \
-  auto mywhat = (what);                                                                         \
-  do                                                                                            \
-  {                                                                                             \
-    msg << str << " = " << mywhat << " ";                                                       \
+#define writeitvar(what, str, mywhat)                                                       \
+  auto mywhat = (what);                                                                     \
+  do                                                                                        \
+  {                                                                                         \
+    msg << str << " = " << mywhat << " ";                                                   \
     bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), read, msg, text); \
   } while (0);

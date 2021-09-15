@@ -282,8 +282,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
     total_size = static_cast<uint64_t>(sm.marginals.size());
     msg << "marginals size = " << total_size << "\n";
   }
-  bin_text_read_write_fixed_validated(
-      io, reinterpret_cast<char*>(&total_size), sizeof(total_size), read, msg, text);
+  bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&total_size), sizeof(total_size), read, msg, text);
 
   auto iter = sm.marginals.begin();
   for (size_t i = 0; i < total_size; ++i)
@@ -322,8 +321,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
       total_size = static_cast<uint64_t>(sm.expert_state.size());
       msg << "expert_state size = " << total_size << "\n";
     }
-    bin_text_read_write_fixed_validated(
-        io, reinterpret_cast<char*>(&total_size), sizeof(total_size), read, msg, text);
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&total_size), sizeof(total_size), read, msg, text);
 
     auto exp_iter = sm.expert_state.begin();
     for (size_t i = 0; i < total_size; ++i)

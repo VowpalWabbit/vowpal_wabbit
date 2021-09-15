@@ -411,8 +411,7 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
         model_file, reinterpret_cast<char*>(&b.predictors_used), sizeof(b.predictors_used), read, msg, text);
 
     msg << "progress = " << b.progress << " ";
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&b.progress), sizeof(b.progress), read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&b.progress), sizeof(b.progress), read, msg, text);
 
     msg << "swap_resist = " << b.swap_resist << "\n";
     bin_text_read_write_fixed(
@@ -438,8 +437,7 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
           model_file, reinterpret_cast<char*>(&n.min_count), sizeof(n.min_count), read, msg, text);
 
       msg << " internal = " << n.internal;
-      bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&n.internal), sizeof(n.internal), read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&n.internal), sizeof(n.internal), read, msg, text);
 
       if (n.internal)
       {
@@ -454,8 +452,7 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
         bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&n.right), sizeof(n.right), read, msg, text);
 
         msg << " norm_Eh = " << n.norm_Eh;
-        bin_text_read_write_fixed(
-            model_file, reinterpret_cast<char*>(&n.norm_Eh), sizeof(n.norm_Eh), read, msg, text);
+        bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&n.norm_Eh), sizeof(n.norm_Eh), read, msg, text);
 
         msg << " Eh = " << n.Eh;
         bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&n.Eh), sizeof(n.Eh), read, msg, text);

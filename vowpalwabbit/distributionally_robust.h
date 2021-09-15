@@ -36,8 +36,7 @@ namespace distributionally_robust
       if (model_file.num_files() == 0) { return; }
       std::stringstream msg;
       if (!read) { msg << "_duals_unbounded " << unbounded << "\n"; }
-      bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&unbounded), sizeof(unbounded), read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&unbounded), sizeof(unbounded), read, msg, text);
 
       if (!read) { msg << "_duals_kappa " << kappa << "\n"; }
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&kappa), sizeof(kappa), read, msg, text);
@@ -188,8 +187,7 @@ namespace distributionally_robust
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&sumwsqr), sizeof(sumwsqr), read, msg, text);
 
       if (!read) { msg << "_chisq_chi_sumwsqrsq " << sumwsqrsq << "\n"; }
-      bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&sumwsqrsq), sizeof(sumwsqrsq), read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&sumwsqrsq), sizeof(sumwsqrsq), read, msg, text);
 
       if (!read) { msg << "_chisq_chi_delta " << delta << "\n"; }
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&delta), sizeof(delta), read, msg, text);

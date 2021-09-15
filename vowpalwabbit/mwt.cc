@@ -185,8 +185,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 
   // total
   msg << "total: " << c.total;
-  bin_text_read_write_fixed_validated(
-      model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), read, msg, text);
+  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), read, msg, text);
 
   // policies
   size_t policies_size = c.policies.size();
@@ -200,8 +199,8 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
     for (feature_index& policy : c.policies) msg << policy << " ";
   }
 
-  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(c.policies.begin()),
-      policies_size * sizeof(feature_index), read, msg, text);
+  bin_text_read_write_fixed_validated(
+      model_file, reinterpret_cast<char*>(c.policies.begin()), policies_size * sizeof(feature_index), read, msg, text);
 
   // c.evals is already initialized nicely to the same size as the regressor.
   for (feature_index& policy : c.policies)
