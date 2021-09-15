@@ -11,6 +11,7 @@
 #include "active.h"
 #include "vw_exception.h"
 #include "shared_data.h"
+#include "vw_math.h"
 #include "vw_versions.h"
 
 #include "io/logger.h"
@@ -24,7 +25,8 @@ float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
   const float b = c0 * (std::log(k + 1.f) + 0.0001f) / (k + 0.0001f);
   const float sb = std::sqrt(b);
-  avg_loss = std::min(1.f, std::max(0.f, avg_loss));  // loss should be in [0,1]
+  // loss should be in [0,1]
+  avg_loss = VW::math::clamp(avg_loss, 0.f, 1.f);
 
   const float sl = std::sqrt(avg_loss) + std::sqrt(avg_loss + g);
   if (g <= sb * sl + b) { return 1; }
@@ -146,14 +148,15 @@ void return_active_example(vw& all, active& a, example& ec)
 void save_load(active& a, io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if(a._model_version >= VW::version_definitions::VERSION_FILE_WITH_ACTIVE_SEEN_LABELS)
+  if (a._model_version >= VW::version_definitions::VERSION_FILE_WITH_ACTIVE_SEEN_LABELS)
   {
-      std::stringstream msg;
-      if (!read) { msg << fmt::format("Active: min_seen_label {}, max_seen_label: {}\n", a._min_seen_label, a._max_seen_label); }
-      bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&a._min_seen_label),
-          sizeof(a._min_seen_label), "", read, msg, text);
-      bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&a._max_seen_label),
-          sizeof(a._max_seen_label), "", read, msg, text);
+    std::stringstream msg;
+    if (!read)
+    { msg << fmt::format("Active: min_seen_label {}, max_seen_label: {}\n", a._min_seen_label, a._max_seen_label); }
+    bin_text_read_write_fixed_validated(
+        io, reinterpret_cast<char*>(&a._min_seen_label), sizeof(a._min_seen_label), "", read, msg, text);
+    bin_text_read_write_fixed_validated(
+        io, reinterpret_cast<char*>(&a._max_seen_label), sizeof(a._max_seen_label), "", read, msg, text);
   }
 }
 
