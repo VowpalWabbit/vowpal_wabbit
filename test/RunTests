@@ -2504,13 +2504,13 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/corrupt_weights_gd_mf.stderr
 
 # Test 351: test privacy_activation command line argument
-{VW} --privacy_activation -d train-sets/privacy_dataset --invert_hash readable_model_privacy.txt --cbify 2 --cb_adf -f  model_privacy.vw
+{VW} --privacy_activation -d train-sets/privacy_dataset --invert_hash readable_model_privacy.txt --cbify 2 --cb_adf -f model_privacy.vw
     train-sets/ref/privacy_dataset.stderr
     model-sets/model_privacy.vw
     pred-sets/ref/readable_model_privacy.txt  
 
 # Test 352: test privacy_activation command line argument with no tags input
-{VW} --privacy_activation -d train-sets/privacy_dataset_no_tags --invert_hash readable_model_privacy_no_tags.txt --cbify 2 --cb_adf -f  model_privacy_no_tags.vw
+{VW} --privacy_activation -d train-sets/privacy_dataset_no_tags --invert_hash readable_model_privacy_no_tags.txt --cbify 2 --cb_adf -f model_privacy_no_tags.vw
     train-sets/ref/privacy_no_tags.stderr
     model-sets/model_privacy_no_tags.vw
     pred-sets/ref/readable_model_privacy_no_tags.txt  
