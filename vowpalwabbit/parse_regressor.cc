@@ -132,7 +132,7 @@ void save_load_header(
       buff2[std::min(v_length, default_buf_size) - 1] = '\0';
     }
     bytes_read_write += bin_text_read_write(model_file, buff2.data(), v_length, read, msg, text);
-    all.model_file_ver = VW::version_struct{buff2.data()};   // stored in all to check save_resume fix in gd
+    all.model_file_ver = VW::version_struct{buff2.data()};  // stored in all to check save_resume fix in gd
     VW::validate_version(all);
 
     if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
