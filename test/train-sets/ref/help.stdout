@@ -43,6 +43,8 @@ Diagnostic options:
 Randomization options:
   --random_seed arg     seed random number generator
 Feature options:
+  --privacy_activation            Helps in aggregated learning saving only the 
+                                  features which cross 10 users
   --hash arg                      how to hash the features. Available options: 
                                   strings, all
   --hash_seed arg (=0, )          seed for hash function
