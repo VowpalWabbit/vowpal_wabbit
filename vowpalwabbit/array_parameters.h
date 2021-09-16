@@ -100,7 +100,7 @@ public:
   typedef sparse_iterator<weight> iterator;
   typedef sparse_iterator<const weight> const_iterator;
 
-  sparse_parameters(size_t length, uint32_t stride_shift)
+  sparse_parameters(size_t length, uint32_t stride_shift = 0)
       : _map()
       , _weight_mask((length << stride_shift) - 1)
       , _stride_shift(stride_shift)
@@ -108,17 +108,6 @@ public:
       , _delete(false)
       , _default_func(nullptr)
       , _privacy_activation_threshold(0)
-  {
-  }
-
-  sparse_parameters(size_t length, size_t privacy_activation_threshold, uint32_t stride_shift)
-      : _map()
-      , _weight_mask((length << stride_shift) - 1)
-      , _stride_shift(stride_shift)
-      , _seeded(false)
-      , _delete(false)
-      , _default_func(nullptr)
-      , _privacy_activation_threshold(privacy_activation_threshold)
   {
   }
 
@@ -228,6 +217,11 @@ public:
   uint32_t stride_shift() const { return _stride_shift; }
 
   void stride_shift(uint32_t stride_shift) { _stride_shift = stride_shift; }
+
+  void privacy_activation_threshold(size_t privacy_activation_threshold)
+  {
+    _privacy_activation_threshold = privacy_activation_threshold;
+  }
 
 #ifndef _WIN32
   void share(size_t /* length */) { THROW_OR_RETURN("Operation not supported on Windows"); }

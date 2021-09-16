@@ -66,21 +66,12 @@ private:
 public:
   typedef dense_iterator<weight> iterator;
   typedef dense_iterator<const weight> const_iterator;
-  dense_parameters(size_t length, uint32_t stride_shift)
+  dense_parameters(size_t length, uint32_t stride_shift = 0)
       : _begin(calloc_mergable_or_throw<weight>(length << stride_shift))
       , _weight_mask((length << stride_shift) - 1)
       , _stride_shift(stride_shift)
       , _seeded(false)
       , _privacy_activation_threshold(0)
-  {
-  }
-
-  dense_parameters(size_t length, size_t privacy_activation_threshold, uint32_t stride_shift)
-      : _begin(calloc_mergable_or_throw<weight>(length << stride_shift))
-      , _weight_mask((length << stride_shift) - 1)
-      , _stride_shift(stride_shift)
-      , _seeded(false)
-      , _privacy_activation_threshold(privacy_activation_threshold)
   {
   }
 
@@ -166,6 +157,11 @@ public:
   uint32_t stride_shift() const { return _stride_shift; }
 
   void stride_shift(uint32_t stride_shift) { _stride_shift = stride_shift; }
+
+  void privacy_activation_threshold(size_t privacy_activation_threshold)
+  {
+    _privacy_activation_threshold = privacy_activation_threshold;
+  }
 
 #ifndef _WIN32
 #  ifndef DISABLE_SHARED_WEIGHTS

@@ -68,11 +68,8 @@ void initialize_regressor(vw& all, T& weights)
   {
     uint32_t ss = weights.stride_shift();
     weights.~T();  // dealloc so that we can realloc, now with a known size
-    if (all.privacy_activation) { new (&weights) T(length, all.privacy_activation_threshold, ss); }
-    else
-    {
-      new (&weights) T(length, ss);
-    }
+    new (&weights) T(length, ss);
+    if (all.privacy_activation) { weights.privacy_activation_threshold(all.privacy_activation_threshold); }
   }
   catch (const VW::vw_exception&)
   {

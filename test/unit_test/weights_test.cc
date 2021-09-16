@@ -28,7 +28,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_feature_is_activated, T, weight_types)
   // unit test to check if number of bits equal to the threshold in
   // bitset set to 1 for a feature returns true
   int threshold = 10;
-  T w(LENGTH, threshold, STRIDE_SHIFT);
+  T w(LENGTH, STRIDE_SHIFT);
+  w.privacy_activation_threshold(threshold);
   int feature_index = 0;
   // function to set the bits in bitset to 1 equal to the threshold
   for (int tag_hash = 0; tag_hash < threshold; tag_hash++)
@@ -44,7 +45,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_feature_not_activated, T, weight_types)
   // unit test to check if number of bits less than the threshold in
   // bitset set to 1 for a feature returns false
   int threshold = 10;
-  T w(LENGTH, threshold, STRIDE_SHIFT);
+  T w(LENGTH, STRIDE_SHIFT);
+  w.privacy_activation_threshold(threshold);
   int feature_index = 0;
   // function to set the bits in bitset to 1 equal to the (threshold-1)
   for (int tag_hash = 0; tag_hash < (threshold - 1); tag_hash++)
