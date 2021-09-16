@@ -67,7 +67,8 @@ static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
 
 static void benchmark_cb_adf_learn_privacy_preserving(benchmark::State& state, int feature_count)
 {
-  auto vw = VW::initialize("--privacy_activation --cb_explore_adf --epsilon 0.1 --quiet -q ::", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(
+      "--privacy_activation --cb_explore_adf --epsilon 0.1 --quiet -q ::", nullptr, false, nullptr, nullptr);
   multi_ex examples;
   examples.push_back(VW::read_example(*vw, std::string("shared tag1| s_1 s_2")));
   examples.push_back(VW::read_example(*vw, get_x_string_fts(feature_count)));
