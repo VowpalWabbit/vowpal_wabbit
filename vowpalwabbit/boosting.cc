@@ -257,7 +257,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   if (model_file.num_files() == 0) return;
   std::stringstream os;
   os << "boosts " << o.N << endl;
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&(o.N)), sizeof(o.N), "", read, os, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&(o.N)), sizeof(o.N), read, os, text);
 
   if (read)
   {
@@ -269,7 +269,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     if (read)
     {
       float f;
-      model_file.bin_read_fixed(reinterpret_cast<char*>(&f), sizeof(f), "");
+      model_file.bin_read_fixed(reinterpret_cast<char*>(&f), sizeof(f));
       o.alpha[i] = f;
     }
     else
@@ -283,7 +283,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     if (read)
     {
       float f;
-      model_file.bin_read_fixed(reinterpret_cast<char*>(&f), sizeof(f), "");
+      model_file.bin_read_fixed(reinterpret_cast<char*>(&f), sizeof(f));
       o.v[i] = f;
     }
     else
@@ -323,7 +323,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
   if (model_file.num_files() == 0) return;
   std::stringstream os;
   os << "boosts " << o.N << endl;
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&(o.N)), sizeof(o.N), "", read, os, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&(o.N)), sizeof(o.N), read, os, text);
 
   if (read) o.alpha.resize(o.N);
 
@@ -331,7 +331,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
     if (read)
     {
       float f;
-      model_file.bin_read_fixed(reinterpret_cast<char*>(&f), sizeof(f), "");
+      model_file.bin_read_fixed(reinterpret_cast<char*>(&f), sizeof(f));
       o.alpha[i] = f;
     }
     else
