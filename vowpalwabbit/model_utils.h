@@ -26,9 +26,7 @@ size_t write_text_mode_output(io_buf& io, const T& var, const std::string& name_
   std::string message;
   // If the user has supplied a template string then use that.
   if (name_or_readable_field_template.find("{}") != VW::string_view::npos)
-  {
-    message = fmt::format(name_or_readable_field_template, var);
-  }
+  { message = fmt::format(name_or_readable_field_template, var); }
   else
   {
     // Use the default template string.
