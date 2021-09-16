@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "rand_state.h"
 #include "reductions_fwd.h"
 #include "distributionally_robust.h"
 #include "constant.h"  // NUM_NAMESPACES
@@ -29,6 +30,7 @@ void fail_if_enabled(vw&, const std::set<std::string>&);
 }  // namespace details
 
 constexpr size_t MAX_CONFIGS = 10;
+constexpr size_t CONGIGS_PER_CHAMP_CHANGE = 5;
 
 struct scored_config
 {
@@ -100,6 +102,8 @@ struct config_manager : config_manager_base
   size_t current_champ = 0;
   size_t budget;
   size_t max_live_configs;
+  uint64_t seed;
+  rand_state random_state;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, size_t> ns_counter;
@@ -113,10 +117,7 @@ struct config_manager : config_manager_base
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, size_t>> index_queue;
 
-  // Stores new namespaces seen between champ changes (and config generations)
-  std::set<namespace_index> new_namespaces;
-
-  config_manager(size_t, size_t);
+  config_manager(size_t, size_t, uint64_t);
 
   void one_step(const multi_ex&) override;
   void apply_config(example*, size_t) override;
@@ -143,8 +144,8 @@ struct automl
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   VW::version_struct model_file_version;
   ACTION_SCORE::action_scores champ_a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  automl(size_t starting_budget, VW::version_struct model_file_version, size_t max_live_configs)
-      : cm(starting_budget, max_live_configs), model_file_version(model_file_version)
+  automl(size_t starting_budget, VW::version_struct model_file_version, size_t max_live_configs, uint64_t seed)
+      : cm(starting_budget, max_live_configs, seed), model_file_version(model_file_version)
   {
   }
 };
