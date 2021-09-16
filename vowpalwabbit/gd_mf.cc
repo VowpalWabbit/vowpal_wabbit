@@ -273,7 +273,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       size_t K = d.rank * 2 + 1;
       std::stringstream msg;
       msg << i << " ";
-      brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), "", read, msg, text);
+      brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       if (brw != 0)
       {
         weight* w_i = &(all.weights.strided_index(i));
@@ -281,13 +281,13 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
         {
           weight* v = w_i + k;
           msg << v << " ";
-          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), "", read, msg, text);
+          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
       }
       if (text)
       {
         msg << "\n";
-        brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
+        brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
 
       if (!read) ++i;
