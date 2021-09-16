@@ -64,10 +64,11 @@ public:
 class sparse_parameters
 {
 private:
-  struct tag_hash_info // define struct to store the information of the tag hash
+  // struct to store the tag hash and if it is set or not
+  struct tag_hash_info
   {
     uint64_t tag_hash;
-    bool is_set=false;
+    bool is_set = false;
   };
   // This must be mutable because the const operator[] must be able to intialize default weights to return.
   mutable weight_map _map;
@@ -76,7 +77,7 @@ private:
   bool _seeded;  // whether the instance is sharing model state with others
   bool _delete;
   std::function<void(weight*, uint64_t)> _default_func;
-  std::unordered_map<uint64_t, std::bitset<32>> _feature_bit_vector; // define the 32-bitset for each feature
+  std::unordered_map<uint64_t, std::bitset<32>> _feature_bit_vector;  // define the bitset for each feature
   tag_hash_info _tag_info;
 
   // It is marked const so it can be used from both const and non const operator[]
@@ -115,23 +116,24 @@ public:
 
   bool not_null() { return (_weight_mask > 0 && !_map.empty()); }
 
-  void set_tag(uint64_t tag_hash) // function to store the tag hash for a feature and set it to true
+  void set_tag(uint64_t tag_hash)
   {
-    _tag_info.tag_hash=tag_hash;
-    _tag_info.is_set=true;
-  }
-  
-  void turn_on_bit(uint64_t feature_index) // function to lookup a bit for a feature in the 32-bitset using the 5-bit tag hash and set it to 1.
-  {
-    if(_tag_info.is_set) 
-    {
-      _feature_bit_vector[feature_index & _weight_mask][_tag_info.tag_hash]=1;
-    }
+    _tag_info.tag_hash = tag_hash;
+    _tag_info.is_set = true;
   }
 
-  void unset_tag(){ _tag_info.is_set=false;} // function to set the tag to false after an example is trained on
+  // function to lookup a bit for a feature in the bitset using the
+  // tag hash and turn the bit on
+  void turn_on_bit(uint64_t feature_index)
+  {
+    if (_tag_info.is_set) { _feature_bit_vector[feature_index & _weight_mask][_tag_info.tag_hash] = 1; }
+  }
 
-  bool is_activated(uint64_t index){return _feature_bit_vector[index].count()>=10;} // function to check if the number of bits set to 1 are greater than a threshold for a feature 
+  void unset_tag() { _tag_info.is_set = false; }
+
+  // function to check if the number of bits set to 1 are greater than a threshold for a feature
+  // TODO make 10 a cli arg
+  bool is_activated(uint64_t index) { return _feature_bit_vector[index].count() >= 10; }
 
   sparse_parameters(const sparse_parameters& other) = delete;
   sparse_parameters& operator=(const sparse_parameters& other) = delete;

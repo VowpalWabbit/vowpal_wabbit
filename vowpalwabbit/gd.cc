@@ -113,7 +113,8 @@ inline void update_feature(float& update, float x, float& fw)
   bool modify = x < FLT_MAX && x > -FLT_MAX && (feature_mask_off || fw != 0.);
   if (modify)
   {
-    if VW_STD17_CONSTEXPR (spare != 0) { x *= w[spare]; }
+    if
+      VW_STD17_CONSTEXPR(spare != 0) { x *= w[spare]; }
     w[0] += update * x;
   }
 }
@@ -122,26 +123,28 @@ inline void update_feature(float& update, float x, float& fw)
 template <bool sqrt_rate, size_t adaptive, size_t normalized>
 float average_update(float total_weight, float normalized_sum_norm_x, float neg_norm_power)
 {
-  if VW_STD17_CONSTEXPR (normalized != 0)
-  {
-    if (sqrt_rate)
+  if
+    VW_STD17_CONSTEXPR(normalized != 0)
     {
-      float avg_norm = (total_weight / normalized_sum_norm_x);
-      if (adaptive)
-        return std::sqrt(avg_norm);
+      if (sqrt_rate)
+      {
+        float avg_norm = (total_weight / normalized_sum_norm_x);
+        if (adaptive)
+          return std::sqrt(avg_norm);
+        else
+          return avg_norm;
+      }
       else
-        return avg_norm;
+        return powf((normalized_sum_norm_x / total_weight), neg_norm_power);
     }
-    else
-      return powf((normalized_sum_norm_x / total_weight), neg_norm_power);
-  }
   return 1.f;
 }
 
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void train(gd& g, example& ec, float update)
 {
-  if VW_STD17_CONSTEXPR (normalized != 0) { update *= g.update_multiplier; }
+  if
+    VW_STD17_CONSTEXPR(normalized != 0) { update *= g.update_multiplier; }
   VW_DBG(ec) << "gd: train() spare=" << spare << std::endl;
   foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
 }
@@ -466,19 +469,20 @@ inline float compute_rate_decay(power_data& s, float& fw)
     else
       rate_decay = powf(w[adaptive], s.minus_power_t);
   }
-  if VW_STD17_CONSTEXPR (normalized != 0)
-  {
-    if (sqrt_rate)
+  if
+    VW_STD17_CONSTEXPR(normalized != 0)
     {
-      float inv_norm = 1.f / w[normalized];
-      if (adaptive)
-        rate_decay *= inv_norm;
+      if (sqrt_rate)
+      {
+        float inv_norm = 1.f / w[normalized];
+        if (adaptive)
+          rate_decay *= inv_norm;
+        else
+          rate_decay *= inv_norm * inv_norm;
+      }
       else
-        rate_decay *= inv_norm * inv_norm;
+        rate_decay *= powf(w[normalized] * w[normalized], s.neg_norm_power);
     }
-    else
-      rate_decay *= powf(w[normalized] * w[normalized], s.neg_norm_power);
-  }
   return rate_decay;
 }
 
@@ -516,35 +520,36 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       w = nd.extra_state;
     }
     if (adaptive) w[adaptive] += nd.grad_squared * x2;
-    if VW_STD17_CONSTEXPR (normalized != 0)
-    {
-      float x_abs = fabsf(x);
-      if (x_abs > w[normalized])  // new scale discovered
+    if
+      VW_STD17_CONSTEXPR(normalized != 0)
       {
-        if (w[normalized] >
-            0.)  // If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
+        float x_abs = fabsf(x);
+        if (x_abs > w[normalized])  // new scale discovered
         {
-          if (sqrt_rate)
+          if (w[normalized] >
+              0.)  // If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
           {
-            float rescale = w[normalized] / x_abs;
-            w[0] *= (adaptive ? rescale : rescale * rescale);
+            if (sqrt_rate)
+            {
+              float rescale = w[normalized] / x_abs;
+              w[0] *= (adaptive ? rescale : rescale * rescale);
+            }
+            else
+            {
+              float rescale = x_abs / w[normalized];
+              w[0] *= powf(rescale * rescale, nd.pd.neg_norm_power);
+            }
           }
-          else
-          {
-            float rescale = x_abs / w[normalized];
-            w[0] *= powf(rescale * rescale, nd.pd.neg_norm_power);
-          }
+          w[normalized] = x_abs;
         }
-        w[normalized] = x_abs;
+        float norm_x2 = x2 / (w[normalized] * w[normalized]);
+        if (x2 > x2_max)
+        {
+          norm_x2 = 1;
+          logger::errlog_error("your features have too much magnitude");
+        }
+        nd.norm_x += norm_x2;
       }
-      float norm_x2 = x2 / (w[normalized] * w[normalized]);
-      if (x2 > x2_max)
-      {
-        norm_x2 = 1;
-        logger::errlog_error("your features have too much magnitude");
-      }
-      nd.norm_x += norm_x2;
-    }
     w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, w[0]);
     nd.pred_per_update += x2 * w[spare];
   }
@@ -567,23 +572,24 @@ float get_pred_per_update(gd& g, example& ec)
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}, {0}};
   foreach_feature<norm_data,
       pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
-  if VW_STD17_CONSTEXPR (normalized != 0)
-  {
-    if (!stateless)
+  if
+    VW_STD17_CONSTEXPR(normalized != 0)
     {
-      g.all->normalized_sum_norm_x += (static_cast<double>(ec.weight)) * nd.norm_x;
-      g.total_weight += ec.weight;
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(
-          static_cast<float>(g.total_weight), static_cast<float>(g.all->normalized_sum_norm_x), g.neg_norm_power);
+      if (!stateless)
+      {
+        g.all->normalized_sum_norm_x += (static_cast<double>(ec.weight)) * nd.norm_x;
+        g.total_weight += ec.weight;
+        g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(
+            static_cast<float>(g.total_weight), static_cast<float>(g.all->normalized_sum_norm_x), g.neg_norm_power);
+      }
+      else
+      {
+        float nsnx = (static_cast<float>(g.all->normalized_sum_norm_x)) + ec.weight * nd.norm_x;
+        float tw = static_cast<float>(g.total_weight) + ec.weight;
+        g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
+      }
+      nd.pred_per_update *= g.update_multiplier;
     }
-    else
-    {
-      float nsnx = (static_cast<float>(g.all->normalized_sum_norm_x)) + ec.weight * nd.norm_x;
-      float tw = static_cast<float>(g.total_weight) + ec.weight;
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
-    }
-    nd.pred_per_update *= g.update_multiplier;
-  }
   return nd.pred_per_update;
 }
 
@@ -591,8 +597,9 @@ template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, siz
     bool stateless>
 float sensitivity(gd& g, example& ec)
 {
-  if VW_STD17_CONSTEXPR (adaptive || normalized)
-    return get_pred_per_update<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, stateless>(g, ec);
+  if
+    VW_STD17_CONSTEXPR(adaptive || normalized)
+  return get_pred_per_update<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, stateless>(g, ec);
   else
   {
     _UNUSED(g);
@@ -672,17 +679,31 @@ void update(gd& g, base_learner&, example& ec)
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
            g, ec)) != 0.)
   {
-    if(g.all->weights.sparse)
+    if (g.all->weights.sparse)
     {
-      g.all->weights.sparse_weights.set_tag(ec.tag_hash); // find the 5-bit hash of the tag for sparse weights
-      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-      g.all->weights.sparse_weights.unset_tag(); // set the tag to false after the example has been trained on    
+      if (g.all->privacy_activation)
+      {
+        g.all->weights.sparse_weights.set_tag(ec.tag_hash);
+        train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+        g.all->weights.sparse_weights.unset_tag();
+      }
+      else
+      {
+        train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+      }
     }
     else
     {
-      g.all->weights.dense_weights.set_tag(ec.tag_hash); // find the 5-bit hash of the tag for dense weights
-      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-      g.all->weights.dense_weights.unset_tag(); // set the tag to false after the example has been trained on
+      if (g.all->privacy_activation)
+      {
+        g.all->weights.dense_weights.set_tag(ec.tag_hash);
+        train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+        g.all->weights.dense_weights.unset_tag();
+      }
+      else
+      {
+        train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
+      }
     }
   }
 
@@ -748,7 +769,10 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
     for (auto it = weights.begin(); it != weights.end(); ++it)
     {
       const auto weight_value = *it;
-      if (*it != 0.f && ((all.privacy_activation==false)||(weights.is_activated(it.index())==true && all.privacy_activation==true))) //TODO : Check where else this condition is needed
+      if (*it != 0.f &&
+          (!all.privacy_activation ||
+              (weights.is_activated(it.index()) &&
+                  all.privacy_activation)))  // TODO : Check where else this condition is needed
       {
         const auto weight_index = it.index() >> weights.stride_shift();
 
@@ -791,7 +815,8 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
   else  // write
   {
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
-      if (*v != 0. && ((all.privacy_activation==false)||(weights.is_activated(v.index())==true && all.privacy_activation==true))) // checks for a non zero weight value and if the number of bits set to 1 for a feature greater than the threshold
+      // checks for a non zero weight value and if the privacy preservation threshold has been met
+      if (*v != 0. && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
       {
         i = v.index() >> weights.stride_shift();
         std::stringstream msg;

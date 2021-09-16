@@ -75,6 +75,7 @@ void copy_example_metadata(example* dst, const example* src)
   dst->example_counter = src->example_counter;
 
   dst->ft_offset = src->ft_offset;
+
   dst->partial_prediction = src->partial_prediction;
   if (src->passthrough == nullptr)
     dst->passthrough = nullptr;
@@ -89,7 +90,7 @@ void copy_example_metadata(example* dst, const example* src)
   dst->end_pass = src->end_pass;
   dst->is_newline = src->is_newline;
   dst->sorted = src->sorted;
-  dst->tag_hash=src->tag_hash;
+  dst->tag_hash = src->tag_hash;
 }
 
 void copy_example_data(example* dst, const example* src)

@@ -159,8 +159,10 @@ public:
   bool default_bits;
 
   uint32_t hash_seed;
+
   bool privacy_activation = false;
-  uint32_t feature_bitset_num_bits=32; // Default value for feature bitset size for privacy activation set to 32
+  size_t feature_bitset_size = 32;
+  size_t privacy_activation_threshold = 10;
 
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;

@@ -154,7 +154,7 @@ inline void vec_add_with_norm(std::pair<float, float>& p, float fx, float fw)
 
 float cb_explore_adf_rnd::get_initial_prediction(example* ec)
 {
-  LazyGaussian w; // defined as a const as its used in a prediction function and helps assist in calling the overloaded foreach_feature()
+  LazyGaussian w;
 
   std::pair<float, float> dotwithnorm(0.f, 0.f);
   GD::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, LazyGaussian>(
