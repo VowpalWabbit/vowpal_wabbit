@@ -877,7 +877,7 @@ void save_load_online_state(
 
       if (all.print_invert)  // write readable model with feature names
       {
-        if (*v != 0.f && (!all.privacy_activation || (weights.is_activated(it.index()) && all.privacy_activation)))
+        if (*v != 0.f && (!all.privacy_activation || (weights.is_activated(i.index()) && all.privacy_activation)))
         {
           const auto map_it = all.index_name_map.find(i);
           if (map_it != all.index_name_map.end())
