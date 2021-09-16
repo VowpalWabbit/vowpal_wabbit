@@ -77,7 +77,6 @@ class Simulator:
                 example_string += "0:{}:{} ".format(cost, prob)
             example_string += f'|{ns2}ction article={action} \n'
         #Strip the last newline
-        print("example:::"+example_string[:-1], file=self.debug_log)
         return example_string[:-1]
 
     def sample_custom_pmf(self, pmf):
@@ -85,21 +84,17 @@ class Simulator:
         scale = 1 / total
         pmf = [x * scale for x in pmf]
         draw = random.random()
-        print("draw="+str(draw), file=self.debug_log)
         sum_prob = 0.0
         for index, prob in enumerate(pmf):
             sum_prob += prob
             if(sum_prob > draw):
-                print(f"index:{index} prob:{prob}, sum_prob="+str(sum_prob), file=self.debug_log)
                 return index, prob
 
     def get_action(self, vw, context, actions):
         vw_text_example = self.to_vw_example_format(context,actions)
         pmf = vw.predict(vw_text_example)
-        print("pmf:" +str(pmf), file=self.debug_log)
         chosen_action_index, prob = self.sample_custom_pmf(pmf)
         self.index_count.update(((chosen_action_index,prob),))
-        print(str(chosen_action_index)+" "+str(prob), file=self.debug_log)
         return actions[chosen_action_index], prob
 
     def choose_user(self, users):
@@ -129,8 +124,6 @@ class Simulator:
 
     def run_simulation(self, vw, num_iterations, users, times_of_day, actions, cost_function, do_learn = True, shift=1):
         for i in range(shift, shift+num_iterations):
-            print("", file=self.debug_log)
-            print("id:"+str(i),file=self.debug_log)
             # 1. In each simulation choose a user
             user = self.choose_user(users)
             # 2. Choose time of day for a given user
@@ -142,7 +135,6 @@ class Simulator:
 
             # 4. Get cost of the action we chose
             cost = cost_function(context, action)
-            print("cost="+str(cost), file=self.debug_log)
             self.cost_sum += cost
 
             if do_learn:
@@ -161,14 +153,6 @@ class Simulator:
             if self.has_aml and i % 1 == 0:
                 metrics = vw.get_learner_metrics()
                 self.process_metrics(i, metrics)
-
-        if self.has_aml and num_iterations + shift >= 2000: # fix: hardcoded 2000 bad
-            print("counter1:"+str(self.count_1), file=self.debug_log)
-            print("counter2:"+str(self.count_2), file=self.debug_log)
-            print("indexcount:"+str(self.index_count), file=self.debug_log)
-            print("ohterindexcount:"+str(self.other_index_count), file=self.debug_log)
-
-            self.debug_log.close() # or also fix this
 
         return self.ctr
 
