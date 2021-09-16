@@ -2495,24 +2495,24 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/cats_load.stderr
     pred-sets/ref/cats_load.predict
 
-# Test 349: model with corrupted weights gd.cc
-./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd.model
-    train-sets/ref/corrupt_weights_gd.stderr
-
-# Test 350: model with corrupted weights gd_mf.cc
-./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd_mf.model
-    train-sets/ref/corrupt_weights_gd_mf.stderr
-
-# Test 351: test privacy_activation command line argument
+# Test 349: test privacy_activation command line argument
 {VW} --privacy_activation -d train-sets/privacy_dataset --invert_hash readable_model_privacy.txt --cbify 2 --cb_adf -f  model_privacy.vw
     train-sets/ref/privacy_dataset.stderr
     model-sets/model_privacy.vw
-    pred-sets/ref/readable_model_privacy.txt  
+    pred-sets/ref/readable_model_privacy.txt
 
-# Test 352: test privacy_activation command line argument with no tags input
+# Test 350: test privacy_activation command line argument with no tags input
 {VW} --privacy_activation -d train-sets/privacy_dataset_no_tags --invert_hash readable_model_privacy_no_tags.txt --cbify 2 --cb_adf -f  model_privacy_no_tags.vw
     train-sets/ref/privacy_no_tags.stderr
     model-sets/model_privacy_no_tags.vw
-    pred-sets/ref/readable_model_privacy_no_tags.txt  
+    pred-sets/ref/readable_model_privacy_no_tags.txt
+
+# Test 351: model with corrupted weights gd.cc
+./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd.model
+    train-sets/ref/corrupt_weights_gd.stderr
+
+# Test 352: model with corrupted weights gd_mf.cc
+./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd_mf.model
+    train-sets/ref/corrupt_weights_gd_mf.stderr
 
 # Do not delete this line or the empty line above it
