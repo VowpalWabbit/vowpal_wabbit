@@ -291,6 +291,7 @@ void config_manager::process_namespaces(const multi_ex& ecs)
 // stored as 'exclusions.' The current design is to look at the interactions of
 // the current champ and remove one interaction for each new config. The number
 // of configs to generate per champ is hard-coded to 5 at the moment.
+// TODO: Add logic to avoid duplicate configs (could be very costly)
 void config_manager::exclusion_configs_oracle()
 {
   auto& champ_interactions = scores[current_champ].live_interactions;
@@ -355,8 +356,11 @@ void config_manager::handle_empty_budget(size_t stride)
 {
   auto& score = scores[stride];
   size_t config_index = score.config_index;
-  configs[config_index].budget *= 2;
-  if (better_than_median(stride)) { return; }
+  if (configs[scores[stride].config_index].state != Removed)
+  {
+    configs[config_index].budget *= 2;
+    if (better_than_median(stride)) { return; }
+  }
   // Skip over removed configs
   bool removed = true;
   while (!index_queue.empty() && removed)
@@ -364,7 +368,6 @@ void config_manager::handle_empty_budget(size_t stride)
     removed = configs[index_queue.top().second].state == Removed;
     if (removed) { index_queue.pop(); }
   }
-  // TODO: Add logic to erase index from configs map if wanted
   if (index_queue.empty() && !repopulate_index_queue()) { return; }
   score.reset_stats();
   configs[config_index].state = Inactive;
@@ -401,7 +404,8 @@ void config_manager::schedule()
       scores.push_back(sc);
       gen_quadratic_interactions(stride);
     }
-    else if (scores[stride].update_count >= configs[scores[stride].config_index].budget)
+    else if (scores[stride].update_count >= configs[scores[stride].config_index].budget ||
+        configs[scores[stride].config_index].state == Removed)
     {
       handle_empty_budget(stride);
     }
