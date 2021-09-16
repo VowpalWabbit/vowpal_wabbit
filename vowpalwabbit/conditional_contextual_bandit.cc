@@ -611,7 +611,7 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
     std::stringstream msg;
     if (!read) { msg << "CCB: has_seen_multi_slot_example = " << sm.has_seen_multi_slot_example << "\n"; }
     bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&sm.has_seen_multi_slot_example),
-        sizeof(sm.has_seen_multi_slot_example), "", read, msg, text);
+        sizeof(sm.has_seen_multi_slot_example), read, msg, text);
   }
 
   if (read && sm.has_seen_multi_slot_example) { insert_ccb_interactions(sm.all->interactions); }
