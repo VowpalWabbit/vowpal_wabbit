@@ -19,10 +19,10 @@ struct expreplay
   vw* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
   size_t N = 0;             // how big is the buffer?
-  example* buf = nullptr;         // the deep copies of examples (N of them)
-  bool* filled = nullptr;         // which of buf[] is filled
-  size_t replay_count = 0;  // each time er.learn() is called, how many times do we call base.learn()? default=1 (in which
-                        // case we're just permuting)
+  example* buf = nullptr;   // the deep copies of examples (N of them)
+  bool* filled = nullptr;   // which of buf[] is filled
+  size_t replay_count = 0;  // each time er.learn() is called, how many times do we call base.learn()? default=1 (in
+                            // which case we're just permuting)
   VW::LEARNER::single_learner* base = nullptr;
 
   ~expreplay()
@@ -112,8 +112,8 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
 
   er->base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(std::move(er), er->base, learn<lp>, predict<lp>, replay_string)
-      .set_end_pass(end_pass<lp>)
-      .build();
+                .set_end_pass(end_pass<lp>)
+                .build();
 
   return VW::LEARNER::make_base(*l);
 }

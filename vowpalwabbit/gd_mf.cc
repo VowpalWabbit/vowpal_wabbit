@@ -372,12 +372,13 @@ base_learner* gd_mf_setup(VW::setup_base_i& stack_builder)
   }
   all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
 
-  auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup), prediction_type_t::scalar, label_type_t::simple)
-      .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-      .set_learn_returns_prediction(true)
-      .set_save_load(save_load)
-      .set_end_pass(end_pass)
-      .build();
+  auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
+      prediction_type_t::scalar, label_type_t::simple)
+                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_learn_returns_prediction(true)
+                .set_save_load(save_load)
+                .set_end_pass(end_pass)
+                .build();
 
   return make_base(*l);
 }

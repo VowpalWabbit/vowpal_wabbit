@@ -167,7 +167,8 @@ VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
   logger::errlog_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
   data->all = &all;
 
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true, true>, predict_or_learn<false, true>, stack_builder.get_setupfn_name(interact_setup))
-      .build();
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true, true>, predict_or_learn<false, true>, stack_builder.get_setupfn_name(interact_setup))
+                .build();
   return make_base(*l);
 }
