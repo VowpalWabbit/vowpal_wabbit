@@ -66,7 +66,7 @@ private:
 public:
   typedef dense_iterator<weight> iterator;
   typedef dense_iterator<const weight> const_iterator;
-  dense_parameters(size_t length, uint32_t stride_shift = 0)
+  dense_parameters(size_t length, uint32_t stride_shift)
       : _begin(calloc_mergable_or_throw<weight>(length << stride_shift))
       , _weight_mask((length << stride_shift) - 1)
       , _stride_shift(stride_shift)
@@ -75,7 +75,7 @@ public:
   {
   }
 
-  dense_parameters(size_t length, size_t privacy_activation_threshold, uint32_t stride_shift = 0)
+  dense_parameters(size_t length, size_t privacy_activation_threshold, uint32_t stride_shift)
       : _begin(calloc_mergable_or_throw<weight>(length << stride_shift))
       , _weight_mask((length << stride_shift) - 1)
       , _stride_shift(stride_shift)

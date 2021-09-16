@@ -100,7 +100,7 @@ public:
   typedef sparse_iterator<weight> iterator;
   typedef sparse_iterator<const weight> const_iterator;
 
-  sparse_parameters(size_t length, uint32_t stride_shift = 0)
+  sparse_parameters(size_t length, uint32_t stride_shift)
       : _map()
       , _weight_mask((length << stride_shift) - 1)
       , _stride_shift(stride_shift)
@@ -111,7 +111,7 @@ public:
   {
   }
 
-  sparse_parameters(size_t length, size_t privacy_activation_threshold, uint32_t stride_shift = 0)
+  sparse_parameters(size_t length, size_t privacy_activation_threshold, uint32_t stride_shift)
       : _map()
       , _weight_mask((length << stride_shift) - 1)
       , _stride_shift(stride_shift)
