@@ -255,57 +255,70 @@ void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
 void update_after_prediction_proximal(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  if (b.all->weights.sparse)
+  if (b.all->weights.sparse && b.all->privacy_activation)
   {
-    b.all->weights.sparse_weights.set_tag(hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) %
-        32);  // find the 5-bit hash of the tag for sparse weights
+    b.all->weights.sparse_weights.set_tag(
+        hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) % b.all->feature_bitset_size);
     GD::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
-    b.all->weights.sparse_weights.unset_tag();  // set the tag to false after the example has been trained on
+    b.all->weights.sparse_weights.unset_tag();
+  }
+  else if (!b.all->weights.sparse && b.all->privacy_activation)
+  {
+    b.all->weights.dense_weights.set_tag(
+        hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) % b.all->feature_bitset_size);
+    GD::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
+    b.all->weights.dense_weights.unset_tag();
   }
   else
   {
-    b.all->weights.dense_weights.set_tag(hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) %
-        32);  // find the 5-bit hash of the tag for dense weights
     GD::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
-    b.all->weights.dense_weights.unset_tag();  // set the tag to false after the example has been trained on
   }
 }
 
 void update_after_prediction_pistol(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  if (b.all->weights.sparse)
+
+  if (b.all->weights.sparse && b.all->privacy_activation)
   {
-    b.all->weights.sparse_weights.set_tag(hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) %
-        32);  // find the 5-bit hash of the tag for sparse weights
+    b.all->weights.sparse_weights.set_tag(
+        hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) % b.all->feature_bitset_size);
     GD::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
-    b.all->weights.sparse_weights.unset_tag();  // set the tag to false after the example has been trained on
+    b.all->weights.sparse_weights.unset_tag();
+  }
+  else if (!b.all->weights.sparse && b.all->privacy_activation)
+  {
+    b.all->weights.dense_weights.set_tag(
+        hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) % b.all->feature_bitset_size);
+    GD::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
+    b.all->weights.dense_weights.unset_tag();
   }
   else
   {
-    b.all->weights.dense_weights.set_tag(hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) %
-        32);  // find the 5-bit hash of the tag for dense weights
     GD::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
-    b.all->weights.dense_weights.unset_tag();  // set the tag to false after the example has been trained on
   }
 }
 
 void coin_betting_update_after_prediction(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  if (b.all->weights.sparse)
+  if (b.all->weights.sparse && b.all->privacy_activation)
   {
-    b.all->weights.sparse_weights.set_tag(hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) %
-        32);  // find the 5-bit hash of the tag for sparse weights
+    b.all->weights.sparse_weights.set_tag(
+        hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) % b.all->feature_bitset_size);
     GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
-    b.all->weights.sparse_weights.unset_tag();  // set the tag to false after the example has been trained on
+    b.all->weights.sparse_weights.unset_tag();
+  }
+  else if (!b.all->weights.sparse && b.all->privacy_activation)
+  {
+    b.all->weights.dense_weights.set_tag(
+        hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) % b.all->feature_bitset_size);
+    GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
+    b.all->weights.dense_weights.unset_tag();
   }
   else
   {
-    b.all->weights.dense_weights.set_tag(hashall(ec.tag.begin(), ec.tag.size(), b.all->hash_seed) %
-        32);  // find the 5-bit hash of the tag for dense weights
     GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
-    b.all->weights.dense_weights.unset_tag();  // set the tag to false after the example has been trained on
   }
 }
 

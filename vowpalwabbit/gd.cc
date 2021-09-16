@@ -769,10 +769,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
     for (auto it = weights.begin(); it != weights.end(); ++it)
     {
       const auto weight_value = *it;
-      if (*it != 0.f &&
-          (!all.privacy_activation ||
-              (weights.is_activated(it.index()) &&
-                  all.privacy_activation)))  // TODO : Check where else this condition is needed
+      if (*it != 0.f && (!all.privacy_activation || (weights.is_activated(it.index()) && all.privacy_activation)))
       {
         const auto weight_index = it.index() >> weights.stride_shift();
 
@@ -815,7 +812,6 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
   else  // write
   {
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
-      // checks for a non zero weight value and if the privacy preservation threshold has been met
       if (*v != 0. && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
       {
         i = v.index() >> weights.stride_shift();
@@ -881,7 +877,7 @@ void save_load_online_state(
 
       if (all.print_invert)  // write readable model with feature names
       {
-        if (*v != 0.f)
+        if (*v != 0.f && (!all.privacy_activation || (weights.is_activated(it.index()) && all.privacy_activation)))
         {
           const auto map_it = all.index_name_map.find(i);
           if (map_it != all.index_name_map.end())

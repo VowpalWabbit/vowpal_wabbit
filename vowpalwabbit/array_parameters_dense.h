@@ -59,7 +59,8 @@ private:
   uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
   uint32_t _stride_shift;
   bool _seeded;  // whether the instance is sharing model state with others
-  std::unordered_map<uint64_t, std::bitset<32>> _feature_bit_vector;  // define the bitset for each feature
+  size_t _privacy_activation_threshold;
+  std::unordered_map<uint64_t, std::bitset<32>> _feature_bitset;  // define the bitset for each feature
   tag_hash_info _tag_info;
 
 public:
@@ -70,10 +71,23 @@ public:
       , _weight_mask((length << stride_shift) - 1)
       , _stride_shift(stride_shift)
       , _seeded(false)
+      , _privacy_activation_threshold(0)
   {
   }
 
-  dense_parameters() : _begin(nullptr), _weight_mask(0), _stride_shift(0), _seeded(false) {}
+  dense_parameters(size_t length, size_t privacy_activation_threshold, uint32_t stride_shift = 0)
+      : _begin(calloc_mergable_or_throw<weight>(length << stride_shift))
+      , _weight_mask((length << stride_shift) - 1)
+      , _stride_shift(stride_shift)
+      , _seeded(false)
+      , _privacy_activation_threshold(privacy_activation_threshold)
+  {
+  }
+
+  dense_parameters()
+      : _begin(nullptr), _weight_mask(0), _stride_shift(0), _seeded(false), _privacy_activation_threshold(0)
+  {
+  }
 
   bool not_null() { return (_weight_mask > 0 && _begin != nullptr); }
 
@@ -105,16 +119,15 @@ public:
 
   // function to lookup a bit for a feature in the bitset using the
   // tag hash and turn it on
-  void turn_on_bit(uint64_t feature_index)
+  void set_privacy_preserving_bit(uint64_t feature_index)
   {
-    if (_tag_info.is_set) { _feature_bit_vector[feature_index & _weight_mask][_tag_info.tag_hash] = 1; }
+    if (_tag_info.is_set) { _feature_bitset[feature_index & _weight_mask][_tag_info.tag_hash] = 1; }
   }
 
   void unset_tag() { _tag_info.is_set = false; }
 
   // function to check if the number of bits set to 1 are greater than a threshold for a feature
-  // TODO 10 to be cli arg
-  bool is_activated(uint64_t index) { return _feature_bit_vector[index].count() >= 10; }
+  bool is_activated(uint64_t index) { return _feature_bitset[index].count() >= _privacy_activation_threshold; }
 
   void shallow_copy(const dense_parameters& input)
   {
@@ -123,6 +136,7 @@ public:
     _weight_mask = input._weight_mask;
     _stride_shift = input._stride_shift;
     _seeded = true;
+    _privacy_activation_threshold = input._privacy_activation_threshold;
   }
 
   inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }

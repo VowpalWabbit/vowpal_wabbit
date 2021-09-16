@@ -26,7 +26,7 @@ inline void foreach_feature(WeightsT& weights, const features& fs, DataT& dat, u
 {
   for (const auto& f : fs)
   {
-    weights.turn_on_bit(f.index() + offset);
+    weights.set_privacy_preserving_bit(f.index() + offset);
     weight& w = weights[(f.index() + offset)];
     FuncT(dat, mult * f.value(), w);
   }
