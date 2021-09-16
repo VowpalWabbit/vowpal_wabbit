@@ -96,21 +96,19 @@ void scored_config::save_load_scored_config(io_buf& model_file, bool read, bool 
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
   if (!read) msg << "_aml_config_ips " << ips << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ips), sizeof(ips), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ips), sizeof(ips), read, msg, text);
 
   if (!read) msg << "_aml_config_count " << update_count << "\n";
-  bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&update_count), sizeof(update_count), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&update_count), sizeof(update_count), read, msg, text);
 
   if (!read) msg << "_aml_config_lastw " << last_w << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&last_w), sizeof(last_w), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&last_w), sizeof(last_w), read, msg, text);
 
   if (!read) msg << "_aml_config_lastr " << last_r << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&last_r), sizeof(last_r), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&last_r), sizeof(last_r), read, msg, text);
 
   if (!read) msg << "_aml_config_index " << config_index << "\n";
-  bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&config_index), sizeof(config_index), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&config_index), sizeof(config_index), read, msg, text);
 
   chisq.save_load(model_file, read, text);
 }
@@ -146,19 +144,19 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
   if (read)
   {
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), read, msg, text);
     for (size_t i = 0; i < exclusion_size; ++i)
     {
       namespace_index ns;
       size_t other_ns_size;
       std::set<namespace_index> other_namespaces;
-      bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), read, msg, text);
       bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), read, msg, text);
       for (size_t i = 0; i < other_ns_size; ++i)
       {
         namespace_index other_ns;
-        bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), read, msg, text);
         other_namespaces.insert(other_ns);
       }
       exclusions[ns] = other_namespaces;
@@ -169,30 +167,40 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
     exclusion_size = exclusions.size();
     msg << "exclusion_size " << exclusion_size << "\n";
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), read, msg, text);
     for (const auto& ns_pair : exclusions)
     {
       namespace_index ns = ns_pair.first;
       size_t other_ns_size = ns_pair.second.size();
-      bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), read, msg, text);
       bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), read, msg, text);
       for (const auto& other_ns : ns_pair.second)
-      { bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), "", read, msg, text); }
+      { bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), read, msg, text); }
     }
   }
 
   if (!read) msg << "_aml_budget " << budget << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&budget), sizeof(budget), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&budget), sizeof(budget), read, msg, text);
+
+  if (!read) msg << "_aml_ips " << ips << "\n";
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ips), sizeof(ips), read, msg, text);
+
+  if (!read) msg << "_aml_lower_bound " << lower_bound << "\n";
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&lower_bound), sizeof(lower_bound), read, msg, text);
+
+  if (!read) msg << "_aml_state " << state << "\n";
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&state), sizeof(state), read, msg, text);
 }
 
-// config_manager is a state machine (config_state) 'time' moves forward after a call into one_step()
+// config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
 config_manager::config_manager(size_t budget, size_t max_live_configs)
     : budget(budget), max_live_configs(max_live_configs)
 {
   exclusion_config conf(budget);
+  conf.state = Live;
   configs[0] = conf;
   scored_config sc;
   scores.push_back(sc);
@@ -327,12 +335,11 @@ void config_manager::exclusion_configs_oracle()
 // on ns_counter (which is updated as each example is processed)
 bool config_manager::repopulate_index_queue()
 {
-  std::set<size_t> live_indices;
-  for (const auto& score : scores) { live_indices.insert(score.config_index); }
   for (const auto& ind_config : configs)
   {
     size_t redo_index = ind_config.first;
-    if (live_indices.find(redo_index) == live_indices.end())
+    // Only re-add if not removed and not live
+    if (configs[redo_index].state == New || configs[redo_index].state == Inactive)
     {
       float priority = calc_priority(redo_index);
       index_queue.push(std::make_pair(priority, redo_index));
@@ -341,17 +348,47 @@ bool config_manager::repopulate_index_queue()
   return !index_queue.empty();
 }
 
+// Function from Chacha to determine if loss is better than median. Very strict
+// requires ips is strictly greater, and strict median
+bool config_manager::better_than_median(size_t stride)
+{
+  size_t lower = 0;
+  size_t higher = 0;
+  for (size_t other_stride = 0; other_stride < scores.size(); ++other_stride)
+  {
+    if (other_stride != stride)
+    {
+      if (configs[scores[stride].config_index].ips > configs[scores[other_stride].config_index].ips) { higher++; }
+      else
+      {
+        lower++;
+      }
+    }
+  }
+  return higher > lower;
+}
+
 void config_manager::handle_empty_budget(size_t stride)
 {
   auto& score = scores[stride];
   size_t config_index = score.config_index;
-  score.reset_stats();
   configs[config_index].budget *= 2;
+  if (better_than_median(stride)) { return; }
+  // Skip over removed configs
+  bool removed = true;
+  while (!index_queue.empty() && removed)
+  {
+    removed = configs[index_queue.top().second].state == Removed;
+    if (removed) { index_queue.pop(); }
+  }
   // TODO: Add logic to erase index from configs map if wanted
   if (index_queue.empty() && !repopulate_index_queue()) { return; }
+  score.reset_stats();
+  configs[config_index].state = Inactive;
   config_index = index_queue.top().second;
   index_queue.pop();
   score.config_index = config_index;
+  configs[config_index].state = Live;
   // Regenerate interactions each time an exclusion is swapped in
   gen_quadratic_interactions(stride);
   // We may also want to 0 out weights here? Currently keep all same in stride position
@@ -366,9 +403,17 @@ void config_manager::schedule()
     if (stride == current_champ) { continue; }
     if (scores.size() <= stride)
     {
+      // Skip over removed configs
+      bool removed = true;
+      while (!index_queue.empty() && removed)
+      {
+        removed = configs[index_queue.top().second].state == Removed;
+        if (removed) { index_queue.pop(); }
+      }
       if (index_queue.empty() && !repopulate_index_queue()) { return; }
       scored_config sc;
       sc.config_index = index_queue.top().second;
+      configs[sc.config_index].state = Live;
       index_queue.pop();
       scores.push_back(sc);
       gen_quadratic_interactions(stride);
@@ -382,20 +427,61 @@ void config_manager::schedule()
 
 void config_manager::update_champ()
 {
-  float temp_champ_ips = scores[current_champ].current_ips();
+  // Update ips and lower bound for live configs
+  for (size_t stride = 0; stride < scores.size(); ++stride)
+  {
+    float ips = scores[stride].current_ips();
+    distributionally_robust::ScoredDual sd = scores[stride].chisq.recompute_duals();
+    float lower_bound = static_cast<float>(sd.first);
+    configs[scores[stride].config_index].ips = ips;
+    configs[scores[stride].config_index].lower_bound = lower_bound;
+  }
+  float champ_ips = configs[scores[current_champ].config_index].ips;
+  float champ_lower_bound = configs[scores[current_champ].config_index].lower_bound;
   bool champ_change = false;
 
   // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
-  for (size_t stride = 0; stride < scores.size(); ++stride)
+  for (size_t config_index = 0; config_index < configs.size(); ++config_index)
   {
-    if (stride == current_champ) continue;
-    distributionally_robust::ScoredDual sd = scores[stride].chisq.recompute_duals();
-    float challenger_l_bound = static_cast<float>(sd.first);
-    if (temp_champ_ips < challenger_l_bound)
+    if (configs[config_index].state == New || configs[config_index].state == Removed ||
+        scores[current_champ].config_index == config_index)
+    { continue; }
+    // If challenger is better ('better function from Chacha')
+    if (champ_ips < configs[config_index].lower_bound)
     {
-      current_champ = stride;  // champ switch
-      temp_champ_ips = challenger_l_bound;
       champ_change = true;
+      if (configs[config_index].state == Live)
+      {
+        // Update champ with stride of live config
+        for (size_t stride = 0; stride < scores.size(); ++stride)
+        {
+          if (scores[stride].config_index == config_index)
+          {
+            current_champ = stride;
+            break;
+          }
+        }
+        champ_ips = configs[config_index].ips;
+        champ_lower_bound = configs[config_index].lower_bound;
+      }
+      else
+      {
+        configs[scores[current_champ].config_index].budget *= 2;
+        configs[scores[current_champ].config_index].state = Inactive;
+        scores[current_champ].reset_stats();
+        scores[current_champ].config_index = config_index;
+        configs[scores[current_champ].config_index].state = Live;
+        gen_quadratic_interactions(current_champ);
+        // Rare case breaks index_queue, best to just clear it
+        while (!index_queue.empty()) { index_queue.pop(); };
+      }
+    }
+
+    // If challenger is worse ('worse function from Chacha')
+    if (configs[config_index].ips < champ_lower_bound)
+    {
+      // TODO: Update worse function, this seems way too strict (removes configs instantly)
+      // configs[config_index].state = Removed;
     }
   }
   if (champ_change) { exclusion_configs_oracle(); }
@@ -408,14 +494,14 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
 
   if (!read) msg << "_aml_cm_state " << current_state << "\n";
   bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&current_state), sizeof(current_state), "", read, msg, text);
+      model_file, reinterpret_cast<char*>(&current_state), sizeof(current_state), read, msg, text);
 
   if (!read) msg << "_aml_cm_county " << county << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&county), sizeof(county), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&county), sizeof(county), read, msg, text);
 
   if (!read) msg << "_aml_cm_champ " << current_champ << "\n";
   bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&current_champ), sizeof(current_champ), "", read, msg, text);
+      model_file, reinterpret_cast<char*>(&current_champ), sizeof(current_champ), read, msg, text);
 
   size_t config_size;
   size_t ns_counter_size;
@@ -426,8 +512,7 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
   {
     // Load scores
     scores.clear();
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), read, msg, text);
     for (size_t i = 0; i < score_size; ++i)
     {
       scored_config sc;
@@ -437,47 +522,46 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
 
     // Load new_namespaces
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&new_namespaces_size), sizeof(new_namespaces_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&new_namespaces_size), sizeof(new_namespaces_size), read, msg, text);
     for (size_t i = 0; new_namespaces_size; ++i)
     {
       namespace_index ns;
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ns), sizeof(ns), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ns), sizeof(ns), read, msg, text);
       new_namespaces.insert(ns);
     }
 
     // Load configs
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&config_size), sizeof(config_size), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&config_size), sizeof(config_size), read, msg, text);
     for (size_t i = 0; i < config_size; ++i)
     {
       size_t index;
       exclusion_config conf;
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
       conf.save_load_exclusion_config(model_file, read, text);
       configs[index] = conf;
     }
 
     // Load ns_counter
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&ns_counter_size), sizeof(ns_counter_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&ns_counter_size), sizeof(ns_counter_size), read, msg, text);
     for (size_t i = 0; i < ns_counter_size; ++i)
     {
       namespace_index ns;
       size_t count;
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ns), sizeof(ns), "", read, msg, text);
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&count), sizeof(count), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ns), sizeof(ns), read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&count), sizeof(count), read, msg, text);
       ns_counter[ns] = count;
     }
 
     // Load index_queue
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&index_queue_size), sizeof(index_queue_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&index_queue_size), sizeof(index_queue_size), read, msg, text);
     for (size_t i = 0; i < index_queue_size; ++i)
     {
       float priority;
       size_t index;
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&priority), sizeof(priority), "", read, msg, text);
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&priority), sizeof(priority), read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
       index_queue.push(std::make_pair(priority, index));
     }
 
@@ -488,26 +572,23 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
     // Save scores
     score_size = scores.size();
     msg << "score_size " << score_size << "\n";
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), read, msg, text);
     for (auto& score : scores) { score.save_load_scored_config(model_file, read, text); }
 
     // Save new_namespaces
     new_namespaces_size = new_namespaces.size();
     msg << "new_namespaces_size " << new_namespaces_size << "\n";
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&new_namespaces_size), sizeof(new_namespaces_size), "", read, msg, text);
-    for (auto& ns : new_namespaces)
-    { bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text); }
+        model_file, reinterpret_cast<char*>(&new_namespaces_size), sizeof(new_namespaces_size), read, msg, text);
+    for (auto& ns : new_namespaces) { bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), read, msg, text); }
 
     // Save configs
     config_size = configs.size();
     msg << "config_size " << config_size << "\n";
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&config_size), sizeof(config_size), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&config_size), sizeof(config_size), read, msg, text);
     for (auto& ind_config : configs)
     {
-      bin_text_read_write_fixed(model_file, (char*)&ind_config.first, sizeof(ind_config.first), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&ind_config.first, sizeof(ind_config.first), read, msg, text);
       ind_config.second.save_load_exclusion_config(model_file, read, text);
     }
 
@@ -515,24 +596,24 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
     ns_counter_size = ns_counter.size();
     msg << "ns_counter_size " << ns_counter_size << "\n";
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&ns_counter_size), sizeof(ns_counter_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&ns_counter_size), sizeof(ns_counter_size), read, msg, text);
     for (auto& ns_count : ns_counter)
     {
-      bin_text_read_write_fixed(model_file, (char*)&ns_count.first, sizeof(ns_count.first), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&ns_count.first, sizeof(ns_count.first), read, msg, text);
       bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&ns_count.second), sizeof(ns_count.second), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&ns_count.second), sizeof(ns_count.second), read, msg, text);
     }
 
     // Save index_queue
     index_queue_size = index_queue.size();
     msg << "index_queue_size " << index_queue_size << "\n";
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&index_queue_size), sizeof(index_queue_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&index_queue_size), sizeof(index_queue_size), read, msg, text);
     while (!index_queue.empty())
     {
       auto& pri_ind = index_queue.top();
-      bin_text_read_write_fixed(model_file, (char*)&pri_ind.first, sizeof(pri_ind.first), "", read, msg, text);
-      bin_text_read_write_fixed(model_file, (char*)&pri_ind.second, sizeof(pri_ind.second), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&pri_ind.first, sizeof(pri_ind.first), read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&pri_ind.second, sizeof(pri_ind.second), read, msg, text);
       index_queue.pop();
     }
   }
@@ -630,10 +711,10 @@ void learn_automl(automl& data, multi_learner& base, multi_ex& ec)
     }
   }
 
-  config_state current_state = data.cm.current_state;
+  config_manager_state current_state = data.cm.current_state;
   data.cm.one_step(ec);
 
-  if (current_state == config_state::Experimenting)
+  if (current_state == config_manager_state::Experimenting)
   {
     for (size_t stride = 0; stride < data.cm.scores.size(); ++stride)
     { offset_learn(data, base, ec, stride, logged, labelled_action); }

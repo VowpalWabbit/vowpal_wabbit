@@ -49,10 +49,22 @@ struct scored_config
   void reset_stats();
 };
 
+// all possible states of config_manager
+enum config_state
+{
+  New,
+  Live,
+  Inactive,
+  Removed
+};
+
 struct exclusion_config
 {
   std::map<namespace_index, std::set<namespace_index>> exclusions;
   size_t budget;
+  float ips = 0.f;
+  float lower_bound = std::numeric_limits<float>::infinity();
+  config_state state = New;
 
   exclusion_config(size_t budget = 10) : budget(budget) {}
 
@@ -60,7 +72,7 @@ struct exclusion_config
 };
 
 // all possible states of config_manager
-enum config_state
+enum config_manager_state
 {
   Idle,
   Collecting,
@@ -83,7 +95,7 @@ struct config_manager_base
 
 struct config_manager : config_manager_base
 {
-  config_state current_state = config_state::Idle;
+  config_manager_state current_state = config_manager_state::Idle;
   size_t county = 0;
   size_t current_champ = 0;
   size_t budget;
@@ -119,6 +131,7 @@ private:
   void process_namespaces(const multi_ex&);
   void exclusion_configs_oracle();
   bool repopulate_index_queue();
+  bool better_than_median(size_t);
   void handle_empty_budget(size_t);
   void schedule();
 };

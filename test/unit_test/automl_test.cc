@@ -59,17 +59,17 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
 
   test_hooks.emplace(deterministic_champ_switch - 1, [&](cb_sim&, vw& all, multi_ex&) {
     VW::automl::automl* aml = ut_helper::get_automl_data(all);
-    BOOST_CHECK_EQUAL(aml->cm.current_champ, 0);
+    BOOST_CHECK_EQUAL(aml->cm.current_champ, 1);
     BOOST_CHECK_EQUAL(deterministic_champ_switch - 1, aml->cm.county);
-    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Experimenting);
+    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_manager_state::Experimenting);
     return true;
   });
 
   test_hooks.emplace(deterministic_champ_switch, [&deterministic_champ_switch](cb_sim&, vw& all, multi_ex&) {
     VW::automl::automl* aml = ut_helper::get_automl_data(all);
-    BOOST_CHECK_EQUAL(aml->cm.current_champ, 0);
+    BOOST_CHECK_EQUAL(aml->cm.current_champ, 1);
     BOOST_CHECK_EQUAL(deterministic_champ_switch, aml->cm.county);
-    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Experimenting);
+    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_manager_state::Experimenting);
     return true;
   });
 
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_automl)
   test_hooks.emplace(zero, [&zero](cb_sim&, vw& all, multi_ex&) {
     VW::automl::automl* aml = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(aml->cm.county, zero);
-    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Idle);
+    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_manager_state::Idle);
     return true;
   });
 
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_automl)
   test_hooks.emplace(num_iterations, [&num_iterations](cb_sim&, vw& all, multi_ex&) {
     VW::automl::automl* aml = ut_helper::get_automl_data(all);
     BOOST_CHECK_EQUAL(aml->cm.county, num_iterations);
-    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Experimenting);
+    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_manager_state::Experimenting);
     return true;
   });
 
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_budget)
   // Note this is after learning 14 examples (first iteration is Idle)
   test_hooks.emplace(fifteen, [&fifteen](cb_sim&, vw& all, multi_ex&) {
     VW::automl::automl* aml = ut_helper::get_automl_data(all);
-    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_state::Experimenting);
+    BOOST_CHECK_EQUAL(aml->cm.current_state, VW::automl::config_manager_state::Experimenting);
     BOOST_CHECK_EQUAL(aml->cm.county, 15);
     BOOST_CHECK_EQUAL(aml->cm.current_champ, 0);
     BOOST_CHECK_EQUAL(aml->cm.scores[0].config_index, 0);
@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
     auto champ_exclusions = aml->cm.configs[aml->cm.scores[aml->cm.current_champ].config_index].exclusions;
     BOOST_CHECK_EQUAL(champ_exclusions.size(), 1);
 
-    BOOST_CHECK(champ_exclusions.find(static_cast<namespace_index>(128)) != champ_exclusions.end());
+    BOOST_CHECK(champ_exclusions.find('T') != champ_exclusions.end());
 
     auto champ_interactions = aml->cm.scores[aml->cm.current_champ].live_interactions;
     BOOST_CHECK_EQUAL(champ_interactions.size(), 6);
