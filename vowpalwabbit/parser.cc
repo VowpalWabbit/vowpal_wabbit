@@ -103,7 +103,10 @@ uint32_t cache_numbits(VW::io::reader* filepointer)
   std::vector<char> t(v_length);
   io_buf::read_file(filepointer, t.data(), v_length);
   VW::version_struct v_tmp(t.data());
-  if (v_tmp != VW::version) { return 0; }
+  if (v_tmp != VW::version)
+  {
+    return 0;
+  }
 
   char temp;
   if (io_buf::read_file(filepointer, &temp, 1) < 1) THROW("failed to read");
@@ -112,7 +115,8 @@ uint32_t cache_numbits(VW::io::reader* filepointer)
 
   uint32_t cache_numbits;
   if (io_buf::read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < static_cast<int>(sizeof(cache_numbits)))
-  { return true; } return cache_numbits;
+  { return true; }
+  return cache_numbits;
 }
 
 void set_cache_reader(vw& all) { all.example_parser->reader = read_cached_features; }
@@ -718,7 +722,10 @@ void setup_example(vw& all, example* ae)
     for (features& fs : *ae)
       for (auto& j : fs.indicies) j *= multiplier;
   ae->num_features = 0;
-  for (const features& fs : *ae) { ae->num_features += fs.size(); }
+  for (const features& fs : *ae)
+  {
+    ae->num_features += fs.size();
+  }
 
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
