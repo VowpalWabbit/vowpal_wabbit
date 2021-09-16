@@ -369,7 +369,7 @@ size_t process_model_field(io_buf& io, T& var, bool read, VW::string_view name, 
   auto* data = reinterpret_cast<char*>(&var);
   auto len = sizeof(var);
 
-  if (read) { return io.bin_read_fixed(data, len, ""); }
+  if (read) { return io.bin_read_fixed(data, len); }
 
   if (text)
   {
