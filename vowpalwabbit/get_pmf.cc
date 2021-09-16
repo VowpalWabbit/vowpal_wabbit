@@ -37,7 +37,7 @@ struct get_pmf
 
 private:
   single_learner* _base = nullptr;
-  float _epsilon;
+  float _epsilon = 0.f;
 };
 
 int get_pmf::learn(example& ec, experimental::api_status*)
@@ -101,13 +101,14 @@ LEARNER::base_learner* get_pmf_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
-  auto p_reduction = scoped_calloc_or_throw<get_pmf>();
+  auto p_reduction = VW::make_unique<get_pmf>();
   p_reduction->init(as_singleline(p_base), epsilon);
 
-  LEARNER::learner<get_pmf, example>& l = init_learner(p_reduction, as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, 1, prediction_type_t::pdf, stack_builder.get_setupfn_name(get_pmf_setup));
+  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(get_pmf_setup))
+      .set_prediction_type(prediction_type_t::pdf)
+      .build();
 
-  return make_base(l);
+  return make_base(*l);
 }
 }  // namespace continuous_action
 }  // namespace VW
