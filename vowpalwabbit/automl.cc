@@ -453,7 +453,7 @@ void config_manager::update_champ()
       }
       else
       {
-        float worst_ips = std::numeric_limits<double>::infinity();
+        float worst_ips = std::numeric_limits<float>::infinity();
         size_t worst_stride = 0;
         for (size_t stride = 0; stride < scores.size(); ++stride)
         {
