@@ -777,7 +777,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
       size_t K = all.lda;
       if (!read && text) msg << i << " ";
 
-      if (!read || all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
+      if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
         brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), "", read, msg, text);
       else
       {

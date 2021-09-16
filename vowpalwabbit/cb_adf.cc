@@ -457,7 +457,7 @@ void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
 
 void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 {
-  if (c.get_model_file_ver() != nullptr && *c.get_model_file_ver() < VERSION_FILE_WITH_CB_ADF_SAVE) return;
+  if (c.get_model_file_ver() != nullptr && *c.get_model_file_ver() < VW::version_definitions::VERSION_FILE_WITH_CB_ADF_SAVE) { return; }
   std::stringstream msg;
   msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
   bin_text_read_write_fixed(

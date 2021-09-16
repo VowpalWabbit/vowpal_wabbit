@@ -132,12 +132,12 @@ void save_load_header(
       buff2[std::min(v_length, default_buf_size) - 1] = '\0';
     }
     bytes_read_write += bin_text_read_write(model_file, buff2.data(), v_length, "", read, msg, text);
-    all.model_file_ver = buff2.data();  // stored in all to check save_resume fix in gd
+    all.model_file_ver = VW::version_struct{buff2.data()};  // stored in all to check save_resume fix in gd
     VW::validate_version(all);
 
-    if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH) model_file.verify_hash(true);
+    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH) model_file.verify_hash(true);
 
-    if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
+    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
     {
       v_length = all.id.length() + 1;
 
@@ -187,7 +187,7 @@ void save_load_header(
 
     VW::validate_num_bits(all);
 
-    if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
+    if (all.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_INTERACTIONS_IN_FO)
     {
       if (!read) THROW("cannot write legacy format");
 
@@ -235,7 +235,7 @@ void save_load_header(
       bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
 
       if (all.model_file_ver >=
-          VERSION_FILE_WITH_INTERACTIONS)  // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
+          VW::version_definitions::VERSION_FILE_WITH_INTERACTIONS)  // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
       {
         if (!read) THROW("cannot write legacy format");
 
@@ -267,7 +267,7 @@ void save_load_header(
       }
     }
 
-    if (all.model_file_ver <= VERSION_FILE_WITH_RANK_IN_HEADER)
+    if (all.model_file_ver <= VW::version_definitions::VERSION_FILE_WITH_RANK_IN_HEADER)
     {
       // to fix compatibility that was broken in 7.9
       uint32_t rank = 0;
@@ -406,9 +406,9 @@ void save_load_header(
     }
 
     // Read/write checksum if required by version
-    if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_HASH)
+    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_HASH)
     {
-      uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+      uint32_t check_sum = (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
           ? model_file.hash()
           : static_cast<uint32_t>(uniform_hash(model_file.buffer_start(), bytes_read_write, 0));
 
@@ -420,7 +420,7 @@ void save_load_header(
       if (check_sum_saved != check_sum) { THROW("Checksum is inconsistent, file is possibly corrupted."); }
     }
 
-    if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH) { model_file.verify_hash(false); }
+    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH) { model_file.verify_hash(false); }
   }
 }
 
