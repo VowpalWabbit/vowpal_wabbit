@@ -742,7 +742,7 @@ def main():
         tests = [x.__dict__ for x in tests]
         print("Tests parsed from RunTests file: {}".format((runtests_file)))
     else:
-        json_test_spec_content = open(args.test_spec).read()
+        json_test_spec_content = open(args.test_spec, encoding='utf-8').read()
         tests = json.loads(json_test_spec_content)
         print("Tests read from test spec file: {}".format((args.test_spec)))
 
