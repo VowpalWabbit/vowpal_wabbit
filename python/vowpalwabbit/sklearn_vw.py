@@ -931,7 +931,7 @@ class VWMultiClassifier(VWClassifier):
                 self.estimator_ = {estimator: n_classes}
                 if n_classes is not None:
                     if self.classes_ is None:
-                        self.classes_ = np.array(list(range(1, n_classes + 1)))
+                        self.classes_ = np.array(list(range(1, n_classes + 1))).astype('int')
                     break
             else:
                 # use oaa by default and determine classes from y
