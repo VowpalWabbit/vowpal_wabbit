@@ -114,60 +114,29 @@ public:
     for (iterator iter = begin(); iter != end(); ++iter) (&(*iter))[offset] = 0;
   }
 
-  void swap_offsets(size_t offset_1, size_t offset_2, size_t params_per_problem)
-  {
-    float temp = 0.f;
-    assert(offset_1 < offset_2);
-    for (iterator iter = begin(); iter != end(); ++iter)
-    {
-      // assert(*iter == _begin[(count << stride_shift()) & _weight_mask]);
-      size_t actual_index = iter.index() >> stride_shift();
-      size_t actual_type = actual_index & (params_per_problem - 1);
-      if (actual_type == offset_1)
-      {
-        float* other = &_begin[(actual_index + (offset_2 - offset_1)) << stride_shift()];
-
-        if (*other != 0.f || *iter != 0.f)
-        {
-          temp = *other;
-          (&(*other))[0] = (&(*iter))[0];
-          (&(*iter))[0] = temp;
-        }
-      }
-    }
-  }
-
-  void copy_offsets(size_t from, size_t to, size_t params_per_problem)
+  void copy_offsets(const size_t from, const size_t to, const size_t params_per_problem)
   {
     std::int64_t diff = to - from;
-    // assert(from < to);
-    for (iterator iter = begin(); iter != end(); ++iter)
+    for (auto iter = begin(); iter != end(); ++iter)
     {
-      // assert(*iter == _begin[(count << stride_shift()) & _weight_mask]);
       size_t actual_index = iter.index() >> stride_shift();
       size_t actual_type = actual_index & (params_per_problem - 1);
       if (actual_type == from)
       {
         float* other = &_begin[(actual_index + diff) << stride_shift()];
 
+        // todo: handle offsets 1-3
         if (*other != 0.f || *iter != 0.f) { (&(*other))[0] = (&(*iter))[0]; }
       }
     }
   }
 
-  // void copy_offsets(size_t from, size_t to, size_t width = 1, size_t params_per_problem = 1)
-  // {
-  //   for (iterator iter = begin(); iter != end(); ++iter)
-  //   {
-  //     for (size_t j = 0; j < width; j++) { (&(*iter))[to + j] = (&(*iter))[from + j]; }
-  //   }
-  // }
-
-  void clear_offset(size_t offset, size_t params_per_problem)
+  void clear_offset(const size_t offset, const size_t params_per_problem)
   {
     for (iterator iter = begin(); iter != end(); ++iter)
     {
       size_t actual = (iter.index() >> stride_shift()) & (params_per_problem - 1);
+      // todo: handle offsets 1-3
       if (actual == offset && *iter != 0.f) { (&(*iter))[0] = 0; }
     }
   }

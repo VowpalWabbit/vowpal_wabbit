@@ -21,22 +21,22 @@ namespace VW
 {
 namespace automl
 {
-namespace helper
+namespace details
 {
 // fail if incompatible reductions got setup
-// inefficient, address later
-// references global all interactions
-void fail_if_enabled(vw& all, std::string name)
+// todo: audit if they reference global all interactions
+void fail_if_enabled(vw& all, const std::set<std::string>& not_compat)
 {
   std::vector<std::string> enabled_reductions;
   if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
 
-  if (std::find(enabled_reductions.begin(), enabled_reductions.end(), name) != enabled_reductions.end())
-    THROW("plz no bad stack" + name);
+  for (auto reduction : enabled_reductions)
+  {
+    if (not_compat.count(reduction) > 0) THROW("automl.cc: plz no bad stack" + reduction);
+  }
 }
 
-bool cmpf(float A, float B, float epsilon = 0.001f) { return (fabs(A - B) < epsilon); }
-
+/*
 void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
 {
   for (auto it = weights.begin(); it != weights.end(); ++it)
@@ -79,7 +79,8 @@ void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
   }
   std::cerr << std::endl;
 }
-}  // namespace helper
+*/
+}  // namespace details
 
 void scored_config::update(float w, float r)
 {
@@ -95,21 +96,19 @@ void scored_config::save_load_scored_config(io_buf& model_file, bool read, bool 
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
   if (!read) msg << "_aml_config_ips " << ips << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ips), sizeof(ips), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ips), sizeof(ips), read, msg, text);
 
   if (!read) msg << "_aml_config_count " << update_count << "\n";
-  bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&update_count), sizeof(update_count), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&update_count), sizeof(update_count), read, msg, text);
 
   if (!read) msg << "_aml_config_lastw " << last_w << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&last_w), sizeof(last_w), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&last_w), sizeof(last_w), read, msg, text);
 
   if (!read) msg << "_aml_config_lastr " << last_r << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&last_r), sizeof(last_r), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&last_r), sizeof(last_r), read, msg, text);
 
   if (!read) msg << "_aml_config_index " << config_index << "\n";
-  bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&config_index), sizeof(config_index), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&config_index), sizeof(config_index), read, msg, text);
 
   chisq.save_load(model_file, read, text);
 }
@@ -145,19 +144,19 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
   if (read)
   {
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), read, msg, text);
     for (size_t i = 0; i < exclusion_size; ++i)
     {
       namespace_index ns;
       size_t other_ns_size;
       std::set<namespace_index> other_namespaces;
-      bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), read, msg, text);
       bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), read, msg, text);
       for (size_t i = 0; i < other_ns_size; ++i)
       {
         namespace_index other_ns;
-        bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), read, msg, text);
         other_namespaces.insert(other_ns);
       }
       exclusions[ns] = other_namespaces;
@@ -168,70 +167,43 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
     exclusion_size = exclusions.size();
     msg << "exclusion_size " << exclusion_size << "\n";
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), read, msg, text);
     for (const auto& ns_pair : exclusions)
     {
       namespace_index ns = ns_pair.first;
       size_t other_ns_size = ns_pair.second.size();
-      bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), read, msg, text);
       bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), read, msg, text);
       for (const auto& other_ns : ns_pair.second)
-      { bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), "", read, msg, text); }
+      { bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), read, msg, text); }
     }
   }
 
-  if (!read || true)
-  {
-    if (!read) msg << "_aml_budget " << budget << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&budget), sizeof(budget), "", read, msg, text);
-  }
+  if (!read) msg << "_aml_budget " << budget << "\n";
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&budget), sizeof(budget), read, msg, text);
+
+  if (!read) msg << "_aml_ips " << ips << "\n";
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ips), sizeof(ips), read, msg, text);
+
+  if (!read) msg << "_aml_lower_bound " << lower_bound << "\n";
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&lower_bound), sizeof(lower_bound), read, msg, text);
+
+  if (!read) msg << "_aml_state " << state << "\n";
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&state), sizeof(state), read, msg, text);
 }
 
-// This code is primarily borrowed from expand_quadratics_wildcard_interactions in
-// interactions.cc. It will generate interactions with -q :: and exclude namespaces
-// from the corresponding stride. This function can be swapped out depending on
-// preference of how to generate interactions from a given set of exclusions.
-// Transforms exclusions -> interactions expected by VW.
-interaction_vec quadratic_exclusion_oracle::gen_interactions(const std::map<namespace_index, size_t>& ns_counter,
-    const std::map<namespace_index, std::set<namespace_index>>& exclusions) const
-{
-  std::set<std::vector<namespace_index>> interactions;
-
-  for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
-  {
-    auto idx1 = (*it).first;
-    // Only handles ':' for now, extend to handle specific namespaces later as needed
-    if (exclusions.find(idx1) != exclusions.end() && exclusions.at(idx1).find(':') != exclusions.at(idx1).end())
-    { continue; }
-    interactions.insert({idx1, idx1});
-
-    for (auto jt = it; jt != ns_counter.end(); ++jt)
-    {
-      auto idx2 = (*jt).first;
-      // Only handles ':' for now, extend to handle specific namespaces later as needed
-      if (exclusions.find(idx2) != exclusions.end() && exclusions.at(idx2).find(':') != exclusions.at(idx2).end())
-      { continue; }
-      interactions.insert({idx1, idx2});
-      interactions.insert({idx2, idx2});
-    }
-  }
-  interaction_vec v = interaction_vec(interactions.begin(), interactions.end());
-  return v;
-}
-
-// config_manager is a state machine (config_state) 'time' moves forward after a call into one_step()
+// config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
-config_manager::config_manager(size_t budget, const size_t max_live_configs)
-    : budget(budget), max_live_configs(max_live_configs)
+config_manager::config_manager(size_t budget, size_t max_live_configs, uint64_t seed)
+    : budget(budget), max_live_configs(max_live_configs), seed(seed)
 {
+  random_state.set_random_state(seed);
   exclusion_config conf(budget);
+  conf.state = Live;
   configs[0] = conf;
   scored_config sc;
-  sc.config_index = 0;
-  interaction_vec v;
-  sc.live_interactions = v;
   scores.push_back(sc);
 }
 
@@ -240,6 +212,8 @@ void config_manager::one_step(const multi_ex& ec)
   switch (current_state)
   {
     case Idle:
+      process_namespaces(ec);
+      exclusion_configs_oracle();
       current_state = Experimenting;
       break;
 
@@ -247,13 +221,35 @@ void config_manager::one_step(const multi_ex& ec)
       break;
 
     case Experimenting:
-      gen_exclusion_configs(ec);
-      update_live_configs();
+      process_namespaces(ec);
+      schedule();
       update_champ();
       break;
 
     default:
       break;
+  }
+}
+
+// This code is primarily borrowed from expand_quadratics_wildcard_interactions in
+// interactions.cc. It will generate interactions with -q :: and exclude namespaces
+// from the corresponding stride. This function can be swapped out depending on
+// preference of how to generate interactions from a given set of exclusions.
+// Transforms exclusions -> interactions expected by VW.
+void config_manager::gen_quadratic_interactions(size_t stride)
+{
+  auto& exclusions = configs[scores[stride].config_index].exclusions;
+  auto& interactions = scores[stride].live_interactions;
+  if (!interactions.empty()) { interactions.clear(); }
+  for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
+  {
+    auto idx1 = (*it).first;
+    for (auto jt = it; jt != ns_counter.end(); ++jt)
+    {
+      auto idx2 = (*jt).first;
+      if (exclusions.find(idx1) == exclusions.end() || exclusions.at(idx1).find(idx2) == exclusions.at(idx1).end())
+      { interactions.push_back({idx1, idx2}); }
+    }
   }
 }
 
@@ -268,49 +264,51 @@ float config_manager::calc_priority(size_t config_index)
   return priority;
 }
 
-// This will generate configs with all combinations of current namespaces. These
-// combinations will be held stored as 'exclusions' but can be used differently
-// depending on oracle design.
-void config_manager::gen_exclusion_configs(const multi_ex& ecs)
+// This function will process an incoming multi_ex, update the namespace_counter,
+// log if new namespaces are encountered, and regenerate interactions based on
+// newly seen namespaces.
+void config_manager::process_namespaces(const multi_ex& ecs)
 {
-  std::set<namespace_index> new_namespaces;
   // Count all namepsace seen in current example
+  bool new_ns_seen = false;
   for (const example* ex : ecs)
   {
     for (const auto& ns : ex->indices)
     {
       ns_counter[ns]++;
-      if (ns_counter[ns] == 1) { new_namespaces.insert(ns); }
+      if (ns_counter[ns] == 1) { new_ns_seen = true; }
     }
   }
-  // Add new configs if new namespace are seen
-  for (const auto& ns : new_namespaces)
-  {
-    std::set<std::map<namespace_index, std::set<namespace_index>>> new_exclusions;
-    for (const auto& config : configs)
-    {
-      std::map<namespace_index, std::set<namespace_index>> new_exclusion(config.second.exclusions);
-      new_exclusion[ns] = {':'};
-      new_exclusions.insert(new_exclusion);
-    }
-    for (const auto& new_exclusion : new_exclusions)
-    {
-      size_t config_index = configs.size();
-      exclusion_config conf(budget);
-      conf.exclusions = new_exclusion;
-      configs[config_index] = conf;
-      float priority = calc_priority(config_index);
-      index_queue.push(std::make_pair(priority, config_index));
-    }
-  }
+
   // Regenerate interactions if new namespaces are seen
-  if (!new_namespaces.empty())
+  if (new_ns_seen)
   {
-    for (auto& score : scores)
-    {
-      score.live_interactions.clear();
-      score.live_interactions = oc.gen_interactions(ns_counter, configs[score.config_index].exclusions);
-    }
+    for (size_t stride = 0; stride < scores.size(); ++stride) { gen_quadratic_interactions(stride); }
+  }
+}
+
+// This will generate configs based on the current champ. These configs will be
+// stored as 'exclusions.' The current design is to look at the interactions of
+// the current champ and remove one interaction for each new config. The number
+// of configs to generate per champ is hard-coded to 5 at the moment.
+// TODO: Add logic to avoid duplicate configs (could be very costly)
+void config_manager::exclusion_configs_oracle()
+{
+  auto& champ_interactions = scores[current_champ].live_interactions;
+  for (size_t i = 0; i < CONGIGS_PER_CHAMP_CHANGE; ++i)
+  {
+    size_t rand_ind = static_cast<size_t>(random_state.get_and_update_random() * champ_interactions.size());
+    namespace_index ns1 = champ_interactions[rand_ind][0];
+    namespace_index ns2 = champ_interactions[rand_ind][1];
+    std::map<namespace_index, std::set<namespace_index>> new_exclusions(
+        configs[scores[current_champ].config_index].exclusions);
+    new_exclusions[ns1].insert(ns2);
+    size_t config_index = configs.size();
+    exclusion_config conf(budget);
+    conf.exclusions = new_exclusions;
+    configs[config_index] = conf;
+    float priority = calc_priority(config_index);
+    index_queue.push(std::make_pair(priority, config_index));
   }
 }
 
@@ -321,12 +319,11 @@ void config_manager::gen_exclusion_configs(const multi_ex& ecs)
 // on ns_counter (which is updated as each example is processed)
 bool config_manager::repopulate_index_queue()
 {
-  std::set<size_t> live_indices;
-  for (const auto& score : scores) { live_indices.insert(score.config_index); }
   for (const auto& ind_config : configs)
   {
     size_t redo_index = ind_config.first;
-    if (live_indices.find(redo_index) == live_indices.end())
+    // Only re-add if not removed and not live
+    if (configs[redo_index].state == New || configs[redo_index].state == Inactive)
     {
       float priority = calc_priority(redo_index);
       index_queue.push(std::make_pair(priority, redo_index));
@@ -335,62 +332,157 @@ bool config_manager::repopulate_index_queue()
   return !index_queue.empty();
 }
 
-void config_manager::handle_empty_budget(scored_config& score)
+// Function from Chacha to determine if loss is better than median. Very strict
+// requires ips is strictly greater, and strict median
+bool config_manager::better_than_median(size_t stride)
 {
+  size_t lower = 0;
+  size_t higher = 0;
+  for (size_t other_stride = 0; other_stride < scores.size(); ++other_stride)
+  {
+    if (other_stride != stride)
+    {
+      if (configs[scores[stride].config_index].ips > configs[scores[other_stride].config_index].ips) { higher++; }
+      else
+      {
+        lower++;
+      }
+    }
+  }
+  return higher > lower;
+}
+
+void config_manager::handle_empty_budget(size_t stride)
+{
+  auto& score = scores[stride];
   size_t config_index = score.config_index;
-  score.reset_stats();
-  configs[config_index].budget *= 2;
-  // TODO: Add logic to erase index from configs map if wanted
+  if (configs[scores[stride].config_index].state != Removed)
+  {
+    configs[config_index].budget *= 2;
+    if (better_than_median(stride)) { return; }
+  }
+  // Skip over removed configs
+  bool removed = true;
+  while (!index_queue.empty() && removed)
+  {
+    removed = configs[index_queue.top().second].state == Removed;
+    if (removed) { index_queue.pop(); }
+  }
   if (index_queue.empty() && !repopulate_index_queue()) { return; }
+  score.reset_stats();
+  configs[config_index].state = Inactive;
   config_index = index_queue.top().second;
   index_queue.pop();
   score.config_index = config_index;
+  configs[config_index].state = Live;
   // Regenerate interactions each time an exclusion is swapped in
-  score.live_interactions.clear();
-  score.live_interactions = oc.gen_interactions(ns_counter, configs[config_index].exclusions);
+  gen_quadratic_interactions(stride);
   // We may also want to 0 out weights here? Currently keep all same in stride position
 }
 
 // This function defines the logic update the live configs' budgets, and to swap out
 // new configs when the budget runs out.
-void config_manager::update_live_configs()
+void config_manager::schedule()
 {
   for (size_t stride = 0; stride < max_live_configs; ++stride)
   {
     if (stride == current_champ) { continue; }
     if (scores.size() <= stride)
     {
+      // Skip over removed configs
+      bool removed = true;
+      while (!index_queue.empty() && removed)
+      {
+        removed = configs[index_queue.top().second].state == Removed;
+        if (removed) { index_queue.pop(); }
+      }
       if (index_queue.empty() && !repopulate_index_queue()) { return; }
       scored_config sc;
       sc.config_index = index_queue.top().second;
-      interaction_vec v = oc.gen_interactions(ns_counter, configs[sc.config_index].exclusions);
-      sc.live_interactions = v;
+      configs[sc.config_index].state = Live;
       index_queue.pop();
       scores.push_back(sc);
+      gen_quadratic_interactions(stride);
     }
-    else if (scores[stride].update_count >= configs[scores[stride].config_index].budget)
+    else if (scores[stride].update_count >= configs[scores[stride].config_index].budget ||
+        configs[scores[stride].config_index].state == Removed)
     {
-      handle_empty_budget(scores[stride]);
+      handle_empty_budget(stride);
     }
   }
 }
 
 void config_manager::update_champ()
 {
-  float temp_champ_ips = scores[current_champ].current_ips();
-
-  // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
+  // Update ips and lower bound for live configs
   for (size_t stride = 0; stride < scores.size(); ++stride)
   {
-    if (stride == current_champ) continue;
+    float ips = scores[stride].current_ips();
     distributionally_robust::ScoredDual sd = scores[stride].chisq.recompute_duals();
-    float challenger_l_bound = static_cast<float>(sd.first);
-    if (temp_champ_ips < challenger_l_bound)
+    float lower_bound = static_cast<float>(sd.first);
+    configs[scores[stride].config_index].ips = ips;
+    configs[scores[stride].config_index].lower_bound = lower_bound;
+  }
+  float champ_ips = configs[scores[current_champ].config_index].ips;
+  float champ_lower_bound = configs[scores[current_champ].config_index].lower_bound;
+  bool champ_change = false;
+
+  // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
+  for (size_t config_index = 0; config_index < configs.size(); ++config_index)
+  {
+    if (configs[config_index].state == New || configs[config_index].state == Removed ||
+        scores[current_champ].config_index == config_index)
+    { continue; }
+    // If challenger is better ('better function from Chacha')
+    if (champ_ips < configs[config_index].lower_bound)
     {
-      current_champ = stride;  // champ switch
-      temp_champ_ips = challenger_l_bound;
+      champ_change = true;
+      if (configs[config_index].state == Live)
+      {
+        // Update champ with stride of live config
+        for (size_t stride = 0; stride < scores.size(); ++stride)
+        {
+          if (scores[stride].config_index == config_index)
+          {
+            current_champ = stride;
+            break;
+          }
+        }
+        champ_ips = configs[config_index].ips;
+        champ_lower_bound = configs[config_index].lower_bound;
+      }
+      else
+      {
+        float worst_ips = std::numeric_limits<float>::infinity();
+        size_t worst_stride = 0;
+        for (size_t stride = 0; stride < scores.size(); ++stride)
+        {
+          if (configs[scores[stride].config_index].ips < worst_ips)
+          {
+            worst_ips = configs[scores[stride].config_index].ips;
+            worst_stride = stride;
+          }
+        }
+        configs[scores[worst_stride].config_index].budget *= 2;
+        configs[scores[worst_stride].config_index].state = Inactive;
+        scores[worst_stride].reset_stats();
+        scores[worst_stride].config_index = config_index;
+        configs[scores[worst_stride].config_index].state = Live;
+        gen_quadratic_interactions(worst_stride);
+        current_champ = worst_stride;
+        // Rare case breaks index_queue, best to just clear it
+        while (!index_queue.empty()) { index_queue.pop(); };
+      }
+    }
+
+    // If challenger is worse ('worse function from Chacha')
+    if (configs[config_index].ips < champ_lower_bound)
+    {
+      // TODO: Update worse function, this seems way too strict (removes configs instantly)
+      // configs[config_index].state = Removed;
     }
   }
+  if (champ_change) { exclusion_configs_oracle(); }
 }
 
 void config_manager::save_load(io_buf& model_file, bool read, bool text)
@@ -400,14 +492,14 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
 
   if (!read) msg << "_aml_cm_state " << current_state << "\n";
   bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&current_state), sizeof(current_state), "", read, msg, text);
+      model_file, reinterpret_cast<char*>(&current_state), sizeof(current_state), read, msg, text);
 
   if (!read) msg << "_aml_cm_county " << county << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&county), sizeof(county), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&county), sizeof(county), read, msg, text);
 
   if (!read) msg << "_aml_cm_champ " << current_champ << "\n";
   bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&current_champ), sizeof(current_champ), "", read, msg, text);
+      model_file, reinterpret_cast<char*>(&current_champ), sizeof(current_champ), read, msg, text);
 
   size_t config_size;
   size_t ns_counter_size;
@@ -417,8 +509,7 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
   {
     // Load scores
     scores.clear();
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), read, msg, text);
     for (size_t i = 0; i < score_size; ++i)
     {
       scored_config sc;
@@ -427,65 +518,57 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
     }
 
     // Load configs
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&config_size), sizeof(config_size), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&config_size), sizeof(config_size), read, msg, text);
     for (size_t i = 0; i < config_size; ++i)
     {
       size_t index;
       exclusion_config conf;
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
       conf.save_load_exclusion_config(model_file, read, text);
       configs[index] = conf;
     }
 
     // Load ns_counter
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&ns_counter_size), sizeof(ns_counter_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&ns_counter_size), sizeof(ns_counter_size), read, msg, text);
     for (size_t i = 0; i < ns_counter_size; ++i)
     {
       namespace_index ns;
       size_t count;
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ns), sizeof(ns), "", read, msg, text);
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&count), sizeof(count), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ns), sizeof(ns), read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&count), sizeof(count), read, msg, text);
       ns_counter[ns] = count;
     }
 
     // Load index_queue
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&index_queue_size), sizeof(index_queue_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&index_queue_size), sizeof(index_queue_size), read, msg, text);
     for (size_t i = 0; i < index_queue_size; ++i)
     {
       float priority;
       size_t index;
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&priority), sizeof(priority), "", read, msg, text);
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&priority), sizeof(priority), read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
       index_queue.push(std::make_pair(priority, index));
     }
 
-    for (auto& score : scores)
-    {
-      score.live_interactions.clear();
-      interaction_vec v = oc.gen_interactions(ns_counter, configs[score.config_index].exclusions);
-      score.live_interactions = v;
-    }
+    for (size_t stride = 0; stride < scores.size(); ++stride) { gen_quadratic_interactions(stride); }
   }
   else
   {
     // Save scores
     score_size = scores.size();
     msg << "score_size " << score_size << "\n";
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), read, msg, text);
     for (auto& score : scores) { score.save_load_scored_config(model_file, read, text); }
 
     // Save configs
     config_size = configs.size();
     msg << "config_size " << config_size << "\n";
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&config_size), sizeof(config_size), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&config_size), sizeof(config_size), read, msg, text);
     for (auto& ind_config : configs)
     {
-      bin_text_read_write_fixed(model_file, (char*)&ind_config.first, sizeof(ind_config.first), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&ind_config.first, sizeof(ind_config.first), read, msg, text);
       ind_config.second.save_load_exclusion_config(model_file, read, text);
     }
 
@@ -493,24 +576,24 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
     ns_counter_size = ns_counter.size();
     msg << "ns_counter_size " << ns_counter_size << "\n";
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&ns_counter_size), sizeof(ns_counter_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&ns_counter_size), sizeof(ns_counter_size), read, msg, text);
     for (auto& ns_count : ns_counter)
     {
-      bin_text_read_write_fixed(model_file, (char*)&ns_count.first, sizeof(ns_count.first), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&ns_count.first, sizeof(ns_count.first), read, msg, text);
       bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&ns_count.second), sizeof(ns_count.second), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&ns_count.second), sizeof(ns_count.second), read, msg, text);
     }
 
     // Save index_queue
     index_queue_size = index_queue.size();
     msg << "index_queue_size " << index_queue_size << "\n";
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&index_queue_size), sizeof(index_queue_size), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&index_queue_size), sizeof(index_queue_size), read, msg, text);
     while (!index_queue.empty())
     {
       auto& pri_ind = index_queue.top();
-      bin_text_read_write_fixed(model_file, (char*)&pri_ind.first, sizeof(pri_ind.first), "", read, msg, text);
-      bin_text_read_write_fixed(model_file, (char*)&pri_ind.second, sizeof(pri_ind.second), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&pri_ind.first, sizeof(pri_ind.first), read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&pri_ind.second, sizeof(pri_ind.second), read, msg, text);
       index_queue.pop();
     }
   }
@@ -531,7 +614,7 @@ void config_manager::apply_config(example* ec, size_t stride)
   if (stride < max_live_configs) { ec->interactions = &(scores[stride].live_interactions); }
   else
   {
-    THROW("fatal: trying to apply a config higher than max configs allowed");
+    THROW("fatal (automl): trying to apply a config higher than max configs allowed");
   }
 }
 
@@ -608,10 +691,10 @@ void learn_automl(automl& data, multi_learner& base, multi_ex& ec)
     }
   }
 
-  config_state current_state = data.cm.current_state;
+  config_manager_state current_state = data.cm.current_state;
   data.cm.one_step(ec);
 
-  if (current_state == Experimenting)
+  if (current_state == config_manager_state::Experimenting)
   {
     for (size_t stride = 0; stride < data.cm.scores.size(); ++stride)
     { offset_learn(data, base, ec, stride, logged, labelled_action); }
@@ -674,7 +757,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto data = VW::make_unique<automl>(budget, all.model_file_ver, max_live_configs);
+  auto data = VW::make_unique<automl>(budget, all.model_file_ver, max_live_configs, all.random_seed);
   // all is not needed but good to have for testing purposes
   data->all = &all;
   assert(max_live_configs <= MAX_CONFIGS);
@@ -695,21 +778,9 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   // ask jack about flushing the cache, after mutating reductions
   // that might change
 
-  helper::fail_if_enabled(all, "ccb_explore_adf");
-  helper::fail_if_enabled(all, "audit_regressor");
-  helper::fail_if_enabled(all, "baseline");
-  helper::fail_if_enabled(all, "cb_explore_adf_rnd");
-  helper::fail_if_enabled(all, "cb_to_cb_adf");
-  helper::fail_if_enabled(all, "cbify");
-  helper::fail_if_enabled(all, "replay_c");
-  helper::fail_if_enabled(all, "replay_b");
-  helper::fail_if_enabled(all, "replay_m");
-  // fail_if_enabled(all, "gd");
-  // fail_if_enabled(all, "generate_interactions");
-  helper::fail_if_enabled(all, "memory_tree");
-  helper::fail_if_enabled(all, "new_mf");
-  helper::fail_if_enabled(all, "nn");
-  helper::fail_if_enabled(all, "stage_poly");
+  details::fail_if_enabled(all,
+      {"ccb_explore_adf", "audit_regressor", "baseline", "cb_explore_adf_rnd", "cb_to_cb_adf", "cbify", "replay_c",
+          "replay_b", "replay_m", "memory_tree", "new_mf", "nn", "stage_poly"});
 
   // only this has been tested
   if (base_learner->is_multiline)
@@ -735,7 +806,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   else
   {
     // not implemented yet
-    THROW("not supported");
+    THROW("fatal: automl not supported for single line learners yet");
   }
 }
 
