@@ -24,7 +24,7 @@ constexpr float AUTO_ML_FLOAT_TOL = 0.01f;
 namespace vw_hash_helpers
 {
 // see parse_example.cc:maybeFeature(..) for other cases
-size_t get_index_for_feature(vw& all, const std::string& ns, const std::string& feature)
+size_t get_hash_for_feature(vw& all, const std::string& ns, const std::string& feature)
 {
   std::uint64_t hash_ft = VW::hash_feature(all, feature, VW::hash_space(all, ns));
   std::uint64_t ft = hash_ft & all.parse_mask;
@@ -67,12 +67,12 @@ bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
 
   std::vector<std::uint64_t> feature_indexes;
   // hardcoded features that correspond to simulator.h
-  feature_indexes.emplace_back(hash_to_index(all.weights, get_index_for_feature(all, "Action", "article=music")));
-  feature_indexes.emplace_back(hash_to_index(all.weights, get_index_for_feature(all, "Action", "article=politics")));
-  feature_indexes.emplace_back(hash_to_index(all.weights, get_index_for_feature(all, "User", "user=Anna")));
+  feature_indexes.emplace_back(hash_to_index(all.weights, get_hash_for_feature(all, "Action", "article=music")));
+  feature_indexes.emplace_back(hash_to_index(all.weights, get_hash_for_feature(all, "Action", "article=politics")));
+  feature_indexes.emplace_back(hash_to_index(all.weights, get_hash_for_feature(all, "User", "user=Anna")));
 
   const size_t interaction_index = interaction_to_index(all.weights,
-      get_index_for_feature(all, "Action", "article=sports"), get_index_for_feature(all, "Action", "article=sports"));
+      get_hash_for_feature(all, "Action", "article=sports"), get_hash_for_feature(all, "Action", "article=sports"));
 
   const float expected_w0 = 0.00331056793f;
   const float expected_w1 = -0.0163742676f;
@@ -134,7 +134,7 @@ bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
 
   // Ensure weights are non-zero for another live interaction
   const size_t interaction_index_other = interaction_to_index(all.weights,
-      get_index_for_feature(all, "Action", "article=sports"), get_index_for_feature(all, "User", "user=Anna"));
+      get_hash_for_feature(all, "Action", "article=sports"), get_hash_for_feature(all, "User", "user=Anna"));
 
   BOOST_CHECK_NE(ZERO, weights.strided_index(interaction_index_other));
   BOOST_CHECK_NE(ZERO, weights.strided_index(interaction_index_other + 1));
@@ -142,7 +142,7 @@ bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
 
   // Ensure weights are 0 for non-live interactions
   const size_t interaction_index_empty = interaction_to_index(all.weights,
-      get_index_for_feature(all, "User", "user=Anna"), get_index_for_feature(all, "Action", "article=sports"));
+      get_hash_for_feature(all, "User", "user=Anna"), get_hash_for_feature(all, "Action", "article=sports"));
 
   BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index_empty));
   BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index_empty + 1));
