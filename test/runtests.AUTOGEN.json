@@ -4079,7 +4079,7 @@
   {
     "id": 344,
     "desc": "check cb_adf with multiple passes",
-    "vw_command": "--cb_adf -c --passes 2 -d train-sets/cb_adf_multipass_crash_1.data --holdout_off",
+    "vw_command": "--cb_adf -k -c --passes 2 -d train-sets/cb_adf_multipass_crash_1.data --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/cb_adf_multipass_crash_1.stderr"
     },
@@ -4090,7 +4090,7 @@
   {
     "id": 345,
     "desc": "check cb with multiple passes",
-    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 -c --passes 2 --holdout_off",
+    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 -k -c --passes 2 --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/cb_multi_cost_multipass.stderr"
     },
@@ -4101,12 +4101,82 @@
   {
     "id": 346,
     "desc": "check legacy mode cb with multiple passes",
-    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 -c --passes 2 --holdout_off --cb_force_legacy",
+    "vw_command": "-d train-sets/cb_multi_cost.dat --cb 4 -k -c --passes 2 --holdout_off --cb_force_legacy",
     "diff_files": {
       "stderr": "train-sets/ref/cb_multi_cost_multipass_legacy.stderr"
     },
     "input_files": [
       "train-sets/cb_multi_cost.dat"
+    ]
+  },
+  {
+    "id": 347,
+    "desc": "cats save with predictions",
+    "vw_command": "--cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -f models/cats_train.model -p cats_save.predict --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats_save.stderr",
+      "cats_save.predict": "pred-sets/ref/cats_save.predict"
+    },
+    "input_files": [
+      "train-sets/cats_train.json"
+    ]
+  },
+  {
+    "id": 348,
+    "desc": "cats load with predictions",
+    "vw_command": "--cats 32 --bandwidth 1 --min_value 0 --max_value 32 --json --chain_hash --coin --epsilon 0.2 -q :: -d train-sets/cats_train.json -i models/cats_train.model -p cats_load.predict --save_resume",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats_load.stderr",
+      "cats_load.predict": "pred-sets/ref/cats_load.predict"
+    },
+    "input_files": [
+      "train-sets/cats_train.json",
+      "models/cats_train.model"
+    ],
+    "depends_on": [
+      347
+    ]
+  },
+  {
+    "id": 349,
+    "desc": "model with corrupted weights gd.cc",
+    "diff_files": {
+      "stderr": "train-sets/ref/corrupt_weights_gd.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd.model"
+  },
+  {
+    "id": 350,
+    "desc": "model with corrupted weights gd_mf.cc",
+    "diff_files": {
+      "stderr": "train-sets/ref/corrupt_weights_gd_mf.stderr"
+    },
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd_mf.model"
+  },
+  {
+    "id": 351,
+    "desc": "test privacy_activation command line argument",
+    "vw_command": "--privacy_activation -d train-sets/privacy_dataset --invert_hash readable_model_privacy.txt --cbify 2 --cb_adf -f model_privacy.vw",
+    "diff_files": {
+      "stderr": "train-sets/ref/privacy_dataset.stderr",
+      "model_privacy.vw": "model-sets/model_privacy.vw",
+      "readable_model_privacy.txt": "pred-sets/ref/readable_model_privacy.txt"
+    },
+    "input_files": [
+      "train-sets/privacy_dataset"
+    ]
+  },
+  {
+    "id": 352,
+    "desc": "test privacy_activation command line argument with no tags input",
+    "vw_command": "--privacy_activation -d train-sets/privacy_dataset_no_tags --invert_hash readable_model_privacy_no_tags.txt --cbify 2 --cb_adf -f model_privacy_no_tags.vw",
+    "diff_files": {
+      "stderr": "train-sets/ref/privacy_no_tags.stderr",
+      "model_privacy_no_tags.vw": "model-sets/model_privacy_no_tags.vw",
+      "readable_model_privacy_no_tags.txt": "pred-sets/ref/readable_model_privacy_no_tags.txt"
+    },
+    "input_files": [
+      "train-sets/privacy_dataset_no_tags"
     ]
   }
 ]
