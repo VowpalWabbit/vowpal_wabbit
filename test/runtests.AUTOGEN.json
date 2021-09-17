@@ -4159,7 +4159,6 @@
     "vw_command": "--privacy_activation -d train-sets/privacy_dataset --invert_hash readable_model_privacy.txt --cbify 2 --cb_adf -f model_privacy.vw",
     "diff_files": {
       "stderr": "train-sets/ref/privacy_dataset.stderr",
-      "model_privacy.vw": "model-sets/model_privacy.vw",
       "readable_model_privacy.txt": "pred-sets/ref/readable_model_privacy.txt"
     },
     "input_files": [
@@ -4172,7 +4171,6 @@
     "vw_command": "--privacy_activation -d train-sets/privacy_dataset_no_tags --invert_hash readable_model_privacy_no_tags.txt --cbify 2 --cb_adf -f model_privacy_no_tags.vw",
     "diff_files": {
       "stderr": "train-sets/ref/privacy_no_tags.stderr",
-      "model_privacy_no_tags.vw": "model-sets/model_privacy_no_tags.vw",
       "readable_model_privacy_no_tags.txt": "pred-sets/ref/readable_model_privacy_no_tags.txt"
     },
     "input_files": [

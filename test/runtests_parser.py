@@ -175,7 +175,7 @@ class Parser:
     @staticmethod
     def is_filename_of_testset(line):
         tokens = line.split("/")
-        return tokens[0] in ["train-sets", "pred-sets", "test-sets", "model-sets"]
+        return tokens[0] in ["train-sets", "pred-sets", "test-sets"]
 
     # RunTests has the contract of ending with this perl commment
     @staticmethod
