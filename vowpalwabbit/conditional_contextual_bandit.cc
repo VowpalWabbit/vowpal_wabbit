@@ -18,6 +18,7 @@
 #include "version.h"
 #include "debug_log.h"
 #include "shared_data.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 
@@ -606,10 +607,8 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
   // added.
   if (!read || (sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG && sm.is_ccb_input_model))
   {
-    std::stringstream msg;
-    if (!read) { msg << "CCB: has_seen_multi_slot_example = " << sm.has_seen_multi_slot_example << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&sm.has_seen_multi_slot_example),
-        sizeof(sm.has_seen_multi_slot_example), read, msg, text);
+    VW::model_utils::process_model_field(
+        io, sm.has_seen_multi_slot_example, read, "CCB: has_seen_multi_slot_example", text);
   }
 
   if (read && sm.has_seen_multi_slot_example) { insert_ccb_interactions(sm.all->interactions); }

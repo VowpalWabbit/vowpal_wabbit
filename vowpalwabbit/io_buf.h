@@ -12,10 +12,12 @@
 #include <cassert>
 #include <cstdlib>
 #include <algorithm>
+#include <fmt/format.h>
 
 #include "v_array.h"
 #include "hash.h"
 #include "io/io_adapter.h"
+#include "vw_string_view.h"
 
 #ifndef VW_NOEXCEPT
 #  include "vw_exception.h"
