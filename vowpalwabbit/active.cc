@@ -13,6 +13,7 @@
 #include "shared_data.h"
 #include "vw_math.h"
 #include "vw_versions.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 
@@ -149,13 +150,8 @@ void save_load(active& a, io_buf& io, bool read, bool text)
   if (io.num_files() == 0) { return; }
   if (a._model_version >= VW::version_definitions::VERSION_FILE_WITH_ACTIVE_SEEN_LABELS)
   {
-    std::stringstream msg;
-    if (!read)
-    { msg << fmt::format("Active: min_seen_label {}, max_seen_label: {}\n", a._min_seen_label, a._max_seen_label); }
-    bin_text_read_write_fixed_validated(
-        io, reinterpret_cast<char*>(&a._min_seen_label), sizeof(a._min_seen_label), "", read, msg, text);
-    bin_text_read_write_fixed_validated(
-        io, reinterpret_cast<char*>(&a._max_seen_label), sizeof(a._max_seen_label), "", read, msg, text);
+    VW::model_utils::process_model_field(io, a._min_seen_label, read, "Active: min_seen_label {}", text);
+    VW::model_utils::process_model_field(io, a._max_seen_label, read, "Active: max_seen_label {}", text);
   }
 }
 
