@@ -10,7 +10,7 @@ public class Program
     private static Process StartGitRevParse()
     {
         Process gitProcess = new Process();
-        
+
         try
         {
             gitProcess.StartInfo.FileName = "git";
@@ -28,7 +28,7 @@ public class Program
         {
             gitProcess = null;
         }
-        
+
         return gitProcess;
     }
 
@@ -47,16 +47,23 @@ public class Program
             string version = lines[0].Trim();
 
             string gitCommit = String.Empty;
-            
-            if (p != null) 
+
+            if (p != null)
             {
                 gitCommit = p.StandardOutput.ReadToEnd().Trim();
-            
+
                 // Needed?
                 p.WaitForExit();
             }
 
+            var numbers = version
+                .Split('.')
+                .ToList();
+
             string config = "#define PACKAGE_VERSION \"" + version + "\"\n"
+                          + "#define VW_VERSION_MAJOR " + numbers[0] + "\n";
+                          + "#define VW_VERSION_MINOR " + numbers[1] + "\n";
+                          + "#define VW_VERSION_PATCH " + numbers[2] + "\n";
                           + "#define COMMIT_VERSION \"" + gitCommit + "\"\n";
 
             if (!File.Exists("config.h") ||

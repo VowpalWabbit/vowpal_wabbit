@@ -24,13 +24,11 @@
 #include "vw.h"
 #include "shared_data.h"
 #include "label_parser.h"
+#include "vw_versions.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::gd
 #include "io/logger.h"
-
-#define VERSION_SAVE_RESUME_FIX "7.10.1"
-#define VERSION_PASS_UINT64 "8.3.3"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -1001,7 +999,7 @@ void save_load_online_state(
   bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&all.sd->total_features), sizeof(all.sd->total_features), read, msg, text);
 
-  if (!read || all.model_file_ver >= VERSION_SAVE_RESUME_FIX)
+  if (!read || all.model_file_ver >= VW::version_definitions::VERSION_SAVE_RESUME_FIX)
   {
     // restore some data to allow --save_resume work more accurate
 
@@ -1017,7 +1015,7 @@ void save_load_online_state(
 
     // fix "number of examples per pass"
     msg << "current_pass " << all.current_pass << "\n";
-    if (all.model_file_ver >= VERSION_PASS_UINT64)
+    if (all.model_file_ver >= VW::version_definitions::VERSION_PASS_UINT64)
       bin_text_read_write_fixed(
           model_file, reinterpret_cast<char*>(&all.current_pass), sizeof(all.current_pass), read, msg, text);
     else  // backwards compatiblity.
@@ -1084,11 +1082,11 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
     if (resume)
     {
-      if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
+      if (read && all.model_file_ver < VW::version_definitions::VERSION_SAVE_RESUME_FIX)
         *(all.trace_message)
             << std::endl
             << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than "
-            << VERSION_SAVE_RESUME_FIX << std::endl
+            << VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string() << std::endl
             << std::endl;
       save_load_online_state(all, model_file, read, text, g.total_weight, &g);
     }
