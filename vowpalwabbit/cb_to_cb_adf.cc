@@ -129,7 +129,8 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("eval")) return nullptr;
 
   // ANY model created with older version should default to --cb_force_legacy
-  if (all.model_file_ver != EMPTY_VERSION_FILE) compat_old_cb = !(all.model_file_ver >= VERSION_FILE_WITH_CB_TO_CBADF);
+  if (all.model_file_ver != VW::version_definitions::EMPTY_VERSION_FILE)
+  { compat_old_cb = !(all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF); }
 
   // not compatible with adf
   if (options.was_supplied("cbify_reg")) compat_old_cb = true;

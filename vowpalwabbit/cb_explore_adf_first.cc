@@ -85,11 +85,11 @@ void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, multi_ex& 
 void cb_explore_adf_first::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VERSION_FILE_WITH_FIRST_SAVE_RESUME)
+  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_FIRST_SAVE_RESUME)
   {
     std::stringstream msg;
     if (!read) { msg << "cb first adf storing example counter:  = " << _tau << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_tau), sizeof(_tau), "", read, msg, text);
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_tau), sizeof(_tau), read, msg, text);
   }
 }
 

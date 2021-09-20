@@ -1,4 +1,4 @@
-Id 
+Id
 Min label:-1
 Max label:0
 bits:18
@@ -7,7 +7,7 @@ lda:0
 0 skip:
 options: --cb_adf --cb_explore_adf --cb_sample --cb_type mtr --ccb_explore_adf --csoaa_ldf multiline --csoaa_rank
 Checksum: 3404196193
-CCB: has_seen_multi_slot_example = 1
+CCB: has_seen_multi_slot_example = true
 event_sum 2
 action_sum 5
 :0
