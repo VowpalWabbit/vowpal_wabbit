@@ -1,5 +1,5 @@
 Version 8.11.0
-Id 
+Id
 Min label:-1
 Max label:0
 bits:18
@@ -8,7 +8,7 @@ lda:0
 0 skip:
 options: --cb_adf --cb_explore_adf --cb_sample --cb_type mtr --ccb_explore_adf --csoaa_ldf multiline --csoaa_rank --interactions AAA --interactions ::: --quadratic :: --quadratic AB
 Checksum: 2813477556
-CCB: has_seen_multi_slot_example = 1
+CCB: has_seen_multi_slot_example = true
 event_sum 12
 action_sum 48
 :0
