@@ -21,7 +21,8 @@ using namespace VW::config;
 
 namespace INTERACTIONS
 {
-namespace {
+namespace
+{
 template <typename FuncT>
 void for_each_value(const std::array<features, NUM_NAMESPACES>& feature_spaces, namespace_index term, const FuncT& func)
 {
@@ -93,13 +94,11 @@ float calculate_count_and_sum_ft_sq_for_combinations(const std::array<features, 
         results.resize(order_of_inter);
         std::fill(results.begin(), results.end(), 0.f);
 
-        for_each_value(feature_spaces, *interaction_term_it,
-            [&](float value)
-            {
-              const float x = value * value;
-              results[0] += x;
-              for (size_t j = 1; j < order_of_inter; ++j) { results[j] += results[j - 1] * x; }
-            });
+        for_each_value(feature_spaces, *interaction_term_it, [&](float value) {
+          const float x = value * value;
+          results[0] += x;
+          for (size_t j = 1; j < order_of_inter; ++j) { results[j] += results[j - 1] * x; }
+        });
 
         sum_feat_sq_in_inter *= results[order_of_inter - 1];
         if (sum_feat_sq_in_inter == 0.f) { break; }
@@ -113,7 +112,7 @@ float calculate_count_and_sum_ft_sq_for_combinations(const std::array<features, 
 
   return sum_feat_sq_in_inter_outer;
 }
-  }
+}  // namespace
 
 // returns number of new features that will be generated for example and sum of their squared values
 float eval_sum_ft_squared_of_generated_ft(bool permutations,
@@ -287,9 +286,7 @@ std::vector<std::vector<namespace_index>> generate_namespace_combinations_with_r
   // This computation involves factorials and so can only be done with relatively small inputs.
   // Factorial 22 would result in 64 bit overflow.
   if ((namespaces.size() + num_to_pick) <= 21)
-  {
-    result.reserve(VW::math::number_of_combinations_with_repetition(namespaces.size(), num_to_pick));
-  }
+  { result.reserve(VW::math::number_of_combinations_with_repetition(namespaces.size(), num_to_pick)); }
 
   auto last_index = namespaces.size() - 1;
   // last index is used to signal when done

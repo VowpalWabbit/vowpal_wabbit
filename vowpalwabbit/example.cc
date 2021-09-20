@@ -14,7 +14,8 @@ float calculate_total_sum_features_squared(bool permutations, example& ec)
   float sum_features_squared = 0.f;
   for (const features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
 
-  float calculated_sum_features_squared = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(permutations, *ec.interactions, *ec.extent_interactions, ec.feature_space);
+  float calculated_sum_features_squared = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
+      permutations, *ec.interactions, *ec.extent_interactions, ec.feature_space);
   sum_features_squared += calculated_sum_features_squared;
   return sum_features_squared;
 }

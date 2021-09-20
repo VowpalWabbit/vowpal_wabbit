@@ -34,7 +34,8 @@ inline bool contains_wildcard(const std::vector<namespace_index>& interaction)
   return std::find(interaction.begin(), interaction.end(), wildcard_namespace) != interaction.end();
 }
 // function estimates how many new features will be generated for example and their sum(value^2).
-float eval_sum_ft_squared_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
+float eval_sum_ft_squared_of_generated_ft(bool permutations,
+    const std::vector<std::vector<namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions,
     const std::array<features, NUM_NAMESPACES>& feature_spaces);
 
