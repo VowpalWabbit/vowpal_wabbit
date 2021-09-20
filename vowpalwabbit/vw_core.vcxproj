@@ -214,6 +214,7 @@
     <ClInclude Include="metric_sink.h" />
     <ClInclude Include="mf.h" />
     <ClInclude Include="multiclass.h" />
+    <ClInclude Include="model_utils.h" />
     <ClInclude Include="multilabel_oaa.h" />
     <ClInclude Include="multilabel.h" />
     <ClInclude Include="namespaced_feature_store.h" />

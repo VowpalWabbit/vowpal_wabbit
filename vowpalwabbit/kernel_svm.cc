@@ -248,14 +248,14 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
   if (read)
   {
     fec = &calloc_or_throw<flat_example>();
-    brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fec), sizeof(flat_example), "");
+    brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fec), sizeof(flat_example));
 
     if (brw > 0)
     {
       if (fec->tag_len > 0)
       {
         fec->tag = calloc_or_throw<char>(fec->tag_len);
-        brw = model_file.bin_read_fixed(fec->tag, fec->tag_len * sizeof(char), "");
+        brw = model_file.bin_read_fixed(fec->tag, fec->tag_len * sizeof(char));
         if (!brw) return 2;
       }
       if (fec->fs.size() > 0)
@@ -264,13 +264,13 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         size_t len = fs.size();
         fs.values.clear();
         fs.values.resize_but_with_stl_behavior(len);
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.values.begin()), len * sizeof(feature_value), "");
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.values.begin()), len * sizeof(feature_value));
         if (!brw) return 3;
 
         len = fs.indicies.size();
         fs.indicies.clear();
         fs.indicies.resize_but_with_stl_behavior(len);
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.indicies.begin()), len * sizeof(feature_index), "");
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(fs.indicies.begin()), len * sizeof(feature_index));
         if (!brw) return 3;
       }
     }
@@ -318,7 +318,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   if (model_file.num_files() == 0) return;
   std::stringstream msg;
   bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&(model->num_support)), sizeof(model->num_support), "", read, msg, text);
+      model_file, reinterpret_cast<char*>(&(model->num_support)), sizeof(model->num_support), read, msg, text);
   // params.all->opts_n_args.trace_message<<"Read num support "<<model->num_support<< endl;
 
   flat_example* fec = nullptr;
@@ -342,10 +342,10 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
 
   if (read) { model->alpha.resize_but_with_stl_behavior(model->num_support); }
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->alpha.data()),
-      static_cast<uint32_t>(model->num_support) * sizeof(float), "", read, msg, text);
+      static_cast<uint32_t>(model->num_support) * sizeof(float), read, msg, text);
   if (read) { model->delta.resize_but_with_stl_behavior(model->num_support); }
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->delta.data()),
-      static_cast<uint32_t>(model->num_support) * sizeof(float), "", read, msg, text);
+      static_cast<uint32_t>(model->num_support) * sizeof(float), read, msg, text);
 }
 
 void save_load(svm_params& params, io_buf& model_file, bool read, bool text)

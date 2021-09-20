@@ -147,6 +147,7 @@ set(vw_all_headers
   multiclass.h
   multilabel_oaa.h
   multilabel.h
+  model_utils.h
   mwt.h
   namespaced_feature_store.h
   numeric_casts.h

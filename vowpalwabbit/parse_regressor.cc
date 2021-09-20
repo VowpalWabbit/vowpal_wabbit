@@ -131,20 +131,21 @@ void save_load_header(
       v_length = buff2.size();
       buff2[std::min(v_length, default_buf_size) - 1] = '\0';
     }
-    bytes_read_write += bin_text_read_write(model_file, buff2.data(), v_length, "", read, msg, text);
-    all.model_file_ver = buff2.data();  // stored in all to check save_resume fix in gd
+    bytes_read_write += bin_text_read_write(model_file, buff2.data(), v_length, read, msg, text);
+    all.model_file_ver = VW::version_struct{buff2.data()};  // stored in all to check save_resume fix in gd
     VW::validate_version(all);
 
-    if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH) model_file.verify_hash(true);
+    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+      model_file.verify_hash(true);
 
-    if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
+    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
     {
       v_length = all.id.length() + 1;
 
       msg << "Id " << all.id << "\n";
       memcpy(buff2.data(), all.id.c_str(), std::min(v_length, default_buf_size));
       if (read) { v_length = default_buf_size; }
-      bytes_read_write += bin_text_read_write(model_file, buff2.data(), v_length, "", read, msg, text);
+      bytes_read_write += bin_text_read_write(model_file, buff2.data(), v_length, read, msg, text);
       all.id = buff2.data();
 
       if (read && !options.was_supplied("id") && !all.id.empty())
@@ -155,22 +156,21 @@ void save_load_header(
     }
 
     char model = 'm';
-
-    bytes_read_write +=
-        bin_text_read_write_fixed_validated(model_file, &model, 1, "file is not a model file", read, msg, text);
+    bytes_read_write += bin_text_read_write_fixed_validated(model_file, &model, 1, read, msg, text);
+    if (model != 'm') { THROW("file is not a model file") }
 
     msg << "Min label:" << all.sd->min_label << "\n";
     bytes_read_write += bin_text_read_write_fixed_validated(
-        model_file, reinterpret_cast<char*>(&all.sd->min_label), sizeof(all.sd->min_label), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&all.sd->min_label), sizeof(all.sd->min_label), read, msg, text);
 
     msg << "Max label:" << all.sd->max_label << "\n";
     bytes_read_write += bin_text_read_write_fixed_validated(
-        model_file, reinterpret_cast<char*>(&all.sd->max_label), sizeof(all.sd->max_label), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&all.sd->max_label), sizeof(all.sd->max_label), read, msg, text);
 
     msg << "bits:" << all.num_bits << "\n";
     uint32_t local_num_bits = all.num_bits;
     bytes_read_write += bin_text_read_write_fixed_validated(
-        model_file, reinterpret_cast<char*>(&local_num_bits), sizeof(local_num_bits), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&local_num_bits), sizeof(local_num_bits), read, msg, text);
 
     if (read && !options.was_supplied("bit_precision"))
     {
@@ -187,7 +187,7 @@ void save_load_header(
 
     VW::validate_num_bits(all);
 
-    if (all.model_file_ver < VERSION_FILE_WITH_INTERACTIONS_IN_FO)
+    if (all.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_INTERACTIONS_IN_FO)
     {
       if (!read) THROW("cannot write legacy format");
 
@@ -195,7 +195,7 @@ void save_load_header(
       uint32_t pair_len = 0;
       msg << pair_len << " pairs: ";
       bytes_read_write += bin_text_read_write_fixed_validated(
-          model_file, reinterpret_cast<char*>(&pair_len), sizeof(pair_len), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&pair_len), sizeof(pair_len), read, msg, text);
 
       // TODO: validate pairs?
       for (size_t i = 0; i < pair_len; i++)
@@ -203,20 +203,20 @@ void save_load_header(
         char pair[3] = {0, 0, 0};
 
         // Only the read path is implemented since this is for old version read support.
-        bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, "", read, msg, text);
+        bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, read, msg, text);
         std::vector<namespace_index> temp(pair, *(&pair + 1));
         if (std::count(all.interactions.begin(), all.interactions.end(), temp) == 0)
         { all.interactions.emplace_back(temp.begin(), temp.end()); }
       }
 
       msg << "\n";
-      bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, read, msg, text);
 
       uint32_t triple_len = 0;
 
       msg << triple_len << " triples: ";
       bytes_read_write += bin_text_read_write_fixed_validated(
-          model_file, reinterpret_cast<char*>(&triple_len), sizeof(triple_len), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&triple_len), sizeof(triple_len), read, msg, text);
 
       // TODO: validate triples?
       for (size_t i = 0; i < triple_len; i++)
@@ -224,7 +224,7 @@ void save_load_header(
         char triple[4] = {0, 0, 0, 0};
 
         // Only the read path is implemented since this is for old version read support.
-        bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, "", read, msg, text);
+        bytes_read_write += bin_text_read_write_fixed_validated(model_file, triple, 3, read, msg, text);
 
         std::vector<namespace_index> temp(triple, *(&triple + 1));
         if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
@@ -232,10 +232,11 @@ void save_load_header(
       }
 
       msg << "\n";
-      bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, read, msg, text);
 
       if (all.model_file_ver >=
-          VERSION_FILE_WITH_INTERACTIONS)  // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO (previous if)
+          VW::version_definitions::VERSION_FILE_WITH_INTERACTIONS)  // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO
+                                                                    // (previous if)
       {
         if (!read) THROW("cannot write legacy format");
 
@@ -244,16 +245,16 @@ void save_load_header(
 
         msg << len << " interactions: ";
         bytes_read_write += bin_text_read_write_fixed_validated(
-            model_file, reinterpret_cast<char*>(&len), sizeof(len), "", read, msg, text);
+            model_file, reinterpret_cast<char*>(&len), sizeof(len), read, msg, text);
 
         for (size_t i = 0; i < len; i++)
         {
           // Only the read path is implemented since this is for old version read support.
           uint32_t inter_len = 0;
           bytes_read_write += bin_text_read_write_fixed_validated(
-              model_file, reinterpret_cast<char*>(&inter_len), sizeof(inter_len), "", read, msg, text);
+              model_file, reinterpret_cast<char*>(&inter_len), sizeof(inter_len), read, msg, text);
 
-          auto size = bin_text_read_write_fixed_validated(model_file, buff2.data(), inter_len, "", read, msg, text);
+          auto size = bin_text_read_write_fixed_validated(model_file, buff2.data(), inter_len, read, msg, text);
           bytes_read_write += size;
           if (size != inter_len) { THROW("Failed to read interaction from model file."); }
 
@@ -263,17 +264,17 @@ void save_load_header(
         }
 
         msg << "\n";
-        bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
+        bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, read, msg, text);
       }
     }
 
-    if (all.model_file_ver <= VERSION_FILE_WITH_RANK_IN_HEADER)
+    if (all.model_file_ver <= VW::version_definitions::VERSION_FILE_WITH_RANK_IN_HEADER)
     {
       // to fix compatibility that was broken in 7.9
       uint32_t rank = 0;
       msg << "rank:" << rank << "\n";
       bytes_read_write += bin_text_read_write_fixed_validated(
-          model_file, reinterpret_cast<char*>(&rank), sizeof(rank), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&rank), sizeof(rank), read, msg, text);
       if (rank != 0)
       {
         if (!options.was_supplied("rank"))
@@ -294,7 +295,7 @@ void save_load_header(
 
     msg << "lda:" << all.lda << "\n";
     bytes_read_write += bin_text_read_write_fixed_validated(
-        model_file, reinterpret_cast<char*>(&all.lda), sizeof(all.lda), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&all.lda), sizeof(all.lda), read, msg, text);
 
     // TODO: validate ngram_len?
     auto* g_transformer = all.skip_gram_transformer.get();
@@ -302,7 +303,7 @@ void save_load_header(
         (g_transformer != nullptr) ? static_cast<uint32_t>(g_transformer->get_initial_ngram_definitions().size()) : 0;
     msg << ngram_len << " ngram:";
     bytes_read_write += bin_text_read_write_fixed_validated(
-        model_file, reinterpret_cast<char*>(&ngram_len), sizeof(ngram_len), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&ngram_len), sizeof(ngram_len), read, msg, text);
 
     std::vector<std::string> temp_vec;
     const auto& ngram_strings = g_transformer != nullptr ? g_transformer->get_initial_ngram_definitions() : temp_vec;
@@ -315,7 +316,7 @@ void save_load_header(
         msg << ngram_strings[i] << " ";
         memcpy(ngram, ngram_strings[i].c_str(), std::min(static_cast<size_t>(3), ngram_strings[i].size()));
       }
-      bytes_read_write += bin_text_read_write_fixed_validated(model_file, ngram, 3, "", read, msg, text);
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, ngram, 3, read, msg, text);
       if (read)
       {
         std::string temp(ngram);
@@ -325,14 +326,14 @@ void save_load_header(
     }
 
     msg << "\n";
-    bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
+    bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, read, msg, text);
 
     // TODO: validate skips?
     uint32_t skip_len =
         (g_transformer != nullptr) ? static_cast<uint32_t>(g_transformer->get_initial_skip_definitions().size()) : 0;
     msg << skip_len << " skip:";
     bytes_read_write += bin_text_read_write_fixed_validated(
-        model_file, reinterpret_cast<char*>(&skip_len), sizeof(skip_len), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&skip_len), sizeof(skip_len), read, msg, text);
 
     const auto& skip_strings = g_transformer != nullptr ? g_transformer->get_initial_skip_definitions() : temp_vec;
     for (size_t i = 0; i < skip_len; i++)
@@ -344,7 +345,7 @@ void save_load_header(
         memcpy(skip, skip_strings[i].c_str(), std::min(static_cast<size_t>(3), skip_strings[i].size()));
       }
 
-      bytes_read_write += bin_text_read_write_fixed_validated(model_file, skip, 3, "", read, msg, text);
+      bytes_read_write += bin_text_read_write_fixed_validated(model_file, skip, 3, read, msg, text);
       if (read)
       {
         std::string temp(skip);
@@ -354,15 +355,15 @@ void save_load_header(
     }
 
     msg << "\n";
-    bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, "", read, msg, text);
+    bytes_read_write += bin_text_read_write_fixed_validated(model_file, nullptr, 0, read, msg, text);
 
     if (read)
     {
       uint32_t len;
-      size_t ret = model_file.bin_read_fixed(reinterpret_cast<char*>(&len), sizeof(len), "");
+      size_t ret = model_file.bin_read_fixed(reinterpret_cast<char*>(&len), sizeof(len));
       if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t)) THROW("bad model format!");
       if (buff2.size() < len) { buff2.resize(len); }
-      bytes_read_write += model_file.bin_read_fixed(buff2.data(), len, "") + ret;
+      bytes_read_write += model_file.bin_read_fixed(buff2.data(), len) + ret;
 
       // Write out file options to caller.
       if (len > 0)
@@ -402,25 +403,26 @@ void save_load_header(
       memcpy(buff2.data(), serialized_keep_options.c_str(), len + 1);
       *(buff2.data() + len) = 0;
       bytes_read_write += bin_text_read_write(model_file, buff2.data(), len + 1,  // len+1 to write a \0
-          "", read, msg, text);
+          read, msg, text);
     }
 
     // Read/write checksum if required by version
-    if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_HASH)
+    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_HASH)
     {
-      uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+      uint32_t check_sum = (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
           ? model_file.hash()
           : static_cast<uint32_t>(uniform_hash(model_file.buffer_start(), bytes_read_write, 0));
 
       uint32_t check_sum_saved = check_sum;
 
       msg << "Checksum: " << check_sum << "\n";
-      bin_text_read_write(model_file, reinterpret_cast<char*>(&check_sum), sizeof(check_sum), "", read, msg, text);
+      bin_text_read_write(model_file, reinterpret_cast<char*>(&check_sum), sizeof(check_sum), read, msg, text);
 
       if (check_sum_saved != check_sum) { THROW("Checksum is inconsistent, file is possibly corrupted."); }
     }
 
-    if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH) { model_file.verify_hash(false); }
+    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+    { model_file.verify_hash(false); }
   }
 }
 

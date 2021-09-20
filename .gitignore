@@ -22,6 +22,7 @@ CMakeCache.txt
 CTestCostData.txt
 CTestTestfile.cmake
 cmake_install.cmake
+CMakeUserPresets.json
 config.h
 *.la
 *.lo
