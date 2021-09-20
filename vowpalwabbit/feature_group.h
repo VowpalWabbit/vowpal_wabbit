@@ -441,6 +441,20 @@ struct features
   extent_iterator hash_extents_end(uint64_t hash) { return {this, hash, namespace_extents.end()}; }
   const_extent_iterator hash_extents_end(uint64_t hash) const { return {this, hash, namespace_extents.end()}; }
 
+  template<typename FuncT>
+  void foreach_feature_for_hash(uint64_t hash, const FuncT& func) const
+  {
+    for (auto it = hash_extents_begin(hash); it != hash_extents_end(hash); ++it)
+    {
+      auto this_range = *it;
+      for (auto inner_begin = this_range.first; inner_begin != this_range.second; ++inner_begin)
+      {
+        func(inner_begin);
+      }
+    }
+  }
+
+
   void clear();
   // These 3 overloads can be used if the sum_feat_sq of the removed section is known to avoid recalculating.
   void truncate_to(const audit_iterator& pos, float sum_feat_sq_of_removed_section);
