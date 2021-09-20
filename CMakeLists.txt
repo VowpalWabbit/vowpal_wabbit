@@ -242,6 +242,7 @@ add_subdirectory(cluster)
 add_subdirectory(library)
 include(ext_libs/ext_libs.cmake)
 add_subdirectory(vowpalwabbit)
+add_subdirectory(utl/dump_options)
 
 if (BUILD_FLATBUFFERS)
   add_subdirectory(utl/flatbuffer)

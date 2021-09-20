@@ -642,7 +642,7 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   {
     std::stringstream msg;
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(poly.depthsbits),
-        static_cast<uint32_t>(depthsbits_sizeof(poly)), "", read, msg, text);
+        static_cast<uint32_t>(depthsbits_sizeof(poly)), read, msg, text);
   }
   // unfortunately, following can't go here since save_load called before gd::save_load and thus
   // weight vector state uninitialiazed.

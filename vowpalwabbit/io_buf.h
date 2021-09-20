@@ -12,10 +12,12 @@
 #include <cassert>
 #include <cstdlib>
 #include <algorithm>
+#include <fmt/format.h>
 
 #include "v_array.h"
 #include "hash.h"
 #include "io/io_adapter.h"
+#include "vw_string_view.h"
 
 #ifndef VW_NOEXCEPT
 #  include "vw_exception.h"
@@ -251,8 +253,7 @@ public:
   void buf_write(char*& pointer, size_t n);
   size_t buf_read(char*& pointer, size_t n);
 
-  // if read_message is null, just read it in.  Otherwise do a comparison and barf on read_message.
-  size_t bin_read_fixed(char* data, size_t len, const char* read_message)
+  size_t bin_read_fixed(char* data, size_t len)
   {
     if (len > 0)
     {
@@ -263,10 +264,7 @@ public:
 
       // compute hash for check-sum
       if (_verify_hash) { _hash = static_cast<uint32_t>(uniform_hash(p, len, _hash)); }
-
-      if (*read_message == '\0') { memcpy(data, p, len); }
-      else if (memcmp(data, p, len) != 0)
-        THROW(read_message);
+      memcpy(data, p, len);
       return len;
     }
     return 0;
@@ -294,13 +292,13 @@ public:
   char* buffer_start() { return _buffer._begin; }  // This should be replaced with slicing.
 };
 
-inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_message)
+inline size_t bin_read(io_buf& i, char* data, size_t len)
 {
   uint32_t obj_len;
-  size_t ret = i.bin_read_fixed(reinterpret_cast<char*>(&obj_len), sizeof(obj_len), "");
+  size_t ret = i.bin_read_fixed(reinterpret_cast<char*>(&obj_len), sizeof(obj_len));
   if (obj_len > len || ret < sizeof(uint32_t)) THROW("bad model format!");
 
-  ret += i.bin_read_fixed(data, obj_len, read_message);
+  ret += i.bin_read_fixed(data, obj_len);
 
   return ret;
 }
@@ -324,10 +322,9 @@ inline size_t bin_text_write(io_buf& io, char* data, size_t len, std::stringstre
 }
 
 // a unified function for read(in binary), write(in binary), and write(in text)
-inline size_t bin_text_read_write(
-    io_buf& io, char* data, size_t len, const char* read_message, bool read, std::stringstream& msg, bool text)
+inline size_t bin_text_read_write(io_buf& io, char* data, size_t len, bool read, std::stringstream& msg, bool text)
 {
-  if (read) { return bin_read(io, data, len, read_message); }
+  if (read) { return bin_read(io, data, len); }
   return bin_text_write(io, data, len, msg, text);
 }
 
@@ -344,16 +341,16 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len, std::stri
 
 // a unified function for read(in binary), write(in binary), and write(in text)
 inline size_t bin_text_read_write_fixed(
-    io_buf& io, char* data, size_t len, const char* read_message, bool read, std::stringstream& msg, bool text)
+    io_buf& io, char* data, size_t len, bool read, std::stringstream& msg, bool text)
 {
-  if (read) { return io.bin_read_fixed(data, len, read_message); }
+  if (read) { return io.bin_read_fixed(data, len); }
   return bin_text_write_fixed(io, data, len, msg, text);
 }
 
 inline size_t bin_text_read_write_fixed_validated(
-    io_buf& io, char* data, size_t len, const char* read_message, bool read, std::stringstream& msg, bool text)
+    io_buf& io, char* data, size_t len, bool read, std::stringstream& msg, bool text)
 {
-  size_t nbytes = bin_text_read_write_fixed(io, data, len, read_message, read, msg, text);
+  size_t nbytes = bin_text_read_write_fixed(io, data, len, read, msg, text);
   if (read && len > 0)  // only validate bytes read/write if expected length > 0
   {
     if (nbytes == 0) { THROW("Unexpected end of file encountered."); }
@@ -361,17 +358,17 @@ inline size_t bin_text_read_write_fixed_validated(
   return nbytes;
 }
 
-#define writeit(what, str)                                                                  \
-  do                                                                                        \
-  {                                                                                         \
-    msg << str << " = " << what << " ";                                                     \
-    bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), "", read, msg, text); \
+#define writeit(what, str)                                                              \
+  do                                                                                    \
+  {                                                                                     \
+    msg << str << " = " << what << " ";                                                 \
+    bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), read, msg, text); \
   } while (0);
 
-#define writeitvar(what, str, mywhat)                                                           \
-  auto mywhat = (what);                                                                         \
-  do                                                                                            \
-  {                                                                                             \
-    msg << str << " = " << mywhat << " ";                                                       \
-    bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), "", read, msg, text); \
+#define writeitvar(what, str, mywhat)                                                       \
+  auto mywhat = (what);                                                                     \
+  do                                                                                        \
+  {                                                                                         \
+    msg << str << " = " << mywhat << " ";                                                   \
+    bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), read, msg, text); \
   } while (0);
