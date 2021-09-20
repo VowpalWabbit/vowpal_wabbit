@@ -605,7 +605,9 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 
   // We want to enter this block if either we are writing, or reading a model file after the version in which this was
   // added.
-  if (!read || (sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG && sm.is_ccb_input_model))
+  if (!read ||
+      (sm.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG &&
+          sm.is_ccb_input_model))
   {
     VW::model_utils::process_model_field(
         io, sm.has_seen_multi_slot_example, read, "CCB: has_seen_multi_slot_example", text);

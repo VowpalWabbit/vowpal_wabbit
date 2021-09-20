@@ -14,9 +14,9 @@ namespace VW
 {
 void validate_version(vw& all)
 {
-  if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
+  if (all.model_file_ver < VW::version_definitions::LAST_COMPATIBLE_VERSION)
     THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
-  if (all.model_file_ver > PACKAGE_VERSION)
+  if (all.model_file_ver > VW::version)
     logger::errlog_warn("Warning: model version is more recent than VW version.  This may not work.");
 }
 
