@@ -131,13 +131,6 @@ public:
     _tag_info.is_set = true;
   }
 
-  // function to lookup a bit for a feature in the bitset using the
-  // tag hash and turn the bit on
-  void set_privacy_preserving_bit(uint64_t feature_index)
-  {
-    if (_tag_info.is_set) { _feature_bitset[feature_index & _weight_mask][_tag_info.tag_hash] = 1; }
-  }
-
   void unset_tag() { _tag_info.is_set = false; }
 
   // function to check if the number of bits set to 1 are greater than a threshold for a feature
@@ -174,7 +167,16 @@ public:
     return const_iterator(i, stride());
   }
 
-  inline weight& operator[](size_t i) { return *(get_or_default_and_get(i)); }
+  inline weight& operator[](size_t i) 
+  { 
+    // lookup a bit for a feature in the bitset using the
+    // tag hash and turn the bit on
+    if(_tag_info.is_set) 
+    {
+      _feature_bitset[i & _weight_mask][_tag_info.tag_hash]=1;
+    }
+    return *(get_or_default_and_get(i)); 
+  }
 
   inline const weight& operator[](size_t i) const { return *(get_or_default_and_get(i)); }
 

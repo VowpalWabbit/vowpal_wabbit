@@ -101,21 +101,23 @@ public:
   const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _begin, stride()); }
 
   inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
-  inline weight& operator[](size_t i) { return _begin[i & _weight_mask]; }
+  inline weight& operator[](size_t i) 
+  { 
+    if(_tag_info.is_set)
+    {
+      // lookup a bit for a feature in the bitset using the
+      // tag hash and turn it on
+      _feature_bitset[i & _weight_mask][_tag_info.tag_hash]=1;
+    }
+    return _begin[i & _weight_mask]; 
+  }
 
   void set_tag(uint64_t tag_hash)
   {
     _tag_info.tag_hash = tag_hash;
     _tag_info.is_set = true;
   }
-
-  // function to lookup a bit for a feature in the bitset using the
-  // tag hash and turn it on
-  void set_privacy_preserving_bit(uint64_t feature_index)
-  {
-    if (_tag_info.is_set) { _feature_bitset[feature_index & _weight_mask][_tag_info.tag_hash] = 1; }
-  }
-
+  
   void unset_tag() { _tag_info.is_set = false; }
 
   // function to check if the number of bits set to 1 are greater than a threshold for a feature
