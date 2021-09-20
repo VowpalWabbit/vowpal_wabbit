@@ -67,7 +67,7 @@ template <typename InteractionTermT>
 float calculate_count_and_sum_ft_sq_for_combinations(const std::array<features, NUM_NAMESPACES>& feature_spaces,
     const std::vector<std::vector<InteractionTermT>>& interactions)
 {
-  v_array<float> results;
+  std::vector<float> results;
 
   float sum_feat_sq_in_inter_outer = 0.;
   for (const auto& inter : interactions)
@@ -84,8 +84,13 @@ float calculate_count_and_sum_ft_sq_for_combinations(const std::array<features, 
       }
       else
       {
-        size_t order_of_inter = inter.size();
-        results.resize_but_with_stl_behavior(order_of_inter);
+        // already compared ns == ns+1
+        size_t order_of_inter = 2;
+        for (auto ns_end = interaction_term_it + 2; ns_end < inter.end(); ++ns_end)
+        {
+          if (*interaction_term_it == *ns_end) { ++order_of_inter; }
+        }
+        results.resize(order_of_inter);
         std::fill(results.begin(), results.end(), 0.f);
 
         for_each_value(feature_spaces, *interaction_term_it,
