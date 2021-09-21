@@ -753,7 +753,8 @@ void finish_example(vw& all, automl& data, multi_ex& ec)
 void save_load_aml(automl& d, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
-  if (!read || d.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_AUTOML) { d.cm.save_load(model_file, read, text); }
+  if (!read || d.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_AUTOML)
+  { d.cm.save_load(model_file, read, text); }
 }
 
 VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
