@@ -314,7 +314,7 @@ void save_load(cb_explore& cb, io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
 
-  if (!read || cb.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  if (!read || cb.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
     if (!read) { msg << "cb cover storing example counter:  = " << cb.counter << "\n"; }
