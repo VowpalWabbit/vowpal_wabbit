@@ -42,8 +42,8 @@ Schedule -> schedule(): Swaps out / manages live configs on each step
 Schedule.median -> better_than_median(): Checks if config is better than median
 Schedule.Choose -> calc_priority(): Determines priority when selecting next live config
 Predict/Incur Loss -> offset_learn(): Updates weights and learns on live configs
-Better -> update_champ()(section noted in code): Changes champ if challenger is better
-Worse -> update_champ()(section noted in code): Removes challenger is much worse than champ
+Better -> better(): Changes champ if challenger is better
+Worse -> worse(): Removes challenger is much worse than champ
 */
 
 namespace VW
@@ -490,9 +490,10 @@ void interaction_config_manager::update_champ()
         while (!index_queue.empty()) { index_queue.pop(); };
       }
     }
-
-    // If challenger is worse ('worse function from Chacha')
-    if (worse(configs[config_index], champ_config)) { configs[config_index].state = Removed; }
+    else if (worse(configs[config_index], champ_config))  // If challenger is worse ('worse function from Chacha')
+    {
+      configs[config_index].state = Removed;
+    }
   }
   if (champ_change) { exclusion_configs_oracle(); }
 }
