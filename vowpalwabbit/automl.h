@@ -116,9 +116,8 @@ struct interaction_config_manager : config_manager
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, size_t>> index_queue;
 
-  interaction_config_manager(size_t, size_t, uint64_t,
-      float (*calc_priority_ns)(size_t config_index, const std::map<size_t, exclusion_config>& configs,
-          const std::map<namespace_index, size_t>& ns_counter));
+  interaction_config_manager(
+      size_t, size_t, uint64_t, float (*)(const exclusion_config&, const std::map<namespace_index, size_t>&));
 
   void one_step(const multi_ex&) override;
   void apply_config(example*, size_t) override;
@@ -131,7 +130,7 @@ private:
   bool better(const exclusion_config&, const exclusion_config&) const;
   bool worse(const exclusion_config&, const exclusion_config&) const;
   void update_champ();
-  float (*calc_priority)(size_t, const std::map<size_t, exclusion_config>&, const std::map<namespace_index, size_t>&);
+  float (*calc_priority)(const exclusion_config&, const std::map<namespace_index, size_t>&);
   void process_namespaces(const multi_ex&);
   void exclusion_configs_oracle();
   bool repopulate_index_queue();
