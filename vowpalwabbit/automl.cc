@@ -437,8 +437,8 @@ bool interaction_config_manager::better(const exclusion_config& challenger, cons
 
 bool interaction_config_manager::worse(const exclusion_config& challenger, const exclusion_config& champ) const
 {
-  // return champ.lower_bound > challenger.ips;
-  return false;
+  // Dummy return false to remove unused variable warning
+  return (champ.lower_bound > challenger.ips) ? false : false;
 }
 
 void interaction_config_manager::update_champ()
