@@ -8,7 +8,6 @@
 #include "learner.h"
 #include "io/logger.h"
 #include "vw.h"
-#include "vw_versions.h"
 
 #include <cfloat>
 
@@ -226,8 +225,9 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
 // config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
-interaction_config_manager::interaction_config_manager(size_t lease, size_t max_live_configs, uint64_t seed)
-    : lease(lease), max_live_configs(max_live_configs), seed(seed)
+interaction_config_manager::interaction_config_manager(size_t lease, size_t max_live_configs, uint64_t seed,
+    float (*calc_priority)(size_t, const std::map<size_t, exclusion_config>&, const std::map<namespace_index, size_t>&))
+    : lease(lease), max_live_configs(max_live_configs), seed(seed), calc_priority(calc_priority)
 {
   random_state.set_random_state(seed);
   exclusion_config conf(lease);
@@ -283,17 +283,6 @@ void interaction_config_manager::gen_quadratic_interactions(size_t stride)
   }
 }
 
-// Basic implementation of scheduler to pick new configs when one runs out of lease.
-// Highest priority will be picked first because of max-PQ implementation, this will
-// be the config with the least exclusion. Note that all configs will run to lease
-// before priorities and lease are reset.
-float interaction_config_manager::calc_priority(size_t config_index) const
-{
-  float priority = 0.f;
-  for (const auto& ns_pair : configs.at(config_index).exclusions) { priority -= ns_counter.at(ns_pair.first); }
-  return priority;
-}
-
 // This function will process an incoming multi_ex, update the namespace_counter,
 // log if new namespaces are encountered, and regenerate interactions based on
 // newly seen namespaces.
@@ -337,7 +326,7 @@ void interaction_config_manager::exclusion_configs_oracle()
     exclusion_config conf(lease);
     conf.exclusions = new_exclusions;
     configs[config_index] = conf;
-    float priority = calc_priority(config_index);
+    float priority = (*calc_priority)(config_index, configs, ns_counter);
     index_queue.push(std::make_pair(priority, config_index));
   }
 }
@@ -355,7 +344,7 @@ bool interaction_config_manager::repopulate_index_queue()
     // Only re-add if not removed and not live
     if (configs[redo_index].state == New || configs[redo_index].state == Inactive)
     {
-      float priority = calc_priority(redo_index);
+      float priority = (*calc_priority)(redo_index, configs, ns_counter);
       index_queue.push(std::make_pair(priority, redo_index));
     }
   }
@@ -646,11 +635,11 @@ void interaction_config_manager::revert_config(example* ec) { ec->interactions =
 template <typename CMType, bool is_explore>
 void predict_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 {
-  size_t champ_stride = data.cm.current_champ;
-  for (example* ex : ec) { data.cm.apply_config(ex, champ_stride); }
+  size_t champ_stride = data.cm->current_champ;
+  for (example* ex : ec) { data.cm->apply_config(ex, champ_stride); }
 
   auto restore_guard = VW::scope_exit([&data, &ec, &champ_stride] {
-    for (example* ex : ec) { data.cm.revert_config(ex); }
+    for (example* ex : ec) { data.cm->revert_config(ex); }
   });
 
   base.predict(ec, champ_stride);
@@ -661,10 +650,10 @@ template <typename CMType>
 void offset_learn(automl<CMType>& data, multi_learner& base, multi_ex& ec, const size_t stride, CB::cb_class& logged,
     size_t labelled_action)
 {
-  for (example* ex : ec) { data.cm.apply_config(ex, stride); }
+  for (example* ex : ec) { data.cm->apply_config(ex, stride); }
 
   auto restore_guard = VW::scope_exit([&data, &ec, &stride] {
-    for (example* ex : ec) { data.cm.revert_config(ex); }
+    for (example* ex : ec) { data.cm->revert_config(ex); }
   });
 
   if (!base.learn_returns_prediction) { base.predict(ec, stride); }
@@ -683,10 +672,10 @@ void offset_learn(automl<CMType>& data, multi_learner& base, multi_ex& ec, const
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
   const float r = -logged.cost;
 
-  data.cm.scores[stride].update(chosen_action == labelled_action ? w : 0, r);
+  data.cm->scores[stride].update(chosen_action == labelled_action ? w : 0, r);
 
   // cache the champ
-  if (data.cm.current_champ == stride) { data.champ_a_s = std::move(ec[0]->pred.a_s); }
+  if (data.cm->current_champ == stride) { data.champ_a_s = std::move(ec[0]->pred.a_s); }
 }
 
 // this is the registered learn function for this reduction
@@ -698,7 +687,7 @@ void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 
   bool is_learn = true;
 
-  if (is_learn) { data.cm.county++; }
+  if (is_learn) { data.cm->county++; }
   // extra assert just bc
   assert(data.all->interactions.empty() == true);
 
@@ -715,19 +704,19 @@ void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
     }
   }
 
-  config_manager_state current_state = data.cm.current_state;
-  data.cm.one_step(ec);
+  config_manager_state current_state = data.cm->current_state;
+  data.cm->one_step(ec);
 
   if (current_state == config_manager_state::Experimenting)
   {
-    for (size_t stride = 0; stride < data.cm.scores.size(); ++stride)
+    for (size_t stride = 0; stride < data.cm->scores.size(); ++stride)
     { offset_learn(data, base, ec, stride, logged, labelled_action); }
     // replace bc champ always gets cached
     ec[0]->pred.a_s = std::move(data.champ_a_s);
   }
   else
   {
-    size_t champ = data.cm.current_champ;
+    size_t champ = data.cm->current_champ;
     offset_learn(data, base, ec, champ, logged, labelled_action);
     // replace bc champ always gets cached
     ec[0]->pred.a_s = std::move(data.champ_a_s);
@@ -741,18 +730,18 @@ void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 template <typename CMType>
 void persist(automl<CMType>& data, metric_sink& metrics)
 {
-  data.cm.persist(metrics);
+  data.cm->persist(metrics);
 }
 
 template <typename CMType>
 void finish_example(vw& all, automl<CMType>& data, multi_ex& ec)
 {
   {
-    size_t champ_stride = data.cm.current_champ;
-    for (example* ex : ec) { data.cm.apply_config(ex, champ_stride); }
+    size_t champ_stride = data.cm->current_champ;
+    for (example* ex : ec) { data.cm->apply_config(ex, champ_stride); }
 
     auto restore_guard = VW::scope_exit([&data, &ec, &champ_stride] {
-      for (example* ex : ec) { data.cm.revert_config(ex); }
+      for (example* ex : ec) { data.cm->revert_config(ex); }
     });
 
     data.adf_learner->print_example(all, ec);
@@ -765,8 +754,28 @@ template <typename CMType>
 void save_load_aml(automl<CMType>& d, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
-  if (!read || d.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_AUTOML)
-  { d.cm.save_load(model_file, read, text); }
+  d.cm->save_load(model_file, read, text);
+}
+
+// Basic implementation of scheduler to pick new configs when one runs out of lease.
+// Highest priority will be picked first because of max-PQ implementation, this will
+// be the config with the least exclusion. Note that all configs will run to lease
+// before priorities and lease are reset.
+float calc_priority_least_exclusion(size_t config_index, const std::map<size_t, exclusion_config>& configs,
+    const std::map<namespace_index, size_t>& ns_counter)
+{
+  float priority = 0.f;
+  for (const auto& ns_pair : configs.at(config_index).exclusions) { priority -= ns_counter.at(ns_pair.first); }
+  return priority;
+}
+
+// Same as above, returns 0 (includes rest to remove unused variable warning)
+float calc_priority_empty(size_t config_index, const std::map<size_t, exclusion_config>& configs,
+    const std::map<namespace_index, size_t>& ns_counter)
+{
+  float priority = 0.f;
+  for (const auto& ns_pair : configs.at(config_index).exclusions) { priority -= ns_counter.at(ns_pair.first); }
+  return 0.f;
 }
 
 VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
@@ -777,6 +786,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   size_t lease;
   size_t max_live_configs;
   std::string cm_type;
+  std::string priority_type;
 
   option_group_definition new_options("Debug: automl reduction");
   new_options
@@ -786,12 +796,28 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
                .default_value(3)
                .help("set number of live configs"))
       .add(make_option("lease", lease).keep().default_value(10).help("set initial lease for automl interactions"))
-      .add(make_option("cm-type", cm_type).keep().default_value("interaction").help("set type of config manager"));
+      .add(make_option("cm_type", cm_type).keep().default_value("interaction").help("set type of config manager"))
+      .add(make_option("priority_type", priority_type)
+               .keep()
+               .default_value("none")
+               .help("set type of config manager in {none, le}"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto data =
-      VW::make_unique<automl<interaction_config_manager>>(lease, all.model_file_ver, max_live_configs, all.random_seed);
+  float (*calc_priority)(size_t, const std::map<size_t, exclusion_config>&, const std::map<namespace_index, size_t>&);
+
+  if (priority_type == "none") { calc_priority = &calc_priority_empty; }
+  else if (priority_type == "le")
+  {
+    calc_priority = &calc_priority_least_exclusion;
+  }
+  else
+  {
+    THROW("Error: Invalid priority function provided");
+  }
+
+  auto cm = VW::make_unique<interaction_config_manager>(lease, max_live_configs, all.random_seed, calc_priority);
+  auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
   // all is not needed but good to have for testing purposes
   data->all = &all;
   assert(max_live_configs <= MAX_CONFIGS);

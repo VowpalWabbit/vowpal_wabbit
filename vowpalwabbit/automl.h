@@ -9,7 +9,6 @@
 #include "constant.h"  // NUM_NAMESPACES
 #include "metric_sink.h"
 #include "action_score.h"
-#include "version.h"
 #include <map>
 #include <set>
 #include <queue>
@@ -117,7 +116,9 @@ struct interaction_config_manager : config_manager
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, size_t>> index_queue;
 
-  interaction_config_manager(size_t, size_t, uint64_t);
+  interaction_config_manager(size_t, size_t, uint64_t,
+      float (*calc_priority_ns)(size_t config_index, const std::map<size_t, exclusion_config>& configs,
+          const std::map<namespace_index, size_t>& ns_counter));
 
   void one_step(const multi_ex&) override;
   void apply_config(example*, size_t) override;
@@ -130,7 +131,7 @@ private:
   bool better(const exclusion_config&, const exclusion_config&) const;
   bool worse(const exclusion_config&, const exclusion_config&) const;
   void update_champ();
-  float calc_priority(size_t) const;
+  float (*calc_priority)(size_t, const std::map<size_t, exclusion_config>&, const std::map<namespace_index, size_t>&);
   void process_namespaces(const multi_ex&);
   void exclusion_configs_oracle();
   bool repopulate_index_queue();
@@ -141,15 +142,11 @@ private:
 template <typename CMType>
 struct automl
 {
-  CMType cm;
+  std::unique_ptr<CMType> cm;
   vw* all = nullptr;                              //  TBD might not be needed
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
-  VW::version_struct model_file_version;
-  ACTION_SCORE::action_scores champ_a_s;  // a sequence of classes with scores.  Also used for probabilities.
-  automl(size_t starting_lease, VW::version_struct model_file_version, size_t max_live_configs, uint64_t seed)
-      : cm(starting_lease, max_live_configs, seed), model_file_version(model_file_version)
-  {
-  }
+  ACTION_SCORE::action_scores champ_a_s;          // a sequence of classes with scores.  Also used for probabilities.
+  automl(std::unique_ptr<CMType> cm) : cm(std::move(cm)) {}
 };
 
 }  // namespace automl

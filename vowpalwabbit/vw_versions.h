@@ -53,9 +53,6 @@ constexpr VW::version_struct VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME{8, 11, 0};
 /// version that ensures accuracy of loaded models in first
 constexpr VW::version_struct VERSION_FILE_WITH_FIRST_SAVE_RESUME{8, 11, 0};
 
-/// version that ensures accuracy of loaded models in automl
-constexpr VW::version_struct VERSION_FILE_WITH_AUTOML{8, 11, 0};
-
 constexpr VW::version_struct VERSION_SAVE_RESUME_FIX{7, 10, 1};
 
 constexpr VW::version_struct VERSION_PASS_UINT64{8, 3, 3};
