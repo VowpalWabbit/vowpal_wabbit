@@ -226,7 +226,7 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
 // config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
-config_manager::config_manager(size_t lease, size_t max_live_configs, uint64_t seed)
+interaction_config_manager::interaction_config_manager(size_t lease, size_t max_live_configs, uint64_t seed)
     : lease(lease), max_live_configs(max_live_configs), seed(seed)
 {
   random_state.set_random_state(seed);
@@ -237,7 +237,7 @@ config_manager::config_manager(size_t lease, size_t max_live_configs, uint64_t s
   scores.push_back(sc);
 }
 
-void config_manager::one_step(const multi_ex& ec)
+void interaction_config_manager::one_step(const multi_ex& ec)
 {
   switch (current_state)
   {
@@ -266,7 +266,7 @@ void config_manager::one_step(const multi_ex& ec)
 // from the corresponding stride. This function can be swapped out depending on
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
-void config_manager::gen_quadratic_interactions(size_t stride)
+void interaction_config_manager::gen_quadratic_interactions(size_t stride)
 {
   auto& exclusions = configs[scores[stride].config_index].exclusions;
   auto& interactions = scores[stride].live_interactions;
@@ -287,17 +287,17 @@ void config_manager::gen_quadratic_interactions(size_t stride)
 // Highest priority will be picked first because of max-PQ implementation, this will
 // be the config with the least exclusion. Note that all configs will run to lease
 // before priorities and lease are reset.
-float config_manager::calc_priority(size_t config_index)
+float interaction_config_manager::calc_priority(size_t config_index) const
 {
   float priority = 0.f;
-  for (const auto& ns_pair : configs[config_index].exclusions) { priority -= ns_counter[ns_pair.first]; }
+  for (const auto& ns_pair : configs.at(config_index).exclusions) { priority -= ns_counter.at(ns_pair.first); }
   return priority;
 }
 
 // This function will process an incoming multi_ex, update the namespace_counter,
 // log if new namespaces are encountered, and regenerate interactions based on
 // newly seen namespaces.
-void config_manager::process_namespaces(const multi_ex& ecs)
+void interaction_config_manager::process_namespaces(const multi_ex& ecs)
 {
   // Count all namepsace seen in current example
   bool new_ns_seen = false;
@@ -322,7 +322,7 @@ void config_manager::process_namespaces(const multi_ex& ecs)
 // the current champ and remove one interaction for each new config. The number
 // of configs to generate per champ is hard-coded to 5 at the moment.
 // TODO: Add logic to avoid duplicate configs (could be very costly)
-void config_manager::exclusion_configs_oracle()
+void interaction_config_manager::exclusion_configs_oracle()
 {
   auto& champ_interactions = scores[current_champ].live_interactions;
   for (size_t i = 0; i < CONGIGS_PER_CHAMP_CHANGE; ++i)
@@ -347,7 +347,7 @@ void config_manager::exclusion_configs_oracle()
 // 'index_queue' which can be used to swap out live configs as they run out of lease. This functionality
 // may be better within the oracle, which could generate better priorities for different configs based
 // on ns_counter (which is updated as each example is processed)
-bool config_manager::repopulate_index_queue()
+bool interaction_config_manager::repopulate_index_queue()
 {
   for (const auto& ind_config : configs)
   {
@@ -364,7 +364,7 @@ bool config_manager::repopulate_index_queue()
 
 // Function from Chacha to determine if loss is better than median. Very strict
 // requires ips is strictly greater, and strict median
-bool config_manager::better_than_median(size_t stride) const
+bool interaction_config_manager::better_than_median(size_t stride) const
 {
   size_t lower = 0;
   size_t higher = 0;
@@ -384,7 +384,7 @@ bool config_manager::better_than_median(size_t stride) const
 
 // This function defines the logic update the live configs' leases, and to swap out
 // new configs when the lease runs out.
-void config_manager::schedule()
+void interaction_config_manager::schedule()
 {
   for (size_t stride = 0; stride < max_live_configs; ++stride)
   {
@@ -430,7 +430,18 @@ void config_manager::schedule()
   }
 }
 
-void config_manager::update_champ()
+bool interaction_config_manager::better(const exclusion_config& challenger, const exclusion_config& champ) const
+{
+  return challenger.lower_bound > champ.ips;
+}
+
+bool interaction_config_manager::worse(const exclusion_config& challenger, const exclusion_config& champ) const
+{
+  // return champ.lower_bound > challenger.ips;
+  return false;
+}
+
+void interaction_config_manager::update_champ()
 {
   // Update ips and lower bound for live configs
   for (size_t stride = 0; stride < scores.size(); ++stride)
@@ -441,8 +452,7 @@ void config_manager::update_champ()
     configs[scores[stride].config_index].ips = ips;
     configs[scores[stride].config_index].lower_bound = lower_bound;
   }
-  float champ_ips = configs[scores[current_champ].config_index].ips;
-  float champ_lower_bound = configs[scores[current_champ].config_index].lower_bound;
+  exclusion_config champ_config = configs[scores[current_champ].config_index];
   bool champ_change = false;
 
   // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
@@ -452,7 +462,7 @@ void config_manager::update_champ()
         scores[current_champ].config_index == config_index)
     { continue; }
     // If challenger is better ('better function from Chacha')
-    if (champ_ips < configs[config_index].lower_bound)
+    if (better(configs[config_index], champ_config))
     {
       champ_change = true;
       if (configs[config_index].state == Live)
@@ -466,8 +476,7 @@ void config_manager::update_champ()
             break;
           }
         }
-        champ_ips = configs[config_index].ips;
-        champ_lower_bound = configs[config_index].lower_bound;
+        champ_config = configs[config_index];
       }
       else
       {
@@ -494,16 +503,12 @@ void config_manager::update_champ()
     }
 
     // If challenger is worse ('worse function from Chacha')
-    if (configs[config_index].ips < champ_lower_bound)
-    {
-      // TODO: Update worse function, this seems way too strict (removes configs instantly)
-      // configs[config_index].state = Removed;
-    }
+    if (worse(configs[config_index], champ_config)) { configs[config_index].state = Removed; }
   }
   if (champ_change) { exclusion_configs_oracle(); }
 }
 
-void config_manager::save_load(io_buf& model_file, bool read, bool text)
+void interaction_config_manager::save_load(io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
@@ -617,7 +622,7 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
   }
 }
 
-void config_manager::persist(metric_sink& metrics)
+void interaction_config_manager::persist(metric_sink& metrics)
 {
   metrics.int_metrics_list.emplace_back("test_county", county);
   metrics.int_metrics_list.emplace_back("current_champ", current_champ);
@@ -626,7 +631,7 @@ void config_manager::persist(metric_sink& metrics)
 }
 
 // This sets up example with correct ineractions vector
-void config_manager::apply_config(example* ec, size_t stride)
+void interaction_config_manager::apply_config(example* ec, size_t stride)
 {
   if (ec == nullptr) { return; }
   if (stride < max_live_configs) { ec->interactions = &(scores[stride].live_interactions); }
@@ -636,10 +641,10 @@ void config_manager::apply_config(example* ec, size_t stride)
   }
 }
 
-void config_manager::revert_config(example* ec) { ec->interactions = nullptr; }
+void interaction_config_manager::revert_config(example* ec) { ec->interactions = nullptr; }
 
-template <bool is_explore>
-void predict_automl(automl& data, multi_learner& base, multi_ex& ec)
+template <typename CMType, bool is_explore>
+void predict_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 {
   size_t champ_stride = data.cm.current_champ;
   for (example* ex : ec) { data.cm.apply_config(ex, champ_stride); }
@@ -652,8 +657,9 @@ void predict_automl(automl& data, multi_learner& base, multi_ex& ec)
 }
 
 // inner loop of learn driven by # MAX_CONFIGS
-void offset_learn(
-    automl& data, multi_learner& base, multi_ex& ec, const size_t stride, CB::cb_class& logged, size_t labelled_action)
+template <typename CMType>
+void offset_learn(automl<CMType>& data, multi_learner& base, multi_ex& ec, const size_t stride, CB::cb_class& logged,
+    size_t labelled_action)
 {
   for (example* ex : ec) { data.cm.apply_config(ex, stride); }
 
@@ -685,8 +691,8 @@ void offset_learn(
 
 // this is the registered learn function for this reduction
 // mostly uses config_manager and actual_learn(..)
-template <bool is_explore>
-void learn_automl(automl& data, multi_learner& base, multi_ex& ec)
+template <typename CMType, bool is_explore>
+void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 {
   assert(data.all->weights.sparse == false);
 
@@ -732,9 +738,14 @@ void learn_automl(automl& data, multi_learner& base, multi_ex& ec)
   assert(ec[0]->interactions == nullptr);
 }
 
-void persist(automl& data, metric_sink& metrics) { data.cm.persist(metrics); }
+template <typename CMType>
+void persist(automl<CMType>& data, metric_sink& metrics)
+{
+  data.cm.persist(metrics);
+}
 
-void finish_example(vw& all, automl& data, multi_ex& ec)
+template <typename CMType>
+void finish_example(vw& all, automl<CMType>& data, multi_ex& ec)
 {
   {
     size_t champ_stride = data.cm.current_champ;
@@ -750,7 +761,8 @@ void finish_example(vw& all, automl& data, multi_ex& ec)
   VW::finish_example(all, ec);
 }
 
-void save_load_aml(automl& d, io_buf& model_file, bool read, bool text)
+template <typename CMType>
+void save_load_aml(automl<CMType>& d, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
   if (!read || d.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_AUTOML)
@@ -764,6 +776,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
 
   size_t lease;
   size_t max_live_configs;
+  std::string cm_type;
 
   option_group_definition new_options("Debug: automl reduction");
   new_options
@@ -772,11 +785,13 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
                .keep()
                .default_value(3)
                .help("set number of live configs"))
-      .add(make_option("lease", lease).keep().default_value(10).help("set initial lease for automl interactions"));
+      .add(make_option("lease", lease).keep().default_value(10).help("set initial lease for automl interactions"))
+      .add(make_option("cm-type", cm_type).keep().default_value("interaction").help("set type of config manager"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto data = VW::make_unique<automl>(lease, all.model_file_ver, max_live_configs, all.random_seed);
+  auto data =
+      VW::make_unique<automl<interaction_config_manager>>(lease, all.model_file_ver, max_live_configs, all.random_seed);
   // all is not needed but good to have for testing purposes
   data->all = &all;
   assert(max_live_configs <= MAX_CONFIGS);
@@ -808,17 +823,17 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
     auto ppw = max_live_configs;
 
-    auto* l =
-        make_reduction_learner(std::move(data), as_multiline(base_learner), learn_automl<true>, predict_automl<true>,
-            stack_builder.get_setupfn_name(automl_setup))
-            .set_params_per_weight(ppw)  // refactor pm
-            .set_finish_example(finish_example)
-            .set_save_load(save_load_aml)
-            .set_persist_metrics(persist)
-            .set_prediction_type(base_learner->pred_type)
-            .set_label_type(label_type_t::cb)
-            .set_learn_returns_prediction(true)
-            .build();
+    auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
+        learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
+        stack_builder.get_setupfn_name(automl_setup))
+                  .set_params_per_weight(ppw)  // refactor pm
+                  .set_finish_example(finish_example<interaction_config_manager>)
+                  .set_save_load(save_load_aml<interaction_config_manager>)
+                  .set_persist_metrics(persist<interaction_config_manager>)
+                  .set_prediction_type(base_learner->pred_type)
+                  .set_label_type(label_type_t::cb)
+                  .set_learn_returns_prediction(true)
+                  .build();
 
     return make_base(*l);
   }

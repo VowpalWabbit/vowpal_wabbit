@@ -81,7 +81,7 @@ enum config_manager_state
   Experimenting
 };
 
-struct config_manager_base
+struct config_manager
 {
   // This fn gets called before learning any example
   virtual void one_step(const multi_ex&) = 0;
@@ -95,7 +95,7 @@ struct config_manager_base
   virtual void persist(metric_sink&) = 0;
 };
 
-struct config_manager : config_manager_base
+struct interaction_config_manager : config_manager
 {
   config_manager_state current_state = config_manager_state::Idle;
   size_t county = 0;
@@ -117,7 +117,7 @@ struct config_manager : config_manager_base
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, size_t>> index_queue;
 
-  config_manager(size_t, size_t, uint64_t);
+  interaction_config_manager(size_t, size_t, uint64_t);
 
   void one_step(const multi_ex&) override;
   void apply_config(example*, size_t) override;
@@ -127,8 +127,10 @@ struct config_manager : config_manager_base
 
 private:
   void gen_quadratic_interactions(size_t);
+  bool better(const exclusion_config&, const exclusion_config&) const;
+  bool worse(const exclusion_config&, const exclusion_config&) const;
   void update_champ();
-  float calc_priority(size_t);
+  float calc_priority(size_t) const;
   void process_namespaces(const multi_ex&);
   void exclusion_configs_oracle();
   bool repopulate_index_queue();
@@ -136,9 +138,10 @@ private:
   void schedule();
 };
 
+template <typename CMType>
 struct automl
 {
-  config_manager cm;
+  CMType cm;
   vw* all = nullptr;                              //  TBD might not be needed
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   VW::version_struct model_file_version;
