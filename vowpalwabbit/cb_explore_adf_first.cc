@@ -51,7 +51,7 @@ private:
 };
 
 cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version)
-    : _tau(tau), _epsilon(epsilon), _model_file_version(std::move(model_file_version))
+    : _tau(tau), _epsilon(epsilon), _model_file_version(model_file_version)
 {
 }
 
