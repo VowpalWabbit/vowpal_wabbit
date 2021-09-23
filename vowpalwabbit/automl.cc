@@ -705,10 +705,9 @@ void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
     }
   }
 
-  config_manager_state current_state = data.cm->current_state;
   data.cm->one_step(ec);
 
-  if (current_state == config_manager_state::Experimenting)
+  if (data.cm->current_state == config_manager_state::Experimenting)
   {
     for (size_t stride = 0; stride < data.cm->scores.size(); ++stride)
     { offset_learn(data, base, ec, stride, logged, labelled_action); }
