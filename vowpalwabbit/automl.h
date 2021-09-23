@@ -39,6 +39,7 @@ struct scored_config
   float last_r = 0.0;
   size_t update_count = 0;
   size_t config_index = 0;
+  bool regular = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
   scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
@@ -99,10 +100,11 @@ struct interaction_config_manager : config_manager
   config_manager_state current_state = config_manager_state::Idle;
   size_t county = 0;
   size_t current_champ = 0;
-  size_t lease;
+  size_t global_lease;
   size_t max_live_configs;
   uint64_t seed;
   rand_state random_state;
+  size_t priority_challengers;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, size_t> ns_counter;
@@ -117,7 +119,7 @@ struct interaction_config_manager : config_manager
   std::priority_queue<std::pair<float, size_t>> index_queue;
 
   interaction_config_manager(
-      size_t, size_t, uint64_t, float (*)(const exclusion_config&, const std::map<namespace_index, size_t>&));
+      size_t, size_t, uint64_t, size_t, float (*)(const exclusion_config&, const std::map<namespace_index, size_t>&));
 
   void one_step(const multi_ex&) override;
   void apply_config(example*, size_t) override;
@@ -134,7 +136,7 @@ private:
   void process_namespaces(const multi_ex&);
   void exclusion_configs_oracle();
   bool repopulate_index_queue();
-  bool better_than_median(size_t) const;
+  bool swap_regular(size_t);
   void schedule();
 };
 

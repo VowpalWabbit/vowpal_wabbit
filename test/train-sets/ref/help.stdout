@@ -201,10 +201,11 @@ Audit Regressor:
 Autolink:
   --autolink arg        create link function with polynomial d
 Debug: automl reduction:
-  --automl arg (=3, )            set number of live configs
-  --lease arg (=10, )            set initial lease for automl interactions
-  --cm_type arg (=interaction, ) set type of config manager
-  --priority_type arg (=none, )  set type of config manager in {none, le}
+  --automl arg (=3, )                set number of live configs
+  --global_lease arg (=10, )         set initial lease for automl interactions
+  --cm_type arg (=interaction, )     set type of config manager
+  --priority_type arg (=none, )      set type of config manager in {none, le}
+  --priority_challengers arg (=-1, ) set number of priority challengers to use
 Baseline options:
   --baseline            Learn an additive baseline (from constant features) and
                         a residual separately in regression.

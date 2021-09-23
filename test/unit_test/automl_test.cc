@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
     VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
-    BOOST_CHECK_EQUAL(aml->cm->current_champ, 1);
+    BOOST_CHECK_EQUAL(aml->cm->current_champ, 2);
     BOOST_CHECK_EQUAL(deterministic_champ_switch - 1, aml->cm->county);
     BOOST_CHECK_EQUAL(aml->cm->current_state, VW::automl::config_manager_state::Experimenting);
     return true;
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
     VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
-    BOOST_CHECK_EQUAL(aml->cm->current_champ, 1);
+    BOOST_CHECK_EQUAL(aml->cm->current_champ, 2);
     BOOST_CHECK_EQUAL(deterministic_champ_switch, aml->cm->county);
     BOOST_CHECK_EQUAL(aml->cm->current_state, VW::automl::config_manager_state::Experimenting);
     return true;
@@ -218,17 +218,17 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_lease)
     BOOST_CHECK_EQUAL(aml->cm->county, 15);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(aml->cm->scores[0].config_index, 0);
-    BOOST_CHECK_EQUAL(aml->cm->scores[1].config_index, 3);
-    BOOST_CHECK_EQUAL(aml->cm->scores[2].config_index, 2);
+    BOOST_CHECK_EQUAL(aml->cm->scores[1].config_index, 5);
+    BOOST_CHECK_EQUAL(aml->cm->scores[2].config_index, 3);
     BOOST_CHECK_EQUAL(aml->cm->configs.size(), 6);
-    BOOST_CHECK_EQUAL(aml->cm->configs[0].lease, 10);
+    BOOST_CHECK_EQUAL(aml->cm->configs[0].lease, 20);
     BOOST_CHECK_EQUAL(aml->cm->configs[3].lease, 10);
     BOOST_CHECK_EQUAL(aml->cm->configs[2].lease, 10);
     BOOST_CHECK_EQUAL(aml->cm->configs[4].lease, 20);
     BOOST_CHECK_EQUAL(aml->cm->scores[0].update_count, 15);
-    BOOST_CHECK_EQUAL(aml->cm->scores[1].update_count, 4);
+    BOOST_CHECK_EQUAL(aml->cm->scores[1].update_count, 14);
     BOOST_CHECK_EQUAL(aml->cm->scores[2].update_count, 4);
-    BOOST_CHECK_EQUAL(aml->cm->index_queue.size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm->index_queue.size(), 2);
     return true;
   });
 
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type le --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --lease 500", test_hooks,
-      num_iterations);
+      "--automl 3 --priority_type le --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --global_lease 500",
+      test_hooks, num_iterations);
   BOOST_CHECK_GT(ctr.back(), 0.8f);
 }

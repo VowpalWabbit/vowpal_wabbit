@@ -74,9 +74,9 @@ bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
   const size_t interaction_index = interaction_to_index(all.weights,
       get_hash_for_feature(all, "Action", "article=sports"), get_hash_for_feature(all, "Action", "article=sports"));
 
-  const float expected_w0 = 0.00331056793f;
-  const float expected_w1 = -0.0163742676f;
-  const float expected_w2 = 0.0492100269f;
+  const float expected_w0 = 0.0102325846f;
+  const float expected_w1 = 0.0230506323f;
+  const float expected_w2 = 0.0141550414f;
   const float ZERO = 0.f;
 
   for (auto index : feature_indexes)
