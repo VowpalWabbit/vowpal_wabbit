@@ -16,14 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install jq
-        shell: bash
-        run: |
-          apt update
-          apt install -y --no-install-recommends jq
-      - name: Configure CMake
-        shell: bash
-        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=On
       - name: Run clang tidy
         shell: bash
         run: ./.scripts/linux/run-clang-tidy.sh

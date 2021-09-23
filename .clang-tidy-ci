@@ -1,3 +1,0 @@
-Checks: '-*,performance-unnecessary-copy-initialization,performance-for-range-copy,performance-move-const-arg'
-FormatStyle: file
-WarningsAsErrors: '-*,performance-unnecessary-copy-initialization,performance-for-range-copy,performance-move-const-arg'
