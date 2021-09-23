@@ -1,0 +1,11 @@
+{
+  Checks: "-*,performance-unnecessary-copy-initialization,performance-for-range-copy,performance-move-const-arg",
+  WarningsAsErrors: "-*,performance-unnecessary-copy-initialization,performance-for-range-copy,performance-move-const-arg",
+  CheckOptions:
+    [
+      {
+        key: performance-move-const-arg.CheckTriviallyCopyableMove,
+        value: false,
+      }
+    ]
+}
