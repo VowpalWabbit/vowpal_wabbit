@@ -5,7 +5,7 @@
     [
       {
         key: performance-move-const-arg.CheckTriviallyCopyableMove,
-        value: false,
+        value: '0',
       }
     ]
 }
