@@ -343,7 +343,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   if (use_cs)
     csl = std::move(ec.l.cs);
   else
-    ld = std::move(ec.l.multi);
+    ld = ec.l.multi;
 
   ec.l.cb.costs.clear();
   ec.pred.a_s.clear();
@@ -370,7 +370,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   if (use_cs)
     ec.l.cs = std::move(csl);
   else
-    ec.l.multi = std::move(ld);
+    ec.l.multi = ld;
 
   ec.pred.multiclass = action;
   ec.l.cb.costs.clear();
