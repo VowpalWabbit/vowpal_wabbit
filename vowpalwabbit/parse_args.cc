@@ -1653,7 +1653,8 @@ vw* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model
   return ret;
 }
 
-vw* initialize(const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
+vw* initialize(
+    const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   return initialize_with_builder(s, model, skip_model_load, trace_listener, trace_context, nullptr);
 }

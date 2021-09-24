@@ -250,7 +250,8 @@ void options_boost_po::check_unregistered()
 }
 
 template <>
-void options_boost_po::add_to_description_impl<typelist<>>(const std::shared_ptr<base_option>&, po::options_description&)
+void options_boost_po::add_to_description_impl<typelist<>>(
+    const std::shared_ptr<base_option>&, po::options_description&)
 {
   THROW("That is an unsupported option type.");
 }
