@@ -6,4 +6,4 @@
 
 #include <string>
 
-using trace_message_t = void (*)(void *, const std::string &);
+using trace_message_t = void (*)(void*, const std::string&);

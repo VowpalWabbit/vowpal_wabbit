@@ -102,7 +102,7 @@ std::unique_ptr<writer> open_compressed_stdout();
 std::unique_ptr<reader> open_stdin();
 std::unique_ptr<writer> open_stdout();
 
-using write_func_t = ssize_t (*)(void *, const char *, size_t);
+using write_func_t = ssize_t (*)(void*, const char*, size_t);
 std::unique_ptr<writer> create_custom_writer(void* context, write_func_t write_func);
 
 /// \param fd the file descriptor of the socket. Will take ownership of the resource.

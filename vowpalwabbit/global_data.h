@@ -54,8 +54,8 @@
 
 typedef float weight;
 
-using feature_dict = std::unordered_map<std::string, std::unique_ptr<features> >;
-using reduction_setup_fn = VW::LEARNER::base_learner *(*)(VW::setup_base_i &);
+using feature_dict = std::unordered_map<std::string, std::unique_ptr<features>>;
+using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);
 

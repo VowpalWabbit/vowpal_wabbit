@@ -23,7 +23,7 @@
 #include "vw_exception.h"
 
 class sparse_parameters;
-using weight_map = std::unordered_map<uint64_t, weight *>;
+using weight_map = std::unordered_map<uint64_t, weight*>;
 
 template <typename T>
 class sparse_iterator
@@ -36,8 +36,8 @@ public:
   using iterator_category = std::forward_iterator_tag;
   using value_type = T;
   using difference_type = ptrdiff_t;
-  using pointer = T *;
-  using reference = T &;
+  using pointer = T*;
+  using reference = T&;
 
   sparse_iterator(weight_map::iterator& iter, uint32_t stride) : _iter(iter), _stride(stride) {}
 

@@ -25,8 +25,8 @@ public:
   using iterator_category = std::forward_iterator_tag;
   using value_type = T;
   using difference_type = std::ptrdiff_t;
-  using pointer = T *;
-  using reference = T &;
+  using pointer = T*;
+  using reference = T&;
 
   dense_iterator(T* current, T* begin, uint32_t stride) : _current(current), _begin(begin), _stride(stride) {}
 
