@@ -8,7 +8,6 @@
 #include "learner.h"
 #include "io/logger.h"
 #include "vw.h"
-#include "vw_versions.h"
 
 #include <cfloat>
 
@@ -16,6 +15,36 @@ using namespace VW::config;
 using namespace VW::LEARNER;
 
 namespace logger = VW::io::logger;
+
+/*
+This reduction implements the ChaCha algorithm from page 5 of the following paper:
+https://arxiv.org/pdf/2106.04815.pdf
+
+There are two key differences between this implementation and the algorithm described
+in the paper. First, the paper assumes all knowledge (of examples and namespaces) is
+known at the start, whereas that information is gathered as we process examples in reality.
+Second, this algorithm follows the pattern Schedule -> Update Champ -> Learn, whereas
+the paper follows the pattern Schedule -> Learn -> Update Champ. This should not make a
+functional difference. Nearly all of the variables and functions described in the
+algorithm live in the config_manager struct. The following provides a translation of
+terms used in the paper to this implementation:
+
+Variables from ChaCha:
+c_init -> 0: The first champ is initialized to the 0th indexed set of weights
+b(budget) -> max_live_configs: The weights/configs to learn on
+C -> current_champ: The weight index of the current champ
+S -> configs: The entire set of challengers/configs generated so far
+B(+ C) -> scores: The live challengers (including the champ) with statistics
+
+Functions from ChaCha:
+ConfigOracle -> exclusion_configs_oracle(): Generates new configs based on champ
+Schedule -> schedule(): Swaps out / manages live configs on each step
+Schedule.median -> better_than_median(): Checks if config is better than median
+Schedule.Choose -> calc_priority(): Determines priority when selecting next live config
+Predict/Incur Loss -> offset_learn(): Updates weights and learns on live configs
+Better -> better(): Changes champ if challenger is better
+Worse -> worse(): Removes challenger is much worse than champ
+*/
 
 namespace VW
 {
@@ -110,6 +139,9 @@ void scored_config::save_load_scored_config(io_buf& model_file, bool read, bool 
   if (!read) msg << "_aml_config_index " << config_index << "\n";
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&config_index), sizeof(config_index), read, msg, text);
 
+  if (!read) msg << "_aml_config_regular " << regular << "\n";
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&regular), sizeof(regular), read, msg, text);
+
   chisq.save_load(model_file, read, text);
 }
 
@@ -180,8 +212,8 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
     }
   }
 
-  if (!read) msg << "_aml_budget " << budget << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&budget), sizeof(budget), read, msg, text);
+  if (!read) msg << "_aml_lease " << lease << "\n";
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&lease), sizeof(lease), read, msg, text);
 
   if (!read) msg << "_aml_ips " << ips << "\n";
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ips), sizeof(ips), read, msg, text);
@@ -196,18 +228,24 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
 // config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
-config_manager::config_manager(size_t budget, size_t max_live_configs, uint64_t seed)
-    : budget(budget), max_live_configs(max_live_configs), seed(seed)
+interaction_config_manager::interaction_config_manager(size_t global_lease, size_t max_live_configs, uint64_t seed,
+    size_t priority_challengers,
+    float (*calc_priority)(const exclusion_config&, const std::map<namespace_index, size_t>&))
+    : global_lease(global_lease)
+    , max_live_configs(max_live_configs)
+    , seed(seed)
+    , priority_challengers(priority_challengers)
+    , calc_priority(calc_priority)
 {
   random_state.set_random_state(seed);
-  exclusion_config conf(budget);
+  exclusion_config conf(global_lease);
   conf.state = Live;
   configs[0] = conf;
   scored_config sc;
   scores.push_back(sc);
 }
 
-void config_manager::one_step(const multi_ex& ec)
+void interaction_config_manager::one_step(const multi_ex& ec)
 {
   switch (current_state)
   {
@@ -236,7 +274,7 @@ void config_manager::one_step(const multi_ex& ec)
 // from the corresponding stride. This function can be swapped out depending on
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
-void config_manager::gen_quadratic_interactions(size_t stride)
+void interaction_config_manager::gen_quadratic_interactions(size_t stride)
 {
   auto& exclusions = configs[scores[stride].config_index].exclusions;
   auto& interactions = scores[stride].live_interactions;
@@ -253,21 +291,10 @@ void config_manager::gen_quadratic_interactions(size_t stride)
   }
 }
 
-// Basic implementation of scheduler to pick new configs when one runs out of budget.
-// Highest priority will be picked first because of max-PQ implementation, this will
-// be the config with the least exclusion. Note that all configs will run to budget
-// before priorities and budget are reset.
-float config_manager::calc_priority(size_t config_index)
-{
-  float priority = 0.f;
-  for (const auto& ns_pair : configs[config_index].exclusions) { priority -= ns_counter[ns_pair.first]; }
-  return priority;
-}
-
 // This function will process an incoming multi_ex, update the namespace_counter,
 // log if new namespaces are encountered, and regenerate interactions based on
 // newly seen namespaces.
-void config_manager::process_namespaces(const multi_ex& ecs)
+void interaction_config_manager::process_namespaces(const multi_ex& ecs)
 {
   // Count all namepsace seen in current example
   bool new_ns_seen = false;
@@ -292,7 +319,7 @@ void config_manager::process_namespaces(const multi_ex& ecs)
 // the current champ and remove one interaction for each new config. The number
 // of configs to generate per champ is hard-coded to 5 at the moment.
 // TODO: Add logic to avoid duplicate configs (could be very costly)
-void config_manager::exclusion_configs_oracle()
+void interaction_config_manager::exclusion_configs_oracle()
 {
   auto& champ_interactions = scores[current_champ].live_interactions;
   for (size_t i = 0; i < CONGIGS_PER_CHAMP_CHANGE; ++i)
@@ -304,20 +331,20 @@ void config_manager::exclusion_configs_oracle()
         configs[scores[current_champ].config_index].exclusions);
     new_exclusions[ns1].insert(ns2);
     size_t config_index = configs.size();
-    exclusion_config conf(budget);
+    exclusion_config conf(global_lease);
     conf.exclusions = new_exclusions;
     configs[config_index] = conf;
-    float priority = calc_priority(config_index);
+    float priority = (*calc_priority)(configs[config_index], ns_counter);
     index_queue.push(std::make_pair(priority, config_index));
   }
 }
 
 // This function is triggered when all sets of interactions generated by the oracle have been tried and
-// reached their budget. It will then add inactive configs (stored in the config manager) to the queue
-// 'index_queue' which can be used to swap out live configs as they run out of budget. This functionality
+// reached their lease. It will then add inactive configs (stored in the config manager) to the queue
+// 'index_queue' which can be used to swap out live configs as they run out of lease. This functionality
 // may be better within the oracle, which could generate better priorities for different configs based
 // on ns_counter (which is updated as each example is processed)
-bool config_manager::repopulate_index_queue()
+bool interaction_config_manager::repopulate_index_queue()
 {
   for (const auto& ind_config : configs)
   {
@@ -325,7 +352,7 @@ bool config_manager::repopulate_index_queue()
     // Only re-add if not removed and not live
     if (configs[redo_index].state == New || configs[redo_index].state == Inactive)
     {
-      float priority = calc_priority(redo_index);
+      float priority = (*calc_priority)(configs[redo_index], ns_counter);
       index_queue.push(std::make_pair(priority, redo_index));
     }
   }
@@ -334,7 +361,7 @@ bool config_manager::repopulate_index_queue()
 
 // Function from Chacha to determine if loss is better than median. Very strict
 // requires ips is strictly greater, and strict median
-bool config_manager::better_than_median(size_t stride)
+/*bool interaction_config_manager::better_than_median(size_t stride) const
 {
   size_t lower = 0;
   size_t higher = 0;
@@ -342,7 +369,7 @@ bool config_manager::better_than_median(size_t stride)
   {
     if (other_stride != stride)
     {
-      if (configs[scores[stride].config_index].ips > configs[scores[other_stride].config_index].ips) { higher++; }
+      if (configs.at(scores[stride].config_index).ips > configs.at(scores[other_stride].config_index).ips) { higher++; }
       else
       {
         lower++;
@@ -350,69 +377,83 @@ bool config_manager::better_than_median(size_t stride)
     }
   }
   return higher > lower;
-}
+}*/
 
-void config_manager::handle_empty_budget(size_t stride)
+bool interaction_config_manager::swap_regular(size_t stride)
 {
-  auto& score = scores[stride];
-  size_t config_index = score.config_index;
-  if (configs[scores[stride].config_index].state != Removed)
+  for (size_t other_stride = 0; other_stride < scores.size(); ++other_stride)
   {
-    configs[config_index].budget *= 2;
-    if (better_than_median(stride)) { return; }
+    if (!scores[other_stride].regular && other_stride != current_champ &&
+        better(configs[scores[stride].config_index], configs[scores[other_stride].config_index]))
+    {
+      scores[stride].regular = false;
+      scores[other_stride].regular = true;
+      return true;
+    }
   }
-  // Skip over removed configs
-  bool removed = true;
-  while (!index_queue.empty() && removed)
-  {
-    removed = configs[index_queue.top().second].state == Removed;
-    if (removed) { index_queue.pop(); }
-  }
-  if (index_queue.empty() && !repopulate_index_queue()) { return; }
-  score.reset_stats();
-  configs[config_index].state = Inactive;
-  config_index = index_queue.top().second;
-  index_queue.pop();
-  score.config_index = config_index;
-  configs[config_index].state = Live;
-  // Regenerate interactions each time an exclusion is swapped in
-  gen_quadratic_interactions(stride);
-  // We may also want to 0 out weights here? Currently keep all same in stride position
+  return false;
 }
 
-// This function defines the logic update the live configs' budgets, and to swap out
-// new configs when the budget runs out.
-void config_manager::schedule()
+// This function defines the logic update the live configs' leases, and to swap out
+// new configs when the lease runs out.
+void interaction_config_manager::schedule()
 {
   for (size_t stride = 0; stride < max_live_configs; ++stride)
   {
-    if (stride == current_champ) { continue; }
-    if (scores.size() <= stride)
+    bool need_new_score = scores.size() <= stride;
+    /*
+    Scheduling a new live config is necessary in 3 cases:
+    1. We have not reached the maximum number of live configs yet
+    2. The current live config has been removed due to Chacha's worse function
+    3. A config has reached its lease
+    */
+    if (need_new_score || configs[scores[stride].config_index].state == Removed ||
+        scores[stride].update_count >= configs[scores[stride].config_index].lease)
     {
-      // Skip over removed configs
-      bool removed = true;
-      while (!index_queue.empty() && removed)
+      // Double the lease check swap for regular configs
+      if (!need_new_score && configs[scores[stride].config_index].state == Live)
       {
-        removed = configs[index_queue.top().second].state == Removed;
-        if (removed) { index_queue.pop(); }
+        configs[scores[stride].config_index].lease *= 2;
+        if (!scores[stride].regular || swap_regular(stride)) { continue; }
       }
-      if (index_queue.empty() && !repopulate_index_queue()) { return; }
-      scored_config sc;
-      sc.config_index = index_queue.top().second;
-      configs[sc.config_index].state = Live;
+      // Skip over removed configs in index queue, and do nothing we we run out of eligible configs
+      while (!index_queue.empty() && configs[index_queue.top().second].state == Removed) { index_queue.pop(); }
+      if (index_queue.empty() && !repopulate_index_queue()) { continue; }
+      // Allocate new score if we haven't reached maximum yet
+      if (need_new_score)
+      {
+        scored_config sc;
+        if (stride > priority_challengers) { sc.regular = true; }
+        scores.push_back(sc);
+      }
+      // Only inactivate current config if lease is reached
+      if (!need_new_score && configs[scores[stride].config_index].state == Live)
+      { configs[scores[stride].config_index].state = Inactive; }
+      // Set all features of new live config
+      scores[stride].reset_stats();
+      size_t new_live_config_index = index_queue.top().second;
       index_queue.pop();
-      scores.push_back(sc);
+      scores[stride].config_index = new_live_config_index;
+      configs[new_live_config_index].state = Live;
+      // Regenerate interactions each time an exclusion is swapped in
       gen_quadratic_interactions(stride);
-    }
-    else if (scores[stride].update_count >= configs[scores[stride].config_index].budget ||
-        configs[scores[stride].config_index].state == Removed)
-    {
-      handle_empty_budget(stride);
+      // We may also want to 0 out weights here? Currently keep all same in stride position
     }
   }
 }
 
-void config_manager::update_champ()
+bool interaction_config_manager::better(const exclusion_config& challenger, const exclusion_config& champ) const
+{
+  return challenger.lower_bound > champ.ips;
+}
+
+bool interaction_config_manager::worse(const exclusion_config& challenger, const exclusion_config& champ) const
+{
+  // Dummy return false to remove unused variable warning
+  return (champ.lower_bound > challenger.ips) ? false : false;
+}
+
+void interaction_config_manager::update_champ()
 {
   // Update ips and lower bound for live configs
   for (size_t stride = 0; stride < scores.size(); ++stride)
@@ -423,8 +464,7 @@ void config_manager::update_champ()
     configs[scores[stride].config_index].ips = ips;
     configs[scores[stride].config_index].lower_bound = lower_bound;
   }
-  float champ_ips = configs[scores[current_champ].config_index].ips;
-  float champ_lower_bound = configs[scores[current_champ].config_index].lower_bound;
+  exclusion_config champ_config = configs[scores[current_champ].config_index];
   bool champ_change = false;
 
   // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
@@ -434,7 +474,7 @@ void config_manager::update_champ()
         scores[current_champ].config_index == config_index)
     { continue; }
     // If challenger is better ('better function from Chacha')
-    if (champ_ips < configs[config_index].lower_bound)
+    if (better(configs[config_index], champ_config))
     {
       champ_change = true;
       if (configs[config_index].state == Live)
@@ -444,12 +484,16 @@ void config_manager::update_champ()
         {
           if (scores[stride].config_index == config_index)
           {
+            if (scores[stride].regular)
+            {
+              scores[stride].regular = false;
+              scores[current_champ].regular = true;
+            }
             current_champ = stride;
             break;
           }
         }
-        champ_ips = configs[config_index].ips;
-        champ_lower_bound = configs[config_index].lower_bound;
+        champ_config = configs[config_index];
       }
       else
       {
@@ -463,29 +507,31 @@ void config_manager::update_champ()
             worst_stride = stride;
           }
         }
-        configs[scores[worst_stride].config_index].budget *= 2;
+        configs[scores[worst_stride].config_index].lease *= 2;
         configs[scores[worst_stride].config_index].state = Inactive;
         scores[worst_stride].reset_stats();
         scores[worst_stride].config_index = config_index;
         configs[scores[worst_stride].config_index].state = Live;
         gen_quadratic_interactions(worst_stride);
+        if (scores[worst_stride].regular)
+        {
+          scores[worst_stride].regular = false;
+          scores[current_champ].regular = true;
+        }
         current_champ = worst_stride;
         // Rare case breaks index_queue, best to just clear it
         while (!index_queue.empty()) { index_queue.pop(); };
       }
     }
-
-    // If challenger is worse ('worse function from Chacha')
-    if (configs[config_index].ips < champ_lower_bound)
+    else if (worse(configs[config_index], champ_config))  // If challenger is worse ('worse function from Chacha')
     {
-      // TODO: Update worse function, this seems way too strict (removes configs instantly)
-      // configs[config_index].state = Removed;
+      configs[config_index].state = Removed;
     }
   }
   if (champ_change) { exclusion_configs_oracle(); }
 }
 
-void config_manager::save_load(io_buf& model_file, bool read, bool text)
+void interaction_config_manager::save_load(io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
@@ -599,7 +645,7 @@ void config_manager::save_load(io_buf& model_file, bool read, bool text)
   }
 }
 
-void config_manager::persist(metric_sink& metrics)
+void interaction_config_manager::persist(metric_sink& metrics)
 {
   metrics.int_metrics_list.emplace_back("test_county", county);
   metrics.int_metrics_list.emplace_back("current_champ", current_champ);
@@ -608,7 +654,7 @@ void config_manager::persist(metric_sink& metrics)
 }
 
 // This sets up example with correct ineractions vector
-void config_manager::apply_config(example* ec, size_t stride)
+void interaction_config_manager::apply_config(example* ec, size_t stride)
 {
   if (ec == nullptr) { return; }
   if (stride < max_live_configs) { ec->interactions = &(scores[stride].live_interactions); }
@@ -618,29 +664,30 @@ void config_manager::apply_config(example* ec, size_t stride)
   }
 }
 
-void config_manager::revert_config(example* ec) { ec->interactions = nullptr; }
+void interaction_config_manager::revert_config(example* ec) { ec->interactions = nullptr; }
 
-template <bool is_explore>
-void predict_automl(automl& data, multi_learner& base, multi_ex& ec)
+template <typename CMType, bool is_explore>
+void predict_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 {
-  size_t champ_stride = data.cm.current_champ;
-  for (example* ex : ec) { data.cm.apply_config(ex, champ_stride); }
+  size_t champ_stride = data.cm->current_champ;
+  for (example* ex : ec) { data.cm->apply_config(ex, champ_stride); }
 
   auto restore_guard = VW::scope_exit([&data, &ec, &champ_stride] {
-    for (example* ex : ec) { data.cm.revert_config(ex); }
+    for (example* ex : ec) { data.cm->revert_config(ex); }
   });
 
   base.predict(ec, champ_stride);
 }
 
 // inner loop of learn driven by # MAX_CONFIGS
-void offset_learn(
-    automl& data, multi_learner& base, multi_ex& ec, const size_t stride, CB::cb_class& logged, size_t labelled_action)
+template <typename CMType>
+void offset_learn(automl<CMType>& data, multi_learner& base, multi_ex& ec, const size_t stride, CB::cb_class& logged,
+    size_t labelled_action)
 {
-  for (example* ex : ec) { data.cm.apply_config(ex, stride); }
+  for (example* ex : ec) { data.cm->apply_config(ex, stride); }
 
   auto restore_guard = VW::scope_exit([&data, &ec, &stride] {
-    for (example* ex : ec) { data.cm.revert_config(ex); }
+    for (example* ex : ec) { data.cm->revert_config(ex); }
   });
 
   if (!base.learn_returns_prediction) { base.predict(ec, stride); }
@@ -659,22 +706,22 @@ void offset_learn(
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
   const float r = -logged.cost;
 
-  data.cm.scores[stride].update(chosen_action == labelled_action ? w : 0, r);
+  data.cm->scores[stride].update(chosen_action == labelled_action ? w : 0, r);
 
   // cache the champ
-  if (data.cm.current_champ == stride) { data.champ_a_s = std::move(ec[0]->pred.a_s); }
+  if (data.cm->current_champ == stride) { data.champ_a_s = std::move(ec[0]->pred.a_s); }
 }
 
 // this is the registered learn function for this reduction
 // mostly uses config_manager and actual_learn(..)
-template <bool is_explore>
-void learn_automl(automl& data, multi_learner& base, multi_ex& ec)
+template <typename CMType, bool is_explore>
+void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 {
   assert(data.all->weights.sparse == false);
 
   bool is_learn = true;
 
-  if (is_learn) { data.cm.county++; }
+  if (is_learn) { data.cm->county++; }
   // extra assert just bc
   assert(data.all->interactions.empty() == true);
 
@@ -691,19 +738,18 @@ void learn_automl(automl& data, multi_learner& base, multi_ex& ec)
     }
   }
 
-  config_manager_state current_state = data.cm.current_state;
-  data.cm.one_step(ec);
+  data.cm->one_step(ec);
 
-  if (current_state == config_manager_state::Experimenting)
+  if (data.cm->current_state == config_manager_state::Experimenting)
   {
-    for (size_t stride = 0; stride < data.cm.scores.size(); ++stride)
+    for (size_t stride = 0; stride < data.cm->scores.size(); ++stride)
     { offset_learn(data, base, ec, stride, logged, labelled_action); }
     // replace bc champ always gets cached
     ec[0]->pred.a_s = std::move(data.champ_a_s);
   }
   else
   {
-    size_t champ = data.cm.current_champ;
+    size_t champ = data.cm->current_champ;
     offset_learn(data, base, ec, champ, logged, labelled_action);
     // replace bc champ always gets cached
     ec[0]->pred.a_s = std::move(data.champ_a_s);
@@ -714,16 +760,21 @@ void learn_automl(automl& data, multi_learner& base, multi_ex& ec)
   assert(ec[0]->interactions == nullptr);
 }
 
-void persist(automl& data, metric_sink& metrics) { data.cm.persist(metrics); }
+template <typename CMType>
+void persist(automl<CMType>& data, metric_sink& metrics)
+{
+  data.cm->persist(metrics);
+}
 
-void finish_example(vw& all, automl& data, multi_ex& ec)
+template <typename CMType>
+void finish_example(vw& all, automl<CMType>& data, multi_ex& ec)
 {
   {
-    size_t champ_stride = data.cm.current_champ;
-    for (example* ex : ec) { data.cm.apply_config(ex, champ_stride); }
+    size_t champ_stride = data.cm->current_champ;
+    for (example* ex : ec) { data.cm->apply_config(ex, champ_stride); }
 
     auto restore_guard = VW::scope_exit([&data, &ec, &champ_stride] {
-      for (example* ex : ec) { data.cm.revert_config(ex); }
+      for (example* ex : ec) { data.cm->revert_config(ex); }
     });
 
     data.adf_learner->print_example(all, ec);
@@ -732,10 +783,30 @@ void finish_example(vw& all, automl& data, multi_ex& ec)
   VW::finish_example(all, ec);
 }
 
-void save_load_aml(automl& d, io_buf& model_file, bool read, bool text)
+template <typename CMType>
+void save_load_aml(automl<CMType>& d, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
-  if (!read || d.model_file_version >= VERSION_FILE_WITH_AUTOML) { d.cm.save_load(model_file, read, text); }
+  d.cm->save_load(model_file, read, text);
+}
+
+// Basic implementation of scheduler to pick new configs when one runs out of lease.
+// Highest priority will be picked first because of max-PQ implementation, this will
+// be the config with the least exclusion. Note that all configs will run to lease
+// before priorities and lease are reset.
+float calc_priority_least_exclusion(const exclusion_config& config, const std::map<namespace_index, size_t>& ns_counter)
+{
+  float priority = 0.f;
+  for (const auto& ns_pair : config.exclusions) { priority -= ns_counter.at(ns_pair.first); }
+  return priority;
+}
+
+// Same as above, returns 0 (includes rest to remove unused variable warning)
+float calc_priority_empty(const exclusion_config& config, const std::map<namespace_index, size_t>& ns_counter)
+{
+  float priority = 0.f;
+  for (const auto& ns_pair : config.exclusions) { priority -= ns_counter.at(ns_pair.first); }
+  return 0.f;
 }
 
 VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
@@ -743,8 +814,11 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
 
-  size_t budget;
+  size_t global_lease;
   size_t max_live_configs;
+  std::string cm_type;
+  std::string priority_type;
+  int priority_challengers;
 
   option_group_definition new_options("Debug: automl reduction");
   new_options
@@ -753,11 +827,39 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
                .keep()
                .default_value(3)
                .help("set number of live configs"))
-      .add(make_option("budget", budget).keep().default_value(10).help("set initial budget for automl interactions"));
+      .add(make_option("global_lease", global_lease)
+               .keep()
+               .default_value(10)
+               .help("set initial lease for automl interactions"))
+      .add(make_option("cm_type", cm_type).keep().default_value("interaction").help("set type of config manager"))
+      .add(make_option("priority_type", priority_type)
+               .keep()
+               .default_value("none")
+               .help("set type of config manager in {none, le}"))
+      .add(make_option("priority_challengers", priority_challengers)
+               .keep()
+               .default_value(-1)
+               .help("set number of priority challengers to use"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto data = VW::make_unique<automl>(budget, all.model_file_ver, max_live_configs, all.random_seed);
+  float (*calc_priority)(const exclusion_config&, const std::map<namespace_index, size_t>&);
+
+  if (priority_type == "none") { calc_priority = &calc_priority_empty; }
+  else if (priority_type == "le")
+  {
+    calc_priority = &calc_priority_least_exclusion;
+  }
+  else
+  {
+    THROW("Error: Invalid priority function provided");
+  }
+
+  if (priority_challengers < 0) { priority_challengers = (max_live_configs - 1) / 2; }
+
+  auto cm = VW::make_unique<interaction_config_manager>(
+      global_lease, max_live_configs, all.random_seed, static_cast<size_t>(priority_challengers), calc_priority);
+  auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
   // all is not needed but good to have for testing purposes
   data->all = &all;
   assert(max_live_configs <= MAX_CONFIGS);
@@ -789,17 +891,17 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
     auto ppw = max_live_configs;
 
-    auto* l =
-        make_reduction_learner(std::move(data), as_multiline(base_learner), learn_automl<true>, predict_automl<true>,
-            stack_builder.get_setupfn_name(automl_setup))
-            .set_params_per_weight(ppw)  // refactor pm
-            .set_finish_example(finish_example)
-            .set_save_load(save_load_aml)
-            .set_persist_metrics(persist)
-            .set_prediction_type(base_learner->pred_type)
-            .set_label_type(label_type_t::cb)
-            .set_learn_returns_prediction(true)
-            .build();
+    auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
+        learn_automl<interaction_config_manager, true>, predict_automl<interaction_config_manager, true>,
+        stack_builder.get_setupfn_name(automl_setup))
+                  .set_params_per_weight(ppw)  // refactor pm
+                  .set_finish_example(finish_example<interaction_config_manager>)
+                  .set_save_load(save_load_aml<interaction_config_manager>)
+                  .set_persist_metrics(persist<interaction_config_manager>)
+                  .set_prediction_type(base_learner->pred_type)
+                  .set_label_type(label_type_t::cb)
+                  .set_learn_returns_prediction(true)
+                  .build();
 
     return make_base(*l);
   }

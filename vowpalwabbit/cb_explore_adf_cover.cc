@@ -76,7 +76,7 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
     , _first_only(first_only)
     , _counter(0)
     , _cs_ldf_learner(cs_ldf_learner)
-    , _model_file_version(std::move(model_file_version))
+    , _model_file_version(model_file_version)
 {
   _gen_cs.cb_type = cb_type;
   _gen_cs.scorer = scorer;
@@ -213,7 +213,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
 void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
     if (!read) { msg << "cb cover adf storing example counter:  = " << _counter << "\n"; }
