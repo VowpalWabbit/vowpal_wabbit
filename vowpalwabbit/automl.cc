@@ -185,7 +185,7 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
       bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), read, msg, text);
       bin_text_read_write_fixed(
           model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), read, msg, text);
-      for (size_t i = 0; i < other_ns_size; ++i)
+      for (size_t j = 0; j < other_ns_size; ++j)
       {
         namespace_index other_ns;
         bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), read, msg, text);
@@ -855,7 +855,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
     THROW("Error: Invalid priority function provided");
   }
 
-  if (priority_challengers < 0) { priority_challengers = (max_live_configs - 1) / 2; }
+  if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
   auto cm = VW::make_unique<interaction_config_manager>(
       global_lease, max_live_configs, all.random_seed, static_cast<size_t>(priority_challengers), calc_priority);
