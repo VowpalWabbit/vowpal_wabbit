@@ -90,7 +90,7 @@ std::string find_in_path(const std::vector<std::string>& paths, const std::strin
   for (const auto& path : paths)
   {
     std::string full = path;
-    if(!vw::ends_with(path, delimiter)) { full += delimiter; }
+    if (!vw::ends_with(path, delimiter)) { full += delimiter; }
     full += fname;
     std::ifstream f(full.c_str());
     if (f.good()) return full;
