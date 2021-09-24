@@ -1,0 +1,28 @@
+predictions = csoaa_unnamed_probabilities.predict
+WARNING: --probabilities should be used only with --loss_function=logistic
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/test_unnamed_csoaa.cache
+Reading datafile = train-sets/test_unnamed_csoaa
+num sources = 1
+Enabled reductions: gd, scorer-identity, csoaa-prob
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+    n.a.     n.a.            1            1.0 4294967295   1(33%)        2
+    n.a.     n.a.            2            2.0 4294967295   2(35%)        2
+    n.a.     n.a.            4            4.0 4294967295   2(34%)        2
+    n.a.     n.a.            8            8.0 4294967295   3(36%)        2
+    n.a.     n.a.           16           16.0 4294967295   3(36%)        2
+    n.a.     n.a.           32           32.0 4294967295   3(37%)        2
+
+finished run
+number of examples per pass = 6
+passes used = 10
+weighted example sum = 60.000000
+weighted label sum = 0.000000
+average loss = n.a.
+average multiclass log loss = inf
+total feature number = 120

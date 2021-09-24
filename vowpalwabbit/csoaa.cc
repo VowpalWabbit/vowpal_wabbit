@@ -35,6 +35,7 @@ struct csoaa
 {
   uint32_t num_classes = 0;
   polyprediction* pred = nullptr;
+  bool is_probabilities = false;
   ~csoaa() { free(pred); }
 };
 
@@ -49,7 +50,9 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
     base.learn(ec, i - 1);
   }
   else
+  {
     base.predict(ec, i - 1);
+  }
 
   partial_prediction = ec.partial_prediction;
   if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction))
@@ -62,7 +65,7 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
 
 #define DO_MULTIPREDICT true
 
-template <bool is_learn>
+template <bool is_learn, bool probabilities>
 void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 {
   COST_SENSITIVE::label ld = std::move(ec.l.cs);
@@ -77,11 +80,26 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
   bool dont_learn = DO_MULTIPREDICT && !is_learn;
+  if (probabilities)
+  {
+    base.multipredict(ec, 0, c.num_classes, c.pred, true);
+    for (uint32_t i = 0; i < c.num_classes; i++) ec.pred.scalars.push_back(c.pred[i].scalar);
+    float sum_prob = 0;
+    for (uint32_t i = 0; i < c.num_classes; i++)
+    {
+      ec.pred.scalars[i] = 1.f / (1.f + correctedExp(-c.pred[i].scalar));
+      sum_prob += ec.pred.scalars[i];
+    }
+    const float inv_sum_prob = 1.f / sum_prob;
+    for (uint32_t i = 0; i < c.num_classes; i++) ec.pred.scalars[i] *= inv_sum_prob;
+  }
 
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
+    {
       inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction);
+    }
     ec.partial_prediction = score;
   }
   else if (dont_learn)
@@ -129,7 +147,69 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   ec.pred.multiclass = prediction;
 }
 
-void finish_example(vw& all, csoaa&, example& ec) { COST_SENSITIVE::finish_example(all, ec); }
+template<bool probabilities>
+void finish_example(vw& all, csoaa& c, example& ec)
+{
+  if (probabilities)
+  {
+    // === Compute multiclass_log_loss
+    // TODO:
+    // What to do if the correct label is unknown, i.e. (uint32_t)-1?
+    //   Suggestion: increase all.sd->weighted_unlabeled_examples???,
+    //               but not sd.example_number, so the average loss is not influenced.
+    // What to do if the correct_class_prob==0?
+    //   Suggestion: have some maximal multiclass_log_loss limit, e.g. 999.
+    float multiclass_log_loss = 999;  // -log(0) = plus infinity
+    float correct_class_prob = 0;
+    if (ec.l.multi.label <= c.num_classes)  // prevent segmentation fault if labeĺ==(uint32_t)-1
+      correct_class_prob = ec.pred.scalars[ec.l.multi.label - 1];
+    if (correct_class_prob > 0) multiclass_log_loss = -std::log(correct_class_prob) * ec.weight;
+    if (ec.test_only)
+      all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
+    else
+      all.sd->multiclass_log_loss += multiclass_log_loss;
+
+    // === Compute `prediction` and zero_one_loss
+    // We have already computed `prediction` in predict_or_learn,
+    // but we cannot store it in ec.pred union because we store ec.pred.probs there.
+    uint32_t prediction = 0;
+    for (uint32_t i = 1; i < c.num_classes; i++)
+      if (ec.pred.scalars[i] > ec.pred.scalars[prediction]) prediction = i;
+    prediction++;  // prediction is 1-based index (not 0-based)
+    float zero_one_loss = 0;
+    if (ec.l.multi.label != prediction) zero_one_loss = ec.weight;
+
+    // === Print probabilities for all classes
+    std::ostringstream outputStringStream;
+    for (uint32_t i = 0; i < c.num_classes; i++)
+    {
+      if (i > 0) outputStringStream << ' ';
+      if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(i + 1); }
+      else
+        outputStringStream << i + 1;
+      outputStringStream << ':' << ec.pred.scalars[i];
+    }
+    const auto ss_str = outputStringStream.str();
+    for (auto& sink : all.final_prediction_sink) all.print_text_by_ref(sink.get(), ss_str, ec.tag);
+
+    // === Report updates using zero-one loss
+    all.sd->update(
+        ec.test_only, ec.l.multi.label != static_cast<uint32_t>(-1), zero_one_loss, ec.weight, ec.get_num_features());
+    // Alternatively, we could report multiclass_log_loss.
+    // all.sd->update(ec.test_only, multiclass_log_loss, ec.weight, ec.num_features);
+    // Even better would be to report both losses, but this would mean to increase
+    // the number of columns and this would not fit narrow screens.
+    // So let's report (average) multiclass_log_loss only in the final resume.
+
+    // === Print progress report
+    MULTICLASS::print_update_with_probability(all, ec, prediction);
+    VW::finish_example(all, ec);
+  }
+  else
+  {
+    COST_SENSITIVE::finish_example(all, ec);
+  }
+}
 
 base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
 {
@@ -139,19 +219,51 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("Cost Sensitive One Against All");
   new_options.add(
       make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"));
+  new_options.add(
+      make_option("probabilities", c->is_probabilities).keep().help("predict probabilites of all classes"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
   size_t ws = c->num_classes;
+
+  std::string name_addition;
+  prediction_type_t pred_type;
+  void (*learn_ptr)(csoaa&, single_learner& base, example& ec);
+  void (*pred_ptr)(csoaa&, single_learner& base, example& ec);
+  void (*finish_ptr)(vw&, csoaa& c, example& ec);
+
+  if (c->is_probabilities)
+  {
+    all.sd->report_multiclass_log_loss = true;
+    auto loss_function_type = all.loss->getType();
+    if (loss_function_type != "logistic")
+      *(all.trace_message) << "WARNING: --probabilities should be used only "
+                              "with --loss_function=logistic"
+                           << std::endl;
+    name_addition = "-prob";
+    pred_type = prediction_type_t::scalars;
+    learn_ptr = predict_or_learn<true, true>;
+    pred_ptr = predict_or_learn<false, true>;
+    finish_ptr = finish_example<true>;
+  }
+  else
+  {
+    name_addition = "";
+    pred_type = prediction_type_t::multiclass;
+    learn_ptr = predict_or_learn<true, false>;
+    pred_ptr = predict_or_learn<false, false>;
+    finish_ptr = finish_example<false>;
+  }
+
   auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()),
-      predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(csoaa_setup))
+      learn_ptr, pred_ptr, stack_builder.get_setupfn_name(csoaa_setup) + name_addition)
                 .set_learn_returns_prediction(
                     true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
                 .set_params_per_weight(ws)
-                .set_prediction_type(prediction_type_t::multiclass)
+                .set_prediction_type(pred_type)
                 .set_label_type(label_type_t::cs)
-                .set_finish_example(finish_example)
+                .set_finish_example(finish_ptr)
                 .build();
 
   all.example_parser->lbl_parser = cs_label;
@@ -181,7 +293,7 @@ struct ldf
   std::vector<action_scores> stored_preds;
 };
 
-bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or just "label:___"
+bool ec_is_label_definition(example& ec)  // label derobfs look like "0:___" or just "label:___"
 {
   if (ec.indices.empty()) return false;
   if (ec.indices[0] != 'l') return false;

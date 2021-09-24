@@ -1279,7 +1279,7 @@ echo "" | {VW}
     pred-sets/ref/test_named.predict
 
 # Test 90: named labels at training time (csoaa)
-{VW} --named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa  -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model
+{VW} --named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa -k -c --passes 10 --holdout_off -f models/test_named_csoaa.model
     train-sets/ref/test_named_csoaa_train.stderr
 
 # Test 91: named labels at prediction (csoaa)
@@ -2502,5 +2502,15 @@ train-sets/ref/slates_simple_w_interactions.stderr
 # Test 350: model with corrupted weights gd_mf.cc
 ./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd_mf.model
     train-sets/ref/corrupt_weights_gd_mf.stderr
+
+# Test 351: named labels at training time (csoaa) with probabilities
+{VW} --named_labels det,noun,verb --csoaa 3 -d train-sets/test_named_csoaa -k -c --passes 10 --holdout_off --probabilities -p csoaa_named_probabilities.predict
+    train-sets/ref/test_named_csoaa_train_probs.stderr
+    pred-sets/ref/csoaa_named_probabilities.predict
+
+# Test 352: unnamed labels at training time (csoaa) with probabilities
+{VW} --csoaa 3 -d train-sets/test_unnamed_csoaa -k -c --passes 10 --holdout_off --probabilities -p csoaa_unnamed_probabilities.predict
+    train-sets/ref/test_unnamed_csoaa_train_probs.stderr
+    pred-sets/ref/csoaa_unnamed_probabilities.predict
 
 # Do not delete this line or the empty line above it

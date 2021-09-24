@@ -156,7 +156,9 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
     }
   }
   else
+  {
     ec.pred.multiclass = prediction;
+  }
 }
 
 // TODO: partial code duplication with multiclass.cc:finish_example
@@ -288,7 +290,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
       learn_ptr = learn<!PRINT_ALL, SCORES, PROBABILITIES>;
       pred_ptr = predict<!PRINT_ALL, SCORES, PROBABILITIES>;
       name_addition = "-prob";
-      finish_ptr = finish_example_scores<true>;
+      finish_ptr = finish_example_scores<PROBABILITIES>;
       all.sd->report_multiclass_log_loss = true;
     }
     else
@@ -296,7 +298,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
       learn_ptr = learn<!PRINT_ALL, SCORES, !PROBABILITIES>;
       pred_ptr = predict<!PRINT_ALL, SCORES, !PROBABILITIES>;
       name_addition = "-scores";
-      finish_ptr = finish_example_scores<false>;
+      finish_ptr = finish_example_scores<!PROBABILITIES>;
     }
   }
   else
