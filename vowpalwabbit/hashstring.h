@@ -33,6 +33,6 @@ VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_
   return ret + h;
 }
 
-typedef uint64_t (*hash_func_t)(const char* s, size_t, uint64_t);
+using hash_func_t = uint64_t (*)(const char*, size_t, uint64_t);
 
 hash_func_t getHasher(const std::string& s);

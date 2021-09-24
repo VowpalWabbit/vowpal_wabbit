@@ -1,6 +1,6 @@
 {
-  Checks: "-*,performance-unnecessary-copy-initialization,performance-for-range-copy,performance-move-const-arg",
-  WarningsAsErrors: "-*,performance-unnecessary-copy-initialization,performance-for-range-copy,performance-move-const-arg",
+  Checks: "-*,performance-unnecessary-copy-initialization,performance-for-range-copy,performance-move-const-arg,modernize-use-using",
+  WarningsAsErrors: "-*,performance-unnecessary-copy-initialization,performance-for-range-copy,performance-move-const-arg,modernize-use-using",
   CheckOptions:
     [
       {
