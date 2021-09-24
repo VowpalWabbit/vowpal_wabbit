@@ -59,7 +59,7 @@ void fail_if_enabled(vw& all, const std::set<std::string>& not_compat)
   std::vector<std::string> enabled_reductions;
   if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
 
-  for (auto reduction : enabled_reductions)
+  for (const auto& reduction : enabled_reductions)
   {
     if (not_compat.count(reduction) > 0) THROW("automl.cc: plz no bad stack" + reduction);
   }
