@@ -462,14 +462,14 @@ void save_predictor(vw& all, const std::string& reg_name, size_t current_pass)
   dump_regressor(all, filename.str(), false);
 }
 
-void finalize_regressor(vw& all, std::string reg_name)
+void finalize_regressor(vw& all, const std::string& reg_name)
 {
   if (!all.early_terminate)
   {
     if (all.per_feature_regularizer_output.length() > 0)
       dump_regressor(all, all.per_feature_regularizer_output, false);
     else
-      dump_regressor(all, std::move(reg_name), false);
+      dump_regressor(all, reg_name, false);
     if (all.per_feature_regularizer_text.length() > 0)
       dump_regressor(all, all.per_feature_regularizer_text, true);
     else
@@ -482,7 +482,7 @@ void finalize_regressor(vw& all, std::string reg_name)
   }
 }
 
-void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& io_temp)
+void read_regressor_file(vw& all, const std::vector<std::string>& all_intial, io_buf& io_temp)
 {
   if (all_intial.size() > 0)
   {
@@ -544,7 +544,7 @@ void parse_mask_regressor_args(vw& all, const std::string& feature_mask, std::ve
 
 namespace VW
 {
-void save_predictor(vw& all, std::string reg_name) { dump_regressor(all, std::move(reg_name), false); }
+void save_predictor(vw& all, const std::string& reg_name) { dump_regressor(all, reg_name, false); }
 
 void save_predictor(vw& all, io_buf& buf) { dump_regressor(all, buf, false); }
 }  // namespace VW

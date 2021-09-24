@@ -47,7 +47,7 @@ vw* initialize(std::unique_ptr<config::options_i, options_deleter_type> options,
     bool skip_model_load = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* initialize(std::string s, io_buf* model = nullptr, bool skip_model_load = false,
+vw* initialize(const std::string& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
@@ -148,7 +148,7 @@ void copy_example_data_with_label(example* dst, const example* src);
 primitive_feature_space* export_example(vw& all, example* e, size_t& len);
 void releaseFeatureSpace(primitive_feature_space* features, size_t len);
 
-void save_predictor(vw& all, std::string reg_name);
+void save_predictor(vw& all, const std::string& reg_name);
 void save_predictor(vw& all, io_buf& buf);
 
 // inlines

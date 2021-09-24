@@ -89,7 +89,18 @@ std::string find_in_path(const std::vector<std::string>& paths, const std::strin
 #endif
   for (const auto& path : paths)
   {
-    std::string full = VW::ends_with(path, delimiter) ? (path + fname) : (path + delimiter + fname);
+    std::string full;
+    if (VW::ends_with(path, delimiter))
+    {
+      full += path;
+      full += fname;
+    }
+    else
+    {
+      full += path;
+      full += delimiter;
+      full += fname;
+    }
     std::ifstream f(full.c_str());
     if (f.good()) return full;
   }
@@ -1642,9 +1653,9 @@ vw* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model
   return ret;
 }
 
-vw* initialize(std::string s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
+vw* initialize(const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
-  return initialize_with_builder(std::move(s), model, skip_model_load, trace_listener, trace_context, nullptr);
+  return initialize_with_builder(s, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
 // Create a new VW instance while sharing the model with another instance

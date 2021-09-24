@@ -6,9 +6,9 @@
 #include "global_data.h"
 #include "options.h"
 
-void read_regressor_file(vw& all, std::vector<std::string> files, io_buf& io_temp);
+void read_regressor_file(vw& all, const std::vector<std::string>& files, io_buf& io_temp);
 
-void finalize_regressor(vw& all, std::string reg_name);
+void finalize_regressor(vw& all, const std::string& reg_name);
 void initialize_regressor(vw& all);
 
 void save_predictor(vw& all, const std::string& reg_name, size_t current_pass);
