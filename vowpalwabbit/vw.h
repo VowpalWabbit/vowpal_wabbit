@@ -52,16 +52,16 @@ vw* initialize(std::string s, io_buf* model = nullptr, bool skip_model_load = fa
 vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* seed_vw_model(
-    vw* vw_model, std::string extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+    vw* vw_model, const std::string& extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Allows the input command line string to have spaces escaped by '\'
 vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Experimental (VW::setup_base_i):
-vw* initialize_with_builder(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,
+vw* initialize_with_builder(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
     std::unique_ptr<VW::setup_base_i> = nullptr);
 
-void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
+void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value);
 
 // The argv array from both of these functions must be freed.
 char** to_argv(std::string const& s, int& argc);
@@ -108,7 +108,7 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
 example* alloc_examples(size_t count);
 void dealloc_examples(example* example_ptr, size_t count);
 
-void parse_example_label(vw& all, example& ec, std::string label);
+void parse_example_label(vw& all, example& ec, const std::string& label);
 void setup_examples(vw& all, v_array<example*>& examples);
 void setup_example(vw& all, example* ae);
 example* new_unused_example(vw& all);

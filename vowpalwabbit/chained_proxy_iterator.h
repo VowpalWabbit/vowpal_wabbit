@@ -42,8 +42,8 @@ public:
 
   chained_proxy_iterator(const chained_proxy_iterator&) = default;
   chained_proxy_iterator& operator=(const chained_proxy_iterator&) = default;
-  chained_proxy_iterator(chained_proxy_iterator&&) = default;
-  chained_proxy_iterator& operator=(chained_proxy_iterator&&) = default;
+  chained_proxy_iterator(chained_proxy_iterator&&)  noexcept = default;
+  chained_proxy_iterator& operator=(chained_proxy_iterator&&)  noexcept = default;
 
   inline reference operator*() { return *_current; }
   inline const_reference operator*() const { return *_current; }

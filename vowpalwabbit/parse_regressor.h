@@ -11,8 +11,8 @@ void read_regressor_file(vw& all, std::vector<std::string> files, io_buf& io_tem
 void finalize_regressor(vw& all, std::string reg_name);
 void initialize_regressor(vw& all);
 
-void save_predictor(vw& all, std::string reg_name, size_t current_pass);
+void save_predictor(vw& all, const std::string& reg_name, size_t current_pass);
 void save_load_header(
     vw& all, io_buf& model_file, bool read, bool text, std::string& file_options, VW::config::options_i& options);
 
-void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<std::string> initial_regressors);
+void parse_mask_regressor_args(vw& all, const std::string& feature_mask, std::vector<std::string> initial_regressors);

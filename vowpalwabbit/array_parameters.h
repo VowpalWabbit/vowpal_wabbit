@@ -43,8 +43,8 @@ public:
 
   sparse_iterator& operator=(const sparse_iterator& other) = default;
   sparse_iterator(const sparse_iterator& other) = default;
-  sparse_iterator& operator=(sparse_iterator&& other) = default;
-  sparse_iterator(sparse_iterator&& other) = default;
+  sparse_iterator& operator=(sparse_iterator&& other)  noexcept = default;
+  sparse_iterator(sparse_iterator&& other)  noexcept = default;
 
   uint64_t index() { return _iter->first; }
 
