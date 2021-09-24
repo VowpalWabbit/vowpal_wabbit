@@ -97,9 +97,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
-    {
-      inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction);
-    }
+    { inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction); }
     ec.partial_prediction = score;
   }
   else if (dont_learn)
@@ -147,7 +145,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   ec.pred.multiclass = prediction;
 }
 
-template<bool probabilities>
+template <bool probabilities>
 void finish_example(vw& all, csoaa& c, example& ec)
 {
   if (probabilities)
@@ -219,8 +217,7 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("Cost Sensitive One Against All");
   new_options.add(
       make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"));
-  new_options.add(
-      make_option("probabilities", c->is_probabilities).keep().help("predict probabilites of all classes"));
+  new_options.add(make_option("probabilities", c->is_probabilities).keep().help("predict probabilites of all classes"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -229,9 +226,9 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
 
   std::string name_addition;
   prediction_type_t pred_type;
-  void (*learn_ptr)(csoaa&, single_learner& base, example& ec);
-  void (*pred_ptr)(csoaa&, single_learner& base, example& ec);
-  void (*finish_ptr)(vw&, csoaa& c, example& ec);
+  void (*learn_ptr)(csoaa&, single_learner & base, example & ec);
+  void (*pred_ptr)(csoaa&, single_learner & base, example & ec);
+  void (*finish_ptr)(vw&, csoaa & c, example & ec);
 
   if (c->is_probabilities)
   {
@@ -256,8 +253,8 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
     finish_ptr = finish_example<false>;
   }
 
-  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()),
-      learn_ptr, pred_ptr, stack_builder.get_setupfn_name(csoaa_setup) + name_addition)
+  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
+      stack_builder.get_setupfn_name(csoaa_setup) + name_addition)
                 .set_learn_returns_prediction(
                     true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
                 .set_params_per_weight(ws)
