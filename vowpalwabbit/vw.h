@@ -51,8 +51,8 @@ vw* initialize(std::string s, io_buf* model = nullptr, bool skip_model_load = fa
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-vw* seed_vw_model(
-    vw* vw_model, const std::string& extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+vw* seed_vw_model(vw* vw_model, const std::string& extra_args, trace_message_t trace_listener = nullptr,
+    void* trace_context = nullptr);
 // Allows the input command line string to have spaces escaped by '\'
 vw* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);

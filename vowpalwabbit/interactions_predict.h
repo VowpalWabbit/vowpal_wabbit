@@ -122,7 +122,7 @@ std::vector<features_range_t> inline generate_generic_char_combination(
 {
   std::vector<features_range_t> inter;
   inter.reserve(namespace_indexes.size());
-for (const auto namespace_index : namespace_indexes)
+  for (const auto namespace_index : namespace_indexes)
   { inter.emplace_back(feature_groups[namespace_index].audit_begin(), feature_groups[namespace_index].audit_end()); }
   return inter;
 }
