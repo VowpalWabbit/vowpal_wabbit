@@ -59,7 +59,7 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
 
   po::options_description new_options(group.m_name);
 
-  for (auto opt_ptr : group.m_options)
+  for (const auto& opt_ptr : group.m_options)
   {
     add_to_description(opt_ptr, new_options);
     m_defined_options.insert(opt_ptr->m_name);
@@ -177,7 +177,7 @@ std::string options_boost_po::help(const std::vector<std::string>& enabled_reduc
   else
   {
     // add help message of only enabled reductions
-    for (auto reduction : enabled_reductions)
+    for (const auto& reduction : enabled_reductions)
     {
       auto it = m_help_stringstream.find(reduction);
       if (it != m_help_stringstream.end()) { help << it->second.rdbuf(); }
