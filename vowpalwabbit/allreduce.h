@@ -37,7 +37,7 @@ class promise;
 #  include <stdio.h>
 #  include <unistd.h>
 #  include <string.h>
-typedef int socket_t;
+using socket_t = int;
 #  define CLOSESOCK close
 #  include <future>
 #endif

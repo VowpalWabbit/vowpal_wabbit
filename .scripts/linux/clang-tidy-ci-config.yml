@@ -1,6 +1,6 @@
 {
-  Checks: "-*,performance-*",
-  WarningsAsErrors: "-*,performance-*",
+  Checks: "-*,performance-*,modernize-use-using",
+  WarningsAsErrors: "-*,performance-*,modernize-use-using",
   CheckOptions:
     [
       {
