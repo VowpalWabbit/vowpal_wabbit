@@ -345,7 +345,7 @@ class VW(BaseEstimator):
         wap : integer
             Use weighted all pairs multiclass learning
         probabilities : float
-            predict probabilities of all classes
+            Output probabilities of all classes
 
         Neural Network options
 
@@ -833,7 +833,7 @@ class VWClassifier(VW, LinearClassifierMixin):
         return self.classes_[indices]
 
     def predict_proba(self, X):
-        """Predict probabilities for samples
+        """Output probabilities for samples
 
         Parameters
         ----------
@@ -964,7 +964,7 @@ class VWMultiClassifier(VWClassifier):
         return logits
 
     def predict_proba(self, X):
-        """Predict probabilities for each class.
+        """Output probabilities for each class.
 
         Parameters
         ----------

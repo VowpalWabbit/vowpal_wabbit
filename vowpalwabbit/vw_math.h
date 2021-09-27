@@ -5,6 +5,7 @@
 
 #include "future_compat.h"
 #include "vw_exception.h"
+#include "correctedMath.h"
 
 namespace VW
 {
@@ -45,6 +46,18 @@ inline int64_t number_of_combinations_with_repetition(int64_t n, int64_t k)
 inline int64_t number_of_permutations_with_repetition(int64_t n, int64_t k)
 {
   return static_cast<int64_t>(std::pow(n, k));
+}
+
+inline void normalize_oaa(v_array<float>& arr)
+{
+  float sum_prob = 0;
+  for (uint32_t i = 0; i < arr.size(); ++i)
+  {
+    arr[i] = 1.f / (1.f + correctedExp(-arr[i]));
+    sum_prob += arr[i];
+  }
+  const float inv_sum_prob = 1.f / sum_prob;
+  for (uint32_t i = 0; i < arr.size(); i++) { arr[i] *= inv_sum_prob; }
 }
 
 constexpr inline float sign(float w) noexcept { return (w <= 0.f) ? -1.f : 1.f; }

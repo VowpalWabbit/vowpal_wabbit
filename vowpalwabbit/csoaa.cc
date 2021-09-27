@@ -83,15 +83,8 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
   if (probabilities)
   {
     base.multipredict(ec, 0, c.num_classes, c.pred, true);
-    for (uint32_t i = 0; i < c.num_classes; i++) ec.pred.scalars.push_back(c.pred[i].scalar);
-    float sum_prob = 0;
-    for (uint32_t i = 0; i < c.num_classes; i++)
-    {
-      ec.pred.scalars[i] = 1.f / (1.f + correctedExp(-c.pred[i].scalar));
-      sum_prob += ec.pred.scalars[i];
-    }
-    const float inv_sum_prob = 1.f / sum_prob;
-    for (uint32_t i = 0; i < c.num_classes; i++) ec.pred.scalars[i] *= inv_sum_prob;
+    for (size_t i = 0; i < c.num_classes; i++) { ec.pred.scalars.push_back(c.pred[i].scalar); }
+    VW::math::normalize_oaa(ec.pred.scalars);
   }
 
   if (!ld.costs.empty())
@@ -217,7 +210,7 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("Cost Sensitive One Against All");
   new_options.add(
       make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"));
-  new_options.add(make_option("probabilities", c->is_probabilities).keep().help("predict probabilites of all classes"));
+  new_options.add(make_option("probabilities", c->is_probabilities).keep().help("Output probabilites of all classes"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -290,7 +283,7 @@ struct ldf
   std::vector<action_scores> stored_preds;
 };
 
-bool ec_is_label_definition(example& ec)  // label derobfs look like "0:___" or just "label:___"
+bool ec_is_label_definition(example& ec)  // label defs look like "0:___" or just "label:___"
 {
   if (ec.indices.empty()) return false;
   if (ec.indices[0] != 'l') return false;
@@ -572,21 +565,16 @@ void learn_csoaa_ldf(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 
 void convert_to_probabilities(multi_ex& ec_seq)
 {
-  float sum_prob = 0;
-  for (const auto& example : ec_seq)
-  {
-    // probability(correct_class) = 1 / (1+exp(-score)), where score is higher
-    // for better classes,
-    // but partial_prediction is lower for better classes (we are predicting the
-    // cost),
-    // so we need to take score = -partial_prediction,
-    // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
-    float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
-    example->pred.prob = prob;
-    sum_prob += prob;
-  }
-  // make sure that the probabilities sum up (exactly) to one
-  for (const auto& example : ec_seq) { example->pred.prob /= sum_prob; }
+  // probability(correct_class) = 1 / (1+exp(-score)), where score is higher
+  // for better classes,
+  // but partial_prediction is lower for better classes (we are predicting the
+  // cost),
+  // so we need to take score = -partial_prediction,
+  // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
+  v_array<float> preds;
+  for (const auto& example : ec_seq) { preds.push_back(-example->partial_prediction); }
+  VW::math::normalize_oaa(preds);
+  for (size_t i = 0; i < preds.size(); ++i) { ec_seq[i]->pred.prob = preds[i]; }
 }
 
 /*
@@ -951,7 +939,7 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
           .help("Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file"));
   csldf_outer_options.add(make_option("csoaa_rank", ld->rank).keep().help("Return actions sorted by score order"));
   csldf_outer_options.add(
-      make_option("probabilities", ld->is_probabilities).keep().help("predict probabilites of all classes"));
+      make_option("probabilities", ld->is_probabilities).keep().help("Output probabilites of all classes"));
 
   option_group_definition csldf_inner_options("Cost Sensitive weighted all-pairs with Label Dependent Features");
   csldf_inner_options.add(make_option("wap_ldf", wap_ldf)
