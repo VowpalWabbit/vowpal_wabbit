@@ -35,7 +35,7 @@ constexpr unsigned char baseline_enabled_message_namespace = 137;  // this is \x
 constexpr unsigned char ccb_slot_namespace = 139;
 constexpr unsigned char ccb_id_namespace = 140;
 
-typedef float weight;
+using weight = float;
 
 constexpr size_t NUM_NAMESPACES = 256;
 
