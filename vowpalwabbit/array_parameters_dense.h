@@ -119,11 +119,11 @@ public:
     std::int64_t diff = to - from;
     for (auto iter = begin(); iter != end(); ++iter)
     {
-      size_t actual_index = iter.index() >> stride_shift();
-      size_t actual_type = actual_index & (params_per_problem - 1);
-      if (actual_type == from)
+      size_t prestride_index = iter.index() >> stride_shift();
+      size_t current_offset = prestride_index & (params_per_problem - 1);
+      if (current_offset == from)
       {
-        float* other = &_begin[(actual_index + diff) << stride_shift()];
+        float* other = &_begin[(prestride_index + diff) << stride_shift()];
 
         // todo: handle offsets 1-3
         if (*other != 0.f || *iter != 0.f) { (&(*other))[0] = (&(*iter))[0]; }
@@ -135,9 +135,9 @@ public:
   {
     for (iterator iter = begin(); iter != end(); ++iter)
     {
-      size_t actual = (iter.index() >> stride_shift()) & (params_per_problem - 1);
+      size_t current_offset = (iter.index() >> stride_shift()) & (params_per_problem - 1);
       // todo: handle offsets 1-3
-      if (actual == offset && *iter != 0.f) { (&(*iter))[0] = 0; }
+      if (current_offset == offset && *iter != 0.f) { (&(*iter))[0] = 0; }
     }
   }
 
