@@ -144,10 +144,7 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
     ec.pred.scalars = scores_array;
 
     // The scores should be converted to probabilities
-    if (probabilities)
-    {
-      VW::math::normalize_oaa(ec.pred.scalars);
-    }
+    if (probabilities) { VW::math::normalize_oaa(ec.pred.scalars); }
   }
   else
   {
