@@ -540,8 +540,8 @@ void interaction_config_manager::save_load(io_buf& model_file, bool read, bool t
   bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&current_state), sizeof(current_state), read, msg, text);
 
-  if (!read) msg << "_aml_cm_county " << county << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&county), sizeof(county), read, msg, text);
+  if (!read) msg << "_aml_cm_count " << total_learn_count << "\n";
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&total_learn_count), sizeof(total_learn_count), read, msg, text);
 
   if (!read) msg << "_aml_cm_champ " << current_champ << "\n";
   bin_text_read_write_fixed(
@@ -647,7 +647,7 @@ void interaction_config_manager::save_load(io_buf& model_file, bool read, bool t
 
 void interaction_config_manager::persist(metric_sink& metrics)
 {
-  metrics.int_metrics_list.emplace_back("test_county", county);
+  metrics.int_metrics_list.emplace_back("test_county", total_learn_count);
   metrics.int_metrics_list.emplace_back("current_champ", current_champ);
   for (size_t stride = 0; stride < scores.size(); ++stride)
   { scores[stride].persist(metrics, "_" + std::to_string(stride)); }
@@ -721,7 +721,7 @@ void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 
   bool is_learn = true;
 
-  if (is_learn) { data.cm->county++; }
+  if (is_learn) { data.cm->total_learn_count++; }
   // extra assert just bc
   assert(data.all->interactions.empty() == true);
 
