@@ -642,7 +642,7 @@ public:
     return ret;
   }
 
-  base_learner* get_learner_by_name_prefix(std::string reduction_name)
+  base_learner* get_learner_by_name_prefix(const std::string& reduction_name)
   {
     if (name.find(reduction_name) != std::string::npos) { return (base_learner*)this; }
     else

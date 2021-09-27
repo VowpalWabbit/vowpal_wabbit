@@ -9,7 +9,7 @@ struct vw;
 
 namespace no_label
 {
-typedef char no_label;
+using no_label = char;
 
 void return_no_label_example(vw& all, void*, example& ec);
 

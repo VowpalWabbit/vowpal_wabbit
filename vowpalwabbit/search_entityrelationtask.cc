@@ -100,7 +100,7 @@ bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
   return false;
 }
 
-void decode_tag(v_array<char> tag, char& type, int& id1, int& id2)
+void decode_tag(const v_array<char>& tag, char& type, int& id1, int& id2)
 {
   std::string s1;
   std::string s2;

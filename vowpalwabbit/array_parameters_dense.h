@@ -11,7 +11,7 @@
 
 #include "memory.h"
 
-typedef float weight;
+using weight = float;
 
 template <typename T>
 class dense_iterator
@@ -22,11 +22,11 @@ private:
   uint32_t _stride;
 
 public:
-  typedef std::forward_iterator_tag iterator_category;
-  typedef T value_type;
-  typedef std::ptrdiff_t difference_type;
-  typedef T* pointer;
-  typedef T& reference;
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = T;
+  using difference_type = std::ptrdiff_t;
+  using pointer = T*;
+  using reference = T&;
 
   dense_iterator(T* current, T* begin, uint32_t stride) : _current(current), _begin(begin), _stride(stride) {}
 
@@ -53,8 +53,8 @@ private:
   bool _seeded;  // whether the instance is sharing model state with others
 
 public:
-  typedef dense_iterator<weight> iterator;
-  typedef dense_iterator<const weight> const_iterator;
+  using iterator = dense_iterator<weight>;
+  using const_iterator = dense_iterator<const weight>;
   dense_parameters(size_t length, uint32_t stride_shift = 0)
       : _begin(calloc_mergable_or_throw<weight>(length << stride_shift))
       , _weight_mask((length << stride_shift) - 1)

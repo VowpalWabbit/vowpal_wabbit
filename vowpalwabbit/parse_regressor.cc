@@ -19,6 +19,7 @@
 #include <iostream>
 #include <algorithm>
 #include <numeric>
+#include <utility>
 
 #include "crossplat_compat.h"
 #include "rand48.h"
@@ -437,7 +438,7 @@ void dump_regressor(vw& all, io_buf& buf, bool as_text)
   buf.close_file();
 }
 
-void dump_regressor(vw& all, std::string reg_name, bool as_text)
+void dump_regressor(vw& all, const std::string& reg_name, bool as_text)
 {
   if (reg_name == std::string("")) return;
   std::string start_name = reg_name + std::string(".writing");
@@ -453,7 +454,7 @@ void dump_regressor(vw& all, std::string reg_name, bool as_text)
         << start_name.c_str() << " to " << reg_name.c_str());
 }
 
-void save_predictor(vw& all, std::string reg_name, size_t current_pass)
+void save_predictor(vw& all, const std::string& reg_name, size_t current_pass)
 {
   std::stringstream filename;
   filename << reg_name;
@@ -461,7 +462,7 @@ void save_predictor(vw& all, std::string reg_name, size_t current_pass)
   dump_regressor(all, filename.str(), false);
 }
 
-void finalize_regressor(vw& all, std::string reg_name)
+void finalize_regressor(vw& all, const std::string& reg_name)
 {
   if (!all.early_terminate)
   {
@@ -481,7 +482,7 @@ void finalize_regressor(vw& all, std::string reg_name)
   }
 }
 
-void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& io_temp)
+void read_regressor_file(vw& all, const std::vector<std::string>& all_intial, io_buf& io_temp)
 {
   if (all_intial.size() > 0)
   {
@@ -499,7 +500,7 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
   }
 }
 
-void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<std::string> initial_regressors)
+void parse_mask_regressor_args(vw& all, const std::string& feature_mask, std::vector<std::string> initial_regressors)
 {
   // TODO does this extra check need to be used? I think it is duplicated but there may be some logic I am missing.
   std::string file_options;
@@ -543,7 +544,7 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
 
 namespace VW
 {
-void save_predictor(vw& all, std::string reg_name) { dump_regressor(all, reg_name, false); }
+void save_predictor(vw& all, const std::string& reg_name) { dump_regressor(all, reg_name, false); }
 
 void save_predictor(vw& all, io_buf& buf) { dump_regressor(all, buf, false); }
 }  // namespace VW
