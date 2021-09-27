@@ -184,7 +184,7 @@ inline bool is_aligned16(void* ptr)
 #    define HAVE_SIMD_MATHMODE
 
 typedef __m128 v4sf;
-typedef __m128i v4si;
+using v4si = __m128i;
 
 inline v4sf v4si_to_v4sf(v4si x) { return _mm_cvtepi32_ps(x); }
 
