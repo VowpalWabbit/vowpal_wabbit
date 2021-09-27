@@ -541,7 +541,8 @@ void interaction_config_manager::save_load(io_buf& model_file, bool read, bool t
       model_file, reinterpret_cast<char*>(&current_state), sizeof(current_state), read, msg, text);
 
   if (!read) msg << "_aml_cm_count " << total_learn_count << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&total_learn_count), sizeof(total_learn_count), read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&total_learn_count), sizeof(total_learn_count), read, msg, text);
 
   if (!read) msg << "_aml_cm_champ " << current_champ << "\n";
   bin_text_read_write_fixed(
