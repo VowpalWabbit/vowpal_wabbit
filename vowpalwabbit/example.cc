@@ -294,7 +294,7 @@ void dealloc_examples(example* example_ptr, size_t count)
 }
 
 void finish_example(vw&, example&);
-void clean_example(vw&, example&, bool rewind);
+void clean_example(vw&, example&);
 
 void finish_example(vw& all, multi_ex& ec_seq)
 {
@@ -303,7 +303,7 @@ void finish_example(vw& all, multi_ex& ec_seq)
 
 void return_multiple_example(vw& all, v_array<example*>& examples)
 {
-  for (auto ec : examples) { clean_example(all, *ec, true); }
+  for (auto ec : examples) { clean_example(all, *ec); }
   examples.clear();
 }
 

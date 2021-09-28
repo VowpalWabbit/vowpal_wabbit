@@ -212,7 +212,7 @@ void reset_source(vw& all, size_t numbits)
       {
         std::unique_lock<std::mutex> lock(all.example_parser->output_lock);
         all.example_parser->output_done.wait(lock, [&] {
-          return all.example_parser->finished_examples == all.example_parser->end_parsed_examples &&
+          return all.example_parser->num_finished_examples == all.example_parser->num_setup_examples &&
               all.example_parser->ready_parsed_examples.size() == 0;
         });
       }
@@ -646,8 +646,8 @@ namespace VW
 example& get_unused_example(vw* all)
 {
   parser* p = all->example_parser;
-  auto ex = p->example_pool.get_object();
-  p->begin_parsed_examples++;
+  auto* ex = p->example_pool.get_object();
+  ex->example_counter = static_cast<size_t>(p->num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
   return *ex;
 }
 
@@ -675,7 +675,7 @@ void setup_example(vw& all, example* ae)
   ae->_debug_current_reduction_depth = 0;
   ae->use_permutations = all.permutations;
 
-  ae->example_counter = static_cast<size_t>(all.example_parser->end_parsed_examples.load());
+  all.example_parser->num_setup_examples++;
   if (!all.example_parser->emptylines_separate_examples) all.example_parser->in_pass_counter++;
 
   // Determine if this example is part of the holdout set.
@@ -736,17 +736,15 @@ example* new_unused_example(vw& all)
 {
   example* ec = &get_unused_example(&all);
   all.example_parser->lbl_parser.default_label(&ec->l);
-  all.example_parser->begin_parsed_examples++;
-  ec->example_counter = static_cast<size_t>(all.example_parser->begin_parsed_examples.load());
   return ec;
 }
+
 example* read_example(vw& all, const char* example_line)
 {
   example* ret = &get_unused_example(&all);
 
   VW::read_line(all, ret, example_line);
   setup_example(all, ret);
-  all.example_parser->end_parsed_examples++;
 
   return ret;
 }
@@ -786,7 +784,6 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
   }
 
   setup_example(all, ret);
-  all.example_parser->end_parsed_examples++;
   return ret;
 }
 
@@ -845,14 +842,8 @@ void empty_example(vw& /*all*/, example& ec)
   ec.num_features_from_interactions = 0;
 }
 
-void clean_example(vw& all, example& ec, bool rewind)
+void clean_example(vw& all, example& ec)
 {
-  if (rewind)
-  {
-    assert(all.example_parser->begin_parsed_examples.load() > 0);
-    all.example_parser->begin_parsed_examples--;
-  }
-
   empty_example(all, ec);
   all.example_parser->example_pool.return_object(&ec);
 }
@@ -862,11 +853,11 @@ void finish_example(vw& all, example& ec)
   // only return examples to the pool that are from the pool and not externally allocated
   if (!is_ring_example(all, &ec)) return;
 
-  clean_example(all, ec, false);
+  clean_example(all, ec);
 
   {
     std::lock_guard<std::mutex> lock(all.example_parser->output_lock);
-    ++all.example_parser->finished_examples;
+    ++all.example_parser->num_finished_examples;
     all.example_parser->output_done.notify_one();
   }
 }
@@ -874,7 +865,6 @@ void finish_example(vw& all, example& ec)
 
 void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
-  all.example_parser->end_parsed_examples += examples.size();
   for (auto example : examples) { all.example_parser->ready_parsed_examples.push(example); }
 }
 
