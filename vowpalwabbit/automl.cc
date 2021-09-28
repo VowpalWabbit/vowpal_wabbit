@@ -61,7 +61,7 @@ void fail_if_enabled(vw& all, const std::set<std::string>& not_compat)
 
   for (const auto& reduction : enabled_reductions)
   {
-    if (not_compat.count(reduction) > 0) THROW("automl.cc: plz no bad stack" + reduction);
+    if (not_compat.count(reduction) > 0) THROW("Error: automl does not yet support this reduction: " + reduction);
   }
 }
 
@@ -156,7 +156,11 @@ void scored_config::persist(metric_sink& metrics, const std::string& suffix)
   metrics.int_metrics_list.emplace_back("conf_idx" + suffix, config_index);
 }
 
-float scored_config::current_ips() const { return ips / update_count; }
+float scored_config::current_ips() const
+{
+  if (update_count <= 0) { THROW("Error: update count must be >0 before calculating ips"); }
+  return ips / update_count;
+}
 
 void scored_config::reset_stats()
 {
