@@ -164,10 +164,11 @@ VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
   auto base = stack_builder.setup_base_learner();
   size_t ws = 1 + lrq->field_name.size() * lrq->k;
 
-  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(lrqfa_setup))
-      .set_params_per_weight(ws)
-      .set_learn_returns_prediction(base->learn_returns_prediction)
-      .build();
+  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(lrqfa_setup))
+                .set_params_per_weight(ws)
+                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .build();
 
   return make_base(*l);
 }

@@ -87,7 +87,7 @@ struct lda
   bool total_lambda_init = false;
 
   double example_t = 0.0;
-  vw *all = nullptr;  // regressor, lda
+  vw* all = nullptr;  // regressor, lda
 
   static constexpr float underflow_threshold = 1.0e-10f;
   inline float digamma(float x);
@@ -964,7 +964,7 @@ void learn_batch(lda &l)
   l.doc_lengths.clear();
 }
 
-void learn(lda &l, base_learner&, example &ec)
+void learn(lda& l, base_learner&, example& ec)
 {
   uint32_t num_ex = static_cast<uint32_t>(l.examples.size());
   l.examples.push_back(&ec);
@@ -981,7 +981,7 @@ void learn(lda &l, base_learner&, example &ec)
   if (++num_ex == l.minibatch) learn_batch(l);
 }
 
-void learn_with_metrics(lda &l, base_learner &base, example &ec)
+void learn_with_metrics(lda& l, base_learner& base, example& ec)
 {
   if (l.all->passes_complete == 0)
   {
@@ -1004,8 +1004,8 @@ void learn_with_metrics(lda &l, base_learner &base, example &ec)
 }
 
 // placeholder
-void predict(lda &l, base_learner &base, example &ec) { learn(l, base, ec); }
-void predict_with_metrics(lda &l, base_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
+void predict(lda& l, base_learner& base, example& ec) { learn(l, base, ec); }
+void predict_with_metrics(lda& l, base_learner& base, example& ec) { learn_with_metrics(l, base, ec); }
 
 struct word_doc_frequency
 {
@@ -1342,14 +1342,16 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
 
   all.example_parser->lbl_parser = no_label::no_label_parser;
 
-  auto* l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn, ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup), prediction_type_t::scalars, label_type_t::nolabel)
-      .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-      .set_learn_returns_prediction(true)
-      .set_save_load(save_load)
-      .set_finish_example(finish_example)
-      .set_end_examples(end_examples)
-      .set_end_pass(end_pass)
-      .build();
+  auto* l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
+      ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
+      prediction_type_t::scalars, label_type_t::nolabel)
+                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_learn_returns_prediction(true)
+                .set_save_load(save_load)
+                .set_finish_example(finish_example)
+                .set_end_examples(end_examples)
+                .set_end_pass(end_pass)
+                .build();
 
   return make_base(*l);
 }

@@ -220,11 +220,12 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
   all.wpp = all.wpp * static_cast<uint64_t>(1 + maxk);
   auto base = stack_builder.setup_base_learner();
 
-  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(lrq_setup))
-      .set_params_per_weight(1 + maxk)
-      .set_learn_returns_prediction(base->learn_returns_prediction)
-      .set_end_pass(reset_seed)
-      .build();
+  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(lrq_setup))
+                .set_params_per_weight(1 + maxk)
+                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .set_end_pass(reset_seed)
+                .build();
 
   // TODO: leaks memory ?
   return make_base(*l);

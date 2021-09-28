@@ -196,7 +196,7 @@ struct memory_tree
   size_t final_pass = 0;
 
   int top_K;  // commands:
-  bool oas = false;   // indicator for multi-label classification (oas = 1)
+  bool oas = false;  // indicator for multi-label classification (oas = 1)
   int dream_at_update = 0;
 
   bool online = false;  // indicator for running CMT in online fashion
@@ -1270,12 +1270,13 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
     label_type = label_type_t::multilabel;
   }
 
-  auto l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict, stack_builder.get_setupfn_name(memory_tree_setup))
-      .set_params_per_weight(num_learners)
-      .set_end_pass(end_pass)
-      .set_save_load(save_load_memory_tree)
-      .set_prediction_type(pred_type)
-      .set_label_type(label_type);
+  auto l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
+      stack_builder.get_setupfn_name(memory_tree_setup))
+               .set_params_per_weight(num_learners)
+               .set_end_pass(end_pass)
+               .set_save_load(save_load_memory_tree)
+               .set_prediction_type(pred_type)
+               .set_label_type(label_type);
 
   if (!oas) { l.set_finish_example(MULTICLASS::finish_example<memory_tree&>); }
 
