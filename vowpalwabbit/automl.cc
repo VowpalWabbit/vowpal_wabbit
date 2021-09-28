@@ -158,8 +158,7 @@ void scored_config::persist(metric_sink& metrics, const std::string& suffix)
 
 float scored_config::current_ips() const
 {
-  if (update_count <= 0) { THROW("Error: update count must be >0 before calculating ips"); }
-  return ips / update_count;
+  return (update_count > 0) ? ips / update_count : 0;
 }
 
 void scored_config::reset_stats()
