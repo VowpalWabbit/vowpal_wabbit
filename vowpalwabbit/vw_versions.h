@@ -56,5 +56,8 @@ constexpr VW::version_struct VERSION_FILE_WITH_FIRST_SAVE_RESUME{8, 11, 0};
 constexpr VW::version_struct VERSION_SAVE_RESUME_FIX{7, 10, 1};
 
 constexpr VW::version_struct VERSION_PASS_UINT64{8, 3, 3};
+
+/// Added serialized seen min and max labels in the --active reduction
+constexpr VW::version_struct VERSION_FILE_WITH_ACTIVE_SEEN_LABELS{9, 0, 0};
 }  // namespace version_definitions
 }  // namespace VW
