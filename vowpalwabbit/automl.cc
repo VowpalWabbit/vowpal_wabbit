@@ -156,10 +156,7 @@ void scored_config::persist(metric_sink& metrics, const std::string& suffix)
   metrics.int_metrics_list.emplace_back("conf_idx" + suffix, config_index);
 }
 
-float scored_config::current_ips() const
-{
-  return (update_count > 0) ? ips / update_count : 0;
-}
+float scored_config::current_ips() const { return (update_count > 0) ? ips / update_count : 0; }
 
 void scored_config::reset_stats()
 {
