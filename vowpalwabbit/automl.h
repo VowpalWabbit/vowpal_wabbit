@@ -97,7 +97,7 @@ struct config_manager
 
 struct interaction_config_manager : config_manager
 {
-  config_manager_state current_state = config_manager_state::Idle;
+  config_manager_state current_state = config_manager_state::Collecting;
   size_t total_learn_count = 0;
   size_t current_champ = 0;
   size_t global_lease;

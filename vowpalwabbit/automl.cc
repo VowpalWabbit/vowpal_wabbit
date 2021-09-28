@@ -250,12 +250,12 @@ void interaction_config_manager::one_step(const multi_ex& ec)
   switch (current_state)
   {
     case Idle:
-      process_namespaces(ec);
-      exclusion_configs_oracle();
-      current_state = Experimenting;
       break;
 
     case Collecting:
+      process_namespaces(ec);
+      exclusion_configs_oracle();
+      current_state = Experimenting;
       break;
 
     case Experimenting:
@@ -836,7 +836,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
       .add(make_option("priority_type", priority_type)
                .keep()
                .default_value("none")
-               .help("set type of config manager in {none, le}"))
+               .help("set function to determine next config {none, least_exclusion}"))
       .add(make_option("priority_challengers", priority_challengers)
                .keep()
                .default_value(-1)
@@ -847,7 +847,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   float (*calc_priority)(const exclusion_config&, const std::map<namespace_index, size_t>&);
 
   if (priority_type == "none") { calc_priority = &calc_priority_empty; }
-  else if (priority_type == "le")
+  else if (priority_type == "least_exclusion")
   {
     calc_priority = &calc_priority_least_exclusion;
   }

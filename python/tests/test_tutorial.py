@@ -16,13 +16,12 @@ class Simulator:
 
     users = ['Tom', 'Anna']
     times_of_day = ['morning', 'afternoon']
-    # actions = ["politics", "sports", "music", "food", "finance", "health", "camping"]
     actions = ["politics", "sports", "music"]
 
     def __init__(self, debug_logfile=None, seed=10, has_automl=False):
         random.seed(seed)
 
-        self.has_aml = has_automl
+        self.has_automl = has_automl
 
         if debug_logfile:
             self.debug_log = open(debug_logfile, 'w')
@@ -150,7 +149,7 @@ class Simulator:
             # We negate this so that on the plot instead of minimizing cost, we are maximizing reward
             self.ctr.append(-1*self.cost_sum/i)
 
-            if self.has_aml and i % 1 == 0:
+            if self.has_automl and i % 1 == 0:
                 metrics = vw.get_learner_metrics()
                 self.process_metrics(i, metrics)
 
@@ -158,8 +157,8 @@ class Simulator:
 
 def _test_helper(vw_arg: str, num_iterations=2000, seed=10, has_automl=False, log_filename=None):
     vw = pyvw.vw(arg_str=vw_arg)
-    has_aml = "automl" in vw.get_enabled_reductions()
-    sim = Simulator(seed=seed, has_automl=has_aml, debug_logfile=log_filename)
+    has_automl = "automl" in vw.get_enabled_reductions()
+    sim = Simulator(seed=seed, has_automl=has_automl, debug_logfile=log_filename)
     ctr = sim.run_simulation(vw, num_iterations, sim.users, sim.times_of_day, sim.actions, sim.get_cost)
     vw.save("readable.vw")
     vw.finish()
@@ -170,8 +169,8 @@ def _test_helper_save_load(vw_arg: str, num_iterations=2000, seed=10, has_automl
     before_save = num_iterations-split
 
     first_vw = pyvw.vw(arg_str=vw_arg)
-    has_aml = "automl" in first_vw.get_enabled_reductions()
-    sim = Simulator(seed=seed, has_automl=has_aml, debug_logfile=log_filename)
+    has_automl = "automl" in first_vw.get_enabled_reductions()
+    sim = Simulator(seed=seed, has_automl=has_automl, debug_logfile=log_filename)
     # first chunk
     ctr = sim.run_simulation(first_vw, before_save, sim.users, sim.times_of_day, sim.actions, sim.get_cost)
     # save
@@ -209,7 +208,7 @@ def test_without_interaction():
 
 def test_custom_reduction(config=3, sim_saveload=False):
     # 10281881982--audit --invert_hash
-    args = f"--invert_hash readable.vw --automl {str(config)} --priority_type le --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json"
+    args = f"--invert_hash readable.vw --automl {str(config)} --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json"
     if sim_saveload:
         ctr = _test_helper_save_load(vw_arg=f"--save_resume {args}", log_filename=f"custom_reduc_{str(config)}.txt")
     else:
