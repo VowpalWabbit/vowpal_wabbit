@@ -16,7 +16,7 @@ struct action_score
   float score;
 };
 
-typedef v_array<action_score> action_scores;
+using action_scores = v_array<action_score>;
 
 class score_iterator
 {

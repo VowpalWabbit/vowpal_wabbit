@@ -48,9 +48,9 @@ po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std
 }
 
 void options_boost_po::add_to_description(
-    std::shared_ptr<base_option> opt, po::options_description& options_description)
+    const std::shared_ptr<base_option>& opt, po::options_description& options_description)
 {
-  add_to_description_impl<supported_options_types>(std::move(opt), options_description);
+  add_to_description_impl<supported_options_types>(opt, options_description);
 }
 
 void options_boost_po::add_and_parse(const option_group_definition& group)
@@ -250,7 +250,8 @@ void options_boost_po::check_unregistered()
 }
 
 template <>
-void options_boost_po::add_to_description_impl<typelist<>>(std::shared_ptr<base_option>, po::options_description&)
+void options_boost_po::add_to_description_impl<typelist<>>(
+    const std::shared_ptr<base_option>&, po::options_description&)
 {
   THROW("That is an unsupported option type.");
 }
