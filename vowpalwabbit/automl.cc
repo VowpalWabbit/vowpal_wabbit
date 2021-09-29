@@ -892,9 +892,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   assert(all.interactions.empty() == true);
 
   assert(all.weights.sparse == false);
-
-  // ask jack about flushing the cache, after mutating reductions
-  // that might change
+  if (all.weights.sparse) THROW("--automl does not work with sparse weights");
 
   details::fail_if_enabled(all,
       {"ccb_explore_adf", "audit_regressor", "baseline", "cb_explore_adf_rnd", "cb_to_cb_adf", "cbify", "replay_c",
