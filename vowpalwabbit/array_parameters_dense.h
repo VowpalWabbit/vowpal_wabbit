@@ -118,7 +118,7 @@ public:
   {
     assert(from < params_per_problem);
     assert(to < params_per_problem);
-    size_t stride_size = 1 << stride_shift();
+    uint32_t stride_size = 1 << stride_shift();
 
     int64_t diff = to - from;
     for (auto iter = begin(); iter != end(); ++iter)
@@ -141,7 +141,7 @@ public:
   void clear_offset(const size_t offset, const size_t params_per_problem)
   {
     assert(offset < params_per_problem);
-    size_t stride_size = 1 << stride_shift();
+    uint32_t stride_size = 1 << stride_shift();
 
     for (iterator iter = begin(); iter != end(); ++iter)
     {
