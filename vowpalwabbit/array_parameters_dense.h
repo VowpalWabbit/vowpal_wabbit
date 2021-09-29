@@ -116,6 +116,10 @@ public:
 
   void copy_offsets(const size_t from, const size_t to, const size_t params_per_problem)
   {
+    assert(from < params_per_problem);
+    assert(to < params_per_problem);
+    size_t stride_size = 1 << stride_shift();
+
     int64_t diff = to - from;
     for (auto iter = begin(); iter != end(); ++iter)
     {
@@ -125,19 +129,31 @@ public:
       {
         float* other = &_begin[(prestride_index + diff) << stride_shift()];
 
-        // todo: handle offsets 1-3
-        if (*other != 0.f || *iter != 0.f) { (&(*other))[0] = (&(*iter))[0]; }
+        if (*other != 0.f || *iter != 0.f)
+        {
+          for (size_t stride_offset = 0; stride_offset < stride_size; stride_offset++)
+          { (&(*other))[stride_offset] = (&(*iter))[stride_offset]; }
+        }
       }
     }
   }
 
   void clear_offset(const size_t offset, const size_t params_per_problem)
   {
+    assert(offset < params_per_problem);
+    size_t stride_size = 1 << stride_shift();
+
     for (iterator iter = begin(); iter != end(); ++iter)
     {
-      size_t current_offset = (iter.index() >> stride_shift()) & (params_per_problem - 1);
-      // todo: handle offsets 1-3
-      if (current_offset == offset && *iter != 0.f) { (&(*iter))[0] = 0; }
+      if (*iter != 0.f)
+      {
+        size_t current_offset = (iter.index() >> stride_shift()) & (params_per_problem - 1);
+        if (current_offset == offset)
+        {
+          for (size_t stride_offset = 0; stride_offset < stride_size; stride_offset++)
+          { (&(*iter))[stride_offset] = 0.f; }
+        }
+      }
     }
   }
 
