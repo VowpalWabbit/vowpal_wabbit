@@ -39,7 +39,7 @@ struct scored_config
   float last_r = 0.0;
   size_t update_count = 0;
   size_t config_index = 0;
-  bool regular = false;
+  bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
   scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
@@ -83,16 +83,20 @@ enum config_manager_state
 
 struct config_manager
 {
-  // This fn gets called before learning any example
-  virtual void one_step(const multi_ex&) = 0;
   // This fn is responsible for applying a config
-  // tracked by 'stride' into the example.
-  // the impl is responsible of tracking this config-stride mapping
-  virtual void apply_config(example*, size_t) = 0;
+  // tracked by 'live_slot' into the example.
+  // the impl is responsible of tracking this config-live_slot mapping
+  void apply_config(example*, size_t);
   // This fn is the 'undo' of configure_interactions
-  virtual void revert_config(example*) = 0;
-  virtual void save_load(io_buf&, bool, bool) = 0;
-  virtual void persist(metric_sink&) = 0;
+  void revert_config(example*);
+  void save_load(io_buf&, bool, bool);
+  void persist(metric_sink&);
+
+  // Public Chacha functions
+  void config_oracle();
+  void process_namespaces(const multi_ex&);
+  void schedule();
+  void update_champ();
 };
 
 struct interaction_config_manager : config_manager
@@ -121,23 +125,24 @@ struct interaction_config_manager : config_manager
   interaction_config_manager(
       size_t, size_t, uint64_t, size_t, float (*)(const exclusion_config&, const std::map<namespace_index, size_t>&));
 
-  void one_step(const multi_ex&) override;
-  void apply_config(example*, size_t) override;
-  void revert_config(example*) override;
-  void save_load(io_buf&, bool, bool) override;
-  void persist(metric_sink&) override;
+  void apply_config(example*, size_t);
+  void revert_config(example*);
+  void save_load(io_buf&, bool, bool);
+  void persist(metric_sink&);
+
+  // Public Chacha functions
+  void config_oracle();
+  void process_namespaces(const multi_ex&);
+  void schedule();
+  void update_champ();
 
 private:
   void gen_quadratic_interactions(size_t);
   bool better(const exclusion_config&, const exclusion_config&) const;
   bool worse(const exclusion_config&, const exclusion_config&) const;
-  void update_champ();
   float (*calc_priority)(const exclusion_config&, const std::map<namespace_index, size_t>&);
-  void process_namespaces(const multi_ex&);
-  void exclusion_configs_oracle();
   bool repopulate_index_queue();
-  bool swap_regular(size_t);
-  void schedule();
+  bool swap_eligible_to_inactivate(size_t);
 };
 
 template <typename CMType>
@@ -148,6 +153,8 @@ struct automl
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   ACTION_SCORE::action_scores champ_a_s;          // a sequence of classes with scores.  Also used for probabilities.
   automl(std::unique_ptr<CMType> cm) : cm(std::move(cm)) {}
+  // This fn gets called before learning any example
+  void one_step(const multi_ex&);
 };
 
 }  // namespace automl
