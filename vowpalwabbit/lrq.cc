@@ -14,13 +14,19 @@ using namespace VW::config;
 
 struct LRQstate
 {
-  vw* all;  // feature creation, audit, hash_inv
+  vw* all = nullptr;  // feature creation, audit, hash_inv
   bool lrindices[256];
   size_t orig_size[256];
   std::set<std::string> lrpairs;
-  bool dropout;
-  uint64_t seed;
-  uint64_t initial_seed;
+  bool dropout = false;
+  uint64_t seed = 0;
+  uint64_t initial_seed = 0;
+
+  LRQstate()
+  {
+    std::fill(lrindices, lrindices + 256, false);
+    std::fill(orig_size, orig_size + 256, 0);
+  }
 };
 
 bool valid_int(const char* s)
@@ -167,7 +173,7 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto lrq = scoped_calloc_or_throw<LRQstate>();
+  auto lrq = VW::make_unique<LRQstate>();
   std::vector<std::string> lrq_names;
   option_group_definition new_options("Low Rank Quadratics");
   new_options.add(make_option("lrq", lrq_names).keep().necessary().help("use low rank quadratic features"))
@@ -213,10 +219,14 @@ base_learner* lrq_setup(VW::setup_base_i& stack_builder)
 
   all.wpp = all.wpp * static_cast<uint64_t>(1 + maxk);
   auto base = stack_builder.setup_base_learner();
-  learner<LRQstate, example>& l = init_learner(lrq, as_singleline(base), predict_or_learn<true>,
-      predict_or_learn<false>, 1 + maxk, stack_builder.get_setupfn_name(lrq_setup), base->learn_returns_prediction);
-  l.set_end_pass(reset_seed);
+
+  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(lrq_setup))
+                .set_params_per_weight(1 + maxk)
+                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .set_end_pass(reset_seed)
+                .build();
 
   // TODO: leaks memory ?
-  return make_base(l);
+  return make_base(*l);
 }
