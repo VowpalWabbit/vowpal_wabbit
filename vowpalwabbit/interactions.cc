@@ -53,7 +53,7 @@ template <typename InteractionTermT>
 float calculate_count_and_sum_ft_sq_for_permutations(const std::array<features, NUM_NAMESPACES>& feature_spaces,
     const std::vector<std::vector<InteractionTermT>>& interactions)
 {
-  float sum_feat_sq_in_inter_outer = 1.;
+  float sum_feat_sq_in_inter_outer = 0.;
   for (const auto& interaction : interactions)
   {
     float sum_feat_sq_in_inter = 1.;
