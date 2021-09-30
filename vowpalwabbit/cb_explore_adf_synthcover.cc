@@ -16,6 +16,7 @@
 #include "version.h"
 #include "label_parser.h"
 
+#include <utility>
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -66,7 +67,7 @@ cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, s
     : _epsilon(epsilon)
     , _psi(psi)
     , _synthcoversize(synthcoversize)
-    , _random_state(random_state)
+    , _random_state(std::move(random_state))
     , _model_file_version(model_file_version)
     , _min_cost(0.0)
     , _max_cost(0.0)

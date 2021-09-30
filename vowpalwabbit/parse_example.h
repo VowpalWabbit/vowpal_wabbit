@@ -8,11 +8,11 @@
 #include "vw_string_view.h"
 
 // example processing
-typedef enum
+enum FeatureInputType
 {
   StringFeatures,
   JsonFeatures
-} FeatureInputType;
+};
 
 void substring_to_example(VW::workspace* all, example* ae, VW::string_view example);
 

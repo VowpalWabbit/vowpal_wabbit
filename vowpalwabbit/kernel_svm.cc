@@ -84,33 +84,34 @@ void free_svm_model(svm_model* model)
 
 struct svm_params
 {
-  size_t current_pass;
-  bool active;
-  bool active_pool_greedy;
-  bool para_active;
-  double active_c;
+  size_t current_pass = 0;
+  bool active = false;
+  bool active_pool_greedy = false;
+  bool para_active = false;
+  double active_c = 0.0;
 
-  size_t pool_size;
-  size_t pool_pos;
-  size_t subsample;  // NOTE: Eliminating subsample to only support 1/pool_size
-  size_t reprocess;
+  size_t pool_size = 0;
+  size_t pool_pos = 0;
+  size_t subsample = 0;  // NOTE: Eliminating subsample to only support 1/pool_size
+  size_t reprocess = 0;
 
-  svm_model* model;
-  size_t maxcache;
+  svm_model* model = nullptr;
+  size_t maxcache = 0;
   // size_t curcache;
 
-  svm_example** pool;
-  float lambda;
+  svm_example** pool = nullptr;
+  float lambda = 0.f;
 
-  void* kernel_params;
-  size_t kernel_type;
+  void* kernel_params = nullptr;
+  size_t kernel_type = 0;
 
-  size_t local_begin, local_end;
-  size_t current_t;
+  size_t local_begin = 0;
+  size_t local_end = 0;
+  size_t current_t = 0;
 
-  float loss_sum;
+  float loss_sum = 0.f;
 
-  VW::workspace* all;  // flatten, parallel
+  VW::workspace* all = nullptr;  // flatten, parallel
   std::shared_ptr<rand_state> _random_state;
 
   ~svm_params()
@@ -438,7 +439,7 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
   }
 }
 
-void predict(svm_params& params, single_learner&, example& ec)
+void predict(svm_params& params, base_learner&, example& ec)
 {
   flat_example* fec = flatten_sort_example(*(params.all), &ec);
   if (fec)
@@ -762,7 +763,7 @@ void train(svm_params& params)
   free(train_pool);
 }
 
-void learn(svm_params& params, single_learner&, example& ec)
+void learn(svm_params& params, base_learner&, example& ec)
 {
   flat_example* fec = flatten_sort_example(*(params.all), &ec);
   if (fec)
@@ -799,7 +800,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  auto params = scoped_calloc_or_throw<svm_params>();
+  auto params = VW::make_unique<svm_params>();
   std::string kernel_type;
   float bandwidth = 1.f;
   int degree = 2;
@@ -872,8 +873,10 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
 
   params->all->weights.stride_shift(0);
 
-  learner<svm_params, example>& l =
-      init_learner(params, learn, predict, 1, stack_builder.get_setupfn_name(kernel_svm_setup));
-  l.set_save_load(save_load);
-  return make_base(l);
+  auto* l = make_base_learner(std::move(params), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
+      prediction_type_t::scalar, label_type_t::simple)
+                .set_save_load(save_load)
+                .build();
+
+  return make_base(*l);
 }

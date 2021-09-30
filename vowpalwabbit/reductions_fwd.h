@@ -31,7 +31,7 @@ struct options_i;
 }  // namespace config
 
 struct setup_base_i;
-typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::setup_base_i&);
+using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 struct setup_base_i
 {

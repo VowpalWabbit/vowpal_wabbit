@@ -16,8 +16,8 @@
     std::clog
 // comment the previous two lines if you want loads of debug output :)
 
-typedef uint32_t action;
-typedef uint32_t ptag;
+using action = uint32_t;
+using ptag = uint32_t;
 
 namespace Search
 {

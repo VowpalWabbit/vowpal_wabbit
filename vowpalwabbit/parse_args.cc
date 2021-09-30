@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <algorithm>
+#include <utility>
 
 #include "parse_regressor.h"
 #include "parser.h"
@@ -88,7 +89,9 @@ std::string find_in_path(const std::vector<std::string>& paths, const std::strin
 #endif
   for (const auto& path : paths)
   {
-    std::string full = VW::ends_with(path, delimiter) ? (path + fname) : (path + delimiter + fname);
+    std::string full = path;
+    if (!VW::ends_with(path, delimiter)) { full += delimiter; }
+    full += fname;
     std::ifstream f(full.c_str());
     if (f.good()) return full;
   }
@@ -1402,7 +1405,7 @@ void parse_sources(options_i& options, VW::workspace& all, io_buf& model, bool s
 
 namespace VW
 {
-void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value)
+void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value)
 {
   flag_to_replace.append(
       " ");  // add a space to make sure we obtain the right flag in case 2 flags start with the same set of characters
@@ -1619,7 +1622,7 @@ VW::workspace* initialize(
   return initialize_with_builder(argc, argv, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
-VW::workspace* initialize_with_builder(std::string s, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
+VW::workspace* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
     void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   int argc = 0;
@@ -1641,14 +1644,15 @@ VW::workspace* initialize_with_builder(std::string s, io_buf* model, bool skip_m
   return ret;
 }
 
-VW::workspace* initialize(std::string s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
+VW::workspace* initialize(
+    const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   return initialize_with_builder(s, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
 // Create a new VW instance while sharing the model with another instance
 // The extra arguments will be appended to those of the other VW instance
-VW::workspace* seed_vw_model(VW::workspace* vw_model, std::string extra_args, trace_message_t trace_listener, void* trace_context)
+VW::workspace* seed_vw_model(VW::workspace* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
 {
   options_serializer_boost_po serializer;
   for (auto const& option : vw_model->options->get_all_options())

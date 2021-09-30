@@ -162,24 +162,24 @@ struct node
 // memory_tree
 struct memory_tree
 {
-  VW::workspace* all;
+  VW::workspace* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
 
   std::vector<node> nodes;  // array of nodes.
   // v_array<node> nodes;         // array of nodes.
   v_array<example*> examples;  // array of example points
 
-  size_t max_leaf_examples;
-  size_t max_nodes;
-  size_t leaf_example_multiplier;
-  size_t max_routers;
-  size_t max_num_labels;
+  size_t max_leaf_examples = 0;
+  size_t max_nodes = 0;
+  size_t leaf_example_multiplier = 0;
+  size_t max_routers = 0;
+  size_t max_num_labels = 0;
   float alpha;  // for cpt type of update.
   uint64_t routers_used;
   int iter;
-  uint32_t dream_repeats;  // number of dream operations per example.
+  uint32_t dream_repeats = 0;  // number of dream operations per example.
 
-  uint32_t total_num_queries;
+  uint32_t total_num_queries = 0;
 
   size_t max_depth;
   size_t max_ex_in_leaf;
@@ -188,35 +188,35 @@ struct memory_tree
   float test_time;       // recording the test time
 
   uint32_t num_mistakes;
-  bool learn_at_leaf;  // indicator for turning on learning the scorer function at the leaf level
+  bool learn_at_leaf = false;  // indicator for turning on learning the scorer function at the leaf level
 
   bool test_mode;
 
-  size_t current_pass;  // for tracking # of passes over the dataset
-  size_t final_pass;
+  size_t current_pass = 0;  // for tracking # of passes over the dataset
+  size_t final_pass = 0;
 
   int top_K;  // commands:
-  bool oas;   // indicator for multi-label classification (oas = 1)
-  int dream_at_update;
+  bool oas = false;  // indicator for multi-label classification (oas = 1)
+  int dream_at_update = 0;
 
-  bool online;  // indicator for running CMT in online fashion
+  bool online = false;  // indicator for running CMT in online fashion
 
-  float F1_score;
-  float hamming_loss;
+  float F1_score = 0.f;
+  float hamming_loss = 0.f;
 
-  example* kprod_ec;
+  example* kprod_ec = nullptr;
 
   memory_tree()
   {
-    alpha = 0.5;
+    alpha = 0.5f;
     routers_used = 0;
     iter = 0;
     num_mistakes = 0;
     test_mode = false;
     max_depth = 0;
     max_ex_in_leaf = 0;
-    construct_time = 0;
-    test_time = 0;
+    construct_time = 0.f;
+    test_time = 0.f;
     top_K = 1;
   }
 
@@ -1202,7 +1202,7 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   using namespace memory_tree_ns;
-  auto tree = scoped_calloc_or_throw<memory_tree>();
+  auto tree = VW::make_unique<memory_tree>();
   option_group_definition new_options("Memory Tree");
 
   new_options
@@ -1249,32 +1249,36 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
                          << "oas = " << tree->oas << " "
                          << "online =" << tree->online << " " << std::endl;
 
-  size_t num_learners = 0;
+  size_t num_learners;
+  prediction_type_t pred_type;
+  label_type_t label_type;
+  bool oas = tree->oas;
 
   // multi-class classification
-  if (tree->oas == false)
+  if (!oas)
   {
     num_learners = tree->max_nodes + 1;
-    learner<memory_tree, example>& l = init_multiclass_learner(tree, as_singleline(stack_builder.setup_base_learner()),
-        learn, predict, all.example_parser, num_learners, stack_builder.get_setupfn_name(memory_tree_setup));
-    all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
-    // srand(time(0));
-    l.set_save_load(save_load_memory_tree);
-    l.set_end_pass(end_pass);
-
-    return make_base(l);
+    all.example_parser->lbl_parser = MULTICLASS::mc_label;
+    pred_type = prediction_type_t::multiclass;
+    label_type = label_type_t::multiclass;
   }  // multi-label classification
   else
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
-    learner<memory_tree, example>& l = init_learner(tree, as_singleline(stack_builder.setup_base_learner()), learn,
-        predict, num_learners, prediction_type_t::multilabels, stack_builder.get_setupfn_name(memory_tree_setup));
-
-    l.set_end_pass(end_pass);
-    l.set_save_load(save_load_memory_tree);
-
     all.example_parser->lbl_parser = MULTILABEL::multilabel;
-
-    return make_base(l);
+    pred_type = prediction_type_t::multilabels;
+    label_type = label_type_t::multilabel;
   }
+
+  auto l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
+      stack_builder.get_setupfn_name(memory_tree_setup))
+               .set_params_per_weight(num_learners)
+               .set_end_pass(end_pass)
+               .set_save_load(save_load_memory_tree)
+               .set_prediction_type(pred_type)
+               .set_label_type(label_type);
+
+  if (!oas) { l.set_finish_example(MULTICLASS::finish_example<memory_tree&>); }
+
+  return make_base(*l.build());
 }

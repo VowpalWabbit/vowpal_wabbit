@@ -50,21 +50,22 @@ VW::workspace* initialize(std::unique_ptr<config::options_i, options_deleter_typ
     bool skip_model_load = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 VW::workspace* initialize(config::options_i& options, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-VW::workspace* initialize(std::string s, io_buf* model = nullptr, bool skip_model_load = false,
+VW::workspace* initialize(const std::string& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 VW::workspace* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
-VW::workspace* seed_vw_model(
-    VW::workspace* vw_model, std::string extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+
+VW::workspace* seed_vw_model(VW::workspace* vw_model, const std::string& extra_args, trace_message_t trace_listener = nullptr,
+    void* trace_context = nullptr);
 // Allows the input command line string to have spaces escaped by '\'
 VW::workspace* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Experimental (VW::setup_base_i):
-VW::workspace* initialize_with_builder(std::string s, io_buf* model = nullptr, bool skipModelLoad = false,
+VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
     std::unique_ptr<VW::setup_base_i> = nullptr);
 
-void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value);
+void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value);
 
 // The argv array from both of these functions must be freed.
 char** to_argv(std::string const& s, int& argc);
@@ -111,7 +112,7 @@ example* import_example(VW::workspace& all, const std::string& label, primitive_
 example* alloc_examples(size_t count);
 void dealloc_examples(example* example_ptr, size_t count);
 
-void parse_example_label(VW::workspace& all, example& ec, std::string label);
+void parse_example_label(VW::workspace& all, example& ec, const std::string& label);
 void setup_examples(VW::workspace& all, v_array<example*>& examples);
 void setup_example(VW::workspace& all, example* ae);
 example* new_unused_example(VW::workspace& all);
@@ -151,7 +152,7 @@ void copy_example_data_with_label(example* dst, const example* src);
 primitive_feature_space* export_example(VW::workspace& all, example* e, size_t& len);
 void releaseFeatureSpace(primitive_feature_space* features, size_t len);
 
-void save_predictor(VW::workspace& all, std::string reg_name);
+void save_predictor(VW::workspace& all, const std::string& reg_name);
 void save_predictor(VW::workspace& all, io_buf& buf);
 
 // inlines

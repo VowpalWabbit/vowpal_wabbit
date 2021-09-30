@@ -31,7 +31,7 @@ struct metrics_data
   size_t predict_count = 0;
 };
 
-void list_to_json_file(dsjson_metrics* ds_metrics, std::string filename, metric_sink& metrics)
+void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, metric_sink& metrics)
 {
   FILE* fp;
 

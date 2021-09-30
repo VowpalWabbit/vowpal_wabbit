@@ -139,12 +139,12 @@ private:
       std::shared_ptr<typed_option<std::vector<T>>>& opt, po::typed_value<std::vector<T>>* po_value);
 
   template <typename T>
-  bool add_if_t(std::shared_ptr<base_option> opt, po::options_description& options_description);
+  bool add_if_t(const std::shared_ptr<base_option>& opt, po::options_description& options_description);
 
-  void add_to_description(std::shared_ptr<base_option> opt, po::options_description& options_description);
+  void add_to_description(const std::shared_ptr<base_option>& opt, po::options_description& options_description);
 
   template <typename TTypes>
-  void add_to_description_impl(std::shared_ptr<base_option> opt, po::options_description& options_description)
+  void add_to_description_impl(const std::shared_ptr<base_option>& opt, po::options_description& options_description)
   {
     if (add_if_t<typename TTypes::head>(opt, options_description)) { return; }
     add_to_description_impl<typename TTypes::tail>(opt, options_description);
@@ -276,7 +276,7 @@ po::typed_value<std::vector<T>>* options_boost_po::add_notifier(
 }
 
 template <typename T>
-bool options_boost_po::add_if_t(std::shared_ptr<base_option> opt, po::options_description& options_description)
+bool options_boost_po::add_if_t(const std::shared_ptr<base_option>& opt, po::options_description& options_description)
 {
   if (opt->m_type_hash == typeid(T).hash_code())
   {
@@ -290,7 +290,7 @@ bool options_boost_po::add_if_t(std::shared_ptr<base_option> opt, po::options_de
 
 template <>
 void options_boost_po::add_to_description_impl<typelist<>>(
-    std::shared_ptr<base_option> opt, po::options_description& options_description);
+    const std::shared_ptr<base_option>& opt, po::options_description& options_description);
 
 template <typename T>
 void options_boost_po::add_to_description(

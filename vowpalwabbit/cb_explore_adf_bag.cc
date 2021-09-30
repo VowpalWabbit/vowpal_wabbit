@@ -13,6 +13,7 @@
 #include "cb_explore.h"
 #include "explore.h"
 #include "label_parser.h"
+#include <utility>
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -57,7 +58,11 @@ private:
 
 cb_explore_adf_bag::cb_explore_adf_bag(
     float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state)
-    : _epsilon(epsilon), _bag_size(bag_size), _greedify(greedify), _first_only(first_only), _random_state(random_state)
+    : _epsilon(epsilon)
+    , _bag_size(bag_size)
+    , _greedify(greedify)
+    , _first_only(first_only)
+    , _random_state(std::move(random_state))
 {
 }
 

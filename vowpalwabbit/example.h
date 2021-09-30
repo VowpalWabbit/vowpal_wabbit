@@ -182,7 +182,7 @@ namespace VW
 {
 void return_multiple_example(VW::workspace& all, v_array<example*>& examples);
 
-typedef example& (*example_factory_t)(void*);
+using example_factory_t = example& (*)(void*);
 
 }  // namespace VW
 

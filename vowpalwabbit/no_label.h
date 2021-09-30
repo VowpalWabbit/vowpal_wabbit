@@ -13,7 +13,7 @@ namespace VW { struct workspace; }
 
 namespace no_label
 {
-typedef char no_label;
+using no_label = char;
 
 void return_no_label_example(VW::workspace& all, void*, example& ec);
 
