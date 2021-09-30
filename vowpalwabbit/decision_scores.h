@@ -14,7 +14,7 @@
 namespace ACTION_SCORE
 {
 struct action_score;
-typedef v_array<action_score> action_scores;
+using action_scores = v_array<action_score>;
 }  // namespace ACTION_SCORE
 
 struct vw;

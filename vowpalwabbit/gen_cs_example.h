@@ -190,7 +190,7 @@ void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels);
 
 void gen_cs_example_sm(multi_ex& examples, uint32_t chosen_action, float sign_offset,
-    ACTION_SCORE::action_scores action_vals, COST_SENSITIVE::label& cs_labels);
+    const ACTION_SCORE::action_scores& action_vals, COST_SENSITIVE::label& cs_labels);
 
 template <bool is_learn>
 void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p = 0.f)
