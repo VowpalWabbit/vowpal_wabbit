@@ -264,6 +264,7 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
       auto& current_obj = outcomes[i];
       auto& destination = slot_examples[i]->l.slates.probabilities;
       auto& actions = current_obj["_a"];
+
       if (actions.GetType() == rapidjson::kNumberType) { destination.push_back({actions.GetUint(), 0.f}); }
       else if (actions.GetType() == rapidjson::kArrayType)
       {
@@ -290,6 +291,12 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
       else
       {
         assert(false);
+      }
+
+      if (current_obj.HasMember("_original_label_cost"))
+      {
+        assert(current_obj["_original_label_cost"].IsFloat());
+        data->originalLabelCost = current_obj["_original_label_cost"].GetFloat();
       }
     }
 

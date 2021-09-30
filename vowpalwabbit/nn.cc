@@ -143,8 +143,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
   bool shouldOutput = n.all->raw_prediction != nullptr;
   if (!n.finished_setup) finish_setup(n, *(n.all));
-  shared_data sd;
-  memcpy(&sd, n.all->sd, sizeof(shared_data));
+  // Yes, copy all of shared data.
+  shared_data sd{*n.all->sd};
   {
     // guard for all.sd as it is modified - this will restore the state at the end of the scope.
     auto swap_guard = VW::swap_guard(n.all->sd, &sd);

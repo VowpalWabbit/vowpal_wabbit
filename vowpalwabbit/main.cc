@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
   {
     // TODO: If loggers are instantiated within struct vw, this line lives outside of that. Log as critical for now
     std::cerr << "[critical] vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
-    exit(1);
+    return 1;
   }
   catch (std::exception& e)
   {
@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
     // TODO: If loggers are instantiated within struct vw, this line lives outside of that. Log as critical for now
     std::cerr << "[critical] vw: " << e.what() << std::endl;
     // cin.ignore();
-    exit(1);
+    return 1;
   }
   // cin.ignore();
   return 0;

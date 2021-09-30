@@ -12,7 +12,7 @@ Search::search_task task = {"sequence", run, initialize, nullptr, nullptr, nullp
 }
 namespace SequenceSpanTask
 {
-Search::search_task task = {"sequencespan", run, initialize, finish, setup, takedown};
+Search::search_task task = {"sequencespan", run, initialize, nullptr, setup, takedown};
 }
 namespace SequenceTaskCostToGo
 {
@@ -20,11 +20,11 @@ Search::search_task task = {"sequence_ctg", run, initialize, nullptr, nullptr, n
 }
 namespace ArgmaxTask
 {
-Search::search_task task = {"argmax", run, initialize, finish, nullptr, nullptr};
+Search::search_task task = {"argmax", run, initialize, nullptr, nullptr, nullptr};
 }
 namespace SequenceTask_DemoLDF
 {
-Search::search_task task = {"sequence_demoldf", run, initialize, finish, nullptr, nullptr};
+Search::search_task task = {"sequence_demoldf", run, initialize, nullptr, nullptr, nullptr};
 }
 
 namespace SequenceTask
@@ -177,12 +177,6 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   sch.set_num_learners(D->multipass);
 }
 
-void finish(Search::search& sch)
-{
-  task_data* D = sch.get_task_data<task_data>();
-  delete D;
-}
-
 void setup(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
@@ -272,7 +266,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       Search::ACTION_COSTS |          // we'll provide cost-per-action (rather than oracle)
       0);
-  sch.set_task_data<size_t>(&num_actions);
+  sch.set_task_data<size_t>(new size_t{num_actions});
 }
 
 void run(Search::search& sch, multi_ex& ec)
@@ -326,12 +320,6 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
         Search::EXAMPLES_DONT_CHANGE);                 // we don't do any internal example munging
 }
 
-void finish(Search::search& sch)
-{
-  task_data* D = sch.get_task_data<task_data>();
-  delete D;
-}
-
 void run(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
@@ -364,7 +352,7 @@ namespace SequenceTask_DemoLDF  // this is just to debug/show off how to do LDF
 namespace CS = COST_SENSITIVE;
 struct task_data
 {
-  example* ldf_examples;
+  std::vector<example> ldf_examples;
   size_t num_actions;
 };
 
@@ -372,30 +360,22 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 {
   CS::wclass default_wclass = {0., 0, 0., 0.};
 
-  example* ldf_examples = VW::alloc_examples(num_actions);
+  task_data* data = new task_data;
+  data->ldf_examples.resize(num_actions);
   for (size_t a = 0; a < num_actions; a++)
   {
-    CS::label& lab = ldf_examples[a].l.cs;
+    CS::label& lab = data->ldf_examples[a].l.cs;
     CS::default_label(lab);
     lab.costs.push_back(default_wclass);
-    ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
+    data->ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
   }
 
-  task_data* data = &calloc_or_throw<task_data>();
-  data->ldf_examples = ldf_examples;
   data->num_actions = num_actions;
 
   sch.set_task_data<task_data>(data);
   sch.set_options(Search::AUTO_CONDITION_FEATURES |  // automatically add history features to our examples, please
       Search::AUTO_HAMMING_LOSS |  // please just use hamming loss on individual predictions -- we won't declare loss
       Search::IS_LDF);             // we generate ldf examples
-}
-
-void finish(Search::search& sch)
-{
-  task_data* data = sch.get_task_data<task_data>();
-  VW::dealloc_examples(data->ldf_examples, data->num_actions);
-  free(data);
 }
 
 // this is totally bogus for the example -- you'd never actually do this!
@@ -433,7 +413,7 @@ void run(Search::search& sch, multi_ex& ec)
 
     action oracle = ec[i]->l.multi.label - 1;
     action pred_id = P.set_tag(static_cast<ptag>(i + 1))
-                         .set_input(data->ldf_examples, data->num_actions)
+                         .set_input(data->ldf_examples.data(), data->num_actions)
                          .set_oracle(oracle)
                          .set_condition_range(i, sch.get_history_length(), 'p')
                          .predict();

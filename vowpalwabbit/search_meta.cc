@@ -50,12 +50,11 @@ namespace SelectiveBranchingMT
 {
 void run(Search::search& sch, multi_ex& ec);
 void initialize(Search::search& sch, size_t& num_actions, options_i& options);
-void finish(Search::search& sch);
-Search::search_metatask metatask = {"selective_branching", run, initialize, finish, nullptr, nullptr};
+Search::search_metatask metatask = {"selective_branching", run, initialize, nullptr, nullptr, nullptr};
 
 typedef std::pair<action, float> act_score;
-typedef std::vector<act_score> path;
-typedef std::pair<float, path> branch;
+using path = std::vector<act_score>;
+using branch = std::pair<float, path>;
 
 std::ostream& operator<<(std::ostream& os, const std::pair<unsigned int, float>& v)
 {
@@ -102,8 +101,6 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   task_data* d = new task_data(max_branches, kbest);
   sch.set_metatask_data(d);
 }
-
-void finish(Search::search& sch) { delete sch.get_metatask_data<task_data>(); }
 
 void run(Search::search& sch, multi_ex& ec)
 {

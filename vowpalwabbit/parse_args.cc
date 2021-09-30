@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <algorithm>
+#include <utility>
 
 #include "parse_regressor.h"
 #include "parser.h"
@@ -28,6 +29,8 @@
 #include "vw_validate.h"
 #include "vw_allreduce.h"
 #include "metrics.h"
+#include "text_utils.h"
+#include "interactions.h"
 
 #include "options.h"
 #include "options_boost_po.h"
@@ -48,19 +51,6 @@ using std::endl;
 using namespace VW::config;
 
 namespace logger = VW::io::logger;
-
-//
-// Does std::string end with a certain substring?
-//
-bool ends_with(std::string const& full_string, std::string const& ending)
-{
-  if (full_string.length() > ending.length())
-  { return (full_string.compare(full_string.length() - ending.length(), ending.length(), ending) == 0); }
-  else
-  {
-    return false;
-  }
-}
 
 uint64_t hash_file_contents(VW::io::reader* f)
 {
@@ -99,7 +89,9 @@ std::string find_in_path(const std::vector<std::string>& paths, const std::strin
 #endif
   for (const auto& path : paths)
   {
-    std::string full = ends_with(path, delimiter) ? (path + fname) : (path + delimiter + fname);
+    std::string full = path;
+    if (!VW::ends_with(path, delimiter)) { full += delimiter; }
+    full += fname;
     std::ifstream f(full.c_str());
     if (f.good()) return full;
   }
@@ -123,7 +115,7 @@ void parse_dictionary_argument(vw& all, const std::string& str)
   std::string file_name = find_in_path(all.dictionary_path, std::string(s));
   if (file_name.empty()) THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path")
 
-  bool is_gzip = ends_with(file_name, ".gz");
+  bool is_gzip = VW::ends_with(file_name, ".gz");
   std::unique_ptr<VW::io::reader> file_adapter;
   try
   {
@@ -506,47 +498,12 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
 }  // namespace VW
 
-// Return a copy of std::string replacing \x00 sequences in it
-std::string spoof_hex_encoded_namespaces(const std::string& arg)
+std::vector<namespace_index> parse_char_interactions(VW::string_view input)
 {
-  constexpr size_t NUMBER_OF_HEX_CHARS = 2;
-  // "\x" + hex chars
-  constexpr size_t LENGTH_OF_HEX_TOKEN = 2 + NUMBER_OF_HEX_CHARS;
-  constexpr size_t HEX_BASE = 16;
-
-  // Too short to be hex encoded.
-  if (arg.size() < LENGTH_OF_HEX_TOKEN) { return arg; }
-
-  std::string res;
-  size_t pos = 0;
-  while (pos < arg.size() - (LENGTH_OF_HEX_TOKEN - 1))
-  {
-    if (arg[pos] == '\\' && arg[pos + 1] == 'x')
-    {
-      std::string substr = arg.substr(pos + NUMBER_OF_HEX_CHARS, NUMBER_OF_HEX_CHARS);
-      char* p;
-      const auto c = static_cast<namespace_index>(std::strtoul(substr.c_str(), &p, HEX_BASE));
-      if (*p == '\0')
-      {
-        res.push_back(c);
-        pos += LENGTH_OF_HEX_TOKEN;
-      }
-      else
-      {
-        logger::errlog_warn("Possibly malformed hex representation of a namespace: '\\x{}'", substr);
-        res.push_back(arg[pos++]);
-      }
-    }
-    else
-    {
-      res.push_back(arg[pos++]);
-    }
-  }
-
-  // Copy last 2 characters
-  while (pos < arg.size()) { res.push_back(arg[pos++]); }
-
-  return res;
+  std::vector<namespace_index> result;
+  auto decoded = VW::decode_inline_hex(input);
+  result.insert(result.begin(), decoded.begin(), decoded.end());
+  return result;
 }
 
 void parse_feature_tweaks(
@@ -633,7 +590,7 @@ void parse_feature_tweaks(
   {
     for (auto& spelling_n : spelling_ns)
     {
-      spelling_n = spoof_hex_encoded_namespaces(spelling_n);
+      spelling_n = VW::decode_inline_hex(spelling_n);
       if (spelling_n[0] == '_')
         all.spelling_features[static_cast<unsigned char>(' ')] = true;
       else
@@ -647,7 +604,7 @@ void parse_feature_tweaks(
         << "WARNING: '--q:' is deprecated and not supported. You can use : as a wildcard in interactions." << endl;
   }
 
-  if (options.was_supplied("affix")) parse_affix_argument(all, spoof_hex_encoded_namespaces(affix));
+  if (options.was_supplied("affix")) parse_affix_argument(all, VW::decode_inline_hex(affix));
 
   // Process ngram and skips arguments
   if (options.was_supplied("skips"))
@@ -662,12 +619,12 @@ void parse_feature_tweaks(
     std::vector<std::string> hex_decoded_ngram_strings;
     hex_decoded_ngram_strings.reserve(ngram_strings.size());
     std::transform(ngram_strings.begin(), ngram_strings.end(), std::back_inserter(hex_decoded_ngram_strings),
-        [](const std::string& arg) { return spoof_hex_encoded_namespaces(arg); });
+        [](const std::string& arg) { return VW::decode_inline_hex(arg); });
 
     std::vector<std::string> hex_decoded_skip_strings;
     hex_decoded_skip_strings.reserve(skip_strings.size());
     std::transform(skip_strings.begin(), skip_strings.end(), std::back_inserter(hex_decoded_skip_strings),
-        [](const std::string& arg) { return spoof_hex_encoded_namespaces(arg); });
+        [](const std::string& arg) { return VW::decode_inline_hex(arg); });
 
     all.skip_gram_transformer = VW::make_unique<VW::kskip_ngram_transformer>(
         VW::kskip_ngram_transformer::build(hex_decoded_ngram_strings, hex_decoded_skip_strings, all.logger.quiet));
@@ -706,73 +663,60 @@ void parse_feature_tweaks(
 
   if (options.was_supplied("quadratic"))
   {
-    if (!all.logger.quiet) *(all.trace_message) << "creating quadratic features for pairs: ";
-
     for (auto& i : quadratics)
     {
-      if (i.size() != 2) { THROW("error, quadratic features must involve two sets.)") }
-      auto encoded = spoof_hex_encoded_namespaces(i);
-      decoded_interactions.emplace_back(encoded.begin(), encoded.end());
-      if (!all.logger.quiet) *(all.trace_message) << i << " ";
+      auto parsed = parse_char_interactions(i);
+      if (parsed.size() != 2) { THROW("error, quadratic features must involve two sets.)") }
+      decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
 
-    if (!all.logger.quiet && !options.was_supplied("leave_duplicate_interactions"))
+    if (!all.logger.quiet)
     {
-      bool contains_wildcard_quadratic =
-          std::find_if(quadratics.begin(), quadratics.end(), [](const std::string& interaction) {
-            return interaction.find(wildcard_namespace) != std::string::npos;
-          }) != quadratics.end();
-      if (contains_wildcard_quadratic)
-      {
-        *(all.trace_message) << "\n"
-                             << "WARNING: any duplicate namespace interactions will be removed\n"
-                             << "You can use --leave_duplicate_interactions to disable this behaviour.";
-      }
+      *(all.trace_message) << fmt::format("creating quadratic features for pairs: {}\n", fmt::join(quadratics, " "));
     }
-
-
-    if (!all.logger.quiet) *(all.trace_message) << endl;
   }
 
   if (options.was_supplied("cubic"))
   {
-    if (!all.logger.quiet) *(all.trace_message) << "creating cubic features for triples: ";
     for (const auto& i : cubics)
     {
-      if (i.size() != 3) { THROW("error, cubic features must involve three sets.") }
-      auto encoded = spoof_hex_encoded_namespaces(i);
-      decoded_interactions.emplace_back(encoded.begin(), encoded.end());
-      if (!all.logger.quiet) *(all.trace_message) << i << " ";
+      auto parsed = parse_char_interactions(i);
+      if (parsed.size() != 3) { THROW("error, cubic features must involve three sets.") }
+      decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
-    if (!all.logger.quiet) *(all.trace_message) << endl;
 
-    bool contains_wildcard_cubic = std::find_if(cubics.begin(), cubics.end(), [](const std::string& interaction) {
-      return interaction.find(wildcard_namespace) != std::string::npos;
-    }) != cubics.end();
-    if (contains_wildcard_cubic)
-    {
-      *(all.trace_message) << "\n"
-                           << "WARNING: any duplicate namespace interactions will be removed\n"
-                           << "You can use --leave_duplicate_interactions to disable this behaviour.";
-    }
+    if (!all.logger.quiet)
+    { *(all.trace_message) << fmt::format("creating cubic features for triples: {}\n", fmt::join(cubics, " ")); }
   }
 
   if (options.was_supplied("interactions"))
   {
-    if (!all.logger.quiet) *(all.trace_message) << "creating features for following interactions: ";
-
     for (const auto& i : interactions)
     {
-      if (i.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
-      auto encoded = spoof_hex_encoded_namespaces(i);
-      decoded_interactions.emplace_back(encoded.begin(), encoded.end());
-      if (!all.logger.quiet) *(all.trace_message) << i << " ";
+      auto parsed = parse_char_interactions(i);
+      if (parsed.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
+      decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
-    if (!all.logger.quiet) *(all.trace_message) << endl;
+    if (!all.logger.quiet)
+    {
+      *(all.trace_message) << fmt::format(
+          "creating features for following interactions: {}\n", fmt::join(interactions, " "));
+    }
   }
 
   if (!decoded_interactions.empty())
   {
+    if (!all.logger.quiet && !options.was_supplied("leave_duplicate_interactions"))
+    {
+      auto any_contain_wildcards = std::any_of(decoded_interactions.begin(), decoded_interactions.end(),
+          [](const std::vector<namespace_index>& interaction) { return INTERACTIONS::contains_wildcard(interaction); });
+      if (any_contain_wildcards)
+      {
+        *(all.trace_message) << "WARNING: any duplicate namespace interactions will be removed\n"
+                             << "You can use --leave_duplicate_interactions to disable this behaviour.\n";
+      }
+    }
+
     // Sorts the overall list
     std::sort(decoded_interactions.begin(), decoded_interactions.end(), INTERACTIONS::sort_interactions_comparator);
 
@@ -813,7 +757,7 @@ void parse_feature_tweaks(
 
     for (auto& i : ignores)
     {
-      i = spoof_hex_encoded_namespaces(i);
+      i = VW::decode_inline_hex(i);
       for (auto j : i) all.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = true;
     }
 
@@ -833,7 +777,7 @@ void parse_feature_tweaks(
 
     for (auto& i : ignore_linears)
     {
-      i = spoof_hex_encoded_namespaces(i);
+      i = VW::decode_inline_hex(i);
       for (auto j : i) all.ignore_linear[static_cast<size_t>(static_cast<unsigned char>(j))] = true;
     }
 
@@ -855,7 +799,7 @@ void parse_feature_tweaks(
 
     for (auto& i : keeps)
     {
-      i = spoof_hex_encoded_namespaces(i);
+      i = VW::decode_inline_hex(i);
       for (const auto& j : i) all.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = false;
     }
 
@@ -882,7 +826,7 @@ void parse_feature_tweaks(
 
     for (const auto& arg : redefines)
     {
-      const std::string& argument = spoof_hex_encoded_namespaces(arg);
+      const std::string& argument = VW::decode_inline_hex(arg);
       size_t arg_len = argument.length();
 
       size_t operator_pos = 0;  // keeps operator pos + 1 to stay unsigned type
@@ -1461,7 +1405,7 @@ void parse_sources(options_i& options, vw& all, io_buf& model, bool skip_model_l
 
 namespace VW
 {
-void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value)
+void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value)
 {
   flag_to_replace.append(
       " ");  // add a space to make sure we obtain the right flag in case 2 flags start with the same set of characters
@@ -1538,8 +1482,6 @@ char** to_argv(std::string const& s, int& argc)
   argc = static_cast<int>(foo.size()) + 1;
   return argv;
 }
-
-char** get_argv_from_string(std::string s, int& argc) { return to_argv(s, argc); }
 
 void free_args(int argc, char* argv[])
 {
@@ -1692,7 +1634,7 @@ vw* initialize(
   return initialize_with_builder(argc, argv, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
-vw* initialize_with_builder(std::string s, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
+vw* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
     void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   int argc = 0;
@@ -1714,14 +1656,15 @@ vw* initialize_with_builder(std::string s, io_buf* model, bool skip_model_load, 
   return ret;
 }
 
-vw* initialize(std::string s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
+vw* initialize(
+    const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   return initialize_with_builder(s, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
 // Create a new VW instance while sharing the model with another instance
 // The extra arguments will be appended to those of the other VW instance
-vw* seed_vw_model(vw* vw_model, std::string extra_args, trace_message_t trace_listener, void* trace_context)
+vw* seed_vw_model(vw* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
 {
   options_serializer_boost_po serializer;
   for (auto const& option : vw_model->options->get_all_options())
@@ -1811,7 +1754,7 @@ void finish(vw& all, bool delete_all)
 
     float best_constant;
     float best_constant_loss;
-    if (get_best_constant(all, best_constant, best_constant_loss))
+    if (get_best_constant(all.loss.get(), all.sd, best_constant, best_constant_loss))
     {
       *(all.trace_message) << endl << "best constant = " << best_constant;
       if (best_constant_loss != FLT_MIN)
@@ -1826,16 +1769,14 @@ void finish(vw& all, bool delete_all)
   // implement finally.
   // finalize_regressor can throw if it can't write the file.
   // we still want to free up all the memory.
-  vw_exception finalize_regressor_exception(__FILE__, __LINE__, "empty");
-  bool finalize_regressor_exception_thrown = false;
+  std::exception_ptr finalize_regressor_exception;
   try
   {
     finalize_regressor(all, all.final_regressor_name);
   }
-  catch (vw_exception& e)
+  catch (vw_exception& /* e */)
   {
-    finalize_regressor_exception = e;
-    finalize_regressor_exception_thrown = true;
+    finalize_regressor_exception = std::current_exception();
   }
 
   metrics::output_metrics(all);
@@ -1843,6 +1784,6 @@ void finish(vw& all, bool delete_all)
 
   if (delete_all) delete &all;
 
-  if (finalize_regressor_exception_thrown) throw finalize_regressor_exception;
+  if (finalize_regressor_exception) { std::rethrow_exception(finalize_regressor_exception); }
 }
 }  // namespace VW

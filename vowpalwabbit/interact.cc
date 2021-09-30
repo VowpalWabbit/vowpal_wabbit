@@ -14,11 +14,13 @@ namespace logger = VW::io::logger;
 
 struct interact
 {
-  unsigned char n1, n2;  // namespaces to interact
+  // namespaces to interact
+  unsigned char n1 = static_cast<unsigned char>(0);
+  unsigned char n2 = static_cast<unsigned char>(0);
   features feat_store;
-  vw* all;
-  float n1_feat_sq;
-  size_t num_features;
+  vw* all = nullptr;
+  float n1_feat_sq = 0.f;
+  size_t num_features = 0;
 };
 
 bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, interact& in)
@@ -158,16 +160,15 @@ VW::LEARNER::base_learner* interact_setup(VW::setup_base_i& stack_builder)
     return nullptr;
   }
 
-  auto data = scoped_calloc_or_throw<interact>();
+  auto data = VW::make_unique<interact>();
 
   data->n1 = static_cast<unsigned char>(s[0]);
   data->n2 = static_cast<unsigned char>(s[1]);
   logger::errlog_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
   data->all = &all;
 
-  VW::LEARNER::learner<interact, example>* l;
-  l = &VW::LEARNER::init_learner(data, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true, true>,
-      predict_or_learn<false, true>, 1, stack_builder.get_setupfn_name(interact_setup));
-
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true, true>, predict_or_learn<false, true>, stack_builder.get_setupfn_name(interact_setup))
+                .build();
   return make_base(*l);
 }

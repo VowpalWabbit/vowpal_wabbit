@@ -132,11 +132,12 @@ VW::LEARNER::base_learner* topk_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto data = scoped_calloc_or_throw<VW::topk>(K);
-
-  VW::LEARNER::learner<VW::topk, multi_ex>& l = init_learner(data, as_singleline(stack_builder.setup_base_learner()),
-      predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(topk_setup), true);
-  l.set_finish_example(finish_example);
-
-  return make_base(l);
+  auto data = VW::make_unique<VW::topk>(K);
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+      predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(topk_setup))
+                .set_learn_returns_prediction(true)
+                .set_prediction_type(prediction_type_t::scalar)
+                .set_finish_example(finish_example)
+                .build();
+  return make_base(*l);
 }

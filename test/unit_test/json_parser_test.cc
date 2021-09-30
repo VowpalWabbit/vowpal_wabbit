@@ -377,6 +377,7 @@ BOOST_AUTO_TEST_CASE(parse_json_slates_dom_parser)
 
   check_collections_exact(examples[0]->indices, std::vector<namespace_index>{'G'});
   BOOST_CHECK_EQUAL(examples[0]->feature_space['G'].indicies.size(), 4);
+  BOOST_CHECK_EQUAL(examples[0]->feature_space['G'].namespace_extents.size(), 1);
 
   VW::finish_example(*slates_vw, examples);
   VW::finish(*slates_vw);
@@ -822,5 +823,43 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates_dedup_id_missing)
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
   for (auto& dedup : dedup_examples) { VW::finish_example(*vw, *dedup.second); }
+  VW::finish(*vw);
+}
+
+BOOST_AUTO_TEST_CASE(parse_json_simple_verify_extents)
+{
+  auto* vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+
+  std::string json_text = R"(
+    {
+      "default_feature":1.0,
+      "features": {
+        "13": 3.9656971e-02,
+        "24303": 2.2660980e-01,
+        "const": 0.01,
+        "nested_object" : {
+          "nested_feature" : 1.0
+        },
+        "next": 1.0
+      },
+      "features2": {
+        "f2": 1
+      }
+    })";
+
+  auto examples = parse_json(*vw, json_text);
+  BOOST_CHECK_EQUAL(examples[0]->feature_space[' '].size(), 1);
+  BOOST_CHECK_EQUAL(examples[0]->feature_space['f'].size(), 5);
+  BOOST_CHECK_EQUAL(examples[0]->feature_space['n'].size(), 1);
+
+  BOOST_CHECK_EQUAL(examples[0]->feature_space[' '].namespace_extents.size(), 1);
+  BOOST_CHECK_EQUAL(examples[0]->feature_space['f'].namespace_extents.size(), 2);
+  BOOST_CHECK_EQUAL(examples[0]->feature_space['f'].namespace_extents[0],
+      (VW::namespace_extent{0, 4, VW::hash_space(*vw, "features")}));
+  BOOST_CHECK_EQUAL(examples[0]->feature_space['f'].namespace_extents[1],
+      (VW::namespace_extent{4, 5, VW::hash_space(*vw, "features2")}));
+  BOOST_CHECK_EQUAL(examples[0]->feature_space['n'].namespace_extents.size(), 1);
+
+  VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }

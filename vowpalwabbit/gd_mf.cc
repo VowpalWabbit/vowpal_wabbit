@@ -23,11 +23,11 @@ using namespace VW::config;
 
 struct gdmf
 {
-  vw* all;  // regressor, printing
+  vw* all = nullptr;  // regressor, printing
   v_array<float> scalars;
-  uint32_t rank;
-  size_t no_win_counter;
-  uint64_t early_stop_thres;
+  uint32_t rank = 0;
+  size_t no_win_counter = 0;
+  uint64_t early_stop_thres = 0;
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
@@ -264,6 +264,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() > 0)
   {
+    if (!all.weights.not_null()) { THROW("Error: Model weights not initialized."); }
     uint64_t i = 0;
     size_t brw = 1;
     do
@@ -272,7 +273,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       size_t K = d.rank * 2 + 1;
       std::stringstream msg;
       msg << i << " ";
-      brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), "", read, msg, text);
+      brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       if (brw != 0)
       {
         weight* w_i = &(all.weights.strided_index(i));
@@ -280,13 +281,13 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
         {
           weight* v = w_i + k;
           msg << v << " ";
-          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), "", read, msg, text);
+          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
       }
       if (text)
       {
         msg << "\n";
-        brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
+        brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
 
       if (!read) ++i;
@@ -310,9 +311,9 @@ void end_pass(gdmf& d)
   }
 }
 
-void predict(gdmf& d, single_learner&, example& ec) { mf_predict(d, ec); }
+void predict(gdmf& d, base_learner&, example& ec) { mf_predict(d, ec); }
 
-void learn(gdmf& d, single_learner&, example& ec)
+void learn(gdmf& d, base_learner&, example& ec)
 {
   vw& all = *d.all;
 
@@ -325,7 +326,7 @@ base_learner* gd_mf_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
 
-  auto data = scoped_calloc_or_throw<gdmf>();
+  auto data = VW::make_unique<gdmf>();
 
   bool bfgs = false;
   bool conjugate_gradient = false;
@@ -371,10 +372,13 @@ base_learner* gd_mf_setup(VW::setup_base_i& stack_builder)
   }
   all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
 
-  learner<gdmf, example>& l = init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()),
-      stack_builder.get_setupfn_name(gd_mf_setup), true);
-  l.set_save_load(save_load);
-  l.set_end_pass(end_pass);
+  auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
+      prediction_type_t::scalar, label_type_t::simple)
+                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_learn_returns_prediction(true)
+                .set_save_load(save_load)
+                .set_end_pass(end_pass)
+                .build();
 
-  return make_base(l);
+  return make_base(*l);
 }

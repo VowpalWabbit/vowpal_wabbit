@@ -54,8 +54,8 @@
 
 typedef float weight;
 
-typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
-typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::setup_base_i&);
+using feature_dict = std::unordered_map<std::string, std::unique_ptr<features>>;
+using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);
 
@@ -243,11 +243,6 @@ public:
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
-  VW_DEPRECATED(
-      "delete_prediction has been deprecated. Prediction types should have the proper destructor now. This will be "
-      "removed in VW 9.0.")
-  void (*delete_prediction)(void*);
-
   vw_logger logger;
   bool audit;     // should I print lots of debugging information?
   bool training;  // Should I train if lable data is available?
@@ -281,16 +276,9 @@ public:
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
   std::unique_ptr<VW::io::writer> raw_prediction;                      // file descriptors for text output.
 
-  VW_DEPRECATED("print has been deprecated, use print_by_ref. This will be removed in VW 9.0.")
-  void (*print)(VW::io::writer*, float, float, v_array<char>);
   void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&);
-  VW_DEPRECATED("print_text has been deprecated, use print_text_by_ref. This will be removed in VW 9.0.")
-  void (*print_text)(VW::io::writer*, std::string, v_array<char>);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&);
   std::unique_ptr<loss_function> loss;
-
-  VW_DEPRECATED("This is unused and will be removed. This will be removed in VW 9.0.")
-  char* program_name;
 
   bool stdin_off;
 
@@ -340,12 +328,7 @@ private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
 
-VW_DEPRECATED("Use print_result_by_ref instead. This will be removed in VW 9.0.")
-void print_result(VW::io::writer* f, float res, float weight, v_array<char> tag);
 void print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
-
-VW_DEPRECATED("Use binary_print_result_by_ref instead. This will be removed in VW 9.0.")
-void binary_print_result(VW::io::writer* f, float res, float weight, v_array<char> tag);
 void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const v_array<char>& tag);
 
 void noop_mm(shared_data*, float label);
@@ -354,6 +337,4 @@ void compile_gram(
     std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet);
 
-VW_DEPRECATED("Use print_tag_by_ref instead. This will be removed in VW 9.0.")
-int print_tag(std::stringstream& ss, v_array<char> tag);
 int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag);

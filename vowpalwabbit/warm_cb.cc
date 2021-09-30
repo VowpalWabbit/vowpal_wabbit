@@ -105,7 +105,7 @@ float loss(warm_cb& data, uint32_t label, uint32_t final_prediction)
     return data.loss0;
 }
 
-float loss_cs(warm_cb& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
+float loss_cs(warm_cb& data, std::vector<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
 {
   float cost = 0.;
   for (auto wc : costs)
@@ -119,12 +119,10 @@ float loss_cs(warm_cb& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t fi
   return data.loss0 + (data.loss1 - data.loss0) * cost;
 }
 
-template <class T>
-uint32_t find_min(std::vector<T> arr)
+uint32_t find_min(const std::vector<float>& arr)
 {
-  T min_val = FLT_MAX;
+  float min_val = FLT_MAX;
   uint32_t argmin = 0;
-
   for (uint32_t i = 0; i < arr.size(); i++)
   {
     if (arr[i] < min_val)
