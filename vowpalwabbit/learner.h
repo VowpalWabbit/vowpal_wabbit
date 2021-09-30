@@ -419,11 +419,11 @@ public:
     {
       save_load_fd.save_load_f(save_load_fd.data, io, read, text);
     }
-    catch(VW::vw_exception& vwex)
+    catch (VW::vw_exception& vwex)
     {
       std::stringstream better_msg;
-      better_msg << "model " << std::string(read?"load":"save") << " failed. Error Details: " << vwex.what();
-      throw VW::save_load_model_exception(vwex.Filename(),vwex.LineNumber(),better_msg.str());
+      better_msg << "model " << std::string(read ? "load" : "save") << " failed. Error Details: " << vwex.what();
+      throw VW::save_load_model_exception(vwex.Filename(), vwex.LineNumber(), better_msg.str());
     }
     if (save_load_fd.base) save_load_fd.base->save_load(io, read, text);
   }
