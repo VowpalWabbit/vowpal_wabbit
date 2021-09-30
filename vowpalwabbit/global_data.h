@@ -63,7 +63,7 @@ struct shared_data;
 
 namespace VW
 {
-  struct workspace;
+struct workspace;
 }
 
 // TODO: deprecate this alias.

@@ -101,7 +101,7 @@ void workspace::build_setupfn_name_dict(std::vector<std::tuple<std::string, redu
 {
   for (auto&& setup_tuple : reduction_stack) { _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple); }
 }
-}
+}  // namespace VW
 
 void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char>& tag)
 {
