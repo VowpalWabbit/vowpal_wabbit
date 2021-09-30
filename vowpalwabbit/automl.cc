@@ -235,7 +235,7 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
   if (!read) msg << "_aml_lower_bound " << lower_bound << "\n";
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&lower_bound), sizeof(lower_bound), read, msg, text);
 
-  if (!read) msg << "_aml_state " << state << "\n";
+  if (!read) msg << "_aml_state " << static_cast<int>(state) << "\n";
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&state), sizeof(state), read, msg, text);
 }
 
@@ -244,16 +244,16 @@ void automl<CMType>::one_step(const multi_ex& ec)
 {
   switch (cm->current_state)
   {
-    case Idle:
+    case VW::automl::config_manager_state::Idle:
       break;
 
-    case Collecting:
+    case VW::automl::config_manager_state::Collecting:
       cm->process_namespaces(ec);
       cm->config_oracle();
-      cm->current_state = Experimenting;
+      cm->current_state = VW::automl::config_manager_state::Experimenting;
       break;
 
-    case Experimenting:
+    case VW::automl::config_manager_state::Experimenting:
       cm->process_namespaces(ec);
       cm->schedule();
       cm->update_champ();
@@ -268,8 +268,7 @@ void automl<CMType>::one_step(const multi_ex& ec)
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(size_t global_lease, size_t max_live_configs, uint64_t seed,
-    size_t priority_challengers,
-    float (*calc_priority)(const exclusion_config&, const std::map<namespace_index, size_t>&))
+    size_t priority_challengers, priority_func* calc_priority)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , seed(seed)
@@ -278,7 +277,7 @@ interaction_config_manager::interaction_config_manager(size_t global_lease, size
 {
   random_state.set_random_state(seed);
   exclusion_config conf(global_lease);
-  conf.state = Live;
+  conf.state = VW::automl::config_state::Live;
   configs[0] = conf;
   scored_config sc;
   scores.push_back(sc);
@@ -365,7 +364,8 @@ bool interaction_config_manager::repopulate_index_queue()
   {
     size_t redo_index = ind_config.first;
     // Only re-add if not removed and not live
-    if (configs[redo_index].state == New || configs[redo_index].state == Inactive)
+    if (configs[redo_index].state == VW::automl::config_state::New ||
+        configs[redo_index].state == VW::automl::config_state::Inactive)
     {
       float priority = (*calc_priority)(configs[redo_index], ns_counter);
       index_queue.push(std::make_pair(priority, redo_index));
@@ -422,17 +422,18 @@ void interaction_config_manager::schedule()
     2. The current live config has been removed due to Chacha's worse function
     3. A config has reached its lease
     */
-    if (need_new_score || configs[scores[live_slot].config_index].state == Removed ||
+    if (need_new_score || configs[scores[live_slot].config_index].state == VW::automl::config_state::Removed ||
         scores[live_slot].update_count >= configs[scores[live_slot].config_index].lease)
     {
       // Double the lease check swap for eligible_to_inactivate configs
-      if (!need_new_score && configs[scores[live_slot].config_index].state == Live)
+      if (!need_new_score && configs[scores[live_slot].config_index].state == VW::automl::config_state::Live)
       {
         configs[scores[live_slot].config_index].lease *= 2;
         if (!scores[live_slot].eligible_to_inactivate || swap_eligible_to_inactivate(live_slot)) { continue; }
       }
       // Skip over removed configs in index queue, and do nothing we we run out of eligible configs
-      while (!index_queue.empty() && configs[index_queue.top().second].state == Removed) { index_queue.pop(); }
+      while (!index_queue.empty() && configs[index_queue.top().second].state == VW::automl::config_state::Removed)
+      { index_queue.pop(); }
       if (index_queue.empty() && !repopulate_index_queue()) { continue; }
       // Allocate new score if we haven't reached maximum yet
       if (need_new_score)
@@ -442,14 +443,14 @@ void interaction_config_manager::schedule()
         scores.push_back(sc);
       }
       // Only inactivate current config if lease is reached
-      if (!need_new_score && configs[scores[live_slot].config_index].state == Live)
-      { configs[scores[live_slot].config_index].state = Inactive; }
+      if (!need_new_score && configs[scores[live_slot].config_index].state == VW::automl::config_state::Live)
+      { configs[scores[live_slot].config_index].state = VW::automl::config_state::Inactive; }
       // Set all features of new live config
       scores[live_slot].reset_stats();
       size_t new_live_config_index = index_queue.top().second;
       index_queue.pop();
       scores[live_slot].config_index = new_live_config_index;
-      configs[new_live_config_index].state = Live;
+      configs[new_live_config_index].state = VW::automl::config_state::Live;
       // Regenerate interactions each time an exclusion is swapped in
       gen_quadratic_interactions(live_slot);
       // We may also want to 0 out weights here? Currently keep all same in live_slot position
@@ -485,14 +486,15 @@ void interaction_config_manager::update_champ()
   // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
   for (size_t config_index = 0; config_index < configs.size(); ++config_index)
   {
-    if (configs[config_index].state == New || configs[config_index].state == Removed ||
+    if (configs[config_index].state == VW::automl::config_state::New ||
+        configs[config_index].state == VW::automl::config_state::Removed ||
         scores[current_champ].config_index == config_index)
     { continue; }
     // If challenger is better ('better function from Chacha')
     if (better(configs[config_index], champ_config))
     {
       champ_change = true;
-      if (configs[config_index].state == Live)
+      if (configs[config_index].state == VW::automl::config_state::Live)
       {
         // Update champ with live_slot of live config
         for (size_t live_slot = 0; live_slot < scores.size(); ++live_slot)
@@ -523,10 +525,10 @@ void interaction_config_manager::update_champ()
           }
         }
         configs[scores[worst_live_slot].config_index].lease *= 2;
-        configs[scores[worst_live_slot].config_index].state = Inactive;
+        configs[scores[worst_live_slot].config_index].state = VW::automl::config_state::Inactive;
         scores[worst_live_slot].reset_stats();
         scores[worst_live_slot].config_index = config_index;
-        configs[scores[worst_live_slot].config_index].state = Live;
+        configs[scores[worst_live_slot].config_index].state = VW::automl::config_state::Live;
         gen_quadratic_interactions(worst_live_slot);
         if (scores[worst_live_slot].eligible_to_inactivate)
         {
@@ -540,7 +542,7 @@ void interaction_config_manager::update_champ()
     }
     else if (worse(configs[config_index], champ_config))  // If challenger is worse ('worse function from Chacha')
     {
-      configs[config_index].state = Removed;
+      configs[config_index].state = VW::automl::config_state::Removed;
     }
   }
   if (champ_change) { config_oracle(); }
@@ -551,7 +553,7 @@ void interaction_config_manager::save_load(io_buf& model_file, bool read, bool t
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
 
-  if (!read) msg << "_aml_cm_state " << current_state << "\n";
+  if (!read) msg << "_aml_cm_state " << static_cast<int>(current_state) << "\n";
   bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&current_state), sizeof(current_state), read, msg, text);
 
@@ -756,7 +758,7 @@ void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 
   data.one_step(ec);
 
-  if (data.cm->current_state == config_manager_state::Experimenting)
+  if (data.cm->current_state == VW::automl::config_manager_state::Experimenting)
   {
     for (size_t live_slot = 0; live_slot < data.cm->scores.size(); ++live_slot)
     { offset_learn(data, base, ec, live_slot, logged, labelled_action); }
@@ -820,8 +822,8 @@ float calc_priority_least_exclusion(const exclusion_config& config, const std::m
 // Same as above, returns 0 (includes rest to remove unused variable warning)
 float calc_priority_empty(const exclusion_config& config, const std::map<namespace_index, size_t>& ns_counter)
 {
-  (void)config;
-  (void)ns_counter;
+  _UNUSED(config);
+  _UNUSED(ns_counter);
   return 0.f;
 }
 
@@ -859,7 +861,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  float (*calc_priority)(const exclusion_config&, const std::map<namespace_index, size_t>&);
+  priority_func* calc_priority;
 
   if (priority_type == "none") { calc_priority = &calc_priority_empty; }
   else if (priority_type == "least_exclusion")
@@ -915,7 +917,6 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
                   .set_save_load(save_load_aml<interaction_config_manager>)
                   .set_persist_metrics(persist<interaction_config_manager>)
                   .set_prediction_type(base_learner->pred_type)
-                  .set_label_type(label_type_t::cb)
                   .set_learn_returns_prediction(true)
                   .build();
 

@@ -52,7 +52,7 @@ struct scored_config
 };
 
 // all possible states of exclusion config
-enum config_state
+enum class config_state
 {
   New,
   Live,
@@ -66,7 +66,7 @@ struct exclusion_config
   size_t lease;
   float ips = 0.f;
   float lower_bound = std::numeric_limits<float>::infinity();
-  config_state state = New;
+  config_state state = VW::automl::config_state::New;
 
   exclusion_config(size_t lease = 10) : lease(lease) {}
 
@@ -74,7 +74,7 @@ struct exclusion_config
 };
 
 // all possible states of config_manager
-enum config_manager_state
+enum class config_manager_state
 {
   Idle,
   Collecting,
@@ -98,6 +98,8 @@ struct config_manager
   void schedule();
   void update_champ();
 };
+
+using priority_func = float(const exclusion_config&, const std::map<namespace_index, size_t>&);
 
 struct interaction_config_manager : config_manager
 {
@@ -140,7 +142,7 @@ private:
   void gen_quadratic_interactions(size_t);
   bool better(const exclusion_config&, const exclusion_config&) const;
   bool worse(const exclusion_config&, const exclusion_config&) const;
-  float (*calc_priority)(const exclusion_config&, const std::map<namespace_index, size_t>&);
+  priority_func* calc_priority;
   bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(size_t);
 };
