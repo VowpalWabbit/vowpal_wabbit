@@ -24,7 +24,7 @@
 #include "vw_exception.h"
 
 class sparse_parameters;
-typedef std::unordered_map<uint64_t, weight*> weight_map;
+using weight_map = std::unordered_map<uint64_t, weight*>;
 
 template <typename T>
 class sparse_iterator
@@ -34,18 +34,18 @@ private:
   uint32_t _stride;
 
 public:
-  typedef std::forward_iterator_tag iterator_category;
-  typedef T value_type;
-  typedef ptrdiff_t difference_type;
-  typedef T* pointer;
-  typedef T& reference;
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = T;
+  using difference_type = ptrdiff_t;
+  using pointer = T*;
+  using reference = T&;
 
   sparse_iterator(weight_map::iterator& iter, uint32_t stride) : _iter(iter), _stride(stride) {}
 
   sparse_iterator& operator=(const sparse_iterator& other) = default;
   sparse_iterator(const sparse_iterator& other) = default;
-  sparse_iterator& operator=(sparse_iterator&& other) = default;
-  sparse_iterator(sparse_iterator&& other) = default;
+  sparse_iterator& operator=(sparse_iterator&& other) noexcept = default;
+  sparse_iterator(sparse_iterator&& other) noexcept = default;
 
   uint64_t index() { return _iter->first; }
 
@@ -97,8 +97,8 @@ private:
   }
 
 public:
-  typedef sparse_iterator<weight> iterator;
-  typedef sparse_iterator<const weight> const_iterator;
+  using iterator = sparse_iterator<weight>;
+  using const_iterator = sparse_iterator<const weight>;
 
   sparse_parameters(size_t length, uint32_t stride_shift = 0)
       : _map()
