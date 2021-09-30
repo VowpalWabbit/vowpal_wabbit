@@ -934,6 +934,16 @@ public:
         return &ctx.array_float_state;
       }
 
+      else if (ctx.key_length == 20 && !strncmp(str, "_original_label_cost", 20))
+      {
+        if(!ctx.decision_service_data) {
+          THROW("_original_label_cost is only valid in DSJson");
+        }
+        ctx.float_state.output_float = &ctx.decision_service_data->originalLabelCost;
+        ctx.float_state.return_state = this;
+        return &ctx.float_state;
+      }
+
       else if (ctx.key_length == 5 && !_stricmp(ctx.key, "__aid"))
       {
         ctx.uint_dedup_state.return_state = this;
@@ -1428,6 +1438,12 @@ public:
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
       }
+      else if (length == 20 && !strncmp(str, "_original_label_cost", 20))
+      {
+        ctx.float_state.output_float = &data->originalLabelCost;
+        ctx.float_state.return_state = this;
+        return &ctx.float_state;
+      }
     }
 
     // ignore unknown properties
@@ -1464,6 +1480,11 @@ public:
 
   VW::example_factory_t example_factory;
   void* example_factory_context;
+
+  // TODO: This shouldn't really exist in the Context. Once the JSON parser
+  // gets refactored to separate the VWJson/DSJson concepts, this should
+  // be moved into the DSJson version of the context
+  DecisionServiceInteraction* decision_service_data = nullptr;
 
   // states
   DefaultState<audit> default_state;
@@ -1522,31 +1543,14 @@ public:
 
   void PushNamespace(const char* ns, BaseState<audit>* return_state)
   {
-    Namespace<audit> n;
-    n.feature_group = ns[0];
-    n.namespace_hash = VW::hash_space_cstr(*all, ns);
-    n.ftrs = ex->feature_space.data() + ns[0];
-    n.feature_count = 0;
-
-    n.name = ns;
-
-    namespace_path.push_back(n);
+    push_ns(ex, ns, namespace_path, *all);
     return_path.push_back(return_state);
   }
 
   BaseState<audit>* PopNamespace()
   {
-    auto& ns = CurrentNamespace();
-    if (ns.feature_count > 0)
-    {
-      auto feature_group = ns.feature_group;
-      // Do not insert feature_group if it already exists.
-      if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
-      { ex->indices.push_back(feature_group); }
-    }
-
+    pop_ns(ex, namespace_path);
     auto return_state = return_path.back();
-    namespace_path.pop_back();
     return_path.pop_back();
     return return_state;
   }
@@ -1651,20 +1655,15 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
 
   BaseState<audit>* current_state = handler.current_state();
 
+  // The stack of namespaces must be drained so there are no half extents left around.
+  while (!handler.ctx.namespace_path.empty()) { handler.ctx.PopNamespace(); }
+
   THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
                                 << ". "
                                    "Handler: "
                                 << handler.error().str()
                                 << "State: " << (current_state ? current_state->name : "null"));  // <<
   // "Line: '"<< line_copy << "'");
-}
-
-template <bool audit>
-VW_DEPRECATED("read_line_json has been deprecated; use read_line_json_s instead. This will be removed in VW 9.0.")
-void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory,
-    void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
-{
-  read_line_json_s<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context, dedup_examples);
 }
 
 inline bool apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
@@ -1715,6 +1714,7 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   VWReaderHandler<audit>& handler = parser.handler;
   handler.init(&all, &examples, &ss, line + length, example_factory, ex_factory_context);
   handler.ctx.SetStartStateToDecisionService(data);
+  handler.ctx.decision_service_data = data;
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
@@ -1722,6 +1722,9 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   if (result.IsError())
   {
     BaseState<audit>* current_state = handler.current_state();
+
+    // The stack of namespaces must be drained so there are no half extents left around.
+    while (!handler.ctx.namespace_path.empty()) { handler.ctx.PopNamespace(); }
 
     if (all.example_parser->strict_parse)
     {
@@ -1780,6 +1783,12 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
         else
           all->example_parser->metrics->LastEventTime = std::move(interaction.timestamp);
       }
+
+      // Technically the aggregation operation here is supposed to be user-defined
+      // but according to Casey, the only operation used is Sum
+      // The _original_label_cost element is found either at the top level OR under
+      // the _outcomes node (for CCB)
+      all->example_parser->metrics->DsjsonSumCostOriginal += interaction.originalLabelCost;
     }
 
     // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
@@ -1851,7 +1860,7 @@ void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<
 }
 
 template <bool audit>
-int read_features_json(vw* all, v_array<example*>& examples)
+int read_features_json(vw* all, io_buf& buf, v_array<example*>& examples)
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;
@@ -1861,7 +1870,7 @@ int read_features_json(vw* all, v_array<example*>& examples)
 
     char* line;
     size_t num_chars;
-    size_t num_chars_initial = read_features(all, line, num_chars);
+    size_t num_chars_initial = read_features(buf, line, num_chars);
     if (num_chars_initial < 1) return static_cast<int>(num_chars_initial);
 
     // Ensure there is a null terminator.

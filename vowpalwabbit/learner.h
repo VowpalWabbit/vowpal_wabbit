@@ -612,7 +612,7 @@ public:
     return ret;
   }
 
-  base_learner* get_learner_by_name_prefix(std::string reduction_name)
+  base_learner* get_learner_by_name_prefix(const std::string& reduction_name)
   {
     if (name.find(reduction_name) != std::string::npos) { return (base_learner*)this; }
     else
@@ -916,6 +916,7 @@ struct reduction_learner_builder
     this->_learner->finisher_fd.data = this->_learner->learner_data.get();
     this->_learner->finisher_fd.base = make_base(*base);
     this->_learner->finisher_fd.func = static_cast<func_data::fn>(noop);
+    this->_learner->learn_fd.multipredict_f = nullptr;
 
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
@@ -1006,6 +1007,7 @@ struct base_learner_builder
       : common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>(
             std::move(data), name)
   {
+    this->_learner->persist_metrics_fd.save_metric_f = static_cast<save_metric_data::fn>(noop_persist_metrics);
     this->_learner->end_pass_fd.func = static_cast<func_data::fn>(noop);
     this->_learner->end_examples_fd.func = static_cast<func_data::fn>(noop);
     this->_learner->init_fd.func = static_cast<func_data::fn>(noop);
@@ -1073,6 +1075,15 @@ base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&&
   builder.set_update(learn_fn);
   builder.set_predict(predict_fn);
   return builder;
+}
+
+template <class ExampleT>
+base_learner_builder<char, ExampleT> make_no_data_base_learner(void (*learn_fn)(char&, base_learner&, ExampleT&),
+    void (*predict_fn)(char&, base_learner&, ExampleT&), const std::string& name, prediction_type_t pred_type,
+    label_type_t label_type)
+{
+  return make_base_learner<char, ExampleT>(
+      std::unique_ptr<char>(nullptr), learn_fn, predict_fn, name, pred_type, label_type);
 }
 
 }  // namespace LEARNER

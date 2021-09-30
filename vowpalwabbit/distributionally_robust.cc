@@ -3,6 +3,7 @@
 #include <type_traits>
 
 #include "distributionally_robust.h"
+#include "vw_math.h"
 
 namespace VW
 {
@@ -156,6 +157,8 @@ ScoredDual ChiSquared::recompute_duals()
 
     duals = *it;
   }
+
+  duals.first = VW::math::clamp(sign * duals.first, rmin, rmax);
 
   return duals;
 }

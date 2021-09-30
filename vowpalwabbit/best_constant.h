@@ -21,4 +21,4 @@ inline void count_label(shared_data* sd, float l)
   }
 }
 
-bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss);
+bool get_best_constant(loss_function* loss_func, shared_data* sd, float& best_constant, float& best_constant_loss);

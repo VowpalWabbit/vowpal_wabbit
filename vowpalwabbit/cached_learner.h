@@ -11,11 +11,18 @@ struct cached_learner : public setup_base_i
 
   operator bool() const { return !(_cached == nullptr); }
 
-  cached_learner(vw& all, VW::config::options_i& options, VW::LEARNER::base_learner* learner = nullptr)
-      : _cached(learner)
+  void delayed_state_attach(vw& all, VW::config::options_i& options) override
   {
     options_impl = &options;
     all_ptr = &all;
+  }
+
+  cached_learner(VW::LEARNER::base_learner* learner = nullptr) : _cached(learner) {}
+
+  cached_learner(vw& all, VW::config::options_i& options, VW::LEARNER::base_learner* learner = nullptr)
+      : _cached(learner)
+  {
+    delayed_state_attach(all, options);
   }
 
   VW::config::options_i* get_options() override { return options_impl; }

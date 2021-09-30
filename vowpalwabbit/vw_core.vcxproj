@@ -213,6 +213,7 @@
     <ClInclude Include="metric_sink.h" />
     <ClInclude Include="mf.h" />
     <ClInclude Include="multiclass.h" />
+    <ClInclude Include="model_utils.h" />
     <ClInclude Include="multilabel_oaa.h" />
     <ClInclude Include="multilabel.h" />
     <ClInclude Include="namespaced_feature_store.h" />
@@ -269,6 +270,7 @@
     <ClInclude Include="stagewise_poly.h" />
     <ClInclude Include="svrg.h" />
     <ClInclude Include="tag_utils.h" />
+    <ClInclude Include="text_utils.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
@@ -421,6 +423,7 @@
     <ClCompile Include="stagewise_poly.cc" />
     <ClCompile Include="svrg.cc" />
     <ClCompile Include="tag_utils.cc" />
+    <ClCompile Include="text_utils.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="version.cc" />

@@ -7,7 +7,7 @@
 #include <limits>
 
 #include "cats_tree.h"
-#include "learner.h"     // init_learner()
+#include "learner.h"
 #include "reductions.h"
 #include "debug_log.h"
 #include "explore_internal.h"
@@ -185,7 +185,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
   return (cur_node.id - _binary_tree.internal_node_count() + 1);  // 1 to k
 }
 
-void cats_tree::init_node_costs(v_array<cb_class>& ac)
+void cats_tree::init_node_costs(std::vector<cb_class>& ac)
 {
   assert(ac.size() > 0);
   assert(ac[0].action > 0);
@@ -226,7 +226,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
   auto saved_pred = stash_guard(ec.pred);
 
   const vector<tree_node>& nodes = _binary_tree.nodes;
-  v_array<cb_class>& ac = ec.l.cb.costs;
+  auto& ac = ec.l.cb.costs;
 
   VW_DBG(ec) << "tree_c: learn() -- tree_traversal -- " << std::endl;
 

@@ -126,7 +126,6 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(gd_mf_setup);
   reductions.push_back(print_setup);
   reductions.push_back(noop_setup);
-  reductions.push_back(lda_setup);
   reductions.push_back(bfgs_setup);
   reductions.push_back(OjaNewton_setup);
   // reductions.push_back(VW_CNTK::setup);
@@ -148,6 +147,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(lrqfa_setup);
   reductions.push_back(stagewise_poly_setup);
   reductions.push_back(scorer_setup);
+  reductions.push_back(lda_setup);
   reductions.push_back(VW::cbzo::setup);
 
   // Reductions
@@ -214,10 +214,19 @@ namespace VW
 {
 default_reduction_stack_setup::default_reduction_stack_setup(vw& all, VW::config::options_i& options)
 {
-  options_impl = &options;
-  all_ptr = &all;
   // push all reduction functions into the stack
   prepare_reductions(reduction_stack);
+  delayed_state_attach(all, options);
+}
+
+default_reduction_stack_setup::default_reduction_stack_setup() { prepare_reductions(reduction_stack); }
+
+// this should be reworked, but its setup related to how setup is tied with all object
+// which is not applicable to everything
+void default_reduction_stack_setup::delayed_state_attach(vw& all, VW::config::options_i& options)
+{
+  all_ptr = &all;
+  options_impl = &options;
   // populate setup_fn -> name map to be used to lookup names in setup_base
   all.build_setupfn_name_dict(reduction_stack);
 }

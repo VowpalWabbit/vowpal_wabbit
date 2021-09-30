@@ -37,7 +37,7 @@ struct wclass
 
 struct label
 {
-  v_array<wclass> costs;
+  std::vector<wclass> costs;
 };
 
 void output_example(vw& all, example& ec);

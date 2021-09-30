@@ -30,10 +30,12 @@ struct options_i;
 }  // namespace config
 
 struct setup_base_i;
-typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::setup_base_i&);
+using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 struct setup_base_i
 {
+  virtual void delayed_state_attach(vw&, VW::config::options_i&) = 0;
+
   virtual VW::LEARNER::base_learner* setup_base_learner() = 0;
 
   // this one we can share freely

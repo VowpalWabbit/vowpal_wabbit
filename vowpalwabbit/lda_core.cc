@@ -37,6 +37,7 @@
 #endif
 
 using namespace VW::config;
+using namespace VW::LEARNER;
 
 namespace logger = VW::io::logger;
 
@@ -57,15 +58,15 @@ public:
 
 struct lda
 {
-  size_t topics;
-  float lda_alpha;
-  float lda_rho;
-  float lda_D;
-  float lda_epsilon;
-  size_t minibatch;
+  size_t topics = 0;
+  float lda_alpha = 0.f;
+  float lda_rho = 0.f;
+  float lda_D = 0.f;
+  float lda_epsilon = 0.f;
+  size_t minibatch = 0;
   lda_math_mode mmode;
 
-  size_t finish_example_count;
+  size_t finish_example_count = 0;
 
   v_array<float> Elogtheta;
   v_array<float> decay_levels;
@@ -77,16 +78,16 @@ struct lda
   v_array<float> v;
   std::vector<index_feature> sorted_features;
 
-  bool compute_coherence_metrics;
+  bool compute_coherence_metrics = false;
 
   // size by 1 << bits
   std::vector<uint32_t> feature_counts;
   std::vector<std::vector<size_t>> feature_to_example_map;
 
-  bool total_lambda_init;
+  bool total_lambda_init = false;
 
-  double example_t;
-  vw *all;  // regressor, lda
+  double example_t = 0.0;
+  vw* all = nullptr;  // regressor, lda
 
   static constexpr float underflow_threshold = 1.0e-10f;
   inline float digamma(float x);
@@ -184,7 +185,7 @@ inline bool is_aligned16(void* ptr)
 #    define HAVE_SIMD_MATHMODE
 
 typedef __m128 v4sf;
-typedef __m128i v4si;
+using v4si = __m128i;
 
 inline v4sf v4si_to_v4sf(v4si x) { return _mm_cvtepi32_ps(x); }
 
@@ -777,13 +778,13 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
       size_t K = all.lda;
       if (!read && text) msg << i << " ";
 
-      if (!read || all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
-        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), "", read, msg, text);
+      if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
+        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       else
       {
         // support 32bit build models
         uint32_t j;
-        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&j), sizeof(j), "", read, msg, text);
+        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&j), sizeof(j), read, msg, text);
         i = j;
       }
 
@@ -794,13 +795,13 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
         {
           weight *v = w + k;
           if (!read && text) msg << *v + l.lda_rho << " ";
-          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), "", read, msg, text);
+          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
       }
       if (text)
       {
         if (!read) msg << "\n";
-        brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
+        brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
       if (!read) ++i;
     } while ((!read && i < length) || (read && brw > 0));
@@ -963,7 +964,7 @@ void learn_batch(lda &l)
   l.doc_lengths.clear();
 }
 
-void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
+void learn(lda& l, base_learner&, example& ec)
 {
   uint32_t num_ex = static_cast<uint32_t>(l.examples.size());
   l.examples.push_back(&ec);
@@ -980,7 +981,7 @@ void learn(lda &l, VW::LEARNER::single_learner &, example &ec)
   if (++num_ex == l.minibatch) learn_batch(l);
 }
 
-void learn_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec)
+void learn_with_metrics(lda& l, base_learner& base, example& ec)
 {
   if (l.all->passes_complete == 0)
   {
@@ -1003,8 +1004,8 @@ void learn_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec)
 }
 
 // placeholder
-void predict(lda &l, VW::LEARNER::single_learner &base, example &ec) { learn(l, base, ec); }
-void predict_with_metrics(lda &l, VW::LEARNER::single_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
+void predict(lda& l, base_learner& base, example& ec) { learn(l, base, ec); }
+void predict_with_metrics(lda& l, base_learner& base, example& ec) { learn_with_metrics(l, base, ec); }
 
 struct word_doc_frequency
 {
@@ -1273,12 +1274,12 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
   return in;
 }
 
-VW::LEARNER::base_learner* lda_setup(VW::setup_base_i& stack_builder)
+base_learner* lda_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
 
-  auto ld = scoped_calloc_or_throw<lda>();
+  auto ld = VW::make_unique<lda>();
   option_group_definition new_options("Latent Dirichlet Allocation");
   int math_mode;
   new_options.add(make_option("lda", ld->topics).keep().necessary().help("Run lda with <int> topics"))
@@ -1341,14 +1342,16 @@ VW::LEARNER::base_learner* lda_setup(VW::setup_base_i& stack_builder)
 
   all.example_parser->lbl_parser = no_label::no_label_parser;
 
-  VW::LEARNER::learner<lda, example>& l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
-      ld->compute_coherence_metrics ? predict_with_metrics : predict, UINT64_ONE << all.weights.stride_shift(),
-      prediction_type_t::scalars, stack_builder.get_setupfn_name(lda_setup), true);
+  auto* l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
+      ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
+      prediction_type_t::scalars, label_type_t::nolabel)
+                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_learn_returns_prediction(true)
+                .set_save_load(save_load)
+                .set_finish_example(finish_example)
+                .set_end_examples(end_examples)
+                .set_end_pass(end_pass)
+                .build();
 
-  l.set_save_load(save_load);
-  l.set_finish_example(finish_example);
-  l.set_end_examples(end_examples);
-  l.set_end_pass(end_pass);
-
-  return make_base(l);
+  return make_base(*l);
 }

@@ -67,8 +67,9 @@ Feature options:
                                   generate generalized n-skip-k-gram. To 
                                   generate n-skips for a single namespace 
                                   'foo', arg should be fN.
-  --feature_limit arg             limit to N features. To apply to a single 
-                                  namespace 'foo', arg should be fN
+  --feature_limit arg             limit to N unique features per namespace. To 
+                                  apply to a single namespace 'foo', arg should
+                                  be fN
   --affix arg                     generate prefixes/suffixes of features; 
                                   argument '+2a,-3b,+1' means generate 2-char 
                                   prefixes for namespace a, 3-char suffixes for

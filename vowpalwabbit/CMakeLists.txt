@@ -146,6 +146,7 @@ set(vw_all_headers
   multiclass.h
   multilabel_oaa.h
   multilabel.h
+  model_utils.h
   mwt.h
   namespaced_feature_store.h
   numeric_casts.h
@@ -204,6 +205,7 @@ set(vw_all_headers
   stagewise_poly.h
   svrg.h
   tag_utils.h
+  text_utils.h
   topk.h
   unique_sort.h
   v_array.h
@@ -355,6 +357,7 @@ set(vw_all_sources
   stagewise_poly.cc
   svrg.cc
   tag_utils.cc
+  text_utils.cc
   topk.cc
   unique_sort.cc
   version.cc

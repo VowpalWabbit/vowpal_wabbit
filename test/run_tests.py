@@ -14,9 +14,12 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 import socket
+from typing import Any, List, Set
 
 import runtests_parser
+from run_tests_common import TestData
 import runtests_flatbuffer_converter as fb_converter
+
 
 class Color():
     LIGHT_CYAN = '\033[96m'
@@ -213,53 +216,49 @@ def print_colored_diff(diff, color_enum):
 def is_valgrind_available():
    return shutil.which("valgrind") is not None
 
-def run_command_line_test(test_id,
-                          command_line,
-                          comparison_files,
+def run_command_line_test(test: TestData,
                           overwrite,
                           epsilon,
-                          is_shell,
-                          input_files,
                           base_working_dir,
                           ref_dir,
                           completed_tests,
-                          dependencies=None,
                           fuzzy_compare=False,
-                          skip=False,
                           valgrind=False):
 
-    if skip:
-        completed_tests.report_completion(test_id, False)
-        return (test_id, {
+    if test.skip:
+        completed_tests.report_completion(test.id, False)
+        return (test.id, {
             "result": Result.SKIPPED,
+            "skip_reason":test.skip_reason,
             "checks": {}
         })
 
-    if dependencies is not None:
-        for dep in dependencies:
-            success = completed_tests.wait_for_completion_get_success(dep)
-            if not success:
-                completed_tests.report_completion(test_id, False)
-                return (test_id, {
-                    "result": Result.SKIPPED,
-                    "checks": {}
-                })
+    for dep in test.depends_on:
+        success = completed_tests.wait_for_completion_get_success(dep)
+        if not success:
+            completed_tests.report_completion(test.id, False)
+            return (test.id, {
+                "result": Result.SKIPPED,
+                "skip_reason":test.skip_reason,
+                "checks": {}
+            })
 
     try:
-        if is_shell:
+        if test.is_shell:
             # Because we don't really know what shell scripts do, we need to run them in the tests dir.
             working_dir = ref_dir
         else:
             working_dir = str(create_test_dir(
-                test_id, input_files, base_working_dir, ref_dir, dependencies=dependencies))
+                test.id, test.input_files, base_working_dir, ref_dir, dependencies=test.depends_on))
 
+        command_line = test.command_line
         if valgrind:
-            valgrind_log_file_name = "test-{}.valgrind-err".format(test_id)
+            valgrind_log_file_name = "test-{}.valgrind-err".format(test.id)
             valgrind_log_file_path = os.path.join(
                     working_dir, valgrind_log_file_name)
-            command_line = "valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full --log-file='{}' {}".format(valgrind_log_file_name, command_line)
+            command_line = "valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full --log-file={} {}".format(valgrind_log_file_path, command_line)
 
-        if is_shell:
+        if test.is_shell:
             cmd = command_line
         else:
             cmd = "{}".format((command_line)).split()
@@ -270,7 +269,7 @@ def run_command_line_test(test_id,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 cwd=working_dir,
-                shell=is_shell,
+                shell=test.is_shell,
                 timeout=100)
         except subprocess.TimeoutExpired as e:
             stdout = try_decode(e.stdout)
@@ -283,7 +282,7 @@ def run_command_line_test(test_id,
                 "stderr": stderr
             }
 
-            return (test_id, {
+            return (test.id, {
                 "result": Result.FAIL,
                 "checks": checks
             })
@@ -293,9 +292,9 @@ def run_command_line_test(test_id,
         stderr = try_decode(result.stderr)
 
         checks = dict()
-        success = return_code == 0 or (return_code == 100 and is_shell and valgrind)
+        success = return_code == 0 or (return_code == 100 and test.is_shell and valgrind)
         message = "Exited with {}".format((return_code))
-        if return_code == 100 and is_shell and valgrind:
+        if return_code == 100 and test.is_shell and valgrind:
             message += " - valgrind failure ignored in shell test"
         checks["exit_code"] = {
             "success": success,
@@ -309,7 +308,7 @@ def run_command_line_test(test_id,
             message = "OK"
             diff = []
             if return_code == 100:
-                if is_shell:
+                if test.is_shell:
                     message = "valgrind failure ignored for a shell based test"
                 else:
                     success = False
@@ -325,7 +324,7 @@ def run_command_line_test(test_id,
                 "diff": diff
             }
 
-        for output_file, ref_file in comparison_files.items():
+        for output_file, ref_file in test.comparison_files.items():
 
             if output_file == "stdout":
                 output_content = stdout
@@ -368,13 +367,13 @@ def run_command_line_test(test_id,
                 "diff": diff
             }
     except:
-        completed_tests.report_completion(test_id, False)
+        completed_tests.report_completion(test.id, False)
         raise
 
     success = all(check["success"] == True for name, check in checks.items())
-    completed_tests.report_completion(test_id, success)
+    completed_tests.report_completion(test.id, success)
 
-    return (test_id, {
+    return (test.id, {
         "result": Result.SUCCESS if success else Result.FAIL,
         "checks": checks
     })
@@ -403,7 +402,7 @@ class Completion():
         return success
 
 
-def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependencies=None):
+def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependencies:List[int]=[]):
     test_working_dir = Path(test_base_dir).joinpath(
         "test_{}".format((test_id)))
     Path(test_working_dir).mkdir(parents=True, exist_ok=True)
@@ -415,7 +414,7 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir, dependenc
     for f in input_files:
         file_to_copy = None
         search_paths = [Path(test_ref_dir).joinpath(f)]
-        if dependencies is not None:
+        if len(dependencies) > 0:
             search_paths.extend([Path(test_base_dir).joinpath(
                 "test_{}".format((x)), f) for x in dependencies])
             search_paths.extend([Path(test_base_dir).joinpath(
@@ -509,8 +508,8 @@ def find_or_use_user_supplied_path(test_base_ref_dir, user_supplied_bin_path, se
         return find_in_path(search_paths, is_correct_bin_func, debug_file_name)
     else:
         if not Path(user_supplied_bin_path).exists() or not Path(user_supplied_bin_path).is_file():
-            raise ValueError("Invalid {debug_file_name} binary path: {}".format(
-                (user_supplied_bin_path)))
+            raise ValueError("Invalid {} binary path: {}".format(debug_file_name,
+                user_supplied_bin_path))
         return user_supplied_bin_path
 
 def find_runtests_file(test_base_ref_dir):
@@ -553,17 +552,16 @@ def clean_dirty(test_base_ref_dir):
         print("Failed to run {}".format(git_command))
 
 
-def calculate_test_to_run_explicitly(explicit_tests, tests):
-    def get_deps(test_number, tests):
-        deps = set()
+def calculate_test_to_run_explicitly(explicit_tests: List[int], tests: List[TestData]):
+    def get_deps(test_number: int, tests: List[TestData]):
+        deps: Set[int] = set()
         test_index = test_number - 1
-        if "depends_on" in tests[test_index]:
-            for dep in tests[test_index]["depends_on"]:
-                deps.add(dep)
-                deps = set.union(deps, get_deps(dep, tests))
+        for dep in tests[test_index].depends_on:
+            deps.add(dep)
+            deps = set.union(deps, get_deps(dep, tests))
         return deps
 
-    tests_to_run_explicitly = set()
+    tests_to_run_explicitly: Set[int] = set()
     for test_number in explicit_tests:
         if test_number > len(tests):
             print("Error: Test number {} does not exist. There are {} tests in total.".format(test_number, len(tests)))
@@ -575,36 +573,35 @@ def calculate_test_to_run_explicitly(explicit_tests, tests):
 
     return list(tests_to_run_explicitly)
 
-def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
+def convert_tests_for_flatbuffers(tests: List[TestData], to_flatbuff, working_dir, color_enum):
     test_base_working_dir = str(working_dir)
     if not Path(test_base_working_dir).exists():
         Path(test_base_working_dir).mkdir(parents=True, exist_ok=True)
 
     for test in tests:
-        test_id = test['id']
-        if 'vw_command' not in test:
-            print("{}Skipping test {} for flatbuffers, no vw command available{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            test['skip'] = True
+        if test.is_shell:
+            test.skip = True
+            test.skip_reason = "Cannot convert bash based tests to flatbuffers"
             continue
-        if 'flatbuffer' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, already a flatbuffer test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            test['skip'] = True
+        if 'flatbuffer' in test.command_line:
+            test.skip = True
+            test.skip_reason = "already a flatbuffer test"
             continue
-        if 'malformed' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, malformed input{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            test['skip'] = True
+        if 'malformed' in test.command_line:
+            test.skip = True
+            test.skip_reason = "malformed input"
             continue
-        if 'input_files' not in test:
-            print("{}Skipping test {} for flatbuffers, no input files{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            test['skip'] = True
+        if len(test.input_files) < 1:
+            test.skip = True
+            test.skip_reason = "no input files for for automatic converted flatbuffer test"
             continue
-        if 'dictionary' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, currently dictionaries are not supported{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            test['skip'] = True
+        if 'dictionary' in test.command_line:
+            test.skip = True
+            test.skip_reason = "currently dictionaries are not supported for automatic converted flatbuffer tests"
             continue
-        if 'help' in test['vw_command']:
-            print("{}Skipping test {} for flatbuffers, --help test{}".format(color_enum.LIGHT_CYAN, test_id, color_enum.ENDC))
-            test['skip'] = True
+        if 'help' in test.command_line:
+            test.skip = True
+            test.skip_reason = "--help test skipped for automatic converted flatbuffer tests"
             continue
         #todo: 300 understand why is it failing
         # test 189, 312, 316, 318 and 319 depend on dsjson parser behaviour
@@ -612,12 +609,14 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
         # (324-326) deals with corrupted data, so cannot be translated to fb
         # pdrop is not supported in fb, so 327-331 are excluded
         # 336, 337, 338 - the FB converter script seems to be affecting the invert_hash
-        if str(test_id) in ('300', '189', '312', '316', '318', '319', '324', '325', '326', '327', '328', '329', '330', '331', '336', '337', '338'):
+        if str(test.id) in ('300', '189', '312', '316', '318', '319', '324', '325', '326', '327', '328', '329', '330', '331', '336', '337', '338'):
+            test.skip = True
+            test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"
             continue
 
         # test id is being used as an index here, not necessarily a contract
         depends_on_test = (
-            tests[int(test["depends_on"][0]) - 1] if "depends_on" in test else None
+            get_test(test.depends_on[0], tests) if len(test.depends_on) > 0 else None
         )
 
         fb_test_converter = fb_converter.FlatbufferTest(test, working_dir, depends_on_test=depends_on_test)
@@ -625,9 +624,47 @@ def convert_tests_for_flatbuffers(tests, to_flatbuff, working_dir, color_enum):
 
     return tests
 
+def convert_to_test_data(tests:List[Any], vw_bin: str, spanning_tree_bin: str) -> List[TestData]:
+    results = []
+    for test in tests:
+        skip = False
+        skip_reason = None
+        is_shell = False
+        command_line = ""
+        if "bash_command" in test:
+            if sys.platform == "win32":
+                skip = True
+                skip_reason = "bash_command is unsupported on Windows"
+            else:
+                command_line = test['bash_command'].format(
+                    VW=vw_bin, SPANNING_TREE=spanning_tree_bin)
+                is_shell = True
+        elif "vw_command" in test:
+            command_line = "{} {}".format(vw_bin, test['vw_command'])
+        else:
+            skip = True
+            skip_reason = "This test is an unknown type"
+
+        results.append(TestData(
+            id=test['id'],
+            description=test['desc'],
+            depends_on=test['depends_on'] if 'depends_on' in test else [],
+            command_line=command_line,
+            is_shell=is_shell,
+            input_files=test['input_files'] if 'input_files' in test else [],
+            comparison_files=test["diff_files"],
+            skip=skip,
+            skip_reason=skip_reason
+        ))
+    return results
+
+def get_test(test_number, tests):
+    for test in tests:
+        if test.id == test_number:
+            return test
+    return None
 
 def main():
-
     working_dir = Path.home().joinpath(".vw_runtests_working_dir")
     test_ref_dir = Path(os.path.dirname(os.path.abspath(__file__)))
 
@@ -722,7 +759,26 @@ def main():
         tests = json.loads(json_test_spec_content)
         print("Tests read from test spec file: {}".format((args.test_spec)))
 
+    tests = convert_to_test_data(tests, vw_bin, spanning_tree_bin)
+
     print()
+
+    # Filter the test list if the requested tests were explicitly specified
+    tests_to_run_explicitly = None
+    if args.test is not None:
+        tests_to_run_explicitly = calculate_test_to_run_explicitly(args.test, tests)
+        print("Running tests: {}".format((list(tests_to_run_explicitly))))
+        if len(args.test) != len(tests_to_run_explicitly):
+            print(
+                "Note: due to test dependencies, more than just tests {} must be run".format((args.test)))
+        tests = list(filter(lambda x: x.id in tests_to_run_explicitly, tests))
+
+    # Filter out flatbuffer tests if not specified
+    if not args.include_flatbuffers and not args.for_flatbuffers:
+        for test in tests:
+            if '--flatbuffer' in test.command_line:
+                test.skip = True
+                test.skip_reason = "This is a flatbuffer test, can be run with --include_flatbuffers flag"
 
     if args.for_flatbuffers:
         to_flatbuff = find_to_flatbuf_binary(test_base_ref_dir, args.to_flatbuff_path)
@@ -733,72 +789,25 @@ def main():
     # Until we can move to a test spec which allows us to specify the input/output we need to add dependencies between them here.
     prev_bash_test = None
     for test in tests:
-        test_number = test["id"]
-        if "bash_command" in test:
+        if test.is_shell:
             if prev_bash_test is not None:
-                if "depends_on" not in tests[test_number - 1]:
-                    tests[test_number - 1]["depends_on"] = []
-                tests[test_number - 1]["depends_on"].append(prev_bash_test)
-            prev_bash_test = test_number
+                test.depends_on.append(prev_bash_test.id)
+            prev_bash_test = test
 
     tasks = []
     completed_tests = Completion()
-    tests_to_run_explicitly = None
-    if args.test is not None:
-        tests_to_run_explicitly = calculate_test_to_run_explicitly(args.test, tests)
-        print("Running tests: {}".format((list(tests_to_run_explicitly))))
-        if len(args.test) != len(tests_to_run_explicitly):
-            print(
-                "Note: due to test dependencies, more than just tests {} must be run".format((args.test)))
 
     executor = ThreadPoolExecutor(max_workers=args.jobs)
+
     for test in tests:
-        test_number = test["id"]
-
-        if tests_to_run_explicitly is not None and test_number not in tests_to_run_explicitly:
-            continue
-
-        dependencies = None
-        if "depends_on" in test:
-            dependencies = test["depends_on"]
-
-        input_files = []
-        if "input_files" in test:
-            input_files = test["input_files"]
-
-        is_shell = False
-        if "bash_command" in test:
-            if sys.platform == "win32":
-                print(
-                    "Skipping test number '{}' as bash_command is unsupported on Windows.".format((test_number)))
-                continue
-            command_line = test['bash_command'].format(
-                VW=vw_bin, SPANNING_TREE=spanning_tree_bin)
-            is_shell = True
-        elif "vw_command" in test:
-            command_line = "{} {}".format((vw_bin), (test['vw_command']))
-            if not args.include_flatbuffers and not args.for_flatbuffers:
-                if '--flatbuffer' in test['vw_command']:
-                    print("{} is a flatbuffer test, can be run with --include_flatbuffers flag, Skipping...".format(test_number))
-                    continue
-        else:
-            print("{} is an unknown type. Skipping...".format((test_number)))
-            continue
-
         tasks.append(executor.submit(run_command_line_test,
-                                     test_number,
-                                     command_line,
-                                     test["diff_files"],
+                                     test,
                                      overwrite=args.overwrite,
                                      epsilon=args.epsilon,
-                                     is_shell=is_shell,
-                                     input_files=input_files,
                                      base_working_dir=test_base_working_dir,
                                      ref_dir=test_base_ref_dir,
                                      completed_tests=completed_tests,
-                                     dependencies=dependencies,
                                      fuzzy_compare=args.fuzzy_compare,
-                                     skip=test['skip'] if "skip" in test else False,
                                      valgrind=args.valgrind))
 
     num_success = 0
@@ -834,23 +843,22 @@ def main():
             result_text = success_text
         elif result['result'] == Result.FAIL:
             result_text = fail_text
-        else:
-            result_text = skipped_text
+        elif result['result'] == Result.SKIPPED:
+            result_text = skipped_text + " ({})".format(result["skip_reason"] if result["skip_reason"] is not None else "unknown reason")
 
         print("Test {}: {}".format((test_number), (result_text)))
-        if not result['result'] == Result.SUCCESS:
-            test = tests[test_number - 1]
-            print("\tDescription: {}".format((test['desc'])))
-            if 'vw_command' in test:
-                print("\tvw_command: \"{}\"".format((test['vw_command'])))
-            if 'bash_command' in test:
-                print("\tbash_command: \"{}\"".format((test['bash_command'])))
+        if result['result'] != Result.SUCCESS:
+            test = get_test(test_number, tests)
+            # Since this test produced a result - it must be in the tests list
+            assert test is not None
+            print("\tDescription: {}".format(test.description))
+            print("\t{} _command: \"{}\"".format("bash" if test.is_shell else "vw", test.command_line))
         for name, check in result["checks"].items():
             # Don't print exit_code check as it is too much noise.
             if check['success'] and name == "exit_code":
                 continue
             print(
-                "\t[{}] {}: {}".format((name), (success_text if check['success'] else fail_text), (check['message'])))
+                "\t[{}] {}: {}".format(name, success_text if check['success'] else fail_text, check['message']))
             if not check['success']:
                 if name == "exit_code":
                     print("---- stdout ----")
@@ -867,9 +875,9 @@ def main():
                         task.cancel()
                     sys.exit(1)
     print("-----")
-    print("# Success: {}".format((num_success)))
-    print("# Fail: {}".format((num_fail)))
-    print("# Skip: {}".format((num_skip)))
+    print("# Success: {}".format(num_success))
+    print("# Fail: {}".format(num_fail))
+    print("# Skip: {}".format(num_skip))
 
     if num_fail > 0:
         sys.exit(1)

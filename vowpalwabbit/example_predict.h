@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
-typedef unsigned char namespace_index;
+using namespace_index = unsigned char;
 
 #include "constant.h"
 #include "future_compat.h"
@@ -66,19 +66,6 @@ struct example_predict
 
   // Used for debugging reductions.  Keeps track of current reduction level.
   uint32_t _debug_current_reduction_depth = 0;
-};
-
-// make sure we have an exception safe version of example_predict
-
-class VW_DEPRECATED(
-    "example_predict is now RAII based. That class can be used instead. This will be removed in VW 9.0.")
-    safe_example_predict : public example_predict
-{
-public:
-  safe_example_predict();
-  ~safe_example_predict() = default;
-
-  void clear();
 };
 
 std::string features_to_string(const example_predict& ec);

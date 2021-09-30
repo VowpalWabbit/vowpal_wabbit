@@ -964,12 +964,12 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
     if (read)
     {
       c++;
-      brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i), "");
+      brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i));
       if (brw > 0)
       {
         assert(i < length);
         v = &(b.regularizers[i]);
-        brw += model_file.bin_read_fixed(reinterpret_cast<char*>(v), sizeof(*v), "");
+        brw += model_file.bin_read_fixed(reinterpret_cast<char*>(v), sizeof(*v));
       }
     }
     else  // write binary or text
@@ -1046,8 +1046,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
   {
     std::stringstream msg;
     msg << ":" << reg_vector << "\n";
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&reg_vector), sizeof(reg_vector), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&reg_vector), sizeof(reg_vector), read, msg, text);
 
     if (reg_vector)
       save_load_regularizer(*all, b, model_file, read, text);

@@ -1,1 +1,2 @@
 add_subdirectory(parser_throughput)
+add_subdirectory(fuzzing)

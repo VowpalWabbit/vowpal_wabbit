@@ -5329,7 +5329,7 @@ static void benchmark_rcv1_dataset(benchmark::State& state, std::string command_
 
   for (auto* example : examples) { vw->finish_example(*example); }
 
-  VW::finish(*vw, true);
+  VW::finish(*vw);
 }
 
 BENCHMARK_CAPTURE(benchmark_rcv1_dataset, simple, "--quiet");

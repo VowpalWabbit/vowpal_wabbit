@@ -16,6 +16,7 @@
 #include "version.h"
 #include "label_parser.h"
 
+#include <utility>
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -66,7 +67,7 @@ cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, s
     : _epsilon(epsilon)
     , _psi(psi)
     , _synthcoversize(synthcoversize)
-    , _random_state(random_state)
+    , _random_state(std::move(random_state))
     , _model_file_version(model_file_version)
     , _min_cost(0.0)
     , _max_cost(0.0)
@@ -102,8 +103,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     return;
   }
 
-  for (size_t i = 0; i < num_actions; i++)
-  { preds[i].score = std::min(_max_cost, std::max(_min_cost, preds[i].score)); }
+  for (size_t i = 0; i < num_actions; i++) { preds[i].score = VW::math::clamp(preds[i].score, _min_cost, _max_cost); }
   std::make_heap(
       preds.begin(), preds.end(), [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) {
         return ACTION_SCORE::score_comp(&a, &b) > 0;
@@ -148,14 +148,14 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
 void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
     if (!read) msg << "_min_cost " << _min_cost << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_min_cost), sizeof(_min_cost), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_min_cost), sizeof(_min_cost), read, msg, text);
 
     if (!read) msg << "_max_cost " << _max_cost << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_max_cost), sizeof(_max_cost), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_max_cost), sizeof(_max_cost), read, msg, text);
   }
 }
 

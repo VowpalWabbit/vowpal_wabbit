@@ -27,16 +27,17 @@ constexpr uint8_t linear_policy = 1;
 
 struct cbzo
 {
-  float radius;
-  vw* all;
-  bool min_prediction_supplied, max_prediction_supplied;
+  float radius = 0.f;
+  vw* all = nullptr;
+  bool min_prediction_supplied = false;
+  bool max_prediction_supplied = false;
 };
 
 struct linear_update_data
 {
-  float mult;
-  float part_grad;
-  vw* all;
+  float mult = 0.f;
+  float part_grad = 0.f;
+  vw* all = nullptr;
 };
 
 // uint64_t index variant of VW::get_weight
@@ -207,7 +208,7 @@ void predict(cbzo& data, base_learner&, example& ec)
 
   float action_centroid = inference<policy>(*data.all, ec);
   set_minmax(data.all->sd, action_centroid, data.min_prediction_supplied, data.max_prediction_supplied);
-  action_centroid = std::min(std::max(action_centroid, data.all->sd->min_label), data.all->sd->max_label);
+  action_centroid = VW::math::clamp(action_centroid, data.all->sd->min_label, data.all->sd->max_label);
 
   approx_pmf_to_pdf(action_centroid - data.radius, action_centroid + data.radius, ec.pred.pdf);
 
@@ -321,7 +322,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
 
-  auto data = scoped_calloc_or_throw<cbzo>();
+  auto data = VW::make_unique<cbzo>();
 
   std::string policy_str;
   bool cbzo_option = false;
@@ -362,13 +363,14 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
-  learner<cbzo, example>& l = init_learner(data, get_learn(all, policy, feature_mask_off), get_predict(all, policy), 0,
-      prediction_type_t::pdf, stack_builder.get_setupfn_name(setup));
+  auto* l = make_base_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
+      stack_builder.get_setupfn_name(setup), prediction_type_t::pdf, label_type_t::continuous)
+                .set_params_per_weight(0)
+                .set_save_load(save_load)
+                .set_finish_example(finish_example)
+                .build();
 
-  l.set_save_load(save_load);
-  l.set_finish_example(finish_example);
-
-  return make_base(l);
+  return make_base(*l);
 }
 
 }  // namespace cbzo

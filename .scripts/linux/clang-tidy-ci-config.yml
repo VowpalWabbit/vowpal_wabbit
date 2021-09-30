@@ -1,0 +1,11 @@
+{
+  Checks: "-*,performance-*,modernize-use-using",
+  WarningsAsErrors: "-*,performance-*,modernize-use-using",
+  CheckOptions:
+    [
+      {
+        key: performance-move-const-arg.CheckTriviallyCopyableMove,
+        value: '0',
+      }
+    ]
+}
