@@ -7,6 +7,7 @@
 
 #include <string>
 #include <algorithm>
+#include <utility>
 
 #ifdef _WIN32
 #  define NOMINMAX
@@ -36,7 +37,7 @@ class promise;
 #  include <stdio.h>
 #  include <unistd.h>
 #  include <string.h>
-typedef int socket_t;
+using socket_t = int;
 #  define CLOSESOCK close
 #  include <future>
 #endif
@@ -284,7 +285,7 @@ private:
 public:
   AllReduceSockets(std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal,
       const size_t pnode, bool pquiet)
-      : AllReduce(ptotal, pnode, pquiet), span_server(pspan_server), port(pport), unique_id(punique_id)
+      : AllReduce(ptotal, pnode, pquiet), span_server(std::move(pspan_server)), port(pport), unique_id(punique_id)
   {
   }
 

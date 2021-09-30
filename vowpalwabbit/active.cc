@@ -12,6 +12,8 @@
 #include "vw_exception.h"
 #include "shared_data.h"
 #include "vw_math.h"
+#include "vw_versions.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 
@@ -87,7 +89,19 @@ void predict_or_learn_active(active& a, single_learner& base, example& ec)
   if (ec.l.simple.label == FLT_MAX)
   {
     const float threshold = (a._shared_data->max_label + a._shared_data->min_label) * 0.5f;
-    ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
+    // We want to understand the change in prediction if the label were to be
+    // the opposite of what was predicted. 0 and 1 are used for the expected min
+    // and max labels to be coming in from the active interactor.
+    ec.l.simple.label = (ec.pred.scalar >= threshold) ? a._min_seen_label : a._max_seen_label;
+    std::cout << a._min_seen_label << std::endl;
+    ec.confidence = std::abs(ec.pred.scalar - threshold) / base.sensitivity(ec);
+    ec.l.simple.label = FLT_MAX;
+  }
+  else
+  {
+    // Update seen labels based on the current example's label.
+    a._min_seen_label = std::min(ec.l.simple.label, a._min_seen_label);
+    a._max_seen_label = std::max(ec.l.simple.label, a._max_seen_label);
   }
 }
 
@@ -114,7 +128,6 @@ void output_and_account_example(vw& all, active& a, example& ec)
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only)
   { all.sd->weighted_labels += (static_cast<double>(ld.label)) * static_cast<double>(ec.weight); }
-  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? static_cast<double>(ec.weight) : 0.0;
 
   float ai = -1;
   if (ld.label == FLT_MAX)
@@ -130,6 +143,16 @@ void return_active_example(vw& all, active& a, example& ec)
 {
   output_and_account_example(all, a, ec);
   VW::finish_example(all, ec);
+}
+
+void save_load(active& a, io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+  if (a._model_version >= VW::version_definitions::VERSION_FILE_WITH_ACTIVE_SEEN_LABELS)
+  {
+    VW::model_utils::process_model_field(io, a._min_seen_label, read, "Active: min_seen_label {}", text);
+    VW::model_utils::process_model_field(io, a._max_seen_label, read, "Active: max_seen_label {}", text);
+  }
 }
 
 base_learner* active_setup(VW::setup_base_i& stack_builder)
@@ -151,7 +174,7 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (options.was_supplied("lda")) { THROW("error: you can't combine lda and active learning") }
-  auto data = VW::make_unique<active>(active_c0, all.sd, all.get_random_state());
+  auto data = VW::make_unique<active>(active_c0, all.sd, all.get_random_state(), all.model_file_ver);
   auto base = as_singleline(stack_builder.setup_base_learner());
 
   using learn_pred_func_t = void (*)(active&, VW::LEARNER::single_learner&, example&);
@@ -178,6 +201,7 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
   reduction_builder.set_label_type(label_type_t::simple);
   reduction_builder.set_prediction_type(prediction_type_t::scalar);
   reduction_builder.set_learn_returns_prediction(learn_returns_prediction);
+  reduction_builder.set_save_load(save_load);
   if (!simulation) { reduction_builder.set_finish_example(return_active_example); }
 
   return make_base(*reduction_builder.build());

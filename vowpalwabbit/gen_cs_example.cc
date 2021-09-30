@@ -149,8 +149,8 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
   }
 }
 
-void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset, ACTION_SCORE::action_scores action_vals,
-    COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_sm(multi_ex&, uint32_t chosen_action, float sign_offset,
+    const ACTION_SCORE::action_scores& action_vals, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < action_vals.size(); i++)
