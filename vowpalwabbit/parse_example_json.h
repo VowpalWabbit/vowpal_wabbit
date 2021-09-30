@@ -58,7 +58,10 @@ namespace logger = VW::io::logger;
 
 using namespace rapidjson;
 
-namespace VW { struct workspace; }
+namespace VW
+{
+struct workspace;
+}
 
 template <bool audit>
 struct BaseState;
@@ -1573,8 +1576,8 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 {
   Context<audit> ctx;
 
-  void init(VW::workspace* all, v_array<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
-      VW::example_factory_t example_factory, void* example_factory_context,
+  void init(VW::workspace* all, v_array<example*>* examples, rapidjson::InsituStringStream* stream,
+      const char* stream_end, VW::example_factory_t example_factory, void* example_factory_context,
       std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
   {
     ctx.init(all);
@@ -1692,8 +1695,8 @@ inline bool apply_pdrop(VW::workspace& all, float pdrop, v_array<example*>& exam
 
 // returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
-bool read_line_decision_service_json(VW::workspace& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
-    example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
+bool read_line_decision_service_json(VW::workspace& all, v_array<example*>& examples, char* line, size_t length,
+    bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
   {

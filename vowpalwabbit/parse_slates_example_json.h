@@ -146,8 +146,8 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
 }
 
 template <bool audit>
-void parse_context(const Value& context, VW::workspace& all, v_array<example*>& examples, VW::example_factory_t example_factory,
-    void* ex_factory_context, std::vector<example*>& slot_examples,
+void parse_context(const Value& context, VW::workspace& all, v_array<example*>& examples,
+    VW::example_factory_t example_factory, void* ex_factory_context, std::vector<example*>& slot_examples,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
   std::vector<Namespace<audit>> namespaces;

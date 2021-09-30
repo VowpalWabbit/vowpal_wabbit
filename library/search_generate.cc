@@ -223,8 +223,8 @@ float get_or_one(std::vector<std::pair<char,size_t> >& v, char c)
 class Generator : public SearchTask<input, output>
 {
 public:
-
-  Generator(VW::workspace& vw_obj, Trie* _dict=nullptr) : SearchTask<input,output>(vw_obj), dist(0), dict(_dict)    // must run parent constructor!
+  Generator(VW::workspace& vw_obj, Trie* _dict = nullptr)
+      : SearchTask<input, output>(vw_obj), dist(0), dict(_dict)  // must run parent constructor!
   {
     // TODO: if action costs is specified but no allowed actions provided, don't segfault :P
     sch.set_options(Search::AUTO_CONDITION_FEATURES | Search::NO_CACHING | Search::ACTION_COSTS);
@@ -371,7 +371,9 @@ private:
 };
 
 void run_easy()
-{ VW::workspace& vw_obj = *VW::initialize("--search 29 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none");
+{
+  VW::workspace& vw_obj = *VW::initialize(
+      "--search 29 --quiet --search_task hook --ring_size 1024 --search_rollin learn --search_rollout none");
   Generator task(vw_obj);
   output out("");
 
@@ -482,7 +484,8 @@ void train()
 }
 
 void predict()
-{ VW::workspace& vw_obj = *VW::initialize("--quiet -t --ring_size 1024 -i my_model");
+{
+  VW::workspace& vw_obj = *VW::initialize("--quiet -t --ring_size 1024 -i my_model");
   //run(vw_obj);
   VW::finish(vw_obj);
 }

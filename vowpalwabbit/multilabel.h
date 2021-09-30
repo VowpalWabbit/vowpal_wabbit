@@ -6,7 +6,10 @@
 #include "v_array.h"
 
 struct example;
-namespace VW { struct workspace; }
+namespace VW
+{
+struct workspace;
+}
 
 namespace MULTILABEL
 {

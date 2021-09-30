@@ -114,8 +114,8 @@ void initialize_regressor(VW::workspace& all)
 constexpr size_t default_buf_size = 512;
 
 // file_options will be written to when reading
-void save_load_header(
-    VW::workspace& all, io_buf& model_file, bool read, bool text, std::string& file_options, VW::config::options_i& options)
+void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool text, std::string& file_options,
+    VW::config::options_i& options)
 {
   if (model_file.num_files() > 0)
   {
@@ -500,7 +500,8 @@ void read_regressor_file(VW::workspace& all, const std::vector<std::string>& all
   }
 }
 
-void parse_mask_regressor_args(VW::workspace& all, const std::string& feature_mask, std::vector<std::string> initial_regressors)
+void parse_mask_regressor_args(
+    VW::workspace& all, const std::string& feature_mask, std::vector<std::string> initial_regressors)
 {
   // TODO does this extra check need to be used? I think it is duplicated but there may be some logic I am missing.
   std::string file_options;

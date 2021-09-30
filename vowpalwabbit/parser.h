@@ -28,7 +28,10 @@
 #include "hashstring.h"
 #include "simple_label_parser.h"
 
-namespace VW { struct workspace; }
+namespace VW
+{
+struct workspace;
+}
 struct input_options;
 struct dsjson_metrics;
 struct parser

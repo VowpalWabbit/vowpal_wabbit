@@ -28,7 +28,10 @@
 #include <vector>
 #include <iostream>
 
-namespace VW { struct workspace; }
+namespace VW
+{
+struct workspace;
+}
 namespace VW
 {
 void copy_example_data(example* dst, const example* src);
@@ -141,7 +144,10 @@ private:
   bool use_permutations = false;
 };
 
-namespace VW { struct workspace; }
+namespace VW
+{
+struct workspace;
+}
 
 struct flat_example
 {

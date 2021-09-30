@@ -751,7 +751,10 @@ example* read_example(VW::workspace& all, const char* example_line)
   return ret;
 }
 
-example* read_example(VW::workspace& all, const std::string& example_line) { return read_example(all, example_line.c_str()); }
+example* read_example(VW::workspace& all, const std::string& example_line)
+{
+  return read_example(all, example_line.c_str());
+}
 
 void add_constant_feature(VW::workspace& vw, example* ec)
 {

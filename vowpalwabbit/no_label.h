@@ -4,12 +4,16 @@
 #pragma once
 #include "label_parser.h"
 
-namespace VW {
-struct workspace; 
+namespace VW
+{
+struct workspace;
 }
 
 struct example;
-namespace VW { struct workspace; }
+namespace VW
+{
+struct workspace;
+}
 
 namespace no_label
 {

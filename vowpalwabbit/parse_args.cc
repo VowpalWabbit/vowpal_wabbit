@@ -506,8 +506,8 @@ std::vector<namespace_index> parse_char_interactions(VW::string_view input)
   return result;
 }
 
-void parse_feature_tweaks(
-    options_i& options, VW::workspace& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
+void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interactions_settings_duplicated,
+    std::vector<std::string>& dictionary_nses)
 {
   std::string hash_function("strings");
   uint32_t new_bits;
@@ -1322,7 +1322,8 @@ void merge_options_from_header_strings(const std::vector<std::string>& strings, 
   if (count == 0 && !saved_key.empty()) { options.insert(saved_key, ""); }
 }
 
-options_i& load_header_merge_options(options_i& options, VW::workspace& all, io_buf& model, bool& interactions_settings_duplicated)
+options_i& load_header_merge_options(
+    options_i& options, VW::workspace& all, io_buf& model, bool& interactions_settings_duplicated)
 {
   std::string file_options;
   save_load_header(all, model, true, false, file_options, options);
@@ -1339,8 +1340,8 @@ options_i& load_header_merge_options(options_i& options, VW::workspace& all, io_
   return options;
 }
 
-void parse_modules(
-    options_i& options, VW::workspace& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_namespaces)
+void parse_modules(options_i& options, VW::workspace& all, bool interactions_settings_duplicated,
+    std::vector<std::string>& dictionary_namespaces)
 {
   option_group_definition rand_options("Randomization options");
   rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
@@ -1503,8 +1504,8 @@ void print_enabled_reductions(VW::workspace& all, std::vector<std::string>& enab
   }
 }
 
-VW::workspace* initialize(config::options_i& options, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
-    void* trace_context)
+VW::workspace* initialize(config::options_i& options, io_buf* model, bool skip_model_load,
+    trace_message_t trace_listener, void* trace_context)
 {
   std::unique_ptr<options_i, options_deleter_type> opts(&options, [](VW::config::options_i*) {});
 
@@ -1607,8 +1608,8 @@ VW::workspace* initialize_escaped(
   return ret;
 }
 
-VW::workspace* initialize_with_builder(int argc, char* argv[], io_buf* model, bool skip_model_load, trace_message_t trace_listener,
-    void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
+VW::workspace* initialize_with_builder(int argc, char* argv[], io_buf* model, bool skip_model_load,
+    trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   std::unique_ptr<options_i, options_deleter_type> options(
       new config::options_boost_po(argc, argv), [](VW::config::options_i* ptr) { delete ptr; });
@@ -1622,8 +1623,8 @@ VW::workspace* initialize(
   return initialize_with_builder(argc, argv, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
-VW::workspace* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
-    void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
+VW::workspace* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load,
+    trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   int argc = 0;
   char** argv = to_argv(s, argc);
@@ -1652,7 +1653,8 @@ VW::workspace* initialize(
 
 // Create a new VW instance while sharing the model with another instance
 // The extra arguments will be appended to those of the other VW instance
-VW::workspace* seed_vw_model(VW::workspace* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
+VW::workspace* seed_vw_model(
+    VW::workspace* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
 {
   options_serializer_boost_po serializer;
   for (auto const& option : vw_model->options->get_all_options())

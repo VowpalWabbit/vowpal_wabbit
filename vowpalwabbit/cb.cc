@@ -122,7 +122,8 @@ std::string known_cost_to_str(CB::cb_class* known_cost)
   return label_string.str();
 }
 
-void print_update(VW::workspace& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, CB::cb_class* known_cost)
+void print_update(
+    VW::workspace& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, CB::cb_class* known_cost)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.logger.quiet && !all.bfgs)
   {

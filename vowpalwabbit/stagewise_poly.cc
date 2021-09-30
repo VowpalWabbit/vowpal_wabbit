@@ -591,7 +591,7 @@ void end_pass(stagewise_poly &poly)
   sanity_check_state(poly);
 #endif  // DEBUG
 
-  VW::workspace &all = *poly.all;
+  VW::workspace& all = *poly.all;
   if (all.all_reduce != nullptr)
   {
     /*
@@ -626,7 +626,7 @@ void end_pass(stagewise_poly &poly)
   }
 }
 
-void finish_example(VW::workspace& all, stagewise_poly &poly, example &ec)
+void finish_example(VW::workspace& all, stagewise_poly& poly, example& ec)
 {
   size_t temp_num_features = ec.num_features;
   ec.num_features = poly.synth_ec.get_num_features();

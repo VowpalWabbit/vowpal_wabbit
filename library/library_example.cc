@@ -9,7 +9,8 @@ inline feature vw_feature_from_string(VW::workspace& v, std::string fstr, unsign
 }
 
 int main(int argc, char *argv[])
-{ VW::workspace* model = VW::initialize("--hash all -q st --noconstant -i train.w -f train2.vw --no_stdin");
+{
+  VW::workspace* model = VW::initialize("--hash all -q st --noconstant -i train.w -f train2.vw --no_stdin");
 
   example *vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model->learn(*vec2);

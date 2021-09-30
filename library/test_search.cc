@@ -17,7 +17,7 @@ class SequenceLabelerTask : public SearchTask<std::vector<wt>, std::vector<uint3
 {
 public:
   SequenceLabelerTask(VW::workspace& vw_obj)
-    : SearchTask<std::vector<wt>, std::vector<uint32_t> >(vw_obj)    // must run parent constructor!
+      : SearchTask<std::vector<wt>, std::vector<uint32_t> >(vw_obj)  // must run parent constructor!
   { sch.set_options( Search::AUTO_HAMMING_LOSS | Search::AUTO_CONDITION_FEATURES );
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     cerr << "num_actions = " << d->num_actions << endl;

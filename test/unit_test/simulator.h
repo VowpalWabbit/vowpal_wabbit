@@ -19,7 +19,10 @@
 #include <vector>
 #include <string>
 
-namespace VW { struct workspace; }
+namespace VW
+{
+struct workspace;
+}
 
 namespace simulator
 {

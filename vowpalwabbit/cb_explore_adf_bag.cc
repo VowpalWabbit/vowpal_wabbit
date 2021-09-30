@@ -134,7 +134,7 @@ void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner &base, multi_ex &examp
   }
 }
 
-void finish_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag> &data, multi_ex &ec_seq)
+void finish_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag>& data, multi_ex& ec_seq)
 {
   assert(ec_seq.size() > 0);
   ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();

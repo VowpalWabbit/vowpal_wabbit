@@ -13,7 +13,6 @@ struct example;
 using multi_ex = std::vector<example*>;
 struct random_state;
 
-
 namespace VW
 {
 struct workspace;

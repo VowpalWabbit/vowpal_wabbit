@@ -10,7 +10,10 @@
 #include "v_array.h"
 
 struct example;
-namespace VW { struct workspace; }
+namespace VW
+{
+struct workspace;
+}
 
 namespace COST_SENSITIVE
 {
@@ -41,7 +44,8 @@ struct label
 };
 
 void output_example(VW::workspace& all, example& ec);
-void output_example(VW::workspace& all, example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction);
+void output_example(
+    VW::workspace& all, example& ec, const COST_SENSITIVE::label& cs_label, uint32_t multiclass_prediction);
 void finish_example(VW::workspace& all, example& ec);
 template <class T>
 void finish_example(VW::workspace& all, T&, example& ec)

@@ -5,7 +5,10 @@
 #pragma once
 #include <cstdint>
 
-namespace VW { struct workspace; }
+namespace VW
+{
+struct workspace;
+}
 
 namespace VW
 {

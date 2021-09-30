@@ -6,7 +6,10 @@
 #include <cstddef>
 
 struct example;
-namespace VW { struct workspace; }
+namespace VW
+{
+struct workspace;
+}
 
 struct label_data
 {

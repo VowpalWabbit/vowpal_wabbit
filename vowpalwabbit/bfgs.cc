@@ -236,7 +236,8 @@ float direction_magnitude(VW::workspace& all)
 }
 
 template <class T>
-void bfgs_iter_start(VW::workspace& all, bfgs& b, float* mem, int& lastj, double importance_weight_sum, int& origin, T& weights)
+void bfgs_iter_start(
+    VW::workspace& all, bfgs& b, float* mem, int& lastj, double importance_weight_sum, int& origin, T& weights)
 {
   double g1_Hg1 = 0.;
   double g1_g1 = 0.;
@@ -267,7 +268,8 @@ void bfgs_iter_start(VW::workspace& all, bfgs& b, float* mem, int& lastj, double
 }
 
 template <class T>
-void bfgs_iter_middle(VW::workspace& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int& origin, T& weights)
+void bfgs_iter_middle(
+    VW::workspace& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int& origin, T& weights)
 {
   float* mem0 = mem;
   // implement conjugate gradient

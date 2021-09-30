@@ -162,7 +162,10 @@ void print_update_with_probability(VW::workspace& all, example& ec, uint32_t pre
 {
   print_update<print_probability>(all, ec, pred);
 }
-void print_update_with_score(VW::workspace& all, example& ec, uint32_t pred) { print_update<print_score>(all, ec, pred); }
+void print_update_with_score(VW::workspace& all, example& ec, uint32_t pred)
+{
+  print_update<print_score>(all, ec, pred);
+}
 
 void finish_example(VW::workspace& all, example& ec, bool update_loss)
 {

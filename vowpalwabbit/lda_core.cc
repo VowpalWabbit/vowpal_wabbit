@@ -93,8 +93,8 @@ struct lda
   inline float digamma(float x);
   inline float lgamma(float x);
   inline float powf(float x, float p);
-  inline void expdigammify(VW::workspace& all, float *gamma);
-  inline void expdigammify_2(VW::workspace& all, float *gamma, float *norm);
+  inline void expdigammify(VW::workspace& all, float* gamma);
+  inline void expdigammify_2(VW::workspace& all, float* gamma, float* norm);
 };
 
 // #define VW_NO_INLINE_SIMD
@@ -289,7 +289,7 @@ inline v4sf vfastdigamma(v4sf x)
       logterm;
 }
 
-void vexpdigammify(VW::workspace& all, float *gamma, const float underflow_threshold)
+void vexpdigammify(VW::workspace& all, float* gamma, const float underflow_threshold)
 {
   float extra_sum = 0.0f;
   v4sf sum = v4sfl(0.0f);
@@ -345,7 +345,7 @@ void vexpdigammify(VW::workspace& all, float *gamma, const float underflow_thres
   for (; fp < fpend; ++fp) { *fp = fmax(underflow_threshold, fastexp(*fp - extra_sum)); }
 }
 
-void vexpdigammify_2(VW::workspace& all, float *gamma, const float *norm, const float underflow_threshold)
+void vexpdigammify_2(VW::workspace& all, float* gamma, const float* norm, const float underflow_threshold)
 {
   float *fp = gamma;
   const float *np;
@@ -484,7 +484,7 @@ inline float powf<float, USE_SIMD>(float x, float p)
 }
 
 template <typename T, const lda_math_mode mtype>
-inline void expdigammify(VW::workspace& all, T *gamma, T threshold, T initial)
+inline void expdigammify(VW::workspace& all, T* gamma, T threshold, T initial)
 {
   T sum = digamma<T, mtype>(std::accumulate(gamma, gamma + all.lda, initial));
 
@@ -492,7 +492,7 @@ inline void expdigammify(VW::workspace& all, T *gamma, T threshold, T initial)
       [sum, threshold](T g) { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - sum)); });
 }
 template <>
-inline void expdigammify<float, USE_SIMD>(VW::workspace& all, float *gamma, float threshold, float)
+inline void expdigammify<float, USE_SIMD>(VW::workspace& all, float* gamma, float threshold, float)
 {
 #if defined(HAVE_SIMD_MATHMODE)
   vexpdigammify(all, gamma, threshold);
@@ -503,13 +503,13 @@ inline void expdigammify<float, USE_SIMD>(VW::workspace& all, float *gamma, floa
 }
 
 template <typename T, const lda_math_mode mtype>
-inline void expdigammify_2(VW::workspace& all, float *gamma, T *norm, const T threshold)
+inline void expdigammify_2(VW::workspace& all, float* gamma, T* norm, const T threshold)
 {
   std::transform(gamma, gamma + all.lda, norm, gamma,
       [threshold](float g, float n) { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n)); });
 }
 template <>
-inline void expdigammify_2<float, USE_SIMD>(VW::workspace& all, float *gamma, float *norm, const float threshold)
+inline void expdigammify_2<float, USE_SIMD>(VW::workspace& all, float* gamma, float* norm, const float threshold)
 {
 #if defined(HAVE_SIMD_MATHMODE)
   vexpdigammify_2(all, gamma, norm, threshold);
@@ -573,7 +573,7 @@ float lda::powf(float x, float p)
   }
 }
 
-void lda::expdigammify(VW::workspace& all_, float *gamma)
+void lda::expdigammify(VW::workspace& all_, float* gamma)
 {
   switch (mmode)
   {
@@ -592,7 +592,7 @@ void lda::expdigammify(VW::workspace& all_, float *gamma)
   }
 }
 
-void lda::expdigammify_2(VW::workspace& all_, float *gamma, float *norm)
+void lda::expdigammify_2(VW::workspace& all_, float* gamma, float* norm)
 {
   switch (mmode)
   {
@@ -611,7 +611,7 @@ void lda::expdigammify_2(VW::workspace& all_, float *gamma, float *norm)
   }
 }
 
-static inline float average_diff(VW::workspace& all, float *oldgamma, float *newgamma)
+static inline float average_diff(VW::workspace& all, float* oldgamma, float* newgamma)
 {
   float sum;
   float normalizer;
@@ -808,7 +808,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   }
 }
 
-void return_example(VW::workspace& all, example &ec)
+void return_example(VW::workspace& all, example& ec)
 {
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.get_num_features());
   for (auto &sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag); }
@@ -1027,7 +1027,7 @@ struct feature_pair
 };
 
 template <class T>
-void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::vector<feature> &output, T &weights)
+void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::vector<feature>& output, T& weights)
 {
   uint64_t length = static_cast<uint64_t>(1) << all->num_bits;
 
@@ -1058,7 +1058,7 @@ void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::ve
   }
 }
 
-void get_top_weights(VW::workspace *all, int top_words_count, int topic, std::vector<feature> &output)
+void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::vector<feature>& output)
 {
   if (all->weights.sparse)
     get_top_weights(all, top_words_count, topic, output, all->weights.sparse_weights);
@@ -1241,7 +1241,7 @@ void end_examples(lda &l)
     end_examples(l, l.all->weights.dense_weights);
 }
 
-void finish_example(VW::workspace& all, lda &l, example &e)
+void finish_example(VW::workspace& all, lda& l, example& e)
 {
   if (l.minibatch <= 1) { return return_example(all, e); }
 
