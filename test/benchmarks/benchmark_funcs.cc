@@ -6,7 +6,6 @@
 #include "io/io_adapter.h"
 #include "vw.h"
 
-
 static void benchmark_sum_ft_squared(benchmark::State& state)
 {
   std::string example_string =
