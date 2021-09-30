@@ -61,7 +61,7 @@ constexpr uint32_t my_null = 9999999; /*representing_default*/
 
 void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &options)
 {
-  vw &all = sch.get_vw_pointer_unsafe();
+  VW::workspace& all = sch.get_vw_pointer_unsafe();
   task_data *data = new task_data();
   data->action_loss.resize_but_with_stl_behavior(5);
   sch.set_task_data<task_data>(data);
@@ -237,7 +237,7 @@ size_t transition_eager(Search::search &sch, uint64_t a_id, uint32_t idx, uint32
 
 void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
 {
-  vw &all = sch.get_vw_pointer_unsafe();
+  VW::workspace& all = sch.get_vw_pointer_unsafe();
   task_data *data = sch.get_task_data<task_data>();
   reset_ex(data->ex);
   uint64_t mask = sch.get_mask();

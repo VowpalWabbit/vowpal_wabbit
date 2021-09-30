@@ -48,7 +48,7 @@ struct nn
   polyprediction* hidden_units_pred;
   polyprediction* hiddenbias_pred;
 
-  vw* all;  // many things
+  VW::workspace* all;  // many things
   std::shared_ptr<rand_state> _random_state;
 
   ~nn()
@@ -81,7 +81,7 @@ static inline float fastexp(float p) { return fastpow2(1.442695040f * p); }
 
 static inline float fasttanh(float p) { return -1.0f + 2.0f / (1.0f + fastexp(-2.0f * p)); }
 
-void finish_setup(nn& n, vw& all)
+void finish_setup(nn& n, VW::workspace& all)
 {
   // TODO: output_layer audit
 
@@ -398,7 +398,7 @@ void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t
   ec.ft_offset -= static_cast<uint64_t>(step * count);
 }
 
-void finish_example(vw& all, nn&, example& ec)
+void finish_example(VW::workspace& all, nn&, example& ec)
 {
   std::unique_ptr<VW::io::writer> temp(nullptr);
   auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
@@ -408,7 +408,7 @@ void finish_example(vw& all, nn&, example& ec)
 base_learner* nn_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto n = scoped_calloc_or_throw<nn>();
   bool meanfield = false;
   option_group_definition new_options("Neural Network");

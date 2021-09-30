@@ -37,7 +37,7 @@ void initialize_weights_as_polar_normal(weight* weights, uint64_t index) { weigh
 // re-scaling to re-picking values outside the truncating boundary.
 // note:- boundary is twice the standard deviation.
 template <class T>
-void truncate(vw& all, T& weights)
+void truncate(VW::workspace& all, T& weights)
 {
   static double sd = calculate_sd(all, weights);
   std::for_each(weights.begin(), weights.end(), [](float& v) {
@@ -46,7 +46,7 @@ void truncate(vw& all, T& weights)
 }
 
 template <class T>
-double calculate_sd(vw& /* all */, T& weights)
+double calculate_sd(VW::workspace& /* all */, T& weights)
 {
   static int my_size = 0;
   std::for_each(weights.begin(), weights.end(), [](float /* v */) { my_size += 1; });
@@ -58,7 +58,7 @@ double calculate_sd(vw& /* all */, T& weights)
   return std::sqrt(sq_sum / my_size);
 }
 template <class T>
-void initialize_regressor(vw& all, T& weights)
+void initialize_regressor(VW::workspace& all, T& weights)
 {
   // Regressor is already initialized.
   if (weights.not_null()) return;
@@ -102,7 +102,7 @@ void initialize_regressor(vw& all, T& weights)
   }
 }
 
-void initialize_regressor(vw& all)
+void initialize_regressor(VW::workspace& all)
 {
   if (all.weights.sparse)
     initialize_regressor(all, all.weights.sparse_weights);
@@ -114,7 +114,7 @@ constexpr size_t default_buf_size = 512;
 
 // file_options will be written to when reading
 void save_load_header(
-    vw& all, io_buf& model_file, bool read, bool text, std::string& file_options, VW::config::options_i& options)
+    VW::workspace& all, io_buf& model_file, bool read, bool text, std::string& file_options, VW::config::options_i& options)
 {
   if (model_file.num_files() > 0)
   {
@@ -426,7 +426,7 @@ void save_load_header(
   }
 }
 
-void dump_regressor(vw& all, io_buf& buf, bool as_text)
+void dump_regressor(VW::workspace& all, io_buf& buf, bool as_text)
 {
   if (buf.num_output_files() == 0) { THROW("Cannot dump regressor with an io buffer that has no output files."); }
   std::string unused;
@@ -437,7 +437,7 @@ void dump_regressor(vw& all, io_buf& buf, bool as_text)
   buf.close_file();
 }
 
-void dump_regressor(vw& all, std::string reg_name, bool as_text)
+void dump_regressor(VW::workspace& all, std::string reg_name, bool as_text)
 {
   if (reg_name == std::string("")) return;
   std::string start_name = reg_name + std::string(".writing");
@@ -453,7 +453,7 @@ void dump_regressor(vw& all, std::string reg_name, bool as_text)
         << start_name.c_str() << " to " << reg_name.c_str());
 }
 
-void save_predictor(vw& all, std::string reg_name, size_t current_pass)
+void save_predictor(VW::workspace& all, std::string reg_name, size_t current_pass)
 {
   std::stringstream filename;
   filename << reg_name;
@@ -461,7 +461,7 @@ void save_predictor(vw& all, std::string reg_name, size_t current_pass)
   dump_regressor(all, filename.str(), false);
 }
 
-void finalize_regressor(vw& all, std::string reg_name)
+void finalize_regressor(VW::workspace& all, std::string reg_name)
 {
   if (!all.early_terminate)
   {
@@ -481,7 +481,7 @@ void finalize_regressor(vw& all, std::string reg_name)
   }
 }
 
-void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& io_temp)
+void read_regressor_file(VW::workspace& all, std::vector<std::string> all_intial, io_buf& io_temp)
 {
   if (all_intial.size() > 0)
   {
@@ -499,7 +499,7 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
   }
 }
 
-void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<std::string> initial_regressors)
+void parse_mask_regressor_args(VW::workspace& all, std::string feature_mask, std::vector<std::string> initial_regressors)
 {
   // TODO does this extra check need to be used? I think it is duplicated but there may be some logic I am missing.
   std::string file_options;
@@ -543,7 +543,7 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
 
 namespace VW
 {
-void save_predictor(vw& all, std::string reg_name) { dump_regressor(all, reg_name, false); }
+void save_predictor(VW::workspace& all, std::string reg_name) { dump_regressor(all, reg_name, false); }
 
-void save_predictor(vw& all, io_buf& buf) { dump_regressor(all, buf, false); }
+void save_predictor(VW::workspace& all, io_buf& buf) { dump_regressor(all, buf, false); }
 }  // namespace VW

@@ -12,11 +12,11 @@ using std::cout;
 // TODO: This file should probably(?) use trace_message
 struct print
 {
-  print(vw* all) : all(all) {}
-  vw* all;
+  print(VW::workspace* all) : all(all) {}
+  VW::workspace* all;
 };  // regressor, feature loop
 
-void print_feature(vw& /* all */, float value, uint64_t index)
+void print_feature(VW::workspace& /* all */, float value, uint64_t index)
 {
   cout << index;
   if (value != 1.) cout << ":" << value;
@@ -41,14 +41,14 @@ void learn(print& p, VW::LEARNER::base_learner&, example& ec)
     cout.write(ec.tag.begin(), ec.tag.size());
   }
   cout << "| ";
-  GD::foreach_feature<vw, uint64_t, print_feature>(*(p.all), ec, *p.all);
+  GD::foreach_feature<VW::workspace, uint64_t, print_feature>(*(p.all), ec, *p.all);
   cout << std::endl;
 }
 
 VW::LEARNER::base_learner* print_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   bool print_option = false;
   option_group_definition new_options("Print psuedolearner");
   new_options.add(make_option("print", print_option).keep().necessary().help("print examples"));

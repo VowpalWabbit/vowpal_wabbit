@@ -37,7 +37,7 @@ inline float get_number(const rapidjson::Value& value)
 
 template <bool audit>
 void handle_features_value(const char* key_namespace, const Value& value, example* current_example,
-    std::vector<Namespace<audit>>& namespaces, vw& all)
+    std::vector<Namespace<audit>>& namespaces, VW::workspace& all)
 {
   assert(key_namespace != nullptr);
   assert(std::strlen(key_namespace) != 0);
@@ -146,7 +146,7 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
 }
 
 template <bool audit>
-void parse_context(const Value& context, vw& all, v_array<example*>& examples, VW::example_factory_t example_factory,
+void parse_context(const Value& context, VW::workspace& all, v_array<example*>& examples, VW::example_factory_t example_factory,
     void* ex_factory_context, std::vector<example*>& slot_examples,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
@@ -215,7 +215,7 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
 }
 
 template <bool audit>
-void parse_slates_example_json(vw& all, v_array<example*>& examples, char* line, size_t /*length*/,
+void parse_slates_example_json(VW::workspace& all, v_array<example*>& examples, char* line, size_t /*length*/,
     VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
@@ -229,7 +229,7 @@ void parse_slates_example_json(vw& all, v_array<example*>& examples, char* line,
 }
 
 template <bool audit>
-void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* line, size_t /*length*/,
+void parse_slates_example_dsjson(VW::workspace& all, v_array<example*>& examples, char* line, size_t /*length*/,
     VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {

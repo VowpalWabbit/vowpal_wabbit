@@ -30,9 +30,9 @@ struct svrg
   // calculation.
 
   // The VW process' global state.
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
 
-  svrg(vw* all) : all(all) {}
+  svrg(VW::workspace* all) : all(all) {}
 };
 
 // Mimic GD::inline_predict but with offset for predicting with either
@@ -46,7 +46,7 @@ inline void vec_add(float& p, const float x, float& w)
 }
 
 template <int offset>
-inline float inline_predict(vw& all, example& ec)
+inline float inline_predict(VW::workspace& all, example& ec)
 {
   const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
   float acc = simple_red_features.initial;
@@ -170,7 +170,7 @@ using namespace SVRG;
 base_learner* svrg_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto s = VW::make_unique<svrg>(&all);
 
   bool svrg_option = false;

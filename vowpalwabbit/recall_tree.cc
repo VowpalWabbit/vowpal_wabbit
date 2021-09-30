@@ -62,7 +62,7 @@ struct node
 
 struct recall_tree
 {
-  vw* all;
+  VW::workspace* all;
   std::shared_ptr<rand_state> _random_state;
   uint32_t k;
   bool node_only;
@@ -211,7 +211,7 @@ void insert_example_at_node(recall_tree& b, uint32_t cn, example& ec)
 
 void add_node_id_feature(recall_tree& b, uint32_t cn, example& ec)
 {
-  vw* all = b.all;
+  VW::workspace* all = b.all;
   uint64_t mask = all->weights.mask();
   size_t ss = all->weights.stride_shift();
 
@@ -489,7 +489,7 @@ using namespace recall_tree_ns;
 base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto tree = scoped_calloc_or_throw<recall_tree>();
   option_group_definition new_options("Recall Tree");
   new_options.add(make_option("recall_tree", tree->k).keep().necessary().help("Use online tree for multiclass"))

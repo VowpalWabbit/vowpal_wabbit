@@ -325,7 +325,7 @@ void learn(ect& e, single_learner& base, example& ec)
 base_learner* ect_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = scoped_calloc_or_throw<ect>();
   std::string link;
   option_group_definition new_options("Error Correcting Tournament Options");

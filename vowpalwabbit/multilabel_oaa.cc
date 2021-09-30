@@ -54,7 +54,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
   ec.l.multilabels = multilabels;
 }
 
-void finish_example(vw& all, multi_oaa&, example& ec)
+void finish_example(VW::workspace& all, multi_oaa&, example& ec)
 {
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);
@@ -63,7 +63,7 @@ void finish_example(vw& all, multi_oaa&, example& ec)
 VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = scoped_calloc_or_throw<multi_oaa>();
   option_group_definition new_options("Multilabel One Against All");
   new_options.add(

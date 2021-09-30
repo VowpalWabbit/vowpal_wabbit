@@ -1,6 +1,6 @@
 #include "test_common.h"
 
-multi_ex parse_json(vw& all, const std::string& line)
+multi_ex parse_json(VW::workspace& all, const std::string& line)
 {
   v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(&all));
@@ -15,7 +15,7 @@ multi_ex parse_json(vw& all, const std::string& line)
   return result;
 }
 
-multi_ex parse_dsjson(vw& all, std::string line, DecisionServiceInteraction* interaction)
+multi_ex parse_dsjson(VW::workspace& all, std::string line, DecisionServiceInteraction* interaction)
 {
   v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(&all));

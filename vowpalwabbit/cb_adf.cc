@@ -368,7 +368,7 @@ bool cb_adf::update_statistics(example& ec, multi_ex* ec_seq)
   return labeled_example;
 }
 
-void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
+void output_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   if (example_is_newline_not_header(ec)) return;
 
@@ -397,7 +397,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
-void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
+void output_rank_example(VW::workspace& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   const auto& costs = ec.l.cb.costs;
 
@@ -425,7 +425,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
-void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -440,7 +440,7 @@ void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
   }
 }
 
-void update_and_output(vw& all, cb_adf& data, multi_ex& ec_seq)
+void update_and_output(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -449,7 +449,7 @@ void update_and_output(vw& all, cb_adf& data, multi_ex& ec_seq)
   }
 }
 
-void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, cb_adf& data, multi_ex& ec_seq)
 {
   update_and_output(all, data, ec_seq);
   VW::finish_example(all, ec_seq);
@@ -479,7 +479,7 @@ using namespace CB_ADF;
 base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   bool cb_adf_option = false;
   std::string type_string = "mtr";
 

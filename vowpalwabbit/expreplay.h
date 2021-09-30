@@ -16,7 +16,7 @@ namespace ExpReplay
 template <label_parser& lp>
 struct expreplay
 {
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
   size_t N = 0;             // how big is the buffer?
   example* buf = nullptr;   // the deep copies of examples (N of them)
@@ -80,7 +80,7 @@ template <char er_level, label_parser& lp>
 VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   std::string replay_string = "replay_";
   replay_string += er_level;
   std::string replay_count_string = replay_string;

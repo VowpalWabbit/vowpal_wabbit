@@ -40,7 +40,7 @@ struct Namespace
     if (audit) ftrs->space_names.push_back(audit_strings(name, feature_name));
   }
 
-  void AddFeature(vw* all, const char* str)
+  void AddFeature(VW::workspace* all, const char* str)
   {
     ftrs->push_back(1., VW::hash_feature_cstr(*all, str, namespace_hash));
     feature_count++;
@@ -48,7 +48,7 @@ struct Namespace
     if (audit) ftrs->space_names.push_back(audit_strings(name, str));
   }
 
-  void AddFeature(vw* all, const char* key, const char* value)
+  void AddFeature(VW::workspace* all, const char* key, const char* value)
   {
     ftrs->push_back(1., VW::chain_hash(*all, key, value, namespace_hash));
     feature_count++;
@@ -60,7 +60,7 @@ struct Namespace
 };
 
 template <bool audit>
-void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespaces, vw& all)
+void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespaces, VW::workspace& all)
 {
   Namespace<audit> n;
   n.feature_group = ns[0];

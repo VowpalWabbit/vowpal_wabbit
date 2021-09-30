@@ -338,7 +338,7 @@ void learn(cats_tree& tree, single_learner& base, example& ec)
 base_learner* setup(setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   option_group_definition new_options("CATS Tree Options");
   uint32_t num_actions;  // = K = 2^D

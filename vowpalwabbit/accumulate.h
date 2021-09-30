@@ -6,7 +6,7 @@
 #pragma once
 #include "global_data.h"
 
-void accumulate(vw& all, parameters& weights, size_t o);
-float accumulate_scalar(vw& all, float local_sum);
-void accumulate_weighted_avg(vw& all, parameters& weights);
-void accumulate_avg(vw& all, parameters& weights, size_t o);
+void accumulate(VW::workspace& all, parameters& weights, size_t o);
+float accumulate_scalar(VW::workspace& all, float local_sum);
+void accumulate_weighted_avg(VW::workspace& all, parameters& weights);
+void accumulate_avg(VW::workspace& all, parameters& weights, size_t o);

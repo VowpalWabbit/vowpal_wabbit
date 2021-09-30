@@ -30,7 +30,7 @@ struct oja_n_update_data
 
 struct OjaNewton
 {
-  vw* all;
+  VW::workspace* all;
   std::shared_ptr<rand_state> _random_state;
   int m;
   int epoch_size;
@@ -337,7 +337,7 @@ struct OjaNewton
   }
 };
 
-void keep_example(vw& all, OjaNewton& /* ON */, example& ec) { output_and_account_example(all, ec); }
+void keep_example(VW::workspace& all, OjaNewton& /* ON */, example& ec) { output_and_account_example(all, ec); }
 
 void make_pred(oja_n_update_data& data, float x, float& wref)
 {
@@ -453,7 +453,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
 
 void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
 {
-  vw& all = *ON.all;
+  VW::workspace& all = *ON.all;
   if (read)
   {
     initialize_regressor(all);
@@ -478,7 +478,7 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
 base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
   auto ON = scoped_calloc_or_throw<OjaNewton>();
 

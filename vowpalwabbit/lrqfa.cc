@@ -14,7 +14,7 @@ using namespace VW::config;
 
 struct LRQFAstate
 {
-  vw* all;
+  VW::workspace* all;
   std::string field_name;
   int k;
   int field_id[256];
@@ -33,7 +33,7 @@ constexpr inline bool example_is_test(example& ec) { return ec.l.simple.label ==
 template <bool is_learn>
 void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 {
-  vw& all = *lrq.all;
+  VW::workspace& all = *lrq.all;
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
   for (namespace_index i : ec.indices) lrq.orig_size[i] = ec.feature_space[i].size();
@@ -135,7 +135,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   std::string lrqfa;
   option_group_definition new_options("Low Rank Quadratics FA");
   new_options.add(

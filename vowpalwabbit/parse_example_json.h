@@ -58,7 +58,7 @@ namespace logger = VW::io::logger;
 
 using namespace rapidjson;
 
-struct vw;
+namespace VW { struct workspace; }
 
 template <bool audit>
 struct BaseState;
@@ -237,7 +237,7 @@ public:
 
   LabelObjectState() : BaseState<audit>("LabelObject") {}
 
-  void init(vw* /* all */)
+  void init(VW::workspace* /* all */)
   {
     found = found_cb = found_cb_continuous = false;
 
@@ -1458,7 +1458,7 @@ private:
   std::unique_ptr<std::stringstream> error_ptr;
 
 public:
-  vw* all;
+  VW::workspace* all;
 
   // last "<key>": encountered
   const char* key;
@@ -1519,7 +1519,7 @@ public:
     root_state = &default_state;
   }
 
-  void init(vw* pall)
+  void init(VW::workspace* pall)
   {
     all = pall;
     key = " ";
@@ -1573,7 +1573,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 {
   Context<audit> ctx;
 
-  void init(vw* all, v_array<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
+  void init(VW::workspace* all, v_array<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
       VW::example_factory_t example_factory, void* example_factory_context,
       std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
   {
@@ -1631,7 +1631,7 @@ struct json_parser
 namespace VW
 {
 template <bool audit>
-void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t length,
+void read_line_json_s(VW::workspace& all, v_array<example*>& examples, char* line, size_t length,
     example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
@@ -1666,7 +1666,7 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
   // "Line: '"<< line_copy << "'");
 }
 
-inline bool apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
+inline bool apply_pdrop(VW::workspace& all, float pdrop, v_array<example*>& examples)
 {
   if (pdrop == 1.)
   {
@@ -1692,7 +1692,7 @@ inline bool apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
 
 // returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
-bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
+bool read_line_decision_service_json(VW::workspace& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
     example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
   if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
@@ -1747,7 +1747,7 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 }  // namespace VW
 
 template <bool audit>
-bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
+bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, v_array<example*>& examples)
 {
   if (all->example_parser->decision_service_json)
   {
@@ -1818,7 +1818,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
   return true;
 }
 
-inline void append_empty_newline_example_for_driver(vw* all, v_array<example*>& examples)
+inline void append_empty_newline_example_for_driver(VW::workspace* all, v_array<example*>& examples)
 {
   // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
   // since the communication between the parsing thread the main learner expects examples to be requested in order (as
@@ -1840,7 +1840,7 @@ inline void append_empty_newline_example_for_driver(vw* all, v_array<example*>& 
 
 // This is used by the python parser
 template <bool audit>
-void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<example*>& examples)
+void line_to_examples_json(VW::workspace* all, const char* line, size_t num_chars, v_array<example*>& examples)
 {
   // The JSON reader does insitu parsing and therefore modifies the input
   // string, so we make a copy since this function cannot modify the input
@@ -1860,7 +1860,7 @@ void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<
 }
 
 template <bool audit>
-int read_features_json(vw* all, io_buf& buf, v_array<example*>& examples)
+int read_features_json(VW::workspace* all, io_buf& buf, v_array<example*>& examples)
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;

@@ -28,7 +28,6 @@
 #include "io/logger.h"
 namespace logger = VW::io::logger;
 
-
 struct global_prediction
 {
   float p;
@@ -89,17 +88,21 @@ int print_tag_by_ref(std::stringstream& ss, const v_array<char>& tag)
   return tag.begin() != tag.end();
 }
 
-std::string vw::get_setupfn_name(reduction_setup_fn setup_fn)
+namespace VW
 {
-  const auto loc = _setup_name_map.find(setup_fn);
-  if (loc != _setup_name_map.end()) return loc->second;
-  return "NA";
+  std::string workspace::get_setupfn_name(reduction_setup_fn setup_fn)
+  {
+    const auto loc = _setup_name_map.find(setup_fn);
+    if (loc != _setup_name_map.end()) return loc->second;
+    return "NA";
+  }
+
+  void workspace::build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
+  {
+    for (auto&& setup_tuple : reduction_stack) { _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple); }
+  }
 }
 
-void vw::build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
-{
-  for (auto&& setup_tuple : reduction_stack) { _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple); }
-}
 
 
 void print_result_by_ref(VW::io::writer* f, float res, float, const v_array<char>& tag)
@@ -139,7 +142,9 @@ void set_mm(shared_data* sd, float label)
 
 void noop_mm(shared_data*, float) {}
 
-void vw::learn(example& ec)
+namespace VW
+{
+void workspace::learn(example& ec)
 {
   if (l->is_multiline) THROW("This reduction does not support single-line examples.");
 
@@ -156,7 +161,7 @@ void vw::learn(example& ec)
   }
 }
 
-void vw::learn(multi_ex& ec)
+void workspace::learn(multi_ex& ec)
 {
   if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
 
@@ -173,7 +178,7 @@ void vw::learn(multi_ex& ec)
   }
 }
 
-void vw::predict(example& ec)
+void workspace::predict(example& ec)
 {
   if (l->is_multiline) THROW("This reduction does not support single-line examples.");
 
@@ -183,7 +188,7 @@ void vw::predict(example& ec)
   VW::LEARNER::as_singleline(l)->predict(ec);
 }
 
-void vw::predict(multi_ex& ec)
+void workspace::predict(multi_ex& ec)
 {
   if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
 
@@ -194,19 +199,20 @@ void vw::predict(multi_ex& ec)
   VW::LEARNER::as_multiline(l)->predict(ec);
 }
 
-void vw::finish_example(example& ec)
+void workspace::finish_example(example& ec)
 {
   if (l->is_multiline) THROW("This reduction does not support single-line examples.");
 
   VW::LEARNER::as_singleline(l)->finish_example(*this, ec);
 }
 
-void vw::finish_example(multi_ex& ec)
+void workspace::finish_example(multi_ex& ec)
 {
   if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
 
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
+}  // namespace VW
 
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool /*quiet*/)
 {
@@ -233,7 +239,9 @@ void compile_limits(std::vector<std::string> limits, std::array<uint32_t, NUM_NA
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 
-vw::vw() : options(nullptr, nullptr)
+namespace VW
+{
+workspace::workspace() : options(nullptr, nullptr)
 {
   sd = new shared_data();
   // Default is stderr.
@@ -331,7 +339,7 @@ vw::vw() : options(nullptr, nullptr)
 }
 VW_WARNING_STATE_POP
 
-vw::~vw()
+workspace::~workspace()
 {
   if (l != nullptr)
   {
@@ -351,3 +359,5 @@ vw::~vw()
 
   delete all_reduce;
 }
+
+}  // namespace VW

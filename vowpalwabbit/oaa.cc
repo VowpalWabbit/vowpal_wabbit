@@ -23,7 +23,7 @@ static constexpr bool PROBABILITIES = true;
 struct oaa
 {
   uint64_t k = 0;
-  vw* all = nullptr;                    // for raw
+  VW::workspace* all = nullptr;                    // for raw
   polyprediction* pred = nullptr;       // for multipredict
   uint64_t num_subsample = 0;           // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order = nullptr;  // for randomized subsampling, in what order should we touch classes
@@ -161,7 +161,7 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
 
 // TODO: partial code duplication with multiclass.cc:finish_example
 template <bool probabilities>
-void finish_example_scores(vw& all, oaa& o, example& ec)
+void finish_example_scores(VW::workspace& all, oaa& o, example& ec)
 {
   // === Compute multiclass_log_loss
   // TODO:
@@ -225,7 +225,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
 VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<oaa>();
   bool probabilities = false;
   bool scores = false;
@@ -274,7 +274,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   void (*pred_ptr)(oaa&, LEARNER::single_learner&, example&);
   std::string name_addition;
   prediction_type_t pred_type;
-  void (*finish_ptr)(vw&, oaa&, example&);
+  void (*finish_ptr)(VW::workspace&, oaa&, example&);
   if (probabilities || scores)
   {
     pred_type = prediction_type_t::scalars;

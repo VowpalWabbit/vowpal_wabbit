@@ -15,8 +15,8 @@ using namespace VW::config;
 
 struct scorer
 {
-  scorer(vw* all) : all(all) {}
-  vw* all;
+  scorer(VW::workspace* all) : all(all) {}
+  VW::workspace* all;
 };  // for set_minmax, loss
 
 template <bool is_learn, float (*link)(float in)>
@@ -72,7 +72,7 @@ inline float id(float in) { return in; }
 VW::LEARNER::base_learner* scorer_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   std::string link;
   option_group_definition new_options("scorer options");
   new_options.add(make_option("link", link)

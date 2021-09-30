@@ -77,7 +77,7 @@ void insert_ccb_interactions(std::vector<std::vector<namespace_index>>& interact
 
 struct ccb
 {
-  vw* all = nullptr;
+  VW::workspace* all = nullptr;
   example* shared = nullptr;
   std::vector<example*> actions, slots;
   std::vector<uint32_t> origin_index;
@@ -534,7 +534,7 @@ std::string generate_ccb_label_printout(const std::vector<example*>& slots)
   return label_ss.str();
 }
 
-void output_example(vw& all, ccb& c, multi_ex& ec_seq)
+void output_example(VW::workspace& all, ccb& c, multi_ex& ec_seq)
 {
   if (ec_seq.empty()) { return; }
 
@@ -585,7 +585,7 @@ void output_example(vw& all, ccb& c, multi_ex& ec_seq)
   VW::print_update_ccb(all, slots, preds, num_features);
 }
 
-void finish_multiline_example(vw& all, ccb& data, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, ccb& data, multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -619,7 +619,7 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<ccb>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;

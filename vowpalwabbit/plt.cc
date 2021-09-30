@@ -32,7 +32,7 @@ struct node
 
 struct plt
 {
-  vw* all;
+  VW::workspace* all;
 
   // tree structure
   uint32_t k;     // number of labels
@@ -267,7 +267,7 @@ void predict(plt& p, single_learner& base, example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
-void finish_example(vw& all, plt& /*p*/, example& ec)
+void finish_example(VW::workspace& all, plt& /*p*/, example& ec)
 {
   MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);
@@ -325,7 +325,7 @@ using namespace plt_ns;
 base_learner* plt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto tree = scoped_calloc_or_throw<plt>();
   option_group_definition new_options("Probabilistic Label Tree ");
   new_options.add(make_option("plt", tree->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))

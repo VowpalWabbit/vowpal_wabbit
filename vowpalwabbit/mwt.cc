@@ -40,7 +40,7 @@ struct mwt
 
   v_array<namespace_index> indices;  // excluded namespaces
   features feature_space[256];
-  vw* all;
+  VW::workspace* all;
 };
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
@@ -157,7 +157,7 @@ void print_scalars(VW::io::writer* f, v_array<float>& scalars, v_array<char>& ta
   }
 }
 
-void finish_example(vw& all, mwt& c, example& ec)
+void finish_example(VW::workspace& all, mwt& c, example& ec)
 {
   float loss = 0.;
   if (c.learn)
@@ -217,7 +217,7 @@ using namespace MWT;
 base_learner* mwt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto c = scoped_calloc_or_throw<mwt>();
   std::string s;
   bool exclude_eval = false;

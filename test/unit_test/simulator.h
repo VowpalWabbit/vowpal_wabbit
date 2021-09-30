@@ -19,14 +19,14 @@
 #include <vector>
 #include <string>
 
-struct vw;
+namespace VW { struct workspace; }
 
 namespace simulator
 {
 class cb_sim;
 // maps an int: # learned examples
 // with a function to 'test' at that point in time in the simulator
-using callback_map = typename std::map<size_t, std::function<bool(cb_sim&, vw&, multi_ex&)>>;
+using callback_map = typename std::map<size_t, std::function<bool(cb_sim&, VW::workspace&, multi_ex&)>>;
 
 class cb_sim
 {
@@ -49,14 +49,14 @@ public:
   std::vector<std::string> to_vw_example_format(
       const std::map<std::string, std::string>&, const std::string&, float = 0.f, float = 0.f);
   std::pair<int, float> sample_custom_pmf(std::vector<float>& pmf);
-  std::pair<std::string, float> get_action(vw* vw, const std::map<std::string, std::string>&);
+  std::pair<std::string, float> get_action(VW::workspace* vw, const std::map<std::string, std::string>&);
   const std::string& choose_user();
   const std::string& choose_time_of_day();
-  std::vector<float> run_simulation(vw*, size_t, bool = true, size_t = 1);
-  std::vector<float> run_simulation_hook(vw*, size_t, callback_map&, bool = true, size_t = 1);
+  std::vector<float> run_simulation(VW::workspace*, size_t, bool = true, size_t = 1);
+  std::vector<float> run_simulation_hook(VW::workspace*, size_t, callback_map&, bool = true, size_t = 1);
 
 private:
-  void call_if_exists(vw&, multi_ex&, const callback_map&, const size_t);
+  void call_if_exists(VW::workspace&, multi_ex&, const callback_map&, const size_t);
 };
 
 std::vector<float> _test_helper(const std::string&, size_t = 3000, int = 10);

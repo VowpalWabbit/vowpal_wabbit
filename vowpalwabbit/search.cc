@@ -162,7 +162,7 @@ private:
 public:
   using cache_map = std::unordered_map<byte_array, scored_action, cached_item_hash, cached_item_equivalent>;
 
-  vw* all;
+  VW::workspace* all;
   std::shared_ptr<rand_state> _random_state;
 
   uint64_t offset;
@@ -407,7 +407,7 @@ int select_learner(search_private& priv, int policy, size_t learner_id, bool is_
   }
 }
 
-bool should_print_update(vw& all, bool hit_new_pass = false)
+bool should_print_update(VW::workspace& all, bool hit_new_pass = false)
 {
   // uncomment to print out final loss after all examples processed
   // commented for now so that outputs matches make test
@@ -418,7 +418,7 @@ bool should_print_update(vw& all, bool hit_new_pass = false)
   return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
 }
 
-bool might_print_update(vw& all)
+bool might_print_update(VW::workspace& all)
 {
   // basically do should_print_update but check me and the next
   // example because of off-by-ones
@@ -428,7 +428,7 @@ bool might_print_update(vw& all)
   return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.logger.quiet && !all.bfgs;
 }
 
-bool must_run_test(vw& all, multi_ex& ec, bool is_test_ex)
+bool must_run_test(VW::workspace& all, multi_ex& ec, bool is_test_ex)
 {
   return (all.final_prediction_sink.size() > 0) ||  // if we have to produce output, we need to run this
       might_print_update(all) ||                    // if we have to print and update to stderr
@@ -487,7 +487,7 @@ void print_update(search_private& priv)
   // TODO: This function should be outputting to trace_message(?), but is mixing ostream and printf formats
   //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
   //       to ostream format
-  vw& all = *priv.all;
+  VW::workspace& all = *priv.all;
   if (!priv.printed_output_header && !all.logger.quiet)
   {
     const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
@@ -1079,7 +1079,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     action override_action)  // if override_action != -1, then we return it as the action and a_cost is set to the
                              // appropriate cost for that action
 {
-  vw& all = *priv.all;
+  VW::workspace& all = *priv.all;
   polylabel old_label = ec.l;
   bool need_partial_predictions = need_memo_foreach_action(priv) ||
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != static_cast<action>(-1)) ||
@@ -2020,7 +2020,7 @@ template <bool is_learn>
 void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, multi_ex& ec_seq)
 {
   search_private& priv = *sch.priv;
-  vw& all = *priv.all;
+  VW::workspace& all = *priv.all;
   bool ran_test = false;  // we must keep track so that even if we skip test, we still update # of examples seen
 
   // if (! priv.no_caching)
@@ -2269,7 +2269,7 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
 void end_pass(search& sch)
 {
   search_private& priv = *sch.priv;
-  vw* all = priv.all;
+  VW::workspace* all = priv.all;
   priv.hit_new_pass = true;
   priv.read_example_last_pass++;
   priv.passes_since_new_policy++;
@@ -2290,7 +2290,7 @@ void end_pass(search& sch)
   }
 }
 
-void finish_multiline_example(vw& all, search& sch, multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, search& sch, multi_ex& ec_seq)
 {
   print_update(*sch.priv);
   VW::finish_example(all, ec_seq);
@@ -2299,7 +2299,7 @@ void finish_multiline_example(vw& all, search& sch, multi_ex& ec_seq)
 void end_examples(search& sch)
 {
   search_private& priv = *sch.priv;
-  vw* all = priv.all;
+  VW::workspace* all = priv.all;
 
   if (all->training)
   {
@@ -2318,7 +2318,7 @@ void end_examples(search& sch)
 
 bool mc_label_is_test(polylabel* lab) { return MC::test_label(lab->multi); }
 
-void search_initialize(vw* all, search& sch)
+void search_initialize(VW::workspace* all, search& sch)
 {
   search_private& priv = *sch.priv;  // priv is zero initialized by default
   priv.all = all;
@@ -2369,7 +2369,7 @@ void ensure_param(float& v, float lo, float hi, float def, const char* str)
   }
 }
 
-void handle_condition_options(vw& all, auto_condition_settings& acset)
+void handle_condition_options(VW::workspace& all, auto_condition_settings& acset)
 {
   option_group_definition new_options("Search Auto-conditioning Options");
   new_options.add(make_option("search_max_bias_ngram_length", acset.max_bias_ngram_length)
@@ -2497,7 +2497,7 @@ void parse_neighbor_features(VW::string_view nf_strview, search& sch)
 base_learner* setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   free_ptr<search> sch = scoped_calloc_or_throw<search>();
   search_private& priv = *sch->priv;
   std::string task_string;
@@ -2926,7 +2926,7 @@ std::string search::pretty_label(action a)
   }
 }
 
-vw& search::get_vw_pointer_unsafe() { return *this->priv->all; }
+VW::workspace& search::get_vw_pointer_unsafe() { return *this->priv->all; }
 void search::set_force_oracle(bool force) { this->priv->force_oracle = force; }
 
 // predictor implementation

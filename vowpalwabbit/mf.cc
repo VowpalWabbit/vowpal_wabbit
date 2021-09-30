@@ -35,7 +35,7 @@ struct mf
   // array for temp storage of features
   features temp_features;
 
-  vw* all;  // for pairs? and finalize
+  VW::workspace* all;  // for pairs? and finalize
 };
 
 template <bool cache_sub_predictions>
@@ -188,7 +188,7 @@ void learn(mf& data, single_learner& base, example& ec)
 base_learner* mf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = scoped_calloc_or_throw<mf>();
   option_group_definition new_options("Matrix Factorization Reduction");
   new_options.add(

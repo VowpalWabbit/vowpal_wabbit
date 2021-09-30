@@ -6,7 +6,7 @@
 #include <memory>
 
 struct shared_data;
-struct vw;
+namespace VW { struct workspace; }
 
 class loss_function
 {
@@ -40,4 +40,4 @@ public:
   virtual ~loss_function() = default;
 };
 
-std::unique_ptr<loss_function> getLossFunction(vw&, const std::string& funcName, float function_parameter = 0);
+std::unique_ptr<loss_function> getLossFunction(VW::workspace&, const std::string& funcName, float function_parameter = 0);

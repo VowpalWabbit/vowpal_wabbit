@@ -49,7 +49,7 @@ struct warm_cb
   action_scores a_s;
   // used as the seed
   size_t example_counter;
-  vw* all;
+  VW::workspace* all;
   std::shared_ptr<rand_state> _random_state;
   multi_ex ecs;
   float loss0;
@@ -522,7 +522,7 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
 base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   uint32_t num_actions = 0;
   auto data = scoped_calloc_or_throw<warm_cb>();
   bool use_cs;

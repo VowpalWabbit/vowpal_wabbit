@@ -6,7 +6,7 @@
 #pragma once
 #include "reductions_fwd.h"
 
-struct vw;
+namespace VW { struct workspace; }
 
 namespace VW
 {

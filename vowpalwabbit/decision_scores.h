@@ -17,7 +17,7 @@ struct action_score;
 typedef v_array<action_score> action_scores;
 }  // namespace ACTION_SCORE
 
-struct vw;
+namespace VW { struct workspace; }
 struct example;
 
 namespace VW
@@ -29,7 +29,7 @@ using decision_scores_t = std::vector<ACTION_SCORE::action_scores>;
 void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decision_scores);
 
 void print_update_ccb(
-    vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features);
+    VW::workspace& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features);
 void print_update_slates(
-    vw& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features);
+    VW::workspace& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features);
 }  // namespace VW

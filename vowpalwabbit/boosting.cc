@@ -39,7 +39,7 @@ struct boosting
   int N;
   float gamma;
   std::string alg;
-  vw* all;
+  VW::workspace* all;
   std::shared_ptr<rand_state> _random_state;
   std::vector<std::vector<int64_t> > C;
   std::vector<float> alpha;
@@ -312,7 +312,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   logger::errlog_info("{}", fmt::to_string(buffer));
 }
 
-void return_example(vw& all, boosting& /* a */, example& ec)
+void return_example(VW::workspace& all, boosting& /* a */, example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all, ec);
@@ -366,7 +366,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   free_ptr<boosting> data = scoped_calloc_or_throw<boosting>();
   option_group_definition new_options("Boosting");
   new_options.add(make_option("boosting", data->N).keep().necessary().help("Online boosting with <N> weak learners"))

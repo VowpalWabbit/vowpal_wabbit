@@ -103,7 +103,7 @@ void predict_or_learn(sample_pdf& reduction, single_learner&, example& ec)
 LEARNER::base_learner* sample_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  vw& all = *stack_builder.get_all_pointer();
+  VW::workspace& all = *stack_builder.get_all_pointer();
   option_group_definition new_options("Continuous actions - sample pdf");
   bool invoked = false;
   new_options.add(
