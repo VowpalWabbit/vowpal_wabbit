@@ -61,6 +61,14 @@ using options_deleter_type = void (*)(VW::config::options_i*);
 
 struct shared_data;
 
+namespace VW
+{
+  struct workspace;
+}
+
+// TODO: deprecate this alias.
+using vw = VW::workspace;
+
 struct dictionary_info
 {
   std::string name;

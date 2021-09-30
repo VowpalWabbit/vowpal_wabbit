@@ -37,9 +37,6 @@
 
 #include "compat.h"
 
-// TODO: deprecate this alias.
-using vw = VW::workspace;
-
 namespace VW
 {
 /*    Caveats:
