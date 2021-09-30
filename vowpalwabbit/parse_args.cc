@@ -1569,7 +1569,6 @@ vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> opt
   }
   catch (VW::save_load_model_exception& e)
   {
-    const bool DETETE_ALL = true;
     std::stringstream better_msg;
     better_msg << e.what() << " , model files = ";
     for(const auto& regressor_name : all.initial_regressors)
