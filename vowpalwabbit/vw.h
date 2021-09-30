@@ -73,7 +73,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2);
 /*
   Call finish() after you are done with the vw instance.  This cleans up memory usage.
  */
-void finish(vw& all, bool delete_all = true, bool finalize_reductions = true);
+void finish(vw& all, bool delete_all = true);
 void sync_stats(vw& all);
 
 void start_parser(vw& all);
