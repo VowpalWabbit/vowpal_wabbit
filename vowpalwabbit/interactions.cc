@@ -90,6 +90,11 @@ float calculate_count_and_sum_ft_sq_for_combinations(const std::array<features, 
         for (auto ns_end = interaction_term_it + 2; ns_end < inter.end(); ++ns_end)
         {
           if (*interaction_term_it == *ns_end) { ++order_of_inter; }
+          else
+          {
+            // Since the list is sorted, as soon as they don't match we can exit.
+            break;
+          }
         }
         results.resize(order_of_inter);
         std::fill(results.begin(), results.end(), 0.f);
