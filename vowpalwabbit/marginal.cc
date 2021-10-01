@@ -26,7 +26,7 @@ struct expert
 };
 
 typedef std::pair<double, double> marginal;
-typedef std::pair<expert, expert> expert_pair;
+using expert_pair = std::pair<expert, expert>;
 
 struct data
 {

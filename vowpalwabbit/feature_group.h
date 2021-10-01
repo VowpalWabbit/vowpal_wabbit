@@ -104,8 +104,8 @@ public:
 
   audit_features_iterator(const audit_features_iterator&) = default;
   audit_features_iterator& operator=(const audit_features_iterator&) = default;
-  audit_features_iterator(audit_features_iterator&&) = default;
-  audit_features_iterator& operator=(audit_features_iterator&&) = default;
+  audit_features_iterator(audit_features_iterator&&) noexcept = default;
+  audit_features_iterator& operator=(audit_features_iterator&&) noexcept = default;
 
   inline feature_value_type_t& value() { return *_begin_values; }
   inline const feature_value_type_t& value() const { return *_begin_values; }
@@ -288,8 +288,8 @@ public:
 
   features_iterator(const features_iterator&) = default;
   features_iterator& operator=(const features_iterator&) = default;
-  features_iterator(features_iterator&&) = default;
-  features_iterator& operator=(features_iterator&&) = default;
+  features_iterator(features_iterator&&) noexcept = default;
+  features_iterator& operator=(features_iterator&&) noexcept = default;
 
   inline feature_value_type_t& value() { return *_begin_values; }
   inline const feature_value_type_t& value() const { return *_begin_values; }

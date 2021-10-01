@@ -221,6 +221,7 @@ std::vector<features_range_t> inline generate_generic_char_combination(
     const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& terms)
 {
   std::vector<features_range_t> inter;
+  inter.reserve(terms.size());
   for (const auto& term : terms)
   { inter.emplace_back(feature_groups[term].audit_begin(), feature_groups[term].audit_end()); }
   return inter;
