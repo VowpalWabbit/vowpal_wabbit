@@ -939,9 +939,9 @@ public:
         if(!ctx.decision_service_data) {
           THROW("_original_label_cost is only valid in DSJson");
         }
-        ctx.float_state.output_float = &ctx.decision_service_data->originalLabelCost;
-        ctx.float_state.return_state = this;
-        return &ctx.float_state;
+        ctx.float_state_add.output_float = &ctx.decision_service_data->originalLabelCost;
+        ctx.float_state_add.return_state = this;
+        return &ctx.float_state_add;
       }
 
       else if (ctx.key_length == 5 && !_stricmp(ctx.key, "__aid"))
@@ -1174,7 +1174,18 @@ public:
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override { return return_state; }
 };
 
-template <bool audit>
+// AggrFunc prototype is void (*)(float *input_output, float f);
+// Basic Aggregation Types
+namespace float_aggregation {
+inline void set(float* output, float f) {
+  *output = f;
+}
+inline void add(float* output, float f) {
+  *output += f;
+}
+}
+
+template <bool audit, void (*func)(float*, float)>
 class FloatToFloatState : public BaseState<audit>
 {
 public:
@@ -1185,7 +1196,8 @@ public:
 
   BaseState<audit>* Float(Context<audit>& /*ctx*/, float f) override
   {
-    *output_float = f;
+    func(output_float, f);
+    //*output_float = f;
     return return_state;
   }
 
@@ -1440,9 +1452,9 @@ public:
       }
       else if (length == 20 && !strncmp(str, "_original_label_cost", 20))
       {
-        ctx.float_state.output_float = &data->originalLabelCost;
-        ctx.float_state.return_state = this;
-        return &ctx.float_state;
+        ctx.float_state_add.output_float = &data->originalLabelCost;
+        ctx.float_state_add.return_state = this;
+        return &ctx.float_state_add;
       }
     }
 
@@ -1505,7 +1517,8 @@ public:
   ArrayToVectorState<audit, float> array_float_state;
   ArrayToVectorState<audit, unsigned> array_uint_state;
   StringToStringState<audit> string_state;
-  FloatToFloatState<audit> float_state;
+  FloatToFloatState<audit, float_aggregation::set> float_state;
+  FloatToFloatState<audit, float_aggregation::add> float_state_add;
   UIntToUIntState<audit> uint_state;
   UIntDedupState<audit> uint_dedup_state;
   BoolToBoolState<audit> bool_state;
