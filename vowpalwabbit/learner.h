@@ -115,17 +115,6 @@ struct save_metric_data
   fn save_metric_f = nullptr;
 };
 
-// used for automl
-struct multiconfig_data
-{
-  using fn_copy = void (*)(void*, base_learner& base, size_t, size_t);
-  using fn_clear = void (*)(void*, base_learner& base, size_t);
-  void* data = nullptr;
-  base_learner* base = nullptr;
-  fn_copy copy_notify_f = nullptr;
-  fn_clear clear_notify_f = nullptr;
-};
-
 struct finish_example_data
 {
   using fn = void (*)(vw&, void* data, void* ex);
@@ -141,8 +130,6 @@ void generic_driver_onethread(vw& all);
 
 inline void noop_save_load(void*, io_buf&, bool, bool) {}
 inline void noop_persist_metrics(void*, metric_sink&) {}
-inline void noop_copy(void*, base_learner&, size_t, size_t) {}
-inline void noop_clear(void*, base_learner&, size_t) {}
 inline void noop(void*) {}
 inline float noop_sensitivity(void*, base_learner&, example&)
 {
@@ -265,16 +252,15 @@ private:
   func_data end_pass_fd;
   func_data end_examples_fd;
   save_metric_data persist_metrics_fd;
-  multiconfig_data copy_clear_fd;
   func_data finisher_fd;
   std::string name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
 
+  std::shared_ptr<void> learner_data;
 
   learner(){};  // Should only be able to construct a learner through
                 // init_learner function
 
 public:
-  std::shared_ptr<void> learner_data;  // oops for now
   prediction_type_t pred_type;
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
@@ -296,6 +282,8 @@ public:
   {
     VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
   }
+
+  void* get_internal_type_erased_data_pointer_test_use_only() { return learner_data.get(); }
 
   /// \brief Will update the model according to the labels and examples supplied.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
@@ -458,20 +446,6 @@ public:
     persist_metrics_fd.base = learn_fd.base;
   }
 
-  // non-recursive
-  void copy_offset_based(size_t from, size_t to)
-  {
-    // apply increment to match learn(ex, i) behaviour
-    copy_clear_fd.copy_notify_f(copy_clear_fd.data, *copy_clear_fd.base, increment * from, increment * to);
-  }
-
-  // non-recursive
-  void clear_offset_based(size_t offset)
-  {
-    // apply increment to match learn(ex, i) behaviour
-    copy_clear_fd.clear_notify_f(copy_clear_fd.data, *copy_clear_fd.base, increment * offset);
-  }
-
   // called to clean up state.  Autorecursive.
   void set_finish(void (*f)(T&))
   {
@@ -605,8 +579,6 @@ public:
       ret.end_pass_fd.func = static_cast<func_data::fn>(noop);
       ret.end_examples_fd.func = static_cast<func_data::fn>(noop);
       ret.persist_metrics_fd.save_metric_f = static_cast<save_metric_data::fn>(noop_persist_metrics);
-      ret.copy_clear_fd.copy_notify_f = static_cast<multiconfig_data::fn_copy>(noop_copy);
-      ret.copy_clear_fd.clear_notify_f = static_cast<multiconfig_data::fn_clear>(noop_clear);
       ret.init_fd.func = static_cast<func_data::fn>(noop);
       ret.save_load_fd.save_load_f = static_cast<save_load_data::fn>(noop_save_load);
       ret.finisher_fd.data = dat;
@@ -925,22 +897,6 @@ struct common_learner_builder
     _learner->persist_metrics_fd.base = _learner->learn_fd.base;
     return *static_cast<FluentBuilderT*>(this);
   }
-
-  FluentBuilderT& set_copy(void (*fn_ptr)(DataT&, size_t& from, size_t& to))
-  {
-    _learner->copy_clear_fd.copy_notify_f = (multiconfig_data::fn_copy)fn_ptr;
-    _learner->copy_clear_fd.data = _learner->learn_fd.data;
-    _learner->copy_clear_fd.base = _learner->learn_fd.base;
-    return *static_cast<FluentBuilderT*>(this);
-  }
-
-  FluentBuilderT& set_reset_zero(void (*fn_ptr)(DataT&, size_t&))
-  {
-    _learner->copy_clear_fd.clear_notify_f = (multiconfig_data::fn_clear)fn_ptr;
-    _learner->copy_clear_fd.data = _learner->learn_fd.data;
-    _learner->copy_clear_fd.base = _learner->learn_fd.base;
-    return *static_cast<FluentBuilderT*>(this);
-  }
 };
 
 template <class DataT, class ExampleT, class BaseLearnerT>
@@ -1054,8 +1010,6 @@ struct base_learner_builder
             std::move(data), name)
   {
     this->_learner->persist_metrics_fd.save_metric_f = static_cast<save_metric_data::fn>(noop_persist_metrics);
-    this->_learner->copy_clear_fd.copy_notify_f = static_cast<multiconfig_data::fn_copy>(noop_copy);
-    this->_learner->copy_clear_fd.clear_notify_f = static_cast<multiconfig_data::fn_clear>(noop_clear);
     this->_learner->end_pass_fd.func = static_cast<func_data::fn>(noop);
     this->_learner->end_examples_fd.func = static_cast<func_data::fn>(noop);
     this->_learner->init_fd.func = static_cast<func_data::fn>(noop);

@@ -84,7 +84,8 @@ VW::automl::automl<interaction_config_manager>* get_automl_data(vw& all)
 
   VW::LEARNER::multi_learner* automl_learner = as_multiline(all.l->get_learner_by_name_prefix("automl"));
 
-  return (VW::automl::automl<interaction_config_manager>*)automl_learner->learner_data.get();
+  return (VW::automl::automl<interaction_config_manager>*)
+      automl_learner->get_internal_type_erased_data_pointer_test_use_only();
 }
 }  // namespace aml_test
 
@@ -247,24 +248,6 @@ BOOST_AUTO_TEST_CASE(cpp_simulator_automl)
       "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics --automl 3 --priority_type "
       "least_exclusion");
   BOOST_CHECK_GT(ctr.back(), 0.6f);
-}
-
-BOOST_AUTO_TEST_CASE(learner_copy_clear_test)
-{
-  callback_map test_hooks;
-
-  test_hooks.emplace(10, [&](cb_sim&, vw& all, multi_ex&) {
-    all.l->copy_offset_based(0, 1);
-    all.l->clear_offset_based(0);
-
-    // no-op for now
-
-    return true;
-  });
-
-  auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks,
-      10);
 }
 
 BOOST_AUTO_TEST_CASE(namespace_switch)
