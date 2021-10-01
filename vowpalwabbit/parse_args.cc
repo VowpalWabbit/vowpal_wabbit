@@ -1542,7 +1542,7 @@ vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> opt
     parse_sources(*all.options, all, *model, skip_model_load);
 
     // we must delay so parse_mask is fully defined.
-    for (const auto& dictionary_namespace : dictionary_namespaces) parse_dictionary_argument(all, dictionary_namespace);
+    for (const auto& name_space : dictionary_namespaces) parse_dictionary_argument(all, name_space);
 
     all.options->check_unregistered();
 
@@ -1569,11 +1569,11 @@ vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> opt
   }
   catch (VW::save_load_model_exception& e)
   {
-    auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all.initial_regressors, ", ");
+    auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all.initial_regressors, ", "));
 
     delete &all;
 
-    throw save_load_model_exception(e.Filename(), e.LineNumber(), better_msg.str());
+    throw save_load_model_exception(e.Filename(), e.LineNumber(), msg);
   }
   catch (std::exception& e)
   {
