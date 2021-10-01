@@ -32,6 +32,7 @@ vw* setup(options_i& options)
   }
   catch (const std::exception& ex)
   {
+    std::cout << ex.what() << std::endl;
     throw;
   }
   catch (...)
