@@ -516,12 +516,12 @@ std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view s
   tokenize('|', str, tokens, true);
   for (const auto& token : tokens)
   {
-    if (token.empty()) { THROW("A term in --new_full_interactions cannot be empty. Given: " << str) }
+    if (token.empty()) { THROW("A term in --experimental_full_name_interactions cannot be empty. Given: " << str) }
     if (std::find(token.begin(), token.end(), ':') != token.end())
     {
       if (token.size() != 1)
       {
-        THROW("A wildcard term in --new_full_interactions cannot contain characters other than ':'. Found: " << token)
+        THROW("A wildcard term in --experimental_full_name_interactions cannot contain characters other than ':'. Found: " << token)
       }
       result.emplace_back(wildcard_namespace, wildcard_namespace);
     }
@@ -601,7 +601,7 @@ void parse_feature_tweaks(
       .add(make_option("interactions", interactions)
                .keep()
                .help("Create feature interactions of any level between namespaces."))
-      .add(make_option("new_full_interactions", full_name_interactions)
+      .add(make_option("experimental_full_name_interactions", full_name_interactions)
                .keep()
                .help("EXPERIMENTAL: Create feature interactions of any level between namespaces by specifying the full "
                      "name of each namespace."))
@@ -776,7 +776,7 @@ void parse_feature_tweaks(
     all.interactions = std::move(decoded_interactions);
   }
 
-  if (options.was_supplied("new_full_interactions"))
+  if (options.was_supplied("experimental_full_name_interactions"))
   {
     for (const auto& i : full_name_interactions)
     {

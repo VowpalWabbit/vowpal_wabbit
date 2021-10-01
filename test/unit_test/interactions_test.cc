@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
 BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_combinations_test)
 {
   auto& vw = *VW::initialize(
-      "--quiet --new_full_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant", nullptr, false, nullptr, nullptr);
+      "--quiet --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant", nullptr, false, nullptr, nullptr);
   auto* ex = VW::read_example(vw, "3 |fff a b c |eee x y z |ggg a b |gg c d");
 
   size_t naive_features_count;
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_combinations_test)
 
 BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_permutations_test)
 {
-  auto& vw = *VW::initialize("--quiet -permutations --new_full_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant",
+  auto& vw = *VW::initialize("--quiet -permutations --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant",
       nullptr, false, nullptr, nullptr);
   auto* ex = VW::read_example(vw, "3 |fff a b c |eee x y z |ggg a b |gg c d");
 
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
 BOOST_AUTO_TEST_CASE(extent_vs_char_interactions)
 {
   auto* vw_char_inter = VW::initialize("--quiet -q AB");
-  auto* vw_extent_inter = VW::initialize("--quiet --new_full_interactions group1|group2");
+  auto* vw_extent_inter = VW::initialize("--quiet --experimental_full_name_interactions group1|group2");
   auto cleanup = VW::scope_exit([&]() {
     VW::finish(*vw_char_inter);
     VW::finish(*vw_extent_inter);
