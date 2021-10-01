@@ -8,6 +8,7 @@
 #include "learner.h"
 #include "io/logger.h"
 #include "vw.h"
+#include "model_utils.h"
 
 #include <cfloat>
 
@@ -133,30 +134,18 @@ void scored_config::update(float w, float r)
   last_r = r;
 }
 
-void scored_config::save_load_scored_config(io_buf& model_file, bool read, bool text)
+void scored_config::save_load_scored_config(io_buf& io, bool read, bool text)
 {
-  if (model_file.num_files() == 0) { return; }
-  std::stringstream msg;
-  if (!read) msg << "_aml_config_ips " << ips << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ips), sizeof(ips), read, msg, text);
+  if (io.num_files() == 0) { return; }
 
-  if (!read) msg << "_aml_config_count " << update_count << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&update_count), sizeof(update_count), read, msg, text);
+  VW::model_utils::process_model_field(io, ips, read, "_aml_config_ips", text);
+  VW::model_utils::process_model_field(io, update_count, read, "_aml_config_count", text);
+  VW::model_utils::process_model_field(io, last_w, read, "_aml_config_lastw", text);
+  VW::model_utils::process_model_field(io, last_r, read, "_aml_config_lastr", text);
+  VW::model_utils::process_model_field(io, config_index, read, "_aml_config_index", text);
+  VW::model_utils::process_model_field(io, eligible_to_inactivate, read, "_aml_config_eligible_to_inactivate", text);
 
-  if (!read) msg << "_aml_config_lastw " << last_w << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&last_w), sizeof(last_w), read, msg, text);
-
-  if (!read) msg << "_aml_config_lastr " << last_r << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&last_r), sizeof(last_r), read, msg, text);
-
-  if (!read) msg << "_aml_config_index " << config_index << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&config_index), sizeof(config_index), read, msg, text);
-
-  if (!read) msg << "_aml_config_eligible_to_inactivate " << eligible_to_inactivate << "\n";
-  bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&eligible_to_inactivate), sizeof(eligible_to_inactivate), read, msg, text);
-
-  chisq.save_load(model_file, read, text);
+  chisq.save_load(io, read, text);
 }
 
 void scored_config::persist(metric_sink& metrics, const std::string& suffix)
@@ -226,14 +215,9 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
     }
   }
 
-  if (!read) msg << "_aml_lease " << lease << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&lease), sizeof(lease), read, msg, text);
-
-  if (!read) msg << "_aml_ips " << ips << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ips), sizeof(ips), read, msg, text);
-
-  if (!read) msg << "_aml_lower_bound " << lower_bound << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&lower_bound), sizeof(lower_bound), read, msg, text);
+  VW::model_utils::process_model_field(model_file, lease, read, "_aml_lease", text);
+  VW::model_utils::process_model_field(model_file, ips, read, "_aml_ips", text);
+  VW::model_utils::process_model_field(model_file, lower_bound, read, "_aml_lower_bound", text);
 
   if (!read) msg << "_aml_state " << static_cast<int>(state) << "\n";
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&state), sizeof(state), read, msg, text);
@@ -557,13 +541,8 @@ void interaction_config_manager::save_load(io_buf& model_file, bool read, bool t
   bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&current_state), sizeof(current_state), read, msg, text);
 
-  if (!read) msg << "_aml_cm_count " << total_learn_count << "\n";
-  bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&total_learn_count), sizeof(total_learn_count), read, msg, text);
-
-  if (!read) msg << "_aml_cm_champ " << current_champ << "\n";
-  bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&current_champ), sizeof(current_champ), read, msg, text);
+  VW::model_utils::process_model_field(model_file, total_learn_count, read, "_aml_cm_count", text);
+  VW::model_utils::process_model_field(model_file, current_champ, read, "_aml_cm_champ", text);
 
   size_t config_size;
   size_t ns_counter_size;
