@@ -326,13 +326,19 @@ sub next_test() {
     }
 
     if ($cmd =~ /{VW}/) {
-         $cmd = trim_spaces($cmd);
-         $cmd =~ s/{VW}/$VW$opt_O/g;
+        $cmd = trim_spaces($cmd);
+        # IF {SPANNING_TREE} is also present it is the python test so dont add the additional VW args.
+        if ($cmd =~ /{SPANNING_TREE}/) {
+            $cmd =~ s/{VW}/$VW/g;
+        }
+        else{
+            $cmd =~ s/{VW}/$VW$opt_O/g;
+        }
     }
 
     $spanning_tree_bin = '../build/cluster/spanning_tree';
     if ($cmd =~ /{SPANNING_TREE}/) {
-         $cmd =~ s/{SPANNING_TREE}/$spanning_tree_bin/g;
+        $cmd =~ s/{SPANNING_TREE}/$spanning_tree_bin/g;
     }
 
     if ($cmd =~ /--flatbuffer/) {
