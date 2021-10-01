@@ -394,7 +394,8 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
   {
     const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info");
     size_t counter = 0;
-    INTERACTIONS::generate_generic_extent_combination_iterative(ex->feature_space, extent_terms,
+    INTERACTIONS::generate_generic_extent_combination_iterative(
+        ex->feature_space, extent_terms,
         [&](const std::vector<INTERACTIONS::features_range_t>& combination) {
           counter++;
           BOOST_REQUIRE_EQUAL(combination.size(), 2);
@@ -406,7 +407,8 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
   {
     const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info|user_info");
     size_t counter = 0;
-    INTERACTIONS::generate_generic_extent_combination_iterative(ex->feature_space, extent_terms,
+    INTERACTIONS::generate_generic_extent_combination_iterative(
+        ex->feature_space, extent_terms,
         [&](const std::vector<INTERACTIONS::features_range_t>& combination) {
           counter++;
           BOOST_REQUIRE_EQUAL(combination.size(), 3);
@@ -418,7 +420,8 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
   {
     const auto extent_terms = parse_full_name_interactions(*vw, "user_info|extra");
     size_t counter = 0;
-    INTERACTIONS::generate_generic_extent_combination_iterative(ex->feature_space, extent_terms,
+    INTERACTIONS::generate_generic_extent_combination_iterative(
+        ex->feature_space, extent_terms,
         [&](const std::vector<INTERACTIONS::features_range_t>& combination) {
           counter++;
           BOOST_REQUIRE_EQUAL(combination.size(), 2);
