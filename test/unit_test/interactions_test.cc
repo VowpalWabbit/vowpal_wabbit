@@ -101,8 +101,8 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
 
 BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_combinations_test)
 {
-  auto& vw = *VW::initialize(
-      "--quiet --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant", nullptr, false, nullptr, nullptr);
+  auto& vw = *VW::initialize("--quiet --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant",
+      nullptr, false, nullptr, nullptr);
   auto* ex = VW::read_example(vw, "3 |fff a b c |eee x y z |ggg a b |gg c d");
 
   size_t naive_features_count;
@@ -125,8 +125,9 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_combinations_test)
 
 BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_permutations_test)
 {
-  auto& vw = *VW::initialize("--quiet -permutations --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant",
-      nullptr, false, nullptr, nullptr);
+  auto& vw = *VW::initialize(
+      "--quiet -permutations --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant", nullptr,
+      false, nullptr, nullptr);
   auto* ex = VW::read_example(vw, "3 |fff a b c |eee x y z |ggg a b |gg c d");
 
   size_t naive_features_count;

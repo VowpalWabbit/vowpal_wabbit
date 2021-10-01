@@ -38,7 +38,8 @@ static void benchmark_sum_ft_squared_extent(benchmark::State& state)
       "NumberOfLegs:4.0 HasStripes";
 
   auto vw = VW::initialize(
-      "--quiet --experimental_full_name_interactions MetricFeatures|Says --experimental_full_name_interactions MetricFeatures|OtherFeatures|Says",
+      "--quiet --experimental_full_name_interactions MetricFeatures|Says --experimental_full_name_interactions "
+      "MetricFeatures|OtherFeatures|Says",
       nullptr, false, nullptr, nullptr);
 
   v_array<example*> examples;
