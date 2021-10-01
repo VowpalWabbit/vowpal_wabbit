@@ -37,7 +37,9 @@ static void benchmark_sum_ft_squared_extent(benchmark::State& state)
       "1 1.0 zebra|MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures "
       "NumberOfLegs:4.0 HasStripes";
 
-  auto vw = VW::initialize("--quiet --new_full_interactions MetricFeatures|Says --new_full_interactions MetricFeatures|OtherFeatures|Says", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(
+      "--quiet --new_full_interactions MetricFeatures|Says --new_full_interactions MetricFeatures|OtherFeatures|Says",
+      nullptr, false, nullptr, nullptr);
 
   v_array<example*> examples;
   io_buf buffer;

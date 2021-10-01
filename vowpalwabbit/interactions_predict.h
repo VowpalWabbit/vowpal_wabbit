@@ -484,8 +484,7 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     if (std::any_of(ns.begin(), ns.end(), [](const extent_term& term) { return term.first == wildcard_namespace; }))
     { continue; }
 
-    generate_generic_extent_combination_iterative(
-        ec.feature_space, ns,
+    generate_generic_extent_combination_iterative(ec.feature_space, ns,
         [&](const std::vector<features_range_t>& combination) {
           const size_t len = ns.size();
           if (len == 2)
