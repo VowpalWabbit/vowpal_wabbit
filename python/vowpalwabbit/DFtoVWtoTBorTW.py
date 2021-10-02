@@ -106,6 +106,7 @@ class VWtoTensorwatchStreamer:
 			This is the logfile where tensorwatch will log the metrics to, so if no client is listening to the socket then client can pick values from the log file, file should have '.log' extension
 		port : int
 			Port on which Watcher of Tensorwatch should stream
+			Default value is 4500
 
 		Returns
 		-------
@@ -130,6 +131,10 @@ class VWtoTensorwatchStreamer:
 				This is the average_loss value to be logged for Tensorwatch
 		since_last   : float
 				This is the since_last value to be logged for Tensorwatch
+		label        : int
+				This is the label value to be logged for Tensorwatch
+		prediction   : int
+				Thhis is the prediction value to be logged for Tensorwatch
 
 		Returns
 		-------
@@ -173,7 +178,8 @@ class VWtoTensorwatchClient:
 			This is the logfile where tensorwatch will log the metrics to, so if no client is listening to the socket then client can pick values from the log file, file should have '.log' extension
 		port : int
 			Port on which WatcherClient should work
-
+			Default value is 4500
+			
 		Returns
 		-------
 
@@ -206,10 +212,10 @@ class VWtoTensorwatchClient:
 		since_last_plot = tw.Visualizer(since_last_tw, vis_type='line', xtitle='iterations', ytitle='since_last')
 		since_last_plot.show()
 
-		label_plot = tw.Visualizer(label_tw, vis_type='bar', xtitle='label_per_iteration')
+		label_plot = tw.Visualizer(label_tw, vis_type='bar', xtitle='label_per_iteration', color='red')  # color='red' becuase default color='None' which gives error
 		label_plot.show()
 
-		prediction_plot = tw.Visualizer(prediction_tw, vis_type='bar', xtitle='prediction_per_iteration')
+		prediction_plot = tw.Visualizer(prediction_tw, vis_type='bar', xtitle='prediction_per_iteration', color='red')   # color='red' becuase default color='None' which gives error
 		prediction_plot.show()
 
 	def __del__(self):

@@ -586,7 +586,7 @@ class vw(pylibvw.vw):
             ec = self.parse(ec)
             new_example = True
 
-            if isinstance(vw_to_tensorwatch, VWtoTensorwatchStreamer):
+            if isinstance(vw_to_tensorwatch, VWtoTensorwatchStreamer):  # tensorwatch barplot for label and prediction 
                 label = get_label(ec, super().get_label_type())
                 prediction = get_prediction(ec, super().get_prediction_type())
 
