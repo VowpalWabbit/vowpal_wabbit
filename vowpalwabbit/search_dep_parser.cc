@@ -112,7 +112,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   else
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
 
-  sch.set_label_parser(COST_SENSITIVE::cs_label, [](polylabel &l) -> bool { return l.cs.costs.size() == 0; });
+  sch.set_label_parser(COST_SENSITIVE::cs_label, [](polylabel* l) -> bool { return l->cs.costs.size() == 0; });
 }
 
 void inline add_feature(

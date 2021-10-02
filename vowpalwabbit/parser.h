@@ -42,8 +42,6 @@ struct parser
       , finished_examples(0)
       , strict_parse{strict_parse_}
   {
-    this->input = VW::make_unique<io_buf>();
-    this->output = VW::make_unique<io_buf>();
     this->lbl_parser = simple_label_parser;
   }
 
@@ -57,9 +55,15 @@ struct parser
   VW::object_pool<example> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
 
-  std::unique_ptr<io_buf> input;  // Input source(s)
-  /// reader consumes the input io_buf in the vw object and is generally for file based parsing
-  int (*reader)(vw*, v_array<example*>& examples);
+  io_buf input;  // Input source(s)
+
+  /// reader consumes the given io_buf and produces parsed examples. The number
+  /// of produced examples is implementation defined. However, in practice for
+  /// single_line parsers a single example is produced. And for multi_line
+  /// parsers multiple are produced which all correspond the the same overall
+  /// logical example. examples must have a single empty example in it when this
+  /// call is made.
+  int (*reader)(vw*, io_buf&, v_array<example*>& examples);
   /// text_reader consumes the char* input and is for text based parsing
   void (*text_reader)(vw*, const char*, size_t, v_array<example*>&);
 
@@ -67,7 +71,7 @@ struct parser
 
   hash_func_t hasher;
   bool resettable;           // Whether or not the input can be reset.
-  std::unique_ptr<io_buf> output;  // Where to output the cache.
+  io_buf output;             // Where to output the cache.
   std::string currentname;
   std::string finalname;
 
@@ -110,6 +114,7 @@ struct dsjson_metrics
   size_t NumberOfSkippedEvents = 0;
   size_t NumberOfEventsZeroActions = 0;
   size_t LineParseError = 0;
+  float DsjsonSumCostOriginal = 0.f;
   std::string FirstEventId;
   std::string FirstEventTime;
   std::string LastEventId;
@@ -118,17 +123,10 @@ struct dsjson_metrics
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
 
-VW_DEPRECATED("Function is no longer used. This will be removed in VW 9.0.")
-void adjust_used_index(vw& all);
-
 // parser control
 void lock_done(parser& p);
 void set_done(vw& all);
 
 // source control functions
 void reset_source(vw& all, size_t numbits);
-VW_DEPRECATED("Function is no longer used. This will be removed in VW 9.0.")
-void finalize_source(parser* source);
-VW_DEPRECATED("Function is no longer used. This will be removed in VW 9.0.")
-void set_compressed(parser* par);
 void free_parser(vw& all);

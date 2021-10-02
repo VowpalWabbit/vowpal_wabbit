@@ -41,12 +41,11 @@ namespace Search
 {
 using byte_array = std::unique_ptr<uint8_t[]>;
 
-search_task* all_tasks[] = {&SequenceTask::task, &SequenceSpanTask::task, &SequenceTaskCostToGo::task,
+std::array<search_task*, 10> all_tasks = {&SequenceTask::task, &SequenceSpanTask::task, &SequenceTaskCostToGo::task,
     &ArgmaxTask::task, &SequenceTask_DemoLDF::task, &MulticlassTask::task, &DepParserTask::task,
-    &EntityRelationTask::task, &HookTask::task, &GraphTask::task, nullptr};  // must nullptr terminate!
+    &EntityRelationTask::task, &HookTask::task, &GraphTask::task};
 
-search_metatask* all_metatasks[] = {
-    &DebugMT::metatask, &SelectiveBranchingMT::metatask, nullptr};  // must nullptr terminate!
+std::array<search_metatask*, 2> all_metatasks = {&DebugMT::metatask, &SelectiveBranchingMT::metatask};
 
 constexpr bool PRINT_UPDATE_EVERY_EXAMPLE = false;
 constexpr bool PRINT_UPDATE_EVERY_PASS = false;
@@ -128,10 +127,6 @@ struct action_cache
   action k;
   bool is_opt;
   float cost;
-  action_cache(float _min_cost, action _k, bool _is_opt, float _cost)
-      : min_cost(_min_cost), k(_k), is_opt(_is_opt), cost(_cost)
-  {
-  }
 };
 std::ostream& operator<<(std::ostream& os, const action_cache& x)
 {
@@ -193,7 +188,7 @@ public:
                              // oracle (0 means "infinite")
   bool linear_ordering;      // insist that examples are generated in linear order (rather that the default hoopla
                              // permutation)
-  bool (*label_is_test)(polylabel&);  // tell me if the label data from an example is test
+  bool (*label_is_test)(polylabel*);  // tell me if the label data from an example is test
 
   size_t t;                                     // current search step
   size_t T;                                     // length of root trajectory
@@ -706,7 +701,7 @@ void search_declare_loss(search_private& priv, float loss)
 }
 
 template <class T>
-void cdbg_print_array(std::string str, v_array<T>& A)
+void cdbg_print_array(const std::string& str, v_array<T>& A)
 {
   cdbg << str << " = [";
   for (size_t i = 0; i < A.size(); i++) cdbg << " " << A[i];
@@ -1008,10 +1003,10 @@ void ensure_size(v_array<T>& A, size_t sz)
 }
 
 template <class T>
-void push_at(v_array<T>& v, T item, size_t pos)
+void set_at(v_array<T>& v, T item, size_t pos)
 {
-  if (pos > v.size()) { v.resize_but_with_stl_behavior(pos); }
-  v.insert(v.begin() + pos, item);
+  if (pos >= v.size()) { v.resize_but_with_stl_behavior(pos + 1); }
+  v[pos] = item;
 }
 
 action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* oracle_actions,
@@ -1070,7 +1065,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
     {
       action cl = cs_get_cost_index(priv.cb_learner, l, k);
       float cost = array_contains(cl, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f;
-      this_cache->push_back(action_cache(0., cl, cl == a, cost));
+      this_cache->push_back(action_cache{0., cl, cl == a, cost});
     }
     assert(priv.memo_foreach_action.size() == priv.meta_t + priv.t - 1);
     priv.memo_foreach_action.push_back(this_cache);
@@ -1134,7 +1129,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       if (priv.metaoverride && priv.metaoverride->_foreach_action)
         priv.metaoverride->_foreach_action(*priv.metaoverride->sch, priv.t - 1, min_cost, cl, cl == act, cost);
       if (override_action == cl) a_cost = cost;
-      if (this_cache) this_cache->push_back(action_cache(min_cost, cl, cl == act, cost));
+      if (this_cache) this_cache->push_back(action_cache{min_cost, cl, cl == act, cost});
     }
     if (this_cache)
     {
@@ -1270,7 +1265,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
       best_action = a;
       a_cost = best_prediction;
     }
-    if (this_cache) this_cache->push_back(action_cache(0., a, false, ecs[a].partial_prediction));
+    if (this_cache) this_cache->push_back(action_cache{0., a, false, ecs[a].partial_prediction});
 
     priv.num_features += ecs[a].get_num_features();
     ecs[a].l = old_label;
@@ -1627,7 +1622,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
         for (size_t i = 0; i < condition_on_cnt; i++)
         {
-          push_at(priv.learn_condition_on_act,
+          set_at(priv.learn_condition_on_act,
               action_repr(((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size()))
                       ? priv.ptag_to_action[condition_on[i]]
                       : 0),
@@ -1919,20 +1914,6 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   }
 
   if (!priv.linear_ordering) hoopla_permute(timesteps.begin(), timesteps.end());
-}
-
-struct final_item
-{
-  v_array<scored_action>* prefix;
-  std::string str;
-  float total_cost;
-  final_item(v_array<scored_action>* p, std::string s, float ic) : prefix(p), str(s), total_cost(ic) {}
-};
-
-void free_final_item(final_item* p)
-{
-  delete p->prefix;
-  delete p;
 }
 
 void BaseTask::Run()
@@ -2254,7 +2235,7 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
 
   for (size_t i = 0; i < ec_seq.size(); i++)
   {
-    is_test_ex |= priv.label_is_test(ec_seq[i]->l);
+    is_test_ex |= priv.label_is_test(&ec_seq[i]->l);
     is_holdout_ex |= ec_seq[i]->test_only;
     if (is_test_ex && is_holdout_ex) break;
   }
@@ -2335,7 +2316,7 @@ void end_examples(search& sch)
   }
 }
 
-bool mc_label_is_test(polylabel& lab) { return MC::test_label(lab.multi); }
+bool mc_label_is_test(polylabel* lab) { return MC::test_label(lab->multi); }
 
 void search_initialize(vw* all, search& sch)
 {
@@ -2537,10 +2518,10 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                       .keep()
                       .necessary()
                       .help("the search task (use \"--search_task list\" to get a list of available tasks)"));
-  new_options.add(
-      make_option("search_metatask", metatask_string)
-          .keep()
-          .help("the search metatask (use \"--search_metatask list\" to get a list of available metatasks)"));
+  new_options.add(make_option("search_metatask", metatask_string)
+                      .keep()
+                      .help("the search metatask (use \"--search_metatask list\" to get a list of available metatasks."
+                            " Note: a valid search_task needs to be supplied in addition for this to output.)"));
   new_options.add(make_option("search_interpolation", interpolation_string)
                       .keep()
                       .help("at what level should interpolation happen? [*data|policy]"));
@@ -2600,27 +2581,27 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   parse_neighbor_features(neighbor_features_string, *sch.get());
 
-  if (interpolation_string.compare("data") == 0)  // run as dagger
+  if (interpolation_string == "data")  // run as dagger
   {
     priv.adaptive_beta = true;
     priv.allow_current_policy = true;
     priv.passes_per_policy = all.numpasses;
     if (priv.current_policy > 1) priv.current_policy = 1;
   }
-  else if (interpolation_string.compare("policy") == 0)
+  else if (interpolation_string == "policy")
     ;
   else
     THROW("error: --search_interpolation must be 'data' or 'policy'");
 
-  if ((rollout_string.compare("policy") == 0) || (rollout_string.compare("learn") == 0))
+  if ((rollout_string == "policy") || (rollout_string == "learn"))
     priv.rollout_method = POLICY;
-  else if ((rollout_string.compare("oracle") == 0) || (rollout_string.compare("ref") == 0))
+  else if ((rollout_string == "oracle") || (rollout_string == "ref"))
     priv.rollout_method = ORACLE;
-  else if ((rollout_string.compare("mix_per_state") == 0))
+  else if ((rollout_string == "mix_per_state"))
     priv.rollout_method = MIX_PER_STATE;
-  else if ((rollout_string.compare("mix_per_roll") == 0) || (rollout_string.compare("mix") == 0))
+  else if ((rollout_string == "mix_per_roll") || (rollout_string == "mix"))
     priv.rollout_method = MIX_PER_ROLL;
-  else if ((rollout_string.compare("none") == 0))
+  else if ((rollout_string == "none"))
   {
     priv.rollout_method = NO_ROLLOUT;
     priv.no_caching = true;
@@ -2628,13 +2609,13 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   else
     THROW("error: --search_rollout must be 'learn', 'ref', 'mix', 'mix_per_state' or 'none'");
 
-  if ((rollin_string.compare("policy") == 0) || (rollin_string.compare("learn") == 0))
+  if ((rollin_string == "policy") || (rollin_string == "learn"))
     priv.rollin_method = POLICY;
-  else if ((rollin_string.compare("oracle") == 0) || (rollin_string.compare("ref") == 0))
+  else if ((rollin_string == "oracle") || (rollin_string == "ref"))
     priv.rollin_method = ORACLE;
-  else if ((rollin_string.compare("mix_per_state") == 0))
+  else if ((rollin_string == "mix_per_state"))
     priv.rollin_method = MIX_PER_STATE;
-  else if ((rollin_string.compare("mix_per_roll") == 0) || (rollin_string.compare("mix") == 0))
+  else if ((rollin_string == "mix_per_roll") || (rollin_string == "mix"))
     priv.rollin_method = MIX_PER_ROLL;
   else
     THROW("error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'");
@@ -2694,44 +2675,49 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   cdbg << "search current_policy = " << priv.current_policy
        << " total_number_of_policies = " << priv.total_number_of_policies << endl;
 
-  if (task_string.compare("list") == 0)
+  if (task_string == "list")
   {
     // command line action, output directly to cerr
-    std::cerr << endl << "available search tasks:" << endl;
-    for (search_task** mytask = all_tasks; *mytask != nullptr; mytask++)
-      std::cerr << "  " << (*mytask)->task_name << endl;
-    std::cerr << endl;
+    std::vector<const char*> names;
+    std::transform(all_tasks.begin(), all_tasks.end(), std::back_inserter(names),
+        [](const search_task* task) { return task->task_name; });
+    fmt::print(stderr, "available search tasks:\n  - {}\n", fmt::join(names, "\n  - "));
     exit(0);
   }
-  if (metatask_string.compare("list") == 0)
+  if (metatask_string == "list")
   {
     // command line action, output directly to cerr
-    std::cerr << endl << "available search metatasks:" << endl;
-    for (search_metatask** mytask = all_metatasks; *mytask != nullptr; mytask++)
-      std::cerr << "  " << (*mytask)->metatask_name << endl;
-    std::cerr << endl;
+    std::vector<const char*> names;
+    std::transform(all_metatasks.begin(), all_metatasks.end(), std::back_inserter(names),
+        [](const search_metatask* task) { return task->metatask_name; });
+    fmt::print(stderr, "available search metatasks:\n  - {}\n", fmt::join(names, "\n  - "));
     exit(0);
   }
-  for (search_task** mytask = all_tasks; *mytask != nullptr; mytask++)
-    if (task_string.compare((*mytask)->task_name) == 0)
+  for (auto* task : all_tasks)
+  {
+    if (task_string == task->task_name)
     {
-      priv.task = *mytask;
-      sch->task_name = (*mytask)->task_name;
+      priv.task = task;
+      sch->task_name = task->task_name;
       break;
     }
+  }
+
   if (priv.task == nullptr)
   {
     if (!options.was_supplied("help"))
-      THROW("fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list");
+    { THROW("fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list"); }
   }
   priv.metatask = nullptr;
-  for (search_metatask** mytask = all_metatasks; *mytask != nullptr; mytask++)
-    if (metatask_string.compare((*mytask)->metatask_name) == 0)
+  for (auto* task : all_metatasks)
+  {
+    if (metatask_string == task->metatask_name)
     {
-      priv.metatask = *mytask;
-      sch->metatask_name = (*mytask)->metatask_name;
+      priv.metatask = task;
+      sch->metatask_name = task->metatask_name;
       break;
     }
+  }
   all.example_parser->emptylines_separate_examples = true;
 
   if (!options.was_supplied("csoaa") && !options.was_supplied("cs_active") && !options.was_supplied("csoaa_ldf") &&
@@ -2823,11 +2809,11 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
     if (priv->acset.use_passthrough_repr)
     {
       assert((mytag >= priv->ptag_to_action.size()) || (priv->ptag_to_action[mytag].repr == nullptr));
-      push_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
+      set_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
     }
     else
-      push_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag);
-    cdbg << "push_at " << mytag << endl;
+      set_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag);
+    cdbg << "set_at " << mytag << endl;
   }
   if (priv->auto_hamming_loss)
     loss(priv->use_action_costs ? action_cost_loss(a, allowed_actions, allowed_actions_cost, allowed_actions_cnt)
@@ -2863,7 +2849,7 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
         priv->ptag_to_action[mytag].repr = nullptr;
       }
     }
-    push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
+    set_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
   }
   if (priv->auto_hamming_loss) loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));  // TODO: action costs
   cdbg << "predict returning " << a << endl;
@@ -2904,12 +2890,12 @@ void search::set_options(uint32_t opts)
     );
 }
 
-void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
+void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel*))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
     logger::errlog_warn("warning: task should not set label parser except in initialize function!");
   this->priv->all->example_parser->lbl_parser = lp;
-  this->priv->all->example_parser->lbl_parser.test_label = reinterpret_cast<bool (*)(polylabel*)>(is_test);
+  this->priv->all->example_parser->lbl_parser.test_label = is_test;
   this->priv->label_is_test = is_test;
 }
 
@@ -2949,28 +2935,10 @@ predictor::predictor(search& sch, ptag my_tag)
     , my_tag(my_tag)
     , ec(nullptr)
     , ec_cnt(0)
-    , ec_alloced(false)
     , weight(1.)
     , learner_id(0)
     , sch(sch)
 {
-}
-
-void predictor::free_ec()
-{
-  if (ec_alloced)
-  {
-    if (is_ldf) { VW::dealloc_examples(ec, ec_cnt); }
-    else
-    {
-      VW::dealloc_examples(ec, 1);
-    }
-  }
-}
-
-predictor::~predictor()
-{
-  free_ec();
 }
 
 predictor& predictor::reset()
@@ -2979,51 +2947,35 @@ predictor& predictor::reset()
   this->erase_alloweds();
   condition_on_tags.clear();
   condition_on_names.clear();
-  free_ec();
+  allocated_examples.clear();
   return *this;
 }
 
 predictor& predictor::set_input(example& input_example)
 {
-  free_ec();
   is_ldf = false;
   ec = &input_example;
   ec_cnt = 1;
-  ec_alloced = false;
   return *this;
 }
 
 predictor& predictor::set_input(example* input_example, size_t input_length)
 {
-  free_ec();
   is_ldf = true;
   ec = input_example;
   ec_cnt = input_length;
-  ec_alloced = false;
   return *this;
 }
 
 void predictor::set_input_length(size_t input_length)
 {
   is_ldf = true;
-  if (ec_alloced)
-  {
-    for (size_t i = ec_cnt; ec_cnt < input_length; ++i) ec[i].~example();
-    example* temp = static_cast<example*>(realloc(ec, input_length * sizeof(example)));
-    if (temp != nullptr)
-      ec = temp;
-    else
-      THROW("realloc failed in search.cc");
-  }
-  else
-    ec = VW::alloc_examples(input_length);
+  allocated_examples.resize(input_length);
+  ec = allocated_examples.data();
   ec_cnt = input_length;
-  ec_alloced = true;
 }
 void predictor::set_input_at(size_t posn, example& ex)
 {
-  if (!ec_alloced) THROW("call to set_input_at without previous call to set_input_length");
-
   if (posn >= ec_cnt)
     THROW("call to set_input_at with too large a position: posn (" << posn << ") >= ec_cnt(" << ec_cnt << ")");
 

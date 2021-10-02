@@ -14,11 +14,17 @@ using namespace VW::config;
 
 struct LRQFAstate
 {
-  vw* all;
-  std::string field_name;
-  int k;
+  vw* all = nullptr;
+  std::string field_name = "";
+  int k = 0;
   int field_id[256];
   size_t orig_size[256];
+
+  LRQFAstate()
+  {
+    std::fill(field_id, field_id + 256, 0);
+    std::fill(orig_size, orig_size + 256, 0);
+  }
 };
 
 inline float cheesyrand(uint64_t x)
@@ -143,7 +149,7 @@ VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  auto lrq = scoped_calloc_or_throw<LRQFAstate>();
+  auto lrq = VW::make_unique<LRQFAstate>();
   lrq->all = &all;
 
   std::string lrqopt = VW::decode_inline_hex(lrqfa);
@@ -156,9 +162,13 @@ VW::LEARNER::base_learner* lrqfa_setup(VW::setup_base_i& stack_builder)
 
   all.wpp = all.wpp * static_cast<uint64_t>(1 + lrq->k);
   auto base = stack_builder.setup_base_learner();
-  learner<LRQFAstate, example>& l = init_learner(lrq, as_singleline(base), predict_or_learn<true>,
-      predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k, stack_builder.get_setupfn_name(lrqfa_setup),
-      base->learn_returns_prediction);
+  size_t ws = 1 + lrq->field_name.size() * lrq->k;
 
-  return make_base(l);
+  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(lrqfa_setup))
+                .set_params_per_weight(ws)
+                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .build();
+
+  return make_base(*l);
 }

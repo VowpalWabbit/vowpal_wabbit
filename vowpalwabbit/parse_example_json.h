@@ -934,6 +934,17 @@ public:
         return &ctx.array_float_state;
       }
 
+      else if (ctx.key_length == 20 && !strncmp(str, "_original_label_cost", 20))
+      {
+        if(!ctx.decision_service_data) {
+          THROW("_original_label_cost is only valid in DSJson");
+        }
+        ctx.original_label_cost_state.aggr_float = &ctx.decision_service_data->originalLabelCost;
+        ctx.original_label_cost_state.first_slot_float = &ctx.decision_service_data->originalLabelCostFirstSlot;
+        ctx.original_label_cost_state.return_state = this;
+        return &ctx.original_label_cost_state;
+      }
+
       else if (ctx.key_length == 5 && !_stricmp(ctx.key, "__aid"))
       {
         ctx.uint_dedup_state.return_state = this;
@@ -1164,7 +1175,18 @@ public:
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override { return return_state; }
 };
 
-template <bool audit>
+// AggrFunc prototype is void (*)(float *input_output, float f);
+// Basic Aggregation Types
+namespace float_aggregation {
+inline void set(float* output, float f) {
+  *output = f;
+}
+inline void add(float* output, float f) {
+  *output += f;
+}
+}
+
+template <bool audit, void (*func)(float*, float)>
 class FloatToFloatState : public BaseState<audit>
 {
 public:
@@ -1175,7 +1197,7 @@ public:
 
   BaseState<audit>* Float(Context<audit>& /*ctx*/, float f) override
   {
-    *output_float = f;
+    func(output_float, f);
     return return_state;
   }
 
@@ -1186,10 +1208,47 @@ public:
 
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override
   {
-    *output_float = 0.f;
+    func(output_float, 0.f);
     return return_state;
   }
 };
+
+// HACK: This state object is a complete hack. This object needs to address some very specific business
+//       logic which cannot be handled in the state machine in a better way without impacting performance.
+//       This level of specificity should NOT be in the parser, do not use this as an example of what to do.
+template <bool audit>
+class FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
+{
+public:
+  FloatToFloatState_OriginalLabelCostHack() : BaseState<audit>("FloatToFloatState_OriginalLabelCostHack") {}
+
+  float* aggr_float;
+  float* first_slot_float;
+  bool seen_first = false;
+  BaseState<audit>* return_state;
+
+  BaseState<audit>* Float(Context<audit>& /*ctx*/, float f) override
+  {
+    *aggr_float += f;
+    if(!seen_first) {
+      seen_first = true;
+      *first_slot_float = f;
+    }
+    return return_state;
+  }
+
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
+  {
+    return Float(ctx, static_cast<float>(i));
+  }
+
+  BaseState<audit>* Null(Context<audit>& /*ctx*/) override
+  {
+    // do nothing
+    return return_state;
+  }
+};
+
 
 template <bool audit>
 class UIntDedupState : public BaseState<audit>
@@ -1428,6 +1487,13 @@ public:
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
       }
+      else if (length == 20 && !strncmp(str, "_original_label_cost", 20))
+      {
+        ctx.original_label_cost_state.aggr_float = &data->originalLabelCost;
+        ctx.original_label_cost_state.first_slot_float = &data->originalLabelCostFirstSlot;
+        ctx.original_label_cost_state.return_state = this;
+        return &ctx.original_label_cost_state;
+      }
     }
 
     // ignore unknown properties
@@ -1465,6 +1531,11 @@ public:
   VW::example_factory_t example_factory;
   void* example_factory_context;
 
+  // TODO: This shouldn't really exist in the Context. Once the JSON parser
+  // gets refactored to separate the VWJson/DSJson concepts, this should
+  // be moved into the DSJson version of the context
+  DecisionServiceInteraction* decision_service_data = nullptr;
+
   // states
   DefaultState<audit> default_state;
   LabelState<audit> label_state;
@@ -1484,7 +1555,8 @@ public:
   ArrayToVectorState<audit, float> array_float_state;
   ArrayToVectorState<audit, unsigned> array_uint_state;
   StringToStringState<audit> string_state;
-  FloatToFloatState<audit> float_state;
+  FloatToFloatState<audit, float_aggregation::set> float_state;
+  FloatToFloatState_OriginalLabelCostHack<audit> original_label_cost_state;
   UIntToUIntState<audit> uint_state;
   UIntDedupState<audit> uint_dedup_state;
   BoolToBoolState<audit> bool_state;
@@ -1634,20 +1706,15 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
 
   BaseState<audit>* current_state = handler.current_state();
 
+  // The stack of namespaces must be drained so there are no half extents left around.
+  while (!handler.ctx.namespace_path.empty()) { handler.ctx.PopNamespace(); }
+
   THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
                                 << ". "
                                    "Handler: "
                                 << handler.error().str()
                                 << "State: " << (current_state ? current_state->name : "null"));  // <<
   // "Line: '"<< line_copy << "'");
-}
-
-template <bool audit>
-VW_DEPRECATED("read_line_json has been deprecated; use read_line_json_s instead. This will be removed in VW 9.0.")
-void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory,
-    void* ex_factory_context, std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
-{
-  read_line_json_s<audit>(all, examples, line, strlen(line), example_factory, ex_factory_context, dedup_examples);
 }
 
 inline bool apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
@@ -1698,6 +1765,7 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   VWReaderHandler<audit>& handler = parser.handler;
   handler.init(&all, &examples, &ss, line + length, example_factory, ex_factory_context);
   handler.ctx.SetStartStateToDecisionService(data);
+  handler.ctx.decision_service_data = data;
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
@@ -1705,6 +1773,9 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   if (result.IsError())
   {
     BaseState<audit>* current_state = handler.current_state();
+
+    // The stack of namespaces must be drained so there are no half extents left around.
+    while (!handler.ctx.namespace_path.empty()) { handler.ctx.PopNamespace(); }
 
     if (all.example_parser->strict_parse)
     {
@@ -1763,6 +1834,12 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
         else
           all->example_parser->metrics->LastEventTime = std::move(interaction.timestamp);
       }
+
+      // Technically the aggregation operation here is supposed to be user-defined
+      // but according to Casey, the only operation used is Sum
+      // The _original_label_cost element is found either at the top level OR under
+      // the _outcomes node (for CCB)
+      all->example_parser->metrics->DsjsonSumCostOriginal += interaction.originalLabelCost;
     }
 
     // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
@@ -1834,7 +1911,7 @@ void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<
 }
 
 template <bool audit>
-int read_features_json(vw* all, v_array<example*>& examples)
+int read_features_json(vw* all, io_buf& buf, v_array<example*>& examples)
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;
@@ -1844,7 +1921,7 @@ int read_features_json(vw* all, v_array<example*>& examples)
 
     char* line;
     size_t num_chars;
-    size_t num_chars_initial = read_features(all, line, num_chars);
+    size_t num_chars_initial = read_features(buf, line, num_chars);
     if (num_chars_initial < 1) return static_cast<int>(num_chars_initial);
 
     // Ensure there is a null terminator.

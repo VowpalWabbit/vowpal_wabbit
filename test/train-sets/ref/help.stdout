@@ -621,7 +621,9 @@ Search options:
                                         list" to get a list of available tasks)
   --search_metatask arg                 the search metatask (use 
                                         "--search_metatask list" to get a list 
-                                        of available metatasks)
+                                        of available metatasks. Note: a valid 
+                                        search_task needs to be supplied in 
+                                        addition for this to output.)
   --search_interpolation arg            at what level should interpolation 
                                         happen? [*data|policy]
   --search_rollout arg                  how should rollouts be executed?       

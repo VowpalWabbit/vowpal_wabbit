@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <algorithm>
+#include <utility>
 
 #include "parse_regressor.h"
 #include "parser.h"
@@ -88,7 +89,9 @@ std::string find_in_path(const std::vector<std::string>& paths, const std::strin
 #endif
   for (const auto& path : paths)
   {
-    std::string full = VW::ends_with(path, delimiter) ? (path + fname) : (path + delimiter + fname);
+    std::string full = path;
+    if (!VW::ends_with(path, delimiter)) { full += delimiter; }
+    full += fname;
     std::ifstream f(full.c_str());
     if (f.good()) return full;
   }
@@ -1402,7 +1405,7 @@ void parse_sources(options_i& options, vw& all, io_buf& model, bool skip_model_l
 
 namespace VW
 {
-void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value)
+void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value)
 {
   flag_to_replace.append(
       " ");  // add a space to make sure we obtain the right flag in case 2 flags start with the same set of characters
@@ -1479,8 +1482,6 @@ char** to_argv(std::string const& s, int& argc)
   argc = static_cast<int>(foo.size()) + 1;
   return argv;
 }
-
-char** get_argv_from_string(std::string s, int& argc) { return to_argv(s, argc); }
 
 void free_args(int argc, char* argv[])
 {
@@ -1621,7 +1622,7 @@ vw* initialize(
   return initialize_with_builder(argc, argv, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
-vw* initialize_with_builder(std::string s, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
+vw* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
     void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   int argc = 0;
@@ -1643,14 +1644,15 @@ vw* initialize_with_builder(std::string s, io_buf* model, bool skip_model_load, 
   return ret;
 }
 
-vw* initialize(std::string s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
+vw* initialize(
+    const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   return initialize_with_builder(s, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
 // Create a new VW instance while sharing the model with another instance
 // The extra arguments will be appended to those of the other VW instance
-vw* seed_vw_model(vw* vw_model, std::string extra_args, trace_message_t trace_listener, void* trace_context)
+vw* seed_vw_model(vw* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
 {
   options_serializer_boost_po serializer;
   for (auto const& option : vw_model->options->get_all_options())
@@ -1740,7 +1742,7 @@ void finish(vw& all, bool delete_all)
 
     float best_constant;
     float best_constant_loss;
-    if (get_best_constant(all, best_constant, best_constant_loss))
+    if (get_best_constant(all.loss.get(), all.sd, best_constant, best_constant_loss))
     {
       *(all.trace_message) << endl << "best constant = " << best_constant;
       if (best_constant_loss != FLT_MIN)
@@ -1755,16 +1757,14 @@ void finish(vw& all, bool delete_all)
   // implement finally.
   // finalize_regressor can throw if it can't write the file.
   // we still want to free up all the memory.
-  vw_exception finalize_regressor_exception(__FILE__, __LINE__, "empty");
-  bool finalize_regressor_exception_thrown = false;
+  std::exception_ptr finalize_regressor_exception;
   try
   {
     finalize_regressor(all, all.final_regressor_name);
   }
-  catch (vw_exception& e)
+  catch (vw_exception& /* e */)
   {
-    finalize_regressor_exception = e;
-    finalize_regressor_exception_thrown = true;
+    finalize_regressor_exception = std::current_exception();
   }
 
   metrics::output_metrics(all);
@@ -1772,6 +1772,6 @@ void finish(vw& all, bool delete_all)
 
   if (delete_all) delete &all;
 
-  if (finalize_regressor_exception_thrown) throw finalize_regressor_exception;
+  if (finalize_regressor_exception) { std::rethrow_exception(finalize_regressor_exception); }
 }
 }  // namespace VW

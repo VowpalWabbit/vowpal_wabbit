@@ -612,7 +612,7 @@ public:
     return ret;
   }
 
-  base_learner* get_learner_by_name_prefix(std::string reduction_name)
+  base_learner* get_learner_by_name_prefix(const std::string& reduction_name)
   {
     if (name.find(reduction_name) != std::string::npos) { return (base_learner*)this; }
     else
@@ -916,6 +916,7 @@ struct reduction_learner_builder
     this->_learner->finisher_fd.data = this->_learner->learner_data.get();
     this->_learner->finisher_fd.base = make_base(*base);
     this->_learner->finisher_fd.func = static_cast<func_data::fn>(noop);
+    this->_learner->learn_fd.multipredict_f = nullptr;
 
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);

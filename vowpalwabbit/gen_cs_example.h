@@ -14,14 +14,14 @@ namespace GEN_CS
 {
 struct cb_to_cs
 {
-  size_t cb_type;
-  uint32_t num_actions;
+  size_t cb_type = 0;
+  uint32_t num_actions = 0;
   COST_SENSITIVE::label pred_scores;
-  VW::LEARNER::single_learner* scorer;
-  float avg_loss_regressors;
-  size_t nb_ex_regressors;
-  float last_pred_reg;
-  float last_correct_cost;
+  VW::LEARNER::single_learner* scorer = nullptr;
+  float avg_loss_regressors = 0.f;
+  size_t nb_ex_regressors = 0;
+  float last_pred_reg = 0.f;
+  float last_correct_cost = 0.f;
 
   CB::cb_class known_cost;
 };
@@ -190,7 +190,7 @@ void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels);
 
 void gen_cs_example_sm(multi_ex& examples, uint32_t chosen_action, float sign_offset,
-    ACTION_SCORE::action_scores action_vals, COST_SENSITIVE::label& cs_labels);
+    const ACTION_SCORE::action_scores& action_vals, COST_SENSITIVE::label& cs_labels);
 
 template <bool is_learn>
 void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p = 0.f)

@@ -108,7 +108,7 @@ void run_predict_in_memory(
   float score;
   if (!strcmp(data_filename, "regression_data_1.txt"))
   {
-    safe_example_predict ex[2];
+    example_predict ex[2];
     // 1 |0 0:1
     example_predict_builder b0(&ex[0], (namespace_index)0);
     b0.push_feature(0, 1.f);
@@ -124,7 +124,7 @@ void run_predict_in_memory(
   }
   else if (!strcmp(data_filename, "regression_data_2.txt"))
   {
-    safe_example_predict ex[2];
+    example_predict ex[2];
     // 1 |0 0:1 |a 0:2
     example_predict_builder b00(&ex[0], (namespace_index)0);
     b00.push_feature(0, 1.f);
@@ -142,7 +142,7 @@ void run_predict_in_memory(
   }
   else if (!strcmp(data_filename, "regression_data_3.txt"))
   {
-    safe_example_predict ex[2];
+    example_predict ex[2];
     // 1 |a 0:1 |b 2:2
     example_predict_builder b0a(&ex[0], "a");
     b0a.push_feature(0, 1.f);
@@ -162,7 +162,7 @@ void run_predict_in_memory(
   }
   else if (!strcmp(data_filename, "regression_data_4.txt"))
   {
-    safe_example_predict ex[2];
+    example_predict ex[2];
     // 1 |a 0:1 |b 2:2 |c 3:3 |d 4:4
     example_predict_builder b0a(&ex[0], "a");
     b0a.push_feature(0, 1.f);
@@ -190,7 +190,7 @@ void run_predict_in_memory(
   }
   else if (!strcmp(data_filename, "regression_data_7.txt"))
   {
-    safe_example_predict ex[2];
+    example_predict ex[2];
     // 1 |a x:1 |b y:2
     example_predict_builder b0a(&ex[0], "a");
     b0a.push_feature_string("x", 1.f);
@@ -353,13 +353,13 @@ TEST(VowpalWabbitSlim, multiclass_data_4)
 
   std::vector<float> out_scores;
 
-  safe_example_predict shared;
+  example_predict shared;
   // shared |a 0:1 5:12
   example_predict_builder bs(&shared, (char*)"a");
   bs.push_feature(0, 1.f);
   bs.push_feature(5, 12.f);
 
-  safe_example_predict ex[3];
+  example_predict ex[3];
   // 1:1.0 |b 0:1
   example_predict_builder b0(&ex[0], (char*)"b");
   b0.push_feature(0, 1.f);
@@ -387,13 +387,13 @@ TEST(VowpalWabbitSlim, multiclass_data_5)
 
   std::vector<float> out_scores;
 
-  safe_example_predict shared;
+  example_predict shared;
   // shared |aa 0:1 5:12
   example_predict_builder bs(&shared, "aa");
   bs.push_feature(0, 1.f);
   bs.push_feature(5, 12.f);
 
-  safe_example_predict ex[8];
+  example_predict ex[8];
   // 1:1.0 |ab 0:1
   example_predict_builder b0(&ex[0], "ab");
   b0.push_feature(0, 1.f);
@@ -438,7 +438,7 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
   ASSERT_EQ(0, vw.load((const char*)td.model, td.model_len));
 
   // we have loaded the model and can push the features
-  safe_example_predict features;
+  example_predict features;
   vw_slim::example_predict_builder bOa(&features, "64");
   bOa.push_feature(static_cast<int>(call_type), 1.f);
   vw_slim::example_predict_builder bOb(&features, "16");
@@ -450,7 +450,7 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
 
   // push actions
   const int min_delay_actions = 10;
-  safe_example_predict actions[min_delay_actions];
+  example_predict actions[min_delay_actions];
   for (int i = 0; i < min_delay_actions; i++)
   {
     vw_slim::example_predict_builder bOe(&actions[i], "80");
@@ -484,7 +484,7 @@ TEST(VowpalWabbitSlim, interaction_num_bits_bug)
   EXPECT_EQ(result, 0);
 
   // we have loaded the model and can push the features
-  safe_example_predict features;
+  example_predict features;
 
   // Test with the single namespace.
   vw_slim::example_predict_builder bOa(&features, "Features", vw.feature_index_num_bits());
@@ -495,7 +495,7 @@ TEST(VowpalWabbitSlim, interaction_num_bits_bug)
 
   const int MINDELAYACTIONS = 10;
   // push actions
-  safe_example_predict actions[MINDELAYACTIONS];
+  example_predict actions[MINDELAYACTIONS];
   for (int i = 0; i < MINDELAYACTIONS; i++)
   {
     vw_slim::example_predict_builder bOe(&actions[i], "80");
@@ -559,13 +559,19 @@ TEST(VowpalWabbitSlim, cb_data_epsilon_0_skype_jb)
   cb_data_epsilon_0_skype_jb_test_runner(999, 0, 2, 0, ranking_expected, pdf_expected);
 }
 
-void generate_cb_data_5(safe_example_predict& shared, safe_example_predict* ex)
+void clear(example_predict& ex)
+{
+  for (auto ns : ex.indices) { ex.feature_space[ns].clear(); }
+  ex.indices.clear();
+}
+
+void generate_cb_data_5(example_predict& shared, example_predict* ex)
 {
   // clean features
-  shared.clear();
-  ex[0].clear();
-  ex[1].clear();
-  ex[2].clear();
+  clear(shared);
+  clear(ex[0]);
+  clear(ex[1]);
+  clear(ex[2]);
 
   // shared |a 0:1 5:12
   example_predict_builder bs(&shared, "a");
@@ -622,8 +628,8 @@ TEST_P(CBPredictTest, CBRunPredict)
   std::vector<float> pdf_expected = GetParam().pdf_expected;
   std::vector<float> histogram(pdf_expected.size() * pdf_expected.size());
 
-  safe_example_predict shared;
-  safe_example_predict ex[3];
+  example_predict shared;
+  example_predict ex[3];
 
   std::vector<int> ranking;
 
@@ -773,13 +779,13 @@ TEST(ColdStartModel, action_set_not_reordered)
   int result = vw.load(buffer_ptr.get(), length);
   EXPECT_EQ(result, 0);
 
-  safe_example_predict features;
+  example_predict features;
 
   vw_slim::example_predict_builder bOa(&features, "Features", vw.feature_index_num_bits());
   bOa.push_feature_string("f1", 1.f);
 
   const int NUM_ACTIONS = 5;
-  std::array<safe_example_predict, NUM_ACTIONS> actions;
+  std::array<example_predict, NUM_ACTIONS> actions;
   for (int i = 0; i < actions.size(); i++)
   {
     vw_slim::example_predict_builder bOe(&actions[i], "ActionFeatures");

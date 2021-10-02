@@ -62,11 +62,32 @@ struct feature_gen_data
   }
 };
 
+inline bool term_is_empty(namespace_index term, const std::array<features, NUM_NAMESPACES>& feature_groups)
+{
+  return feature_groups[term].empty();
+}
+
+inline bool has_empty_interaction_quadratic(
+    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
+{
+  assert(namespace_indexes.size() == 2);
+  return term_is_empty(namespace_indexes[0], feature_groups) || term_is_empty(namespace_indexes[1], feature_groups);
+}
+
+inline bool has_empty_interaction_cubic(
+    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
+{
+  assert(namespace_indexes.size() == 3);
+  return term_is_empty(namespace_indexes[0], feature_groups) || term_is_empty(namespace_indexes[1], feature_groups) ||
+      term_is_empty(namespace_indexes[2], feature_groups);
+  ;
+}
+
 inline bool has_empty_interaction(
     const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
 {
   return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
-      [&](namespace_index idx) { return feature_groups[idx].empty(); });
+      [&](namespace_index idx) { return term_is_empty(idx, feature_groups); });
 }
 
 // The inline function below may be adjusted to change the way
@@ -100,6 +121,7 @@ std::vector<features_range_t> inline generate_generic_char_combination(
     const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<namespace_index>& namespace_indexes)
 {
   std::vector<features_range_t> inter;
+  inter.reserve(namespace_indexes.size());
   for (const auto namespace_index : namespace_indexes)
   { inter.emplace_back(feature_groups[namespace_index].audit_begin(), feature_groups[namespace_index].audit_end()); }
   return inter;
@@ -322,8 +344,6 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
   // current list of namespaces to interact.
   for (const auto& ns : interactions)
   {
-    // Skip over any interaction with an empty namespace.
-    if (has_empty_interaction(ec.feature_space, ns)) { continue; }
 
 #ifndef GEN_INTER_LOOP
 
@@ -333,12 +353,16 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     const size_t len = ns.size();
     if (len == 2)  // special case of pairs
     {
+      // Skip over any interaction with an empty namespace.
+      if (has_empty_interaction_quadratic(ec.feature_space, ns)) { continue; }
       num_features +=
           process_quadratic_interaction<audit>(generate_quadratic_char_combination(ec.feature_space, ns[0], ns[1]),
               permutations, inner_kernel_func, depth_audit_func);
     }
     else if (len == 3)  // special case for triples
     {
+      // Skip over any interaction with an empty namespace.
+      if (has_empty_interaction_cubic(ec.feature_space, ns)) { continue; }
       num_features +=
           process_cubic_interaction<audit>(generate_cubic_char_combination(ec.feature_space, ns[0], ns[1], ns[2]),
               permutations, inner_kernel_func, depth_audit_func);
@@ -346,6 +370,8 @@ inline void generate_interactions(const std::vector<std::vector<namespace_index>
     else  // generic case: quatriples, etc.
 #endif
     {
+      // Skip over any interaction with an empty namespace.
+      if (has_empty_interaction(ec.feature_space, ns)) { continue; }
       num_features += process_generic_interaction<audit>(
           generate_generic_char_combination(ec.feature_space, ns), permutations, inner_kernel_func, depth_audit_func);
     }

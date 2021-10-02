@@ -16,8 +16,8 @@
     std::clog
 // comment the previous two lines if you want loads of debug output :)
 
-typedef uint32_t action;
-typedef uint32_t ptag;
+using action = uint32_t;
+using ptag = uint32_t;
 
 namespace Search
 {
@@ -109,7 +109,7 @@ struct search
 
   // change the default label parser, but you _must_ tell me how
   // to detect test examples!
-  void set_label_parser(label_parser& lp, bool (*is_test)(polylabel&));
+  void set_label_parser(label_parser& lp, bool (*is_test)(polylabel*));
 
   // for explicitly declaring a loss incrementally
   void loss(float incr_loss);
@@ -257,7 +257,6 @@ class predictor
 {
 public:
   predictor(search& sch, ptag my_tag);
-  ~predictor();
 
   // tell the predictor what to use as input. a single example input
   // means non-LDF mode; an array of inputs means LDF mode
@@ -332,7 +331,7 @@ private:
   ptag my_tag;
   example* ec;
   size_t ec_cnt;
-  bool ec_alloced;
+  std::vector<example> allocated_examples;
   float weight;
   v_array<action> oracle_actions;
   v_array<ptag> condition_on_tags;
@@ -341,8 +340,6 @@ private:
   v_array<float> allowed_actions_cost;
   size_t learner_id;
   search& sch;
-
-  void free_ec();
 
   // prevent the user from doing something stupid :) ... ugh needed to turn this off for python :(
   // predictor(const predictor&P);
