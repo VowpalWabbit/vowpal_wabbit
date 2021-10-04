@@ -626,14 +626,15 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
     label_type = label_type_t::multiclass;
   }
 
-  auto* l = make_reduction_learner(std::move(data), base, learn_pred_ptr, learn_pred_ptr, stack_builder.get_setupfn_name(warm_cb_setup) + name_addition)
-      .set_params_per_weight(ws)
-      .set_prediction_type(prediction_type_t::multiclass)
-      .set_learn_returns_prediction(true)
-      .set_finish_example(finish_ptr)
-      .set_finish(finish)
-      .set_label_type(label_type)
-      .build();
+  auto* l = make_reduction_learner(std::move(data), base, learn_pred_ptr, learn_pred_ptr,
+      stack_builder.get_setupfn_name(warm_cb_setup) + name_addition)
+                .set_params_per_weight(ws)
+                .set_prediction_type(prediction_type_t::multiclass)
+                .set_learn_returns_prediction(true)
+                .set_finish_example(finish_ptr)
+                .set_finish(finish)
+                .set_label_type(label_type)
+                .build();
 
   return make_base(*l);
 }

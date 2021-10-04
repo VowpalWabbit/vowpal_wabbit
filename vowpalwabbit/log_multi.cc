@@ -520,13 +520,14 @@ base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
   init_tree(*data.get());
 
   size_t ws = data->max_predictors;
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn, predict, stack_builder.get_setupfn_name(log_multi_setup))
-    .set_params_per_weight(ws)
-    .set_finish_example(MULTICLASS::finish_example<log_multi&>)
-    .set_save_load(save_load_tree)
-    .set_prediction_type(prediction_type_t::multiclass)
-    .set_label_type(label_type_t::multiclass)
-    .build();
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn, predict,
+      stack_builder.get_setupfn_name(log_multi_setup))
+                .set_params_per_weight(ws)
+                .set_finish_example(MULTICLASS::finish_example<log_multi&>)
+                .set_save_load(save_load_tree)
+                .set_prediction_type(prediction_type_t::multiclass)
+                .set_label_type(label_type_t::multiclass)
+                .build();
 
   all.example_parser->lbl_parser = MULTICLASS::mc_label;
 

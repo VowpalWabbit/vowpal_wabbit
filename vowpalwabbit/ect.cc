@@ -344,12 +344,13 @@ base_learner* ect_setup(VW::setup_base_i& stack_builder)
   base_learner* base = stack_builder.setup_base_learner();
   if (link == "logistic") data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
 
-  auto* l = make_reduction_learner(std::move(data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
-    .set_params_per_weight(wpp)
-    .set_finish_example(MULTICLASS::finish_example<ect&>)
-    .set_prediction_type(prediction_type_t::multiclass)
-    .set_label_type(label_type_t::multiclass)
-    .build();
+  auto* l = make_reduction_learner(
+      std::move(data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
+                .set_params_per_weight(wpp)
+                .set_finish_example(MULTICLASS::finish_example<ect&>)
+                .set_prediction_type(prediction_type_t::multiclass)
+                .set_label_type(label_type_t::multiclass)
+                .build();
 
   all.example_parser->lbl_parser = MULTICLASS::mc_label;
 
