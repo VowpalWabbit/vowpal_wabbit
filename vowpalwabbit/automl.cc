@@ -3,12 +3,6 @@
 // license as described in the file LICENSE.
 
 #include "automl.h"
-#include "debug_log.h"
-#include "reductions.h"
-#include "learner.h"
-#include "io/logger.h"
-#include "vw.h"
-#include "model_utils.h"
 
 #include <cfloat>
 
@@ -62,6 +56,9 @@ to swap out and try new configs more consistently.
 
 namespace VW
 {
+namespace model_utils
+{
+}  // namespace model_utils
 namespace automl
 {
 namespace details
@@ -134,7 +131,7 @@ void scored_config::update(float w, float r)
   last_r = r;
 }
 
-void scored_config::save_load_scored_config(io_buf& io, bool read, bool text)
+void scored_config::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
 
@@ -170,7 +167,7 @@ void scored_config::reset_stats()
   update_count = 0;
 }
 
-void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read, bool text)
+void exclusion_config::save_load(io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
@@ -218,29 +215,32 @@ void exclusion_config::save_load_exclusion_config(io_buf& model_file, bool read,
   VW::model_utils::process_model_field(model_file, lease, read, "_aml_lease", text);
   VW::model_utils::process_model_field(model_file, ips, read, "_aml_ips", text);
   VW::model_utils::process_model_field(model_file, lower_bound, read, "_aml_lower_bound", text);
-
-  if (!read) msg << "_aml_state " << static_cast<int>(state) << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&state), sizeof(state), read, msg, text);
+  VW::model_utils::process_model_field(model_file, state, read, "_aml_state", text);
 }
 
 template <typename CMType>
-void automl<CMType>::one_step(const multi_ex& ec)
+void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, size_t labelled_action)
 {
-  switch (cm->current_state)
+  cm->total_learn_count++;
+  switch (current_state)
   {
-    case VW::automl::config_manager_state::Idle:
-      break;
-
-    case VW::automl::config_manager_state::Collecting:
-      cm->process_namespaces(ec);
+    case VW::automl::automl_state::Collecting:
+      cm->pre_process(ec);
       cm->config_oracle();
-      cm->current_state = VW::automl::config_manager_state::Experimenting;
+      offset_learn(base, ec, cm->current_champ, logged, labelled_action);
+      // replace bc champ always gets cached
+      ec[0]->pred.a_s = std::move(champ_a_s);
+      current_state = VW::automl::automl_state::Experimenting;
       break;
 
-    case VW::automl::config_manager_state::Experimenting:
-      cm->process_namespaces(ec);
+    case VW::automl::automl_state::Experimenting:
+      cm->pre_process(ec);
       cm->schedule();
       cm->update_champ();
+      for (size_t live_slot = 0; live_slot < cm->scores.size(); ++live_slot)
+      { offset_learn(base, ec, live_slot, logged, labelled_action); }
+      // replace bc champ always gets cached
+      ec[0]->pred.a_s = std::move(champ_a_s);
       break;
 
     default:
@@ -292,7 +292,7 @@ void interaction_config_manager::gen_quadratic_interactions(size_t live_slot)
 // This function will process an incoming multi_ex, update the namespace_counter,
 // log if new namespaces are encountered, and regenerate interactions based on
 // newly seen namespaces.
-void interaction_config_manager::process_namespaces(const multi_ex& ecs)
+void interaction_config_manager::pre_process(const multi_ex& ecs)
 {
   // Count all namepsace seen in current example
   bool new_ns_seen = false;
@@ -357,26 +357,6 @@ bool interaction_config_manager::repopulate_index_queue()
   }
   return !index_queue.empty();
 }
-
-// Function from Chacha to determine if loss is better than median. Very strict
-// requires ips is strictly greater, and strict median
-/*bool interaction_config_manager::better_than_median(size_t live_slot) const
-{
-  size_t lower = 0;
-  size_t higher = 0;
-  for (size_t other_live_slot = 0; other_live_slot < scores.size(); ++other_live_slot)
-  {
-    if (other_live_slot != live_slot)
-    {
-      if (configs.at(scores[live_slot].config_index).ips > configs.at(scores[other_live_slot].config_index).ips) {
-higher++; } else
-      {
-        lower++;
-      }
-    }
-  }
-  return higher > lower;
-}*/
 
 bool interaction_config_manager::swap_eligible_to_inactivate(size_t live_slot)
 {
@@ -537,10 +517,6 @@ void interaction_config_manager::save_load(io_buf& model_file, bool read, bool t
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
 
-  if (!read) msg << "_aml_cm_state " << static_cast<int>(current_state) << "\n";
-  bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&current_state), sizeof(current_state), read, msg, text);
-
   VW::model_utils::process_model_field(model_file, total_learn_count, read, "_aml_cm_count", text);
   VW::model_utils::process_model_field(model_file, current_champ, read, "_aml_cm_champ", text);
 
@@ -556,7 +532,7 @@ void interaction_config_manager::save_load(io_buf& model_file, bool read, bool t
     for (size_t i = 0; i < score_size; ++i)
     {
       scored_config sc;
-      sc.save_load_scored_config(model_file, read, text);
+      sc.save_load(model_file, read, text);
       scores.push_back(sc);
     }
 
@@ -567,7 +543,7 @@ void interaction_config_manager::save_load(io_buf& model_file, bool read, bool t
       size_t index;
       exclusion_config conf;
       bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
-      conf.save_load_exclusion_config(model_file, read, text);
+      conf.save_load(model_file, read, text);
       configs[index] = conf;
     }
 
@@ -603,7 +579,7 @@ void interaction_config_manager::save_load(io_buf& model_file, bool read, bool t
     score_size = scores.size();
     msg << "score_size " << score_size << "\n";
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), read, msg, text);
-    for (auto& score : scores) { score.save_load_scored_config(model_file, read, text); }
+    for (auto& score : scores) { score.save_load(model_file, read, text); }
 
     // Save configs
     config_size = configs.size();
@@ -612,7 +588,7 @@ void interaction_config_manager::save_load(io_buf& model_file, bool read, bool t
     for (auto& ind_config : configs)
     {
       bin_text_read_write_fixed(model_file, (char*)&ind_config.first, sizeof(ind_config.first), read, msg, text);
-      ind_config.second.save_load_exclusion_config(model_file, read, text);
+      ind_config.second.save_load(model_file, read, text);
     }
 
     // Save ns_counter
@@ -678,13 +654,13 @@ void predict_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 
 // inner loop of learn driven by # MAX_CONFIGS
 template <typename CMType>
-void offset_learn(automl<CMType>& data, multi_learner& base, multi_ex& ec, const size_t live_slot, CB::cb_class& logged,
-    size_t labelled_action)
+void automl<CMType>::offset_learn(
+    multi_learner& base, multi_ex& ec, const size_t live_slot, CB::cb_class& logged, size_t labelled_action)
 {
-  for (example* ex : ec) { data.cm->apply_config(ex, live_slot); }
+  for (example* ex : ec) { cm->apply_config(ex, live_slot); }
 
-  auto restore_guard = VW::scope_exit([&data, &ec, &live_slot] {
-    for (example* ex : ec) { data.cm->revert_config(ex); }
+  auto restore_guard = VW::scope_exit([this, &ec, &live_slot] {
+    for (example* ex : ec) { this->cm->revert_config(ex); }
   });
 
   if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
@@ -703,10 +679,10 @@ void offset_learn(automl<CMType>& data, multi_learner& base, multi_ex& ec, const
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
   const float r = -logged.cost;
 
-  data.cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
+  cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
 
   // cache the champ
-  if (data.cm->current_champ == live_slot) { data.champ_a_s = std::move(ec[0]->pred.a_s); }
+  if (cm->current_champ == live_slot) { champ_a_s = std::move(ec[0]->pred.a_s); }
 }
 
 // this is the registered learn function for this reduction
@@ -718,7 +694,6 @@ void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 
   bool is_learn = true;
 
-  if (is_learn) { data.cm->total_learn_count++; }
   // extra assert just bc
   assert(data.all->interactions.empty() == true);
 
@@ -735,22 +710,7 @@ void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
     }
   }
 
-  data.one_step(ec);
-
-  if (data.cm->current_state == VW::automl::config_manager_state::Experimenting)
-  {
-    for (size_t live_slot = 0; live_slot < data.cm->scores.size(); ++live_slot)
-    { offset_learn(data, base, ec, live_slot, logged, labelled_action); }
-    // replace bc champ always gets cached
-    ec[0]->pred.a_s = std::move(data.champ_a_s);
-  }
-  else
-  {
-    size_t champ = data.cm->current_champ;
-    offset_learn(data, base, ec, champ, logged, labelled_action);
-    // replace bc champ always gets cached
-    ec[0]->pred.a_s = std::move(data.champ_a_s);
-  }
+  data.one_step(base, ec, logged, labelled_action);
 
   // extra: assert again just like at the top
   assert(data.all->interactions.empty() == true);
@@ -784,6 +744,7 @@ template <typename CMType>
 void save_load_aml(automl<CMType>& d, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
+  VW::model_utils::process_model_field(model_file, d.current_state, read, "_aml_state", text);
   d.cm->save_load(model_file, read, text);
 }
 

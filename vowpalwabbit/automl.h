@@ -9,9 +9,18 @@
 #include "constant.h"  // NUM_NAMESPACES
 #include "metric_sink.h"
 #include "action_score.h"
+#include "debug_log.h"
+#include "reductions.h"
+#include "learner.h"
+#include "io/logger.h"
+#include "vw.h"
+#include "model_utils.h"
 #include <map>
 #include <set>
 #include <queue>
+
+using namespace VW::config;
+using namespace VW::LEARNER;
 
 namespace VW
 {
@@ -45,7 +54,7 @@ struct scored_config
   scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
 
   void update(float w, float r);
-  void save_load_scored_config(io_buf&, bool, bool);
+  void save_load(io_buf&, bool, bool);
   void persist(metric_sink&, const std::string&);
   float current_ips() const;
   void reset_stats();
@@ -70,13 +79,12 @@ struct exclusion_config
 
   exclusion_config(size_t lease = 10) : lease(lease) {}
 
-  void save_load_exclusion_config(io_buf&, bool, bool);
+  void save_load(io_buf&, bool, bool);
 };
 
-// all possible states of config_manager
-enum class config_manager_state
+// all possible states of automl
+enum class automl_state
 {
-  Idle,
   Collecting,
   Experimenting
 };
@@ -94,7 +102,7 @@ struct config_manager
 
   // Public Chacha functions
   void config_oracle();
-  void process_namespaces(const multi_ex&);
+  void pre_process(const multi_ex&);
   void schedule();
   void update_champ();
 };
@@ -103,7 +111,6 @@ using priority_func = float(const exclusion_config&, const std::map<namespace_in
 
 struct interaction_config_manager : config_manager
 {
-  config_manager_state current_state = config_manager_state::Collecting;
   size_t total_learn_count = 0;
   size_t current_champ = 0;
   size_t global_lease;
@@ -134,7 +141,7 @@ struct interaction_config_manager : config_manager
 
   // Public Chacha functions
   void config_oracle();
-  void process_namespaces(const multi_ex&);
+  void pre_process(const multi_ex&);
   void schedule();
   void update_champ();
 
@@ -150,13 +157,15 @@ private:
 template <typename CMType>
 struct automl
 {
+  automl_state current_state = automl_state::Collecting;
   std::unique_ptr<CMType> cm;
   vw* all = nullptr;                              //  TBD might not be needed
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   ACTION_SCORE::action_scores champ_a_s;          // a sequence of classes with scores.  Also used for probabilities.
   automl(std::unique_ptr<CMType> cm) : cm(std::move(cm)) {}
   // This fn gets called before learning any example
-  void one_step(const multi_ex&);
+  void one_step(multi_learner&, multi_ex&, CB::cb_class&, size_t);
+  void offset_learn(multi_learner&, multi_ex&, const size_t, CB::cb_class&, size_t);
 };
 
 }  // namespace automl

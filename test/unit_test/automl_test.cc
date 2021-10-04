@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
     aml_test::check_config_states(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 2);
     BOOST_CHECK_EQUAL(deterministic_champ_switch - 1, aml->cm->total_learn_count);
-    BOOST_CHECK(aml->cm->current_state == VW::automl::config_manager_state::Experimenting);
+    BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
     return true;
   });
 
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
     aml_test::check_config_states(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 2);
     BOOST_CHECK_EQUAL(deterministic_champ_switch, aml->cm->total_learn_count);
-    BOOST_CHECK(aml->cm->current_state == VW::automl::config_manager_state::Experimenting);
+    BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
     return true;
   });
 
@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_automl)
   test_hooks.emplace(zero, [&zero](cb_sim&, vw& all, multi_ex&) {
     VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
     BOOST_CHECK_EQUAL(aml->cm->total_learn_count, zero);
-    BOOST_CHECK(aml->cm->current_state == VW::automl::config_manager_state::Collecting);
+    BOOST_CHECK(aml->current_state == VW::automl::automl_state::Collecting);
     return true;
   });
 
@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_automl)
   test_hooks.emplace(num_iterations, [&num_iterations](cb_sim&, vw& all, multi_ex&) {
     VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
     BOOST_CHECK_EQUAL(aml->cm->total_learn_count, num_iterations);
-    BOOST_CHECK(aml->cm->current_state == VW::automl::config_manager_state::Experimenting);
+    BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
     return true;
   });
 
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_lease)
     VW::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
-    BOOST_CHECK(aml->cm->current_state == VW::automl::config_manager_state::Experimenting);
+    BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
     BOOST_CHECK_EQUAL(aml->cm->total_learn_count, 15);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(aml->cm->scores[0].config_index, 0);
