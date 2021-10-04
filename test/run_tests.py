@@ -354,7 +354,7 @@ def run_command_line_test(test: TestData,
                 }
                 continue
             are_different, diff, reason = are_outputs_different(output_content, output_file,
-                                                                ref_content, ref_file, overwrite, epsilon, fuzzy_compare=fuzzy_compare)
+                                                                ref_content, ref_file_ref_dir, overwrite, epsilon, fuzzy_compare=fuzzy_compare)
 
             if are_different:
                 message = "Diff not OK, {}".format((reason))
