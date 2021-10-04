@@ -939,9 +939,10 @@ public:
         if(!ctx.decision_service_data) {
           THROW("_original_label_cost is only valid in DSJson");
         }
-        ctx.float_state.output_float = &ctx.decision_service_data->originalLabelCost;
-        ctx.float_state.return_state = this;
-        return &ctx.float_state;
+        ctx.original_label_cost_state.aggr_float = &ctx.decision_service_data->originalLabelCost;
+        ctx.original_label_cost_state.first_slot_float = &ctx.decision_service_data->originalLabelCostFirstSlot;
+        ctx.original_label_cost_state.return_state = this;
+        return &ctx.original_label_cost_state;
       }
 
       else if (ctx.key_length == 5 && !_stricmp(ctx.key, "__aid"))
@@ -1174,7 +1175,18 @@ public:
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override { return return_state; }
 };
 
-template <bool audit>
+// AggrFunc prototype is void (*)(float *input_output, float f);
+// Basic Aggregation Types
+namespace float_aggregation {
+inline void set(float* output, float f) {
+  *output = f;
+}
+inline void add(float* output, float f) {
+  *output += f;
+}
+}
+
+template <bool audit, void (*func)(float*, float)>
 class FloatToFloatState : public BaseState<audit>
 {
 public:
@@ -1185,7 +1197,7 @@ public:
 
   BaseState<audit>* Float(Context<audit>& /*ctx*/, float f) override
   {
-    *output_float = f;
+    func(output_float, f);
     return return_state;
   }
 
@@ -1196,10 +1208,47 @@ public:
 
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override
   {
-    *output_float = 0.f;
+    func(output_float, 0.f);
     return return_state;
   }
 };
+
+// HACK: This state object is a complete hack. This object needs to address some very specific business
+//       logic which cannot be handled in the state machine in a better way without impacting performance.
+//       This level of specificity should NOT be in the parser, do not use this as an example of what to do.
+template <bool audit>
+class FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
+{
+public:
+  FloatToFloatState_OriginalLabelCostHack() : BaseState<audit>("FloatToFloatState_OriginalLabelCostHack") {}
+
+  float* aggr_float;
+  float* first_slot_float;
+  bool seen_first = false;
+  BaseState<audit>* return_state;
+
+  BaseState<audit>* Float(Context<audit>& /*ctx*/, float f) override
+  {
+    *aggr_float += f;
+    if(!seen_first) {
+      seen_first = true;
+      *first_slot_float = f;
+    }
+    return return_state;
+  }
+
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
+  {
+    return Float(ctx, static_cast<float>(i));
+  }
+
+  BaseState<audit>* Null(Context<audit>& /*ctx*/) override
+  {
+    // do nothing
+    return return_state;
+  }
+};
+
 
 template <bool audit>
 class UIntDedupState : public BaseState<audit>
@@ -1440,9 +1489,10 @@ public:
       }
       else if (length == 20 && !strncmp(str, "_original_label_cost", 20))
       {
-        ctx.float_state.output_float = &data->originalLabelCost;
-        ctx.float_state.return_state = this;
-        return &ctx.float_state;
+        ctx.original_label_cost_state.aggr_float = &data->originalLabelCost;
+        ctx.original_label_cost_state.first_slot_float = &data->originalLabelCostFirstSlot;
+        ctx.original_label_cost_state.return_state = this;
+        return &ctx.original_label_cost_state;
       }
     }
 
@@ -1505,7 +1555,8 @@ public:
   ArrayToVectorState<audit, float> array_float_state;
   ArrayToVectorState<audit, unsigned> array_uint_state;
   StringToStringState<audit> string_state;
-  FloatToFloatState<audit> float_state;
+  FloatToFloatState<audit, float_aggregation::set> float_state;
+  FloatToFloatState_OriginalLabelCostHack<audit> original_label_cost_state;
   UIntToUIntState<audit> uint_state;
   UIntDedupState<audit> uint_dedup_state;
   BoolToBoolState<audit> bool_state;
