@@ -213,7 +213,7 @@ void ChiSquared::save_load(io_buf& model_file, bool read, bool text, const char*
   {                                                                                       \
     if (!read) msg << name << "_chisq_" << #field << " " << std::fixed << field << "\n";  \
     bin_text_read_write_fixed_validated(                                                  \
-        model_file, reinterpret_cast<char*>(&field), sizeof(field), "", read, msg, text); \
+        model_file, reinterpret_cast<char*>(&field), sizeof(field), read, msg, text); \
   } while (0)
 
   save_load_field(n);

@@ -40,11 +40,12 @@ struct discounted_expectation
   void save_load(io_buf& io, bool read, bool text, const char* name)
   {
     std::stringstream msg;
+
     if (!read) { msg << name << "_expectation_sum " << std::fixed << sum << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&sum), sizeof(sum), "", read, msg, text);
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&sum), sizeof(sum), read, msg, text);
 
     if (!read) { msg << name << "_expectation_n " << std::fixed << n << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&n), sizeof(sum), "", read, msg, text);
+    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&n), sizeof(sum), read, msg, text);
   }
 
 private:
