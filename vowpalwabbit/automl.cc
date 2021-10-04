@@ -227,20 +227,15 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
     case VW::automl::automl_state::Collecting:
       cm->pre_process(ec);
       cm->config_oracle();
-      offset_learn(base, ec, cm->current_champ, logged, labelled_action);
-      // replace bc champ always gets cached
-      ec[0]->pred.a_s = std::move(champ_a_s);
+      offset_learn(base, ec, logged, labelled_action);
       current_state = VW::automl::automl_state::Experimenting;
       break;
 
     case VW::automl::automl_state::Experimenting:
       cm->pre_process(ec);
       cm->schedule();
+      offset_learn(base, ec, logged, labelled_action);
       cm->update_champ();
-      for (size_t live_slot = 0; live_slot < cm->scores.size(); ++live_slot)
-      { offset_learn(base, ec, live_slot, logged, labelled_action); }
-      // replace bc champ always gets cached
-      ec[0]->pred.a_s = std::move(champ_a_s);
       break;
 
     default:
@@ -411,8 +406,7 @@ void interaction_config_manager::schedule()
       { configs[scores[live_slot].config_index].state = VW::automl::config_state::Inactive; }
       // Set all features of new live config
       scores[live_slot].reset_stats();
-      size_t new_live_config_index = index_queue.top().second;
-      index_queue.pop();
+      size_t new_live_config_index = choose();
       scores[live_slot].config_index = new_live_config_index;
       configs[new_live_config_index].state = VW::automl::config_state::Live;
       // Regenerate interactions each time an exclusion is swapped in
@@ -431,6 +425,13 @@ bool interaction_config_manager::worse(const exclusion_config& challenger, const
 {
   // Dummy return false to remove unused variable warning
   return (champ.lower_bound > challenger.ips) ? false : false;
+}
+
+size_t interaction_config_manager::choose()
+{
+  size_t ret = index_queue.top().second;
+  index_queue.pop();
+  return ret;
 }
 
 void interaction_config_manager::update_champ()
@@ -654,35 +655,39 @@ void predict_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 
 // inner loop of learn driven by # MAX_CONFIGS
 template <typename CMType>
-void automl<CMType>::offset_learn(
-    multi_learner& base, multi_ex& ec, const size_t live_slot, CB::cb_class& logged, size_t labelled_action)
+void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, size_t labelled_action)
 {
-  for (example* ex : ec) { cm->apply_config(ex, live_slot); }
+  for (size_t live_slot = 0; live_slot < cm->scores.size(); ++live_slot)
+  {
+    for (example* ex : ec) { cm->apply_config(ex, live_slot); }
 
-  auto restore_guard = VW::scope_exit([this, &ec, &live_slot] {
-    for (example* ex : ec) { this->cm->revert_config(ex); }
-  });
+    auto restore_guard = VW::scope_exit([this, &ec, &live_slot] {
+      for (example* ex : ec) { this->cm->revert_config(ex); }
+    });
 
-  if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
+    if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
 
-  base.learn(ec, live_slot);
+    base.learn(ec, live_slot);
 
-  const auto& action_scores = ec[0]->pred.a_s;
-  // cb_adf => first action is a greedy action
-  const auto maxit = action_scores.begin();
-  const uint32_t chosen_action = maxit->action;
+    const auto& action_scores = ec[0]->pred.a_s;
+    // cb_adf => first action is a greedy action
+    const auto maxit = action_scores.begin();
+    const uint32_t chosen_action = maxit->action;
 
-  // extra asserts
-  assert(chosen_action < ec.size());
-  assert(labelled_action < ec.size());
+    // extra asserts
+    assert(chosen_action < ec.size());
+    assert(labelled_action < ec.size());
 
-  const float w = logged.probability > 0 ? 1 / logged.probability : 0;
-  const float r = -logged.cost;
+    const float w = logged.probability > 0 ? 1 / logged.probability : 0;
+    const float r = -logged.cost;
 
-  cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
+    cm->scores[live_slot].update(chosen_action == labelled_action ? w : 0, r);
 
-  // cache the champ
-  if (cm->current_champ == live_slot) { champ_a_s = std::move(ec[0]->pred.a_s); }
+    // cache the champ
+    if (cm->current_champ == live_slot) { champ_a_s = std::move(ec[0]->pred.a_s); }
+  }
+  // replace bc champ always gets cached
+  ec[0]->pred.a_s = std::move(champ_a_s);
 }
 
 // this is the registered learn function for this reduction

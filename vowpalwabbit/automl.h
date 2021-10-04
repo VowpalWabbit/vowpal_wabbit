@@ -149,6 +149,7 @@ private:
   void gen_quadratic_interactions(size_t);
   bool better(const exclusion_config&, const exclusion_config&) const;
   bool worse(const exclusion_config&, const exclusion_config&) const;
+  size_t choose();
   priority_func* calc_priority;
   bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(size_t);
@@ -165,7 +166,7 @@ struct automl
   automl(std::unique_ptr<CMType> cm) : cm(std::move(cm)) {}
   // This fn gets called before learning any example
   void one_step(multi_learner&, multi_ex&, CB::cb_class&, size_t);
-  void offset_learn(multi_learner&, multi_ex&, const size_t, CB::cb_class&, size_t);
+  void offset_learn(multi_learner&, multi_ex&, CB::cb_class&, size_t);
 };
 
 }  // namespace automl
