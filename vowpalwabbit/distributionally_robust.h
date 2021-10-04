@@ -15,18 +15,17 @@ license as described in the file LICENSE.
 
 namespace VW
 {
-
 namespace distributionally_robust
 {
-  struct Duals;
-  class ChiSquared;
-}
+struct Duals;
+class ChiSquared;
+}  // namespace distributionally_robust
 
 namespace model_utils
 {
 size_t process_model_field(io_buf&, VW::distributionally_robust::Duals&, bool, const std::string&, bool);
 size_t process_model_field(io_buf&, VW::distributionally_robust::ChiSquared&, bool, const std::string&, bool);
-}
+}  // namespace model_utils
 
 namespace distributionally_robust
 {
@@ -44,7 +43,8 @@ namespace distributionally_robust
     {
     }
     double qfunc(double w, double r) { return unbounded ? 1 : -(gamma + (beta + r) * w) / ((n + 1) * kappa); }
-    friend size_t VW::model_utils::process_model_field<>(io_buf&, VW::distributionally_robust::Duals&, bool, const std::string&, bool);
+    friend size_t VW::model_utils::process_model_field<>(
+        io_buf&, VW::distributionally_robust::Duals&, bool, const std::string&, bool);
   };
 
   using ScoredDual = std::pair<double, Duals>;
@@ -137,7 +137,8 @@ namespace distributionally_robust
     ScoredDual recompute_duals();
     static double chisq_onedof_isf(double alpha);
     const double& effn() { return n; }
-    friend size_t VW::model_utils::process_model_field(io_buf&, VW::distributionally_robust::ChiSquared&, bool, const std::string&, bool);
+    friend size_t VW::model_utils::process_model_field(
+        io_buf&, VW::distributionally_robust::ChiSquared&, bool, const std::string&, bool);
   };
 
 }  // namespace distributionally_robust

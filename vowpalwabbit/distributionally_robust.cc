@@ -9,7 +9,8 @@ namespace VW
 {
 namespace model_utils
 {
-size_t process_model_field(io_buf& io, VW::distributionally_robust::Duals& duals, bool read, const std::string&, bool text)
+size_t process_model_field(
+    io_buf& io, VW::distributionally_robust::Duals& duals, bool read, const std::string&, bool text)
 {
   if (io.num_files() == 0) { return 0; }
   process_model_field(io, duals.unbounded, read, "_duals_unbounded", text);
@@ -20,7 +21,8 @@ size_t process_model_field(io_buf& io, VW::distributionally_robust::Duals& duals
   return 0;
 }
 
-size_t process_model_field(io_buf& io, VW::distributionally_robust::ChiSquared& chisq, bool read, const std::string&, bool text)
+size_t process_model_field(
+    io_buf& io, VW::distributionally_robust::ChiSquared& chisq, bool read, const std::string&, bool text)
 {
   if (io.num_files() == 0) { return 0; }
   process_model_field(io, chisq.duals.first, read, "_chisq_chi_scored", text);
