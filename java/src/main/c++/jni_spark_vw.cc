@@ -337,6 +337,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
   {
     example* ex = VW::alloc_examples(1);
     ex->interactions = &all->interactions;
+    ex->extent_interactions = &all->extent_interactions;
 
     if (isEmpty)
     {
