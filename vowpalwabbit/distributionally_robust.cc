@@ -7,6 +7,42 @@
 
 namespace VW
 {
+namespace model_utils
+{
+size_t process_model_field(io_buf& io, VW::distributionally_robust::Duals& duals, bool read, const std::string&, bool text)
+{
+  if (io.num_files() == 0) { return 0; }
+  process_model_field(io, duals.unbounded, read, "_duals_unbounded", text);
+  process_model_field(io, duals.kappa, read, "_duals_kappa", text);
+  process_model_field(io, duals.gamma, read, "_duals_gamma", text);
+  process_model_field(io, duals.beta, read, "_duals_beta", text);
+  process_model_field(io, duals.n, read, "_duals_n", text);
+  return 0;
+}
+
+size_t process_model_field(io_buf& io, VW::distributionally_robust::ChiSquared& chisq, bool read, const std::string&, bool text)
+{
+  if (io.num_files() == 0) { return 0; }
+  process_model_field(io, chisq.duals.first, read, "_chisq_chi_scored", text);
+  process_model_field(io, chisq.duals_stale, read, "_chisq_chi_duals_stale", text);
+  process_model_field(io, chisq.duals.second, read, "", text);
+  process_model_field(io, chisq.alpha, read, "_chisq_chi_alpha", text);
+  process_model_field(io, chisq.tau, read, "_chisq_chi_tau", text);
+  process_model_field(io, chisq.wmin, read, "_chisq_chi_wmin", text);
+  process_model_field(io, chisq.wmax, read, "_chisq_chi_wmax", text);
+  process_model_field(io, chisq.rmin, read, "_chisq_chi_rmin", text);
+  process_model_field(io, chisq.rmax, read, "_chisq_chi_rmax", text);
+  process_model_field(io, chisq.n, read, "_chisq_chi_n", text);
+  process_model_field(io, chisq.sumw, read, "_chisq_chi_sumw", text);
+  process_model_field(io, chisq.sumwsq, read, "_chisq_chi_sumwsq", text);
+  process_model_field(io, chisq.sumwr, read, "_chisq_chi_sumwr", text);
+  process_model_field(io, chisq.sumwsqr, read, "_chisq_chi_sumwsqr", text);
+  process_model_field(io, chisq.sumwsqrsq, read, "_chisq_chi_sumwsqrsq", text);
+  process_model_field(io, chisq.delta, read, "_chisq_chi_delta", text);
+  return 0;
+}
+}  // namespace model_utils
+
 namespace distributionally_robust
 {
 double ChiSquared::chisq_onedof_isf(double alpha)

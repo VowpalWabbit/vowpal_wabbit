@@ -11,9 +11,23 @@ license as described in the file LICENSE.
 #include <tuple>
 #include "vw_exception.h"
 #include "io_buf.h"
+#include "model_utils.h"
 
 namespace VW
 {
+
+namespace distributionally_robust
+{
+  struct Duals;
+  class ChiSquared;
+}
+
+namespace model_utils
+{
+size_t process_model_field(io_buf&, VW::distributionally_robust::Duals&, bool, const std::string&, bool);
+size_t process_model_field(io_buf&, VW::distributionally_robust::ChiSquared&, bool, const std::string&, bool);
+}
+
 namespace distributionally_robust
 {
   struct Duals
@@ -30,26 +44,7 @@ namespace distributionally_robust
     {
     }
     double qfunc(double w, double r) { return unbounded ? 1 : -(gamma + (beta + r) * w) / ((n + 1) * kappa); }
-
-    void save_load(io_buf& model_file, bool read, bool text)
-    {
-      if (model_file.num_files() == 0) { return; }
-      std::stringstream msg;
-      if (!read) { msg << "_duals_unbounded " << unbounded << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&unbounded), sizeof(unbounded), read, msg, text);
-
-      if (!read) { msg << "_duals_kappa " << kappa << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&kappa), sizeof(kappa), read, msg, text);
-
-      if (!read) { msg << "_duals_gamma " << gamma << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&gamma), sizeof(gamma), read, msg, text);
-
-      if (!read) { msg << "_duals_beta " << beta << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&beta), sizeof(beta), read, msg, text);
-
-      if (!read) { msg << "_duals_n " << n << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&n), sizeof(n), read, msg, text);
-    }
+    friend size_t VW::model_utils::process_model_field<>(io_buf&, VW::distributionally_robust::Duals&, bool, const std::string&, bool);
   };
 
   using ScoredDual = std::pair<double, Duals>;
@@ -139,63 +134,10 @@ namespace distributionally_robust
       return duals.second.qfunc(w, r);
     }
 
-    void save_load(io_buf& model_file, bool read, bool text)
-    {
-      if (model_file.num_files() == 0) { return; }
-      std::stringstream msg;
-      if (!read) { msg << "_chisq_chi_scored " << duals.first << "\n"; }
-      bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&duals.first), sizeof(duals.first), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_duals_stale " << duals_stale << "\n"; }
-      bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&duals_stale), sizeof(duals_stale), read, msg, text);
-
-      duals.second.save_load(model_file, read, text);
-
-      if (!read) { msg << "_chisq_chi_alpha " << alpha << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&alpha), sizeof(alpha), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_tau " << tau << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&tau), sizeof(tau), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_wmin " << wmin << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&wmin), sizeof(wmin), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_wmax " << wmax << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&wmax), sizeof(wmax), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_rmin " << rmin << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&rmin), sizeof(rmin), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_rmax " << rmax << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&rmax), sizeof(rmax), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_n " << n << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&n), sizeof(n), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_sumw " << sumw << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&sumw), sizeof(sumw), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_sumwsq " << sumwsq << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&sumwsq), sizeof(sumwsq), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_sumwr " << sumwr << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&sumwr), sizeof(sumwr), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_sumwsqr " << sumwsqr << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&sumwsqr), sizeof(sumwsqr), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_sumwsqrsq " << sumwsqrsq << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&sumwsqrsq), sizeof(sumwsqrsq), read, msg, text);
-
-      if (!read) { msg << "_chisq_chi_delta " << delta << "\n"; }
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&delta), sizeof(delta), read, msg, text);
-    }
-
     ScoredDual recompute_duals();
     static double chisq_onedof_isf(double alpha);
     const double& effn() { return n; }
+    friend size_t VW::model_utils::process_model_field(io_buf&, VW::distributionally_robust::ChiSquared&, bool, const std::string&, bool);
   };
 
 }  // namespace distributionally_robust
