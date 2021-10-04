@@ -115,6 +115,7 @@ struct dsjson_metrics
   size_t NumberOfEventsZeroActions = 0;
   size_t LineParseError = 0;
   float DsjsonSumCostOriginal = 0.f;
+  float DsjsonCostOriginalFirstSlot = 0.f;
   std::string FirstEventId;
   std::string FirstEventTime;
   std::string LastEventId;

@@ -72,6 +72,8 @@ void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, 
       writer.String(ds_metrics->LastEventTime.c_str());
       writer.Key("dsjson_sum_cost_original");
       writer.Double(ds_metrics->DsjsonSumCostOriginal);
+      writer.Key("dsjson_cost_original_first_slot");
+      writer.Double(ds_metrics->DsjsonCostOriginalFirstSlot);
     }
 
     writer.EndObject();
