@@ -31,7 +31,8 @@ struct metrics_data
   size_t predict_count = 0;
 };
 
-void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, metric_sink& metrics, const std::vector<std::string>& enabled_reductions)
+void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, metric_sink& metrics,
+    const std::vector<std::string>& enabled_reductions)
 {
   FILE* fp;
 
@@ -70,7 +71,8 @@ void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, 
       writer.String(ds_metrics->LastEventId.c_str());
       writer.Key("last_event_time");
       writer.String(ds_metrics->LastEventTime.c_str());
-      if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") != enabled_reductions.end())
+      if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") !=
+          enabled_reductions.end())
       {
         writer.Key("dsjson_sum_cost_original_first_slot");
         writer.Double(ds_metrics->DsjsonSumCostOriginalFirstSlot);
