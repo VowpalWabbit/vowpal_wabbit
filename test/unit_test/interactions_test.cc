@@ -81,9 +81,7 @@ void eval_count_of_generated_ft_naive(vw& all, example_predict& ec, size_t& new_
   for (auto ns_index : ec.indices)
   {
     for (const auto& extent : ec.feature_space[ns_index].namespace_extents)
-    {
-      seen_extents.insert({ns_index, extent.hash});
-    }
+    { seen_extents.insert({ns_index, extent.hash}); }
   }
 
   auto interactions = INTERACTIONS::compile_extent_interactions<generate_func, leave_duplicate_interactions>(
@@ -107,8 +105,8 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
 
   size_t naive_features_count;
   float naive_features_value;
-  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>, false>(
-      vw, *ex, naive_features_count, naive_features_value);
+  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>,
+      false>(vw, *ex, naive_features_count, naive_features_value);
 
   auto interactions =
       INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
@@ -460,10 +458,12 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
   }
 }
 
-void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool combinations){
+void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool combinations)
+{
   std::string char_cmd_line = "--quiet --noconstant";
   std::string extent_cmd_line = "--quiet --noconstant";
-  if (add_quadratic) {
+  if (add_quadratic)
+  {
     char_cmd_line += " -q :: ";
     extent_cmd_line += " --experimental_full_name_interactions :|: ";
   }
@@ -479,16 +479,13 @@ void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool 
   }
   auto* vw_char_inter = VW::initialize(char_cmd_line);
   auto* vw_extent_inter = VW::initialize(extent_cmd_line);
-  auto cleanup = VW::scope_exit(
-      [&]()
-      {
-        VW::finish(*vw_char_inter);
-        VW::finish(*vw_extent_inter);
-      });
+  auto cleanup = VW::scope_exit([&]() {
+    VW::finish(*vw_char_inter);
+    VW::finish(*vw_extent_inter);
+  });
 
   auto parse_and_return_num_fts = [&](const char* char_inter_example,
-                                      const char* extent_inter_example) -> std::pair<size_t, size_t>
-  {
+                                      const char* extent_inter_example) -> std::pair<size_t, size_t> {
     auto* ex_char = VW::read_example(*vw_char_inter, char_inter_example);
     auto* ex_extent = VW::read_example(*vw_extent_inter, extent_inter_example);
     vw_char_inter->predict(*ex_char);
@@ -514,14 +511,16 @@ void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool 
   BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
 }
 
-
 BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard) { do_interaction_feature_count_test(true, false, true); }
 BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard)
 {
   do_interaction_feature_count_test(true, true, true);
 }
 
-BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard_permutations) { do_interaction_feature_count_test(true, false, false); }
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard_permutations)
+{
+  do_interaction_feature_count_test(true, false, false);
+}
 BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard_permutations)
 {
   do_interaction_feature_count_test(true, true, false);

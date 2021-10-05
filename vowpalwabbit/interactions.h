@@ -38,7 +38,8 @@ inline bool contains_wildcard(const std::vector<namespace_index>& interaction)
 
 inline bool contains_wildcard(const std::vector<extent_term>& interaction)
 {
-  return std::find(interaction.begin(), interaction.end(), extent_term{wildcard_namespace, wildcard_namespace}) != interaction.end();
+  return std::find(interaction.begin(), interaction.end(), extent_term{wildcard_namespace, wildcard_namespace}) !=
+      interaction.end();
 }
 
 // function estimates how many new features will be generated for example and their sum(value^2).
@@ -47,10 +48,8 @@ float eval_sum_ft_squared_of_generated_ft(bool permutations,
     const std::vector<std::vector<extent_term>>& extent_interactions,
     const std::array<features, NUM_NAMESPACES>& feature_spaces);
 
-
-template<typename T>
-std::vector<T> indices_to_values_one_based(
-    const std::vector<size_t>& indices, const std::set<T>& values)
+template <typename T>
+std::vector<T> indices_to_values_one_based(const std::vector<size_t>& indices, const std::set<T>& values)
 {
   std::vector<T> result;
   result.reserve(indices.size());
@@ -63,9 +62,8 @@ std::vector<T> indices_to_values_one_based(
   return result;
 }
 
-template<typename T>
-std::vector<T> indices_to_values_ignore_last_index(
-    const std::vector<size_t>& indices, const std::set<T>& values)
+template <typename T>
+std::vector<T> indices_to_values_ignore_last_index(const std::vector<size_t>& indices, const std::set<T>& values)
 {
   std::vector<T> result;
   result.reserve(indices.size() - 1);
@@ -104,8 +102,7 @@ std::vector<std::vector<T>> generate_namespace_combinations_with_repetition(
       }
     }
 
-    if (indices[num_to_pick] > 0) { break;
-}
+    if (indices[num_to_pick] > 0) { break; }
     result.emplace_back(indices_to_values_ignore_last_index(indices, namespaces));
 
     indices[0] += 1;
@@ -114,7 +111,7 @@ std::vector<std::vector<T>> generate_namespace_combinations_with_repetition(
   return result;
 }
 
-template<typename T>
+template <typename T>
 std::vector<std::vector<T>> generate_namespace_permutations_with_repetition(
     const std::set<T>& namespaces, size_t num_to_pick)
 {
@@ -151,15 +148,13 @@ std::vector<std::vector<T>> generate_namespace_permutations_with_repetition(
   return result;
 }
 
-template<typename T>
-using generate_func_t = std::vector<std::vector<T>>(
-    const std::set<T>& namespaces, size_t num_to_pick);
+template <typename T>
+using generate_func_t = std::vector<std::vector<T>>(const std::set<T>& namespaces, size_t num_to_pick);
 
 std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interactions(
     bool leave_duplicate_interactions, const std::set<namespace_index>& new_example_indices);
 
 bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b);
-
 
 template <generate_func_t<namespace_index> generate_func, bool leave_duplicate_interactions>
 std::vector<std::vector<namespace_index>> compile_interaction(
@@ -309,16 +304,13 @@ public:
 
   template <generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
   void update_extent_interactions_if_new_namespace_seen(const std::vector<std::vector<extent_term>>& interactions,
-    const v_array<namespace_index>& indices,
-    const std::array<features, NUM_NAMESPACES>& feature_space)
+      const v_array<namespace_index>& indices, const std::array<features, NUM_NAMESPACES>& feature_space)
   {
     auto prev_count = all_seen_extents.size();
     for (auto ns_index : indices)
     {
       for (const auto& extent : feature_space[ns_index].namespace_extents)
-      {
-        all_seen_extents.insert({ns_index, extent.hash});
-      }
+      { all_seen_extents.insert({ns_index, extent.hash}); }
     }
 
     if (prev_count != all_seen_extents.size())
@@ -359,7 +351,6 @@ inline bool must_be_left_sorted(const std::vector<T>& oi)
   return false;  // 'aaa' or 'abc'
 }
 
-
 // used from parse_args.cc
 // filter duplicate namespaces treating them as unordered sets of namespaces.
 // also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
@@ -384,11 +375,13 @@ void sort_and_filter_duplicate_interactions(
   {
     // remove duplicates
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b)
-        { return a.first < b.first; });
+        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b) {
+          return a.first < b.first;
+        });
     auto last = unique(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b)
-        { return a.first == b.first; });
+        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b) {
+          return a.first == b.first;
+        });
     vec_sorted.erase(last, vec_sorted.end());
 
     // report number of removed interactions
@@ -396,8 +389,9 @@ void sort_and_filter_duplicate_interactions(
 
     // restore original order
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b)
-        { return a.second < b.second; });
+        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b) {
+          return a.second < b.second;
+        });
   }
 
   // we have original vector and vector with duplicates removed + corresponding indexes in original vector
