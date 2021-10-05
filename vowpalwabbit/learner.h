@@ -709,34 +709,6 @@ learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(
   return learner<T, E>::init_learner(nullptr, base, learn, predict, 1, base->pred_type, name, learn_returns_prediction);
 }
 
-// multiclass reduction
-template <class T, class E, class L>
-learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
-    prediction_type_t pred_type = prediction_type_t::multiclass, bool learn_returns_prediction = false)
-{
-  learner<T, E>& l =
-      learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_returns_prediction);
-
-  dat.release();
-  l.set_finish_example(MULTICLASS::finish_example<T>);
-  p->lbl_parser = MULTICLASS::mc_label;
-  return l;
-}
-
-template <class T, class E, class L>
-learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&), parser* p, size_t ws, const std::string& name,
-    prediction_type_t pred_type = prediction_type_t::multiclass, bool learn_returns_prediction = false)
-{
-  learner<T, E>& l =
-      learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_returns_prediction);
-  dat.release();
-  l.set_finish_example(COST_SENSITIVE::finish_example);
-  p->lbl_parser = COST_SENSITIVE::cs_label;
-  return l;
-}
-
 template <class T, class E>
 base_learner* make_base(learner<T, E>& base)
 {

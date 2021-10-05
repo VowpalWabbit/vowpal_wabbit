@@ -301,8 +301,7 @@ void generic_driver_onethread(vw& all)
   single_instance_context context(all);
   handler_type handler(context);
   custom_examples_queue examples_queue;
-  auto multi_ex_fptr = [&handler, &examples_queue](vw& all, const v_array<example*>& examples) {
-    all.example_parser->end_parsed_examples += examples.size();  // divergence: lock & signal
+  auto multi_ex_fptr = [&handler, &examples_queue](vw& /*all*/, const v_array<example*>& examples) {
     examples_queue.reset_examples(&examples);
     process_examples(examples_queue, handler);
   };
