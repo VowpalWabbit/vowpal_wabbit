@@ -326,8 +326,19 @@ sub next_test() {
     }
 
     if ($cmd =~ /{VW}/) {
-         $cmd = trim_spaces($cmd);
-         $cmd =~ s/{VW}/$VW$opt_O/g;
+        $cmd = trim_spaces($cmd);
+        # IF {SPANNING_TREE} is also present it is the python test so dont add the additional VW args.
+        if ($cmd =~ /{SPANNING_TREE}/) {
+            $cmd =~ s/{VW}/$VW/g;
+        }
+        else{
+            $cmd =~ s/{VW}/$VW$opt_O/g;
+        }
+    }
+
+    $spanning_tree_bin = '../build/cluster/spanning_tree';
+    if ($cmd =~ /{SPANNING_TREE}/) {
+        $cmd =~ s/{SPANNING_TREE}/$spanning_tree_bin/g;
     }
 
     if ($cmd =~ /--flatbuffer/) {
@@ -1789,7 +1800,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | {VW} --oaa 3 -q ef --audit
     train-sets/ref/ccb_reuse_medium.stderr
 
 # Test 203: Basic test of cluster. Can't use the VW replacer as it will think this is a VW command append things like --onethread
-python3 ./cluster_test.py --vw ../build/vowpalwabbit/vw --spanning_tree ../build/cluster/spanning_tree \
+python3 ./cluster_test.py --vw {VW} --spanning_tree {SPANNING_TREE} \
     --test_file test-sets/0001.dat --data_files train-sets/0001.dat train-sets/0002.dat \
     --prediction_file cluster.predict
         test-sets/ref/cluster.stderr
