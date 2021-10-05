@@ -17,6 +17,7 @@
 #include <array>
 #include <memory>
 #include <atomic>
+#include <sstream>
 #include "vw_string_view.h"
 
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
@@ -247,6 +248,8 @@ public:
 
   vw_logger logger;
   bool audit;     // should I print lots of debugging information?
+  std::stringstream audit_buffer;
+  std::unique_ptr<VW::io::writer> audit_writer;
   bool training;  // Should I train if lable data is available?
   bool active;
   bool invariant_updates;  // Should we use importance aware/safe updates
