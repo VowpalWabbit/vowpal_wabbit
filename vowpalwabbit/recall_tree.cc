@@ -62,19 +62,19 @@ struct node
 
 struct recall_tree
 {
-  vw* all;
+  vw* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
-  uint32_t k;
-  bool node_only;
+  uint32_t k = 0;
+  bool node_only = false;
 
   std::vector<node> nodes;
 
-  size_t max_candidates;
-  size_t max_routers;
-  size_t max_depth;
-  float bern_hyper;
+  size_t max_candidates = 0;
+  size_t max_routers = 0;
+  size_t max_depth = 0;
+  float bern_hyper = 0.f;
 
-  bool randomized_routing;
+  bool randomized_routing = false;
 };
 
 VW_STD14_CONSTEXPR float to_prob(float x)
@@ -490,7 +490,7 @@ base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto tree = scoped_calloc_or_throw<recall_tree>();
+  auto tree = VW::make_unique<recall_tree>();
   option_group_definition new_options("Recall Tree");
   new_options.add(make_option("recall_tree", tree->k).keep().necessary().help("Use online tree for multiclass"))
       .add(make_option("max_candidates", tree->max_candidates)
@@ -522,11 +522,17 @@ base_learner* recall_tree_setup(VW::setup_base_i& stack_builder)
                                           : "n/a testonly")
                          << std::endl;
 
-  learner<recall_tree, example>& l =
-      init_multiclass_learner(tree, as_singleline(stack_builder.setup_base_learner()), learn, predict,
-          all.example_parser, tree->max_routers + tree->k, stack_builder.get_setupfn_name(recall_tree_setup));
-  all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
-  l.set_save_load(save_load_tree);
+  size_t ws = tree->max_routers + tree->k;
+  auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
+      stack_builder.get_setupfn_name(recall_tree_setup))
+                .set_params_per_weight(ws)
+                .set_finish_example(MULTICLASS::finish_example<recall_tree&>)
+                .set_save_load(save_load_tree)
+                .set_prediction_type(prediction_type_t::multiclass)
+                .set_label_type(label_type_t::multiclass)
+                .build();
 
-  return make_base(l);
+  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+
+  return make_base(*l);
 }
