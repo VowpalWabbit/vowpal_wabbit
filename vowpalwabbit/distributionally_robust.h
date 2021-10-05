@@ -43,7 +43,7 @@ namespace distributionally_robust
     {
     }
     double qfunc(double w, double r) { return unbounded ? 1 : -(gamma + (beta + r) * w) / ((n + 1) * kappa); }
-    friend size_t VW::model_utils::process_model_field<>(
+    friend size_t VW::model_utils::process_model_field(
         io_buf&, VW::distributionally_robust::Duals&, bool, const std::string&, bool);
   };
 
