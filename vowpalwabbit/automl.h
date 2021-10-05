@@ -160,13 +160,14 @@ struct automl
 {
   automl_state current_state = automl_state::Collecting;
   std::unique_ptr<CMType> cm;
-  vw* all = nullptr;                              //  TBD might not be needed
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
-  ACTION_SCORE::action_scores champ_a_s;          // a sequence of classes with scores.  Also used for probabilities.
   automl(std::unique_ptr<CMType> cm) : cm(std::move(cm)) {}
   // This fn gets called before learning any example
   void one_step(multi_learner&, multi_ex&, CB::cb_class&, size_t);
   void offset_learn(multi_learner&, multi_ex&, CB::cb_class&, size_t);
+
+private:
+  ACTION_SCORE::action_scores champ_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
 
 }  // namespace automl

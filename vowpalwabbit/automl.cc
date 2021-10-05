@@ -646,7 +646,7 @@ void predict_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
   size_t champ_live_slot = data.cm->current_champ;
   for (example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
-  auto restore_guard = VW::scope_exit([&data, &ec, &champ_live_slot] {
+  auto restore_guard = VW::scope_exit([&data, &ec] {
     for (example* ex : ec) { data.cm->revert_config(ex); }
   });
 
@@ -661,7 +661,7 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   {
     for (example* ex : ec) { cm->apply_config(ex, live_slot); }
 
-    auto restore_guard = VW::scope_exit([this, &ec, &live_slot] {
+    auto restore_guard = VW::scope_exit([this, &ec] {
       for (example* ex : ec) { this->cm->revert_config(ex); }
     });
 
@@ -695,30 +695,17 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
 template <typename CMType, bool is_explore>
 void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 {
-  assert(data.all->weights.sparse == false);
-
-  bool is_learn = true;
-
-  // extra assert just bc
-  assert(data.all->interactions.empty() == true);
-
   CB::cb_class logged{};
   size_t labelled_action = 0;
-  if (is_learn)
-  {
-    const auto it = std::find_if(ec.begin(), ec.end(), [](example* item) { return !item->l.cb.costs.empty(); });
+  const auto it = std::find_if(ec.begin(), ec.end(), [](example* item) { return !item->l.cb.costs.empty(); });
 
-    if (it != ec.end())
-    {
-      logged = (*it)->l.cb.costs[0];
-      labelled_action = std::distance(ec.begin(), it);
-    }
+  if (it != ec.end())
+  {
+    logged = (*it)->l.cb.costs[0];
+    labelled_action = std::distance(ec.begin(), it);
   }
 
   data.one_step(base, ec, logged, labelled_action);
-
-  // extra: assert again just like at the top
-  assert(data.all->interactions.empty() == true);
   assert(ec[0]->interactions == nullptr);
 }
 
@@ -823,8 +810,6 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   auto cm = VW::make_unique<interaction_config_manager>(
       global_lease, max_live_configs, all.random_seed, static_cast<size_t>(priority_challengers), calc_priority);
   auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
-  // all is not needed but good to have for testing purposes
-  data->all = &all;
   assert(max_live_configs <= MAX_CONFIGS);
 
   // override and clear all the global interactions
