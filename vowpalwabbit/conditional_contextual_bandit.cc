@@ -18,6 +18,7 @@
 #include "version.h"
 #include "debug_log.h"
 #include "shared_data.h"
+#include "model_utils.h"
 
 #include "io/logger.h"
 
@@ -283,11 +284,8 @@ void inject_slot_id(ccb& data, example* shared, size_t id)
 template <bool audit>
 void remove_slot_id(example* shared)
 {
-  shared->feature_space[ccb_id_namespace].indicies.pop_back();
-  shared->feature_space[ccb_id_namespace].values.pop_back();
+  shared->feature_space[ccb_id_namespace].clear();
   shared->indices.pop_back();
-
-  if (audit) { shared->feature_space[ccb_id_namespace].space_names.pop_back(); }
 }
 
 void remove_slot_features(example* shared, example* slot)
@@ -622,12 +620,12 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 
   // We want to enter this block if either we are writing, or reading a model file after the version in which this was
   // added.
-  if (!read || (sm.model_file_version >= VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG && sm.is_ccb_input_model))
+  if (!read ||
+      (sm.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG &&
+          sm.is_ccb_input_model))
   {
-    std::stringstream msg;
-    if (!read) { msg << "CCB: has_seen_multi_slot_example = " << sm.has_seen_multi_slot_example << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&sm.has_seen_multi_slot_example),
-        sizeof(sm.has_seen_multi_slot_example), "", read, msg, text);
+    VW::model_utils::process_model_field(
+        io, sm.has_seen_multi_slot_example, read, "CCB: has_seen_multi_slot_example", text);
   }
 
   if (read && sm.has_seen_multi_slot_example)

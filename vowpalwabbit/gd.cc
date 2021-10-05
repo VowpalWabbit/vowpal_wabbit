@@ -24,13 +24,11 @@
 #include "vw.h"
 #include "shared_data.h"
 #include "label_parser.h"
+#include "vw_versions.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::gd
 #include "io/logger.h"
-
-#define VERSION_SAVE_RESUME_FIX "7.10.1"
-#define VERSION_PASS_UINT64 "8.3.3"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -761,18 +759,18 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
       brw = 1;
       if (all.num_bits < 31)  // backwards compatible
       {
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&old_i), sizeof(old_i), "");
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&old_i), sizeof(old_i));
         i = old_i;
       }
       else
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i), "");
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i));
       if (brw > 0)
       {
         if (i >= length)
           THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length "
                                                                    << length);
         weight* v = &weights.strided_index(i);
-        brw += model_file.bin_read_fixed(reinterpret_cast<char*>(&(*v)), sizeof(*v), "");
+        brw += model_file.bin_read_fixed(reinterpret_cast<char*>(&(*v)), sizeof(*v));
       }
     } while (brw > 0);
   else  // write
@@ -814,11 +812,11 @@ void save_load_online_state(
       brw = 1;
       if (all.num_bits < 31)  // backwards compatible
       {
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&old_i), sizeof(old_i), "");
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&old_i), sizeof(old_i));
         i = old_i;
       }
       else
-        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i), "");
+        brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i));
       if (brw > 0)
       {
         if (i >= length)
@@ -826,13 +824,13 @@ void save_load_online_state(
                                                                    << length);
         weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
         if (ftrl_size > 0)
-          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * ftrl_size, "");
+          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * ftrl_size);
         else if (g == nullptr || (!g->adaptive_input && !g->normalized_input))
-          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]), "");
+          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]));
         else if ((g->adaptive_input && !g->normalized_input) || (!g->adaptive_input && g->normalized_input))
-          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * 2, "");
+          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * 2);
         else  // adaptive and normalized
-          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * 3, "");
+          brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * 3);
         uint32_t stride = 1 << weights.stride_shift();
         weight* v = &weights.strided_index(i);
         for (size_t j = 0; j < stride; j++) v[j] = buff[j];
@@ -924,82 +922,81 @@ void save_load_online_state(
 
   msg << "initial_t " << all.initial_t << "\n";
   bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&all.initial_t), sizeof(all.initial_t), "", read, msg, text);
+      model_file, reinterpret_cast<char*>(&all.initial_t), sizeof(all.initial_t), read, msg, text);
 
   msg << "norm normalizer " << all.normalized_sum_norm_x << "\n";
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.normalized_sum_norm_x),
-      sizeof(all.normalized_sum_norm_x), "", read, msg, text);
+      sizeof(all.normalized_sum_norm_x), read, msg, text);
 
   msg << "t " << all.sd->t << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->t), sizeof(all.sd->t), "", read, msg, text);
+  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->t), sizeof(all.sd->t), read, msg, text);
 
   msg << "sum_loss " << all.sd->sum_loss << "\n";
   bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&all.sd->sum_loss), sizeof(all.sd->sum_loss), "", read, msg, text);
+      model_file, reinterpret_cast<char*>(&all.sd->sum_loss), sizeof(all.sd->sum_loss), read, msg, text);
 
   msg << "sum_loss_since_last_dump " << all.sd->sum_loss_since_last_dump << "\n";
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->sum_loss_since_last_dump),
-      sizeof(all.sd->sum_loss_since_last_dump), "", read, msg, text);
+      sizeof(all.sd->sum_loss_since_last_dump), read, msg, text);
 
   float dump_interval = all.sd->dump_interval;
   msg << "dump_interval " << dump_interval << "\n";
   bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&dump_interval), sizeof(dump_interval), "", read, msg, text);
+      model_file, reinterpret_cast<char*>(&dump_interval), sizeof(dump_interval), read, msg, text);
   if (!read || (all.training && all.preserve_performance_counters))  // update dump_interval from input model
     all.sd->dump_interval = dump_interval;
 
   msg << "min_label " << all.sd->min_label << "\n";
   bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&all.sd->min_label), sizeof(all.sd->min_label), "", read, msg, text);
+      model_file, reinterpret_cast<char*>(&all.sd->min_label), sizeof(all.sd->min_label), read, msg, text);
 
   msg << "max_label " << all.sd->max_label << "\n";
   bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&all.sd->max_label), sizeof(all.sd->max_label), "", read, msg, text);
+      model_file, reinterpret_cast<char*>(&all.sd->max_label), sizeof(all.sd->max_label), read, msg, text);
 
   msg << "weighted_labeled_examples " << all.sd->weighted_labeled_examples << "\n";
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->weighted_labeled_examples),
-      sizeof(all.sd->weighted_labeled_examples), "", read, msg, text);
+      sizeof(all.sd->weighted_labeled_examples), read, msg, text);
 
   msg << "weighted_labels " << all.sd->weighted_labels << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->weighted_labels),
-      sizeof(all.sd->weighted_labels), "", read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&all.sd->weighted_labels), sizeof(all.sd->weighted_labels), read, msg, text);
 
   msg << "weighted_unlabeled_examples " << all.sd->weighted_unlabeled_examples << "\n";
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->weighted_unlabeled_examples),
-      sizeof(all.sd->weighted_unlabeled_examples), "", read, msg, text);
+      sizeof(all.sd->weighted_unlabeled_examples), read, msg, text);
 
   msg << "example_number " << all.sd->example_number << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->example_number),
-      sizeof(all.sd->example_number), "", read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&all.sd->example_number), sizeof(all.sd->example_number), read, msg, text);
 
   msg << "total_features " << all.sd->total_features << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->total_features),
-      sizeof(all.sd->total_features), "", read, msg, text);
+  bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&all.sd->total_features), sizeof(all.sd->total_features), read, msg, text);
 
-  if (!read || all.model_file_ver >= VERSION_SAVE_RESUME_FIX)
+  if (!read || all.model_file_ver >= VW::version_definitions::VERSION_SAVE_RESUME_FIX)
   {
     // restore some data to allow --save_resume work more accurate
 
     // fix average loss
     msg << "total_weight " << total_weight << "\n";
     bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&total_weight), sizeof(total_weight), "", read, msg, text);
+        model_file, reinterpret_cast<char*>(&total_weight), sizeof(total_weight), read, msg, text);
 
     // fix "loss since last" for first printed out example details
     msg << "sd::oec.weighted_labeled_examples " << all.sd->old_weighted_labeled_examples << "\n";
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->old_weighted_labeled_examples),
-        sizeof(all.sd->old_weighted_labeled_examples), "", read, msg, text);
+        sizeof(all.sd->old_weighted_labeled_examples), read, msg, text);
 
     // fix "number of examples per pass"
     msg << "current_pass " << all.current_pass << "\n";
-    if (all.model_file_ver >= VERSION_PASS_UINT64)
+    if (all.model_file_ver >= VW::version_definitions::VERSION_PASS_UINT64)
       bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&all.current_pass), sizeof(all.current_pass), "", read, msg, text);
+          model_file, reinterpret_cast<char*>(&all.current_pass), sizeof(all.current_pass), read, msg, text);
     else  // backwards compatiblity.
     {
       size_t temp_pass = static_cast<size_t>(all.current_pass);
-      bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&temp_pass), sizeof(temp_pass), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&temp_pass), sizeof(temp_pass), read, msg, text);
       all.current_pass = temp_pass;
     }
   }
@@ -1057,14 +1054,14 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     bool resume = all.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
     if (resume)
     {
-      if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
+      if (read && all.model_file_ver < VW::version_definitions::VERSION_SAVE_RESUME_FIX)
         *(all.trace_message)
             << std::endl
             << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than "
-            << VERSION_SAVE_RESUME_FIX << std::endl
+            << VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string() << std::endl
             << std::endl;
       save_load_online_state(all, model_file, read, text, g.total_weight, &g);
     }

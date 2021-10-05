@@ -13,11 +13,8 @@ float calculate_total_sum_features_squared(bool permutations, example& ec)
 {
   float sum_features_squared = 0.f;
   for (const features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
-
-  size_t ignored_interacted_feature_count = 0;
-  float calculated_sum_features_squared = 0.f;
-  INTERACTIONS::eval_count_of_generated_ft(permutations, *ec.interactions, *ec.extent_interactions, ec.feature_space,
-      ignored_interacted_feature_count, calculated_sum_features_squared);
+  float calculated_sum_features_squared = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
+      permutations, *ec.interactions, *ec.extent_interactions, ec.feature_space);
   sum_features_squared += calculated_sum_features_squared;
   return sum_features_squared;
 }
@@ -295,7 +292,7 @@ void dealloc_examples(example* example_ptr, size_t count)
 }
 
 void finish_example(vw&, example&);
-void clean_example(vw&, example&, bool rewind);
+void clean_example(vw&, example&);
 
 void finish_example(vw& all, multi_ex& ec_seq)
 {
@@ -304,7 +301,7 @@ void finish_example(vw& all, multi_ex& ec_seq)
 
 void return_multiple_example(vw& all, v_array<example*>& examples)
 {
-  for (auto ec : examples) { clean_example(all, *ec, true); }
+  for (auto ec : examples) { clean_example(all, *ec); }
   examples.clear();
 }
 

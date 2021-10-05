@@ -141,13 +141,15 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
       {
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
             audit_regressor_interaction, sparse_parameters>(rd.all->interactions, rd.all->extent_interactions,
-            rd.all->permutations, ec, rd, rd.all->weights.sparse_weights, num_interacted_features);
+            rd.all->permutations, ec, rd, rd.all->weights.sparse_weights, num_interacted_features,
+            rd.all->_generate_interactions_object_cache);
       }
       else
       {
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
             audit_regressor_interaction, dense_parameters>(rd.all->interactions, rd.all->extent_interactions,
-            rd.all->permutations, ec, rd, rd.all->weights.dense_weights, num_interacted_features);
+            rd.all->permutations, ec, rd, rd.all->weights.dense_weights, num_interacted_features,
+            rd.all->_generate_interactions_object_cache);
       }
 
       ec.ft_offset += rd.increment;

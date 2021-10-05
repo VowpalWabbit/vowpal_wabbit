@@ -237,12 +237,21 @@ private:
 class custom_examples_queue
 {
 public:
-  custom_examples_queue(v_array<example*> examples) : _examples(examples) {}
+  void reset_examples(const v_array<example*>* examples)
+  {
+    assert(examples != nullptr);
+    _examples = examples;
+    _index = 0;
+  }
 
-  example* pop() { return _index < _examples.size() ? _examples[_index++] : nullptr; }
+  example* pop()
+  {
+    assert(_examples != nullptr);
+    return _index < _examples->size() ? (*_examples)[_index++] : nullptr;
+  }
 
 private:
-  v_array<example*> _examples;
+  const v_array<example*>* _examples;
   size_t _index{0};
 };
 
@@ -291,9 +300,9 @@ void generic_driver_onethread(vw& all)
 {
   single_instance_context context(all);
   handler_type handler(context);
-  auto multi_ex_fptr = [&handler](vw& all, v_array<example*> examples) {
-    all.example_parser->end_parsed_examples += examples.size();  // divergence: lock & signal
-    custom_examples_queue examples_queue(examples);
+  custom_examples_queue examples_queue;
+  auto multi_ex_fptr = [&handler, &examples_queue](vw& /*all*/, const v_array<example*>& examples) {
+    examples_queue.reset_examples(&examples);
     process_examples(examples_queue, handler);
   };
   parse_dispatch(all, multi_ex_fptr);

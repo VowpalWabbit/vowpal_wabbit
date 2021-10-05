@@ -42,9 +42,10 @@ inline bool contains_wildcard(const std::vector<extent_term>& interaction)
 }
 
 // function estimates how many new features will be generated for example and their sum(value^2).
-void eval_count_of_generated_ft(bool permutations, const std::vector<std::vector<namespace_index>>& interactions,
+float eval_sum_ft_squared_of_generated_ft(bool permutations,
+    const std::vector<std::vector<namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions,
-    const std::array<features, NUM_NAMESPACES>& feature_spaces, size_t& new_features_cnt, float& new_features_value);
+    const std::array<features, NUM_NAMESPACES>& feature_spaces);
 
 
 template<typename T>

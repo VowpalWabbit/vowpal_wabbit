@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
-typedef unsigned char namespace_index;
+using namespace_index = unsigned char;
 
 #include "constant.h"
 #include "future_compat.h"

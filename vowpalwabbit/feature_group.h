@@ -104,8 +104,8 @@ public:
 
   audit_features_iterator(const audit_features_iterator&) = default;
   audit_features_iterator& operator=(const audit_features_iterator&) = default;
-  audit_features_iterator(audit_features_iterator&&) = default;
-  audit_features_iterator& operator=(audit_features_iterator&&) = default;
+  audit_features_iterator(audit_features_iterator&&) noexcept = default;
+  audit_features_iterator& operator=(audit_features_iterator&&) noexcept = default;
 
   inline feature_value_type_t& value() { return *_begin_values; }
   inline const feature_value_type_t& value() const { return *_begin_values; }
@@ -217,6 +217,9 @@ public:
   ns_extent_iterator(features_t* feature_group, uint64_t hash, extent_it index_current)
       : _feature_group(feature_group), _hash(hash), _index_current(index_current)
   {
+    // Seek to the first valid position.
+    while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash != _hash)
+    { ++_index_current; }
   }
 
 private:
@@ -245,11 +248,7 @@ public:
   // Required for forward_iterator
   ns_extent_iterator& operator++()
   {
-    // 1. get to end of current segment.
-    while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash == _hash)
-    { ++_index_current; }
-
-    // 2. skip over any non-equal segments
+    ++_index_current;
     while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash != _hash)
     { ++_index_current; }
 
@@ -289,8 +288,8 @@ public:
 
   features_iterator(const features_iterator&) = default;
   features_iterator& operator=(const features_iterator&) = default;
-  features_iterator(features_iterator&&) = default;
-  features_iterator& operator=(features_iterator&&) = default;
+  features_iterator(features_iterator&&) noexcept = default;
+  features_iterator& operator=(features_iterator&&) noexcept = default;
 
   inline feature_value_type_t& value() { return *_begin_values; }
   inline const feature_value_type_t& value() const { return *_begin_values; }
@@ -441,6 +440,16 @@ struct features
   const_extent_iterator hash_extents_begin(uint64_t hash) const { return {this, hash, namespace_extents.begin()}; }
   extent_iterator hash_extents_end(uint64_t hash) { return {this, hash, namespace_extents.end()}; }
   const_extent_iterator hash_extents_end(uint64_t hash) const { return {this, hash, namespace_extents.end()}; }
+
+  template <typename FuncT>
+  void foreach_feature_for_hash(uint64_t hash, const FuncT& func) const
+  {
+    for (auto it = hash_extents_begin(hash); it != hash_extents_end(hash); ++it)
+    {
+      auto this_range = *it;
+      for (auto inner_begin = this_range.first; inner_begin != this_range.second; ++inner_begin) { func(inner_begin); }
+    }
+  }
 
   void clear();
   // These 3 overloads can be used if the sum_feat_sq of the removed section is known to avoid recalculating.

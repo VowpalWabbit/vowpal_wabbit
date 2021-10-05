@@ -18,6 +18,7 @@
 #include "interactions.h"
 #include "parse_args.h"
 #include "constant.h"
+#include "interactions_predict.h"
 
 namespace std
 {
@@ -85,13 +86,10 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
           vw.interactions, std::set<namespace_index>(ex->indices.begin(), ex->indices.end()));
   ex->interactions = &interactions;
   ex->extent_interactions = &vw.extent_interactions;
-  size_t fast_features_count;
-  float fast_features_value;
-  INTERACTIONS::eval_count_of_generated_ft(vw.permutations, *ex->interactions, *ex->extent_interactions,
-      ex->feature_space, fast_features_count, fast_features_value);
+  float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
+      vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
   ex->interactions = &vw.interactions;
 
-  BOOST_CHECK_EQUAL(naive_features_count, fast_features_count);
   BOOST_CHECK_CLOSE(naive_features_value, fast_features_value, FLOAT_TOL);
 
   // Prediction will count the interacted features, so we can compare that too.
@@ -101,26 +99,50 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
   VW::finish(vw);
 }
 
-BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_permuations_test)
+BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_combinations_test)
+{
+  auto& vw = *VW::initialize("--quiet --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant",
+      nullptr, false, nullptr, nullptr);
+  auto* ex = VW::read_example(vw, "3 |fff a b c |eee x y z |ggg a b |gg c d");
+
+
+  size_t naive_features_count;
+  float naive_features_value;
+  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+      vw, *ex, naive_features_count, naive_features_value);
+
+  float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
+      vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
+
+  BOOST_CHECK_CLOSE(naive_features_value, fast_features_value, FLOAT_TOL);
+
+  ex->interactions = &vw.interactions;
+  // Prediction will count the interacted features, so we can compare that too.
+  vw.predict(*ex);
+  BOOST_CHECK_EQUAL(naive_features_count, ex->num_features_from_interactions);
+  VW::finish_example(vw, *ex);
+  VW::finish(vw);
+}
+
+BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_permutations_test)
 {
   auto& vw = *VW::initialize(
-      "--quiet -q :: --leave_duplicate_interactions --permutations --noconstant", nullptr, false, nullptr, nullptr);
-  auto* ex = VW::read_example(vw, "3 |f a b c |e x y z");
+      "--quiet -permutations --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant", nullptr,
+      false, nullptr, nullptr);
+  auto* ex = VW::read_example(vw, "3 |fff a b c |eee x y z |ggg a b |gg c d");
 
-  auto interactions =
-      INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
-          vw.interactions, std::set<namespace_index>(ex->indices.begin(), ex->indices.end()));
-  ex->interactions = &interactions;
-  ex->extent_interactions = &vw.extent_interactions;
-  size_t fast_features_count;
-  float fast_features_value;
-  INTERACTIONS::eval_count_of_generated_ft(vw.permutations, *ex->interactions, *ex->extent_interactions,
-      ex->feature_space, fast_features_count, fast_features_value);
-  ex->interactions = &vw.interactions;
+  size_t naive_features_count;
+  float naive_features_value;
+  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+      vw, *ex, naive_features_count, naive_features_value);
+  float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
+      vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
 
+  BOOST_CHECK_CLOSE(naive_features_value, fast_features_value, FLOAT_TOL);
+
+  // Prediction will count the interacted features, so we can compare that too.
   vw.predict(*ex);
-  BOOST_CHECK_EQUAL(fast_features_count, ex->num_features_from_interactions);
-
+  BOOST_CHECK_EQUAL(naive_features_count, ex->num_features_from_interactions);
   VW::finish_example(vw, *ex);
   VW::finish(vw);
 }
@@ -319,4 +341,93 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
   BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "|a|||b"), VW::vw_exception);
   BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "abc|::"), VW::vw_exception);
   VW::finish(*vw);
+}
+
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions)
+{
+  auto* vw_char_inter = VW::initialize("--quiet -q AB");
+  auto* vw_extent_inter = VW::initialize("--quiet --experimental_full_name_interactions group1|group2");
+  auto cleanup = VW::scope_exit([&]() {
+    VW::finish(*vw_char_inter);
+    VW::finish(*vw_extent_inter);
+  });
+
+  auto parse_and_return_num_fts = [&](const char* char_inter_example,
+                                      const char* extent_inter_example) -> std::pair<size_t, size_t> {
+    auto* ex_char = VW::read_example(*vw_char_inter, char_inter_example);
+    auto* ex_extent = VW::read_example(*vw_extent_inter, extent_inter_example);
+    vw_char_inter->predict(*ex_char);
+    vw_extent_inter->predict(*ex_extent);
+    vw_char_inter->finish_example(*ex_char);
+    vw_extent_inter->finish_example(*ex_extent);
+    return std::make_pair(vw_char_inter->sd->total_features, vw_extent_inter->sd->total_features);
+  };
+
+  size_t num_char_fts = 0;
+  size_t num_extent_fts = 0;
+
+  std::tie(num_char_fts, num_extent_fts) =
+      parse_and_return_num_fts("|A a b c |B a b c d", "|group1 a b c |group2 a b c d");
+  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+
+  std::tie(num_char_fts, num_extent_fts) =
+      parse_and_return_num_fts("|A a b c |B a b c d", "|group1 c |group1 a b |group2 a b c d");
+  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+
+  std::tie(num_char_fts, num_extent_fts) =
+      parse_and_return_num_fts("|A a b c |B a b c d", "|group2 a d |group1 c |group1 a b |group2 b c");
+  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+}
+
+BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
+{
+  auto* vw = VW::initialize("--quiet");
+  auto* ex = VW::read_example(*vw,
+      "|user_info a b c |user_geo a b c d |user_info a b |another a b c |extra a b |extra_filler a |extra a b "
+      "|extra_filler a |extra a b");
+  auto cleanup = VW::scope_exit([&]() {
+    VW::finish_example(*vw, *ex);
+    VW::finish(*vw);
+  });
+
+  INTERACTIONS::generate_interactions_object_cache cache;
+
+  {
+    const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info");
+    size_t counter = 0;
+    INTERACTIONS::generate_generic_extent_combination_iterative(
+        ex->feature_space, extent_terms,
+        [&](const std::vector<INTERACTIONS::features_range_t>& combination) {
+          counter++;
+          BOOST_REQUIRE_EQUAL(combination.size(), 2);
+        },
+        cache.in_process_frames, cache.frame_pool);
+    BOOST_REQUIRE_EQUAL(counter, 3);
+  }
+
+  {
+    const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info|user_info");
+    size_t counter = 0;
+    INTERACTIONS::generate_generic_extent_combination_iterative(
+        ex->feature_space, extent_terms,
+        [&](const std::vector<INTERACTIONS::features_range_t>& combination) {
+          counter++;
+          BOOST_REQUIRE_EQUAL(combination.size(), 3);
+        },
+        cache.in_process_frames, cache.frame_pool);
+    BOOST_REQUIRE_EQUAL(counter, 4);
+  }
+
+  {
+    const auto extent_terms = parse_full_name_interactions(*vw, "user_info|extra");
+    size_t counter = 0;
+    INTERACTIONS::generate_generic_extent_combination_iterative(
+        ex->feature_space, extent_terms,
+        [&](const std::vector<INTERACTIONS::features_range_t>& combination) {
+          counter++;
+          BOOST_REQUIRE_EQUAL(combination.size(), 2);
+        },
+        cache.in_process_frames, cache.frame_pool);
+    BOOST_REQUIRE_EQUAL(counter, 6);
+  }
 }

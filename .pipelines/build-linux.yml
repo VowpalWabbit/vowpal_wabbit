@@ -6,10 +6,10 @@ pr:
 - '*'
 
 pool:
-  vmImage: 'ubuntu-16.04'
+  vmImage: 'ubuntu-18.04'
 
 container:
-  image: vowpalwabbit/ubuntu1604-build:latest
+  image: vowpalwabbit/ubuntu1804-build:latest
   endpoint: DockerHub
 
 strategy:

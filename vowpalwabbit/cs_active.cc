@@ -45,32 +45,32 @@ struct lq_data
 struct cs_active
 {
   // active learning algorithm parameters
-  float c0;        // mellowness controlling the width of the set of good functions
-  float c1;        // multiplier on the threshold for the cost range test
-  float cost_max;  // max cost
-  float cost_min;  // min cost
+  float c0 = 0.f;        // mellowness controlling the width of the set of good functions
+  float c1 = 0.f;        // multiplier on the threshold for the cost range test
+  float cost_max = 0.f;  // max cost
+  float cost_min = 0.f;  // min cost
 
-  uint32_t num_classes;
-  size_t t;
+  uint32_t num_classes = 0;
+  size_t t = 0;
 
-  bool print_debug_stuff;
-  size_t min_labels;
-  size_t max_labels;
+  bool print_debug_stuff = false;
+  size_t min_labels = 0;
+  size_t max_labels = 0;
 
-  bool is_baseline;
-  bool use_domination;
+  bool is_baseline = false;
+  bool use_domination = false;
 
-  vw* all;  // statistics, loss
-  VW::LEARNER::base_learner* l;
+  vw* all = nullptr;  // statistics, loss
+  VW::LEARNER::base_learner* l = nullptr;
 
   v_array<lq_data> query_data;
 
-  size_t num_any_queries;  // examples where at least one label is queried
-  size_t overlapped_and_range_small;
+  size_t num_any_queries = 0;  // examples where at least one label is queried
+  size_t overlapped_and_range_small = 0;
   v_array<size_t> examples_by_queries;
-  size_t labels_outside_range;
-  float distance_to_range;
-  float range;
+  size_t labels_outside_range = 0;
+  float distance_to_range = 0.f;
+  float range = 0.f;
 };
 
 float binarySearch(float fhat, float delta, float sens, float tol)
@@ -297,7 +297,7 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto data = scoped_calloc_or_throw<cs_active>();
+  auto data = VW::make_unique<cs_active>();
 
   bool simulation = false;
   int domination;
@@ -354,18 +354,36 @@ base_learner* cs_active_setup(VW::setup_base_i& stack_builder)
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) data->examples_by_queries.push_back(0);
 
-  learner<cs_active, example>& l = simulation
-      ? init_learner(data, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true, true>,
-            predict_or_learn<false, true>, data->num_classes, prediction_type_t::active_multiclass,
-            stack_builder.get_setupfn_name(cs_active_setup) + "-sim", true)
-      : init_learner(data, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true, false>,
-            predict_or_learn<false, false>, data->num_classes, prediction_type_t::active_multiclass,
-            stack_builder.get_setupfn_name(cs_active_setup), true);
+  void (*learn_ptr)(cs_active & cs_a, single_learner & base, example & ec);
+  void (*predict_ptr)(cs_active & cs_a, single_learner & base, example & ec);
+  std::string name_addition;
 
-  l.set_finish_example(finish_example);
+  if (simulation)
+  {
+    learn_ptr = predict_or_learn<true, true>;
+    predict_ptr = predict_or_learn<false, true>;
+    name_addition = "-sim";
+  }
+  else
+  {
+    learn_ptr = predict_or_learn<true, false>;
+    predict_ptr = predict_or_learn<false, false>;
+    name_addition = "";
+  }
+
+  size_t ws = data->num_classes;
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
+      predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
+                .set_params_per_weight(ws)
+                .set_learn_returns_prediction(true)
+                .set_prediction_type(prediction_type_t::active_multiclass)
+                .set_label_type(label_type_t::cs)
+                .set_finish_example(finish_example)
+                .build();
+
   // Label parser set to cost sensitive label parser
   all.example_parser->lbl_parser = cs_label;
-  base_learner* b = make_base(l);
+  base_learner* b = make_base(*l);
   all.cost_sensitive = b;
   return b;
 }
