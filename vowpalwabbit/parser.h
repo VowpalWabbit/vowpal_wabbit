@@ -37,9 +37,9 @@ struct parser
       : example_pool{ring_size}
       , ready_parsed_examples{ring_size}
       , ring_size{ring_size}
-      , begin_parsed_examples(0)
-      , end_parsed_examples(0)
-      , finished_examples(0)
+      , num_examples_taken_from_pool(0)
+      , num_setup_examples(0)
+      , num_finished_examples(0)
       , strict_parse{strict_parse_}
   {
     this->lbl_parser = simple_label_parser;
@@ -80,9 +80,9 @@ struct parser
   bool sorted_cache = false;
 
   const size_t ring_size;
-  std::atomic<uint64_t> begin_parsed_examples;  // The index of the beginning parsed example.
-  std::atomic<uint64_t> end_parsed_examples;    // The index of the fully parsed example.
-  std::atomic<uint64_t> finished_examples;      // The count of finished examples.
+  std::atomic<uint64_t> num_examples_taken_from_pool;
+  std::atomic<uint64_t> num_setup_examples;
+  std::atomic<uint64_t> num_finished_examples;
   uint32_t in_pass_counter = 0;
   bool emptylines_separate_examples = false;  // true if you want to have holdout computed on a per-block basis rather
                                               // than a per-line basis
