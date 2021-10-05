@@ -188,7 +188,7 @@ Cost Sensitive One Against All with Label Dependent Features:
   --ldf_override arg    Override singleline or multiline from csoaa_ldf or 
                         wap_ldf, eg if stored in file
   --csoaa_rank          Return actions sorted by score order
-  --probabilities       predict probabilites of all classes
+  --probabilities       predict probabilities of all classes
 Contextual Bandit with Action Dependent Features:
   --cb_adf              Do Contextual Bandit learning with multiline action 
                         dependent features.

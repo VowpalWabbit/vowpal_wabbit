@@ -435,7 +435,7 @@ Cost Sensitive One Against All with Label Dependent Features:
   --ldf_override arg    Override singleline or multiline from csoaa_ldf or 
                         wap_ldf, eg if stored in file
   --csoaa_rank          Return actions sorted by score order
-  --probabilities       predict probabilites of all classes
+  --probabilities       predict probabilities of all classes
 Cost Sensitive weighted all-pairs with Label Dependent Features:
   --wap_ldf arg         Use weighted all-pairs multiclass learning with label 
                         dependent features.  Specify singleline or multiline.
@@ -533,6 +533,7 @@ Memory Tree:
                                        update as well
 Multilabel One Against All:
   --multilabel_oaa arg  One-against-all multilabel with <k> labels
+  --probabilities       predict probabilities of all classes
 Multiworld Testing Options:
   --multiworld_test arg Evaluate features as a policies
   --learn arg           Do Contextual Bandit learning on <n> classes.
@@ -554,7 +555,7 @@ One Against All Options:
   --oaa arg             One-against-all multiclass with <k> labels
   --oaa_subsample arg   subsample this number of negative examples when 
                         learning
-  --probabilities       predict probabilites of all classes
+  --probabilities       predict probabilities of all classes
   --scores              output raw scores per class
 Offset tree Options:
   --ot arg              Offset tree with <k> labels
