@@ -146,36 +146,6 @@ bool sort_interactions_comparator(const std::vector<namespace_index>& a, const s
   return a < b;
 }
 
-/*
- *   Sorting and filtering duplicate interactions
- */
-
-// returns true if iteraction contains one or more duplicated namespaces
-// with one exeption - returns false if interaction made of one namespace
-// like 'aaa' as it has no sense to sort such things.
-
-inline bool must_be_left_sorted(const std::vector<namespace_index>& oi)
-{
-  if (oi.size() <= 1) return true;  // one letter in std::string - no need to sort
-
-  bool diff_ns_found = false;
-  bool pair_found = false;
-
-  for (auto i = std::begin(oi); i != std::end(oi) - 1; ++i)
-    if (*i == *(i + 1))  // pair found
-    {
-      if (diff_ns_found) return true;  // case 'abb'
-      pair_found = true;
-    }
-    else
-    {
-      if (pair_found) return true;  // case 'aab'
-      diff_ns_found = true;
-    }
-
-  return false;  // 'aaa' or 'abc'
-}
-
 std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interactions(
     bool leave_duplicate_interactions, const std::set<namespace_index>& new_example_indices)
 {
@@ -195,65 +165,6 @@ std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interaction
     }
   }
   return std::vector<std::vector<namespace_index>>(interactions.begin(), interactions.end());
-}
-
-// used from parse_args.cc
-// filter duplicate namespaces treating them as unordered sets of namespaces.
-// also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
-
-void sort_and_filter_duplicate_interactions(
-    std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
-{
-  // 2 out parameters
-  removed_cnt = 0;
-  sorted_cnt = 0;
-
-  // interaction value sort + original position
-  std::vector<std::pair<std::vector<namespace_index>, size_t>> vec_sorted;
-  for (size_t i = 0; i < vec.size(); ++i)
-  {
-    std::vector<namespace_index> sorted_i(vec[i]);
-    std::stable_sort(std::begin(sorted_i), std::end(sorted_i));
-    vec_sorted.push_back(std::make_pair(sorted_i, i));
-  }
-
-  if (filter_duplicates)
-  {
-    // remove duplicates
-    std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<namespace_index>, size_t> const& a,
-            std::pair<std::vector<namespace_index>, size_t> const& b) { return a.first < b.first; });
-    auto last = unique(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<namespace_index>, size_t> const& a,
-            std::pair<std::vector<namespace_index>, size_t> const& b) { return a.first == b.first; });
-    vec_sorted.erase(last, vec_sorted.end());
-
-    // report number of removed interactions
-    removed_cnt = vec.size() - vec_sorted.size();
-
-    // restore original order
-    std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<namespace_index>, size_t> const& a,
-            std::pair<std::vector<namespace_index>, size_t> const& b) { return a.second < b.second; });
-  }
-
-  // we have original vector and vector with duplicates removed + corresponding indexes in original vector
-  // plus second vector's data is sorted. We can reuse it if we need interaction to be left sorted.
-  // let's make a new vector from these two sources - without dulicates and with sorted data whenever it's needed.
-  std::vector<std::vector<namespace_index>> res;
-  for (auto& i : vec_sorted)
-  {
-    if (must_be_left_sorted(i.first))
-    {
-      // if so - copy sorted data to result
-      res.push_back(i.first);
-      ++sorted_cnt;
-    }
-    else  // else - move unsorted data to result
-      res.push_back(vec[i.second]);
-  }
-
-  vec = res;
 }
 
 }  // namespace INTERACTIONS

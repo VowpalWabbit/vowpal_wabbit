@@ -160,19 +160,6 @@ std::vector<std::vector<namespace_index>> expand_quadratics_wildcard_interaction
 
 bool sort_interactions_comparator(const std::vector<namespace_index>& a, const std::vector<namespace_index>& b);
 
-void sort_and_filter_duplicate_interactions(
-    std::vector<std::vector<namespace_index>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt);
-
-inline void sort_and_filter_duplicate_extent_interactions(
-    std::vector<std::vector<extent_term>>& vec, bool filter_duplicates)
-{
-  for (auto term : vec)
-  {
-    std::sort(term.begin(), term.end());
-  }
-  std::sort(vec.begin(), vec.end());
-  if (filter_duplicates) { vec.erase(std::unique(vec.begin(), vec.end()), vec.end()); }
-}
 
 template <generate_func_t<namespace_index> generate_func, bool leave_duplicate_interactions>
 std::vector<std::vector<namespace_index>> compile_interaction(
@@ -277,7 +264,10 @@ std::vector<std::vector<extent_term>> compile_extent_interactions(
       final_interactions.push_back(inter);
     }
   }
-  sort_and_filter_duplicate_extent_interactions(final_interactions, !leave_duplicate_interactions);
+  size_t removed_cnt = 0;
+  size_t sorted_cnt = 0;
+  INTERACTIONS::sort_and_filter_duplicate_interactions(
+      final_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
   return final_interactions;
 }
 
@@ -342,5 +332,91 @@ public:
     }
   }
 };
+
+// returns true if iteraction contains one or more duplicated namespaces
+// with one exeption - returns false if interaction made of one namespace
+// like 'aaa' as it has no sense to sort such things.
+template <typename T>
+inline bool must_be_left_sorted(const std::vector<T>& oi)
+{
+  if (oi.size() <= 1) return true;  // one letter in std::string - no need to sort
+
+  bool diff_ns_found = false;
+  bool pair_found = false;
+
+  for (auto i = std::begin(oi); i != std::end(oi) - 1; ++i)
+    if (*i == *(i + 1))  // pair found
+    {
+      if (diff_ns_found) return true;  // case 'abb'
+      pair_found = true;
+    }
+    else
+    {
+      if (pair_found) return true;  // case 'aab'
+      diff_ns_found = true;
+    }
+
+  return false;  // 'aaa' or 'abc'
+}
+
+
+// used from parse_args.cc
+// filter duplicate namespaces treating them as unordered sets of namespaces.
+// also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
+template <typename T>
+void sort_and_filter_duplicate_interactions(
+    std::vector<std::vector<T>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
+{
+  // 2 out parameters
+  removed_cnt = 0;
+  sorted_cnt = 0;
+
+  // interaction value sort + original position
+  std::vector<std::pair<std::vector<T>, size_t>> vec_sorted;
+  for (size_t i = 0; i < vec.size(); ++i)
+  {
+    std::vector<T> sorted_i(vec[i]);
+    std::stable_sort(std::begin(sorted_i), std::end(sorted_i));
+    vec_sorted.push_back(std::make_pair(sorted_i, i));
+  }
+
+  if (filter_duplicates)
+  {
+    // remove duplicates
+    std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
+        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b)
+        { return a.first < b.first; });
+    auto last = unique(vec_sorted.begin(), vec_sorted.end(),
+        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b)
+        { return a.first == b.first; });
+    vec_sorted.erase(last, vec_sorted.end());
+
+    // report number of removed interactions
+    removed_cnt = vec.size() - vec_sorted.size();
+
+    // restore original order
+    std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
+        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b)
+        { return a.second < b.second; });
+  }
+
+  // we have original vector and vector with duplicates removed + corresponding indexes in original vector
+  // plus second vector's data is sorted. We can reuse it if we need interaction to be left sorted.
+  // let's make a new vector from these two sources - without dulicates and with sorted data whenever it's needed.
+  std::vector<std::vector<T>> res;
+  for (auto& i : vec_sorted)
+  {
+    if (must_be_left_sorted(i.first))
+    {
+      // if so - copy sorted data to result
+      res.push_back(i.first);
+      ++sorted_cnt;
+    }
+    else  // else - move unsorted data to result
+      res.push_back(vec[i.second]);
+  }
+
+  vec = res;
+}
 
 }  // namespace INTERACTIONS

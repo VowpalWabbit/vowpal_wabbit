@@ -460,18 +460,35 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
   }
 }
 
-
-BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard)
-{
-  auto* vw_char_inter = VW::initialize("--quiet -q :: --noconstant");
-  auto* vw_extent_inter = VW::initialize("--quiet --experimental_full_name_interactions :|: --noconstant");
-  auto cleanup = VW::scope_exit([&]() {
-    VW::finish(*vw_char_inter);
-    VW::finish(*vw_extent_inter);
-  });
+void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool combinations){
+  std::string char_cmd_line = "--quiet --noconstant";
+  std::string extent_cmd_line = "--quiet --noconstant";
+  if (add_quadratic) {
+    char_cmd_line += " -q :: ";
+    extent_cmd_line += " --experimental_full_name_interactions :|: ";
+  }
+  if (add_cubic)
+  {
+    char_cmd_line += " --cubic ::: ";
+    extent_cmd_line += " --experimental_full_name_interactions :|:|: ";
+  }
+  if (!combinations)
+  {
+    char_cmd_line += " --leave_duplicate_interactions ";
+    extent_cmd_line += " --leave_duplicate_interactions ";
+  }
+  auto* vw_char_inter = VW::initialize(char_cmd_line);
+  auto* vw_extent_inter = VW::initialize(extent_cmd_line);
+  auto cleanup = VW::scope_exit(
+      [&]()
+      {
+        VW::finish(*vw_char_inter);
+        VW::finish(*vw_extent_inter);
+      });
 
   auto parse_and_return_num_fts = [&](const char* char_inter_example,
-                                      const char* extent_inter_example) -> std::pair<size_t, size_t> {
+                                      const char* extent_inter_example) -> std::pair<size_t, size_t>
+  {
     auto* ex_char = VW::read_example(*vw_char_inter, char_inter_example);
     auto* ex_extent = VW::read_example(*vw_extent_inter, extent_inter_example);
     vw_char_inter->predict(*ex_char);
@@ -495,4 +512,17 @@ BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard)
   std::tie(num_char_fts, num_extent_fts) =
       parse_and_return_num_fts("|A a b c |B a b c d", "|group2 a d |group1 c |group1 a b |group2 b c");
   BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+}
+
+
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard) { do_interaction_feature_count_test(true, false, true); }
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard)
+{
+  do_interaction_feature_count_test(true, true, true);
+}
+
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard_permutations) { do_interaction_feature_count_test(true, false, false); }
+BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard_permutations)
+{
+  do_interaction_feature_count_test(true, true, false);
 }

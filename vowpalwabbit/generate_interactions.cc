@@ -209,15 +209,15 @@ VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_b
     if (interactions_spec_contains_extent_wildcards)
     {
       learn_func =
-          transform_single_ex<true, INTERACTIONS::generate_namespace_permutations_with_repetition<namespace_index>,
-              INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>, false>;
+          transform_single_ex<true, INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>,
+              INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>, false>;
       pred_func =
-          transform_single_ex<false, INTERACTIONS::generate_namespace_permutations_with_repetition<namespace_index>,
-              INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>, false>;
-      update_func = update<INTERACTIONS::generate_namespace_permutations_with_repetition<namespace_index>,
-          INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>, false>;
-      multipredict_func = multipredict<INTERACTIONS::generate_namespace_permutations_with_repetition<namespace_index>,
-          INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>, false>;
+          transform_single_ex<false, INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>,
+              INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>, false>;
+      update_func = update<INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>,
+          INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>, false>;
+      multipredict_func = multipredict<INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>,
+          INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>, false>;
     }
     else
     {
