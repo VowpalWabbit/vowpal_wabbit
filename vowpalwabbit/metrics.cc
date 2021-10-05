@@ -31,7 +31,7 @@ struct metrics_data
   size_t predict_count = 0;
 };
 
-void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, metric_sink& metrics, std::vector<std::string> enabled_reductions)
+void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, metric_sink& metrics, const std::vector<std::string>& enabled_reductions)
 {
   FILE* fp;
 
@@ -109,7 +109,7 @@ void output_metrics(vw& all)
 
     std::vector<std::string> enabled_reductions;
     if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
-    
+
     list_to_json_file(all.example_parser->metrics.get(), filename, list_metrics, enabled_reductions);
   }
 }
