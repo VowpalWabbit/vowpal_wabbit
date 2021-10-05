@@ -143,9 +143,7 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   if (options.was_supplied("probabilities"))
-  {
-    THROW("Error: csoaa does not support probabilities flag, please use oaa or multilabel_oaa");
-  }
+  { THROW("Error: csoaa does not support probabilities flag, please use oaa or multilabel_oaa"); }
 
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
   size_t ws = c->num_classes;

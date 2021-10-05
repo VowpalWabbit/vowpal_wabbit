@@ -110,8 +110,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
     pred_type = prediction_type_t::scalars;
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
-      *(all.trace_message) << "WARNING: --probabilities should be used only with --loss_function=logistic"
-                            << std::endl;
+      *(all.trace_message) << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
     // the three boolean template parameters are: is_learn, print_all and scores
     name_addition = "-prob";
   }
@@ -121,13 +120,15 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
     pred_type = prediction_type_t::multilabels;
   }
 
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(multilabel_oaa_setup) + name_addition)
-      .set_params_per_weight(ws)
-      .set_learn_returns_prediction(true)
-      .set_label_type(label_type_t::multilabel)
-      .set_prediction_type(pred_type)
-      .set_finish_example(finish_example)
-      .build();
+  auto* l =
+      make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true>,
+          predict_or_learn<false>, stack_builder.get_setupfn_name(multilabel_oaa_setup) + name_addition)
+          .set_params_per_weight(ws)
+          .set_learn_returns_prediction(true)
+          .set_label_type(label_type_t::multilabel)
+          .set_prediction_type(pred_type)
+          .set_finish_example(finish_example)
+          .build();
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
 
