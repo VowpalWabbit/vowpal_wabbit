@@ -53,7 +53,7 @@ std::vector<T> indices_to_values_one_based(const std::vector<size_t>& indices, c
 {
   std::vector<T> result;
   result.reserve(indices.size());
-  for (unsigned long idx : indices)
+  for (auto idx : indices)
   {
     auto it = values.begin();
     std::advance(it, idx - 1);
