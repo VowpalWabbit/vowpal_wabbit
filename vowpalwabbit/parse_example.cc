@@ -541,10 +541,11 @@ void read_line(vw& all, example* ex, VW::string_view line)
 
 void read_line(vw& all, example* ex, const char* line) { return read_line(all, ex, VW::string_view(line)); }
 
-void read_lines(vw* all, const char* line, size_t /*len*/, v_array<example*>& examples)
+void read_lines(vw* all, const char* line, size_t len, v_array<example*>& examples)
 {
+  VW::string_view line_view = VW::string_view(line, len);
   std::vector<VW::string_view> lines;
-  tokenize('\n', line, lines);
+  tokenize('\n', line_view, lines);
   for (size_t i = 0; i < lines.size(); i++)
   {
     // Check if a new empty example needs to be added.
