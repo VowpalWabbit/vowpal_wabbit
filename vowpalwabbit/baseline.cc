@@ -181,6 +181,7 @@ base_learner* baseline_setup(VW::setup_base_i& stack_builder)
 
   // initialize baseline example's interactions.
   data->ec.interactions = &all.interactions;
+  data->ec.extent_interactions = &all.extent_interactions;
   data->all = &all;
 
   const auto loss_function_type = all.loss->getType();
