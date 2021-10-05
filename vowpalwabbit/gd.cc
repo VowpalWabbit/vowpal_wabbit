@@ -284,7 +284,7 @@ void print_lda_features(vw& all, example& ec)
   std::cout << " total of " << count << " features." << std::endl;
 }
 
-void print_features(vw& all, example& ec)
+void print_features(vw& all, example& ec, VW::io::writer* f)
 {
   if (all.lda > 0)
     print_lda_features(all, ec);
@@ -313,17 +313,21 @@ void print_features(vw& all, example& ec)
     stable_sort(dat.results.begin(), dat.results.end());
     if (all.audit)
     {
-      for (string_value& sv : dat.results) std::cout << '\t' << sv.s;
-      std::cout << std::endl;
+      for (string_value& sv : dat.results)
+      {
+        f->write("\t", 1);
+        f->write(sv.s.data(), sv.s.size());
+      }
+      f->write("\n", 1);
     }
   }
 }
 
 void print_audit_features(vw& all, example& ec)
 {
-  if (all.audit) print_result_by_ref(all.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag);
-  fflush(stdout);
-  print_features(all, ec);
+  if (all.audit) print_result_by_ref(all.audit_writer.get(), ec.pred.scalar, -1, ec.tag);
+
+  print_features(all, ec, all.audit ? all.audit_writer.get() : all.stdout_adapter.get());
 }
 
 float finalize_prediction(shared_data* sd, vw_logger&, float ret)
