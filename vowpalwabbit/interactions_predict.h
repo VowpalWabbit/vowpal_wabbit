@@ -119,16 +119,6 @@ inline bool has_empty_interaction(
                }) == feature_groups[idx.first].namespace_extents.end();
   });
 }
-inline bool has_empty_interaction(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& namespace_indexes)
-{
-  return std::any_of(namespace_indexes.begin(), namespace_indexes.end(), [&](extent_term idx) {
-    return std::find_if(feature_groups[idx.first].namespace_extents.begin(),
-               feature_groups[idx.first].namespace_extents.end(), [&idx](const VW::namespace_extent& extent) {
-                 return idx.second == extent.hash && ((extent.end_index - extent.begin_index) > 0);
-               }) == feature_groups[idx.first].namespace_extents.end();
-  });
-}
 
 // The inline function below may be adjusted to change the way
 // synthetic (interaction) features' values are calculated, e.g.,

@@ -81,7 +81,6 @@ inline void foreach_feature(vw& all, example& ec, DataT& dat, size_t& num_intera
   return all.weights.sparse
       ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters>(all.weights.sparse_weights,
             all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-
             dat, num_interacted_features, all._generate_interactions_object_cache)
       : foreach_feature<DataT, WeightOrIndexT, FuncT, dense_parameters>(all.weights.dense_weights,
             all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,

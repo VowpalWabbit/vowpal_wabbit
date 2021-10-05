@@ -4,7 +4,6 @@
 
 #include "interactions.h"
 
-#include "vw_exception.h"
 #include "vw_math.h"
 #include "v_array.h"
 

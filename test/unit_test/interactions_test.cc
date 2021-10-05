@@ -105,7 +105,6 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_combinations_test)
       nullptr, false, nullptr, nullptr);
   auto* ex = VW::read_example(vw, "3 |fff a b c |eee x y z |ggg a b |gg c d");
 
-
   size_t naive_features_count;
   float naive_features_value;
   eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
@@ -113,10 +112,10 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_combinations_test)
 
   float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
       vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
+  ex->interactions = &vw.interactions;
 
   BOOST_CHECK_CLOSE(naive_features_value, fast_features_value, FLOAT_TOL);
 
-  ex->interactions = &vw.interactions;
   // Prediction will count the interacted features, so we can compare that too.
   vw.predict(*ex);
   BOOST_CHECK_EQUAL(naive_features_count, ex->num_features_from_interactions);
