@@ -284,7 +284,7 @@ void print_lda_features(vw& all, example& ec)
   std::cout << " total of " << count << " features." << std::endl;
 }
 
-void print_features(vw& all, example& ec, VW::io::writer* f)
+void print_features(vw& all, example& ec, VW::io::writer* w)
 {
   if (all.lda > 0)
     print_lda_features(all, ec);
@@ -315,10 +315,10 @@ void print_features(vw& all, example& ec, VW::io::writer* f)
     {
       for (string_value& sv : dat.results)
       {
-        f->write("\t", 1);
-        f->write(sv.s.data(), sv.s.size());
+        w->write("\t", 1);
+        w->write(sv.s.data(), sv.s.size());
       }
-      f->write("\n", 1);
+      w->write("\n", 1);
     }
   }
 }
