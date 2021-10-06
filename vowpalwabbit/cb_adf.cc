@@ -459,7 +459,9 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 {
   if (c.get_model_file_ver() != nullptr &&
       *c.get_model_file_ver() < VW::version_definitions::VERSION_FILE_WITH_CB_ADF_SAVE)
-  { return; }
+  {
+    return;
+  }
   std::stringstream msg;
   msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
   bin_text_read_write_fixed(
@@ -501,6 +503,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
                .default_value(0.f)
                .help("Clipping probability in importance weight. Default: 0.f (no clipping)."))
       .add(make_option("cb_type", type_string)
+               .one_of(“ips”, “dr”, “mtr”)
                .keep()
                .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
 
