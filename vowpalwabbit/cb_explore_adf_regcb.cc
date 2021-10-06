@@ -275,7 +275,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
       .add(make_option("cb_type", type_string)
                .keep()
-               .one_of(“ips”, “dr”, “mtr”)
+               .one_of("ips", "dr", "mtr")
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
 
   options.add_and_parse(new_options);
