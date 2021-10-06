@@ -141,8 +141,7 @@ void scored_config::save_load(io_buf& io, bool read, bool text)
   VW::model_utils::process_model_field(io, last_r, read, "_aml_config_lastr", text);
   VW::model_utils::process_model_field(io, config_index, read, "_aml_config_index", text);
   VW::model_utils::process_model_field(io, eligible_to_inactivate, read, "_aml_config_eligible_to_inactivate", text);
-
-  chisq.save_load(io, read, text);
+  VW::model_utils::process_model_field(io, chisq, read, "", text);
 }
 
 void scored_config::persist(metric_sink& metrics, const std::string& suffix)

@@ -14,7 +14,6 @@
 #include "learner.h"
 #include "io/logger.h"
 #include "vw.h"
-#include "model_utils.h"
 #include <map>
 #include <set>
 #include <queue>

@@ -143,10 +143,10 @@ set(vw_all_headers
   metrics.h
   metric_sink.h
   mf.h
+  model_utils.h
   multiclass.h
   multilabel_oaa.h
   multilabel.h
-  model_utils.h
   mwt.h
   namespaced_feature_store.h
   numeric_casts.h
