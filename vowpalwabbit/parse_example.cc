@@ -19,14 +19,14 @@
 
 namespace logger = VW::io::logger;
 
+template <bool audit>
 struct audit_parser_hook
 {
-  audit_parser_hook(bool audit) : _audit(audit) {}
   void process_feature(example* ex, namespace_index ns_idx, uint64_t /*channel_hash*/, uint64_t /*word_hash*/,
       float /*feature_value*/, VW::string_view feature_name, VW::string_view string_feature_value,
       VW::string_view namespace_name) const
   {
-    if (_audit)
+    if (audit)
     {
       auto& current_features = ex->feature_space[ns_idx];
       if (!string_feature_value.empty())
@@ -40,15 +40,13 @@ struct audit_parser_hook
       }
     }
   }
-
-private:
-  bool _audit;
 };
 
+template <bool audit>
 struct affix_parser_hook
 {
-  affix_parser_hook(std::array<uint64_t, NUM_NAMESPACES>* affix_features, hash_func_t hasher, bool audit)
-      : _affix_features(affix_features), _hasher(hasher), _audit(audit)
+  affix_parser_hook(std::array<uint64_t, NUM_NAMESPACES>* affix_features, hash_func_t hasher)
+      : _affix_features(affix_features), _hasher(hasher)
   {
   }
 
@@ -78,7 +76,7 @@ struct affix_parser_hook
         word_hash = _hasher(affix_name.begin(), affix_name.length(), channel_hash) *
             (affix_constant + (affix & 0xF) * quadratic_constant);
         affix_fs.push_back(feature_value, word_hash, affix_namespace);
-        if (_audit)
+        if (audit)
         {
           v_array<char> affix_v;
           if (ns_idx != ' ') affix_v.push_back(ns_idx);
@@ -97,13 +95,13 @@ struct affix_parser_hook
 private:
   std::array<uint64_t, NUM_NAMESPACES>* _affix_features;
   hash_func_t _hasher;
-  bool _audit;
 };
 
+template <bool audit>
 struct spelling_parser_hook
 {
-  spelling_parser_hook(std::array<bool, NUM_NAMESPACES>* spelling_features, bool audit)
-      : _spelling_features(spelling_features), _audit(audit)
+  spelling_parser_hook(std::array<bool, NUM_NAMESPACES>* spelling_features)
+      : _spelling_features(spelling_features)
   {
   }
 
@@ -137,7 +135,7 @@ struct spelling_parser_hook
       VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
       word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), channel_hash);
       spell_fs.push_back(feature_value, word_hash, spelling_namespace);
-      if (_audit)
+      if (audit)
       {
         v_array<char> spelling_v;
         if (ns_idx != ' ')
@@ -154,15 +152,15 @@ struct spelling_parser_hook
 
 private:
   std::array<bool, NUM_NAMESPACES>* _spelling_features;
-  bool _audit;
   v_array<char> _spelling;
 };
 
+template <bool audit>
 struct dictionary_parser_hook
 {
   dictionary_parser_hook(
-      std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* namespace_dictionaries, bool audit)
-      : _namespace_dictionaries(namespace_dictionaries), _audit(audit)
+      std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* namespace_dictionaries)
+      : _namespace_dictionaries(namespace_dictionaries)
   {
   }
 
@@ -187,7 +185,7 @@ struct dictionary_parser_hook
           dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
           dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
           dict_fs.sum_feat_sq += feats->sum_feat_sq;
-          if (_audit)
+          if (audit)
           {
             for (const auto& id : feats->indicies)
             {
@@ -206,7 +204,6 @@ struct dictionary_parser_hook
 
 private:
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
-  bool _audit;
 };
 
 size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
@@ -261,10 +258,10 @@ public:
   example* _ae;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
-  audit_parser_hook _audit_hook;
-  affix_parser_hook _affix_hook;
-  spelling_parser_hook _spelling_hook;
-  dictionary_parser_hook _dictionary_hook;
+  audit_parser_hook<audit> _audit_hook;
+  affix_parser_hook<audit> _affix_hook;
+  spelling_parser_hook<audit> _spelling_hook;
+  dictionary_parser_hook<audit> _dictionary_hook;
 
   ~TC_parser() = default;
 
@@ -548,10 +545,9 @@ public:
   }
 
   TC_parser(vw& all)
-      : _audit_hook(all.audit)
-      , _affix_hook(&all.affix_features, all.example_parser->hasher, all.audit)
-      , _spelling_hook(&all.spelling_features, all.audit)
-      , _dictionary_hook(&all.namespace_dictionaries, all.audit)
+      : _affix_hook(&all.affix_features, all.example_parser->hasher)
+      , _spelling_hook(&all.spelling_features)
+      , _dictionary_hook(&all.namespace_dictionaries)
   {
     this->_p = all.example_parser;
     this->_redefine_some = all.redefine_some;
