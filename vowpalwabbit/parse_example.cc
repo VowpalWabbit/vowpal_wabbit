@@ -22,9 +22,9 @@ namespace logger = VW::io::logger;
 template <bool audit>
 struct audit_parser_hook
 {
-  inline FORCE_INLINE void process_feature(example* ex, namespace_index ns_idx, uint64_t /*channel_hash*/, uint64_t /*word_hash*/,
-      float /*feature_value*/, VW::string_view feature_name, VW::string_view string_feature_value,
-      VW::string_view namespace_name) const
+  inline FORCE_INLINE void process_feature(example* ex, namespace_index ns_idx, uint64_t /*channel_hash*/,
+      uint64_t /*word_hash*/, float /*feature_value*/, VW::string_view feature_name,
+      VW::string_view string_feature_value, VW::string_view namespace_name) const
   {
     if (audit)
     {
@@ -100,10 +100,7 @@ private:
 template <bool audit>
 struct spelling_parser_hook
 {
-  spelling_parser_hook(std::array<bool, NUM_NAMESPACES>* spelling_features)
-      : _spelling_features(spelling_features)
-  {
-  }
+  spelling_parser_hook(std::array<bool, NUM_NAMESPACES>* spelling_features) : _spelling_features(spelling_features) {}
 
   inline FORCE_INLINE void process_feature(example* ex, namespace_index ns_idx, uint64_t channel_hash,
       uint64_t word_hash, float feature_value, VW::string_view feature_name, VW::string_view /*string_feature_value*/,
@@ -158,8 +155,7 @@ private:
 template <bool audit>
 struct dictionary_parser_hook
 {
-  dictionary_parser_hook(
-      std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* namespace_dictionaries)
+  dictionary_parser_hook(std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* namespace_dictionaries)
       : _namespace_dictionaries(namespace_dictionaries)
   {
   }
