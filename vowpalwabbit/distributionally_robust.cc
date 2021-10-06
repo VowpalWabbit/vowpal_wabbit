@@ -4,7 +4,7 @@
 
 #include "distributionally_robust.h"
 #include "vw_math.h"
-#include "model_utils.h"
+// #include "model_utils.h"
 
 namespace VW
 {

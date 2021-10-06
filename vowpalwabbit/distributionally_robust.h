@@ -172,6 +172,8 @@ namespace distributionally_robust
     ScoredDual recompute_duals();
     static double chisq_onedof_isf(double alpha);
     const double& effn() { return n; }
+    friend size_t VW::model_utils::process_model_field(
+        io_buf&, VW::distributionally_robust::ChiSquared&, bool, const std::string&, bool);
     void save_load(io_buf& model_file, bool read, bool text, const char* name);
   };
 
