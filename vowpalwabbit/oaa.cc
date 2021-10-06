@@ -285,7 +285,9 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
       auto loss_function_type = all.loss->getType();
       if (loss_function_type != "logistic")
       {
-        logger::log_error("WARNING: --probabilities should be used only with --loss_function=logistic, currently using: {}", loss_function_type);
+        logger::log_error(
+            "WARNING: --probabilities should be used only with --loss_function=logistic, currently using: {}",
+            loss_function_type);
       }
       // the three boolean template parameters are: is_learn, print_all and scores
       learn_ptr = learn<!PRINT_ALL, SCORES, PROBABILITIES>;

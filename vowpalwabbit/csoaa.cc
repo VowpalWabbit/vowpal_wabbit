@@ -893,12 +893,12 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
     {
-      logger::log_error("WARNING: --probabilities should be used only with --loss_function=logistic, currently using: {}", loss_function_type);
+      logger::log_error(
+          "WARNING: --probabilities should be used only with --loss_function=logistic, currently using: {}",
+          loss_function_type);
     }
     if (!ld->treat_as_classifier)
-    {
-      logger::log_error("WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa, --multilabel_oaa)");
-    }
+    { logger::log_error("WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa, --multilabel_oaa)"); }
   }
 
   all.example_parser->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
