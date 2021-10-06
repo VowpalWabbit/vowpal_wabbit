@@ -274,6 +274,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
       .add(make_option("cb_max_cost", max_cb_cost).keep().default_value(1.f).help("upper bound on cost"))
       .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
       .add(make_option("cb_type", type_string)
+               .one_of(“ips”, “dr”, “mtr”)
                .keep()
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
 

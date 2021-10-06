@@ -261,9 +261,8 @@ void cb_adf::learn_MTR(multi_learner& base, multi_ex& examples)
   examples[_gen_cs.mtr_example]->num_features = nf;
   examples[_gen_cs.mtr_example]->weight = old_weight;
   std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
-
-  if (PREDICT)  // Return the saved prediction
-    std::swap(examples[0]->pred.a_s, _a_s);
+  n a validatin a validatin a validatin a validati if (PREDICT)  // Return the saved prediction
+      std::swap(examples[0]->pred.a_s, _a_s);
 }
 
 // Validates a multiline example collection as a valid sequence for action dependent features format.
@@ -459,7 +458,9 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 {
   if (c.get_model_file_ver() != nullptr &&
       *c.get_model_file_ver() < VW::version_definitions::VERSION_FILE_WITH_CB_ADF_SAVE)
-  { return; }
+  {
+    return;
+  }
   std::stringstream msg;
   msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
   bin_text_read_write_fixed(
@@ -502,6 +503,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
                .help("Clipping probability in importance weight. Default: 0.f (no clipping)."))
       .add(make_option("cb_type", type_string)
                .keep()
+               .one_of(“ips”, “dr”, “mtr”)
                .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;

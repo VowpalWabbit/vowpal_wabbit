@@ -350,6 +350,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                .default_value(1.f)
                .help("Upper bound on cost. Only used with --elim"))
       .add(make_option("cb_type", type_string)
+               .one_of(“ips”, “dr”, “mtr”)
                .keep()
                .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
 
