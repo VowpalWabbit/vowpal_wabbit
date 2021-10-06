@@ -10,7 +10,6 @@
 #include "io/logger.h"
 
 using namespace VW::config;
-using namespace VW::LEARNER;
 namespace logger = VW::io::logger;
 
 struct multi_oaa
@@ -56,6 +55,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
   }
   if (o.probabilities)
   {
+    assert(ec.pred.scalars.size() == o.k);
     float sum = std::accumulate(ec.pred.scalars.begin(), ec.pred.scalars.end(), 0.f);
     for (size_t i = 0; i < o.k; ++i) { ec.pred.scalars[i] /= sum; }
   }
@@ -106,11 +106,12 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
   if (data->probabilities)
   {
     options.insert("link", "logistic");
-    options.add_and_parse(new_options);
     pred_type = prediction_type_t::scalars;
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
-      *(all.trace_message) << "WARNING: --probabilities should be used only with --loss_function=logistic" << std::endl;
+      logger::log_error(
+          "WARNING: --probabilities should be used only with --loss_function=logistic, currently using: {}",
+          loss_function_type);
     // the three boolean template parameters are: is_learn, print_all and scores
     name_addition = "-prob";
   }

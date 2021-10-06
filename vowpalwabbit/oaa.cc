@@ -238,11 +238,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  if (probabilities)
-  {
-    options.insert("link", "logistic");
-    options.add_and_parse(new_options);
-  }
+  if (probabilities) { options.insert("link", "logistic"); }
 
   if (all.sd->ldict && (data->k != all.sd->ldict->getK()))
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
@@ -288,8 +284,9 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
     {
       auto loss_function_type = all.loss->getType();
       if (loss_function_type != "logistic")
-        *(all.trace_message) << "WARNING: --probabilities should be used only with --loss_function=logistic"
-                             << std::endl;
+      {
+        logger::log_error("WARNING: --probabilities should be used only with --loss_function=logistic, currently using: {}", loss_function_type);
+      }
       // the three boolean template parameters are: is_learn, print_all and scores
       learn_ptr = learn<!PRINT_ALL, SCORES, PROBABILITIES>;
       pred_ptr = predict<!PRINT_ALL, SCORES, PROBABILITIES>;
