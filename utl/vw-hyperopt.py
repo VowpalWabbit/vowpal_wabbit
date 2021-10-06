@@ -102,8 +102,6 @@ class HyperoptSpaceConstructor(object):
                 elif distr_part == '':
                     distrib = hp.uniform(hp_choice_name, vmin, vmax)
                 elif distr_part == 'I':
-                    distrib = hp.quniform(hp_choice_name, vmin, vmax, 1)
-                elif distr_part == 'D':
                     distrib = scope.int(hp.quniform(hp_choice_name, vmin, vmax, 1))
                 elif distr_part in {'LI', 'IL'}:
                     distrib = hp.qloguniform(hp_choice_name, log(vmin), log(vmax), 1)
@@ -114,7 +112,7 @@ class HyperoptSpaceConstructor(object):
             possible_values = range_part.split(',')
             if arg == '--lrq' or arg == '--lrqfa' or arg == '-q' or arg == '--quadratic' or arg == '--cubic':
                 possible_values = [v.replace('+', ' {a} '.format(a=arg)) for v in possible_values]
-                print(possible_values)
+
             distrib = hp.choice(hp_choice_name, possible_values)
         if try_omit_zero:
             hp_choice_name_outer = hp_choice_name + '_outer'
@@ -218,9 +216,6 @@ class HyperOptimizer(object):
         return logger
 
     def get_hyperparam_string(self, **kwargs):
-        for arg in ['--passes']: #, '--rank', '--lrq']:
-            if arg in kwargs:
-                kwargs[arg] = int(kwargs[arg])
 
         #print 'KWARGS: ', kwargs
         flags = [key for key in kwargs if key.startswith('-')]
@@ -233,12 +228,9 @@ class HyperOptimizer(object):
             if key.startswith('-'):
                 if key.startswith('--lrq=') or key.startswith('--lrqfa='):
                     list_param.append('%s%s' % (key, kwargs[key]))
-                else: 
+                else:
                     list_param.append('%s %s' % (key, kwargs[key]))
         self.param_suffix = ' '.join(list_param)
-        print(self.param_suffix)
-        print(kwargs)
-        # self.param_suffix = ' '.join(['%s %s' % (key, kwargs[key]) if key.startswith('-') for key in kwargs])
         self.param_suffix += ' %s' % (kwargs['argument'])
 
     def compose_vw_train_command(self):
