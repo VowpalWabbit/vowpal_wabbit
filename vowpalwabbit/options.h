@@ -64,7 +64,11 @@ struct option_builder
     m_option_obj.m_keep = keep;
     return *this;
   }
-
+  option_builder& one_of(bool one_of = true)
+  {
+    m_option_obj.one_of = one_of;
+    return *this;
+  }
   option_builder& necessary(bool necessary = true)
   {
     m_option_obj.m_necessary = necessary;
@@ -74,7 +78,9 @@ struct option_builder
   option_builder& allow_override(bool allow_override = true)
   {
     if (!is_scalar_option_type<typename T::value_type>::value)
-    { THROW("allow_override can only apply to scalar option types.") }
+    {
+      THROW("allow_override can only apply to scalar option types.")
+    }
     m_option_obj.m_allow_override = allow_override;
     return *this;
   }
