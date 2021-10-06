@@ -76,6 +76,12 @@ void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, 
       {
         writer.Key("dsjson_sum_cost_original_first_slot");
         writer.Double(ds_metrics->DsjsonSumCostOriginalFirstSlot);
+        writer.Key("dsjson_number_label_equal_baseline_first_slot");
+        writer.Int64(ds_metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot);
+        writer.Key("dsjson_number_label_not_equal_baseline_first_slot");
+        writer.Int64(ds_metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
+        writer.Key("dsjson_sum_cost_original_label_equal_baseline_first_slot");
+        writer.Double(ds_metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
       }
       else
       {
