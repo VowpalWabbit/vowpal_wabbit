@@ -43,13 +43,13 @@ struct discounted_expectation {
       msg << name << "_expectation_sum " << std::fixed << sum << "\n";
     }
     bin_text_read_write_fixed_validated(
-        io, reinterpret_cast<char*>(&sum), sizeof(sum), "", read, msg, text);
+        io, reinterpret_cast<char*>(&sum), sizeof(sum), read, msg, text);
 
     if (!read) {
       msg << name << "_expectation_n " << std::fixed << n << "\n";
     }
     bin_text_read_write_fixed_validated(
-        io, reinterpret_cast<char*>(&n), sizeof(sum), "", read, msg, text);
+        io, reinterpret_cast<char*>(&n), sizeof(sum), read, msg, text);
   }
 private:
   double tau, sum, n;
