@@ -26,6 +26,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& arg)
   td->num_actions = num_actions;
   td->arg = &arg;
   sch.set_task_data<task_data>(td);
+  sch.set_is_ldf(false);
 }
 
 void run(Search::search& sch, multi_ex& /*ec*/)

@@ -312,6 +312,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   options.add_and_parse(new_options);
 
   sch.set_task_data(D);
+  sch.set_is_ldf(true);
 
   if (D->predict_max)
     sch.set_options(Search::EXAMPLES_DONT_CHANGE);  // we don't do any internal example munging
