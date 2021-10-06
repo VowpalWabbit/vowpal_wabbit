@@ -49,7 +49,9 @@ struct discounted_expectation
   }
 
 private:
-  double tau, sum, n;
+  double tau;
+  double sum;
+  double n;
 };
 
 constexpr double DEFAULT_TAU = 0.999;

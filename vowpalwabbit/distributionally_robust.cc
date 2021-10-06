@@ -4,6 +4,7 @@
 
 #include "distributionally_robust.h"
 #include "vw_math.h"
+#include "model_utils.h"
 
 namespace VW
 {
@@ -206,14 +207,12 @@ ScoredDual ChiSquared::recompute_duals()
 void ChiSquared::save_load(io_buf& model_file, bool read, bool text, const char* name)
 {
   if (model_file.num_files() == 0) { return; }
-  std::stringstream msg;
 
-#define save_load_field(field)                                                            \
-  do                                                                                      \
-  {                                                                                       \
-    if (!read) msg << name << "_chisq_" << #field << " " << std::fixed << field << "\n";  \
-    bin_text_read_write_fixed_validated(                                                  \
-        model_file, reinterpret_cast<char*>(&field), sizeof(field), read, msg, text); \
+#define save_load_field(field)                                                           \
+  do {                                                                                   \
+    std::stringstream msg;                                                               \
+    if (!read) msg << name << "_chisq_" << #field << " " << std::fixed << field << "\n"; \
+    model_utils::process_model_field(model_file, field, read, msg.str(), text);          \
   } while (0)
 
   save_load_field(n);
