@@ -503,9 +503,9 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
                .default_value(0.f)
                .help("Clipping probability in importance weight. Default: 0.f (no clipping)."))
       .add(make_option("cb_type", type_string)
-               .one_of("ips", "dr", "mtr")
                .keep()
-               .help("contextual bandit method to use in {ips, dm, dr, mtr, sm}. Default: mtr"));
+               .one_of("ips", "dr", "mtr")
+               .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
