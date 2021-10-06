@@ -2271,7 +2271,6 @@ void do_actual_learning(search& sch, multi_ex& ec_seq)
   if (priv.task->run_takedown) priv.task->run_takedown(sch, ec_seq);
 }
 
-
 template <bool is_learn>
 void do_actual_learning_ldf(search& sch, multi_learner& base, multi_ex& ec_seq)
 {
