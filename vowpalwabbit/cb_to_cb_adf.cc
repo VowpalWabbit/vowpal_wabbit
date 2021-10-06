@@ -126,7 +126,7 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
       .add(make_option("cb_type", type_string)
                .keep()
                .one_of(“ips”, “dr”, “mtr”)
-               .help("contextual bandit method to use in {}"))
+               .help("contextual bandit method to use in {ips,dr,mtr}. Default: mtr"))
       .add(make_option("cb_force_legacy", force_legacy).keep().help("Default to non-adf cb implementation (cb_algs)"));
 
   options.add_parse_and_check_necessary(new_options);

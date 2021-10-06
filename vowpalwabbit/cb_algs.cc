@@ -162,7 +162,7 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
       .add(make_option("cb_type", type_string)
                .keep()
                .one_of(“ips”, “dr”, “mtr”)
-               .help("contextual bandit method to use in {ips,dm,dr}"))
+               .help("contextual bandit method to use in {ips,dm,dr}. Default: mtr""))
       .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."))
       .add(make_option("cb_force_legacy", force_legacy)
                .keep()
@@ -209,7 +209,8 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
   }
 
   auto base = as_singleline(stack_builder.setup_base_learner());
-  if (eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
+  if (eval) {
+    all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
   else
   {
     all.example_parser->lbl_parser = CB::cb_label;
