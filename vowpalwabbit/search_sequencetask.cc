@@ -35,6 +35,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& /*optio
       Search::AUTO_HAMMING_LOSS |     // please just use hamming loss on individual predictions -- we won't declare loss
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       0);
+  sch.set_is_ldf(false);
 }
 
 void run(Search::search& sch, multi_ex& ec)
@@ -175,6 +176,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       0);
   sch.set_num_learners(D->multipass);
+  sch.set_is_ldf(false);
 }
 
 void setup(Search::search& sch, multi_ex& ec)
@@ -267,6 +269,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
       Search::ACTION_COSTS |          // we'll provide cost-per-action (rather than oracle)
       0);
   sch.set_task_data<size_t>(new size_t{num_actions});
+  sch.set_is_ldf(false);
 }
 
 void run(Search::search& sch, multi_ex& ec)
@@ -312,7 +315,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   options.add_and_parse(new_options);
 
   sch.set_task_data(D);
-  sch.set_is_ldf(true);
+  sch.set_is_ldf(false);
 
   if (D->predict_max)
     sch.set_options(Search::EXAMPLES_DONT_CHANGE);  // we don't do any internal example munging
@@ -373,7 +376,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
   }
 
   data->num_actions = num_actions;
-
+  sch.set_is_ldf(true);
   sch.set_task_data<task_data>(data);
   sch.set_options(Search::AUTO_CONDITION_FEATURES |  // automatically add history features to our examples, please
       Search::AUTO_HAMMING_LOSS |  // please just use hamming loss on individual predictions -- we won't declare loss

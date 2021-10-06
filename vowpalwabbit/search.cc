@@ -3008,7 +3008,8 @@ predictor& predictor::reset()
 
 predictor& predictor::set_input(example& input_example)
 {
-  assert(is_ldf == false);
+  assert(sch.is_ldf() == false);
+  is_ldf = false;
   ec = &input_example;
   ec_cnt = 1;
   return *this;
@@ -3016,7 +3017,8 @@ predictor& predictor::set_input(example& input_example)
 
 predictor& predictor::set_input(example* input_example, size_t input_length)
 {
-  assert(is_ldf == true);
+  assert(sch.is_ldf() == true);
+  is_ldf = true;
   ec = input_example;
   ec_cnt = input_length;
   return *this;
@@ -3024,7 +3026,8 @@ predictor& predictor::set_input(example* input_example, size_t input_length)
 
 void predictor::set_input_length(size_t input_length)
 {
-  assert(is_ldf == true);
+  assert(sch.is_ldf() == true);
+  is_ldf = true;
   allocated_examples.resize(input_length);
   ec = allocated_examples.data();
   ec_cnt = input_length;
