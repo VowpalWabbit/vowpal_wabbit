@@ -1,8 +1,8 @@
 #ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
-#include <ios>
-#include <sstream>
-#include "reductions_fwd.h"
+#  define BOOST_TEST_DYN_LINK
+#  include <ios>
+#  include <sstream>
+#  include "reductions_fwd.h"
 #endif
 
 #include <boost/test/unit_test.hpp>
@@ -17,27 +17,25 @@
 void make_example(multi_ex& examples, vw& vw, int arm, float* costs, float* probs)
 {
   examples.push_back(VW::read_example(vw, "shared | shared_f"));
-  for(int i = 0; i < 4; ++i) {
+  for (int i = 0; i < 4; ++i)
+  {
     std::stringstream str;
-    if(i == arm) {
-      str << "0:" << std::fixed << costs[i] << ":" << probs[i] << " ";
-    }
-    str << "| " << "arm_" << i;
+    if (i == arm) { str << "0:" << std::fixed << costs[i] << ":" << probs[i] << " "; }
+    str << "| "
+        << "arm_" << i;
     examples.push_back(VW::read_example(vw, str.str().c_str()));
   }
 }
 
-int sample(int size, const float *probs, float s)
+int sample(int size, const float* probs, float s)
 {
-  for(int i = 0; i < size; ++i) {
-    if(s <= probs[i]) {
-      return i;
-    }
+  for (int i = 0; i < size; ++i)
+  {
+    if (s <= probs[i]) { return i; }
     s -= probs[i];
   }
-  return 0; //error
+  return 0;  // error
 }
-
 
 int get_int_metric(const VW::metric_sink& metrics, const std::string& metric_name)
 {
@@ -59,13 +57,15 @@ float get_float_metric(const VW::metric_sink& metrics, const std::string& metric
 
 BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
 {
-  auto& vw = *VW::initialize("--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5");
-  float costs_p0[] = { -0.1, -0.3, -0.3, -1.0 };
-  float probs_p0[] = { 0.05, 0.05, 0.05, 0.85 };
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --baseline_challenger_cb --quiet --extra_metrics ut_metrics.json --random_seed 5");
+  float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
+  float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
 
   uint64_t state = 37;
-  for (int i = 0; i < 50; ++i) {
-    float s =  merand48(state);
+  for (int i = 0; i < 50; ++i)
+  {
+    float s = merand48(state);
     multi_ex ex;
 
     make_example(ex, vw, sample(4, probs_p0, s), costs_p0, probs_p0);
@@ -77,34 +77,37 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
   vw.l->persist_metrics(metrics);
 
   BOOST_CHECK_EQUAL(get_int_metric(metrics, "baseline_cb_baseline_in_use"), 0);
-  //if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
-  BOOST_CHECK_LE(get_float_metric(metrics, "baseline_cb_baseline_lowerbound"), get_float_metric(metrics, "baseline_cb_policy_expectation"));
+  // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
+  BOOST_CHECK_LE(get_float_metric(metrics, "baseline_cb_baseline_lowerbound"),
+      get_float_metric(metrics, "baseline_cb_policy_expectation"));
 
   multi_ex tst;
   make_example(tst, vw, -1, costs_p0, probs_p0);
   vw.predict(tst);
   BOOST_CHECK_EQUAL(tst[0]->pred.a_s.size(), 4);
   BOOST_CHECK_EQUAL(tst[0]->pred.a_s[0].action, 3);
-  BOOST_CHECK_GE(tst[0]->pred.a_s[0].score, 0.9625f); //greedy action, 4 actions + egreedy 0.05
+  BOOST_CHECK_GE(tst[0]->pred.a_s[0].score, 0.9625f);  // greedy action, 4 actions + egreedy 0.05
 
   vw.finish_example(tst);
 
   VW::finish(vw);
 }
 
-
 BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
 {
-  auto& vw = *VW::initialize("--cb_explore_adf --baseline_challenger_cb --cb_c_tau 0.995 --quiet --power_t 0 -l 0.001 --extra_metrics ut_metrics.json --random_seed 5");
-  float costs_p0[] = { -0.1, -0.3, -0.3, -1.0 };
-  float probs_p0[] = { 0.05, 0.05, 0.05, 0.85 };
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --baseline_challenger_cb --cb_c_tau 0.995 --quiet --power_t 0 -l 0.001 --extra_metrics "
+      "ut_metrics.json --random_seed 5");
+  float costs_p0[] = {-0.1, -0.3, -0.3, -1.0};
+  float probs_p0[] = {0.05, 0.05, 0.05, 0.85};
 
-  float costs_p1[] = { -1.0, -0.3, -0.3, -0.1 };
-  float probs_p1[] = { 0.05, 0.05, 0.05, 0.85 };
+  float costs_p1[] = {-1.0, -0.3, -0.3, -0.1};
+  float probs_p1[] = {0.05, 0.05, 0.05, 0.85};
 
   uint64_t state = 37;
-  for (int i = 0; i < 500; ++i) {
-    float s =  merand48(state);
+  for (int i = 0; i < 500; ++i)
+  {
+    float s = merand48(state);
     multi_ex ex;
 
     make_example(ex, vw, sample(4, probs_p0, s), costs_p0, probs_p0);
@@ -112,8 +115,9 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
     vw.finish_example(ex);
   }
 
-  for (int i = 0; i < 400; ++i) {
-    float s =  merand48(state);
+  for (int i = 0; i < 400; ++i)
+  {
+    float s = merand48(state);
     multi_ex ex;
 
     make_example(ex, vw, sample(4, probs_p1, s), costs_p1, probs_p1);
@@ -121,13 +125,14 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
     vw.finish_example(ex);
   }
 
-  //after 400 steps of switched reward dynamics, the baseline CI should have caught up.
+  // after 400 steps of switched reward dynamics, the baseline CI should have caught up.
   VW::metric_sink metrics;
   vw.l->persist_metrics(metrics);
 
   BOOST_CHECK_EQUAL(get_int_metric(metrics, "baseline_cb_baseline_in_use"), 1);
-  //if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
-  BOOST_CHECK_GT(get_float_metric(metrics, "baseline_cb_baseline_lowerbound"), get_float_metric(metrics, "baseline_cb_policy_expectation"));
+  // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
+  BOOST_CHECK_GT(get_float_metric(metrics, "baseline_cb_baseline_lowerbound"),
+      get_float_metric(metrics, "baseline_cb_policy_expectation"));
 
   multi_ex tst;
   make_example(tst, vw, -1, costs_p1, probs_p1);
@@ -135,7 +140,7 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
 
   BOOST_CHECK_EQUAL(tst[0]->pred.a_s.size(), 4);
   BOOST_CHECK_EQUAL(tst[0]->pred.a_s[0].action, 0);
-  BOOST_CHECK_GE(tst[0]->pred.a_s[0].score, 0.9625f); //greedy action, 4 actions + egreedy 0.05
+  BOOST_CHECK_GE(tst[0]->pred.a_s[0].score, 0.9625f);  // greedy action, 4 actions + egreedy 0.05
 
   vw.finish_example(tst);
 
