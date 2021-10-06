@@ -22,9 +22,9 @@ namespace logger = VW::io::logger;
 struct audit_parser_hook
 {
   audit_parser_hook(bool audit) : _audit(audit) {}
-  void process_feature(example* ex, namespace_index ns_idx, uint64_t /*channel_hash*/, uint64_t /*word_hash*/,
-      float /*feature_value*/, VW::string_view feature_name, VW::string_view string_feature_value,
-      VW::string_view namespace_name) const
+  inline FORCE_INLINE void process_feature(example* ex, namespace_index ns_idx, uint64_t /*channel_hash*/,
+      uint64_t /*word_hash*/, float /*feature_value*/, VW::string_view feature_name,
+      VW::string_view string_feature_value, VW::string_view namespace_name) const
   {
     if (_audit)
     {
@@ -52,8 +52,8 @@ struct affix_parser_hook
   {
   }
 
-  void process_feature(example* ex, namespace_index ns_idx, uint64_t channel_hash, uint64_t word_hash,
-      float feature_value, VW::string_view feature_name, VW::string_view /*string_feature_value*/,
+  inline FORCE_INLINE void process_feature(example* ex, namespace_index ns_idx, uint64_t channel_hash,
+      uint64_t word_hash, float feature_value, VW::string_view feature_name, VW::string_view /*string_feature_value*/,
       VW::string_view /*namespace_name*/) const
   {
     if (((*_affix_features)[ns_idx] > 0) && (!feature_name.empty()))
@@ -107,8 +107,8 @@ struct spelling_parser_hook
   {
   }
 
-  void process_feature(example* ex, namespace_index ns_idx, uint64_t channel_hash, uint64_t word_hash,
-      float feature_value, VW::string_view feature_name, VW::string_view /*string_feature_value*/,
+  inline FORCE_INLINE void process_feature(example* ex, namespace_index ns_idx, uint64_t channel_hash,
+      uint64_t word_hash, float feature_value, VW::string_view feature_name, VW::string_view /*string_feature_value*/,
       VW::string_view /*namespace_name*/)
   {
     if ((*_spelling_features)[ns_idx])
@@ -166,9 +166,9 @@ struct dictionary_parser_hook
   {
   }
 
-  void process_feature(example* ex, namespace_index ns_idx, uint64_t /*channel_hash*/, uint64_t /*word_hash*/,
-      float /*feature_value*/, VW::string_view feature_name, VW::string_view /*string_feature_value*/,
-      VW::string_view /*namespace_name*/) const
+  inline FORCE_INLINE void process_feature(example* ex, namespace_index ns_idx, uint64_t /*channel_hash*/,
+      uint64_t /*word_hash*/, float /*feature_value*/, VW::string_view feature_name,
+      VW::string_view /*string_feature_value*/, VW::string_view /*namespace_name*/) const
   {
     if (!(*_namespace_dictionaries)[ns_idx].empty())
     {
