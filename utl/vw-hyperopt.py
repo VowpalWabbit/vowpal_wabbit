@@ -8,6 +8,7 @@ Github version of hyperparameter optimization for Vowpal Wabbit via hyperopt
 __author__ = 'kurtosis'
 
 from hyperopt import hp, fmin, tpe, rand, Trials, STATUS_OK
+from hyperopt.pyll import scope
 from sklearn.metrics import roc_curve, auc, log_loss, average_precision_score, hinge_loss, \
     mean_squared_error
 import numpy as np
@@ -64,7 +65,7 @@ class HyperoptSpaceConstructor(object):
         }
 
         self.range_pattern = re.compile("[^~]+")  # re.compile("(?<=\[).+(?=\])")
-        self.distr_pattern = re.compile("(?<=~)[IOL]*")  # re.compile("(?<=\])[IOL]*")
+        self.distr_pattern = re.compile("(?<=~)[IOLD]*")  # re.compile("(?<=\])[IOL]*")
         self.only_continuous = re.compile("(?<=~)[IL]*")  # re.compile("(?<=\])[IL]*")
 
     def _process_vw_argument(self, arg, value, algorithm):
@@ -91,24 +92,30 @@ class HyperoptSpaceConstructor(object):
         distr_part = distr_part.replace('O', '')
 
         if is_continuous:
-            vmin, vmax = [float(i) for i in range_part.split('..')]
-
-            if distr_part == 'L':
-                distrib = hp.loguniform(hp_choice_name, log(vmin), log(vmax))
-            elif distr_part == '':
-                distrib = hp.uniform(hp_choice_name, vmin, vmax)
-            elif distr_part == 'I':
-                distrib = hp.quniform(hp_choice_name, vmin, vmax, 1)
-            elif distr_part in {'LI', 'IL'}:
-                distrib = hp.qloguniform(hp_choice_name, log(vmin), log(vmax), 1)
+            if arg == '--lrq' or arg == '--lrqfa':
+                vmin, vmax = [float(re.sub("[^0-9]", "", i)) for i in range_part.split('..')]
+                distrib = scope.int(hp.quniform(hp_choice_name, vmin, vmax, 1))
             else:
-                raise ValueError("Cannot recognize distribution: %s" % (distr_part))
+                vmin, vmax = [float(i) for i in range_part.split('..')]
+                if distr_part == 'L':
+                    distrib = hp.loguniform(hp_choice_name, log(vmin), log(vmax))
+                elif distr_part == '':
+                    distrib = hp.uniform(hp_choice_name, vmin, vmax)
+                elif distr_part == 'I':
+                    distrib = hp.quniform(hp_choice_name, vmin, vmax, 1)
+                elif distr_part == 'D':
+                    distrib = scope.int(hp.quniform(hp_choice_name, vmin, vmax, 1))
+                elif distr_part in {'LI', 'IL'}:
+                    distrib = hp.qloguniform(hp_choice_name, log(vmin), log(vmax), 1)
+                else:
+                    raise ValueError("Cannot recognize distribution: %s" % (distr_part))
+
         else:
             possible_values = range_part.split(',')
-            if arg == '-q':
-                possible_values = [v.replace('+', ' -q ') for v in possible_values]
+            if arg == '--lrq' or arg == '--lrqfa' or arg == '-q' or arg == '--quadratic' or arg == '--cubic':
+                possible_values = [v.replace('+', ' {a} '.format(a=arg)) for v in possible_values]
+                print(possible_values)
             distrib = hp.choice(hp_choice_name, possible_values)
-
         if try_omit_zero:
             hp_choice_name_outer = hp_choice_name + '_outer'
             distrib = hp.choice(hp_choice_name_outer, ['omit', distrib])
@@ -144,7 +151,11 @@ class HyperoptSpaceConstructor(object):
                     continue
                 if arg not in self.algorithm_metadata[algo]['prohibited_flags']:
                     distrib = self._process_vw_argument(arg, value, algo)
-                    self.space[algo][arg] = distrib
+                    key = arg
+                    if (arg=='--lrq' or arg=='--lrqfa') and '..' in value:
+                        ns = re.sub('[^a-zA-Z]+', '', value)
+                        key = arg +'='+ns
+                    self.space[algo][key] = distrib
                 else:
                     pass
         self.space = hp.choice('algorithm', self.space.values())
@@ -217,7 +228,17 @@ class HyperOptimizer(object):
             if kwargs[flag] == 'omit':
                 del kwargs[flag]
 
-        self.param_suffix = ' '.join(['%s %s' % (key, kwargs[key]) for key in kwargs if key.startswith('-')])
+        list_param = []
+        for key in kwargs:
+            if key.startswith('-'):
+                if key.startswith('--lrq=') or key.startswith('--lrqfa='):
+                    list_param.append('%s%s' % (key, kwargs[key]))
+                else: 
+                    list_param.append('%s %s' % (key, kwargs[key]))
+        self.param_suffix = ' '.join(list_param)
+        print(self.param_suffix)
+        print(kwargs)
+        # self.param_suffix = ' '.join(['%s %s' % (key, kwargs[key]) if key.startswith('-') for key in kwargs])
         self.param_suffix += ' %s' % (kwargs['argument'])
 
     def compose_vw_train_command(self):
