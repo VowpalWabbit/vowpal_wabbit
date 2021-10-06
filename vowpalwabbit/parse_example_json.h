@@ -951,14 +951,6 @@ public:
         return &ctx.uint_dedup_state;
       }
 
-      else if (ctx.key_length == 3 && !strncmp(str, "_ba", 3))
-      {
-        if (!ctx.decision_service_data) { THROW("_ba is only valid in DSJson"); }
-        ctx.array_uint_state.output_array = &ctx.decision_service_data->baseline_actions;
-        ctx.array_uint_state.return_state = this;
-        return &ctx.array_uint_state;
-      }
-
       return Ignore(ctx, length);
     }
 
