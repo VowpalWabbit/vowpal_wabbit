@@ -15,7 +15,199 @@
 
 #include "io/logger.h"
 
+#include <fmt/format.h>
+
 namespace logger = VW::io::logger;
+
+struct audit_parser_hook
+{
+  audit_parser_hook(bool audit) : _audit(audit) {}
+  void process_feature(example* ex, namespace_index ns_idx, uint64_t /*channel_hash*/, uint64_t /*word_hash*/,
+      float /*feature_value*/, VW::string_view feature_name, VW::string_view string_feature_value,
+      VW::string_view namespace_name) const
+  {
+    if (_audit)
+    {
+      auto& current_features = ex->feature_space[ns_idx];
+      if (!string_feature_value.empty())
+      {
+        current_features.space_names.emplace_back(
+            namespace_name.to_string(), fmt::format("{}^{}", feature_name, string_feature_value));
+      }
+      else
+      {
+        current_features.space_names.emplace_back(namespace_name.to_string(), feature_name.to_string());
+      }
+    }
+  }
+
+private:
+  bool _audit;
+};
+
+struct affix_parser_hook
+{
+  affix_parser_hook(std::array<uint64_t, NUM_NAMESPACES>* affix_features, hash_func_t hasher, bool audit)
+      : _affix_features(affix_features), _hasher(hasher), _audit(audit)
+  {
+  }
+
+  void process_feature(example* ex, namespace_index ns_idx, uint64_t channel_hash, uint64_t word_hash,
+      float feature_value, VW::string_view feature_name, VW::string_view /*string_feature_value*/,
+      VW::string_view /*namespace_name*/) const
+  {
+    if (((*_affix_features)[ns_idx] > 0) && (!feature_name.empty()))
+    {
+      features& affix_fs = ex->feature_space[affix_namespace];
+      if (affix_fs.empty()) { ex->indices.push_back(affix_namespace); }
+      uint64_t affix = (*_affix_features)[ns_idx];
+
+      while (affix > 0)
+      {
+        bool is_prefix = affix & 0x1;
+        uint64_t len = (affix >> 1) & 0x7;
+        VW::string_view affix_name(feature_name);
+        if (affix_name.size() > len)
+        {
+          if (is_prefix)
+            affix_name.remove_suffix(affix_name.size() - len);
+          else
+            affix_name.remove_prefix(affix_name.size() - len);
+        }
+
+        word_hash = _hasher(affix_name.begin(), affix_name.length(), channel_hash) *
+            (affix_constant + (affix & 0xF) * quadratic_constant);
+        affix_fs.push_back(feature_value, word_hash, affix_namespace);
+        if (_audit)
+        {
+          v_array<char> affix_v;
+          if (ns_idx != ' ') affix_v.push_back(ns_idx);
+          affix_v.push_back(is_prefix ? '+' : '-');
+          affix_v.push_back('0' + static_cast<char>(len));
+          affix_v.push_back('=');
+          affix_v.insert(affix_v.end(), affix_name.begin(), affix_name.end());
+          affix_v.push_back('\0');
+          affix_fs.space_names.push_back(audit_strings("affix", affix_v.begin()));
+        }
+        affix >>= 4;
+      }
+    }
+  }
+
+private:
+  std::array<uint64_t, NUM_NAMESPACES>* _affix_features;
+  hash_func_t _hasher;
+  bool _audit;
+};
+
+struct spelling_parser_hook
+{
+  spelling_parser_hook(std::array<bool, NUM_NAMESPACES>* spelling_features, bool audit)
+      : _spelling_features(spelling_features), _audit(audit)
+  {
+  }
+
+  void process_feature(example* ex, namespace_index ns_idx, uint64_t channel_hash, uint64_t word_hash,
+      float feature_value, VW::string_view feature_name, VW::string_view /*string_feature_value*/,
+      VW::string_view /*namespace_name*/)
+  {
+    if ((*_spelling_features)[ns_idx])
+    {
+      features& spell_fs = ex->feature_space[spelling_namespace];
+      if (spell_fs.empty()) { ex->indices.push_back(spelling_namespace); }
+      // v_array<char> spelling;
+      _spelling.clear();
+      for (char c : feature_name)
+      {
+        char d = 0;
+        if ((c >= '0') && (c <= '9'))
+          d = '0';
+        else if ((c >= 'a') && (c <= 'z'))
+          d = 'a';
+        else if ((c >= 'A') && (c <= 'Z'))
+          d = 'A';
+        else if (c == '.')
+          d = '.';
+        else
+          d = '#';
+        // if ((spelling.size() == 0) || (spelling.last() != d))
+        _spelling.push_back(d);
+      }
+
+      VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
+      word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), channel_hash);
+      spell_fs.push_back(feature_value, word_hash, spelling_namespace);
+      if (_audit)
+      {
+        v_array<char> spelling_v;
+        if (ns_idx != ' ')
+        {
+          spelling_v.push_back(ns_idx);
+          spelling_v.push_back('_');
+        }
+        spelling_v.insert(spelling_v.end(), spelling_strview.begin(), spelling_strview.end());
+        spelling_v.push_back('\0');
+        spell_fs.space_names.emplace_back("spelling", spelling_v.begin());
+      }
+    }
+  }
+
+private:
+  std::array<bool, NUM_NAMESPACES>* _spelling_features;
+  bool _audit;
+  v_array<char> _spelling;
+};
+
+struct dictionary_parser_hook
+{
+  dictionary_parser_hook(
+      std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* namespace_dictionaries, bool audit)
+      : _namespace_dictionaries(namespace_dictionaries), _audit(audit)
+  {
+  }
+
+  void process_feature(example* ex, namespace_index ns_idx, uint64_t /*channel_hash*/, uint64_t /*word_hash*/,
+      float /*feature_value*/, VW::string_view feature_name, VW::string_view /*string_feature_value*/,
+      VW::string_view /*namespace_name*/) const
+  {
+    if (!(*_namespace_dictionaries)[ns_idx].empty())
+    {
+      // Heterogeneous lookup not yet implemented in std
+      // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0919r0.html
+      const std::string feature_name_str(feature_name);
+      for (const auto& map : (*_namespace_dictionaries)[ns_idx])
+      {
+        const auto& feats_it = map->find(feature_name_str);
+        if ((feats_it != map->end()) && (!feats_it->second->values.empty()))
+        {
+          const auto& feats = feats_it->second;
+          features& dict_fs = ex->feature_space[dictionary_namespace];
+          if (dict_fs.empty()) { ex->indices.push_back(dictionary_namespace); }
+          dict_fs.start_ns_extent(dictionary_namespace);
+          dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
+          dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
+          dict_fs.sum_feat_sq += feats->sum_feat_sq;
+          if (_audit)
+          {
+            for (const auto& id : feats->indicies)
+            {
+              std::stringstream ss;
+              ss << ns_idx << '_';
+              ss << feature_name;
+              ss << '=' << id;
+              dict_fs.space_names.push_back(audit_strings("dictionary", ss.str()));
+            }
+          }
+          dict_fs.end_ns_extent();
+        }
+      }
+    }
+  }
+
+private:
+  std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
+  bool _audit;
+};
 
 size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
 {
@@ -67,14 +259,14 @@ public:
   std::array<unsigned char, NUM_NAMESPACES>* _redefine;
   parser* _p;
   example* _ae;
-  std::array<uint64_t, NUM_NAMESPACES>* _affix_features;
-  std::array<bool, NUM_NAMESPACES>* _spelling_features;
-  v_array<char> _spelling;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
-  std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
+  audit_parser_hook _audit_hook;
+  affix_parser_hook _affix_hook;
+  spelling_parser_hook _spelling_hook;
+  dictionary_parser_hook _dictionary_hook;
 
-  ~TC_parser() {}
+  ~TC_parser() = default;
 
   // TODO: Currently this function is called by both warning and error conditions. We only log
   //      to warning here though.
@@ -213,127 +405,12 @@ public:
       features& fs = _ae->feature_space[_index];
       fs.push_back(_v, word_hash);
 
-      if (audit)
-      {
-        if (!string_feature_value.empty())
-        {
-          std::stringstream ss;
-          ss << feature_name << "^" << string_feature_value;
-          fs.space_names.push_back(audit_strings(_base.to_string(), ss.str()));
-        }
-        else
-        {
-          fs.space_names.push_back(audit_strings(_base.to_string(), feature_name.to_string()));
-        }
-      }
-
-      if (((*_affix_features)[_index] > 0) && (!feature_name.empty()))
-      {
-        features& affix_fs = _ae->feature_space[affix_namespace];
-        if (affix_fs.size() == 0) _ae->indices.push_back(affix_namespace);
-        uint64_t affix = (*_affix_features)[_index];
-
-        while (affix > 0)
-        {
-          bool is_prefix = affix & 0x1;
-          uint64_t len = (affix >> 1) & 0x7;
-          VW::string_view affix_name(feature_name);
-          if (affix_name.size() > len)
-          {
-            if (is_prefix)
-              affix_name.remove_suffix(affix_name.size() - len);
-            else
-              affix_name.remove_prefix(affix_name.size() - len);
-          }
-
-          word_hash = _p->hasher(affix_name.begin(), affix_name.length(), (uint64_t)_channel_hash) *
-              (affix_constant + (affix & 0xF) * quadratic_constant);
-          affix_fs.push_back(_v, word_hash, affix_namespace);
-          if (audit)
-          {
-            v_array<char> affix_v;
-            if (_index != ' ') affix_v.push_back(_index);
-            affix_v.push_back(is_prefix ? '+' : '-');
-            affix_v.push_back('0' + static_cast<char>(len));
-            affix_v.push_back('=');
-            affix_v.insert(affix_v.end(), affix_name.begin(), affix_name.end());
-            affix_v.push_back('\0');
-            affix_fs.space_names.push_back(audit_strings("affix", affix_v.begin()));
-          }
-          affix >>= 4;
-        }
-      }
-      if ((*_spelling_features)[_index])
-      {
-        features& spell_fs = _ae->feature_space[spelling_namespace];
-        if (spell_fs.empty()) { _ae->indices.push_back(spelling_namespace); }
-        // v_array<char> spelling;
-        _spelling.clear();
-        for (char c : feature_name)
-        {
-          char d = 0;
-          if ((c >= '0') && (c <= '9'))
-            d = '0';
-          else if ((c >= 'a') && (c <= 'z'))
-            d = 'a';
-          else if ((c >= 'A') && (c <= 'Z'))
-            d = 'A';
-          else if (c == '.')
-            d = '.';
-          else
-            d = '#';
-          // if ((spelling.size() == 0) || (spelling.last() != d))
-          _spelling.push_back(d);
-        }
-
-        VW::string_view spelling_strview(_spelling.begin(), _spelling.size());
-        word_hash = hashstring(spelling_strview.begin(), spelling_strview.length(), (uint64_t)_channel_hash);
-        spell_fs.push_back(_v, word_hash, spelling_namespace);
-        if (audit)
-        {
-          v_array<char> spelling_v;
-          if (_index != ' ')
-          {
-            spelling_v.push_back(_index);
-            spelling_v.push_back('_');
-          }
-          spelling_v.insert(spelling_v.end(), spelling_strview.begin(), spelling_strview.end());
-          spelling_v.push_back('\0');
-          spell_fs.space_names.push_back(audit_strings("spelling", spelling_v.begin()));
-        }
-      }
-      if ((*_namespace_dictionaries)[_index].size() > 0)
-      {
-        // Heterogeneous lookup not yet implemented in std
-        // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0919r0.html
-        const std::string feature_name_str(feature_name);
-        for (const auto& map : (*_namespace_dictionaries)[_index])
-        {
-          const auto& feats_it = map->find(feature_name_str);
-          if ((feats_it != map->end()) && (feats_it->second->values.size() > 0))
-          {
-            const auto& feats = feats_it->second;
-            features& dict_fs = _ae->feature_space[dictionary_namespace];
-            if (dict_fs.empty()) { _ae->indices.push_back(dictionary_namespace); }
-            dict_fs.start_ns_extent(dictionary_namespace);
-            dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
-            dict_fs.indicies.insert(dict_fs.indicies.end(), feats->indicies.begin(), feats->indicies.end());
-            dict_fs.sum_feat_sq += feats->sum_feat_sq;
-            if (audit)
-            {
-              for (const auto& id : feats->indicies)
-              {
-                std::stringstream ss;
-                ss << _index << '_';
-                ss << feature_name;
-                ss << '=' << id;
-                dict_fs.space_names.push_back(audit_strings("dictionary", ss.str()));
-              }
-            }
-            dict_fs.end_ns_extent();
-          }
-        }
-      }
+      _audit_hook.process_feature(_ae, _index, _channel_hash, word_hash, _v, feature_name, string_feature_value, _base);
+      _affix_hook.process_feature(_ae, _index, _channel_hash, word_hash, _v, feature_name, string_feature_value, _base);
+      _spelling_hook.process_feature(
+          _ae, _index, _channel_hash, word_hash, _v, feature_name, string_feature_value, _base);
+      _dictionary_hook.process_feature(
+          _ae, _index, _channel_hash, word_hash, _v, feature_name, string_feature_value, _base);
     }
   }
 
@@ -470,20 +547,27 @@ public:
     }
   }
 
-  TC_parser(VW::string_view line, vw& all, example* ae) : _line(line)
+  TC_parser(vw& all)
+      : _audit_hook(all.audit)
+      , _affix_hook(&all.affix_features, all.example_parser->hasher, all.audit)
+      , _spelling_hook(&all.spelling_features, all.audit)
+      , _dictionary_hook(&all.namespace_dictionaries, all.audit)
   {
+    this->_p = all.example_parser;
+    this->_redefine_some = all.redefine_some;
+    this->_redefine = &all.redefine;
+    this->_hash_seed = all.hash_seed;
+    this->_parse_mask = all.parse_mask;
+  }
+
+  void parse_example(VW::string_view line, example* ae)
+  {
+    _line = line;
+    _ae = ae;
+
     if (!_line.empty())
     {
       this->_read_idx = 0;
-      this->_p = all.example_parser;
-      this->_redefine_some = all.redefine_some;
-      this->_redefine = &all.redefine;
-      this->_ae = ae;
-      this->_affix_features = &all.affix_features;
-      this->_spelling_features = &all.spelling_features;
-      this->_namespace_dictionaries = &all.namespace_dictionaries;
-      this->_hash_seed = all.hash_seed;
-      this->_parse_mask = all.parse_mask;
       listNameSpace();
     }
     else
@@ -533,9 +617,17 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
   if (bar_idx != VW::string_view::npos)
   {
     if (all->audit || all->hash_inv)
-      TC_parser<true> parser_line(example.substr(bar_idx), *all, ae);
+    {
+      // TODO - reuse this object.
+      TC_parser<true> parser_line(*all);
+      parser_line.parse_example(example.substr(bar_idx), ae);
+    }
     else
-      TC_parser<false> parser_line(example.substr(bar_idx), *all, ae);
+    {
+      // TODO - reuse this object.
+      TC_parser<false> parser_line(*all);
+      parser_line.parse_example(example.substr(bar_idx), ae);
+    }
   }
 }
 
