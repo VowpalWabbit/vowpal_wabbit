@@ -203,6 +203,30 @@ ScoredDual ChiSquared::recompute_duals()
   return duals;
 }
 
+void ChiSquared::save_load(io_buf& model_file, bool read, bool text, const char* name) {
+  if (model_file.num_files() == 0) { return; }
+  std::stringstream msg;
+
+#define save_load_field(field) do { \
+  if (!read) msg << name << "_chisq_" << #field << " " << std::fixed << field << "\n"; \
+  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(&field), sizeof(field), "", read, msg, text); \
+} while (0)
+
+  save_load_field(n);
+  save_load_field(sumw);
+  save_load_field(sumwsq);
+  save_load_field(sumwr);
+  save_load_field(sumwsqr);
+  save_load_field(sumwsqrsq);
+
+  save_load_field(rmin);
+  save_load_field(rmax);
+  save_load_field(wmin);
+  save_load_field(wmax);
+
+  duals_stale = true;
+}
+
 }  // namespace distributionally_robust
 
 }  // namespace VW
