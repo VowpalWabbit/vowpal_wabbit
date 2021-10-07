@@ -1847,25 +1847,17 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
       // the _outcomes node (for CCB)
       all->example_parser->metrics->DsjsonSumCostOriginal += interaction.originalLabelCost;
       all->example_parser->metrics->DsjsonSumCostOriginalFirstSlot += interaction.originalLabelCostFirstSlot;
-
-      std::vector<std::string> enabled_reductions;
-      if (all->l != nullptr) { all->l->get_enabled_reductions(enabled_reductions); }
-
-      if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") !=
-          enabled_reductions.end())
+      if (!interaction.actions.empty() && !interaction.baseline_actions.empty())
       {
-        if (!interaction.actions.empty() && !interaction.baseline_actions.empty())
+        if (interaction.actions[0] == interaction.baseline_actions[0])
         {
-          if (interaction.actions[0] == interaction.baseline_actions[0])
-          {
-            all->example_parser->metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot++;
-            all->example_parser->metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot +=
-                interaction.originalLabelCostFirstSlot;
-          }
-          else
-          {
-            all->example_parser->metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot++;
-          }
+          all->example_parser->metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot++;
+          all->example_parser->metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot +=
+              interaction.originalLabelCostFirstSlot;
+        }
+        else
+        {
+          all->example_parser->metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot++;
         }
       }
     }
