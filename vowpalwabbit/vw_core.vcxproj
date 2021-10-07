@@ -139,6 +139,7 @@
     <ClInclude Include="array_parameters.h" />
     <ClInclude Include="audit_regressor.h" />
     <ClInclude Include="autolink.h" />
+    <ClInclude Include="automl.h" />
     <ClInclude Include="baseline.h" />
     <ClInclude Include="best_constant.h" />
     <ClInclude Include="bfgs.h" />
@@ -212,8 +213,8 @@
     <ClInclude Include="metrics.h" />
     <ClInclude Include="metric_sink.h" />
     <ClInclude Include="mf.h" />
-    <ClInclude Include="multiclass.h" />
     <ClInclude Include="model_utils.h" />
+    <ClInclude Include="multiclass.h" />
     <ClInclude Include="multilabel_oaa.h" />
     <ClInclude Include="multilabel.h" />
     <ClInclude Include="mwt.h" />
@@ -310,6 +311,7 @@
     <ClCompile Include="api_status.cc" />
     <ClCompile Include="audit_regressor.cc" />
     <ClCompile Include="autolink.cc" />
+    <ClCompile Include="automl.cc" />
     <ClCompile Include="baseline.cc" />
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="bfgs.cc" />

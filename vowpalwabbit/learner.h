@@ -283,6 +283,8 @@ public:
     VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
   }
 
+  void* get_internal_type_erased_data_pointer_test_use_only() { return learner_data.get(); }
+
   /// \brief Will update the model according to the labels and examples supplied.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid label set for every ::example in the field
