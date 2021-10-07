@@ -110,7 +110,6 @@ class HyperoptSpaceConstructor(object):
             if (arg == '--lrq' or arg == '--lrqfa'):
                 possible_values = []
                 if arg == '--lrq' and '+' in range_part:
-                    possible_values_dict = {}
                     list_range_part = range_part.split('+')
                     for range_part_k in list_range_part:
                         vmin, vmax = [int(re.sub("[^0-9]", "", i)) for i in range_part_k.split('..')]
