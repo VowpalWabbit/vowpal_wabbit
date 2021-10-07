@@ -65,7 +65,7 @@ class HyperoptSpaceConstructor(object):
         }
 
         self.range_pattern = re.compile("[^~]+")  # re.compile("(?<=\[).+(?=\])")
-        self.distr_pattern = re.compile("(?<=~)[IOLD]*")  # re.compile("(?<=\])[IOL]*")
+        self.distr_pattern = re.compile("(?<=~)[IOL]*")  # re.compile("(?<=\])[IOL]*")
         self.only_continuous = re.compile("(?<=~)[IL]*")  # re.compile("(?<=\])[IL]*")
 
     def _process_vw_argument(self, arg, value, algorithm):
