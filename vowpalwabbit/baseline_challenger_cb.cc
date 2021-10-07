@@ -64,7 +64,7 @@ struct baseline_challenger_data
   float baseline_epsilon;
   bool emit_metrics;
 
-  baseline_challenger_data(bool emit_metrics, float alpha, float tau)
+  baseline_challenger_data(bool emit_metrics, double alpha, double tau)
       : baseline(alpha, tau), policy_expectation(tau), emit_metrics(emit_metrics)
   {
   }
