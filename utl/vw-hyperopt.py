@@ -20,6 +20,8 @@ import re
 import logging
 import json
 from matplotlib import pyplot as plt
+import itertools
+from collections import Counter
 try:
     import seaborn as sns
 except ImportError:
@@ -68,6 +70,18 @@ class HyperoptSpaceConstructor(object):
         self.distr_pattern = re.compile("(?<=~)[IOL]*")  # re.compile("(?<=\])[IOL]*")
         self.only_continuous = re.compile("(?<=~)[IL]*")  # re.compile("(?<=\])[IL]*")
 
+
+    def _create_combinations(self,possible_values,len_comb,arg):
+        out_combos=[]
+        all_combos=itertools.combinations(possible_values,len_comb)
+        for combo in all_combos:
+            combo_ns_only = [re.sub('[^a-zA-Z]+', '', k) for k in combo]
+            if len(Counter(combo_ns_only).keys())==len_comb:
+                current_list = [combo[0]]
+                current_list.extend([f'{arg} {k}' for k in combo[1:]])
+                out_combos.append(' '.join(current_list))
+        return out_combos
+
     def _process_vw_argument(self, arg, value, algorithm):
         try:
             distr_part = self.distr_pattern.findall(value)[0]
@@ -94,9 +108,20 @@ class HyperoptSpaceConstructor(object):
         
         if is_continuous:
             if (arg == '--lrq' or arg == '--lrqfa'):
-                vmin, vmax = [int(re.sub("[^0-9]", "", i)) for i in range_part.split('..')]
-                ns = re.sub('[^a-zA-Z]+', '', range_part)
-                possible_values = [f"{ns}{v}" for v in range(vmin, vmax)]
+                possible_values = []
+                if arg == '--lrq' and '+' in range_part:
+                    possible_values_dict = {}
+                    list_range_part = range_part.split('+')
+                    for range_part_k in list_range_part:
+                        vmin, vmax = [int(re.sub("[^0-9]", "", i)) for i in range_part_k.split('..')]
+                        ns = re.sub('[^a-zA-Z]+', '', range_part_k)
+                        possible_values.extend([f"{ns}{v}" for v in range(vmin, vmax+1)])
+                    n = len(list_range_part)
+                    possible_values=self._create_combinations(possible_values,n,arg)
+                else:
+                    vmin, vmax = [int(re.sub("[^0-9]", "", i)) for i in range_part.split('..')]
+                    ns = re.sub('[^a-zA-Z]+', '', range_part)
+                    possible_values = [f"{ns}{v}" for v in range(vmin, vmax+1)]
                 distrib = hp.choice(hp_choice_name, possible_values)
             else:
                 vmin, vmax = [float(i) for i in range_part.split('..')]
@@ -115,7 +140,7 @@ class HyperoptSpaceConstructor(object):
             possible_values = range_part.split(',')
             arg_list = ['--lrq', '-q', '--quadratic', '--cubic']
             if arg in arg_list:
-                possible_values = [v.replace('+', ' {a} '.format(a=arg)) for v in possible_values]
+                possible_values = [v.replace('+', f' {arg} ') for v in possible_values]
             distrib = hp.choice(hp_choice_name, possible_values)
         if try_omit_zero:
             hp_choice_name_outer = hp_choice_name + '_outer'
@@ -222,14 +247,7 @@ class HyperOptimizer(object):
             if kwargs[flag] == 'omit':
                 del kwargs[flag]
 
-        list_param = []
-        for key in kwargs:
-            if key.startswith('-'):
-                if key.startswith('--lrq=') or key.startswith('--lrqfa='):
-                    list_param.append('%s%s' % (key, kwargs[key]))
-                else:
-                    list_param.append('%s %s' % (key, kwargs[key]))
-        self.param_suffix = ' '.join(list_param)
+        self.param_suffix = ' '.join(['%s %s' % (key, kwargs[key]) for key in kwargs if key.startswith('-')])
         self.param_suffix += ' %s' % (kwargs['argument'])
 
     def compose_vw_train_command(self):
