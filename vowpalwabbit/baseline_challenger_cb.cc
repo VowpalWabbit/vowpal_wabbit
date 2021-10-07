@@ -140,8 +140,8 @@ void save_load(baseline_challenger_data& data, io_buf& io, bool read, bool text)
 void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
 {
   if (!data.emit_metrics) { return; }
-  double ci = data.baseline.lower_bound();
-  double exp = data.policy_expectation.current();
+  auto ci = static_cast<float>(data.baseline.lower_bound());
+  auto exp = static_cast<float>(data.policy_expectation.current());
 
   metrics.float_metrics_list.emplace_back("baseline_cb_baseline_lowerbound", ci);
   metrics.float_metrics_list.emplace_back("baseline_cb_policy_expectation", exp);
