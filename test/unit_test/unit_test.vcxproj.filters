@@ -18,6 +18,9 @@
     <ClCompile Include="automl_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="automl_weights_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="cache_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
