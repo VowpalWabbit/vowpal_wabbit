@@ -147,9 +147,6 @@
     <ClCompile Include="vwdll_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="namespaced_feature_store_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="numeric_cast_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

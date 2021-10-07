@@ -47,7 +47,6 @@
     <ClCompile Include="json_parser_test.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="math_test.cc" />
-    <ClCompile Include="namespaced_feature_store_test.cc" />
     <ClCompile Include="numeric_cast_tests.cc" />
     <ClCompile Include="random_test.cc" />
     <ClCompile Include="parse_args_test.cc" />
