@@ -76,6 +76,12 @@ void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, 
       {
         writer.Key("dsjson_sum_cost_original_first_slot");
         writer.Double(ds_metrics->DsjsonSumCostOriginalFirstSlot);
+        writer.Key("dsjson_number_label_equal_baseline_first_slot");
+        writer.Int64(ds_metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot);
+        writer.Key("dsjson_number_label_not_equal_baseline_first_slot");
+        writer.Int64(ds_metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
+        writer.Key("dsjson_sum_cost_original_label_equal_baseline_first_slot");
+        writer.Double(ds_metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
       }
       else
       {
@@ -110,7 +116,7 @@ void output_metrics(vw& all)
     list_metrics.int_metrics_list.emplace_back("total_log_calls", logger::get_log_count());
 
     std::vector<std::string> enabled_reductions;
-    if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
+    if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
 
     list_to_json_file(all.example_parser->metrics.get(), filename, list_metrics, enabled_reductions);
   }
