@@ -91,10 +91,13 @@ class HyperoptSpaceConstructor(object):
         try_omit_zero = 'O' in distr_part
         distr_part = distr_part.replace('O', '')
 
+        
         if is_continuous:
-            if arg == '--lrq' or arg == '--lrqfa':
-                vmin, vmax = [float(re.sub("[^0-9]", "", i)) for i in range_part.split('..')]
-                distrib = scope.int(hp.quniform(hp_choice_name, vmin, vmax, 1))
+            if (arg == '--lrq' or arg == '--lrqfa'):
+                vmin, vmax = [int(re.sub("[^0-9]", "", i)) for i in range_part.split('..')]
+                ns = re.sub('[^a-zA-Z]+', '', range_part)
+                possible_values = [f"{ns}{v}" for v in range(vmin, vmax)]
+                distrib = hp.choice(hp_choice_name, possible_values)
             else:
                 vmin, vmax = [float(i) for i in range_part.split('..')]
                 if distr_part == 'L':
@@ -110,9 +113,9 @@ class HyperoptSpaceConstructor(object):
 
         else:
             possible_values = range_part.split(',')
-            if arg == '--lrq' or arg == '--lrqfa' or arg == '-q' or arg == '--quadratic' or arg == '--cubic':
+            arg_list = ['--lrq', '-q', '--quadratic', '--cubic']
+            if arg in arg_list:
                 possible_values = [v.replace('+', ' {a} '.format(a=arg)) for v in possible_values]
-
             distrib = hp.choice(hp_choice_name, possible_values)
         if try_omit_zero:
             hp_choice_name_outer = hp_choice_name + '_outer'
@@ -149,11 +152,7 @@ class HyperoptSpaceConstructor(object):
                     continue
                 if arg not in self.algorithm_metadata[algo]['prohibited_flags']:
                     distrib = self._process_vw_argument(arg, value, algo)
-                    key = arg
-                    if (arg=='--lrq' or arg=='--lrqfa') and '..' in value:
-                        ns = re.sub('[^a-zA-Z]+', '', value)
-                        key = arg +'='+ns
-                    self.space[algo][key] = distrib
+                    self.space[algo][arg] = distrib
                 else:
                     pass
         self.space = hp.choice('algorithm', self.space.values())
