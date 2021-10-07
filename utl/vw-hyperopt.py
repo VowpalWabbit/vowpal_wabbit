@@ -109,18 +109,21 @@ class HyperoptSpaceConstructor(object):
         if is_continuous:
             if (arg == '--lrq' or arg == '--lrqfa'):
                 possible_values = []
-                if arg == '--lrq' and '+' in range_part:
-                    list_range_part = range_part.split('+')
-                    for range_part_k in list_range_part:
-                        vmin, vmax = [int(re.sub("[^0-9]", "", i)) for i in range_part_k.split('..')]
-                        ns = re.sub('[^a-zA-Z]+', '', range_part_k)
+                for current_int in range_part.split(','):
+                    possible_values_current = []
+                    if '+' in current_int and arg == '--lrq':
+                        list_range_part = current_int.split('+')
+                        for range_part_k in list_range_part:
+                            vmin, vmax = [int(re.sub("[^0-9]", "", i)) for i in range_part_k.split('..')]
+                            ns = re.sub('[^a-zA-Z]+', '', range_part_k)
+                            possible_values_current.extend([f"{ns}{v}" for v in range(vmin, vmax+1)])
+                        n = len(list_range_part)
+                        possible_values.extend(self._create_combinations(possible_values_current,n,arg))                   
+                    else:
+                        vmin, vmax = [int(re.sub("[^0-9]", "", i)) for i in current_int.split('..')]
+                        ns = re.sub('[^a-zA-Z]+', '', current_int)
                         possible_values.extend([f"{ns}{v}" for v in range(vmin, vmax+1)])
-                    n = len(list_range_part)
-                    possible_values=self._create_combinations(possible_values,n,arg)
-                else:
-                    vmin, vmax = [int(re.sub("[^0-9]", "", i)) for i in range_part.split('..')]
-                    ns = re.sub('[^a-zA-Z]+', '', range_part)
-                    possible_values = [f"{ns}{v}" for v in range(vmin, vmax+1)]
+                
                 distrib = hp.choice(hp_choice_name, possible_values)
             else:
                 vmin, vmax = [float(i) for i in range_part.split('..')]
