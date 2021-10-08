@@ -49,3 +49,10 @@ else()
     )
   endif()
 endif()
+
+if(VW_INSTALL)
+  set(ABSL_ENABLE_INSTALL ON CACHE BOOL "" FORCE)
+endif()
+# This is only available as an embedded dependency at the moment as that is the way recommended by Abseil.
+# https://github.com/abseil/abseil-cpp/tree/master/CMake
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/abseil-cpp)

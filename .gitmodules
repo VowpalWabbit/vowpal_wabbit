@@ -7,3 +7,6 @@
 [submodule "ext_libs/fmt"]
 	path = ext_libs/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "ext_libs/abseil-cpp"]
+	path = ext_libs/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git
