@@ -31,7 +31,8 @@ struct metrics_data
   size_t predict_count = 0;
 };
 
-void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, metric_sink& metrics)
+void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, metric_sink& metrics,
+    const std::vector<std::string>& enabled_reductions)
 {
   FILE* fp;
 
@@ -70,8 +71,23 @@ void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, 
       writer.String(ds_metrics->LastEventId.c_str());
       writer.Key("last_event_time");
       writer.String(ds_metrics->LastEventTime.c_str());
-      writer.Key("dsjson_sum_cost_original");
-      writer.Double(ds_metrics->DsjsonSumCostOriginal);
+      if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") !=
+          enabled_reductions.end())
+      {
+        writer.Key("dsjson_sum_cost_original_first_slot");
+        writer.Double(ds_metrics->DsjsonSumCostOriginalFirstSlot);
+        writer.Key("dsjson_number_label_equal_baseline_first_slot");
+        writer.Int64(ds_metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot);
+        writer.Key("dsjson_number_label_not_equal_baseline_first_slot");
+        writer.Int64(ds_metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
+        writer.Key("dsjson_sum_cost_original_label_equal_baseline_first_slot");
+        writer.Double(ds_metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
+      }
+      else
+      {
+        writer.Key("dsjson_sum_cost_original");
+        writer.Double(ds_metrics->DsjsonSumCostOriginal);
+      }
     }
 
     writer.EndObject();
@@ -99,7 +115,10 @@ void output_metrics(vw& all)
 
     list_metrics.int_metrics_list.emplace_back("total_log_calls", logger::get_log_count());
 
-    list_to_json_file(all.example_parser->metrics.get(), filename, list_metrics);
+    std::vector<std::string> enabled_reductions;
+    if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
+
+    list_to_json_file(all.example_parser->metrics.get(), filename, list_metrics, enabled_reductions);
   }
 }
 
