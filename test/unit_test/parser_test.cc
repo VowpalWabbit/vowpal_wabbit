@@ -8,6 +8,7 @@
 #include "test_common.h"
 #include "parse_args.h"
 #include "parse_example.h"
+#include "parse_primitives.h"
 
 BOOST_AUTO_TEST_CASE(spoof_hex_encoded_namespace_test)
 {
@@ -39,4 +40,14 @@ BOOST_AUTO_TEST_CASE(parse_text_with_extents)
 
   VW::finish_example(*vw, *ex);
   VW::finish(*vw);
+}
+
+BOOST_AUTO_TEST_CASE(trim_whitespace_test)
+{
+  BOOST_TEST("" == VW::trim_whitespace(VW::string_view("")));
+  BOOST_TEST("abc" == VW::trim_whitespace(VW::string_view("abc")));
+  BOOST_TEST("abc" == VW::trim_whitespace(VW::string_view("              abc               ")));
+  BOOST_TEST("ab     c" == VW::trim_whitespace(VW::string_view("              ab     c               ")));
+  BOOST_TEST("a\nb     c" == VW::trim_whitespace(VW::string_view("              a\nb     c               ")));
+  BOOST_TEST("a\nb     \tc" == VW::trim_whitespace(VW::string_view("     \t         a\nb     \tc        \t\t       ")));
 }

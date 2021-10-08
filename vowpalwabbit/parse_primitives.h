@@ -141,3 +141,9 @@ inline int int_of_string(VW::string_view s)
   char* end = nullptr;
   return int_of_string(s, end);
 }
+
+namespace VW
+{
+std::string trim_whitespace(const std::string& s);
+VW::string_view trim_whitespace(VW::string_view str);
+}

@@ -50,3 +50,32 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
   }
   return tokens;
 }
+
+constexpr const char* whitespace_chars_to_remove = " \n\r\t";
+namespace VW
+{
+std::string trim_whitespace(const std::string& str)
+{
+  // Determine start
+  size_t start = str.find_first_not_of(whitespace_chars_to_remove);
+  if (start == std::string::npos) { return ""; }
+
+  // Determine end
+  size_t end = str.find_last_not_of(whitespace_chars_to_remove);
+  if (end == std::string::npos) { return ""; }
+  return str.substr(start, end + 1);
+}
+
+VW::string_view trim_whitespace(VW::string_view str)
+{
+  // Determine start
+  size_t start = str.find_first_not_of(whitespace_chars_to_remove);
+  if (start == std::string::npos) { return ""; }
+  str = str.substr(start);
+
+  // Determine end
+  size_t end = str.find_last_not_of(whitespace_chars_to_remove);
+  if (end == std::string::npos) { return ""; }
+  return str.substr(0, end + 1);
+}
+}  // namespace VW
