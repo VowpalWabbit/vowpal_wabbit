@@ -56,9 +56,6 @@ to swap out and try new configs more consistently.
 
 namespace VW
 {
-namespace model_utils
-{
-}  // namespace model_utils
 namespace automl
 {
 namespace details
@@ -125,30 +122,17 @@ void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
 void scored_config::update(float w, float r)
 {
   update_count++;
-  chisq.update(w, r);
+  chisq->update(w, r);
   ips += r * w;
   last_w = w;
   last_r = r;
-}
-
-void scored_config::save_load(io_buf& io, bool read, bool text)
-{
-  if (io.num_files() == 0) { return; }
-
-  VW::model_utils::process_model_field(io, ips, read, "_aml_config_ips", text);
-  VW::model_utils::process_model_field(io, update_count, read, "_aml_config_count", text);
-  VW::model_utils::process_model_field(io, last_w, read, "_aml_config_lastw", text);
-  VW::model_utils::process_model_field(io, last_r, read, "_aml_config_lastr", text);
-  VW::model_utils::process_model_field(io, config_index, read, "_aml_config_index", text);
-  VW::model_utils::process_model_field(io, eligible_to_inactivate, read, "_aml_config_eligible_to_inactivate", text);
-  VW::model_utils::process_model_field(io, chisq, read, "", text);
 }
 
 void scored_config::persist(metric_sink& metrics, const std::string& suffix)
 {
   metrics.int_metrics_list.emplace_back("upcnt" + suffix, update_count);
   metrics.float_metrics_list.emplace_back("ips" + suffix, current_ips());
-  distributionally_robust::ScoredDual sd = chisq.recompute_duals();
+  distributionally_robust::ScoredDual sd = chisq->recompute_duals();
   metrics.float_metrics_list.emplace_back("bound" + suffix, static_cast<float>(sd.first));
   metrics.float_metrics_list.emplace_back("w" + suffix, last_w);
   metrics.float_metrics_list.emplace_back("r" + suffix, last_r);
@@ -159,62 +143,11 @@ float scored_config::current_ips() const { return (update_count > 0) ? ips / upd
 
 void scored_config::reset_stats()
 {
-  chisq.reset(0.05, 0.999);
+  chisq->reset(0.05, 0.999);
   ips = 0.0;
   last_w = 0.0;
   last_r = 0.0;
   update_count = 0;
-}
-
-void exclusion_config::save_load(io_buf& model_file, bool read, bool text)
-{
-  if (model_file.num_files() == 0) { return; }
-  std::stringstream msg;
-
-  size_t exclusion_size;
-  if (read)
-  {
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), read, msg, text);
-    for (size_t i = 0; i < exclusion_size; ++i)
-    {
-      namespace_index ns;
-      size_t other_ns_size;
-      std::set<namespace_index> other_namespaces;
-      bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), read, msg, text);
-      bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), read, msg, text);
-      for (size_t j = 0; j < other_ns_size; ++j)
-      {
-        namespace_index other_ns;
-        bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), read, msg, text);
-        other_namespaces.insert(other_ns);
-      }
-      exclusions[ns] = other_namespaces;
-    }
-  }
-  else
-  {
-    exclusion_size = exclusions.size();
-    msg << "exclusion_size " << exclusion_size << "\n";
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&exclusion_size), sizeof(exclusion_size), read, msg, text);
-    for (const auto& ns_pair : exclusions)
-    {
-      namespace_index ns = ns_pair.first;
-      size_t other_ns_size = ns_pair.second.size();
-      bin_text_read_write_fixed(model_file, (char*)&ns, sizeof(ns), read, msg, text);
-      bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&other_ns_size), sizeof(other_ns_size), read, msg, text);
-      for (const auto& other_ns : ns_pair.second)
-      { bin_text_read_write_fixed(model_file, (char*)&other_ns, sizeof(other_ns), read, msg, text); }
-    }
-  }
-
-  VW::model_utils::process_model_field(model_file, lease, read, "_aml_lease", text);
-  VW::model_utils::process_model_field(model_file, ips, read, "_aml_ips", text);
-  VW::model_utils::process_model_field(model_file, lower_bound, read, "_aml_lower_bound", text);
-  VW::model_utils::process_model_field(model_file, state, read, "_aml_state", text);
 }
 
 template <typename CMType>
@@ -439,7 +372,7 @@ void interaction_config_manager::update_champ()
   for (size_t live_slot = 0; live_slot < scores.size(); ++live_slot)
   {
     float ips = scores[live_slot].current_ips();
-    distributionally_robust::ScoredDual sd = scores[live_slot].chisq.recompute_duals();
+    distributionally_robust::ScoredDual sd = scores[live_slot].chisq->recompute_duals();
     float lower_bound = static_cast<float>(sd.first);
     configs[scores[live_slot].config_index].ips = ips;
     configs[scores[live_slot].config_index].lower_bound = lower_bound;
@@ -510,112 +443,6 @@ void interaction_config_manager::update_champ()
     }
   }
   if (champ_change) { config_oracle(); }
-}
-
-void interaction_config_manager::save_load(io_buf& model_file, bool read, bool text)
-{
-  if (model_file.num_files() == 0) { return; }
-  std::stringstream msg;
-
-  VW::model_utils::process_model_field(model_file, total_learn_count, read, "_aml_cm_count", text);
-  VW::model_utils::process_model_field(model_file, current_champ, read, "_aml_cm_champ", text);
-
-  size_t config_size;
-  size_t ns_counter_size;
-  size_t index_queue_size;
-  size_t score_size;
-  if (read)
-  {
-    // Load scores
-    scores.clear();
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), read, msg, text);
-    for (size_t i = 0; i < score_size; ++i)
-    {
-      scored_config sc;
-      sc.save_load(model_file, read, text);
-      scores.push_back(sc);
-    }
-
-    // Load configs
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&config_size), sizeof(config_size), read, msg, text);
-    for (size_t i = 0; i < config_size; ++i)
-    {
-      size_t index;
-      exclusion_config conf;
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
-      conf.save_load(model_file, read, text);
-      configs[index] = conf;
-    }
-
-    // Load ns_counter
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&ns_counter_size), sizeof(ns_counter_size), read, msg, text);
-    for (size_t i = 0; i < ns_counter_size; ++i)
-    {
-      namespace_index ns;
-      size_t count;
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&ns), sizeof(ns), read, msg, text);
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&count), sizeof(count), read, msg, text);
-      ns_counter[ns] = count;
-    }
-
-    // Load index_queue
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&index_queue_size), sizeof(index_queue_size), read, msg, text);
-    for (size_t i = 0; i < index_queue_size; ++i)
-    {
-      float priority;
-      size_t index;
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&priority), sizeof(priority), read, msg, text);
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
-      index_queue.push(std::make_pair(priority, index));
-    }
-
-    for (size_t live_slot = 0; live_slot < scores.size(); ++live_slot) { gen_quadratic_interactions(live_slot); }
-  }
-  else
-  {
-    // Save scores
-    score_size = scores.size();
-    msg << "score_size " << score_size << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&score_size), sizeof(score_size), read, msg, text);
-    for (auto& score : scores) { score.save_load(model_file, read, text); }
-
-    // Save configs
-    config_size = configs.size();
-    msg << "config_size " << config_size << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&config_size), sizeof(config_size), read, msg, text);
-    for (auto& ind_config : configs)
-    {
-      bin_text_read_write_fixed(model_file, (char*)&ind_config.first, sizeof(ind_config.first), read, msg, text);
-      ind_config.second.save_load(model_file, read, text);
-    }
-
-    // Save ns_counter
-    ns_counter_size = ns_counter.size();
-    msg << "ns_counter_size " << ns_counter_size << "\n";
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&ns_counter_size), sizeof(ns_counter_size), read, msg, text);
-    for (auto& ns_count : ns_counter)
-    {
-      bin_text_read_write_fixed(model_file, (char*)&ns_count.first, sizeof(ns_count.first), read, msg, text);
-      bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&ns_count.second), sizeof(ns_count.second), read, msg, text);
-    }
-
-    // Save index_queue
-    index_queue_size = index_queue.size();
-    msg << "index_queue_size " << index_queue_size << "\n";
-    bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&index_queue_size), sizeof(index_queue_size), read, msg, text);
-    while (!index_queue.empty())
-    {
-      auto& pri_ind = index_queue.top();
-      bin_text_read_write_fixed(model_file, (char*)&pri_ind.first, sizeof(pri_ind.first), read, msg, text);
-      bin_text_read_write_fixed(model_file, (char*)&pri_ind.second, sizeof(pri_ind.second), read, msg, text);
-      index_queue.pop();
-    }
-  }
 }
 
 void interaction_config_manager::persist(metric_sink& metrics)
@@ -732,11 +559,11 @@ void finish_example(vw& all, automl<CMType>& data, multi_ex& ec)
 }
 
 template <typename CMType>
-void save_load_aml(automl<CMType>& d, io_buf& model_file, bool read, bool text)
+void save_load_aml(automl<CMType>& d, io_buf& io, bool read, bool text)
 {
-  if (model_file.num_files() == 0) { return; }
-  VW::model_utils::process_model_field(model_file, d.current_state, read, "_aml_state", text);
-  d.cm->save_load(model_file, read, text);
+  if (io.num_files() == 0) { return; }
+  VW::model_utils::process_model_field(io, d.current_state, read, "_aml_state", text);
+  VW::model_utils::process_model_field(io, *d.cm, read, "_aml_cm", text);
 }
 
 // Basic implementation of scheduler to pick new configs when one runs out of lease.
@@ -855,6 +682,56 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
     THROW("fatal: automl not supported for single line learners yet");
   }
 }
-
 }  // namespace automl
+
+namespace model_utils
+{
+  size_t process_model_field(io_buf& io, VW::automl::exclusion_config& ec, bool read, const std::string& name_or_readable_field_template, bool text)
+  {
+    if (io.num_files() == 0) { return 0; }
+
+    size_t bytes = 0;
+    bytes += process_model_field(io, ec.exclusions, read,  name_or_readable_field_template + "_exclusions", text);
+    bytes += process_model_field(io, ec.lease, read, name_or_readable_field_template + "_lease", text);
+    bytes += process_model_field(io, ec.ips, read, name_or_readable_field_template + "_ips", text);
+    bytes += process_model_field(io, ec.lower_bound, read, name_or_readable_field_template + "_lower_bound", text);
+    bytes += process_model_field(io, ec.state, read, name_or_readable_field_template + "_state", text);
+    return bytes;
+  }
+
+  size_t process_model_field(io_buf& io, VW::automl::scored_config& sc, bool read, const std::string&  name_or_readable_field_template, bool text)
+  {
+    if (io.num_files() == 0) { return 0; }
+
+    size_t bytes = 0;
+    bytes += process_model_field(io, sc.ips, read, name_or_readable_field_template + "_ips", text);
+    bytes += process_model_field(io, sc.update_count, read, name_or_readable_field_template + "_count", text);
+    bytes += process_model_field(io, sc.last_w, read, name_or_readable_field_template + "_lastw", text);
+    bytes += process_model_field(io, sc.last_r, read, name_or_readable_field_template + "_lastr", text);
+    bytes += process_model_field(io, sc.config_index, read, name_or_readable_field_template + "_index", text);
+    bytes += process_model_field(io, sc.eligible_to_inactivate, read, name_or_readable_field_template + "_eligible_to_inactivate", text);
+    bytes += process_model_field(io, *sc.chisq, read, name_or_readable_field_template + "_chisq", text);
+    return bytes;
+  }
+
+  size_t process_model_field(io_buf& io, VW::automl::interaction_config_manager& cm, bool read, const std::string&  name_or_readable_field_template, bool text)
+  {
+    if (io.num_files() == 0) { return 0; }
+    if (read) { cm.scores.clear(); }
+
+    size_t bytes = 0;
+    bytes += process_model_field(io, cm.total_learn_count, read, name_or_readable_field_template + "_count", text);
+    bytes += process_model_field(io, cm.current_champ, read, name_or_readable_field_template + "_champ", text);
+    bytes += process_model_field(io, cm.ns_counter, read, name_or_readable_field_template + "_ns_counter", text);
+    bytes += process_model_field(io, cm.configs, read, name_or_readable_field_template + "_configs", text);
+    bytes += process_model_field(io, cm.scores, read, name_or_readable_field_template + "_scores", text);
+    bytes += process_model_field(io, cm.index_queue, read, name_or_readable_field_template + "_index_queue", text);
+
+    if (read)
+    {
+      for (size_t live_slot = 0; live_slot < cm.scores.size(); ++live_slot) { cm.gen_quadratic_interactions(live_slot); }
+    }
+    return bytes;
+  }
+} // namespaces model_utils
 }  // namespace VW

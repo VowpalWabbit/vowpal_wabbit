@@ -23,6 +23,10 @@ using namespace VW::LEARNER;
 
 namespace VW
 {
+namespace distributionally_robust
+{
+  struct ChiSquared;
+}
 namespace automl
 {
 using namespace_index = unsigned char;
@@ -41,7 +45,7 @@ constexpr size_t CONGIGS_PER_CHAMP_CHANGE = 5;
 
 struct scored_config
 {
-  VW::distributionally_robust::ChiSquared chisq;
+  std::shared_ptr<VW::distributionally_robust::ChiSquared> chisq;
   float ips = 0.0;
   float last_w = 0.0;
   float last_r = 0.0;
@@ -50,7 +54,7 @@ struct scored_config
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
-  scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
+  scored_config() { chisq = std::make_shared<VW::distributionally_robust::ChiSquared>(0.05, 0.999, 0, std::numeric_limits<double>::infinity()); }
 
   void update(float w, float r);
   void save_load(io_buf&, bool, bool);
@@ -144,8 +148,10 @@ struct interaction_config_manager : config_manager
   void schedule();
   void update_champ();
 
-private:
+  // Public for save_load
   void gen_quadratic_interactions(size_t);
+
+private:
   bool better(const exclusion_config&, const exclusion_config&) const;
   bool worse(const exclusion_config&, const exclusion_config&) const;
   size_t choose();

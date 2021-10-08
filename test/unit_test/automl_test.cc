@@ -6,6 +6,9 @@
 #  define BOOST_TEST_DYN_LINK
 #endif
 
+#ifndef AUTOML_TEST
+#define AUTOML_TEST
+
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
@@ -295,3 +298,5 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
       test_hooks, num_iterations);
   BOOST_CHECK_GT(ctr.back(), 0.8f);
 }
+
+#endif // AUTOML_TEST
