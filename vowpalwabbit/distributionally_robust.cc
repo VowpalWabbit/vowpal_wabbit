@@ -4,6 +4,7 @@
 
 #include "distributionally_robust.h"
 #include "vw_math.h"
+// #include "model_utils.h"
 
 namespace VW
 {
@@ -201,6 +202,31 @@ ScoredDual ChiSquared::recompute_duals()
   duals.first = VW::math::clamp(sign * duals.first, rmin, rmax);
 
   return duals;
+}
+
+void ChiSquared::save_load(io_buf& model_file, bool read, bool text, const char* name)
+{
+  if (model_file.num_files() == 0) { return; }
+
+#define save_load_field(field)                                                                              \
+  do                                                                                                        \
+  {                                                                                                         \
+    model_utils::process_model_field(model_file, field, read, fmt::format("{}_chisq_" #field, name), text); \
+  } while (0)
+
+  save_load_field(n);
+  save_load_field(sumw);
+  save_load_field(sumwsq);
+  save_load_field(sumwr);
+  save_load_field(sumwsqr);
+  save_load_field(sumwsqrsq);
+
+  save_load_field(rmin);
+  save_load_field(rmax);
+  save_load_field(wmin);
+  save_load_field(wmax);
+
+  duals_stale = true;
 }
 
 }  // namespace distributionally_robust
