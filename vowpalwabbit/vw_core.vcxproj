@@ -296,8 +296,8 @@
     <ClCompile Include="../ext_libs/spdlog/src/fmt.cpp" />
     <ClCompile Include="../ext_libs/spdlog/src/spdlog.cpp" />
     <ClCompile Include="../ext_libs/spdlog/src/stdout_sinks.cpp" />
-    <ClCompile Include="../ext_libs/abseil-cpp/absl/base/throw_delegate.cc" />
-    <ClCompile Include="../ext_libs/abseil-cpp/absl/base/raw_logging.cc" />
+    <ClCompile Include="../ext_libs/abseil-cpp/absl/base/internal/throw_delegate.cc" />
+    <ClCompile Include="../ext_libs/abseil-cpp/absl/base/internal/raw_logging.cc" />
     <ClCompile Include="../ext_libs/abseil-cpp/absl/base/log_severity.cc" />
     <ClCompile Include="cats.cc" />
     <ClCompile Include="cats_pdf.cc" />
