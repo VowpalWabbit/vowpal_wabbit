@@ -80,8 +80,9 @@ endif()
 
 # Automatically set BOOST_TEST_DYN_LINK if the dependency is shared.
 get_target_property(boost_test_target_type Boost::unit_test_framework TYPE)
-message(STATUS "Boost test is: ${boost_test_target_type}")
+message(STATUS "Boost test library type is: ${boost_test_target_type}")
 if (boost_test_target_type STREQUAL SHARED_LIBRARY)
+  message(STATUS "Adding BOOST_TEST_DYN_LINK")
   target_compile_definitions(vw-unit-test.out PRIVATE BOOST_TEST_DYN_LINK)
 endif()
 
