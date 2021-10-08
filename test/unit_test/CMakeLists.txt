@@ -77,9 +77,11 @@ if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
   )
 endif()
 
-# Communicate that Boost Unit Test is being statically linked
-if(STATIC_LINK_VW)
-  target_compile_definitions(vw-unit-test.out PRIVATE STATIC_LINK_VW)
+# Automatically set BOOST_TEST_DYN_LINK if the dependency is shared.
+get_target_property(boost_test_target_type Boost::unit_test_framework TYPE)
+message(STATUS "Boost test is: ${boost_test_target_type}")
+if (boost_test_target_type STREQUAL SHARED_LIBRARY)
+  target_compile_definitions(vw-unit-test.out PRIVATE BOOST_TEST_DYN_LINK)
 endif()
 
 add_test(
