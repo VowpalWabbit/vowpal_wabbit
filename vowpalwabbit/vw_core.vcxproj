@@ -90,7 +90,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\ext_libs\rapidjson\include;$(ProjectDir)\..\explore;$(ProjectDir)\..\ext_libs\fmt\include;$(ProjectDir)\..\ext_libs\spdlog\include;$(ProjectDir)\..\ext_libs\abseil-cpp\</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL;NOMINMAX;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;_ENABLE_EXTENDED_ALIGNED_STORAGE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZLIB_WINAPI;$(BUILD_FLATBUFFERS);SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;_ENABLE_EXTENDED_ALIGNED_STORAGE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
