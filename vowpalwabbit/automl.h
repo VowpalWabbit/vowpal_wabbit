@@ -25,7 +25,7 @@ namespace VW
 {
 namespace distributionally_robust
 {
-  struct ChiSquared;
+struct ChiSquared;
 }
 namespace automl
 {
@@ -54,7 +54,11 @@ struct scored_config
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
-  scored_config() { chisq = std::make_shared<VW::distributionally_robust::ChiSquared>(0.05, 0.999, 0, std::numeric_limits<double>::infinity()); }
+  scored_config()
+  {
+    chisq = std::make_shared<VW::distributionally_robust::ChiSquared>(
+        0.05, 0.999, 0, std::numeric_limits<double>::infinity());
+  }
 
   void update(float w, float r);
   void save_load(io_buf&, bool, bool);

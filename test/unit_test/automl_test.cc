@@ -7,19 +7,19 @@
 #endif
 
 #ifndef AUTOML_TEST
-#define AUTOML_TEST
+#  define AUTOML_TEST
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#  include <boost/test/unit_test.hpp>
+#  include <boost/test/test_tools.hpp>
 
-#include "test_common.h"
-#include "simulator.h"
-#include "reductions_fwd.h"
-#include "automl.h"
-#include "metric_sink.h"
+#  include "test_common.h"
+#  include "simulator.h"
+#  include "reductions_fwd.h"
+#  include "automl.h"
+#  include "metric_sink.h"
 
-#include <functional>
-#include <map>
+#  include <functional>
+#  include <map>
 
 using simulator::callback_map;
 using simulator::cb_sim;
@@ -299,4 +299,4 @@ BOOST_AUTO_TEST_CASE(namespace_switch)
   BOOST_CHECK_GT(ctr.back(), 0.8f);
 }
 
-#endif // AUTOML_TEST
+#endif  // AUTOML_TEST

@@ -17,10 +17,10 @@ namespace VW
 {
 namespace automl
 {
-  struct exclusion_config;
-  struct scored_config;
-  struct interaction_config_manager;
-}
+struct exclusion_config;
+struct scored_config;
+struct interaction_config_manager;
+}  // namespace automl
 namespace model_utils
 {
 namespace details
@@ -50,9 +50,12 @@ size_t write_text_mode_output(io_buf& io, const T& var, const std::string& name_
 }
 }  // namespace details
 
-size_t process_model_field(io_buf& io, VW::automl::exclusion_config& var, bool read, const std::string& name_or_readable_field_template, bool text);
-size_t process_model_field(io_buf& io, VW::automl::scored_config& var, bool read, const std::string& name_or_readable_field_template, bool text);
-size_t process_model_field(io_buf& io, VW::automl::interaction_config_manager& var, bool read, const std::string& name_or_readable_field_template, bool text);
+size_t process_model_field(io_buf& io, VW::automl::exclusion_config& var, bool read,
+    const std::string& name_or_readable_field_template, bool text);
+size_t process_model_field(io_buf& io, VW::automl::scored_config& var, bool read,
+    const std::string& name_or_readable_field_template, bool text);
+size_t process_model_field(io_buf& io, VW::automl::interaction_config_manager& var, bool read,
+    const std::string& name_or_readable_field_template, bool text);
 
 /**
  * @brief This function is the uniform interface for serializing a variable to
@@ -77,7 +80,8 @@ size_t process_model_field(io_buf& io, VW::automl::interaction_config_manager& v
  * @return size_t the number of bytes written or read
  */
 template <typename T>
-size_t process_model_field(io_buf& io, const T& var, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t process_model_field(
+    io_buf& io, const T& var, bool read, const std::string& name_or_readable_field_template, bool text)
 {
   // It is not valid to read a text based field.
   assert(!(read && text));
@@ -98,7 +102,8 @@ size_t process_model_field(io_buf& io, const T& var, bool read, const std::strin
 }
 
 template <typename T>
-size_t process_model_field(io_buf& io, std::set<T>& set, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t process_model_field(
+    io_buf& io, std::set<T>& set, bool read, const std::string& name_or_readable_field_template, bool text)
 {
   size_t bytes = 0;
   size_t set_size;
@@ -127,7 +132,8 @@ size_t process_model_field(io_buf& io, std::set<T>& set, bool read, const std::s
 }
 
 template <typename T>
-size_t process_model_field(io_buf& io, std::vector<T>& vec, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t process_model_field(
+    io_buf& io, std::vector<T>& vec, bool read, const std::string& name_or_readable_field_template, bool text)
 {
   size_t bytes = 0;
   size_t vec_size;
@@ -156,7 +162,8 @@ size_t process_model_field(io_buf& io, std::vector<T>& vec, bool read, const std
 }
 
 template <typename F, typename S>
-size_t process_model_field(io_buf& io, std::pair<F, S>& pair, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t process_model_field(
+    io_buf& io, std::pair<F, S>& pair, bool read, const std::string& name_or_readable_field_template, bool text)
 {
   size_t bytes = 0;
   bytes += process_model_field(io, pair.first, read, name_or_readable_field_template + "_first", text);
@@ -165,7 +172,8 @@ size_t process_model_field(io_buf& io, std::pair<F, S>& pair, bool read, const s
 }
 
 template <typename T>
-size_t process_model_field(io_buf& io, std::priority_queue<T>& pq, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t process_model_field(
+    io_buf& io, std::priority_queue<T>& pq, bool read, const std::string& name_or_readable_field_template, bool text)
 {
   size_t bytes = 0;
   size_t queue_size;
@@ -196,7 +204,8 @@ size_t process_model_field(io_buf& io, std::priority_queue<T>& pq, bool read, co
 }
 
 template <typename K, typename V>
-size_t process_model_field(io_buf& io, std::map<K, V>& map, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t process_model_field(
+    io_buf& io, std::map<K, V>& map, bool read, const std::string& name_or_readable_field_template, bool text)
 {
   size_t bytes = 0;
   size_t map_size;
@@ -206,7 +215,7 @@ size_t process_model_field(io_buf& io, std::map<K, V>& map, bool read, const std
     for (size_t i = 0; i < map_size; ++i)
     {
       std::pair<K, V> pair;
-      bytes += VW::model_utils::process_model_field(io, pair, read, "", text);  
+      bytes += VW::model_utils::process_model_field(io, pair, read, "", text);
       map[pair.first] = pair.second;
     }
   }
@@ -217,7 +226,8 @@ size_t process_model_field(io_buf& io, std::map<K, V>& map, bool read, const std
     size_t i = 0;
     for (auto& pair : map)
     {
-      bytes += VW::model_utils::process_model_field(io, pair, read, name_or_readable_field_template + "_" + std::to_string(i), text);
+      bytes += VW::model_utils::process_model_field(
+          io, pair, read, name_or_readable_field_template + "_" + std::to_string(i), text);
       ++i;
     }
   }

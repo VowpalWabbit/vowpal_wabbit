@@ -686,52 +686,56 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
 
 namespace model_utils
 {
-  size_t process_model_field(io_buf& io, VW::automl::exclusion_config& ec, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t process_model_field(io_buf& io, VW::automl::exclusion_config& ec, bool read,
+    const std::string& name_or_readable_field_template, bool text)
+{
+  if (io.num_files() == 0) { return 0; }
+
+  size_t bytes = 0;
+  bytes += process_model_field(io, ec.exclusions, read, name_or_readable_field_template + "_exclusions", text);
+  bytes += process_model_field(io, ec.lease, read, name_or_readable_field_template + "_lease", text);
+  bytes += process_model_field(io, ec.ips, read, name_or_readable_field_template + "_ips", text);
+  bytes += process_model_field(io, ec.lower_bound, read, name_or_readable_field_template + "_lower_bound", text);
+  bytes += process_model_field(io, ec.state, read, name_or_readable_field_template + "_state", text);
+  return bytes;
+}
+
+size_t process_model_field(
+    io_buf& io, VW::automl::scored_config& sc, bool read, const std::string& name_or_readable_field_template, bool text)
+{
+  if (io.num_files() == 0) { return 0; }
+
+  size_t bytes = 0;
+  bytes += process_model_field(io, sc.ips, read, name_or_readable_field_template + "_ips", text);
+  bytes += process_model_field(io, sc.update_count, read, name_or_readable_field_template + "_count", text);
+  bytes += process_model_field(io, sc.last_w, read, name_or_readable_field_template + "_lastw", text);
+  bytes += process_model_field(io, sc.last_r, read, name_or_readable_field_template + "_lastr", text);
+  bytes += process_model_field(io, sc.config_index, read, name_or_readable_field_template + "_index", text);
+  bytes += process_model_field(
+      io, sc.eligible_to_inactivate, read, name_or_readable_field_template + "_eligible_to_inactivate", text);
+  bytes += process_model_field(io, *sc.chisq, read, name_or_readable_field_template + "_chisq", text);
+  return bytes;
+}
+
+size_t process_model_field(io_buf& io, VW::automl::interaction_config_manager& cm, bool read,
+    const std::string& name_or_readable_field_template, bool text)
+{
+  if (io.num_files() == 0) { return 0; }
+  if (read) { cm.scores.clear(); }
+
+  size_t bytes = 0;
+  bytes += process_model_field(io, cm.total_learn_count, read, name_or_readable_field_template + "_count", text);
+  bytes += process_model_field(io, cm.current_champ, read, name_or_readable_field_template + "_champ", text);
+  bytes += process_model_field(io, cm.ns_counter, read, name_or_readable_field_template + "_ns_counter", text);
+  bytes += process_model_field(io, cm.configs, read, name_or_readable_field_template + "_configs", text);
+  bytes += process_model_field(io, cm.scores, read, name_or_readable_field_template + "_scores", text);
+  bytes += process_model_field(io, cm.index_queue, read, name_or_readable_field_template + "_index_queue", text);
+
+  if (read)
   {
-    if (io.num_files() == 0) { return 0; }
-
-    size_t bytes = 0;
-    bytes += process_model_field(io, ec.exclusions, read,  name_or_readable_field_template + "_exclusions", text);
-    bytes += process_model_field(io, ec.lease, read, name_or_readable_field_template + "_lease", text);
-    bytes += process_model_field(io, ec.ips, read, name_or_readable_field_template + "_ips", text);
-    bytes += process_model_field(io, ec.lower_bound, read, name_or_readable_field_template + "_lower_bound", text);
-    bytes += process_model_field(io, ec.state, read, name_or_readable_field_template + "_state", text);
-    return bytes;
+    for (size_t live_slot = 0; live_slot < cm.scores.size(); ++live_slot) { cm.gen_quadratic_interactions(live_slot); }
   }
-
-  size_t process_model_field(io_buf& io, VW::automl::scored_config& sc, bool read, const std::string&  name_or_readable_field_template, bool text)
-  {
-    if (io.num_files() == 0) { return 0; }
-
-    size_t bytes = 0;
-    bytes += process_model_field(io, sc.ips, read, name_or_readable_field_template + "_ips", text);
-    bytes += process_model_field(io, sc.update_count, read, name_or_readable_field_template + "_count", text);
-    bytes += process_model_field(io, sc.last_w, read, name_or_readable_field_template + "_lastw", text);
-    bytes += process_model_field(io, sc.last_r, read, name_or_readable_field_template + "_lastr", text);
-    bytes += process_model_field(io, sc.config_index, read, name_or_readable_field_template + "_index", text);
-    bytes += process_model_field(io, sc.eligible_to_inactivate, read, name_or_readable_field_template + "_eligible_to_inactivate", text);
-    bytes += process_model_field(io, *sc.chisq, read, name_or_readable_field_template + "_chisq", text);
-    return bytes;
-  }
-
-  size_t process_model_field(io_buf& io, VW::automl::interaction_config_manager& cm, bool read, const std::string&  name_or_readable_field_template, bool text)
-  {
-    if (io.num_files() == 0) { return 0; }
-    if (read) { cm.scores.clear(); }
-
-    size_t bytes = 0;
-    bytes += process_model_field(io, cm.total_learn_count, read, name_or_readable_field_template + "_count", text);
-    bytes += process_model_field(io, cm.current_champ, read, name_or_readable_field_template + "_champ", text);
-    bytes += process_model_field(io, cm.ns_counter, read, name_or_readable_field_template + "_ns_counter", text);
-    bytes += process_model_field(io, cm.configs, read, name_or_readable_field_template + "_configs", text);
-    bytes += process_model_field(io, cm.scores, read, name_or_readable_field_template + "_scores", text);
-    bytes += process_model_field(io, cm.index_queue, read, name_or_readable_field_template + "_index_queue", text);
-
-    if (read)
-    {
-      for (size_t live_slot = 0; live_slot < cm.scores.size(); ++live_slot) { cm.gen_quadratic_interactions(live_slot); }
-    }
-    return bytes;
-  }
-} // namespaces model_utils
+  return bytes;
+}
+}  // namespace model_utils
 }  // namespace VW
