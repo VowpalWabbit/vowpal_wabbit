@@ -23,10 +23,6 @@ using namespace VW::LEARNER;
 
 namespace VW
 {
-namespace distributionally_robust
-{
-struct ChiSquared;
-}
 namespace automl
 {
 using namespace_index = unsigned char;
