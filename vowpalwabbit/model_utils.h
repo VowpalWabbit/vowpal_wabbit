@@ -9,15 +9,6 @@
 
 #include <type_traits>
 
-#define VW_MODEL_FIELD(io_buf, field, field_name, read, text)                  \
-  do {                                                             \
-    if (read) { VW::model_utils::read_model_field(io_buf, field); }    \
-    else                                                           \
-    {                                                              \
-      VW::model_utils::write_model_field(io_buf, field, field_name, text); \
-    }                                                              \
-  } while (0)
-
 namespace VW
 {
 namespace model_utils
