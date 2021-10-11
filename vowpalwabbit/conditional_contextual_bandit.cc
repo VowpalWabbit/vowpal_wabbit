@@ -27,9 +27,6 @@
 #include <unordered_set>
 #include <bitset>
 
-#include <absl/container/inlined_vector.h>
-#include <absl/types/span.h>
-
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::ccb
 
@@ -147,8 +144,6 @@ void clear_all(ccb& data)
 // split the slots, the actions and the shared example from the multiline example
 bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
 {
-  absl::InlinedVector<example*, 5> slots;
-  absl::Span<example*> sp = absl::MakeSpan(slots);
   for (auto* ex : examples)
   {
     switch (ex->l.conditional_contextual_bandit.type)
