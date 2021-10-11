@@ -6,6 +6,7 @@
 #include <string>
 #include <stdexcept>
 #include <sstream>
+#include <cctype>
 
 #include "parse_primitives.h"
 #include "hash.h"
@@ -52,7 +53,6 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
   return tokens;
 }
 
-constexpr const char* whitespace_chars_to_remove = " \n\r\t";
 namespace VW
 {
 std::string trim_whitespace(const std::string& str) { return std::string(VW::trim_whitespace(VW::string_view(str))); }
@@ -60,13 +60,16 @@ std::string trim_whitespace(const std::string& str) { return std::string(VW::tri
 VW::string_view trim_whitespace(VW::string_view str)
 {
   // Determine start
-  size_t start = str.find_first_not_of(whitespace_chars_to_remove);
-  if (start == std::string::npos) { return ""; }
-  str = str.substr(start);
+  auto start = std::find_if_not(str.begin(), str.end(), [](char c) { return std::isspace(c); });
+  if (start == str.end()) { return ""; }
+  auto start_pos = std::distance(str.begin(), start);
+  str = str.substr(start_pos);
 
   // Determine end
-  size_t end = str.find_last_not_of(whitespace_chars_to_remove);
-  if (end == std::string::npos) { return ""; }
-  return str.substr(0, end + 1);
+  auto end = std::find_if_not(str.rbegin(), str.rend(), [](char c) { return std::isspace(c); });
+  if (end == str.rend()) { return ""; }
+  // -1 is required as position 0 of the string is (rend - 1)
+  auto end_pos = std::distance(end, str.rend()) - 1;
+  return str.substr(0, end_pos + 1);
 }
 }  // namespace VW
