@@ -105,6 +105,8 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
 
   if (data->probabilities)
   {
+    // Unlike oaa and csoaa_ldf (which always remove --logistic link and apply logic manually for probabilities),
+    // multilabel_oaa will always add logistic link and apply logic in base (scorer) reduction
     options.insert("link", "logistic");
     pred_type = prediction_type_t::scalars;
     auto loss_function_type = all.loss->getType();

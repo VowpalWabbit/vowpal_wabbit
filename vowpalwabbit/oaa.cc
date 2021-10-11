@@ -148,7 +148,7 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
       float sum_prob = 0;
       for (uint32_t i = 0; i < o.k; i++)
       {
-        ec.pred.scalars[i] = o.pred[i].scalar;
+        ec.pred.scalars[i] = 1.f / (1.f + correctedExp(-o.pred[i].scalar));
         sum_prob += ec.pred.scalars[i];
       }
       const float inv_sum_prob = 1.f / sum_prob;
@@ -238,7 +238,10 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
-  if (probabilities) { options.insert("link", "logistic"); }
+  // oaa does logistic link manually for probabilities because the unlinked values are required
+  // in base.update(). This implemenation will provide correct probabilities regardless
+  // of whether --link logistic is included or not.
+  if (probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
 
   if (all.sd->ldict && (data->k != all.sd->ldict->getK()))
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")

@@ -859,6 +859,11 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
     if (!options.add_parse_and_check_necessary(csldf_inner_options)) { return nullptr; }
   }
 
+  // csoaa_ldf does logistic link manually for probabilities because the unlinked values are
+  // required elsewhere. This implemenation will provide correct probabilities regardless
+  // of whether --link logistic is included or not.
+  if (ld->is_probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
+
   ld->all = &all;
   ld->first_pass = true;
 
