@@ -228,6 +228,10 @@ Baseline options:
                         baseline predictions
   --check_enabled       only use baseline when the example contains enabled 
                         flag
+Baseline challenger reduction: Build a CI around the baseline action and use it instead of the model if it's perfoming better:
+  --baseline_challenger_cb   Enable reduction
+  --cb_c_alpha arg (=0.05, ) Confidence level for 
+  --cb_c_tau arg (=0.999, )  Time constant for count decay
 Conjugate Gradient options:
   --conjugate_gradient  use conjugate gradient based optimization
 LBFGS and Conjugate Gradient options:

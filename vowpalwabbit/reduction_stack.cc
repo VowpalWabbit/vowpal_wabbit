@@ -83,6 +83,7 @@
 #include "pmf_to_pdf.h"
 #include "sample_pdf.h"
 #include "kskip_ngram_transformer.h"
+#include "baseline_challenger_cb.h"
 
 void register_reductions(std::vector<reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
@@ -175,6 +176,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(cb_adf_setup);
   reductions.push_back(mwt_setup);
   reductions.push_back(VW::cats_tree::setup);
+  reductions.push_back(baseline_challenger_cb_setup);
   reductions.push_back(cb_explore_setup);
   reductions.push_back(VW::cb_explore_adf::greedy::setup);
   reductions.push_back(VW::cb_explore_adf::softmax::setup);
