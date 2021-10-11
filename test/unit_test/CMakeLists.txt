@@ -1,5 +1,7 @@
 add_executable(vw-unit-test.out
   automl_test.cc
+  automl_weights_test.cc
+  baseline_cb_test.cc
   cache_test.cc
   cats_test.cc
   cats_tree_tests.cc
@@ -25,7 +27,6 @@ add_executable(vw-unit-test.out
   main.cc
   math_test.cc
   multiclass_label_parser_test.cc
-  namespaced_feature_store_test.cc
   numeric_cast_tests.cc
   object_pool_test.cc
   offset_tree_tests.cc

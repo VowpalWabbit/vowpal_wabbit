@@ -9,7 +9,6 @@ license as described in the file LICENSE.
 #include <algorithm>
 #include <limits>
 #include <tuple>
-#include "vw_exception.h"
 #include "io_buf.h"
 #include "model_utils.h"
 
@@ -43,6 +42,16 @@ namespace distributionally_robust
     {
     }
     double qfunc(double w, double r) { return unbounded ? 1 : -(gamma + (beta + r) * w) / ((n + 1) * kappa); }
+
+    void reset()
+    {
+      unbounded = false;
+      kappa = 0.f;
+      gamma = 0.f;
+      beta = 0.f;
+      n = 0.0;
+    }
+
     friend size_t VW::model_utils::process_model_field(
         io_buf&, VW::distributionally_robust::Duals&, bool, const std::string&, bool);
   };
@@ -134,11 +143,38 @@ namespace distributionally_robust
       return duals.second.qfunc(w, r);
     }
 
+    void reset(double _alpha, double _tau)
+    {
+      alpha = _alpha;
+      tau = _tau;
+      wmin = 0.0;
+      wmax = std::numeric_limits<double>::infinity();
+      rmin = 0.0;
+      rmax = 1;
+      n = 0.0;
+      sumw = 0.0;
+      sumwsq = 0.0;
+      sumwr = 0.0;
+      sumwsqr = 0.0;
+      sumwsqrsq = 0.0;
+      delta = chisq_onedof_isf(alpha);
+      duals_stale = true;
+      duals.first = 0.0;
+      duals.second.reset();
+    }
+
+    double lower_bound()
+    {
+      if (duals_stale) { recompute_duals(); }
+      return duals.first;
+    }
+
     ScoredDual recompute_duals();
     static double chisq_onedof_isf(double alpha);
     const double& effn() { return n; }
     friend size_t VW::model_utils::process_model_field(
         io_buf&, VW::distributionally_robust::ChiSquared&, bool, const std::string&, bool);
+    void save_load(io_buf& model_file, bool read, bool text, const char* name);
   };
 
 }  // namespace distributionally_robust

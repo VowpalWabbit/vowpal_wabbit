@@ -13,7 +13,8 @@ namespace simulator
 cb_sim::cb_sim(uint64_t seed)
     : users({"Tom", "Anna"})
     , times_of_day({"morning", "afternoon"})
-    , actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
+    //, actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
+    , actions({"politics", "sports", "music"})
     , user_ns("User")
     , action_ns("Action")
 {

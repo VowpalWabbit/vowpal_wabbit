@@ -213,6 +213,13 @@ Audit Regressor:
                         this mode.
 Autolink:
   --autolink arg        create link function with polynomial d
+Debug: automl reduction:
+  --automl arg (=3, )                set number of live configs
+  --global_lease arg (=10, )         set initial lease for automl interactions
+  --cm_type arg (=interaction, )     set type of config manager
+  --priority_type arg (=none, )      set function to determine next config 
+                                     {none, least_exclusion}
+  --priority_challengers arg (=-1, ) set number of priority challengers to use
 Baseline options:
   --baseline            Learn an additive baseline (from constant features) and
                         a residual separately in regression.
@@ -221,6 +228,10 @@ Baseline options:
                         baseline predictions
   --check_enabled       only use baseline when the example contains enabled 
                         flag
+Baseline challenger reduction: Build a CI around the baseline action and use it instead of the model if it's perfoming better:
+  --baseline_challenger_cb   Enable reduction
+  --cb_c_alpha arg (=0.05, ) Confidence level for 
+  --cb_c_tau arg (=0.999, )  Time constant for count decay
 Conjugate Gradient options:
   --conjugate_gradient  use conjugate gradient based optimization
 LBFGS and Conjugate Gradient options:

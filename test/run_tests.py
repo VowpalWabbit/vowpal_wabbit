@@ -591,12 +591,12 @@ def convert_tests_for_flatbuffers(tests: List[TestData], to_flatbuff, working_di
             test.skip_reason = "--help test skipped for automatic converted flatbuffer tests"
             continue
         #todo: 300 understand why is it failing
-        # test 189, 312, 316, 318 and 319 depend on dsjson parser behaviour
+        # test 189, 312, 316, 318, 351 and 319 depend on dsjson parser behaviour
         # they can be enabled if we ignore diffing the --extra_metrics
         # (324-326) deals with corrupted data, so cannot be translated to fb
         # pdrop is not supported in fb, so 327-331 are excluded
         # 336, 337, 338 - the FB converter script seems to be affecting the invert_hash
-        if str(test.id) in ('300', '189', '312', '316', '318', '319', '324', '325', '326', '327', '328', '329', '330', '331', '336', '337', '338'):
+        if str(test.id) in ('300', '189', '312', '316', '318', '319', '324', '325', '326', '327', '328', '329', '330', '331', '336', '337', '338', '351'):
             test.skip = True
             test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"
             continue
