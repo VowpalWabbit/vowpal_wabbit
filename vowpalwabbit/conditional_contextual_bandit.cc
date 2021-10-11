@@ -148,7 +148,7 @@ void clear_all(ccb& data)
 bool split_multi_example_and_stash_labels(const multi_ex& examples, ccb& data)
 {
   absl::InlinedVector<example*, 5> slots;
-  absl::Span<example*> sp = slots;
+  absl::Span<example*> sp = absl::MakeSpan(slots);
   for (auto* ex : examples)
   {
     switch (ex->l.conditional_contextual_bandit.type)
