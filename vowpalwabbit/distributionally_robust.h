@@ -22,8 +22,10 @@ class ChiSquared;
 
 namespace model_utils
 {
-size_t process_model_field(io_buf&, VW::distributionally_robust::Duals&, bool, const std::string&, bool);
-size_t process_model_field(io_buf&, VW::distributionally_robust::ChiSquared&, bool, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::distributionally_robust::Duals&);
+size_t write_model_field(io_buf&, const VW::distributionally_robust::Duals&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::distributionally_robust::ChiSquared&);
+size_t write_model_field(io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
 }  // namespace model_utils
 
 namespace distributionally_robust
@@ -52,8 +54,10 @@ namespace distributionally_robust
       n = 0.0;
     }
 
-    friend size_t VW::model_utils::process_model_field(
-        io_buf&, VW::distributionally_robust::Duals&, bool, const std::string&, bool);
+    friend size_t VW::model_utils::read_model_field(
+        io_buf&, VW::distributionally_robust::Duals&);
+    friend size_t VW::model_utils::write_model_field(
+        io_buf&, const VW::distributionally_robust::Duals&, const std::string&, bool);
   };
 
   using ScoredDual = std::pair<double, Duals>;
@@ -172,8 +176,10 @@ namespace distributionally_robust
     ScoredDual recompute_duals();
     static double chisq_onedof_isf(double alpha);
     const double& effn() { return n; }
-    friend size_t VW::model_utils::process_model_field(
-        io_buf&, VW::distributionally_robust::ChiSquared&, bool, const std::string&, bool);
+    friend size_t VW::model_utils::read_model_field(
+        io_buf&, VW::distributionally_robust::ChiSquared&);
+    friend size_t VW::model_utils::write_model_field(
+        io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
     void save_load(io_buf& model_file, bool read, bool text, const char* name);
   };
 
