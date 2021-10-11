@@ -55,10 +55,7 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
 constexpr const char* whitespace_chars_to_remove = " \n\r\t";
 namespace VW
 {
-std::string trim_whitespace(const std::string& str)
-{
-  return std::string(VW::trim_whitespace(VW::string_view(str)));
-}
+std::string trim_whitespace(const std::string& str) { return std::string(VW::trim_whitespace(VW::string_view(str))); }
 
 VW::string_view trim_whitespace(VW::string_view str)
 {
