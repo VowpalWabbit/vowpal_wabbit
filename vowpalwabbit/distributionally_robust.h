@@ -54,8 +54,7 @@ namespace distributionally_robust
       n = 0.0;
     }
 
-    friend size_t VW::model_utils::read_model_field(
-        io_buf&, VW::distributionally_robust::Duals&);
+    friend size_t VW::model_utils::read_model_field(io_buf&, VW::distributionally_robust::Duals&);
     friend size_t VW::model_utils::write_model_field(
         io_buf&, const VW::distributionally_robust::Duals&, const std::string&, bool);
   };
@@ -176,8 +175,7 @@ namespace distributionally_robust
     ScoredDual recompute_duals();
     static double chisq_onedof_isf(double alpha);
     const double& effn() { return n; }
-    friend size_t VW::model_utils::read_model_field(
-        io_buf&, VW::distributionally_robust::ChiSquared&);
+    friend size_t VW::model_utils::read_model_field(io_buf&, VW::distributionally_robust::ChiSquared&);
     friend size_t VW::model_utils::write_model_field(
         io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
     void save_load(io_buf& model_file, bool read, bool text, const char* name);

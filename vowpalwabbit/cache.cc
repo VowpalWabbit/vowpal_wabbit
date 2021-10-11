@@ -19,9 +19,7 @@ inline char* run_len_decode(char* p, uint64_t& i)
 {
   // read an int 7 bits at a time.
   size_t count = 0;
-  while (*p & 128) {
-    i = i | (static_cast<uint64_t>(*(p++) & 127) << 7 * count++);
-  }
+  while (*p & 128) { i = i | (static_cast<uint64_t>(*(p++) & 127) << 7 * count++); }
   i = i | (static_cast<uint64_t>(*(p++)) << 7 * count);
   return p;
 }
@@ -39,10 +37,7 @@ inline char* run_len_encode(char* p, uint64_t i)
 }
 
 constexpr inline int64_t ZigZagDecode(uint64_t n) { return (n >> 1) ^ -static_cast<int64_t>(n & 1); }
-constexpr inline uint64_t ZigZagEncode(int64_t n)
-{
-  return (n << 1) ^ (n >> 63);
-}
+constexpr inline uint64_t ZigZagEncode(int64_t n) { return (n << 1) ^ (n >> 63); }
 
 size_t read_cached_tag(io_buf& cache, example* ae)
 {
@@ -151,8 +146,6 @@ int read_cached_features(vw* all, io_buf& buf, v_array<example*>& examples)
   return VW::read_example_from_cache(buf, examples[0], all->example_parser->lbl_parser,
       all->example_parser->sorted_cache, all->example_parser->_shared_data);
 }
-
-
 
 void output_byte(io_buf& cache, unsigned char s)
 {

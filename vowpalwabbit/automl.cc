@@ -146,7 +146,6 @@ void scored_config::save_load(io_buf& io, bool read, bool text)
   }
   else
   {
-
     VW::model_utils::write_model_field(io, ips, "_aml_config_ips", text);
     VW::model_utils::write_model_field(io, update_count, "_aml_config_count", text);
     VW::model_utils::write_model_field(io, last_w, "_aml_config_lastw", text);
@@ -233,7 +232,6 @@ void exclusion_config::save_load(io_buf& model_file, bool read, bool text)
   }
   else
   {
-
     VW::model_utils::write_model_field(model_file, lease, "_aml_lease", text);
     VW::model_utils::write_model_field(model_file, ips, "_aml_ips", text);
     VW::model_utils::write_model_field(model_file, lower_bound, "_aml_lower_bound", text);
@@ -543,16 +541,14 @@ void interaction_config_manager::save_load(io_buf& model_file, bool read, bool t
 
   if (read)
   {
-  VW::model_utils::read_model_field(model_file, total_learn_count);
-  VW::model_utils::read_model_field(model_file, current_champ);
+    VW::model_utils::read_model_field(model_file, total_learn_count);
+    VW::model_utils::read_model_field(model_file, current_champ);
   }
   else
   {
-  VW::model_utils::write_model_field(model_file, total_learn_count, "_aml_cm_count", text);
-  VW::model_utils::write_model_field(model_file, current_champ, "_aml_cm_champ", text);
+    VW::model_utils::write_model_field(model_file, total_learn_count, "_aml_cm_count", text);
+    VW::model_utils::write_model_field(model_file, current_champ, "_aml_cm_champ", text);
   }
-
-
 
   size_t config_size;
   size_t ns_counter_size;
@@ -769,13 +765,9 @@ template <typename CMType>
 void save_load_aml(automl<CMType>& d, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
-  if (read)
-  {
-    VW::model_utils::read_model_field(model_file, d.current_state);
-  }
+  if (read) { VW::model_utils::read_model_field(model_file, d.current_state); }
   else
   {
-
     VW::model_utils::write_model_field(model_file, d.current_state, "_aml_state", text);
   }
   d.cm->save_load(model_file, read, text);
