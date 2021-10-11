@@ -63,13 +63,12 @@ VW::string_view trim_whitespace(VW::string_view str)
   auto start = std::find_if_not(str.begin(), str.end(), [](char c) { return std::isspace(c); });
   if (start == str.end()) { return ""; }
   auto start_pos = std::distance(str.begin(), start);
-  str = str.substr(start_pos);
 
   // Determine end
   auto end = std::find_if_not(str.rbegin(), str.rend(), [](char c) { return std::isspace(c); });
   if (end == str.rend()) { return ""; }
   // -1 is required as position 0 of the string is (rend - 1)
   auto end_pos = std::distance(end, str.rend()) - 1;
-  return str.substr(0, end_pos + 1);
+  return str.substr(start_pos, (end_pos - start_pos) + 1);
 }
 }  // namespace VW
