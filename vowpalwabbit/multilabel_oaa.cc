@@ -16,6 +16,7 @@ struct multi_oaa
 {
   size_t k = 0;
   bool probabilities = false;
+  std::string link;
 };
 
 template <bool is_learn>
@@ -42,22 +43,25 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
     }
     else
       base.predict(ec, i);
-    if (ec.pred.scalar > 0.) preds.label_v.push_back(i);
+    if ((o.link == "logistic" && ec.pred.scalar > 0.5) || (o.link != "logistic" && ec.pred.scalar > 0.0))
+    {
+      preds.label_v.push_back(i);
+    }
     if (o.probabilities) { ec.pred.scalars.push_back(std::move(ec.pred.scalar)); }
   }
   if (is_learn)
   {
     if (multilabel_index < multilabels.label_v.size())
     {
-      logger::log_error("label {0} is not in {{0,{1}}} This won't work right.",
-                        multilabels.label_v[multilabel_index], o.k - 1);
+      logger::log_error(
+          "label {0} is not in {{0,{1}}} This won't work right.", multilabels.label_v[multilabel_index], o.k - 1);
     }
   }
   if (o.probabilities)
   {
     assert(ec.pred.scalars.size() == o.k);
     float sum = std::accumulate(ec.pred.scalars.begin(), ec.pred.scalars.end(), 0.f);
-    for (size_t i = 0; i < o.k; ++i) { ec.pred.scalars[i] /= sum; }
+    for (size_t i = 0; i < o.k; ++i) { ec.pred.scalars[i] *= (static_cast<float>(preds.label_v.size()) / sum); }
   }
   else
   {
@@ -95,7 +99,11 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("Multilabel One Against All");
   new_options
       .add(make_option("multilabel_oaa", data->k).keep().necessary().help("One-against-all multilabel with <k> labels"))
-      .add(make_option("probabilities", data->probabilities).help("predict probabilities of all classes"));
+      .add(make_option("probabilities", data->probabilities).help("predict probabilities of all classes"))
+      .add(make_option("link", data->link)
+               .default_value("identity")
+               .keep()
+               .help("Specify the link function: identity, logistic, glf1 or poisson"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -107,7 +115,8 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
   {
     // Unlike oaa and csoaa_ldf (which always remove --logistic link and apply logic manually for probabilities),
     // multilabel_oaa will always add logistic link and apply logic in base (scorer) reduction
-    options.insert("link", "logistic");
+    options.replace("link", "logistic");
+    data->link = "logistic";
     pred_type = prediction_type_t::scalars;
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")

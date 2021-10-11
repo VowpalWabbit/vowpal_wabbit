@@ -556,8 +556,10 @@ Memory Tree:
   --online                             turn on dream operations at reward based
                                        update as well
 Multilabel One Against All:
-  --multilabel_oaa arg  One-against-all multilabel with <k> labels
-  --probabilities       predict probabilities of all classes
+  --multilabel_oaa arg     One-against-all multilabel with <k> labels
+  --probabilities          predict probabilities of all classes
+  --link arg (=identity, ) Specify the link function: identity, logistic, glf1 
+                           or poisson
 Multiworld Testing Options:
   --multiworld_test arg Evaluate features as a policies
   --learn arg           Do Contextual Bandit learning on <n> classes.
