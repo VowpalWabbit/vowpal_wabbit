@@ -14,6 +14,7 @@
 #include "learner.h"
 #include "io/logger.h"
 #include "vw.h"
+#include "cache.h"
 #include <map>
 #include <set>
 #include <queue>
@@ -41,7 +42,7 @@ constexpr size_t CONGIGS_PER_CHAMP_CHANGE = 5;
 
 struct scored_config
 {
-  std::shared_ptr<VW::distributionally_robust::ChiSquared> chisq;
+  VW::distributionally_robust::ChiSquared chisq;
   float ips = 0.0;
   float last_w = 0.0;
   float last_r = 0.0;
@@ -50,11 +51,7 @@ struct scored_config
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
-  scored_config()
-  {
-    chisq = std::make_shared<VW::distributionally_robust::ChiSquared>(
-        0.05, 0.999, 0, std::numeric_limits<double>::infinity());
-  }
+  scored_config() : chisq(0.05, 0.999, 0, std::numeric_limits<double>::infinity()) {}
 
   void update(float w, float r);
   void save_load(io_buf&, bool, bool);

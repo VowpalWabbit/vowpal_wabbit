@@ -122,7 +122,7 @@ void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
 void scored_config::update(float w, float r)
 {
   update_count++;
-  chisq->update(w, r);
+  chisq.update(w, r);
   ips += r * w;
   last_w = w;
   last_r = r;
@@ -132,7 +132,7 @@ void scored_config::persist(metric_sink& metrics, const std::string& suffix)
 {
   metrics.int_metrics_list.emplace_back("upcnt" + suffix, update_count);
   metrics.float_metrics_list.emplace_back("ips" + suffix, current_ips());
-  distributionally_robust::ScoredDual sd = chisq->recompute_duals();
+  distributionally_robust::ScoredDual sd = chisq.recompute_duals();
   metrics.float_metrics_list.emplace_back("bound" + suffix, static_cast<float>(sd.first));
   metrics.float_metrics_list.emplace_back("w" + suffix, last_w);
   metrics.float_metrics_list.emplace_back("r" + suffix, last_r);
@@ -143,7 +143,7 @@ float scored_config::current_ips() const { return (update_count > 0) ? ips / upd
 
 void scored_config::reset_stats()
 {
-  chisq->reset(0.05, 0.999);
+  chisq.reset(0.05, 0.999);
   ips = 0.0;
   last_w = 0.0;
   last_r = 0.0;
@@ -372,7 +372,7 @@ void interaction_config_manager::update_champ()
   for (size_t live_slot = 0; live_slot < scores.size(); ++live_slot)
   {
     float ips = scores[live_slot].current_ips();
-    distributionally_robust::ScoredDual sd = scores[live_slot].chisq->recompute_duals();
+    distributionally_robust::ScoredDual sd = scores[live_slot].chisq.recompute_duals();
     float lower_bound = static_cast<float>(sd.first);
     configs[scores[live_slot].config_index].ips = ips;
     configs[scores[live_slot].config_index].lower_bound = lower_bound;
@@ -721,7 +721,7 @@ size_t read_model_field(io_buf& io, VW::automl::scored_config& sc)
   bytes += read_model_field(io, sc.last_r);
   bytes += read_model_field(io, sc.config_index);
   bytes += read_model_field(io, sc.eligible_to_inactivate);
-  bytes += read_model_field(io, *sc.chisq);
+  bytes += read_model_field(io, sc.chisq);
   return bytes;
 }
 
@@ -734,7 +734,7 @@ size_t write_model_field(io_buf& io, const VW::automl::scored_config& sc, const 
   bytes += write_model_field(io, sc.last_r, upstream_name + "_lastr", text);
   bytes += write_model_field(io, sc.config_index, upstream_name + "_index", text);
   bytes += write_model_field(io, sc.eligible_to_inactivate, upstream_name + "_eligible_to_inactivate", text);
-  bytes += write_model_field(io, *sc.chisq, upstream_name + "_chisq", text);
+  bytes += write_model_field(io, sc.chisq, upstream_name + "_chisq", text);
   return bytes;
 }
 

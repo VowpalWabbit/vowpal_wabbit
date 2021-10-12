@@ -377,7 +377,6 @@
     <ClCompile Include="memory_tree.cc" />
     <ClCompile Include="metrics.cc" />
     <ClCompile Include="mf.cc" />
-    <ClInclude Include="model_utils.cc" />
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="multilabel_oaa.cc" />
     <ClCompile Include="multilabel.cc" />
