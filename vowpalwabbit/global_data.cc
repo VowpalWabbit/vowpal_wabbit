@@ -204,10 +204,7 @@ void vw::finish_example(example& ec)
   // simple. Many reductions which use simple labels do different reporting.
   // Ideally, it would all use a common pipeline and this could go there but
   // that is not that case.
-  if (example_parser->lbl_parser.label_type == label_type_t::simple)
-  {
-    count_label(sd, ec.l.simple.label);
-  }
+  if (example_parser->lbl_parser.label_type == label_type_t::simple) { count_label(sd, ec.l.simple.label); }
 
   VW::LEARNER::as_singleline(l)->finish_example(*this, ec);
 }
