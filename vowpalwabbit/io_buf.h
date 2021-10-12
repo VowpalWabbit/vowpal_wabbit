@@ -220,24 +220,29 @@ public:
     while (close_file()) {}
   }
 
-  template <typename T>
-  void write_value(const T& value)
+  template <typename T,
+    typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value,
+        bool>::type = true>
+  size_t write_value(const T& value)
   {
     char* c;
     buf_write(c, sizeof(T));
     *reinterpret_cast<T*>(c) = value;
     c += sizeof(T);
     set(c);
+    return sizeof(T);
   }
 
-  template <typename T>
-  T read_value(const char* debug_name = nullptr)
+  template <typename T,
+    typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value,
+        bool>::type = true>
+  T read_value(VW::string_view debug_name = "")
   {
     char* c;
     T value;
     if (buf_read(c, sizeof(T)) < sizeof(T))
     {
-      if (debug_name != nullptr)
+      if (!debug_name.empty())
       { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
       else
       {
@@ -248,6 +253,15 @@ public:
     c += sizeof(T);
     set(c);
     return value;
+  }
+
+  template <typename T,
+    typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value,
+        bool>::type = true>
+  T read_value_and_accumulate_size(VW::string_view debug_name, size_t& size)
+  {
+    size += sizeof(T);
+    return read_value<T>(debug_name);
   }
 
   void buf_write(char*& pointer, size_t n);
