@@ -61,9 +61,7 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
 
   auto size_includes = cache.read_value_and_accumulate_size<uint32_t>("size_includes", read_count);
   for (uint32_t i = 0; i < size_includes; i++)
-  {
-    ld.explicit_included_actions.push_back(cache.read_value_and_accumulate_size<uint32_t>("include", read_count));
-  }
+  { ld.explicit_included_actions.push_back(cache.read_value_and_accumulate_size<uint32_t>("include", read_count)); }
 
   ld.weight = cache.read_value_and_accumulate_size<float>("weight", read_count);
   return read_count;

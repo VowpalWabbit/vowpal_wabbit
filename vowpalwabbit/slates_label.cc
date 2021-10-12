@@ -32,9 +32,7 @@ size_t read_cached_label(shared_data* /*sd*/, slates::label& ld, io_buf& cache)
 
   auto size_probs = cache.read_value_and_accumulate_size<uint32_t>("size_probs", read_count);
   for (uint32_t i = 0; i < size_probs; i++)
-  {
-    ld.probabilities.push_back(cache.read_value_and_accumulate_size<ACTION_SCORE::action_score>("a_s", read_count));
-  }
+  { ld.probabilities.push_back(cache.read_value_and_accumulate_size<ACTION_SCORE::action_score>("a_s", read_count)); }
   return read_count;
 }
 
@@ -46,7 +44,7 @@ void cache_label(slates::label& ld, io_buf& cache)
   cache.write_value(ld.cost);
   cache.write_value(VW::convert(ld.slot_id));
   cache.write_value(VW::convert(ld.probabilities.size()));
-  for (const auto& score : ld.probabilities) { cache.write_value(score);}
+  for (const auto& score : ld.probabilities) { cache.write_value(score); }
 }
 
 float weight(slates::label& ld) { return ld.weight; }

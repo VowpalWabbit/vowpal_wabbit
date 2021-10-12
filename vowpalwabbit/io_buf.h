@@ -221,8 +221,7 @@ public:
   }
 
   template <typename T,
-    typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value,
-        bool>::type = true>
+      typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value, bool>::type = true>
   size_t write_value(const T& value)
   {
     char* c;
@@ -234,16 +233,14 @@ public:
   }
 
   template <typename T,
-    typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value,
-        bool>::type = true>
+      typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value, bool>::type = true>
   T read_value(VW::string_view debug_name = "")
   {
     char* c;
     T value;
     if (buf_read(c, sizeof(T)) < sizeof(T))
     {
-      if (!debug_name.empty())
-      { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
+      if (!debug_name.empty()) { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
       else
       {
         THROW("Failed to read cache value with size: " << sizeof(T));
@@ -256,8 +253,7 @@ public:
   }
 
   template <typename T,
-    typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value,
-        bool>::type = true>
+      typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value, bool>::type = true>
   T read_value_and_accumulate_size(VW::string_view debug_name, size_t& size)
   {
     size += sizeof(T);
