@@ -76,7 +76,6 @@ void cache_label(label& ld, io_buf& cache)
   if (ld.outcome != nullptr)
   {
     cache.write_value(ld.outcome->cost);
-    cache.write_value(ld.outcome->cost);
     cache.write_value(VW::convert(ld.outcome->probabilities.size()));
     for (const auto& score : ld.outcome->probabilities) { cache.write_value(score); }
   }
