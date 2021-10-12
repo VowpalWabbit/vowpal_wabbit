@@ -12,6 +12,8 @@
 
 #include <fmt/format.h>
 
+#include <type_traits>
+
 namespace VW
 {
 namespace automl
@@ -19,7 +21,10 @@ namespace automl
 struct exclusion_config;
 struct scored_config;
 struct interaction_config_manager;
+template <typename CMType>
+struct automl;
 }  // namespace automl
+
 namespace model_utils
 {
 namespace details
@@ -31,204 +36,228 @@ inline size_t check_length_matches(size_t actual_len, size_t expected_len)
 }
 
 template <typename T>
-size_t write_text_mode_output(io_buf& io, const T& var, const std::string& name_or_readable_field_template)
+size_t write_text_mode_output(io_buf& io, const T& var, const std::string& upstream_name)
 {
-  if (name_or_readable_field_template.empty()) { return 0; }
+  if (upstream_name.empty()) { return 0; }
 
   std::string message;
   // If the user has supplied a template string then use that.
-  if (name_or_readable_field_template.find("{}") != VW::string_view::npos)
-  { message = fmt::format(name_or_readable_field_template, var); }
+  if (upstream_name.find("{}") != VW::string_view::npos)
+  { message = fmt::format(upstream_name, var); }
   else
   {
     // Use the default template string.
-    message = fmt::format("{} = {}\n", name_or_readable_field_template, var);
+    message = fmt::format("{} = {}\n", upstream_name, var);
   }
 
   return details::check_length_matches(io.bin_write_fixed(message.c_str(), message.size()), message.size());
 }
 }  // namespace details
 
-size_t process_model_field(io_buf& io, VW::automl::exclusion_config& var, bool read,
-    const std::string& name_or_readable_field_template, bool text);
-size_t process_model_field(io_buf& io, VW::automl::scored_config& var, bool read,
-    const std::string& name_or_readable_field_template, bool text);
-size_t process_model_field(io_buf& io, VW::automl::interaction_config_manager& var, bool read,
-    const std::string& name_or_readable_field_template, bool text);
+// Declare type specifications
+size_t read_model_field(io_buf&, size_t&);
+size_t write_model_field(io_buf&, const size_t&, const std::string&, bool);
+
+// Declare comlex overloads
+size_t read_model_field(io_buf&, VW::automl::exclusion_config&);
+size_t read_model_field(io_buf&, VW::automl::scored_config&);
+size_t read_model_field(io_buf&, VW::automl::interaction_config_manager&);
+template <typename CMType>
+size_t read_model_field(io_buf&, VW::automl::automl<CMType>&);
+size_t write_model_field(io_buf&, const VW::automl::exclusion_config&, const std::string&, bool);
+size_t write_model_field(io_buf&, const VW::automl::scored_config&, const std::string&, bool);
+size_t write_model_field(io_buf&, const VW::automl::interaction_config_manager&, const std::string&, bool);
+template <typename CMType>
+size_t write_model_field(io_buf&, const VW::automl::automl<CMType>&, const std::string&, bool);
 
 /**
- * @brief This function is the uniform interface for serializing a variable to
- * the model file.
+ * @brief This function is the uniform interface reading a variable from the model file. The value must be a POD type.
  *
  * @tparam T type of value to serialize or deserialize. This is important as it determines the number of bytes to be
  * processed.
  * @param io model file io_buf to read from or write to
- * @param var value to serialize or deserialize. Must be a type which supports
- * validly bit casting to a sequence of bytes. If reading, does not need to be
- * initialized. If writing, must be initialized.
- * @param read whether to read from io or to write to io
- * @param name_or_readable_field_template (Only used when text == true) The name
+ * @param var Variable to write into for the deserialized value. Must be a type which supports
+ * validly bit casting to a sequence of bytes. Does not need to be initialized.
+ * @return size_t the number of bytes read
+ */
+template <typename T,
+    typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value && std::is_pod<T>::value,
+        bool>::type = true>
+size_t read_model_field(io_buf& io, T& var)
+{
+  auto* data = reinterpret_cast<char*>(&var);
+  auto len = sizeof(var);
+
+  return details::check_length_matches(io.bin_read_fixed(data, len), len);
+}
+
+/**
+ * @brief This function is the uniform interface for serializing a variable to
+ * the model file. The value must be a POD type.
+ *
+ * @tparam T type of value to serialize or deserialize. This is important as it determines the number of bytes to be
+ * processed.
+ * @param io model file io_buf to read from or write to
+ * @param var value to serialize. Must be a type which supports
+ * validly bit casting to a sequence of bytes. Must be initialized.
+ * @param upstream_name (Only used when text == true) The name
  * of the variable or a template string to use when writing.
  *   - If empty, then no output is written for this call
  *   - If the string contains a "{}", then the variable value will be substituted for that. Note: more than one "{}" in
  * the string will result in a runtime error due to the templating failure.
  *   - Otherwise, if the string is non-empty and does not contain a "{}" the value will be used as the name of the
- * variable and be outputted in the form `("{} = {}\n", name_or_readable_field_template, var)`
- * @param text whether to write in text mode or binary mode. It is invalid to
- * specify both read and text.
- * @return size_t the number of bytes written or read
+ * variable and be outputted in the form `("{} = {}\n", upstream_name, var)`
+ * @param text whether to write in text mode or binary mode.
+ * @return size_t the number of bytes written
  */
-template <typename T>
-size_t process_model_field(
-    io_buf& io, const T& var, bool read, const std::string& name_or_readable_field_template, bool text)
+template <typename T,
+    typename std::enable_if<!std::is_pointer<T>::value && std::is_trivially_copyable<T>::value && std::is_pod<T>::value,
+        bool>::type = true>
+size_t write_model_field(io_buf& io, const T& var, const std::string& upstream_name, bool text)
 {
-  // It is not valid to read a text based field.
-  assert(!(read && text));
+  if (text) { return details::write_text_mode_output(io, var, upstream_name); }
 
-  if (read)
-  {
-    auto* data = reinterpret_cast<char*>(const_cast<T*>(&var));
-    auto len = sizeof(var);
-    return details::check_length_matches(io.bin_read_fixed(data, len), len);
-  }
-
-  auto* data = reinterpret_cast<const char*>(&var);
+  const auto* data = reinterpret_cast<const char*>(&var);
   auto len = sizeof(var);
 
-  if (text) { return details::write_text_mode_output(io, var, name_or_readable_field_template); }
-  // If not read or text we are just writing the binary data.
+  // If not text we are just writing the binary data.
   return details::check_length_matches(io.bin_write_fixed(data, len), len);
 }
 
 template <typename T>
-size_t process_model_field(
-    io_buf& io, std::set<T>& set, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t read_model_field(io_buf& io, std::set<T>& set)
 {
   size_t bytes = 0;
   size_t set_size;
-  if (read)
+  bytes += read_model_field(io, set_size);
+  for (size_t i = 0; i < set_size; ++i)
   {
-    bytes += process_model_field(io, set_size, read, "", text);
-    for (size_t i = 0; i < set_size; ++i)
-    {
-      T v;
-      bytes += process_model_field(io, v, read, "", text);
-      set.insert(v);
-    }
-  }
-  else
-  {
-    set_size = set.size();
-    bytes += process_model_field(io, set_size, read, name_or_readable_field_template + "_size", text);
-    size_t i = 0;
-    for (T v : set)
-    {
-      bytes += process_model_field(io, v, read, name_or_readable_field_template + "_" + std::to_string(i), text);
-      ++i;
-    }
+    T v;
+    bytes += read_model_field(io, v);
+    set.insert(v);
   }
   return bytes;
 }
 
 template <typename T>
-size_t process_model_field(
-    io_buf& io, std::vector<T>& vec, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t write_model_field(io_buf& io, const std::set<T>& set, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  size_t set_size = set.size();
+  bytes += write_model_field(io, set_size, upstream_name + "_size", text);
+  size_t i = 0;
+  for (const T& v : set)
+  {
+    bytes += write_model_field(io, v, upstream_name + "_" + std::to_string(i), text);
+    ++i;
+  }
+  return bytes;
+}
+
+template <typename T>
+size_t read_model_field(io_buf& io, std::vector<T>& vec)
 {
   size_t bytes = 0;
   size_t vec_size;
-  if (read)
+  bytes += read_model_field(io, vec_size);
+  for (size_t i = 0; i < vec_size; ++i)
   {
-    bytes += process_model_field(io, vec_size, read, "", text);
-    for (size_t i = 0; i < vec_size; ++i)
-    {
-      T v;
-      bytes += process_model_field(io, v, read, "", text);
-      vec.push_back(v);
-    }
+    T v;
+    bytes += read_model_field(io, v);
+    vec.push_back(v);
   }
-  else
-  {
-    vec_size = vec.size();
-    bytes += process_model_field(io, vec_size, read, name_or_readable_field_template + "_size", text);
-    size_t i = 0;
-    for (T v : vec)
-    {
-      bytes += process_model_field(io, v, read, name_or_readable_field_template + "_" + std::to_string(i), text);
-      ++i;
-    }
-  }
+  return bytes;
+}
+
+template <typename T>
+size_t write_model_field(io_buf& io, const std::vector<T>& vec, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  size_t vec_size = vec.size();
+  bytes += write_model_field(io, vec_size, upstream_name + "_size", text);
+  for (size_t i = 0; i < vec_size; ++i)
+  { bytes += write_model_field(io, vec[i], upstream_name + "_" + std::to_string(i), text); }
   return bytes;
 }
 
 template <typename F, typename S>
-size_t process_model_field(
-    io_buf& io, std::pair<F, S>& pair, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t read_model_field(io_buf& io, std::pair<F, S>& pair)
 {
   size_t bytes = 0;
-  bytes += process_model_field(io, pair.first, read, name_or_readable_field_template + "_first", text);
-  bytes += process_model_field(io, pair.second, read, name_or_readable_field_template + "_second", text);
+  bytes += read_model_field(io, pair.first);
+  bytes += read_model_field(io, pair.second);
+  return bytes;
+}
+
+template <typename F, typename S>
+size_t write_model_field(io_buf& io, const std::pair<F, S>& pair, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, pair.first, upstream_name + "_first", text);
+  bytes += write_model_field(io, pair.second, upstream_name + "_second", text);
   return bytes;
 }
 
 template <typename T>
-size_t process_model_field(
-    io_buf& io, std::priority_queue<T>& pq, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t read_model_field(io_buf& io, std::priority_queue<T>& pq)
 {
   size_t bytes = 0;
   size_t queue_size;
-  if (read)
+  bytes += read_model_field(io, queue_size);
+  for (size_t i = 0; i < queue_size; ++i)
   {
-    bytes += process_model_field(io, queue_size, read, "", text);
-    for (size_t i = 0; i < queue_size; ++i)
-    {
-      T v;
-      bytes += process_model_field(io, v, read, "", text);
-      pq.push(v);
-    }
+    T v;
+    bytes += read_model_field(io, v);
+    pq.push(v);
   }
-  else
+  return bytes;
+}
+
+template <typename T>
+size_t write_model_field(io_buf& io, const std::priority_queue<T>& pq, const std::string& upstream_name, bool text)
+{
+  std::priority_queue<T> pq_cp = pq;
+  size_t bytes = 0;
+  size_t queue_size = pq_cp.size();
+  bytes += write_model_field(io, queue_size, upstream_name + "_size", text);
+  size_t i = 0;
+  while (!pq_cp.empty())
   {
-    queue_size = pq.size();
-    bytes += process_model_field(io, queue_size, read, name_or_readable_field_template + "_size", text);
-    size_t i = 0;
-    while (!pq.empty())
-    {
-      T v = pq.top();
-      pq.pop();
-      bytes += process_model_field(io, v, read, name_or_readable_field_template + "_" + std::to_string(i), text);
-      ++i;
-    }
+    const T& v = pq_cp.top();
+    bytes += write_model_field(io, v, upstream_name + "_" + std::to_string(i), text);
+    pq_cp.pop();
+    ++i;
   }
   return bytes;
 }
 
 template <typename K, typename V>
-size_t process_model_field(
-    io_buf& io, std::map<K, V>& map, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t read_model_field(io_buf& io, std::map<K, V>& map)
 {
   size_t bytes = 0;
   size_t map_size;
-  if (read)
+  bytes += read_model_field(io, map_size);
+  for (size_t i = 0; i < map_size; ++i)
   {
-    bytes += process_model_field(io, map_size, read, "", text);
-    for (size_t i = 0; i < map_size; ++i)
-    {
-      std::pair<K, V> pair;
-      bytes += VW::model_utils::process_model_field(io, pair, read, "", text);
-      map[pair.first] = pair.second;
-    }
+    std::pair<K, V> pair;
+    bytes += read_model_field(io, pair);
+    map[pair.first] = pair.second;
   }
-  else
+  return bytes;
+}
+
+template <typename K, typename V>
+size_t write_model_field(
+    io_buf& io, const std::map<K, V>& map, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  size_t map_size = map.size();
+  bytes += write_model_field(io, map_size, upstream_name + "_size", text);
+  size_t i = 0;
+  for (auto& pair : map)
   {
-    map_size = map.size();
-    bytes += process_model_field(io, map_size, read, name_or_readable_field_template + "_size", text);
-    size_t i = 0;
-    for (auto& pair : map)
-    {
-      bytes += VW::model_utils::process_model_field(
-          io, pair, read, name_or_readable_field_template + "_" + std::to_string(i), text);
-      ++i;
-    }
+    bytes += write_model_field(io, pair, upstream_name + "_" + std::to_string(i), text);
+    ++i;
   }
   return bytes;
 }

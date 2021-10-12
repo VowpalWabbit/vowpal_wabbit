@@ -8,45 +8,6 @@
 
 namespace VW
 {
-namespace model_utils
-{
-size_t process_model_field(io_buf& io, VW::distributionally_robust::Duals& duals, bool read,
-    const std::string& name_or_readable_field_template, bool text)
-{
-  if (io.num_files() == 0) { return 0; }
-  size_t bytes = 0;
-  bytes += process_model_field(io, duals.unbounded, read, name_or_readable_field_template + "_unbounded", text);
-  bytes += process_model_field(io, duals.kappa, read, name_or_readable_field_template + "_kappa", text);
-  bytes += process_model_field(io, duals.gamma, read, name_or_readable_field_template + "_gamma", text);
-  bytes += process_model_field(io, duals.beta, read, name_or_readable_field_template + "_beta", text);
-  bytes += process_model_field(io, duals.n, read, name_or_readable_field_template + "_n", text);
-  return bytes;
-}
-
-size_t process_model_field(io_buf& io, VW::distributionally_robust::ChiSquared& chisq, bool read,
-    const std::string& name_or_readable_field_template, bool text)
-{
-  if (io.num_files() == 0) { return 0; }
-  size_t bytes = 0;
-  bytes += process_model_field(io, chisq.duals.first, read, name_or_readable_field_template + "_chi_scored", text);
-  bytes += process_model_field(io, chisq.duals_stale, read, name_or_readable_field_template + "_chi_duals_stale", text);
-  bytes += process_model_field(io, chisq.duals.second, read, name_or_readable_field_template + "_duals", text);
-  bytes += process_model_field(io, chisq.alpha, read, name_or_readable_field_template + "_chi_alpha", text);
-  bytes += process_model_field(io, chisq.tau, read, name_or_readable_field_template + "_chi_tau", text);
-  bytes += process_model_field(io, chisq.wmin, read, name_or_readable_field_template + "_chi_wmin", text);
-  bytes += process_model_field(io, chisq.wmax, read, name_or_readable_field_template + "_chi_wmax", text);
-  bytes += process_model_field(io, chisq.rmin, read, name_or_readable_field_template + "_chi_rmin", text);
-  bytes += process_model_field(io, chisq.rmax, read, name_or_readable_field_template + "_chi_rmax", text);
-  bytes += process_model_field(io, chisq.n, read, name_or_readable_field_template + "_chi_n", text);
-  bytes += process_model_field(io, chisq.sumw, read, name_or_readable_field_template + "_chi_sumw", text);
-  bytes += process_model_field(io, chisq.sumwsq, read, name_or_readable_field_template + "_chi_sumwsq", text);
-  bytes += process_model_field(io, chisq.sumwr, read, name_or_readable_field_template + "_chi_sumwr", text);
-  bytes += process_model_field(io, chisq.sumwsqr, read, name_or_readable_field_template + "_chi_sumwsqr", text);
-  bytes += process_model_field(io, chisq.sumwsqrsq, read, name_or_readable_field_template + "_chi_sumwsqrsq", text);
-  bytes += process_model_field(io, chisq.delta, read, name_or_readable_field_template + "_chi_delta", text);
-  return bytes;
-}
-}  // namespace model_utils
 
 namespace distributionally_robust
 {
@@ -204,30 +165,75 @@ ScoredDual ChiSquared::recompute_duals()
   return duals;
 }
 
-void ChiSquared::save_load(io_buf& model_file, bool read, bool text, const char* name)
+}  // namespace distributionally_robust
+
+namespace model_utils
 {
-  if (model_file.num_files() == 0) { return; }
-
-#define save_load_field(field)                                                                              \
-  do                                                                                                        \
-  {                                                                                                         \
-    model_utils::process_model_field(model_file, field, read, fmt::format("{}_chisq_" #field, name), text); \
-  } while (0)
-
-  save_load_field(n);
-  save_load_field(sumw);
-  save_load_field(sumwsq);
-  save_load_field(sumwr);
-  save_load_field(sumwsqr);
-  save_load_field(sumwsqrsq);
-
-  save_load_field(rmin);
-  save_load_field(rmax);
-  save_load_field(wmin);
-  save_load_field(wmax);
-
-  duals_stale = true;
+size_t read_model_field(io_buf& io, VW::distributionally_robust::Duals& duals)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, duals.unbounded);
+  bytes += read_model_field(io, duals.kappa);
+  bytes += read_model_field(io, duals.gamma);
+  bytes += read_model_field(io, duals.beta);
+  bytes += read_model_field(io, duals.n);
+  return bytes;
 }
 
-}  // namespace distributionally_robust
+size_t write_model_field(io_buf& io, const VW::distributionally_robust::Duals& duals, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, duals.unbounded, upstream_name + "_unbounded", text);
+  bytes += write_model_field(io, duals.kappa, upstream_name + "_kappa", text);
+  bytes += write_model_field(io, duals.gamma, upstream_name + "_gamma", text);
+  bytes += write_model_field(io, duals.beta, upstream_name + "_beta", text);
+  bytes += write_model_field(io, duals.n, upstream_name + "_n", text);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, VW::distributionally_robust::ChiSquared& chisq)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, chisq.duals.first);
+  bytes += read_model_field(io, chisq.duals_stale);
+  bytes += read_model_field(io, chisq.duals.second);
+  bytes += read_model_field(io, chisq.alpha);
+  bytes += read_model_field(io, chisq.tau);
+  bytes += read_model_field(io, chisq.wmin);
+  bytes += read_model_field(io, chisq.wmax);
+  bytes += read_model_field(io, chisq.rmin);
+  bytes += read_model_field(io, chisq.rmax);
+  bytes += read_model_field(io, chisq.n);
+  bytes += read_model_field(io, chisq.sumw);
+  bytes += read_model_field(io, chisq.sumwsq);
+  bytes += read_model_field(io, chisq.sumwr);
+  bytes += read_model_field(io, chisq.sumwsqr);
+  bytes += read_model_field(io, chisq.sumwsqrsq);
+  bytes += read_model_field(io, chisq.delta);
+  return bytes;
+}
+
+size_t write_model_field(
+    io_buf& io, const VW::distributionally_robust::ChiSquared& chisq, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, chisq.duals.first, upstream_name + "_scored", text);
+  bytes += write_model_field(io, chisq.duals_stale, upstream_name + "_duals_stale", text);
+  bytes += write_model_field(io, chisq.duals.second, upstream_name + "_duals", text);
+  bytes += write_model_field(io, chisq.alpha, upstream_name + "_alpha", text);
+  bytes += write_model_field(io, chisq.tau, upstream_name + "_tau", text);
+  bytes += write_model_field(io, chisq.wmin, upstream_name + "_wmin", text);
+  bytes += write_model_field(io, chisq.wmax, upstream_name + "_wmax", text);
+  bytes += write_model_field(io, chisq.rmin, upstream_name + "_rmin", text);
+  bytes += write_model_field(io, chisq.rmax, upstream_name + "_rmax", text);
+  bytes += write_model_field(io, chisq.n, upstream_name + "_n", text);
+  bytes += write_model_field(io, chisq.sumw, upstream_name + "_sumw", text);
+  bytes += write_model_field(io, chisq.sumwsq, upstream_name + "_sumwsq", text);
+  bytes += write_model_field(io, chisq.sumwr, upstream_name + "_sumwr", text);
+  bytes += write_model_field(io, chisq.sumwsqr, upstream_name + "_sumwsqr", text);
+  bytes += write_model_field(io, chisq.sumwsqrsq, upstream_name + "_sumwsqrsq", text);
+  bytes += write_model_field(io, chisq.delta, upstream_name + "_delta", text);
+  return bytes;
+}
+}  // namespace model_utils
 }  // namespace VW

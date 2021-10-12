@@ -311,6 +311,7 @@ set(vw_all_sources
   memory_tree.cc
   metrics.cc
   mf.cc
+  model_utils.cc
   multiclass.cc
   multilabel_oaa.cc
   multilabel.cc

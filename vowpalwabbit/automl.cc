@@ -559,11 +559,14 @@ void finish_example(vw& all, automl<CMType>& data, multi_ex& ec)
 }
 
 template <typename CMType>
-void save_load_aml(automl<CMType>& d, io_buf& io, bool read, bool text)
+void save_load_aml(automl<CMType>& aml, io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  VW::model_utils::process_model_field(io, d.current_state, read, "_aml_state", text);
-  VW::model_utils::process_model_field(io, *d.cm, read, "_aml_cm", text);
+  if (read) { VW::model_utils::read_model_field(io, aml); }
+  else
+  {
+    VW::model_utils::write_model_field(io, aml, "_automl", text);
+  }
 }
 
 // Basic implementation of scheduler to pick new configs when one runs out of lease.
@@ -686,56 +689,100 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
 
 namespace model_utils
 {
-size_t process_model_field(io_buf& io, VW::automl::exclusion_config& ec, bool read,
-    const std::string& name_or_readable_field_template, bool text)
+size_t read_model_field(io_buf& io, VW::automl::exclusion_config& ec)
 {
-  if (io.num_files() == 0) { return 0; }
-
   size_t bytes = 0;
-  bytes += process_model_field(io, ec.exclusions, read, name_or_readable_field_template + "_exclusions", text);
-  bytes += process_model_field(io, ec.lease, read, name_or_readable_field_template + "_lease", text);
-  bytes += process_model_field(io, ec.ips, read, name_or_readable_field_template + "_ips", text);
-  bytes += process_model_field(io, ec.lower_bound, read, name_or_readable_field_template + "_lower_bound", text);
-  bytes += process_model_field(io, ec.state, read, name_or_readable_field_template + "_state", text);
+  bytes += read_model_field(io, ec.exclusions);
+  bytes += read_model_field(io, ec.lease);
+  bytes += read_model_field(io, ec.ips);
+  bytes += read_model_field(io, ec.lower_bound);
+  bytes += read_model_field(io, ec.state);
   return bytes;
 }
 
-size_t process_model_field(
-    io_buf& io, VW::automl::scored_config& sc, bool read, const std::string& name_or_readable_field_template, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::automl::exclusion_config& ec, const std::string& upstream_name, bool text)
 {
-  if (io.num_files() == 0) { return 0; }
-
   size_t bytes = 0;
-  bytes += process_model_field(io, sc.ips, read, name_or_readable_field_template + "_ips", text);
-  bytes += process_model_field(io, sc.update_count, read, name_or_readable_field_template + "_count", text);
-  bytes += process_model_field(io, sc.last_w, read, name_or_readable_field_template + "_lastw", text);
-  bytes += process_model_field(io, sc.last_r, read, name_or_readable_field_template + "_lastr", text);
-  bytes += process_model_field(io, sc.config_index, read, name_or_readable_field_template + "_index", text);
-  bytes += process_model_field(
-      io, sc.eligible_to_inactivate, read, name_or_readable_field_template + "_eligible_to_inactivate", text);
-  bytes += process_model_field(io, *sc.chisq, read, name_or_readable_field_template + "_chisq", text);
+  bytes += write_model_field(io, ec.exclusions, upstream_name + "_exclusions", text);
+  bytes += write_model_field(io, ec.lease, upstream_name + "_lease", text);
+  bytes += write_model_field(io, ec.ips, upstream_name + "_ips", text);
+  bytes += write_model_field(io, ec.lower_bound, upstream_name + "_lower_bound", text);
+  bytes += write_model_field(io, ec.state, upstream_name + "_state", text);
   return bytes;
 }
 
-size_t process_model_field(io_buf& io, VW::automl::interaction_config_manager& cm, bool read,
-    const std::string& name_or_readable_field_template, bool text)
+size_t read_model_field(io_buf& io, VW::automl::scored_config& sc)
 {
-  if (io.num_files() == 0) { return 0; }
-  if (read) { cm.scores.clear(); }
-
   size_t bytes = 0;
-  bytes += process_model_field(io, cm.total_learn_count, read, name_or_readable_field_template + "_count", text);
-  bytes += process_model_field(io, cm.current_champ, read, name_or_readable_field_template + "_champ", text);
-  bytes += process_model_field(io, cm.ns_counter, read, name_or_readable_field_template + "_ns_counter", text);
-  bytes += process_model_field(io, cm.configs, read, name_or_readable_field_template + "_configs", text);
-  bytes += process_model_field(io, cm.scores, read, name_or_readable_field_template + "_scores", text);
-  bytes += process_model_field(io, cm.index_queue, read, name_or_readable_field_template + "_index_queue", text);
-
-  if (read)
-  {
-    for (size_t live_slot = 0; live_slot < cm.scores.size(); ++live_slot) { cm.gen_quadratic_interactions(live_slot); }
-  }
+  bytes += read_model_field(io, sc.ips);
+  bytes += read_model_field(io, sc.update_count);
+  bytes += read_model_field(io, sc.last_w);
+  bytes += read_model_field(io, sc.last_r);
+  bytes += read_model_field(io, sc.config_index);
+  bytes += read_model_field(io, sc.eligible_to_inactivate);
+  bytes += read_model_field(io, *sc.chisq);
   return bytes;
 }
+
+size_t write_model_field(io_buf& io, const VW::automl::scored_config& sc, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, sc.ips, upstream_name + "_ips", text);
+  bytes += write_model_field(io, sc.update_count, upstream_name + "_count", text);
+  bytes += write_model_field(io, sc.last_w, upstream_name + "_lastw", text);
+  bytes += write_model_field(io, sc.last_r, upstream_name + "_lastr", text);
+  bytes += write_model_field(io, sc.config_index, upstream_name + "_index", text);
+  bytes += write_model_field(io, sc.eligible_to_inactivate, upstream_name + "_eligible_to_inactivate", text);
+  bytes += write_model_field(io, *sc.chisq, upstream_name + "_chisq", text);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, VW::automl::interaction_config_manager& cm)
+{
+  cm.scores.clear();
+  size_t bytes = 0;
+  bytes += read_model_field(io, cm.total_learn_count);
+  bytes += read_model_field(io, cm.current_champ);
+  bytes += read_model_field(io, cm.ns_counter);
+  bytes += read_model_field(io, cm.configs);
+  bytes += read_model_field(io, cm.scores);
+  bytes += read_model_field(io, cm.index_queue);
+  for (size_t live_slot = 0; live_slot < cm.scores.size(); ++live_slot) { cm.gen_quadratic_interactions(live_slot); }
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const VW::automl::interaction_config_manager& cm,
+    const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, cm.total_learn_count, upstream_name + "_count", text);
+  bytes += write_model_field(io, cm.current_champ, upstream_name + "_champ", text);
+  bytes += write_model_field(io, cm.ns_counter, upstream_name + "_ns_counter", text);
+  bytes += write_model_field(io, cm.configs, upstream_name + "_configs", text);
+  bytes += write_model_field(io, cm.scores, upstream_name + "_scores", text);
+  bytes += write_model_field(io, cm.index_queue, upstream_name + "_index_queue", text);
+  return bytes;
+}
+
+template<typename CMType>
+size_t read_model_field(io_buf& io, VW::automl::automl<CMType>& aml)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, aml.current_state);
+  bytes += read_model_field(io, *aml.cm);
+  return bytes;
+}
+
+template<typename CMType>
+size_t write_model_field(io_buf& io, const VW::automl::automl<CMType>& aml,
+    const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, aml.current_state, upstream_name + "_state", text);
+  bytes += write_model_field(io, *aml.cm, upstream_name + "_config_manager", text);
+  return bytes;
+}
+
 }  // namespace model_utils
 }  // namespace VW
