@@ -52,6 +52,7 @@ set(vw_all_headers
   audit_regressor.h
   autolink.h
   baseline.h
+  baseline_challenger_cb.h
   beam.h
   best_constant.h
   bfgs.h
@@ -242,6 +243,7 @@ set(vw_all_sources
   audit_regressor.cc
   autolink.cc
   baseline.cc
+  baseline_challenger_cb.cc
   best_constant.cc
   bfgs.cc
   binary.cc

@@ -1,6 +1,7 @@
 add_executable(vw-unit-test.out
   automl_test.cc
   automl_weights_test.cc
+  baseline_cb_test.cc
   cache_test.cc
   cats_test.cc
   cats_tree_tests.cc
@@ -77,9 +78,17 @@ if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
   )
 endif()
 
-# Communicate that Boost Unit Test is being statically linked
-if(STATIC_LINK_VW)
-  target_compile_definitions(vw-unit-test.out PRIVATE STATIC_LINK_VW)
+# Automatically set BOOST_TEST_DYN_LINK if the dependency is shared.
+get_target_property(boost_test_target_type Boost::unit_test_framework TYPE)
+if (boost_test_target_type STREQUAL SHARED_LIBRARY)
+  message(STATUS "Boost::unit_test_framework looks to be a shared library. Adding BOOST_TEST_DYN_LINK")
+  target_compile_definitions(vw-unit-test.out PRIVATE BOOST_TEST_DYN_LINK)
+elseif(boost_test_target_type STREQUAL UNKNOWN_LIBRARY)
+# If find_package is used then by default we're looking at a shared dependency unless Boost_USE_STATIC_LIBS was set.
+  if(NOT Boost_USE_STATIC_LIBS)
+    message(STATUS "Boost::unit_test_framework looks to be a shared library. Adding BOOST_TEST_DYN_LINK")
+    target_compile_definitions(vw-unit-test.out PRIVATE BOOST_TEST_DYN_LINK)
+  endif()
 endif()
 
 add_test(

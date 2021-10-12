@@ -190,6 +190,8 @@ struct search
 
   // check if the user declared ldf mode
   bool is_ldf();
+  // Ldf is used to determine if the base learner is multi or single line.
+  void set_is_ldf(bool);
 
   // where you should write output
   std::stringstream& output();

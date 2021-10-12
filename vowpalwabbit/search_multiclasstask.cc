@@ -27,6 +27,7 @@ void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i&
   my_task_data->y_allowed.push_back(1);
   my_task_data->y_allowed.push_back(2);
   sch.set_task_data(my_task_data);
+  sch.set_is_ldf(false);
 }
 
 void run(Search::search& sch, multi_ex& ec)

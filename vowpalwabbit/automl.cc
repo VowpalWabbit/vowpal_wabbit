@@ -134,14 +134,26 @@ void scored_config::update(float w, float r)
 void scored_config::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-
-  VW::model_utils::process_model_field(io, ips, read, "_aml_config_ips", text);
-  VW::model_utils::process_model_field(io, update_count, read, "_aml_config_count", text);
-  VW::model_utils::process_model_field(io, last_w, read, "_aml_config_lastw", text);
-  VW::model_utils::process_model_field(io, last_r, read, "_aml_config_lastr", text);
-  VW::model_utils::process_model_field(io, config_index, read, "_aml_config_index", text);
-  VW::model_utils::process_model_field(io, eligible_to_inactivate, read, "_aml_config_eligible_to_inactivate", text);
-  VW::model_utils::process_model_field(io, chisq, read, "", text);
+  if (read)
+  {
+    VW::model_utils::read_model_field(io, ips);
+    VW::model_utils::read_model_field(io, update_count);
+    VW::model_utils::read_model_field(io, last_w);
+    VW::model_utils::read_model_field(io, last_r);
+    VW::model_utils::read_model_field(io, config_index);
+    VW::model_utils::read_model_field(io, eligible_to_inactivate);
+    VW::model_utils::read_model_field(io, chisq);
+  }
+  else
+  {
+    VW::model_utils::write_model_field(io, ips, "_aml_config_ips", text);
+    VW::model_utils::write_model_field(io, update_count, "_aml_config_count", text);
+    VW::model_utils::write_model_field(io, last_w, "_aml_config_lastw", text);
+    VW::model_utils::write_model_field(io, last_r, "_aml_config_lastr", text);
+    VW::model_utils::write_model_field(io, config_index, "_aml_config_index", text);
+    VW::model_utils::write_model_field(io, eligible_to_inactivate, "_aml_config_eligible_to_inactivate", text);
+    VW::model_utils::write_model_field(io, chisq, "", text);
+  }
 }
 
 void scored_config::persist(metric_sink& metrics, const std::string& suffix)
@@ -211,10 +223,20 @@ void exclusion_config::save_load(io_buf& model_file, bool read, bool text)
     }
   }
 
-  VW::model_utils::process_model_field(model_file, lease, read, "_aml_lease", text);
-  VW::model_utils::process_model_field(model_file, ips, read, "_aml_ips", text);
-  VW::model_utils::process_model_field(model_file, lower_bound, read, "_aml_lower_bound", text);
-  VW::model_utils::process_model_field(model_file, state, read, "_aml_state", text);
+  if (read)
+  {
+    VW::model_utils::read_model_field(model_file, lease);
+    VW::model_utils::read_model_field(model_file, ips);
+    VW::model_utils::read_model_field(model_file, lower_bound);
+    VW::model_utils::read_model_field(model_file, state);
+  }
+  else
+  {
+    VW::model_utils::write_model_field(model_file, lease, "_aml_lease", text);
+    VW::model_utils::write_model_field(model_file, ips, "_aml_ips", text);
+    VW::model_utils::write_model_field(model_file, lower_bound, "_aml_lower_bound", text);
+    VW::model_utils::write_model_field(model_file, state, "_aml_state", text);
+  }
 }
 
 template <typename CMType>
@@ -517,8 +539,16 @@ void interaction_config_manager::save_load(io_buf& model_file, bool read, bool t
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
 
-  VW::model_utils::process_model_field(model_file, total_learn_count, read, "_aml_cm_count", text);
-  VW::model_utils::process_model_field(model_file, current_champ, read, "_aml_cm_champ", text);
+  if (read)
+  {
+    VW::model_utils::read_model_field(model_file, total_learn_count);
+    VW::model_utils::read_model_field(model_file, current_champ);
+  }
+  else
+  {
+    VW::model_utils::write_model_field(model_file, total_learn_count, "_aml_cm_count", text);
+    VW::model_utils::write_model_field(model_file, current_champ, "_aml_cm_champ", text);
+  }
 
   size_t config_size;
   size_t ns_counter_size;
@@ -735,7 +765,11 @@ template <typename CMType>
 void save_load_aml(automl<CMType>& d, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
-  VW::model_utils::process_model_field(model_file, d.current_state, read, "_aml_state", text);
+  if (read) { VW::model_utils::read_model_field(model_file, d.current_state); }
+  else
+  {
+    VW::model_utils::write_model_field(model_file, d.current_state, "_aml_state", text);
+  }
   d.cm->save_load(model_file, read, text);
 }
 
