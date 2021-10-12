@@ -10,40 +10,74 @@ namespace VW
 {
 namespace model_utils
 {
-size_t process_model_field(
-    io_buf& io, VW::distributionally_robust::Duals& duals, bool read, const std::string&, bool text)
+size_t read_model_field(io_buf& io, VW::distributionally_robust::Duals& duals)
 {
   if (io.num_files() == 0) { return 0; }
   size_t bytes = 0;
-  bytes += process_model_field(io, duals.unbounded, read, "_duals_unbounded", text);
-  bytes += process_model_field(io, duals.kappa, read, "_duals_kappa", text);
-  bytes += process_model_field(io, duals.gamma, read, "_duals_gamma", text);
-  bytes += process_model_field(io, duals.beta, read, "_duals_beta", text);
-  bytes += process_model_field(io, duals.n, read, "_duals_n", text);
+  bytes += read_model_field(io, duals.unbounded);
+  bytes += read_model_field(io, duals.kappa);
+  bytes += read_model_field(io, duals.gamma);
+  bytes += read_model_field(io, duals.beta);
+  bytes += read_model_field(io, duals.n);
   return bytes;
 }
 
-size_t process_model_field(
-    io_buf& io, VW::distributionally_robust::ChiSquared& chisq, bool read, const std::string&, bool text)
+size_t write_model_field(io_buf& io, const VW::distributionally_robust::Duals& duals, const std::string&, bool text)
 {
   if (io.num_files() == 0) { return 0; }
   size_t bytes = 0;
-  bytes += process_model_field(io, chisq.duals.first, read, "_chisq_chi_scored", text);
-  bytes += process_model_field(io, chisq.duals_stale, read, "_chisq_chi_duals_stale", text);
-  bytes += process_model_field(io, chisq.duals.second, read, "", text);
-  bytes += process_model_field(io, chisq.alpha, read, "_chisq_chi_alpha", text);
-  bytes += process_model_field(io, chisq.tau, read, "_chisq_chi_tau", text);
-  bytes += process_model_field(io, chisq.wmin, read, "_chisq_chi_wmin", text);
-  bytes += process_model_field(io, chisq.wmax, read, "_chisq_chi_wmax", text);
-  bytes += process_model_field(io, chisq.rmin, read, "_chisq_chi_rmin", text);
-  bytes += process_model_field(io, chisq.rmax, read, "_chisq_chi_rmax", text);
-  bytes += process_model_field(io, chisq.n, read, "_chisq_chi_n", text);
-  bytes += process_model_field(io, chisq.sumw, read, "_chisq_chi_sumw", text);
-  bytes += process_model_field(io, chisq.sumwsq, read, "_chisq_chi_sumwsq", text);
-  bytes += process_model_field(io, chisq.sumwr, read, "_chisq_chi_sumwr", text);
-  bytes += process_model_field(io, chisq.sumwsqr, read, "_chisq_chi_sumwsqr", text);
-  bytes += process_model_field(io, chisq.sumwsqrsq, read, "_chisq_chi_sumwsqrsq", text);
-  bytes += process_model_field(io, chisq.delta, read, "_chisq_chi_delta", text);
+  bytes += write_model_field(io, duals.unbounded, "_duals_unbounded", text);
+  bytes += write_model_field(io, duals.kappa, "_duals_kappa", text);
+  bytes += write_model_field(io, duals.gamma, "_duals_gamma", text);
+  bytes += write_model_field(io, duals.beta, "_duals_beta", text);
+  bytes += write_model_field(io, duals.n, "_duals_n", text);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, VW::distributionally_robust::ChiSquared& chisq)
+{
+  if (io.num_files() == 0) { return 0; }
+  size_t bytes = 0;
+  bytes += read_model_field(io, chisq.duals.first);
+  bytes += read_model_field(io, chisq.duals_stale);
+  bytes += read_model_field(io, chisq.duals.second);
+  bytes += read_model_field(io, chisq.alpha);
+  bytes += read_model_field(io, chisq.tau);
+  bytes += read_model_field(io, chisq.wmin);
+  bytes += read_model_field(io, chisq.wmax);
+  bytes += read_model_field(io, chisq.rmin);
+  bytes += read_model_field(io, chisq.rmax);
+  bytes += read_model_field(io, chisq.n);
+  bytes += read_model_field(io, chisq.sumw);
+  bytes += read_model_field(io, chisq.sumwsq);
+  bytes += read_model_field(io, chisq.sumwr);
+  bytes += read_model_field(io, chisq.sumwsqr);
+  bytes += read_model_field(io, chisq.sumwsqrsq);
+  bytes += read_model_field(io, chisq.delta);
+  return bytes;
+}
+
+size_t write_model_field(
+    io_buf& io, const VW::distributionally_robust::ChiSquared& chisq, const std::string&, bool text)
+{
+  if (io.num_files() == 0) { return 0; }
+  size_t bytes = 0;
+  bytes += write_model_field(io, chisq.duals.first, "_chisq_chi_scored", text);
+  bytes += write_model_field(io, chisq.duals_stale, "_chisq_chi_duals_stale", text);
+  bytes += write_model_field(io, chisq.duals.second, "", text);
+  bytes += write_model_field(io, chisq.alpha, "_chisq_chi_alpha", text);
+  bytes += write_model_field(io, chisq.tau, "_chisq_chi_tau", text);
+  bytes += write_model_field(io, chisq.wmin, "_chisq_chi_wmin", text);
+  bytes += write_model_field(io, chisq.wmax, "_chisq_chi_wmax", text);
+  bytes += write_model_field(io, chisq.rmin, "_chisq_chi_rmin", text);
+  bytes += write_model_field(io, chisq.rmax, "_chisq_chi_rmax", text);
+  bytes += write_model_field(io, chisq.n, "_chisq_chi_n", text);
+  bytes += write_model_field(io, chisq.sumw, "_chisq_chi_sumw", text);
+  bytes += write_model_field(io, chisq.sumwsq, "_chisq_chi_sumwsq", text);
+  bytes += write_model_field(io, chisq.sumwr, "_chisq_chi_sumwr", text);
+  bytes += write_model_field(io, chisq.sumwsqr, "_chisq_chi_sumwsqr", text);
+  bytes += write_model_field(io, chisq.sumwsqrsq, "_chisq_chi_sumwsqrsq", text);
+  bytes += write_model_field(io, chisq.delta, "_chisq_chi_delta", text);
   return bytes;
 }
 }  // namespace model_utils
@@ -208,10 +242,14 @@ void ChiSquared::save_load(io_buf& model_file, bool read, bool text, const char*
 {
   if (model_file.num_files() == 0) { return; }
 
-#define save_load_field(field)                                                                              \
-  do                                                                                                        \
-  {                                                                                                         \
-    model_utils::process_model_field(model_file, field, read, fmt::format("{}_chisq_" #field, name), text); \
+#define save_load_field(field)                                                                            \
+  do                                                                                                      \
+  {                                                                                                       \
+    if (read) { VW::model_utils::read_model_field(model_file, field); }                                   \
+    else                                                                                                  \
+    {                                                                                                     \
+      VW::model_utils::write_model_field(model_file, field, fmt::format("{}_chisq_" #field, name), text); \
+    }                                                                                                     \
   } while (0)
 
   save_load_field(n);
