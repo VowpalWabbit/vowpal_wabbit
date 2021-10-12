@@ -752,8 +752,8 @@ size_t read_model_field(io_buf& io, VW::automl::interaction_config_manager& cm)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::automl::interaction_config_manager& cm,
-    const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::automl::interaction_config_manager& cm, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, cm.total_learn_count, upstream_name + "_count", text);
@@ -765,7 +765,7 @@ size_t write_model_field(io_buf& io, const VW::automl::interaction_config_manage
   return bytes;
 }
 
-template<typename CMType>
+template <typename CMType>
 size_t read_model_field(io_buf& io, VW::automl::automl<CMType>& aml)
 {
   size_t bytes = 0;
@@ -774,9 +774,8 @@ size_t read_model_field(io_buf& io, VW::automl::automl<CMType>& aml)
   return bytes;
 }
 
-template<typename CMType>
-size_t write_model_field(io_buf& io, const VW::automl::automl<CMType>& aml,
-    const std::string& upstream_name, bool text)
+template <typename CMType>
+size_t write_model_field(io_buf& io, const VW::automl::automl<CMType>& aml, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, aml.current_state, upstream_name + "_state", text);

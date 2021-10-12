@@ -42,8 +42,7 @@ size_t write_text_mode_output(io_buf& io, const T& var, const std::string& upstr
 
   std::string message;
   // If the user has supplied a template string then use that.
-  if (upstream_name.find("{}") != VW::string_view::npos)
-  { message = fmt::format(upstream_name, var); }
+  if (upstream_name.find("{}") != VW::string_view::npos) { message = fmt::format(upstream_name, var); }
   else
   {
     // Use the default template string.
@@ -247,8 +246,7 @@ size_t read_model_field(io_buf& io, std::map<K, V>& map)
 }
 
 template <typename K, typename V>
-size_t write_model_field(
-    io_buf& io, const std::map<K, V>& map, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const std::map<K, V>& map, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   size_t map_size = map.size();

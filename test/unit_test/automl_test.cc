@@ -5,13 +5,13 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
-#  include "test_common.h"
+#include "test_common.h"
 #include "simulator.h"
 #include "reductions_fwd.h"
-#  include "automl.h"
+#include "automl.h"
 #include "metric_sink.h"
 
-#  include <functional>
+#include <functional>
 #include <map>
 
 using simulator::callback_map;

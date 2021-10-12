@@ -180,7 +180,8 @@ size_t read_model_field(io_buf& io, VW::distributionally_robust::Duals& duals)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::distributionally_robust::Duals& duals, const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::distributionally_robust::Duals& duals, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, duals.unbounded, upstream_name + "_unbounded", text);

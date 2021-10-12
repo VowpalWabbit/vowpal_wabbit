@@ -39,7 +39,8 @@ struct discounted_expectation
   double current() const { return n == 0 ? 0 : sum / n; }
 
   friend size_t VW::model_utils::read_model_field(io_buf&, VW::discounted_expectation&);
-  friend size_t VW::model_utils::write_model_field(io_buf&, const VW::discounted_expectation&, const std::string&, bool);
+  friend size_t VW::model_utils::write_model_field(
+      io_buf&, const VW::discounted_expectation&, const std::string&, bool);
 
 private:
   double tau;
@@ -114,7 +115,8 @@ struct baseline_challenger_data
   }
 
   friend size_t VW::model_utils::read_model_field(io_buf&, VW::baseline_challenger_data&);
-  friend size_t VW::model_utils::write_model_field(io_buf&, const VW::baseline_challenger_data&, const std::string&, bool);
+  friend size_t VW::model_utils::write_model_field(
+      io_buf&, const VW::baseline_challenger_data&, const std::string&, bool);
 };
 
 namespace model_utils
@@ -127,8 +129,7 @@ size_t read_model_field(io_buf& io, VW::discounted_expectation& de)
   return bytes;
 }
 
-size_t write_model_field(
-    io_buf& io, const VW::discounted_expectation& de, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::discounted_expectation& de, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, de.sum, upstream_name + "_expectation_sum", text);
@@ -152,8 +153,8 @@ size_t write_model_field(
   bytes += write_model_field(io, challenger.policy_expectation, upstream_name + "_policy", text);
   return bytes;
 }
-} // namespace model_utils
-} // namespace VW
+}  // namespace model_utils
+}  // namespace VW
 
 template <bool is_learn>
 void learn_or_predict(baseline_challenger_data& data, multi_learner& base, multi_ex& examples)
@@ -165,7 +166,10 @@ void save_load(baseline_challenger_data& data, io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, data); }
-  else { VW::model_utils::write_model_field(io, data, "_challenger", text); }
+  else
+  {
+    VW::model_utils::write_model_field(io, data, "_challenger", text);
+  }
 }
 
 void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
