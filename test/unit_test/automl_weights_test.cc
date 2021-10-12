@@ -90,8 +90,10 @@ bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
   }
 
   BOOST_CHECK(VW::math::are_same_rel(expected_w0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL));
-  BOOST_CHECK(VW::math::are_same_rel(expected_w1, weights.strided_index(interaction_index + offset_to_clear), AUTO_ML_FLOAT_TOL));
-  BOOST_CHECK(VW::math::are_same_rel(expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL));
+  BOOST_CHECK(VW::math::are_same_rel(
+      expected_w1, weights.strided_index(interaction_index + offset_to_clear), AUTO_ML_FLOAT_TOL));
+  BOOST_CHECK(VW::math::are_same_rel(
+      expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL));
 
   // all weights of offset 1 will be set to zero
   weights.clear_offset(offset_to_clear, all.wpp);
@@ -108,7 +110,8 @@ bool weights_offset_test(cb_sim&, vw& all, multi_ex& ec)
 
   BOOST_CHECK(VW::math::are_same_rel(expected_w0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL));
   BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index + offset_to_clear));
-  BOOST_CHECK(VW::math::are_same_rel(expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL));
+  BOOST_CHECK(VW::math::are_same_rel(
+      expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL));
 
   // copy from offset 2 to offset 1
   weights.copy_offsets(offset_to_clear + 1, offset_to_clear, all.wpp);
