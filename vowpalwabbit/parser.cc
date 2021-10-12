@@ -946,5 +946,5 @@ namespace VW
 {
 void end_parser(vw& all) { all.parse_thread.join(); }
 
-bool is_ring_example(vw& all, example* ae) { return all.example_parser->example_pool.is_from_pool(ae); }
+bool is_ring_example(const vw& all, const example* ae) { return all.example_parser->example_pool.is_from_pool(ae); }
 }  // namespace VW
