@@ -17,4 +17,6 @@ number of examples = 5
 weighted example sum = 5.000000
 weighted label sum = 5.000000
 average loss = 0.344573
+best constant = 1.000000
+best constant's loss = 0.000000
 total feature number = 9
