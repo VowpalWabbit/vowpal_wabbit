@@ -213,6 +213,14 @@ void vw::finish_example(multi_ex& ec)
 {
   if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
 
+  if (example_parser->lbl_parser.label_type == label_type_t::simple)
+  {
+    for (const auto* ex : ec)
+    {
+      count_label(sd, ex->l.simple.label);
+    }
+  }
+
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
