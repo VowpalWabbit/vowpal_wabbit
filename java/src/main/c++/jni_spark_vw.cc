@@ -486,8 +486,6 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
     ld->label = label;
     auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
     red_fts.weight = weight;
-
-    count_label(all->sd, ld->label);
   }
   catch (...)
   {

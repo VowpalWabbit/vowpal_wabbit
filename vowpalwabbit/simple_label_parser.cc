@@ -27,8 +27,6 @@ char* bufread_simple_label(shared_data* sd, label_data& ld, simple_label_reducti
   c += sizeof(red_features.weight);
   memcpy(&red_features.initial, c, sizeof(red_features.initial));
   c += sizeof(red_features.initial);
-
-  count_label(sd, ld.label);
   return c;
 }
 
@@ -97,7 +95,6 @@ void parse_simple_label(
     default:
       logger::log_error("Error: {0} is too many tokens for a simple label: {1}", words.size(), fmt::join(words, " "));
   }
-  count_label(sd, ld.label);
 }
 
 // clang-format off

@@ -27,7 +27,6 @@ void parser::parse_simple_label(
   l->simple.label = label->label();
   simple_red_features.weight = label->weight();
   simple_red_features.initial = label->initial();
-  count_label(sd, label->label());
 }
 
 void parser::parse_cb_label(polylabel* l, const CBLabel* label)
