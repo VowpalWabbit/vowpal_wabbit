@@ -36,13 +36,13 @@ namespace LEARNER
 void learn_ex(example& ec, vw& all)
 {
   all.learn(ec);
-  as_singleline(all.l)->finish_example(all, ec);
+  all.finish_example(ec);
 }
 
 void learn_multi_ex(multi_ex& ec_seq, vw& all)
 {
   all.learn(ec_seq);
-  as_multiline(all.l)->finish_example(all, ec_seq);
+  all.finish_example(ec_seq);
 }
 
 void end_pass(example& ec, vw& all)
