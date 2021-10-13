@@ -482,7 +482,7 @@ multi_ex unwrap_example_list(py::list& ec)
   return ex_coll;
 }
 
-void my_finish_example(vw_ptr all, example_ptr ec) { as_singleline(all->l)->finish_example(*all, *ec); }
+void my_finish_example(vw_ptr all, example_ptr ec) { all->finish_example(*ec); }
 
 void my_finish_multi_ex(vw_ptr& all, py::list& ec)
 {
@@ -492,7 +492,7 @@ void my_finish_multi_ex(vw_ptr& all, py::list& ec)
 
 void my_learn(vw_ptr all, example_ptr ec)
 {
-  if (ec->test_only) { as_singleline(all->l)->predict(*ec); }
+  if (ec->test_only) { all->predict(*ec); }
   else
   {
     all->learn(*ec.get());
@@ -501,7 +501,7 @@ void my_learn(vw_ptr all, example_ptr ec)
 
 float my_predict(vw_ptr all, example_ptr ec)
 {
-  as_singleline(all->l)->predict(*ec);
+  all->predict(*ec);
   return ec->partial_prediction;
 }
 
