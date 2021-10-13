@@ -4,6 +4,7 @@
 #pragma once
 
 #include "io_buf.h"
+#include "cache.h"
 #include <set>
 #include <map>
 #include <queue>
@@ -115,18 +116,18 @@ size_t write_model_field(io_buf& io, const T& var, const std::string& name_or_re
   return details::check_length_matches(io.bin_write_fixed(data, len), len);
 }
 
-inline size_t read_model_field(io_buf& io, uint32_t& var)
+inline size_t read_model_field(io_buf& io, uint64_t& var)
 {
   size_t bytes = 0;
-  uint64_t v;
+  uint32_t v;
   bytes += read_model_field(io, v);
-  var = static_cast<uint32_t>(v);
+  var = static_cast<uint64_t>(v);
   return bytes;
 }
 
-inline size_t write_model_field(io_buf& io, const uint32_t& var, const std::string& upstream_name, bool text)
+inline size_t write_model_field(io_buf& io, const uint64_t& var, const std::string& upstream_name, bool text)
 {
-  uint64_t v = static_cast<uint64_t>(var);
+  uint32_t v = VW::convert(var);
   return write_model_field(io, v, upstream_name, text);
 }
 
