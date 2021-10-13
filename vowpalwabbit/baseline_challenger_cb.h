@@ -6,6 +6,4 @@
 
 #include "reductions_fwd.h"
 
-struct io_buf;
-
 VW::LEARNER::base_learner* baseline_challenger_cb_setup(VW::setup_base_i&);
