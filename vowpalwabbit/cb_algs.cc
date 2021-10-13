@@ -180,25 +180,24 @@ base_learner* cb_algs_setup(VW::setup_base_i& stack_builder)
 
   size_t problem_multiplier = 2;  // default for DR
   c.cb_type = VW::cb_type_from_string(type_string);
-  switch(c.cb_type)
+  switch (c.cb_type)
   {
-  case VW::cb_type_t::dr:
-    break;
-  case VW::cb_type_t::dm:
-    if (eval) THROW("direct method can not be used for evaluation --- it is biased.");
-    problem_multiplier = 1;
-    break;
-  case VW::cb_type_t::ips:
-    problem_multiplier = 1;
-    break;
-  case VW::cb_type_t::mtr:
-  case VW::cb_type_t::sm:
-    logger::errlog_warn(
-        "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr. Input received: {}", VW::to_string(c.cb_type));
-    c.cb_type = VW::cb_type_t::dr;
-    break;
+    case VW::cb_type_t::dr:
+      break;
+    case VW::cb_type_t::dm:
+      if (eval) THROW("direct method can not be used for evaluation --- it is biased.");
+      problem_multiplier = 1;
+      break;
+    case VW::cb_type_t::ips:
+      problem_multiplier = 1;
+      break;
+    case VW::cb_type_t::mtr:
+    case VW::cb_type_t::sm:
+      logger::errlog_warn("warning: cb_type must be in {'ips','dm','dr'}; resetting to dr. Input received: {}",
+          VW::to_string(c.cb_type));
+      c.cb_type = VW::cb_type_t::dr;
+      break;
   }
-
 
   if (!options.was_supplied("csoaa"))
   {

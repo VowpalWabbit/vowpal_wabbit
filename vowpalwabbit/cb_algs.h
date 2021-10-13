@@ -18,7 +18,8 @@ VW::LEARNER::base_learner* cb_algs_setup(VW::setup_base_i& stack_builder);
 
 namespace VW
 {
-enum class cb_type_t {
+enum class cb_type_t
+{
   dr,
   dm,
   ips,
@@ -38,18 +39,18 @@ inline cb_type_t cb_type_from_string(VW::string_view str)
 
 inline VW::string_view to_string(cb_type_t type)
 {
-  switch(type)
+  switch (type)
   {
-  case cb_type_t::dr:
-    return "dr";
-  case cb_type_t::dm:
-    return "dm";
-  case cb_type_t::ips:
-    return "ips";
-  case cb_type_t::mtr:
-    return "mtr";
-  case cb_type_t::sm:
-    return "sm";
+    case cb_type_t::dr:
+      return "dr";
+    case cb_type_t::dm:
+      return "dm";
+    case cb_type_t::ips:
+      return "ips";
+    case cb_type_t::mtr:
+      return "mtr";
+    case cb_type_t::sm:
+      return "sm";
   }
   THROW("Unknown cb_type passed to to_string");
 }

@@ -144,7 +144,7 @@ void gen_cs_example_dr(
     cb_to_cs& c, example& ec, const CB::label& ld, COST_SENSITIVE::label& cs_ld, float /*clip_p*/ = 0.f)
 {
   // this implements the doubly robust method
-    VW_DBG(ec) << "gen_cs_example_dr:" << is_learn << std::endl;
+  VW_DBG(ec) << "gen_cs_example_dr:" << is_learn << std::endl;
   cs_ld.costs.clear();
   c.pred_scores.costs.clear();
   if (ld.costs.size() == 0)  // a test example

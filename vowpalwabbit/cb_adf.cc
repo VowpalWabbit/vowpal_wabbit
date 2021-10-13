@@ -90,8 +90,8 @@ public:
   void predict(VW::LEARNER::multi_learner& base, multi_ex& ec_seq);
   bool update_statistics(example& ec, multi_ex* ec_seq);
 
-  cb_adf(
-      shared_data* sd, VW::cb_type_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p, bool no_predict)
+  cb_adf(shared_data* sd, VW::cb_type_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p,
+      bool no_predict)
       : _sd(sd)
       , _model_file_ver(model_file_ver)
       , _offset(0)
