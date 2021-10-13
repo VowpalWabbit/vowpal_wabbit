@@ -1,12 +1,13 @@
-#ifndef STATIC_LINK_VW
-#  define BOOST_TEST_DYN_LINK
-#  include <ios>
-#  include <sstream>
-#  include "reductions_fwd.h"
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
+
+#include <ios>
+#include <sstream>
+#include "reductions_fwd.h"
 
 #include "test_common.h"
 
