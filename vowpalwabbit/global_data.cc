@@ -180,10 +180,8 @@ void vw::predict(example& ec)
 
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
-  const auto saved_test_only = ec.test_only;
   ec.test_only = true;
   VW::LEARNER::as_singleline(l)->predict(ec);
-  ec.test_only = saved_test_only;
 }
 
 void vw::predict(multi_ex& ec)
@@ -192,16 +190,9 @@ void vw::predict(multi_ex& ec)
 
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
-  std::vector<bool> saved_test_only;
-  saved_test_only.reserve(ec.size());
-  for (auto& ex : ec)
-  {
-    saved_test_only.push_back(ex->test_only);
-    ex->test_only = true;
-  }
+  for (auto& ex : ec) { ex->test_only = true; }
 
   VW::LEARNER::as_multiline(l)->predict(ec);
-  for (size_t i = 0; i < ec.size(); i++) { ec[i]->test_only = saved_test_only[i]; }
 }
 
 void vw::finish_example(example& ec)
