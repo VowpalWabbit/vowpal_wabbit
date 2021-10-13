@@ -50,17 +50,6 @@ size_t write_text_mode_output(io_buf& io, const T& var, const std::string& upstr
 }
 }  // namespace details
 
-// Declare comlex overloads
-size_t read_model_field(io_buf&, VW::automl::exclusion_config&);
-size_t read_model_field(io_buf&, VW::automl::scored_config&);
-size_t read_model_field(io_buf&, VW::automl::interaction_config_manager&);
-template <typename CMType>
-size_t read_model_field(io_buf&, VW::automl::automl<CMType>&);
-size_t write_model_field(io_buf&, const VW::automl::exclusion_config&, const std::string&, bool);
-size_t write_model_field(io_buf&, const VW::automl::scored_config&, const std::string&, bool);
-size_t write_model_field(io_buf&, const VW::automl::interaction_config_manager&, const std::string&, bool);
-template <typename CMType>
-size_t write_model_field(io_buf&, const VW::automl::automl<CMType>&, const std::string&, bool);
 
 /**
  * @brief This function is the uniform interface reading a variable from the model file. The value must be a POD type.

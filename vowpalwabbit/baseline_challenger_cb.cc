@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "baseline_challenger_cb.h"
+
 #include "action_score.h"
 #include "debug_log.h"
 #include "reductions.h"
@@ -9,10 +11,10 @@
 #include <cfloat>
 
 #include "distributionally_robust.h"
-#include "baseline_challenger_cb.h"
 #include "io/logger.h"
 #include "vw.h"
 #include "example.h"
+#include "model_utils.h"
 
 #include <memory>
 #include <utility>

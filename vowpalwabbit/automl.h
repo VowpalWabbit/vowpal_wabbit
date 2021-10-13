@@ -6,14 +6,10 @@
 #include "rand_state.h"
 #include "reductions_fwd.h"
 #include "distributionally_robust.h"
-#include "constant.h"  // NUM_NAMESPACES
 #include "metric_sink.h"
 #include "action_score.h"
-#include "debug_log.h"
 #include "reductions.h"
 #include "learner.h"
-#include "io/logger.h"
-#include "vw.h"
 #include <map>
 #include <set>
 #include <queue>
@@ -172,4 +168,5 @@ private:
 };
 
 }  // namespace automl
+
 }  // namespace VW

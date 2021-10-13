@@ -1,10 +1,15 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include "distributionally_robust.h"
+
 #include <cmath>
 #include <list>
 #include <type_traits>
 
-#include "distributionally_robust.h"
 #include "vw_math.h"
-// #include "model_utils.h"
+#include "model_utils.h"
 
 namespace VW
 {
