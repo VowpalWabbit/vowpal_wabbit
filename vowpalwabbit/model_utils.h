@@ -179,6 +179,7 @@ size_t read_model_field(io_buf& io, std::vector<T>& vec)
 template <typename T>
 size_t write_model_field(io_buf& io, const std::vector<T>& vec, const std::string& upstream_name, bool text)
 {
+  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for vector."); }
   size_t bytes = 0;
   size_t vec_size = vec.size();
   bytes += write_model_field(io, vec_size, upstream_name + "_size", text);
@@ -199,6 +200,7 @@ size_t read_model_field(io_buf& io, std::pair<F, S>& pair)
 template <typename F, typename S>
 size_t write_model_field(io_buf& io, const std::pair<F, S>& pair, const std::string& upstream_name, bool text)
 {
+  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for pair."); }
   size_t bytes = 0;
   bytes += write_model_field(io, pair.first, upstream_name + "_first", text);
   bytes += write_model_field(io, pair.second, upstream_name + "_second", text);
@@ -223,6 +225,7 @@ size_t read_model_field(io_buf& io, std::priority_queue<T>& pq)
 template <typename T>
 size_t write_model_field(io_buf& io, const std::priority_queue<T>& pq, const std::string& upstream_name, bool text)
 {
+  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for priority_queue."); }
   std::priority_queue<T> pq_cp = pq;
   size_t bytes = 0;
   size_t queue_size = pq_cp.size();
@@ -256,6 +259,7 @@ size_t read_model_field(io_buf& io, std::map<K, V>& map)
 template <typename K, typename V>
 size_t write_model_field(io_buf& io, const std::map<K, V>& map, const std::string& upstream_name, bool text)
 {
+  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for map."); }
   size_t bytes = 0;
   size_t map_size = map.size();
   bytes += write_model_field(io, map_size, upstream_name + "_size", text);
