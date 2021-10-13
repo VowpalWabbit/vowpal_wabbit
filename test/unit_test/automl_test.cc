@@ -18,8 +18,6 @@ using simulator::callback_map;
 using simulator::cb_sim;
 using namespace VW::automl;
 
-constexpr float AUTO_ML_FLOAT_TOL = 0.01f;
-
 namespace aml_test
 {
 void assert_metric(const std::string& metric_name, const size_t value, const VW::metric_sink& metrics)
