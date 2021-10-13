@@ -9,7 +9,7 @@
 #include "io/logger.h"
 #include "vw.h"
 
-// The above definitions must be available from the context of this header as there are 
+// The above definitions must be available from the context of this header as there are
 // vectors etc which contain the above types.
 #include "model_utils.h"
 
@@ -83,7 +83,7 @@ void fail_if_enabled(vw& all, const std::set<std::string>& not_compat)
 }
 
 /*
-void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
+void print_weights_nonzero(vw* all, uint64_t count, dense_parameters& weights)
 {
   for (auto it = weights.begin(); it != weights.end(); ++it)
   {
@@ -96,7 +96,7 @@ void print_weights_nonzero(vw* all, size_t count, dense_parameters& weights)
 
     int type = real_index & (all->wpp - 1);
 
-    size_t off = 0;
+    uint64_t off = 0;
     auto zero = (&(*it))[0 + off];
     if (!cmpf(zero, 0.f))
     {
@@ -160,7 +160,7 @@ void scored_config::reset_stats()
 }
 
 template <typename CMType>
-void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, size_t labelled_action)
+void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
 {
   cm->total_learn_count++;
   switch (current_state)
@@ -187,8 +187,8 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
-interaction_config_manager::interaction_config_manager(size_t global_lease, size_t max_live_configs, uint64_t seed,
-    size_t priority_challengers, priority_func* calc_priority)
+interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs, uint64_t seed,
+    uint64_t priority_challengers, priority_func* calc_priority)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , seed(seed)
@@ -208,7 +208,7 @@ interaction_config_manager::interaction_config_manager(size_t global_lease, size
 // from the corresponding live_slot. This function can be swapped out depending on
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
-void interaction_config_manager::gen_quadratic_interactions(size_t live_slot)
+void interaction_config_manager::gen_quadratic_interactions(uint64_t live_slot)
 {
   auto& exclusions = configs[scores[live_slot].config_index].exclusions;
   auto& interactions = scores[live_slot].live_interactions;
@@ -244,7 +244,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
   // Regenerate interactions if new namespaces are seen
   if (new_ns_seen)
   {
-    for (size_t live_slot = 0; live_slot < scores.size(); ++live_slot) { gen_quadratic_interactions(live_slot); }
+    for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot) { gen_quadratic_interactions(live_slot); }
   }
 }
 
@@ -256,15 +256,15 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
 void interaction_config_manager::config_oracle()
 {
   auto& champ_interactions = scores[current_champ].live_interactions;
-  for (size_t i = 0; i < CONGIGS_PER_CHAMP_CHANGE; ++i)
+  for (uint64_t i = 0; i < CONGIGS_PER_CHAMP_CHANGE; ++i)
   {
-    size_t rand_ind = static_cast<size_t>(random_state.get_and_update_random() * champ_interactions.size());
+    uint64_t rand_ind = static_cast<uint64_t>(random_state.get_and_update_random() * champ_interactions.size());
     namespace_index ns1 = champ_interactions[rand_ind][0];
     namespace_index ns2 = champ_interactions[rand_ind][1];
     std::map<namespace_index, std::set<namespace_index>> new_exclusions(
         configs[scores[current_champ].config_index].exclusions);
     new_exclusions[ns1].insert(ns2);
-    size_t config_index = configs.size();
+    uint64_t config_index = configs.size();
     exclusion_config conf(global_lease);
     conf.exclusions = new_exclusions;
     configs[config_index] = conf;
@@ -282,7 +282,7 @@ bool interaction_config_manager::repopulate_index_queue()
 {
   for (const auto& ind_config : configs)
   {
-    size_t redo_index = ind_config.first;
+    uint64_t redo_index = ind_config.first;
     // Only re-add if not removed and not live
     if (configs[redo_index].state == VW::automl::config_state::New ||
         configs[redo_index].state == VW::automl::config_state::Inactive)
@@ -294,9 +294,9 @@ bool interaction_config_manager::repopulate_index_queue()
   return !index_queue.empty();
 }
 
-bool interaction_config_manager::swap_eligible_to_inactivate(size_t live_slot)
+bool interaction_config_manager::swap_eligible_to_inactivate(uint64_t live_slot)
 {
-  for (size_t other_live_slot = 0; other_live_slot < scores.size(); ++other_live_slot)
+  for (uint64_t other_live_slot = 0; other_live_slot < scores.size(); ++other_live_slot)
   {
     if (!scores[other_live_slot].eligible_to_inactivate && other_live_slot != current_champ &&
         better(configs[scores[live_slot].config_index], configs[scores[other_live_slot].config_index]))
@@ -313,7 +313,7 @@ bool interaction_config_manager::swap_eligible_to_inactivate(size_t live_slot)
 // new configs when the lease runs out.
 void interaction_config_manager::schedule()
 {
-  for (size_t live_slot = 0; live_slot < max_live_configs; ++live_slot)
+  for (uint64_t live_slot = 0; live_slot < max_live_configs; ++live_slot)
   {
     bool need_new_score = scores.size() <= live_slot;
     /*
@@ -347,7 +347,7 @@ void interaction_config_manager::schedule()
       { configs[scores[live_slot].config_index].state = VW::automl::config_state::Inactive; }
       // Set all features of new live config
       scores[live_slot].reset_stats();
-      size_t new_live_config_index = choose();
+      uint64_t new_live_config_index = choose();
       scores[live_slot].config_index = new_live_config_index;
       configs[new_live_config_index].state = VW::automl::config_state::Live;
       // Regenerate interactions each time an exclusion is swapped in
@@ -368,9 +368,9 @@ bool interaction_config_manager::worse(const exclusion_config& challenger, const
   return (champ.lower_bound > challenger.ips) ? false : false;
 }
 
-size_t interaction_config_manager::choose()
+uint64_t interaction_config_manager::choose()
 {
-  size_t ret = index_queue.top().second;
+  uint64_t ret = index_queue.top().second;
   index_queue.pop();
   return ret;
 }
@@ -378,7 +378,7 @@ size_t interaction_config_manager::choose()
 void interaction_config_manager::update_champ()
 {
   // Update ips and lower bound for live configs
-  for (size_t live_slot = 0; live_slot < scores.size(); ++live_slot)
+  for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
   {
     float ips = scores[live_slot].current_ips();
     distributionally_robust::ScoredDual sd = scores[live_slot].chisq.recompute_duals();
@@ -390,7 +390,7 @@ void interaction_config_manager::update_champ()
   bool champ_change = false;
 
   // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
-  for (size_t config_index = 0; config_index < configs.size(); ++config_index)
+  for (uint64_t config_index = 0; config_index < configs.size(); ++config_index)
   {
     if (configs[config_index].state == VW::automl::config_state::New ||
         configs[config_index].state == VW::automl::config_state::Removed ||
@@ -403,7 +403,7 @@ void interaction_config_manager::update_champ()
       if (configs[config_index].state == VW::automl::config_state::Live)
       {
         // Update champ with live_slot of live config
-        for (size_t live_slot = 0; live_slot < scores.size(); ++live_slot)
+        for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
         {
           if (scores[live_slot].config_index == config_index)
           {
@@ -421,8 +421,8 @@ void interaction_config_manager::update_champ()
       else
       {
         float worst_ips = std::numeric_limits<float>::infinity();
-        size_t worst_live_slot = 0;
-        for (size_t live_slot = 0; live_slot < scores.size(); ++live_slot)
+        uint64_t worst_live_slot = 0;
+        for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
         {
           if (configs[scores[live_slot].config_index].ips < worst_ips)
           {
@@ -458,12 +458,12 @@ void interaction_config_manager::persist(metric_sink& metrics)
 {
   metrics.int_metrics_list.emplace_back("test_county", total_learn_count);
   metrics.int_metrics_list.emplace_back("current_champ", current_champ);
-  for (size_t live_slot = 0; live_slot < scores.size(); ++live_slot)
+  for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
   { scores[live_slot].persist(metrics, "_" + std::to_string(live_slot)); }
 }
 
 // This sets up example with correct ineractions vector
-void interaction_config_manager::apply_config(example* ec, size_t live_slot)
+void interaction_config_manager::apply_config(example* ec, uint64_t live_slot)
 {
   if (ec == nullptr) { return; }
   if (live_slot < max_live_configs) { ec->interactions = &(scores[live_slot].live_interactions); }
@@ -478,7 +478,7 @@ void interaction_config_manager::revert_config(example* ec) { ec->interactions =
 template <typename CMType, bool is_explore>
 void predict_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 {
-  size_t champ_live_slot = data.cm->current_champ;
+  uint64_t champ_live_slot = data.cm->current_champ;
   for (example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
   auto restore_guard = VW::scope_exit([&data, &ec] {
@@ -490,9 +490,9 @@ void predict_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 
 // inner loop of learn driven by # MAX_CONFIGS
 template <typename CMType>
-void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, size_t labelled_action)
+void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
 {
-  for (size_t live_slot = 0; live_slot < cm->scores.size(); ++live_slot)
+  for (uint64_t live_slot = 0; live_slot < cm->scores.size(); ++live_slot)
   {
     for (example* ex : ec) { cm->apply_config(ex, live_slot); }
 
@@ -531,7 +531,7 @@ template <typename CMType, bool is_explore>
 void learn_automl(automl<CMType>& data, multi_learner& base, multi_ex& ec)
 {
   CB::cb_class logged{};
-  size_t labelled_action = 0;
+  uint64_t labelled_action = 0;
   const auto it = std::find_if(ec.begin(), ec.end(), [](example* item) { return !item->l.cb.costs.empty(); });
 
   if (it != ec.end())
@@ -554,7 +554,7 @@ template <typename CMType>
 void finish_example(vw& all, automl<CMType>& data, multi_ex& ec)
 {
   {
-    size_t champ_live_slot = data.cm->current_champ;
+    uint64_t champ_live_slot = data.cm->current_champ;
     for (example* ex : ec) { data.cm->apply_config(ex, champ_live_slot); }
 
     auto restore_guard = VW::scope_exit([&data, &ec, &champ_live_slot] {
@@ -582,7 +582,7 @@ void save_load_aml(automl<CMType>& aml, io_buf& io, bool read, bool text)
 // Highest priority will be picked first because of max-PQ implementation, this will
 // be the config with the least exclusion. Note that all configs will run to lease
 // before priorities and lease are reset.
-float calc_priority_least_exclusion(const exclusion_config& config, const std::map<namespace_index, size_t>& ns_counter)
+float calc_priority_least_exclusion(const exclusion_config& config, const std::map<namespace_index, uint64_t>& ns_counter)
 {
   float priority = 0.f;
   for (const auto& ns_pair : config.exclusions) { priority -= ns_counter.at(ns_pair.first); }
@@ -590,7 +590,7 @@ float calc_priority_least_exclusion(const exclusion_config& config, const std::m
 }
 
 // Same as above, returns 0 (includes rest to remove unused variable warning)
-float calc_priority_empty(const exclusion_config& config, const std::map<namespace_index, size_t>& ns_counter)
+float calc_priority_empty(const exclusion_config& config, const std::map<namespace_index, uint64_t>& ns_counter)
 {
   _UNUSED(config);
   _UNUSED(ns_counter);
@@ -602,8 +602,8 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
 
-  size_t global_lease;
-  size_t max_live_configs;
+  uint64_t global_lease;
+  uint64_t max_live_configs;
   std::string cm_type;
   std::string priority_type;
   int priority_challengers;
@@ -646,7 +646,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
   auto cm = VW::make_unique<interaction_config_manager>(
-      global_lease, max_live_configs, all.random_seed, static_cast<size_t>(priority_challengers), calc_priority);
+      global_lease, max_live_configs, all.random_seed, static_cast<uint64_t>(priority_challengers), calc_priority);
   auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
   assert(max_live_configs <= MAX_CONFIGS);
 
@@ -757,7 +757,7 @@ size_t read_model_field(io_buf& io, VW::automl::interaction_config_manager& cm)
   bytes += read_model_field(io, cm.configs);
   bytes += read_model_field(io, cm.scores);
   bytes += read_model_field(io, cm.index_queue);
-  for (size_t live_slot = 0; live_slot < cm.scores.size(); ++live_slot) { cm.gen_quadratic_interactions(live_slot); }
+  for (uint64_t live_slot = 0; live_slot < cm.scores.size(); ++live_slot) { cm.gen_quadratic_interactions(live_slot); }
   return bytes;
 }
 
