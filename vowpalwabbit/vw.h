@@ -78,7 +78,7 @@ void sync_stats(vw& all);
 
 void start_parser(vw& all);
 void end_parser(vw& all);
-bool is_ring_example(vw& all, example* ae);
+bool is_ring_example(const vw& all, const example* ae);
 
 struct primitive_feature_space  // just a helper definition.
 {
