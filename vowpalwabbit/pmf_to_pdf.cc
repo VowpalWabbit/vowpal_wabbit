@@ -42,8 +42,8 @@ void reduction::learn(example& ec)
 
   // going to pass label into tree, so need to used discretized version of bandwidth i.e. tree_bandwidth
   uint32_t b = tree_bandwidth;
-  const uint32_t local_min_value = std::max(0, action_segment_index - static_cast<int>(b) + 1);
-  const uint32_t local_max_value = std::min(num_actions - 1 - b, action_segment_index + b);
+  const uint32_t local_min_value = std::max(0, action_segment_index - static_cast<int>(b));
+  const uint32_t local_max_value = std::min(num_actions - 1, action_segment_index + b);
 
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
 
