@@ -18,58 +18,33 @@ namespace slates
 {
 void default_label(slates::label& v);
 
-#define READ_CACHED_VALUE(DEST, TYPE)                                      \
-  next_read_size = sizeof(TYPE);                                           \
-  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0; \
-  DEST = *(TYPE*)read_ptr;                                                 \
-  read_count += sizeof(TYPE);
-
-#define WRITE_CACHED_VALUE(VALUE, TYPE) \
-  *(TYPE*)c = VALUE;                    \
-  c += sizeof(TYPE);
-
 size_t read_cached_label(shared_data* /*sd*/, slates::label& ld, io_buf& cache)
 {
   // Since read_cached_features doesn't default the label we must do it here.
   default_label(ld);
 
   size_t read_count = 0;
-  char* read_ptr;
-  size_t next_read_size = 0;
+  ld.type = cache.read_value_and_accumulate_size<slates::example_type>("type", read_count);
+  ld.weight = cache.read_value_and_accumulate_size<float>("weight", read_count);
+  ld.labeled = cache.read_value_and_accumulate_size<bool>("labeled", read_count);
+  ld.cost = cache.read_value_and_accumulate_size<float>("cost", read_count);
+  ld.slot_id = cache.read_value_and_accumulate_size<uint32_t>("slot_id", read_count);
 
-  READ_CACHED_VALUE(ld.type, slates::example_type);
-  READ_CACHED_VALUE(ld.weight, float);
-  READ_CACHED_VALUE(ld.labeled, bool);
-  READ_CACHED_VALUE(ld.cost, float);
-  READ_CACHED_VALUE(ld.slot_id, uint32_t);
-
-  uint32_t size_probs = 0;
-  READ_CACHED_VALUE(size_probs, uint32_t);
-
+  auto size_probs = cache.read_value_and_accumulate_size<uint32_t>("size_probs", read_count);
   for (uint32_t i = 0; i < size_probs; i++)
-  {
-    ACTION_SCORE::action_score a_s;
-    READ_CACHED_VALUE(a_s, ACTION_SCORE::action_score);
-    ld.probabilities.push_back(a_s);
-  }
+  { ld.probabilities.push_back(cache.read_value_and_accumulate_size<ACTION_SCORE::action_score>("a_s", read_count)); }
   return read_count;
 }
 
 void cache_label(slates::label& ld, io_buf& cache)
 {
-  char* c;
-  size_t size = sizeof(ld.type) + sizeof(ld.weight) + sizeof(ld.labeled) + sizeof(ld.cost) + sizeof(ld.slot_id) +
-      sizeof(uint32_t)  // Size of probabilities
-      + sizeof(ACTION_SCORE::action_score) * ld.probabilities.size();
-
-  cache.buf_write(c, size);
-  WRITE_CACHED_VALUE(ld.type, slates::example_type);
-  WRITE_CACHED_VALUE(ld.weight, float);
-  WRITE_CACHED_VALUE(ld.labeled, bool);
-  WRITE_CACHED_VALUE(ld.cost, float);
-  WRITE_CACHED_VALUE(VW::convert(ld.slot_id), uint32_t);
-  WRITE_CACHED_VALUE(VW::convert(ld.probabilities.size()), uint32_t);
-  for (const auto& score : ld.probabilities) { WRITE_CACHED_VALUE(score, ACTION_SCORE::action_score); }
+  cache.write_value(ld.type);
+  cache.write_value(ld.weight);
+  cache.write_value(ld.labeled);
+  cache.write_value(ld.cost);
+  cache.write_value(VW::convert(ld.slot_id));
+  cache.write_value(VW::convert(ld.probabilities.size()));
+  for (const auto& score : ld.probabilities) { cache.write_value(score); }
 }
 
 float weight(slates::label& ld) { return ld.weight; }
