@@ -519,7 +519,7 @@ base_learner* cb_adf_setup(VW::setup_base_i& stack_builder)
   {
     cb_type = VW::cb_type_from_string(type_string);
   }
-  catch (const VW::vw_exception& exception)
+  catch (const VW::vw_exception& /*exception*/)
   {
     logger::log_warn(
         "warning: cb_type must be in {'ips','dr','mtr','dm','sm'}; resetting to mtr. Input was: '{}'", type_string);
