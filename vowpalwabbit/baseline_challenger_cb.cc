@@ -28,6 +28,15 @@ namespace logger = VW::io::logger;
 
 namespace VW
 {
+struct discounted_expectation;
+struct baseline_challenger_data;
+namespace model_utils
+{
+size_t read_model_field(io_buf&, VW::discounted_expectation&);
+size_t write_model_field(io_buf&, const VW::discounted_expectation&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::baseline_challenger_data&);
+size_t write_model_field(io_buf&, const VW::baseline_challenger_data&, const std::string&, bool);
+}  // namespace model_utils
 struct discounted_expectation
 {
   discounted_expectation(double tau) : tau(tau), sum(0), n(0) {}

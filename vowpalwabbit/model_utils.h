@@ -50,7 +50,6 @@ size_t write_text_mode_output(io_buf& io, const T& var, const std::string& upstr
 }
 }  // namespace details
 
-
 /**
  * @brief This function is the uniform interface reading a variable from the model file. The value must be a POD type.
  *
