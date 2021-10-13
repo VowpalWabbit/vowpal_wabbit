@@ -126,8 +126,8 @@ struct interaction_config_manager : config_manager
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
-  interaction_config_manager(
-      uint64_t, uint64_t, uint64_t, uint64_t, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&));
+  interaction_config_manager(uint64_t, uint64_t, uint64_t, uint64_t,
+      float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&));
 
   void apply_config(example*, uint64_t);
   void revert_config(example*);

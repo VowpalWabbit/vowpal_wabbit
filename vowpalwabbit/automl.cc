@@ -582,7 +582,8 @@ void save_load_aml(automl<CMType>& aml, io_buf& io, bool read, bool text)
 // Highest priority will be picked first because of max-PQ implementation, this will
 // be the config with the least exclusion. Note that all configs will run to lease
 // before priorities and lease are reset.
-float calc_priority_least_exclusion(const exclusion_config& config, const std::map<namespace_index, uint64_t>& ns_counter)
+float calc_priority_least_exclusion(
+    const exclusion_config& config, const std::map<namespace_index, uint64_t>& ns_counter)
 {
   float priority = 0.f;
   for (const auto& ns_pair : config.exclusions) { priority -= ns_counter.at(ns_pair.first); }
