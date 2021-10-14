@@ -13,15 +13,6 @@
 
 namespace VW
 {
-namespace automl
-{
-struct exclusion_config;
-struct scored_config;
-struct interaction_config_manager;
-template <typename CMType>
-struct automl;
-}  // namespace automl
-
 namespace model_utils
 {
 namespace details
