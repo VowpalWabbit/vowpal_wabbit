@@ -233,10 +233,15 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   new_options.add(make_option("oaa", data->k).keep().necessary().help("One-against-all multiclass with <k> labels"))
       .add(make_option("oaa_subsample", data->num_subsample)
                .help("subsample this number of negative examples when learning"))
-      .add(make_option("probabilities", probabilities).help("predict probabilites of all classes"))
+      .add(make_option("probabilities", probabilities).help("predict probabilities of all classes"))
       .add(make_option("scores", scores).help("output raw scores per class"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+
+  // oaa does logistic link manually for probabilities because the unlinked values are required
+  // in base.update(). This implemenation will provide correct probabilities regardless
+  // of whether --link logistic is included or not.
+  if (probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
 
   if (all.sd->ldict && (data->k != all.sd->ldict->getK()))
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
@@ -282,8 +287,11 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
     {
       auto loss_function_type = all.loss->getType();
       if (loss_function_type != "logistic")
-        *(all.trace_message) << "WARNING: --probabilities should be used only with --loss_function=logistic"
-                             << std::endl;
+      {
+        logger::log_error(
+            "WARNING: --probabilities should be used only with --loss_function=logistic, currently using: {}",
+            loss_function_type);
+      }
       // the three boolean template parameters are: is_learn, print_all and scores
       learn_ptr = learn<!PRINT_ALL, SCORES, PROBABILITIES>;
       pred_ptr = predict<!PRINT_ALL, SCORES, PROBABILITIES>;

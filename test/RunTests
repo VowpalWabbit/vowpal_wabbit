@@ -2520,4 +2520,24 @@ train-sets/ref/slates_simple_w_interactions.stderr
     train-sets/ref/cbe_adf_dsjson_metrics_.stderr
     test-sets/ref/metrics_.json
 
+# Test 352: check multilabel_oaa probabilities
+{VW} --multilabel_oaa 10 -d train-sets/multilabel -p multilabel_probs.predict --loss_function=logistic --probabilities
+    train-sets/ref/multilabel_probs.stderr
+    pred-sets/ref/multilabel_probs.predict
+
+# Test 353: check multilabel_oaa probabilities same as when manually specifying link
+{VW} --multilabel_oaa 10 -d train-sets/multilabel -p multilabel_probs.predict --loss_function=logistic --probabilities --link logistic
+    train-sets/ref/multilabel_probs.stderr
+    pred-sets/ref/multilabel_probs.predict
+
+# Test 354: check oaa probabilities same as when manually specifying link
+{VW} -d train-sets/probabilities.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_probabilities.predict --link logistic
+   train-sets/ref/oaa_probabilities.stderr
+   pred-sets/ref/oaa_probabilities.predict
+
+# Test 355: check csoaa_ldf probabilities same as when manually specifying link
+{VW} -d train-sets/cs_test.ldf --probabilities --csoaa_ldf=mc --loss_function=logistic -p csoaa_ldf_probabilities.predict --link logistic
+   train-sets/ref/csoaa_ldf_probabilities.stderr
+   pred-sets/ref/csoaa_ldf_probabilities.predict
+
 # Do not delete this line or the empty line above it
