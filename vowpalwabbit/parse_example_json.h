@@ -1851,10 +1851,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
       {
         // APS requires this metric for CB (baseline action is 1)
         if (interaction.actions[0] == 1)
-        {
-          all->example_parser->metrics->DsjsonSumCostOriginalBaseline +=
-            interaction.originalLabelCost;
-        }
+        { all->example_parser->metrics->DsjsonSumCostOriginalBaseline += interaction.originalLabelCost; }
 
         if (!interaction.baseline_actions.empty())
         {
