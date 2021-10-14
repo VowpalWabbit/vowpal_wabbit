@@ -16,7 +16,7 @@ struct multi_oaa
 {
   size_t k = 0;
   bool probabilities = false;
-  std::string link;
+  std::string link = "";
 };
 
 template <bool is_learn>
@@ -55,13 +55,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, example& 
           "label {0} is not in {{0,{1}}} This won't work right.", multilabels.label_v[multilabel_index], o.k - 1);
     }
   }
-  if (o.probabilities)
-  {
-    assert(ec.pred.scalars.size() == o.k);
-    float sum = std::accumulate(ec.pred.scalars.begin(), ec.pred.scalars.end(), 0.f);
-    for (size_t i = 0; i < o.k; ++i) { ec.pred.scalars[i] *= (static_cast<float>(preds.label_v.size()) / sum); }
-  }
-  else
+  if (!o.probabilities)
   {
     ec.pred.multilabels = preds;
     ec.l.multilabels = multilabels;
@@ -113,8 +107,11 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
   {
     // Unlike oaa and csoaa_ldf (which always remove --logistic link and apply logic manually for probabilities),
     // multilabel_oaa will always add logistic link and apply logic in base (scorer) reduction
-    options.replace("link", "logistic");
-    data->link = "logistic";
+    if (data->link != "logistic")
+    {
+      options.replace("link", "logistic");
+      data->link = "logistic";
+    }
     pred_type = prediction_type_t::scalars;
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
