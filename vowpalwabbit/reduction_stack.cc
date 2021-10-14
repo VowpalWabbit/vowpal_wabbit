@@ -94,8 +94,7 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
       {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"},
-      {generate_interactions_setup, "generate_interactions"},
-      {VW::count_label_setup, "count_label"}};
+      {generate_interactions_setup, "generate_interactions"}, {VW::count_label_setup, "count_label"}};
 
   auto name_extractor = VW::config::options_name_extractor();
   vw dummy_all;

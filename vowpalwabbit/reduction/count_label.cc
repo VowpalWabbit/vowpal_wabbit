@@ -6,7 +6,6 @@
 #include "global_data.h"
 #include "learner.h"
 #include "memory.h"
-#include "options.h"
 #include "vw.h"
 #include "future_compat.h"
 #include "best_constant.h"
@@ -14,8 +13,9 @@
 struct reduction_data
 {
   shared_data* _sd;
+  VW::LEARNER::base_learner* _base;
 
-  explicit reduction_data(shared_data* sd) : _sd(sd) {}
+  explicit reduction_data(shared_data* sd, VW::LEARNER::base_learner* base) : _sd(sd), _base(base) {}
 };
 
 template <bool is_learn>
@@ -42,6 +42,16 @@ void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, m
   }
 }
 
+// This reduction must delegate finish to the one it is above as this is just a utility counter.
+void finish_example_multi(vw& all, reduction_data& data, multi_ex& ec)
+{
+  VW::LEARNER::as_multiline(data._base)->finish_example(all, ec);
+}
+void finish_example_single(vw& all, reduction_data& data, example& ec)
+{
+  VW::LEARNER::as_singleline(data._base)->finish_example(all, ec);
+}
+
 namespace VW
 {
 VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder)
@@ -59,21 +69,25 @@ VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder)
   // constructed but it works because we aren't part of it
   if (all->example_parser->lbl_parser.label_type != label_type_t::simple) { return base; }
 
-  auto data = VW::make_unique<reduction_data>(all->sd);
+  auto data = VW::make_unique<reduction_data>(all->sd, base);
   if (base->is_multiline)
   {
     auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base),
         count_label_multi<true>, count_label_multi<false>, stack_builder.get_setupfn_name(count_label_setup))
+                        .set_learn_returns_prediction(base->learn_returns_prediction)
                         .set_prediction_type(base->pred_type)
                         .set_label_type(label_type_t::simple)
+                        .set_finish_example(finish_example_multi)
                         .build();
     return VW::LEARNER::make_base(*learner);
   }
 
   auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_singleline(base),
       count_label_single<true>, count_label_single<false>, stack_builder.get_setupfn_name(count_label_setup))
+                      .set_learn_returns_prediction(base->learn_returns_prediction)
                       .set_prediction_type(base->pred_type)
                       .set_label_type(label_type_t::simple)
+                      .set_finish_example(finish_example_single)
                       .build();
   return VW::LEARNER::make_base(*learner);
 }
