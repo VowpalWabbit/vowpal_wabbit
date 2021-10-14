@@ -1847,7 +1847,6 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
       // the _outcomes node (for CCB)
       all->example_parser->metrics->DsjsonSumCostOriginal += interaction.originalLabelCost;
       all->example_parser->metrics->DsjsonSumCostOriginalFirstSlot += interaction.originalLabelCostFirstSlot;      
-
       if (!interaction.actions.empty())
       {
         // APS requires this metric for CB (baseline action is 1)
