@@ -120,7 +120,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(
     all->learn(ex_coll);
 
     // as this is not a ring-based example it is not freed
-    all->finish_example(ex_coll);
+    as_multiline(all->l)->finish_example(*all, ex_coll);
 
     // prediction is in the first example
     return getJavaPrediction(env, all, ex_coll[0]);
@@ -145,7 +145,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict
     all->predict(ex_coll);
 
     // as this is not a ring-based example it is not freed
-    all->finish_example(ex_coll);
+    as_multiline(all->l)->finish_example(*all, ex_coll);
 
     // prediction is in the first example
     return getJavaPrediction(env, all, ex_coll[0]);
@@ -486,6 +486,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
     ld->label = label;
     auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
     red_fts.weight = weight;
+
+    count_label(all->sd, ld->label);
   }
   catch (...)
   {
@@ -570,7 +572,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_learn(JNI
     all->learn(*ex);
 
     // as this is not a ring-based example it is not free'd
-    all->finish_example(*ex);
+    VW::LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
   }
   catch (...)
   {
@@ -589,7 +591,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_predic
     all->predict(*ex);
 
     // as this is not a ring-based example it is not free'd
-    all->finish_example(*ex);
+    VW::LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
 
     return getJavaPrediction(env, all, ex);
   }

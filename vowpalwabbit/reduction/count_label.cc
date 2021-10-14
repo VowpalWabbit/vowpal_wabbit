@@ -1,0 +1,80 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include "example.h"
+#include "global_data.h"
+#include "learner.h"
+#include "memory.h"
+#include "options.h"
+#include "vw.h"
+#include "future_compat.h"
+#include "best_constant.h"
+
+struct reduction_data
+{
+  shared_data* _sd;
+
+  explicit reduction_data(shared_data* sd) : _sd(sd) {}
+};
+
+template <bool is_learn>
+void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base, example& ec)
+{
+  count_label(data._sd, ec.l.simple.label);
+
+  if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec); }
+  else
+  {
+    base.predict(ec);
+  }
+}
+
+template <bool is_learn>
+void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, multi_ex& ec_seq)
+{
+  for (const auto* ex : ec_seq) { count_label(data._sd, ex->l.simple.label); }
+
+  if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec_seq); }
+  else
+  {
+    base.predict(ec_seq);
+  }
+}
+
+namespace VW
+{
+VW::LEARNER::base_learner* count_label_setup(VW::setup_base_i& stack_builder)
+{
+  auto* all = stack_builder.get_all_pointer();
+
+  auto* base = stack_builder.setup_base_learner();
+
+  // When called to determine the name base will be nullptr and other `all` state will be nullptr.
+  if (base == nullptr) { return nullptr; }
+
+  // TODO use field on base when that is available. In most reductions we would
+  // return nullptr if the reduction is not active. However, in this reduction we
+  // have already constructed the base. So we must return what we've already
+  // constructed but it works because we aren't part of it
+  if (all->example_parser->lbl_parser.label_type != label_type_t::simple) { return base; }
+
+  auto data = VW::make_unique<reduction_data>(all->sd);
+  if (base->is_multiline)
+  {
+    auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base),
+        count_label_multi<true>, count_label_multi<false>, stack_builder.get_setupfn_name(count_label_setup))
+                        .set_prediction_type(base->pred_type)
+                        .set_label_type(label_type_t::simple)
+                        .build();
+    return VW::LEARNER::make_base(*learner);
+  }
+
+  auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_singleline(base),
+      count_label_single<true>, count_label_single<false>, stack_builder.get_setupfn_name(count_label_setup))
+                      .set_prediction_type(base->pred_type)
+                      .set_label_type(label_type_t::simple)
+                      .build();
+  return VW::LEARNER::make_base(*learner);
+}
+}  // namespace VW

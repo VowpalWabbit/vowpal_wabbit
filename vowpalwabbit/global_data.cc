@@ -15,7 +15,6 @@
 #include "vw_exception.h"
 #include "future_compat.h"
 #include "vw_allreduce.h"
-#include "best_constant.h"
 #include "named_labels.h"
 #include "shared_data.h"
 #include "reduction_stack.h"
@@ -199,24 +198,12 @@ void vw::finish_example(example& ec)
 {
   if (l->is_multiline) THROW("This reduction does not support single-line examples.");
 
-  // This operation used to be done in the label parsing code but is only used
-  // in reporting. It must be done for any problem where the label type is
-  // simple. Many reductions which use simple labels do different reporting.
-  // Ideally, it would all use a common pipeline and this could go there but
-  // that is not that case.
-  if (example_parser->lbl_parser.label_type == label_type_t::simple) { count_label(sd, ec.l.simple.label); }
-
   VW::LEARNER::as_singleline(l)->finish_example(*this, ec);
 }
 
 void vw::finish_example(multi_ex& ec)
 {
   if (!l->is_multiline) THROW("This reduction does not support multi-line example.");
-
-  if (example_parser->lbl_parser.label_type == label_type_t::simple)
-  {
-    for (const auto* ex : ec) { count_label(sd, ex->l.simple.label); }
-  }
 
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
