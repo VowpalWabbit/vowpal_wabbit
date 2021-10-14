@@ -1845,17 +1845,24 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
       // the _outcomes node (for CCB)
       all->example_parser->metrics->DsjsonSumCostOriginal += interaction.originalLabelCost;
       all->example_parser->metrics->DsjsonSumCostOriginalFirstSlot += interaction.originalLabelCostFirstSlot;
-      if (!interaction.actions.empty() && !interaction.baseline_actions.empty())
+      if (!interaction.actions.empty())
       {
-        if (interaction.actions[0] == interaction.baseline_actions[0])
+        // APS requires this metric for CB (baseline action is 1)
+        if (interaction.actions[0] == 1)
+        { all->example_parser->metrics->DsjsonSumCostOriginalBaseline += interaction.originalLabelCost; }
+
+        if (!interaction.baseline_actions.empty())
         {
-          all->example_parser->metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot++;
-          all->example_parser->metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot +=
-              interaction.originalLabelCostFirstSlot;
-        }
-        else
-        {
-          all->example_parser->metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot++;
+          if (interaction.actions[0] == interaction.baseline_actions[0])
+          {
+            all->example_parser->metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot++;
+            all->example_parser->metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot +=
+                interaction.originalLabelCostFirstSlot;
+          }
+          else
+          {
+            all->example_parser->metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot++;
+          }
         }
       }
     }
