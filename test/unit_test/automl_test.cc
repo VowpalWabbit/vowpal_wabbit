@@ -2,10 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#ifndef STATIC_LINK_VW
-#  define BOOST_TEST_DYN_LINK
-#endif
-
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
@@ -21,8 +17,6 @@
 using simulator::callback_map;
 using simulator::cb_sim;
 using namespace VW::automl;
-
-constexpr float AUTO_ML_FLOAT_TOL = 0.01f;
 
 namespace aml_test
 {
