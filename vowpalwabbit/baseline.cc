@@ -29,7 +29,7 @@ void reset_baseline_disabled(example* ec)
   if (it != ec->indices.end()) { ec->indices.erase(it); }
 }
 
-bool baseline_enabled(example* ec)
+bool baseline_enabled(const example* ec)
 {
   const auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
   return it != ec->indices.end();

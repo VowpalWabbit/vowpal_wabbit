@@ -367,7 +367,7 @@ base_learner* cb_explore_setup(VW::setup_base_i& stack_builder)
 
   if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
-  data->cbcs.cb_type = CB_TYPE_DR;
+  data->cbcs.cb_type = VW::cb_type_t::dr;
   data->model_file_version = all.model_file_ver;
 
   single_learner* base = as_singleline(stack_builder.setup_base_learner());
