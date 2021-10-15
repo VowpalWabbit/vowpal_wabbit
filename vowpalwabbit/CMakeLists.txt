@@ -227,6 +227,7 @@ set(vw_all_headers
   label_type.h
   cb_type.h
   prediction_type.h
+  count_label.h
 )
 
 if(BUILD_FLATBUFFERS)
@@ -371,6 +372,7 @@ set(vw_all_sources
   label_type.cc
   cb_type.cc
   prediction_type.cc
+  count_label.cc
 )
 
 if(BUILD_FLATBUFFERS)

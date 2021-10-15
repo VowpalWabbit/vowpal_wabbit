@@ -12,6 +12,7 @@
 #include "best_constant.h"
 #include "vw_string_view.h"
 #include "example.h"
+#include "vw.h"
 #include "vw_string_view_fmt.h"
 
 #include "io/logger.h"

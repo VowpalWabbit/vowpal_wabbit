@@ -4,6 +4,8 @@
 
 #include "best_constant.h"
 
+#include "loss_functions.h"
+
 #include <cmath>
 
 bool get_best_constant(loss_function* loss_func, shared_data* sd, float& best_constant, float& best_constant_loss)

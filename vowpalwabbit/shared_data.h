@@ -8,12 +8,13 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <cfloat>
 
 #include "named_labels.h"
 
 struct shared_data
 {
-  shared_data();
+  shared_data() = default;
   ~shared_data() = default;
   shared_data(const shared_data& other);
   shared_data& operator=(const shared_data& other);
@@ -55,9 +56,9 @@ struct shared_data
   double multiclass_log_loss = 0.0;
   double holdout_multiclass_log_loss = 0.0;
 
-  std::atomic<bool> is_more_than_two_labels_observed;
-  std::atomic<float> first_observed_label;
-  std::atomic<float> second_observed_label;
+  bool is_more_than_two_labels_observed = false;
+  float first_observed_label = FLT_MAX;
+  float second_observed_label = FLT_MAX;
 
   // Column width, precision constants:
   static constexpr int col_avg_loss = 8;

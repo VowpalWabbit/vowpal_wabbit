@@ -253,6 +253,7 @@
     <ClInclude Include="rand48.h" />
     <ClInclude Include="recall_tree.h" />
     <ClInclude Include="reduction_features.h" />
+    <ClInclude Include="count_label.h" />
     <ClInclude Include="sample_pdf.h" />
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search_dep_parser.h" />
@@ -410,6 +411,7 @@
     <ClCompile Include="prob_dist_cont.cc" />
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="recall_tree.cc" />
+    <ClCompile Include="count_label.cc" />
     <ClCompile Include="sample_pdf.cc" />
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="search_dep_parser.cc" />
