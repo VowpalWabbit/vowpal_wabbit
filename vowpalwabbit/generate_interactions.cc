@@ -166,9 +166,7 @@ VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_b
   // ccb_explore_adf adds a wildcard post setup and so this reduction must be turned on.
   if (!(interactions_spec_contains_wildcards || interactions_spec_contains_extent_wildcards ||
           options.was_supplied("ccb_explore_adf")))
-  {
-    return nullptr;
-  }
+  { return nullptr; }
 
   using learn_pred_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, example&);
   using multipredict_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, example&,
