@@ -276,13 +276,14 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict_or_learn<false, false, false>;
   }
 
-  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr, stack_builder.get_setupfn_name(mwt_setup) + name_addition)
-      .set_learn_returns_prediction(true)
-      .set_prediction_type(prediction_type_t::scalars)
-      .set_label_type(label_type_t::cb)
-      .set_save_load(save_load)
-      .set_finish_example(finish_example)
-      .build();
+  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
+      stack_builder.get_setupfn_name(mwt_setup) + name_addition)
+                .set_learn_returns_prediction(true)
+                .set_prediction_type(prediction_type_t::scalars)
+                .set_label_type(label_type_t::cb)
+                .set_save_load(save_load)
+                .set_finish_example(finish_example)
+                .build();
 
   all.example_parser->lbl_parser = CB::cb_label;
   return make_base(*l);

@@ -543,11 +543,12 @@ base_learner* OjaNewton_setup(VW::setup_base_i& stack_builder)
 
   all.weights.stride_shift(static_cast<uint32_t>(ceil(log2(ON->m + 2))));
 
-  auto* l = make_base_learner(std::move(ON), learn, predict, stack_builder.get_setupfn_name(OjaNewton_setup), prediction_type_t::scalar, label_type_t::simple)
-    .set_params_per_weight(all.weights.stride())
-    .set_save_load(save_load)
-    .set_finish_example(keep_example)
-    .build();
+  auto* l = make_base_learner(std::move(ON), learn, predict, stack_builder.get_setupfn_name(OjaNewton_setup),
+      prediction_type_t::scalar, label_type_t::simple)
+                .set_params_per_weight(all.weights.stride())
+                .set_save_load(save_load)
+                .set_finish_example(keep_example)
+                .build();
 
   return make_base(*l);
 }

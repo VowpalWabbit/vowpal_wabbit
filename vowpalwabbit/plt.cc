@@ -384,15 +384,16 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict<true>;
   }
 
-  auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr, stack_builder.get_setupfn_name(plt_setup) + name_addition)
-      .set_params_per_weight(ws)
-      .set_prediction_type(prediction_type_t::multilabels)
-      .set_label_type(label_type_t::multilabel)
-      .set_learn_returns_prediction(true)
-      .set_finish_example(finish_example)
-      .set_finish(finish)
-      .set_save_load(save_load_tree)
-      .build();
+  auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
+      stack_builder.get_setupfn_name(plt_setup) + name_addition)
+                .set_params_per_weight(ws)
+                .set_prediction_type(prediction_type_t::multilabels)
+                .set_label_type(label_type_t::multilabel)
+                .set_learn_returns_prediction(true)
+                .set_finish_example(finish_example)
+                .set_finish(finish)
+                .set_save_load(save_load_tree)
+                .build();
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
 

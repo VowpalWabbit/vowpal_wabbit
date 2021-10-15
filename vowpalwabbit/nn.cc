@@ -463,15 +463,16 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
   size_t ws = n->k + 1;
   auto* multipredict_f = (nv.multitask) ? multipredict : nullptr;
 
-  auto* l = make_reduction_learner(std::move(n), base, predict_or_learn_multi<true, true>, predict_or_learn_multi<false, true>, stack_builder.get_setupfn_name(nn_setup))
-      .set_params_per_weight(ws)
-      .set_learn_returns_prediction(true)
-      .set_multipredict(multipredict_f)
-      .set_prediction_type(prediction_type_t::scalar)
-      .set_label_type(label_type_t::simple)
-      .set_finish_example(finish_example)
-      .set_end_pass(end_pass)
-      .build();
+  auto* l = make_reduction_learner(std::move(n), base, predict_or_learn_multi<true, true>,
+      predict_or_learn_multi<false, true>, stack_builder.get_setupfn_name(nn_setup))
+                .set_params_per_weight(ws)
+                .set_learn_returns_prediction(true)
+                .set_multipredict(multipredict_f)
+                .set_prediction_type(prediction_type_t::scalar)
+                .set_label_type(label_type_t::simple)
+                .set_finish_example(finish_example)
+                .set_end_pass(end_pass)
+                .build();
 
   return make_base(*l);
 }

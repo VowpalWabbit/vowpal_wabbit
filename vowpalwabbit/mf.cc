@@ -207,10 +207,11 @@ base_learner* mf_setup(VW::setup_base_i& stack_builder)
 
   size_t ws = 2 * data->rank + 1;
 
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn, predict<false>, stack_builder.get_setupfn_name(mf_setup))
-      .set_params_per_weight(ws)
-      .set_prediction_type(prediction_type_t::scalar)
-      .build();
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn,
+      predict<false>, stack_builder.get_setupfn_name(mf_setup))
+                .set_params_per_weight(ws)
+                .set_prediction_type(prediction_type_t::scalar)
+                .build();
 
   return make_base(*l);
 }

@@ -432,13 +432,14 @@ VW::LEARNER::base_learner* boosting_setup(VW::setup_base_i& stack_builder)
     THROW("Unrecognized boosting algorithm: \'" << data->alg << "\' Bailing!");
   }
 
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)
-      .set_params_per_weight(ws)
-      .set_prediction_type(prediction_type_t::scalar)
-      .set_label_type(label_type_t::simple)
-      .set_save_load(save_load_fn)
-      .set_finish_example(return_example)
-      .build();
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
+      pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)
+                .set_params_per_weight(ws)
+                .set_prediction_type(prediction_type_t::scalar)
+                .set_label_type(label_type_t::simple)
+                .set_save_load(save_load_fn)
+                .set_finish_example(return_example)
+                .build();
 
   return make_base(*l);
 }
