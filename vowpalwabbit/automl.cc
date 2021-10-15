@@ -8,9 +8,6 @@
 #include "debug_log.h"
 #include "io/logger.h"
 #include "vw.h"
-
-// The above definitions must be available from the context of this header as there are
-// vectors etc which contain the above types.
 #include "model_utils.h"
 
 #include <cfloat>
