@@ -27,4 +27,5 @@ enum class label_type_t : uint32_t
 string_view to_string(label_type_t);
 }  // namespace VW
 
-using label_type_t VW_DEPRECATED("Global namespace label_type_t is deprecated. Use VW::label_type_t.") = VW::label_type_t;
+using label_type_t VW_DEPRECATED(
+    "Global namespace label_type_t is deprecated. Use VW::label_type_t.") = VW::label_type_t;

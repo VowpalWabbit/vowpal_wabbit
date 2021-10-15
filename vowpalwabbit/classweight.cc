@@ -98,12 +98,13 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
 
   VW::LEARNER::learner<classweights, example>* ret;
   if (base->pred_type == VW::prediction_type_t::scalar)
-    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, VW::prediction_type_t::scalar>,
-        &predict_or_learn<false, VW::prediction_type_t::scalar>,
+    ret = &VW::LEARNER::init_learner<classweights>(cweights, base,
+        &predict_or_learn<true, VW::prediction_type_t::scalar>, &predict_or_learn<false, VW::prediction_type_t::scalar>,
         stack_builder.get_setupfn_name(classweight_setup) + "-scalar");
   else if (base->pred_type == VW::prediction_type_t::multiclass)
     ret = &VW::LEARNER::init_learner<classweights>(cweights, base,
-        &predict_or_learn<true, VW::prediction_type_t::multiclass>, &predict_or_learn<false, VW::prediction_type_t::multiclass>,
+        &predict_or_learn<true, VW::prediction_type_t::multiclass>,
+        &predict_or_learn<false, VW::prediction_type_t::multiclass>,
         stack_builder.get_setupfn_name(classweight_setup) + "-multi");
   else
     THROW("--classweight not implemented for this type of prediction");

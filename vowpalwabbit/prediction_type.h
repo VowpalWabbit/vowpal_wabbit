@@ -28,8 +28,9 @@ enum class prediction_type_t : uint32_t
 string_view to_string(prediction_type_t);
 }  // namespace VW
 
-using prediction_type_t VW_DEPRECATED("Global namespace prediction_type_t is deprecated. Use VW::label_type_t.") = VW::prediction_type_t;
+using prediction_type_t VW_DEPRECATED(
+    "Global namespace prediction_type_t is deprecated. Use VW::label_type_t.") = VW::prediction_type_t;
 
-VW_DEPRECATED("Global namespace to_string(VW::prediction_type_t) is deprecated. Use VW::to_string(VW::prediction_type_t)")
+VW_DEPRECATED(
+    "Global namespace to_string(VW::prediction_type_t) is deprecated. Use VW::to_string(VW::prediction_type_t)")
 VW::string_view to_string(VW::prediction_type_t prediction_type);
-

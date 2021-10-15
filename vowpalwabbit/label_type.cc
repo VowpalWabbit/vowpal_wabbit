@@ -28,7 +28,8 @@ VW::string_view to_string(VW::label_type_t label_type)
   }
 
   // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`
-  // The following is required by the compiler, otherwise it things control can reach the end of this function without returning.
+  // The following is required by the compiler, otherwise it things control can reach the end of this function without
+  // returning.
   assert(false);
   return "unknown label type enum";
 }

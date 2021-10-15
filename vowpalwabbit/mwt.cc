@@ -260,8 +260,8 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
           stack_builder.get_setupfn_name(mwt_setup) + "-eval", true);
   else
     l = &init_learner(c, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<false, false, true>,
-        predict_or_learn<false, false, false>, 1, VW::prediction_type_t::scalars, stack_builder.get_setupfn_name(mwt_setup),
-        true);
+        predict_or_learn<false, false, false>, 1, VW::prediction_type_t::scalars,
+        stack_builder.get_setupfn_name(mwt_setup), true);
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);

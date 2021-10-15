@@ -31,12 +31,10 @@ VW::string_view VW::to_string(prediction_type_t prediction_type)
   }
 
   // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`
-  // The following is required by the compiler, otherwise it things control can reach the end of this function without returning.
+  // The following is required by the compiler, otherwise it things control can reach the end of this function without
+  // returning.
   assert(false);
   return "unknown prediction type enum";
 }
 
-VW::string_view to_string(VW::prediction_type_t prediction_type)
-{
-  return VW::to_string(prediction_type);
-}
+VW::string_view to_string(VW::prediction_type_t prediction_type) { return VW::to_string(prediction_type); }
