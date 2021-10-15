@@ -278,11 +278,11 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   void (*learn_ptr)(oaa&, VW::LEARNER::single_learner&, example&);
   void (*pred_ptr)(oaa&, LEARNER::single_learner&, example&);
   std::string name_addition;
-  prediction_type_t pred_type;
+  VW::prediction_type_t pred_type;
   void (*finish_ptr)(vw&, oaa&, example&);
   if (probabilities || scores)
   {
-    pred_type = prediction_type_t::scalars;
+    pred_type = VW::prediction_type_t::scalars;
     if (probabilities)
     {
       auto loss_function_type = all.loss->getType();
@@ -309,7 +309,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   }
   else
   {
-    pred_type = prediction_type_t::multiclass;
+    pred_type = VW::prediction_type_t::multiclass;
     finish_ptr = MULTICLASS::finish_example<oaa>;
     if (all.raw_prediction != nullptr)
     {
@@ -336,7 +336,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
                .set_params_per_weight(k_value)
-               .set_label_type(label_type_t::multiclass)
+               .set_label_type(VW::label_type_t::multiclass)
                .set_prediction_type(pred_type)
                .set_finish_example(finish_ptr)
                .build();

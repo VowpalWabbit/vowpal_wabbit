@@ -100,7 +100,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
   std::string name_addition;
-  prediction_type_t pred_type;
+  VW::prediction_type_t pred_type;
   size_t ws = data->k;
 
   if (data->probabilities)
@@ -112,7 +112,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
       options.replace("link", "logistic");
       data->link = "logistic";
     }
-    pred_type = prediction_type_t::scalars;
+    pred_type = VW::prediction_type_t::scalars;
     auto loss_function_type = all.loss->getType();
     if (loss_function_type != "logistic")
       logger::log_error(
@@ -124,7 +124,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
   else
   {
     name_addition = "";
-    pred_type = prediction_type_t::multilabels;
+    pred_type = VW::prediction_type_t::multilabels;
   }
 
   auto* l =
@@ -132,7 +132,7 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
           predict_or_learn<false>, stack_builder.get_setupfn_name(multilabel_oaa_setup) + name_addition)
           .set_params_per_weight(ws)
           .set_learn_returns_prediction(true)
-          .set_label_type(label_type_t::multilabel)
+          .set_label_type(VW::label_type_t::multilabel)
           .set_prediction_type(pred_type)
           .set_finish_example(finish_example)
           .build();

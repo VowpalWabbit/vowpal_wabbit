@@ -134,8 +134,8 @@ LEARNER::base_learner* cb_explore_pdf_setup(VW::setup_base_i& stack_builder)
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cb_explore_pdf_setup))
-                .set_prediction_type(prediction_type_t::pdf)
-                .set_label_type(label_type_t::cb)
+                .set_prediction_type(VW::prediction_type_t::pdf)
+                .set_label_type(VW::label_type_t::cb)
                 .build();
   return make_base(*l);
 }
