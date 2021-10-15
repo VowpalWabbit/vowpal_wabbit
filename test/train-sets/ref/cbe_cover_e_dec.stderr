@@ -1,6 +1,6 @@
 final_regressor = models/cover_e_dec.model
 predictions = cover_e_dec_train.pred
-warning: currently, mtr is only used for the first policy in cover, other policies use dr
+[warning] currently, mtr is only used for the first policy in cover, other policies use dr
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
