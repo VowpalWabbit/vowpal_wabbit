@@ -47,7 +47,7 @@ void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t)
 // eval_count_of_generated_ft_naive() is an alternative way of implementation of
 // eval_count_of_generated_ft() it just calls generate_interactions() with small
 // function which counts generated features and sums their squared values. We
-// use it to validate the with more fast (?) analytic solution
+// use it to validate the more fast (?) analytic solution
 template <INTERACTIONS::generate_func_t<namespace_index> generate_func, bool leave_duplicate_interactions>
 void eval_count_of_generated_ft_naive(vw& all, example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {

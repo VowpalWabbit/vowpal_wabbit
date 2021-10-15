@@ -166,7 +166,9 @@ VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_b
   // ccb_explore_adf adds a wildcard post setup and so this reduction must be turned on.
   if (!(interactions_spec_contains_wildcards || interactions_spec_contains_extent_wildcards ||
           options.was_supplied("ccb_explore_adf")))
-  { return nullptr; }
+  {
+    return nullptr;
+  }
 
   using learn_pred_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, example&);
   using multipredict_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, example&,
@@ -180,52 +182,96 @@ VW::LEARNER::base_learner* generate_interactions_setup(VW::setup_base_i& stack_b
   {
     if (interactions_spec_contains_extent_wildcards)
     {
-      learn_func =
-          transform_single_ex<true, INTERACTIONS::generate_namespace_permutations_with_repetition<namespace_index>,
-              INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>, true>;
-      pred_func =
-          transform_single_ex<false, INTERACTIONS::generate_namespace_permutations_with_repetition<namespace_index>,
-              INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>, true>;
-      update_func = update<INTERACTIONS::generate_namespace_permutations_with_repetition<namespace_index>,
-          INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>, true>;
-      multipredict_func = multipredict<INTERACTIONS::generate_namespace_permutations_with_repetition<namespace_index>,
-          INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>, true>;
+      learn_func = transform_single_ex<true,  // is_learn
+          INTERACTIONS::generate_namespace_permutations_with_repetition<
+              namespace_index>,                                                        // generate_fn<namespace_index>
+          INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>,  // generate_fn<extent_term>
+          true                                                                         // leave_duplicate_interactions
+          >;
+      pred_func = transform_single_ex<false,  // is_learn
+          INTERACTIONS::generate_namespace_permutations_with_repetition<
+              namespace_index>,                                                        // generate_fn<namespace_index>
+          INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>,  // generate_fn<extent_term>
+          true                                                                         // leave_duplicate_interactions
+          >;
+      update_func = update<INTERACTIONS::generate_namespace_permutations_with_repetition<
+                               namespace_index>,                                       // generate_fn<namespace_index>
+          INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>,  // generate_fn<extent_term>
+          true>;
+      multipredict_func = multipredict<INTERACTIONS::generate_namespace_permutations_with_repetition<
+                                           namespace_index>,                           // generate_fn<namespace_index>
+          INTERACTIONS::generate_namespace_permutations_with_repetition<extent_term>,  // generate_fn<extent_term>
+          true>;
     }
     else
     {
-      learn_func = transform_single_ex<true,
-          INTERACTIONS::generate_namespace_permutations_with_repetition<namespace_index>, true>;
-      pred_func = transform_single_ex<false,
-          INTERACTIONS::generate_namespace_permutations_with_repetition<namespace_index>, true>;
-      update_func = update<INTERACTIONS::generate_namespace_permutations_with_repetition<namespace_index>, true>;
-      multipredict_func =
-          multipredict<INTERACTIONS::generate_namespace_permutations_with_repetition<namespace_index>, true>;
+      learn_func = transform_single_ex<true,  // is_learn
+          INTERACTIONS::generate_namespace_permutations_with_repetition<
+              namespace_index>,  // generate_fn<namespace_index>
+          true                   // leave_duplicate_interactions
+          >;
+      pred_func = transform_single_ex<false,  // is_learn
+          INTERACTIONS::generate_namespace_permutations_with_repetition<
+              namespace_index>,  // generate_fn<namespace_index>
+          true                   // leave_duplicate_interactions
+          >;
+      update_func = update<INTERACTIONS::generate_namespace_permutations_with_repetition<
+                               namespace_index>,  // generate_fn<namespace_index>
+          true                                    // leave_duplicate_interactions
+          >;
+      multipredict_func = multipredict<INTERACTIONS::generate_namespace_permutations_with_repetition<
+                                           namespace_index>,  // generate_fn<namespace_index>
+          true                                                // leave_duplicate_interactions
+          >;
     }
   }
   else
   {
     if (interactions_spec_contains_extent_wildcards)
     {
-      learn_func =
-          transform_single_ex<true, INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>,
-              INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>, false>;
-      pred_func =
-          transform_single_ex<false, INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>,
-              INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>, false>;
-      update_func = update<INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>,
-          INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>, false>;
-      multipredict_func = multipredict<INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>,
-          INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>, false>;
+      learn_func = transform_single_ex<true,  // is_learn
+          INTERACTIONS::generate_namespace_combinations_with_repetition<
+              namespace_index>,                                                        // generate_fn<namespace_index>
+          INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>,  // generate_fn<extent_term>
+          false                                                                        // leave_duplicate_interactions
+          >;
+      pred_func = transform_single_ex<false,  // is_learn
+          INTERACTIONS::generate_namespace_combinations_with_repetition<
+              namespace_index>,                                                        // generate_fn<namespace_index>
+          INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>,  // generate_fn<extent_term>
+          false                                                                        // leave_duplicate_interactions
+          >;
+      update_func = update<INTERACTIONS::generate_namespace_combinations_with_repetition<
+                               namespace_index>,                                       // generate_fn<namespace_index>
+          INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>,  // generate_fn<extent_term>
+          false                                                                        // leave_duplicate_interactions
+          >;
+      multipredict_func = multipredict<INTERACTIONS::generate_namespace_combinations_with_repetition<
+                                           namespace_index>,                           // generate_fn<namespace_index>
+          INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>,  // generate_fn<extent_term>
+          false                                                                        // leave_duplicate_interactions
+          >;
     }
     else
     {
-      learn_func = transform_single_ex<true,
-          INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>, false>;
-      pred_func = transform_single_ex<false,
-          INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>, false>;
-      update_func = update<INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>, false>;
-      multipredict_func =
-          multipredict<INTERACTIONS::generate_namespace_combinations_with_repetition<namespace_index>, false>;
+      learn_func = transform_single_ex<true,  // is_learn
+          INTERACTIONS::generate_namespace_combinations_with_repetition<
+              namespace_index>,  // generate_fn<namespace_index>
+          false                  // leave_duplicate_interactions
+          >;
+      pred_func = transform_single_ex<false,  // is_learn
+          INTERACTIONS::generate_namespace_combinations_with_repetition<
+              namespace_index>,  // generate_fn<namespace_index>
+          false                  // leave_duplicate_interactions
+          >;
+      update_func = update<INTERACTIONS::generate_namespace_combinations_with_repetition<
+                               namespace_index>,  // generate_fn<namespace_index>
+          false                                   // leave_duplicate_interactions
+          >;
+      multipredict_func = multipredict<INTERACTIONS::generate_namespace_combinations_with_repetition<
+                                           namespace_index>,  // generate_fn<namespace_index>
+          false                                               // leave_duplicate_interactions
+          >;
     }
   }
 
