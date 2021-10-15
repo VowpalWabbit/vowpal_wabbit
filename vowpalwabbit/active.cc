@@ -150,8 +150,16 @@ void save_load(active& a, io_buf& io, bool read, bool text)
   if (io.num_files() == 0) { return; }
   if (a._model_version >= VW::version_definitions::VERSION_FILE_WITH_ACTIVE_SEEN_LABELS)
   {
-    VW::model_utils::process_model_field(io, a._min_seen_label, read, "Active: min_seen_label {}", text);
-    VW::model_utils::process_model_field(io, a._max_seen_label, read, "Active: max_seen_label {}", text);
+    if (read)
+    {
+      VW::model_utils::read_model_field(io, a._min_seen_label);
+      VW::model_utils::read_model_field(io, a._max_seen_label);
+    }
+    else
+    {
+      VW::model_utils::write_model_field(io, a._min_seen_label, "Active: min_seen_label {}", text);
+      VW::model_utils::write_model_field(io, a._max_seen_label, "Active: max_seen_label {}", text);
+    }
   }
 }
 

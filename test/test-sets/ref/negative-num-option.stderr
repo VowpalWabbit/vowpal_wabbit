@@ -6,7 +6,7 @@ power_t = 0.5
 using no cache
 Reading datafile = 
 num sources = 0
-Enabled reductions: gd, scorer-identity, classweight-scalar
+Enabled reductions: gd, scorer-identity, classweight-scalar, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 
