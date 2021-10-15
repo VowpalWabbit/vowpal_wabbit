@@ -84,7 +84,7 @@
 #include "sample_pdf.h"
 #include "kskip_ngram_transformer.h"
 #include "baseline_challenger_cb.h"
-#include "reduction/count_label.h"
+#include "count_label.h"
 
 void register_reductions(std::vector<reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
