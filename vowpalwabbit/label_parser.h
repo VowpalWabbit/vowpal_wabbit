@@ -5,6 +5,7 @@
 #pragma once
 
 #include "vw_string_view.h"
+#include "label_type.h"
 
 #include <vector>
 
@@ -13,21 +14,6 @@ struct shared_data;
 struct polylabel;
 class io_buf;
 class reduction_features;
-
-enum class label_type_t
-{
-  simple,
-  cb,       // contextual-bandit
-  cb_eval,  // contextual-bandit evaluation
-  cs,       // cost-sensitive
-  multilabel,
-  multiclass,
-  ccb,  // conditional contextual-bandit
-  slates,
-  nolabel,
-  continuous  // continuous actions
-};
-
 struct example;
 struct label_parser
 {
@@ -37,5 +23,5 @@ struct label_parser
   size_t (*read_cached_label)(shared_data*, polylabel*, reduction_features&, io_buf& cache);
   float (*get_weight)(polylabel*, const reduction_features&);
   bool (*test_label)(polylabel*);
-  label_type_t label_type;
+  VW::label_type_t label_type;
 };

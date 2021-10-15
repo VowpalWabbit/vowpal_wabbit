@@ -121,7 +121,7 @@ VW::LEARNER::base_learner* sender_setup(VW::setup_base_i& stack_builder)
   s->delay_ring = calloc_or_throw<example*>(all.example_parser->ring_size);
 
   auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, learn, stack_builder.get_setupfn_name(sender_setup),
-      prediction_type_t::scalar, label_type_t::simple)
+      VW::prediction_type_t::scalar, VW::label_type_t::simple)
                 .set_finish_example(finish_example)
                 .set_end_examples(end_examples)
                 .build();

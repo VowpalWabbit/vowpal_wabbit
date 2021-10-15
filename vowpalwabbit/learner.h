@@ -22,23 +22,8 @@
 #include "scope_exit.h"
 #include "metric_sink.h"
 
-enum class prediction_type_t
-{
-  scalar,
-  scalars,
-  action_scores,
-  pdf,
-  action_probs,
-  multiclass,
-  multilabels,
-  prob,
-  multiclassprobs,
-  decision_probs,
-  action_pdf_value,
-  active_multiclass
-};
-
-const char* to_string(prediction_type_t prediction_type);
+#include "label_type.h"
+#include "prediction_type.h"
 
 namespace VW
 {
@@ -196,12 +181,12 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
 
 inline bool ec_is_example_header(example const& ec, label_type_t label_type)
 {
-  if (label_type == label_type_t::cb) { return CB::ec_is_example_header(ec); }
-  else if (label_type == label_type_t::ccb)
+  if (label_type == VW::label_type_t::cb) { return CB::ec_is_example_header(ec); }
+  else if (label_type == VW::label_type_t::ccb)
   {
     return CCB::ec_is_example_header(ec);
   }
-  else if (label_type == label_type_t::cs)
+  else if (label_type == VW::label_type_t::cs)
   {
     return COST_SENSITIVE::ec_is_example_header(ec);
   }
@@ -216,16 +201,15 @@ inline bool ec_is_example_header(example const& ec, label_type_t label_type)
 /// will recursively call the base given to it, whereas a base learner will not
 /// recurse and will simply return the result. Learner is not intended to be
 /// inherited from. Instead it is used through composition, and created through
-/// the various VW::LEARNER::init_learner overloaded functions that chain to the
-/// central factor function VW::LEARNER::learner::init_learner The state of this
+/// the make_reduction_learner and make_base_learner. The state of this
 /// learner, or reduction, is stored in the learner_data field. A
 /// <code>std::shared_pointer<void></code> is used as this class uses type
 /// erasure to allow for an arbitrary reduction to be implemented. It is
 /// extremely important that the function pointers given to the class match the
 /// expected types of the object. If the learner is constructed using
-/// VW::LEARNER::learner::init_learner and assembled before it is transformed
-/// into a VW::LEARNER::base_learner with VW::LEARNER::make_base then the usage
-/// of the templated functions should ensure types are correct.
+/// make_reduction_learner or make_base_learner and assembled before it is
+/// transformed into a VW::LEARNER::base_learner with VW::LEARNER::make_base then
+/// the usage of the templated functions should ensure types are correct.
 ///
 /// \tparam T Type of the reduction data object stored. This allows this
 /// specific reduction to have it's own state.
@@ -257,8 +241,7 @@ private:
 
   std::shared_ptr<void> learner_data;
 
-  learner(){};  // Should only be able to construct a learner through
-                // init_learner function
+  learner(){};  // Should only be able to construct a learner through make_reduction_learner / make_base_learner
 
 public:
   prediction_type_t pred_type;
@@ -549,71 +532,6 @@ public:
     enabled_reductions.push_back(name);
   }
 
-  template <class L>
-  static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
-      prediction_type_t pred_type, const std::string& name, bool learn_returns_prediction = false)
-  {
-    learner<T, E>& ret = *(new learner<T, E>());
-
-    if (base != nullptr)
-    {  // a reduction
-
-      // This is a copy assignment into the current object. The purpose is to copy all of the
-      // function data objects so that if this reduction does not define a function such as
-      // save_load then calling save_load on this object will essentially result in forwarding the
-      // call the next reduction that actually implements it.
-      ret = *(learner<T, E>*)(base);
-
-      ret.learn_fd.base = make_base(*base);
-      ret.sensitivity_fd.sensitivity_f = static_cast<sensitivity_data::fn>(recur_sensitivity);
-      ret.finisher_fd.data = dat;
-      ret.finisher_fd.base = make_base(*base);
-      ret.finisher_fd.func = static_cast<func_data::fn>(noop);
-      ret.weights = ws;
-      ret.increment = base->increment * ret.weights;
-    }
-    else  // a base learner
-    {
-      ret.weights = 1;
-      ret.increment = ws;
-      ret.end_pass_fd.func = static_cast<func_data::fn>(noop);
-      ret.end_examples_fd.func = static_cast<func_data::fn>(noop);
-      ret.persist_metrics_fd.save_metric_f = static_cast<save_metric_data::fn>(noop_persist_metrics);
-      ret.init_fd.func = static_cast<func_data::fn>(noop);
-      ret.save_load_fd.save_load_f = static_cast<save_load_data::fn>(noop_save_load);
-      ret.finisher_fd.data = dat;
-      ret.finisher_fd.func = static_cast<func_data::fn>(noop);
-      ret.sensitivity_fd.sensitivity_f = static_cast<sensitivity_data::fn>(noop_sensitivity);
-      ret.finish_example_fd.data = dat;
-      VW_WARNING_STATE_PUSH
-      VW_WARNING_DISABLE_CAST_FUNC_TYPE
-      ret.finish_example_fd.finish_example_f = reinterpret_cast<finish_example_data::fn>(return_simple_example);
-      VW_WARNING_STATE_POP
-    }
-
-    ret.name = name;
-    ret.learner_data = std::shared_ptr<T>(dat, [](T* ptr) {
-      ptr->~T();
-      free(ptr);
-    });
-
-    ret.learn_fd.data = dat;
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    ret.learn_fd.learn_f = reinterpret_cast<learn_data::fn>(learn);
-    ret.learn_fd.update_f = (learn_data::fn)learn;
-    ret.learn_fd.predict_f = (learn_data::fn)predict;
-    VW_WARNING_STATE_POP
-    ret.learn_fd.multipredict_f = nullptr;
-    ret.pred_type = pred_type;
-    ret.is_multiline = std::is_same<multi_ex, E>::value;
-    ret.learn_returns_prediction = learn_returns_prediction;
-
-    VW_DBG_0 << "Added Reduction: " << name << std::endl;
-
-    return ret;
-  }
-
   base_learner* get_learner_by_name_prefix(const std::string& reduction_name)
   {
     if (name.find(reduction_name) != std::string::npos) { return (base_learner*)this; }
@@ -626,88 +544,6 @@ public:
     }
   }
 };
-
-// OLD WAY:
-// The init_learner set of functions is the old way to create a learner. They
-// have been replaced with:
-//   - make_reduction_learner
-//   - make_base_learner
-// They were replaced due to how many different overloads there are and the
-// fact defaults are very hard to express. This problem got worse as more
-// arguments got added.
-template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t ws, prediction_type_t pred_type, const std::string& name, bool learn_returns_prediction = false)
-{
-  auto ret =
-      &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type, name, learn_returns_prediction);
-
-  dat.release();
-  return *ret;
-}
-
-// base learner/predictor
-template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t params_per_weight, const std::string& name, bool learn_returns_prediction = false)
-{
-  auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight,
-      prediction_type_t::scalar, name, learn_returns_prediction);
-
-  dat.release();
-  return *ret;
-}
-
-// base predictor only
-template <class T, class E, class L>
-learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weight, const std::string& name)
-{
-  return learner<T, E>::init_learner(
-      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type_t::scalar, name);
-}
-
-template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t params_per_weight, prediction_type_t pred_type, const std::string& name,
-    bool learn_returns_prediction = false)
-{
-  auto ret = &learner<T, E>::init_learner(
-      dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type, name, learn_returns_prediction);
-  dat.release();
-  return *ret;
-}
-
-// reduction with default prediction type
-template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    size_t ws, const std::string& name, bool learn_returns_prediction = false)
-{
-  auto ret = &learner<T, E>::init_learner(
-      dat.get(), base, learn, predict, ws, base->pred_type, name, learn_returns_prediction);
-
-  dat.release();
-  return *ret;
-}
-
-// reduction with default num_params
-template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
-    const std::string& name, bool learn_returns_prediction = false)
-{
-  auto ret =
-      &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type, name, learn_returns_prediction);
-
-  dat.release();
-  return *ret;
-}
-
-// Reduction with no data.
-template <class T, class E, class L>
-learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), const std::string& name,
-    bool learn_returns_prediction = false)
-{
-  return learner<T, E>::init_learner(nullptr, base, learn, predict, 1, base->pred_type, name, learn_returns_prediction);
-}
 
 template <class T, class E>
 base_learner* make_base(learner<T, E>& base)
