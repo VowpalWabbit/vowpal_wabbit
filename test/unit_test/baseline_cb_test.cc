@@ -52,7 +52,7 @@ int get_int_metric(const VW::metric_sink& metrics, const std::string& metric_nam
 float get_float_metric(const VW::metric_sink& metrics, const std::string& metric_name)
 {
   auto it = std::find_if(metrics.float_metrics_list.begin(), metrics.float_metrics_list.end(),
-      [&metric_name](const std::pair<std::string, size_t>& element) { return element.first == metric_name; });
+      [&metric_name](const std::pair<std::string, float>& element) { return element.first == metric_name; });
 
   if (it == metrics.float_metrics_list.end()) { BOOST_FAIL("could not find metric. fatal."); }
   return it->second;
