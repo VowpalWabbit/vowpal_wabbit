@@ -117,7 +117,7 @@ size_t write_model_field(io_buf& io, const std::set<T>& set, const std::string& 
   if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for set."); }
   size_t bytes = 0;
   uint64_t set_size = static_cast<uint64_t>(set.size());
-  bytes += write_model_field(io, set_size, upstream_name + "_size", text);
+  bytes += write_model_field(io, set_size, upstream_name + ".size()", text);
   uint64_t i = 0;
   for (const T& v : set)
   {
@@ -148,7 +148,7 @@ size_t write_model_field(io_buf& io, const std::vector<T>& vec, const std::strin
   if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for vector."); }
   size_t bytes = 0;
   uint64_t vec_size = static_cast<uint64_t>(vec.size());
-  bytes += write_model_field(io, vec_size, upstream_name + "_size", text);
+  bytes += write_model_field(io, vec_size, upstream_name + ".size()", text);
   for (uint64_t i = 0; i < vec_size; ++i)
   { bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text); }
   return bytes;
@@ -195,7 +195,7 @@ size_t write_model_field(io_buf& io, const std::priority_queue<T>& pq, const std
   std::priority_queue<T> pq_cp = pq;
   size_t bytes = 0;
   uint64_t queue_size = static_cast<uint64_t>(pq_cp.size());
-  bytes += write_model_field(io, queue_size, upstream_name + "_size", text);
+  bytes += write_model_field(io, queue_size, upstream_name + ".size()", text);
   uint64_t i = 0;
   while (!pq_cp.empty())
   {
@@ -228,7 +228,7 @@ size_t write_model_field(io_buf& io, const std::map<K, V>& map, const std::strin
   if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for map."); }
   size_t bytes = 0;
   uint64_t map_size = static_cast<uint64_t>(map.size());
-  bytes += write_model_field(io, map_size, upstream_name + "_size", text);
+  bytes += write_model_field(io, map_size, upstream_name + ".size()", text);
   uint64_t i = 0;
   for (const auto& pair : map)
   {
