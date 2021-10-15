@@ -727,7 +727,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
     default:
     {
       std::ostringstream ostr;
-      ostr << "prediction type '" << to_string(all->l->pred_type) << "' is not supported";
+      ostr << "prediction type '" << VW::to_string(all->l->pred_type) << "' is not supported";
 
       env->ThrowNew(env->FindClass("java/lang/UnsupportedOperationException"), ostr.str().c_str());
       return nullptr;
