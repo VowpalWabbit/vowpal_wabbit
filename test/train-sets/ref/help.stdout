@@ -432,6 +432,9 @@ importance weight classes:
 Confidence:
   --confidence                 Get confidence for binary predictions
   --confidence_after_training  Confidence after training
+count_label options:
+  --dont_output_best_constant  Don't track the best constant used in the 
+                               output.
 Cost-sensitive Active Learning:
   --cs_active arg                       Cost-sensitive active learning with <k>
                                         costs
