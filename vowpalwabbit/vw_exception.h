@@ -189,16 +189,16 @@ bool launchDebugger();
 #  endif
 
 // ease error handling and also log filename and line number
-#  define THROW(args)                                                \
-    {                                                                \
-      ::std::stringstream __msg;                                     \
-      __msg << args;                                                 \
-      throw ::VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
+#  define THROW(args)                                              \
+    {                                                              \
+      std::stringstream __msg;                                     \
+      __msg << args;                                               \
+      throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
     }
 
 #  define THROW_EX(ex, args)                         \
     {                                                \
-      ::std::stringstream __msg;                     \
+      std::stringstream __msg;                       \
       __msg << args;                                 \
       throw ex(__FILENAME__, __LINE__, __msg.str()); \
     }
