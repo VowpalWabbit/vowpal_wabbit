@@ -336,31 +336,6 @@ public:
     }
   }
 
-  template <class L>
-  inline void set_predict(void (*u)(T&, L&, E&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    learn_fd.predict_f = (learn_data::fn)u;
-    VW_WARNING_STATE_POP
-  }
-  template <class L>
-  inline void set_learn(void (*u)(T&, L&, E&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    learn_fd.learn_f = (learn_data::fn)u;
-    VW_WARNING_STATE_POP
-  }
-  template <class L>
-  inline void set_multipredict(void (*u)(T&, L&, E&, size_t, size_t, polyprediction*, bool))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    learn_fd.multipredict_f = (learn_data::multi_fn)u;
-    VW_WARNING_STATE_POP
-  }
-
   inline void update(E& ec, size_t i = 0)
   {
     assert((is_multiline && std::is_same<multi_ex, E>::value) ||
@@ -370,24 +345,7 @@ public:
     learn_fd.update_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     decrement_offset(ec, increment, i);
   }
-  template <class L>
-  inline void set_update(void (*u)(T& data, L& base, E&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    learn_fd.update_f = (learn_data::fn)u;
-    VW_WARNING_STATE_POP
-  }
 
-  // used for active learning and confidence to determine how easily predictions are changed
-  inline void set_sensitivity(float (*u)(T& data, base_learner& base, example&))
-  {
-    sensitivity_fd.data = learn_fd.data;
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    sensitivity_fd.sensitivity_f = (sensitivity_data::fn)u;
-    VW_WARNING_STATE_POP
-  }
   inline float sensitivity(example& ec, size_t i = 0)
   {
     increment_offset(ec, increment, i);
@@ -403,15 +361,6 @@ public:
     save_load_fd.save_load_f(save_load_fd.data, io, read, text);
     if (save_load_fd.base) save_load_fd.base->save_load(io, read, text);
   }
-  inline void set_save_load(void (*sl)(T&, io_buf&, bool, bool))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    save_load_fd.save_load_f = (save_load_data::fn)sl;
-    VW_WARNING_STATE_POP
-    save_load_fd.data = learn_fd.data;
-    save_load_fd.base = learn_fd.base;
-  }
 
   // called when metrics is enabled.  Autorecursive.
   void persist_metrics(metric_sink& metrics)
@@ -419,24 +368,7 @@ public:
     persist_metrics_fd.save_metric_f(persist_metrics_fd.data, metrics);
     if (persist_metrics_fd.base) persist_metrics_fd.base->persist_metrics(metrics);
   }
-  void set_persist_metrics(void (*f)(T&, metric_sink&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    persist_metrics_fd.save_metric_f = (save_metric_data::fn)f;
-    VW_WARNING_STATE_POP
-    persist_metrics_fd.data = learn_fd.data;
-    persist_metrics_fd.base = learn_fd.base;
-  }
 
-  // called to clean up state.  Autorecursive.
-  void set_finish(void (*f)(T&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    finisher_fd = tuple_dbf(learn_fd.data, learn_fd.base, (finish_fptr_type)(f));
-    VW_WARNING_STATE_POP
-  }
 
   inline void finish()
   {
@@ -454,66 +386,21 @@ public:
     if (end_pass_fd.base) end_pass_fd.base->end_pass();
   }  // autorecursive
 
-  void set_end_pass(void (*f)(T&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
-    VW_WARNING_STATE_POP
-  }
-
   // called after parsing of examples is complete.  Autorecursive.
   void end_examples()
   {
     end_examples_fd.func(end_examples_fd.data);
     if (end_examples_fd.base) end_examples_fd.base->end_examples();
   }
-  void set_end_examples(void (*f)(T&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    end_examples_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
-    VW_WARNING_STATE_POP
-  }
 
   // Called at the beginning by the driver.  Explicitly not recursive.
   void init_driver() { init_fd.func(init_fd.data); }
-  void set_init_driver(void (*f)(T&))
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    init_fd = tuple_dbf(learn_fd.data, learn_fd.base, (func_data::fn)f);
-    VW_WARNING_STATE_POP
-  }
 
   // called after learn example for each example.  Explicitly not recursive.
   inline void finish_example(vw& all, E& ec)
   {
     debug_log_message(ec, "finish_example");
     finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
-  }
-  // called after learn example for each example.  Explicitly not recursive.
-  void set_finish_example(void (*f)(vw& all, T&, E&))
-  {
-    finish_example_fd.data = learn_fd.data;
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    finish_example_fd.finish_example_f = (end_fptr_type)(f);
-    VW_WARNING_STATE_POP
-  }
-
-  // never called, convienience method in case reduction has a seperate
-  // print fn that mirrors the fn received on set_finish_example(..)
-  //
-  // usually finish_example routine prints and then deallocs
-  // that printing logic can be registered here
-  void set_print_example(void (*f)(vw& all, T&, E&))
-  {
-    finish_example_fd.data = learn_fd.data;
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_CAST_FUNC_TYPE
-    finish_example_fd.print_example_f = (end_fptr_type)(f);
-    VW_WARNING_STATE_POP
   }
 
   inline void print_example(vw& all, E& ec)
