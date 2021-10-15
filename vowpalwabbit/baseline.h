@@ -13,5 +13,5 @@ namespace BASELINE
 // utility functions for disabling baseline on a given example
 void set_baseline_enabled(example* ec);
 void reset_baseline_disabled(example* ec);
-bool baseline_enabled(example* ec);
+bool baseline_enabled(const example* ec);
 }  // namespace BASELINE
