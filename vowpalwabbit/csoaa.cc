@@ -152,8 +152,8 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(
                     true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
                 .set_params_per_weight(ws)
-                .set_prediction_type(prediction_type_t::multiclass)
-                .set_label_type(label_type_t::cs)
+                .set_prediction_type(VW::prediction_type_t::multiclass)
+                .set_label_type(VW::label_type_t::cs)
                 .set_finish_example(finish_example)
                 .build();
 
@@ -916,31 +916,31 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
 
   std::string name = stack_builder.get_setupfn_name(csldf_setup);
   std::string name_addition;
-  prediction_type_t pred_type;
+  VW::prediction_type_t pred_type;
   void (*pred_ptr)(ldf&, single_learner&, multi_ex&);
   if (ld->rank)
   {
     name_addition = "-rank";
-    pred_type = prediction_type_t::action_scores;
+    pred_type = VW::prediction_type_t::action_scores;
     pred_ptr = predict_csoaa_ldf_rank;
   }
   else if (ld->is_probabilities)
   {
     name_addition = "-prob";
-    pred_type = prediction_type_t::prob;
+    pred_type = VW::prediction_type_t::prob;
     pred_ptr = predict_csoaa_ldf;
   }
   else
   {
     name_addition = "";
-    pred_type = prediction_type_t::multiclass;
+    pred_type = VW::prediction_type_t::multiclass;
     pred_ptr = predict_csoaa_ldf;
   }
 
   auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
                 .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
-                .set_label_type(label_type_t::cs)
+                .set_label_type(VW::label_type_t::cs)
                 .set_prediction_type(pred_type)
                 .build();
 

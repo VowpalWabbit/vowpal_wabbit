@@ -30,8 +30,8 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { prediction_type_t get();
+  property VW::prediction_type_t PredictionType
+  { VW::prediction_type_t get();
   }
 };
 
@@ -49,8 +49,8 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() sealed
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() sealed
     { throw gcnew NotSupportedException("Prediction type is not available.");
     }
   }
@@ -70,9 +70,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() sealed
-    { return prediction_type_t::scalar;
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() sealed
+    { return VW::prediction_type_t::scalar;
     }
   }
 };
@@ -99,9 +99,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() sealed
-    { return prediction_type_t::scalar;
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() sealed
+    { return VW::prediction_type_t::scalar;
     }
   }
 };
@@ -120,9 +120,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() sealed
-    { return prediction_type_t::scalars;
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() sealed
+    { return VW::prediction_type_t::scalars;
     }
   }
 };
@@ -141,9 +141,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() sealed
-    { return prediction_type_t::prob;
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() sealed
+    { return VW::prediction_type_t::prob;
     }
   }
 };
@@ -162,9 +162,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() sealed
-    { return prediction_type_t::multiclass;
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() sealed
+    { return VW::prediction_type_t::multiclass;
     }
   }
 };
@@ -183,9 +183,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() sealed
-    { return prediction_type_t::multiclass;
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() sealed
+    { return VW::prediction_type_t::multiclass;
     }
   }
 };
@@ -205,9 +205,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() sealed
-    { return prediction_type_t::multiclassprobs;
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() sealed
+    { return VW::prediction_type_t::multiclassprobs;
     }
   }
 };
@@ -226,9 +226,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() sealed
-    { return prediction_type_t::multilabels;
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() sealed
+    { return VW::prediction_type_t::multilabels;
     }
   }
 };
@@ -257,8 +257,8 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() abstract;
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() abstract;
   }
 };
 
@@ -272,9 +272,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() override sealed
-    { return prediction_type_t::action_scores;
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() override sealed
+    { return VW::prediction_type_t::action_scores;
     }
   }
 };
@@ -289,9 +289,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() override sealed
-    { return prediction_type_t::action_probs;
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() override sealed
+    { return VW::prediction_type_t::action_probs;
     }
   }
 };
@@ -310,8 +310,8 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
-  { virtual prediction_type_t get() sealed
+  property VW::prediction_type_t PredictionType
+  { virtual VW::prediction_type_t get() sealed
     { throw gcnew NotSupportedException("Prediction type is not available.");
     }
   }
@@ -338,9 +338,9 @@ public:
   /// <summary>
   /// Returns the supported prediction type.
   /// </summary>
-  property prediction_type_t PredictionType
+  property VW::prediction_type_t PredictionType
   {
-    virtual prediction_type_t get() sealed { return prediction_type_t::active_multiclass; }
+    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::active_multiclass; }
   }
 };
 

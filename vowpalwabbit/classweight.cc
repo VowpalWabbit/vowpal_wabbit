@@ -44,15 +44,15 @@ struct classweights
   }
 };
 
-template <prediction_type_t pred_type>
+template <VW::prediction_type_t pred_type>
 void update_example_weight(classweights& cweights, example& ec)
 {
   switch (pred_type)
   {
-    case prediction_type_t::scalar:
+    case VW::prediction_type_t::scalar:
       ec.weight *= cweights.get_class_weight(static_cast<uint32_t>(ec.l.simple.label));
       break;
-    case prediction_type_t::multiclass:
+    case VW::prediction_type_t::multiclass:
       ec.weight *= cweights.get_class_weight(ec.l.multi.label);
       break;
     default:
@@ -61,7 +61,7 @@ void update_example_weight(classweights& cweights, example& ec)
   }
 }
 
-template <bool is_learn, prediction_type_t pred_type>
+template <bool is_learn, VW::prediction_type_t pred_type>
 void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base, example& ec)
 {
   if (is_learn)
@@ -97,13 +97,13 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
   VW::LEARNER::single_learner* base = as_singleline(stack_builder.setup_base_learner());
 
   VW::LEARNER::learner<classweights, example>* ret;
-  if (base->pred_type == prediction_type_t::scalar)
-    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, prediction_type_t::scalar>,
-        &predict_or_learn<false, prediction_type_t::scalar>,
+  if (base->pred_type == VW::prediction_type_t::scalar)
+    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, VW::prediction_type_t::scalar>,
+        &predict_or_learn<false, VW::prediction_type_t::scalar>,
         stack_builder.get_setupfn_name(classweight_setup) + "-scalar");
-  else if (base->pred_type == prediction_type_t::multiclass)
+  else if (base->pred_type == VW::prediction_type_t::multiclass)
     ret = &VW::LEARNER::init_learner<classweights>(cweights, base,
-        &predict_or_learn<true, prediction_type_t::multiclass>, &predict_or_learn<false, prediction_type_t::multiclass>,
+        &predict_or_learn<true, VW::prediction_type_t::multiclass>, &predict_or_learn<false, VW::prediction_type_t::multiclass>,
         stack_builder.get_setupfn_name(classweight_setup) + "-multi");
   else
     THROW("--classweight not implemented for this type of prediction");

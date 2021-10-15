@@ -8,27 +8,6 @@
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
 
-#define CASE(type) \
-  case type:       \
-    return #type;
-
-const char* to_string(prediction_type_t prediction_type)
-{
-  switch (prediction_type)
-  {
-    CASE(prediction_type_t::scalar)
-    CASE(prediction_type_t::scalars)
-    CASE(prediction_type_t::action_scores)
-    CASE(prediction_type_t::action_probs)
-    CASE(prediction_type_t::multiclass)
-    CASE(prediction_type_t::multilabels)
-    CASE(prediction_type_t::prob)
-    CASE(prediction_type_t::multiclassprobs)
-    default:
-      return "<unsupported>";
-  }
-}
-
 namespace VW
 {
 namespace LEARNER

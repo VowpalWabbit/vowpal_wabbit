@@ -372,10 +372,10 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
   learner<plt, example>* l;
   if (tree->top_k > 0)
     l = &init_learner(tree, as_singleline(stack_builder.setup_base_learner()), learn, predict<false>, tree->t,
-        prediction_type_t::multilabels, stack_builder.get_setupfn_name(plt_setup) + "-top_k", true);
+        VW::prediction_type_t::multilabels, stack_builder.get_setupfn_name(plt_setup) + "-top_k", true);
   else
     l = &init_learner(tree, as_singleline(stack_builder.setup_base_learner()), learn, predict<true>, tree->t,
-        prediction_type_t::multilabels, stack_builder.get_setupfn_name(plt_setup), true);
+        VW::prediction_type_t::multilabels, stack_builder.get_setupfn_name(plt_setup), true);
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
 

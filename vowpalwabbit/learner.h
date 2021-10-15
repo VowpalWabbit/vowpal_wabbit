@@ -22,23 +22,8 @@
 #include "scope_exit.h"
 #include "metric_sink.h"
 
-enum class prediction_type_t
-{
-  scalar,
-  scalars,
-  action_scores,
-  pdf,
-  action_probs,
-  multiclass,
-  multilabels,
-  prob,
-  multiclassprobs,
-  decision_probs,
-  action_pdf_value,
-  active_multiclass
-};
-
-const char* to_string(prediction_type_t prediction_type);
+#include "label_type.h"
+#include "prediction_type.h"
 
 namespace VW
 {
@@ -196,12 +181,12 @@ inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const siz
 
 inline bool ec_is_example_header(example const& ec, label_type_t label_type)
 {
-  if (label_type == label_type_t::cb) { return CB::ec_is_example_header(ec); }
-  else if (label_type == label_type_t::ccb)
+  if (label_type == VW::label_type_t::cb) { return CB::ec_is_example_header(ec); }
+  else if (label_type == VW::label_type_t::ccb)
   {
     return CCB::ec_is_example_header(ec);
   }
-  else if (label_type == label_type_t::cs)
+  else if (label_type == VW::label_type_t::cs)
   {
     return COST_SENSITIVE::ec_is_example_header(ec);
   }
@@ -652,7 +637,7 @@ learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*
     size_t params_per_weight, const std::string& name, bool learn_returns_prediction = false)
 {
   auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight,
-      prediction_type_t::scalar, name, learn_returns_prediction);
+      VW::prediction_type_t::scalar, name, learn_returns_prediction);
 
   dat.release();
   return *ret;
@@ -663,7 +648,7 @@ template <class T, class E, class L>
 learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weight, const std::string& name)
 {
   return learner<T, E>::init_learner(
-      nullptr, (L*)nullptr, predict, predict, params_per_weight, prediction_type_t::scalar, name);
+      nullptr, (L*)nullptr, predict, predict, params_per_weight, VW::prediction_type_t::scalar, name);
 }
 
 template <class T, class E, class L>

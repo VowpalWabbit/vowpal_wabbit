@@ -525,8 +525,8 @@ base_learner* log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
                 .set_params_per_weight(ws)
                 .set_finish_example(MULTICLASS::finish_example<log_multi&>)
                 .set_save_load(save_load_tree)
-                .set_prediction_type(prediction_type_t::multiclass)
-                .set_label_type(label_type_t::multiclass)
+                .set_prediction_type(VW::prediction_type_t::multiclass)
+                .set_label_type(VW::label_type_t::multiclass)
                 .build();
 
   all.example_parser->lbl_parser = MULTICLASS::mc_label;

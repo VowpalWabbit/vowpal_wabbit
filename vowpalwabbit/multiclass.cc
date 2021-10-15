@@ -102,7 +102,7 @@ label_parser mc_label = {
   [](polylabel* v, const reduction_features&) { return weight(v->multi); },
   // test_label
   [](polylabel* v) { return test_label(v->multi); },
-  label_type_t::multiclass
+  VW::label_type_t::multiclass
 };
 // clang-format on
 

@@ -224,6 +224,9 @@ set(vw_all_headers
   active_multiclass_prediction.h
   debug_log.h
   rand_state.h
+  label_type.h
+  cb_type.h
+  prediction_type.h
 )
 
 if(BUILD_FLATBUFFERS)
@@ -365,6 +368,9 @@ set(vw_all_sources
   vw_exception.cc
   vw_validate.cc
   warm_cb.cc
+  label_type.cc
+  cb_type.cc
+  prediction_type.cc
 )
 
 if(BUILD_FLATBUFFERS)

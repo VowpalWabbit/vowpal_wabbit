@@ -386,7 +386,7 @@ public:
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb)
+    if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
     {
       auto& ld = ctx.ex->l.conditional_contextual_bandit;
 
@@ -407,7 +407,7 @@ public:
         cb_label = CB::cb_class{};
       }
     }
-    else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates)
+    else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates)
     {
       auto& ld = ctx.ex->l.slates;
       if ((actions.size() != 0) && (probs.size() != 0))
@@ -595,7 +595,7 @@ struct MultiState : BaseState<audit>
   BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
     // mark shared example
-    if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::cb)
+    if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::cb)
     {
       CB::label* ld = &ctx.ex->l.cb;
       CB::cb_class f;
@@ -607,12 +607,12 @@ struct MultiState : BaseState<audit>
 
       ld->costs.push_back(f);
     }
-    else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb)
+    else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
     {
       CCB::label* ld = &ctx.ex->l.conditional_contextual_bandit;
       ld->type = CCB::example_type::shared;
     }
-    else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates)
+    else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates)
     {
       auto& ld = ctx.ex->l.slates;
       ld.type = VW::slates::example_type::shared;
@@ -628,9 +628,9 @@ struct MultiState : BaseState<audit>
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
-    if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb)
+    if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
     { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action; }
-    else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates)
+    else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::action;
     }
@@ -675,9 +675,9 @@ struct SlotsState : BaseState<audit>
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
-    if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb)
+    if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
     { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot; }
-    else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates)
+    else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::slot;
     }
@@ -928,7 +928,7 @@ public:
 
       else if (length == 8 && !strncmp(str, "_slot_id", 8))
       {
-        if (ctx.all->example_parser->lbl_parser.label_type != label_type_t::slates)
+        if (ctx.all->example_parser->lbl_parser.label_type != VW::label_type_t::slates)
         { THROW("Can only use _slot_id with slates examples"); } ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
@@ -1029,7 +1029,7 @@ public:
 
       // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
       // case this is CB, so generate a single slot with this info.
-      if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb)
+      if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
       {
         auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
             [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
@@ -1329,9 +1329,9 @@ public:
     // Find start index of slot objects by iterating until we find the first slot example.
     for (auto ex : *ctx.examples)
     {
-      if ((ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb &&
+      if ((ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb &&
               ex->l.conditional_contextual_bandit.type != CCB::example_type::slot) ||
-          (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates &&
+          (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates &&
               ex->l.slates.type != VW::slates::example_type::slot))
       { slot_object_index++; }
     }
@@ -1363,7 +1363,7 @@ public:
     // DSJson requires the interaction object to be filled. After reading all slot outcomes fill out the top actions.
     for (auto ex : *ctx.examples)
     {
-      if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb &&
+      if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb &&
           ex->l.conditional_contextual_bandit.type == CCB::example_type::slot)
       {
         if (ex->l.conditional_contextual_bandit.outcome)
@@ -1372,7 +1372,7 @@ public:
           interactions->probabilities.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].score);
         }
       }
-      else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates &&
+      else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates &&
           ex->l.slates.type == VW::slates::example_type::slot)
       {
         if (ex->l.slates.labeled)
@@ -1692,7 +1692,7 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
     example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
-  if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
+  if (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates)
   {
     parse_slates_example_json<audit>(all, examples, line, length, example_factory, ex_factory_context, dedup_examples);
     return;
@@ -1732,15 +1732,15 @@ inline bool apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
   }
   // Event with certain pdrop had (1-pdrop) as probability to survive,
   // so it is one of (1 / (1-pdrop)) events that we should learn on, and weight should be updated accordingly.
-  if (all.example_parser->lbl_parser.label_type == label_type_t::cb)
+  if (all.example_parser->lbl_parser.label_type == VW::label_type_t::cb)
   {
     for (auto& e : examples) { e->l.cb.weight /= 1 - pdrop; }
   }
-  else if (all.example_parser->lbl_parser.label_type == label_type_t::ccb)
+  else if (all.example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
   {
     for (auto& e : examples) { e->l.conditional_contextual_bandit.weight /= 1 - pdrop; }
   }
-  if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
+  if (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates)
   {
     // TODO
   }
@@ -1752,7 +1752,7 @@ template <bool audit>
 bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
     example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
-  if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
+  if (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates)
   {
     parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
     return apply_pdrop(all, data->probabilityOfDrop, examples);

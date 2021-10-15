@@ -685,7 +685,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
   jmethodID ctr;
   switch (all->l->pred_type)
   {
-    case prediction_type_t::scalar:
+    case VW::prediction_type_t::scalar:
       predClass = env->FindClass("org/vowpalwabbit/spark/prediction/ScalarPrediction");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -694,7 +694,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
 
       return env->NewObject(predClass, ctr, VW::get_prediction(ex), ex->confidence);
 
-    case prediction_type_t::prob:
+    case VW::prediction_type_t::prob:
       predClass = env->FindClass("java/lang/Float");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -703,7 +703,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
 
       return env->NewObject(predClass, ctr, ex->pred.prob);
 
-    case prediction_type_t::multiclass:
+    case VW::prediction_type_t::multiclass:
       predClass = env->FindClass("java/lang/Integer");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -712,16 +712,16 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
 
       return env->NewObject(predClass, ctr, ex->pred.multiclass);
 
-    case prediction_type_t::scalars:
+    case VW::prediction_type_t::scalars:
       return scalars_predictor(ex, env);
 
-    case prediction_type_t::action_probs:
+    case VW::prediction_type_t::action_probs:
       return action_probs_prediction(ex, env);
 
-    case prediction_type_t::action_scores:
+    case VW::prediction_type_t::action_scores:
       return action_scores_prediction(ex, env);
 
-    case prediction_type_t::multilabels:
+    case VW::prediction_type_t::multilabels:
       return multilabel_predictor(ex, env);
 
     default:
