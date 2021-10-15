@@ -100,7 +100,7 @@ label_parser cb_label = {
   [](polylabel* v, const reduction_features&) { return v->cb.weight; },
   // test_label
   [](polylabel* v) { return CB::is_test_label(v->cb); },
-  label_type_t::cb
+  VW::label_type_t::cb
 };
 // clang-format on
 
@@ -222,7 +222,7 @@ label_parser cb_eval = {
   [](polylabel*, const reduction_features&) { return 1.f; },
   // test_label
   [](polylabel* v) { return CB_EVAL::test_label(v->cb_eval); },
-  label_type_t::cb_eval
+  VW::label_type_t::cb_eval
 };
 // clang-format on
 }  // namespace CB_EVAL

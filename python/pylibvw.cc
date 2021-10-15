@@ -400,29 +400,29 @@ size_t my_get_prediction_type(vw_ptr all)
 {
   switch (all->l->pred_type)
   {
-    case prediction_type_t::scalar:
+    case VW::prediction_type_t::scalar:
       return pSCALAR;
-    case prediction_type_t::scalars:
+    case VW::prediction_type_t::scalars:
       return pSCALARS;
-    case prediction_type_t::action_scores:
+    case VW::prediction_type_t::action_scores:
       return pACTION_SCORES;
-    case prediction_type_t::action_probs:
+    case VW::prediction_type_t::action_probs:
       return pACTION_PROBS;
-    case prediction_type_t::multiclass:
+    case VW::prediction_type_t::multiclass:
       return pMULTICLASS;
-    case prediction_type_t::multilabels:
+    case VW::prediction_type_t::multilabels:
       return pMULTILABELS;
-    case prediction_type_t::prob:
+    case VW::prediction_type_t::prob:
       return pPROB;
-    case prediction_type_t::multiclassprobs:
+    case VW::prediction_type_t::multiclassprobs:
       return pMULTICLASSPROBS;
-    case prediction_type_t::decision_probs:
+    case VW::prediction_type_t::decision_probs:
       return pDECISION_SCORES;
-    case prediction_type_t::action_pdf_value:
+    case VW::prediction_type_t::action_pdf_value:
       return pACTION_PDF_VALUE;
-    case prediction_type_t::pdf:
+    case VW::prediction_type_t::pdf:
       return pPDF;
-    case prediction_type_t::active_multiclass:
+    case VW::prediction_type_t::active_multiclass:
       return pACTIVE_MULTICLASS;
     default:
       THROW("unsupported prediction type used");

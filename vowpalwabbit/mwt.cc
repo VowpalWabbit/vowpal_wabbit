@@ -279,8 +279,8 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
       stack_builder.get_setupfn_name(mwt_setup) + name_addition)
                 .set_learn_returns_prediction(true)
-                .set_prediction_type(prediction_type_t::scalars)
-                .set_label_type(label_type_t::cb)
+                .set_prediction_type(VW::prediction_type_t::scalars)
+                .set_label_type(VW::label_type_t::cb)
                 .set_save_load(save_load)
                 .set_finish_example(finish_example)
                 .build();
