@@ -21,13 +21,12 @@ namespace parsers
 namespace flatbuffer
 {
 void parser::parse_simple_label(
-    shared_data* sd, polylabel* l, reduction_features* red_features, const SimpleLabel* label)
+    shared_data* /*sd*/, polylabel* l, reduction_features* red_features, const SimpleLabel* label)
 {
   auto& simple_red_features = red_features->template get<simple_label_reduction_features>();
   l->simple.label = label->label();
   simple_red_features.weight = label->weight();
   simple_red_features.initial = label->initial();
-  count_label(sd, label->label());
 }
 
 void parser::parse_cb_label(polylabel* l, const CBLabel* label)

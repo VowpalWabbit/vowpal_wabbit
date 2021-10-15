@@ -6,7 +6,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/marginal_features
 num sources = 1
-Enabled reductions: gd, marginal, scorer-identity
+Enabled reductions: gd, marginal, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0   0.5000   0.5006        4

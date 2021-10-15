@@ -19,7 +19,7 @@
 
 namespace logger = VW::io::logger;
 
-char* bufread_simple_label(shared_data* sd, label_data& ld, simple_label_reduction_features& red_features, char* c)
+char* bufread_simple_label(shared_data* /*sd*/, label_data& ld, simple_label_reduction_features& red_features, char* c)
 {
   memcpy(&ld.label, c, sizeof(ld.label));
   c += sizeof(ld.label);
@@ -27,8 +27,6 @@ char* bufread_simple_label(shared_data* sd, label_data& ld, simple_label_reducti
   c += sizeof(red_features.weight);
   memcpy(&red_features.initial, c, sizeof(red_features.initial));
   c += sizeof(red_features.initial);
-
-  count_label(sd, ld.label);
   return c;
 }
 
@@ -75,7 +73,7 @@ bool test_label(label_data& ld) { return ld.label == FLT_MAX; }
 // Example: 0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924
 // label := 0, weight := 1, initial := 0.5
 void parse_simple_label(
-    parser*, shared_data* sd, label_data& ld, std::vector<VW::string_view>& words, reduction_features& red_features)
+    parser*, shared_data* /*sd*/, label_data& ld, std::vector<VW::string_view>& words, reduction_features& red_features)
 {
   auto& simple_red_features = red_features.template get<simple_label_reduction_features>();
   switch (words.size())
@@ -97,7 +95,6 @@ void parse_simple_label(
     default:
       logger::log_error("Error: {0} is too many tokens for a simple label: {1}", words.size(), fmt::join(words, " "));
   }
-  count_label(sd, ld.label);
 }
 
 // clang-format off

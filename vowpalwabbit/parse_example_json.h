@@ -439,8 +439,6 @@ public:
     }
     else if (found)
     {
-      count_label(ctx.all->sd, ctx.ex->l.simple.label);
-
       found = false;
     }
 
