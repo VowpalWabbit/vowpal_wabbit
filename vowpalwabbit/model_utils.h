@@ -10,6 +10,7 @@
 #include <queue>
 
 #include <fmt/format.h>
+#include <type_traits>
 
 namespace VW
 {
