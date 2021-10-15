@@ -34,13 +34,15 @@ struct mwt
   std::vector<policy_data> evals;  // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
   v_array<uint64_t> policies;
-  double total;
-  uint32_t num_classes;
-  bool learn;
+  double total = 0.;
+  uint32_t num_classes = 0;
+  bool learn = false;
 
   v_array<namespace_index> indices;  // excluded namespaces
   features feature_space[256];
-  vw* all;
+  vw* all = nullptr;
+
+  mwt() { std::fill(namespaces, namespaces + 256, false); }
 };
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
@@ -218,7 +220,7 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto c = scoped_calloc_or_throw<mwt>();
+  auto c = VW::make_unique<mwt>();
   std::string s;
   bool exclude_eval = false;
   option_group_definition new_options("Multiworld Testing Options");
@@ -248,23 +250,41 @@ base_learner* mwt_setup(VW::setup_base_i& stack_builder)
   // default to legacy cb implementation
   options.insert("cb_force_legacy", "");
 
-  learner<mwt, example>* l;
-  if (c->learn)
-    if (exclude_eval)
-      l = &init_learner(c, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true, true, true>,
-          predict_or_learn<true, true, false>, 1, prediction_type_t::scalars,
-          stack_builder.get_setupfn_name(mwt_setup) + "-no_eval", true);
-    else
-      l = &init_learner(c, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true, false, true>,
-          predict_or_learn<true, false, false>, 1, prediction_type_t::scalars,
-          stack_builder.get_setupfn_name(mwt_setup) + "-eval", true);
-  else
-    l = &init_learner(c, as_singleline(stack_builder.setup_base_learner()), predict_or_learn<false, false, true>,
-        predict_or_learn<false, false, false>, 1, prediction_type_t::scalars, stack_builder.get_setupfn_name(mwt_setup),
-        true);
+  std::string name_addition;
+  void (*learn_ptr)(mwt&, single_learner&, example&);
+  void (*pred_ptr)(mwt&, single_learner&, example&);
 
-  l->set_save_load(save_load);
-  l->set_finish_example(finish_example);
+  if (c->learn)
+  {
+    if (exclude_eval)
+    {
+      name_addition = "-no_eval";
+      learn_ptr = predict_or_learn<true, true, true>;
+      pred_ptr = predict_or_learn<true, true, false>;
+    }
+    else
+    {
+      name_addition = "-eval";
+      learn_ptr = predict_or_learn<true, false, true>;
+      pred_ptr = predict_or_learn<true, false, false>;
+    }
+  }
+  else
+  {
+    name_addition = "";
+    learn_ptr = predict_or_learn<false, false, true>;
+    pred_ptr = predict_or_learn<false, false, false>;
+  }
+
+  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
+      stack_builder.get_setupfn_name(mwt_setup) + name_addition)
+                .set_learn_returns_prediction(true)
+                .set_prediction_type(prediction_type_t::scalars)
+                .set_label_type(label_type_t::cb)
+                .set_save_load(save_load)
+                .set_finish_example(finish_example)
+                .build();
+
   all.example_parser->lbl_parser = CB::cb_label;
   return make_base(*l);
 }

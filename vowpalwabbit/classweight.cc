@@ -83,7 +83,7 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
   std::vector<std::string> classweight_array;
-  auto cweights = scoped_calloc_or_throw<classweights>();
+  auto cweights = VW::make_unique<classweights>();
   option_group_definition new_options("importance weight classes");
   new_options.add(
       make_option("classweight", classweight_array).necessary().help("importance weight multiplier for class"));
@@ -96,16 +96,34 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
 
   VW::LEARNER::single_learner* base = as_singleline(stack_builder.setup_base_learner());
 
-  VW::LEARNER::learner<classweights, example>* ret;
+  std::string name_addition;
+  void (*learn_ptr)(classweights&, VW::LEARNER::single_learner&, example&);
+  void (*pred_ptr)(classweights&, VW::LEARNER::single_learner&, example&);
+  prediction_type_t pred_type;
+
   if (base->pred_type == prediction_type_t::scalar)
-    ret = &VW::LEARNER::init_learner<classweights>(cweights, base, &predict_or_learn<true, prediction_type_t::scalar>,
-        &predict_or_learn<false, prediction_type_t::scalar>,
-        stack_builder.get_setupfn_name(classweight_setup) + "-scalar");
+  {
+    name_addition = "-scalar";
+    learn_ptr = predict_or_learn<true, prediction_type_t::scalar>;
+    pred_ptr = predict_or_learn<false, prediction_type_t::scalar>;
+    pred_type = prediction_type_t::scalar;
+  }
   else if (base->pred_type == prediction_type_t::multiclass)
-    ret = &VW::LEARNER::init_learner<classweights>(cweights, base,
-        &predict_or_learn<true, prediction_type_t::multiclass>, &predict_or_learn<false, prediction_type_t::multiclass>,
-        stack_builder.get_setupfn_name(classweight_setup) + "-multi");
+  {
+    name_addition = "-multi";
+    learn_ptr = predict_or_learn<true, prediction_type_t::multiclass>;
+    pred_ptr = predict_or_learn<false, prediction_type_t::multiclass>;
+    pred_type = prediction_type_t::multiclass;
+  }
   else
+  {
     THROW("--classweight not implemented for this type of prediction");
-  return make_base(*ret);
+  }
+
+  auto* l = make_reduction_learner(
+      std::move(cweights), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(classweight_setup) + name_addition)
+                .set_prediction_type(pred_type)
+                .build();
+
+  return make_base(*l);
 }
