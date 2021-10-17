@@ -475,21 +475,3 @@ struct features
     return all_extents_complete;
   }
 };
-
-namespace VW
-{
-struct namespaced_features
-{
-  features feats;
-  uint64_t hash;
-  namespace_index index;
-
-  namespaced_features(uint64_t hash, namespace_index index) : hash(hash), index(index) {}
-
-  template <typename FeaturesT>
-  namespaced_features(FeaturesT&& inner_features, uint64_t hash, namespace_index index)
-      : feats(std::forward<FeaturesT>(inner_features)), hash(hash), index(index)
-  {
-  }
-};
-}  // namespace VW

@@ -12,6 +12,7 @@
 #include "best_constant.h"
 #include "vw_string_view.h"
 #include "example.h"
+#include "vw.h"
 #include "vw_string_view_fmt.h"
 
 #include "io/logger.h"
@@ -50,7 +51,7 @@ label_parser no_label_parser = {
   [](polylabel*, const reduction_features&) { return 1.f; },
   // test_label
   [](polylabel*) { return false; },
-  label_type_t::nolabel
+  VW::label_type_t::nolabel
 };
 // clang-format on
 

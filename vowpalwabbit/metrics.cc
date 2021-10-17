@@ -76,12 +76,20 @@ void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, 
       {
         writer.Key("dsjson_sum_cost_original_first_slot");
         writer.Double(ds_metrics->DsjsonSumCostOriginalFirstSlot);
+        writer.Key("dsjson_number_label_equal_baseline_first_slot");
+        writer.Int64(ds_metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot);
+        writer.Key("dsjson_number_label_not_equal_baseline_first_slot");
+        writer.Int64(ds_metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
+        writer.Key("dsjson_sum_cost_original_label_equal_baseline_first_slot");
+        writer.Double(ds_metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
       }
       else
       {
-        writer.Key("dsjson_sum_cost_original");
-        writer.Double(ds_metrics->DsjsonSumCostOriginal);
+        writer.Key("dsjson_sum_cost_original_baseline");
+        writer.Double(ds_metrics->DsjsonSumCostOriginalBaseline);
       }
+      writer.Key("dsjson_sum_cost_original");
+      writer.Double(ds_metrics->DsjsonSumCostOriginal);
     }
 
     writer.EndObject();
@@ -110,7 +118,7 @@ void output_metrics(vw& all)
     list_metrics.int_metrics_list.emplace_back("total_log_calls", logger::get_log_count());
 
     std::vector<std::string> enabled_reductions;
-    if (all.l != nullptr) all.l->get_enabled_reductions(enabled_reductions);
+    if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
 
     list_to_json_file(all.example_parser->metrics.get(), filename, list_metrics, enabled_reductions);
   }
@@ -140,7 +148,7 @@ void persist(metrics_data& data, metric_sink& metrics)
 VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  auto data = scoped_calloc_or_throw<metrics_data>();
+  auto data = VW::make_unique<metrics_data>();
 
   option_group_definition new_options("Debug: Metrics");
   new_options.add(make_option("extra_metrics", data->out_file)
@@ -155,18 +163,24 @@ VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)
 
   if (base_learner->is_multiline)
   {
-    learner<metrics_data, multi_ex>* l = &init_learner(data, as_multiline(base_learner),
-        predict_or_learn<true, multi_learner, multi_ex>, predict_or_learn<false, multi_learner, multi_ex>, 1,
-        base_learner->pred_type, stack_builder.get_setupfn_name(metrics_setup), base_learner->learn_returns_prediction);
-    l->set_persist_metrics(persist);
+    auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
+        predict_or_learn<true, multi_learner, multi_ex>, predict_or_learn<false, multi_learner, multi_ex>,
+        stack_builder.get_setupfn_name(metrics_setup))
+                  .set_prediction_type(base_learner->pred_type)
+                  .set_learn_returns_prediction(base_learner->learn_returns_prediction)
+                  .set_persist_metrics(persist)
+                  .build();
     return make_base(*l);
   }
   else
   {
-    learner<metrics_data, example>* l = &init_learner(data, as_singleline(base_learner),
-        predict_or_learn<true, single_learner, example>, predict_or_learn<false, single_learner, example>, 1,
-        base_learner->pred_type, stack_builder.get_setupfn_name(metrics_setup), base_learner->learn_returns_prediction);
-    l->set_persist_metrics(persist);
+    auto* l = make_reduction_learner(std::move(data), as_singleline(base_learner),
+        predict_or_learn<true, single_learner, example>, predict_or_learn<false, single_learner, example>,
+        stack_builder.get_setupfn_name(metrics_setup))
+                  .set_prediction_type(base_learner->pred_type)
+                  .set_learn_returns_prediction(base_learner->learn_returns_prediction)
+                  .set_persist_metrics(persist)
+                  .build();
     return make_base(*l);
   }
 }

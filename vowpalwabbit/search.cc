@@ -283,7 +283,8 @@ public:
   bool active_csoaa;
   float active_csoaa_verify;
 
-  VW::LEARNER::base_learner* base_learner;
+  VW::LEARNER::multi_learner* multi_base_learner = nullptr;
+  VW::LEARNER::single_learner* single_base_learner = nullptr;
   clock_t start_clock_time;
 
   CS::label empty_cs_label;
@@ -1094,7 +1095,8 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     cdbg << ' ' << ec.l.cs.costs[i].class_index << ':' << ec.l.cs.costs[i].x;
   cdbg << " ]" << endl;
 
-  as_singleline(priv.base_learner)->predict(ec, policy);
+  assert(priv.single_base_learner != nullptr);
+  priv.single_base_learner->predict(ec, policy);
 
   uint32_t act = priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass;
   cdbg << "a=" << act << " from";
@@ -1250,7 +1252,9 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     uint64_t old_offset = ecs[a].ft_offset;
     ecs[a].ft_offset = priv.offset;
     tmp.push_back(&ecs[a]);
-    as_multiline(priv.base_learner)->predict(tmp, policy);
+
+    assert(priv.multi_base_learner != nullptr);
+    priv.multi_base_learner->predict(tmp, policy);
 
     ecs[a].ft_offset = old_offset;
     cdbg << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
@@ -1422,9 +1426,10 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     for (size_t is_local = 0; is_local <= static_cast<size_t>(priv.xv); is_local++)
     {
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
-      cdbg << "BEGIN base_learner->learn(ec, " << learner << ")" << endl;
-      as_singleline(priv.base_learner)->learn(ec, learner);
-      cdbg << "END   base_learner->learn(ec, " << learner << ")" << endl;
+      cdbg << "BEGIN single_base_learner->learn(ec, " << learner << ")" << endl;
+      assert(priv.single_base_learner != nullptr);
+      priv.single_base_learner->learn(ec, learner);
+      cdbg << "END   single_base_learner->learn(ec, " << learner << ")" << endl;
     }
     if (add_conditioning) del_example_conditioning(priv, ec);
     ec.l = old_label;
@@ -1473,7 +1478,8 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
       }
 
       // learn with the multiline example
-      as_multiline(priv.base_learner)->learn(tmp, learner);
+      assert(priv.multi_base_learner != nullptr);
+      priv.multi_base_learner->learn(tmp, learner);
 
       // restore the offsets in examples
       int i = 0;
@@ -2215,7 +2221,7 @@ void inline adjust_auto_condition(search_private& priv)
 }
 
 template <bool is_learn>
-void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
+void do_actual_learning(search& sch, multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0) return;  // nothing to do :)
 
@@ -2224,7 +2230,6 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
 
   search_private& priv = *sch.priv;
   priv.offset = ec_seq[0]->ft_offset;
-  priv.base_learner = &base;
 
   adjust_auto_condition(priv);
   priv.read_example_last_id = ec_seq[ec_seq.size() - 1]->example_counter;
@@ -2264,6 +2269,24 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
   del_neighbor_features(priv, ec_seq);
 
   if (priv.task->run_takedown) priv.task->run_takedown(sch, ec_seq);
+}
+
+template <bool is_learn>
+void do_actual_learning_ldf(search& sch, multi_learner& base, multi_ex& ec_seq)
+{
+  if (ec_seq.size() == 0) return;  // nothing to do :)
+  search_private& priv = *sch.priv;
+  priv.multi_base_learner = &base;
+  do_actual_learning<is_learn>(sch, ec_seq);
+}
+
+template <bool is_learn>
+void do_actual_learning_non_ldf(search& sch, single_learner& base, multi_ex& ec_seq)
+{
+  if (ec_seq.size() == 0) return;  // nothing to do :)
+  search_private& priv = *sch.priv;
+  priv.single_base_learner = &base;
+  do_actual_learning<is_learn>(sch, ec_seq);
 }
 
 void end_pass(search& sch)
@@ -2451,10 +2474,9 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
   return allowed;
 }
 
-void parse_neighbor_features(VW::string_view nf_strview, search& sch)
+void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neighbor_features)
 {
-  search_private& priv = *sch.priv;
-  priv.neighbor_features.clear();
+  neighbor_features.clear();
   if (nf_strview.empty()) return;
 
   std::vector<VW::string_view> cmd;
@@ -2490,7 +2512,7 @@ void parse_neighbor_features(VW::string_view nf_strview, search& sch)
       logger::errlog_warn("warning: ignoring malformed neighbor specification: '{}'", strview);
     }
     int32_t enc = (posn << 24) | (ns & 0xFF);
-    priv.neighbor_features.push_back(enc);
+    neighbor_features.push_back(enc);
   }
 }
 
@@ -2498,7 +2520,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  free_ptr<search> sch = scoped_calloc_or_throw<search>();
+  auto sch = VW::make_unique<search>();
   search_private& priv = *sch->priv;
   std::string task_string;
   std::string metatask_string;
@@ -2579,7 +2601,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   search_initialize(&all, *sch.get());
 
-  parse_neighbor_features(neighbor_features_string, *sch.get());
+  parse_neighbor_features(neighbor_features_string, sch->priv->neighbor_features);
 
   if (interpolation_string == "data")  // run as dagger
   {
@@ -2621,6 +2643,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
     THROW("error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'");
 
   // check if the base learner is contextual bandit, in which case, we dont rollout all actions.
+  // TODO consume this when learner understand base label type
   if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;
@@ -2731,7 +2754,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
-  base_learner* base = stack_builder.setup_base_learner();
+  auto* base = stack_builder.setup_base_learner();
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   all.example_parser->lbl_parser = MC::mc_label;
@@ -2739,6 +2762,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (priv.task && priv.task->initialize) priv.task->initialize(*sch.get(), priv.A, options);
   if (priv.metatask && priv.metatask->initialize) priv.metatask->initialize(*sch.get(), priv.A, options);
   priv.meta_t = 0;
+
+  VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
 
   if (options.was_supplied("search_allowed_transitions"))
     read_allowed_transitions(static_cast<action>(priv.A), search_allowed_transitions.c_str());
@@ -2757,15 +2782,43 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   cdbg << "num_learners = " << priv.num_learners << endl;
 
-  learner<search, multi_ex>& l =
-      init_learner(sch, make_base(*base), do_actual_learning<true>, do_actual_learning<false>,
-          priv.total_number_of_policies * priv.num_learners, stack_builder.get_setupfn_name(setup), true);
+  // No normal prediction is produced so the base prediction type is used. That type is unlikely to be accessible
+  // though. TODO: either let search return a prediction or add a NO_PRED type.
+  learner<search, multi_ex>* l;
+  if (sch->is_ldf())
+  {
+    // base is multiline
+    l = VW::LEARNER::make_reduction_learner(std::move(sch), as_multiline(base), do_actual_learning_ldf<true>,
+        do_actual_learning_ldf<false>, stack_builder.get_setupfn_name(setup))
+            .set_learn_returns_prediction(true)
+            .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
+            .set_finish_example(finish_multiline_example)
+            .set_end_examples(end_examples)
+            .set_finish(search_finish)
+            .set_end_pass(end_pass)
+            .set_label_type(expected_label_type)
+            // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
+            // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
+            .build();
+  }
+  else
+  {
+    // base is singleline
+    l = VW::LEARNER::make_reduction_learner(std::move(sch), as_singleline(base), do_actual_learning_non_ldf<true>,
+        do_actual_learning_non_ldf<false>, stack_builder.get_setupfn_name(setup))
+            .set_learn_returns_prediction(true)
+            .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
+            .set_finish_example(finish_multiline_example)
+            .set_end_examples(end_examples)
+            .set_finish(search_finish)
+            .set_end_pass(end_pass)
+            .set_label_type(expected_label_type)
+            // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
+            // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
+            .build();
+  }
 
-  l.set_finish_example(finish_multiline_example);
-  l.set_end_examples(end_examples);
-  l.set_finish(search_finish);
-  l.set_end_pass(end_pass);
-  return make_base(l);
+  return make_base(*l);
 }
 
 float action_hamming_loss(action a, const action* A, size_t sz)
@@ -2786,6 +2839,7 @@ float action_cost_loss(action a, const action* act, const float* costs, size_t s
 
 // the interface:
 bool search::is_ldf() { return priv->is_ldf; }
+void search::set_is_ldf(bool is_ldf) { priv->is_ldf = is_ldf; }
 
 action search::predict(example& ec, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt,
     const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt,
@@ -2953,6 +3007,7 @@ predictor& predictor::reset()
 
 predictor& predictor::set_input(example& input_example)
 {
+  assert(sch.is_ldf() == false);
   is_ldf = false;
   ec = &input_example;
   ec_cnt = 1;
@@ -2961,6 +3016,7 @@ predictor& predictor::set_input(example& input_example)
 
 predictor& predictor::set_input(example* input_example, size_t input_length)
 {
+  assert(sch.is_ldf() == true);
   is_ldf = true;
   ec = input_example;
   ec_cnt = input_length;
@@ -2969,6 +3025,7 @@ predictor& predictor::set_input(example* input_example, size_t input_length)
 
 void predictor::set_input_length(size_t input_length)
 {
+  assert(sch.is_ldf() == true);
   is_ldf = true;
   allocated_examples.resize(input_length);
   ec = allocated_examples.data();

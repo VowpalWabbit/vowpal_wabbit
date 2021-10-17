@@ -41,69 +41,29 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
   // Since read_cached_features doesn't default the label we must do it here.
   default_label(ld);
 
-  if (ld.outcome) { ld.outcome->probabilities.clear(); }
+  if (ld.outcome != nullptr) { ld.outcome->probabilities.clear(); }
   ld.explicit_included_actions.clear();
 
   size_t read_count = 0;
-  char* read_ptr;
-
-  size_t next_read_size = sizeof(ld.type);
-  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0;
-  ld.type = *reinterpret_cast<CCB::example_type*>(read_ptr);
-  read_count += sizeof(ld.type);
-
-  bool is_outcome_present;
-  next_read_size = sizeof(bool);
-  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
-  is_outcome_present = *reinterpret_cast<bool*>(read_ptr);
-  read_count += sizeof(is_outcome_present);
-
+  ld.type = cache.read_value_and_accumulate_size<CCB::example_type>("type", read_count);
+  auto is_outcome_present = cache.read_value_and_accumulate_size<bool>("is_outcome_present", read_count);
   if (is_outcome_present)
   {
     ld.outcome = new CCB::conditional_contextual_bandit_outcome();
-
-    next_read_size = sizeof(ld.outcome->cost);
-    if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0;
-    ld.outcome->cost = *reinterpret_cast<float*>(read_ptr);
-    read_count += sizeof(ld.outcome->cost);
-
-    uint32_t size_probs;
-    next_read_size = sizeof(size_probs);
-    if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
-    size_probs = *reinterpret_cast<uint32_t*>(read_ptr);
-    read_count += sizeof(size_probs);
-
+    ld.outcome->cost = cache.read_value_and_accumulate_size<float>("outcome cost", read_count);
+    auto size_probs = cache.read_value_and_accumulate_size<uint32_t>("size_probs", read_count);
     for (uint32_t i = 0; i < size_probs; i++)
     {
-      ACTION_SCORE::action_score a_s;
-      next_read_size = sizeof(a_s);
-      if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
-      a_s = *reinterpret_cast<ACTION_SCORE::action_score*>(read_ptr);
-      read_count += sizeof(a_s);
-
-      ld.outcome->probabilities.push_back(a_s);
+      ld.outcome->probabilities.push_back(
+          cache.read_value_and_accumulate_size<ACTION_SCORE::action_score>("a_s", read_count));
     }
   }
 
-  uint32_t size_includes;
-  next_read_size = sizeof(size_includes);
-  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
-  size_includes = *reinterpret_cast<uint32_t*>(read_ptr);
-  read_count += sizeof(size_includes);
-
+  auto size_includes = cache.read_value_and_accumulate_size<uint32_t>("size_includes", read_count);
   for (uint32_t i = 0; i < size_includes; i++)
-  {
-    uint32_t include;
-    next_read_size = sizeof(include);
-    if (cache.buf_read(read_ptr, next_read_size) < next_read_size) { return 0; }
-    include = *reinterpret_cast<uint32_t*>(read_ptr);
-    read_count += sizeof(include);
-    ld.explicit_included_actions.push_back(include);
-  }
+  { ld.explicit_included_actions.push_back(cache.read_value_and_accumulate_size<uint32_t>("include", read_count)); }
 
-  next_read_size = sizeof(ld.weight);
-  if (cache.buf_read(read_ptr, next_read_size) < next_read_size) return 0;
-  ld.weight = *reinterpret_cast<float*>(read_ptr);
+  ld.weight = cache.read_value_and_accumulate_size<float>("weight", read_count);
   return read_count;
 }
 
@@ -111,50 +71,17 @@ float ccb_weight(CCB::label& ld) { return ld.weight; }
 
 void cache_label(label& ld, io_buf& cache)
 {
-  char* c;
-  size_t size = sizeof(uint8_t)  // type
-      + sizeof(bool)             // outcome exists?
-      + (ld.outcome == nullptr ? 0
-                               : sizeof(ld.outcome->cost)                                     // cost
-                    + sizeof(uint32_t)                                                        // probabilities size
-                    + sizeof(ACTION_SCORE::action_score) * ld.outcome->probabilities.size())  // probabilities
-      + sizeof(uint32_t)  // explicit_included_actions size
-      + sizeof(uint32_t) * ld.explicit_included_actions.size() + sizeof(ld.weight);
-
-  cache.buf_write(c, size);
-
-  *reinterpret_cast<uint8_t*>(c) = static_cast<uint8_t>(ld.type);
-  c += sizeof(ld.type);
-
-  *reinterpret_cast<bool*>(c) = ld.outcome != nullptr;
-  c += sizeof(bool);
-
+  cache.write_value(ld.type);
+  cache.write_value(ld.outcome != nullptr);
   if (ld.outcome != nullptr)
   {
-    *reinterpret_cast<float*>(c) = ld.outcome->cost;
-    c += sizeof(ld.outcome->cost);
-
-    *reinterpret_cast<uint32_t*>(c) = convert(ld.outcome->probabilities.size());
-    c += sizeof(uint32_t);
-
-    for (const auto& score : ld.outcome->probabilities)
-    {
-      *reinterpret_cast<ACTION_SCORE::action_score*>(c) = score;
-      c += sizeof(ACTION_SCORE::action_score);
-    }
+    cache.write_value(ld.outcome->cost);
+    cache.write_value(VW::convert(ld.outcome->probabilities.size()));
+    for (const auto& score : ld.outcome->probabilities) { cache.write_value(score); }
   }
-
-  *reinterpret_cast<uint32_t*>(c) = convert(ld.explicit_included_actions.size());
-  c += sizeof(uint32_t);
-
-  for (const auto& included_action : ld.explicit_included_actions)
-  {
-    *reinterpret_cast<uint32_t*>(c) = included_action;
-    c += sizeof(included_action);
-  }
-
-  *reinterpret_cast<float*>(c) = ld.weight;
-  c += sizeof(ld.weight);
+  cache.write_value(VW::convert(ld.explicit_included_actions.size()));
+  for (const auto& included_action : ld.explicit_included_actions) { cache.write_value(included_action); }
+  cache.write_value(ld.weight);
 }
 
 void default_label(label& ld)
@@ -306,7 +233,7 @@ label_parser ccb_label_parser = {
   [](polylabel* v, const ::reduction_features&) { return ccb_weight(v->conditional_contextual_bandit); },
   // test_label
   [](polylabel* v) { return test_label(v->conditional_contextual_bandit); },
-  label_type_t::ccb
+  VW::label_type_t::ccb
 };
 // clang-format on
 }  // namespace CCB

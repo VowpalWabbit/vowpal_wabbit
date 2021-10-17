@@ -5,7 +5,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/malformed.dat
 num sources = 1
-Enabled reductions: gd, scorer-identity
+Enabled reductions: gd, scorer-identity, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 [warning] malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"

@@ -53,7 +53,7 @@ struct offset_tree
 
 private:
   min_depth_binary_tree binary_tree;
-  uint32_t _num_actions;
+  uint32_t _num_actions = 0;
   predict_buffer_t _prediction_buffer{};
   std::vector<float> _scores{};
 };

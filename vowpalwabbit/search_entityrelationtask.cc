@@ -90,6 +90,20 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 
   sch.set_num_learners(2);
   if (my_task_data->search_order == 4) sch.set_num_learners(3);
+
+  switch (my_task_data->search_order)
+  {
+    case 0:
+    case 1:
+    case 2:
+      sch.set_is_ldf(false);
+      break;
+    case 3:
+      sch.set_is_ldf(true);
+      break;
+    default:
+      logger::errlog_error("search order {} is undefined", my_task_data->search_order);
+  }
 }
 
 bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
