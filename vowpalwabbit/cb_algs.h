@@ -10,51 +10,12 @@
 #include "cb.h"
 #include "example.h"
 #include "learner.h"
+#include "cb_type.h"
 
 #include <cfloat>
 
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
 VW::LEARNER::base_learner* cb_algs_setup(VW::setup_base_i& stack_builder);
-
-namespace VW
-{
-enum class cb_type_t
-{
-  dr,
-  dm,
-  ips,
-  mtr,
-  sm
-};
-
-inline cb_type_t cb_type_from_string(VW::string_view str)
-{
-  if (str == "dr") { return cb_type_t::dr; }
-  if (str == "dm") { return VW::cb_type_t::dm; }
-  if (str == "ips") { return VW::cb_type_t::ips; }
-  if (str == "mtr") { return VW::cb_type_t::mtr; }
-  if (str == "sm") { return VW::cb_type_t::sm; }
-  THROW("Unknown cb_type: " << str);
-}
-
-inline VW::string_view to_string(cb_type_t type)
-{
-  switch (type)
-  {
-    case cb_type_t::dr:
-      return "dr";
-    case cb_type_t::dm:
-      return "dm";
-    case cb_type_t::ips:
-      return "ips";
-    case cb_type_t::mtr:
-      return "mtr";
-    case cb_type_t::sm:
-      return "sm";
-  }
-  THROW("Unknown cb_type passed to to_string");
-}
-}  // namespace VW
 
 namespace CB_ALGS
 {

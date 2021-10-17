@@ -20,9 +20,11 @@ void CheckExample(vw* vw, example* ex, prediction_type_t type)
   if (ex_pred_type != type)
   { auto sb = gcnew StringBuilder();
     sb->Append("Prediction type must be ");
-    sb->Append(gcnew String(to_string(type)));
+    // Note: we know this is a static lifetime string constant that is null terminated.
+    sb->Append(gcnew String(VW::to_string(type).data()));
     sb->Append(" but is ");
-    sb->Append(gcnew String(to_string(ex_pred_type)));
+    // Note: we know this is a static lifetime string constant that is null terminated.
+    sb->Append(gcnew String(VW::to_string(ex_pred_type).data()));
 
     throw gcnew ArgumentException(sb->ToString());
   }
@@ -202,7 +204,8 @@ System::Object^ VowpalWabbitDynamicPredictionFactory::Create(vw* vw, example* ex
     default:
     { auto sb = gcnew StringBuilder();
       sb->Append("Unsupported prediction type: ");
-      sb->Append(gcnew String(to_string(vw->l->pred_type)));
+      // Note: we know this is a static lifetime string constant that is null terminated.
+      sb->Append(gcnew String(VW::to_string(vw->l->pred_type).data()));
       throw gcnew ArgumentException(sb->ToString());
     }
   }

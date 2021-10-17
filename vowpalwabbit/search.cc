@@ -2763,7 +2763,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (priv.metatask && priv.metatask->initialize) priv.metatask->initialize(*sch.get(), priv.A, options);
   priv.meta_t = 0;
 
-  label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
+  VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
 
   if (options.was_supplied("search_allowed_transitions"))
     read_allowed_transitions(static_cast<action>(priv.A), search_allowed_transitions.c_str());

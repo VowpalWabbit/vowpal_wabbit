@@ -114,6 +114,6 @@ label_parser simple_label_parser = {
   // test_label
   [](polylabel* v) { return test_label(v->simple); },
   // test_label
-  label_type_t::simple
+  VW::label_type_t::simple
 };
 // clang-format on
