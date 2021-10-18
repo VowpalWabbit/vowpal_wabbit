@@ -92,9 +92,6 @@ struct parser
 
   bool done = false;
 
-  v_array<size_t> ids;     // unique ids for sources
-  v_array<size_t> counts;  // partial examples received from sources
-  size_t finished_count;   // the number of finished examples;
   int bound_sock = 0;
 
   std::vector<VW::string_view> parse_name;
