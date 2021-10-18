@@ -683,7 +683,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
 {
   jclass predClass;
   jmethodID ctr;
-  switch (all->l->pred_type)
+  switch (all->l->get_output_prediction_type())
   {
     case VW::prediction_type_t::scalar:
       predClass = env->FindClass("org/vowpalwabbit/spark/prediction/ScalarPrediction");
@@ -727,7 +727,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
     default:
     {
       std::ostringstream ostr;
-      ostr << "prediction type '" << VW::to_string(all->l->pred_type) << "' is not supported";
+      ostr << "prediction type '" << VW::to_string(all->l->get_output_prediction_type()) << "' is not supported";
 
       env->ThrowNew(env->FindClass("java/lang/UnsupportedOperationException"), ostr.str().c_str());
       return nullptr;
