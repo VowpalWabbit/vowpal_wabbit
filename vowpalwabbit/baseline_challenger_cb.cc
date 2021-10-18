@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "baseline_challenger_cb.h"
+
 #include "action_score.h"
 #include "debug_log.h"
 #include "reductions.h"
@@ -12,6 +14,7 @@
 #include "io/logger.h"
 #include "vw.h"
 #include "example.h"
+#include "model_utils.h"
 
 #include <memory>
 #include <utility>
@@ -25,6 +28,15 @@ namespace logger = VW::io::logger;
 
 namespace VW
 {
+struct discounted_expectation;
+struct baseline_challenger_data;
+namespace model_utils
+{
+size_t read_model_field(io_buf&, VW::discounted_expectation&);
+size_t write_model_field(io_buf&, const VW::discounted_expectation&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::baseline_challenger_data&);
+size_t write_model_field(io_buf&, const VW::baseline_challenger_data&, const std::string&, bool);
+}  // namespace model_utils
 struct discounted_expectation
 {
   discounted_expectation(double tau) : tau(tau), sum(0), n(0) {}
@@ -37,16 +49,9 @@ struct discounted_expectation
 
   double current() const { return n == 0 ? 0 : sum / n; }
 
-  void save_load(io_buf& io, bool read, bool text, const char* name)
-  {
-    std::stringstream msg;
-
-    if (!read) { msg << name << "_expectation_sum " << std::fixed << sum << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&sum), sizeof(sum), read, msg, text);
-
-    if (!read) { msg << name << "_expectation_n " << std::fixed << n << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&n), sizeof(sum), read, msg, text);
-  }
+  friend size_t VW::model_utils::read_model_field(io_buf&, VW::discounted_expectation&);
+  friend size_t VW::model_utils::write_model_field(
+      io_buf&, const VW::discounted_expectation&, const std::string&, bool);
 
 private:
   double tau;
@@ -119,8 +124,47 @@ struct baseline_challenger_data
       }
     }
   }
+
+  friend size_t VW::model_utils::read_model_field(io_buf&, VW::baseline_challenger_data&);
+  friend size_t VW::model_utils::write_model_field(
+      io_buf&, const VW::baseline_challenger_data&, const std::string&, bool);
 };
 
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, VW::discounted_expectation& de)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, de.sum);
+  bytes += read_model_field(io, de.n);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const VW::discounted_expectation& de, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, de.sum, upstream_name + "_expectation_sum", text);
+  bytes += write_model_field(io, de.n, upstream_name + "_expectation_n", text);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, VW::baseline_challenger_data& challenger)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, challenger.baseline);
+  bytes += read_model_field(io, challenger.policy_expectation);
+  return bytes;
+}
+
+size_t write_model_field(
+    io_buf& io, const VW::baseline_challenger_data& challenger, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, challenger.baseline, upstream_name + "_baseline", text);
+  bytes += write_model_field(io, challenger.policy_expectation, upstream_name + "_policy", text);
+  return bytes;
+}
+}  // namespace model_utils
 }  // namespace VW
 
 template <bool is_learn>
@@ -132,9 +176,11 @@ void learn_or_predict(baseline_challenger_data& data, multi_learner& base, multi
 void save_load(baseline_challenger_data& data, io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-
-  data.policy_expectation.save_load(io, read, text, "policy");
-  data.baseline.save_load(io, read, text, "baseline");
+  if (read) { VW::model_utils::read_model_field(io, data); }
+  else
+  {
+    VW::model_utils::write_model_field(io, data, "_challenger", text);
+  }
 }
 
 void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
