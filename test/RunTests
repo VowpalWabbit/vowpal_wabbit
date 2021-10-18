@@ -2516,9 +2516,10 @@ train-sets/ref/slates_simple_w_interactions.stderr
 
 # Test 351: should be the same output as 158
 # except the line of enabled_reductions
-{VW} --save_resume -f automl.model --automl 3 --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json
+{VW} --save_resume -f automl.model --automl 3 --priority_type least_exclusion -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json --readable_model automl_readable.txt
     train-sets/ref/cbe_adf_dsjson_metrics_.stderr
     test-sets/ref/metrics_.json
+    train-sets/ref/automl_readable.txt
 
 # Test 352: check multilabel_oaa probabilities
 {VW} --multilabel_oaa 10 -d train-sets/multilabel -p multilabel_probs.predict --loss_function=logistic --probabilities
