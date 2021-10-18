@@ -398,7 +398,7 @@ size_t my_get_label_type(vw* all)
 
 size_t my_get_prediction_type(vw_ptr all)
 {
-  switch (all->l->pred_type)
+  switch (all->l->get_output_prediction_type())
   {
     case VW::prediction_type_t::scalar:
       return pSCALAR;
@@ -505,7 +505,7 @@ float my_predict(vw_ptr all, example_ptr ec)
   return ec->partial_prediction;
 }
 
-bool my_is_multiline(vw_ptr all) { return all->l->is_multiline; }
+bool my_is_multiline(vw_ptr all) { return all->l->is_multiline(); }
 
 template <bool learn>
 void predict_or_learn(vw_ptr& all, py::list& ec)

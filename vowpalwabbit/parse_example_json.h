@@ -1879,7 +1879,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     }
 
     // let's ask to continue reading data until we find a line with actions provided
-    if (interaction.actions.size() == 0 && all->l->is_multiline)
+    if (interaction.actions.size() == 0 && all->l->is_multiline())
     {
       if (all->example_parser->metrics) all->example_parser->metrics->NumberOfEventsZeroActions++;
       VW::return_multiple_example(*all, examples);

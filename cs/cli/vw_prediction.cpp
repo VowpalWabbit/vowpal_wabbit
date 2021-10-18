@@ -16,7 +16,7 @@ void CheckExample(vw* vw, example* ex, prediction_type_t type)
   if (ex == nullptr)
     throw gcnew ArgumentNullException("ex");
 
-  auto ex_pred_type = vw->l->pred_type;
+  auto ex_pred_type = vw->l->get_output_prediction_type();
   if (ex_pred_type != type)
   { auto sb = gcnew StringBuilder();
     sb->Append("Prediction type must be ");
@@ -182,7 +182,7 @@ System::Object^ VowpalWabbitDynamicPredictionFactory::Create(vw* vw, example* ex
 { if (ex == nullptr)
     throw gcnew ArgumentNullException("ex");
 
-  switch (vw->l->pred_type)
+  switch (vw->l->get_output_prediction_type())
   { case prediction_type_t::scalar:
       return VowpalWabbitPredictionType::Scalar->Create(vw, ex);
     case prediction_type_t::scalars:
@@ -205,7 +205,7 @@ System::Object^ VowpalWabbitDynamicPredictionFactory::Create(vw* vw, example* ex
     { auto sb = gcnew StringBuilder();
       sb->Append("Unsupported prediction type: ");
       // Note: we know this is a static lifetime string constant that is null terminated.
-      sb->Append(gcnew String(VW::to_string(vw->l->pred_type).data()));
+      sb->Append(gcnew String(VW::to_string(vw->l->get_output_prediction_type()).data()));
       throw gcnew ArgumentException(sb->ToString());
     }
   }
