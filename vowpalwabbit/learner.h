@@ -434,20 +434,11 @@ public:
     }
   }
 
-  prediction_type_t get_output_prediction_type()
-  {
-    return pred_type;
-  }
+  prediction_type_t get_output_prediction_type() { return pred_type; }
 
-  label_type_t get_input_label_type()
-  {
-    return _input_label_type;
-  }
+  label_type_t get_input_label_type() { return _input_label_type; }
 
-  bool is_multiline()
-  {
-    return _is_multiline;
-  }
+  bool is_multiline() { return _is_multiline; }
 };
 
 template <class T, class E>
@@ -629,8 +620,8 @@ struct reduction_learner_builder
     : public common_learner_builder<reduction_learner_builder<DataT, ExampleT, BaseLearnerT>, DataT, ExampleT,
           BaseLearnerT>
 {
-  using super = common_learner_builder<reduction_learner_builder<DataT, ExampleT, BaseLearnerT>, DataT, ExampleT,
-          BaseLearnerT>;
+  using super =
+      common_learner_builder<reduction_learner_builder<DataT, ExampleT, BaseLearnerT>, DataT, ExampleT, BaseLearnerT>;
   reduction_learner_builder(std::unique_ptr<DataT>&& data, BaseLearnerT* base, const std::string& name)
       // NOTE: This is a copy of the base! The purpose is to copy all of the
       // function data objects so that if this reduction does not define a function such as
@@ -670,8 +661,8 @@ struct reduction_no_data_learner_builder
     : public common_learner_builder<reduction_learner_builder<char, ExampleT, BaseLearnerT>, char, ExampleT,
           BaseLearnerT>
 {
-  using super = common_learner_builder<reduction_learner_builder<char, ExampleT, BaseLearnerT>, char, ExampleT,
-          BaseLearnerT>;
+  using super =
+      common_learner_builder<reduction_learner_builder<char, ExampleT, BaseLearnerT>, char, ExampleT, BaseLearnerT>;
   reduction_no_data_learner_builder(BaseLearnerT* base, const std::string& name)
       // NOTE: This is a copy of the base! The purpose is to copy all of the
       // function data objects so that if this reduction does not define a function such as
