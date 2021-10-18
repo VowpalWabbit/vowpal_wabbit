@@ -642,8 +642,8 @@ struct reduction_learner_builder
     this->set_learn_returns_prediction(false);
 
     // Default here is passthrough.
-    super::set_prediction_type(base->pred_type);
-    super::set_label_type(base->_input_label_type);
+    super::set_prediction_type(base->get_output_prediction_type());
+    super::set_label_type(base->get_input_label_type());
   }
 
   reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_params_per_weight(size_t params_per_weight)
@@ -679,8 +679,8 @@ struct reduction_no_data_learner_builder
 
     set_params_per_weight(1);
     // Default here is passthrough.
-    super::set_prediction_type(base->pred_type);
-    super::set_label_type(base->_input_label_type);
+    super::set_prediction_type(base->get_output_prediction_type());
+    super::set_label_type(base->get_input_label_type());
   }
 
   reduction_no_data_learner_builder<ExampleT, BaseLearnerT>& set_params_per_weight(size_t params_per_weight)
