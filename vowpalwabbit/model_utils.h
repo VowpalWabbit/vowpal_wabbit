@@ -4,9 +4,12 @@
 #pragma once
 
 #include "io_buf.h"
+#include "cache.h"
+#include <set>
+#include <map>
+#include <queue>
 
 #include <fmt/format.h>
-
 #include <type_traits>
 
 namespace VW
@@ -92,6 +95,149 @@ size_t write_model_field(io_buf& io, const T& var, const std::string& name_or_re
 
   // If not text we are just writing the binary data.
   return details::check_length_matches(io.bin_write_fixed(data, len), len);
+}
+
+template <typename T>
+size_t read_model_field(io_buf& io, std::set<T>& set)
+{
+  size_t bytes = 0;
+  uint64_t set_size;
+  bytes += read_model_field(io, set_size);
+  for (uint64_t i = 0; i < set_size; ++i)
+  {
+    T v;
+    bytes += read_model_field(io, v);
+    set.insert(v);
+  }
+  return bytes;
+}
+
+template <typename T>
+size_t write_model_field(io_buf& io, const std::set<T>& set, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for set."); }
+  size_t bytes = 0;
+  uint64_t set_size = static_cast<uint64_t>(set.size());
+  bytes += write_model_field(io, set_size, upstream_name + ".size()", text);
+  uint64_t i = 0;
+  for (const T& v : set)
+  {
+    bytes += write_model_field(io, v, fmt::format("{}[{}]", upstream_name, i), text);
+    ++i;
+  }
+  return bytes;
+}
+
+template <typename T>
+size_t read_model_field(io_buf& io, std::vector<T>& vec)
+{
+  size_t bytes = 0;
+  uint64_t vec_size;
+  bytes += read_model_field(io, vec_size);
+  for (uint64_t i = 0; i < vec_size; ++i)
+  {
+    T v;
+    bytes += read_model_field(io, v);
+    vec.push_back(v);
+  }
+  return bytes;
+}
+
+template <typename T>
+size_t write_model_field(io_buf& io, const std::vector<T>& vec, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for vector."); }
+  size_t bytes = 0;
+  uint64_t vec_size = static_cast<uint64_t>(vec.size());
+  bytes += write_model_field(io, vec_size, upstream_name + ".size()", text);
+  for (uint64_t i = 0; i < vec_size; ++i)
+  { bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text); }
+  return bytes;
+}
+
+template <typename F, typename S>
+size_t read_model_field(io_buf& io, std::pair<F, S>& pair)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, pair.first);
+  bytes += read_model_field(io, pair.second);
+  return bytes;
+}
+
+template <typename F, typename S>
+size_t write_model_field(io_buf& io, const std::pair<F, S>& pair, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for pair."); }
+  size_t bytes = 0;
+  bytes += write_model_field(io, pair.first, upstream_name + ".first", text);
+  bytes += write_model_field(io, pair.second, upstream_name + ".second", text);
+  return bytes;
+}
+
+template <typename T>
+size_t read_model_field(io_buf& io, std::priority_queue<T>& pq)
+{
+  size_t bytes = 0;
+  uint64_t queue_size;
+  bytes += read_model_field(io, queue_size);
+  for (uint64_t i = 0; i < queue_size; ++i)
+  {
+    T v;
+    bytes += read_model_field(io, v);
+    pq.push(v);
+  }
+  return bytes;
+}
+
+template <typename T>
+size_t write_model_field(io_buf& io, const std::priority_queue<T>& pq, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for priority_queue."); }
+  std::priority_queue<T> pq_cp = pq;
+  size_t bytes = 0;
+  uint64_t queue_size = static_cast<uint64_t>(pq_cp.size());
+  bytes += write_model_field(io, queue_size, upstream_name + ".size()", text);
+  uint64_t i = 0;
+  while (!pq_cp.empty())
+  {
+    const T& v = pq_cp.top();
+    bytes += write_model_field(io, v, fmt::format("{}[{}]", upstream_name, i), text);
+    pq_cp.pop();
+    ++i;
+  }
+  return bytes;
+}
+
+template <typename K, typename V>
+size_t read_model_field(io_buf& io, std::map<K, V>& map)
+{
+  size_t bytes = 0;
+  uint64_t map_size;
+  bytes += read_model_field(io, map_size);
+  for (uint64_t i = 0; i < map_size; ++i)
+  {
+    std::pair<K, V> pair;
+    bytes += read_model_field(io, pair);
+    map[pair.first] = pair.second;
+  }
+  return bytes;
+}
+
+template <typename K, typename V>
+size_t write_model_field(io_buf& io, const std::map<K, V>& map, const std::string& upstream_name, bool text)
+{
+  if (upstream_name.find("{}") != std::string::npos) { THROW("Field template not allowed for map."); }
+  size_t bytes = 0;
+  uint64_t map_size = static_cast<uint64_t>(map.size());
+  bytes += write_model_field(io, map_size, upstream_name + ".size()", text);
+  uint64_t i = 0;
+  for (const auto& pair : map)
+  {
+    bytes += write_model_field(io, pair.first, fmt::format("{}.key{}", upstream_name, i), text);
+    bytes += write_model_field(io, pair.second, fmt::format("{}[{}]", upstream_name, pair.first), text);
+    ++i;
+  }
+  return bytes;
 }
 
 }  // namespace model_utils
