@@ -667,7 +667,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
           "replay_b", "replay_m", "memory_tree", "new_mf", "nn", "stage_poly"});
 
   // only this has been tested
-  if (base_learner->is_multiline)
+  if (base_learner->is_multiline())
   {
     // fetch cb_explore_adf to call directly into the print routine twice
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_explore_adf_"));
@@ -680,7 +680,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
                   .set_finish_example(finish_example<interaction_config_manager>)
                   .set_save_load(save_load_aml<interaction_config_manager>)
                   .set_persist_metrics(persist<interaction_config_manager>)
-                  .set_prediction_type(base_learner->pred_type)
+                  .set_prediction_type(base_learner->get_output_prediction_type())
                   .set_learn_returns_prediction(true)
                   .build();
 

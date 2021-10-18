@@ -57,7 +57,7 @@ VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("ksvm")) return nullptr;
 
   auto base = stack_builder.setup_base_learner();
-  BOOST_CHECK(base->is_multiline == false);
+  BOOST_CHECK(base->is_multiline() == false);
 
   auto ret = VW::LEARNER::make_no_data_reduction_learner(as_singleline(base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(test_reduction_setup<test_stack>))
