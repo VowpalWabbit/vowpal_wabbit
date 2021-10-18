@@ -71,9 +71,9 @@ void finish_example(vw& all, multi_oaa& o, example& ec)
     for (uint32_t i = 0; i < o.k; i++)
     {
       if (i > 0) outputStringStream << ' ';
-      if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(i + 1); }
+      if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(i); }
       else
-        outputStringStream << i + 1;
+        outputStringStream << i;
       outputStringStream << ':' << ec.pred.scalars[i];
     }
     const auto ss_str = outputStringStream.str();
