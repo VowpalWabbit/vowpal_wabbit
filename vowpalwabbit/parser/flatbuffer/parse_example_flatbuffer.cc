@@ -132,7 +132,7 @@ bool parser::parse_examples(vw* all, io_buf& buf, v_array<example*>& examples, u
 
 void parser::parse_example(vw* all, example* ae, const Example* eg)
 {
-  all->example_parser->lbl_parser.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(ae->l);
   ae->is_newline = eg->is_newline();
   parse_flat_label(all->sd, ae, eg);
 
