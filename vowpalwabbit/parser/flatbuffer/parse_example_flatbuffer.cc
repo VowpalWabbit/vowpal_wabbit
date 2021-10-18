@@ -147,7 +147,7 @@ void parser::parse_example(vw* all, example* ae, const Example* eg)
 
 void parser::parse_multi_example(vw* all, example* ae, const MultiExample* eg)
 {
-  all->example_parser->lbl_parser.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(ae->l);
   if (_multi_ex_index >= eg->examples()->size())
   {
     // done with multi example, send a newline example and reset
