@@ -97,7 +97,6 @@ struct parser
   size_t finished_count;   // the number of finished examples;
   int bound_sock = 0;
 
-  std::vector<VW::string_view> parse_name;
   VW::label_parser_reuse_mem parser_memory_to_reuse;
 
   label_parser lbl_parser;  // moved from vw
