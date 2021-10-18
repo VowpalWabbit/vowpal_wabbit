@@ -239,7 +239,7 @@ private:
   func_data finisher_fd;
   std::string name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
   label_type_t _input_label_type;
-  prediction_type_t pred_type;
+  prediction_type_t _output_pred_type;
   bool _is_multiline;  // Is this a single-line or multi-line reduction?
 
   std::shared_ptr<void> learner_data;
@@ -434,7 +434,7 @@ public:
     }
   }
 
-  prediction_type_t get_output_prediction_type() { return pred_type; }
+  prediction_type_t get_output_prediction_type() { return _output_pred_type; }
 
   label_type_t get_input_label_type() { return _input_label_type; }
 
@@ -604,7 +604,7 @@ struct common_learner_builder
 
   FluentBuilderT& set_prediction_type(prediction_type_t pred_type)
   {
-    this->_learner->pred_type = pred_type;
+    this->_learner->_output_pred_type = pred_type;
     return *static_cast<FluentBuilderT*>(this);
   }
 
