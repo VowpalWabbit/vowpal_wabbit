@@ -200,22 +200,19 @@ size_t write_model_field(
 size_t read_model_field(io_buf& io, VW::distributionally_robust::ChiSquared& chisq)
 {
   size_t bytes = 0;
-  bytes += read_model_field(io, chisq.duals.first);
-  bytes += read_model_field(io, chisq.duals_stale);
-  bytes += read_model_field(io, chisq.duals.second);
-  bytes += read_model_field(io, chisq.alpha);
-  bytes += read_model_field(io, chisq.tau);
-  bytes += read_model_field(io, chisq.wmin);
-  bytes += read_model_field(io, chisq.wmax);
-  bytes += read_model_field(io, chisq.rmin);
-  bytes += read_model_field(io, chisq.rmax);
   bytes += read_model_field(io, chisq.n);
   bytes += read_model_field(io, chisq.sumw);
   bytes += read_model_field(io, chisq.sumwsq);
   bytes += read_model_field(io, chisq.sumwr);
   bytes += read_model_field(io, chisq.sumwsqr);
   bytes += read_model_field(io, chisq.sumwsqrsq);
-  bytes += read_model_field(io, chisq.delta);
+
+  bytes += read_model_field(io, chisq.rmin);
+  bytes += read_model_field(io, chisq.rmax);
+  bytes += read_model_field(io, chisq.wmin);
+  bytes += read_model_field(io, chisq.wmax);
+
+  chisq.duals_stale = true;
   return bytes;
 }
 
@@ -223,22 +220,17 @@ size_t write_model_field(
     io_buf& io, const VW::distributionally_robust::ChiSquared& chisq, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, chisq.duals.first, upstream_name + "_scored", text);
-  bytes += write_model_field(io, chisq.duals_stale, upstream_name + "_duals_stale", text);
-  bytes += write_model_field(io, chisq.duals.second, upstream_name + "_duals", text);
-  bytes += write_model_field(io, chisq.alpha, upstream_name + "_alpha", text);
-  bytes += write_model_field(io, chisq.tau, upstream_name + "_tau", text);
-  bytes += write_model_field(io, chisq.wmin, upstream_name + "_wmin", text);
-  bytes += write_model_field(io, chisq.wmax, upstream_name + "_wmax", text);
-  bytes += write_model_field(io, chisq.rmin, upstream_name + "_rmin", text);
-  bytes += write_model_field(io, chisq.rmax, upstream_name + "_rmax", text);
   bytes += write_model_field(io, chisq.n, upstream_name + "_n", text);
   bytes += write_model_field(io, chisq.sumw, upstream_name + "_sumw", text);
   bytes += write_model_field(io, chisq.sumwsq, upstream_name + "_sumwsq", text);
   bytes += write_model_field(io, chisq.sumwr, upstream_name + "_sumwr", text);
   bytes += write_model_field(io, chisq.sumwsqr, upstream_name + "_sumwsqr", text);
   bytes += write_model_field(io, chisq.sumwsqrsq, upstream_name + "_sumwsqrsq", text);
-  bytes += write_model_field(io, chisq.delta, upstream_name + "_delta", text);
+
+  bytes += write_model_field(io, chisq.rmin, upstream_name + "_rmin", text);
+  bytes += write_model_field(io, chisq.rmax, upstream_name + "_rmax", text);
+  bytes += write_model_field(io, chisq.wmin, upstream_name + "_wmin", text);
+  bytes += write_model_field(io, chisq.wmax, upstream_name + "_wmax", text);
   return bytes;
 }
 }  // namespace model_utils
