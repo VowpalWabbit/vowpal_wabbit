@@ -101,14 +101,14 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
   void (*pred_ptr)(classweights&, VW::LEARNER::single_learner&, example&);
   VW::prediction_type_t pred_type;
 
-  if (base->pred_type == VW::prediction_type_t::scalar)
+  if (base->get_output_prediction_type() == VW::prediction_type_t::scalar)
   {
     name_addition = "-scalar";
     learn_ptr = predict_or_learn<true, prediction_type_t::scalar>;
     pred_ptr = predict_or_learn<false, prediction_type_t::scalar>;
     pred_type = VW::prediction_type_t::scalar;
   }
-  else if (base->pred_type == prediction_type_t::multiclass)
+  else if (base->get_output_prediction_type() == prediction_type_t::multiclass)
   {
     name_addition = "-multi";
     learn_ptr = predict_or_learn<true, prediction_type_t::multiclass>;
