@@ -97,14 +97,16 @@ label_parser multilabel = {
     [](polylabel& label) { default_label(label.multilabels); },
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words)
-    { parse_label(label.multilabels, reuse_mem, words); },
+        const VW::named_labels* /* ldict */,
+        const std::vector<VW::string_view>& words) { parse_label(label.multilabels, reuse_mem, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache)
-    { cache_label(label.multilabels, cache); },
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
+      cache_label(label.multilabels, cache);
+    },
     // read_cached_label
-    [](polylabel& label, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf& cache)
-    { return read_cached_label(label.multilabels, cache); },
+    [](polylabel& label, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf& cache) {
+      return read_cached_label(label.multilabels, cache);
+    },
     // get_weight
     [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.multilabels); },
     // test_label

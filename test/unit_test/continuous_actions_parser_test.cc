@@ -47,8 +47,8 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_pdf)
     auto plabel = scoped_calloc_or_throw<polylabel>();
     reduction_features red_features;
 
-    parse_label(lp, "ca 185.121:0.657567:6.20426e-05 pdf 185:8109.67:2.10314e-06 8109.67:23959:6.20426e-05",
-        *plabel, red_features);
+    parse_label(lp, "ca 185.121:0.657567:6.20426e-05 pdf 185:8109.67:2.10314e-06 8109.67:23959:6.20426e-05", *plabel,
+        red_features);
     // check label
     BOOST_CHECK_CLOSE(plabel->cb_cont.costs[0].pdf_value, 6.20426e-05, FLOAT_TOL);
     BOOST_CHECK_CLOSE(plabel->cb_cont.costs[0].cost, 0.657567, FLOAT_TOL);

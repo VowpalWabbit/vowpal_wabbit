@@ -61,7 +61,6 @@ bool test_label(const slates::label& ld) { return ld.labeled == false; }
 // For a more complete description of the grammar, including examples see:
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
 
-
 void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words)
 {
   ld.weight = 1;
@@ -149,14 +148,16 @@ label_parser slates_label_parser = {
     [](polylabel& label) { default_label(label.slates); },
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words)
-    { parse_label(label.slates, reuse_mem, words); },
+        const VW::named_labels* /* ldict */,
+        const std::vector<VW::string_view>& words) { parse_label(label.slates, reuse_mem, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache)
-    { cache_label(label.slates, cache); },
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
+      cache_label(label.slates, cache);
+    },
     // read_cached_label
-    [](polylabel& label, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf& cache)
-    { return read_cached_label(label.slates, cache); },
+    [](polylabel& label, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf& cache) {
+      return read_cached_label(label.slates, cache);
+    },
     // get_weight
     [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.slates); },
     // test_label

@@ -100,10 +100,8 @@ bool test_label(const label& ld) { return test_label_internal(ld); }
 
 bool test_label(label& ld) { return test_label_internal(ld); }
 
-
-
-void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem,
-      const VW::named_labels* ldict, const std::vector<VW::string_view>& words)
+void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::named_labels* ldict,
+    const std::vector<VW::string_view>& words)
 {
   ld.costs.clear();
 
@@ -173,14 +171,16 @@ label_parser cs_label = {
     [](polylabel& label) { default_label(label.cs); },
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* ldict, const std::vector<VW::string_view>& words)
-    { parse_label(label.cs, reuse_mem, ldict, words); },
+        const VW::named_labels* ldict,
+        const std::vector<VW::string_view>& words) { parse_label(label.cs, reuse_mem, ldict, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache)
-    { cache_label(label.cs, cache); },
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
+      cache_label(label.cs, cache);
+    },
     // read_cached_label
-    [](polylabel& label, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf& cache)
-    { return read_cached_label(label.cs, cache); },
+    [](polylabel& label, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf& cache) {
+      return read_cached_label(label.cs, cache);
+    },
     // get_weight
     [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.cs); },
     // test_label

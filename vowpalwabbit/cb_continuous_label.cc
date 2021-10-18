@@ -27,7 +27,8 @@ size_t read_cached_label_additional_fields<VW::cb_continuous::continuous_label>(
 }
 
 template <>
-void cache_label_additional_fields<VW::cb_continuous::continuous_label>(const VW::cb_continuous::continuous_label&, io_buf&)
+void cache_label_additional_fields<VW::cb_continuous::continuous_label>(
+    const VW::cb_continuous::continuous_label&, io_buf&)
 {
 }
 
@@ -38,8 +39,8 @@ void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb
 
 }  // namespace CB
 
-void parse_pdf(
-    const std::vector<VW::string_view>& words, size_t words_index, VW::label_parser_reuse_mem& reuse_mem, reduction_features& red_features)
+void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW::label_parser_reuse_mem& reuse_mem,
+    reduction_features& red_features)
 {
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)
@@ -56,8 +57,8 @@ void parse_pdf(
   if (!VW::continuous_actions::is_valid_pdf(cats_reduction_features.pdf)) { cats_reduction_features.pdf.clear(); }
 }
 
-void parse_chosen_action(
-    const std::vector<VW::string_view>& words, size_t words_index, VW::label_parser_reuse_mem& reuse_mem, reduction_features& red_features)
+void parse_chosen_action(const std::vector<VW::string_view>& words, size_t words_index,
+    VW::label_parser_reuse_mem& reuse_mem, reduction_features& red_features)
 {
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)
@@ -76,7 +77,7 @@ namespace cb_continuous
 ////////////////////////////////////////////////////
 // Begin: parse a,c,p label format
 void parse_label(continuous_label& ld, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
-  const std::vector<VW::string_view>& words)
+    const std::vector<VW::string_view>& words)
 {
   ld.costs.clear();
 
@@ -104,7 +105,8 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
 
       if (reuse_mem.tokens.size() > 1) f.cost = float_of_string(reuse_mem.tokens[1]);
 
-      if (std::isnan(f.cost)) THROW("error NaN cost (" << reuse_mem.tokens[1] << " for action: " << reuse_mem.tokens[0]);
+      if (std::isnan(f.cost))
+        THROW("error NaN cost (" << reuse_mem.tokens[1] << " for action: " << reuse_mem.tokens[0]);
 
       f.pdf_value = .0;
       if (reuse_mem.tokens.size() > 2) f.pdf_value = float_of_string(reuse_mem.tokens[2]);
@@ -128,14 +130,16 @@ label_parser the_label_parser = {
     [](polylabel& label) { CB::default_label<continuous_label>(label.cb_cont); },
     // parse_label
     [](polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words)
-    { parse_label(label.cb_cont, red_features, reuse_mem, words); },
+        const VW::named_labels* /*ldict*/,
+        const std::vector<VW::string_view>& words) { parse_label(label.cb_cont, red_features, reuse_mem, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache)
-    { CB::cache_label<continuous_label, continuous_label_elm>(label.cb_cont, cache); },
+    [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache) {
+      CB::cache_label<continuous_label, continuous_label_elm>(label.cb_cont, cache);
+    },
     // read_cached_label
-    [](polylabel& label, reduction_features& /*red_features*/, const VW::named_labels*, io_buf& cache)
-    { return CB::read_cached_label<continuous_label, continuous_label_elm>(label.cb_cont, cache); },
+    [](polylabel& label, reduction_features& /*red_features*/, const VW::named_labels*, io_buf& cache) {
+      return CB::read_cached_label<continuous_label, continuous_label_elm>(label.cb_cont, cache);
+    },
     // get_weight
     // CB::weight just returns 1.f? This seems like it could be a bug...
     [](const polylabel& /*label*/, const reduction_features& /*red_features*/) { return 1.f; },

@@ -101,14 +101,16 @@ label_parser simple_label_parser = {
     [](polylabel& label) { default_simple_label(label.simple); },
     // parse_label
     [](polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& /*reuse_mem*/,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words)
-    { parse_simple_label(label.simple, red_features, words); },
+        const VW::named_labels* /*ldict*/,
+        const std::vector<VW::string_view>& words) { parse_simple_label(label.simple, red_features, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& red_features, io_buf& cache)
-    { cache_simple_label(label.simple, red_features, cache); },
+    [](const polylabel& label, const reduction_features& red_features, io_buf& cache) {
+      cache_simple_label(label.simple, red_features, cache);
+    },
     // read_cached_label
-    [](polylabel& label, reduction_features& red_features, const VW::named_labels*, io_buf& cache)
-    { return read_cached_simple_label(label.simple, red_features, cache); },
+    [](polylabel& label, reduction_features& red_features, const VW::named_labels*, io_buf& cache) {
+      return read_cached_simple_label(label.simple, red_features, cache);
+    },
     // get_weight
     [](const polylabel& /*label*/, const reduction_features& red_features) { return get_weight(red_features); },
     // test_label

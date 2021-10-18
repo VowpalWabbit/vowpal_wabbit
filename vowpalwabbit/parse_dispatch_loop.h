@@ -70,4 +70,3 @@ void parse_dispatch(vw& all, DispatchFuncT& dispatch)
   }
   lock_done(*all.example_parser);
 }
-

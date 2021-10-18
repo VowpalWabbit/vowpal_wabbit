@@ -44,8 +44,8 @@ label_parser no_label_parser = {
     // cache_label
     [](const polylabel& /* label */, const reduction_features& /* red_features */, io_buf& /* cache */) {},
     // read_cached_label
-    [](polylabel& /* label */, reduction_features& /* red_features */, const VW::named_labels* /* ldict */,
-        io_buf& /* cache */) -> size_t { return 1; },
+    [](polylabel& /* label */, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf &
+        /* cache */) -> size_t { return 1; },
     // get_weight
     [](const polylabel& /* label */, const reduction_features& /* red_features */) { return 1.f; },
     // test_label

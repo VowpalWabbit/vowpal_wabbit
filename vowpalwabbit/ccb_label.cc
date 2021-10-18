@@ -223,17 +223,21 @@ label_parser ccb_label_parser = {
     [](polylabel& label) { default_label(label.conditional_contextual_bandit); },
     // parse_label
     [](polylabel& label, ::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words)
-    { parse_label(label.conditional_contextual_bandit, reuse_mem, words); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words) {
+      parse_label(label.conditional_contextual_bandit, reuse_mem, words);
+    },
     // cache_label
-    [](const polylabel& label, const ::reduction_features& /*red_features*/, io_buf& cache)
-    { cache_label(label.conditional_contextual_bandit, cache); },
+    [](const polylabel& label, const ::reduction_features& /*red_features*/, io_buf& cache) {
+      cache_label(label.conditional_contextual_bandit, cache);
+    },
     // read_cached_label
-    [](polylabel& label, ::reduction_features& /*red_features*/, const VW::named_labels* /*ldict*/, io_buf& cache)
-    { return read_cached_label(label.conditional_contextual_bandit, cache); },
+    [](polylabel& label, ::reduction_features& /*red_features*/, const VW::named_labels* /*ldict*/, io_buf& cache) {
+      return read_cached_label(label.conditional_contextual_bandit, cache);
+    },
     // get_weight
-    [](const polylabel& label, const ::reduction_features& /*red_features*/)
-    { return ccb_weight(label.conditional_contextual_bandit); },
+    [](const polylabel& label, const ::reduction_features& /*red_features*/) {
+      return ccb_weight(label.conditional_contextual_bandit);
+    },
     // test_label
     [](const polylabel& label) { return test_label(label.conditional_contextual_bandit); },
     // label type

@@ -89,14 +89,16 @@ label_parser cb_label = {
     [](polylabel& label) { CB::default_label(label.cb); },
     // parse_label
     [](polylabel& label, reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words)
-    { CB::parse_label(label.cb, reuse_mem, words); },
+        const VW::named_labels* /*ldict*/,
+        const std::vector<VW::string_view>& words) { CB::parse_label(label.cb, reuse_mem, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache)
-    { CB::cache_label(label.cb, cache); },
+    [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache) {
+      CB::cache_label(label.cb, cache);
+    },
     // read_cached_label
-    [](polylabel& label, reduction_features& /*red_features*/, const VW::named_labels* /*ldict*/, io_buf& cache)
-    { return CB::read_cached_label(label.cb, cache); },
+    [](polylabel& label, reduction_features& /*red_features*/, const VW::named_labels* /*ldict*/, io_buf& cache) {
+      return CB::read_cached_label(label.cb, cache);
+    },
     // get_weight
     [](const polylabel& label, const reduction_features& /*red_features*/) { return label.cb.weight; },
     // test_label
@@ -198,7 +200,7 @@ void parse_label(CB_EVAL::label& ld, VW::label_parser_reuse_mem& reuse_mem, cons
   ld.action = static_cast<uint32_t>(hashstring(words[0].begin(), words[0].length(), 0));
 
   // TODO - make this a span and there is no allocation
-  const auto rest_of_tokens = std::vector<VW::string_view>(words.begin()+1, words.end());
+  const auto rest_of_tokens = std::vector<VW::string_view>(words.begin() + 1, words.end());
   CB::parse_label(ld.event, reuse_mem, rest_of_tokens);
 }
 
@@ -207,14 +209,16 @@ label_parser cb_eval = {
     [](polylabel& label) { CB_EVAL::default_label(label.cb_eval); },
     // parse_label
     [](polylabel& label, reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words)
-    { CB_EVAL::parse_label(label.cb_eval, reuse_mem, words); },
+        const VW::named_labels* /*ldict*/,
+        const std::vector<VW::string_view>& words) { CB_EVAL::parse_label(label.cb_eval, reuse_mem, words); },
     // cache_label
-    [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache)
-    { CB_EVAL::cache_label(label.cb_eval, cache); },
+    [](const polylabel& label, const reduction_features& /*red_features*/, io_buf& cache) {
+      CB_EVAL::cache_label(label.cb_eval, cache);
+    },
     // read_cached_label
-    [](polylabel& label, reduction_features& /*red_features*/, const VW::named_labels* /*ldict*/, io_buf& cache)
-    { return CB_EVAL::read_cached_label(label.cb_eval, cache); },
+    [](polylabel& label, reduction_features& /*red_features*/, const VW::named_labels* /*ldict*/, io_buf& cache) {
+      return CB_EVAL::read_cached_label(label.cb_eval, cache);
+    },
     // get_weight
     [](const polylabel& /*label*/, const reduction_features& /*red_features*/) { return 1.f; },
     // test_label
