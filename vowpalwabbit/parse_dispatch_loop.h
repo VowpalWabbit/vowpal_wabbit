@@ -37,7 +37,7 @@ void parse_dispatch(vw& all, DispatchFuncT& dispatch)
         all.passes_complete++;
 
         // setup an end_pass example
-        all.example_parser->lbl_parser.default_label(&examples[0]->l);
+        all.example_parser->lbl_parser.default_label(examples[0]->l);
         examples[0]->end_pass = true;
         all.example_parser->in_pass_counter = 0;
 
@@ -70,3 +70,4 @@ void parse_dispatch(vw& all, DispatchFuncT& dispatch)
   }
   lock_done(*all.example_parser);
 }
+

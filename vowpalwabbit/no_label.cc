@@ -35,25 +35,23 @@ void parse_no_label(const std::vector<VW::string_view>& words)
   }
 }
 
-// clang-format off
 label_parser no_label_parser = {
-  // default_label
-  [](polylabel*) {},
-  // parse_label
-  [](parser*, shared_data*, polylabel*, std::vector<VW::string_view>& words, reduction_features&) {
-    parse_no_label(words);
-  },
-  // cache_label
-  [](polylabel*, reduction_features&, io_buf&) {},
-  // read_cached_label
-  [](shared_data*, polylabel*, reduction_features&, io_buf&) -> size_t { return 1; },
-   // get_weight
-  [](polylabel*, const reduction_features&) { return 1.f; },
-  // test_label
-  [](polylabel*) { return false; },
-  VW::label_type_t::nolabel
-};
-// clang-format on
+    // default_label
+    [](polylabel& /* label */) {},
+    // parse_label
+    [](polylabel& /* label */, reduction_features& /* red_features */, VW::label_parser_reuse_mem& /* reuse_mem */,
+        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words) { parse_no_label(words); },
+    // cache_label
+    [](const polylabel& /* label */, const reduction_features& /* red_features */, io_buf& /* cache */) {},
+    // read_cached_label
+    [](polylabel& /* label */, reduction_features& /* red_features */, const VW::named_labels* /* ldict */,
+        io_buf& /* cache */) -> size_t { return 1; },
+    // get_weight
+    [](const polylabel& /* label */, const reduction_features& /* red_features */) { return 1.f; },
+    // test_label
+    [](const polylabel& /* label */) { return false; },
+    // label type
+    VW::label_type_t::nolabel};
 
 void print_no_label_update(vw& all, example& ec)
 {

@@ -625,7 +625,7 @@ void set_done(vw& all)
 
 void end_pass_example(vw& all, example* ae)
 {
-  all.example_parser->lbl_parser.default_label(&ae->l);
+  all.example_parser->lbl_parser.default_label(ae->l);
   ae->end_pass = true;
   all.example_parser->in_pass_counter = 0;
 }
@@ -682,14 +682,14 @@ void setup_example(vw& all, example* ae)
   ae->test_only = is_test_only(all.example_parser->in_pass_counter, all.holdout_period, all.holdout_after,
       all.holdout_set_off, all.example_parser->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
   // If this example has a test only label then it is true regardless.
-  ae->test_only |= all.example_parser->lbl_parser.test_label(&ae->l);
+  ae->test_only |= all.example_parser->lbl_parser.test_label(ae->l);
 
   if (all.example_parser->emptylines_separate_examples &&
       (example_is_newline(*ae) &&
           (all.example_parser->lbl_parser.label_type != label_type_t::ccb || CCB::ec_is_example_unset(*ae))))
     all.example_parser->in_pass_counter++;
 
-  ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l, ae->_reduction_features);
+  ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->_reduction_features);
 
   if (all.ignore_some)
   {
@@ -736,7 +736,7 @@ namespace VW
 example* new_unused_example(vw& all)
 {
   example* ec = &get_unused_example(&all);
-  all.example_parser->lbl_parser.default_label(&ec->l);
+  all.example_parser->lbl_parser.default_label(ec->l);
   return ec;
 }
 
@@ -772,7 +772,7 @@ void add_label(example* ec, float label, float weight, float base)
 example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len)
 {
   example* ret = &get_unused_example(&all);
-  all.example_parser->lbl_parser.default_label(&ret->l);
+  all.example_parser->lbl_parser.default_label(ret->l);
 
   if (label.length() > 0) parse_example_label(all, *ret, label);
 
@@ -827,7 +827,7 @@ void parse_example_label(vw& all, example& ec, const std::string& label)
   std::vector<VW::string_view> words;
   tokenize(' ', label, words);
   all.example_parser->lbl_parser.parse_label(
-      all.example_parser, all.example_parser->_shared_data, &ec.l, words, ec._reduction_features);
+      ec.l, ec._reduction_features, all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words);
 }
 
 void empty_example(vw& /*all*/, example& ec)

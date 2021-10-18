@@ -18,7 +18,7 @@ namespace slates
 {
 void default_label(slates::label& v);
 
-size_t read_cached_label(shared_data* /*sd*/, slates::label& ld, io_buf& cache)
+size_t read_cached_label(slates::label& ld, io_buf& cache)
 {
   // Since read_cached_features doesn't default the label we must do it here.
   default_label(ld);
@@ -36,7 +36,7 @@ size_t read_cached_label(shared_data* /*sd*/, slates::label& ld, io_buf& cache)
   return read_count;
 }
 
-void cache_label(slates::label& ld, io_buf& cache)
+void cache_label(const slates::label& ld, io_buf& cache)
 {
   cache.write_value(ld.type);
   cache.write_value(ld.weight);
@@ -47,11 +47,11 @@ void cache_label(slates::label& ld, io_buf& cache)
   for (const auto& score : ld.probabilities) { cache.write_value(score); }
 }
 
-float weight(slates::label& ld) { return ld.weight; }
+float weight(const slates::label& ld) { return ld.weight; }
 
 void default_label(slates::label& ld) { ld.reset_to_default(); }
 
-bool test_label(slates::label& ld) { return ld.labeled == false; }
+bool test_label(const slates::label& ld) { return ld.labeled == false; }
 
 // Slates labels come in three types, shared, action and slot with the following structure:
 // slates shared [global_cost]
@@ -60,8 +60,9 @@ bool test_label(slates::label& ld) { return ld.labeled == false; }
 //
 // For a more complete description of the grammar, including examples see:
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
-void parse_label(
-    parser* p, shared_data* /*sd*/, slates::label& ld, std::vector<VW::string_view>& words, reduction_features&)
+
+
+void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words)
 {
   ld.weight = 1;
 
@@ -101,10 +102,10 @@ void parse_label(
     if (words.size() == 3)
     {
       ld.labeled = true;
-      tokenize(',', words[2], p->parse_name);
+      tokenize(',', words[2], reuse_mem.tokens);
 
       std::vector<VW::string_view> split_colons;
-      for (auto& token : p->parse_name)
+      for (auto& token : reuse_mem.tokens)
       {
         tokenize(':', token, split_colons);
         if (split_colons.size() != 2) { THROW("Malformed action score token"); }
@@ -143,25 +144,25 @@ void parse_label(
   }
 }
 
-// clang-format off
 label_parser slates_label_parser = {
-  // default_label
-  [](polylabel* v) { default_label(v->slates); },
-  // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
-    parse_label(p, sd, v->slates, words, red_features);
-  },
-  // cache_label
-  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->slates, cache); },
-  // read_cached_label
-  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->slates, cache); },
-  // get_weight
-  [](polylabel* v, const reduction_features&) { return weight(v->slates); },
-  // test_label
-  [](polylabel* v) { return test_label(v->slates); },
-  label_type_t::slates
-};
-// clang-format on
+    // default_label
+    [](polylabel& label) { default_label(label.slates); },
+    // parse_label
+    [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
+        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words)
+    { parse_label(label.slates, reuse_mem, words); },
+    // cache_label
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache)
+    { cache_label(label.slates, cache); },
+    // read_cached_label
+    [](polylabel& label, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf& cache)
+    { return read_cached_label(label.slates, cache); },
+    // get_weight
+    [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.slates); },
+    // test_label
+    [](const polylabel& label) { return test_label(label.slates); },
+    // label type
+    label_type_t::slates};
 
 }  // namespace slates
 }  // namespace VW

@@ -12,6 +12,7 @@
 #include "constant.h"
 #include "vw_string_view.h"
 #include "future_compat.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 
@@ -497,7 +498,7 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
 {
   if (example.empty()) { ae->is_newline = true; }
 
-  all->example_parser->lbl_parser.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(ae->l);
 
   size_t bar_idx = example.find('|');
 
@@ -527,8 +528,10 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
   }
 
   if (!all->example_parser->words.empty())
-    all->example_parser->lbl_parser.parse_label(all->example_parser, all->example_parser->_shared_data, &ae->l,
-        all->example_parser->words, ae->_reduction_features);
+  {
+    all->example_parser->lbl_parser.parse_label(ae->l, ae->_reduction_features,
+        all->example_parser->parser_memory_to_reuse, all->sd->ldict.get(), all->example_parser->words);
+  }
 
   if (bar_idx != VW::string_view::npos)
   {
