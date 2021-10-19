@@ -36,7 +36,7 @@ void cache_label(const label_t& ld, io_buf& cache)
   c += sizeof(ld.weight);
 }
 
-size_t read_cached_label(shared_data*, label_t& ld, io_buf& cache)
+size_t read_cached_label(label_t& ld, io_buf& cache)
 {
   char* c;
   size_t total = sizeof(ld.label) + sizeof(ld.weight);
@@ -47,17 +47,17 @@ size_t read_cached_label(shared_data*, label_t& ld, io_buf& cache)
   c += sizeof(ld.weight);
   return total;
 }
-float weight(label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
+float weight(const label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
 bool test_label(const label_t& ld) { return ld.label == static_cast<uint32_t>(-1); }
 
-void parse_label(parser*, shared_data* sd, label_t& ld, std::vector<VW::string_view>& words, reduction_features&)
+void parse_label(label_t& ld, const VW::named_labels* ldict, const std::vector<VW::string_view>& words)
 {
   switch (words.size())
   {
     case 0:
       break;
     case 1:
-      if (sd->ldict) { ld.label = sd->ldict->get(words[0]); }
+      if (ldict) { ld.label = ldict->get(words[0]); }
       else
       {
         char* char_after_int = nullptr;
@@ -68,7 +68,7 @@ void parse_label(parser*, shared_data* sd, label_t& ld, std::vector<VW::string_v
       ld.weight = 1.0;
       break;
     case 2:
-      if (sd->ldict) { ld.label = sd->ldict->get(words[0]); }
+      if (ldict) { ld.label = ldict->get(words[0]); }
       else
       {
         char* char_after_int = nullptr;
@@ -83,28 +83,30 @@ void parse_label(parser*, shared_data* sd, label_t& ld, std::vector<VW::string_v
   }
   if (ld.label == 0)
     THROW("label 0 is not allowed for multiclass.  Valid labels are {1,k}"
-        << (sd->ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
+        << (ldict ? "\nthis likely happened because you specified an invalid label with named labels" : ""));
 }
 
-// clang-format off
 label_parser mc_label = {
-  // default_label
-  [](polylabel* v) { default_label(v->multi); },
-  // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
-    parse_label(p, sd, v->multi, words, red_features);
-  },
-  // cache_label
-  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->multi, cache); },
-  // read_cached_label
-  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->multi, cache); },
-  // get_weight
-  [](polylabel* v, const reduction_features&) { return weight(v->multi); },
-  // test_label
-  [](polylabel* v) { return test_label(v->multi); },
-  VW::label_type_t::multiclass
-};
-// clang-format on
+    // default_label
+    [](polylabel& label) { default_label(label.multi); },
+    // parse_label
+    [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& /* reuse_mem */,
+        const VW::named_labels* ldict,
+        const std::vector<VW::string_view>& words) { parse_label(label.multi, ldict, words); },
+    // cache_label
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
+      cache_label(label.multi, cache);
+    },
+    // read_cached_label
+    [](polylabel& label, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf& cache) {
+      return read_cached_label(label.multi, cache);
+    },
+    // get_weight
+    [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.multi); },
+    // test_label
+    [](const polylabel& label) { return test_label(label.multi); },
+    // label type
+    VW::label_type_t::multiclass};
 
 void print_label_pred(vw& all, example& ec, uint32_t prediction)
 {

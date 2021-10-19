@@ -138,7 +138,7 @@ private:
   bool complete_multi_ex(example* ec)
   {
     auto& master = _context.get_master();
-    const bool is_test_ec = master.example_parser->lbl_parser.test_label(&ec->l);
+    const bool is_test_ec = master.example_parser->lbl_parser.test_label(ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
 
     // In the case of end-of-pass example, we need to treat it as an indicator of

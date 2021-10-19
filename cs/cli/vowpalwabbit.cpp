@@ -789,7 +789,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
   if (ex == nullptr)
   { try
     { auto ex = VW::alloc_examples(1);
-      m_vw->example_parser->lbl_parser.default_label(&ex->l);
+      m_vw->example_parser->lbl_parser.default_label(ex->l);
       return gcnew VowpalWabbitExample(this, ex);
     }
     CATCHRETHROW
@@ -797,7 +797,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
 
   try
   { VW::empty_example(*m_vw, *ex->m_example);
-    m_vw->example_parser->lbl_parser.default_label(&ex->m_example->l);
+    m_vw->example_parser->lbl_parser.default_label(ex->m_example->l);
 
     return ex;
   }

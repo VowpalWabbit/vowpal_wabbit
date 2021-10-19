@@ -28,7 +28,7 @@ std::shared_ptr<std::vector<char>> get_cache_buffer(const std::string& es)
 
   if (vw->example_parser->write_cache)
   {
-    vw->example_parser->lbl_parser.cache_label(&ae->l, ae->_reduction_features, vw->example_parser->output);
+    vw->example_parser->lbl_parser.cache_label(ae->l, ae->_reduction_features, vw->example_parser->output);
     cache_features(vw->example_parser->output, ae, vw->parse_mask);
   }
   vw->example_parser->output.flush();

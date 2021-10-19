@@ -5,6 +5,7 @@
 #include "cache.h"
 #include "unique_sort.h"
 #include "global_data.h"
+#include "shared_data.h"
 #include "vw.h"
 #include "io/logger.h"
 
@@ -64,7 +65,7 @@ __attribute__((packed))
 
 void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_parser, uint64_t parse_mask)
 {
-  lbl_parser.cache_label(&ae->l, ae->_reduction_features, output);
+  lbl_parser.cache_label(ae->l, ae->_reduction_features, output);
   cache_features(output, ae, parse_mask);
 }
 
@@ -72,7 +73,7 @@ int VW::read_example_from_cache(
     io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache, shared_data* shared_dat)
 {
   ae->sorted = sorted_cache;
-  size_t total = lbl_parser.read_cached_label(shared_dat, &ae->l, ae->_reduction_features, input);
+  size_t total = lbl_parser.read_cached_label(ae->l, ae->_reduction_features, shared_dat->ldict.get(), input);
   if (total == 0) { return 0; }
   if (read_cached_tag(input, ae) == 0) { return 0; }
   unsigned char newline_indicator = input.read_value<unsigned char>("newline_indicator");

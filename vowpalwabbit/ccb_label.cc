@@ -18,6 +18,7 @@
 #include "vw_string_view.h"
 #include "parse_primitives.h"
 #include "reduction_features.h"
+#include "label_parser.h"
 
 #include "io/logger.h"
 
@@ -36,7 +37,7 @@ namespace CCB
 {
 void default_label(label& ld);
 
-size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
+size_t read_cached_label(label& ld, io_buf& cache)
 {
   // Since read_cached_features doesn't default the label we must do it here.
   default_label(ld);
@@ -67,9 +68,9 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
   return read_count;
 }
 
-float ccb_weight(CCB::label& ld) { return ld.weight; }
+float ccb_weight(const CCB::label& ld) { return ld.weight; }
 
-void cache_label(label& ld, io_buf& cache)
+void cache_label(const label& ld, io_buf& cache)
 {
   cache.write_value(ld.type);
   cache.write_value(ld.outcome != nullptr);
@@ -98,7 +99,7 @@ void default_label(label& ld)
   ld.weight = 1.0;
 }
 
-bool test_label(CCB::label& ld) { return ld.outcome == nullptr; }
+bool test_label(const CCB::label& ld) { return ld.outcome == nullptr; }
 
 ACTION_SCORE::action_score convert_to_score(
     const VW::string_view& action_id_str, const VW::string_view& probability_str)
@@ -122,7 +123,7 @@ ACTION_SCORE::action_score convert_to_score(
 }
 
 //<action>:<cost>:<probability>,<action>:<probability>,<action>:<probability>,…
-CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view& outcome)
+CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view outcome)
 {
   auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
 
@@ -156,7 +157,7 @@ void parse_explicit_inclusions(CCB::label& ld, const std::vector<VW::string_view
   for (const auto& inclusion : split_inclusions) { ld.explicit_included_actions.push_back(int_of_string(inclusion)); }
 }
 
-void parse_label(parser* p, shared_data*, label& ld, std::vector<VW::string_view>& words, ::reduction_features&)
+void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words)
 {
   ld.weight = 1.0;
 
@@ -191,8 +192,8 @@ void parse_label(parser* p, shared_data*, label& ld, std::vector<VW::string_view
       }
       else
       {
-        tokenize(',', words[i], p->parse_name);
-        parse_explicit_inclusions(ld, p->parse_name);
+        tokenize(',', words[i], reuse_mem.tokens);
+        parse_explicit_inclusions(ld, reuse_mem.tokens);
       }
     }
 
@@ -217,23 +218,28 @@ void parse_label(parser* p, shared_data*, label& ld, std::vector<VW::string_view
   }
 }
 
-// clang-format off
 label_parser ccb_label_parser = {
-  // default_label
-  [](polylabel* v) { default_label(v->conditional_contextual_bandit); },
-  // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, ::reduction_features& red_features) {
-    parse_label(p, sd, v->conditional_contextual_bandit, words, red_features);
-  },
-  // cache_label
-  [](polylabel* v, ::reduction_features&, io_buf& cache) { cache_label(v->conditional_contextual_bandit, cache); },
-  // read_cached_label
-  [](shared_data* sd, polylabel* v, ::reduction_features&, io_buf& cache) { return read_cached_label(sd, v->conditional_contextual_bandit, cache); },
-  // get_weight
-  [](polylabel* v, const ::reduction_features&) { return ccb_weight(v->conditional_contextual_bandit); },
-  // test_label
-  [](polylabel* v) { return test_label(v->conditional_contextual_bandit); },
-  VW::label_type_t::ccb
-};
-// clang-format on
+    // default_label
+    [](polylabel& label) { default_label(label.conditional_contextual_bandit); },
+    // parse_label
+    [](polylabel& label, ::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words) {
+      parse_label(label.conditional_contextual_bandit, reuse_mem, words);
+    },
+    // cache_label
+    [](const polylabel& label, const ::reduction_features& /*red_features*/, io_buf& cache) {
+      cache_label(label.conditional_contextual_bandit, cache);
+    },
+    // read_cached_label
+    [](polylabel& label, ::reduction_features& /*red_features*/, const VW::named_labels* /*ldict*/, io_buf& cache) {
+      return read_cached_label(label.conditional_contextual_bandit, cache);
+    },
+    // get_weight
+    [](const polylabel& label, const ::reduction_features& /*red_features*/) {
+      return ccb_weight(label.conditional_contextual_bandit);
+    },
+    // test_label
+    [](const polylabel& label) { return test_label(label.conditional_contextual_bandit); },
+    // label type
+    VW::label_type_t::ccb};
 }  // namespace CCB
