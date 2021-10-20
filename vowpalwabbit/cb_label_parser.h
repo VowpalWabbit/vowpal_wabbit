@@ -21,7 +21,7 @@ size_t read_cached_label_additional_fields(LabelT& ld, io_buf& cache)
 }
 
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-size_t read_cached_label(shared_data*, LabelT& ld, io_buf& cache)
+size_t read_cached_label(LabelT& ld, io_buf& cache)
 {
   ld.costs.clear();
 
@@ -48,13 +48,13 @@ size_t read_cached_label(shared_data*, LabelT& ld, io_buf& cache)
 }
 
 template <typename LabelT = CB::label>
-void cache_label_additional_fields(LabelT& ld, io_buf& cache)
+void cache_label_additional_fields(const LabelT& ld, io_buf& cache)
 {
   cache.write_value(ld.weight);
 }
 
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-void cache_label(LabelT& ld, io_buf& cache)
+void cache_label(const LabelT& ld, io_buf& cache)
 {
   cache.write_value<size_t>(ld.costs.size());
 
@@ -89,7 +89,7 @@ inline float get_probability(const VW::cb_continuous::continuous_label_elm& elm)
 }
 
 template <typename LabelT = CB::label, typename LabelElmT = cb_class>
-bool is_test_label(LabelT& ld)
+bool is_test_label(const LabelT& ld)
 {
   if (ld.costs.size() == 0) return true;
   for (size_t i = 0; i < ld.costs.size(); i++)
