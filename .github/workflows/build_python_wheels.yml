@@ -78,4 +78,4 @@ jobs:
         shell: bash
         run: |
           cd test
-          python run_tests.py --vw_bin_path "python3 -m vowpalwabbit"
+          python run_tests.py --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit"
