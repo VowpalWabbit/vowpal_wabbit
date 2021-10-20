@@ -15,6 +15,7 @@
 #include <fstream>
 
 #include "text_utils.h"
+#include "crossplat_compat.h"
 
 #ifdef _WIN32
 #  define NOMINMAX
@@ -411,20 +412,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       std::ofstream pid_file;
       pid_file.open(input_options.pid_file.c_str());
-      if (!pid_file.is_open()) THROW("error writing pid file");
-
-#ifdef _WIN32
-#  pragma warning(push)  // This next line is inappropriately triggering the Windows-side warning about getpid()
-#  pragma warning( \
-      disable : 4996)  // In newer toolchains, we are properly calling _getpid(), via the #define above (line 33).
-#endif
-
-      pid_file << VW_getpid() << endl;
+      if (!pid_file.is_open()) { THROW("error writing pid file"); }
+      pid_file << VW::get_pid() << endl;
       pid_file.close();
-
-#ifdef _WIN32
-#  pragma warning(pop)
-#endif
     }
 
     if (all.daemon && !all.active)
