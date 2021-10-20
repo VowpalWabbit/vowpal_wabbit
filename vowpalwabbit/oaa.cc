@@ -41,15 +41,16 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   // Update indexing
   if (o.indexing == -1 && ec.l.multi.label == 0) { o.indexing = 0; }
-  else if (o.indexing == -1 && ec.l.multi.label == o.k) { o.indexing = 1; }
+  else if (o.indexing == -1 && ec.l.multi.label == o.k)
+  {
+    o.indexing = 1;
+  }
 
   MULTICLASS::label_t ld = ec.l.multi;
 
   // Label validation
   if (o.indexing == 0 && ld.label >= o.k)
-  {
-    logger::log_error("label {0} is not in {{0,{1}}} This won't work 0-indexed actions.", ld.label, o.k - 1);
-  }
+  { logger::log_error("label {0} is not in {{0,{1}}} This won't work 0-indexed actions.", ld.label, o.k - 1); }
   else if (o.indexing == 1 && (ld.label < 1 || ld.label > o.k))
   {
     logger::log_error("label {0} is not in {{1,{1}}} This won't work for 1-indexed actions.", ld.label, o.k);
@@ -57,7 +58,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 
   ec.l.simple.label = 1.;  // truth
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
-  
+
   base.learn(ec, (ld.label + o.k - 1) % o.k);
 
   size_t prediction = ld.label;
@@ -94,7 +95,10 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, example& ec)
 {
   // Update indexing
   if (o.indexing == -1 && ec.l.multi.label == 0) { o.indexing = 0; }
-  else if (o.indexing == -1 && ec.l.multi.label == o.k) { o.indexing = 1; }
+  else if (o.indexing == -1 && ec.l.multi.label == o.k)
+  {
+    o.indexing = 1;
+  }
 
   // Save label
   MULTICLASS::label_t mc_label_data = ec.l.multi;
@@ -131,7 +135,10 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
 {
   // Update indexing
   if (o.indexing == -1 && ec.l.multi.label == 0) { o.indexing = 0; }
-  else if (o.indexing == -1 && ec.l.multi.label == o.k) { o.indexing = 1; }
+  else if (o.indexing == -1 && ec.l.multi.label == o.k)
+  {
+    o.indexing = 1;
+  }
   // The predictions are either an array of scores or a single
   // class id of a multiclass label
 
@@ -158,7 +165,8 @@ void predict(oaa& o, LEARNER::single_learner& base, example& ec)
       add_passthrough_feature(ec, 0, o.pred[o.k - 1].scalar);
       for (uint32_t i = 0; i < o.k - 1; i++) add_passthrough_feature(ec, (i + 1), o.pred[i].scalar);
     }
-    else{
+    else
+    {
       for (uint32_t i = 1; i <= o.k; i++) add_passthrough_feature(ec, i, o.pred[i - 1].scalar);
     }
   }
