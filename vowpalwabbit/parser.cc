@@ -95,8 +95,8 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 uint32_t cache_numbits(VW::io::reader& cache_reader)
 {
   size_t version_buffer_length;
-  if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&version_buffer_length), sizeof(version_buffer_length))) <
-      sizeof(version_buffer_length))
+  if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&version_buffer_length),
+          sizeof(version_buffer_length))) < sizeof(version_buffer_length))
   { THROW("failed to read: version_buffer_length"); }
 
   if (version_buffer_length > 61) THROW("cache version too long, cache file is probably invalid");
@@ -121,7 +121,8 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   if (marker != 'c') THROW("data file is not a cache file");
 
   uint32_t cache_numbits;
-  if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&cache_numbits), sizeof(cache_numbits))) < sizeof(cache_numbits))
+  if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&cache_numbits), sizeof(cache_numbits))) <
+      sizeof(cache_numbits))
   { THROW("failed to read"); }
 
   return cache_numbits;
