@@ -437,7 +437,7 @@ void to_flat::convert_txt_to_flat(vw& all)
     }
     std::string tag(ae->tag.begin(), ae->tag.size());
 
-    if (all.l->is_multiline)
+    if (all.l->is_multiline())
     {
       if (!example_is_newline(*ae) ||
           (all.example_parser->lbl_parser.label_type == VW::label_type_t::cb &&
@@ -470,7 +470,7 @@ void to_flat::convert_txt_to_flat(vw& all)
       _examples++;
     }
 
-    write_to_file(collection, all.l->is_multiline, multi_ex_builder, ex_builder, outfile);
+    write_to_file(collection, all.l->is_multiline(), multi_ex_builder, ex_builder, outfile);
 
     ae = all.example_parser->ready_parsed_examples.pop();
   }
@@ -478,12 +478,12 @@ void to_flat::convert_txt_to_flat(vw& all)
   if (collection && _collection_count > 0)
   {
     // left over examples that did not fit in collection
-    write_collection_to_file(all.l->is_multiline, outfile);
+    write_collection_to_file(all.l->is_multiline(), outfile);
   }
-  else if (all.l->is_multiline && _multi_ex_index > 0)
+  else if (all.l->is_multiline() && _multi_ex_index > 0)
   {
     // left over multi examples at end of file
-    write_to_file(collection, all.l->is_multiline, multi_ex_builder, ex_builder, outfile);
+    write_to_file(collection, all.l->is_multiline(), multi_ex_builder, ex_builder, outfile);
   }
 
   *(all.trace_message) << "Converted " << _examples << " examples" << std::endl;

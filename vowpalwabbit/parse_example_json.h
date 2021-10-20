@@ -247,7 +247,7 @@ public:
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
-    ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
+    ctx.all->example_parser->lbl_parser.default_label(ctx.ex->l);
 
     // don't allow { { { } } }
     if (ctx.previous_state == this)
@@ -625,7 +625,7 @@ struct MultiState : BaseState<audit>
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-    ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
+    ctx.all->example_parser->lbl_parser.default_label(ctx.ex->l);
     if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
     { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action; }
     else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates)
@@ -672,7 +672,7 @@ struct SlotsState : BaseState<audit>
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-    ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
+    ctx.all->example_parser->lbl_parser.default_label(ctx.ex->l);
     if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
     { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot; }
     else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates)
@@ -1034,7 +1034,7 @@ public:
         if (num_slots == 0 && ctx.label_object_state.found_cb)
         {
           ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-          ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
+          ctx.all->example_parser->lbl_parser.default_label(ctx.ex->l);
           ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
           ctx.examples->push_back(ctx.ex);
 
@@ -1635,7 +1635,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
     ctx.init(all);
     ctx.examples = examples;
     ctx.ex = (*examples)[0];
-    all->example_parser->lbl_parser.default_label(&ctx.ex->l);
+    all->example_parser->lbl_parser.default_label(ctx.ex->l);
 
     ctx.stream = stream;
     ctx.stream_end = stream_end;
@@ -1879,7 +1879,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     }
 
     // let's ask to continue reading data until we find a line with actions provided
-    if (interaction.actions.size() == 0 && all->l->is_multiline)
+    if (interaction.actions.size() == 0 && all->l->is_multiline())
     {
       if (all->example_parser->metrics) all->example_parser->metrics->NumberOfEventsZeroActions++;
       VW::return_multiple_example(*all, examples);

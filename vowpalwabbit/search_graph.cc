@@ -89,7 +89,7 @@ struct task_data
   float true_counts_total;
 };
 
-inline bool example_is_test(polylabel* l) { return l->cs.costs.size() == 0; }
+inline bool example_is_test(const polylabel& l) { return l.cs.costs.empty(); }
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {

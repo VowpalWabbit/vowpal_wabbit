@@ -345,7 +345,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
       VW::read_line(*all, ex, &empty);
     }
     else
-      all->example_parser->lbl_parser.default_label(&ex->l);
+      all->example_parser->lbl_parser.default_label(ex->l);
 
     return reinterpret_cast<jlong>(new VowpalWabbitExampleWrapper(all, ex));
   }
@@ -377,7 +377,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNI
   try
   {
     VW::empty_example(*all, *ex);
-    all->example_parser->lbl_parser.default_label(&ex->l);
+    all->example_parser->lbl_parser.default_label(ex->l);
   }
   catch (...)
   {
@@ -501,7 +501,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setDefaul
 
   try
   {
-    all->example_parser->lbl_parser.default_label(&ex->l);
+    all->example_parser->lbl_parser.default_label(ex->l);
   }
   catch (...)
   {
@@ -683,7 +683,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
 {
   jclass predClass;
   jmethodID ctr;
-  switch (all->l->pred_type)
+  switch (all->l->get_output_prediction_type())
   {
     case VW::prediction_type_t::scalar:
       predClass = env->FindClass("org/vowpalwabbit/spark/prediction/ScalarPrediction");
@@ -727,7 +727,7 @@ jobject getJavaPrediction(JNIEnv* env, vw* all, example* ex)
     default:
     {
       std::ostringstream ostr;
-      ostr << "prediction type '" << VW::to_string(all->l->pred_type) << "' is not supported";
+      ostr << "prediction type '" << VW::to_string(all->l->get_output_prediction_type()) << "' is not supported";
 
       env->ThrowNew(env->FindClass("java/lang/UnsupportedOperationException"), ostr.str().c_str());
       return nullptr;

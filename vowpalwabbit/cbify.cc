@@ -168,7 +168,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l)) { eca.tag.push_back('n'); }
+    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(eca.l)) { eca.tag.push_back('n'); }
   }
 }
 
@@ -520,7 +520,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
   uint32_t predicted_class = ec.pred.multiclass;
 
-  if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
+  if (!COST_SENSITIVE::cs_label.test_label(ec.l))
   {
     for (auto const& cost : costs)
     {
@@ -552,7 +552,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&ec.l), ec, ec_seq, false, predicted_class);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
 void output_example_seq(vw& all, multi_ex& ec_seq)
