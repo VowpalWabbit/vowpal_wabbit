@@ -95,7 +95,7 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 uint32_t cache_numbits(VW::io::reader& cache_reader)
 {
   size_t version_buffer_length;
-  if (cache_reader.read(reinterpret_cast<char*>(&version_buffer_length), sizeof(version_buffer_length)) <
+  if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&version_buffer_length), sizeof(version_buffer_length))) <
       sizeof(version_buffer_length))
   { THROW("failed to read: version_buffer_length"); }
 
@@ -103,7 +103,7 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   if (version_buffer_length == 0) THROW("cache version too short, cache file is probably invalid");
 
   std::vector<char> version_buffer(version_buffer_length);
-  if (cache_reader.read(version_buffer.data(), version_buffer_length) < version_buffer_length)
+  if (static_cast<size_t>(cache_reader.read(version_buffer.data(), version_buffer_length)) < version_buffer_length)
   { THROW("failed to read: version buffer"); }
   VW::version_struct cache_version(version_buffer.data());
   if (cache_version != VW::version)
@@ -116,12 +116,12 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   }
 
   char marker;
-  if (cache_reader.read(&marker, sizeof(marker)) < sizeof(marker)) { THROW("failed to read"); }
+  if (static_cast<size_t>(cache_reader.read(&marker, sizeof(marker))) < sizeof(marker)) { THROW("failed to read"); }
 
   if (marker != 'c') THROW("data file is not a cache file");
 
   uint32_t cache_numbits;
-  if (cache_reader.read(reinterpret_cast<char*>(&cache_numbits), sizeof(cache_numbits)) < sizeof(cache_numbits))
+  if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&cache_numbits), sizeof(cache_numbits))) < sizeof(cache_numbits))
   { THROW("failed to read"); }
 
   return cache_numbits;
