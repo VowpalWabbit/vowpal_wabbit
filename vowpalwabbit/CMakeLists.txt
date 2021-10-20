@@ -282,6 +282,7 @@ set(vw_all_sources
   confidence.cc
   cbzo.cc
   cost_sensitive.cc
+  crossplat_compat.cc
   cs_active.cc
   csoaa.cc
   decision_scores.cc
