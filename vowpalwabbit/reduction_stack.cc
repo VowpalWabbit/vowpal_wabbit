@@ -16,6 +16,7 @@
 #include "multilabel_oaa.h"
 #include "bs.h"
 #include "topk.h"
+#include "automl.h"
 #include "ect.h"
 #include "csoaa.h"
 #include "cb_algs.h"
@@ -83,6 +84,8 @@
 #include "pmf_to_pdf.h"
 #include "sample_pdf.h"
 #include "kskip_ngram_transformer.h"
+#include "baseline_challenger_cb.h"
+#include "count_label.h"
 
 void register_reductions(std::vector<reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
@@ -92,7 +95,7 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
       {VW::cb_explore_adf::greedy::setup, "cb_explore_adf_greedy"},
       {VW::cb_explore_adf::regcb::setup, "cb_explore_adf_regcb"},
       {VW::shared_feature_merger::shared_feature_merger_setup, "shared_feature_merger"},
-      {generate_interactions_setup, "generate_interactions"}};
+      {generate_interactions_setup, "generate_interactions"}, {VW::count_label_setup, "count_label"}};
 
   auto name_extractor = VW::config::options_name_extractor();
   vw dummy_all;
@@ -176,6 +179,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(interaction_ground_setup);
   reductions.push_back(mwt_setup);
   reductions.push_back(VW::cats_tree::setup);
+  reductions.push_back(baseline_challenger_cb_setup);
   reductions.push_back(cb_explore_setup);
   reductions.push_back(VW::cb_explore_adf::greedy::setup);
   reductions.push_back(VW::cb_explore_adf::softmax::setup);
@@ -189,6 +193,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(cb_dro_setup);
   reductions.push_back(cb_sample_setup);
   reductions.push_back(explore_eval_setup);
+  reductions.push_back(VW::automl::automl_setup);
   reductions.push_back(VW::shared_feature_merger::shared_feature_merger_setup);
   reductions.push_back(CCB::ccb_explore_adf_setup);
   reductions.push_back(VW::slates::slates_setup);
@@ -208,6 +213,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(Search::setup);
   reductions.push_back(audit_regressor_setup);
   reductions.push_back(VW::metrics::metrics_setup);
+  reductions.push_back(VW::count_label_setup);
 
   register_reductions(reductions, reduction_stack);
 }

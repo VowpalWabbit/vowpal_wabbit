@@ -372,8 +372,8 @@ base_learner* setup(setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(params_per_weight)
-                .set_prediction_type(prediction_type_t::multiclass)
-                .set_label_type(label_type_t::cb)
+                .set_prediction_type(VW::prediction_type_t::multiclass)
+                .set_label_type(VW::label_type_t::cb)
                 .build();
   all.example_parser->lbl_parser = CB::cb_label;
   return make_base(*l);

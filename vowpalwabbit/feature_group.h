@@ -8,6 +8,7 @@
 #include "future_compat.h"
 #include "generic_range.h"
 
+#include <iterator>
 #include <utility>
 #include <memory>
 #include <string>
@@ -21,6 +22,9 @@ using feature_value = float;
 using feature_index = uint64_t;
 using audit_strings = std::pair<std::string, std::string>;
 using namespace_index = unsigned char;
+
+// First: character based feature group, second: hash of extent
+using extent_term = std::pair<namespace_index, uint64_t>;
 
 struct features;
 struct features_value_index_audit_range;
@@ -100,8 +104,8 @@ public:
 
   audit_features_iterator(const audit_features_iterator&) = default;
   audit_features_iterator& operator=(const audit_features_iterator&) = default;
-  audit_features_iterator(audit_features_iterator&&) = default;
-  audit_features_iterator& operator=(audit_features_iterator&&) = default;
+  audit_features_iterator(audit_features_iterator&&) noexcept = default;
+  audit_features_iterator& operator=(audit_features_iterator&&) noexcept = default;
 
   inline feature_value_type_t& value() { return *_begin_values; }
   inline const feature_value_type_t& value() const { return *_begin_values; }
@@ -213,6 +217,9 @@ public:
   ns_extent_iterator(features_t* feature_group, uint64_t hash, extent_it index_current)
       : _feature_group(feature_group), _hash(hash), _index_current(index_current)
   {
+    // Seek to the first valid position.
+    while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash != _hash)
+    { ++_index_current; }
   }
 
 private:
@@ -221,6 +228,12 @@ private:
   extent_it _index_current;
 
 public:
+  using iterator_category = std::forward_iterator_tag;
+  using difference_type = std::ptrdiff_t;
+  using value_type = std::pair<audit_features_iterator_t, audit_features_iterator_t>;
+  using pointer = value_type*;
+  using reference = value_type&;
+  using const_reference = const value_type&;
   std::pair<audit_features_iterator_t, audit_features_iterator_t> operator*()
   {
     return std::make_pair(_feature_group->audit_begin() + _index_current->begin_index,
@@ -235,6 +248,7 @@ public:
   // Required for forward_iterator
   ns_extent_iterator& operator++()
   {
+    ++_index_current;
     while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash != _hash)
     { ++_index_current; }
 
@@ -274,8 +288,8 @@ public:
 
   features_iterator(const features_iterator&) = default;
   features_iterator& operator=(const features_iterator&) = default;
-  features_iterator(features_iterator&&) = default;
-  features_iterator& operator=(features_iterator&&) = default;
+  features_iterator(features_iterator&&) noexcept = default;
+  features_iterator& operator=(features_iterator&&) noexcept = default;
 
   inline feature_value_type_t& value() { return *_begin_values; }
   inline const feature_value_type_t& value() const { return *_begin_values; }
@@ -427,6 +441,16 @@ struct features
   extent_iterator hash_extents_end(uint64_t hash) { return {this, hash, namespace_extents.end()}; }
   const_extent_iterator hash_extents_end(uint64_t hash) const { return {this, hash, namespace_extents.end()}; }
 
+  template <typename FuncT>
+  void foreach_feature_for_hash(uint64_t hash, const FuncT& func) const
+  {
+    for (auto it = hash_extents_begin(hash); it != hash_extents_end(hash); ++it)
+    {
+      auto this_range = *it;
+      for (auto inner_begin = this_range.first; inner_begin != this_range.second; ++inner_begin) { func(inner_begin); }
+    }
+  }
+
   void clear();
   // These 3 overloads can be used if the sum_feat_sq of the removed section is known to avoid recalculating.
   void truncate_to(const audit_iterator& pos, float sum_feat_sq_of_removed_section);
@@ -451,21 +475,3 @@ struct features
     return all_extents_complete;
   }
 };
-
-namespace VW
-{
-struct namespaced_features
-{
-  features feats;
-  uint64_t hash;
-  namespace_index index;
-
-  namespaced_features(uint64_t hash, namespace_index index) : hash(hash), index(index) {}
-
-  template <typename FeaturesT>
-  namespaced_features(FeaturesT&& inner_features, uint64_t hash, namespace_index index)
-      : feats(std::forward<FeaturesT>(inner_features)), hash(hash), index(index)
-  {
-  }
-};
-}  // namespace VW

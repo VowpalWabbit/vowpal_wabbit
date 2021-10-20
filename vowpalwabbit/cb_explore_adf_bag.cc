@@ -13,6 +13,7 @@
 #include "cb_explore.h"
 #include "explore.h"
 #include "label_parser.h"
+#include <utility>
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -57,7 +58,11 @@ private:
 
 cb_explore_adf_bag::cb_explore_adf_bag(
     float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<rand_state> random_state)
-    : _epsilon(epsilon), _bag_size(bag_size), _greedify(greedify), _first_only(first_only), _random_state(random_state)
+    : _epsilon(epsilon)
+    , _bag_size(bag_size)
+    , _greedify(greedify)
+    , _first_only(first_only)
+    , _random_state(std::move(random_state))
 {
 }
 
@@ -186,8 +191,8 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::action_probs)
-                .set_label_type(label_type_t::cb)
+                .set_prediction_type(VW::prediction_type_t::action_probs)
+                .set_label_type(VW::label_type_t::cb)
                 .set_finish_example(finish_bag_example)
                 .set_print_example(print_bag_example)
                 .set_persist_metrics(explore_type::persist_metrics)

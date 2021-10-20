@@ -18,7 +18,7 @@ namespace logger = VW::io::logger;
 
 namespace COST_SENSITIVE
 {
-void name_value(VW::string_view& s, std::vector<VW::string_view>& name, float& v)
+void name_value(VW::string_view s, std::vector<VW::string_view>& name, float& v)
 {
   tokenize(':', s, name);
 
@@ -54,7 +54,7 @@ char* bufread_label(label& ld, char* c, io_buf& cache)
   return c;
 }
 
-size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
+size_t read_cached_label(label& ld, io_buf& cache)
 {
   ld.costs.clear();
   char* c;
@@ -65,9 +65,9 @@ size_t read_cached_label(shared_data*, label& ld, io_buf& cache)
   return total;
 }
 
-float weight(label&) { return 1.; }
+float weight(const label&) { return 1.; }
 
-char* bufcache_label(label& ld, char* c)
+char* bufcache_label(const label& ld, char* c)
 {
   *reinterpret_cast<size_t*>(c) = ld.costs.size();
   c += sizeof(size_t);
@@ -79,7 +79,7 @@ char* bufcache_label(label& ld, char* c)
   return c;
 }
 
-void cache_label(label& ld, io_buf& cache)
+void cache_label(const label& ld, io_buf& cache)
 {
   char* c;
   cache.buf_write(c, sizeof(size_t) + sizeof(wclass) * ld.costs.size());
@@ -100,7 +100,8 @@ bool test_label(const label& ld) { return test_label_internal(ld); }
 
 bool test_label(label& ld) { return test_label_internal(ld); }
 
-void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_view>& words, reduction_features&)
+void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::named_labels* ldict,
+    const std::vector<VW::string_view>& words)
 {
   ld.costs.clear();
 
@@ -108,19 +109,19 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
   if (words.size() == 1)
   {
     float fx;
-    name_value(words[0], p->parse_name, fx);
-    bool eq_shared = p->parse_name[0] == "***shared***";
-    bool eq_label = p->parse_name[0] == "***label***";
-    if (!sd->ldict)
+    name_value(words[0], reuse_mem.tokens, fx);
+    bool eq_shared = reuse_mem.tokens[0] == "***shared***";
+    bool eq_label = reuse_mem.tokens[0] == "***label***";
+    if (ldict == nullptr)
     {
-      eq_shared |= p->parse_name[0] == "shared";
-      eq_label |= p->parse_name[0] == "label";
+      eq_shared |= reuse_mem.tokens[0] == "shared";
+      eq_label |= reuse_mem.tokens[0] == "label";
     }
     if (eq_shared || eq_label)
     {
       if (eq_shared)
       {
-        if (p->parse_name.size() != 1)
+        if (reuse_mem.tokens.size() != 1)
           logger::errlog_error("shared feature vectors should not have costs on: {}", words[0]);
         else
         {
@@ -130,11 +131,11 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
       }
       if (eq_label)
       {
-        if (p->parse_name.size() != 2)
+        if (reuse_mem.tokens.size() != 2)
           logger::errlog_error("label feature vectors should have exactly one cost on: {}", words[0]);
         else
         {
-          wclass f = {float_of_string(p->parse_name[1]), 0, 0., 0.};
+          wclass f = {float_of_string(reuse_mem.tokens[1]), 0, 0., 0.};
           ld.costs.push_back(f);
         }
       }
@@ -146,44 +147,46 @@ void parse_label(parser* p, shared_data* sd, label& ld, std::vector<VW::string_v
   for (unsigned int i = 0; i < words.size(); i++)
   {
     wclass f = {0., 0, 0., 0.};
-    name_value(words[i], p->parse_name, f.x);
+    name_value(words[i], reuse_mem.tokens, f.x);
 
-    if (p->parse_name.size() == 0) THROW(" invalid cost: specification -- no names on: " << words[i]);
+    if (reuse_mem.tokens.size() == 0) THROW(" invalid cost: specification -- no names on: " << words[i]);
 
-    if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3)
+    if (reuse_mem.tokens.size() == 1 || reuse_mem.tokens.size() == 2 || reuse_mem.tokens.size() == 3)
     {
-      f.class_index = sd->ldict
-          ? sd->ldict->get(p->parse_name[0])
-          : static_cast<uint32_t>(hashstring(p->parse_name[0].begin(), p->parse_name[0].length(), 0));
-      if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
+      f.class_index = ldict
+          ? ldict->get(reuse_mem.tokens[0])
+          : static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].begin(), reuse_mem.tokens[0].length(), 0));
+      if (reuse_mem.tokens.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
     }
     else
-      THROW("malformed cost specification on '" << (p->parse_name[0]) << "'");
+      THROW("malformed cost specification on '" << (reuse_mem.tokens[0]) << "'");
 
     ld.costs.push_back(f);
   }
 }
 
-// clang-format off
 label_parser cs_label = {
-  // default_label
-  [](polylabel* v) { default_label(v->cs); },
-  // parse_label
-  [](parser* p, shared_data* sd, polylabel* v, std::vector<VW::string_view>& words, reduction_features& red_features) {
-    parse_label(p, sd, v->cs, words, red_features);
-  },
-  // cache_label
-  [](polylabel* v, reduction_features&, io_buf& cache) { cache_label(v->cs, cache); },
-  // read_cached_label
-  [](shared_data* sd, polylabel* v, reduction_features&, io_buf& cache) { return read_cached_label(sd, v->cs, cache); },
-  // get_weight
-  [](polylabel* v, const reduction_features&) { return weight(v->cs); },
-  // test_label
-  [](polylabel* v) { return test_label(v->cs); },
-  label_type_t::cs
-};
-// clang-format on
+    // default_label
+    [](polylabel& label) { default_label(label.cs); },
+    // parse_label
+    [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
+        const VW::named_labels* ldict,
+        const std::vector<VW::string_view>& words) { parse_label(label.cs, reuse_mem, ldict, words); },
+    // cache_label
+    [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache) {
+      cache_label(label.cs, cache);
+    },
+    // read_cached_label
+    [](polylabel& label, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf& cache) {
+      return read_cached_label(label.cs, cache);
+    },
+    // get_weight
+    [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.cs); },
+    // test_label
+    [](const polylabel& label) { return test_label(label.cs); },
+    // label type
+    VW::label_type_t::cs};
 
 void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)
 {

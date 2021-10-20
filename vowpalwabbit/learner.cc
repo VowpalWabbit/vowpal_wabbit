@@ -8,27 +8,6 @@
 #include "parse_regressor.h"
 #include "parse_dispatch_loop.h"
 
-#define CASE(type) \
-  case type:       \
-    return #type;
-
-const char* to_string(prediction_type_t prediction_type)
-{
-  switch (prediction_type)
-  {
-    CASE(prediction_type_t::scalar)
-    CASE(prediction_type_t::scalars)
-    CASE(prediction_type_t::action_scores)
-    CASE(prediction_type_t::action_probs)
-    CASE(prediction_type_t::multiclass)
-    CASE(prediction_type_t::multilabels)
-    CASE(prediction_type_t::prob)
-    CASE(prediction_type_t::multiclassprobs)
-    default:
-      return "<unsupported>";
-  }
-}
-
 namespace VW
 {
 namespace LEARNER
@@ -159,7 +138,7 @@ private:
   bool complete_multi_ex(example* ec)
   {
     auto& master = _context.get_master();
-    const bool is_test_ec = master.example_parser->lbl_parser.test_label(&ec->l);
+    const bool is_test_ec = master.example_parser->lbl_parser.test_label(ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
 
     // In the case of end-of-pass example, we need to treat it as an indicator of
@@ -266,7 +245,7 @@ void process_examples(queue_type& examples, handler_type& handler)
 template <typename context_type>
 void generic_driver(ready_examples_queue& examples, context_type& context)
 {
-  if (context.get_master().l->is_multiline)
+  if (context.get_master().l->is_multiline())
   {
     using handler_type = multi_example_handler<context_type>;
     handler_type handler(context);
@@ -301,8 +280,7 @@ void generic_driver_onethread(vw& all)
   single_instance_context context(all);
   handler_type handler(context);
   custom_examples_queue examples_queue;
-  auto multi_ex_fptr = [&handler, &examples_queue](vw& all, const v_array<example*>& examples) {
-    all.example_parser->end_parsed_examples += examples.size();  // divergence: lock & signal
+  auto multi_ex_fptr = [&handler, &examples_queue](vw& /*all*/, const v_array<example*>& examples) {
     examples_queue.reset_examples(&examples);
     process_examples(examples_queue, handler);
   };
@@ -312,7 +290,7 @@ void generic_driver_onethread(vw& all)
 
 void generic_driver_onethread(vw& all)
 {
-  if (all.l->is_multiline)
+  if (all.l->is_multiline())
     generic_driver_onethread<multi_example_handler<single_instance_context>>(all);
   else
     generic_driver_onethread<single_example_handler<single_instance_context>>(all);

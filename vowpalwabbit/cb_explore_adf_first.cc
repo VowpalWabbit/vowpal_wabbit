@@ -51,7 +51,7 @@ private:
 };
 
 cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version)
-    : _tau(tau), _epsilon(epsilon), _model_file_version(std::move(model_file_version))
+    : _tau(tau), _epsilon(epsilon), _model_file_version(model_file_version)
 {
 }
 
@@ -129,8 +129,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::action_probs)
-                .set_label_type(label_type_t::cb)
+                .set_prediction_type(VW::prediction_type_t::action_probs)
+                .set_label_type(VW::label_type_t::cb)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)

@@ -9,11 +9,6 @@
 #include <cfloat>
 #include <climits>
 
-shared_data::shared_data()
-    : is_more_than_two_labels_observed(false), first_observed_label(FLT_MAX), second_observed_label(FLT_MAX)
-{
-}
-
 shared_data::shared_data(const shared_data& other)
 {
   queries = other.queries;
@@ -43,9 +38,9 @@ shared_data::shared_data(const shared_data& other)
   report_multiclass_log_loss = other.report_multiclass_log_loss;
   multiclass_log_loss = other.multiclass_log_loss;
   holdout_multiclass_log_loss = other.holdout_multiclass_log_loss;
-  is_more_than_two_labels_observed = other.is_more_than_two_labels_observed.load();
-  first_observed_label = other.first_observed_label.load();
-  second_observed_label = other.second_observed_label.load();
+  is_more_than_two_labels_observed = other.is_more_than_two_labels_observed;
+  first_observed_label = other.first_observed_label;
+  second_observed_label = other.second_observed_label;
 }
 
 shared_data& shared_data::operator=(const shared_data& other)
@@ -78,9 +73,9 @@ shared_data& shared_data::operator=(const shared_data& other)
   report_multiclass_log_loss = other.report_multiclass_log_loss;
   multiclass_log_loss = other.multiclass_log_loss;
   holdout_multiclass_log_loss = other.holdout_multiclass_log_loss;
-  is_more_than_two_labels_observed = other.is_more_than_two_labels_observed.load();
-  first_observed_label = other.first_observed_label.load();
-  second_observed_label = other.second_observed_label.load();
+  is_more_than_two_labels_observed = other.is_more_than_two_labels_observed;
+  first_observed_label = other.first_observed_label;
+  second_observed_label = other.second_observed_label;
   return *this;
 }
 
@@ -113,9 +108,9 @@ shared_data::shared_data(shared_data&& other) noexcept
   report_multiclass_log_loss = other.report_multiclass_log_loss;
   multiclass_log_loss = other.multiclass_log_loss;
   holdout_multiclass_log_loss = other.holdout_multiclass_log_loss;
-  is_more_than_two_labels_observed = other.is_more_than_two_labels_observed.load();
-  first_observed_label = other.first_observed_label.load();
-  second_observed_label = other.second_observed_label.load();
+  is_more_than_two_labels_observed = other.is_more_than_two_labels_observed;
+  first_observed_label = other.first_observed_label;
+  second_observed_label = other.second_observed_label;
 }
 
 shared_data& shared_data::operator=(shared_data&& other) noexcept
@@ -147,9 +142,9 @@ shared_data& shared_data::operator=(shared_data&& other) noexcept
   report_multiclass_log_loss = other.report_multiclass_log_loss;
   multiclass_log_loss = other.multiclass_log_loss;
   holdout_multiclass_log_loss = other.holdout_multiclass_log_loss;
-  is_more_than_two_labels_observed = other.is_more_than_two_labels_observed.load();
-  first_observed_label = other.first_observed_label.load();
-  second_observed_label = other.second_observed_label.load();
+  is_more_than_two_labels_observed = other.is_more_than_two_labels_observed;
+  first_observed_label = other.first_observed_label;
+  second_observed_label = other.second_observed_label;
   return *this;
 }
 

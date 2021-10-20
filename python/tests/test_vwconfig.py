@@ -11,12 +11,12 @@ def helper_options_to_list_strings(config):
                 temp_str = str(option)
                 if temp_str:
                     cmd_str_list.append(temp_str)
-    
+
     return cmd_str_list
 
 def test_vw_config_manager():
     expected_set = {'--quiet', '--loss_function logistic', '--save_resume', '--data /root/vowpal_wabbit/test/train-sets/rcv1_small.dat'}
-    expected_reductions = {'gd', 'scorer-identity'}
+    expected_reductions = {'gd', 'scorer-identity', 'count_label'}
 
     vw = pyvw.vw(arg_str="--save_resume --loss_function logistic -d /root/vowpal_wabbit/test/train-sets/rcv1_small.dat --quiet")
     config = vw.get_config()

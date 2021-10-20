@@ -49,7 +49,7 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
   ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
 }
 
-void confidence_print_result(VW::io::writer* f, float res, float confidence, v_array<char> tag)
+void confidence_print_result(VW::io::writer* f, float res, float confidence, const v_array<char>& tag)
 {
   if (f != nullptr)
   {
@@ -132,8 +132,8 @@ base_learner* confidence_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(data), base, learn_with_confidence_ptr, predict_with_confidence_ptr,
       stack_builder.get_setupfn_name(confidence_setup))
                 .set_learn_returns_prediction(true)
-                .set_label_type(label_type_t::simple)
-                .set_prediction_type(prediction_type_t::scalar)
+                .set_label_type(VW::label_type_t::simple)
+                .set_prediction_type(VW::prediction_type_t::scalar)
                 .set_finish_example(return_confidence_example)
                 .build();
 

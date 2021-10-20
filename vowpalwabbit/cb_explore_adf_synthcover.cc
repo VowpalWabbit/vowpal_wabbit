@@ -16,6 +16,7 @@
 #include "version.h"
 #include "label_parser.h"
 
+#include <utility>
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -66,7 +67,7 @@ cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, s
     : _epsilon(epsilon)
     , _psi(psi)
     , _synthcoversize(synthcoversize)
-    , _random_state(random_state)
+    , _random_state(std::move(random_state))
     , _model_file_version(model_file_version)
     , _min_cost(0.0)
     , _max_cost(0.0)
@@ -216,8 +217,8 @@ VW::LEARNER::base_learner* setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::action_probs)
-                .set_label_type(label_type_t::cb)
+                .set_prediction_type(VW::prediction_type_t::action_probs)
+                .set_label_type(VW::label_type_t::cb)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_save_load(explore_type::save_load)
