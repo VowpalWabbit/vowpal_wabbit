@@ -233,10 +233,15 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   new_options.add(make_option("oaa", data->k).keep().necessary().help("One-against-all multiclass with <k> labels"))
       .add(make_option("oaa_subsample", data->num_subsample)
                .help("subsample this number of negative examples when learning"))
-      .add(make_option("probabilities", probabilities).help("predict probabilites of all classes"))
+      .add(make_option("probabilities", probabilities).help("predict probabilities of all classes"))
       .add(make_option("scores", scores).help("output raw scores per class"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
+
+  // oaa does logistic link manually for probabilities because the unlinked values are required
+  // in base.update(). This implemenation will provide correct probabilities regardless
+  // of whether --link logistic is included or not.
+  if (probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
 
   if (all.sd->ldict && (data->k != all.sd->ldict->getK()))
     THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
@@ -273,17 +278,20 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   void (*learn_ptr)(oaa&, VW::LEARNER::single_learner&, example&);
   void (*pred_ptr)(oaa&, LEARNER::single_learner&, example&);
   std::string name_addition;
-  prediction_type_t pred_type;
+  VW::prediction_type_t pred_type;
   void (*finish_ptr)(vw&, oaa&, example&);
   if (probabilities || scores)
   {
-    pred_type = prediction_type_t::scalars;
+    pred_type = VW::prediction_type_t::scalars;
     if (probabilities)
     {
       auto loss_function_type = all.loss->getType();
       if (loss_function_type != "logistic")
-        *(all.trace_message) << "WARNING: --probabilities should be used only with --loss_function=logistic"
-                             << std::endl;
+      {
+        logger::log_error(
+            "WARNING: --probabilities should be used only with --loss_function=logistic, currently using: {}",
+            loss_function_type);
+      }
       // the three boolean template parameters are: is_learn, print_all and scores
       learn_ptr = learn<!PRINT_ALL, SCORES, PROBABILITIES>;
       pred_ptr = predict<!PRINT_ALL, SCORES, PROBABILITIES>;
@@ -301,7 +309,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   }
   else
   {
-    pred_type = prediction_type_t::multiclass;
+    pred_type = VW::prediction_type_t::multiclass;
     finish_ptr = MULTICLASS::finish_example<oaa>;
     if (all.raw_prediction != nullptr)
     {
@@ -328,7 +336,7 @@ VW::LEARNER::base_learner* oaa_setup(VW::setup_base_i& stack_builder)
   auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
                .set_params_per_weight(k_value)
-               .set_label_type(label_type_t::multiclass)
+               .set_label_type(VW::label_type_t::multiclass)
                .set_prediction_type(pred_type)
                .set_finish_example(finish_ptr)
                .build();

@@ -45,49 +45,49 @@ namespace logger = VW::io::logger;
 struct warm_cb
 {
   CB::label cb_label;
-  uint64_t app_seed;
+  uint64_t app_seed = 0;
   action_scores a_s;
   // used as the seed
-  size_t example_counter;
-  vw* all;
+  size_t example_counter = 0;
+  vw* all = nullptr;
   std::shared_ptr<rand_state> _random_state;
   multi_ex ecs;
-  float loss0;
-  float loss1;
+  float loss0 = 0.f;
+  float loss1 = 0.f;
 
   // warm start parameters
-  uint32_t ws_period;
-  uint32_t inter_period;
-  uint32_t choices_lambda;
-  bool upd_ws;
-  bool upd_inter;
-  int cor_type_ws;
-  float cor_prob_ws;
-  int vali_method;
-  int wt_scheme;
-  int lambda_scheme;
-  uint32_t overwrite_label;
-  int ws_type;
-  bool sim_bandit;
+  uint32_t ws_period = 0;
+  uint32_t inter_period = 0;
+  uint32_t choices_lambda = 0;
+  bool upd_ws = false;
+  bool upd_inter = false;
+  int cor_type_ws = false;
+  float cor_prob_ws = 0.f;
+  int vali_method = 0;
+  int wt_scheme = 0;
+  int lambda_scheme = 0;
+  uint32_t overwrite_label = 0;
+  int ws_type = 0;
+  bool sim_bandit = false;
 
   // auxiliary variables
-  uint32_t num_actions;
-  float epsilon;
+  uint32_t num_actions = 0;
+  float epsilon = 0.f;
   std::vector<float> lambdas;
   action_scores a_s_adf;
   std::vector<float> cumulative_costs;
   CB::cb_class cl_adf;
-  uint32_t ws_train_size;
-  uint32_t ws_vali_size;
+  uint32_t ws_train_size = 0;
+  uint32_t ws_vali_size = 0;
   std::vector<example*> ws_vali;
-  float cumu_var;
-  uint32_t ws_iter;
-  uint32_t inter_iter;
+  float cumu_var = 0.f;
+  uint32_t ws_iter = 0;
+  uint32_t inter_iter = 0;
   MULTICLASS::label_t mc_label;
   COST_SENSITIVE::label cs_label;
   std::vector<COST_SENSITIVE::label> csls;
   std::vector<CB::label> cbls;
-  bool use_cs;
+  bool use_cs = 0;
 
   ~warm_cb()
   {
@@ -170,7 +170,7 @@ void copy_example_to_adf(warm_cb& data, example& ec)
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l)) { eca.tag.push_back('n'); }
+    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(eca.l)) { eca.tag.push_back('n'); }
   }
 }
 
@@ -524,7 +524,7 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
   uint32_t num_actions = 0;
-  auto data = scoped_calloc_or_throw<warm_cb>();
+  auto data = VW::make_unique<warm_cb>();
   bool use_cs;
 
   option_group_definition new_options("Make Multiclass into Warm-starting Contextual Bandit");
@@ -592,8 +592,6 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
     options.insert("lr_multiplier", ss.str());
   }
 
-  learner<warm_cb, example>* l;
-
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   // Note: the current version of warm start CB can only support epsilon-greedy exploration
   // We need to wait for the epsilon value to be passed from the base
@@ -605,22 +603,38 @@ base_learner* warm_cb_setup(VW::setup_base_i& stack_builder)
     data->epsilon = 0.05f;
   }
 
+  void (*learn_pred_ptr)(warm_cb&, multi_learner&, example&);
+  size_t ws = data->choices_lambda;
+  std::string name_addition;
+  void (*finish_ptr)(vw&, warm_cb&, example&);
+  VW::label_type_t label_type;
+
   if (use_cs)
   {
-    l = &init_cost_sensitive_learner(data, base, predict_and_learn_adf<true>, predict_and_learn_adf<true>,
-        all.example_parser, data->choices_lambda, stack_builder.get_setupfn_name(warm_cb_setup) + "-cs",
-        prediction_type_t::multiclass, true);
-    all.example_parser->lbl_parser.label_type = label_type_t::cs;
+    learn_pred_ptr = predict_and_learn_adf<true>;
+    name_addition = "-cs";
+    finish_ptr = COST_SENSITIVE::finish_example;
+    all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
+    label_type = VW::label_type_t::cs;
   }
   else
   {
-    l = &init_multiclass_learner(data, base, predict_and_learn_adf<false>, predict_and_learn_adf<false>,
-        all.example_parser, data->choices_lambda, stack_builder.get_setupfn_name(warm_cb_setup) + "-multi",
-        prediction_type_t::multiclass, true);
-    all.example_parser->lbl_parser.label_type = label_type_t::multiclass;
+    learn_pred_ptr = predict_and_learn_adf<false>;
+    name_addition = "-multi";
+    finish_ptr = MULTICLASS::finish_example;
+    all.example_parser->lbl_parser = MULTICLASS::mc_label;
+    label_type = VW::label_type_t::multiclass;
   }
 
-  l->set_finish(finish);
+  auto* l = make_reduction_learner(std::move(data), base, learn_pred_ptr, learn_pred_ptr,
+      stack_builder.get_setupfn_name(warm_cb_setup) + name_addition)
+                .set_params_per_weight(ws)
+                .set_prediction_type(VW::prediction_type_t::multiclass)
+                .set_learn_returns_prediction(true)
+                .set_finish_example(finish_ptr)
+                .set_finish(finish)
+                .set_label_type(label_type)
+                .build();
 
   return make_base(*l);
 }
