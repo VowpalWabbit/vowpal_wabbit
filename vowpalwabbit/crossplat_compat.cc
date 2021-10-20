@@ -22,7 +22,7 @@ int VW::string_cpy(char* dest, size_t dest_size, const char* src)
 #endif
 }
 
-inline int VW::file_open(FILE** pf, const char* filename, const char* mode)
+int VW::file_open(FILE** pf, const char* filename, const char* mode)
 {
 #ifdef _WIN32
   // fopen_s returns an errno_t
