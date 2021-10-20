@@ -97,18 +97,14 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   size_t version_buffer_length;
   if (cache_reader.read(reinterpret_cast<char*>(&version_buffer_length), sizeof(version_buffer_length)) <
       sizeof(version_buffer_length))
-  {
-    THROW("failed to read: version_buffer_length");
-  }
+  { THROW("failed to read: version_buffer_length"); }
 
   if (version_buffer_length > 61) THROW("cache version too long, cache file is probably invalid");
   if (version_buffer_length == 0) THROW("cache version too short, cache file is probably invalid");
 
   std::vector<char> version_buffer(version_buffer_length);
   if (cache_reader.read(version_buffer.data(), version_buffer_length) < version_buffer_length)
-  {
-    THROW("failed to read: version buffer");
-  }
+  { THROW("failed to read: version buffer"); }
   VW::version_struct cache_version(version_buffer.data());
   if (cache_version != VW::version)
   {
@@ -126,9 +122,7 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
 
   uint32_t cache_numbits;
   if (cache_reader.read(reinterpret_cast<char*>(&cache_numbits), sizeof(cache_numbits)) < sizeof(cache_numbits))
-  {
-    THROW("failed to read");
-  }
+  { THROW("failed to read"); }
 
   return cache_numbits;
 }
