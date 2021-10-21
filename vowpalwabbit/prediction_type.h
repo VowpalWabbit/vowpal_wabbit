@@ -23,8 +23,7 @@ enum class prediction_type_t : uint32_t
   multiclassprobs,
   decision_probs,
   action_pdf_value,
-  active_multiclass,
-  no_pred
+  active_multiclass
 };
 string_view to_string(prediction_type_t);
 }  // namespace VW
