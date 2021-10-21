@@ -348,6 +348,7 @@
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
     <ClCompile Include="cbzo.cc" />
+    <ClCompile Include="crossplat_compat.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cs_active.cc" />
     <ClCompile Include="csoaa.cc" />
