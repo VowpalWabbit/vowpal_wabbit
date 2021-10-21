@@ -9,11 +9,12 @@
 
 namespace VW
 {
-    namespace details {
+namespace details
+{
 struct cache_temp_buffer;
 
-    }
 }
+}  // namespace VW
 
 char* run_len_decode(char* p, size_t& i);
 char* run_len_encode(char* p, size_t i);
@@ -28,7 +29,8 @@ namespace VW
 {
 uint32_t convert(size_t number);
 // What is written by write_example_to_cache can be read by read_example_from_cache
-void write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_parser, uint64_t parse_mask, VW::details::cache_temp_buffer& temp_buffer);
+void write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_parser, uint64_t parse_mask,
+    VW::details::cache_temp_buffer& temp_buffer);
 int read_example_from_cache(
     io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache, shared_data* shared_dat);
 }  // namespace VW

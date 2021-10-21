@@ -36,9 +36,11 @@ struct cache_temp_buffer
 {
   std::shared_ptr<std::vector<char>> _backing_buffer;
   io_buf _temporary_cache_buffer;
-  cache_temp_buffer() {
+  cache_temp_buffer()
+  {
     _backing_buffer = std::make_shared<std::vector<char>>();
-    _temporary_cache_buffer.add_file(VW::io::create_vector_writer(_backing_buffer)); }
+    _temporary_cache_buffer.add_file(VW::io::create_vector_writer(_backing_buffer));
+  }
 };
 }  // namespace details
 }  // namespace VW
