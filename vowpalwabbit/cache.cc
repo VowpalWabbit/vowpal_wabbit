@@ -82,7 +82,10 @@ int VW::read_example_from_cache(
     io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache, shared_data* shared_dat)
 {
   // Unused for now.
-  auto size = input.read_value<uint64_t>("example size");
+  uint64_t size;
+  char* read_ptr;
+  if (input.buf_read(read_ptr, sizeof(size)) < sizeof(size)) { return 0; }
+  memcpy(&size, read_ptr, sizeof(size));
 
   ae->sorted = sorted_cache;
   size_t total = lbl_parser.read_cached_label(ae->l, ae->_reduction_features, shared_dat->ldict.get(), input);
