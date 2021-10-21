@@ -1344,7 +1344,7 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
 
   auto* l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
-      VW::prediction_type_t::scalars, VW::label_type_t::nolabel)
+      VW::prediction_type_t::scalars, VW::label_type_t::no_label)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)

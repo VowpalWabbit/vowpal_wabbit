@@ -23,7 +23,7 @@ VW::string_view to_string(VW::label_type_t label_type)
     CASE(label_type_t::multiclass)
     CASE(label_type_t::ccb)
     CASE(label_type_t::slates)
-    CASE(label_type_t::nolabel)
+    CASE(label_type_t::no_label)
     CASE(label_type_t::continuous)
   }
 

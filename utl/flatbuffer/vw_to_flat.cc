@@ -372,7 +372,7 @@ void to_flat::convert_txt_to_flat(vw& all)
     VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
     switch (all.example_parser->lbl_parser.label_type)
     {
-      case VW::label_type_t::nolabel:
+      case VW::label_type_t::no_label:
         to_flat::create_no_label(ae, ex_builder);
         break;
       case VW::label_type_t::cb:
