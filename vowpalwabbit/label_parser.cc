@@ -50,5 +50,5 @@ label_parser VW::get_label_parser(VW::label_type_t label_type)
       return VW::cb_continuous::the_label_parser;
   }
 
-  THROW("Unreachable code reached!")
+  THROW("Unknown label type in get_label_parser. This should be unreachable code.")
 }
