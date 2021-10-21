@@ -718,8 +718,8 @@ struct base_learner_builder
     : public common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>
 {
   using super = common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>;
-  base_learner_builder(
-      std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t out_pred_type, label_type_t in_label_type, prediction_type_t in_pred_type, label_type_t out_label_type)
+  base_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t out_pred_type,
+      label_type_t in_label_type, prediction_type_t in_pred_type, label_type_t out_label_type)
       : common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>(
             std::move(data), name)
   {
@@ -782,9 +782,12 @@ reduction_no_data_learner_builder<ExampleT, BaseLearnerT> make_no_data_reduction
 
 template <class DataT, class ExampleT>
 base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&& data,
-    void (*learn_fn)(DataT&, base_learner&, ExampleT&), void (*predict_fn)(DataT&, base_learner&, ExampleT&), const std::string& name, prediction_type_t out_pred_type, label_type_t in_label_type, prediction_type_t in_pred_type = prediction_type_t::no_pred, label_type_t out_label_type = label_type_t::no_label)
+    void (*learn_fn)(DataT&, base_learner&, ExampleT&), void (*predict_fn)(DataT&, base_learner&, ExampleT&),
+    const std::string& name, prediction_type_t out_pred_type, label_type_t in_label_type,
+    prediction_type_t in_pred_type = prediction_type_t::no_pred, label_type_t out_label_type = label_type_t::no_label)
 {
-  auto builder = base_learner_builder<DataT, ExampleT>(std::move(data), name, out_pred_type, in_label_type, in_pred_type, out_label_type);
+  auto builder = base_learner_builder<DataT, ExampleT>(
+      std::move(data), name, out_pred_type, in_label_type, in_pred_type, out_label_type);
   builder.set_learn(learn_fn);
   builder.set_update(learn_fn);
   builder.set_predict(predict_fn);
@@ -793,10 +796,12 @@ base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&&
 
 template <class ExampleT>
 base_learner_builder<char, ExampleT> make_no_data_base_learner(void (*learn_fn)(char&, base_learner&, ExampleT&),
-    void (*predict_fn)(char&, base_learner&, ExampleT&), const std::string& name, prediction_type_t out_pred_type, label_type_t in_label_type, prediction_type_t in_pred_type = prediction_type_t::no_pred, label_type_t out_label_type = label_type_t::no_label)
+    void (*predict_fn)(char&, base_learner&, ExampleT&), const std::string& name, prediction_type_t out_pred_type,
+    label_type_t in_label_type, prediction_type_t in_pred_type = prediction_type_t::no_pred,
+    label_type_t out_label_type = label_type_t::no_label)
 {
-  return make_base_learner<char, ExampleT>(
-      std::unique_ptr<char>(nullptr), learn_fn, predict_fn, name, out_pred_type, in_label_type, in_pred_type, out_label_type);
+  return make_base_learner<char, ExampleT>(std::unique_ptr<char>(nullptr), learn_fn, predict_fn, name, out_pred_type,
+      in_label_type, in_pred_type, out_label_type);
 }
 
 }  // namespace LEARNER
