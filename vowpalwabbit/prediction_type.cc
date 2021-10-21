@@ -28,6 +28,7 @@ VW::string_view VW::to_string(prediction_type_t prediction_type)
     CASE(prediction_type_t::decision_probs)
     CASE(prediction_type_t::action_pdf_value)
     CASE(prediction_type_t::active_multiclass)
+    CASE(prediction_type_t::no_pred)
   }
 
   // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`
