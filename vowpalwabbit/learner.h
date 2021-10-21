@@ -779,8 +779,7 @@ base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&&
     void (*learn_fn)(DataT&, base_learner&, ExampleT&), void (*predict_fn)(DataT&, base_learner&, ExampleT&),
     const std::string& name, prediction_type_t out_pred_type, label_type_t in_label_type)
 {
-  auto builder = base_learner_builder<DataT, ExampleT>(
-      std::move(data), name, out_pred_type, in_label_type);
+  auto builder = base_learner_builder<DataT, ExampleT>(std::move(data), name, out_pred_type, in_label_type);
   builder.set_learn(learn_fn);
   builder.set_update(learn_fn);
   builder.set_predict(predict_fn);
@@ -792,7 +791,8 @@ base_learner_builder<char, ExampleT> make_no_data_base_learner(void (*learn_fn)(
     void (*predict_fn)(char&, base_learner&, ExampleT&), const std::string& name, prediction_type_t out_pred_type,
     label_type_t in_label_type)
 {
-  return make_base_learner<char, ExampleT>(std::unique_ptr<char>(nullptr), learn_fn, predict_fn, name, out_pred_type, in_label_type);
+  return make_base_learner<char, ExampleT>(
+      std::unique_ptr<char>(nullptr), learn_fn, predict_fn, name, out_pred_type, in_label_type);
 }
 
 }  // namespace LEARNER
