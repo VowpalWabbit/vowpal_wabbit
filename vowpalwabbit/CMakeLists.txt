@@ -306,6 +306,7 @@ set(vw_all_sources
   io_buf.cc
   kernel_svm.cc
   label_dictionary.cc
+  label_parser.cc
   lda_core.cc
   learner.cc
   log_multi.cc
