@@ -38,3 +38,8 @@ struct label_parser
   bool (*test_label)(const polylabel& label);
   VW::label_type_t label_type;
 };
+
+namespace VW
+{
+label_parser get_label_parser(VW::label_type_t label_type);
+}  // namespace VW
