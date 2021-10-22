@@ -659,7 +659,10 @@ void setup_example(vw& all, example* ae)
   if (all.example_parser->sort_features && ae->sorted == false) unique_sort_features(all.parse_mask, ae);
 
   if (all.example_parser->write_cache)
-  { VW::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask); }
+  {
+    VW::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask,
+        all.example_parser->_cache_temp_buffer);
+  }
 
   // Require all extents to be complete in an example.
 #ifndef NDEBUG
