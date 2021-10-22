@@ -55,7 +55,6 @@ def fuzzy_float_compare(float_one, float_two, epsilon):
     # Special case handle these two as they will not be equal when checking absolute difference.
     # But for the purposes of comparing the diff they are equal.
     if float_one == float("inf") and float_two == float("inf"):
-        print("Infinity comparison")
         return True
     if float_one == float("nan") and float_two == float("nan"):
         return True
