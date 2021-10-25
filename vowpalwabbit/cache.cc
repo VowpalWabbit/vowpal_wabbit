@@ -3,6 +3,9 @@
 // license as described in the file LICENSE.
 
 #include "cache.h"
+#include <cstdint>
+#include <memory>
+#include "io/io_adapter.h"
 #include "unique_sort.h"
 #include "global_data.h"
 #include "shared_data.h"
@@ -63,15 +66,28 @@ __attribute__((packed))
 #endif
 ;
 
-void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_parser, uint64_t parse_mask)
+void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_parser, uint64_t parse_mask,
+    VW::details::cache_temp_buffer& temp_buffer)
 {
-  lbl_parser.cache_label(ae->l, ae->_reduction_features, output);
-  cache_features(output, ae, parse_mask);
+  temp_buffer._backing_buffer->clear();
+  lbl_parser.cache_label(ae->l, ae->_reduction_features, temp_buffer._temporary_cache_buffer);
+  cache_features(temp_buffer._temporary_cache_buffer, ae, parse_mask);
+  temp_buffer._temporary_cache_buffer.flush();
+
+  uint64_t example_size = temp_buffer._backing_buffer->size();
+  output.write_value(example_size);
+  output.bin_write_fixed(temp_buffer._backing_buffer->data(), temp_buffer._backing_buffer->size());
 }
 
 int VW::read_example_from_cache(
     io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache, shared_data* shared_dat)
 {
+  // Unused for now.
+  uint64_t size;
+  char* read_ptr;
+  if (input.buf_read(read_ptr, sizeof(size)) < sizeof(size)) { return 0; }
+  memcpy(&size, read_ptr, sizeof(size));
+
   ae->sorted = sorted_cache;
   size_t total = lbl_parser.read_cached_label(ae->l, ae->_reduction_features, shared_dat->ldict.get(), input);
   if (total == 0) { return 0; }

@@ -51,6 +51,14 @@ def try_decode(binary_object):
 def fuzzy_float_compare(float_one, float_two, epsilon):
     float_one = float(float_one)
     float_two = float(float_two)
+
+    # Special case handle these two as they will not be equal when checking absolute difference.
+    # But for the purposes of comparing the diff they are equal.
+    if float_one == float("inf") and float_two == float("inf"):
+        return True
+    if float_one == float("nan") and float_two == float("nan"):
+        return True
+
     delta = abs(float_one - float_two)
     if delta < epsilon:
         return True
