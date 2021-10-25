@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include <bits/types/FILE.h>
 #include "debug_log.h"
 #include "reductions.h"
 #include "learner.h"
@@ -13,12 +14,44 @@
 #include <cfloat>
 
 #include "io/logger.h"
+#include "scope_exit.h"
 
 using namespace VW::config;
 using namespace VW::LEARNER;
 using namespace rapidjson;
 
 namespace logger = VW::io::logger;
+
+void insert_dsjson_metrics(
+    const dsjson_metrics* ds_metrics, VW::metric_sink& metrics, const std::vector<std::string>& enabled_reductions)
+{
+  // ds_metrics is nullptr when --dsjson is disabled
+  if (ds_metrics != nullptr)
+  {
+    metrics.set("number_skipped_events", ds_metrics->NumberOfSkippedEvents);
+    metrics.set("number_events_zero_actions", ds_metrics->NumberOfEventsZeroActions);
+    metrics.set("line_parse_error", ds_metrics->LineParseError);
+    metrics.set("first_event_id", ds_metrics->FirstEventId);
+    metrics.set("first_event_time", ds_metrics->FirstEventTime);
+    metrics.set("last_event_id", ds_metrics->LastEventId);
+    metrics.set("last_event_time", ds_metrics->LastEventTime);
+    metrics.set("dsjson_sum_cost_original", ds_metrics->DsjsonSumCostOriginal);
+    if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") != enabled_reductions.end())
+    {
+      metrics.set("dsjson_sum_cost_original_first_slot", ds_metrics->DsjsonSumCostOriginalFirstSlot);
+      metrics.set(
+          "dsjson_number_label_equal_baseline_first_slot", ds_metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot);
+      metrics.set("dsjson_number_label_not_equal_baseline_first_slot",
+          ds_metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
+      metrics.set("dsjson_sum_cost_original_label_equal_baseline_first_slot",
+          ds_metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
+    }
+    else
+    {
+      metrics.set("dsjson_sum_cost_original_baseline", ds_metrics->DsjsonSumCostOriginalBaseline);
+    }
+  }
+}
 
 namespace VW
 {
@@ -31,70 +64,50 @@ struct metrics_data
   size_t predict_count = 0;
 };
 
-void list_to_json_file(dsjson_metrics* ds_metrics, const std::string& filename, metric_sink& metrics,
-    const std::vector<std::string>& enabled_reductions)
+struct json_metrics_writer : metric_sink_visitor
+{
+  json_metrics_writer(Writer<FileWriteStream>& writer) : _writer(writer) { _writer.StartObject(); }
+  ~json_metrics_writer() override { _writer.EndObject(); }
+  void int_metric(const std::string& key, uint64_t value) override
+  {
+    _writer.Key(key.c_str());
+    _writer.Uint64(value);
+  }
+  void float_metric(const std::string& key, float value) override
+  {
+    _writer.Key(key.c_str());
+    _writer.Double(static_cast<double>(value));
+  }
+  void string_metric(const std::string& key, const std::string& value) override
+  {
+    _writer.Key(key.c_str());
+
+    _writer.String(value.c_str());
+  }
+  void bool_metric(const std::string& key, bool value) override
+  {
+    _writer.Key(key.c_str());
+    _writer.Bool(value);
+  }
+
+private:
+  Writer<FileWriteStream>& _writer;
+};
+
+void list_to_json_file(const std::string& filename, const metric_sink& metrics)
 {
   FILE* fp;
-
   if (VW::file_open(&fp, filename.c_str(), "wt") == 0)
   {
-    char writeBuffer[1024];
-    FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
+    auto file_closer = VW::scope_exit([fp]() {
+      fclose(fp);
+    });
+
+    std::array<char, 1024> write_buffer;
+    FileWriteStream os(fp, write_buffer.data(), write_buffer.size());
     Writer<FileWriteStream> writer(os);
-
-    writer.StartObject();
-    for (const auto& m : metrics.int_metrics_list)
-    {
-      writer.Key(m.first.c_str());
-      writer.Uint64(m.second);
-    }
-    for (const auto& m : metrics.float_metrics_list)
-    {
-      writer.Key(m.first.c_str());
-      writer.Double(static_cast<double>(m.second));
-    }
-
-    // ds_metrics is nullptr when --dsjson is disabled
-    if (ds_metrics)
-    {
-      writer.Key("number_skipped_events");
-      writer.Int64(ds_metrics->NumberOfSkippedEvents);
-      writer.Key("number_events_zero_actions");
-      writer.Int64(ds_metrics->NumberOfEventsZeroActions);
-      writer.Key("line_parse_error");
-      writer.Int64(ds_metrics->LineParseError);
-      writer.Key("first_event_id");
-      writer.String(ds_metrics->FirstEventId.c_str());
-      writer.Key("first_event_time");
-      writer.String(ds_metrics->FirstEventTime.c_str());
-      writer.Key("last_event_id");
-      writer.String(ds_metrics->LastEventId.c_str());
-      writer.Key("last_event_time");
-      writer.String(ds_metrics->LastEventTime.c_str());
-      if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") !=
-          enabled_reductions.end())
-      {
-        writer.Key("dsjson_sum_cost_original_first_slot");
-        writer.Double(ds_metrics->DsjsonSumCostOriginalFirstSlot);
-        writer.Key("dsjson_number_label_equal_baseline_first_slot");
-        writer.Int64(ds_metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot);
-        writer.Key("dsjson_number_label_not_equal_baseline_first_slot");
-        writer.Int64(ds_metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
-        writer.Key("dsjson_sum_cost_original_label_equal_baseline_first_slot");
-        writer.Double(ds_metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
-      }
-      else
-      {
-        writer.Key("dsjson_sum_cost_original_baseline");
-        writer.Double(ds_metrics->DsjsonSumCostOriginalBaseline);
-      }
-      writer.Key("dsjson_sum_cost_original");
-      writer.Double(ds_metrics->DsjsonSumCostOriginal);
-    }
-
-    writer.EndObject();
-
-    fclose(fp);
+    json_metrics_writer json_writer(writer);
+    metrics.visit(json_writer);
   }
   else
   {
@@ -115,12 +128,13 @@ void output_metrics(vw& all)
     if (all.external_parser) { all.external_parser->persist_metrics(list_metrics.int_metrics_list); }
 #endif
 
-    list_metrics.int_metrics_list.emplace_back("total_log_calls", logger::get_log_count());
+    list_metrics.set("total_log_calls", logger::get_log_count());
 
     std::vector<std::string> enabled_reductions;
     if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
+    insert_dsjson_metrics(all.example_parser->metrics.get(), list_metrics, enabled_reductions);
 
-    list_to_json_file(all.example_parser->metrics.get(), filename, list_metrics, enabled_reductions);
+    list_to_json_file(filename, list_metrics);
   }
 }
 
@@ -141,8 +155,8 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
 
 void persist(metrics_data& data, metric_sink& metrics)
 {
-  metrics.int_metrics_list.emplace_back("total_predict_calls", data.predict_count);
-  metrics.int_metrics_list.emplace_back("total_learn_calls", data.learn_count);
+  metrics.set("total_predict_calls", data.predict_count);
+  metrics.set("total_learn_calls", data.learn_count);
 }
 
 VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)

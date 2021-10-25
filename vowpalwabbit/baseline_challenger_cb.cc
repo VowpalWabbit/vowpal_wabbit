@@ -189,9 +189,9 @@ void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
   auto ci = static_cast<float>(data.baseline.lower_bound());
   auto exp = static_cast<float>(data.policy_expectation.current());
 
-  metrics.float_metrics_list.emplace_back("baseline_cb_baseline_lowerbound", ci);
-  metrics.float_metrics_list.emplace_back("baseline_cb_policy_expectation", exp);
-  metrics.int_metrics_list.emplace_back("baseline_cb_baseline_in_use", ci > exp);
+  metrics.set("baseline_cb_baseline_lowerbound", ci);
+  metrics.set("baseline_cb_policy_expectation", exp);
+  metrics.set("baseline_cb_baseline_in_use", ci > exp);
 }
 
 VW::LEARNER::base_learner* baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)

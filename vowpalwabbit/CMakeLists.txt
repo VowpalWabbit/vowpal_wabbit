@@ -316,6 +316,7 @@ set(vw_all_sources
   marginal.cc
   memory_tree.cc
   metrics.cc
+  metric_sink.cc
   mf.cc
   multiclass.cc
   multilabel_oaa.cc
