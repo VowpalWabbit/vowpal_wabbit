@@ -2,7 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <bits/types/FILE.h>
 #include "debug_log.h"
 #include "reductions.h"
 #include "learner.h"
