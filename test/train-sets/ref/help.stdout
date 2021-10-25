@@ -586,6 +586,7 @@ One Against All Options:
                         learning
   --probabilities       predict probabilities of all classes
   --scores              output raw scores per class
+  --zero_ind            use 0-indexing for classes
 Offset tree Options:
   --ot arg              Offset tree with <k> labels
 Probabilistic Label Tree :
