@@ -99,9 +99,7 @@ void list_to_json_file(const std::string& filename, const metric_sink& metrics)
   FILE* fp;
   if (VW::file_open(&fp, filename.c_str(), "wt") == 0)
   {
-    auto file_closer = VW::scope_exit([fp]() {
-      fclose(fp);
-    });
+    auto file_closer = VW::scope_exit([fp]() { fclose(fp); });
 
     std::array<char, 1024> write_buffer;
     FileWriteStream os(fp, write_buffer.data(), write_buffer.size());

@@ -12,7 +12,6 @@
 
 namespace VW
 {
-
 struct metric_sink_visitor
 {
   virtual ~metric_sink_visitor() = default;

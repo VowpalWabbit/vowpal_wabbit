@@ -12,9 +12,7 @@ void VW::metric_sink::throw_if_not_overwrite_and_key_exists(const std::string& k
   {
     auto key_exists = _keys.count(key) > 0;
     if (key_exists)
-    {
-      THROW("Key: " << key << " already exists in metrics. Set overwrite to true if this should be overwritten.")
-    }
+    { THROW("Key: " << key << " already exists in metrics. Set overwrite to true if this should be overwritten.") }
   }
 }
 
@@ -70,7 +68,8 @@ float VW::metric_sink::get_float(const std::string& key) const
 VW::string_view VW::metric_sink::get_string(const std::string& key) const
 {
   auto it = _string_metrics.find(key);
-  if (it == _string_metrics.end()) { THROW("Key: " << key << " does not exist in string metrics. Is the type correct?") }
+  if (it == _string_metrics.end())
+  { THROW("Key: " << key << " does not exist in string metrics. Is the type correct?") }
   return it->second;
 }
 

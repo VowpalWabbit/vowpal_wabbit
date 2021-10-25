@@ -311,11 +311,9 @@ inline void cb_explore_adf_base<ExploreType>::persist_metrics(
           "cbea_avg_ns_per_action", static_cast<float>(data._metrics->sum_namespaces / data._metrics->sum_actions));
     }
 
-    if (data._metrics->min_actions != SIZE_MAX)
-    { metrics.set("cbea_min_actions", data._metrics->min_actions); }
+    if (data._metrics->min_actions != SIZE_MAX) { metrics.set("cbea_min_actions", data._metrics->min_actions); }
 
-    if (data._metrics->max_actions)
-    { metrics.set("cbea_max_actions", data._metrics->max_actions); }
+    if (data._metrics->max_actions) { metrics.set("cbea_max_actions", data._metrics->max_actions); }
   }
 }
 

@@ -66,8 +66,8 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
 
   BOOST_CHECK_EQUAL(metrics.get_bool("baseline_cb_baseline_in_use"), false);
   // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
-  BOOST_CHECK_LE(metrics.get_float("baseline_cb_baseline_lowerbound"),
-      metrics.get_float("baseline_cb_policy_expectation"));
+  BOOST_CHECK_LE(
+      metrics.get_float("baseline_cb_baseline_lowerbound"), metrics.get_float("baseline_cb_policy_expectation"));
 
   multi_ex tst;
   make_example(tst, vw, -1, costs_p0, probs_p0);
@@ -121,8 +121,8 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
   BOOST_CHECK_EQUAL(metrics.get_bool("baseline_cb_baseline_in_use"), true);
 
   // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
-  BOOST_CHECK_GT(metrics.get_float("baseline_cb_baseline_lowerbound"),
-      metrics.get_float("baseline_cb_policy_expectation"));
+  BOOST_CHECK_GT(
+      metrics.get_float("baseline_cb_baseline_lowerbound"), metrics.get_float("baseline_cb_policy_expectation"));
 
   multi_ex tst;
   make_example(tst, vw, -1, costs_p1, probs_p1);
