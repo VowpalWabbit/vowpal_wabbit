@@ -1,8 +1,8 @@
 Python Packaging
 ================
 
-Binary wheels are produced in CI according to the `support table`_ and uploaded to PyPI for a release.
-The source is also used to by the Conda-Forge Feedstock CI to update a release on the conda-forge channel of Anaconda.
+| Binary wheels are produced in CI according to the `support table`_ and uploaded to PyPI for a release.
+| The source is also used to by the Conda-Forge Feedstock CI to update a release on the conda-forge channel of Anaconda.
 
 PyPI Deployment Process
 -----------------------
