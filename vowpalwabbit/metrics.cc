@@ -122,7 +122,7 @@ void output_metrics(vw& all)
     all.l->persist_metrics(list_metrics);
 
 #ifdef BUILD_EXTERNAL_PARSER
-    if (all.external_parser) { all.external_parser->persist_metrics(list_metrics.int_metrics_list); }
+    if (all.external_parser) { all.external_parser->persist_metrics(list_metrics); }
 #endif
 
     list_metrics.set("total_log_calls", logger::get_log_count());
