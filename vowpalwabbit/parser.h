@@ -124,7 +124,7 @@ struct parser
   /// parsers multiple are produced which all correspond the the same overall
   /// logical example. examples must have a single empty example in it when this
   /// call is made.
-  std::unique_ptr<VW::example_parser_i> active_example_parser;
+  std::unique_ptr<VW::example_parser_i> active_example_parser = nullptr;
 
   std::unique_ptr<VW::example_parser_factory_i> custom_example_parser_factory = nullptr;
 

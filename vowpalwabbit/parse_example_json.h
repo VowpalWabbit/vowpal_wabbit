@@ -1823,11 +1823,10 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 template <bool audit>
 bool parse_line_dsjson(vw* all, char* line, size_t num_chars, dsjson_metrics* metrics, v_array<example*>& examples)
 {
+  assert(examples.size() == 1);
+
   // Skip lines that do not start with "{"
   if (line[0] != '{') { return false; }
-
-  assert(examples.empty());
-  examples.push_back(&VW::get_unused_example(all));
 
   DecisionServiceInteraction interaction;
   bool result = VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,

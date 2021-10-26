@@ -23,6 +23,8 @@ void parse_dispatch(vw& all, DispatchFuncT& dispatch)
     while (!all.example_parser->done)
     {
       assert(all.example_parser->active_example_parser != nullptr);
+      examples.push_back(&VW::get_unused_example(&all));  // need at least 1 example
+      assert(examples.size() == 1);
       if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
           all.example_parser->active_example_parser->next(all.example_parser->input, examples) == true)
       {
