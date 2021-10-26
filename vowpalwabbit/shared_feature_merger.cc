@@ -87,7 +87,8 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, multi_ex
 void persist(sfm_data& data, metric_sink& metrics)
 {
   if (data._metrics)
-  { metrics.set("sfm_count_learn_example_with_shared", data._metrics->count_learn_example_with_shared); }
+  {
+    metrics.set_uint("sfm_count_learn_example_with_shared", data._metrics->count_learn_example_with_shared); }
 }
 
 VW::LEARNER::base_learner* shared_feature_merger_setup(VW::setup_base_i& stack_builder)

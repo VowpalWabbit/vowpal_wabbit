@@ -27,27 +27,27 @@ void insert_dsjson_metrics(
   // ds_metrics is nullptr when --dsjson is disabled
   if (ds_metrics != nullptr)
   {
-    metrics.set("number_skipped_events", ds_metrics->NumberOfSkippedEvents);
-    metrics.set("number_events_zero_actions", ds_metrics->NumberOfEventsZeroActions);
-    metrics.set("line_parse_error", ds_metrics->LineParseError);
-    metrics.set("first_event_id", ds_metrics->FirstEventId);
-    metrics.set("first_event_time", ds_metrics->FirstEventTime);
-    metrics.set("last_event_id", ds_metrics->LastEventId);
-    metrics.set("last_event_time", ds_metrics->LastEventTime);
-    metrics.set("dsjson_sum_cost_original", ds_metrics->DsjsonSumCostOriginal);
+    metrics.set_uint("number_skipped_events", ds_metrics->NumberOfSkippedEvents);
+    metrics.set_uint("number_events_zero_actions", ds_metrics->NumberOfEventsZeroActions);
+    metrics.set_uint("line_parse_error", ds_metrics->LineParseError);
+    metrics.set_string("first_event_id", ds_metrics->FirstEventId);
+    metrics.set_string("first_event_time", ds_metrics->FirstEventTime);
+    metrics.set_string("last_event_id", ds_metrics->LastEventId);
+    metrics.set_string("last_event_time", ds_metrics->LastEventTime);
+    metrics.set_float("dsjson_sum_cost_original", ds_metrics->DsjsonSumCostOriginal);
     if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") != enabled_reductions.end())
     {
-      metrics.set("dsjson_sum_cost_original_first_slot", ds_metrics->DsjsonSumCostOriginalFirstSlot);
-      metrics.set(
+      metrics.set_float("dsjson_sum_cost_original_first_slot", ds_metrics->DsjsonSumCostOriginalFirstSlot);
+      metrics.set_uint(
           "dsjson_number_label_equal_baseline_first_slot", ds_metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot);
-      metrics.set("dsjson_number_label_not_equal_baseline_first_slot",
+      metrics.set_uint("dsjson_number_label_not_equal_baseline_first_slot",
           ds_metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
-      metrics.set("dsjson_sum_cost_original_label_equal_baseline_first_slot",
+      metrics.set_float("dsjson_sum_cost_original_label_equal_baseline_first_slot",
           ds_metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
     }
     else
     {
-      metrics.set("dsjson_sum_cost_original_baseline", ds_metrics->DsjsonSumCostOriginalBaseline);
+      metrics.set_float("dsjson_sum_cost_original_baseline", ds_metrics->DsjsonSumCostOriginalBaseline);
     }
   }
 }
@@ -125,7 +125,7 @@ void output_metrics(vw& all)
     if (all.external_parser) { all.external_parser->persist_metrics(list_metrics); }
 #endif
 
-    list_metrics.set("total_log_calls", logger::get_log_count());
+    list_metrics.set_uint("total_log_calls", logger::get_log_count());
 
     std::vector<std::string> enabled_reductions;
     if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
@@ -152,8 +152,8 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
 
 void persist(metrics_data& data, metric_sink& metrics)
 {
-  metrics.set("total_predict_calls", data.predict_count);
-  metrics.set("total_learn_calls", data.learn_count);
+  metrics.set_uint("total_predict_calls", data.predict_count);
+  metrics.set_uint("total_learn_calls", data.learn_count);
 }
 
 VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder)

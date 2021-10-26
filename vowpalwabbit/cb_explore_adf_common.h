@@ -285,35 +285,35 @@ inline void cb_explore_adf_base<ExploreType>::persist_metrics(
 {
   if (data._metrics)
   {
-    metrics.set("cbea_labeled_ex", data._metrics->metric_labeled);
-    metrics.set("cbea_predict_in_learn", data._metrics->metric_predict_in_learn);
-    metrics.set("cbea_sum_cost", data._metrics->metric_sum_cost);
-    metrics.set("cbea_sum_cost_baseline", data._metrics->metric_sum_cost_first);
-    metrics.set("cbea_label_first_action", data._metrics->label_action_first_option);
-    metrics.set("cbea_label_not_first", data._metrics->label_action_not_first);
-    metrics.set("cbea_non_zero_cost", data._metrics->count_non_zero_cost);
+    metrics.set_uint("cbea_labeled_ex", data._metrics->metric_labeled);
+    metrics.set_uint("cbea_predict_in_learn", data._metrics->metric_predict_in_learn);
+    metrics.set_float("cbea_sum_cost", data._metrics->metric_sum_cost);
+    metrics.set_float("cbea_sum_cost_baseline", data._metrics->metric_sum_cost_first);
+    metrics.set_uint("cbea_label_first_action", data._metrics->label_action_first_option);
+    metrics.set_uint("cbea_label_not_first", data._metrics->label_action_not_first);
+    metrics.set_uint("cbea_non_zero_cost", data._metrics->count_non_zero_cost);
 
     if (data._metrics->metric_labeled)
     {
-      metrics.set(
+      metrics.set_float(
           "cbea_avg_feat_per_event", static_cast<float>(data._metrics->sum_features / data._metrics->metric_labeled));
-      metrics.set(
+      metrics.set_float(
           "cbea_avg_actions_per_event", static_cast<float>(data._metrics->sum_actions / data._metrics->metric_labeled));
-      metrics.set(
+      metrics.set_float(
           "cbea_avg_ns_per_event", static_cast<float>(data._metrics->sum_namespaces / data._metrics->metric_labeled));
     }
 
     if (data._metrics->sum_actions)
     {
-      metrics.set(
+      metrics.set_float(
           "cbea_avg_feat_per_action", static_cast<float>(data._metrics->sum_features / data._metrics->sum_actions));
-      metrics.set(
+      metrics.set_float(
           "cbea_avg_ns_per_action", static_cast<float>(data._metrics->sum_namespaces / data._metrics->sum_actions));
     }
 
-    if (data._metrics->min_actions != SIZE_MAX) { metrics.set("cbea_min_actions", data._metrics->min_actions); }
+    if (data._metrics->min_actions != SIZE_MAX) { metrics.set_uint("cbea_min_actions", data._metrics->min_actions); }
 
-    if (data._metrics->max_actions) { metrics.set("cbea_max_actions", data._metrics->max_actions); }
+    if (data._metrics->max_actions) { metrics.set_uint("cbea_max_actions", data._metrics->max_actions); }
   }
 }
 

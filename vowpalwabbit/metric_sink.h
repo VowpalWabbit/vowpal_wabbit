@@ -23,17 +23,17 @@ struct metric_sink_visitor
 
 struct metric_sink
 {
-  void set(const std::string& key, uint64_t value, bool overwrite = false);
-  void set(const std::string& key, float value, bool overwrite = false);
-  void set(const std::string& key, const std::string& value, bool overwrite = false);
-  void set(const std::string& key, bool value, bool overwrite = false);
-
-  void visit(metric_sink_visitor& visitor) const;
+  void set_uint(const std::string& key, uint64_t value, bool overwrite = false);
+  void set_float(const std::string& key, float value, bool overwrite = false);
+  void set_string(const std::string& key, const std::string& value, bool overwrite = false);
+  void set_bool(const std::string& key, bool value, bool overwrite = false);
 
   uint64_t get_uint(const std::string& key) const;
   float get_float(const std::string& key) const;
   VW::string_view get_string(const std::string& key) const;
   bool get_bool(const std::string& key) const;
+
+  void visit(metric_sink_visitor& visitor) const;
 
 private:
   void throw_if_not_overwrite_and_key_exists(const std::string& key, bool overwrite);
