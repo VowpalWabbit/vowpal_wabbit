@@ -44,4 +44,4 @@ jobs:
       - run: pip install black
       - shell: bash
         run: |
-          python -m black --check python/vowpalwabbit || (echo "To fix, run python -m black python/vowpalwabbit"; exit 1)
+          python -m black --check python/vowpalwabbit || (echo "---\nTo fix, run:\n\tpython -m black python/vowpalwabbit"; exit 1)
