@@ -42,11 +42,7 @@ jobs:
         with:
           python-version: 3.6
       - run: pip install black
-      - shell: bash
-        run: |
-          python -m black --check python/vowpalwabbit
-          if [ "$?" -ne "0" ]
-          then
-            echo "To fix, run: python -m black python/vowpalwabbit"
-            exit 1
-          fi
+      - run: python -m black --check python/vowpalwabbit
+      - name: Formatting issue
+        if: ${{ failure() }}
+        run: echo "::error Formatting issues. To fix, run `python -m black python/vowpalwabbit`"
