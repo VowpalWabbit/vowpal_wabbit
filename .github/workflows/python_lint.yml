@@ -42,7 +42,6 @@ jobs:
         with:
           python-version: 3.6
       - run: pip install black
-      - run: python -m black --check python/vowpalwabbit
-      - name: Formatting issue
-        if: ${{ failure() }}
-        run: echo "::error Formatting issues. To fix, run `python -m black python/vowpalwabbit`"
+      - shell: bash
+        run: |
+          python -m black --check python/vowpalwabbit || (echo "To fix, run python -m black python/vowpalwabbit"; exit 1)
