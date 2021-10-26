@@ -384,6 +384,7 @@
     <ClCompile Include="marginal.cc" />
     <ClCompile Include="memory_tree.cc" />
     <ClCompile Include="metrics.cc" />
+    <ClCompile Include="metric_sink.cc" />
     <ClCompile Include="mf.cc" />
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="multilabel_oaa.cc" />

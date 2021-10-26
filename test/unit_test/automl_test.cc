@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include <boost/test/tools/old/interface.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
@@ -13,6 +14,7 @@
 
 #include <functional>
 #include <map>
+#include <utility>
 
 using simulator::callback_map;
 using simulator::cb_sim;
@@ -20,17 +22,6 @@ using namespace VW::automl;
 
 namespace aml_test
 {
-void assert_metric(const std::string& metric_name, const size_t value, const VW::metric_sink& metrics)
-{
-  auto it = std::find_if(metrics.int_metrics_list.begin(), metrics.int_metrics_list.end(),
-      [&metric_name](const std::pair<std::string, size_t>& element) { return element.first == metric_name; });
-
-  if (it == metrics.int_metrics_list.end()) { BOOST_FAIL("could not find metric. fatal."); }
-  else
-  {
-    BOOST_CHECK_EQUAL(it->second, value);
-  }
-}
 
 void check_interactions_match_exclusions(VW::automl::automl<interaction_config_manager>* aml)
 {
@@ -178,7 +169,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_metrics)
     VW::metric_sink metrics;
     all.l->persist_metrics(metrics);
 
-    aml_test::assert_metric(metric_name, zero, metrics);
+    BOOST_REQUIRE_EQUAL(metrics.get_uint(metric_name), zero);
     return true;
   });
 
@@ -187,7 +178,7 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_metrics)
     VW::metric_sink metrics;
     all.l->persist_metrics(metrics);
 
-    aml_test::assert_metric(metric_name, num_iterations, metrics);
+    BOOST_REQUIRE_EQUAL(metrics.get_uint(metric_name), num_iterations);
     return true;
   });
 
