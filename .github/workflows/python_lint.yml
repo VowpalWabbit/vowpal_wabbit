@@ -42,4 +42,11 @@ jobs:
         with:
           python-version: 3.6
       - run: pip install black
-      - run: python -m black --check python/vowpalwabbit
+      - shell: bash
+        run: |
+          python -m black --check python/vowpalwabbit
+          if [ "$?" -ne "0" ]
+          then
+            echo "To fix, run: python -m black python/vowpalwabbit"
+            exit 1
+          fi
