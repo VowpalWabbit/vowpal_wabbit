@@ -270,6 +270,17 @@ void my_run_parser(vw_ptr all)
   VW::end_parser(*all);
 }
 
+struct python_dict_writer : VW::metric_sink_visitor
+{
+  python_dict_writer(py::dict& dest_dict) : _dest_dict(dest_dict) {}
+  void int_metric(const std::string& key, uint64_t value) override { _dest_dict[key] = value; }
+  void float_metric(const std::string& key, float value) override { _dest_dict[key] = value; }
+  void string_metric(const std::string& key, const std::string& value) override { _dest_dict[key] = value; }
+  void bool_metric(const std::string& key, bool value) override { _dest_dict[key] = value; }
+private:
+  py::dict& _dest_dict;
+};
+
 py::dict get_learner_metrics(vw_ptr all)
 {
   py::dict dictionary;
@@ -279,8 +290,8 @@ py::dict get_learner_metrics(vw_ptr all)
     VW::metric_sink metrics;
     all->l->persist_metrics(metrics);
 
-    for (const auto& m : metrics.int_metrics_list) { dictionary[m.first] = m.second; }
-    for (const auto& m : metrics.float_metrics_list) { dictionary[m.first] = m.second; }
+    python_dict_writer writer(dictionary);
+    metrics.visit(writer);
   }
 
   return dictionary;
