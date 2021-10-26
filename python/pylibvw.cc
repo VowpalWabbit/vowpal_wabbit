@@ -277,6 +277,7 @@ struct python_dict_writer : VW::metric_sink_visitor
   void float_metric(const std::string& key, float value) override { _dest_dict[key] = value; }
   void string_metric(const std::string& key, const std::string& value) override { _dest_dict[key] = value; }
   void bool_metric(const std::string& key, bool value) override { _dest_dict[key] = value; }
+
 private:
   py::dict& _dest_dict;
 };
