@@ -80,7 +80,7 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
 }
 
 int VW::read_example_from_cache(
-    io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache, shared_data* shared_dat)
+    io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache)
 {
   // Unused for now.
   uint64_t size;
@@ -89,7 +89,7 @@ int VW::read_example_from_cache(
   memcpy(&size, read_ptr, sizeof(size));
 
   ae->sorted = sorted_cache;
-  size_t total = lbl_parser.read_cached_label(ae->l, ae->_reduction_features, shared_dat->ldict.get(), input);
+  size_t total = lbl_parser.read_cached_label(ae->l, ae->_reduction_features, input);
   if (total == 0) { return 0; }
   if (read_cached_tag(input, ae) == 0) { return 0; }
   unsigned char newline_indicator = input.read_value<unsigned char>("newline_indicator");
@@ -160,7 +160,7 @@ int VW::read_example_from_cache(
 int read_cached_features(vw* all, io_buf& buf, v_array<example*>& examples)
 {
   return VW::read_example_from_cache(buf, examples[0], all->example_parser->lbl_parser,
-      all->example_parser->sorted_cache, all->example_parser->_shared_data);
+      all->example_parser->sorted_cache);
 }
 
 inline uint64_t ZigZagEncode(int64_t n)
