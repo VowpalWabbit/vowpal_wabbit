@@ -96,7 +96,7 @@ label_parser cb_label = {
       CB::cache_label(label.cb, cache);
     },
     // read_cached_label
-    [](polylabel& label, reduction_features& /*red_features*/, const VW::named_labels* /*ldict*/, io_buf& cache) {
+    [](polylabel& label, reduction_features& /*red_features*/, io_buf& cache) {
       return CB::read_cached_label(label.cb, cache);
     },
     // get_weight
@@ -216,7 +216,7 @@ label_parser cb_eval = {
       CB_EVAL::cache_label(label.cb_eval, cache);
     },
     // read_cached_label
-    [](polylabel& label, reduction_features& /*red_features*/, const VW::named_labels* /*ldict*/, io_buf& cache) {
+    [](polylabel& label, reduction_features& /*red_features*/, io_buf& cache) {
       return CB_EVAL::read_cached_label(label.cb_eval, cache);
     },
     // get_weight
