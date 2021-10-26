@@ -31,6 +31,5 @@ uint32_t convert(size_t number);
 // What is written by write_example_to_cache can be read by read_example_from_cache
 void write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_parser, uint64_t parse_mask,
     VW::details::cache_temp_buffer& temp_buffer);
-int read_example_from_cache(
-    io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache);
+int read_example_from_cache(io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache);
 }  // namespace VW

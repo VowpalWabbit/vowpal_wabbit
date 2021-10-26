@@ -79,8 +79,7 @@ void VW::write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_p
   output.bin_write_fixed(temp_buffer._backing_buffer->data(), temp_buffer._backing_buffer->size());
 }
 
-int VW::read_example_from_cache(
-    io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache)
+int VW::read_example_from_cache(io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache)
 {
   // Unused for now.
   uint64_t size;
@@ -159,8 +158,8 @@ int VW::read_example_from_cache(
 
 int read_cached_features(vw* all, io_buf& buf, v_array<example*>& examples)
 {
-  return VW::read_example_from_cache(buf, examples[0], all->example_parser->lbl_parser,
-      all->example_parser->sorted_cache);
+  return VW::read_example_from_cache(
+      buf, examples[0], all->example_parser->lbl_parser, all->example_parser->sorted_cache);
 }
 
 inline uint64_t ZigZagEncode(int64_t n)
