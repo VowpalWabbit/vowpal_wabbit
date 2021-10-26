@@ -22,16 +22,19 @@ void parse_dispatch(vw& all, DispatchFuncT& dispatch)
   {
     while (!all.example_parser->done)
     {
-      examples.push_back(&VW::get_unused_example(&all));  // need at least 1 example
+      assert(all.example_parser->active_example_parser != nullptr);
       if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
-          all.example_parser->reader(&all, all.example_parser->input, examples) > 0)
+          all.example_parser->active_example_parser->next(all.example_parser->input, examples) == true)
       {
+        assert(!examples.empty());
+
         VW::setup_examples(all, examples);
         example_number += examples.size();
         dispatch(all, examples);
       }
       else
       {
+        assert(examples.size() == 1);
         reset_source(all, all.num_bits);
         all.do_reset_source = false;
         all.passes_complete++;

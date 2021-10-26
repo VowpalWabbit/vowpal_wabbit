@@ -27,6 +27,7 @@
 #include "object_pool.h"
 #include "hashstring.h"
 #include "simple_label_parser.h"
+#include "metric_sink.h"
 
 namespace VW
 {
@@ -43,6 +44,52 @@ struct cache_temp_buffer
   }
 };
 }  // namespace details
+
+struct example_factory_i
+{
+  virtual ~example_factory_i() = default;
+  virtual example* create() = 0;
+  virtual void destroy(example*) = 0;
+};
+
+struct pooled_example_factory final : example_factory_i
+{
+  pooled_example_factory(vw* all) : _all(all) {}
+  example* create() override;
+  void destroy(example*) override;
+private:
+  vw* _all;
+};
+
+struct example_parser_i
+{
+  example_parser_i(std::string type);
+  virtual ~example_parser_i() = default;
+
+  // False if there is no next - EOF
+  // If io_buf is changed without first calling reset() it is UB
+  virtual bool next(io_buf& input, v_array<example*>& output) = 0;
+
+  // ! - the io_buf will change
+  // Some example parsers pre-parse the io_buf so an explicit signal is required to prepare them for a new io_buf
+  virtual void reset() {}
+
+  virtual void persist_metrics(metric_sink& /*sink*/) {}
+
+  VW::string_view type();
+private:
+  std::string _type;
+};
+
+struct example_parser_factory_i
+{
+  virtual ~example_parser_factory_i() = default;
+
+  virtual std::unique_ptr<example_parser_i> make_parser(bool audit,
+      VW::label_type_t type, uint32_t hash_seed, uint64_t parse_mask, hash_func_t hash_func, bool record_metrics,
+      std::unique_ptr<example_factory_i>&& example_factory) = 0;
+};
+
 }  // namespace VW
 
 struct vw;
@@ -66,9 +113,6 @@ struct parser
   parser(const parser&) = delete;
   parser& operator=(const parser&) = delete;
 
-  // helper(s) for text parsing
-  std::vector<VW::string_view> words;
-
   VW::object_pool<example> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
 
@@ -80,16 +124,17 @@ struct parser
   /// parsers multiple are produced which all correspond the the same overall
   /// logical example. examples must have a single empty example in it when this
   /// call is made.
-  int (*reader)(vw*, io_buf&, v_array<example*>& examples);
-  /// text_reader consumes the char* input and is for text based parsing
-  void (*text_reader)(vw*, const char*, size_t, v_array<example*>&);
+  std::unique_ptr<VW::example_parser_i> active_example_parser;
+
+  std::unique_ptr<VW::example_parser_factory_i> custom_example_parser_factory = nullptr;
+
 
   shared_data* _shared_data = nullptr;
 
   hash_func_t hasher;
   bool resettable;           // Whether or not the input can be reset.
   io_buf output;             // Where to output the cache.
-  VW::details::cache_temp_buffer _cache_temp_buffer;
+
   std::string currentname;
   std::string finalname;
 
@@ -112,33 +157,15 @@ struct parser
 
   int bound_sock = 0;
 
-  VW::label_parser_reuse_mem parser_memory_to_reuse;
 
   label_parser lbl_parser;  // moved from vw
 
-  bool audit = false;
-  bool decision_service_json = false;
-
   bool strict_parse;
   std::exception_ptr exc_ptr;
-  std::unique_ptr<dsjson_metrics> metrics = nullptr;
-};
 
-struct dsjson_metrics
-{
-  size_t NumberOfSkippedEvents = 0;
-  size_t NumberOfEventsZeroActions = 0;
-  size_t LineParseError = 0;
-  float DsjsonSumCostOriginal = 0.f;
-  float DsjsonSumCostOriginalFirstSlot = 0.f;
-  float DsjsonSumCostOriginalBaseline = 0.f;
-  size_t DsjsonNumberOfLabelEqualBaselineFirstSlot = 0;
-  size_t DsjsonNumberOfLabelNotEqualBaselineFirstSlot = 0;
-  float DsjsonSumCostOriginalLabelEqualBaselineFirstSlot = 0.f;
-  std::string FirstEventId;
-  std::string FirstEventTime;
-  std::string LastEventId;
-  std::string LastEventTime;
+  // Helper state to reduce allocations.
+  VW::label_parser_reuse_mem parser_memory_to_reuse;
+  VW::details::cache_temp_buffer _cache_temp_buffer;
 };
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);

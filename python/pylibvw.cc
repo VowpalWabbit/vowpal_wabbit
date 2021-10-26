@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "io/io_adapter.h"
 #include "vw.h"
 
 #include "multiclass.h"
@@ -533,7 +534,26 @@ py::list my_parse(vw_ptr& all, char* str)
 {
   v_array<example*> examples;
   examples.push_back(&VW::get_unused_example(all.get()));
-  all->example_parser->text_reader(all.get(), str, strlen(str), examples);
+
+  auto current_parser_type = all->example_parser->active_example_parser->type();
+  if (current_parser_type == "text" || current_parser_type == "json" || current_parser_type == "dsjson")
+  {
+    io_buf buffer;
+    buffer.add_file(VW::io::create_buffer_view(str, strlen(str)));
+    all->example_parser->active_example_parser->reset();
+    // Consider draining the input instead of simply taking the first example?
+    all->example_parser->active_example_parser->next(buffer, examples);
+  }
+  else
+  {
+    // If some other input type is in use the default is to fallback to text in this call.
+    auto text_parser = VW::make_text_parser(*all);
+    io_buf buffer;
+    buffer.add_file(VW::io::create_buffer_view(str, strlen(str)));
+    all->example_parser->active_example_parser->reset();
+    // Consider draining the input instead of simply taking the first example?
+    all->example_parser->active_example_parser->next(buffer, examples);
+  }
 
   py::list example_collection;
   for (auto* ex : examples)

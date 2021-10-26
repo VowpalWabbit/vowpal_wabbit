@@ -234,10 +234,6 @@ if(BUILD_FLATBUFFERS)
   set(vw_all_headers ${vw_all_headers} parser/flatbuffer/parse_example_flatbuffer.h)
 endif()
 
-if(BUILD_EXTERNAL_PARSER)
-  set(vw_all_headers ${vw_all_headers} ${external_parser_headers})
-endif()
-
 set(vw_all_sources
   accumulate.cc
   action_score.cc
@@ -384,10 +380,6 @@ if(BUILD_FLATBUFFERS)
     parser/flatbuffer/parse_label.cc)
 endif()
 
-if(BUILD_EXTERNAL_PARSER)
-  set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
-endif()
-
 if (vw_BUILD_NET_FRAMEWORK)
 set(vw_all_sources ${vw_all_sources} spanning_tree.cc)
 endif()
@@ -403,12 +395,6 @@ target_link_libraries(vw
     # actually a private dependency and so do not "link" when processing targets for installation.
     # https://gitlab.kitware.com/cmake/cmake/issues/15415
     $<BUILD_INTERFACE:RapidJSON>)
-
-if (BUILD_EXTERNAL_PARSER)
-  target_compile_definitions(vw PUBLIC BUILD_EXTERNAL_PARSER)
-  target_include_directories(vw PRIVATE ${EXTERNAL_PARSER_DIR})
-  target_link_libraries(vw PRIVATE ${EXTERNAL_PARSER_LIBS})
-endif()
 
 if(BUILD_FLATBUFFERS)
   target_link_libraries(vw

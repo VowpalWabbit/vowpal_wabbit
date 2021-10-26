@@ -16,6 +16,7 @@ void read_line(vw& all, example* ex, const char* line);  // read example from th
 void read_lines(vw* all, const char* line, size_t len,
     v_array<example*>& examples);  // read examples from the new line separated strings.
 
+std::unique_ptr<example_parser_i> make_text_parser(vw& all);
 }  // namespace VW
 
 int read_features_string(vw* all, io_buf& buf, v_array<example*>& examples);

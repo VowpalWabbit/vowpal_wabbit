@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "v_array.h"
+#include <vector>
 #include "future_compat.h"
 
 #include <cstring>
@@ -53,6 +53,24 @@ VW_WARNING_STATE_POP
 #ifndef _WIN32
 #  define _stricmp strcasecmp
 #endif
+
+struct dsjson_metrics
+{
+  size_t NumberOfSkippedEvents = 0;
+  size_t NumberOfEventsZeroActions = 0;
+  size_t LineParseError = 0;
+  float DsjsonSumCostOriginal = 0.f;
+  float DsjsonSumCostOriginalFirstSlot = 0.f;
+  float DsjsonSumCostOriginalBaseline = 0.f;
+  size_t DsjsonNumberOfLabelEqualBaselineFirstSlot = 0;
+  size_t DsjsonNumberOfLabelNotEqualBaselineFirstSlot = 0;
+  float DsjsonSumCostOriginalLabelEqualBaselineFirstSlot = 0.f;
+  std::string FirstEventId;
+  std::string FirstEventTime;
+  std::string LastEventId;
+  std::string LastEventTime;
+};
+
 
 namespace logger = VW::io::logger;
 
@@ -1690,6 +1708,7 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
     example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
+  assert(examples.size() == 1);
   if (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates)
   {
     parse_slates_example_json<audit>(all, examples, line, length, example_factory, ex_factory_context, dedup_examples);
@@ -1802,94 +1821,91 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
 }  // namespace VW
 
 template <bool audit>
-bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& examples)
+bool parse_line_dsjson(vw* all, char* line, size_t num_chars, dsjson_metrics* metrics, v_array<example*>& examples)
 {
-  if (all->example_parser->decision_service_json)
+  // Skip lines that do not start with "{"
+  if (line[0] != '{') { return false; }
+
+  assert(examples.empty());
+  examples.push_back(&VW::get_unused_example(all));
+
+  DecisionServiceInteraction interaction;
+  bool result = VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
+      reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
+
+  if (!result)
   {
-    // Skip lines that do not start with "{"
-    if (line[0] != '{') { return false; }
+    VW::return_multiple_example(*all, examples);
+    examples.push_back(&VW::get_unused_example(all));
+    if (metrics != nullptr) metrics->LineParseError++;
+    return false;
+  }
 
-    DecisionServiceInteraction interaction;
-    bool result = VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
-        reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
-
-    if (!result)
+  if (metrics != nullptr)
+  {
+    if (!interaction.eventId.empty())
     {
-      VW::return_multiple_example(*all, examples);
-      examples.push_back(&VW::get_unused_example(all));
-      if (all->example_parser->metrics) all->example_parser->metrics->LineParseError++;
-      return false;
+      if (metrics->FirstEventId.empty())
+        metrics->FirstEventId = std::move(interaction.eventId);
+      else
+        metrics->LastEventId = std::move(interaction.eventId);
     }
 
-    if (all->example_parser->metrics)
+    if (!interaction.timestamp.empty())
     {
-      if (!interaction.eventId.empty())
-      {
-        if (all->example_parser->metrics->FirstEventId.empty())
-          all->example_parser->metrics->FirstEventId = std::move(interaction.eventId);
-        else
-          all->example_parser->metrics->LastEventId = std::move(interaction.eventId);
-      }
+      if (metrics->FirstEventTime.empty())
+        metrics->FirstEventTime = std::move(interaction.timestamp);
+      else
+        metrics->LastEventTime = std::move(interaction.timestamp);
+    }
 
-      if (!interaction.timestamp.empty())
-      {
-        if (all->example_parser->metrics->FirstEventTime.empty())
-          all->example_parser->metrics->FirstEventTime = std::move(interaction.timestamp);
-        else
-          all->example_parser->metrics->LastEventTime = std::move(interaction.timestamp);
-      }
+    // Technically the aggregation operation here is supposed to be user-defined
+    // but according to Casey, the only operation used is Sum
+    // The _original_label_cost element is found either at the top level OR under
+    // the _outcomes node (for CCB)
+    metrics->DsjsonSumCostOriginal += interaction.originalLabelCost;
+    metrics->DsjsonSumCostOriginalFirstSlot += interaction.originalLabelCostFirstSlot;
+    if (!interaction.actions.empty())
+    {
+      // APS requires this metric for CB (baseline action is 1)
+      if (interaction.actions[0] == 1)
+      { metrics->DsjsonSumCostOriginalBaseline += interaction.originalLabelCost; }
 
-      // Technically the aggregation operation here is supposed to be user-defined
-      // but according to Casey, the only operation used is Sum
-      // The _original_label_cost element is found either at the top level OR under
-      // the _outcomes node (for CCB)
-      all->example_parser->metrics->DsjsonSumCostOriginal += interaction.originalLabelCost;
-      all->example_parser->metrics->DsjsonSumCostOriginalFirstSlot += interaction.originalLabelCostFirstSlot;
-      if (!interaction.actions.empty())
+      if (!interaction.baseline_actions.empty())
       {
-        // APS requires this metric for CB (baseline action is 1)
-        if (interaction.actions[0] == 1)
-        { all->example_parser->metrics->DsjsonSumCostOriginalBaseline += interaction.originalLabelCost; }
-
-        if (!interaction.baseline_actions.empty())
+        if (interaction.actions[0] == interaction.baseline_actions[0])
         {
-          if (interaction.actions[0] == interaction.baseline_actions[0])
-          {
-            all->example_parser->metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot++;
-            all->example_parser->metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot +=
-                interaction.originalLabelCostFirstSlot;
-          }
-          else
-          {
-            all->example_parser->metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot++;
-          }
+          metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot++;
+          metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot +=
+              interaction.originalLabelCostFirstSlot;
+        }
+        else
+        {
+          metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot++;
         }
       }
     }
-
-    // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
-    // stop suppressing "skipLearn" interactions. Also, not sure if this is the right logic
-    // for counterfactual. (@marco)
-    if (interaction.skipLearn)
-    {
-      if (all->example_parser->metrics) all->example_parser->metrics->NumberOfSkippedEvents++;
-      VW::return_multiple_example(*all, examples);
-      examples.push_back(&VW::get_unused_example(all));
-      return false;
-    }
-
-    // let's ask to continue reading data until we find a line with actions provided
-    if (interaction.actions.size() == 0 && all->l->is_multiline())
-    {
-      if (all->example_parser->metrics) all->example_parser->metrics->NumberOfEventsZeroActions++;
-      VW::return_multiple_example(*all, examples);
-      examples.push_back(&VW::get_unused_example(all));
-      return false;
-    }
   }
-  else
-    VW::template read_line_json_s<audit>(
-        *all, examples, line, num_chars, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
+
+  // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
+  // stop suppressing "skipLearn" interactions. Also, not sure if this is the right logic
+  // for counterfactual. (@marco)
+  if (interaction.skipLearn)
+  {
+    if (metrics != nullptr) metrics->NumberOfSkippedEvents++;
+    VW::return_multiple_example(*all, examples);
+    examples.push_back(&VW::get_unused_example(all));
+    return false;
+  }
+
+  // let's ask to continue reading data until we find a line with actions provided
+  if (interaction.actions.size() == 0 && all->l->is_multiline())
+  {
+    if (metrics != nullptr) metrics->NumberOfEventsZeroActions++;
+    VW::return_multiple_example(*all, examples);
+    examples.push_back(&VW::get_unused_example(all));
+    return false;
+  }
 
   return true;
 }
@@ -1905,57 +1921,133 @@ inline void append_empty_newline_example_for_driver(vw* all, v_array<example*>& 
   if (examples.size() > 1)
   {
     example& ae = VW::get_unused_example(all);
-    static const char empty[] = "";
-    VW::string_view example(empty);
-    substring_to_example(all, &ae, example);
+    substring_to_example(all, &ae, "");
     ae.is_newline = true;
 
     examples.push_back(&ae);
   }
 }
 
-// This is used by the python parser
-template <bool audit>
-void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<example*>& examples)
+namespace VW
 {
-  // The JSON reader does insitu parsing and therefore modifies the input
-  // string, so we make a copy since this function cannot modify the input
-  // string.
-  std::vector<char> owned_str;
-  size_t len = std::strlen(line) + 1;
-  owned_str.resize(len);
-  std::memcpy(owned_str.data(), line, len);
-
-  bool good_example = parse_line_json<audit>(all, owned_str.data(), num_chars, examples);
-  if (!good_example)
+namespace details
+{
+template <bool audit>
+struct json_example_parser : VW::example_parser_i
+{
+  json_example_parser(vw* all) : example_parser_i("json"), _all(all)
   {
-    VW::return_multiple_example(*all, examples);
-    examples.push_back(&VW::get_unused_example(all));
-    return;
   }
-}
 
-template <bool audit>
-int read_features_json(vw* all, io_buf& buf, v_array<example*>& examples)
-{
-  // Keep reading lines until a valid set of examples is produced.
-  bool reread;
-  do
+  bool next(io_buf& input, v_array<example*>& output) override
   {
-    reread = false;
-
     char* line;
     size_t num_chars;
-    size_t num_chars_initial = read_features(buf, line, num_chars);
-    if (num_chars_initial < 1) return static_cast<int>(num_chars_initial);
-
+    size_t num_chars_initial = read_features(input, line, num_chars);
+    if (num_chars_initial < 1) { return false; }
     // Ensure there is a null terminator.
     line[num_chars] = '\0';
 
-    reread = !parse_line_json<audit>(all, line, num_chars, examples);
-  } while (reread);
+    VW::template read_line_json_s<audit>(
+        *_all, output, line, num_chars, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), _all);
 
-  append_empty_newline_example_for_driver(all, examples);
+    append_empty_newline_example_for_driver(_all, output);
+    return true;
+  }
 
-  return 1;
+private:
+  vw* _all;
+};
+
+template <bool audit>
+struct dsjson_example_parser : VW::example_parser_i
+{
+  dsjson_example_parser(vw* all, bool record_metrics) : example_parser_i("dsjson"), _all(all), _should_record_metrics(record_metrics)
+  {
+  }
+
+  bool next(io_buf& input, v_array<example*>& output) override
+  {
+    bool reread;
+    do
+    {
+      reread = false;
+
+      char* line;
+      size_t num_chars;
+      size_t num_chars_initial = read_features(input, line, num_chars);
+      if (num_chars_initial < 1) { return false; }
+
+      // Ensure there is a null terminator.
+      line[num_chars] = '\0';
+
+      dsjson_metrics* metrics = _should_record_metrics ? &_ds_metrics : nullptr;
+
+      reread = !parse_line_dsjson<audit>(_all, line, num_chars, metrics, output);
+    } while (reread);
+
+    append_empty_newline_example_for_driver(_all, output);
+    return true;
+  }
+
+  void persist_metrics(VW::metric_sink& sink) override
+  {
+    if(!_should_record_metrics)
+    {
+      return;
+    }
+
+    std::vector<std::string> enabled_reductions;
+    if (_all->l != nullptr) { _all->l->get_enabled_reductions(enabled_reductions); }
+
+    sink.set_uint("number_skipped_events", _ds_metrics.NumberOfSkippedEvents);
+    sink.set_uint("number_events_zero_actions", _ds_metrics.NumberOfEventsZeroActions);
+    sink.set_uint("line_parse_error", _ds_metrics.LineParseError);
+    sink.set_string("first_event_id", _ds_metrics.FirstEventId);
+    sink.set_string("first_event_time", _ds_metrics.FirstEventTime);
+    sink.set_string("last_event_id", _ds_metrics.LastEventId);
+    sink.set_string("last_event_time", _ds_metrics.LastEventTime);
+    sink.set_float("dsjson_sum_cost_original", _ds_metrics.DsjsonSumCostOriginal);
+    if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") != enabled_reductions.end())
+    {
+      sink.set_float("dsjson_sum_cost_original_first_slot", _ds_metrics.DsjsonSumCostOriginalFirstSlot);
+      sink.set_uint(
+          "dsjson_number_label_equal_baseline_first_slot", _ds_metrics.DsjsonNumberOfLabelEqualBaselineFirstSlot);
+      sink.set_uint("dsjson_number_label_not_equal_baseline_first_slot",
+          _ds_metrics.DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
+      sink.set_float("dsjson_sum_cost_original_label_equal_baseline_first_slot",
+          _ds_metrics.DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
+    }
+    else
+    {
+      sink.set_float("dsjson_sum_cost_original_baseline", _ds_metrics.DsjsonSumCostOriginalBaseline);
+    }
+  }
+
+private:
+  vw* _all;
+  dsjson_metrics _ds_metrics;
+  bool _should_record_metrics;
+};
+
+}  // namespace details
+inline std::unique_ptr<VW::example_parser_i> make_json_parser(vw& all)
+{
+  if (all.audit || all.hash_inv)
+  {
+    return VW::make_unique<details::json_example_parser<true>>(&all);
+  }
+
+  return VW::make_unique<details::json_example_parser<false>>(&all);
+
 }
+inline std::unique_ptr<VW::example_parser_i> make_dsjson_parser(vw& all, bool record_metrics)
+{
+  if (all.audit || all.hash_inv)
+  {
+    return VW::make_unique<details::dsjson_example_parser<true>>(&all, record_metrics);
+  }
+
+  return VW::make_unique<details::dsjson_example_parser<false>>(&all, record_metrics);
+}
+}  // namespace VW

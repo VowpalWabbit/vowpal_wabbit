@@ -5,9 +5,6 @@
 #include "debug_log.h"
 #include "reductions.h"
 #include "learner.h"
-#ifdef BUILD_EXTERNAL_PARSER
-#  include "parse_example_external.h"
-#endif
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/writer.h>
 #include <cfloat>
@@ -20,37 +17,6 @@ using namespace VW::LEARNER;
 using namespace rapidjson;
 
 namespace logger = VW::io::logger;
-
-void insert_dsjson_metrics(
-    const dsjson_metrics* ds_metrics, VW::metric_sink& metrics, const std::vector<std::string>& enabled_reductions)
-{
-  // ds_metrics is nullptr when --dsjson is disabled
-  if (ds_metrics != nullptr)
-  {
-    metrics.set_uint("number_skipped_events", ds_metrics->NumberOfSkippedEvents);
-    metrics.set_uint("number_events_zero_actions", ds_metrics->NumberOfEventsZeroActions);
-    metrics.set_uint("line_parse_error", ds_metrics->LineParseError);
-    metrics.set_string("first_event_id", ds_metrics->FirstEventId);
-    metrics.set_string("first_event_time", ds_metrics->FirstEventTime);
-    metrics.set_string("last_event_id", ds_metrics->LastEventId);
-    metrics.set_string("last_event_time", ds_metrics->LastEventTime);
-    metrics.set_float("dsjson_sum_cost_original", ds_metrics->DsjsonSumCostOriginal);
-    if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") != enabled_reductions.end())
-    {
-      metrics.set_float("dsjson_sum_cost_original_first_slot", ds_metrics->DsjsonSumCostOriginalFirstSlot);
-      metrics.set_uint(
-          "dsjson_number_label_equal_baseline_first_slot", ds_metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot);
-      metrics.set_uint("dsjson_number_label_not_equal_baseline_first_slot",
-          ds_metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
-      metrics.set_float("dsjson_sum_cost_original_label_equal_baseline_first_slot",
-          ds_metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
-    }
-    else
-    {
-      metrics.set_float("dsjson_sum_cost_original_baseline", ds_metrics->DsjsonSumCostOriginalBaseline);
-    }
-  }
-}
 
 namespace VW
 {
@@ -121,16 +87,13 @@ void output_metrics(vw& all)
 
     all.l->persist_metrics(list_metrics);
 
-#ifdef BUILD_EXTERNAL_PARSER
-    if (all.external_parser) { all.external_parser->persist_metrics(list_metrics); }
-#endif
+    // Give the current parser an opportunity to add its metrics.
+    if (all.example_parser->active_example_parser != nullptr)
+    {
+      all.example_parser->active_example_parser->persist_metrics(list_metrics);
+    }
 
     list_metrics.set_uint("total_log_calls", logger::get_log_count());
-
-    std::vector<std::string> enabled_reductions;
-    if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
-    insert_dsjson_metrics(all.example_parser->metrics.get(), list_metrics, enabled_reductions);
-
     list_to_json_file(filename, list_metrics);
   }
 }

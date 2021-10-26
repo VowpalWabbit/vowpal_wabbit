@@ -24,14 +24,10 @@ struct input_options
   bool compressed;
   bool chain_hash_json;
   bool flatbuffer = false;
-#ifdef BUILD_EXTERNAL_PARSER
-  // pointer because it is an incomplete type
-  std::unique_ptr<VW::external::parser_options> ext_opts;
-#endif
 };
 
 // trace listener + context need to be passed at initialization to capture all messages.
-vw& parse_args(VW::config::options_i& options, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+vw& parse_args(VW::config::options_i& options, trace_message_t trace_listener = nullptr, void* trace_context = nullptr, std::unique_ptr<VW::example_parser_factory_i> example_parser_factory = nullptr);
 void parse_modules(VW::config::options_i& options, vw& all);
 void parse_sources(VW::config::options_i& options, vw& all, io_buf& model, bool skip_model_load = false);
 

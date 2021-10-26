@@ -66,14 +66,15 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #  include "parser/flatbuffer/parse_example_flatbuffer.h"
 #endif
 
-#ifdef BUILD_EXTERNAL_PARSER
-#  include "parse_example_external.h"
-#endif
-
 // OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
 #if !defined(SOL_TCP) && defined(IPPROTO_TCP)
 #  define SOL_TCP IPPROTO_TCP
 #endif
+
+VW::example_parser_i::example_parser_i(std::string type) : _type(std::move(type)){}
+VW::string_view VW::example_parser_i::type() { return _type; };
+example* VW::pooled_example_factory::create() { return &VW::get_unused_example(_all); }
+void VW::pooled_example_factory::destroy(example* ex) { VW::finish_example(*_all, *ex); }
 
 using std::endl;
 
@@ -129,53 +130,41 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   return cache_numbits;
 }
 
-void set_cache_reader(vw& all) { all.example_parser->reader = read_cached_features; }
+void set_cache_reader(vw& all) {
+  all.example_parser->active_example_parser = VW::make_cache_parser(all); }
 
 void set_string_reader(vw& all)
 {
-  all.example_parser->reader = read_features_string;
-  all.print_by_ref = print_result_by_ref;
+  all.example_parser->active_example_parser = VW::make_text_parser(all);
 }
 
 bool is_currently_json_reader(const vw& all)
 {
-  return all.example_parser->reader == &read_features_json<true> ||
-      all.example_parser->reader == &read_features_json<false>;
+  return all.example_parser->active_example_parser->type() == "json";
 }
 
 bool is_currently_dsjson_reader(const vw& all)
 {
-  return is_currently_json_reader(all) && all.example_parser->decision_service_json;
+  return all.example_parser->active_example_parser->type() == "dsjson";
 }
 
 void set_json_reader(vw& all, bool dsjson = false)
 {
-  // TODO: change to class with virtual method
-  // --invert_hash requires the audit parser version to save the extra information.
-  if (all.audit || all.hash_inv)
+  if (dsjson)
   {
-    all.example_parser->reader = &read_features_json<true>;
-    all.example_parser->text_reader = &line_to_examples_json<true>;
-    all.example_parser->audit = true;
+    all.example_parser->active_example_parser = VW::make_dsjson_parser(all, all.options->was_supplied("extra_metrics"));
   }
   else
   {
-    all.example_parser->reader = &read_features_json<false>;
-    all.example_parser->text_reader = &line_to_examples_json<false>;
-    all.example_parser->audit = false;
+    all.example_parser->active_example_parser = VW::make_json_parser(all);
   }
-
-  all.example_parser->decision_service_json = dsjson;
-
-  if (dsjson && all.options->was_supplied("extra_metrics"))
-  { all.example_parser->metrics = VW::make_unique<dsjson_metrics>(); }
 }
 
 void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
 {
   if (all.example_parser->input.isbinary())
   {
-    all.example_parser->reader = read_cached_features;
+    set_cache_reader(all);
     all.print_by_ref = binary_print_result_by_ref;
   }
   else if (json || dsjson)
@@ -251,6 +240,7 @@ void reset_source(vw& all, size_t numbits)
     {
       if (!input.is_resettable()) { THROW("Cannot reset source as it is a non-resettable input type.") }
       input.reset();
+      all.example_parser->active_example_parser->reset();
       for (auto& file : input.get_input_files())
       {
         if (cache_numbits(*file) < numbits) { THROW("argh, a bug in caching of some sort!") }
@@ -325,10 +315,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       {
         if (!quiet) *(all.trace_message) << "using cache_file = " << file.c_str() << endl;
         set_cache_reader(all);
-        if (c == all.num_bits)
-          all.example_parser->sorted_cache = true;
-        else
-          all.example_parser->sorted_cache = false;
+        all.example_parser->sorted_cache = (c == all.num_bits);
         all.example_parser->resettable = true;
       }
     }
@@ -349,9 +336,6 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options)
 {
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
-
-  // default text reader
-  all.example_parser->text_reader = VW::read_lines;
 
   if (!all.no_daemon && (all.daemon || all.active))
   {
@@ -566,7 +550,19 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         }
       }
 
-      if (input_options.json || input_options.dsjson)
+
+      if(all.example_parser->custom_example_parser_factory != nullptr)
+      {
+          all.example_parser->active_example_parser = all.example_parser->custom_example_parser_factory->make_parser(
+            all.audit || all.hash_inv,
+            all.example_parser->lbl_parser.label_type,
+            all.hash_seed,
+            all.parse_mask,
+            all.example_parser->hasher,
+            all.options->was_supplied("extra_metrics"),
+            VW::make_unique<VW::pooled_example_factory>(&all));
+      }
+      else if (input_options.json || input_options.dsjson)
       {
         if (!input_options.chain_hash_json)
         {
@@ -584,14 +580,17 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         all.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
       }
 #endif
-
-#ifdef BUILD_EXTERNAL_PARSER
-      else if (input_options.ext_opts && input_options.ext_opts->is_enabled())
+      else if(all.example_parser->custom_example_parser_factory != nullptr)
       {
-        all.external_parser = VW::external::parser::get_external_parser(&all, input_options);
-        all.example_parser->reader = VW::external::parse_examples;
+          all.example_parser->active_example_parser = all.example_parser->custom_example_parser_factory->make_parser(
+            all.audit || all.hash_inv,
+            all.example_parser->lbl_parser.label_type,
+            all.hash_seed,
+            all.parse_mask,
+            all.example_parser->hasher,
+            all.options->was_supplied("extra_metrics"),
+            VW::make_unique<VW::pooled_example_factory>(&all));
       }
-#endif
       else
       {
         set_string_reader(all);

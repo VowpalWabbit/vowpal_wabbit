@@ -4,12 +4,14 @@
 
 #include <cmath>
 #include <cctype>
+#include "memory.h"
 #include "parse_example.h"
 #include "parse_primitives.h"
 #include "hash.h"
 #include "unique_sort.h"
 #include "global_data.h"
 #include "constant.h"
+#include "v_array.h"
 #include "vw_string_view.h"
 #include "future_compat.h"
 #include "shared_data.h"
@@ -17,6 +19,28 @@
 #include "io/logger.h"
 
 namespace logger = VW::io::logger;
+
+struct text_example_parser : VW::example_parser_i
+{
+  text_example_parser(vw* all)
+      : example_parser_i("text")
+      , _all(all)
+  {
+  }
+
+  bool next(io_buf& input, v_array<example*>& output) override;
+
+private:
+  std::vector<VW::string_view> _token_storage;
+  VW::label_parser_reuse_mem _label_parser_reuse_mem;
+  vw* _all;
+};
+
+
+std::unique_ptr<VW::example_parser_i> VW::make_text_parser(vw& all)
+{
+  return VW::make_unique<text_example_parser>(&all);
+}
 
 size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
 {
@@ -496,7 +520,7 @@ public:
   }
 };
 
-void substring_to_example(vw* all, example* ae, VW::string_view example)
+void substring_to_example(vw* all, example* ae, VW::string_view example, std::vector<VW::string_view>& words, VW::label_parser_reuse_mem& label_parser_mem)
 {
   if (example.empty()) { ae->is_newline = true; }
 
@@ -504,7 +528,7 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
 
   size_t bar_idx = example.find('|');
 
-  all->example_parser->words.clear();
+  words.clear();
   if (bar_idx != 0)
   {
     VW::string_view label_space(example);
@@ -517,22 +541,22 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
     size_t tab_idx = label_space.find('\t');
     if (tab_idx != VW::string_view::npos) { label_space.remove_prefix(tab_idx + 1); }
 
-    tokenize(' ', label_space, all->example_parser->words);
-    if (all->example_parser->words.size() > 0 &&
-        (all->example_parser->words.back().end() == label_space.end() ||
-            all->example_parser->words.back().front() == '\''))  // The last field is a tag, so record and strip it off
+    tokenize(' ', label_space, words);
+    if (words.size() > 0 &&
+        (words.back().end() == label_space.end() ||
+            words.back().front() == '\''))  // The last field is a tag, so record and strip it off
     {
-      VW::string_view tag = all->example_parser->words.back();
-      all->example_parser->words.pop_back();
+      VW::string_view tag = words.back();
+      words.pop_back();
       if (tag.front() == '\'') { tag.remove_prefix(1); }
       ae->tag.insert(ae->tag.end(), tag.begin(), tag.end());
     }
   }
 
-  if (!all->example_parser->words.empty())
+  if (!words.empty())
   {
     all->example_parser->lbl_parser.parse_label(ae->l, ae->_reduction_features,
-        all->example_parser->parser_memory_to_reuse, all->sd->ldict.get(), all->example_parser->words);
+        label_parser_mem, all->sd->ldict.get(), words);
   }
 
   if (bar_idx != VW::string_view::npos)
@@ -542,6 +566,13 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
     else
       TC_parser<false> parser_line(example.substr(bar_idx), *all, ae);
   }
+}
+
+void substring_to_example(vw* all, example* ae, VW::string_view example)
+{
+  std::vector<VW::string_view> words;
+  VW::label_parser_reuse_mem label_parser_mem;
+  substring_to_example(all, ae, example, words, label_parser_mem);
 }
 
 namespace VW
@@ -568,3 +599,21 @@ void read_lines(vw* all, const char* line, size_t len, v_array<example*>& exampl
 }
 
 }  // namespace VW
+
+bool text_example_parser::next(io_buf& input, v_array<example*>& output)
+{
+  assert(output.size() == 1);
+  char* line;
+  size_t num_chars;
+  // This function consumes input until it reaches a '\n' then it walks back the '\n' and '\r' if it exists.
+  size_t num_bytes_consumed = read_features(input, line, num_chars);
+  if (num_bytes_consumed < 1)
+  {
+    // This branch will get hit once we have reached EOF of the input device.
+    return false;
+  }
+
+  VW::string_view example_line(line, num_chars);
+   substring_to_example(_all, output[0], example_line, _token_storage, _label_parser_reuse_mem);
+  return true;
+}

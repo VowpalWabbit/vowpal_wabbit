@@ -70,7 +70,7 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
 
   for (auto _ : state)
   {
-    vw->example_parser->reader(vw, buffer, examples);
+    vw->example_parser->active_example_parser->next(buffer, examples);
     VW::empty_example(*vw, *examples[0]);
     buffer.reset();
     benchmark::ClobberMemory();
@@ -92,7 +92,7 @@ static void benchmark_example_reuse(benchmark::State& state)
   for (auto _ : state)
   {
     examples.push_back(&VW::get_unused_example(vw));
-    vw->example_parser->reader(vw, buffer, examples);
+    vw->example_parser->active_example_parser->next(buffer, examples);
     VW::finish_example(*vw, *examples[0]);
     buffer.reset();
     examples.clear();

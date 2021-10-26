@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <cfloat>
+#include <memory>
 #include <sstream>
 #include <fstream>
 #include <sys/types.h>
@@ -42,10 +43,6 @@
 #include "io/custom_streambuf.h"
 #include "io/owning_stream.h"
 #include "io/logger.h"
-
-#ifdef BUILD_EXTERNAL_PARSER
-#  include "parse_example_binary.h"
-#endif
 
 using std::cout;
 using std::endl;
@@ -390,9 +387,6 @@ input_options parse_source(vw& all, options_i& options)
                      "migrate you to the new behavior and silence the warning."))
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
                .help("data file will be interpreted as a flatbuffer file"));
-#ifdef BUILD_EXTERNAL_PARSER
-  VW::external::parser::set_parse_args(input_options, parsed_options);
-#endif
 
   options.add_and_parse(input_options);
 
@@ -1171,7 +1165,7 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
 }
 
 vw& parse_args(
-    std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener, void* trace_context)
+    std::unique_ptr<options_i, options_deleter_type> options, trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::example_parser_factory_i> example_parser_factory)
 {
   vw& all = *(new vw());
   all.options = std::move(options);
@@ -1201,6 +1195,10 @@ vw& parse_args(
 
     all.example_parser = new parser{ring_size, strict_parse};
     all.example_parser->_shared_data = all.sd;
+    if(example_parser_factory != nullptr)
+    {
+      all.example_parser->custom_example_parser_factory = std::move(example_parser_factory);
+    }
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
@@ -1565,11 +1563,11 @@ vw* initialize(config::options_i& options, io_buf* model, bool skip_model_load, 
 
 vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
     bool skip_model_load, trace_message_t trace_listener, void* trace_context,
-    std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
+    std::unique_ptr<VW::setup_base_i> learner_builder = nullptr, std::unique_ptr<VW::example_parser_factory_i> example_parser_factory = nullptr)
 {
   // Set up logger as early as possible
   logger::initialize_logger();
-  vw& all = parse_args(std::move(options), trace_listener, trace_context);
+  vw& all = parse_args(std::move(options), trace_listener, trace_context, std::move(example_parser_factory));
 
   try
   {
@@ -1695,6 +1693,14 @@ vw* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model
   free_args(argc, argv);
   return ret;
 }
+
+vw* initialize_with_custom_parser(std::unique_ptr<config::options_i, options_deleter_type> options, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
+    void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder, std::unique_ptr<VW::example_parser_factory_i> factory)
+{
+  return initialize_with_builder(
+        std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(learner_builder), std::move(factory));
+}
+
 
 vw* initialize(
     const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)

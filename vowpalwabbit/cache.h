@@ -3,9 +3,11 @@
 // license as described in the file LICENSE.
 
 #pragma once
+#include "named_labels.h"
 #include "v_array.h"
 #include "io_buf.h"
 #include "example.h"
+#include "parser.h"
 
 namespace VW
 {
@@ -32,4 +34,8 @@ uint32_t convert(size_t number);
 void write_example_to_cache(io_buf& output, example* ae, label_parser& lbl_parser, uint64_t parse_mask,
     VW::details::cache_temp_buffer& temp_buffer);
 int read_example_from_cache(io_buf& input, example* ae, label_parser& lbl_parser, bool sorted_cache);
+
+std::unique_ptr<example_parser_i> make_cache_parser(vw& all);
+std::unique_ptr<example_parser_i> make_cache_parser(VW::label_type_t label_type, bool sorted_cache);
+
 }  // namespace VW
