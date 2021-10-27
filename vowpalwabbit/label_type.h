@@ -21,7 +21,7 @@ enum class label_type_t : uint32_t
   multiclass,
   ccb,  // conditional contextual-bandit
   slates,
-  no_label,
+  nolabel,
   continuous  // continuous actions
 };
 string_view to_string(label_type_t);

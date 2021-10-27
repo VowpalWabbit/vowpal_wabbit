@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(parse_json_cats)
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(parse_json_cats_no_label)
+BOOST_AUTO_TEST_CASE(parse_json_cats_nolabel)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(

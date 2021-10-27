@@ -37,7 +37,7 @@ void setup_example(vw& all, example* ae);
 
 struct polylabel
 {
-  no_label::no_label empty;
+  nolabel::nolabel empty;
   label_data simple;
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;

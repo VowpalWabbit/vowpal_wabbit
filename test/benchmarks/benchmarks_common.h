@@ -20,7 +20,7 @@ inline std::string get_x_string_fts(int feature_size)
   return s;
 };
 
-inline std::string get_x_string_fts_no_label(int feature_size, size_t action_index = 0)
+inline std::string get_x_string_fts_nolabel(int feature_size, size_t action_index = 0)
 {
   std::stringstream ss;
   ss << " | ";

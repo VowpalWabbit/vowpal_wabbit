@@ -21,9 +21,9 @@
 
 namespace logger = VW::io::logger;
 
-namespace no_label
+namespace nolabel
 {
-void parse_no_label(const std::vector<VW::string_view>& words)
+void parse_nolabel(const std::vector<VW::string_view>& words)
 {
   switch (words.size())
   {
@@ -35,12 +35,12 @@ void parse_no_label(const std::vector<VW::string_view>& words)
   }
 }
 
-label_parser no_label_parser = {
+label_parser nolabel_parser = {
     // default_label
     [](polylabel& /* label */) {},
     // parse_label
     [](polylabel& /* label */, reduction_features& /* red_features */, VW::label_parser_reuse_mem& /* reuse_mem */,
-        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words) { parse_no_label(words); },
+        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words) { parse_nolabel(words); },
     // cache_label
     [](const polylabel& /* label */, const reduction_features& /* red_features */, io_buf& /* cache */) {},
     // read_cached_label
@@ -51,9 +51,9 @@ label_parser no_label_parser = {
     // test_label
     [](const polylabel& /* label */) { return false; },
     // label type
-    VW::label_type_t::no_label};
+    VW::label_type_t::nolabel};
 
-void print_no_label_update(vw& all, example& ec)
+void print_nolabel_update(vw& all, example& ec)
 {
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
       !all.logger.quiet && !all.bfgs)
@@ -63,19 +63,19 @@ void print_no_label_update(vw& all, example& ec)
   }
 }
 
-void output_and_account_no_label_example(vw& all, example& ec)
+void output_and_account_nolabel_example(vw& all, example& ec)
 {
   all.sd->update(ec.test_only, false, ec.loss, ec.weight, ec.get_num_features());
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag);
   for (auto& sink : all.final_prediction_sink) { all.print_by_ref(sink.get(), ec.pred.scalar, 0, ec.tag); }
 
-  print_no_label_update(all, ec);
+  print_nolabel_update(all, ec);
 }
 
-void return_no_label_example(vw& all, void*, example& ec)
+void return_nolabel_example(vw& all, void*, example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all, ec);
 }
-}  // namespace no_label
+}  // namespace nolabel

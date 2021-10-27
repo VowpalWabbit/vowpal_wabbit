@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_pdf)
   }
 }
 
-BOOST_AUTO_TEST_CASE(continuous_actions_parse_only_pdf_no_label)
+BOOST_AUTO_TEST_CASE(continuous_actions_parse_only_pdf_nolabel)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_chosen_action)
   }
 }
 
-BOOST_AUTO_TEST_CASE(continuous_actions_chosen_action_only_no_label)
+BOOST_AUTO_TEST_CASE(continuous_actions_chosen_action_only_nolabel)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_pdf_and_chosen_action)
   }
 }
 
-BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label)
+BOOST_AUTO_TEST_CASE(continuous_actions_parse_nolabel)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label)
   }
 }
 
-BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label_w_prefix)
+BOOST_AUTO_TEST_CASE(continuous_actions_parse_nolabel_w_prefix)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {

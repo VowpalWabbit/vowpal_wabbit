@@ -13,19 +13,19 @@ from vowpalwabbit.DFtoVW import (
 
 
 # Tests when constructor is used without label
-def test_no_label():
+def test_nolabel():
     df = pd.DataFrame({"a": [1]})
     first_line = DFtoVW(df=df, features=Feature("a")).convert_df()[0]
     assert first_line == "| a:1"
 
 
-def test_no_label_rename_feature():
+def test_nolabel_rename_feature():
     df = pd.DataFrame({"a": [1]})
     first_line = DFtoVW(df=df, features=Feature("a", rename_feature="")).convert_df()[0]
     assert first_line == "| :1"
 
 
-def test_no_label_multiple_features():
+def test_nolabel_multiple_features():
     df = pd.DataFrame({"a": [2], "b": [3]})
     conv = DFtoVW(df=df, features=[Feature(col) for col in ["a", "b"]])
     first_line = conv.convert_df()[0]

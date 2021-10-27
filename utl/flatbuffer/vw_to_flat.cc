@@ -286,9 +286,9 @@ void to_flat::create_cs_label(example* v, ExampleBuilder& ex_builder)
   ex_builder.label_type = VW::parsers::flatbuffer::Label_CS_Label;
 }
 
-void to_flat::create_no_label(example* v, ExampleBuilder& ex_builder)
+void to_flat::create_nolabel(example* v, ExampleBuilder& ex_builder)
 {
-  ex_builder.label = VW::parsers::flatbuffer::Createno_label(_builder, (uint8_t)'\000').Union();
+  ex_builder.label = VW::parsers::flatbuffer::Createnolabel(_builder, (uint8_t)'\000').Union();
 }
 
 flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespace(
@@ -372,8 +372,8 @@ void to_flat::convert_txt_to_flat(vw& all)
     VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
     switch (all.example_parser->lbl_parser.label_type)
     {
-      case VW::label_type_t::no_label:
-        to_flat::create_no_label(ae, ex_builder);
+      case VW::label_type_t::nolabel:
+        to_flat::create_nolabel(ae, ex_builder);
         break;
       case VW::label_type_t::cb:
         to_flat::create_cb_label(ae, ex_builder);
