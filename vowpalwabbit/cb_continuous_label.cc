@@ -137,7 +137,7 @@ label_parser the_label_parser = {
       CB::cache_label<continuous_label, continuous_label_elm>(label.cb_cont, cache);
     },
     // read_cached_label
-    [](polylabel& label, reduction_features& /*red_features*/, const VW::named_labels*, io_buf& cache) {
+    [](polylabel& label, reduction_features& /*red_features*/, io_buf& cache) {
       return CB::read_cached_label<continuous_label, continuous_label_elm>(label.cb_cont, cache);
     },
     // get_weight

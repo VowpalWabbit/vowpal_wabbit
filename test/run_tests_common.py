@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional
 
+
 class TestData:
     id: int
     depends_on: List[int]
@@ -12,7 +13,18 @@ class TestData:
     skip: bool
     skip_reason: Optional[str]
 
-    def __init__(self, id, description, depends_on, command_line, is_shell, input_files, comparison_files, skip, skip_reason):
+    def __init__(
+        self,
+        id,
+        description,
+        depends_on,
+        command_line,
+        is_shell,
+        input_files,
+        comparison_files,
+        skip,
+        skip_reason,
+    ):
         self.id = id
         self.description = description
         self.depends_on = depends_on

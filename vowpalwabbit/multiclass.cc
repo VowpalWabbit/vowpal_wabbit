@@ -95,7 +95,7 @@ label_parser mc_label = {
       cache_label(label.multi, cache);
     },
     // read_cached_label
-    [](polylabel& label, reduction_features& /* red_features */, const VW::named_labels* /* ldict */, io_buf& cache) {
+    [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
       return read_cached_label(label.multi, cache);
     },
     // get_weight
