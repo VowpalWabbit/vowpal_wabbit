@@ -40,24 +40,6 @@ int sample(int size, const float* probs, float s)
   return 0;  // error
 }
 
-int get_int_metric(const VW::metric_sink& metrics, const std::string& metric_name)
-{
-  auto it = std::find_if(metrics.int_metrics_list.begin(), metrics.int_metrics_list.end(),
-      [&metric_name](const std::pair<std::string, size_t>& element) { return element.first == metric_name; });
-
-  if (it == metrics.int_metrics_list.end()) { BOOST_FAIL("could not find metric. fatal."); }
-  return it->second;
-}
-
-float get_float_metric(const VW::metric_sink& metrics, const std::string& metric_name)
-{
-  auto it = std::find_if(metrics.float_metrics_list.begin(), metrics.float_metrics_list.end(),
-      [&metric_name](const std::pair<std::string, float>& element) { return element.first == metric_name; });
-
-  if (it == metrics.float_metrics_list.end()) { BOOST_FAIL("could not find metric. fatal."); }
-  return it->second;
-}
-
 }  // namespace test_helpers
 
 BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
@@ -82,10 +64,10 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
   VW::metric_sink metrics;
   vw.l->persist_metrics(metrics);
 
-  BOOST_CHECK_EQUAL(get_int_metric(metrics, "baseline_cb_baseline_in_use"), 0);
+  BOOST_CHECK_EQUAL(metrics.get_bool("baseline_cb_baseline_in_use"), false);
   // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
-  BOOST_CHECK_LE(get_float_metric(metrics, "baseline_cb_baseline_lowerbound"),
-      get_float_metric(metrics, "baseline_cb_policy_expectation"));
+  BOOST_CHECK_LE(
+      metrics.get_float("baseline_cb_baseline_lowerbound"), metrics.get_float("baseline_cb_policy_expectation"));
 
   multi_ex tst;
   make_example(tst, vw, -1, costs_p0, probs_p0);
@@ -136,10 +118,11 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
   VW::metric_sink metrics;
   vw.l->persist_metrics(metrics);
 
-  BOOST_CHECK_EQUAL(get_int_metric(metrics, "baseline_cb_baseline_in_use"), 1);
+  BOOST_CHECK_EQUAL(metrics.get_bool("baseline_cb_baseline_in_use"), true);
+
   // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
-  BOOST_CHECK_GT(get_float_metric(metrics, "baseline_cb_baseline_lowerbound"),
-      get_float_metric(metrics, "baseline_cb_policy_expectation"));
+  BOOST_CHECK_GT(
+      metrics.get_float("baseline_cb_baseline_lowerbound"), metrics.get_float("baseline_cb_policy_expectation"));
 
   multi_ex tst;
   make_example(tst, vw, -1, costs_p1, probs_p1);
@@ -194,12 +177,7 @@ BOOST_AUTO_TEST_CASE(baseline_cb_save_load_test)
   auto m1 = run_simulation(50, -1);
   auto m2 = run_simulation(50, 20);
 
-  BOOST_CHECK_EQUAL(test_helpers::get_int_metric(m1, "baseline_cb_baseline_in_use"),
-      test_helpers::get_int_metric(m2, "baseline_cb_baseline_in_use"));
-
-  BOOST_CHECK_EQUAL(test_helpers::get_float_metric(m1, "baseline_cb_baseline_lowerbound"),
-      test_helpers::get_float_metric(m2, "baseline_cb_baseline_lowerbound"));
-
-  BOOST_CHECK_EQUAL(test_helpers::get_float_metric(m1, "baseline_cb_policy_expectation"),
-      test_helpers::get_float_metric(m2, "baseline_cb_policy_expectation"));
+  BOOST_CHECK_EQUAL(m1.get_bool("baseline_cb_baseline_in_use"), m2.get_bool("baseline_cb_baseline_in_use"));
+  BOOST_CHECK_EQUAL(m1.get_float("baseline_cb_baseline_lowerbound"), m2.get_float("baseline_cb_baseline_lowerbound"));
+  BOOST_CHECK_EQUAL(m1.get_float("baseline_cb_policy_expectation"), m2.get_float("baseline_cb_policy_expectation"));
 }

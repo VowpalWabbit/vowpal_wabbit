@@ -136,13 +136,13 @@ void scored_config::update(float w, float r)
 
 void scored_config::persist(metric_sink& metrics, const std::string& suffix)
 {
-  metrics.int_metrics_list.emplace_back("upcnt" + suffix, update_count);
-  metrics.float_metrics_list.emplace_back("ips" + suffix, current_ips());
+  metrics.set_uint("upcnt" + suffix, update_count);
+  metrics.set_float("ips" + suffix, current_ips());
   distributionally_robust::ScoredDual sd = chisq.recompute_duals();
-  metrics.float_metrics_list.emplace_back("bound" + suffix, static_cast<float>(sd.first));
-  metrics.float_metrics_list.emplace_back("w" + suffix, last_w);
-  metrics.float_metrics_list.emplace_back("r" + suffix, last_r);
-  metrics.int_metrics_list.emplace_back("conf_idx" + suffix, config_index);
+  metrics.set_float("bound" + suffix, static_cast<float>(sd.first));
+  metrics.set_float("w" + suffix, last_w);
+  metrics.set_float("r" + suffix, last_r);
+  metrics.set_uint("conf_idx" + suffix, config_index);
 }
 
 float scored_config::current_ips() const { return (update_count > 0) ? ips / update_count : 0; }
@@ -453,8 +453,8 @@ void interaction_config_manager::update_champ()
 
 void interaction_config_manager::persist(metric_sink& metrics)
 {
-  metrics.int_metrics_list.emplace_back("test_county", total_learn_count);
-  metrics.int_metrics_list.emplace_back("current_champ", current_champ);
+  metrics.set_uint("test_county", total_learn_count);
+  metrics.set_uint("current_champ", current_champ);
   for (uint64_t live_slot = 0; live_slot < scores.size(); ++live_slot)
   { scores[live_slot].persist(metrics, "_" + std::to_string(live_slot)); }
 }

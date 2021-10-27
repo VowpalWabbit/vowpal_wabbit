@@ -190,7 +190,9 @@ public:
     // Send out the end-of-pass notification after doing learning
     if (ec->end_pass)
     {
-      // TODO: Should it be an error to have an in-flight multi_ex during end_pass?
+      // Because the end_pass example is used to complete the in-flight multi_ex prior
+      // to this call we should have no more in-flight multi_ex here.
+      assert(ec_seq.empty());
       _context.template process<example, end_pass>(*ec);
     }
   }

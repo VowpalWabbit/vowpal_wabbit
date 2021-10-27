@@ -38,17 +38,19 @@ int read_features_string(vw* all, io_buf& buf, v_array<example*>& examples)
 {
   char* line;
   size_t num_chars;
-  size_t num_chars_initial = read_features(buf, line, num_chars);
-  if (num_chars_initial < 1)
+  // This function consumes input until it reaches a '\n' then it walks back the '\n' and '\r' if it exists.
+  size_t num_bytes_consumed = read_features(buf, line, num_chars);
+  if (num_bytes_consumed < 1)
   {
-    examples[0]->is_newline = true;
-    return static_cast<int>(num_chars_initial);
+    // This branch will get hit once we have reached EOF of the input device.
+    return static_cast<int>(num_bytes_consumed);
   }
 
   VW::string_view example(line, num_chars);
+  // If this example is empty substring_to_example will mark it as a newline example.
   substring_to_example(all, examples[0], example);
 
-  return static_cast<int>(num_chars_initial);
+  return static_cast<int>(num_bytes_consumed);
 }
 
 template <bool audit>
