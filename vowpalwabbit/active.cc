@@ -142,10 +142,7 @@ void output_and_account_example(vw& all, active& a, example& ec)
 template <bool simulation>
 void return_active_example(vw& all, active& a, example& ec)
 {
-  if (simulation)
-  {
-    output_and_account_example(all, ec);
-  }
+  if (simulation) { output_and_account_example(all, ec); }
   else
   {
     output_and_account_example(all, a, ec);
@@ -216,13 +213,13 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
   }
 
   // Create new learner
-  auto *l = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name)
-    .set_input_label_type(VW::label_type_t::simple)
-    .set_output_prediction_type(VW::prediction_type_t::scalar)
-    .set_learn_returns_prediction(learn_returns_prediction)
-    .set_save_load(save_load)
-    .set_finish_example(finish_ptr)
-    .build();
+  auto* l = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_learn_returns_prediction(learn_returns_prediction)
+                .set_save_load(save_load)
+                .set_finish_example(finish_ptr)
+                .build();
 
   return make_base(*l);
 }

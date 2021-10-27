@@ -7,14 +7,14 @@
 struct example;
 struct vw;
 
-namespace nolabel
+namespace no_label
 {
-using nolabel = char;
+using no_label = char;
 
-void return_nolabel_example(vw& all, void*, example& ec);
+void return_no_label_example(vw& all, void*, example& ec);
 
-extern label_parser nolabel_parser;
+extern label_parser no_label_parser;
 
-void print_nolabel_update(vw& all, example& ec);
-void output_and_account_nolabel_example(vw& all, example& ec);
-}  // namespace nolabel
+void print_no_label_update(vw& all, example& ec);
+void output_and_account_no_label_example(vw& all, example& ec);
+}  // namespace no_label

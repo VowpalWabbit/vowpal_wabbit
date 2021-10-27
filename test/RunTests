@@ -2008,8 +2008,8 @@ python3 ./cluster_test.py --vw {VW} --spanning_tree {SPANNING_TREE} \
          train-sets/ref/rcv1_cb_eval_fb.stderr
 
 # Test 245: Flatbuffer no label Test (LDA)
-{VW} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/wiki256_nolabel.fb --flatbuffer
-         train-sets/ref/nolabel_fb.stderr
+{VW} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/wiki256_no_label.fb --flatbuffer
+         train-sets/ref/no_label_fb.stderr
 
 # Test 246: Flatbuffer CCB Label Test
 {VW} --ccb_explore_adf -d train-sets/ccb.fb \

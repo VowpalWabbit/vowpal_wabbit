@@ -53,8 +53,8 @@ static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
   multi_ex examples;
   examples.push_back(VW::read_example(*vw, std::string("shared | s_1 s_2")));
   examples.push_back(VW::read_example(*vw, get_x_string_fts(feature_count)));
-  examples.push_back(VW::read_example(*vw, get_x_string_fts_nolabel(feature_count)));
-  examples.push_back(VW::read_example(*vw, get_x_string_fts_nolabel(feature_count)));
+  examples.push_back(VW::read_example(*vw, get_x_string_fts_no_label(feature_count)));
+  examples.push_back(VW::read_example(*vw, get_x_string_fts_no_label(feature_count)));
 
   for (auto _ : state)
   {

@@ -2894,12 +2894,12 @@
   {
     "id": 245,
     "desc": "Flatbuffer no label Test (LDA)",
-    "vw_command": "-k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/wiki256_nolabel.fb --flatbuffer",
+    "vw_command": "-k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/wiki256_no_label.fb --flatbuffer",
     "diff_files": {
-      "stderr": "train-sets/ref/nolabel_fb.stderr"
+      "stderr": "train-sets/ref/no_label_fb.stderr"
     },
     "input_files": [
-      "train-sets/wiki256_nolabel.fb"
+      "train-sets/wiki256_no_label.fb"
     ]
   },
   {

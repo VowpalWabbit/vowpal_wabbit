@@ -78,7 +78,7 @@ private:
   void create_multi_label(example* v, ExampleBuilder& ex_builder);
   void create_slates_label(example* v, ExampleBuilder& ex_builder);
   void create_cs_label(example* v, ExampleBuilder& ex_builder);
-  void create_nolabel(example* v, ExampleBuilder& ex_builder);
+  void create_no_label(example* v, ExampleBuilder& ex_builder);
   void create_continuous_action_label(example* v, ExampleBuilder& ex_builder);
   // helpers
   void write_collection_to_file(bool is_multiline, std::ofstream& outfile);
