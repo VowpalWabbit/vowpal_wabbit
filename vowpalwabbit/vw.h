@@ -142,6 +142,7 @@ void add_label(example* ec, float label, float weight = 1, float base = 0);
 void finish_example(vw& all, example& ec);
 void finish_example(vw& all, multi_ex& ec);
 void empty_example(vw& all, example& ec);
+void empty_example(example& ec);
 
 void move_feature_namespace(example* dst, example* src, namespace_index c);
 

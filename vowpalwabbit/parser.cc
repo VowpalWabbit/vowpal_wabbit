@@ -843,6 +843,19 @@ void empty_example(vw& /*all*/, example& ec)
   ec.num_features_from_interactions = 0;
 }
 
+void empty_example(example& ec)
+{
+  for (features& fs : ec) fs.clear();
+
+  ec.indices.clear();
+  ec.tag.clear();
+  ec.sorted = false;
+  ec.end_pass = false;
+  ec.is_newline = false;
+  ec._reduction_features.clear();
+  ec.num_features_from_interactions = 0;
+}
+
 void clean_example(vw& all, example& ec)
 {
   empty_example(all, ec);
