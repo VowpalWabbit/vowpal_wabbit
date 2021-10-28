@@ -143,6 +143,18 @@ void my_run_parser(vw_ptr all)
   VW::end_parser(*all);
 }
 
+struct python_dict_writer : VW::metric_sink_visitor
+{
+  python_dict_writer(py::dict& dest_dict) : _dest_dict(dest_dict) {}
+  void int_metric(const std::string& key, uint64_t value) override { _dest_dict[key] = value; }
+  void float_metric(const std::string& key, float value) override { _dest_dict[key] = value; }
+  void string_metric(const std::string& key, const std::string& value) override { _dest_dict[key] = value; }
+  void bool_metric(const std::string& key, bool value) override { _dest_dict[key] = value; }
+
+private:
+  py::dict& _dest_dict;
+};
+
 py::dict get_learner_metrics(vw_ptr all)
 {
   py::dict dictionary;
@@ -152,8 +164,8 @@ py::dict get_learner_metrics(vw_ptr all)
     VW::metric_sink metrics;
     all->l->persist_metrics(metrics);
 
-    for (const auto& m : metrics.int_metrics_list) { dictionary[m.first] = m.second; }
-    for (const auto& m : metrics.float_metrics_list) { dictionary[m.first] = m.second; }
+    python_dict_writer writer(dictionary);
+    metrics.visit(writer);
   }
 
   return dictionary;
@@ -271,31 +283,31 @@ size_t my_get_label_type(vw* all)
 
 size_t my_get_prediction_type(vw_ptr all)
 {
-  switch (all->l->pred_type)
+  switch (all->l->get_output_prediction_type())
   {
-    case prediction_type_t::scalar:
+    case VW::prediction_type_t::scalar:
       return pSCALAR;
-    case prediction_type_t::scalars:
+    case VW::prediction_type_t::scalars:
       return pSCALARS;
-    case prediction_type_t::action_scores:
+    case VW::prediction_type_t::action_scores:
       return pACTION_SCORES;
-    case prediction_type_t::action_probs:
+    case VW::prediction_type_t::action_probs:
       return pACTION_PROBS;
-    case prediction_type_t::multiclass:
+    case VW::prediction_type_t::multiclass:
       return pMULTICLASS;
-    case prediction_type_t::multilabels:
+    case VW::prediction_type_t::multilabels:
       return pMULTILABELS;
-    case prediction_type_t::prob:
+    case VW::prediction_type_t::prob:
       return pPROB;
-    case prediction_type_t::multiclassprobs:
+    case VW::prediction_type_t::multiclassprobs:
       return pMULTICLASSPROBS;
-    case prediction_type_t::decision_probs:
+    case VW::prediction_type_t::decision_probs:
       return pDECISION_SCORES;
-    case prediction_type_t::action_pdf_value:
+    case VW::prediction_type_t::action_pdf_value:
       return pACTION_PDF_VALUE;
-    case prediction_type_t::pdf:
+    case VW::prediction_type_t::pdf:
       return pPDF;
-    case prediction_type_t::active_multiclass:
+    case VW::prediction_type_t::active_multiclass:
       return pACTIVE_MULTICLASS;
     default:
       THROW("unsupported prediction type used");
@@ -314,8 +326,9 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
 {
   label_parser* lp = get_label_parser(&*vw, labelType);
   example* ec = VW::alloc_examples(1);
-  lp->default_label(&ec->l);
+  lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
+  ec->extent_interactions = &vw->extent_interactions;
   if (labelType == lCOST_SENSITIVE)
   {
     COST_SENSITIVE::wclass zero = {0., 1, 0., 0.};
@@ -377,7 +390,7 @@ float my_predict(vw_ptr all, example_ptr ec)
   return ec->partial_prediction;
 }
 
-bool my_is_multiline(vw_ptr all) { return all->l->is_multiline; }
+bool my_is_multiline(vw_ptr all) { return all->l->is_multiline(); }
 
 template <bool learn>
 void predict_or_learn(vw_ptr& all, py::list& ec)

@@ -32,13 +32,13 @@ struct node
 
 struct plt
 {
-  vw* all;
+  vw* all = nullptr;
 
   // tree structure
-  uint32_t k;     // number of labels
-  uint32_t t;     // number of tree nodes
-  uint32_t ti;    // number of internal nodes
-  uint32_t kary;  // kary tree
+  uint32_t k = 0;     // number of labels
+  uint32_t t = 0;     // number of tree nodes
+  uint32_t ti = 0;    // number of internal nodes
+  uint32_t kary = 0;  // kary tree
 
   // for training
   v_array<float> nodes_time;                    // in case of sgd, this stores individual t for each node
@@ -46,19 +46,19 @@ struct plt
   std::unordered_set<uint32_t> negative_nodes;  // container for negative nodes
 
   // for prediction
-  float threshold;
-  uint32_t top_k;
+  float threshold = 0.f;
+  uint32_t top_k = 0;
   std::vector<polyprediction> node_preds;  // for storing results of base.multipredict
   std::vector<node> node_queue;        // container for queue used for both types of predictions
 
   // for measuring predictive performance
   std::unordered_set<uint32_t> true_labels;
   v_array<uint32_t> tp_at;  // true positives at (for precision and recall at)
-  uint32_t tp;
-  uint32_t fp;
-  uint32_t fn;
-  uint32_t true_count;  // number of all true labels (for recall at)
-  uint32_t ec_count;    // number of examples
+  uint32_t tp = 0;
+  uint32_t fp = 0;
+  uint32_t fn = 0;
+  uint32_t true_count = 0;  // number of all true labels (for recall at)
+  uint32_t ec_count = 0;    // number of examples
 
   plt()
   {
@@ -308,13 +308,13 @@ void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
     bool resume = p.all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume && !p.all->weights.adaptive)
     {
       for (size_t i = 0; i < p.t; ++i)
         bin_text_read_write_fixed(
-            model_file, reinterpret_cast<char*>(&p.nodes_time[i]), sizeof(p.nodes_time[0]), "", read, msg, text);
+            model_file, reinterpret_cast<char*>(&p.nodes_time[i]), sizeof(p.nodes_time[0]), read, msg, text);
     }
   }
 }
@@ -326,7 +326,7 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto tree = scoped_calloc_or_throw<plt>();
+  auto tree = VW::make_unique<plt>();
   option_group_definition new_options("Probabilistic Label Tree ");
   new_options.add(make_option("plt", tree->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))
       .add(make_option("kary_tree", tree->kary).keep().default_value(2).help("use <k>-ary tree"))
@@ -369,22 +369,36 @@ base_learner* plt_setup(VW::setup_base_i& stack_builder)
   tree->node_preds.resize(tree->kary);
   if (tree->top_k > 0) tree->tp_at.resize_but_with_stl_behavior(tree->top_k);
 
-  learner<plt, example>* l;
+  size_t ws = tree->t;
+  std::string name_addition;
+  void (*pred_ptr)(plt&, single_learner&, example&);
+
   if (tree->top_k > 0)
-    l = &init_learner(tree, as_singleline(stack_builder.setup_base_learner()), learn, predict<false>, tree->t,
-        prediction_type_t::multilabels, stack_builder.get_setupfn_name(plt_setup) + "-top_k", true);
+  {
+    name_addition = "-top_k";
+    pred_ptr = predict<false>;
+  }
   else
-    l = &init_learner(tree, as_singleline(stack_builder.setup_base_learner()), learn, predict<true>, tree->t,
-        prediction_type_t::multilabels, stack_builder.get_setupfn_name(plt_setup), true);
+  {
+    name_addition = "";
+    pred_ptr = predict<true>;
+  }
+
+  auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
+      stack_builder.get_setupfn_name(plt_setup) + name_addition)
+                .set_params_per_weight(ws)
+                .set_prediction_type(VW::prediction_type_t::multilabels)
+                .set_label_type(VW::label_type_t::multilabel)
+                .set_learn_returns_prediction(true)
+                .set_finish_example(finish_example)
+                .set_finish(finish)
+                .set_save_load(save_load_tree)
+                .build();
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
 
   // force logistic loss for base classifiers
   all.loss = getLossFunction(all, "logistic");
-
-  l->set_finish_example(finish_example);
-  l->set_finish(finish);
-  l->set_save_load(save_load_tree);
 
   return make_base(*l);
 }

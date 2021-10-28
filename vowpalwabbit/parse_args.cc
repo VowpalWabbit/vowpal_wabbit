@@ -9,7 +9,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <algorithm>
+#include <utility>
 
+#include "constant.h"
 #include "parse_regressor.h"
 #include "parser.h"
 #include "parse_primitives.h"
@@ -88,7 +90,9 @@ std::string find_in_path(const std::vector<std::string>& paths, const std::strin
 #endif
   for (const auto& path : paths)
   {
-    std::string full = VW::ends_with(path, delimiter) ? (path + fname) : (path + delimiter + fname);
+    std::string full = path;
+    if (!VW::ends_with(path, delimiter)) { full += delimiter; }
+    full += fname;
     std::ifstream f(full.c_str());
     if (f.good()) return full;
   }
@@ -503,6 +507,35 @@ std::vector<namespace_index> parse_char_interactions(VW::string_view input)
   return result;
 }
 
+std::vector<extent_term> parse_full_name_interactions(vw& all, VW::string_view str)
+{
+  std::vector<extent_term> result;
+  auto encoded = VW::decode_inline_hex(str);
+
+  std::vector<VW::string_view> tokens;
+  tokenize('|', str, tokens, true);
+  for (const auto& token : tokens)
+  {
+    if (token.empty()) { THROW("A term in --experimental_full_name_interactions cannot be empty. Given: " << str) }
+    if (std::find(token.begin(), token.end(), ':') != token.end())
+    {
+      if (token.size() != 1)
+      {
+        THROW(
+            "A wildcard term in --experimental_full_name_interactions cannot contain characters other than ':'. Found: "
+            << token)
+      }
+      result.emplace_back(wildcard_namespace, wildcard_namespace);
+    }
+    else
+    {
+      const auto ns_hash = VW::hash_space(all, std::string{token});
+      result.emplace_back(static_cast<namespace_index>(token[0]), ns_hash);
+    }
+  }
+  return result;
+}
+
 void parse_feature_tweaks(
     options_i& options, vw& all, bool interactions_settings_duplicated, std::vector<std::string>& dictionary_nses)
 {
@@ -512,6 +545,7 @@ void parse_feature_tweaks(
   std::vector<std::string> quadratics;
   std::vector<std::string> cubics;
   std::vector<std::string> interactions;
+  std::vector<std::string> full_name_interactions;
   std::vector<std::string> ignores;
   std::vector<std::string> ignore_linears;
   std::vector<std::string> keeps;
@@ -569,6 +603,10 @@ void parse_feature_tweaks(
       .add(make_option("interactions", interactions)
                .keep()
                .help("Create feature interactions of any level between namespaces."))
+      .add(make_option("experimental_full_name_interactions", full_name_interactions)
+               .keep()
+               .help("EXPERIMENTAL: Create feature interactions of any level between namespaces by specifying the full "
+                     "name of each namespace."))
       .add(make_option("permutations", all.permutations)
                .help("Use permutations instead of combinations for feature interactions of same namespace."))
       .add(make_option("leave_duplicate_interactions", leave_duplicate_interactions)
@@ -738,6 +776,23 @@ void parse_feature_tweaks(
     }
 
     all.interactions = std::move(decoded_interactions);
+  }
+
+  if (options.was_supplied("experimental_full_name_interactions"))
+  {
+    for (const auto& i : full_name_interactions)
+    {
+      auto parsed = parse_full_name_interactions(all, i);
+      if (parsed.size() < 2) { THROW("error, feature interactions must involve at least two namespaces") }
+      std::sort(parsed.begin(), parsed.end());
+      all.extent_interactions.push_back(parsed);
+    }
+    std::sort(all.extent_interactions.begin(), all.extent_interactions.end());
+    if (!leave_duplicate_interactions)
+    {
+      all.extent_interactions.erase(
+          std::unique(all.extent_interactions.begin(), all.extent_interactions.end()), all.extent_interactions.end());
+    }
   }
 
   for (size_t i = 0; i < 256; i++)
@@ -1402,7 +1457,7 @@ void parse_sources(options_i& options, vw& all, io_buf& model, bool skip_model_l
 
 namespace VW
 {
-void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, std::string new_value)
+void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value)
 {
   flag_to_replace.append(
       " ");  // add a space to make sure we obtain the right flag in case 2 flags start with the same set of characters
@@ -1539,7 +1594,7 @@ vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> opt
     parse_sources(*all.options, all, *model, skip_model_load);
 
     // we must delay so parse_mask is fully defined.
-    for (const auto& dictionary_namespace : dictionary_namespaces) parse_dictionary_argument(all, dictionary_namespace);
+    for (const auto& name_space : dictionary_namespaces) parse_dictionary_argument(all, name_space);
 
     all.options->check_unregistered();
 
@@ -1563,6 +1618,14 @@ vw* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> opt
     }
 
     return &all;
+  }
+  catch (VW::save_load_model_exception& e)
+  {
+    auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all.initial_regressors, ", "));
+
+    delete &all;
+
+    throw save_load_model_exception(e.Filename(), e.LineNumber(), msg);
   }
   catch (std::exception& e)
   {
@@ -1619,7 +1682,7 @@ vw* initialize(
   return initialize_with_builder(argc, argv, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
-vw* initialize_with_builder(std::string s, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
+vw* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener,
     void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   int argc = 0;
@@ -1641,14 +1704,15 @@ vw* initialize_with_builder(std::string s, io_buf* model, bool skip_model_load, 
   return ret;
 }
 
-vw* initialize(std::string s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
+vw* initialize(
+    const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   return initialize_with_builder(s, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
 // Create a new VW instance while sharing the model with another instance
 // The extra arguments will be appended to those of the other VW instance
-vw* seed_vw_model(vw* vw_model, std::string extra_args, trace_message_t trace_listener, void* trace_context)
+vw* seed_vw_model(vw* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
 {
   options_serializer_boost_po serializer;
   for (auto const& option : vw_model->options->get_all_options())
@@ -1738,7 +1802,7 @@ void finish(vw& all, bool delete_all)
 
     float best_constant;
     float best_constant_loss;
-    if (get_best_constant(all, best_constant, best_constant_loss))
+    if (get_best_constant(all.loss.get(), all.sd, best_constant, best_constant_loss))
     {
       *(all.trace_message) << endl << "best constant = " << best_constant;
       if (best_constant_loss != FLT_MIN)

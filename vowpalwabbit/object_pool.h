@@ -89,7 +89,7 @@ struct no_lock_object_pool
     return size;
   }
 
-  bool is_from_pool(T* obj) const
+  bool is_from_pool(const T* obj) const
   {
     for (auto& bound : m_chunk_bounds)
     {
@@ -181,7 +181,7 @@ struct object_pool
     return inner_pool.size();
   }
 
-  bool is_from_pool(T* obj) const
+  bool is_from_pool(const T* obj) const
   {
     std::unique_lock<std::mutex> lock(m_lock);
     return inner_pool.is_from_pool(obj);

@@ -7,7 +7,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/topk.vw
 num sources = 1
-Enabled reductions: gd, scorer-identity, top
+Enabled reductions: gd, scorer-identity, top, count_label
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000003 0.000003            1            1.0   3.0000   2.9983        4

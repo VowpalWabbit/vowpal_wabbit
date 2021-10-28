@@ -41,12 +41,11 @@ namespace Search
 {
 using byte_array = std::unique_ptr<uint8_t[]>;
 
-search_task* all_tasks[] = {&SequenceTask::task, &SequenceSpanTask::task, &SequenceTaskCostToGo::task,
+std::array<search_task*, 10> all_tasks = {&SequenceTask::task, &SequenceSpanTask::task, &SequenceTaskCostToGo::task,
     &ArgmaxTask::task, &SequenceTask_DemoLDF::task, &MulticlassTask::task, &DepParserTask::task,
-    &EntityRelationTask::task, &HookTask::task, &GraphTask::task, nullptr};  // must nullptr terminate!
+    &EntityRelationTask::task, &HookTask::task, &GraphTask::task};
 
-search_metatask* all_metatasks[] = {
-    &DebugMT::metatask, &SelectiveBranchingMT::metatask, nullptr};  // must nullptr terminate!
+std::array<search_metatask*, 2> all_metatasks = {&DebugMT::metatask, &SelectiveBranchingMT::metatask};
 
 constexpr bool PRINT_UPDATE_EVERY_EXAMPLE = false;
 constexpr bool PRINT_UPDATE_EVERY_PASS = false;
@@ -128,10 +127,6 @@ struct action_cache
   action k;
   bool is_opt;
   float cost;
-  action_cache(float _min_cost, action _k, bool _is_opt, float _cost)
-      : min_cost(_min_cost), k(_k), is_opt(_is_opt), cost(_cost)
-  {
-  }
 };
 std::ostream& operator<<(std::ostream& os, const action_cache& x)
 {
@@ -193,7 +188,7 @@ public:
                              // oracle (0 means "infinite")
   bool linear_ordering;      // insist that examples are generated in linear order (rather that the default hoopla
                              // permutation)
-  bool (*label_is_test)(polylabel&);  // tell me if the label data from an example is test
+  bool (*label_is_test)(const polylabel&);  // tell me if the label data from an example is test
 
   size_t t;                                     // current search step
   size_t T;                                     // length of root trajectory
@@ -288,7 +283,8 @@ public:
   bool active_csoaa;
   float active_csoaa_verify;
 
-  VW::LEARNER::base_learner* base_learner;
+  VW::LEARNER::multi_learner* multi_base_learner = nullptr;
+  VW::LEARNER::single_learner* single_base_learner = nullptr;
   clock_t start_clock_time;
 
   CS::label empty_cs_label;
@@ -706,7 +702,7 @@ void search_declare_loss(search_private& priv, float loss)
 }
 
 template <class T>
-void cdbg_print_array(std::string str, v_array<T>& A)
+void cdbg_print_array(const std::string& str, v_array<T>& A)
 {
   cdbg << str << " = [";
   for (size_t i = 0; i < A.size(); i++) cdbg << " " << A[i];
@@ -1070,7 +1066,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
     {
       action cl = cs_get_cost_index(priv.cb_learner, l, k);
       float cost = array_contains(cl, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f;
-      this_cache->push_back(action_cache(0., cl, cl == a, cost));
+      this_cache->push_back(action_cache{0., cl, cl == a, cost});
     }
     assert(priv.memo_foreach_action.size() == priv.meta_t + priv.t - 1);
     priv.memo_foreach_action.push_back(this_cache);
@@ -1099,7 +1095,8 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
     cdbg << ' ' << ec.l.cs.costs[i].class_index << ':' << ec.l.cs.costs[i].x;
   cdbg << " ]" << endl;
 
-  as_singleline(priv.base_learner)->predict(ec, policy);
+  assert(priv.single_base_learner != nullptr);
+  priv.single_base_learner->predict(ec, policy);
 
   uint32_t act = priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass;
   cdbg << "a=" << act << " from";
@@ -1134,7 +1131,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       if (priv.metaoverride && priv.metaoverride->_foreach_action)
         priv.metaoverride->_foreach_action(*priv.metaoverride->sch, priv.t - 1, min_cost, cl, cl == act, cost);
       if (override_action == cl) a_cost = cost;
-      if (this_cache) this_cache->push_back(action_cache(min_cost, cl, cl == act, cost));
+      if (this_cache) this_cache->push_back(action_cache{min_cost, cl, cl == act, cost});
     }
     if (this_cache)
     {
@@ -1255,7 +1252,9 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     uint64_t old_offset = ecs[a].ft_offset;
     ecs[a].ft_offset = priv.offset;
     tmp.push_back(&ecs[a]);
-    as_multiline(priv.base_learner)->predict(tmp, policy);
+
+    assert(priv.multi_base_learner != nullptr);
+    priv.multi_base_learner->predict(tmp, policy);
 
     ecs[a].ft_offset = old_offset;
     cdbg << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
@@ -1270,7 +1269,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
       best_action = a;
       a_cost = best_prediction;
     }
-    if (this_cache) this_cache->push_back(action_cache(0., a, false, ecs[a].partial_prediction));
+    if (this_cache) this_cache->push_back(action_cache{0., a, false, ecs[a].partial_prediction});
 
     priv.num_features += ecs[a].get_num_features();
     ecs[a].l = old_label;
@@ -1427,9 +1426,10 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     for (size_t is_local = 0; is_local <= static_cast<size_t>(priv.xv); is_local++)
     {
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
-      cdbg << "BEGIN base_learner->learn(ec, " << learner << ")" << endl;
-      as_singleline(priv.base_learner)->learn(ec, learner);
-      cdbg << "END   base_learner->learn(ec, " << learner << ")" << endl;
+      cdbg << "BEGIN single_base_learner->learn(ec, " << learner << ")" << endl;
+      assert(priv.single_base_learner != nullptr);
+      priv.single_base_learner->learn(ec, learner);
+      cdbg << "END   single_base_learner->learn(ec, " << learner << ")" << endl;
     }
     if (add_conditioning) del_example_conditioning(priv, ec);
     ec.l = old_label;
@@ -1478,7 +1478,8 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
       }
 
       // learn with the multiline example
-      as_multiline(priv.base_learner)->learn(tmp, learner);
+      assert(priv.multi_base_learner != nullptr);
+      priv.multi_base_learner->learn(tmp, learner);
 
       // restore the offsets in examples
       int i = 0;
@@ -1921,20 +1922,6 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   if (!priv.linear_ordering) hoopla_permute(timesteps.begin(), timesteps.end());
 }
 
-struct final_item
-{
-  v_array<scored_action>* prefix;
-  std::string str;
-  float total_cost;
-  final_item(v_array<scored_action>* p, std::string s, float ic) : prefix(p), str(s), total_cost(ic) {}
-};
-
-void free_final_item(final_item* p)
-{
-  delete p->prefix;
-  delete p;
-}
-
 void BaseTask::Run()
 {
   search_private& priv = *sch->priv;
@@ -2234,7 +2221,7 @@ void inline adjust_auto_condition(search_private& priv)
 }
 
 template <bool is_learn>
-void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
+void do_actual_learning(search& sch, multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0) return;  // nothing to do :)
 
@@ -2243,7 +2230,6 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
 
   search_private& priv = *sch.priv;
   priv.offset = ec_seq[0]->ft_offset;
-  priv.base_learner = &base;
 
   adjust_auto_condition(priv);
   priv.read_example_last_id = ec_seq[ec_seq.size() - 1]->example_counter;
@@ -2283,6 +2269,24 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
   del_neighbor_features(priv, ec_seq);
 
   if (priv.task->run_takedown) priv.task->run_takedown(sch, ec_seq);
+}
+
+template <bool is_learn>
+void do_actual_learning_ldf(search& sch, multi_learner& base, multi_ex& ec_seq)
+{
+  if (ec_seq.size() == 0) return;  // nothing to do :)
+  search_private& priv = *sch.priv;
+  priv.multi_base_learner = &base;
+  do_actual_learning<is_learn>(sch, ec_seq);
+}
+
+template <bool is_learn>
+void do_actual_learning_non_ldf(search& sch, single_learner& base, multi_ex& ec_seq)
+{
+  if (ec_seq.size() == 0) return;  // nothing to do :)
+  search_private& priv = *sch.priv;
+  priv.single_base_learner = &base;
+  do_actual_learning<is_learn>(sch, ec_seq);
 }
 
 void end_pass(search& sch)
@@ -2335,7 +2339,7 @@ void end_examples(search& sch)
   }
 }
 
-bool mc_label_is_test(polylabel& lab) { return MC::test_label(lab.multi); }
+bool mc_label_is_test(const polylabel& lab) { return MC::test_label(lab.multi); }
 
 void search_initialize(vw* all, search& sch)
 {
@@ -2470,10 +2474,9 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename)
   return allowed;
 }
 
-void parse_neighbor_features(VW::string_view nf_strview, search& sch)
+void parse_neighbor_features(VW::string_view nf_strview, v_array<int32_t>& neighbor_features)
 {
-  search_private& priv = *sch.priv;
-  priv.neighbor_features.clear();
+  neighbor_features.clear();
   if (nf_strview.empty()) return;
 
   std::vector<VW::string_view> cmd;
@@ -2509,7 +2512,7 @@ void parse_neighbor_features(VW::string_view nf_strview, search& sch)
       logger::errlog_warn("warning: ignoring malformed neighbor specification: '{}'", strview);
     }
     int32_t enc = (posn << 24) | (ns & 0xFF);
-    priv.neighbor_features.push_back(enc);
+    neighbor_features.push_back(enc);
   }
 }
 
@@ -2517,7 +2520,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  free_ptr<search> sch = scoped_calloc_or_throw<search>();
+  auto sch = VW::make_unique<search>();
   search_private& priv = *sch->priv;
   std::string task_string;
   std::string metatask_string;
@@ -2537,10 +2540,10 @@ base_learner* setup(VW::setup_base_i& stack_builder)
                       .keep()
                       .necessary()
                       .help("the search task (use \"--search_task list\" to get a list of available tasks)"));
-  new_options.add(
-      make_option("search_metatask", metatask_string)
-          .keep()
-          .help("the search metatask (use \"--search_metatask list\" to get a list of available metatasks)"));
+  new_options.add(make_option("search_metatask", metatask_string)
+                      .keep()
+                      .help("the search metatask (use \"--search_metatask list\" to get a list of available metatasks."
+                            " Note: a valid search_task needs to be supplied in addition for this to output.)"));
   new_options.add(make_option("search_interpolation", interpolation_string)
                       .keep()
                       .help("at what level should interpolation happen? [*data|policy]"));
@@ -2598,29 +2601,29 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   search_initialize(&all, *sch.get());
 
-  parse_neighbor_features(neighbor_features_string, *sch.get());
+  parse_neighbor_features(neighbor_features_string, sch->priv->neighbor_features);
 
-  if (interpolation_string.compare("data") == 0)  // run as dagger
+  if (interpolation_string == "data")  // run as dagger
   {
     priv.adaptive_beta = true;
     priv.allow_current_policy = true;
     priv.passes_per_policy = all.numpasses;
     if (priv.current_policy > 1) priv.current_policy = 1;
   }
-  else if (interpolation_string.compare("policy") == 0)
+  else if (interpolation_string == "policy")
     ;
   else
     THROW("error: --search_interpolation must be 'data' or 'policy'");
 
-  if ((rollout_string.compare("policy") == 0) || (rollout_string.compare("learn") == 0))
+  if ((rollout_string == "policy") || (rollout_string == "learn"))
     priv.rollout_method = POLICY;
-  else if ((rollout_string.compare("oracle") == 0) || (rollout_string.compare("ref") == 0))
+  else if ((rollout_string == "oracle") || (rollout_string == "ref"))
     priv.rollout_method = ORACLE;
-  else if ((rollout_string.compare("mix_per_state") == 0))
+  else if ((rollout_string == "mix_per_state"))
     priv.rollout_method = MIX_PER_STATE;
-  else if ((rollout_string.compare("mix_per_roll") == 0) || (rollout_string.compare("mix") == 0))
+  else if ((rollout_string == "mix_per_roll") || (rollout_string == "mix"))
     priv.rollout_method = MIX_PER_ROLL;
-  else if ((rollout_string.compare("none") == 0))
+  else if ((rollout_string == "none"))
   {
     priv.rollout_method = NO_ROLLOUT;
     priv.no_caching = true;
@@ -2628,29 +2631,30 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   else
     THROW("error: --search_rollout must be 'learn', 'ref', 'mix', 'mix_per_state' or 'none'");
 
-  if ((rollin_string.compare("policy") == 0) || (rollin_string.compare("learn") == 0))
+  if ((rollin_string == "policy") || (rollin_string == "learn"))
     priv.rollin_method = POLICY;
-  else if ((rollin_string.compare("oracle") == 0) || (rollin_string.compare("ref") == 0))
+  else if ((rollin_string == "oracle") || (rollin_string == "ref"))
     priv.rollin_method = ORACLE;
-  else if ((rollin_string.compare("mix_per_state") == 0))
+  else if ((rollin_string == "mix_per_state"))
     priv.rollin_method = MIX_PER_STATE;
-  else if ((rollin_string.compare("mix_per_roll") == 0) || (rollin_string.compare("mix") == 0))
+  else if ((rollin_string == "mix_per_roll") || (rollin_string == "mix"))
     priv.rollin_method = MIX_PER_ROLL;
   else
     THROW("error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'");
 
   // check if the base learner is contextual bandit, in which case, we dont rollout all actions.
+  // TODO consume this when learner understand base label type
   if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;
-    CB::cb_label.default_label(&priv.allowed_actions_cache);
+    CB::cb_label.default_label(priv.allowed_actions_cache);
     priv.learn_losses.cb.costs.clear();
     priv.gte_label.cb.costs.clear();
   }
   else
   {
     priv.cb_learner = false;
-    CS::cs_label.default_label(&priv.allowed_actions_cache);
+    CS::cs_label.default_label(priv.allowed_actions_cache);
     priv.learn_losses.cs.costs.clear();
     priv.gte_label.cs.costs.clear();
   }
@@ -2694,44 +2698,49 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   cdbg << "search current_policy = " << priv.current_policy
        << " total_number_of_policies = " << priv.total_number_of_policies << endl;
 
-  if (task_string.compare("list") == 0)
+  if (task_string == "list")
   {
     // command line action, output directly to cerr
-    std::cerr << endl << "available search tasks:" << endl;
-    for (search_task** mytask = all_tasks; *mytask != nullptr; mytask++)
-      std::cerr << "  " << (*mytask)->task_name << endl;
-    std::cerr << endl;
+    std::vector<const char*> names;
+    std::transform(all_tasks.begin(), all_tasks.end(), std::back_inserter(names),
+        [](const search_task* task) { return task->task_name; });
+    fmt::print(stderr, "available search tasks:\n  - {}\n", fmt::join(names, "\n  - "));
     exit(0);
   }
-  if (metatask_string.compare("list") == 0)
+  if (metatask_string == "list")
   {
     // command line action, output directly to cerr
-    std::cerr << endl << "available search metatasks:" << endl;
-    for (search_metatask** mytask = all_metatasks; *mytask != nullptr; mytask++)
-      std::cerr << "  " << (*mytask)->metatask_name << endl;
-    std::cerr << endl;
+    std::vector<const char*> names;
+    std::transform(all_metatasks.begin(), all_metatasks.end(), std::back_inserter(names),
+        [](const search_metatask* task) { return task->metatask_name; });
+    fmt::print(stderr, "available search metatasks:\n  - {}\n", fmt::join(names, "\n  - "));
     exit(0);
   }
-  for (search_task** mytask = all_tasks; *mytask != nullptr; mytask++)
-    if (task_string.compare((*mytask)->task_name) == 0)
+  for (auto* task : all_tasks)
+  {
+    if (task_string == task->task_name)
     {
-      priv.task = *mytask;
-      sch->task_name = (*mytask)->task_name;
+      priv.task = task;
+      sch->task_name = task->task_name;
       break;
     }
+  }
+
   if (priv.task == nullptr)
   {
     if (!options.was_supplied("help"))
-      THROW("fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list");
+    { THROW("fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list"); }
   }
   priv.metatask = nullptr;
-  for (search_metatask** mytask = all_metatasks; *mytask != nullptr; mytask++)
-    if (metatask_string.compare((*mytask)->metatask_name) == 0)
+  for (auto* task : all_metatasks)
+  {
+    if (metatask_string == task->metatask_name)
     {
-      priv.metatask = *mytask;
-      sch->metatask_name = (*mytask)->metatask_name;
+      priv.metatask = task;
+      sch->metatask_name = task->metatask_name;
       break;
     }
+  }
   all.example_parser->emptylines_separate_examples = true;
 
   if (!options.was_supplied("csoaa") && !options.was_supplied("cs_active") && !options.was_supplied("csoaa_ldf") &&
@@ -2745,7 +2754,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
-  base_learner* base = stack_builder.setup_base_learner();
+  auto* base = stack_builder.setup_base_learner();
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   all.example_parser->lbl_parser = MC::mc_label;
@@ -2753,6 +2762,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (priv.task && priv.task->initialize) priv.task->initialize(*sch.get(), priv.A, options);
   if (priv.metatask && priv.metatask->initialize) priv.metatask->initialize(*sch.get(), priv.A, options);
   priv.meta_t = 0;
+
+  VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
 
   if (options.was_supplied("search_allowed_transitions"))
     read_allowed_transitions(static_cast<action>(priv.A), search_allowed_transitions.c_str());
@@ -2771,15 +2782,43 @@ base_learner* setup(VW::setup_base_i& stack_builder)
 
   cdbg << "num_learners = " << priv.num_learners << endl;
 
-  learner<search, multi_ex>& l =
-      init_learner(sch, make_base(*base), do_actual_learning<true>, do_actual_learning<false>,
-          priv.total_number_of_policies * priv.num_learners, stack_builder.get_setupfn_name(setup), true);
+  // No normal prediction is produced so the base prediction type is used. That type is unlikely to be accessible
+  // though. TODO: either let search return a prediction or add a NO_PRED type.
+  learner<search, multi_ex>* l;
+  if (sch->is_ldf())
+  {
+    // base is multiline
+    l = VW::LEARNER::make_reduction_learner(std::move(sch), as_multiline(base), do_actual_learning_ldf<true>,
+        do_actual_learning_ldf<false>, stack_builder.get_setupfn_name(setup))
+            .set_learn_returns_prediction(true)
+            .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
+            .set_finish_example(finish_multiline_example)
+            .set_end_examples(end_examples)
+            .set_finish(search_finish)
+            .set_end_pass(end_pass)
+            .set_label_type(expected_label_type)
+            // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
+            // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
+            .build();
+  }
+  else
+  {
+    // base is singleline
+    l = VW::LEARNER::make_reduction_learner(std::move(sch), as_singleline(base), do_actual_learning_non_ldf<true>,
+        do_actual_learning_non_ldf<false>, stack_builder.get_setupfn_name(setup))
+            .set_learn_returns_prediction(true)
+            .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
+            .set_finish_example(finish_multiline_example)
+            .set_end_examples(end_examples)
+            .set_finish(search_finish)
+            .set_end_pass(end_pass)
+            .set_label_type(expected_label_type)
+            // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
+            // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
+            .build();
+  }
 
-  l.set_finish_example(finish_multiline_example);
-  l.set_end_examples(end_examples);
-  l.set_finish(search_finish);
-  l.set_end_pass(end_pass);
-  return make_base(l);
+  return make_base(*l);
 }
 
 float action_hamming_loss(action a, const action* A, size_t sz)
@@ -2800,6 +2839,7 @@ float action_cost_loss(action a, const action* act, const float* costs, size_t s
 
 // the interface:
 bool search::is_ldf() { return priv->is_ldf; }
+void search::set_is_ldf(bool is_ldf) { priv->is_ldf = is_ldf; }
 
 action search::predict(example& ec, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt,
     const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt,
@@ -2904,12 +2944,12 @@ void search::set_options(uint32_t opts)
     );
 }
 
-void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
+void search::set_label_parser(label_parser& lp, bool (*is_test)(const polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
     logger::errlog_warn("warning: task should not set label parser except in initialize function!");
   this->priv->all->example_parser->lbl_parser = lp;
-  this->priv->all->example_parser->lbl_parser.test_label = reinterpret_cast<bool (*)(polylabel*)>(is_test);
+  this->priv->all->example_parser->lbl_parser.test_label = is_test;
   this->priv->label_is_test = is_test;
 }
 
@@ -2967,6 +3007,7 @@ predictor& predictor::reset()
 
 predictor& predictor::set_input(example& input_example)
 {
+  assert(sch.is_ldf() == false);
   is_ldf = false;
   ec = &input_example;
   ec_cnt = 1;
@@ -2975,6 +3016,7 @@ predictor& predictor::set_input(example& input_example)
 
 predictor& predictor::set_input(example* input_example, size_t input_length)
 {
+  assert(sch.is_ldf() == true);
   is_ldf = true;
   ec = input_example;
   ec_cnt = input_length;
@@ -2983,6 +3025,7 @@ predictor& predictor::set_input(example* input_example, size_t input_length)
 
 void predictor::set_input_length(size_t input_length)
 {
+  assert(sch.is_ldf() == true);
   is_ldf = true;
   allocated_examples.resize(input_length);
   ec = allocated_examples.data();

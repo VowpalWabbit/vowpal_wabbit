@@ -152,7 +152,7 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
 {
   std::vector<Namespace<audit>> namespaces;
   handle_features_value(" ", context, examples[0], namespaces, all);
-  all.example_parser->lbl_parser.default_label(&examples[0]->l);
+  all.example_parser->lbl_parser.default_label(examples[0]->l);
   if (context.HasMember("_slot_id"))
   {
     auto slot_id = context["_slot_id"].GetInt();
@@ -173,7 +173,7 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
     for (const Value& obj : multi)
     {
       auto ex = &(*example_factory)(ex_factory_context);
-      all.example_parser->lbl_parser.default_label(&ex->l);
+      all.example_parser->lbl_parser.default_label(ex->l);
       ex->l.slates.type = VW::slates::example_type::action;
       examples.push_back(ex);
       if (dedup_examples && !dedup_examples->empty() && obj.HasMember("__aid"))
@@ -204,7 +204,7 @@ void parse_context(const Value& context, vw& all, v_array<example*>& examples, V
     for (const Value& slot_object : slots)
     {
       auto ex = &(*example_factory)(ex_factory_context);
-      all.example_parser->lbl_parser.default_label(&ex->l);
+      all.example_parser->lbl_parser.default_label(ex->l);
       ex->l.slates.type = VW::slates::example_type::slot;
       examples.push_back(ex);
       slot_examples.push_back(ex);

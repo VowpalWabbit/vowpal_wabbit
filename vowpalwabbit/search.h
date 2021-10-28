@@ -16,8 +16,8 @@
     std::clog
 // comment the previous two lines if you want loads of debug output :)
 
-typedef uint32_t action;
-typedef uint32_t ptag;
+using action = uint32_t;
+using ptag = uint32_t;
 
 namespace Search
 {
@@ -109,7 +109,7 @@ struct search
 
   // change the default label parser, but you _must_ tell me how
   // to detect test examples!
-  void set_label_parser(label_parser& lp, bool (*is_test)(polylabel&));
+  void set_label_parser(label_parser& lp, bool (*is_test)(const polylabel&));
 
   // for explicitly declaring a loss incrementally
   void loss(float incr_loss);
@@ -190,6 +190,8 @@ struct search
 
   // check if the user declared ldf mode
   bool is_ldf();
+  // Ldf is used to determine if the base learner is multi or single line.
+  void set_is_ldf(bool);
 
   // where you should write output
   std::stringstream& output();

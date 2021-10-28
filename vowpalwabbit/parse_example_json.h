@@ -247,7 +247,7 @@ public:
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
-    ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
+    ctx.all->example_parser->lbl_parser.default_label(ctx.ex->l);
 
     // don't allow { { { } } }
     if (ctx.previous_state == this)
@@ -386,7 +386,7 @@ public:
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb)
+    if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
     {
       auto& ld = ctx.ex->l.conditional_contextual_bandit;
 
@@ -407,7 +407,7 @@ public:
         cb_label = CB::cb_class{};
       }
     }
-    else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates)
+    else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates)
     {
       auto& ld = ctx.ex->l.slates;
       if ((actions.size() != 0) && (probs.size() != 0))
@@ -439,8 +439,6 @@ public:
     }
     else if (found)
     {
-      count_label(ctx.all->sd, ctx.ex->l.simple.label);
-
       found = false;
     }
 
@@ -595,7 +593,7 @@ struct MultiState : BaseState<audit>
   BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
     // mark shared example
-    if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::cb)
+    if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::cb)
     {
       CB::label* ld = &ctx.ex->l.cb;
       CB::cb_class f;
@@ -607,12 +605,12 @@ struct MultiState : BaseState<audit>
 
       ld->costs.push_back(f);
     }
-    else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb)
+    else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
     {
       CCB::label* ld = &ctx.ex->l.conditional_contextual_bandit;
       ld->type = CCB::example_type::shared;
     }
-    else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates)
+    else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates)
     {
       auto& ld = ctx.ex->l.slates;
       ld.type = VW::slates::example_type::shared;
@@ -627,10 +625,10 @@ struct MultiState : BaseState<audit>
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-    ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
-    if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb)
+    ctx.all->example_parser->lbl_parser.default_label(ctx.ex->l);
+    if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
     { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action; }
-    else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates)
+    else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::action;
     }
@@ -674,10 +672,10 @@ struct SlotsState : BaseState<audit>
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-    ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
-    if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb)
+    ctx.all->example_parser->lbl_parser.default_label(ctx.ex->l);
+    if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
     { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot; }
-    else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates)
+    else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::slot;
     }
@@ -928,7 +926,7 @@ public:
 
       else if (length == 8 && !strncmp(str, "_slot_id", 8))
       {
-        if (ctx.all->example_parser->lbl_parser.label_type != label_type_t::slates)
+        if (ctx.all->example_parser->lbl_parser.label_type != VW::label_type_t::slates)
         { THROW("Can only use _slot_id with slates examples"); } ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
@@ -939,9 +937,10 @@ public:
         if(!ctx.decision_service_data) {
           THROW("_original_label_cost is only valid in DSJson");
         }
-        ctx.float_state.output_float = &ctx.decision_service_data->originalLabelCost;
-        ctx.float_state.return_state = this;
-        return &ctx.float_state;
+        ctx.original_label_cost_state.aggr_float = &ctx.decision_service_data->originalLabelCost;
+        ctx.original_label_cost_state.first_slot_float = &ctx.decision_service_data->originalLabelCostFirstSlot;
+        ctx.original_label_cost_state.return_state = this;
+        return &ctx.original_label_cost_state;
       }
 
       else if (ctx.key_length == 5 && !_stricmp(ctx.key, "__aid"))
@@ -1028,14 +1027,14 @@ public:
 
       // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
       // case this is CB, so generate a single slot with this info.
-      if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb)
+      if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
       {
         auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
             [](example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
         if (num_slots == 0 && ctx.label_object_state.found_cb)
         {
           ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-          ctx.all->example_parser->lbl_parser.default_label(&ctx.ex->l);
+          ctx.all->example_parser->lbl_parser.default_label(ctx.ex->l);
           ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
           ctx.examples->push_back(ctx.ex);
 
@@ -1174,7 +1173,18 @@ public:
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override { return return_state; }
 };
 
-template <bool audit>
+// AggrFunc prototype is void (*)(float *input_output, float f);
+// Basic Aggregation Types
+namespace float_aggregation {
+inline void set(float* output, float f) {
+  *output = f;
+}
+inline void add(float* output, float f) {
+  *output += f;
+}
+}
+
+template <bool audit, void (*func)(float*, float)>
 class FloatToFloatState : public BaseState<audit>
 {
 public:
@@ -1185,7 +1195,7 @@ public:
 
   BaseState<audit>* Float(Context<audit>& /*ctx*/, float f) override
   {
-    *output_float = f;
+    func(output_float, f);
     return return_state;
   }
 
@@ -1196,10 +1206,47 @@ public:
 
   BaseState<audit>* Null(Context<audit>& /*ctx*/) override
   {
-    *output_float = 0.f;
+    func(output_float, 0.f);
     return return_state;
   }
 };
+
+// HACK: This state object is a complete hack. This object needs to address some very specific business
+//       logic which cannot be handled in the state machine in a better way without impacting performance.
+//       This level of specificity should NOT be in the parser, do not use this as an example of what to do.
+template <bool audit>
+class FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
+{
+public:
+  FloatToFloatState_OriginalLabelCostHack() : BaseState<audit>("FloatToFloatState_OriginalLabelCostHack") {}
+
+  float* aggr_float;
+  float* first_slot_float;
+  bool seen_first = false;
+  BaseState<audit>* return_state;
+
+  BaseState<audit>* Float(Context<audit>& /*ctx*/, float f) override
+  {
+    *aggr_float += f;
+    if(!seen_first) {
+      seen_first = true;
+      *first_slot_float = f;
+    }
+    return return_state;
+  }
+
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned i) override
+  {
+    return Float(ctx, static_cast<float>(i));
+  }
+
+  BaseState<audit>* Null(Context<audit>& /*ctx*/) override
+  {
+    // do nothing
+    return return_state;
+  }
+};
+
 
 template <bool audit>
 class UIntDedupState : public BaseState<audit>
@@ -1280,9 +1327,9 @@ public:
     // Find start index of slot objects by iterating until we find the first slot example.
     for (auto ex : *ctx.examples)
     {
-      if ((ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb &&
+      if ((ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb &&
               ex->l.conditional_contextual_bandit.type != CCB::example_type::slot) ||
-          (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates &&
+          (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates &&
               ex->l.slates.type != VW::slates::example_type::slot))
       { slot_object_index++; }
     }
@@ -1314,7 +1361,7 @@ public:
     // DSJson requires the interaction object to be filled. After reading all slot outcomes fill out the top actions.
     for (auto ex : *ctx.examples)
     {
-      if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::ccb &&
+      if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::ccb &&
           ex->l.conditional_contextual_bandit.type == CCB::example_type::slot)
       {
         if (ex->l.conditional_contextual_bandit.outcome)
@@ -1323,7 +1370,7 @@ public:
           interactions->probabilities.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].score);
         }
       }
-      else if (ctx.all->example_parser->lbl_parser.label_type == label_type_t::slates &&
+      else if (ctx.all->example_parser->lbl_parser.label_type == VW::label_type_t::slates &&
           ex->l.slates.type == VW::slates::example_type::slot)
       {
         if (ex->l.slates.labeled)
@@ -1440,9 +1487,16 @@ public:
       }
       else if (length == 20 && !strncmp(str, "_original_label_cost", 20))
       {
-        ctx.float_state.output_float = &data->originalLabelCost;
-        ctx.float_state.return_state = this;
-        return &ctx.float_state;
+        ctx.original_label_cost_state.aggr_float = &data->originalLabelCost;
+        ctx.original_label_cost_state.first_slot_float = &data->originalLabelCostFirstSlot;
+        ctx.original_label_cost_state.return_state = this;
+        return &ctx.original_label_cost_state;
+      }
+      else if (length == 3 && !strncmp(str, "_ba", 3))
+      {
+        ctx.array_uint_state.output_array = &data->baseline_actions;
+        ctx.array_uint_state.return_state = this;
+        return &ctx.array_uint_state;
       }
     }
 
@@ -1505,7 +1559,8 @@ public:
   ArrayToVectorState<audit, float> array_float_state;
   ArrayToVectorState<audit, unsigned> array_uint_state;
   StringToStringState<audit> string_state;
-  FloatToFloatState<audit> float_state;
+  FloatToFloatState<audit, float_aggregation::set> float_state;
+  FloatToFloatState_OriginalLabelCostHack<audit> original_label_cost_state;
   UIntToUIntState<audit> uint_state;
   UIntDedupState<audit> uint_dedup_state;
   BoolToBoolState<audit> bool_state;
@@ -1580,7 +1635,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
     ctx.init(all);
     ctx.examples = examples;
     ctx.ex = (*examples)[0];
-    all->example_parser->lbl_parser.default_label(&ctx.ex->l);
+    all->example_parser->lbl_parser.default_label(ctx.ex->l);
 
     ctx.stream = stream;
     ctx.stream_end = stream_end;
@@ -1635,7 +1690,7 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
     example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
-  if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
+  if (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates)
   {
     parse_slates_example_json<audit>(all, examples, line, length, example_factory, ex_factory_context, dedup_examples);
     return;
@@ -1655,6 +1710,9 @@ void read_line_json_s(vw& all, v_array<example*>& examples, char* line, size_t l
 
   BaseState<audit>* current_state = handler.current_state();
 
+  // The stack of namespaces must be drained so there are no half extents left around.
+  while (!handler.ctx.namespace_path.empty()) { handler.ctx.PopNamespace(); }
+
   THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
                                 << ". "
                                    "Handler: "
@@ -1672,15 +1730,15 @@ inline bool apply_pdrop(vw& all, float pdrop, v_array<example*>& examples)
   }
   // Event with certain pdrop had (1-pdrop) as probability to survive,
   // so it is one of (1 / (1-pdrop)) events that we should learn on, and weight should be updated accordingly.
-  if (all.example_parser->lbl_parser.label_type == label_type_t::cb)
+  if (all.example_parser->lbl_parser.label_type == VW::label_type_t::cb)
   {
     for (auto& e : examples) { e->l.cb.weight /= 1 - pdrop; }
   }
-  else if (all.example_parser->lbl_parser.label_type == label_type_t::ccb)
+  else if (all.example_parser->lbl_parser.label_type == VW::label_type_t::ccb)
   {
     for (auto& e : examples) { e->l.conditional_contextual_bandit.weight /= 1 - pdrop; }
   }
-  if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
+  if (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates)
   {
     // TODO
   }
@@ -1692,7 +1750,7 @@ template <bool audit>
 bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
     example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
-  if (all.example_parser->lbl_parser.label_type == label_type_t::slates)
+  if (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates)
   {
     parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
     return apply_pdrop(all, data->probabilityOfDrop, examples);
@@ -1719,6 +1777,9 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   if (result.IsError())
   {
     BaseState<audit>* current_state = handler.current_state();
+
+    // The stack of namespaces must be drained so there are no half extents left around.
+    while (!handler.ctx.namespace_path.empty()) { handler.ctx.PopNamespace(); }
 
     if (all.example_parser->strict_parse)
     {
@@ -1783,6 +1844,27 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
       // The _original_label_cost element is found either at the top level OR under
       // the _outcomes node (for CCB)
       all->example_parser->metrics->DsjsonSumCostOriginal += interaction.originalLabelCost;
+      all->example_parser->metrics->DsjsonSumCostOriginalFirstSlot += interaction.originalLabelCostFirstSlot;
+      if (!interaction.actions.empty())
+      {
+        // APS requires this metric for CB (baseline action is 1)
+        if (interaction.actions[0] == 1)
+        { all->example_parser->metrics->DsjsonSumCostOriginalBaseline += interaction.originalLabelCost; }
+
+        if (!interaction.baseline_actions.empty())
+        {
+          if (interaction.actions[0] == interaction.baseline_actions[0])
+          {
+            all->example_parser->metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot++;
+            all->example_parser->metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot +=
+                interaction.originalLabelCostFirstSlot;
+          }
+          else
+          {
+            all->example_parser->metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot++;
+          }
+        }
+      }
     }
 
     // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
@@ -1797,7 +1879,7 @@ bool parse_line_json(vw* all, char* line, size_t num_chars, v_array<example*>& e
     }
 
     // let's ask to continue reading data until we find a line with actions provided
-    if (interaction.actions.size() == 0 && all->l->is_multiline)
+    if (interaction.actions.size() == 0 && all->l->is_multiline())
     {
       if (all->example_parser->metrics) all->example_parser->metrics->NumberOfEventsZeroActions++;
       VW::return_multiple_example(*all, examples);
@@ -1854,7 +1936,7 @@ void line_to_examples_json(vw* all, const char* line, size_t num_chars, v_array<
 }
 
 template <bool audit>
-int read_features_json(vw* all, v_array<example*>& examples)
+int read_features_json(vw* all, io_buf& buf, v_array<example*>& examples)
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;
@@ -1864,7 +1946,7 @@ int read_features_json(vw* all, v_array<example*>& examples)
 
     char* line;
     size_t num_chars;
-    size_t num_chars_initial = read_features(all, line, num_chars);
+    size_t num_chars_initial = read_features(buf, line, num_chars);
     if (num_chars_initial < 1) return static_cast<int>(num_chars_initial);
 
     // Ensure there is a null terminator.

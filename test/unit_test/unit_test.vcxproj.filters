@@ -15,6 +15,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="automl_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="automl_weights_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="cache_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -142,9 +148,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vwdll_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="namespaced_feature_store_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="numeric_cast_tests.cc">

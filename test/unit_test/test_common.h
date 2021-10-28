@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include <boost/test/unit_test.hpp>
@@ -50,3 +54,12 @@ multi_ex parse_json(vw& all, const std::string& line);
 multi_ex parse_dsjson(vw& all, std::string line, DecisionServiceInteraction* interaction = nullptr);
 
 bool is_invoked_with(const std::string& arg);
+
+namespace VW
+{
+inline std::ostream& operator<<(std::ostream& os, const namespace_extent& extent)
+{
+  os << "{" << extent.begin_index << "," << extent.end_index << "," << extent.hash << "}";
+  return os;
+}
+}  // namespace VW

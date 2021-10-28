@@ -28,6 +28,23 @@
 #include "hashstring.h"
 #include "simple_label_parser.h"
 
+namespace VW
+{
+namespace details
+{
+struct cache_temp_buffer
+{
+  std::shared_ptr<std::vector<char>> _backing_buffer;
+  io_buf _temporary_cache_buffer;
+  cache_temp_buffer()
+  {
+    _backing_buffer = std::make_shared<std::vector<char>>();
+    _temporary_cache_buffer.add_file(VW::io::create_vector_writer(_backing_buffer));
+  }
+};
+}  // namespace details
+}  // namespace VW
+
 struct vw;
 struct input_options;
 struct dsjson_metrics;
@@ -37,13 +54,11 @@ struct parser
       : example_pool{ring_size}
       , ready_parsed_examples{ring_size}
       , ring_size{ring_size}
-      , begin_parsed_examples(0)
-      , end_parsed_examples(0)
-      , finished_examples(0)
+      , num_examples_taken_from_pool(0)
+      , num_setup_examples(0)
+      , num_finished_examples(0)
       , strict_parse{strict_parse_}
   {
-    this->input = VW::make_unique<io_buf>();
-    this->output = VW::make_unique<io_buf>();
     this->lbl_parser = simple_label_parser;
   }
 
@@ -57,9 +72,15 @@ struct parser
   VW::object_pool<example> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
 
-  std::unique_ptr<io_buf> input;  // Input source(s)
-  /// reader consumes the input io_buf in the vw object and is generally for file based parsing
-  int (*reader)(vw*, v_array<example*>& examples);
+  io_buf input;  // Input source(s)
+
+  /// reader consumes the given io_buf and produces parsed examples. The number
+  /// of produced examples is implementation defined. However, in practice for
+  /// single_line parsers a single example is produced. And for multi_line
+  /// parsers multiple are produced which all correspond the the same overall
+  /// logical example. examples must have a single empty example in it when this
+  /// call is made.
+  int (*reader)(vw*, io_buf&, v_array<example*>& examples);
   /// text_reader consumes the char* input and is for text based parsing
   void (*text_reader)(vw*, const char*, size_t, v_array<example*>&);
 
@@ -67,7 +88,8 @@ struct parser
 
   hash_func_t hasher;
   bool resettable;           // Whether or not the input can be reset.
-  std::unique_ptr<io_buf> output;  // Where to output the cache.
+  io_buf output;             // Where to output the cache.
+  VW::details::cache_temp_buffer _cache_temp_buffer;
   std::string currentname;
   std::string finalname;
 
@@ -76,9 +98,9 @@ struct parser
   bool sorted_cache = false;
 
   const size_t ring_size;
-  std::atomic<uint64_t> begin_parsed_examples;  // The index of the beginning parsed example.
-  std::atomic<uint64_t> end_parsed_examples;    // The index of the fully parsed example.
-  std::atomic<uint64_t> finished_examples;      // The count of finished examples.
+  std::atomic<uint64_t> num_examples_taken_from_pool;
+  std::atomic<uint64_t> num_setup_examples;
+  std::atomic<uint64_t> num_finished_examples;
   uint32_t in_pass_counter = 0;
   bool emptylines_separate_examples = false;  // true if you want to have holdout computed on a per-block basis rather
                                               // than a per-line basis
@@ -88,12 +110,9 @@ struct parser
 
   bool done = false;
 
-  v_array<size_t> ids;     // unique ids for sources
-  v_array<size_t> counts;  // partial examples received from sources
-  size_t finished_count;   // the number of finished examples;
   int bound_sock = 0;
 
-  std::vector<VW::string_view> parse_name;
+  VW::label_parser_reuse_mem parser_memory_to_reuse;
 
   label_parser lbl_parser;  // moved from vw
 
@@ -111,6 +130,11 @@ struct dsjson_metrics
   size_t NumberOfEventsZeroActions = 0;
   size_t LineParseError = 0;
   float DsjsonSumCostOriginal = 0.f;
+  float DsjsonSumCostOriginalFirstSlot = 0.f;
+  float DsjsonSumCostOriginalBaseline = 0.f;
+  size_t DsjsonNumberOfLabelEqualBaselineFirstSlot = 0;
+  size_t DsjsonNumberOfLabelNotEqualBaselineFirstSlot = 0;
+  float DsjsonSumCostOriginalLabelEqualBaselineFirstSlot = 0.f;
   std::string FirstEventId;
   std::string FirstEventTime;
   std::string LastEventId;

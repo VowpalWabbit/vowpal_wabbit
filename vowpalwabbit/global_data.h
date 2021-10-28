@@ -47,6 +47,7 @@
 #include "feature_group.h"
 #include "rand_state.h"
 #include "allreduce.h"
+#include "interactions_predict.h"
 
 #include "options.h"
 #include "version.h"
@@ -54,8 +55,8 @@
 
 typedef float weight;
 
-typedef std::unordered_map<std::string, std::unique_ptr<features>> feature_dict;
-typedef VW::LEARNER::base_learner* (*reduction_setup_fn)(VW::setup_base_i&);
+using feature_dict = std::unordered_map<std::string, std::unique_ptr<features>>;
+using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);
 
@@ -221,6 +222,7 @@ public:
 
   // Referenced by examples as their set of interactions. Can be overriden by reductions.
   std::vector<std::vector<namespace_index>> interactions;
+  std::vector<std::vector<extent_term>> extent_interactions;
   bool ignore_some;
   std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
   bool ignore_some_linear;
@@ -262,6 +264,8 @@ public:
   uint32_t holdout_after;
   size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
                                         // passes learning a single policy
+
+  INTERACTIONS::generate_interactions_object_cache _generate_interactions_object_cache;
 
   size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 

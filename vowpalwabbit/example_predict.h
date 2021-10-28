@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
-typedef unsigned char namespace_index;
+using namespace_index = unsigned char;
 
 #include "constant.h"
 #include "future_compat.h"
@@ -62,6 +62,9 @@ struct example_predict
   // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
   // vector is an interaction and each char is a namespace.
   std::vector<std::vector<namespace_index>>* interactions = nullptr;
+
+  // Optional
+  std::vector<std::vector<extent_term>>* extent_interactions = nullptr;
   reduction_features _reduction_features;
 
   // Used for debugging reductions.  Keeps track of current reduction level.

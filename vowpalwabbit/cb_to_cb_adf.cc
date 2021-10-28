@@ -16,10 +16,10 @@ using namespace VW::config;
 
 struct cb_to_cb_adf
 {
-  parameters* weights;
+  parameters* weights = nullptr;
   cbify_adf_data adf_data;
-  bool explore_mode;
-  multi_learner* adf_learner;
+  bool explore_mode = false;
+  multi_learner* adf_learner = nullptr;
 };
 
 template <bool is_learn>
@@ -129,7 +129,8 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("eval")) return nullptr;
 
   // ANY model created with older version should default to --cb_force_legacy
-  if (all.model_file_ver != EMPTY_VERSION_FILE) compat_old_cb = !(all.model_file_ver >= VERSION_FILE_WITH_CB_TO_CBADF);
+  if (all.model_file_ver != VW::version_definitions::EMPTY_VERSION_FILE)
+  { compat_old_cb = !(all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF); }
 
   // not compatible with adf
   if (options.was_supplied("cbify_reg")) compat_old_cb = true;
@@ -178,37 +179,38 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
     options.insert("cb_adf", "");
   }
 
-  auto data = scoped_calloc_or_throw<cb_to_cb_adf>();
+  auto data = VW::make_unique<cb_to_cb_adf>();
   data->explore_mode = override_cb_explore;
   data->weights = &(all.weights);
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
 
-  learner<cb_to_cb_adf, example>* l;
-
   if (num_actions <= 0) THROW("cb num actions must be positive");
 
-  data->adf_data.init_adf_data(num_actions, base->increment, all.interactions);
+  data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions);
 
   // see csoaa.cc ~ line 894 / setup for csldf_setup
   all.example_parser->emptylines_separate_examples = false;
+  VW::prediction_type_t pred_type;
 
   if (data->explore_mode)
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
-
-    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::action_probs,
-        all.get_setupfn_name(cb_to_cb_adf_setup), true);
+    pred_type = VW::prediction_type_t::action_probs;
   }
   else
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_adf"));
-
-    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type_t::multiclass,
-        all.get_setupfn_name(cb_to_cb_adf_setup), true);
+    pred_type = VW::prediction_type_t::multiclass;
   }
 
-  l->set_finish_example(finish_example);
+  auto* l = make_reduction_learner(
+      std::move(data), base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(cb_to_cb_adf_setup))
+                .set_prediction_type(pred_type)
+                .set_label_type(VW::label_type_t::cb)
+                .set_learn_returns_prediction(true)
+                .set_finish_example(finish_example)
+                .build();
 
   return make_base(*l);
 }

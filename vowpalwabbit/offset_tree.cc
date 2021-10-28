@@ -4,7 +4,7 @@
 
 #include "offset_tree.h"
 #include "global_data.h"
-#include "learner.h"     // init_learner()
+#include "learner.h"
 #include "action_score.h"
 
 using namespace VW::config;
@@ -264,15 +264,20 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   // default to legacy cb implementation
   options.insert("cb_force_legacy", "");
 
-  auto otree = scoped_calloc_or_throw<offset_tree>(num_actions);
+  auto otree = VW::make_unique<offset_tree>(num_actions);
   otree->init();
 
   base_learner* base = stack_builder.setup_base_learner();
+  size_t ws = otree->learner_count();
 
-  learner<offset_tree, example>& l = init_learner(otree, as_singleline(base), learn, predict, otree->learner_count(),
-      prediction_type_t::action_probs, stack_builder.get_setupfn_name(setup));
+  auto* l = make_reduction_learner(
+      std::move(otree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(setup))
+                .set_params_per_weight(ws)
+                .set_prediction_type(prediction_type_t::action_probs)
+                .set_label_type(label_type_t::cb)
+                .build();
 
-  return make_base(l);
+  return make_base(*l);
 }
 }  // namespace offset_tree
 }  // namespace VW

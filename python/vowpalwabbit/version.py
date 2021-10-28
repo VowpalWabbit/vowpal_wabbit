@@ -2,4 +2,4 @@
 
 import pkg_resources
 
-__version__ = pkg_resources.require('vowpalwabbit')[0].version
+__version__ = pkg_resources.require("vowpalwabbit")[0].version

@@ -164,7 +164,7 @@ flat_example* flatten_example(vw& all, example* ec);
 flat_example* flatten_sort_example(vw& all, example* ec);
 void free_flatten_example(flat_example* fec);
 
-inline int example_is_newline(example const& ec) { return ec.is_newline; }
+inline bool example_is_newline(const example& ec) { return ec.is_newline; }
 
 inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
 
@@ -182,7 +182,7 @@ namespace VW
 {
 void return_multiple_example(vw& all, v_array<example*>& examples);
 
-typedef example& (*example_factory_t)(void*);
+using example_factory_t = example& (*)(void*);
 
 }  // namespace VW
 

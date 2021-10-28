@@ -1,8 +1,26 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
+#include "vw.h"
 #include "simulator.h"
+
+#include <numeric>
+#include <fmt/format.h>
 
 namespace simulator
 {
-cb_sim::cb_sim(int seed) : seed(seed) { srand(seed); }
+cb_sim::cb_sim(uint64_t seed)
+    : users({"Tom", "Anna"})
+    , times_of_day({"morning", "afternoon"})
+    //, actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
+    , actions({"politics", "sports", "music"})
+    , user_ns("User")
+    , action_ns("Action")
+{
+  random_state.set_random_state(seed);
+  callback_count = 0;
+}
 
 float cb_sim::get_cost(const std::map<std::string, std::string>& context, const std::string& action)
 {
@@ -30,12 +48,12 @@ std::vector<std::string> cb_sim::to_vw_example_format(
 {
   std::vector<std::string> multi_ex_str;
   multi_ex_str.push_back(
-      fmt::format("shared |User user={} time_of_day={}", context.at("user"), context.at("time_of_day")));
+      fmt::format("shared |{} user={} time_of_day={}", user_ns, context.at("user"), context.at("time_of_day")));
   for (const auto& action : actions)
   {
     std::ostringstream ex;
     if (action == chosen_action) { ex << fmt::format("0:{}:{} ", cost, prob); }
-    ex << fmt::format("|Action article={}", action);
+    ex << fmt::format("|{} article={}", action_ns, action);
     multi_ex_str.push_back(ex.str());
   }
   return multi_ex_str;
@@ -46,7 +64,7 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
   float total = std::accumulate(pmf.begin(), pmf.end(), 0.f);
   float scale = 1.f / total;
   for (float& val : pmf) { val *= scale; }
-  float draw = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+  float draw = random_state.get_and_update_random();
   float sum_prob = 0.f;
   for (int index = 0; index < pmf.size(); ++index)
   {
@@ -58,7 +76,7 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
 
 std::pair<std::string, float> cb_sim::get_action(vw* vw, const std::map<std::string, std::string>& context)
 {
-  std::vector<std::string> multi_ex_str = to_vw_example_format(context);
+  std::vector<std::string> multi_ex_str = cb_sim::to_vw_example_format(context, "");
   multi_ex examples;
   for (const std::string& ex : multi_ex_str) { examples.push_back(VW::read_example(*vw, ex)); }
   vw->predict(examples);
@@ -76,19 +94,37 @@ std::pair<std::string, float> cb_sim::get_action(vw* vw, const std::map<std::str
 
 const std::string& cb_sim::choose_user()
 {
-  int rand_ind = rand() % users.size();
+  int rand_ind = static_cast<int>(random_state.get_and_update_random() * users.size());
   return users[rand_ind];
 }
 
 const std::string& cb_sim::choose_time_of_day()
 {
-  int rand_ind = rand() % times_of_day.size();
+  int rand_ind = static_cast<int>(random_state.get_and_update_random() * times_of_day.size());
   return times_of_day[rand_ind];
 }
 
-std::vector<float> cb_sim::run_simulation(vw* vw, int num_iterations, bool do_learn, int shift)
+void cb_sim::call_if_exists(vw& vw, multi_ex& ex, const callback_map& callbacks, const size_t event)
 {
-  for (int i = shift; i < shift + num_iterations; ++i)
+  auto iter = callbacks.find(event);
+  if (iter != callbacks.end())
+  {
+    callback_count++;
+    bool callback_result = iter->second(*this, vw, ex);
+    BOOST_CHECK_EQUAL(callback_result, true);
+  }
+}
+
+std::vector<float> cb_sim::run_simulation_hook(
+    vw* vw, size_t num_iterations, callback_map& callbacks, bool do_learn, size_t shift)
+{
+  // check if there's a callback for the first possible element,
+  // in this case most likely 0th event
+  // i.e. right before sending any event to VW
+  multi_ex dummy;
+  call_if_exists(*vw, dummy, callbacks, shift - 1);
+
+  for (size_t i = shift; i < shift + num_iterations; ++i)
   {
     // 1. In each simulation choose a user
     auto user = choose_user();
@@ -116,6 +152,8 @@ std::vector<float> cb_sim::run_simulation(vw* vw, int num_iterations, bool do_le
       // 6. Learn
       vw->learn(examples);
 
+      call_if_exists(*vw, examples, callbacks, i);
+
       // 7. Let VW know you're done with these objects
       vw->finish_example(examples);
     }
@@ -123,6 +161,61 @@ std::vector<float> cb_sim::run_simulation(vw* vw, int num_iterations, bool do_le
     // We negate this so that on the plot instead of minimizing cost, we are maximizing reward
     ctr.push_back(-1 * cost_sum / static_cast<float>(i));
   }
+
+  // avoid silently failing: ensure that all callbacks
+  // got called and then cleanup
+  BOOST_CHECK_EQUAL(callbacks.size(), callback_count);
+  callbacks.clear();
+  callback_count = 0;
+  BOOST_CHECK_EQUAL(callbacks.size(), callback_count);
+
+  return ctr;
+}
+
+std::vector<float> cb_sim::run_simulation(vw* vw, size_t num_iterations, bool do_learn, size_t shift)
+{
+  callback_map callbacks;
+  return cb_sim::run_simulation_hook(vw, num_iterations, callbacks, do_learn, shift);
+}
+
+std::vector<float> _test_helper(const std::string& vw_arg, size_t num_iterations, int seed)
+{
+  auto vw = VW::initialize(vw_arg);
+  simulator::cb_sim sim(seed);
+  auto ctr = sim.run_simulation(vw, num_iterations);
+  VW::finish(*vw);
+  return ctr;
+}
+
+std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_iterations, int seed)
+{
+  const size_t split = 1500;
+  BOOST_CHECK_GT(num_iterations, split);
+  size_t before_save = num_iterations - split;
+
+  auto first_vw = VW::initialize(vw_arg);
+  simulator::cb_sim sim(seed);
+  // first chunk
+  auto ctr = sim.run_simulation(first_vw, before_save);
+  // save
+  std::string model_file = "test_save_load.vw";
+  VW::save_predictor(*first_vw, model_file);
+  VW::finish(*first_vw);
+  // reload in another instance
+  auto other_vw = VW::initialize("--quiet -i " + model_file);
+  // continue
+  ctr = sim.run_simulation(other_vw, split, true, before_save + 1);
+  VW::finish(*other_vw);
+  return ctr;
+}
+
+std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, size_t num_iterations, int seed)
+{
+  BOOST_CHECK(true);
+  auto* vw = VW::initialize(vw_arg);
+  simulator::cb_sim sim(seed);
+  auto ctr = sim.run_simulation_hook(vw, num_iterations, hooks);
+  VW::finish(*vw);
   return ctr;
 }
 }  // namespace simulator

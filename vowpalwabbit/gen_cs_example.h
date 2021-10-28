@@ -14,7 +14,7 @@ namespace GEN_CS
 {
 struct cb_to_cs
 {
-  size_t cb_type = 0;
+  VW::cb_type_t cb_type = VW::cb_type_t::dm;
   uint32_t num_actions = 0;
   COST_SENSITIVE::label pred_scores;
   VW::LEARNER::single_learner* scorer = nullptr;
@@ -28,28 +28,26 @@ struct cb_to_cs
 
 struct cb_to_cs_adf
 {
-  size_t cb_type;
+  VW::cb_type_t cb_type = VW::cb_type_t::dm;
 
   // for MTR
-  uint64_t action_sum;
-  uint64_t event_sum;
-  uint32_t mtr_example;
+  uint64_t action_sum = 0;
+  uint64_t event_sum = 0;
+  uint32_t mtr_example = 0;
   multi_ex mtr_ec_seq;  // shared + the one example.
 
   // for DR
   COST_SENSITIVE::label pred_scores;
   CB::cb_class known_cost;
-  VW::LEARNER::single_learner* scorer;
-
-  cb_to_cs_adf() : cb_type(0), action_sum(0), event_sum(0), mtr_example(0), scorer(nullptr) {}
+  VW::LEARNER::single_learner* scorer = nullptr;
 };
 
 float safe_probability(float prob);
 
-void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p = 0.f);
+void gen_cs_example_ips(cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label& cs_ld, float clip_p = 0.f);
 
 template <bool is_learn>
-void gen_cs_example_dm(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
+void gen_cs_example_dm(cb_to_cs& c, example& ec, const CB::label& ld, COST_SENSITIVE::label& cs_ld)
 {  // this implements the direct estimation method, where costs are directly specified by the learned regressor.
 
   float min = FLT_MAX;
@@ -89,7 +87,7 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::
   }
   else  // this is an example where we can only perform a subset of the actions
   {     // in this case generate cost-sensitive example with only allowed actions
-    for (auto& cl : ld.costs)
+    for (const auto& cl : ld.costs)
     {
       COST_SENSITIVE::wclass wc = {0., cl.action, 0., 0.};
 
@@ -142,8 +140,10 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
 }
 
 template <bool is_learn>
-void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld, float /*clip_p*/ = 0.f)
-{  // this implements the doubly robust method
+void gen_cs_example_dr(
+    cb_to_cs& c, example& ec, const CB::label& ld, COST_SENSITIVE::label& cs_ld, float /*clip_p*/ = 0.f)
+{
+  // this implements the doubly robust method
   VW_DBG(ec) << "gen_cs_example_dr:" << is_learn << std::endl;
   cs_ld.costs.clear();
   c.pred_scores.costs.clear();
@@ -163,34 +163,34 @@ void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::
 }
 
 template <bool is_learn>
-void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
+void gen_cs_example(cb_to_cs& c, example& ec, const CB::label& ld, COST_SENSITIVE::label& cs_ld)
 {
   switch (c.cb_type)
   {
-    case CB_TYPE_IPS:
+    case VW::cb_type_t::ips:
       gen_cs_example_ips(c, ld, cs_ld);
       break;
-    case CB_TYPE_DM:
+    case VW::cb_type_t::dm:
       gen_cs_example_dm<is_learn>(c, ec, ld, cs_ld);
       break;
-    case CB_TYPE_DR:
+    case VW::cb_type_t::dr:
       gen_cs_example_dr<is_learn>(c, ec, ld, cs_ld);
       break;
     default:
-      THROW("Unknown cb_type specified for contextual bandit learning: " << c.cb_type);
+      THROW("Unknown cb_type specified for contextual bandit learning: " << VW::to_string(c.cb_type));
   }
 }
 
-void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
+void gen_cs_test_example(const multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p = 0.f);
+void gen_cs_example_ips(const multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p = 0.f);
 
-void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
+void gen_cs_example_dm(const multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
 void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels);
 
 void gen_cs_example_sm(multi_ex& examples, uint32_t chosen_action, float sign_offset,
-    ACTION_SCORE::action_scores action_vals, COST_SENSITIVE::label& cs_labels);
+    const ACTION_SCORE::action_scores& action_vals, COST_SENSITIVE::label& cs_labels);
 
 template <bool is_learn>
 void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels, float clip_p = 0.f)
@@ -233,17 +233,17 @@ void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs
   VW_DBG(*ec_seq[0]) << "gen_cs_example:" << is_learn << std::endl;
   switch (c.cb_type)
   {
-    case CB_TYPE_IPS:
+    case VW::cb_type_t::ips:
       gen_cs_example_ips(ec_seq, cs_labels);
       break;
-    case CB_TYPE_DR:
+    case VW::cb_type_t::dr:
       gen_cs_example_dr<is_learn>(c, ec_seq, cs_labels);
       break;
-    case CB_TYPE_MTR:
+    case VW::cb_type_t::mtr:
       gen_cs_example_mtr(c, ec_seq, cs_labels);
       break;
     default:
-      THROW("Unknown cb_type specified for contextual bandit learning: " << c.cb_type);
+      THROW("Unknown cb_type specified for contextual bandit learning: " << VW::to_string(c.cb_type));
   }
 }
 
