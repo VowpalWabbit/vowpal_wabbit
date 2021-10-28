@@ -107,8 +107,8 @@ void finish_cbify_reg(cbify_reg& data, std::ostream* trace_stream)
   if (trace_stream != nullptr) (*trace_stream) << "Max Cost=" << data.max_cost << std::endl;
 }
 
-void cbify_adf_data::init_adf_data(
-    const std::size_t num_actions, std::size_t increment, std::vector<std::vector<namespace_index>>& interactions)
+void cbify_adf_data::init_adf_data(const std::size_t num_actions, std::size_t increment,
+    std::vector<std::vector<namespace_index>>& interactions, std::vector<std::vector<extent_term>>& extent_interactions)
 {
   this->num_actions = num_actions;
   this->increment = increment;
@@ -120,6 +120,7 @@ void cbify_adf_data::init_adf_data(
     auto& lab = ecs[a]->l.cb;
     CB::default_label(lab);
     ecs[a]->interactions = &interactions;
+    ecs[a]->extent_interactions = &extent_interactions;
   }
 
   // cache mask for copy routine
@@ -167,7 +168,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, example& ec)
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l)) { eca.tag.push_back('n'); }
+    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(eca.l)) { eca.tag.push_back('n'); }
   }
 }
 
@@ -519,7 +520,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
 
   uint32_t predicted_class = ec.pred.multiclass;
 
-  if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
+  if (!COST_SENSITIVE::cs_label.test_label(ec.l))
   {
     for (auto const& cost : costs)
     {
@@ -551,7 +552,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq)
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&ec.l), ec, ec_seq, false, predicted_class);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
 void output_example_seq(vw& all, multi_ex& ec_seq)
@@ -755,7 +756,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
   learner<cbify, example>* l;
   void (*finish_ptr)(vw&, cbify&, example&);
   std::string name_addition;
-  label_type_t label_type;
+  VW::label_type_t label_type;
 
   if (data->use_adf)
   {
@@ -763,7 +764,8 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     void (*predict_ptr)(cbify&, multi_learner&, example&);
     multi_learner* base = as_multiline(stack_builder.setup_base_learner());
 
-    if (data->use_adf) { data->adf_data.init_adf_data(num_actions, base->increment, all.interactions); }
+    if (data->use_adf)
+    { data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions); }
 
     if (use_cs)
     {
@@ -771,7 +773,7 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
       predict_ptr = predict_adf<true>;
       finish_ptr = COST_SENSITIVE::finish_example;
       name_addition = "-adf-cs";
-      label_type = label_type_t::cs;
+      label_type = VW::label_type_t::cs;
       all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
     }
     else
@@ -780,13 +782,13 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
       predict_ptr = predict_adf<false>;
       finish_ptr = MULTICLASS::finish_example<cbify&>;
       name_addition = "-adf";
-      label_type = label_type_t::multiclass;
+      label_type = VW::label_type_t::multiclass;
       all.example_parser->lbl_parser = MULTICLASS::mc_label;
     }
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
             .set_label_type(label_type)
-            .set_prediction_type(prediction_type_t::multiclass)
+            .set_prediction_type(VW::prediction_type_t::multiclass)
             .set_finish_example(finish_ptr)
             .build();
   }
@@ -794,12 +796,12 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
   {
     void (*learn_ptr)(cbify&, single_learner&, example&);
     void (*predict_ptr)(cbify&, single_learner&, example&);
-    prediction_type_t pred_type;
+    VW::prediction_type_t pred_type;
     single_learner* base = as_singleline(stack_builder.setup_base_learner());
     if (use_reg)
     {
-      label_type = label_type_t::simple;
-      pred_type = prediction_type_t::scalar;
+      label_type = VW::label_type_t::simple;
+      pred_type = VW::prediction_type_t::scalar;
       all.example_parser->lbl_parser = simple_label_parser;
       if (use_discrete)
       {
@@ -818,8 +820,8 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     }
     else if (use_cs)
     {
-      label_type = label_type_t::cs;
-      pred_type = prediction_type_t::multiclass;
+      label_type = VW::label_type_t::cs;
+      pred_type = VW::prediction_type_t::multiclass;
       learn_ptr = predict_or_learn<true, true>;
       predict_ptr = predict_or_learn<false, true>;
       finish_ptr = COST_SENSITIVE::finish_example;
@@ -828,8 +830,8 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     }
     else
     {
-      label_type = label_type_t::multiclass;
-      pred_type = prediction_type_t::multiclass;
+      label_type = VW::label_type_t::multiclass;
+      pred_type = VW::prediction_type_t::multiclass;
       learn_ptr = predict_or_learn<true, false>;
       predict_ptr = predict_or_learn<false, false>;
       finish_ptr = MULTICLASS::finish_example<cbify&>;
@@ -884,8 +886,8 @@ base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   auto* l = make_reduction_learner(std::move(data), base, do_actual_learning_ldf, do_actual_predict_ldf,
       stack_builder.get_setupfn_name(cbifyldf_setup))
-                .set_prediction_type(prediction_type_t::multiclass)
-                .set_label_type(label_type_t::cs)
+                .set_prediction_type(VW::prediction_type_t::multiclass)
+                .set_label_type(VW::label_type_t::cs)
                 .set_finish_example(finish_multiline_example)
                 .build();
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;

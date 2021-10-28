@@ -15,8 +15,10 @@ struct DecisionServiceInteraction
   std::string timestamp;
   std::vector<unsigned> actions;
   std::vector<float> probabilities;
+  std::vector<unsigned> baseline_actions;
   float probabilityOfDrop = 0.f;
   float originalLabelCost = 0.f;
+  float originalLabelCostFirstSlot = 0.f;
   bool skipLearn{false};
 };
 

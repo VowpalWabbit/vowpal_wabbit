@@ -23,7 +23,7 @@ VW::LEARNER::base_learner* noop_setup(VW::setup_base_i& stack_builder)
   // While the learn function doesnt use anything, the implicit finish function expects scalar and simple.
   // This can change if we change the finish function.
   auto ret = VW::LEARNER::make_no_data_base_learner(
-      learn, learn, stack_builder.get_setupfn_name(noop_setup), prediction_type_t::scalar, label_type_t::simple)
+      learn, learn, stack_builder.get_setupfn_name(noop_setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
                  .build();
   return VW::LEARNER::make_base(*ret);
 }

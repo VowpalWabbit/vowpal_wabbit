@@ -157,8 +157,9 @@ float cb_explore_adf_rnd::get_initial_prediction(example* ec)
   LazyGaussian w;
 
   std::pair<float, float> dotwithnorm(0.f, 0.f);
-  GD::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, LazyGaussian>(
-      w, all->ignore_some_linear, all->ignore_linear, all->interactions, all->permutations, *ec, dotwithnorm);
+  GD::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, LazyGaussian>(w, all->ignore_some_linear,
+      all->ignore_linear, all->interactions, all->extent_interactions, all->permutations, *ec, dotwithnorm,
+      all->_generate_interactions_object_cache);
 
   return sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1e-12f, dotwithnorm.first));
 }
@@ -307,8 +308,8 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(data), base, explore_type::learn, explore_type::predict, stack_builder.get_setupfn_name(setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_prediction_type(prediction_type_t::action_probs)
-                .set_label_type(label_type_t::cb)
+                .set_prediction_type(VW::prediction_type_t::action_probs)
+                .set_label_type(VW::label_type_t::cb)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)

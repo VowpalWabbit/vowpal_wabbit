@@ -43,55 +43,68 @@ Diagnostic options:
 Randomization options:
   --random_seed arg     seed random number generator
 Feature options:
-  --hash arg                      how to hash the features. Available options: 
-                                  strings, all
-  --hash_seed arg (=0, )          seed for hash function
-  --ignore arg                    ignore namespaces beginning with character 
-                                  <arg>
-  --ignore_linear arg             ignore namespaces beginning with character 
-                                  <arg> for linear terms only
-  --keep arg                      keep namespaces beginning with character 
-                                  <arg>
-  --redefine arg                  redefine namespaces beginning with characters
-                                  of std::string S as namespace N. <arg> shall 
-                                  be in form 'N:=S' where := is operator. Empty
-                                  N or S are treated as default namespace. Use 
-                                  ':' as a wildcard in S.
-  -b [ --bit_precision ] arg      number of bits in the feature table
-  --noconstant                    Don't add a constant feature
-  -C [ --constant ] arg           Set initial value of constant
-  --ngram arg                     Generate N grams. To generate N grams for a 
-                                  single namespace 'foo', arg should be fN.
-  --skips arg                     Generate skips in N grams. This in 
-                                  conjunction with the ngram tag can be used to
-                                  generate generalized n-skip-k-gram. To 
-                                  generate n-skips for a single namespace 
-                                  'foo', arg should be fN.
-  --feature_limit arg             limit to N unique features per namespace. To 
-                                  apply to a single namespace 'foo', arg should
-                                  be fN
-  --affix arg                     generate prefixes/suffixes of features; 
-                                  argument '+2a,-3b,+1' means generate 2-char 
-                                  prefixes for namespace a, 3-char suffixes for
-                                  b and 1 char prefixes for default namespace
-  --spelling arg                  compute spelling features for a give 
-                                  namespace (use '_' for default namespace)
-  --dictionary arg                read a dictionary for additional features 
-                                  (arg either 'x:file' or just 'file')
-  --dictionary_path arg           look in this directory for dictionaries; 
-                                  defaults to current directory or env{PATH}
-  --interactions arg              Create feature interactions of any level 
-                                  between namespaces.
-  --permutations                  Use permutations instead of combinations for 
-                                  feature interactions of same namespace.
-  --leave_duplicate_interactions  Don't remove interactions with duplicate 
-                                  combinations of namespaces. For ex. this is a
-                                  duplicate: '-q ab -q ba' and a lot more in 
-                                  '-q ::'.
-  -q [ --quadratic ] arg          Create and use quadratic features
-  --q: arg                        DEPRECATED ':' corresponds to a wildcard for 
-                                  all printable characters
-  --cubic arg                     Create and use cubic features
+  --hash arg                            how to hash the features. Available 
+                                        options: strings, all
+  --hash_seed arg (=0, )                seed for hash function
+  --ignore arg                          ignore namespaces beginning with 
+                                        character <arg>
+  --ignore_linear arg                   ignore namespaces beginning with 
+                                        character <arg> for linear terms only
+  --keep arg                            keep namespaces beginning with 
+                                        character <arg>
+  --redefine arg                        redefine namespaces beginning with 
+                                        characters of std::string S as 
+                                        namespace N. <arg> shall be in form 
+                                        'N:=S' where := is operator. Empty N or
+                                        S are treated as default namespace. Use
+                                        ':' as a wildcard in S.
+  -b [ --bit_precision ] arg            number of bits in the feature table
+  --noconstant                          Don't add a constant feature
+  -C [ --constant ] arg                 Set initial value of constant
+  --ngram arg                           Generate N grams. To generate N grams 
+                                        for a single namespace 'foo', arg 
+                                        should be fN.
+  --skips arg                           Generate skips in N grams. This in 
+                                        conjunction with the ngram tag can be 
+                                        used to generate generalized 
+                                        n-skip-k-gram. To generate n-skips for 
+                                        a single namespace 'foo', arg should be
+                                        fN.
+  --feature_limit arg                   limit to N unique features per 
+                                        namespace. To apply to a single 
+                                        namespace 'foo', arg should be fN
+  --affix arg                           generate prefixes/suffixes of features;
+                                        argument '+2a,-3b,+1' means generate 
+                                        2-char prefixes for namespace a, 3-char
+                                        suffixes for b and 1 char prefixes for 
+                                        default namespace
+  --spelling arg                        compute spelling features for a give 
+                                        namespace (use '_' for default 
+                                        namespace)
+  --dictionary arg                      read a dictionary for additional 
+                                        features (arg either 'x:file' or just 
+                                        'file')
+  --dictionary_path arg                 look in this directory for 
+                                        dictionaries; defaults to current 
+                                        directory or env{PATH}
+  --interactions arg                    Create feature interactions of any 
+                                        level between namespaces.
+  --experimental_full_name_interactions arg
+                                        EXPERIMENTAL: Create feature 
+                                        interactions of any level between 
+                                        namespaces by specifying the full name 
+                                        of each namespace.
+  --permutations                        Use permutations instead of 
+                                        combinations for feature interactions 
+                                        of same namespace.
+  --leave_duplicate_interactions        Don't remove interactions with 
+                                        duplicate combinations of namespaces. 
+                                        For ex. this is a duplicate: '-q ab -q 
+                                        ba' and a lot more in '-q ::'.
+  -q [ --quadratic ] arg                Create and use quadratic features
+  --q: arg                              DEPRECATED ':' corresponds to a 
+                                        wildcard for all printable characters
+  --cubic arg                           Create and use cubic features
 Example options:
   -t [ --testonly ]                Ignore label information and just test
   --holdout_off                    no holdout data in multiple passes
@@ -188,7 +201,7 @@ Cost Sensitive One Against All with Label Dependent Features:
   --ldf_override arg    Override singleline or multiline from csoaa_ldf or 
                         wap_ldf, eg if stored in file
   --csoaa_rank          Return actions sorted by score order
-  --probabilities       predict probabilites of all classes
+  --probabilities       predict probabilities of all classes
 Contextual Bandit with Action Dependent Features:
   --cb_adf              Do Contextual Bandit learning with multiline action 
                         dependent features.

@@ -1,0 +1,10 @@
+{
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "runtests.AUTOGEN.json"
+            ],
+            "url": "./test/runtests.schema.json"
+        }
+    ]
+}
