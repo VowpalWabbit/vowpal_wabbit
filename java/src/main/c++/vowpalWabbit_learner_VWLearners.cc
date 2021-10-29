@@ -100,6 +100,9 @@ JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWLearners_getReturnType(JNI
     case VW::prediction_type_t::decision_probs:
       field = env->GetStaticFieldID(clVWReturnType, "DecisionProbs", RETURN_TYPE_INSTANCE);
       break;
+    case VW::prediction_type_t::nopred:
+      field = env->GetStaticFieldID(clVWReturnType, "Nopred", RETURN_TYPE_INSTANCE);
+      break;
     default:
       field = env->GetStaticFieldID(clVWReturnType, "Unknown", RETURN_TYPE_INSTANCE);
   }
