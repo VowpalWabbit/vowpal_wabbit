@@ -41,9 +41,9 @@ using namespace VW::LEARNER;
 
 namespace logger = VW::io::logger;
 
-enum lda_math_mode
+enum class lda_math_mode : int
 {
-  USE_SIMD,
+  USE_SIMD = 0,
   USE_PRECISE,
   USE_FAST_APPROX
 };
@@ -417,22 +417,22 @@ inline T powf(T /* x */, T /* p */)
 // High accuracy float specializations:
 
 template <>
-inline float lgamma<float, USE_PRECISE>(float x)
+inline float lgamma<float, lda_math_mode::USE_PRECISE>(float x)
 {
   return boost::math::lgamma(x);
 }
 template <>
-inline float digamma<float, USE_PRECISE>(float x)
+inline float digamma<float, lda_math_mode::USE_PRECISE>(float x)
 {
   return boost::math::digamma(x);
 }
 template <>
-inline float exponential<float, USE_PRECISE>(float x)
+inline float exponential<float, lda_math_mode::USE_PRECISE>(float x)
 {
   return correctedExp(x);
 }
 template <>
-inline float powf<float, USE_PRECISE>(float x, float p)
+inline float powf<float, lda_math_mode::USE_PRECISE>(float x, float p)
 {
   return std::pow(x, p);
 }
@@ -440,22 +440,22 @@ inline float powf<float, USE_PRECISE>(float x, float p)
 // Fast approximation float specializations:
 
 template <>
-inline float lgamma<float, USE_FAST_APPROX>(float x)
+inline float lgamma<float, lda_math_mode::USE_FAST_APPROX>(float x)
 {
   return fastlgamma(x);
 }
 template <>
-inline float digamma<float, USE_FAST_APPROX>(float x)
+inline float digamma<float, lda_math_mode::USE_FAST_APPROX>(float x)
 {
   return fastdigamma(x);
 }
 template <>
-inline float exponential<float, USE_FAST_APPROX>(float x)
+inline float exponential<float, lda_math_mode::USE_FAST_APPROX>(float x)
 {
   return fastexp(x);
 }
 template <>
-inline float powf<float, USE_FAST_APPROX>(float x, float p)
+inline float powf<float, lda_math_mode::USE_FAST_APPROX>(float x, float p)
 {
   return fastpow(x, p);
 }
@@ -463,24 +463,24 @@ inline float powf<float, USE_FAST_APPROX>(float x, float p)
 // SIMD specializations:
 
 template <>
-inline float lgamma<float, USE_SIMD>(float x)
+inline float lgamma<float, lda_math_mode::USE_SIMD>(float x)
 {
-  return lgamma<float, USE_FAST_APPROX>(x);
+  return lgamma<float, lda_math_mode::USE_FAST_APPROX>(x);
 }
 template <>
-inline float digamma<float, USE_SIMD>(float x)
+inline float digamma<float, lda_math_mode::USE_SIMD>(float x)
 {
-  return digamma<float, USE_FAST_APPROX>(x);
+  return digamma<float, lda_math_mode::USE_FAST_APPROX>(x);
 }
 template <>
-inline float exponential<float, USE_SIMD>(float x)
+inline float exponential<float, lda_math_mode::USE_SIMD>(float x)
 {
-  return exponential<float, USE_FAST_APPROX>(x);
+  return exponential<float, lda_math_mode::USE_FAST_APPROX>(x);
 }
 template <>
-inline float powf<float, USE_SIMD>(float x, float p)
+inline float powf<float, lda_math_mode::USE_SIMD>(float x, float p)
 {
-  return powf<float, USE_FAST_APPROX>(x, p);
+  return powf<float, lda_math_mode::USE_FAST_APPROX>(x, p);
 }
 
 template <typename T, const lda_math_mode mtype>
@@ -492,7 +492,7 @@ inline void expdigammify(vw &all, T *gamma, T threshold, T initial)
       [sum, threshold](T g) { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - sum)); });
 }
 template <>
-inline void expdigammify<float, USE_SIMD>(vw &all, float *gamma, float threshold, float)
+inline void expdigammify<float, lda_math_mode::USE_SIMD>(vw &all, float *gamma, float threshold, float)
 {
 #if defined(HAVE_SIMD_MATHMODE)
   vexpdigammify(all, gamma, threshold);
@@ -509,7 +509,7 @@ inline void expdigammify_2(vw &all, float *gamma, T *norm, const T threshold)
       [threshold](float g, float n) { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n)); });
 }
 template <>
-inline void expdigammify_2<float, USE_SIMD>(vw &all, float *gamma, float *norm, const float threshold)
+inline void expdigammify_2<float, lda_math_mode::USE_SIMD>(vw &all, float *gamma, float *norm, const float threshold)
 {
 #if defined(HAVE_SIMD_MATHMODE)
   vexpdigammify_2(all, gamma, norm, threshold);
@@ -525,12 +525,12 @@ float lda::digamma(float x)
 {
   switch (mmode)
   {
-    case USE_FAST_APPROX:
-      return ldamath::digamma<float, USE_FAST_APPROX>(x);
-    case USE_PRECISE:
-      return ldamath::digamma<float, USE_PRECISE>(x);
-    case USE_SIMD:
-      return ldamath::digamma<float, USE_SIMD>(x);
+    case lda_math_mode::USE_FAST_APPROX:
+      return ldamath::digamma<float, lda_math_mode::USE_FAST_APPROX>(x);
+    case lda_math_mode::USE_PRECISE:
+      return ldamath::digamma<float, lda_math_mode::USE_PRECISE>(x);
+    case lda_math_mode::USE_SIMD:
+      return ldamath::digamma<float, lda_math_mode::USE_SIMD>(x);
     default:
       // Should not happen.
       logger::errlog_critical("lda::digamma: Trampled or invalid math mode, aborting");
@@ -543,12 +543,12 @@ float lda::lgamma(float x)
 {
   switch (mmode)
   {
-    case USE_FAST_APPROX:
-      return ldamath::lgamma<float, USE_FAST_APPROX>(x);
-    case USE_PRECISE:
-      return ldamath::lgamma<float, USE_PRECISE>(x);
-    case USE_SIMD:
-      return ldamath::lgamma<float, USE_SIMD>(x);
+    case lda_math_mode::USE_FAST_APPROX:
+      return ldamath::lgamma<float, lda_math_mode::USE_FAST_APPROX>(x);
+    case lda_math_mode::USE_PRECISE:
+      return ldamath::lgamma<float, lda_math_mode::USE_PRECISE>(x);
+    case lda_math_mode::USE_SIMD:
+      return ldamath::lgamma<float, lda_math_mode::USE_SIMD>(x);
     default:
       logger::errlog_critical("lda::lgamma: Trampled or invalid math mode, aborting");
       abort();
@@ -560,12 +560,12 @@ float lda::powf(float x, float p)
 {
   switch (mmode)
   {
-    case USE_FAST_APPROX:
-      return ldamath::powf<float, USE_FAST_APPROX>(x, p);
-    case USE_PRECISE:
-      return ldamath::powf<float, USE_PRECISE>(x, p);
-    case USE_SIMD:
-      return ldamath::powf<float, USE_SIMD>(x, p);
+    case lda_math_mode::USE_FAST_APPROX:
+      return ldamath::powf<float, lda_math_mode::USE_FAST_APPROX>(x, p);
+    case lda_math_mode::USE_PRECISE:
+      return ldamath::powf<float, lda_math_mode::USE_PRECISE>(x, p);
+    case lda_math_mode::USE_SIMD:
+      return ldamath::powf<float, lda_math_mode::USE_SIMD>(x, p);
     default:
       logger::errlog_critical("lda::powf: Trampled or invalid math mode, aborting");
       abort();
@@ -577,14 +577,14 @@ void lda::expdigammify(vw &all_, float *gamma)
 {
   switch (mmode)
   {
-    case USE_FAST_APPROX:
-      ldamath::expdigammify<float, USE_FAST_APPROX>(all_, gamma, underflow_threshold, 0.0f);
+    case lda_math_mode::USE_FAST_APPROX:
+      ldamath::expdigammify<float, lda_math_mode::USE_FAST_APPROX>(all_, gamma, underflow_threshold, 0.0f);
       break;
-    case USE_PRECISE:
-      ldamath::expdigammify<float, USE_PRECISE>(all_, gamma, underflow_threshold, 0.0f);
+    case lda_math_mode::USE_PRECISE:
+      ldamath::expdigammify<float, lda_math_mode::USE_PRECISE>(all_, gamma, underflow_threshold, 0.0f);
       break;
-    case USE_SIMD:
-      ldamath::expdigammify<float, USE_SIMD>(all_, gamma, underflow_threshold, 0.0f);
+    case lda_math_mode::USE_SIMD:
+      ldamath::expdigammify<float, lda_math_mode::USE_SIMD>(all_, gamma, underflow_threshold, 0.0f);
       break;
     default:
       logger::errlog_critical("lda::expdigammify: Trampled or invalid math mode, aborting");
@@ -596,14 +596,14 @@ void lda::expdigammify_2(vw &all_, float *gamma, float *norm)
 {
   switch (mmode)
   {
-    case USE_FAST_APPROX:
-      ldamath::expdigammify_2<float, USE_FAST_APPROX>(all_, gamma, norm, underflow_threshold);
+    case lda_math_mode::USE_FAST_APPROX:
+      ldamath::expdigammify_2<float, lda_math_mode::USE_FAST_APPROX>(all_, gamma, norm, underflow_threshold);
       break;
-    case USE_PRECISE:
-      ldamath::expdigammify_2<float, USE_PRECISE>(all_, gamma, norm, underflow_threshold);
+    case lda_math_mode::USE_PRECISE:
+      ldamath::expdigammify_2<float, lda_math_mode::USE_PRECISE>(all_, gamma, norm, underflow_threshold);
       break;
-    case USE_SIMD:
-      ldamath::expdigammify_2<float, USE_SIMD>(all_, gamma, norm, underflow_threshold);
+    case lda_math_mode::USE_SIMD:
+      ldamath::expdigammify_2<float, lda_math_mode::USE_SIMD>(all_, gamma, norm, underflow_threshold);
       break;
     default:
       logger::errlog_critical("lda::expdigammify_2: Trampled or invalid math mode, aborting");
@@ -1264,11 +1264,11 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
   std::string token;
   in >> token;
   if (token == "simd")
-    mmode = USE_SIMD;
+    mmode = lda_math_mode::USE_SIMD;
   else if (token == "accuracy" || token == "precise")
-    mmode = USE_PRECISE;
+    mmode = lda_math_mode::USE_PRECISE;
   else if (token == "fast-approx" || token == "approx")
-    mmode = USE_FAST_APPROX;
+    mmode = lda_math_mode::USE_FAST_APPROX;
   else
     THROW_EX(VW::vw_unrecognised_option_exception, token);
   return in;
@@ -1294,7 +1294,7 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
       .add(make_option("lda_D", ld->lda_D).default_value(10000.0f).help("Number of documents"))
       .add(make_option("lda_epsilon", ld->lda_epsilon).default_value(0.001f).help("Loop convergence threshold"))
       .add(make_option("minibatch", ld->minibatch).default_value(1).help("Minibatch size, for LDA"))
-      .add(make_option("math-mode", math_mode).default_value(USE_SIMD).help("Math mode: simd, accuracy, fast-approx"))
+      .add(make_option("math-mode", math_mode).default_value(static_cast<int>(lda_math_mode::USE_SIMD)).help("Math mode: simd, accuracy, fast-approx"))
       .add(make_option("metrics", ld->compute_coherence_metrics).help("Compute metrics"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;

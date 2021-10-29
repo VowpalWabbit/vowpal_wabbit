@@ -9,7 +9,7 @@
 #include <cstdint>
 
 namespace CCB {
-enum example_type : uint8_t
+enum class example_type : uint8_t
 {
   unset = 0,
   shared = 1,
