@@ -363,7 +363,16 @@ public:
   // called anytime saving or loading needs to happen. Autorecursive.
   inline void save_load(io_buf& io, const bool read, const bool text)
   {
-    save_load_fd.save_load_f(save_load_fd.data, io, read, text);
+    try
+    {
+      save_load_fd.save_load_f(save_load_fd.data, io, read, text);
+    }
+    catch (VW::vw_exception& vwex)
+    {
+      std::stringstream better_msg;
+      better_msg << "model " << std::string(read ? "load" : "save") << " failed. Error Details: " << vwex.what();
+      throw VW::save_load_model_exception(vwex.Filename(), vwex.LineNumber(), better_msg.str());
+    }
     if (save_load_fd.base) save_load_fd.base->save_load(io, read, text);
   }
 

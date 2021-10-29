@@ -2541,4 +2541,8 @@ train-sets/ref/slates_simple_w_interactions.stderr
    train-sets/ref/csoaa_ldf_probabilities.stderr
    pred-sets/ref/csoaa_ldf_probabilities.predict
 
+# Test 356: fuzz testing crash due to partial model file
+./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/truncated_model
+    train-sets/ref/truncated_model_crash.stdout
+
 # Do not delete this line or the empty line above it
