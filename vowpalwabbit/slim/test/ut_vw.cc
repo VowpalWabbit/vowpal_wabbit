@@ -277,7 +277,8 @@ std::vector<PredictParam> GenerateTestParams()
       fixtures.push_back(p);
     else
     {
-      std::initializer_list<PredictParamWeightType> weight_types = {PredictParamWeightType::Sparse, PredictParamWeightType::Dense};
+      std::initializer_list<PredictParamWeightType> weight_types = {
+          PredictParamWeightType::Sparse, PredictParamWeightType::Dense};
       for (auto weight_type : weight_types)
       {
         p.weight_type = static_cast<PredictParamWeightType>(weight_type);

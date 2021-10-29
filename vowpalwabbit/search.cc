@@ -1307,13 +1307,15 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
 int choose_policy(search_private& priv, bool advance_prng = true)
 {
   RollMethod method = (priv.state == SearchState::INIT_TEST) ? RollMethod::POLICY
-                                                : (priv.state == SearchState::LEARN)
+                                                             : (priv.state == SearchState::LEARN)
           ? priv.rollout_method
-          : (priv.state == SearchState::INIT_TRAIN) ? priv.rollin_method : RollMethod::NO_ROLLOUT;  // this should never happen
+          : (priv.state == SearchState::INIT_TRAIN) ? priv.rollin_method
+                                                    : RollMethod::NO_ROLLOUT;  // this should never happen
   switch (method)
   {
     case RollMethod::POLICY:
-      return random_policy(priv, priv.allow_current_policy || (priv.state == SearchState::INIT_TEST), false, advance_prng);
+      return random_policy(
+          priv, priv.allow_current_policy || (priv.state == SearchState::INIT_TEST), false, advance_prng);
 
     case RollMethod::ORACLE:
       return -1;
@@ -1689,7 +1691,8 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
     return a;
   }
 
-  if ((priv.state == SearchState::INIT_TRAIN) || (priv.state == SearchState::INIT_TEST) || ((priv.state == SearchState::LEARN) && (t > priv.learn_t)))
+  if ((priv.state == SearchState::INIT_TRAIN) || (priv.state == SearchState::INIT_TEST) ||
+      ((priv.state == SearchState::LEARN) && (t > priv.learn_t)))
   {
     // we actually need to run the policy
 

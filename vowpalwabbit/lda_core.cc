@@ -492,7 +492,7 @@ inline void expdigammify(vw &all, T *gamma, T threshold, T initial)
       [sum, threshold](T g) { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - sum)); });
 }
 template <>
-inline void expdigammify<float, lda_math_mode::USE_SIMD>(vw &all, float *gamma, float threshold, float)
+inline void expdigammify<float, lda_math_mode::USE_SIMD>(vw& all, float* gamma, float threshold, float)
 {
 #if defined(HAVE_SIMD_MATHMODE)
   vexpdigammify(all, gamma, threshold);
@@ -509,7 +509,7 @@ inline void expdigammify_2(vw &all, float *gamma, T *norm, const T threshold)
       [threshold](float g, float n) { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n)); });
 }
 template <>
-inline void expdigammify_2<float, lda_math_mode::USE_SIMD>(vw &all, float *gamma, float *norm, const float threshold)
+inline void expdigammify_2<float, lda_math_mode::USE_SIMD>(vw& all, float* gamma, float* norm, const float threshold)
 {
 #if defined(HAVE_SIMD_MATHMODE)
   vexpdigammify_2(all, gamma, norm, threshold);
@@ -1294,7 +1294,9 @@ base_learner* lda_setup(VW::setup_base_i& stack_builder)
       .add(make_option("lda_D", ld->lda_D).default_value(10000.0f).help("Number of documents"))
       .add(make_option("lda_epsilon", ld->lda_epsilon).default_value(0.001f).help("Loop convergence threshold"))
       .add(make_option("minibatch", ld->minibatch).default_value(1).help("Minibatch size, for LDA"))
-      .add(make_option("math-mode", math_mode).default_value(static_cast<int>(lda_math_mode::USE_SIMD)).help("Math mode: simd, accuracy, fast-approx"))
+      .add(make_option("math-mode", math_mode)
+               .default_value(static_cast<int>(lda_math_mode::USE_SIMD))
+               .help("Math mode: simd, accuracy, fast-approx"))
       .add(make_option("metrics", ld->compute_coherence_metrics).help("Compute metrics"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
