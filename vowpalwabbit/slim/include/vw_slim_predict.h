@@ -23,6 +23,8 @@
 #include "cats_pdf.h"
 #include "sample_pdf.h"
 #include "cats.h"
+#include "rand_state.h"
+#include "rand48.h"
 
 // forward declarations
 namespace GD
@@ -304,6 +306,7 @@ class vw_predict
   uint32_t _stride_shift;
   bool _model_loaded;
   uint64_t random_seed = 0;
+  std::shared_ptr<rand_state> random_state;
 
   VW::LEARNER::learner<VW::continuous_action::cats::cats, example>* _cats_learner;
   std::unique_ptr<predict_info<W>> _predict_info;
@@ -377,7 +380,6 @@ public:
     mp.skip(3 * skips_len);
 
     RETURN_ON_FAIL(mp.read_string<true>("file_options", _command_line_arguments));
-
     // command line arg parsing
     _no_constant = _command_line_arguments.find("--noconstant") != std::string::npos;
 
@@ -387,6 +389,8 @@ public:
       return E_VW_PREDICT_ERR_HASH_SEED_NOT_SUPPORTED;
 
     find_opt_uint64_t(_command_line_arguments, "--random_seed", random_seed);
+    random_state = std::make_shared<rand_state>();
+    random_state->set_random_state(random_seed);
 
     _predict_info->_interactions.clear();
     find_opt(_command_line_arguments, "-q", _predict_info->_interactions);
@@ -575,7 +579,7 @@ public:
       if (!success) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
 
       auto sample_pdf = VW::make_unique<VW::continuous_action::sample_pdf>();
-      sample_pdf->init(cats_pdf_learner_base, &random_seed);
+      sample_pdf->init(cats_pdf_learner_base, random_state);
 
       auto* sample_pdf_learner =
           VW::LEARNER::make_reduction_learner<VW::continuous_action::sample_pdf, example>(std::move(sample_pdf),

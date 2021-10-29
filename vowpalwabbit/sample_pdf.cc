@@ -64,7 +64,7 @@ LEARNER::base_learner* sample_pdf_setup(options_i& options, vw& all)
 
   LEARNER::base_learner* p_base = setup_base(options, all);
   auto p_reduction = scoped_calloc_or_throw<sample_pdf>();
-  p_reduction->init(as_singleline(p_base), &all.random_seed);
+  p_reduction->init(as_singleline(p_base), all.get_random_state());
 
   LEARNER::learner<sample_pdf, example>& l = init_learner(p_reduction, as_singleline(p_base), learn, predict, 1,
       prediction_type_t::action_pdf_value, all.get_setupfn_name(sample_pdf_setup));

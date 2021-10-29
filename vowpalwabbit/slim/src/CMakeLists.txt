@@ -7,7 +7,8 @@ set(VW_SLIM_SOURCES
   ../../example_predict.cc
   ../../learner_no_throw.cc
   ../../api_status.cc
-  ../../interactions.cc)
+  ../../interactions.cc
+  ../../rand48.cc)
 
 set(VW_SLIM_HEADERS
   ../include/example_predict_builder.h

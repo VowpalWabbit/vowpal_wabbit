@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <cctype>
+#include <sstream>
 
 namespace vw_slim
 {
@@ -85,9 +86,17 @@ bool find_opt_int(std::string const& command_line_args, std::string arg_name, in
   return find_opt_parse<int, int, atoi>(command_line_args, arg_name, value);
 }
 
+uint64_t uintconverter(const char* opt)
+{
+  uint64_t value;
+  std::istringstream iss(opt);
+  iss >> value;
+  return value;
+};
+
 bool find_opt_uint64_t(std::string const& command_line_args, std::string arg_name, uint64_t& value)
 {
-  return find_opt_parse<uint64_t, int, atoi>(command_line_args, arg_name, value);
+  return find_opt_parse<uint64_t, uint64_t, uintconverter>(command_line_args, arg_name, value);
 }
 
 }  // namespace vw_slim

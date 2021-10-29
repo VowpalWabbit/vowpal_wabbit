@@ -21,6 +21,12 @@ example_predict_builder::example_predict_builder(
   add_namespace(namespace_idx);
 }
 
+void example_predict_builder::change_namespace(const char* namespace_name)
+{
+  add_namespace(namespace_name[0]);
+  _namespace_hash = hashstring(namespace_name, strlen(namespace_name), 0);
+}
+
 void example_predict_builder::add_namespace(namespace_index feature_group)
 {
   _namespace_idx = feature_group;

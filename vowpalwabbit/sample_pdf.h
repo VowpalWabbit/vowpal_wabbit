@@ -8,6 +8,7 @@
 #include "api_status.h"
 #include "explore.h"
 #include "guard.h"
+#include "rand_state.h"
 
 // forward declaration
 namespace VW
@@ -36,23 +37,24 @@ struct sample_pdf
       _base->predict(ec);
     }
 
-    const int ret_code = exploration::sample_pdf(_p_random_state, std::begin(_pred_pdf), std::end(_pred_pdf),
-        ec.pred.pdf_value.action, ec.pred.pdf_value.pdf_value);
+    uint64_t seed = _p_random_state->get_current_state();
+    const int ret_code = exploration::sample_pdf(&seed, std::begin(_pred_pdf), std::end(_pred_pdf), ec.pred.pdf_value.action, ec.pred.pdf_value.pdf_value);
+    _p_random_state->get_and_update_random();
 
     if (ret_code != S_EXPLORATION_OK) return VW::experimental::error_code::sample_pdf_failed;
 
     return VW::experimental::error_code::success;
   }
 
-  void init(VW::LEARNER::single_learner* p_base, uint64_t* p_random_seed)
+  void init(VW::LEARNER::single_learner* p_base, std::shared_ptr<rand_state> random_state)
   {
     _base = p_base;
-    _p_random_state = p_random_seed;
+    _p_random_state = std::move(random_state);
     _pred_pdf.clear();
   }
 
 private:
-  uint64_t* _p_random_state;
+  std::shared_ptr<rand_state> _p_random_state;
   continuous_actions::probability_density_function _pred_pdf;
   VW::LEARNER::single_learner* _base = nullptr;
 };

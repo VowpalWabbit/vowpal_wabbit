@@ -19,5 +19,6 @@ public:
 
   void push_feature_string(const char* feature_idx, feature_value value);
   void push_feature(feature_index feature_idx, feature_value value);
+  void change_namespace(const char* ns);
 };
 }  // namespace vw_slim
