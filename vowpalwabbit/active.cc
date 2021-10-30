@@ -150,8 +150,16 @@ void save_load(active& a, io_buf& io, bool read, bool text)
   if (io.num_files() == 0) { return; }
   if (a._model_version >= VW::version_definitions::VERSION_FILE_WITH_ACTIVE_SEEN_LABELS)
   {
-    VW::model_utils::process_model_field(io, a._min_seen_label, read, "Active: min_seen_label {}", text);
-    VW::model_utils::process_model_field(io, a._max_seen_label, read, "Active: max_seen_label {}", text);
+    if (read)
+    {
+      VW::model_utils::read_model_field(io, a._min_seen_label);
+      VW::model_utils::read_model_field(io, a._max_seen_label);
+    }
+    else
+    {
+      VW::model_utils::write_model_field(io, a._min_seen_label, "Active: min_seen_label {}", text);
+      VW::model_utils::write_model_field(io, a._max_seen_label, "Active: max_seen_label {}", text);
+    }
   }
 }
 
@@ -198,8 +206,8 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
 
   // Create new learner
   auto reduction_builder = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name);
-  reduction_builder.set_label_type(label_type_t::simple);
-  reduction_builder.set_prediction_type(prediction_type_t::scalar);
+  reduction_builder.set_label_type(VW::label_type_t::simple);
+  reduction_builder.set_prediction_type(VW::prediction_type_t::scalar);
   reduction_builder.set_learn_returns_prediction(learn_returns_prediction);
   reduction_builder.set_save_load(save_load);
   if (!simulation) { reduction_builder.set_finish_example(return_active_example); }

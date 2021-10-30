@@ -36,7 +36,7 @@ template <label_parser &lp>
 void learn(expreplay<lp> &er, LEARNER::single_learner &base, example &ec)
 {
   // Cannot learn if the example weight is 0.
-  if (lp.get_weight(&ec.l, ec._reduction_features) == 0.) return;
+  if (lp.get_weight(ec.l, ec._reduction_features) == 0.) return;
 
   for (size_t replay = 1; replay < er.replay_count; replay++)
   {
@@ -104,6 +104,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
   er->_random_state = all.get_random_state();
   er->buf = VW::alloc_examples(er->N);
   er->buf->interactions = &all.interactions;
+  er->buf->extent_interactions = &all.extent_interactions;
   er->filled = calloc_or_throw<bool>(er->N);
 
   if (!all.logger.quiet)

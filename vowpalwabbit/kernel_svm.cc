@@ -874,7 +874,7 @@ VW::LEARNER::base_learner* kernel_svm_setup(VW::setup_base_i& stack_builder)
   params->all->weights.stride_shift(0);
 
   auto* l = make_base_learner(std::move(params), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
-      prediction_type_t::scalar, label_type_t::simple)
+      VW::prediction_type_t::scalar, VW::label_type_t::simple)
                 .set_save_load(save_load)
                 .build();
 

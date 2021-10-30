@@ -488,8 +488,8 @@ base_learner* ftrl_setup(VW::setup_base_i& stack_builder)
   std::string name_addition = (all.audit || all.hash_inv) ? "-audit" : "";
 
   auto l = VW::LEARNER::make_base_learner(std::move(b), learn_ptr, predict_ptr,
-      stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, prediction_type_t::scalar,
-      label_type_t::simple)
+      stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, VW::prediction_type_t::scalar,
+      VW::label_type_t::simple)
                .set_learn_returns_prediction(learn_returns_prediction)
                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                .set_sensitivity(sensitivity)

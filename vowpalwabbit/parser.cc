@@ -15,6 +15,7 @@
 #include <fstream>
 
 #include "text_utils.h"
+#include "crossplat_compat.h"
 
 #ifdef _WIN32
 #  define NOMINMAX
@@ -92,30 +93,44 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     return (counter > after);
 }
 
-uint32_t cache_numbits(VW::io::reader* filepointer)
+uint32_t cache_numbits(VW::io::reader& cache_reader)
 {
-  size_t v_length;
-  io_buf::read_file(filepointer, reinterpret_cast<char*>(&v_length), sizeof(v_length));
-  if (v_length > 61) THROW("cache version too long, cache file is probably invalid");
+  size_t version_buffer_length;
+  if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&version_buffer_length),
+          sizeof(version_buffer_length))) < sizeof(version_buffer_length))
+  { THROW("failed to read: version_buffer_length"); }
 
-  if (v_length == 0) THROW("cache version too short, cache file is probably invalid");
+  if (version_buffer_length > 61) THROW("cache version too long, cache file is probably invalid");
+  if (version_buffer_length == 0) THROW("cache version too short, cache file is probably invalid");
 
-  std::vector<char> t(v_length);
-  io_buf::read_file(filepointer, t.data(), v_length);
-  VW::version_struct v_tmp(t.data());
-  if (v_tmp != VW::version)
+  std::vector<char> version_buffer(version_buffer_length);
+  if (static_cast<size_t>(cache_reader.read(version_buffer.data(), version_buffer_length)) < version_buffer_length)
+  { THROW("failed to read: version buffer"); }
+  VW::version_struct cache_version(version_buffer.data());
+  if (cache_version != VW::version)
   {
-    return 0;
+    auto msg = fmt::format(
+        "Cache file version does not match current VW version. Cache files must be produced by the version consuming "
+        "them. Cache version: {} VW version: {}",
+        cache_version.to_string(), VW::version.to_string());
+    THROW(msg);
   }
 
-  char temp;
-  if (io_buf::read_file(filepointer, &temp, 1) < 1) THROW("failed to read");
+  char marker;
+  if (static_cast<size_t>(cache_reader.read(&marker, sizeof(marker))) < sizeof(marker)) { THROW("failed to read"); }
 
-  if (temp != 'c') THROW("data file is not a cache file");
+  if (marker != 'c') THROW("data file is not a cache file");
 
   uint32_t cache_numbits;
+<<<<<<< HEAD
   if (io_buf::read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < static_cast<int>(sizeof(cache_numbits)))
   { return true; }
+=======
+  if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&cache_numbits), sizeof(cache_numbits))) <
+      sizeof(cache_numbits))
+  { THROW("failed to read"); }
+
+>>>>>>> 65a403fed39a7c635778da75244088a82d1dbeb0
   return cache_numbits;
 }
 
@@ -211,7 +226,7 @@ void reset_source(vw& all, size_t numbits)
       {
         std::unique_lock<std::mutex> lock(all.example_parser->output_lock);
         all.example_parser->output_done.wait(lock, [&] {
-          return all.example_parser->finished_examples == all.example_parser->end_parsed_examples &&
+          return all.example_parser->num_finished_examples == all.example_parser->num_setup_examples &&
               all.example_parser->ready_parsed_examples.size() == 0;
         });
       }
@@ -243,7 +258,7 @@ void reset_source(vw& all, size_t numbits)
       input.reset();
       for (auto& file : input.get_input_files())
       {
-        if (cache_numbits(file.get()) < numbits) { THROW("argh, a bug in caching of some sort!") }
+        if (cache_numbits(*file) < numbits) { THROW("argh, a bug in caching of some sort!") }
       }
     }
   }
@@ -302,7 +317,7 @@ void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache,
       make_write_cache(all, file, quiet);
     else
     {
-      uint64_t c = cache_numbits(all.example_parser->input.get_input_files().back().get());
+      uint64_t c = cache_numbits(*all.example_parser->input.get_input_files().back());
       if (c < all.num_bits)
       {
         if (!quiet)
@@ -410,20 +425,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       std::ofstream pid_file;
       pid_file.open(input_options.pid_file.c_str());
-      if (!pid_file.is_open()) THROW("error writing pid file");
-
-#ifdef _WIN32
-#  pragma warning(push)  // This next line is inappropriately triggering the Windows-side warning about getpid()
-#  pragma warning( \
-      disable : 4996)  // In newer toolchains, we are properly calling _getpid(), via the #define above (line 33).
-#endif
-
-      pid_file << VW_getpid() << endl;
+      if (!pid_file.is_open()) { THROW("error writing pid file"); }
+      pid_file << VW::get_pid() << endl;
       pid_file.close();
-
-#ifdef _WIN32
-#  pragma warning(pop)
-#endif
     }
 
     if (all.daemon && !all.active)
@@ -624,7 +628,7 @@ void set_done(vw& all)
 
 void end_pass_example(vw& all, example* ae)
 {
-  all.example_parser->lbl_parser.default_label(&ae->l);
+  all.example_parser->lbl_parser.default_label(ae->l);
   ae->end_pass = true;
   all.example_parser->in_pass_counter = 0;
 }
@@ -645,8 +649,8 @@ namespace VW
 example& get_unused_example(vw* all)
 {
   parser* p = all->example_parser;
-  auto ex = p->example_pool.get_object();
-  p->begin_parsed_examples++;
+  auto* ex = p->example_pool.get_object();
+  ex->example_counter = static_cast<size_t>(p->num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
   return *ex;
 }
 
@@ -660,7 +664,10 @@ void setup_example(vw& all, example* ae)
   if (all.example_parser->sort_features && ae->sorted == false) unique_sort_features(all.parse_mask, ae);
 
   if (all.example_parser->write_cache)
-  { VW::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask); }
+  {
+    VW::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask,
+        all.example_parser->_cache_temp_buffer);
+  }
 
   // Require all extents to be complete in an example.
 #ifndef NDEBUG
@@ -674,14 +681,14 @@ void setup_example(vw& all, example* ae)
   ae->_debug_current_reduction_depth = 0;
   ae->use_permutations = all.permutations;
 
-  ae->example_counter = static_cast<size_t>(all.example_parser->end_parsed_examples.load());
+  all.example_parser->num_setup_examples++;
   if (!all.example_parser->emptylines_separate_examples) all.example_parser->in_pass_counter++;
 
   // Determine if this example is part of the holdout set.
   ae->test_only = is_test_only(all.example_parser->in_pass_counter, all.holdout_period, all.holdout_after,
       all.holdout_set_off, all.example_parser->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
   // If this example has a test only label then it is true regardless.
-  ae->test_only |= all.example_parser->lbl_parser.test_label(&ae->l);
+  ae->test_only |= all.example_parser->lbl_parser.test_label(ae->l);
 
   if (all.privacy_activation)
   { ae->tag_hash = hashall(ae->tag.begin(), ae->tag.size(), all.hash_seed) % all.feature_bitset_size; }
@@ -691,7 +698,7 @@ void setup_example(vw& all, example* ae)
           (all.example_parser->lbl_parser.label_type != label_type_t::ccb || CCB::ec_is_example_unset(*ae))))
     all.example_parser->in_pass_counter++;
 
-  ae->weight = all.example_parser->lbl_parser.get_weight(&ae->l, ae->_reduction_features);
+  ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->_reduction_features);
 
   if (all.ignore_some)
   {
@@ -729,6 +736,7 @@ void setup_example(vw& all, example* ae)
 
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
+  ae->extent_interactions = &all.extent_interactions;
 }
 }  // namespace VW
 
@@ -737,18 +745,16 @@ namespace VW
 example* new_unused_example(vw& all)
 {
   example* ec = &get_unused_example(&all);
-  all.example_parser->lbl_parser.default_label(&ec->l);
-  all.example_parser->begin_parsed_examples++;
-  ec->example_counter = static_cast<size_t>(all.example_parser->begin_parsed_examples.load());
+  all.example_parser->lbl_parser.default_label(ec->l);
   return ec;
 }
+
 example* read_example(vw& all, const char* example_line)
 {
   example* ret = &get_unused_example(&all);
 
   VW::read_line(all, ret, example_line);
   setup_example(all, ret);
-  all.example_parser->end_parsed_examples++;
 
   return ret;
 }
@@ -775,7 +781,7 @@ void add_label(example* ec, float label, float weight, float base)
 example* import_example(vw& all, const std::string& label, primitive_feature_space* features, size_t len)
 {
   example* ret = &get_unused_example(&all);
-  all.example_parser->lbl_parser.default_label(&ret->l);
+  all.example_parser->lbl_parser.default_label(ret->l);
 
   if (label.length() > 0) parse_example_label(all, *ret, label);
 
@@ -788,7 +794,6 @@ example* import_example(vw& all, const std::string& label, primitive_feature_spa
   }
 
   setup_example(all, ret);
-  all.example_parser->end_parsed_examples++;
   return ret;
 }
 
@@ -831,7 +836,7 @@ void parse_example_label(vw& all, example& ec, const std::string& label)
   std::vector<VW::string_view> words;
   tokenize(' ', label, words);
   all.example_parser->lbl_parser.parse_label(
-      all.example_parser, all.example_parser->_shared_data, &ec.l, words, ec._reduction_features);
+      ec.l, ec._reduction_features, all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words);
 }
 
 void empty_example(vw& /*all*/, example& ec)
@@ -848,14 +853,8 @@ void empty_example(vw& /*all*/, example& ec)
   ec.num_features_from_interactions = 0;
 }
 
-void clean_example(vw& all, example& ec, bool rewind)
+void clean_example(vw& all, example& ec)
 {
-  if (rewind)
-  {
-    assert(all.example_parser->begin_parsed_examples.load() > 0);
-    all.example_parser->begin_parsed_examples--;
-  }
-
   empty_example(all, ec);
   all.example_parser->example_pool.return_object(&ec);
 }
@@ -865,11 +864,11 @@ void finish_example(vw& all, example& ec)
   // only return examples to the pool that are from the pool and not externally allocated
   if (!is_ring_example(all, &ec)) return;
 
-  clean_example(all, ec, false);
+  clean_example(all, ec);
 
   {
     std::lock_guard<std::mutex> lock(all.example_parser->output_lock);
-    ++all.example_parser->finished_examples;
+    ++all.example_parser->num_finished_examples;
     all.example_parser->output_done.notify_one();
   }
 }
@@ -877,7 +876,6 @@ void finish_example(vw& all, example& ec)
 
 void thread_dispatch(vw& all, const v_array<example*>& examples)
 {
-  all.example_parser->end_parsed_examples += examples.size();
   for (auto example : examples) { all.example_parser->ready_parsed_examples.push(example); }
 }
 
@@ -958,5 +956,5 @@ namespace VW
 {
 void end_parser(vw& all) { all.parse_thread.join(); }
 
-bool is_ring_example(vw& all, example* ae) { return all.example_parser->example_pool.is_from_pool(ae); }
+bool is_ring_example(const vw& all, const example* ae) { return all.example_parser->example_pool.is_from_pool(ae); }
 }  // namespace VW
