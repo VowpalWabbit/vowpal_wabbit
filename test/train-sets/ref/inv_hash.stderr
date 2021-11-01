@@ -1,4 +1,4 @@
-creating quadratic features for pairs: :: 
+creating quadratic features for pairs: ::
 WARNING: any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
 Num weight bits = 18
@@ -6,7 +6,7 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 using no cache
-Reading datafile = 
+Reading from stdin since no datafile given
 num sources = 1
 Enabled reductions: gd, generate_interactions, scorer-identity, oaa
 average  since         example        example  current  current  current
