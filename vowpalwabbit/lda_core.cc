@@ -498,7 +498,7 @@ inline void expdigammify<float, lda_math_mode::USE_SIMD>(vw& all, float* gamma, 
   vexpdigammify(all, gamma, threshold);
 #else
   // Do something sensible if SIMD math isn't available:
-  expdigammify<float, USE_FAST_APPROX>(all, gamma, threshold, 0.0);
+  expdigammify<float, lda_math_mode::USE_FAST_APPROX>(all, gamma, threshold, 0.0);
 #endif
 }
 
@@ -515,7 +515,7 @@ inline void expdigammify_2<float, lda_math_mode::USE_SIMD>(vw& all, float* gamma
   vexpdigammify_2(all, gamma, norm, threshold);
 #else
   // Do something sensible if SIMD math isn't available:
-  expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, threshold);
+  expdigammify_2<float, lda_math_mode::USE_FAST_APPROX>(all, gamma, norm, threshold);
 #endif
 }
 
