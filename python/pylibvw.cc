@@ -61,6 +61,7 @@ const size_t pDECISION_SCORES = 8;
 const size_t pACTION_PDF_VALUE = 9;
 const size_t pPDF = 10;
 const size_t pACTIVE_MULTICLASS = 11;
+const size_t pNOPRED = 12;
 
 void dont_delete_me(void* arg) {}
 
@@ -436,6 +437,8 @@ size_t my_get_prediction_type(vw_ptr all)
       return pPDF;
     case VW::prediction_type_t::active_multiclass:
       return pACTIVE_MULTICLASS;
+    case VW::prediction_type_t::nopred:
+      return pNOPRED;
     default:
       THROW("unsupported prediction type used");
   }
@@ -838,6 +841,8 @@ py::list ex_get_multilabel_predictions(example_ptr ec)
   return values;
 }
 
+char ex_get_nopred(example_ptr ec) { return ec->pred.nopred; }
+
 uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return (uint32_t)ec->l.cs.costs.size(); }
 float ex_get_costsensitive_cost(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].x; }
@@ -1221,7 +1226,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
       .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
       .def_readonly("pPDF", pPDF, "PDF prediction type")
-      .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type");
+      .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type")
+      .def_readonly("pNOPRED", pNOPRED, "Nopred prediction type");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1295,6 +1301,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_active_multiclass", &ex_get_active_multiclass, "Get active multiclass from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
+      .def("get_nopred", &ex_get_nopred, "Get nopred from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
           "Assuming a cost_sensitive label type, get the prediction")
       .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs,

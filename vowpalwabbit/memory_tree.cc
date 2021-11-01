@@ -1276,8 +1276,8 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
                .set_params_per_weight(num_learners)
                .set_end_pass(end_pass)
                .set_save_load(save_load_memory_tree)
-               .set_prediction_type(pred_type)
-               .set_label_type(label_type);
+               .set_output_prediction_type(pred_type)
+               .set_input_label_type(label_type);
 
   if (!oas) { l.set_finish_example(MULTICLASS::finish_example<memory_tree&>); }
 

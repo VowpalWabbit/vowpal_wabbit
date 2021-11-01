@@ -2541,12 +2541,16 @@ train-sets/ref/slates_simple_w_interactions.stderr
    train-sets/ref/csoaa_ldf_probabilities.stderr
    pred-sets/ref/csoaa_ldf_probabilities.predict
 
-# Test 356: --probabilities --oaa one-indexed
+# Test 356: fuzz testing crash due to partial model file
+./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/truncated_model
+    train-sets/ref/truncated_model_crash.stdout
+
+# Test 357: --probabilities --oaa one-indexed
 {VW} -d train-sets/probabilities_one_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_one_ind_probabilities.predict
    train-sets/ref/oaa_one_ind_probabilities.stderr
    pred-sets/ref/oaa_one_ind_probabilities.predict
 
-# Test 357: --probabilities --oaa zero-indexed
+# Test 358: --probabilities --oaa zero-indexed
 {VW} -d train-sets/probabilities_zero_ind.dat --probabilities --oaa=4 --loss_function=logistic -p oaa_zero_ind_probabilities.predict --zero_ind
    train-sets/ref/oaa_zero_ind_probabilities.stderr
    pred-sets/ref/oaa_zero_ind_probabilities.predict
