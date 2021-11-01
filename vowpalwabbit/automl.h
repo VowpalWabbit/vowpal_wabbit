@@ -113,6 +113,8 @@ struct interaction_config_manager : config_manager
   uint64_t seed;
   rand_state random_state;
   uint64_t priority_challengers;
+  uint64_t config_size = 0;
+  bool keep_configs;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
@@ -126,7 +128,7 @@ struct interaction_config_manager : config_manager
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
-  interaction_config_manager(uint64_t, uint64_t, uint64_t, uint64_t,
+  interaction_config_manager(uint64_t, uint64_t, uint64_t, uint64_t, bool,
       float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&));
 
   void apply_config(example*, uint64_t);

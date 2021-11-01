@@ -6,11 +6,12 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --automl 3 --cb_adf --cb_explore_adf --cb_type mtr --csoaa_ldf multiline --csoaa_rank --epsilon 0.200000002980232 --priority_type least_exclusion
-Checksum: 1138623076
+options: --automl 3 --cb_adf --cb_explore_adf --cb_type mtr --csoaa_ldf multiline --csoaa_rank --epsilon 0.200000002980232 --keep_configs --priority_type least_exclusion
+Checksum: 3746788722
 _automl_state = 1
 _automl_config_manager_count = 3
 _automl_config_manager_champ = 0
+_automl_config_manager_config_size = 6
 _automl_config_manager_ns_counter.size() = 10
 _automl_config_manager_ns_counter.key0 = 69
 _automl_config_manager_ns_counter[69] = 18
