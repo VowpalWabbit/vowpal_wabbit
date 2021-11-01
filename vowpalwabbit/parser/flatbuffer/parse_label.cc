@@ -13,6 +13,7 @@
 #include "../../action_score.h"
 #include "../../best_constant.h"
 #include "parse_example_flatbuffer.h"
+#include "slates_label.h"
 
 namespace VW
 {
@@ -136,18 +137,18 @@ void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
   {
     l->slates.labeled = label->labeled();
     l->slates.cost = label->cost();
-    l->slates.type = VW::slates::shared;
+    l->slates.type = VW::slates::example_type::shared;
   }
   else if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_action)
   {
     l->slates.slot_id = label->slot();
-    l->slates.type = VW::slates::action;
+    l->slates.type = VW::slates::example_type::action;
   }
   else if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_slot)
   {
     l->slates.labeled = label->labeled();
     l->slates.probabilities.clear();
-    l->slates.type = VW::slates::slot;
+    l->slates.type = VW::slates::example_type::slot;
 
     for (auto const& as : *(label->probabilities())) l->slates.probabilities.push_back({as->action(), as->score()});
   }
