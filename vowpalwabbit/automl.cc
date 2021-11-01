@@ -249,8 +249,7 @@ bool interaction_config_manager::repopulate_index_queue()
   for (size_t i = 0; i < config_size; ++i)
   {
     // Only re-add if not removed and not live
-    if (configs[i].state == VW::automl::config_state::New ||
-        configs[i].state == VW::automl::config_state::Inactive)
+    if (configs[i].state == VW::automl::config_state::New || configs[i].state == VW::automl::config_state::Inactive)
     {
       float priority = (*calc_priority)(configs[i], ns_counter);
       index_queue.push(std::make_pair(priority, i));
@@ -418,9 +417,7 @@ void interaction_config_manager::update_champ()
   }
   if (champ_change)
   {
-    if (keep_configs) {
-      config_oracle();
-    }
+    if (keep_configs) { config_oracle(); }
     else
     {
       while (!index_queue.empty()) { index_queue.pop(); };
@@ -636,8 +633,8 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
 
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
-  auto cm = VW::make_unique<interaction_config_manager>(
-      global_lease, max_live_configs, all.random_seed, static_cast<uint64_t>(priority_challengers), keep_configs, calc_priority);
+  auto cm = VW::make_unique<interaction_config_manager>(global_lease, max_live_configs, all.random_seed,
+      static_cast<uint64_t>(priority_challengers), keep_configs, calc_priority);
   auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
   assert(max_live_configs <= MAX_CONFIGS);
 

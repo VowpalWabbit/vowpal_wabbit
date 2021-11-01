@@ -103,8 +103,9 @@ BOOST_AUTO_TEST_CASE(automl_first_champ_switch)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --keep_configs", test_hooks,
-      num_iterations, seed);
+      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
+      "--keep_configs",
+      test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
 }
@@ -115,12 +116,15 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
 {
   callback_map empty_hooks;
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --keep_configs", empty_hooks);
+      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
+      "--keep_configs",
+      empty_hooks);
   float without_save = ctr.back();
   BOOST_CHECK_GT(without_save, 0.7f);
 
   ctr = simulator::_test_helper_save_load(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --keep_configs "
+      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
+      "--keep_configs "
       "--save_resume");
   float with_save = ctr.back();
   BOOST_CHECK_GT(with_save, 0.7f);
@@ -151,8 +155,9 @@ BOOST_AUTO_TEST_CASE(assert_0th_event_automl)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --keep_configs", test_hooks,
-      num_iterations);
+      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
+      "--keep_configs",
+      test_hooks, num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
 }
@@ -220,8 +225,9 @@ BOOST_AUTO_TEST_CASE(assert_live_configs_and_lease)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --keep_configs", test_hooks,
-      num_iterations);
+      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 "
+      "--keep_configs",
+      test_hooks, num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
 }
