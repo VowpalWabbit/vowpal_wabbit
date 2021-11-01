@@ -532,20 +532,21 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     }
     else
     {
-      std::string temp = all.data_filename;
-      if (!quiet) *(all.trace_message) << "Reading datafile = " << temp << endl;
+      std::string filename_to_read = all.data_filename;
+      bool stdin_used = false;
 
       auto should_use_compressed = input_options.compressed || VW::ends_with(all.data_filename, ".gz");
 
       try
       {
         std::unique_ptr<VW::io::reader> adapter;
-        if (temp != "")
+        if (!filename_to_read.empty())
         {
-          adapter = should_use_compressed ? VW::io::open_compressed_file_reader(temp) : VW::io::open_file_reader(temp);
+          adapter = should_use_compressed ? VW::io::open_compressed_file_reader(filename_to_read) : VW::io::open_file_reader(filename_to_read);
         }
         else if (!all.stdin_off)
         {
+          stdin_used = true;
           // Should try and use stdin
           if (should_use_compressed) { adapter = VW::io::open_compressed_stdin(); }
           else
@@ -554,12 +555,21 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
           }
         }
 
+        if (!quiet)
+        {
+          if (stdin_used) { *(all.trace_message) << "Reading from stdin since no datafile given" << endl; }
+          else
+          {
+            *(all.trace_message) << "Reading datafile = " << filename_to_read << endl;
+          }
+        }
+
         if (adapter) { all.example_parser->input.add_file(std::move(adapter)); }
       }
       catch (std::exception const&)
       {
-        // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
-        if (!temp.empty()) { *(all.trace_message) << "can't open '" << temp << "', sailing on!" << endl; }
+        // when trying to fix this exception, consider that an empty filename_to_read is valid if all.stdin_off is false
+        if (!filename_to_read.empty()) { *(all.trace_message) << "can't open '" << filename_to_read << "', sailing on!" << endl; }
         else
         {
           throw;
