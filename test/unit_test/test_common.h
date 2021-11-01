@@ -79,4 +79,4 @@ inline std::ostream& operator<<(std::ostream& os, CCB::example_type ex_type)
   os << VW::to_string(ex_type);
   return os;
 }
-}
+}  // namespace std

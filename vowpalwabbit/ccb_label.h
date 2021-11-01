@@ -111,4 +111,3 @@ size_t read_cached_label(CCB::label& ld, io_buf& cache);
 
 extern label_parser ccb_label_parser;
 }  // namespace CCB
-

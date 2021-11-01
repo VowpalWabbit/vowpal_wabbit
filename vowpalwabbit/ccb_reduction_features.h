@@ -26,6 +26,7 @@ struct reduction_features
 };
 }
 
-namespace VW {
+namespace VW
+{
 VW::string_view to_string(CCB::example_type type);
 }  // namespace VW

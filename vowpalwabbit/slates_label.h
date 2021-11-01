@@ -10,7 +10,6 @@
 #include "action_score.h"
 namespace VW
 {
-
 namespace slates
 {
 enum class example_type : uint8_t
