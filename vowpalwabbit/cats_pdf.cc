@@ -189,9 +189,9 @@ LEARNER::base_learner* setup(setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(setup))
                 .set_learn_returns_prediction(true)
-                .set_prediction_type(VW::prediction_type_t::pdf)
+                .set_output_prediction_type(VW::prediction_type_t::pdf)
                 .set_finish_example(finish_example)
-                .set_label_type(VW::label_type_t::continuous)
+                .set_input_label_type(VW::label_type_t::continuous)
                 .build();
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;

@@ -238,8 +238,10 @@ private:
   save_metric_data persist_metrics_fd;
   func_data finisher_fd;
   std::string name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
-  label_type_t _input_label_type;
   prediction_type_t _output_pred_type;
+  prediction_type_t _input_pred_type;
+  label_type_t _output_label_type;
+  label_type_t _input_label_type;
   bool _is_multiline;  // Is this a single-line or multi-line reduction?
 
   std::shared_ptr<void> learner_data;
@@ -444,9 +446,9 @@ public:
   }
 
   prediction_type_t get_output_prediction_type() { return _output_pred_type; }
-
+  prediction_type_t get_input_prediction_type() { return _input_pred_type; }
+  label_type_t get_output_label_type() { return _output_label_type; }
   label_type_t get_input_label_type() { return _input_label_type; }
-
   bool is_multiline() { return _is_multiline; }
 };
 
@@ -611,13 +613,25 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_prediction_type(prediction_type_t pred_type)
+  FluentBuilderT& set_output_prediction_type(prediction_type_t pred_type)
   {
     this->_learner->_output_pred_type = pred_type;
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_label_type(label_type_t label_type)
+  FluentBuilderT& set_input_prediction_type(prediction_type_t pred_type)
+  {
+    this->_learner->_input_pred_type = pred_type;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_output_label_type(label_type_t label_type)
+  {
+    this->_learner->_output_label_type = label_type;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_input_label_type(label_type_t label_type)
   {
     this->_learner->_input_label_type = label_type;
     return *static_cast<FluentBuilderT*>(this);
@@ -651,8 +665,10 @@ struct reduction_learner_builder
     this->set_learn_returns_prediction(false);
 
     // Default here is passthrough.
-    super::set_prediction_type(base->get_output_prediction_type());
-    super::set_label_type(base->get_input_label_type());
+    super::set_output_prediction_type(base->get_output_prediction_type());
+    super::set_input_prediction_type(base->get_input_prediction_type());
+    super::set_output_label_type(base->get_output_label_type());
+    super::set_input_label_type(base->get_input_label_type());
   }
 
   reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_params_per_weight(size_t params_per_weight)
@@ -688,8 +704,10 @@ struct reduction_no_data_learner_builder
 
     set_params_per_weight(1);
     // Default here is passthrough.
-    super::set_prediction_type(base->get_output_prediction_type());
-    super::set_label_type(base->get_input_label_type());
+    super::set_output_prediction_type(base->get_output_prediction_type());
+    super::set_input_prediction_type(base->get_input_prediction_type());
+    super::set_output_label_type(base->get_output_label_type());
+    super::set_input_label_type(base->get_input_label_type());
   }
 
   reduction_no_data_learner_builder<ExampleT, BaseLearnerT>& set_params_per_weight(size_t params_per_weight)
@@ -709,8 +727,8 @@ struct base_learner_builder
     : public common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>
 {
   using super = common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>;
-  base_learner_builder(
-      std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t pred_type, label_type_t label_type)
+  base_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t out_pred_type,
+      label_type_t in_label_type)
       : common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>(
             std::move(data), name)
   {
@@ -728,8 +746,10 @@ struct base_learner_builder
 
     this->_learner->learn_fd.data = this->_learner->learner_data.get();
 
-    super::set_prediction_type(pred_type);
-    super::set_label_type(label_type);
+    super::set_output_prediction_type(out_pred_type);
+    super::set_input_prediction_type(prediction_type_t::nopred);
+    super::set_output_label_type(label_type_t::nolabel);
+    super::set_input_label_type(in_label_type);
 
     set_params_per_weight(1);
   }
@@ -772,9 +792,9 @@ reduction_no_data_learner_builder<ExampleT, BaseLearnerT> make_no_data_reduction
 template <class DataT, class ExampleT>
 base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&& data,
     void (*learn_fn)(DataT&, base_learner&, ExampleT&), void (*predict_fn)(DataT&, base_learner&, ExampleT&),
-    const std::string& name, prediction_type_t pred_type, label_type_t label_type)
+    const std::string& name, prediction_type_t out_pred_type, label_type_t in_label_type)
 {
-  auto builder = base_learner_builder<DataT, ExampleT>(std::move(data), name, pred_type, label_type);
+  auto builder = base_learner_builder<DataT, ExampleT>(std::move(data), name, out_pred_type, in_label_type);
   builder.set_learn(learn_fn);
   builder.set_update(learn_fn);
   builder.set_predict(predict_fn);
@@ -783,11 +803,11 @@ base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&&
 
 template <class ExampleT>
 base_learner_builder<char, ExampleT> make_no_data_base_learner(void (*learn_fn)(char&, base_learner&, ExampleT&),
-    void (*predict_fn)(char&, base_learner&, ExampleT&), const std::string& name, prediction_type_t pred_type,
-    label_type_t label_type)
+    void (*predict_fn)(char&, base_learner&, ExampleT&), const std::string& name, prediction_type_t out_pred_type,
+    label_type_t in_label_type)
 {
   return make_base_learner<char, ExampleT>(
-      std::unique_ptr<char>(nullptr), learn_fn, predict_fn, name, pred_type, label_type);
+      std::unique_ptr<char>(nullptr), learn_fn, predict_fn, name, out_pred_type, in_label_type);
 }
 
 }  // namespace LEARNER
