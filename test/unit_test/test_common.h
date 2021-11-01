@@ -11,6 +11,8 @@
 #include <string>
 
 #include "parse_example_json.h"
+#include "slates_label.h"
+#include "ccb_reduction_features.h"
 #include "action_score.h"
 #include "vw.h"
 
@@ -63,3 +65,18 @@ inline std::ostream& operator<<(std::ostream& os, const namespace_extent& extent
   return os;
 }
 }  // namespace VW
+
+namespace std
+{
+inline std::ostream& operator<<(std::ostream& os, VW::slates::example_type ex_type)
+{
+  os << VW::to_string(ex_type);
+  return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, CCB::example_type ex_type)
+{
+  os << VW::to_string(ex_type);
+  return os;
+}
+}

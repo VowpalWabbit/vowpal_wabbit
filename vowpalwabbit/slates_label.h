@@ -10,6 +10,7 @@
 #include "action_score.h"
 namespace VW
 {
+
 namespace slates
 {
 enum class example_type : uint8_t
@@ -61,4 +62,6 @@ size_t read_cached_label(VW::slates::label& ld, io_buf& cache);
 
 extern label_parser slates_label_parser;
 }  // namespace slates
+
+VW::string_view to_string(VW::slates::example_type);
 }  // namespace VW

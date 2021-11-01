@@ -344,6 +344,7 @@
     <ClCompile Include="cbify.cc" />
     <ClCompile Include="cb_to_cb_adf.cc" />
     <ClCompile Include="ccb_label.cc" />
+    <ClCompile Include="ccb_reduction_features  .cc" />
     <ClCompile Include="classweight.cc" />
     <ClCompile Include="conditional_contextual_bandit.cc" />
     <ClCompile Include="confidence.cc" />
