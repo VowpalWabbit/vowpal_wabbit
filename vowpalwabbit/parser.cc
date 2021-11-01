@@ -542,7 +542,8 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         std::unique_ptr<VW::io::reader> adapter;
         if (!filename_to_read.empty())
         {
-          adapter = should_use_compressed ? VW::io::open_compressed_file_reader(filename_to_read) : VW::io::open_file_reader(filename_to_read);
+          adapter = should_use_compressed ? VW::io::open_compressed_file_reader(filename_to_read)
+                                          : VW::io::open_file_reader(filename_to_read);
         }
         else if (!all.stdin_off)
         {
@@ -569,7 +570,8 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       catch (std::exception const&)
       {
         // when trying to fix this exception, consider that an empty filename_to_read is valid if all.stdin_off is false
-        if (!filename_to_read.empty()) { *(all.trace_message) << "can't open '" << filename_to_read << "', sailing on!" << endl; }
+        if (!filename_to_read.empty())
+        { *(all.trace_message) << "can't open '" << filename_to_read << "', sailing on!" << endl; }
         else
         {
           throw;
