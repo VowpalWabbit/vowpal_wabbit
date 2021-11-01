@@ -16,7 +16,7 @@
 using simulator::callback_map;
 using simulator::cb_sim;
 
-constexpr float AUTO_ML_FLOAT_TOL = 0.0001f;
+constexpr float AUTO_ML_FLOAT_TOL = 0.001f;
 
 namespace vw_hash_helpers
 {

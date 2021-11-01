@@ -206,7 +206,7 @@ def test_without_interaction():
     assert(ctr[-1] <= 0.49)
     assert(ctr[-1] >= 0.38)
 
-def test_custom_reduction(config=3, sim_saveload=False):
+def test_automl_reduction(config=3, sim_saveload=False):
     # 10281881982--audit --invert_hash
     args = f"--invert_hash readable.vw --automl {str(config)} --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json"
     if sim_saveload:
