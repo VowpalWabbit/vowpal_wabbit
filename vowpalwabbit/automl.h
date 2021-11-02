@@ -113,7 +113,7 @@ struct interaction_config_manager : config_manager
   uint64_t seed;
   rand_state random_state;
   uint64_t priority_challengers;
-  uint64_t config_size = 0;
+  uint64_t valid_config_size = 0;
   bool keep_configs;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack

@@ -154,7 +154,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
   configs[0] = conf;
   scored_config sc;
   scores.push_back(sc);
-  ++config_size;
+  ++valid_config_size;
 }
 
 // This code is primarily borrowed from expand_quadratics_wildcard_interactions in
@@ -218,24 +218,27 @@ void interaction_config_manager::config_oracle()
     std::map<namespace_index, std::set<namespace_index>> new_exclusions(
         configs[scores[current_champ].config_index].exclusions);
     new_exclusions[ns1].insert(ns2);
-    if (config_size < configs.size())
+    // Note that configs are never actually cleared, but valid_config_size is set to 0 instead to denote that
+    // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
+    // configs exist we'll generate a new one.
+    if (valid_config_size < configs.size())
     {
-      configs[config_size].exclusions.clear();
-      configs[config_size].exclusions = new_exclusions;
-      configs[config_size].lease = global_lease;
-      configs[config_size].ips = 0;
-      configs[config_size].lower_bound = std::numeric_limits<float>::infinity();
-      configs[config_size].state = VW::automl::config_state::New;
+      configs[valid_config_size].exclusions.clear();
+      configs[valid_config_size].exclusions = new_exclusions;
+      configs[valid_config_size].lease = global_lease;
+      configs[valid_config_size].ips = 0;
+      configs[valid_config_size].lower_bound = std::numeric_limits<float>::infinity();
+      configs[valid_config_size].state = VW::automl::config_state::New;
     }
     else
     {
       exclusion_config conf(global_lease);
       conf.exclusions = new_exclusions;
-      configs[config_size] = conf;
+      configs[valid_config_size] = conf;
     }
-    float priority = (*calc_priority)(configs[config_size], ns_counter);
-    index_queue.push(std::make_pair(priority, config_size));
-    ++config_size;
+    float priority = (*calc_priority)(configs[valid_config_size], ns_counter);
+    index_queue.push(std::make_pair(priority, valid_config_size));
+    ++valid_config_size;
   }
 }
 
@@ -246,7 +249,7 @@ void interaction_config_manager::config_oracle()
 // on ns_counter (which is updated as each example is processed)
 bool interaction_config_manager::repopulate_index_queue()
 {
-  for (size_t i = 0; i < config_size; ++i)
+  for (size_t i = 0; i < valid_config_size; ++i)
   {
     // Only re-add if not removed and not live
     if (configs[i].state == VW::automl::config_state::New || configs[i].state == VW::automl::config_state::Inactive)
@@ -354,7 +357,7 @@ void interaction_config_manager::update_champ()
   bool champ_change = false;
 
   // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
-  for (uint64_t config_index = 0; config_index < config_size; ++config_index)
+  for (uint64_t config_index = 0; config_index < valid_config_size; ++config_index)
   {
     if (configs[config_index].state == VW::automl::config_state::New ||
         configs[config_index].state == VW::automl::config_state::Removed ||
@@ -417,8 +420,7 @@ void interaction_config_manager::update_champ()
   }
   if (champ_change)
   {
-    if (keep_configs) { config_oracle(); }
-    else
+    if (!keep_configs)
     {
       while (!index_queue.empty()) { index_queue.pop(); };
       uint64_t champ_config_index = scores[current_champ].config_index;
@@ -433,9 +435,9 @@ void interaction_config_manager::update_champ()
       scores.clear();
       scores.push_back(champ_score);
       current_champ = 0;
-      config_size = 1;
-      config_oracle();
+      valid_config_size = 1;
     }
+    config_oracle();
   }
 }
 
@@ -741,7 +743,7 @@ size_t read_model_field(io_buf& io, VW::automl::interaction_config_manager& cm)
   size_t bytes = 0;
   bytes += read_model_field(io, cm.total_learn_count);
   bytes += read_model_field(io, cm.current_champ);
-  bytes += read_model_field(io, cm.config_size);
+  bytes += read_model_field(io, cm.valid_config_size);
   bytes += read_model_field(io, cm.ns_counter);
   bytes += read_model_field(io, cm.configs);
   bytes += read_model_field(io, cm.scores);
@@ -756,7 +758,7 @@ size_t write_model_field(
   size_t bytes = 0;
   bytes += write_model_field(io, cm.total_learn_count, upstream_name + "_count", text);
   bytes += write_model_field(io, cm.current_champ, upstream_name + "_champ", text);
-  bytes += write_model_field(io, cm.config_size, upstream_name + "_config_size", text);
+  bytes += write_model_field(io, cm.valid_config_size, upstream_name + "_valid_config_size", text);
   bytes += write_model_field(io, cm.ns_counter, upstream_name + "_ns_counter", text);
   bytes += write_model_field(io, cm.configs, upstream_name + "_configs", text);
   bytes += write_model_field(io, cm.scores, upstream_name + "_scores", text);

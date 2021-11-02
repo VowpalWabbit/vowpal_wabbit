@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE(clear_configs)
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(clear_champ_switch, aml->cm->total_learn_count);
     BOOST_CHECK_EQUAL(aml->cm->scores.size(), 1);
-    BOOST_CHECK_EQUAL(aml->cm->config_size, 6);
+    BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 6);
     BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
     return true;
   });

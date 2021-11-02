@@ -11,7 +11,7 @@ Checksum: 3746788722
 _automl_state = 1
 _automl_config_manager_count = 3
 _automl_config_manager_champ = 0
-_automl_config_manager_config_size = 6
+_automl_config_manager_valid_config_size = 6
 _automl_config_manager_ns_counter.size() = 10
 _automl_config_manager_ns_counter.key0 = 69
 _automl_config_manager_ns_counter[69] = 18
