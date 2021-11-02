@@ -1578,7 +1578,7 @@ public:
   void init(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
       bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict)
   {
-    assert(_reuse_mem != nullptr);
+    assert(reuse_mem != nullptr);
     _label_parser = lbl_parser;
     _hash_func = hash_func;
     _hash_seed = hash_seed;
