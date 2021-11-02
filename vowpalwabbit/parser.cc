@@ -536,7 +536,6 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       std::string input_name = filename_to_read;
       auto should_use_compressed = input_options.compressed || VW::ends_with(filename_to_read, ".gz");
 
-      
       try
       {
         std::unique_ptr<VW::io::reader> adapter;
@@ -569,9 +568,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       {
         // when trying to fix this exception, consider that an empty filename_to_read is valid if all.stdin_off is false
         if (!filename_to_read.empty())
-        {
-          *(all.trace_message) << "can't open '" << filename_to_read << "', sailing on!" << endl;
-        }
+        { *(all.trace_message) << "can't open '" << filename_to_read << "', sailing on!" << endl; }
         else
         {
           throw;
