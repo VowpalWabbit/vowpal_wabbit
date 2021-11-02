@@ -52,7 +52,6 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #include <cerrno>
 #include <cstdio>
 #include <cassert>
-#include <memory>
 
 #include "parse_primitives.h"
 #include "parse_example.h"

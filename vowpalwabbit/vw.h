@@ -19,8 +19,6 @@
  * - [Tutorials](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Tutorial)
  */
 
-#include <cstdint>
-#include "vw_string_view.h"
 #ifdef _WIN32
 #  ifdef LEAKCHECK
 // Visual Leak Detector for memory leak detection on Windows
