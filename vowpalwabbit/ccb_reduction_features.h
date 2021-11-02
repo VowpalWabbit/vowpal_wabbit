@@ -5,7 +5,6 @@
 #pragma once
 
 #include "v_array.h"
-#include "vw_string_view.h"
 
 #include <cstdint>
 
@@ -28,5 +27,5 @@ struct reduction_features
 
 namespace VW
 {
-VW::string_view to_string(CCB::example_type type);
+const char* to_string(CCB::example_type type);
 }  // namespace VW

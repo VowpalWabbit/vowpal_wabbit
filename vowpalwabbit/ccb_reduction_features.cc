@@ -4,7 +4,7 @@
 
 #include "ccb_reduction_features.h"
 
-VW::string_view VW::to_string(CCB::example_type ex_type)
+const char* VW::to_string(CCB::example_type ex_type)
 {
 #define CASE(type) \
   case type:       \
