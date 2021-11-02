@@ -208,7 +208,7 @@ def test_without_interaction():
 
 def test_automl_reduction(config=3, sim_saveload=False):
     # 10281881982--audit --invert_hash
-    args = f"--invert_hash readable.vw --automl {str(config)} --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json --keep_configs"
+    args = f"--invert_hash readable.vw --automl {str(config)} --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json --keep_configs --oracle_type rand"
     if sim_saveload:
         ctr = _test_helper_save_load(vw_arg=f"--save_resume {args}", log_filename=f"custom_reduc_{str(config)}.txt")
     else:

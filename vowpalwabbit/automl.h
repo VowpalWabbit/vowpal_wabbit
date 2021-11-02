@@ -115,6 +115,7 @@ struct interaction_config_manager : config_manager
   uint64_t priority_challengers;
   uint64_t valid_config_size = 0;
   bool keep_configs;
+  std::string oracle_type;
 
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
@@ -128,7 +129,7 @@ struct interaction_config_manager : config_manager
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
-  interaction_config_manager(uint64_t, uint64_t, uint64_t, uint64_t, bool,
+  interaction_config_manager(uint64_t, uint64_t, uint64_t, uint64_t, bool, std::string,
       float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&));
 
   void apply_config(example*, uint64_t);
@@ -152,6 +153,7 @@ private:
   priority_func* calc_priority;
   bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(uint64_t);
+  void insert_config(std::map<namespace_index, std::set<namespace_index>>);
 };
 
 template <typename CMType>
