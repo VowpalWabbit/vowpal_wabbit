@@ -270,7 +270,7 @@ void interaction_config_manager::config_oracle()
       for (namespace_index ns2 : ns_pair.second)
       {
         std::map<namespace_index, std::set<namespace_index>> new_exclusions(
-          configs[scores[current_champ].config_index].exclusions);
+            configs[scores[current_champ].config_index].exclusions);
         new_exclusions[ns1].erase(ns2);
         insert_config(new_exclusions);
       }

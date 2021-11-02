@@ -322,8 +322,9 @@ BOOST_AUTO_TEST_CASE(clear_configs)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --oracle_type rand", test_hooks,
-      num_iterations, seed);
+      "--automl 3 --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --oracle_type "
+      "rand",
+      test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
 }
@@ -365,7 +366,6 @@ BOOST_AUTO_TEST_CASE(clear_configs_one_diff)
     BOOST_CHECK_EQUAL(aml->cm->scores[2].live_interactions.size(), 4);
     return true;
   });
-
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
