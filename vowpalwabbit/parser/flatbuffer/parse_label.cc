@@ -12,8 +12,8 @@
 #include "../../cb.h"
 #include "../../action_score.h"
 #include "../../best_constant.h"
+#include "../../slates_label.h"
 #include "parse_example_flatbuffer.h"
-#include "slates_label.h"
 
 namespace VW
 {
