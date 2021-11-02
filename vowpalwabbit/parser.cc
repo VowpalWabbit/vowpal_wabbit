@@ -98,14 +98,18 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   size_t version_buffer_length;
   if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&version_buffer_length),
           sizeof(version_buffer_length))) < sizeof(version_buffer_length))
-  { THROW("failed to read: version_buffer_length"); }
+  {
+    THROW("failed to read: version_buffer_length");
+  }
 
   if (version_buffer_length > 61) THROW("cache version too long, cache file is probably invalid");
   if (version_buffer_length == 0) THROW("cache version too short, cache file is probably invalid");
 
   std::vector<char> version_buffer(version_buffer_length);
   if (static_cast<size_t>(cache_reader.read(version_buffer.data(), version_buffer_length)) < version_buffer_length)
-  { THROW("failed to read: version buffer"); }
+  {
+    THROW("failed to read: version buffer");
+  }
   VW::version_struct cache_version(version_buffer.data());
   if (cache_version != VW::version)
   {
@@ -124,7 +128,9 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   uint32_t cache_numbits;
   if (static_cast<size_t>(cache_reader.read(reinterpret_cast<char*>(&cache_numbits), sizeof(cache_numbits))) <
       sizeof(cache_numbits))
-  { THROW("failed to read"); }
+  {
+    THROW("failed to read");
+  }
 
   return cache_numbits;
 }
@@ -168,7 +174,9 @@ void set_json_reader(vw& all, bool dsjson = false)
   all.example_parser->decision_service_json = dsjson;
 
   if (dsjson && all.options->was_supplied("extra_metrics"))
-  { all.example_parser->metrics = VW::make_unique<dsjson_metrics>(); }
+  {
+    all.example_parser->metrics = VW::make_unique<dsjson_metrics>();
+  }
 }
 
 void set_daemon_reader(vw& all, bool json = false, bool dsjson = false)
@@ -220,10 +228,12 @@ void reset_source(vw& all, size_t numbits)
       // wait for all predictions to be sent back to client
       {
         std::unique_lock<std::mutex> lock(all.example_parser->output_lock);
-        all.example_parser->output_done.wait(lock, [&] {
-          return all.example_parser->num_finished_examples == all.example_parser->num_setup_examples &&
-              all.example_parser->ready_parsed_examples.size() == 0;
-        });
+        all.example_parser->output_done.wait(lock,
+            [&]
+            {
+              return all.example_parser->num_finished_examples == all.example_parser->num_setup_examples &&
+                  all.example_parser->ready_parsed_examples.size() == 0;
+            });
       }
 
       all.final_prediction_sink.clear();
@@ -399,7 +409,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     {
       socklen_t address_size = sizeof(address);
       if (getsockname(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&address), &address_size) < 0)
-      { *(all.trace_message) << "getsockname: " << VW::strerror_to_string(errno) << endl; }
+      {
+        *(all.trace_message) << "getsockname: " << VW::strerror_to_string(errno) << endl;
+      }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
       if (!port_file.is_open()) THROW("error writing port file: " << input_options.port_file);
@@ -533,7 +545,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     else
     {
       std::string filename_to_read = all.data_filename;
-      bool stdin_used = false;
+      std::string input_name = filename_to_read;
 
       auto should_use_compressed = input_options.compressed || VW::ends_with(all.data_filename, ".gz");
 
@@ -547,7 +559,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         }
         else if (!all.stdin_off)
         {
-          stdin_used = true;
+          input_name = "stdin";
           // Should try and use stdin
           if (should_use_compressed) { adapter = VW::io::open_compressed_stdin(); }
           else
@@ -555,15 +567,13 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
             adapter = VW::io::open_stdin();
           }
         }
-
-        if (!quiet)
+        else
         {
-          if (stdin_used) { *(all.trace_message) << "Reading datafile = none (stdin)" << endl; }
-          else
-          {
-            *(all.trace_message) << "Reading datafile = " << filename_to_read << endl;
-          }
+          // Stdin is off and no file was passed.
+          input_name = "none";
         }
+
+        if (!quiet) { *(all.trace_message) << "Reading datafile = " << input_name << endl; }
 
         if (adapter) { all.example_parser->input.add_file(std::move(adapter)); }
       }
@@ -571,7 +581,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
       {
         // when trying to fix this exception, consider that an empty filename_to_read is valid if all.stdin_off is false
         if (!filename_to_read.empty())
-        { *(all.trace_message) << "can't open '" << filename_to_read << "', sailing on!" << endl; }
+        {
+          *(all.trace_message) << "can't open '" << filename_to_read << "', sailing on!" << endl;
+        }
         else
         {
           throw;
@@ -733,10 +745,7 @@ void setup_example(vw& all, example* ae)
     for (features& fs : *ae)
       for (auto& j : fs.indicies) j *= multiplier;
   ae->num_features = 0;
-  for (const features& fs : *ae)
-  {
-    ae->num_features += fs.size();
-  }
+  for (const features& fs : *ae) { ae->num_features += fs.size(); }
 
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
