@@ -1,17 +1,13 @@
-/*
-Copyright (c) by respective owners including Yahoo!, Microsoft, and
-individual contributors. All rights reserved.  Released under a BSD
-license as described in the file LICENSE.
- */
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #pragma once
 
 #include <algorithm>
 #include <limits>
 #include <tuple>
-#include "vw_exception.h"
 #include "io_buf.h"
-#include "model_utils.h"
 
 namespace VW
 {
@@ -23,8 +19,10 @@ class ChiSquared;
 
 namespace model_utils
 {
-size_t process_model_field(io_buf&, VW::distributionally_robust::Duals&, bool, const std::string&, bool);
-size_t process_model_field(io_buf&, VW::distributionally_robust::ChiSquared&, bool, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::distributionally_robust::Duals&);
+size_t write_model_field(io_buf&, const VW::distributionally_robust::Duals&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::distributionally_robust::ChiSquared&);
+size_t write_model_field(io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
 }  // namespace model_utils
 
 namespace distributionally_robust
@@ -43,8 +41,19 @@ namespace distributionally_robust
     {
     }
     double qfunc(double w, double r) { return unbounded ? 1 : -(gamma + (beta + r) * w) / ((n + 1) * kappa); }
-    friend size_t VW::model_utils::process_model_field(
-        io_buf&, VW::distributionally_robust::Duals&, bool, const std::string&, bool);
+
+    void reset()
+    {
+      unbounded = false;
+      kappa = 0.f;
+      gamma = 0.f;
+      beta = 0.f;
+      n = 0.0;
+    }
+
+    friend size_t VW::model_utils::read_model_field(io_buf&, VW::distributionally_robust::Duals&);
+    friend size_t VW::model_utils::write_model_field(
+        io_buf&, const VW::distributionally_robust::Duals&, const std::string&, bool);
   };
 
   using ScoredDual = std::pair<double, Duals>;
@@ -134,11 +143,39 @@ namespace distributionally_robust
       return duals.second.qfunc(w, r);
     }
 
+    void reset(double _alpha, double _tau)
+    {
+      alpha = _alpha;
+      tau = _tau;
+      wmin = 0.0;
+      wmax = std::numeric_limits<double>::infinity();
+      rmin = 0.0;
+      rmax = 1;
+      n = 0.0;
+      sumw = 0.0;
+      sumwsq = 0.0;
+      sumwr = 0.0;
+      sumwsqr = 0.0;
+      sumwsqrsq = 0.0;
+      delta = chisq_onedof_isf(alpha);
+      duals_stale = true;
+      duals.first = 0.0;
+      duals.second.reset();
+    }
+
+    double lower_bound()
+    {
+      if (duals_stale) { recompute_duals(); }
+      return duals.first;
+    }
+
     ScoredDual recompute_duals();
     static double chisq_onedof_isf(double alpha);
     const double& effn() { return n; }
-    friend size_t VW::model_utils::process_model_field(
-        io_buf&, VW::distributionally_robust::ChiSquared&, bool, const std::string&, bool);
+    friend size_t VW::model_utils::read_model_field(io_buf&, VW::distributionally_robust::ChiSquared&);
+    friend size_t VW::model_utils::write_model_field(
+        io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
+    void save_load(io_buf& model_file, bool read, bool text, const char* name);
   };
 
 }  // namespace distributionally_robust

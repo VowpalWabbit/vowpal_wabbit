@@ -1,6 +1,6 @@
-#ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -8,14 +8,15 @@
 #include "test_common.h"
 #include "parse_args.h"
 #include "parse_example.h"
+#include "parse_primitives.h"
 
-BOOST_AUTO_TEST_CASE(spoof_hex_encoded_namespace_test)
+BOOST_AUTO_TEST_CASE(decode_inline_hex_test)
 {
-  BOOST_CHECK_EQUAL(spoof_hex_encoded_namespaces("test"), "test");
-  BOOST_CHECK_EQUAL(spoof_hex_encoded_namespaces("10"), "10");
-  BOOST_CHECK_EQUAL(spoof_hex_encoded_namespaces("\\x01"), "\x01");
-  BOOST_CHECK_EQUAL(spoof_hex_encoded_namespaces("\\xab"), "\xab");
-  BOOST_CHECK_EQUAL(spoof_hex_encoded_namespaces("\\x01 unrelated \\x56"), "\x01 unrelated \x56");
+  BOOST_CHECK_EQUAL(VW::decode_inline_hex("test"), "test");
+  BOOST_CHECK_EQUAL(VW::decode_inline_hex("10"), "10");
+  BOOST_CHECK_EQUAL(VW::decode_inline_hex("\\x01"), "\x01");
+  BOOST_CHECK_EQUAL(VW::decode_inline_hex("\\xab"), "\xab");
+  BOOST_CHECK_EQUAL(VW::decode_inline_hex("\\x01 unrelated \\x56"), "\x01 unrelated \x56");
 }
 
 BOOST_AUTO_TEST_CASE(parse_text_with_extents)
@@ -39,4 +40,23 @@ BOOST_AUTO_TEST_CASE(parse_text_with_extents)
 
   VW::finish_example(*vw, *ex);
   VW::finish(*vw);
+}
+
+BOOST_AUTO_TEST_CASE(trim_whitespace_test)
+{
+  BOOST_TEST("" == VW::trim_whitespace(VW::string_view("")));
+  BOOST_TEST("abc" == VW::trim_whitespace(VW::string_view("abc")));
+  BOOST_TEST("abc" == VW::trim_whitespace(VW::string_view("              abc               ")));
+  BOOST_TEST("ab     c" == VW::trim_whitespace(VW::string_view("              ab     c               ")));
+  BOOST_TEST("a\nb     c" == VW::trim_whitespace(VW::string_view("              a\nb     c               ")));
+  BOOST_TEST("a\nb     \tc" == VW::trim_whitespace(VW::string_view("     \t         a\nb     \tc        \t\t       ")));
+  BOOST_TEST("" == VW::trim_whitespace(VW::string_view("     \t                 \t\t       ")));
+
+  BOOST_TEST("" == VW::trim_whitespace(std::string("")));
+  BOOST_TEST("abc" == VW::trim_whitespace(std::string("abc")));
+  BOOST_TEST("abc" == VW::trim_whitespace(std::string("              abc               ")));
+  BOOST_TEST("ab     c" == VW::trim_whitespace(std::string("              ab     c               ")));
+  BOOST_TEST("a\nb     c" == VW::trim_whitespace(std::string("              a\nb     c               ")));
+  BOOST_TEST("a\nb     \tc" == VW::trim_whitespace(std::string("     \t         a\nb     \tc        \t\t       ")));
+  BOOST_TEST("" == VW::trim_whitespace(std::string("     \t                 \t\t       ")));
 }

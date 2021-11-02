@@ -28,6 +28,23 @@
 #include "hashstring.h"
 #include "simple_label_parser.h"
 
+namespace VW
+{
+namespace details
+{
+struct cache_temp_buffer
+{
+  std::shared_ptr<std::vector<char>> _backing_buffer;
+  io_buf _temporary_cache_buffer;
+  cache_temp_buffer()
+  {
+    _backing_buffer = std::make_shared<std::vector<char>>();
+    _temporary_cache_buffer.add_file(VW::io::create_vector_writer(_backing_buffer));
+  }
+};
+}  // namespace details
+}  // namespace VW
+
 struct vw;
 struct input_options;
 struct dsjson_metrics;
@@ -72,6 +89,7 @@ struct parser
   hash_func_t hasher;
   bool resettable;           // Whether or not the input can be reset.
   io_buf output;             // Where to output the cache.
+  VW::details::cache_temp_buffer _cache_temp_buffer;
   std::string currentname;
   std::string finalname;
 
@@ -92,12 +110,9 @@ struct parser
 
   bool done = false;
 
-  v_array<size_t> ids;     // unique ids for sources
-  v_array<size_t> counts;  // partial examples received from sources
-  size_t finished_count;   // the number of finished examples;
   int bound_sock = 0;
 
-  std::vector<VW::string_view> parse_name;
+  VW::label_parser_reuse_mem parser_memory_to_reuse;
 
   label_parser lbl_parser;  // moved from vw
 
@@ -116,6 +131,10 @@ struct dsjson_metrics
   size_t LineParseError = 0;
   float DsjsonSumCostOriginal = 0.f;
   float DsjsonSumCostOriginalFirstSlot = 0.f;
+  float DsjsonSumCostOriginalBaseline = 0.f;
+  size_t DsjsonNumberOfLabelEqualBaselineFirstSlot = 0;
+  size_t DsjsonNumberOfLabelNotEqualBaselineFirstSlot = 0;
+  float DsjsonSumCostOriginalLabelEqualBaselineFirstSlot = 0.f;
   std::string FirstEventId;
   std::string FirstEventTime;
   std::string LastEventId;

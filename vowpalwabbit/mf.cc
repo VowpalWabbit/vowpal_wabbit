@@ -18,9 +18,9 @@ using namespace VW::config;
 
 struct mf
 {
-  size_t rank;
+  size_t rank = 0;
 
-  uint32_t increment;
+  uint32_t increment = 0;
 
   // array to cache w*x, (l^k * x_l) and (r^k * x_r)
   // [ w*(1,x_l,x_r) , l^1*x_l, r^1*x_r, l^2*x_l, r^2*x_2, ... ]
@@ -35,7 +35,7 @@ struct mf
   // array for temp storage of features
   features temp_features;
 
-  vw* all;  // for pairs? and finalize
+  vw* all = nullptr;  // for pairs? and finalize
 };
 
 template <bool cache_sub_predictions>
@@ -189,7 +189,7 @@ base_learner* mf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto data = scoped_calloc_or_throw<mf>();
+  auto data = VW::make_unique<mf>();
   option_group_definition new_options("Matrix Factorization Reduction");
   new_options.add(
       make_option("new_mf", data->rank).keep().necessary().help("rank for reduction-based matrix factorization"));
@@ -205,7 +205,13 @@ base_learner* mf_setup(VW::setup_base_i& stack_builder)
 
   all.random_positive_weights = true;
 
-  learner<mf, example>& l = init_learner(data, as_singleline(stack_builder.setup_base_learner()), learn, predict<false>,
-      2 * data->rank + 1, stack_builder.get_setupfn_name(mf_setup));
-  return make_base(l);
+  size_t ws = 2 * data->rank + 1;
+
+  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn,
+      predict<false>, stack_builder.get_setupfn_name(mf_setup))
+                .set_params_per_weight(ws)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .build();
+
+  return make_base(*l);
 }

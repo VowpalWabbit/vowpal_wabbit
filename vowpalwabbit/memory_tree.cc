@@ -1251,8 +1251,8 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
                          << "online =" << tree->online << " " << std::endl;
 
   size_t num_learners;
-  prediction_type_t pred_type;
-  label_type_t label_type;
+  VW::prediction_type_t pred_type;
+  VW::label_type_t label_type;
   bool oas = tree->oas;
 
   // multi-class classification
@@ -1260,15 +1260,15 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
   {
     num_learners = tree->max_nodes + 1;
     all.example_parser->lbl_parser = MULTICLASS::mc_label;
-    pred_type = prediction_type_t::multiclass;
-    label_type = label_type_t::multiclass;
+    pred_type = VW::prediction_type_t::multiclass;
+    label_type = VW::label_type_t::multiclass;
   }  // multi-label classification
   else
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
     all.example_parser->lbl_parser = MULTILABEL::multilabel;
-    pred_type = prediction_type_t::multilabels;
-    label_type = label_type_t::multilabel;
+    pred_type = VW::prediction_type_t::multilabels;
+    label_type = VW::label_type_t::multilabel;
   }
 
   auto l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
@@ -1276,8 +1276,8 @@ base_learner* memory_tree_setup(VW::setup_base_i& stack_builder)
                .set_params_per_weight(num_learners)
                .set_end_pass(end_pass)
                .set_save_load(save_load_memory_tree)
-               .set_prediction_type(pred_type)
-               .set_label_type(label_type);
+               .set_output_prediction_type(pred_type)
+               .set_input_label_type(label_type);
 
   if (!oas) { l.set_finish_example(MULTICLASS::finish_example<memory_tree&>); }
 

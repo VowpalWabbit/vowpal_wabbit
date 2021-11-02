@@ -618,14 +618,14 @@ void save_load(ccb& sm, io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
 
-  // We want to enter this block if either we are writing, or reading a model file after the version in which this was
-  // added.
-  if (!read ||
+  // We need to check if reading a model file after the version in which this was added.
+  if (read &&
       (sm.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG &&
           sm.is_ccb_input_model))
+  { VW::model_utils::read_model_field(io, sm.has_seen_multi_slot_example); }
+  else if (!read)
   {
-    VW::model_utils::process_model_field(
-        io, sm.has_seen_multi_slot_example, read, "CCB: has_seen_multi_slot_example", text);
+    VW::model_utils::write_model_field(io, sm.has_seen_multi_slot_example, "CCB: has_seen_multi_slot_example", text);
   }
 
   if (read && sm.has_seen_multi_slot_example)
@@ -683,8 +683,8 @@ base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(ccb_explore_adf_setup))
                 .set_learn_returns_prediction(true)
-                .set_prediction_type(prediction_type_t::decision_probs)
-                .set_label_type(label_type_t::ccb)
+                .set_output_prediction_type(VW::prediction_type_t::decision_probs)
+                .set_input_label_type(VW::label_type_t::ccb)
                 .set_finish_example(finish_multiline_example)
                 .set_save_load(save_load)
                 .build();

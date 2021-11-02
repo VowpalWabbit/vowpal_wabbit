@@ -191,23 +191,23 @@ VW::LEARNER::base_learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 
   // see csoaa.cc ~ line 894 / setup for csldf_setup
   all.example_parser->emptylines_separate_examples = false;
-  prediction_type_t pred_type;
+  VW::prediction_type_t pred_type;
 
   if (data->explore_mode)
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
-    pred_type = prediction_type_t::action_probs;
+    pred_type = VW::prediction_type_t::action_probs;
   }
   else
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_adf"));
-    pred_type = prediction_type_t::multiclass;
+    pred_type = VW::prediction_type_t::multiclass;
   }
 
   auto* l = make_reduction_learner(
       std::move(data), base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(cb_to_cb_adf_setup))
-                .set_prediction_type(pred_type)
-                .set_label_type(label_type_t::cb)
+                .set_output_prediction_type(pred_type)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_example)
                 .build();

@@ -28,27 +28,27 @@ constexpr uint64_t nn_constant = 533357803;
 
 struct nn
 {
-  uint32_t k;
+  uint32_t k = 0;
   std::unique_ptr<loss_function> squared_loss;
   example output_layer;
   example hiddenbias;
   example outputweight;
-  float prediction;
-  size_t increment;
-  bool dropout;
-  uint64_t xsubi;
-  uint64_t save_xsubi;
-  bool inpass;
-  bool finished_setup;
-  bool multitask;
+  float prediction = 0.f;
+  size_t increment = 0;
+  bool dropout = false;
+  uint64_t xsubi = 0;
+  uint64_t save_xsubi = 0;
+  bool inpass = false;
+  bool finished_setup = false;
+  bool multitask = false;
 
-  float* hidden_units;
-  bool* dropped_out;
+  float* hidden_units = nullptr;
+  bool* dropped_out = nullptr;
 
-  polyprediction* hidden_units_pred;
-  polyprediction* hiddenbias_pred;
+  polyprediction* hidden_units_pred = nullptr;
+  polyprediction* hiddenbias_pred = nullptr;
 
-  vw* all;  // many things
+  vw* all = nullptr;  // many things
   std::shared_ptr<rand_state> _random_state;
 
   ~nn()
@@ -412,7 +412,7 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   vw& all = *stack_builder.get_all_pointer();
-  auto n = scoped_calloc_or_throw<nn>();
+  auto n = VW::make_unique<nn>();
   bool meanfield = false;
   option_group_definition new_options("Neural Network");
   new_options
@@ -459,13 +459,22 @@ base_learner* nn_setup(VW::setup_base_i& stack_builder)
   auto base = as_singleline(stack_builder.setup_base_learner());
   n->increment = base->increment;  // Indexing of output layer is odd.
   nn& nv = *n.get();
-  learner<nn, example>& l = init_learner(n, base, predict_or_learn_multi<true, true>,
-      predict_or_learn_multi<false, true>, n->k + 1, stack_builder.get_setupfn_name(nn_setup), true);
-  if (nv.multitask) l.set_multipredict(multipredict);
-  l.set_finish_example(finish_example);
-  l.set_end_pass(end_pass);
 
-  return make_base(l);
+  size_t ws = n->k + 1;
+  auto* multipredict_f = (nv.multitask) ? multipredict : nullptr;
+
+  auto* l = make_reduction_learner(std::move(n), base, predict_or_learn_multi<true, true>,
+      predict_or_learn_multi<false, true>, stack_builder.get_setupfn_name(nn_setup))
+                .set_params_per_weight(ws)
+                .set_learn_returns_prediction(true)
+                .set_multipredict(multipredict_f)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_finish_example(finish_example)
+                .set_end_pass(end_pass)
+                .build();
+
+  return make_base(*l);
 }
 
 /*
