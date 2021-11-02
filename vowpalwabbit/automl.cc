@@ -140,11 +140,12 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs, uint64_t seed,
-    uint64_t priority_challengers, priority_func* calc_priority)
+    uint64_t priority_challengers, bool keep_configs, priority_func* calc_priority)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , seed(seed)
     , priority_challengers(priority_challengers)
+    , keep_configs(keep_configs)
     , calc_priority(calc_priority)
 {
   random_state.set_random_state(seed);
@@ -153,6 +154,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
   configs[0] = conf;
   scored_config sc;
   scores.push_back(sc);
+  ++valid_config_size;
 }
 
 // This code is primarily borrowed from expand_quadratics_wildcard_interactions in
@@ -216,12 +218,27 @@ void interaction_config_manager::config_oracle()
     std::map<namespace_index, std::set<namespace_index>> new_exclusions(
         configs[scores[current_champ].config_index].exclusions);
     new_exclusions[ns1].insert(ns2);
-    uint64_t config_index = configs.size();
-    exclusion_config conf(global_lease);
-    conf.exclusions = new_exclusions;
-    configs[config_index] = conf;
-    float priority = (*calc_priority)(configs[config_index], ns_counter);
-    index_queue.push(std::make_pair(priority, config_index));
+    // Note that configs are never actually cleared, but valid_config_size is set to 0 instead to denote that
+    // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
+    // configs exist we'll generate a new one.
+    if (valid_config_size < configs.size())
+    {
+      configs[valid_config_size].exclusions.clear();
+      configs[valid_config_size].exclusions = new_exclusions;
+      configs[valid_config_size].lease = global_lease;
+      configs[valid_config_size].ips = 0;
+      configs[valid_config_size].lower_bound = std::numeric_limits<float>::infinity();
+      configs[valid_config_size].state = VW::automl::config_state::New;
+    }
+    else
+    {
+      exclusion_config conf(global_lease);
+      conf.exclusions = new_exclusions;
+      configs[valid_config_size] = conf;
+    }
+    float priority = (*calc_priority)(configs[valid_config_size], ns_counter);
+    index_queue.push(std::make_pair(priority, valid_config_size));
+    ++valid_config_size;
   }
 }
 
@@ -232,15 +249,13 @@ void interaction_config_manager::config_oracle()
 // on ns_counter (which is updated as each example is processed)
 bool interaction_config_manager::repopulate_index_queue()
 {
-  for (const auto& ind_config : configs)
+  for (size_t i = 0; i < valid_config_size; ++i)
   {
-    uint64_t redo_index = ind_config.first;
     // Only re-add if not removed and not live
-    if (configs[redo_index].state == VW::automl::config_state::New ||
-        configs[redo_index].state == VW::automl::config_state::Inactive)
+    if (configs[i].state == VW::automl::config_state::New || configs[i].state == VW::automl::config_state::Inactive)
     {
-      float priority = (*calc_priority)(configs[redo_index], ns_counter);
-      index_queue.push(std::make_pair(priority, redo_index));
+      float priority = (*calc_priority)(configs[i], ns_counter);
+      index_queue.push(std::make_pair(priority, i));
     }
   }
   return !index_queue.empty();
@@ -342,7 +357,7 @@ void interaction_config_manager::update_champ()
   bool champ_change = false;
 
   // compare lowerbound of any challenger to the ips of the champ, and switch whenever when the LB beats the champ
-  for (uint64_t config_index = 0; config_index < configs.size(); ++config_index)
+  for (uint64_t config_index = 0; config_index < valid_config_size; ++config_index)
   {
     if (configs[config_index].state == VW::automl::config_state::New ||
         configs[config_index].state == VW::automl::config_state::Removed ||
@@ -403,7 +418,27 @@ void interaction_config_manager::update_champ()
       configs[config_index].state = VW::automl::config_state::Removed;
     }
   }
-  if (champ_change) { config_oracle(); }
+  if (champ_change)
+  {
+    if (!keep_configs)
+    {
+      while (!index_queue.empty()) { index_queue.pop(); };
+      uint64_t champ_config_index = scores[current_champ].config_index;
+      if (champ_config_index != 0)
+      {
+        exclusion_config& zero_ind = configs[0];
+        exclusion_config& new_champ = configs[champ_config_index];
+        std::swap(zero_ind, new_champ);
+        scores[current_champ].config_index = 0;
+      }
+      scored_config champ_score = std::move(scores[current_champ]);
+      scores.clear();
+      scores.push_back(champ_score);
+      current_champ = 0;
+      valid_config_size = 1;
+    }
+    config_oracle();
+  }
 }
 
 void interaction_config_manager::persist(metric_sink& metrics)
@@ -560,6 +595,7 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
   std::string cm_type;
   std::string priority_type;
   int priority_challengers;
+  bool keep_configs = false;
 
   option_group_definition new_options("Debug: automl reduction");
   new_options
@@ -580,7 +616,8 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
       .add(make_option("priority_challengers", priority_challengers)
                .keep()
                .default_value(-1)
-               .help("set number of priority challengers to use"));
+               .help("set number of priority challengers to use"))
+      .add(make_option("keep_configs", keep_configs).keep().help("keep all configs after champ change"));
 
   if (!options.add_parse_and_check_necessary(new_options)) return nullptr;
 
@@ -598,8 +635,8 @@ VW::LEARNER::base_learner* automl_setup(VW::setup_base_i& stack_builder)
 
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
-  auto cm = VW::make_unique<interaction_config_manager>(
-      global_lease, max_live_configs, all.random_seed, static_cast<uint64_t>(priority_challengers), calc_priority);
+  auto cm = VW::make_unique<interaction_config_manager>(global_lease, max_live_configs, all.random_seed,
+      static_cast<uint64_t>(priority_challengers), keep_configs, calc_priority);
   auto data = VW::make_unique<automl<interaction_config_manager>>(std::move(cm));
   assert(max_live_configs <= MAX_CONFIGS);
 
@@ -706,6 +743,7 @@ size_t read_model_field(io_buf& io, VW::automl::interaction_config_manager& cm)
   size_t bytes = 0;
   bytes += read_model_field(io, cm.total_learn_count);
   bytes += read_model_field(io, cm.current_champ);
+  bytes += read_model_field(io, cm.valid_config_size);
   bytes += read_model_field(io, cm.ns_counter);
   bytes += read_model_field(io, cm.configs);
   bytes += read_model_field(io, cm.scores);
@@ -720,6 +758,7 @@ size_t write_model_field(
   size_t bytes = 0;
   bytes += write_model_field(io, cm.total_learn_count, upstream_name + "_count", text);
   bytes += write_model_field(io, cm.current_champ, upstream_name + "_champ", text);
+  bytes += write_model_field(io, cm.valid_config_size, upstream_name + "_valid_config_size", text);
   bytes += write_model_field(io, cm.ns_counter, upstream_name + "_ns_counter", text);
   bytes += write_model_field(io, cm.configs, upstream_name + "_configs", text);
   bytes += write_model_field(io, cm.scores, upstream_name + "_scores", text);
