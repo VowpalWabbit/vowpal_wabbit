@@ -558,7 +558,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
         if (!quiet)
         {
-          if (stdin_used) { *(all.trace_message) << "Reading from stdin since no datafile given" << endl; }
+          if (stdin_used) { *(all.trace_message) << "Reading datafile = none (stdin)" << endl; }
           else
           {
             *(all.trace_message) << "Reading datafile = " << filename_to_read << endl;
