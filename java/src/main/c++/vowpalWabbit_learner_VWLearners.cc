@@ -74,7 +74,7 @@ JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWLearners_getReturnType(JNI
   jclass clVWReturnType = env->FindClass(RETURN_TYPE);
   jfieldID field;
   vw* vwInstance = (vw*)vwPtr;
-  switch (vwInstance->l->pred_type)
+  switch (vwInstance->l->get_output_prediction_type())
   {
     case VW::prediction_type_t::action_probs:
       field = env->GetStaticFieldID(clVWReturnType, "ActionProbs", RETURN_TYPE_INSTANCE);

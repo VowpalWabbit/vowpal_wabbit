@@ -282,6 +282,7 @@ set(vw_all_sources
   confidence.cc
   cbzo.cc
   cost_sensitive.cc
+  crossplat_compat.cc
   cs_active.cc
   csoaa.cc
   decision_scores.cc
@@ -305,6 +306,7 @@ set(vw_all_sources
   io_buf.cc
   kernel_svm.cc
   label_dictionary.cc
+  label_parser.cc
   lda_core.cc
   learner.cc
   log_multi.cc
@@ -314,6 +316,7 @@ set(vw_all_sources
   marginal.cc
   memory_tree.cc
   metrics.cc
+  metric_sink.cc
   mf.cc
   multiclass.cc
   multilabel_oaa.cc

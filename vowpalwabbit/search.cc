@@ -188,7 +188,7 @@ public:
                              // oracle (0 means "infinite")
   bool linear_ordering;      // insist that examples are generated in linear order (rather that the default hoopla
                              // permutation)
-  bool (*label_is_test)(polylabel*);  // tell me if the label data from an example is test
+  bool (*label_is_test)(const polylabel&);  // tell me if the label data from an example is test
 
   size_t t;                                     // current search step
   size_t T;                                     // length of root trajectory
@@ -2240,7 +2240,7 @@ void do_actual_learning(search& sch, multi_ex& ec_seq)
 
   for (size_t i = 0; i < ec_seq.size(); i++)
   {
-    is_test_ex |= priv.label_is_test(&ec_seq[i]->l);
+    is_test_ex |= priv.label_is_test(ec_seq[i]->l);
     is_holdout_ex |= ec_seq[i]->test_only;
     if (is_test_ex && is_holdout_ex) break;
   }
@@ -2339,7 +2339,7 @@ void end_examples(search& sch)
   }
 }
 
-bool mc_label_is_test(polylabel* lab) { return MC::test_label(lab->multi); }
+bool mc_label_is_test(const polylabel& lab) { return MC::test_label(lab.multi); }
 
 void search_initialize(vw* all, search& sch)
 {
@@ -2647,14 +2647,14 @@ base_learner* setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;
-    CB::cb_label.default_label(&priv.allowed_actions_cache);
+    CB::cb_label.default_label(priv.allowed_actions_cache);
     priv.learn_losses.cb.costs.clear();
     priv.gte_label.cb.costs.clear();
   }
   else
   {
     priv.cb_learner = false;
-    CS::cs_label.default_label(&priv.allowed_actions_cache);
+    CS::cs_label.default_label(priv.allowed_actions_cache);
     priv.learn_losses.cs.costs.clear();
     priv.gte_label.cs.costs.clear();
   }
@@ -2796,7 +2796,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
             .set_end_examples(end_examples)
             .set_finish(search_finish)
             .set_end_pass(end_pass)
-            .set_label_type(expected_label_type)
+            .set_input_label_type(expected_label_type)
             // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
             // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
             .build();
@@ -2812,7 +2812,7 @@ base_learner* setup(VW::setup_base_i& stack_builder)
             .set_end_examples(end_examples)
             .set_finish(search_finish)
             .set_end_pass(end_pass)
-            .set_label_type(expected_label_type)
+            .set_input_label_type(expected_label_type)
             // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
             // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
             .build();
@@ -2944,7 +2944,7 @@ void search::set_options(uint32_t opts)
     );
 }
 
-void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel*))
+void search::set_label_parser(label_parser& lp, bool (*is_test)(const polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
     logger::errlog_warn("warning: task should not set label parser except in initialize function!");

@@ -12,6 +12,7 @@
 #include "constant.h"
 #include "vw_string_view.h"
 #include "future_compat.h"
+#include "shared_data.h"
 
 #include "io/logger.h"
 
@@ -37,17 +38,19 @@ int read_features_string(vw* all, io_buf& buf, v_array<example*>& examples)
 {
   char* line;
   size_t num_chars;
-  size_t num_chars_initial = read_features(buf, line, num_chars);
-  if (num_chars_initial < 1)
+  // This function consumes input until it reaches a '\n' then it walks back the '\n' and '\r' if it exists.
+  size_t num_bytes_consumed = read_features(buf, line, num_chars);
+  if (num_bytes_consumed < 1)
   {
-    examples[0]->is_newline = true;
-    return static_cast<int>(num_chars_initial);
+    // This branch will get hit once we have reached EOF of the input device.
+    return static_cast<int>(num_bytes_consumed);
   }
 
   VW::string_view example(line, num_chars);
+  // If this example is empty substring_to_example will mark it as a newline example.
   substring_to_example(all, examples[0], example);
 
-  return static_cast<int>(num_chars_initial);
+  return static_cast<int>(num_bytes_consumed);
 }
 
 template <bool audit>
@@ -497,7 +500,7 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
 {
   if (example.empty()) { ae->is_newline = true; }
 
-  all->example_parser->lbl_parser.default_label(&ae->l);
+  all->example_parser->lbl_parser.default_label(ae->l);
 
   size_t bar_idx = example.find('|');
 
@@ -527,8 +530,10 @@ void substring_to_example(vw* all, example* ae, VW::string_view example)
   }
 
   if (!all->example_parser->words.empty())
-    all->example_parser->lbl_parser.parse_label(all->example_parser, all->example_parser->_shared_data, &ae->l,
-        all->example_parser->words, ae->_reduction_features);
+  {
+    all->example_parser->lbl_parser.parse_label(ae->l, ae->_reduction_features,
+        all->example_parser->parser_memory_to_reuse, all->sd->ldict.get(), all->example_parser->words);
+  }
 
   if (bar_idx != VW::string_view::npos)
   {

@@ -61,6 +61,7 @@ const size_t pDECISION_SCORES = 8;
 const size_t pACTION_PDF_VALUE = 9;
 const size_t pPDF = 10;
 const size_t pACTIVE_MULTICLASS = 11;
+const size_t pNOPRED = 12;
 
 void dont_delete_me(void* arg) {}
 
@@ -270,6 +271,18 @@ void my_run_parser(vw_ptr all)
   VW::end_parser(*all);
 }
 
+struct python_dict_writer : VW::metric_sink_visitor
+{
+  python_dict_writer(py::dict& dest_dict) : _dest_dict(dest_dict) {}
+  void int_metric(const std::string& key, uint64_t value) override { _dest_dict[key] = value; }
+  void float_metric(const std::string& key, float value) override { _dest_dict[key] = value; }
+  void string_metric(const std::string& key, const std::string& value) override { _dest_dict[key] = value; }
+  void bool_metric(const std::string& key, bool value) override { _dest_dict[key] = value; }
+
+private:
+  py::dict& _dest_dict;
+};
+
 py::dict get_learner_metrics(vw_ptr all)
 {
   py::dict dictionary;
@@ -279,8 +292,8 @@ py::dict get_learner_metrics(vw_ptr all)
     VW::metric_sink metrics;
     all->l->persist_metrics(metrics);
 
-    for (const auto& m : metrics.int_metrics_list) { dictionary[m.first] = m.second; }
-    for (const auto& m : metrics.float_metrics_list) { dictionary[m.first] = m.second; }
+    python_dict_writer writer(dictionary);
+    metrics.visit(writer);
   }
 
   return dictionary;
@@ -398,7 +411,7 @@ size_t my_get_label_type(vw* all)
 
 size_t my_get_prediction_type(vw_ptr all)
 {
-  switch (all->l->pred_type)
+  switch (all->l->get_output_prediction_type())
   {
     case VW::prediction_type_t::scalar:
       return pSCALAR;
@@ -424,6 +437,8 @@ size_t my_get_prediction_type(vw_ptr all)
       return pPDF;
     case VW::prediction_type_t::active_multiclass:
       return pACTIVE_MULTICLASS;
+    case VW::prediction_type_t::nopred:
+      return pNOPRED;
     default:
       THROW("unsupported prediction type used");
   }
@@ -441,7 +456,7 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
 {
   label_parser* lp = get_label_parser(&*vw, labelType);
   example* ec = VW::alloc_examples(1);
-  lp->default_label(&ec->l);
+  lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   ec->extent_interactions = &vw->extent_interactions;
   if (labelType == lCOST_SENSITIVE)
@@ -505,7 +520,7 @@ float my_predict(vw_ptr all, example_ptr ec)
   return ec->partial_prediction;
 }
 
-bool my_is_multiline(vw_ptr all) { return all->l->is_multiline; }
+bool my_is_multiline(vw_ptr all) { return all->l->is_multiline(); }
 
 template <bool learn>
 void predict_or_learn(vw_ptr& all, py::list& ec)
@@ -825,6 +840,8 @@ py::list ex_get_multilabel_predictions(example_ptr ec)
   for (uint32_t l : labels.label_v) { values.append(l); }
   return values;
 }
+
+char ex_get_nopred(example_ptr ec) { return ec->pred.nopred; }
 
 uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return (uint32_t)ec->l.cs.costs.size(); }
@@ -1209,7 +1226,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("pDECISION_SCORES", pDECISION_SCORES, "Decision scores prediction type")
       .def_readonly("pACTION_PDF_VALUE", pACTION_PDF_VALUE, "Action pdf value prediction type")
       .def_readonly("pPDF", pPDF, "PDF prediction type")
-      .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type");
+      .def_readonly("pACTIVE_MULTICLASS", pACTIVE_MULTICLASS, "Active multiclass prediction type")
+      .def_readonly("pNOPRED", pNOPRED, "Nopred prediction type");
 
   // define the example class
   py::class_<example, example_ptr, boost::noncopyable>("example", py::no_init)
@@ -1283,6 +1301,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_active_multiclass", &ex_get_active_multiclass, "Get active multiclass from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
+      .def("get_nopred", &ex_get_nopred, "Get nopred from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
           "Assuming a cost_sensitive label type, get the prediction")
       .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs,

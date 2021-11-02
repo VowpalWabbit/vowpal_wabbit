@@ -71,9 +71,9 @@ void finish_example(vw& all, multi_oaa& o, example& ec)
     for (uint32_t i = 0; i < o.k; i++)
     {
       if (i > 0) outputStringStream << ' ';
-      if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(i + 1); }
+      if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(i); }
       else
-        outputStringStream << i + 1;
+        outputStringStream << i;
       outputStringStream << ':' << ec.pred.scalars[i];
     }
     const auto ss_str = outputStringStream.str();
@@ -132,8 +132,8 @@ VW::LEARNER::base_learner* multilabel_oaa_setup(VW::setup_base_i& stack_builder)
           predict_or_learn<false>, stack_builder.get_setupfn_name(multilabel_oaa_setup) + name_addition)
           .set_params_per_weight(ws)
           .set_learn_returns_prediction(true)
-          .set_label_type(VW::label_type_t::multilabel)
-          .set_prediction_type(pred_type)
+          .set_input_label_type(VW::label_type_t::multilabel)
+          .set_output_prediction_type(pred_type)
           .set_finish_example(finish_example)
           .build();
 

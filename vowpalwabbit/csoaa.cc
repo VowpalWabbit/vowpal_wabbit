@@ -152,8 +152,8 @@ base_learner* csoaa_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(
                     true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
                 .set_params_per_weight(ws)
-                .set_prediction_type(VW::prediction_type_t::multiclass)
-                .set_label_type(VW::label_type_t::cs)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::cs)
                 .set_finish_example(finish_example)
                 .build();
 
@@ -290,13 +290,13 @@ bool test_ldf_sequence(ldf& data, multi_ex& ec_seq)
   if (ec_seq.empty())
     isTest = true;
   else
-    isTest = COST_SENSITIVE::cs_label.test_label(&ec_seq[0]->l);
+    isTest = COST_SENSITIVE::cs_label.test_label(ec_seq[0]->l);
   for (const auto& ec : ec_seq)
   {
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size() == 1);
 
-    if (COST_SENSITIVE::cs_label.test_label(&ec->l) != isTest)
+    if (COST_SENSITIVE::cs_label.test_label(ec->l) != isTest)
     {
       isTest = true;
       *(data.all->trace_message) << "warning: ldf example has mix of train/test data; assuming test" << std::endl;
@@ -617,7 +617,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
   else
     predicted_class = ec.pred.multiclass;
 
-  if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
+  if (!COST_SENSITIVE::cs_label.test_label(ec.l))
   {
     for (auto const& cost : costs)
     {
@@ -650,7 +650,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&ec.l), ec, ec_seq, false, predicted_class);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
 void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec_seq)
@@ -665,7 +665,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
   float loss = 0.;
   v_array<action_score>& preds = head_ec.pred.a_s;
 
-  if (!COST_SENSITIVE::cs_label.test_label(&head_ec.l))
+  if (!COST_SENSITIVE::cs_label.test_label(head_ec.l))
   {
     size_t idx = 0;
     for (example* ex : *ec_seq)
@@ -698,7 +698,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), head_ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&head_ec.l), head_ec, ec_seq, true, 0);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(head_ec.l), head_ec, ec_seq, true, 0);
 }
 
 void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
@@ -940,8 +940,8 @@ base_learner* csldf_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
                 .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
-                .set_label_type(VW::label_type_t::cs)
-                .set_prediction_type(pred_type)
+                .set_input_label_type(VW::label_type_t::cs)
+                .set_output_prediction_type(pred_type)
                 .build();
 
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;

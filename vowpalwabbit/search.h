@@ -109,7 +109,7 @@ struct search
 
   // change the default label parser, but you _must_ tell me how
   // to detect test examples!
-  void set_label_parser(label_parser& lp, bool (*is_test)(polylabel*));
+  void set_label_parser(label_parser& lp, bool (*is_test)(const polylabel&));
 
   // for explicitly declaring a loss incrementally
   void loss(float incr_loss);

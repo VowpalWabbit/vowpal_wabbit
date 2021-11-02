@@ -96,6 +96,21 @@ public:
   ~vw_unrecognised_option_exception() noexcept override = default;
 };
 
+class save_load_model_exception : public vw_exception
+{
+public:
+  save_load_model_exception(const char* file, int lineNumber, const std::string& message)
+      : vw_exception(file, lineNumber, message)
+  {
+  }
+
+  save_load_model_exception(const save_load_model_exception& ex) = default;
+  save_load_model_exception& operator=(const save_load_model_exception& other) = default;
+  save_load_model_exception(save_load_model_exception&& ex) = default;
+  save_load_model_exception& operator=(save_load_model_exception&& other) = default;
+  ~save_load_model_exception() noexcept override = default;
+};
+
 class strict_parse_exception : public vw_exception
 {
 public:
