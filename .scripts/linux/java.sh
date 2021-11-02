@@ -7,7 +7,7 @@ REPO_DIR=$SCRIPT_DIR/../../
 cd $REPO_DIR
 
 # Run Java build and test
-mvn clean test -f java/pom.xml
+mvn clean test integration-test -f java/pom.xml
 
 # publish snapshot jar to staging repository
 if [ "$ossrh_username" = "\$(ossrh_username)" ] || [ -z "$ossrh_username" ]
