@@ -64,7 +64,8 @@ struct Namespace
 };
 
 template <bool audit>
-void push_ns(example* ex, const char* ns, std::vector<Namespace<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed)
+void push_ns(
+    example* ex, const char* ns, std::vector<Namespace<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed)
 {
   Namespace<audit> n;
   n.feature_group = ns[0];

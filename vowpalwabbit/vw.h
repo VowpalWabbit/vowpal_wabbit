@@ -191,12 +191,11 @@ inline uint64_t chain_hash(vw& all, const std::string& name, const std::string& 
       all.parse_mask;
 }
 
-inline uint64_t chain_hash_static(const std::string& name, const std::string& value, uint64_t u, hash_func_t hash_func, uint64_t parse_mask)
+inline uint64_t chain_hash_static(
+    const std::string& name, const std::string& value, uint64_t u, hash_func_t hash_func, uint64_t parse_mask)
 {
   // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-  return hash_func(
-             value.data(), value.length(), hash_func(name.data(), name.length(), u)) &
-      parse_mask;
+  return hash_func(value.data(), value.length(), hash_func(name.data(), name.length(), u)) & parse_mask;
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)

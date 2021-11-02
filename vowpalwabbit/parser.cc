@@ -87,12 +87,12 @@ void handle_sigterm(int) { got_sigterm = true; }
 
 namespace VW
 {
-void parse_example_label(string_view label, const label_parser& lbl_parser, const named_labels* ldict, label_parser_reuse_mem& reuse_mem, example& ec)
+void parse_example_label(string_view label, const label_parser& lbl_parser, const named_labels* ldict,
+    label_parser_reuse_mem& reuse_mem, example& ec)
 {
   std::vector<string_view> words;
   tokenize(' ', label, words);
-  lbl_parser.parse_label(
-      ec.l, ec._reduction_features, reuse_mem, ldict, words);
+  lbl_parser.parse_label(ec.l, ec._reduction_features, reuse_mem, ldict, words);
 }
 }  // namespace VW
 

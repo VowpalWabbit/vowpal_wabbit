@@ -37,7 +37,8 @@ inline float get_number(const rapidjson::Value& value)
 
 template <bool audit>
 void handle_features_value(const char* key_namespace, const Value& value, example* current_example,
-    std::vector<Namespace<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask, bool chain_hash)
+    std::vector<Namespace<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
+    bool chain_hash)
 {
   assert(key_namespace != nullptr);
   assert(std::strlen(key_namespace) != 0);
@@ -63,7 +64,10 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
     {
       push_ns(current_example, key_namespace, namespaces, hash_func, hash_seed);
       for (auto& object_value : value.GetObject())
-      { handle_features_value(object_value.name.GetString(), object_value.value, current_example, namespaces, hash_func, hash_seed, parse_mask, chain_hash); }
+      {
+        handle_features_value(object_value.name.GetString(), object_value.value, current_example, namespaces, hash_func,
+            hash_seed, parse_mask, chain_hash);
+      }
       pop_ns(current_example, namespaces);
     }
     break;
@@ -94,7 +98,8 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
           break;
           case rapidjson::kObjectType:
           {
-            handle_features_value(key_namespace, array_value, current_example, namespaces, hash_func, hash_seed, parse_mask, chain_hash);
+            handle_features_value(
+                key_namespace, array_value, current_example, namespaces, hash_func, hash_seed, parse_mask, chain_hash);
           }
           break;
           default:
@@ -146,7 +151,8 @@ void handle_features_value(const char* key_namespace, const Value& value, exampl
 }
 
 template <bool audit>
-void parse_context(const Value& context, const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, v_array<example*>& examples, VW::example_factory_t example_factory,
+void parse_context(const Value& context, const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
+    uint64_t parse_mask, bool chain_hash, v_array<example*>& examples, VW::example_factory_t example_factory,
     void* ex_factory_context, std::vector<example*>& slot_examples,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
@@ -215,7 +221,8 @@ void parse_context(const Value& context, const label_parser& lbl_parser, hash_fu
 }
 
 template <bool audit>
-void parse_slates_example_json(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, v_array<example*>& examples, char* line, size_t /*length*/,
+void parse_slates_example_json(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
+    uint64_t parse_mask, bool chain_hash, v_array<example*>& examples, char* line, size_t /*length*/,
     VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
@@ -225,7 +232,8 @@ void parse_slates_example_json(const label_parser& lbl_parser, hash_func_t hash_
   // Build shared example
   const Value& context = document.GetObject();
   std::vector<example*> slot_examples;
-  parse_context<audit>(context, lbl_parser, hash_func, hash_seed, parse_mask,chain_hash, examples, example_factory, ex_factory_context, slot_examples, dedup_examples);
+  parse_context<audit>(context, lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, examples, example_factory,
+      ex_factory_context, slot_examples, dedup_examples);
 }
 
 template <bool audit>
@@ -233,7 +241,8 @@ void parse_slates_example_json(const vw& all, v_array<example*>& examples, char*
     VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
 {
-  parse_slates_example_json<audit>(all.chain_hash_json, all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed, all.parse_mask, examples, line, example_factory, ex_factory_context, dedup_examples);
+  parse_slates_example_json<audit>(all.chain_hash_json, all.example_parser->lbl_parser, all.example_parser->hasher,
+      all.hash_seed, all.parse_mask, examples, line, example_factory, ex_factory_context, dedup_examples);
 }
 
 template <bool audit>
@@ -246,7 +255,9 @@ void parse_slates_example_dsjson(vw& all, v_array<example*>& examples, char* lin
   // Build shared example
   const Value& context = document["c"].GetObject();
   std::vector<example*> slot_examples;
-  parse_context<audit>(context, all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed, all.parse_mask, all.chain_hash_json, examples, example_factory, ex_factory_context, slot_examples, dedup_examples);
+  parse_context<audit>(context, all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
+      all.parse_mask, all.chain_hash_json, examples, example_factory, ex_factory_context, slot_examples,
+      dedup_examples);
 
   if (document.HasMember("_label_cost"))
   {

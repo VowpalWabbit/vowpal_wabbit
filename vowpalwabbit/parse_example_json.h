@@ -231,8 +231,8 @@ public:
   CB::cb_class cb_label;
   VW::cb_continuous::continuous_label_elm cont_label_element = {0., 0., 0.};
   bool found = false;
-  bool found_cb= false;
-  bool found_cb_continuous= false;
+  bool found_cb = false;
+  bool found_cb_continuous = false;
   std::vector<unsigned int> actions;
   std::vector<float> probs;
   std::vector<unsigned int> inc;
@@ -971,7 +971,7 @@ public:
       char* prepend = const_cast<char*>(str) - ctx.key_length;
       memmove(prepend, ctx.key, ctx.key_length);
 
-      ctx.CurrentNamespace().AddFeature(prepend,  ctx._hash_func, ctx._parse_mask);
+      ctx.CurrentNamespace().AddFeature(prepend, ctx._hash_func, ctx._parse_mask);
     }
 
     return this;
@@ -1575,7 +1575,8 @@ public:
     root_state = &default_state;
   }
 
-  void init(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict)
+  void init(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
+      bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict)
   {
     assert(_reuse_mem != nullptr);
     _label_parser = lbl_parser;
@@ -1636,7 +1637,9 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 {
   Context<audit> ctx;
 
-  void init(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, v_array<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
+  void init(const label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
+      bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
+      v_array<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
       VW::example_factory_t example_factory, void* example_factory_context,
       std::unordered_map<uint64_t, example*>* dedup_examples = nullptr)
   {
@@ -1789,8 +1792,9 @@ bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char*
   json_parser<audit> parser;
 
   VWReaderHandler<audit>& handler = parser.handler;
-  handler.init(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
-      all.parse_mask, all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &examples, &ss, line + length, example_factory, ex_factory_context);
+  handler.init(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed, all.parse_mask,
+      all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &examples, &ss,
+      line + length, example_factory, ex_factory_context);
 
   handler.ctx.SetStartStateToDecisionService(data);
   handler.ctx.decision_service_data = data;
