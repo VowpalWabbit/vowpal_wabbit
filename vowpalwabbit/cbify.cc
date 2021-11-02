@@ -787,8 +787,8 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     }
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
-            .set_label_type(label_type)
-            .set_prediction_type(VW::prediction_type_t::multiclass)
+            .set_input_label_type(label_type)
+            .set_output_prediction_type(VW::prediction_type_t::multiclass)
             .set_finish_example(finish_ptr)
             .build();
   }
@@ -841,8 +841,8 @@ base_learner* cbify_setup(VW::setup_base_i& stack_builder)
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
             .set_learn_returns_prediction(true)
-            .set_label_type(label_type)
-            .set_prediction_type(pred_type)
+            .set_input_label_type(label_type)
+            .set_output_prediction_type(pred_type)
             .set_finish_example(finish_ptr)
             .build();
   }
@@ -886,8 +886,8 @@ base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder)
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   auto* l = make_reduction_learner(std::move(data), base, do_actual_learning_ldf, do_actual_predict_ldf,
       stack_builder.get_setupfn_name(cbifyldf_setup))
-                .set_prediction_type(VW::prediction_type_t::multiclass)
-                .set_label_type(VW::label_type_t::cs)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::cs)
                 .set_finish_example(finish_multiline_example)
                 .build();
   all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;

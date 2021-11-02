@@ -122,7 +122,7 @@ VW::LEARNER::base_learner* classweight_setup(VW::setup_base_i& stack_builder)
 
   auto* l = make_reduction_learner(
       std::move(cweights), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(classweight_setup) + name_addition)
-                .set_prediction_type(pred_type)
+                .set_output_prediction_type(pred_type)
                 .build();
 
   return make_base(*l);
