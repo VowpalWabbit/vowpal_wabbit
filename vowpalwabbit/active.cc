@@ -139,9 +139,14 @@ void output_and_account_example(vw& all, active& a, example& ec)
   print_update(all, ec);
 }
 
+template <bool simulation>
 void return_active_example(vw& all, active& a, example& ec)
 {
-  output_and_account_example(all, a, ec);
+  if (simulation) { output_and_account_example(all, ec); }
+  else
+  {
+    output_and_account_example(all, a, ec);
+  }
   VW::finish_example(all, ec);
 }
 
@@ -188,12 +193,14 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
   using learn_pred_func_t = void (*)(active&, VW::LEARNER::single_learner&, example&);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
+  void (*finish_ptr)(vw&, active&, example&);
   bool learn_returns_prediction = true;
   std::string reduction_name = stack_builder.get_setupfn_name(active_setup);
   if (simulation)
   {
     learn_func = predict_or_learn_simulation<true>;
     pred_func = predict_or_learn_simulation<false>;
+    finish_ptr = return_active_example<true>;
     reduction_name.append("-simulation");
   }
   else
@@ -201,16 +208,18 @@ base_learner* active_setup(VW::setup_base_i& stack_builder)
     all.active = true;
     learn_func = predict_or_learn_active<true>;
     pred_func = predict_or_learn_active<false>;
+    finish_ptr = return_active_example<false>;
     learn_returns_prediction = base->learn_returns_prediction;
   }
 
   // Create new learner
-  auto reduction_builder = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name);
-  reduction_builder.set_label_type(VW::label_type_t::simple);
-  reduction_builder.set_prediction_type(VW::prediction_type_t::scalar);
-  reduction_builder.set_learn_returns_prediction(learn_returns_prediction);
-  reduction_builder.set_save_load(save_load);
-  if (!simulation) { reduction_builder.set_finish_example(return_active_example); }
+  auto* l = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_learn_returns_prediction(learn_returns_prediction)
+                .set_save_load(save_load)
+                .set_finish_example(finish_ptr)
+                .build();
 
-  return make_base(*reduction_builder.build());
+  return make_base(*l);
 }
