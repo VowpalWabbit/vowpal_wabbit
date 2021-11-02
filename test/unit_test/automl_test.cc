@@ -301,8 +301,8 @@ BOOST_AUTO_TEST_CASE(clear_configs)
     BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 6);
     BOOST_CHECK_EQUAL(clear_champ_switch - 1, aml->cm->total_learn_count);
     BOOST_CHECK_EQUAL(aml->cm->scores[0].live_interactions.size(), 6);
-    BOOST_CHECK_EQUAL(aml->cm->scores[1].live_interactions.size(), 7);
-    BOOST_CHECK_EQUAL(aml->cm->scores[2].live_interactions.size(), 7);
+    BOOST_CHECK_EQUAL(aml->cm->scores[1].live_interactions.size(), 5);
+    BOOST_CHECK_EQUAL(aml->cm->scores[2].live_interactions.size(), 5);
     BOOST_CHECK(aml->current_state == VW::automl::automl_state::Experimenting);
     return true;
   });
